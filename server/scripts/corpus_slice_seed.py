@@ -36,8 +36,6 @@ SLICE_ARTICLES_1998: list[str] = [
     "153",
     "156",
     "157",
-    "157-1",
-    "157-3",
     "158",
     "160",
     "164",
@@ -97,7 +95,7 @@ SEED_DECISIONS: list[SeedDecision] = [
     SeedDecision(
         number="101/2015",
         decided_on="2015-07-23",
-        articles_1998=["157-3", "166", "169"],
+        articles_1998=["157", "166", "169"],
         note="Mentions de l'acte de saisie ; désignation d'un séquestre.",
         ohadata_code="J-16-198",
     ),
@@ -128,8 +126,8 @@ SEED_DECISIONS: list[SeedDecision] = [
     SeedDecision(
         number="038/2010",
         decided_on="2010-06-10",
-        articles_1998=["157-1"],
-        note="Mauvaise application de l'art. 157-1.",
+        articles_1998=["157"],
+        note="Mauvaise application de l'art. 157, al. 1.",
     ),
     SeedDecision(
         number="054/2005",

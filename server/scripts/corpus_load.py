@@ -21,6 +21,7 @@ from sqlalchemy import select
 
 from polar.corpus.akn import parse_lawsafrica_act_html
 from polar.corpus.juricaf import parse_juricaf_decision_html
+from polar.corpus.pdf_act import parse_pdf_act_text
 from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
 from polar.models import (
     CourtDecision,
@@ -36,12 +37,14 @@ from scripts.corpus_slice_seed import (
     AKN_WORK_URI_2023,
     AUPSRVE_SHORT_CODE,
     SEED_DECISIONS,
+    TRANSITIONAL_RULE_1998,
 )
 
 log = structlog.get_logger()
 
 RAW = Path(__file__).parent.parent.parent / "corpus" / "raw"
 SENLII_HTML = RAW / "senlii-aupsrve-2023-fra@2024-07-02.html"
+TXT_1998 = RAW / "aupsrve-1998-leganet-extracted.txt"
 DECISIONS_DIR = RAW / "decisions"
 
 
@@ -134,6 +137,71 @@ async def load_act_2023(session: AsyncSession) -> None:
         created=created,
         updated=updated,
     )
+
+
+async def load_act_1998(session: AsyncSession) -> None:
+    from polar.corpus.akn import article_sort_key
+
+    act = (
+        await session.execute(
+            select(LegalAct).where(LegalAct.akn_work_uri == AKN_WORK_URI_2023)
+        )
+    ).scalar_one()
+
+    version = (
+        await session.execute(
+            select(LegalActVersion).where(
+                LegalActVersion.act_id == act.id, LegalActVersion.label == "1998"
+            )
+        )
+    ).scalar_one_or_none()
+    if version is None:
+        version = LegalActVersion(
+            act_id=act.id,
+            label="1998",
+            adopted_on=date(1998, 4, 10),
+            published_on=date(1998, 6, 1),
+            gazette_reference="J.O. OHADA n° 6, 1er juin 1998",
+            in_force_from=date(1998, 7, 10),
+            transitional_rule=TRANSITIONAL_RULE_1998,
+        )
+        session.add(version)
+        await session.flush()
+
+    raw = TXT_1998.read_bytes()
+    parsed = parse_pdf_act_text(raw.decode("utf-8"))
+    provenance = {
+        "source": "leganet.cd",
+        "kind": "pdf-extraction",
+        "file": "aupsrve-1998-leganet.pdf",
+        "sha256": _sha256((RAW / "aupsrve-1998-leganet.pdf").read_bytes()),
+        "extraction": "pypdf; spacing artifacts possible",
+        "authority_crosscheck": "pending (J.O. OHADA n° 6, 1998 / ohada.com PDF)",
+    }
+    existing = {
+        a.number: a
+        for a in (
+            await session.execute(
+                select(LegalArticle).where(LegalArticle.act_version_id == version.id)
+            )
+        ).scalars()
+    }
+    created = 0
+    for pa in parsed:
+        if pa.number in existing:
+            continue
+        session.add(
+            LegalArticle(
+                act_version_id=version.id,
+                number=pa.number,
+                sort_key=article_sort_key(pa.number),
+                text=pa.text,
+                structure={"alineas": pa.alineas},
+                provenance=provenance,
+            )
+        )
+        created += 1
+    log.info("corpus.load.act_1998", parsed=len(parsed), created=created)
 
 
 async def load_decisions(session: AsyncSession) -> None:
@@ -250,6 +318,7 @@ async def main() -> None:
     sessionmaker = create_async_sessionmaker(engine)
     async with sessionmaker() as session:
         await load_act_2023(session)
+        await load_act_1998(session)
         await load_decisions(session)
         await seed_links(session)
         await session.commit()
