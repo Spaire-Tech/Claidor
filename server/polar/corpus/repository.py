@@ -58,3 +58,18 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
             .order_by(CourtDecision.decided_on)
         )
         return (await self.session.execute(statement)).scalars().all()
+
+    async def list_verified_decisions_for_articles(
+        self, article_ids: Sequence[object]
+    ) -> Sequence[CourtDecision]:
+        """Distinct decisions with a verified link to any of these articles."""
+        decision_ids = select(DecisionArticleLink.decision_id).where(
+            DecisionArticleLink.article_id.in_(list(article_ids)),
+            DecisionArticleLink.status == DecisionLinkStatus.verified,
+        )
+        statement = (
+            select(CourtDecision)
+            .where(CourtDecision.id.in_(decision_ids))
+            .order_by(CourtDecision.decided_on)
+        )
+        return (await self.session.execute(statement)).scalars().all()

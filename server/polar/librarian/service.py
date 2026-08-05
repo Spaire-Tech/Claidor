@@ -9,8 +9,10 @@ Design (proven by scripts/librarian_prototype.py):
   source metadata, final usage).
 """
 
+import json
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from datetime import date
 from typing import Any, cast
 
 import structlog
@@ -23,7 +25,17 @@ from polar.kit.db.postgres import AsyncReadSession
 log = structlog.get_logger()
 
 ANSWER_MODEL = "claude-sonnet-4-6"
+CLASSIFIER_MODEL = "claude-haiku-4-5"
 MAX_ANSWER_TOKENS = 1500
+VERSION_CUTOFF = date(2024, 2, 16)
+
+CLARIFICATION_MESSAGE = (
+    "À quelle date la procédure (ou la mesure d'exécution) a-t-elle été "
+    "engagée ? L'acte applicable dépend de cette date : l'AUPSRVE révisé "
+    "s'applique aux procédures engagées à compter du 16 février 2024, "
+    "l'acte de 1998 aux procédures antérieures. Vous pouvez aussi demander "
+    "une réponse sous les deux régimes."
+)
 
 SYSTEM_PROMPT = f"""Tu es Claidor, l'assistant de recherche juridique sur le droit OHADA.
 
@@ -42,9 +54,8 @@ Règles absolues :
   affirmation juridique.
 - Réponds en français, de manière concise et structurée, comme à un confrère
   avocat pressé.
-- Termine par une ligne « Autorité : … » qualifiant l'assise
-  jurisprudentielle (p. ex. « jurisprudence constante — N décisions » ou
-  « décision unique » ou « texte seul, pas de jurisprudence fournie »)."""
+- N'écris JAMAIS de ligne « Autorité : … » — ce signal est calculé par le
+  système à partir des liens vérifiés du corpus et ajouté après ta réponse."""
 
 
 @dataclass(frozen=True)
@@ -119,20 +130,162 @@ class LibrarianService:
             documents[-1]["cache_control"] = {"type": "ephemeral"}
         return documents, refs
 
+    async def classify_question(self, question: str) -> dict[str, Any]:
+        """Version-gate classifier — strict JSON, cheap model.
+
+        Returns {"version_dependent": bool, "date_present": bool,
+        "anchor_date": "YYYY-MM-DD" | None}. Fails safe: on any parsing or
+        API problem, treats the question as NOT version-dependent (the
+        answer prompt still explains both regimes when relevant).
+        """
+        import anthropic
+
+        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+        instruction = (
+            "Analyse cette question de droit OHADA (AUPSRVE). Réponds "
+            "UNIQUEMENT avec un objet JSON, sans autre texte :\n"
+            '{"version_dependent": bool, "date_present": bool, '
+            '"anchor_date": "YYYY-MM-DD" ou null}\n'
+            "- version_dependent : vrai dès que la question porte sur une "
+            "procédure ou mesure d'exécution concrète régie par l'AUPSRVE "
+            "(saisie, contestation, délais, mainlevée, paiement du tiers "
+            "saisi, etc.) — car le régime applicable dépend de la date "
+            "d'engagement (bascule au 16 février 2024). "
+            "Faux SEULEMENT si la question désigne explicitement une "
+            "version précise (« sous l'acte de 1998 », « selon le texte "
+            "révisé ») ou porte sur l'histoire/comparaison des textes "
+            "eux-mêmes.\n"
+            "- date_present : vrai si la question indique quand la "
+            "procédure a été engagée (date, mois/année, ou repère clair "
+            "comme 'la semaine dernière').\n"
+            "- anchor_date : la date d'engagement au format ISO si "
+            "déterminable, sinon null (approximer au premier jour du mois "
+            "si seul le mois est donné).\n\n"
+            f"Question : {question}"
+        )
+        try:
+            response = await client.messages.create(
+                model=CLASSIFIER_MODEL,
+                max_tokens=200,
+                messages=[{"role": "user", "content": instruction}],
+            )
+            text = "".join(b.text for b in response.content if b.type == "text").strip()
+            start, end = text.find("{"), text.rfind("}")
+            payload = json.loads(text[start : end + 1])
+            return {
+                "version_dependent": bool(payload.get("version_dependent")),
+                "date_present": bool(payload.get("date_present")),
+                "anchor_date": payload.get("anchor_date"),
+            }
+        except Exception as e:
+            log.warning("librarian.classify.failed", error=str(e))
+            return {
+                "version_dependent": False,
+                "date_present": False,
+                "anchor_date": None,
+            }
+
+    async def compute_authority(
+        self,
+        session: AsyncReadSession,
+        cited_article_ids: list[str],
+    ) -> dict[str, Any]:
+        """Authority signal computed from verified links — never by the model.
+
+        Fixed thresholds; copy names its own scope (« dans le corpus
+        chargé ») so the label can never claim more than the data holds.
+        """
+        repository = CorpusRepository.from_session(session)
+        decisions = (
+            await repository.list_verified_decisions_for_articles(cited_article_ids)
+            if cited_article_ids
+            else []
+        )
+        count = len(decisions)
+        years = {d.decided_on.year for d in decisions}
+        if count == 0:
+            label = "texte seul — aucune décision dans le corpus chargé"
+        elif count == 1:
+            label = "autorité limitée — décision unique dans le corpus chargé"
+        elif count >= 4 and len(years) >= 3:
+            label = (
+                f"ligne jurisprudentielle constante — {count} décisions "
+                "dans le corpus chargé"
+            )
+        else:
+            label = f"plusieurs décisions ({count}) dans le corpus chargé"
+        return {
+            "type": "authority",
+            "label": label,
+            "count": count,
+            "decisions": [
+                {
+                    "id": str(d.id),
+                    "number": d.number,
+                    "decided_on": d.decided_on.isoformat(),
+                }
+                for d in decisions
+            ],
+        }
+
     async def answer_stream(
         self,
         session: AsyncReadSession,
         question: str,
+        *,
+        answer_both_versions: bool = False,
     ) -> AsyncIterator[dict[str, Any]]:
-        """Yield SSE-ready events: text / citation / done / error."""
+        """Yield SSE events: clarification / text / citation / authority / done / error."""
         import anthropic
 
         documents, refs = await self.build_documents(session)
         if not documents:
             yield {"type": "error", "message": "corpus_empty"}
             return
+
+        # Version gate — enforced in code, not in the prompt.
+        classification = await self.classify_question(question)
+        versions_used: list[str]
+        steering = ""
+        if classification["version_dependent"] and not answer_both_versions:
+            anchor_raw = classification.get("anchor_date")
+            anchor: date | None = None
+            if classification["date_present"] and anchor_raw:
+                try:
+                    anchor = date.fromisoformat(str(anchor_raw))
+                except ValueError:
+                    anchor = None
+            if anchor is None:
+                yield {
+                    "type": "clarification",
+                    "message": CLARIFICATION_MESSAGE,
+                    "cutoff": VERSION_CUTOFF.isoformat(),
+                }
+                return
+            applicable = "2023" if anchor >= VERSION_CUTOFF else "1998"
+            other = "1998" if applicable == "2023" else "2023"
+            versions_used = [applicable]
+            steering = (
+                f"\n\n[Instruction système, déterminée par le droit "
+                f"transitoire : la procédure a été engagée le "
+                f"{anchor.isoformat()}, donc l'AUPSRVE {applicable} "
+                f"s'applique. Réponds sous ce régime ; ne mentionne l'acte "
+                f"de {other} qu'à titre de contexte.]"
+            )
+        elif classification["version_dependent"] and answer_both_versions:
+            versions_used = ["1998", "2023"]
+            steering = (
+                "\n\n[Instruction système : la date d'engagement n'est pas "
+                "fournie ; présente la réponse sous les DEUX régimes, "
+                "clairement étiquetés « AUPSRVE 1998 » et « AUPSRVE 2023 », "
+                "côte à côte.]"
+            )
+        else:
+            versions_used = []
+
         client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 
+        cited_article_ids: list[str] = []
         try:
             async with client.messages.stream(
                 model=ANSWER_MODEL,
@@ -148,7 +301,8 @@ class LibrarianService:
                     {
                         "role": "user",
                         "content": cast(
-                            Any, [*documents, {"type": "text", "text": question}]
+                            Any,
+                            [*documents, {"type": "text", "text": question + steering}],
                         ),
                     }
                 ],
@@ -166,6 +320,8 @@ class LibrarianService:
                                 if index is not None and 0 <= index < len(refs)
                                 else None
                             )
+                            if ref is not None and ref.kind == "article":
+                                cited_article_ids.append(ref.id)
                             yield {
                                 "type": "citation",
                                 "title": getattr(c, "document_title", None)
@@ -175,8 +331,12 @@ class LibrarianService:
                                 "source_id": ref.id if ref else None,
                             }
                 final = await stream.get_final_message()
+                yield await self.compute_authority(
+                    session, list(dict.fromkeys(cited_article_ids))
+                )
                 yield {
                     "type": "done",
+                    "versions_used": versions_used,
                     "input_tokens": final.usage.input_tokens,
                     "output_tokens": final.usage.output_tokens,
                 }

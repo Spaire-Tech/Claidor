@@ -18,6 +18,13 @@ router = APIRouter(prefix="/librarian", tags=["librarian", APITag.private])
 
 class LibrarianAsk(Schema):
     question: str = Field(min_length=3, max_length=2000)
+    answer_both_versions: bool = Field(
+        default=False,
+        description=(
+            "When the question is version-dependent and undated, answer under "
+            "both acts side by side instead of asking for the date."
+        ),
+    )
 
 
 @router.post("/ask")
@@ -31,7 +38,11 @@ async def ask(
         raise HTTPException(status_code=503, detail="Librarian is not configured.")
 
     async def event_stream():  # type: ignore[no-untyped-def]
-        async for event in librarian.answer_stream(session, ask_body.question):
+        async for event in librarian.answer_stream(
+            session,
+            ask_body.question,
+            answer_both_versions=ask_body.answer_both_versions,
+        ):
             yield {"event": event["type"], "data": json.dumps(event)}
 
     return EventSourceResponse(event_stream())
