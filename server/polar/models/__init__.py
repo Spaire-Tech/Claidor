@@ -11,6 +11,12 @@ from .checkout_link import CheckoutLink
 from .checkout_link_product import CheckoutLinkProduct
 from .checkout_product import CheckoutProduct
 from .client_invoice import ClientInvoice, ClientInvoiceLineItem, ClientInvoiceStatus
+from .court_decision import (
+    CourtDecision,
+    DecisionArticleLink,
+    DecisionArticleTreatment,
+    DecisionLinkStatus,
+)
 from .custom_field import CustomField
 from .customer import Customer
 from .customer_meter import CustomerMeter
@@ -50,6 +56,8 @@ from .form import Form, FormCustomField, FormStatus
 from .form_submission import FormSubmission
 from .held_balance import HeldBalance
 from .issue_reward import IssueReward
+from .legal_act import ArticleEquivalenceRelation, LegalAct, LegalActVersion
+from .legal_article import LegalArticle, LegalArticleEquivalence
 from .license_key import LicenseKey
 from .license_key_activation import LicenseKeyActivation
 from .login_code import LoginCode
@@ -113,6 +121,7 @@ from .webhook_event import WebhookEvent
 __all__ = [
     "Account",
     "AccountCredit",
+    "ArticleEquivalenceRelation",
     "Benefit",
     "BenefitGrant",
     "BillingEntry",
@@ -124,6 +133,7 @@ __all__ = [
     "ClientInvoice",
     "ClientInvoiceLineItem",
     "ClientInvoiceStatus",
+    "CourtDecision",
     "CustomField",
     "Customer",
     "CustomerMeter",
@@ -132,6 +142,9 @@ __all__ = [
     "CustomerSeat",
     "CustomerSession",
     "CustomerSessionCode",
+    "DecisionArticleLink",
+    "DecisionArticleTreatment",
+    "DecisionLinkStatus",
     "Discount",
     "DiscountProduct",
     "DiscountRedemption",
@@ -168,6 +181,10 @@ __all__ = [
     "LegacyRecurringProductPriceCustom",
     "LegacyRecurringProductPriceFixed",
     "LegacyRecurringProductPriceFree",
+    "LegalAct",
+    "LegalActVersion",
+    "LegalArticle",
+    "LegalArticleEquivalence",
     "LicenseKey",
     "LicenseKeyActivation",
     "LoginCode",
