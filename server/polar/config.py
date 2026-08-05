@@ -176,21 +176,6 @@ class Settings(BaseSettings):
     CUSTOMER_SESSION_CODE_TTL: timedelta = timedelta(minutes=30)
     CUSTOMER_SESSION_CODE_LENGTH: int = 6
 
-    # Course preview session — sessions minted by the course preview-access
-    # endpoint (an instructor previewing their own course). Kept SEPARATE from
-    # CUSTOMER_SESSION_TTL so preview links can be made long-lived (e.g. to
-    # share a course-in-progress for a while) WITHOUT extending real customers'
-    # portal logins, which keep the short CUSTOMER_SESSION_TTL. Defaults to the
-    # same 1 hour; override via SPAIRE_COURSE_PREVIEW_SESSION_TTL to lengthen.
-    COURSE_PREVIEW_SESSION_TTL: SecondsTimedelta = timedelta(hours=1)
-
-    # Demo portal — public, no-login access to ONE showcase org's student
-    # portal (e.g. for a YC application demo). When set to an org slug,
-    # `/{slug}/portal/demo` mints a throwaway demo session so anyone with the
-    # link can browse that org's portal without logging in. Unset (default)
-    # disables the feature entirely; every other org is always unaffected.
-    DEMO_PORTAL_ORG_SLUG: str | None = None
-
     # Impersonation session
     IMPERSONATION_COOKIE_KEY: str = "spaire_original_session"
     IMPERSONATION_INDICATOR_COOKIE_KEY: str = "spaire_is_impersonating"
@@ -291,9 +276,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "o4-mini-2025-04-16"
 
-    # Anthropic / Claude — powers the Course Assistant ("Office Hours") TA.
-    # When the key is empty the feature is treated as not configured:
-    # ingestion no-ops and the answer endpoints return 503.
+    # Anthropic / Claude — powers AI features (email copy today; the legal
+    # research assistant in Phase 1). When the key is empty, AI features are
+    # treated as not configured and their endpoints return 503.
     #
     # Read from the unprefixed `ANTHROPIC_API_KEY` (the name the Anthropic SDK
     # itself uses, and what's set in the deployment env), falling back to the
@@ -303,31 +288,14 @@ class Settings(BaseSettings):
         default="",
         validation_alias=AliasChoices("ANTHROPIC_API_KEY", "SPAIRE_ANTHROPIC_API_KEY"),
     )
-    # Strong model for student answers; cheap model for the guardrail pass.
-    COURSE_ASSISTANT_ANSWER_MODEL: str = "claude-sonnet-4-6"
-    COURSE_ASSISTANT_GUARDRAIL_MODEL: str = "claude-haiku-4-5"
-    # Voice-card extraction / sample-question generation use the answer model
-    # unless overridden here.
-    COURSE_ASSISTANT_BUILD_MODEL: str = "claude-sonnet-4-6"
-    # Lifecycle email recap copy ("Welcome note" generation) — a short, creative
-    # generation that benefits from the strongest model + adaptive thinking.
+    # Lifecycle email copy generation — short, creative generation that
+    # benefits from the strongest model.
     EMAIL_COPY_MODEL: str = "claude-opus-4-8"
-    # Whole-course-in-context ceiling. A knowledge base larger than this many
-    # tokens is rejected at build time (status=failed) — that's the point at
-    # which real retrieval/RAG would be needed, which is out of scope for v1.
-    COURSE_ASSISTANT_MAX_CONTEXT_TOKENS: int = 600_000
-    # Max tokens for a single streamed answer.
-    COURSE_ASSISTANT_MAX_ANSWER_TOKENS: int = 1_500
 
     # YouTube Data API v3 (public reads only, plain API key — no OAuth) —
     # powers the Masterclass Architect channel analysis. Empty key = the
     # Architect is not configured and its flows are disabled.
-    YOUTUBE_API_KEY: str = Field(
-        default="",
-        validation_alias=AliasChoices("YOUTUBE_API_KEY", "SPAIRE_YOUTUBE_API_KEY"),
-    )
     # Proposal synthesis is the heart of the feature — strongest model.
-    MASTERCLASS_ARCHITECT_MODEL: str = "claude-opus-4-8"
 
     # Stripe
     STRIPE_SECRET_KEY: str = ""
@@ -339,15 +307,9 @@ class Settings(BaseSettings):
     STRIPE_STATEMENT_DESCRIPTOR: str = "SPAIRE"
 
     # Mux video
-    MUX_TOKEN_ID: str = ""
-    MUX_TOKEN_SECRET: str = ""
-    MUX_WEBHOOK_SECRET: str = ""
     # Signing key used to mint short-lived JWTs for signed playback URLs
     # (https://docs.mux.com/guides/secure-video-playback). When set, new
     # uploads use playback_policy=signed; legacy public assets keep working.
-    MUX_SIGNING_KEY_ID: str = ""
-    MUX_SIGNING_KEY_PRIVATE: str = ""  # PEM-encoded RSA private key
-    MUX_SIGNED_URL_TTL_SECONDS: int = 3600
 
     # Numeral
     NUMERAL_API_KEY: str | None = None

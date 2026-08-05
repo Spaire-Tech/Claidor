@@ -84,9 +84,7 @@ class TestSwapOrgSlug:
     async def test_moves_slug_and_invoice_prefix(
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
-        claim = await _org(
-            save_fixture, slug="robin-kaye-x", prefix="ROBIN-KAYE-X"
-        )
+        claim = await _org(save_fixture, slug="robin-kaye-x", prefix="ROBIN-KAYE-X")
         release = await _org(save_fixture, slug="spaire", prefix="SPAIRE")
         release_slug = _default_release_slug("spaire", release)
 

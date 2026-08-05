@@ -989,9 +989,7 @@ class TestUpdateSeatPricingGate:
         update_schema = ProductUpdate(prices=[_seat_price_create()])
 
         with pytest.raises(FeatureNotInPlanError):
-            await product_service.update(
-                session, product, update_schema, auth_subject
-            )
+            await product_service.update(session, product, update_schema, auth_subject)
         require_feature.assert_awaited_once()
         assert require_feature.await_args.args[2] == "seat_based_product_pricing"
 
@@ -1018,9 +1016,7 @@ class TestUpdateSeatPricingGate:
         )
 
         update_schema = ProductUpdate(name="Renamed seat product")
-        await product_service.update(
-            session, seat_product, update_schema, auth_subject
-        )
+        await product_service.update(session, seat_product, update_schema, auth_subject)
         require_feature.assert_not_called()
 
 

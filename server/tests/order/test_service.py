@@ -3033,15 +3033,11 @@ class TestTriggerPayment:
         )
         await save_fixture(order)
 
-        delete_mock = mocker.patch(
-            "polar.order.service.payment_method_service.delete"
-        )
+        delete_mock = mocker.patch("polar.order.service.payment_method_service.delete")
         invalid_error = stripe_lib.InvalidRequestError(
             message="Amount must be no more than $999,999.99",
             param="amount",
-            json_body={
-                "error": {"message": "Amount must be no more than $999,999.99"}
-            },
+            json_body={"error": {"message": "Amount must be no more than $999,999.99"}},
         )
         stripe_service_mock.create_payment_intent.side_effect = invalid_error
 
@@ -3070,12 +3066,8 @@ class TestTriggerPayment:
         )
         await save_fixture(order)
 
-        delete_mock = mocker.patch(
-            "polar.order.service.payment_method_service.delete"
-        )
-        message = (
-            "The payment method supplied does not belong to the customer."
-        )
+        delete_mock = mocker.patch("polar.order.service.payment_method_service.delete")
+        message = "The payment method supplied does not belong to the customer."
         invalid_error = stripe_lib.InvalidRequestError(
             message=message,
             param="payment_method",
@@ -3220,9 +3212,7 @@ class TestTriggerPayment:
         assert len(descriptor) <= settings.stripe_descriptor_suffix_max_length
         # The slug prefix is truncated to whatever room the suffix leaves,
         # which depends on the configured statement descriptor length.
-        slug_space = settings.stripe_descriptor_suffix_max_length - len(
-            " TRIAL OVER"
-        )
+        slug_space = settings.stripe_descriptor_suffix_max_length - len(" TRIAL OVER")
         assert descriptor.startswith(organization.slug[:slug_space])
 
 

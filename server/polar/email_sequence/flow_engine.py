@@ -359,6 +359,17 @@ async def _evaluate_engagement(
     return score >= threshold
 
 
+_STATUS_RANK = {
+    EmailSequenceStepSendStatus.pending: 0,
+    EmailSequenceStepSendStatus.sent: 1,
+    EmailSequenceStepSendStatus.delivered: 2,
+    EmailSequenceStepSendStatus.opened: 3,
+    EmailSequenceStepSendStatus.clicked: 4,
+    EmailSequenceStepSendStatus.bounced: -1,
+    EmailSequenceStepSendStatus.failed: -1,
+}
+
+
 async def _last_send_reached(
     session: AsyncSession,
     enrollment_id: UUID,

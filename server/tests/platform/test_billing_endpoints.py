@@ -270,9 +270,7 @@ class TestPlatformBillingEndpoints:
     ) -> None:
         # A creator org with no platform Customer yet -> ResourceNotFound.
         platform_org = await create_organization(save_fixture)
-        mocker.patch(
-            "polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
-        )
+        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
         creator = await create_organization(save_fixture)
 
         from polar.exceptions import ResourceNotFound

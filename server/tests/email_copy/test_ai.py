@@ -15,7 +15,12 @@ class TestBuildCourseBrief:
                 "description": "Soul food.",
                 "instructor_name": "Adaeze Bello",
                 "modules": [
-                    {"lessons": [{"title": "The Southern Pantry"}, {"title": "Cornbread"}]},
+                    {
+                        "lessons": [
+                            {"title": "The Southern Pantry"},
+                            {"title": "Cornbread"},
+                        ]
+                    },
                     {"lessons": [{"title": "Braises"}]},
                 ],
             }

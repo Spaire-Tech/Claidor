@@ -9,10 +9,9 @@ from polar.account.service import AccountExternalIdDoesNotExist
 from polar.account.service import account as account_service
 from polar.enums import AccountType
 from polar.integrations.stripe.service import V2AccountInfo, extract_v2_account_info
-from polar.models import Account, Organization, User
+from polar.models import Account, User
 from polar.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
-
 
 _PAYOUTS_MISSING = object()  # sentinel for "no payouts attribute"
 
@@ -47,9 +46,7 @@ def _make_mock_v2_account(
             self.status_details: list[MockStatusDetail] = []
 
     class MockStripeBalance:
-        def __init__(
-            self, transfers_status: str, payouts_status: str | object
-        ) -> None:
+        def __init__(self, transfers_status: str, payouts_status: str | object) -> None:
             self.stripe_transfers = MockStripeTransfers(transfers_status)
             if payouts_status is _PAYOUTS_MISSING:
                 self.payouts = None
@@ -57,26 +54,16 @@ def _make_mock_v2_account(
                 self.payouts = MockPayouts(str(payouts_status))
 
     class MockCapabilities:
-        def __init__(
-            self, transfers_status: str, payouts_status: str
-        ) -> None:
-            self.stripe_balance = MockStripeBalance(
-                transfers_status, payouts_status
-            )
+        def __init__(self, transfers_status: str, payouts_status: str) -> None:
+            self.stripe_balance = MockStripeBalance(transfers_status, payouts_status)
 
     class MockRecipient:
-        def __init__(
-            self, transfers_status: str, payouts_status: str
-        ) -> None:
+        def __init__(self, transfers_status: str, payouts_status: str) -> None:
             self.applied = True
-            self.capabilities = MockCapabilities(
-                transfers_status, payouts_status
-            )
+            self.capabilities = MockCapabilities(transfers_status, payouts_status)
 
     class MockConfiguration:
-        def __init__(
-            self, transfers_status: str, payouts_status: str
-        ) -> None:
+        def __init__(self, transfers_status: str, payouts_status: str) -> None:
             self.recipient = MockRecipient(transfers_status, payouts_status)
 
     class MockIdentity:
@@ -233,9 +220,7 @@ async def _create_account(
 class TestV2AccountCreation:
     """Test account creation using the v2 API."""
 
-    async def test_create_account_returns_v2_info(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_create_account_returns_v2_info(self, mocker: MockerFixture) -> None:
         from polar.integrations.stripe.service import StripeService
 
         service = StripeService()
@@ -277,8 +262,18 @@ class TestV2AccountCreation:
         params = call_kwargs.kwargs["params"]
         assert params["dashboard"] == "express"
         assert params["identity"]["country"] == "SE"
-        assert params["configuration"]["merchant"]["capabilities"]["card_payments"]["requested"] is True
-        assert params["configuration"]["recipient"]["capabilities"]["stripe_balance"]["stripe_transfers"]["requested"] is True
+        assert (
+            params["configuration"]["merchant"]["capabilities"]["card_payments"][
+                "requested"
+            ]
+            is True
+        )
+        assert (
+            params["configuration"]["recipient"]["capabilities"]["stripe_balance"][
+                "stripe_transfers"
+            ]["requested"]
+            is True
+        )
         assert params["display_name"] == "Test Org"
 
 

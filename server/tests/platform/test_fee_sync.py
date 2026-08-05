@@ -319,9 +319,7 @@ class TestSyncByOrganizationId:
         platform_org = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
 
-        result = await platform_fee_sync.sync_by_organization_id(
-            session, uuid4()
-        )
+        result = await platform_fee_sync.sync_by_organization_id(session, uuid4())
 
         assert result.changed is False
         assert result.reason == "org_missing"

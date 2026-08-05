@@ -403,9 +403,7 @@ class TestCreateCheckout:
         await _platform_customer(
             save_fixture, platform_org=platform_org, creator=creator
         )
-        await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
-        )
+        await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
 
         create_mock = self._mock_checkout_create(mocker)
 
@@ -443,9 +441,7 @@ class TestCreateCheckout:
             "trial_consumed_at": utc_now().isoformat(),
         }
         await save_fixture(customer)
-        await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
-        )
+        await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
 
         create_mock = self._mock_checkout_create(mocker)
 
@@ -510,9 +506,7 @@ class TestCreateCheckout:
             save_fixture, platform_org=platform_org, creator=creator
         )
         synthetic = customer.email
-        await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
-        )
+        await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
         self._mock_checkout_create(mocker)
 
         assert synthetic.endswith("@billing.spairehq.internal")
@@ -540,9 +534,7 @@ class TestCreateCheckout:
         # still end up with a DELIVERABLE address, not the dead placeholder.
         platform_org = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
-        await _tier_product(
-            save_fixture, platform_org=platform_org, tier="starter"
-        )
+        await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
         self._mock_checkout_create(mocker)
         real_email = "niki@gmail.com"
 

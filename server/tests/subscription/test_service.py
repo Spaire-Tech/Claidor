@@ -26,8 +26,8 @@ from polar.event.repository import EventRepository
 from polar.event.system import SystemEvent
 from polar.exceptions import (
     BadRequest,
-    SpaireRequestValidationError,
     ResourceUnavailable,
+    SpaireRequestValidationError,
 )
 from polar.kit.currency import PresentmentCurrency
 from polar.kit.pagination import PaginationParams

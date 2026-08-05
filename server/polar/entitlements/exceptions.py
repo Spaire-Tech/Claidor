@@ -18,7 +18,6 @@ _FEATURE_LABEL: dict[str, str] = {
     "cohort_analytics": "Cohort retention analytics",
     "custom_pricing_negotiation": "Custom pricing negotiation",
     "customer_wallet": "Customer wallet (prepaid balance)",
-    "white_label_course_player": "White-label course player",
     "sandbox_mode": "Sandbox / test mode",
     "custom_storefront_domain": "Custom storefront domain",
     "custom_checkout_domain": "Custom checkout domain",
@@ -28,10 +27,6 @@ _FEATURE_LABEL: dict[str, str] = {
 
 
 _LIMIT_LABEL: dict[str, str] = {
-    "published_courses": "published courses",
-    "lessons_per_course": "lessons per course",
-    "video_hours_hosted": "video hours hosted",
-    "video_views_monthly": "video views per month",
     "storage_gb": "GB of file storage",
     "email_subscribers": "email subscribers",
     "email_sends_monthly": "email sends per month",

@@ -36,20 +36,8 @@ class TransactionFee(Schema):
 
 
 class TierLimits(Schema):
-    published_courses: int | None = Field(
-        description="Max published courses (null = unlimited)."
-    )
-    lessons_per_course: int | None = Field(
-        description="Max lessons per course (null = unlimited)."
-    )
     active_email_sequences: int | None = Field(
         description="Max simultaneously-active email sequences (null = unlimited)."
-    )
-    video_hours_hosted: int | None = Field(
-        description="Max video hours hosted (null = unlimited)."
-    )
-    video_views_monthly: int | None = Field(
-        description="Max video views per month (null = unlimited)."
     )
     storage_gb: int | None = Field(
         description="Max downloadable file storage in GB (null = unlimited)."
@@ -67,11 +55,7 @@ class TierLimits(Schema):
     @classmethod
     def from_dataclass(cls, source: TierLimitsDataclass) -> "TierLimits":
         return cls(
-            published_courses=source.published_courses,
-            lessons_per_course=source.lessons_per_course,
             active_email_sequences=source.active_email_sequences,
-            video_hours_hosted=source.video_hours_hosted,
-            video_views_monthly=source.video_views_monthly,
             storage_gb=source.storage_gb,
             email_subscribers=source.email_subscribers,
             email_sends_monthly=source.email_sends_monthly,
@@ -89,7 +73,6 @@ class TierFeatures(Schema):
     cohort_analytics: bool
     custom_pricing_negotiation: bool
     customer_wallet: bool
-    white_label_course_player: bool
     sandbox_mode: bool
     custom_storefront_domain: bool
     custom_checkout_domain: bool
@@ -108,7 +91,6 @@ class TierFeatures(Schema):
             cohort_analytics=source.cohort_analytics,
             custom_pricing_negotiation=source.custom_pricing_negotiation,
             customer_wallet=source.customer_wallet,
-            white_label_course_player=source.white_label_course_player,
             sandbox_mode=source.sandbox_mode,
             custom_storefront_domain=source.custom_storefront_domain,
             custom_checkout_domain=source.custom_checkout_domain,

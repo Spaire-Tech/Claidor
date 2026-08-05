@@ -49,9 +49,7 @@ def _patch_starter_limits(mocker: MockerFixture, **limit_overrides: int | None) 
             return overridden
         return get_definition(tier)
 
-    mocker.patch(
-        "polar.entitlements.service.get_definition", side_effect=_resolve
-    )
+    mocker.patch("polar.entitlements.service.get_definition", side_effect=_resolve)
 
 
 async def _seed_tier_product(

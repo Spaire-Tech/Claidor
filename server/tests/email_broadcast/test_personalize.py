@@ -1,4 +1,5 @@
 """Tests for the per-recipient template variable substitution."""
+
 from __future__ import annotations
 
 from types import SimpleNamespace

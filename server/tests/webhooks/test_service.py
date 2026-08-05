@@ -8,7 +8,7 @@ from pytest_mock import MockerFixture
 from polar.auth.models import AuthSubject
 from polar.auth.scope import Scope
 from polar.checkout.eventstream import CheckoutEvent
-from polar.exceptions import SpaireRequestValidationError, ResourceNotFound
+from polar.exceptions import ResourceNotFound, SpaireRequestValidationError
 from polar.kit.utils import utc_now
 from polar.models import (
     Organization,

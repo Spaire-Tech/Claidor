@@ -11,8 +11,6 @@ from .definitions import QuotaKey
 from .service import QuotaCheckResult
 
 _HUMAN_QUOTA_LABEL: dict[QuotaKey, tuple[str, str]] = {
-    QuotaKey.video_hours_hosted: ("Video hosting", "hours"),
-    QuotaKey.video_views_monthly: ("Video views (this month)", "views"),
     QuotaKey.storage_gb: ("File storage", "GB"),
 }
 

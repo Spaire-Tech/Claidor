@@ -77,11 +77,7 @@ class TransactionFee:
 class TierLimits:
     """Quota caps. None = unlimited / no enforcement."""
 
-    published_courses: int | None
-    lessons_per_course: int | None
     active_email_sequences: int | None
-    video_hours_hosted: int | None
-    video_views_monthly: int | None
     storage_gb: int | None
     email_subscribers: int | None
     email_sends_monthly: int | None
@@ -103,7 +99,6 @@ class TierFeatures:
     # Scale+
     custom_pricing_negotiation: bool
     customer_wallet: bool
-    white_label_course_player: bool
     sandbox_mode: bool
     custom_storefront_domain: bool
     custom_checkout_domain: bool
@@ -146,11 +141,7 @@ _UNMANAGED = TierEntitlements(
         fixed_cents=settings.PLATFORM_FEE_FIXED,
     ),
     limits=TierLimits(
-        published_courses=None,
-        lessons_per_course=None,
         active_email_sequences=None,
-        video_hours_hosted=None,
-        video_views_monthly=None,
         storage_gb=None,
         email_subscribers=None,
         email_sends_monthly=None,
@@ -166,7 +157,6 @@ _UNMANAGED = TierEntitlements(
         cohort_analytics=True,
         custom_pricing_negotiation=True,
         customer_wallet=True,
-        white_label_course_player=True,
         sandbox_mode=True,
         custom_storefront_domain=True,
         custom_checkout_domain=True,
@@ -192,11 +182,7 @@ _INACTIVE = TierEntitlements(
         fixed_cents=settings.PLATFORM_FEE_FIXED,
     ),
     limits=TierLimits(
-        published_courses=0,
-        lessons_per_course=0,
         active_email_sequences=0,
-        video_hours_hosted=0,
-        video_views_monthly=0,
         storage_gb=0,
         email_subscribers=0,
         email_sends_monthly=0,
@@ -212,7 +198,6 @@ _INACTIVE = TierEntitlements(
         cohort_analytics=False,
         custom_pricing_negotiation=False,
         customer_wallet=False,
-        white_label_course_player=False,
         sandbox_mode=False,
         custom_storefront_domain=False,
         custom_checkout_domain=False,
@@ -239,11 +224,7 @@ _STARTER = TierEntitlements(
         # "10 emails and you're capped" failure; the ESP cost is absorbed into
         # the fee spine. Studio still has clear reasons to upgrade (bigger
         # list, custom sender domain, A/B testing, wallet, team seats).
-        published_courses=5,
-        lessons_per_course=50,
         active_email_sequences=None,
-        video_hours_hosted=25,
-        video_views_monthly=5_000,
         storage_gb=5,
         email_subscribers=10_000,
         email_sends_monthly=None,
@@ -275,7 +256,6 @@ _STARTER = TierEntitlements(
         cohort_analytics=False,
         custom_pricing_negotiation=False,
         customer_wallet=False,
-        white_label_course_player=False,
         # Sandbox is a separate environment (sandbox.spairehq.com)
         # available to every creator; the entitlement is informational
         # and not used as a require_feature gate.
@@ -300,11 +280,7 @@ _STUDIO = TierEntitlements(
         # stays meaningful. Email is metered on list size only: sends and
         # active sequences are unlimited (ESP cost absorbed in the fee
         # spine), so the only email lever between tiers is the contact cap.
-        published_courses=25,
-        lessons_per_course=None,
         active_email_sequences=None,
-        video_hours_hosted=50,
-        video_views_monthly=50_000,
         storage_gb=50,
         email_subscribers=50_000,
         email_sends_monthly=None,
@@ -322,7 +298,6 @@ _STUDIO = TierEntitlements(
         cohort_analytics=False,
         custom_pricing_negotiation=False,
         customer_wallet=True,
-        white_label_course_player=True,
         # See Pro definition.
         sandbox_mode=True,
         # Hosted (custom) storefront domain — serve the masterclass landing
@@ -352,11 +327,7 @@ _SCALE = TierEntitlements(
         # day one; bigger lists are a negotiated bump, not a hard wall.
         # Sends and active sequences are unlimited like every tier — email
         # is metered on list size alone.
-        published_courses=100,
-        lessons_per_course=None,
         active_email_sequences=None,
-        video_hours_hosted=200,
-        video_views_monthly=250_000,
         storage_gb=250,
         email_subscribers=150_000,
         email_sends_monthly=None,
@@ -374,7 +345,6 @@ _SCALE = TierEntitlements(
         cohort_analytics=False,
         custom_pricing_negotiation=True,
         customer_wallet=True,
-        white_label_course_player=True,
         # See Pro definition.
         sandbox_mode=True,
         # Hosted (custom) storefront domain — Studio and above.

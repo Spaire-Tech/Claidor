@@ -73,9 +73,7 @@ class TestGet:
         save_fixture: SaveFixture,
     ) -> None:
         organization = await create_organization(save_fixture)
-        mocker.patch(
-            "polar.platform.service.settings.PLATFORM_ORG_ID", organization.id
-        )
+        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", organization.id)
 
         loaded = await platform.get(session)
 

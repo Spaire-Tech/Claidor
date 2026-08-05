@@ -42,9 +42,7 @@ class TestFindOrphanParentIds:
 
     def test_missing_parent_is_orphan(self) -> None:
         missing_parent_id = uuid4()
-        reply = FakeComment(
-            id=uuid4(), parent_id=missing_parent_id, created_at=_at(0)
-        )
+        reply = FakeComment(id=uuid4(), parent_id=missing_parent_id, created_at=_at(0))
         assert find_orphan_parent_ids([reply]) == {missing_parent_id}
 
     def test_dedupes_orphan_ids(self) -> None:
@@ -52,12 +50,8 @@ class TestFindOrphanParentIds:
         # should hold one entry, not two.
         missing_parent_id = uuid4()
         rows = [
-            FakeComment(
-                id=uuid4(), parent_id=missing_parent_id, created_at=_at(0)
-            ),
-            FakeComment(
-                id=uuid4(), parent_id=missing_parent_id, created_at=_at(1)
-            ),
+            FakeComment(id=uuid4(), parent_id=missing_parent_id, created_at=_at(0)),
+            FakeComment(id=uuid4(), parent_id=missing_parent_id, created_at=_at(1)),
         ]
         assert find_orphan_parent_ids(rows) == {missing_parent_id}
 

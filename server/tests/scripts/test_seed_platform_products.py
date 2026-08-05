@@ -30,9 +30,7 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch(
-            "polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
-        )
+        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
 
         for meter_spec in METER_SPECS:
             _, action = await _upsert_meter(
@@ -77,9 +75,7 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch(
-            "polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
-        )
+        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
 
         # First pass.
         for meter_spec in METER_SPECS:
@@ -135,9 +131,7 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch(
-            "polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
-        )
+        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
 
         for product_spec in PRODUCT_SPECS:
             product, _ = await _upsert_product(
@@ -231,17 +225,13 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        mocker.patch(
-            "polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
-        )
+        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
         starter_spec = next(s for s in PRODUCT_SPECS if s.tier == "starter")
 
         product, _ = await _upsert_product(
             session, platform_org, starter_spec, dry_run=False
         )
-        await _upsert_catalog_price(
-            session, product, starter_spec.price, dry_run=False
-        )
+        await _upsert_catalog_price(session, product, starter_spec.price, dry_run=False)
         await session.flush()
 
         # Simulate a price change: same product, different amount.
@@ -255,10 +245,14 @@ class TestSeedPlatformProducts:
         await session.flush()
 
         prices = (
-            await session.execute(
-                select(ProductPrice).where(ProductPrice.product_id == product.id)
+            (
+                await session.execute(
+                    select(ProductPrice).where(ProductPrice.product_id == product.id)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         active = [p for p in prices if not p.is_archived]
         archived = [p for p in prices if p.is_archived]
         assert len(active) == 1
@@ -273,11 +267,15 @@ class TestSeedPlatformProducts:
         save_fixture: SaveFixture,
     ) -> None:
         platform_org = await create_organization(save_fixture)
-        assert platform_org.subscription_settings["allow_multiple_subscriptions"] is False
+        assert (
+            platform_org.subscription_settings["allow_multiple_subscriptions"] is False
+        )
 
         action = _configure_platform_org(platform_org, dry_run=False)
         assert action == "updated"
-        assert platform_org.subscription_settings["allow_multiple_subscriptions"] is True
+        assert (
+            platform_org.subscription_settings["allow_multiple_subscriptions"] is True
+        )
 
         # Idempotent.
         assert _configure_platform_org(platform_org, dry_run=False) == "unchanged"
@@ -289,7 +287,9 @@ class TestSeedPlatformProducts:
         platform_org = await create_organization(save_fixture)
         action = _configure_platform_org(platform_org, dry_run=True)
         assert action == "updated"
-        assert platform_org.subscription_settings["allow_multiple_subscriptions"] is False
+        assert (
+            platform_org.subscription_settings["allow_multiple_subscriptions"] is False
+        )
 
     async def test_migrates_legacy_pro_product_to_starter_in_place(
         self,
@@ -301,9 +301,7 @@ class TestSeedPlatformProducts:
         the Starter spec and re-stamped to "starter" — same row, no
         duplicate — so existing subscriptions keep pointing at it."""
         platform_org = await create_organization(save_fixture)
-        mocker.patch(
-            "polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
-        )
+        mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
 
         legacy_pro = await create_product(
             save_fixture,

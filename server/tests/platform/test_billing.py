@@ -57,7 +57,9 @@ class TestEnsureStarterTrialSubscription:
         _patch_platform_org_id(mocker, None)
         creator = await create_organization(save_fixture)
 
-        result = await platform_billing.ensure_starter_trial_subscription(session, creator)
+        result = await platform_billing.ensure_starter_trial_subscription(
+            session, creator
+        )
 
         assert result is None
         # No platform-org Customer or Subscription should exist.
@@ -150,10 +152,14 @@ class TestEnsureStarterTrialSubscription:
             save_fixture, platform_org=platform_org, tier=TierKey.starter.value
         )
 
-        first = await platform_billing.ensure_starter_trial_subscription(session, creator)
+        first = await platform_billing.ensure_starter_trial_subscription(
+            session, creator
+        )
         assert first is not None
 
-        second = await platform_billing.ensure_starter_trial_subscription(session, creator)
+        second = await platform_billing.ensure_starter_trial_subscription(
+            session, creator
+        )
         assert second is not None
         assert second.id == first.id
 

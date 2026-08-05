@@ -26,7 +26,7 @@ class _QuotaEventRepository(RepositoryBase[Event]):
         definition: QuotaDefinition,
     ) -> int:
         """Aggregate matching events for an organization and return usage
-        in storage units (bytes for storage_gb, seconds for video hours,
+        in storage units (bytes for storage_gb,
         count for email/view quotas).
 
         Display-unit conversion is the service's responsibility — callers

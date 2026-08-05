@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 from pytest_mock import MockerFixture
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from polar.entitlements.tiers import TierKey, get_definition
 from polar.enums import SubscriptionRecurringInterval
@@ -12,11 +12,8 @@ from polar.models.event import EventSource
 from polar.models.subscription import SubscriptionStatus
 from polar.postgres import AsyncSession
 from polar.quotas.definitions import QuotaKey
-from polar.quotas.exceptions import QuotaExceededError
 from polar.quotas.producers import (
     emit_storage_delta,
-    emit_video_uploaded,
-    emit_video_viewed,
     enforce,
 )
 from polar.quotas.service import quotas
@@ -24,7 +21,6 @@ from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import (
     PriceFixtureType,
     create_customer,
-    create_event,
     create_organization,
     create_product,
     create_subscription,
@@ -47,9 +43,7 @@ def _patch_starter_limits(mocker: MockerFixture, **limit_overrides: int | None) 
             return overridden
         return get_definition(tier)
 
-    mocker.patch(
-        "polar.entitlements.service.get_definition", side_effect=_resolve
-    )
+    mocker.patch("polar.entitlements.service.get_definition", side_effect=_resolve)
 
 
 async def _seed_tier_product(
@@ -114,10 +108,14 @@ class TestEmitStorageDelta:
         await session.flush()
 
         events = (
-            await session.execute(
-                select(Event).where(Event.organization_id == creator.id)
+            (
+                await session.execute(
+                    select(Event).where(Event.organization_id == creator.id)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         assert len(events) == 1
         assert events[0].name == "spaire.storage.bytes"
         assert events[0].source == EventSource.system
@@ -143,93 +141,6 @@ class TestEmitStorageDelta:
 
 @pytest.mark.asyncio
 class TestEmitVideoEvents:
-    async def test_video_uploaded_carries_duration(
-        self,
-        session: AsyncSession,
-        save_fixture: SaveFixture,
-    ) -> None:
-        creator = await create_organization(save_fixture)
-
-        emit_video_uploaded(
-            session, organization_id=creator.id, duration_seconds=900
-        )
-        await session.flush()
-
-        event = (
-            await session.execute(
-                select(Event).where(
-                    Event.organization_id == creator.id,
-                    Event.name == "spaire.video.uploaded",
-                )
-            )
-        ).scalar_one()
-        assert event.user_metadata["duration_seconds"] == 900
-
-    async def test_video_viewed_is_a_pure_count(
-        self,
-        session: AsyncSession,
-        save_fixture: SaveFixture,
-    ) -> None:
-        creator = await create_organization(save_fixture)
-
-        emit_video_viewed(session, organization_id=creator.id)
-        emit_video_viewed(session, organization_id=creator.id)
-        await session.flush()
-
-        count = (
-            await session.execute(
-                select(func.count(Event.id)).where(
-                    Event.organization_id == creator.id,
-                    Event.name == "spaire.video.viewed",
-                )
-            )
-        ).scalar_one()
-        assert count == 2
-
-
-@pytest.mark.asyncio
-class TestEnforce:
-    async def test_raises_when_quota_exceeded(
-        self,
-        mocker: MockerFixture,
-        session: AsyncSession,
-        save_fixture: SaveFixture,
-    ) -> None:
-        platform_org = await create_organization(save_fixture)
-        _patch_platform_org_id(mocker, platform_org.id)
-        # Patch Pro down to 5000/mo so we can fill near-cap with 4999
-        # events. Pro's real limit is 250k.
-        _patch_starter_limits(mocker, video_views_monthly=5000)
-        creator = await create_organization(save_fixture)
-        await _subscribe(
-            save_fixture,
-            platform_org=platform_org,
-            creator=creator,
-            tier="starter",
-            monthly_cents=0,
-        )
-        # Pro grace = 10%, ceiling = 5500. 4999 + requested=2 lands in
-        # the grace band (5001), which is allowed. Bump request past
-        # the ceiling so the test exercises the "exceeded" branch.
-        for _ in range(4999):
-            await create_event(
-                save_fixture,
-                organization=creator,
-                source=EventSource.system,
-                name="spaire.video.viewed",
-            )
-
-        with pytest.raises(QuotaExceededError) as excinfo:
-            await enforce(
-                session,
-                creator,
-                QuotaKey.video_views_monthly,
-                requested_storage_units=600,
-            )
-        result = excinfo.value.result
-        assert result.allowed is False
-        assert result.limit == 5000
-
     async def test_returns_result_when_allowed(
         self,
         mocker: MockerFixture,
@@ -305,9 +216,7 @@ class TestProducersIntegrateWithService:
         emit_storage_delta(session, organization_id=creator.id, bytes_delta=-1 * gb)
         await session.flush()
 
-        usage = await quotas.get_usage(
-            session, creator.id, QuotaKey.storage_gb
-        )
+        usage = await quotas.get_usage(session, creator.id, QuotaKey.storage_gb)
         assert usage.used == 4
         assert usage.limit == 5
         assert usage.remaining == 1

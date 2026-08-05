@@ -13,10 +13,10 @@ To regenerate the golden HTML after an intentional renderer change:
     3. Add a third smoke check below for any new XSS / safe-URL guard you've
        introduced so the parity contract surfaces in both runtimes.
 """
+
 from __future__ import annotations
 
 from polar.email_broadcast.render import render_blocks_to_html
-
 
 PARITY_FIXTURE = {
     "version": 1,

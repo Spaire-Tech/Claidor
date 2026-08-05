@@ -62,9 +62,7 @@ async def _platform_plan(
     """Configure a platform org and give `creator` a Spaire subscription in
     the given status (the creator is a Customer of the platform org)."""
     platform_org = await create_organization(save_fixture)
-    mocker.patch(
-        "polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id
-    )
+    mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     prices: list[PriceFixtureType] = [(4900, "usd")]
     product = await create_product(
         save_fixture,
@@ -104,9 +102,7 @@ class TestDelinquencyHold:
         )
         account = await create_account(save_fixture, organization, user)
         # Plenty of withdrawable balance — the hold blocks anyway.
-        await create_balance_transaction(
-            save_fixture, account=account, amount=100000
-        )
+        await create_balance_transaction(save_fixture, account=account, amount=100000)
 
         with pytest.raises(AccountDelinquent):
             await payout_service.create(session, locker, account=account)
@@ -126,9 +122,7 @@ class TestDelinquencyHold:
             status=SubscriptionStatus.past_due,
         )
         account = await create_account(save_fixture, organization, user)
-        await create_balance_transaction(
-            save_fixture, account=account, amount=100000
-        )
+        await create_balance_transaction(save_fixture, account=account, amount=100000)
 
         with pytest.raises(AccountDelinquent):
             await payout_service.estimate(session, account=account)

@@ -43,9 +43,7 @@ def _patch_starter_limits(mocker: MockerFixture, **limit_overrides: int | None) 
             return overridden
         return get_definition(tier)
 
-    mocker.patch(
-        "polar.entitlements.service.get_definition", side_effect=_resolve
-    )
+    mocker.patch("polar.entitlements.service.get_definition", side_effect=_resolve)
 
 
 async def _seed_tier_product(
@@ -118,9 +116,7 @@ class TestRequireFeature:
 
         # Email A/B testing is gated on Studio+ — Pro should be blocked.
         with pytest.raises(FeatureNotInPlanError) as excinfo:
-            await entitlements.require_feature(
-                session, creator.id, "email_ab_testing"
-            )
+            await entitlements.require_feature(session, creator.id, "email_ab_testing")
         assert excinfo.value.feature == "email_ab_testing"
         assert excinfo.value.tier == TierKey.starter
         assert excinfo.value.status_code == 402
@@ -166,7 +162,7 @@ class TestRequireFeature:
 
         for feature in (
             "customer_wallet",
-            "white_label_course_player",
+            "drip_scheduling",
             "sandbox_mode",
             "drip_scheduling",
             "email_ab_testing",
@@ -207,9 +203,7 @@ class TestRequireFeature:
         _patch_platform_org_id(mocker, None)
         creator = await create_organization(save_fixture)
 
-        await entitlements.require_feature(
-            session, creator.id, "customer_wallet"
-        )
+        await entitlements.require_feature(session, creator.id, "customer_wallet")
 
 
 @pytest.mark.asyncio
@@ -224,7 +218,7 @@ class TestRequireUnderLimit:
         _patch_platform_org_id(mocker, platform_org.id)
         # Patch Pro down to 1 published course so the "at-cap" branch
         # can be exercised. Pro's real limit is unlimited.
-        _patch_starter_limits(mocker, published_courses=1)
+        _patch_starter_limits(mocker, email_subscribers=1)
         creator = await create_organization(save_fixture)
         await _subscribe(
             save_fixture,
@@ -236,9 +230,9 @@ class TestRequireUnderLimit:
 
         with pytest.raises(TierLimitReachedError) as excinfo:
             await entitlements.require_under_limit(
-                session, creator.id, "published_courses", current=1
+                session, creator.id, "email_subscribers", current=1
             )
-        assert excinfo.value.key == "published_courses"
+        assert excinfo.value.key == "email_subscribers"
         assert excinfo.value.limit == 1
         assert excinfo.value.tier == TierKey.starter
         assert excinfo.value.status_code == 402
@@ -253,7 +247,7 @@ class TestRequireUnderLimit:
         # should still be blocked.
         platform_org = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
-        _patch_starter_limits(mocker, lessons_per_course=10)
+        _patch_starter_limits(mocker, email_sends_monthly=10)
         creator = await create_organization(save_fixture)
         await _subscribe(
             save_fixture,
@@ -265,7 +259,7 @@ class TestRequireUnderLimit:
 
         with pytest.raises(TierLimitReachedError):
             await entitlements.require_under_limit(
-                session, creator.id, "lessons_per_course", current=42
+                session, creator.id, "email_sends_monthly", current=42
             )
 
     async def test_passes_when_under_limit(
@@ -276,7 +270,7 @@ class TestRequireUnderLimit:
     ) -> None:
         platform_org = await create_organization(save_fixture)
         _patch_platform_org_id(mocker, platform_org.id)
-        _patch_starter_limits(mocker, lessons_per_course=10)
+        _patch_starter_limits(mocker, email_sends_monthly=10)
         creator = await create_organization(save_fixture)
         await _subscribe(
             save_fixture,
@@ -288,7 +282,7 @@ class TestRequireUnderLimit:
 
         # 10 lessons per course (patched). At 9 -> next one fits.
         await entitlements.require_under_limit(
-            session, creator.id, "lessons_per_course", current=9
+            session, creator.id, "email_sends_monthly", current=9
         )
 
     async def test_unlimited_tier_passes(
@@ -312,7 +306,7 @@ class TestRequireUnderLimit:
         # returns silently when the limit is None — that's the path
         # under test.
         await entitlements.require_under_limit(
-            session, creator.id, "lessons_per_course", current=10_000
+            session, creator.id, "email_sends_monthly", current=10_000
         )
 
     async def test_unknown_limit_raises_value_error(

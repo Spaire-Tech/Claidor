@@ -1,7 +1,7 @@
 """Producer helpers that emit usage events feeding the quotas.
 
 Each producer is called by a domain-specific code path (file upload,
-mux webhook, email sender, video playback) and writes one Event row.
+email sender) and writes one Event row.
 The QuotasService aggregates those events to compute usage.
 
 All producer events use `EventSource.system` and the standard event
@@ -75,39 +75,6 @@ def emit_storage_delta(
 
 # ---------------------------------------------------------------------------
 # Video uploads & views — reserved for PR 10 / PR 11.
-# ---------------------------------------------------------------------------
-
-
-def emit_video_uploaded(
-    session: AsyncSession,
-    *,
-    organization_id: UUID,
-    duration_seconds: int,
-) -> Event:
-    definition = get_definition(QuotaKey.video_hours_hosted)
-    return _add_quota_event(
-        session,
-        organization_id=organization_id,
-        name=definition.event_name,
-        metadata={"duration_seconds": int(duration_seconds)},
-    )
-
-
-def emit_video_viewed(
-    session: AsyncSession,
-    *,
-    organization_id: UUID,
-) -> Event:
-    definition = get_definition(QuotaKey.video_views_monthly)
-    return _add_quota_event(
-        session,
-        organization_id=organization_id,
-        name=definition.event_name,
-    )
-
-
-# ---------------------------------------------------------------------------
-# Enforcement helper — check + raise in one call.
 # ---------------------------------------------------------------------------
 
 

@@ -30,8 +30,6 @@ logging.getLogger(__name__)
 
 
 _HUMAN_LABEL: dict[QuotaKey, tuple[str, str]] = {
-    QuotaKey.video_hours_hosted: ("video hosting", "hours"),
-    QuotaKey.video_views_monthly: ("video views this month", "views"),
     QuotaKey.storage_gb: ("file storage", "GB"),
 }
 

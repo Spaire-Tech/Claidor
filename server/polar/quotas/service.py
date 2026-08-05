@@ -8,7 +8,7 @@ two questions:
   2. Would emitting `requested` more storage units of quota X exceed the
      cap?
 
-Producers (file upload, email send, mux webhook, video play) call
+Producers (file upload, email send) call
 `check_quota()` before doing the work and act on `result.allowed`:
 
     # Storage producer: passes the file size in bytes.
@@ -89,8 +89,6 @@ class QuotaCheckResult:
 
 def _limit_for(entitlements: TierEntitlements, quota: QuotaKey) -> int | None:
     mapping = {
-        QuotaKey.video_hours_hosted: entitlements.limits.video_hours_hosted,
-        QuotaKey.video_views_monthly: entitlements.limits.video_views_monthly,
         QuotaKey.storage_gb: entitlements.limits.storage_gb,
     }
     return mapping[quota]
@@ -154,8 +152,6 @@ class QuotasService:
 
         `requested_storage_units` is in the quota's storage unit:
           - bytes for storage_gb
-          - seconds for video_hours_hosted
-          - count for video_views_monthly
         Producers always know the precise amount they want to consume,
         so this is the natural interface.
 

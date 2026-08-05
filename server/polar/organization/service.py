@@ -239,14 +239,6 @@ class OrganizationService:
             settings_update = update_schema.feature_settings.model_dump(
                 mode="json", exclude_unset=True, exclude_none=True
             )
-            # Gate setting course_player_white_label=True on the tier's
-            # feature flag. Disabling (False) is always allowed so creators
-            # can roll back after a downgrade. Same pattern as drip
-            # scheduling in course/service.py.
-            if settings_update.get("course_player_white_label") is True:
-                await entitlements_service.require_feature(
-                    session, organization.id, "white_label_course_player"
-                )
             organization.feature_settings = {
                 **organization.feature_settings,
                 **settings_update,

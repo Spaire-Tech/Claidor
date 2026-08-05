@@ -306,9 +306,7 @@ class TestGetForOrganization:
         assert result.transaction_fee.fixed_cents == 30
         assert result.monthly_price_cents == 4900
         assert result.features.email_sequences_and_segments is True
-        assert result.features.white_label_course_player is False
         assert result.features.customer_wallet is False
-        assert result.limits.published_courses == 5
         # Email is metered on list size only — sends and active sequences
         # are uncapped on every tier.
         assert result.limits.active_email_sequences is None
@@ -328,7 +326,6 @@ class TestGetForOrganization:
         result = await entitlements.get_for_organization(session, creator.id)
 
         assert result.tier == TierKey.unmanaged
-        assert result.limits.published_courses is None
         assert result.limits.email_sends_monthly is None
         assert result.features.custom_email_sender_domain is True
 
@@ -343,13 +340,10 @@ class TestTierDefinitions:
         assert studio.monthly_price_cents == 12900
         assert studio.transaction_fee.percent_basis_points == 500
         assert studio.transaction_fee.fixed_cents == 30
-        assert studio.limits.published_courses == 25
         assert studio.limits.active_email_sequences is None
-        assert studio.limits.video_hours_hosted == 50
         assert studio.limits.email_subscribers == 50_000
         assert studio.limits.email_sends_monthly is None
         assert studio.limits.dashboard_team_seats == 5
-        assert studio.features.white_label_course_player is True
         assert studio.features.customer_wallet is True
         assert studio.features.custom_pricing_negotiation is False
 
@@ -360,9 +354,7 @@ class TestTierDefinitions:
         assert starter.monthly_price_cents == 4900
         assert starter.transaction_fee.percent_basis_points == 700
         assert starter.transaction_fee.fixed_cents == 30
-        assert starter.limits.published_courses == 5
         assert starter.limits.active_email_sequences is None
-        assert starter.limits.video_hours_hosted == 25
         assert starter.limits.email_subscribers == 10_000
         assert starter.limits.email_sends_monthly is None
         assert starter.features.email_sequences_and_segments is True
@@ -377,7 +369,6 @@ class TestTierDefinitions:
         # unmanaged is the dev / self-host / platform-org fallback: unlimited.
         unmanaged = get_definition(TierKey.unmanaged)
         assert unmanaged.monthly_price_cents == 0
-        assert unmanaged.limits.published_courses is None
         assert unmanaged.features.audit_logs is True
 
     def test_inactive_is_restrictive(self) -> None:
@@ -387,7 +378,6 @@ class TestTierDefinitions:
         # there is no free unlimited fallback.
         inactive = get_definition(TierKey.inactive)
         assert inactive.monthly_price_cents == 0
-        assert inactive.limits.published_courses == 0
         assert inactive.limits.email_sends_monthly == 0
         assert inactive.features.audit_logs is False
         assert inactive.features.email_sequences_and_segments is False
@@ -400,7 +390,6 @@ class TestTierDefinitions:
         assert scale.transaction_fee.percent_basis_points == 300
         assert scale.transaction_fee.fixed_cents == 30
         # Scale caps video at 200 hours; only Legacy is fully unlimited.
-        assert scale.limits.video_hours_hosted == 200
         assert scale.limits.dashboard_team_seats == 20
         # Email is metered on list size only; sends and sequences are
         # uncapped, and the published contact ceiling is set high (150k)
@@ -410,5 +399,4 @@ class TestTierDefinitions:
         assert scale.limits.email_subscribers == 150_000
         assert scale.features.custom_pricing_negotiation is True
         assert scale.features.customer_wallet is True
-        assert scale.features.white_label_course_player is True
         assert scale.features.audit_logs is True
