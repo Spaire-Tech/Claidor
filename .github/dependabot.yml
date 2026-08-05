@@ -11,3 +11,7 @@ updates:
   directory: "/server"
   schedule:
     interval: "weekly"
+  ignore:
+    # The fork's API diverged from upstream Polar after SDK 0.27; newer
+    # polar-sdk versions expect fields this API does not serve.
+    - dependency-name: "polar-sdk"
