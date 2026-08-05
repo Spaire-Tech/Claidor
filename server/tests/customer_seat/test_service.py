@@ -7,7 +7,6 @@ import pytest
 from polar.auth.models import AuthSubject
 from polar.customer_seat.service import (
     CustomerNotFound,
-    FeatureNotEnabled,
     InvalidInvitationToken,
     InvalidSeatAssignmentRequest,
     MemberEmailMismatch,
@@ -51,23 +50,19 @@ class TestCheckSeatFeatureEnabled:
         await save_fixture(organization)
         await seat_service.check_seat_feature_enabled(session, organization.id)
 
-    async def test_feature_disabled(
+    async def test_always_enabled_without_flag(
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
+        # Seat-based pricing is always enabled on this platform: the check
+        # must not raise even when the legacy feature flag is off or missing.
         organization = await create_organization(save_fixture)
         organization.feature_settings = {"seat_based_pricing_enabled": False}
         await save_fixture(organization)
-        with pytest.raises(FeatureNotEnabled):
-            await seat_service.check_seat_feature_enabled(session, organization.id)
+        await seat_service.check_seat_feature_enabled(session, organization.id)
 
-    async def test_feature_missing(
-        self, session: AsyncSession, save_fixture: SaveFixture
-    ) -> None:
-        organization = await create_organization(save_fixture)
         organization.feature_settings = {}
         await save_fixture(organization)
-        with pytest.raises(FeatureNotEnabled):
-            await seat_service.check_seat_feature_enabled(session, organization.id)
+        await seat_service.check_seat_feature_enabled(session, organization.id)
 
 
 class TestListSeats:
@@ -82,14 +77,6 @@ class TestListSeats:
         seats = await seat_service.list_seats(session, subscription_with_seats)
         assert len(seats) == 1
         assert seats[0].id == customer_seat_pending.id
-
-    @pytest.mark.asyncio
-    async def test_list_seats_feature_disabled(
-        self, session: AsyncSession, subscription: Subscription
-    ) -> None:
-        subscription.product.organization.feature_settings = {}
-        with pytest.raises(FeatureNotEnabled):
-            await seat_service.list_seats(session, subscription)
 
 
 class TestGetAvailableSeatsCount:
@@ -113,14 +100,6 @@ class TestGetAvailableSeatsCount:
             session, subscription_with_seats
         )
         assert count == 4
-
-    @pytest.mark.asyncio
-    async def test_available_seats_feature_disabled(
-        self, session: AsyncSession, subscription: Subscription
-    ) -> None:
-        subscription.product.organization.feature_settings = {}
-        with pytest.raises(FeatureNotEnabled):
-            await seat_service.get_available_seats_count(session, subscription)
 
 
 class TestAssignSeat:
@@ -292,16 +271,6 @@ class TestAssignSeat:
                 session, subscription_with_seats, customer_id=fake_customer_id
             )
         assert str(fake_customer_id) in str(exc_info.value)
-
-    @pytest.mark.asyncio
-    async def test_assign_seat_feature_disabled(
-        self, session: AsyncSession, subscription: Subscription
-    ) -> None:
-        subscription.product.organization.feature_settings = {}
-        with pytest.raises(FeatureNotEnabled):
-            await seat_service.assign_seat(
-                session, subscription, email="test@example.com"
-            )
 
     @pytest.mark.asyncio
     async def test_assign_seat_creates_new_customer_with_email(
@@ -1454,24 +1423,6 @@ class TestClaimSeat:
             await seat_service.claim_seat(session, old_token)
 
     @pytest.mark.asyncio
-    async def test_claim_seat_feature_disabled(
-        self,
-        session: AsyncSession,
-        save_fixture: SaveFixture,
-        customer_seat_pending: CustomerSeat,
-    ) -> None:
-        assert customer_seat_pending.subscription is not None
-        customer_seat_pending.subscription.product.organization.feature_settings = {}
-        await save_fixture(customer_seat_pending.subscription.product.organization)
-
-        assert customer_seat_pending.invitation_token is not None
-        with pytest.raises(FeatureNotEnabled):
-            await seat_service.claim_seat(
-                session,
-                customer_seat_pending.invitation_token,
-            )
-
-    @pytest.mark.asyncio
     async def test_claim_seat_clears_token(
         self,
         session: AsyncSession,
@@ -1603,20 +1554,6 @@ class TestRevokeSeat:
 
         assert seat.status == SeatStatus.revoked
         assert seat.revoked_at is not None
-
-    @pytest.mark.asyncio
-    async def test_revoke_seat_feature_disabled(
-        self,
-        session: AsyncSession,
-        save_fixture: SaveFixture,
-        customer_seat_claimed: CustomerSeat,
-    ) -> None:
-        assert customer_seat_claimed.subscription is not None
-        customer_seat_claimed.subscription.product.organization.feature_settings = {}
-        await save_fixture(customer_seat_claimed.subscription.product.organization)
-
-        with pytest.raises(FeatureNotEnabled):
-            await seat_service.revoke_seat(session, customer_seat_claimed)
 
     @pytest.mark.asyncio
     async def test_revoke_seat_sends_webhook(
@@ -1786,24 +1723,6 @@ class TestGetSeat:
 
         assert seat is None
 
-    @pytest.mark.asyncio
-    async def test_get_seat_feature_disabled(
-        self,
-        session: AsyncSession,
-        save_fixture: SaveFixture,
-        customer_seat_claimed: CustomerSeat,
-        seat_enabled_organization: Organization,
-    ) -> None:
-        seat_enabled_organization.feature_settings = {}
-        await save_fixture(seat_enabled_organization)
-
-        auth_subject = AuthSubject(
-            subject=seat_enabled_organization, scopes=set(), session=None
-        )
-
-        with pytest.raises(FeatureNotEnabled):
-            await seat_service.get_seat(session, auth_subject, customer_seat_claimed.id)
-
 
 class TestResendInvitation:
     @pytest.mark.asyncio
@@ -1912,35 +1831,6 @@ class TestResendInvitation:
         await session.refresh(seat.subscription.product, ["organization"])
 
         with pytest.raises(InvalidInvitationToken):
-            await seat_service.resend_invitation(session, seat)
-
-    @pytest.mark.asyncio
-    async def test_resend_invitation_feature_disabled(
-        self,
-        session: AsyncSession,
-        save_fixture: SaveFixture,
-        subscription_with_seats: Subscription,
-        customer: Customer,
-    ) -> None:
-        """Test that resending invitation fails when feature is disabled."""
-        # Create a pending seat
-        seat = await create_customer_seat(
-            save_fixture,
-            subscription=subscription_with_seats,
-            customer=customer,
-            status=SeatStatus.pending,
-        )
-        await session.refresh(seat, ["subscription", "customer"])
-        assert seat.subscription is not None
-        await session.refresh(seat.subscription, ["product"])
-        assert seat.subscription is not None
-        await session.refresh(seat.subscription.product, ["organization"])
-
-        # Disable feature
-        subscription_with_seats.product.organization.feature_settings = {}
-        await save_fixture(subscription_with_seats.product.organization)
-
-        with pytest.raises(FeatureNotEnabled):
             await seat_service.resend_invitation(session, seat)
 
     @pytest.mark.asyncio

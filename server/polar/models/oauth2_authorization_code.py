@@ -13,4 +13,4 @@ class OAuth2AuthorizationCode(
 ):
     __tablename__ = "oauth2_authorization_codes"
 
-    client_id: Mapped[str] = mapped_column(String(52), nullable=False)
+    client_id: Mapped[str] = mapped_column(String(64), nullable=False)

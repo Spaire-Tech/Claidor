@@ -100,7 +100,7 @@ class TestValidatePayload:
                 [
                     {
                         "token": "TOKEN",
-                        "type": "POLAR_PERSONAL_ACCESS_TOKEN",
+                        "type": "CLAIDOR_PERSONAL_ACCESS_TOKEN",
                         "source": "github",
                     }
                 ],

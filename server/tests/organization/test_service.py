@@ -479,8 +479,9 @@ class TestSetOrganizationUnderReview:
         session: AsyncSession,
         organization: Organization,
     ) -> None:
-        # Given organization active
+        # Given organization active and already initially reviewed
         organization.status = OrganizationStatus.ACTIVE
+        organization.initially_reviewed_at = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
 
         enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
 
@@ -491,6 +492,29 @@ class TestSetOrganizationUnderReview:
 
         # Then
         assert result.status == OrganizationStatus.ONGOING_REVIEW
+        enqueue_job_mock.assert_called_once_with(
+            "organization.under_review", organization_id=organization.id
+        )
+
+    async def test_set_organization_under_review_initial(
+        self,
+        mocker: MockerFixture,
+        session: AsyncSession,
+        organization: Organization,
+    ) -> None:
+        # Given organization active, never initially reviewed
+        organization.status = OrganizationStatus.ACTIVE
+        organization.initially_reviewed_at = None
+
+        enqueue_job_mock = mocker.patch("polar.organization.service.enqueue_job")
+
+        # When
+        result = await organization_service.set_organization_under_review(
+            session, organization
+        )
+
+        # Then
+        assert result.status == OrganizationStatus.INITIAL_REVIEW
         enqueue_job_mock.assert_called_once_with(
             "organization.under_review", organization_id=organization.id
         )
@@ -514,7 +538,7 @@ class TestGetPaymentStatus:
         )
 
         assert payment_status.payment_ready is False
-        assert len(payment_status.steps) == 3
+        assert len(payment_status.steps) == 4
 
         # Check each step
         create_product_step = next(
@@ -531,6 +555,11 @@ class TestGetPaymentStatus:
             s for s in payment_status.steps if s.id == "setup_account"
         )
         assert setup_account_step.completed is False
+
+        verify_identity_step = next(
+            s for s in payment_status.steps if s.id == "verify_identity"
+        )
+        assert verify_identity_step.completed is False
 
     async def test_with_product_created(
         self,

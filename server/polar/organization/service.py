@@ -18,7 +18,7 @@ from polar.config import Environment, settings
 from polar.customer.repository import CustomerRepository
 from polar.entitlements.service import entitlements as entitlements_service
 from polar.enums import InvoiceNumbering
-from polar.exceptions import NotPermitted, PolarError, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, NotPermitted, PolarError
 from polar.integrations.loops.service import loops as loops_service
 from polar.integrations.plain.service import plain as plain_service
 from polar.integrations.resend import domains as resend_domains
@@ -769,7 +769,11 @@ class OrganizationService:
     async def set_organization_under_review(
         self, session: AsyncSession, organization: Organization
     ) -> Organization:
-        organization.status = OrganizationStatus.ONGOING_REVIEW
+        organization.status = (
+            OrganizationStatus.INITIAL_REVIEW
+            if organization.initially_reviewed_at is None
+            else OrganizationStatus.ONGOING_REVIEW
+        )
         organization.status_updated_at = datetime.now(UTC)
         await self._sync_account_status(session, organization)
         session.add(organization)

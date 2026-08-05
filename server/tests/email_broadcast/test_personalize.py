@@ -47,7 +47,7 @@ def test_html_escapes_values() -> None:
 
 def test_subject_does_not_escape() -> None:
     vs = build_variables(subscriber=_sub("Tom & Jerry"))
-    out = render("Welcome, {{first_name}}!", vs, html=False)
+    out = render("Welcome, {{full_name}}!", vs, html=False)
     # Ampersand stays as-is in the subject; headers aren't HTML.
     assert out == "Welcome, Tom & Jerry!"
 

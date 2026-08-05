@@ -17,6 +17,7 @@ from polar.redis import Redis
 from tests.fixtures.auth import CUSTOMER_AUTH_SUBJECT
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.downloadable import TestDownloadable
+from tests.fixtures.file import s3_backend_enforces_signatures
 
 
 @pytest.mark.asyncio
@@ -159,6 +160,9 @@ class TestDownloadablesEndpoints:
         s3_download_url = response.headers.get("location", None)
         assert s3_download_url
         url = urlparse(s3_download_url)
+
+        if not s3_backend_enforces_signatures():
+            pytest.skip("S3 test backend (moto) does not validate request signatures")
 
         without_signature = f"{url.scheme}://{url.netloc}{url.path}"
         async with AsyncClient() as mimio_client:

@@ -93,7 +93,11 @@ def _make_mock_v2_account(
             self.identity = MockIdentity(country, entity_type)
             self.defaults = MockDefaults(currency)
             self.requirements = MockRequirements(has_past_due_requirements)
-            self.applied_configurations = applied_configurations or ["recipient"]
+            self.applied_configurations = (
+                applied_configurations
+                if applied_configurations is not None
+                else ["recipient"]
+            )
             self.object = "v2.core.account"
 
     return MockV2Account()

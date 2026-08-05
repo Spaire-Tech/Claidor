@@ -348,10 +348,12 @@ class TestGetPaymentStatus:
         assert "steps" in json
         assert "organization_status" in json
 
-        # With account_verification_only=true, only account setup step should be present
+        # With account_verification_only=true, only the account verification
+        # steps should be present (no product/integration steps)
         step_ids = [step["id"] for step in json["steps"]]
         assert "setup_account" in step_ids
-        assert len(step_ids) == 1
+        assert "verify_identity" in step_ids
+        assert len(step_ids) == 2
         assert json["payment_ready"] is False
 
     @pytest.mark.auth
@@ -382,7 +384,7 @@ class TestGetPaymentStatus:
 
         json = response.json()
         assert json["payment_ready"] is False
-        assert len(json["steps"]) == 3
+        assert len(json["steps"]) == 4
 
         # All steps should be incomplete
         for step in json["steps"]:
@@ -393,6 +395,7 @@ class TestGetPaymentStatus:
         assert "create_product" in step_ids
         assert "integrate_checkout" in step_ids
         assert "setup_account" in step_ids
+        assert "verify_identity" in step_ids
 
     @pytest.mark.auth
     async def test_valid_with_product(

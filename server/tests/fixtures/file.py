@@ -1,4 +1,5 @@
 import base64
+import functools
 import hashlib
 import mimetypes
 from collections.abc import Iterable
@@ -9,9 +10,11 @@ from urllib.parse import parse_qs, urlparse
 from uuid import UUID
 
 import boto3
+import httpx
 import pytest
 import pytest_asyncio
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from httpx import AsyncClient, Response
 from minio import Minio
 
@@ -241,6 +244,23 @@ class TestFile:
         return completed
 
 
+@functools.cache
+def s3_backend_enforces_signatures() -> bool:
+    """Whether the S3 backend used in tests validates request signatures.
+
+    Real S3 and MinIO reject unsigned/tampered requests with a 403, but
+    some emulators (moto) accept any credentials and never check
+    signatures. Tests asserting that unsigned or tampered URLs are
+    rejected should skip when this returns False, as that property
+    belongs to the storage backend, not to our code.
+    """
+    response = httpx.get(
+        f"{settings.S3_ENDPOINT_URL}/{settings.S3_FILES_BUCKET_NAME}"
+        "/claidor-test-signature-probe"
+    )
+    return response.status_code == 403
+
+
 @pytest.fixture(scope="session", autouse=True)
 def empty_test_bucket(worker_id: str) -> Iterable[Any]:
     if not settings.S3_ENDPOINT_URL:
@@ -276,6 +296,31 @@ def empty_test_bucket(worker_id: str) -> Iterable[Any]:
     )
 
     bucket = s3.Bucket(bucket_name)
+
+    # The S3 services under test read their bucket names straight from
+    # settings (not the per-worker bucket above), so make sure those
+    # buckets exist and are versioned like the production ones: the S3
+    # service relies on version IDs (e.g. after multipart completion),
+    # and some emulators (moto) reject VersionId="null"/"" lookups on
+    # unversioned buckets. Standalone MinIO setups may not support
+    # versioning — in that case keep the previous unversioned behavior.
+    s3_client = s3.meta.client
+    for service_bucket in {
+        bucket_name,
+        settings.S3_FILES_BUCKET_NAME,
+        settings.S3_FILES_PUBLIC_BUCKET_NAME,
+    }:
+        try:
+            s3_client.head_bucket(Bucket=service_bucket)
+        except ClientError:
+            s3_client.create_bucket(Bucket=service_bucket)
+        try:
+            s3_client.put_bucket_versioning(
+                Bucket=service_bucket,
+                VersioningConfiguration={"Status": "Enabled"},
+            )
+        except ClientError:
+            pass
 
     yield bucket
 

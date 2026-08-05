@@ -8,7 +8,7 @@ from polar.file.s3 import S3_SERVICES
 from polar.integrations.aws.s3.exceptions import S3FileError
 from polar.models import Organization
 from polar.postgres import AsyncSession
-from tests.fixtures.file import TestFile
+from tests.fixtures.file import TestFile, s3_backend_enforces_signatures
 
 
 @pytest.mark.asyncio
@@ -67,6 +67,9 @@ class TestEndpoints:
     async def test_upload_without_signature(
         self, session: AsyncSession, organization: Organization, logo_jpg: TestFile
     ) -> None:
+        if not s3_backend_enforces_signatures():
+            pytest.skip("S3 test backend (moto) does not validate request signatures")
+
         created = await logo_jpg.create(session, organization)
 
         part = created.upload.parts[0]

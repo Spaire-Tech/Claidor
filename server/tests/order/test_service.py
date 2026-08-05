@@ -10,6 +10,7 @@ from freezegun import freeze_time
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 from sqlalchemy.orm import joinedload
+from structlog.testing import capture_logs
 
 from polar.auth.models import AuthSubject
 from polar.checkout.eventstream import CheckoutEvent
@@ -2703,7 +2704,6 @@ class TestProcessDunningOrder:
         save_fixture: SaveFixture,
         customer: Customer,
         product: Product,
-        caplog: pytest.LogCaptureFixture,
     ) -> None:
         """Test that process_dunning_order logs warning for orders without subscription"""
         # Given
@@ -2715,10 +2715,14 @@ class TestProcessDunningOrder:
         )
 
         # When
-        await order_service.process_dunning_order(session, order)
+        with capture_logs() as cap_logs:
+            await order_service.process_dunning_order(session, order)
 
         # Then
-        assert "Order has no subscription, skipping dunning" in caplog.text
+        assert any(
+            e["event"] == "Order has no subscription, skipping dunning"
+            for e in cap_logs
+        )
 
     async def test_process_dunning_order_cancelled_subscription(
         self,
@@ -2761,7 +2765,6 @@ class TestProcessDunningOrder:
         customer: Customer,
         product: Product,
         subscription: Subscription,
-        caplog: pytest.LogCaptureFixture,
     ) -> None:
         """Test that process_dunning_order logs warning for subscriptions without payment method"""
         # Given
@@ -2776,12 +2779,14 @@ class TestProcessDunningOrder:
         await save_fixture(subscription)
 
         # When
-        order = await order_service.process_dunning_order(session, order)
+        with capture_logs() as cap_logs:
+            order = await order_service.process_dunning_order(session, order)
 
         # Then
         enqueue_job_mock.assert_not_called()
-        assert (
-            "Order subscription has no payment method, record a failure" in caplog.text
+        assert any(
+            e["event"] == "Order subscription has no payment method, record a failure"
+            for e in cap_logs
         )
 
     async def test_process_dunning_order_soft_deleted_payment_method(
@@ -2792,7 +2797,6 @@ class TestProcessDunningOrder:
         customer: Customer,
         product: Product,
         subscription: Subscription,
-        caplog: pytest.LogCaptureFixture,
     ) -> None:
         """Test that process_dunning_order logs warning for subscriptions with a soft deleted payment method"""
         # Given
@@ -2811,12 +2815,14 @@ class TestProcessDunningOrder:
         await save_fixture(subscription)
 
         # When
-        order = await order_service.process_dunning_order(session, order)
+        with capture_logs() as cap_logs:
+            order = await order_service.process_dunning_order(session, order)
 
         # Then
         enqueue_job_mock.assert_not_called()
-        assert (
-            "Order subscription has no payment method, record a failure" in caplog.text
+        assert any(
+            e["event"] == "Order subscription has no payment method, record a failure"
+            for e in cap_logs
         )
 
     async def test_process_dunning_order_success(

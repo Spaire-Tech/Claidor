@@ -206,12 +206,15 @@ class S3Service:
         return ret
 
     def get_object_or_raise(self, path: str, s3_version_id: str = "") -> dict[str, Any]:
+        # Only pass VersionId when we actually have one: an empty value is
+        # rejected by S3 implementations that strictly validate version IDs.
+        version_arguments = {"VersionId": s3_version_id} if s3_version_id else {}
         try:
             obj = self.client.get_object(
                 Bucket=self.bucket,
                 Key=path,
-                VersionId=s3_version_id,
                 ChecksumMode="ENABLED",
+                **version_arguments,
             )
         except ClientError:
             raise S3FileError("No object on S3")
@@ -219,9 +222,10 @@ class S3Service:
         return cast(dict[str, Any], obj)
 
     def get_head_or_raise(self, path: str, s3_version_id: str = "") -> dict[str, Any]:
+        version_arguments = {"VersionId": s3_version_id} if s3_version_id else {}
         try:
             head = self.client.head_object(
-                Bucket=self.bucket, Key=path, VersionId=s3_version_id
+                Bucket=self.bucket, Key=path, **version_arguments
             )
         except ClientError:
             raise S3FileError("No metadata from S3")

@@ -57,6 +57,7 @@ dependencies = [
   "aiocsv>=1.4.0",
   "alembic-utils>=0.8.8",
   "clickhouse-connect>=0.8.0",
+  "tzdata>=2025.3",
 ]
 
 [dependency-groups]

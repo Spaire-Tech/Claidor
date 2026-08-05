@@ -1958,6 +1958,7 @@ dependencies = [
     { name = "tagflow" },
     { name = "taskipy" },
     { name = "typer" },
+    { name = "tzdata" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -2043,6 +2044,7 @@ requires-dist = [
     { name = "tagflow", specifier = ">=0.7.0" },
     { name = "taskipy", specifier = ">=1.10.3" },
     { name = "typer", specifier = ">=0.12.5" },
+    { name = "tzdata", specifier = ">=2025.3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.31.1" },
 ]
 

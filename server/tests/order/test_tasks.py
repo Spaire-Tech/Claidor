@@ -5,6 +5,7 @@ import pytest
 import stripe as stripe_lib
 from dramatiq import Retry
 from pytest_mock import MockerFixture
+from structlog.testing import capture_logs
 
 from polar.kit.db.postgres import AsyncSession
 from polar.kit.utils import utc_now
@@ -137,7 +138,6 @@ class TestProcessDunningOrder:
         save_fixture: SaveFixture,
         product: Product,
         organization: Organization,
-        caplog: pytest.LogCaptureFixture,
     ) -> None:
         # Given
         customer = await create_customer(save_fixture, organization=organization)
@@ -149,10 +149,14 @@ class TestProcessDunningOrder:
         )
 
         # When
-        await process_dunning_order(order.id)
+        with capture_logs() as cap_logs:
+            await process_dunning_order(order.id)
 
         # Then
-        assert "Order has no subscription, skipping dunning" in caplog.text
+        assert any(
+            e["event"] == "Order has no subscription, skipping dunning"
+            for e in cap_logs
+        )
 
     async def test_cancelled_subscription_order_cleared_from_dunning(
         self,
@@ -194,7 +198,6 @@ class TestProcessDunningOrder:
         save_fixture: SaveFixture,
         product: Product,
         organization: Organization,
-        caplog: pytest.LogCaptureFixture,
     ) -> None:
         # Given
         customer = await create_customer(save_fixture, organization=organization)
@@ -217,11 +220,13 @@ class TestProcessDunningOrder:
         )
 
         # When
-        await process_dunning_order(order.id)
+        with capture_logs() as cap_logs:
+            await process_dunning_order(order.id)
 
         # Then
-        assert (
-            "Order subscription has no payment method, record a failure" in caplog.text
+        assert any(
+            e["event"] == "Order subscription has no payment method, record a failure"
+            for e in cap_logs
         )
 
     async def test_valid_order_triggers_payment_retry(
