@@ -53,7 +53,6 @@ from .issue_reward import IssueReward
 from .license_key import LicenseKey
 from .license_key_activation import LicenseKeyActivation
 from .login_code import LoginCode
-from .masterclass_architect_analysis import MasterclassArchitectAnalysis
 from .member import Member, MemberRole
 from .member_session import MemberSession
 from .meter import Meter
@@ -172,7 +171,6 @@ __all__ = [
     "LicenseKey",
     "LicenseKeyActivation",
     "LoginCode",
-    "MasterclassArchitectAnalysis",
     "Member",
     "MemberRole",
     "MemberSession",

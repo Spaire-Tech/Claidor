@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "module_is_bonus_805"
-down_revision = "mc_architect_728"
+down_revision = "org_domain_col_707"
 branch_labels = None
 depends_on = None
 
