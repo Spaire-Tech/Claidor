@@ -1,0 +1,547 @@
+/* Course Assistant tab — Assistant-specific styles.
+   Extracted from the creator-handoff design prototype; reuses the hub.css
+   design system (card, btn, cr-head, glist, tog, …) for everything else.
+   Dark rules are scoped to .spaire-hub.dark to match the hub wrapper. */
+
+.glist-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--t3);
+  padding: 6px 4px 10px;
+}
+.glist-label.danger {
+  color: #d6453c;
+}
+/* ---------- MOMENT 1 · BUILDING ---------- */
+.asst-build {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 84px 28px 80px;
+}
+.asst-build-orb {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--t2);
+  background: var(--fill);
+  margin-bottom: 22px;
+}
+.asst-build h2 {
+  font-family: var(--po);
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.asst-build p {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--t2);
+  margin-top: 8px;
+  max-width: 38ch;
+  text-wrap: pretty;
+}
+.asst-build-meta {
+  font-size: 13px;
+  color: var(--t3);
+  margin-top: 20px;
+  font-variant-numeric: tabular-nums;
+}
+/* ---------- MOMENT 2 · REVIEW & APPROVE ---------- */
+.rev-intro {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+}
+.rev-intro .ri-n {
+  flex: 1;
+  font-size: 14px;
+  color: var(--t2);
+}
+.rev-intro .ri-n b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.rev-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rev-card {
+  padding: 20px 22px;
+  transition: box-shadow 0.2s;
+}
+.rev-card.approved {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+.rev-card.flagged {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #d6453c 32%, transparent);
+}
+.rev-q {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+.rev-q .ql {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--t3);
+  padding-top: 3px;
+}
+.rev-q .qt {
+  flex: 1;
+  font-size: 16.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+.rev-scope {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t2);
+  background: var(--fill);
+  white-space: nowrap;
+}
+.rev-a {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hair-2);
+}
+.rev-a .av {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+.rev-a-main {
+  flex: 1;
+  min-width: 0;
+}
+.rev-a-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.rev-a-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--t2);
+  text-wrap: pretty;
+}
+.rev-cite {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 980px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.rev-cite svg {
+  flex: none;
+}
+.rev-edit {
+  margin-top: 12px;
+}
+.rev-edit .textarea {
+  min-height: 90px;
+}
+.rev-edit-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.rev-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hair-2);
+}
+.rev-status {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+}
+.rev-status.ok {
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rev-status.no {
+  color: #d6453c;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rev-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 15px;
+  border-radius: 980px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--t2);
+  background: var(--fill);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.rev-btn:hover {
+  background: var(--fill-2);
+  color: var(--ink);
+}
+.rev-btn.approve.on {
+  background: var(--accent);
+  color: #fff;
+}
+.rev-btn.flag.on {
+  background: color-mix(in srgb, #d6453c 14%, transparent);
+  color: #d6453c;
+}
+.rev-btn .ic {
+  display: inline-flex;
+}
+/* sticky make-live bar */
+.rev-bar {
+  position: sticky;
+  bottom: 18px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 14px 18px 14px 22px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.14);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+.spaire-hub.dark .rev-bar {
+  background: var(--surface-solid);
+}
+.rev-bar-n {
+  flex: 1;
+  min-width: 0;
+}
+.rev-bar-n .bn {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rev-bar-n .bs {
+  font-size: 13px;
+  color: var(--t3);
+  margin-top: 2px;
+}
+.rev-bar .btn {
+  height: 42px;
+  padding: 0 26px;
+  font-size: 15px;
+}
+/* ---------- MOMENT 3 · LIVE ---------- */
+.asst-status {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  margin-bottom: 26px;
+}
+.asst-status-ava {
+  position: relative;
+  flex: none;
+}
+.asst-status-ava img {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+.asst-status-ava .dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #1f9e54;
+  box-shadow: 0 0 0 3px var(--surface);
+}
+.spaire-hub.dark .asst-status-ava .dot {
+  box-shadow: 0 0 0 3px var(--surface-solid);
+}
+.asst-status-main {
+  flex: 1;
+  min-width: 0;
+}
+.asst-status-main h2 {
+  font-family: var(--po);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.asst-status-main .ss {
+  font-size: 13.5px;
+  color: var(--t2);
+  margin-top: 3px;
+}
+.asst-status-state {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.asst-status-lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.asst-status-lbl.off {
+  color: var(--t3);
+}
+.asst-disc {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+}
+.asst-disc .dl {
+  flex: 1;
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.5;
+}
+.asst-disc .dl b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.ask-list {
+  display: flex;
+  flex-direction: column;
+}
+.ask-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 20px;
+  border-top: 1px solid var(--hair);
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s;
+}
+.ask-row:first-child {
+  border-top: none;
+}
+.ask-row:hover {
+  background: var(--fill);
+}
+.ask-main {
+  flex: 1;
+  min-width: 0;
+}
+.ask-q {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+.ask-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--t3);
+  margin-top: 4px;
+}
+.ask-meta .sep {
+  opacity: 0.6;
+}
+.ask-count {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--t2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* "Couldn't answer" — a content-gap signal in the ask-meta row. */
+.ask-gap {
+  color: #d6453c;
+  font-weight: 600;
+}
+.ask-go {
+  flex: none;
+  color: var(--t3);
+  display: grid;
+  place-items: center;
+}
+/* improve — quieter, optional, off to the side */
+.improve-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--t3);
+  padding: 6px 4px 10px;
+  margin-top: 30px;
+}
+.improve-label .opt {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--t3);
+}
+.improve {
+  padding: 20px 22px;
+}
+.improve-head {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.improve-sub {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--t2);
+  margin-top: 5px;
+  max-width: 60ch;
+}
+.improve-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.improve-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 980px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--fill);
+  transition: background 0.15s;
+}
+.improve-chip:hover {
+  background: var(--fill-2);
+}
+.improve-chip svg {
+  color: var(--t2);
+}
+.improve-cov {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hair-2);
+}
+.improve-cov-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+.improve-cov-top .ct {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.improve-cov-top .cv {
+  font-size: 12.5px;
+  color: var(--t3);
+}
+.improve-cov-bar {
+  height: 6px;
+  border-radius: 980px;
+  background: var(--fill-2);
+  overflow: hidden;
+}
+.improve-cov-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 980px;
+  background: var(--t2);
+}
+.improve-cov-note {
+  font-size: 12.5px;
+  color: var(--t3);
+  margin-top: 9px;
+  line-height: 1.5;
+}
+.asst-status {
+  flex-wrap: wrap;
+}
+.rev-q .ql {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--t3);
+  padding-top: 3px;
+}
+.rev-q .qt {
+  flex: 1;
+  font-size: 16.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+.asst-status-main .ss {
+  font-size: 13.5px;
+  color: var(--t2);
+  margin-top: 3px;
+}
+.asst-disc .dl {
+  flex: 1;
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.5;
+}
+.asst-disc .dl b {
+  color: var(--ink);
+  font-weight: 600;
+}

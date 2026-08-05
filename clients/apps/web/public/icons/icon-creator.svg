@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <filter id="organic-creator" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014 0.020" numOctaves="5" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="58" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g filter="url(#organic-creator)">
+    <ellipse cx="232" cy="248" rx="192" ry="178" fill="#E2F0FF"/>
+    <ellipse cx="240" cy="252" rx="165" ry="152" fill="#C8E1FA"/>
+    <ellipse cx="248" cy="256" rx="140" ry="128" fill="#A8CCF5"/>
+    <ellipse cx="254" cy="260" rx="116" ry="105" fill="#84B5EE"/>
+    <ellipse cx="260" cy="264" rx="93" ry="84" fill="#5A9AE6"/>
+    <ellipse cx="265" cy="267" rx="72" ry="65" fill="#3880DA"/>
+    <ellipse cx="269" cy="270" rx="52" ry="47" fill="#1F62C8"/>
+    <ellipse cx="272" cy="272" rx="34" ry="31" fill="#1348A8"/>
+    <ellipse cx="274" cy="274" rx="19" ry="17" fill="#0C308C"/>
+  </g>
+</svg>

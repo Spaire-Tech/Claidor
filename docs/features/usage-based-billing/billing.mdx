@@ -1,0 +1,78 @@
+---
+title: "Billing"
+description: "How metered usage is charged alongside subscription invoices — including caps, discounts, and what happens at cancellation."
+---
+
+Metered usage is billed as part of the subscription invoice. At the end of each billing period, Spaire tallies each meter, calculates the charge, and adds it to the invoice alongside the base subscription fee.
+
+## Add a metered price to a product
+
+Metered prices live on subscription products. Each metered price links one meter to the product and sets a price per unit.
+
+To add one:
+
+1. Open a subscription product
+2. Click **Add metered price**
+3. Select the meter
+4. Set the price per unit
+
+Multiple metered prices are supported — for example, one meter for prompt tokens and another for completion tokens, each with different per-unit rates.
+
+### Usage cap
+
+Optionally set a **cap** on any metered price. If a customer's usage exceeds the cap during the billing period, they're charged the cap amount regardless of actual usage.
+
+Caps provide predictable maximum charges for customers — useful for plan limits or overage ceilings.
+
+## How invoicing works
+
+| Billing cycle | When is usage charged? |
+|---------------|----------------------|
+| **Monthly** | Usage aggregated and invoiced at end of each month |
+| **Yearly** | Usage aggregated and invoiced at end of each year |
+
+The metered amount is combined with the base subscription fee into a single invoice. Customers see the breakdown (base + usage per meter) on their invoice and in the customer portal.
+
+## Discounts and usage charges
+
+A discount applied to a subscription applies to the **entire invoice** — including metered usage. There is no way to apply a discount to only the base fee or only the metered portion.
+
+## Cancellation and usage
+
+When a subscription is canceled at period end (`cancel_at_period_end: true`), usage continues to accrue during the remaining billing period. A final invoice is issued at period end that includes all usage accumulated during the grace period.
+
+If a subscription is revoked immediately, usage accrued up to that point is invoiced at the time of revocation.
+
+## Preview the next charge
+
+Use the charge preview API to show customers what they'll owe before the invoice is generated:
+
+```ts
+const preview = await spaire.subscriptions.chargePreview('<subscription_id>')
+
+console.log({
+  base: preview.base_amount,
+  metered: preview.metered_amount,
+  subtotal: preview.subtotal_amount,
+  discount: preview.discount_amount,
+  tax: preview.tax_amount,
+  total: preview.total_amount,
+})
+```
+
+All amounts are in cents.
+
+## Customer portal
+
+Customers can see their current period usage for each meter in the customer portal — the estimated charge for each meter, and their total upcoming invoice.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="coins" href="/features/usage-based-billing/credits" title="Credits">
+    Let customers pre-pay for usage to avoid surprise invoices.
+  </Card>
+  <Card icon="gauge" href="/features/usage-based-billing/meters" title="Meters">
+    Define how events are filtered and aggregated into billable units.
+  </Card>
+</CardGroup>

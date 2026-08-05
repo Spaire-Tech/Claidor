@@ -1,0 +1,503 @@
+/* Spaire Space — publishable dark theme.
+
+   Applied via `.space-dark` on the Space root, on BOTH surfaces that render a
+   creator's Space:
+     - the public Space page (visitors see it when theme = 'dark')
+     - the in-editor canvas + chrome (live preview while editing)
+
+   The storefront components (ProfileCard, Storefront, ProductCard,
+   StorefrontLinks) and the editor chrome are built with hardcoded light
+   Tailwind utilities (bg-white / bg-gray-50 / text-gray-900 / border-gray-200
+   …) and have no `dark:` variants. Rather than touch every component, we remap
+   those utilities to the same dark palette the Community hub uses (#0c0c10 bg,
+   #f5f5f7 ink, #2997ff accent). Because it's scoped under `.space-dark`, light
+   mode is never affected. */
+
+.space-dark {
+  background: #0c0c10 !important;
+  color: #f5f5f7;
+  color-scheme: dark;
+}
+
+/* The editor canvas root sets its own white background (styles/editor.css);
+   override it when the Space theme is dark. */
+.spaire-editor.space-dark {
+  background: #0c0c10 !important;
+  /* editor.css drives most of its chrome/canvas off these tokens, so flipping
+     them here themes everything that uses var(--ink/--line/--muted/…). The raw
+     `background: white` rules that bypass the tokens are overridden below. */
+  --canvas: #0c0c10;
+  --ink: #f5f5f7;
+  --ink-2: #d2d2d7;
+  --muted: rgba(245, 245, 247, 0.6);
+  --muted-2: rgba(245, 245, 247, 0.42);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-2: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --accent: #2997ff;
+  --accent-soft: rgba(41, 151, 255, 0.16);
+  --accent-ink: #cfe6ff;
+  --green: #4ade80;
+  --green-bg: rgba(40, 160, 90, 0.16);
+}
+
+/* editor.css structural surfaces that use raw `background: white` (not tokens,
+   not Tailwind utilities) — the canvas, the slide-in panels (Arrange / Links),
+   and the on-canvas editing affordances. */
+.space-dark .canvas-wrap {
+  background: #0c0c10 !important;
+}
+.space-dark .side-panel {
+  background: #121214 !important;
+}
+.space-dark .sp-row,
+.space-dark .sp-input,
+.space-dark .sp-share-btn,
+.space-dark .sp-secondary-btn,
+.space-dark .sp-url-row .sp-url-act,
+.space-dark .block-drag-handle:hover,
+.space-dark .item-action,
+.space-dark .item-action:hover,
+.space-dark .item-drag-handle,
+.space-dark .layout-picker,
+.space-dark .hc-btn,
+.space-dark .arrange-panel .ap-cat,
+.space-dark .arrange-panel .ap-row,
+.space-dark .arrange-panel .ap-arrow,
+.space-dark .arrange-panel .ap-mini-action:hover {
+  background: #1b1b20 !important;
+}
+
+/* ---- Lead-magnet / newsletter form (Forms/LeadMagnetCard) ----
+   Injects its own `<style>` with hardcoded hex (.lm-*), so the utility remap
+   can't reach it. Renders on both the public page and the editor canvas. */
+.space-dark .lm-frame {
+  background: #17171b !important;
+  color: #f5f5f7 !important;
+  --accent: #2997ff;
+}
+.space-dark .lm-media {
+  background: #0f0f12 !important;
+}
+.space-dark .lm-headline,
+.space-dark .lm-success p strong {
+  color: #f5f5f7 !important;
+}
+.space-dark .lm-subhead,
+.space-dark .lm-flabel,
+.space-dark .lm-consent span,
+.space-dark .lm-foot,
+.space-dark .lm-media-ph,
+.space-dark .lm-success p {
+  color: rgba(245, 245, 247, 0.55) !important;
+}
+.space-dark .lm-input {
+  background: #0f0f12 !important;
+  color: #f5f5f7 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.space-dark .lm-input::placeholder {
+  color: rgba(245, 245, 247, 0.4) !important;
+}
+.space-dark .lm-input:focus {
+  background: #0c0c10 !important;
+}
+.space-dark .lm-consent .box {
+  background: #0f0f12 !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+.space-dark .lm-cta {
+  background: #f5f5f7 !important;
+  color: #0c0c10 !important;
+}
+.space-dark .lm-cta:hover {
+  background: #e5e5e7 !important;
+}
+
+/* ---- Product detail page (ProductDetailPage `.sppdp`) ----
+   Scoped CSS driven by variables. `--ink` is used for BOTH text and dark button
+   fills, so it stays light (text) and the buttons are re-filled explicitly. */
+.space-dark .sppdp {
+  --bg: #0c0c10;
+  --surface: #17171b;
+  --surface-2: #121214;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-2: rgba(255, 255, 255, 0.07);
+  --ink: #f5f5f7;
+  --ink-2: #d2d2d7;
+  --muted: rgba(245, 245, 247, 0.6);
+  --faint: rgba(245, 245, 247, 0.42);
+}
+.space-dark .sppdp .btn-primary,
+.space-dark .sppdp .creator-sub-btn {
+  background: #f5f5f7;
+  color: #0c0c10;
+}
+.space-dark .sppdp .btn-secondary {
+  background: #17171b;
+}
+.space-dark .sppdp .creator-sub-input {
+  background: #0f0f12;
+}
+.space-dark .sppdp .nav-arrow {
+  background: rgba(30, 30, 34, 0.86);
+}
+.space-dark .sppdp .nav-arrow:hover {
+  background: #26262c;
+}
+.space-dark .sppdp .stickybar {
+  background: rgba(12, 12, 16, 0.82);
+}
+
+/* ---- surfaces (light → dark) ---- */
+.space-dark .bg-white {
+  background-color: #17171b !important;
+}
+.space-dark .hover\:bg-white:hover {
+  background-color: #17171b !important;
+}
+.space-dark .bg-gray-50 {
+  background-color: #121214 !important;
+}
+.space-dark .hover\:bg-gray-50:hover {
+  background-color: #1d1d22 !important;
+}
+.space-dark .bg-gray-100 {
+  background-color: #1d1d22 !important;
+}
+.space-dark .hover\:bg-gray-100:hover {
+  background-color: #26262c !important;
+}
+.space-dark .bg-gray-200 {
+  background-color: #26262c !important;
+}
+.space-dark .hover\:bg-gray-200:hover {
+  background-color: #303036 !important;
+}
+/* translucent bars (bg-gray-50/85, bg-white/80, …) */
+.space-dark [class*='bg-gray-50/'] {
+  background-color: rgba(12, 12, 16, 0.85) !important;
+}
+.space-dark [class*='bg-white/'] {
+  background-color: rgba(23, 23, 27, 0.85) !important;
+}
+
+/* ---- dark accents (already dark — keep dark + visible, do not invert) ---- */
+.space-dark .bg-gray-900 {
+  background-color: #26262c !important;
+}
+.space-dark .hover\:bg-gray-800:hover {
+  background-color: #303036 !important;
+}
+.space-dark .bg-black {
+  background-color: #1d1d22 !important;
+}
+
+/* ---- text ---- */
+.space-dark .text-gray-950,
+.space-dark .text-gray-900 {
+  color: #f5f5f7 !important;
+}
+.space-dark .text-gray-800,
+.space-dark .text-gray-700 {
+  color: #d2d2d7 !important;
+}
+.space-dark .text-gray-600 {
+  color: #b4b4bb !important;
+}
+.space-dark .text-gray-500 {
+  color: rgba(245, 245, 247, 0.52) !important;
+}
+.space-dark .text-gray-400 {
+  color: rgba(245, 245, 247, 0.42) !important;
+}
+
+/* ---- borders ---- */
+.space-dark .border-white {
+  border-color: #17171b !important;
+}
+.space-dark .border-gray-200,
+.space-dark .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+.space-dark .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+.space-dark .hover\:border-gray-200:hover,
+.space-dark .hover\:border-gray-300:hover,
+.space-dark .hover\:border-gray-400:hover {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+.space-dark .divide-gray-100 > * + *,
+.space-dark .divide-gray-200 > * + * {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+/* "Available for work" badge fill (ProfileCard) — bg-green-100 reads too bright
+   on black; soften to a dark green tint to match the green-50 tints above. */
+.space-dark .bg-green-100,
+.space-dark .bg-emerald-100 {
+  background-color: rgba(40, 160, 90, 0.18) !important;
+}
+/* Accent greens (profile eyebrow, badge text) read dim at -600 on black; lift. */
+.space-dark .text-emerald-600 {
+  color: #34d399 !important;
+}
+/* "Work with me" badge hover tint (badge text/border use the blue accent,
+   already remapped above). */
+.space-dark .hover\:bg-blue-50:hover {
+  background-color: rgba(41, 151, 255, 0.12) !important;
+}
+
+/* ---- form fields (bare inputs default to white UA background) ---- */
+.space-dark input:not([type='checkbox']):not([type='radio']):not(
+    [type='range']
+  ),
+.space-dark textarea,
+.space-dark select {
+  background-color: #17171b !important;
+  color: #f5f5f7;
+}
+.space-dark input::placeholder,
+.space-dark textarea::placeholder {
+  color: rgba(245, 245, 247, 0.4) !important;
+}
+
+/* ---- light-tint info / alert cards → dark tints ---- */
+.space-dark .bg-blue-50,
+.space-dark [class*='bg-blue-50/'] {
+  background-color: rgba(41, 151, 255, 0.12) !important;
+}
+.space-dark .border-blue-100,
+.space-dark .border-blue-200 {
+  border-color: rgba(41, 151, 255, 0.3) !important;
+}
+.space-dark .bg-green-50,
+.space-dark .bg-emerald-50 {
+  background-color: rgba(40, 160, 90, 0.12) !important;
+}
+.space-dark .border-green-100,
+.space-dark .border-green-200 {
+  border-color: rgba(50, 170, 100, 0.3) !important;
+}
+.space-dark .text-green-600,
+.space-dark .text-green-700 {
+  color: #4ade80 !important;
+}
+.space-dark .bg-amber-50,
+.space-dark .bg-yellow-50 {
+  background-color: rgba(190, 140, 30, 0.14) !important;
+}
+.space-dark .bg-red-50,
+.space-dark .bg-rose-50 {
+  background-color: rgba(200, 60, 50, 0.12) !important;
+}
+.space-dark .border-red-100,
+.space-dark .border-red-200,
+.space-dark .border-red-300 {
+  border-color: rgba(210, 70, 60, 0.35) !important;
+}
+
+/* ---- accent: text/border accents stay blue; FILLED primary buttons read
+   white-on-dark (white background, near-black text) in dark mode ---- */
+.space-dark .text-\[\#0066cc\],
+.space-dark .text-blue-500,
+.space-dark .text-blue-600 {
+  color: #2997ff !important;
+}
+.space-dark .border-\[\#0066cc\] {
+  border-color: #2997ff !important;
+}
+.space-dark .bg-\[\#0066cc\],
+.space-dark .bg-blue-500 {
+  background-color: #f5f5f7 !important;
+  color: #0c0c10 !important;
+}
+.space-dark .hover\:bg-blue-600:hover {
+  background-color: #e5e5e7 !important;
+}
+/* Floating "Add to Space" FAB: editor.css fills it with var(--ink) (now light
+   via the token flip) but hardcodes white text → invisible. Make it a true
+   white button with dark text + dark affordances. */
+.space-dark .add-fab {
+  color: #0c0c10 !important;
+}
+.space-dark .add-fab:hover {
+  background: #e5e5e7 !important;
+  border-color: #e5e5e7 !important;
+}
+.space-dark .add-fab .plus,
+.space-dark .add-fab .kbd {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: #0c0c10 !important;
+}
+
+/* ---- elevation reads softer on a dark canvas ---- */
+.space-dark .shadow-sm,
+.space-dark .shadow,
+.space-dark .shadow-md,
+.space-dark .shadow-lg,
+.space-dark .shadow-xl,
+.space-dark .shadow-2xl {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ---- Add-to-Space picker (⌘K) ----
+   Portaled to <body>, so it sits OUTSIDE the editor's `.space-dark` root. The
+   picker carries its own `space-dark` class (added by the component when the
+   Space theme is dark). It's token-driven (picker.css `.pk-library` vars), so
+   flipping the tokens themes most of it; a few hardcoded glass surfaces are
+   overridden explicitly. */
+.pk-library.space-dark {
+  --accent: #2997ff;
+  --accent-soft: rgba(41, 151, 255, 0.16);
+  --accent-ink: #cfe6ff;
+  --bg: #0c0c10;
+  --canvas: #17171b;
+  --ink: #f5f5f7;
+  --ink-2: #d2d2d7;
+  --muted: rgba(245, 245, 247, 0.6);
+  --muted-2: rgba(245, 245, 247, 0.42);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-2: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.16);
+}
+/* Modal shell — replace the cream gradient + white border/insets. */
+.pk-library.space-dark.waterglass {
+  background: #141418 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+    0 30px 60px -20px rgba(0, 0, 0, 0.6),
+    0 8px 24px -8px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Close button. */
+.pk-library.space-dark .wg-close {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+.pk-library.space-dark .wg-close:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Tab bar (cream pill rail) + the selected pill (solid white). */
+.pk-library.space-dark .wg-tabs {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset !important;
+}
+.pk-library.space-dark .wg-tabs button[aria-selected='true'] {
+  background: rgba(255, 255, 255, 0.14) !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Pill cards + product/course tiles. */
+.pk-library.space-dark .wg-card,
+.pk-library.space-dark .wg-tile {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.pk-library.space-dark .wg-card:hover,
+.pk-library.space-dark .wg-tile:hover,
+.pk-library.space-dark .wg-grid.embed .wg-card,
+.pk-library.space-dark .wg-grid.embed .wg-card:hover,
+.pk-library.space-dark .wg-card.create:hover,
+.pk-library.space-dark .wg-tile.create:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+.pk-library.space-dark .wg-card.create,
+.pk-library.space-dark .wg-tile.create {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+.pk-library.space-dark .wg-card.selected {
+  background: var(--accent-soft) !important;
+}
+
+/* Empty / dashed art placeholders use black tints — invisible on black. */
+.pk-library.space-dark .wg-art.dashed,
+.pk-library.space-dark .wg-tile-art.empty,
+.pk-library.space-dark .wg-skeleton {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* URL input pill + detected-link form fields. */
+.pk-library.space-dark .wg-input-pill,
+.pk-library.space-dark input {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+.pk-library.space-dark .wg-input-pill:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+.pk-library.space-dark .wg-input-pill:focus-within {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: var(--accent) !important;
+}
+.pk-library.space-dark .atsp-form-input,
+.pk-library.space-dark .atsp-form-input:focus,
+.pk-library.space-dark .atsp-form-input:focus-visible {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: var(--line-strong) !important;
+}
+
+/* Empty preview panel ("A clean preview will appear here") — the big light
+   box from the screenshot — and its placeholder shape. */
+.pk-library.space-dark .wg-empty {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+.pk-library.space-dark .wg-empty-shape {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.12)
+  ) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+/* Sticky footer fade — cream gradient → space dark. */
+.pk-library.space-dark .wg-footer {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 24, 0) 0%,
+    rgba(20, 20, 24, 0.95) 30%,
+    rgba(20, 20, 24, 1) 100%
+  ) !important;
+}
+
+/* Primary buttons fill with var(--ink) + white text. In dark that --ink flips
+   to near-white, so keep them legible: light fill, dark glyph. */
+.pk-library.space-dark .wg-add-btn,
+.pk-library.space-dark .wg-cta,
+.pk-library.space-dark .wg-card:hover .wg-add-btn.ghost {
+  background: #f5f5f7 !important;
+  color: #0c0c10 !important;
+}
+.pk-library.space-dark .wg-add-btn.ghost {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--muted) !important;
+}
+
+/* ---- Course-product landing page (GeneratedPortalPage `.gpp`) ----
+   Rendered for course products on the public Space, inside the (header) layout
+   that already carries `.space-dark`. It themes via `.gpp` CSS variables and
+   ships its own `.gpp.dark` variant for the creator's course theme.
+
+   Respect the creator's per-course theme choice: only the *dark* course pages
+   are aligned onto the Space's dark palette (for a consistent black). A course
+   the creator set to *light* must stay light — previously we forced every
+   `.gpp` dark here, which made the light/dark toggle look broken (light pages
+   kept rendering dark inside a dark Space). */
+.space-dark .gpp.dark {
+  --bg: #0c0c10 !important;
+  --band: 12, 12, 16 !important;
+  --bt: #f5f5f7 !important;
+  --bt2: rgba(245, 245, 247, 0.65) !important;
+  --bt3: rgba(245, 245, 247, 0.45) !important;
+  --text: #f5f5f7 !important;
+  --text-2: rgba(245, 245, 247, 0.6) !important;
+}

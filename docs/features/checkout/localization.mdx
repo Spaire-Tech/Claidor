@@ -1,0 +1,84 @@
+---
+title: "Localized Checkout"
+sidebarTitle: "Localization"
+description: "Serve checkout in your customer's language. Spaire supports 10 locales — set globally or per session."
+---
+
+Spaire renders checkout in the customer's language automatically. You can also override the language explicitly — useful when your app already knows the customer's locale or you want a consistent experience for a specific market.
+
+## Supported locales
+
+| Locale code | Language |
+|------------|----------|
+| `en` | English |
+| `de` | German |
+| `es` | Spanish |
+| `fr` | French |
+| `hu` | Hungarian |
+| `it` | Italian |
+| `nl` | Dutch |
+| `pt` | Portuguese (Brazil) |
+| `pt-PT` | Portuguese (Portugal) |
+| `sv` | Swedish |
+
+## Set locale on a checkout session
+
+Pass the `locale` field when creating a checkout session from your backend:
+
+<CodeGroup>
+
+```ts TypeScript
+import { Spaire } from '@spaire/sdk'
+
+const spaire = new Spaire({
+  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+})
+
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  locale: 'fr',
+})
+```
+
+```python Python
+from spaire_sdk import Spaire
+
+with Spaire(access_token="<YOUR_ACCESS_TOKEN>") as spaire:
+    checkout = spaire.checkouts.create(request={
+        "products": ["<product_id>"],
+        "locale": "fr",
+    })
+```
+
+```bash cURL
+curl -X POST https://api.spairehq.com/v1/checkouts \
+  -H "Authorization: Bearer $SPAIRE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "products": ["<product_id>"],
+    "locale": "fr"
+  }'
+```
+
+</CodeGroup>
+
+## What gets translated
+
+When a locale is set, Spaire translates all checkout UI text — form labels, button text, error messages, and helper text. Customer-provided content (product names, descriptions, benefit names) is not translated and displays as entered.
+
+## Automatic detection
+
+If you don't set a `locale`, Spaire attempts to detect the customer's preferred language from their browser's `Accept-Language` header. If the detected language isn't supported, checkout defaults to English.
+
+For the most consistent experience in a known-locale context — such as a localized marketing page or an app with language settings — set the locale explicitly rather than relying on auto-detection.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="server" href="/features/checkout/session" title="Checkout Sessions">
+    Set locale and other session parameters from your backend.
+  </Card>
+  <Card icon="code" href="/features/checkout/embed" title="Embedded Checkout">
+    Embed localized checkout in your own page.
+  </Card>
+</CardGroup>

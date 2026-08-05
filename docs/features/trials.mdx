@@ -1,0 +1,76 @@
+---
+title: "Trials"
+description: "Let customers experience your product before they commit. Spaire handles the billing delay, payment collection, and abuse prevention automatically."
+---
+
+A trial gives a customer full access to a subscription product for a set period before any charge occurs. Payment details are collected at checkout — but no money moves until the trial ends. If the customer cancels before the trial ends, they're never charged.
+
+## Set up a trial
+
+Trials can be configured in three places:
+
+- **On the product** — applies to all checkouts for that product by default
+- **On a checkout link** — overrides the product's trial for that link
+- **On a checkout session** — overrides the product's trial per-session via the API
+
+A trial period is defined by a **unit** (day, week, month, year) and a **duration** (a number).
+
+<Info>
+  The trial set on a checkout link or session always takes precedence over the product-level trial.
+</Info>
+
+### Set a trial on a product
+
+While creating or editing a product, toggle **Enable trial period** and set the duration.
+
+### Set a trial on a checkout session
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  trialPeriodDays: 14,
+})
+```
+
+## How it works
+
+1. Customer checks out — payment info is collected, no charge occurs
+2. Subscription status is set to `trialing`
+3. At the end of the trial, Spaire charges the customer automatically
+4. Subscription status moves to `active`
+
+If the customer cancels before the trial ends: no charge, subscription moves to `canceled`.
+
+## Manage trials on existing subscriptions
+
+You can add, extend, or end a trial from the dashboard on any active subscription:
+
+**Dashboard**: Go to the subscription detail page → **Update Subscription** → **Trial** tab.
+
+**Extend**: Set a new trial end date in the future. If the subscription was already `active`, it reverts to `trialing` and billing is postponed.
+
+**End early**: Click **End trial**. The trial stops immediately, the subscription activates, and the customer is charged for the first full billing cycle right away.
+
+## Prevent trial abuse
+
+Enable **Prevent trial abuse** in **Settings → Subscriptions** to block customers from claiming multiple trials across your products.
+
+When enabled, Spaire blocks a new trial checkout if either of these matches a previous trial redemption:
+
+- **Email address** — normalized to strip aliases (e.g., `user+alias@gmail.com` is treated as `user@gmail.com`)
+- **Payment method fingerprint** — detects the same card even if a different email is used
+
+A blocked customer sees: *"You have already used a trial for this product. Trials can only be used once per customer."*
+
+The checkout doesn't fail — it automatically removes the trial and lets the customer subscribe at the regular price.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="cube" href="/features/products" title="Products">
+    Set a default trial period directly on a product.
+  </Card>
+  <Card icon="server" href="/features/checkout/session" title="Checkout Sessions">
+    Override trial length per-checkout from your backend.
+  </Card>
+</CardGroup>

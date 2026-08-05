@@ -1,0 +1,752 @@
+/* ─────────────────────────────────────────────────────────────────
+   Add-to-Space picker — verbatim port from the design hand-off.
+   Class names match the prototype (pk-library / wg-*) so anyone can
+   diff against /tmp/spaire-design/spaire-space/project/styles.css
+   and confirm 1:1.
+   ───────────────────────────────────────────────────────────────── */
+
+.pk-library {
+  /* Tokens scoped to the picker so they don't leak into the rest of
+     the app. Community blue accent (matches the editor + community hub). */
+  --accent: var(--color-ce-accent);
+  --accent-soft: color-mix(in oklab, var(--accent) 12%, white);
+  --accent-ink: color-mix(in oklab, var(--accent) 78%, black);
+  --bg: #f4f4f6;
+  --canvas: #ffffff;
+  --ink: #0c0c14;
+  --ink-2: #2a2a35;
+  --muted: #6b6b78;
+  --muted-2: #9a9aa6;
+  --line: #e6e6ec;
+  --line-2: #ededf2;
+  --line-strong: #d8d8e0;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  /* Inter for the picker (loaded via next/font/google in layout.tsx). */
+  font-family:
+    var(--font-inter),
+    'Inter',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.picker-backdrop {
+  position: fixed;
+  inset: 0;
+  /* Transparent click-catcher only. The page blur behind the picker is
+     done by the `filter` on .spaire-editor-root (see editor.css) —
+     backdrop-filter here never reliably blurred the editor and could
+     not blur the canvas's embedded iframes at all. */
+  background: transparent;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pk-fade-in 0.2s ease;
+}
+
+@keyframes pk-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pk-library.waterglass {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(960px, calc(100vw - 32px));
+  max-height: min(90vh, 880px);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  border-radius: 36px;
+  padding: 32px 32px 36px;
+  /* Surface: solid-enough cream so it reads cleanly on top of the
+     blurred backdrop. No backdrop-filter here — the backdrop layer
+     does the blur, and stacking two backdrop-filter elements can
+     cancel out in some browsers. */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(255, 255, 255, 0.66) 100%
+    ),
+    rgba(248, 246, 242, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.04) inset,
+    0 30px 60px -20px rgba(20, 18, 30, 0.35),
+    0 8px 24px -8px rgba(20, 18, 30, 0.18);
+  animation: wgIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes wgIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.pk-library .wg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 12px;
+  /* Lock the header height in the flex column so a long body can never
+     compress it. Without this, tall content in .wg-body (which has
+     flex: 1) could push the header out of frame on Safari. */
+  flex-shrink: 0;
+}
+
+.pk-library .wg-title {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.pk-library .wg-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.pk-library .wg-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ink);
+}
+
+.pk-library .wg-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-top: 18px;
+  /* Solid cream so body content scrolling underneath can never bleed
+     through the (otherwise barely-there) 4% tint we used to have. */
+  background: rgba(248, 246, 242, 0.96);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  align-self: stretch;
+  overflow-x: auto;
+  /* Hold the pill bar's natural height in the flex column. Default
+     flex-shrink: 1 let tall bodies (URL with a long description, the
+     Catalog tab with many tiles before .wg-body's internal scroll
+     engaged) squeeze the pills into a half-row that the user had to
+     scroll past to read. Position relative + z-index keeps it above
+     hovered tile shadows in the body below.
+
+     We don't use position: sticky here — the scrolling ancestor is
+     .wg-body (a sibling), so sticky has nothing to anchor against.
+     The flex layout (head + tabs natural-height, body flex:1 +
+     internal scroll) keeps the pills parked at the top by itself. */
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.pk-library .wg-tabs button {
+  flex: 1;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: inherit;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    box-shadow 0.18s;
+}
+
+.pk-library .wg-tabs button:hover {
+  color: var(--ink);
+}
+
+.pk-library .wg-tabs button[aria-selected='true'] {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.pk-library .wg-body {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 20px;
+  padding: 4px;
+  /* Required to make a flex child actually scroll inside its
+     constrained parent. Without it, tall content (DP / Course tabs
+     with many tiles) blows past the picker's max-height instead of
+     scrolling internally — which used to push the tabs row off
+     screen and let cards render where the tabs should be. */
+  min-height: 0;
+}
+
+.pk-library .wg-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 8px 4px 4px;
+}
+
+.pk-library .wg-help {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 4px 4px 6px;
+  line-height: 1.5;
+}
+
+.pk-library .wg-help b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.pk-library .wg-back {
+  align-self: flex-start;
+  background: transparent;
+  border: 0;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pk-library .wg-back:hover {
+  color: var(--ink);
+}
+
+/* ── Pill card ── */
+.pk-library .wg-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 10px 10px 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 999px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition:
+    background 0.18s,
+    border-color 0.18s,
+    transform 0.12s,
+    box-shadow 0.18s;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  min-height: 68px;
+  width: 100%;
+}
+
+.pk-library .wg-card:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 6px 18px -8px rgba(20, 18, 30, 0.18);
+}
+
+.pk-library .wg-card.selected {
+  background: color-mix(in oklab, var(--accent) 10%, white);
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 6px 18px -8px color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+.pk-library .wg-card.create {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.pk-library .wg-card.create:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Embed tab — solid white pills over the waterglass surface
+   (per the design fix: cards white, surrounding stays glass). */
+.pk-library .wg-grid.embed .wg-card {
+  background: #ffffff;
+}
+
+.pk-library .wg-grid.embed .wg-card:hover {
+  background: #ffffff;
+}
+
+.pk-library .wg-art {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  font-weight: 500;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+  background-size: cover;
+  background-position: center;
+}
+
+.pk-library .wg-art.dashed {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--muted);
+  font-size: 22px;
+  font-weight: 300;
+}
+
+.pk-library .wg-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pk-library .wg-card-title {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pk-library .wg-card-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pk-library .wg-add-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0;
+  /* Black button — purple is reserved for input focus, not buttons. */
+  background: var(--ink);
+  color: white;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 400;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition:
+    transform 0.12s,
+    background 0.15s,
+    opacity 0.15s;
+  box-shadow: 0 2px 6px -2px rgba(12, 12, 20, 0.45);
+}
+
+.pk-library .wg-add-btn:hover {
+  transform: scale(1.06);
+}
+
+.pk-library .wg-add-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pk-library .wg-add-btn.small {
+  width: 34px;
+  height: 34px;
+  font-size: 17px;
+}
+
+.pk-library .wg-add-btn.ghost {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.pk-library .wg-card:hover .wg-add-btn.ghost {
+  background: var(--ink);
+  color: white;
+}
+
+/* Grid */
+.pk-library .wg-grid {
+  display: grid;
+  gap: 14px;
+}
+.pk-library .wg-grid.one {
+  grid-template-columns: 1fr;
+}
+.pk-library .wg-grid.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+.pk-library .wg-grid.three {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+@media (max-width: 760px) {
+  .pk-library .wg-grid.two,
+  .pk-library .wg-grid.three {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .pk-library .wg-grid.two,
+  .pk-library .wg-grid.three {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Vertical tile (used for products & courses) ── */
+.pk-library .wg-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  border-radius: 22px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  background: rgba(255, 255, 255, 0.7);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  transition:
+    transform 0.14s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background 0.15s,
+    box-shadow 0.15s,
+    border-color 0.15s;
+}
+
+.pk-library .wg-tile:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -14px rgba(20, 18, 30, 0.25);
+}
+
+.pk-library .wg-tile.selected {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 12px 28px -14px color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+.pk-library .wg-tile.create {
+  background: rgba(255, 255, 255, 0.5);
+}
+.pk-library .wg-tile.create:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.pk-library .wg-tile-art {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  font-weight: 500;
+  color: white;
+  letter-spacing: -0.02em;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+}
+
+.pk-library .wg-tile-art.empty {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--muted);
+  font-size: 36px;
+  font-weight: 300;
+}
+
+.pk-library .wg-tile-meta {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pk-library .wg-tile-title {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pk-library .wg-tile-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.pk-library .wg-tile-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    transform 0.15s;
+}
+.pk-library .wg-tile:hover .wg-tile-check {
+  opacity: 1;
+}
+.pk-library .wg-tile.selected .wg-tile-check {
+  opacity: 1;
+  background: var(--accent);
+  border-color: white;
+}
+
+/* URL tab — input pill */
+.pk-library .wg-input-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 20px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  min-height: 60px;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+
+.pk-library .wg-input-pill:hover {
+  border-color: #c0c0c8;
+}
+
+.pk-library .wg-input-pill:focus-within {
+  background: rgba(255, 255, 255, 0.95);
+  /* Purple border only — no outer glow ring. The ring extended past the
+     pill and got clipped by .wg-body's overflow, masking the focus state
+     at both ends. An in-box border colour can't be clipped. */
+  border-color: var(--accent);
+}
+
+.pk-library .wg-input-pill input,
+.pk-library .wg-input-pill input:focus,
+.pk-library .wg-input-pill input:focus-visible,
+.pk-library .wg-input-pill input:active {
+  flex: 1;
+  /* Belt-and-suspenders: kill EVERY native border / focus-ring layer
+     the browser AND @tailwindcss/forms might paint inside the pill.
+     The forms plugin sets --tw-ring-* CSS vars and a box-shadow
+     on focus that produced the inner darker rectangle. */
+  border: 0 !important;
+  outline: 0 !important;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-color: transparent;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: transparent;
+  font-size: 15px;
+  color: var(--ink);
+  font-family: inherit;
+  min-width: 0;
+  padding: 0;
+}
+
+/* Webkit autofill paints its own yellow background — neutralize it. */
+.pk-library .wg-input-pill input:-webkit-autofill,
+.pk-library .wg-input-pill input:-webkit-autofill:hover,
+.pk-library .wg-input-pill input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 100px transparent inset;
+  caret-color: var(--ink);
+  transition: background-color 9999s ease-out 0s;
+}
+
+.pk-library .wg-input-pill input::placeholder {
+  color: var(--muted-2);
+}
+
+/* Form inputs (used by LinkEditForm after URL/embed is detected). */
+.pk-library .atsp-form-input,
+.pk-library .atsp-form-input:focus,
+.pk-library .atsp-form-input:focus-visible {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1.5px solid var(--line-strong) !important;
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
+  font-size: 14px;
+  color: var(--ink);
+  font-family: inherit;
+  outline: 0 !important;
+  -webkit-appearance: none;
+  appearance: none;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  box-shadow: none !important;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.pk-library .atsp-form-input:focus {
+  /* Purple border only — the outer glow ring got clipped by the
+     scrolling body, masking the focus state at the edges. */
+  border-color: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+.pk-library .preview-card {
+  animation: previewIn 0.3s ease;
+}
+@keyframes previewIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pk-library .wg-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 44px 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pk-library .wg-empty-shape {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.08));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}
+
+.pk-library .wg-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+  position: sticky;
+  bottom: -36px;
+  margin: 0 -32px -36px;
+  padding: 18px 32px;
+  background: linear-gradient(
+    180deg,
+    rgba(248, 246, 242, 0) 0%,
+    rgba(248, 246, 242, 0.95) 30%,
+    rgba(248, 246, 242, 1) 100%
+  );
+  border-bottom-left-radius: 36px;
+  border-bottom-right-radius: 36px;
+}
+
+.pk-library .wg-cta {
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--ink);
+  color: white;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.12s;
+}
+
+.pk-library .wg-cta:hover {
+  transform: translateY(-1px);
+}
+
+.pk-library .wg-skeleton {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 22px;
+  aspect-ratio: 4 / 3;
+  animation: pkSkeletonPulse 1.4s ease-in-out infinite;
+}
+@keyframes pkSkeletonPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

@@ -1,0 +1,674 @@
+/* =============================================================================
+ * SPAIRE ORIGINALS — Customer portal sign-in (passwordless, email → code).
+ *
+ * Ported faithfully from the creator's "Client Sign In" design. Apple
+ * restraint: one ink, grey secondaries, ONE accent. Split layout: the
+ * creator's photo on the left (persists across every step), the flow on the
+ * right. Light/dark follows the portal theme (.spaire-portal.sp-dark).
+ *
+ * All classes are prefixed `spauth-` and scoped under .spaire-portal so the
+ * design never leaks into the rest of the portal or the dashboard.
+ * ===========================================================================*/
+
+.spaire-portal .spauth {
+  --au-bg: #f5f5f7;
+  --au-panel: #ffffff;
+  --au-ink: #1d1d1f;
+  --au-t2: #6e6e73;
+  --au-t3: #86868b;
+  --au-fill: rgba(0, 0, 0, 0.045);
+  --au-field: #ffffff;
+  --au-field-line: rgba(0, 0, 0, 0.18);
+  --au-accent: #0066cc;
+  --au-good: #1d8a4e;
+  --au-danger: #d8472b;
+  /* neutral, blends with the theme while the photo is empty */
+  --au-visual-base: #e9e9ee;
+  --au-po:
+    'Poppins', var(--font-poppins), ui-sans-serif, -apple-system,
+    BlinkMacSystemFont, system-ui, sans-serif;
+
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  min-height: 100vh;
+  color: var(--au-ink);
+  background: var(--au-bg);
+  font-size: 16px;
+  line-height: 1.47;
+  letter-spacing: -0.018em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.spaire-portal.sp-dark .spauth {
+  --au-bg: #0c0c10;
+  --au-panel: #0e0e13;
+  --au-ink: #f5f5f7;
+  --au-t2: rgba(245, 245, 247, 0.62);
+  --au-t3: rgba(245, 245, 247, 0.42);
+  --au-fill: rgba(255, 255, 255, 0.07);
+  --au-field: rgba(255, 255, 255, 0.055);
+  --au-field-line: rgba(255, 255, 255, 0.18);
+  --au-accent: #2997ff;
+  --au-good: #3ad07e;
+  --au-visual-base: #161619;
+}
+
+.spaire-portal .spauth *,
+.spaire-portal .spauth *::before,
+.spaire-portal .spauth *::after {
+  box-sizing: border-box;
+}
+
+/* ---------- left: creator photo ---------- */
+.spauth-visual {
+  position: relative;
+  background: var(--au-visual-base);
+  overflow: hidden;
+}
+.spauth-visual-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* gentle scrim so any photo reads, and a brand line can sit on it */
+.spauth-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 12, 11, 0.3) 0%,
+    transparent 26%,
+    transparent 58%,
+    rgba(8, 12, 11, 0.52) 100%
+  );
+  opacity: 0.9;
+}
+/* no photo → drop the scrim so the empty panel stays a clean neutral */
+.spauth-visual:not([data-filled]) .spauth-scrim {
+  opacity: 0;
+}
+/* org name, top-left over the photo */
+.spauth-brand {
+  position: absolute;
+  top: 34px;
+  left: 40px;
+  z-index: 3;
+  pointer-events: none;
+  max-width: 78%;
+  color: #fff;
+  font-family: var(--au-po);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 18px rgba(0, 0, 0, 0.4);
+}
+/* no photo → neutral panel; render the name in ink instead of white */
+.spauth-visual:not([data-filled]) .spauth-brand {
+  color: var(--au-ink);
+  text-shadow: none;
+}
+
+/* ---------- right: the flow ---------- */
+.spauth-panel {
+  position: relative;
+  background: var(--au-panel);
+  display: flex;
+  flex-direction: column;
+}
+.spauth-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 22px 26px 0;
+}
+.spauth-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--au-t2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    transform 0.15s;
+}
+.spauth-toggle:hover {
+  background: var(--au-fill);
+  color: var(--au-ink);
+}
+.spauth-toggle:active {
+  transform: scale(0.92);
+}
+
+.spauth-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 40px 56px;
+}
+.spauth-inner {
+  width: 100%;
+  max-width: 392px;
+  animation: spauthIn 0.42s cubic-bezier(0.22, 1, 0.3, 1);
+}
+@keyframes spauthIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* eyebrow with lock */
+.spauth-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--au-t3);
+  margin-bottom: 18px;
+}
+
+.spauth-title {
+  font-family: var(--au-po);
+  font-weight: 600;
+  font-size: 33px;
+  letter-spacing: -0.022em;
+  line-height: 1.08;
+  color: var(--au-ink);
+}
+.spauth-sub {
+  margin-top: 13px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--au-t2);
+  text-wrap: pretty;
+}
+.spauth-sub b {
+  color: var(--au-ink);
+  font-weight: 600;
+}
+
+/* field */
+.spauth-field {
+  margin-top: 26px;
+}
+.spauth-field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--au-t2);
+  margin-bottom: 9px;
+}
+.spauth-field-input {
+  width: 100%;
+  height: 54px;
+  border-radius: 13px;
+  background: var(--au-field);
+  color: var(--au-ink);
+  border: 1px solid var(--au-field-line);
+  padding: 0 16px;
+  font-size: 17px;
+  font-family: inherit;
+  letter-spacing: inherit;
+  outline: none;
+  transition:
+    border-color 0.16s,
+    box-shadow 0.16s,
+    background 0.16s;
+}
+.spauth-field-input::placeholder {
+  color: var(--au-t3);
+}
+.spauth-field-input:focus {
+  border-color: var(--au-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--au-accent) 16%, transparent);
+}
+.spauth-field.spauth-err .spauth-field-input {
+  border-color: var(--au-danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--au-danger) 14%, transparent);
+}
+.spauth-field-msg {
+  font-size: 13px;
+  color: var(--au-danger);
+  margin-top: 9px;
+}
+
+/* primary button */
+.spauth-btn {
+  width: 100%;
+  height: 54px;
+  margin-top: 22px;
+  border-radius: 13px;
+  background: var(--au-ink);
+  color: var(--au-bg);
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  transition:
+    opacity 0.18s,
+    transform 0.12s;
+}
+.spauth-btn:hover {
+  opacity: 0.86;
+}
+.spauth-btn:active {
+  transform: scale(0.99);
+}
+.spauth-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.spauth-spin {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-top-color: currentColor;
+  animation: spauthSpin 0.7s linear infinite;
+}
+@keyframes spauthSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* tertiary / inline links */
+.spauth-link {
+  color: var(--au-accent);
+  font-weight: 500;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+}
+.spauth-link:hover {
+  text-decoration: underline;
+}
+
+.spauth-footnote {
+  margin-top: 28px;
+  font-size: 13.5px;
+  color: var(--au-t3);
+  line-height: 1.5;
+}
+.spauth-footnote a {
+  color: var(--au-t2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.spauth-footnote a:hover {
+  color: var(--au-ink);
+}
+
+/* back row */
+.spauth-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--au-t2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 20px;
+  transition: color 0.15s;
+}
+.spauth-back:hover {
+  color: var(--au-ink);
+}
+
+/* ---------- code step ---------- */
+.spauth-codegrid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+.spauth-codecell {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  border-radius: 12px;
+  text-align: center;
+  background: var(--au-field);
+  color: var(--au-ink);
+  border: 1px solid var(--au-field-line);
+  font-size: 24px;
+  font-weight: 600;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition:
+    border-color 0.16s,
+    box-shadow 0.16s,
+    transform 0.12s;
+}
+.spauth-codecell:focus {
+  border-color: var(--au-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--au-accent) 16%, transparent);
+}
+.spauth-codecell.spauth-filled {
+  border-color: color-mix(in srgb, var(--au-accent) 55%, var(--au-field-line));
+}
+.spauth-codegrid.spauth-err .spauth-codecell {
+  border-color: var(--au-danger);
+  animation: spauthShake 0.4s;
+}
+@keyframes spauthShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+.spauth-codemeta {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--au-t2);
+}
+.spauth-resend.spauth-waiting {
+  color: var(--au-t3);
+  cursor: default;
+}
+.spauth-resend.spauth-waiting:hover {
+  text-decoration: none;
+}
+
+/* ---------- success step ---------- */
+.spauth-success {
+  text-align: center;
+  padding-top: 8px;
+}
+.spauth-badge {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  margin: 0 auto 26px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--au-good) 14%, transparent);
+  color: var(--au-good);
+  animation: spauthBadgePop 0.5s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+@keyframes spauthBadgePop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.spauth-badge svg {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: spauthDrawCheck 0.5s 0.2s forwards ease;
+}
+@keyframes spauthDrawCheck {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.spauth-success .spauth-title {
+  font-size: 30px;
+}
+.spauth-success .spauth-sub {
+  margin: 13px auto 0;
+}
+.spauth-success .spauth-btn {
+  margin-top: 30px;
+}
+
+/* the radio / account-picker list reuses the panel tone */
+.spauth-accounts {
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.spauth-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 15px 16px;
+  border-radius: 13px;
+  background: var(--au-field);
+  border: 1px solid var(--au-field-line);
+  color: var(--au-ink);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.16s,
+    background 0.16s;
+}
+.spauth-account:hover {
+  border-color: color-mix(in srgb, var(--au-accent) 45%, var(--au-field-line));
+}
+.spauth-account.spauth-selected {
+  border-color: var(--au-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-accent) 14%, transparent);
+}
+.spauth-account-dot {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid var(--au-field-line);
+  display: grid;
+  place-items: center;
+}
+.spauth-account.spauth-selected .spauth-account-dot {
+  border-color: var(--au-accent);
+}
+.spauth-account.spauth-selected .spauth-account-dot::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--au-accent);
+}
+
+/* ---------- responsive: stack, photo on top ---------- */
+@media (max-width: 860px) {
+  .spaire-portal .spauth {
+    grid-template-columns: 1fr;
+    grid-template-rows: 38vh 1fr;
+  }
+  .spauth-foot {
+    left: 28px;
+    bottom: 24px;
+  }
+  .spauth-line {
+    font-size: 21px;
+  }
+  .spauth-stage {
+    padding: 16px 26px 44px;
+  }
+  .spauth-topbar {
+    padding: 16px 18px 0;
+  }
+}
+@media (max-width: 420px) {
+  .spauth-codegrid {
+    gap: 7px;
+  }
+  .spauth-codecell {
+    font-size: 20px;
+    border-radius: 10px;
+  }
+  .spauth-title {
+    font-size: 29px;
+  }
+}
+
+/* =============================================================================
+ * Embedded editor — the course builder's "Auth" tab renders this same scene
+ * full-bleed under the tabs and makes the left photo editable in place
+ * (upload + drag-to-reposition), mirroring the Landing canvas.
+ * ===========================================================================*/
+.spaire-portal .spauth--embed {
+  min-height: 0;
+  height: 100%;
+}
+
+/* the left photo, in edit mode, is a drag surface */
+.spauth-visual--editable {
+  cursor: grab;
+  user-select: none;
+}
+.spauth-visual--editable.spauth-dragging {
+  cursor: grabbing;
+}
+
+/* floating controls over the photo (creator-only), centered so they're seen */
+.spauth-edit-tools {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.spauth-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 980px;
+  background: rgba(18, 20, 22, 0.62);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  transition:
+    background 0.15s,
+    transform 0.12s;
+}
+.spauth-edit-btn:hover {
+  background: rgba(32, 34, 36, 0.82);
+}
+.spauth-edit-btn:active {
+  transform: scale(0.97);
+}
+.spauth-edit-btn--danger {
+  background: rgba(150, 30, 22, 0.66);
+}
+.spauth-edit-btn--danger:hover {
+  background: rgba(178, 38, 28, 0.82);
+}
+
+/* "Drag to reposition" hint, centered top, on hover */
+.spauth-edit-hint {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 980px;
+  background: rgba(18, 20, 22, 0.62);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.spauth-visual--editable:hover .spauth-edit-hint {
+  opacity: 1;
+}
+
+/* empty state when there's no image at all (no upload, no course cover) */
+.spauth-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 24px;
+  cursor: pointer;
+}
+.spauth-empty-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--au-fill);
+  color: var(--au-t2);
+}
+.spauth-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--au-ink);
+}
+.spauth-empty-sub {
+  font-size: 13px;
+  color: var(--au-t3);
+  max-width: 260px;
+}
+
+/* in the editor the fake form is non-interactive, but the theme toggle in the
+   top bar stays clickable (it's the creator's appearance control) */
+.spauth-panel--preview .spauth-stage {
+  pointer-events: none;
+}

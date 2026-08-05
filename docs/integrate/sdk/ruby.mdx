@@ -1,0 +1,53 @@
+---
+title: "Ruby SDK"
+sidebarTitle: "Ruby"
+icon: diamond
+description: SDK for Ruby (>=3.0)
+---
+
+## Installation
+
+```bash Terminal
+gem install spaire
+```
+
+Or add it to your `Gemfile`:
+
+```ruby Gemfile
+gem 'spaire'
+```
+
+Then run:
+
+```bash Terminal
+bundle install
+```
+
+## Quickstart
+
+```ruby main.rb
+require 'spaire'
+
+s = OpenApiSDK::Spaire.new(
+  access_token: ENV['SPAIRE_ACCESS_TOKEN']
+)
+
+res = s.organizations.list(page: 1, limit: 10)
+
+if res.list_resource_organization
+  res.list_resource_organization.items.each do |org|
+    puts org.id
+  end
+end
+```
+
+## Sandbox Environment
+
+You can configure the SDK to hit the [sandbox environment](/integrate/sandbox) instead of production by passing the server URL when instantiating the client:
+
+```ruby
+s = OpenApiSDK::Spaire.new(
+  server_url: 'https://sandbox-api.spairehq.com',
+  access_token: ENV['SPAIRE_ACCESS_TOKEN']
+)
+```

@@ -1,0 +1,78 @@
+name: Client
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    types: [opened, synchronize, edited]
+
+defaults:
+  run:
+    working-directory: ./clients
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: "Detect changes"
+    runs-on: ubuntu-latest
+    outputs:
+      clients: ${{ steps.filter.outputs.clients }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            clients:
+              - 'clients/**'
+              - '.github/workflows/test_client.yaml'
+
+  build:
+    name: "Client: Tests 🎨"
+    needs: changes
+    if: needs.changes.outputs.clients == 'true'
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      VERCEL_ENV: "testing"
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: clients/package.json
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: clients/.node-version
+          cache: "pnpm"
+          cache-dependency-path: "clients/pnpm-lock.yaml"
+
+      - name: 📦 Install dependencies
+        run: pnpm install
+
+      - name: 💅Lint
+        run: pnpm run lint
+
+      - name: 👀 Typecheck
+        run: pnpm run typecheck
+
+      - name: "🧪 Test: App"
+        run: pnpm --filter @polar-sh/app test
+
+      - name: "🧪 Test: Customer Portal (SDK)"
+        run: pnpm --filter @polar-sh/customer-portal test
+
+      - name: "🧪 Test: @polar-sh/currency"
+        run: pnpm --filter @polar-sh/currency test
+
+      - name: 🛠️ Build
+        run: pnpm build

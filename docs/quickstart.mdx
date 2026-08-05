@@ -1,0 +1,113 @@
+---
+title: "Quickstart"
+description: "Create a product and run your first checkout in under 5 minutes."
+---
+
+This guide walks you through your first Spaire checkout — creating a product, getting a checkout link, and running a test transaction. No code required.
+
+<Tip>
+  Start in the **sandbox** at [sandbox.spairehq.com](https://sandbox.spairehq.com) if you want to test with no real money involved. The sandbox is a fully isolated environment with its own accounts — see [Sandbox](/integrate/sandbox) for details.
+</Tip>
+
+## Step 1: Create your account
+
+Go to [app.spairehq.com](https://app.spairehq.com) and sign up. After verifying your email, you'll land in your organization dashboard.
+
+Your **organization** is the container for everything in Spaire — your products, customers, orders, API tokens, webhooks, and payout account. You can run multiple organizations from one account if you have separate products or brands.
+
+## Step 2: Create a product
+
+Navigate to **Catalog → Products** and click **New product**.
+
+Fill in the basics:
+
+- **Name** — what your customers will see at checkout (e.g., *Pro Plan*)
+- **Description** — optional, Markdown supported
+- **Pricing** — choose how you want to bill:
+
+| Billing model | When to use |
+|---------------|-------------|
+| Recurring — monthly | Subscription billed every month |
+| Recurring — yearly | Subscription billed every year |
+| One-time | Single charge, no renewal |
+
+Set your price and currency — Spaire supports 36 currencies including USD, EUR, GBP, CAD, AUD, JPY, and more.
+
+Click **Create product**. It's immediately available to sell.
+
+<Info>
+  Billing cycle and pricing type are locked once set. If you need to change them later, create a new product. You can present both a monthly and yearly option at checkout by creating two products and linking them together.
+</Info>
+
+## Step 3: Get a checkout link
+
+The fastest way to start selling is a **checkout link** — a permanent, hosted payment page you can share anywhere.
+
+1. Open your product and click **Share**, or go to **Checkout → Links → New link**
+2. Select your product
+3. Click **Create**
+
+You'll get a URL you can drop into an email, a landing page button, your pricing page, or anywhere else.
+
+## Step 4: Test the checkout
+
+**In sandbox:** Use the test card `4242 4242 4242 4242` with any future expiry and any 3-digit CVC. See [Sandbox](/integrate/sandbox) for the full list of test scenarios.
+
+**In production:** Create a 100% discount and apply it at checkout — the order goes through the full payment flow without charging a real card.
+
+<AccordionGroup>
+  <Accordion title="How to create a 100% test discount">
+    1. Go to **Catalog → Discounts → New discount**
+    2. Set **Type** to *Percentage*
+    3. Set the value to **100%**
+    4. Set **Duration** to *Once*
+    5. Optionally add a **Code** (e.g., `TESTORDER`) to apply it manually at checkout
+    6. Click **Create**
+
+    To apply it automatically, attach the discount when creating a checkout link. Or share the link and enter the code at checkout.
+
+    Delete or deactivate the discount when you're done testing.
+  </Accordion>
+</AccordionGroup>
+
+After a successful checkout, the order appears under **Orders** and the customer is created automatically under **Customers**. Any benefits attached to the product are granted immediately.
+
+## Step 5: Get your API key
+
+To integrate Spaire into your application — creating checkout sessions from your backend, querying customer state, handling webhooks — you need an access token.
+
+1. Go to **Settings → Developers → Access Tokens**
+2. Click **New token**, give it a name, and click **Create**
+3. Copy the token — it won't be shown again
+
+```bash
+export SPAIRE_ACCESS_TOKEN="spaire_..."
+```
+
+Verify it works:
+
+```bash
+curl https://api.spairehq.com/v1/products \
+  -H "Authorization: Bearer $SPAIRE_ACCESS_TOKEN"
+```
+
+<Warning>
+  Never expose your access token in client-side code or commit it to version control. Rotate it immediately from **Settings → Developers** if it's ever compromised.
+</Warning>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="cube" href="/core-concepts" title="Core Concepts">
+    Understand the full data model before you go deeper into the API.
+  </Card>
+  <Card icon="webhook" href="/integrate/webhooks/endpoints" title="Set up webhooks">
+    Listen for `order.paid` and `subscription.active` to react to purchases in your application.
+  </Card>
+  <Card icon="code" href="/integrate/sdk/typescript" title="Install an SDK">
+    Use the TypeScript, Python, Go, PHP, or Ruby SDK to build your integration faster.
+  </Card>
+  <Card icon="person-running" href="/integrate/customer-state" title="Check customer state">
+    Query everything a customer can currently access — in a single API call.
+  </Card>
+</CardGroup>

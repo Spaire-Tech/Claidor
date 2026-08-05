@@ -1,0 +1,112 @@
+---
+title: "Orders & Subscriptions"
+sidebarTitle: "Overview"
+description: "Understand how orders and subscriptions work in Spaire — the core objects behind every sale."
+---
+
+Every sale on Spaire produces at least one **order**. Recurring products also create a **subscription** that drives the billing cycle. This page explains how these objects relate, where to find them, and what their states mean.
+
+## Orders
+
+An order is the record of a single charge. Every completed checkout creates one. For subscriptions, a new order is created at each renewal.
+
+### Order statuses
+
+| Status | Meaning |
+|--------|---------|
+| `pending` | Charge initiated, awaiting confirmation |
+| `paid` | Payment confirmed |
+| `refunded` | Fully refunded |
+| `partially_refunded` | Partially refunded |
+
+### Billing reasons
+
+The `billing_reason` field on an order tells you why the charge occurred:
+
+| Reason | When |
+|--------|------|
+| `purchase` | One-time product purchase |
+| `subscription_create` | First charge when a subscription activates |
+| `subscription_cycle` | Renewal at the start of a new billing period |
+| `subscription_update` | Proration charge when switching products or adding seats |
+| `client_invoice` | Manually created invoice |
+
+### View orders
+
+Go to **Sales → Orders** to see all orders with filters for customer, product, and status.
+
+## Subscriptions
+
+A subscription tracks a recurring billing relationship between a customer and a product. Spaire manages the full lifecycle: trial, activation, renewal, upgrades, cancellation, and final billing.
+
+### Subscription statuses
+
+| Status | Meaning |
+|--------|---------|
+| `incomplete` | Created but initial payment not yet confirmed |
+| `incomplete_expired` | Never completed, no longer actionable |
+| `trialing` | In a free trial period — no charges yet |
+| `active` | Paid and current |
+| `past_due` | Payment failed, in retry / grace period |
+| `canceled` | Scheduled to end at period end, or already ended |
+| `unpaid` | Final payment failed, access revoked |
+
+**Active states**: `trialing`, `active`
+
+**Revoked states**: `canceled`, `unpaid`
+
+### Key subscription fields
+
+| Field | Description |
+|-------|-------------|
+| `current_period_start` | Start of the current billing period |
+| `current_period_end` | End of the current billing period — next charge date |
+| `started_at` | When the subscription first went active |
+| `ends_at` | When the subscription is scheduled to end |
+| `cancel_at_period_end` | `true` if the customer has canceled but access continues until period end |
+| `seats` | Number of seats (seat-based products only) |
+| `meters` | Usage data for any metered prices |
+
+### Upgrade and downgrade
+
+To move a subscriber to a different product, update the subscription's product via the API or the dashboard. You control whether to apply prorations immediately or at the next renewal.
+
+### Cancel at period end
+
+When a customer cancels, the subscription by default remains active until `current_period_end`. The subscription stays in `active` status, `cancel_at_period_end` becomes `true`, and no further renewals are scheduled.
+
+You can reverse a cancellation before the period ends. After the period ends, the subscription moves to `canceled`.
+
+### Revoke immediately
+
+To end a subscription right away — no grace period — revoke it directly. Access is removed immediately and the subscription moves to `canceled`.
+
+### Checkout sessions view
+
+Go to **Sales → Checkouts** to see all checkout sessions and filter by customer, status, or product. Checkout statuses:
+
+| Status | Meaning |
+|--------|---------|
+| `open` | Waiting for the customer to complete payment |
+| `confirmed` | Customer clicked Pay — payment is processing |
+| `succeeded` | Payment succeeded, order created |
+| `expired` | Session timed out — a new session must be created |
+
+Click any checkout to see payment attempts and failure reasons.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="clock" href="/features/trials" title="Trials">
+    Offer free trials on subscription products.
+  </Card>
+  <Card icon="users" href="/features/seat-based-pricing" title="Seat-Based Pricing">
+    Sell team subscriptions with per-seat billing and tiered pricing.
+  </Card>
+  <Card icon="chart-bar" href="/features/usage-based-billing/introduction" title="Usage-Based Billing">
+    Charge customers based on events ingested from your application.
+  </Card>
+  <Card icon="arrows-rotate" href="/features/refunds" title="Refunds">
+    Issue full or partial refunds on any order.
+  </Card>
+</CardGroup>

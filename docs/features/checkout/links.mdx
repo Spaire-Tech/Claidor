@@ -1,0 +1,124 @@
+---
+title: "Checkout Links"
+sidebarTitle: "Checkout Links"
+description: "A permanent, shareable URL that takes customers straight to a hosted payment page. No code required."
+---
+
+A checkout link is the fastest way to start accepting payments. Create one from your dashboard, share the URL anywhere — your site, an email, a button, a QR code — and Spaire handles the rest.
+
+Checkout links are **persistent**. The URL never expires. Each time a customer opens it, Spaire creates a short-lived checkout session for that visit. Copy the link once and use it forever.
+
+## Create a checkout link
+
+Go to **Checkout → Links** and click **New link**.
+
+**Label** — an internal name only you see. Helps you stay organized across multiple links.
+
+**Products** — select one or more products. When you attach multiple products, the customer can switch between them at checkout before paying. This is the recommended way to offer monthly and yearly pricing side by side.
+
+**Discount** — optionally attach a discount that gets applied automatically when the customer lands on the page. You can also disable discount code entry entirely if you don't want customers to apply codes manually.
+
+**Metadata** — an optional key-value object stored on the checkout session and copied to the resulting order and subscription. Useful for tracking attribution or segmenting sales by channel.
+
+Click **Create**. Copy the URL and put it anywhere.
+
+## Share and use
+
+The link URL looks like:
+```
+https://buy.spairehq.com/{org}/{link-id}
+```
+
+Drop it into:
+- A button on your pricing page
+- An email campaign
+- Your docs or README
+- A QR code
+
+<Warning>
+  Always share the checkout **link** URL — not the URL of an open checkout session. Sessions are temporary and expire after one hour. If you copy the URL from an active checkout page, that link will break.
+</Warning>
+
+## Pre-fill fields with query parameters
+
+Append query parameters to your checkout link URL to pre-populate fields for the customer.
+
+### Customer info
+
+<ParamField path="customer_email" type="string">
+  Pre-fill the customer's email address.
+</ParamField>
+
+<ParamField path="customer_name" type="string">
+  Pre-fill the customer's name.
+</ParamField>
+
+### Pricing
+
+<ParamField path="amount" type="integer">
+  Pre-fill the amount for pay-what-you-want (`custom`) pricing.
+</ParamField>
+
+<ParamField path="discount_code" type="string">
+  Pre-apply a discount code.
+</ParamField>
+
+### Custom fields
+
+<ParamField path="custom_field_data.{slug}" type="string">
+  Pre-fill a custom field value, where `{slug}` is the field's slug from your organization settings.
+</ParamField>
+
+### Attribution
+
+These parameters are stored automatically in the checkout session's `metadata` field for analytics and attribution tracking.
+
+<ParamField path="reference_id" type="string">
+  Your own reference ID for this session.
+</ParamField>
+
+<ParamField path="utm_source" type="string">
+  UTM source.
+</ParamField>
+
+<ParamField path="utm_medium" type="string">
+  UTM medium.
+</ParamField>
+
+<ParamField path="utm_campaign" type="string">
+  UTM campaign.
+</ParamField>
+
+<ParamField path="utm_content" type="string">
+  UTM content.
+</ParamField>
+
+<ParamField path="utm_term" type="string">
+  UTM term.
+</ParamField>
+
+### Example
+
+```
+https://buy.spairehq.com/acme/pro-monthly?customer_email=jane@example.com&utm_source=email&utm_campaign=launch
+```
+
+## What happens after payment
+
+Once a customer completes checkout:
+
+- An **order** is created and appears under **Sales → Orders**
+- A **customer** is created automatically (or matched to an existing one by email)
+- Any **benefits** attached to the product are granted immediately
+- Your [webhooks](/integrate/webhooks/endpoints) receive an `order.paid` or `subscription.active` event
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="code" href="/features/checkout/embed" title="Embedded Checkout">
+    Render checkout as a modal or inline widget — no redirect needed.
+  </Card>
+  <Card icon="server" href="/features/checkout/session" title="Checkout Sessions">
+    Generate checkout sessions from your backend for fully custom flows.
+  </Card>
+</CardGroup>

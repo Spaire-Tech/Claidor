@@ -1,0 +1,276 @@
+import builtins
+import uuid
+from typing import Annotated
+
+from fastapi import Depends, Query
+
+from polar.benefit.schemas import BenefitID
+from polar.exceptions import NotPermitted, ResourceNotFound
+from polar.kit.address import Address
+from polar.kit.metadata import MetadataQuery, get_metadata_query_openapi_schema
+from polar.kit.pagination import ListResource, PaginationParamsQuery
+from polar.kit.schemas import MultipleQueryFilter
+from polar.kit.sorting import Sorting, SortingGetter
+from polar.models import Product
+from polar.models.product import ProductVisibility
+from polar.openapi import APITag
+from polar.organization.schemas import OrganizationID
+from polar.postgres import (
+    AsyncReadSession,
+    AsyncSession,
+    get_db_read_session,
+    get_db_session,
+)
+from polar.config import settings
+from polar.routing import APIRouter
+from polar.enums import TaxBehavior
+from polar.tax.calculation import get_tax_service
+from polar.tax.calculation.base import TaxCalculationError, TaxCode
+
+from . import auth
+from .schemas import Product as ProductSchema
+from .schemas import (
+    ProductBenefitsUpdate,
+    ProductCreate,
+    ProductID,
+    ProductTaxPreviewRequest,
+    ProductTaxPreviewResponse,
+    ProductUpdate,
+    TaxRatePreview,
+)
+from .service import product as product_service
+from .sorting import ProductSortProperty
+
+router = APIRouter(
+    prefix="/products",
+    tags=["products", APITag.public, APITag.mcp],
+)
+
+ProductNotFound = {
+    "description": "Product not found.",
+    "model": ResourceNotFound.schema(),
+}
+
+
+ListSorting = Annotated[
+    list[Sorting[ProductSortProperty]],
+    Depends(SortingGetter(ProductSortProperty, ["-created_at"])),
+]
+
+
+@router.get(
+    "/",
+    summary="List Products",
+    response_model=ListResource[ProductSchema],
+    openapi_extra={"parameters": [get_metadata_query_openapi_schema()]},
+)
+async def list(
+    pagination: PaginationParamsQuery,
+    sorting: ListSorting,
+    auth_subject: auth.CreatorProductsRead,
+    metadata: MetadataQuery,
+    id: MultipleQueryFilter[ProductID] | None = Query(
+        None, title="ProductID Filter", description="Filter by product ID."
+    ),
+    organization_id: MultipleQueryFilter[OrganizationID] | None = Query(
+        None, title="OrganizationID Filter", description="Filter by organization ID."
+    ),
+    query: str | None = Query(None, description="Filter by product name."),
+    is_archived: bool | None = Query(None, description="Filter on archived products."),
+    is_recurring: bool | None = Query(
+        None,
+        description=(
+            "Filter on recurring products. "
+            "If `true`, only subscriptions tiers are returned. "
+            "If `false`, only one-time purchase products are returned. "
+        ),
+    ),
+    benefit_id: MultipleQueryFilter[BenefitID] | None = Query(
+        None,
+        title="BenefitID Filter",
+        description="Filter products granting specific benefit.",
+    ),
+    visibility: builtins.list[ProductVisibility] | None = Query(
+        default=None,
+        description="Filter by visibility.",
+    ),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> ListResource[ProductSchema]:
+    """List products."""
+    results, count = await product_service.list(
+        session,
+        auth_subject,
+        id=id,
+        organization_id=organization_id,
+        query=query,
+        is_archived=is_archived,
+        is_recurring=is_recurring,
+        visibility=visibility,
+        benefit_id=benefit_id,
+        metadata=metadata,
+        pagination=pagination,
+        sorting=sorting,
+    )
+
+    return ListResource.from_paginated_results(
+        [ProductSchema.model_validate(result) for result in results],
+        count,
+        pagination,
+    )
+
+
+@router.get(
+    "/{id}",
+    summary="Get Product",
+    response_model=ProductSchema,
+    responses={404: ProductNotFound},
+)
+async def get(
+    id: ProductID,
+    auth_subject: auth.CreatorProductsRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> Product:
+    """Get a product by ID."""
+    product = await product_service.get(session, auth_subject, id)
+
+    if product is None:
+        raise ResourceNotFound()
+
+    return product
+
+
+@router.post(
+    "/",
+    response_model=ProductSchema,
+    status_code=201,
+    summary="Create Product",
+    responses={201: {"description": "Product created."}},
+)
+async def create(
+    product_create: ProductCreate,
+    auth_subject: auth.CreatorProductsWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> Product:
+    """Create a product."""
+    return await product_service.create(session, product_create, auth_subject)
+
+
+@router.patch(
+    "/{id}",
+    response_model=ProductSchema,
+    summary="Update Product",
+    responses={
+        200: {"description": "Product updated."},
+        403: {
+            "description": "You don't have the permission to update this product.",
+            "model": NotPermitted.schema(),
+        },
+        404: ProductNotFound,
+    },
+)
+async def update(
+    id: ProductID,
+    product_update: ProductUpdate,
+    auth_subject: auth.CreatorProductsWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> Product:
+    """Update a product."""
+    product = await product_service.get(session, auth_subject, id)
+
+    if product is None:
+        raise ResourceNotFound()
+
+    return await product_service.update(session, product, product_update, auth_subject)
+
+
+@router.post(
+    "/{id}/benefits",
+    response_model=ProductSchema,
+    summary="Update Product Benefits",
+    responses={
+        200: {"description": "Product benefits updated."},
+        403: {
+            "description": "You don't have the permission to update this product.",
+            "model": NotPermitted.schema(),
+        },
+        404: ProductNotFound,
+    },
+)
+async def update_benefits(
+    id: ProductID,
+    benefits_update: ProductBenefitsUpdate,
+    auth_subject: auth.CreatorProductsWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> Product:
+    """Update benefits granted by a product."""
+    product = await product_service.get(session, auth_subject, id)
+
+    if product is None:
+        raise ResourceNotFound()
+
+    product, _, _ = await product_service.update_benefits(
+        session, product, benefits_update.benefits, auth_subject
+    )
+    return product
+
+
+@router.post(
+    "/tax-preview",
+    response_model=ProductTaxPreviewResponse,
+    summary="Preview Tax",
+    tags=["products"],
+)
+async def preview_tax(
+    preview_request: ProductTaxPreviewRequest,
+    auth_subject: auth.CreatorProductsRead,
+) -> ProductTaxPreviewResponse:
+    """
+    Estimate tax for a product price given a customer location and quantity.
+    Uses the configured tax provider (Stripe Tax) to calculate applicable taxes.
+    """
+    quantity = preview_request.quantity
+    subtotal = preview_request.amount * quantity
+
+    try:
+        address = Address(country=preview_request.country, state=preview_request.state)  # type: ignore[arg-type]
+        tax_service = get_tax_service(settings.DEFAULT_TAX_PROCESSOR)
+        calculation = await tax_service.calculate(
+            identifier=uuid.uuid4(),
+            currency=preview_request.currency,
+            amount=subtotal,
+            tax_behavior=TaxBehavior.exclusive,
+            tax_code=TaxCode.general_electronically_supplied_services,
+            address=address,
+            tax_ids=[],
+            customer_exempt=False,
+        )
+    except TaxCalculationError:
+        return ProductTaxPreviewResponse(
+            subtotal=subtotal,
+            tax_amount=0,
+            total=subtotal,
+            currency=preview_request.currency,
+            quantity=quantity,
+        )
+
+    tax_amount = calculation["amount"]
+    tax_rate: TaxRatePreview | None = None
+    raw_rate = calculation.get("tax_rate")
+    if raw_rate:
+        basis_points = raw_rate.get("basis_points")
+        tax_rate = TaxRatePreview(
+            display_name=raw_rate["display_name"],
+            percentage=basis_points / 100 if basis_points is not None else None,
+        )
+
+    taxability_reason = calculation.get("taxability_reason")
+
+    return ProductTaxPreviewResponse(
+        subtotal=subtotal,
+        tax_amount=tax_amount,
+        total=subtotal + tax_amount,
+        currency=preview_request.currency,
+        quantity=quantity,
+        tax_rate=tax_rate,
+        taxability_reason=str(taxability_reason) if taxability_reason else None,
+    )

@@ -1,0 +1,21 @@
+{
+  "name": "backoffice",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:css": "tailwindcss -i ./styles.css -o ./static/styles.css && cp $(pnpm root)/lucide-static/font/lucide.* static/",
+    "build:js": "esbuild scripts.mjs --bundle --minify --outfile=./static/scripts.js",
+    "build": "npm run build:css && npm run build:js"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.17",
+    "@tailwindcss/postcss": "^4.1.17",
+    "daisyui": "^5.4.7",
+    "esbuild": "^0.25.12",
+    "event-source-plus": "^0.1.15",
+    "htmx.org": "^2.0.8",
+    "hyperscript.org": "^0.9.14",
+    "lucide-static": "^0.552.0",
+    "tailwindcss": "^4.1.17"
+  }
+}

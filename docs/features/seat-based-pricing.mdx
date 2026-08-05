@@ -1,0 +1,130 @@
+---
+title: "Seat-Based Pricing"
+description: "Sell team products where one billing manager pays for a pool of seats and assigns them to team members."
+---
+
+Seat-based pricing is for products sold to teams. One person (the billing manager) buys a number of seats and assigns them to individuals by email. Each seat holder gets their own access to the product's benefits — the billing manager gets none.
+
+Works for both **subscriptions** (recurring billing per seat) and **one-time purchases** (perpetual seat access, no renewal).
+
+## How it works
+
+1. Billing manager checks out and selects the number of seats
+2. After payment, they assign seats via the customer portal or API
+3. Each assigned person receives an invitation email with a 24-hour claim link
+4. Claim link is single-use — once clicked, benefits are granted immediately
+5. Billing manager can revoke seats, resend expired invitations, and add more seats
+
+## Create a seat-based product
+
+In **Catalog → Products → New product**:
+
+1. Set the billing cycle: **Subscription** (monthly/yearly) or **One-time**
+2. Under **Pricing type**, select **Seat-based**
+3. Set pricing tiers:
+   - **Min seats** — the minimum a customer must purchase
+   - **Tiers** — each tier has a max seat count and a per-seat price
+
+**Example tier setup:**
+
+| Seats | Price per seat |
+|-------|---------------|
+| 1–4 | $10/seat/month |
+| 5–9 | $9/seat/month |
+| 10+ | $8/seat/month |
+
+When a customer moves between tiers (e.g., from 4 seats to 5), the new per-seat rate applies to **all seats**, not just the additional ones.
+
+<Info>
+  Benefits are only granted when a seat is claimed — not when the billing manager purchases. The billing manager has no direct access to product benefits.
+</Info>
+
+## Seat statuses
+
+| Status | Meaning |
+|--------|---------|
+| `pending` | Assigned, invitation sent, awaiting claim |
+| `claimed` | Team member accepted — benefits active |
+| `revoked` | Access removed, seat available for reassignment |
+
+## Assign a seat
+
+Via the customer portal (billing manager) or the API:
+
+<CodeGroup>
+
+```ts TypeScript (subscription)
+await spaire.customerSeats.assign({
+  subscriptionId: '<subscription_id>',
+  email: 'teammate@company.com',
+  metadata: {
+    department: 'Engineering',
+    role: 'Developer',
+  },
+})
+```
+
+```ts TypeScript (one-time order)
+await spaire.customerSeats.assign({
+  orderId: '<order_id>',
+  email: 'teammate@company.com',
+})
+```
+
+</CodeGroup>
+
+Optional fields: `externalCustomerId`, `customerId`, `metadata` (up to 10 keys, 1 KB total).
+
+Claim links expire after 24 hours. Resend from the portal or API if they expire.
+
+## Scale seats (subscriptions)
+
+**Add seats:**
+1. Update the subscription seat count
+2. Proration is calculated immediately for the current billing period
+3. New seats can be assigned right away
+
+**Remove seats:**
+1. Revoke enough claimed seats to reach the target count
+2. Update the subscription to the lower seat count
+3. Reduction takes effect at the next renewal
+
+<Warning>
+  You can't reduce the seat count below the number of currently claimed seats. Revoke seats first.
+</Warning>
+
+## One-time purchases
+
+Each order is an independent seat pool. To add more seats, purchase a new order — seats from multiple orders can coexist. All seats are perpetual and never expire. Seats can be revoked (access removed) but not refunded.
+
+## Webhooks
+
+| Event | When |
+|-------|------|
+| `subscription.created` | Seat-based subscription purchased |
+| `subscription.updated` | Seat count changed |
+| `order.created` | Seat-based one-time purchase completed |
+| `benefit_grant.created` | Seat claimed — benefits granted |
+| `benefit_grant.revoked` | Seat revoked — benefits removed |
+
+<Info>
+  `benefit_grant.created` fires per seat claim, not at purchase time. Use this event to provision access in your application.
+</Info>
+
+## Limits
+
+- Maximum 1,000 seats per subscription
+- Seat metadata: up to 10 keys, 1 KB total
+- Claim links expire after 24 hours
+- Seats must be assigned individually (use the API for bulk assignment)
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="chart-bar" href="/features/usage-based-billing/introduction" title="Usage-Based Billing">
+    Combine seat-based pricing with usage meters for hybrid billing.
+  </Card>
+  <Card icon="webhook" href="/integrate/webhooks/events" title="Webhooks">
+    Listen to benefit grant events to provision access in your app.
+  </Card>
+</CardGroup>

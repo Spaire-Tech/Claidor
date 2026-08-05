@@ -1,0 +1,286 @@
+# Frontend Development Guide
+
+Next.js web application with TypeScript, TanStack Query, and Tailwind CSS.
+
+## Quick Commands
+
+```bash
+pnpm dev          # Start dev server (http://127.0.0.1:3000)
+pnpm build        # Production build
+pnpm lint         # Run linting
+pnpm test         # Run tests
+pnpm generate     # Generate API client from OpenAPI
+pnpm typecheck    # Type checking (in apps/web)
+```
+
+## Project Structure
+
+```
+clients/
+├── apps/
+│   └── web/                    # Main Next.js application
+│       └── src/
+│           ├── app/            # App Router pages
+│           │   ├── (main)/     # Main layout (dashboard, org pages)
+│           │   └── (public)/   # Public pages
+│           └── hooks/          # React hooks
+├── packages/
+│   ├── ui/                     # Shared UI components
+│   │   └── src/components/
+│   │       ├── atoms/          # Basic components (Button, Input, Card)
+│   │       ├── molecules/      # Composite components (Banner)
+│   │       └── ui/             # shadcn/ui base components
+│   ├── client/                 # Generated API client
+│   ├── sdk/                    # Published SDK
+│   └── checkout/               # Checkout package
+```
+
+## Design System
+
+### Colors (oklch)
+
+```css
+/* Primary blues */
+blue-500   /* Primary actions, links */
+blue-600   /* Hover states */
+
+/* Grays */
+gray-50    /* Subtle backgrounds */
+gray-100   /* Card backgrounds */
+gray-200   /* Borders */
+gray-400   /* Secondary text */
+gray-500   /* Muted text */
+gray-900   /* Primary text */
+```
+
+### Border Radius
+
+```css
+rounded-lg     /* 8px - Small elements */
+rounded-xl     /* 12px - Buttons, cards (default) */
+rounded-2xl    /* 16px - Large cards */
+rounded-4xl    /* 32px - Hero sections */
+```
+
+### Shadows
+
+```css
+shadow-md   /* Standard elevation */
+shadow-lg   /* Elevated cards */
+shadow-xl   /* Modals, popovers */
+shadow-3xl  /* Hero elements */
+```
+
+## Component Patterns
+
+### Using CVA for Variants
+
+```tsx
+import { cva } from 'class-variance-authority'
+import { twMerge } from 'tailwind-merge'
+
+const buttonVariants = cva(
+  'inline-flex items-center justify-center rounded-xl text-sm font-medium',
+  {
+    variants: {
+      variant: {
+        default: 'bg-blue-500 text-white hover:bg-blue-600',
+        secondary:
+          'bg-gray-100 text-gray-900',
+        outline: 'border border-gray-200 bg-transparent',
+        ghost: 'hover:bg-gray-100',
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-8 px-3 text-xs',
+        lg: 'h-12 px-5',
+        icon: 'h-8 w-8',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  },
+)
+
+const Button = ({ className, variant, size, ...props }) => (
+  <button
+    className={twMerge(buttonVariants({ variant, size }), className)}
+    {...props}
+  />
+)
+```
+
+### Card Pattern
+
+```tsx
+<div className="rounded-xl border border-gray-200 bg-white p-4">
+  <h3 className="text-lg font-medium text-gray-900">Title</h3>
+  <p className="text-gray-500">Description</p>
+</div>
+```
+
+### ShadowBox Pattern
+
+```tsx
+import { ShadowBox } from '@spaire/ui'
+;<ShadowBox>{/* Content with consistent card styling */}</ShadowBox>
+```
+
+## Data Fetching with TanStack Query
+
+### Query Pattern
+
+```tsx
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@/utils/api'
+
+const useProducts = (organizationId: string) => {
+  return useQuery({
+    queryKey: ['products', organizationId],
+    queryFn: () => api.products.list({ organizationId }),
+    enabled: !!organizationId,
+  })
+}
+
+// In component
+const { data: products, isLoading, error } = useProducts(orgId)
+```
+
+### Mutation Pattern
+
+```tsx
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+const useCreateProduct = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: ProductCreate) => api.products.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+  })
+}
+```
+
+## State Management with Zustand
+
+```tsx
+import { create } from 'zustand'
+
+interface AppState {
+  sidebarOpen: boolean
+  toggleSidebar: () => void
+}
+
+const useAppStore = create<AppState>((set) => ({
+  sidebarOpen: true,
+  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+}))
+```
+
+## Form Handling
+
+```tsx
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+
+const schema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email'),
+})
+
+const MyForm = () => {
+  const form = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { name: '', email: '' },
+  })
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      <Input {...form.register('name')} />
+      {form.formState.errors.name && (
+        <span className="text-sm text-red-500">
+          {form.formState.errors.name.message}
+        </span>
+      )}
+    </form>
+  )
+}
+```
+
+## Imports from @spaire/ui
+
+```tsx
+// Atoms
+import Button from '@spaire/ui/components/atoms/Button'
+import { Input } from '@spaire/ui/components/atoms/Input'
+import {
+  Card,
+  CardHeader,
+  CardContent,
+} from '@spaire/ui/components/atoms/Card'
+import { ShadowBox } from '@spaire/ui/components/atoms/ShadowBox'
+import { Avatar } from '@spaire/ui/components/atoms/Avatar'
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@spaire/ui/components/atoms/Tabs'
+
+// Molecules
+import { Banner } from '@spaire/ui/components/molecules/Banner'
+
+// Utils
+import { cn } from '@spaire/ui/lib/utils' // className merger
+```
+
+## Common Patterns
+
+### Loading States
+
+```tsx
+if (isLoading) {
+  return (
+    <div className="h-32 animate-pulse rounded-xl bg-gray-100" />
+  )
+}
+```
+
+### Empty States
+
+```tsx
+if (!data?.length) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <p className="text-gray-500">No items found</p>
+      <Button variant="secondary" className="mt-4">
+        Create First Item
+      </Button>
+    </div>
+  )
+}
+```
+
+### Error Handling
+
+```tsx
+if (error) {
+  return (
+    <div className="rounded-xl bg-red-50 p-4 text-red-600">
+      {error.message}
+    </div>
+  )
+}
+```
+
+## Reference Files
+
+- Button component: `packages/ui/src/components/atoms/Button.tsx`
+- Card component: `packages/ui/src/components/atoms/Card.tsx`
+- Global styles: `apps/web/src/styles/globals.css`
+- Dashboard layout: `apps/web/src/app/(main)/dashboard/`

@@ -1,0 +1,149 @@
+---
+title: "Tax-Inclusive Pricing"
+sidebarTitle: "Tax-Inclusive Pricing"
+description: "Display prices with tax already included — the standard in France, Germany, and most of Europe."
+---
+
+By default, Spaire displays prices exclusive of tax. Tax is calculated and shown separately at checkout before the customer confirms their purchase.
+
+Tax-inclusive pricing flips this: the price you set **already includes tax**. The customer sees one number throughout — on your pricing page, in checkout, and on their receipt. This is the legal standard in France, Germany, and most EU markets, and the expected norm in many other countries.
+
+## How it works
+
+When tax-inclusive pricing is set on a product price, Spaire back-calculates the tax component from the displayed price rather than adding it on top.
+
+**Example — €20 product in France (20% VAT):**
+
+| Mode | Displayed price | Tax | Customer pays |
+|---|---|---|---|
+| Tax-exclusive (default) | €20.00 | +€4.00 | €24.00 |
+| Tax-inclusive | €20.00 | included | €20.00 |
+
+The price the customer sees is the price they pay. No surprises at checkout.
+
+## Tax behavior options
+
+Tax behavior is configured at two levels:
+
+- **Organization default** — applies to all products unless overridden
+- **Per-price override** — overrides the organization default for a specific price
+
+There are three tax behavior options:
+
+| Option | Behavior |
+|---|---|
+| `location` (default) | Uses regional conventions: inclusive for EU/most countries, exclusive for US/CA/IN |
+| `inclusive` | Price includes tax; tax is back-calculated at checkout |
+| `exclusive` | Tax is added on top of the displayed price |
+
+## Configure the organization default
+
+Set the default for your entire organization in **Settings → Billing → Default tax behavior**.
+
+## Set per-price tax behavior
+
+Tax behavior can be set per price, not per product. You can have one price that's tax-inclusive and another that isn't on the same product.
+
+### From the dashboard
+
+1. Go to **Products** → select your product → **Edit**
+2. On the price you want to update, set the **Tax behavior**
+3. Save
+
+### Via the API
+
+Set `tax_behavior` when creating or updating a product price:
+
+<CodeGroup>
+
+```ts TypeScript
+import { Spaire } from '@spaire/sdk'
+
+const spaire = new Spaire({
+  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+})
+
+const product = await spaire.products.create({
+  name: 'Pro Plan',
+  prices: [
+    {
+      type: 'recurring',
+      amount_type: 'fixed',
+      price_amount: 2000, // €20.00
+      price_currency: 'eur',
+      recurring_interval: 'month',
+      tax_behavior: 'inclusive',
+    },
+  ],
+})
+```
+
+```python Python
+from spaire_sdk import Spaire
+
+with Spaire(access_token="<YOUR_ACCESS_TOKEN>") as spaire:
+    product = spaire.products.create(request={
+        "name": "Pro Plan",
+        "prices": [
+            {
+                "type": "recurring",
+                "amount_type": "fixed",
+                "price_amount": 2000,
+                "price_currency": "eur",
+                "recurring_interval": "month",
+                "tax_behavior": "inclusive",
+            }
+        ],
+    })
+```
+
+```bash cURL
+curl -X POST https://api.spairehq.com/v1/products \
+  -H "Authorization: Bearer $SPAIRE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Pro Plan",
+    "prices": [{
+      "type": "recurring",
+      "amount_type": "fixed",
+      "price_amount": 2000,
+      "price_currency": "eur",
+      "recurring_interval": "month",
+      "tax_behavior": "inclusive"
+    }]
+  }'
+```
+
+</CodeGroup>
+
+## What customers see
+
+With tax-inclusive pricing enabled, checkout shows the tax amount broken out for transparency, but the total never exceeds the displayed price:
+
+```
+Pro Plan — Monthly       €20.00
+  of which VAT (20%)      €3.33
+─────────────────────────────
+Total                    €20.00
+```
+
+## When to use this
+
+- **Selling to EU consumers** — EU consumer protection law requires that advertised prices include VAT. Tax-inclusive pricing keeps you compliant.
+- **French market specifically** — France mandates TTC (toutes taxes comprises) pricing for B2C sales.
+- **Consistent pricing across markets** — if you want every customer to pay exactly the number on your pricing page regardless of their country's tax rate.
+
+<Note>
+For B2B sales where your customers are VAT-registered businesses, tax-exclusive pricing is typically preferred — businesses reclaim VAT so they care about the net price.
+</Note>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="earth-europe" href="/merchant-of-record/introduction" title="Merchant of Record">
+    How Spaire handles tax collection and remittance on your behalf.
+  </Card>
+  <Card icon="globe" href="/features/checkout/localization" title="Checkout Localization">
+    Serve checkout in your customer's language.
+  </Card>
+</CardGroup>

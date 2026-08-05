@@ -1,0 +1,48 @@
+/* ============================================================
+   The Baseline — STUDENT view additions (layers on community.css + creator.css)
+   ============================================================ */
+
+/* masthead: the member's chip in the info bar */
+.mh-me { display: inline-flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 500; color: var(--ink); }
+.mh-me img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+.cr-state.mem { color: var(--ink); }
+.cr-state.mem .sdot { background: var(--accent); }
+
+/* no top nav on the student page — tabs pin to the very top */
+.tabs.cr-tabs { top: 0; }
+
+/* feed topic filter */
+.feed-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.feed-filter .chip { height: 34px; padding: 0 15px; border-radius: 980px; font-size: 13.5px; font-weight: 500; color: var(--t2); background: var(--fill); transition: background .15s, color .15s; }
+.feed-filter .chip:hover { background: var(--fill-2); color: var(--ink); }
+.feed-filter .chip.on { background: var(--ink); color: var(--bg); font-weight: 600; }
+
+/* members */
+.mem-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.mem-card { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--hair); }
+body.dark .mem-card { background: var(--surface-solid); }
+.mem-card.me { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.mem-card img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex: none; }
+.mem-main { min-width: 0; }
+.mem-name { display: flex; align-items: center; gap: 8px; font-size: 15.5px; font-weight: 600; color: var(--ink); }
+.mem-you { font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); padding: 2px 8px; border-radius: 980px; }
+.mem-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 980px; }
+.mem-badge.host { color: #fff; background: var(--accent); }
+.mem-badge.mod { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.mem-badge.founding { color: var(--t2); background: var(--fill); }
+.mem-role { font-size: 13px; color: var(--t2); margin-top: 2px; }
+.mem-stats { font-size: 12px; color: var(--t3); margin-top: 5px; }
+
+/* profile */
+.prof-card { padding: 22px; }
+.prof-id { display: flex; align-items: center; gap: 18px; padding-bottom: 20px; margin-bottom: 6px; border-bottom: 1px solid var(--hair-2); }
+.prof-id-name { font-family: var(--po); font-size: 20px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+.prof-id-sub { font-size: 14px; color: var(--t2); margin-top: 3px; }
+.avatar-edit { position: relative; width: 84px; height: 84px; border-radius: 50%; overflow: hidden; flex: none; }
+.avatar-edit img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-edit-over { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; background: rgba(10,11,13,.42); opacity: 0; transition: opacity .18s; }
+.avatar-edit:hover .avatar-edit-over { opacity: 1; }
+
+@media (max-width: 680px) {
+  .mem-grid { grid-template-columns: 1fr; }
+}

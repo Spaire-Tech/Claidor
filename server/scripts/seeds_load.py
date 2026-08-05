@@ -1,0 +1,1044 @@
+import asyncio
+import random
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from typing import Any, Literal, NotRequired, TypedDict
+
+import dramatiq
+import typer
+from sqlalchemy import select
+
+import polar.tasks  # noqa: F401
+from polar.auth.models import AuthSubject
+from polar.benefit.service import benefit as benefit_service
+from polar.benefit.strategies.custom.schemas import BenefitCustomCreate
+from polar.benefit.strategies.downloadables.schemas import BenefitDownloadablesCreate
+
+# Import tasks to register all dramatiq actors
+from polar.benefit.strategies.license_keys.schemas import BenefitLicenseKeysCreate
+from polar.checkout_link.schemas import CheckoutLinkCreateProducts
+from polar.checkout_link.service import checkout_link as checkout_link_service
+from polar.customer.schemas.customer import CustomerCreate
+from polar.customer.service import customer as customer_service
+from polar.enums import AccountType, PaymentProcessor, SubscriptionRecurringInterval
+from polar.event.repository import EventRepository
+from polar.kit.currency import PresentmentCurrency
+from polar.kit.db.postgres import create_async_sessionmaker
+from polar.kit.utils import utc_now
+from polar.meter.aggregation import CountAggregation
+from polar.meter.filter import Filter, FilterClause, FilterConjunction, FilterOperator
+from polar.meter.schemas import MeterCreate
+from polar.meter.service import meter as meter_service
+from polar.models.account import Account
+from polar.models.benefit import BenefitType
+from polar.models.customer_seat import CustomerSeat, SeatStatus
+from polar.models.file import File, FileServiceTypes
+from polar.models.member import Member, MemberRole
+from polar.models.organization import OrganizationDetails, OrganizationStatus
+from polar.models.organization_review import OrganizationReview
+from polar.models.product_price import ProductPriceAmountType, ProductPriceSeatUnit
+from polar.models.subscription import Subscription, SubscriptionStatus
+from polar.models.subscription_product_price import SubscriptionProductPrice
+from polar.models.user import IdentityVerificationStatus
+from polar.organization.schemas import OrganizationCreate
+from polar.organization.service import organization as organization_service
+from polar.postgres import AsyncSession, create_async_engine
+from polar.product.schemas import (
+    ProductCreate,
+    ProductCreateOneTime,
+    ProductCreateRecurring,
+    ProductPriceFixedCreate,
+    ProductPriceMeteredUnitCreate,
+    ProductPriceSeatBasedCreate,
+    ProductPriceSeatTier,
+    ProductPriceSeatTiers,
+)
+from polar.product.service import product as product_service
+from polar.redis import Redis, create_redis
+from polar.user.repository import UserRepository
+from polar.user.service import user as user_service
+from polar.worker import JobQueueManager
+
+cli = typer.Typer()
+
+
+class SeatBasedCustomerDict(TypedDict):
+    email: str
+    name: str
+    seats_purchased: int
+    seats_allocated: int
+
+
+class OrganizationDict(TypedDict):
+    name: str
+    slug: str
+    email: str
+    website: str
+    bio: str
+    status: NotRequired[OrganizationStatus]
+    details: NotRequired[OrganizationDetails]
+    products: NotRequired[list["ProductDict"]]
+    benefits: NotRequired[dict[str, "BenefitDict"]]
+    is_admin: NotRequired[bool]
+    feature_settings: NotRequired[dict[str, bool]]
+    seat_based_customers: NotRequired[list[SeatBasedCustomerDict]]
+
+
+class ProductDict(TypedDict):
+    name: str
+    description: str
+    price: NotRequired[int]
+    recurring: SubscriptionRecurringInterval | None
+    benefits: NotRequired[list[str]]
+    metered: NotRequired[bool]
+    unit_amount: NotRequired[float]
+    cap_amount: NotRequired[int | None]
+    seat_based: NotRequired[bool]
+    price_per_seat: NotRequired[int]
+
+
+class BenefitDictBase(TypedDict):
+    description: str
+
+
+class BenefitCustomDict(BenefitDictBase):
+    type: Literal[BenefitType.custom]
+
+
+class FileDict(TypedDict):
+    name: str
+    mime_type: str
+    url: str
+    path: str
+    size: int
+
+
+class PropertiesFileDict(TypedDict):
+    files: list[FileDict]
+
+
+class BenefitFileDict(BenefitDictBase):
+    type: Literal[BenefitType.downloadables]
+    properties: PropertiesFileDict
+    # properties: TypedDict[{"files": list[FileDict]}]
+
+
+class BenefitLicenseDict(BenefitDictBase):
+    type: Literal[BenefitType.license_keys]
+
+
+type BenefitDict = BenefitCustomDict | BenefitFileDict | BenefitLicenseDict
+
+
+def create_benefit_schema(
+    dict_input: Any,
+) -> BenefitCustomCreate | BenefitDownloadablesCreate | BenefitLicenseKeysCreate:
+    type = dict_input["type"]
+
+    dict_create = {
+        "properties": {},
+        **dict_input,
+    }
+
+    if type is BenefitType.custom:
+        return BenefitCustomCreate(**dict_create)
+    elif type is BenefitType.downloadables:
+        return BenefitDownloadablesCreate(**dict_create)
+    elif type is BenefitType.license_keys:
+        return BenefitLicenseKeysCreate(**dict_create)
+    else:
+        raise Exception(
+            f"Unsupported Benefit type, please go to `create_benefit_schema()` in {__file__} to implement"
+        )
+
+
+async def create_seed_data(session: AsyncSession, redis: Redis) -> None:
+    """Create sample data for development and testing."""
+
+    # Organizations data
+    orgs_data: list[OrganizationDict] = [
+        {
+            "name": "Acme Corporation",
+            "slug": "acme-corp",
+            "email": "contact@acme-corp.com",
+            "website": "https://acme-corp.com",
+            "bio": "Leading provider of innovative solutions for modern businesses.",
+            "status": OrganizationStatus.ACTIVE,
+            "details": {
+                "about": "We provide business intelligence dashboard",
+                "intended_use": "Well have a checkout on our website granting.",
+                "switching": False,
+                "switching_from": None,
+                "product_description": "Our business intellignce dashboard are mostly monthly subscriptions, but our mobile app is accessible after a one-time payment.",
+                "customer_acquisition": ["website"],
+                "future_annual_revenue": 2000000,
+                "previous_annual_revenue": 0,
+            },
+            "products": [
+                {
+                    "name": "Premium Business Suite",
+                    "description": "Complete business management solution",
+                    "price": 25000,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+                {
+                    "name": "Starter Kit",
+                    "description": "Everything you need to get started",
+                    "price": 5000,
+                    "recurring": None,
+                },
+                {
+                    "name": "Enterprise Dashboard",
+                    "description": "Advanced analytics and reporting",
+                    "price": 5000,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+                {
+                    "name": "Mobile App License",
+                    "description": "Mobile companion app access",
+                    "price": 5000,
+                    "recurring": None,
+                },
+            ],
+        },
+        {
+            "name": "Widget Industries",
+            "slug": "widget-industries",
+            "email": "info@widget-industries.com",
+            "website": "https://widget-industries.com",
+            "bio": "Manufacturing high-quality widgets since 1985.",
+            "products": [
+                {
+                    "name": "Widget Pro",
+                    "description": "Professional-grade widget with extended warranty",
+                    "price": 19900,
+                    "recurring": None,
+                },
+                {
+                    "name": "Widget Subscription",
+                    "description": "Monthly widget delivery service",
+                    "price": 1900,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+                {
+                    "name": "Widget Kit",
+                    "description": "Complete widget toolkit for professionals",
+                    "price": 9900,
+                    "recurring": None,
+                },
+                {
+                    "name": "Widget Plus",
+                    "description": "Enhanced widget with premium features",
+                    "price": 15900,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+                {
+                    "name": "Widget Support Package",
+                    "description": "Annual maintenance and support",
+                    "price": 5000,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+            ],
+        },
+        {
+            "name": "MeltedSQL",
+            "slug": "melted-sql",
+            "email": "support@meltedsql.com",
+            "website": "https://meltedsql.com",
+            "bio": "Your go-to solution for SQL database management and optimization.",
+            "status": OrganizationStatus.ACTIVE,
+            "details": {
+                "about": "We make beautiful SQL management products for macOS.",
+                "intended_use": "Well have a checkout on our website granting a download link and license key.",
+                "switching": False,
+                "switching_from": None,
+                "product_description": "The desktop apps that we create allows connecting to SQL databases, and performing queries on those databases.",
+                "customer_acquisition": ["website"],
+                "future_annual_revenue": 2000000,
+                "previous_annual_revenue": 0,
+            },
+            "benefits": {
+                "melted-sql-premium-support": {
+                    "type": BenefitType.custom,
+                    "description": "MeltedSQL premium support email",
+                },
+                "download-link": {
+                    "type": BenefitType.downloadables,
+                    "description": "MeltedSQL download link",
+                    "properties": {
+                        "files": [
+                            {
+                                "name": "meltedsql-download.zip",
+                                "mime_type": "application/zip",
+                                "url": "https://example.com/meltedsql-download.zip",
+                                "path": "/102465214/meltedsql-download.zip",
+                                "size": 508484,
+                            },
+                        ],
+                    },
+                },
+                "license-key": {
+                    "type": BenefitType.license_keys,
+                    "description": "MeltedSQL license",
+                },
+            },
+            "products": [
+                {
+                    "name": "MeltedSQL Basic",
+                    "description": "SQL management tool that will melt your heart",
+                    "price": 9900,
+                    "recurring": SubscriptionRecurringInterval.month,
+                    "benefits": [
+                        "download-link",
+                        "license-key",
+                    ],
+                },
+                {
+                    "name": "MeltedSQL Pro",
+                    "description": "SQL management tool that will melt your brain",
+                    "price": 19900,
+                    "recurring": SubscriptionRecurringInterval.month,
+                    "benefits": [
+                        "download-link",
+                        "license-key",
+                    ],
+                },
+                {
+                    "name": "MeltedSQL Corporate",
+                    "description": "SQL management tool that will melt your face",
+                    "price": 99900,
+                    "recurring": SubscriptionRecurringInterval.month,
+                    "benefits": [
+                        "download-link",
+                        "license-key",
+                        "melted-sql-premium-support",
+                    ],
+                },
+                {
+                    "name": "MeltedSQL Lifetime",
+                    "description": "SQL management tool that will never melt!",
+                    "price": 39900,
+                    "recurring": None,
+                    "benefits": [
+                        "download-link",
+                        "license-key",
+                    ],
+                },
+            ],
+        },
+        {
+            "name": "ColdMail Inc.",
+            "slug": "coldmail",
+            "email": "hello@coldmail.com",
+            "website": "https://coldmail.com",
+            "bio": "Online mail services like it's 1999!",
+            "status": OrganizationStatus.ACTIVE,
+            "details": {
+                "about": "We're a hottest cloud provider since sliced bread",
+                "intended_use": "We'll be selling various plans allowing access to our cloud storage and cloud document services.",
+                "switching": False,
+                "switching_from": None,
+                "product_description": "We sell ColdMail which provides an email inbox plus file storage. We also sell TemperateDocs which allows creating and editing documents online.",
+                "customer_acquisition": ["website"],
+                "future_annual_revenue": 2000000,
+                "previous_annual_revenue": 0,
+            },
+            "products": [
+                {
+                    "name": "ColdMail 10 GB",
+                    "description": "ColdMail with 10 GB of storage",
+                    "price": 1500,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+                {
+                    "name": "ColdMail 10 GB",
+                    "description": "ColdMail with 10 GB of storage",
+                    "price": 15000,
+                    "recurring": SubscriptionRecurringInterval.year,
+                },
+                {
+                    "name": "ColdMail 50 GB",
+                    "description": "ColdMail with 50 GB of storage",
+                    "price": 5000,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+                {
+                    "name": "ColdMail 50 GB",
+                    "description": "ColdMail with 50 GB of storage",
+                    "price": 50000,
+                    "recurring": SubscriptionRecurringInterval.year,
+                },
+                {
+                    "name": "ColdMail 100 GB",
+                    "description": "ColdMail with 100 GB of storage",
+                    "price": 8000,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+                {
+                    "name": "ColdMail 100 GB",
+                    "description": "ColdMail with 100 GB of storage",
+                    "price": 80000,
+                    "recurring": SubscriptionRecurringInterval.year,
+                },
+                {
+                    "name": "TemperateDocs Basic",
+                    "description": "TemperateDocs with basic document editing",
+                    "price": 3000,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+                {
+                    "name": "TemperateDocs Basic",
+                    "description": "TemperateDocs with basic document editing",
+                    "price": 30000,
+                    "recurring": SubscriptionRecurringInterval.year,
+                },
+                {
+                    "name": "TemperateDocs Pro",
+                    "description": "TemperateDocs with sheets, slides, and PDF export",
+                    "price": 6000,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+                {
+                    "name": "TemperateDocs Pro",
+                    "description": "TemperateDocs with sheets, slides, and PDF export",
+                    "price": 60000,
+                    "recurring": SubscriptionRecurringInterval.year,
+                },
+                {
+                    "name": "Coldmail Pay-As-You-Go",
+                    "description": "Pay per email sent - perfect for low-volume or occasional use",
+                    "recurring": SubscriptionRecurringInterval.month,
+                    "metered": True,
+                    "unit_amount": 0.01,  # $0.01 per email
+                    "cap_amount": 10000,  # $100 maximum per month
+                },
+            ],
+        },
+        {
+            "name": "Example News Inc.",
+            "slug": "example-news-inc",
+            "email": "hello@examplenewsinc.com",
+            "website": "https://examplenewsinc.com",
+            "bio": "Your source of news",
+            "status": OrganizationStatus.ACTIVE,
+            "details": {
+                "about": "We provide news in various formats",
+                "intended_use": "We'll have a checkout on our website where you buy subscriptions to our various news products.",
+                "switching": False,
+                "switching_from": None,
+                "product_description": "We send out our news products as emails daily and weekly",
+                "customer_acquisition": ["website"],
+                "future_annual_revenue": 2000000,
+                "previous_annual_revenue": 0,
+            },
+            "products": [
+                {
+                    "name": "Daily newspaper",
+                    "description": "Your source of truthful, subjective daily news",
+                    "price": 800,
+                    "recurring": SubscriptionRecurringInterval.day,
+                },
+                {
+                    "name": "Daily tabloid",
+                    "description": "Slander like there's no tomorrow!",
+                    "price": 1000,
+                    "recurring": SubscriptionRecurringInterval.day,
+                },
+                {
+                    "name": "Weekly paper",
+                    "description": "In-depth journalism and the weekly crossword",
+                    "price": 2500,
+                    "recurring": SubscriptionRecurringInterval.week,
+                },
+            ],
+        },
+        {
+            "name": "Admin Org",
+            "slug": "admin-org",
+            "email": "admin@polar.sh",
+            "website": "https://polar.sh",
+            "bio": "The admin organization of Polar",
+            "status": OrganizationStatus.ACTIVE,
+            "is_admin": True,
+            "details": {
+                "about": "Polar is an open source payment infrastructure platform for developers",
+                "intended_use": "We provide payment processing and subscription management for developers and creators.",
+                "switching": False,
+                "switching_from": None,
+                "product_description": "SaaS platform for payment infrastructure",
+                "customer_acquisition": ["website"],
+                "future_annual_revenue": 1000000,
+                "previous_annual_revenue": 0,
+            },
+            "products": [
+                {
+                    "name": "Polar Pro",
+                    "description": "Monthly subscription to Polar Pro features",
+                    "price": 2000,
+                    "recurring": SubscriptionRecurringInterval.month,
+                },
+            ],
+        },
+        {
+            "name": "SeatBased Members Corp",
+            "slug": "seatbased-members-corp",
+            "email": "admin@polar.sh",
+            "website": "https://seatbased-members.com",
+            "bio": "Organization with seat-based pricing and members model enabled",
+            "status": OrganizationStatus.ACTIVE,
+            "details": {
+                "about": "Testing seat-based pricing with members model",
+                "intended_use": "We sell seat-based licenses for our software",
+                "switching": False,
+                "switching_from": None,
+                "product_description": "Team software licenses with per-seat billing",
+                "customer_acquisition": ["website"],
+                "future_annual_revenue": 500000,
+                "previous_annual_revenue": 0,
+            },
+            "feature_settings": {
+                "seat_based_pricing_enabled": True,
+                "member_model_enabled": True,
+            },
+            "products": [
+                {
+                    "name": "Team Plan",
+                    "description": "Per-seat team plan with member management",
+                    "recurring": SubscriptionRecurringInterval.month,
+                    "seat_based": True,
+                    "price_per_seat": 1000,  # $10 per seat
+                },
+            ],
+            "seat_based_customers": [
+                {
+                    "email": "customer-with-members@polar.sh",
+                    "name": "Customer With Members Inc",
+                    "seats_purchased": 5,
+                    "seats_allocated": 2,
+                },
+            ],
+        },
+        {
+            "name": "SeatBased Only Corp",
+            "slug": "seatbased-only-corp",
+            "email": "admin@polar.sh",
+            "website": "https://seatbased-only.com",
+            "bio": "Organization with seat-based pricing but members model disabled",
+            "status": OrganizationStatus.ACTIVE,
+            "details": {
+                "about": "Testing seat-based pricing without members model",
+                "intended_use": "We sell seat-based licenses without member tracking",
+                "switching": False,
+                "switching_from": None,
+                "product_description": "Team software licenses with simple seat billing",
+                "customer_acquisition": ["website"],
+                "future_annual_revenue": 500000,
+                "previous_annual_revenue": 0,
+            },
+            "feature_settings": {
+                "seat_based_pricing_enabled": True,
+                "member_model_enabled": False,
+            },
+            "products": [
+                {
+                    "name": "Simple Team Plan",
+                    "description": "Per-seat team plan without member management",
+                    "recurring": SubscriptionRecurringInterval.month,
+                    "seat_based": True,
+                    "price_per_seat": 1500,  # $15 per seat
+                },
+            ],
+            "seat_based_customers": [
+                {
+                    "email": "customer-no-members@polar.sh",
+                    "name": "Customer Without Members Inc",
+                    "seats_purchased": 5,
+                    "seats_allocated": 2,
+                },
+            ],
+        },
+    ]
+
+    # Benefits data for each organization
+    benefits_data: dict[str, list[BenefitDict]] = {
+        "acme-corp": [
+            {"type": BenefitType.custom, "description": "Priority customer support"},
+            # {
+            #     "type": BenefitType.downloadables,
+            #     "description": "Exclusive business templates",
+            #     "properties": {
+            #         "files": ["https://example.com/placeholder-downloadable.pdf"],
+            #     },
+            # },
+        ],
+        "widget-industries": [
+            {"type": BenefitType.custom, "description": "Free shipping on all orders"},
+        ],
+        "melted-sql": [
+            # {
+            #     "type": BenefitType.downloadables,
+            #     "description": "Exclusive business templates",
+            #     "properties": {
+            #         "files": ["https://example.com/placeholder-downloadable.pdf"],
+            #     },
+            # },
+        ],
+        "placeholder-enterprises": [
+            {"type": BenefitType.custom, "description": "24/7 placeholder support"},
+            # {
+            #     "type": BenefitType.downloadables,
+            #     "description": "Premium placeholder assets",
+            #     "properties": {
+            #         "files": ["https://example.com/placeholder-downloadable.png"],
+            #     },
+            # },
+        ],
+    }
+
+    # Create organizations with users and sample data
+    for org_data in orgs_data:
+        # Get or create user (allows multiple orgs to share the same user)
+        user, _created = await user_service.get_by_email_or_create(
+            session=session,
+            email=org_data["email"],
+        )
+        user_repository = UserRepository.from_session(session)
+        await user_repository.update(
+            user,
+            update_dict={
+                # Start with the user being admin, so that we can create daily and weekly products
+                "is_admin": True,
+                "identity_verification_status": IdentityVerificationStatus.verified,
+                "identity_verification_id": f"vs_{org_data['slug']}_test",
+            },
+        )
+
+        auth_subject = AuthSubject(subject=user, scopes=set(), session=None)
+
+        # Create organization
+        organization = await organization_service.create(
+            session=session,
+            create_schema=OrganizationCreate(
+                name=org_data["name"],
+                slug=org_data["slug"],
+            ),
+            auth_subject=auth_subject,
+        )
+
+        # Update organization with additional details
+        organization.email = org_data["email"]
+        organization.website = org_data["website"]
+        organization.bio = org_data["bio"]
+        organization.details = org_data.get("details", {})  # type: ignore
+        organization.details_submitted_at = utc_now()
+        organization.status = org_data.get("status", OrganizationStatus.CREATED)
+        organization.feature_settings = org_data.get("feature_settings", {})
+        session.add(organization)
+
+        # Create OrganizationReview with PASS verdict for ACTIVE organizations
+        if organization.status == OrganizationStatus.ACTIVE:
+            organization.initially_reviewed_at = utc_now()
+            organization_review = OrganizationReview(
+                organization_id=organization.id,
+                verdict=OrganizationReview.Verdict.PASS,
+                risk_score=0.0,
+                violated_sections=[],
+                reason="Seed data - automatically approved",
+                timed_out=False,
+                model_used="seed",
+                validated_at=utc_now(),
+                organization_details_snapshot=org_data.get("details", {}),
+            )
+            session.add(organization_review)
+
+        # Create an Account for all organizations except Widget Industries
+        if org_data["slug"] != "widget-industries":
+            account = Account(
+                account_type=AccountType.stripe,
+                admin_id=user.id,
+                stripe_id=f"acct_{organization.slug}_test",  # Test Stripe account ID
+                country="US",
+                currency="USD",
+                is_details_submitted=True,
+                is_charges_enabled=True,
+                is_payouts_enabled=True,
+                status=Account.Status.ACTIVE,
+                email=org_data["email"],
+                processor_fees_applicable=True,
+            )
+            session.add(account)
+            await session.flush()
+
+            # Link the account to the organization
+            organization.account_id = account.id
+            session.add(organization)
+
+        # Create benefits for organization
+        org_benefits = {}
+        for key, benefit_data in org_data.get("benefits", {}).items():
+            benefit_schema_dict: Any = benefit_data.copy()
+            benefit_schema_dict["organization_id"] = organization.id
+
+            if benefit_data["type"] == BenefitType.downloadables:
+                file_ids = []
+                for file_data in benefit_data["properties"]["files"]:
+                    instance = File(
+                        organization=organization,
+                        name=file_data["name"],
+                        path=file_data["path"],
+                        mime_type=file_data["mime_type"],
+                        checksum_sha256_hex="a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e",
+                        checksum_sha256_base64="pZGm1Av0IEBKARczz7exkNYsZb8LzaMrV7J32a2fFG4=",
+                        size=file_data["size"],
+                        service=FileServiceTypes.downloadable,
+                        is_enabled=True,
+                        is_uploaded=True,
+                    )
+                    session.add(instance)
+                    await session.flush()
+
+                    file_ids.append(instance.id)
+                benefit_schema_dict["properties"]["files"] = file_ids
+
+            schema = create_benefit_schema(benefit_schema_dict)
+            benefit = await benefit_service.user_create(
+                session=session,
+                redis=redis,
+                create_schema=schema,
+                auth_subject=auth_subject,
+            )
+            org_benefits[key] = benefit
+
+        # Create meter for ColdMail organization
+        coldmail_meter = None
+        if org_data["slug"] == "coldmail":
+            meter_create = MeterCreate(
+                name="Email Sends",
+                filter=Filter(
+                    conjunction=FilterConjunction.and_,
+                    clauses=[
+                        FilterClause(
+                            property="type",
+                            operator=FilterOperator.eq,
+                            value="email_sent",
+                        )
+                    ],
+                ),
+                aggregation=CountAggregation(),
+                organization_id=organization.id,
+            )
+            coldmail_meter = await meter_service.create(
+                session=session,
+                meter_create=meter_create,
+                auth_subject=auth_subject,
+            )
+
+        # Create products for organization
+        org_products = []
+        seat_based_product = None
+        seat_based_price = None
+        for product_data in org_data.get("products", []):
+            # Handle different price types
+            price_create: (
+                ProductPriceMeteredUnitCreate
+                | ProductPriceFixedCreate
+                | ProductPriceSeatBasedCreate
+            )
+            if product_data.get("metered", False) and coldmail_meter:
+                price_create = ProductPriceMeteredUnitCreate(
+                    amount_type=ProductPriceAmountType.metered_unit,
+                    price_currency=PresentmentCurrency.usd,
+                    unit_amount=Decimal(str(product_data["unit_amount"])),
+                    meter_id=coldmail_meter.id,
+                    cap_amount=product_data.get("cap_amount"),
+                )
+            elif product_data.get("seat_based", False):
+                # Create seat-based price with a single tier
+                price_per_seat = product_data.get("price_per_seat", 1000)
+                price_create = ProductPriceSeatBasedCreate(
+                    amount_type=ProductPriceAmountType.seat_based,
+                    price_currency=PresentmentCurrency.usd,
+                    seat_tiers=ProductPriceSeatTiers(
+                        tiers=[
+                            ProductPriceSeatTier(
+                                min_seats=1,
+                                max_seats=None,  # Unlimited
+                                price_per_seat=price_per_seat,
+                            )
+                        ]
+                    ),
+                )
+            else:
+                # Create fixed price for product
+                price_create = ProductPriceFixedCreate(
+                    amount_type=ProductPriceAmountType.fixed,
+                    price_amount=product_data["price"],
+                    price_currency=PresentmentCurrency.usd,
+                )
+
+            product_create: ProductCreate
+            recurring_interval = product_data.get("recurring", None)
+            if recurring_interval is None:
+                product_create = ProductCreateOneTime(
+                    name=product_data["name"],
+                    description=product_data["description"],
+                    organization_id=organization.id,
+                    prices=[price_create],
+                )
+            else:
+                product_create = ProductCreateRecurring(
+                    name=product_data["name"],
+                    description=product_data["description"],
+                    organization_id=organization.id,
+                    recurring_interval=recurring_interval,
+                    prices=[price_create],
+                )
+
+            product = await product_service.create(
+                session=session,
+                create_schema=product_create,
+                auth_subject=auth_subject,
+            )
+            org_products.append(product)
+
+            # Track seat-based product for later subscription creation
+            if product_data.get("seat_based", False):
+                seat_based_product = product
+                # Get the seat-based price from the freshly created product
+                await session.refresh(product, ["all_prices"])
+                for price in product.all_prices:
+                    if isinstance(price, ProductPriceSeatUnit):
+                        seat_based_price = price
+                        break
+
+            selected_benefits = product_data.get("benefits", [])
+            for benefit_key in selected_benefits:
+                await product_service.update_benefits(
+                    session=session,
+                    product=product,
+                    benefits=[org_benefits[key].id for key in selected_benefits],
+                    auth_subject=auth_subject,
+                )
+
+        # Create CheckoutLink with all products
+        if org_products:
+            checkout_link_create = CheckoutLinkCreateProducts(
+                payment_processor=PaymentProcessor.stripe,
+                products=[product.id for product in org_products],
+                label=f"{org_data['name']} store",
+                allow_discount_codes=True,
+            )
+            await checkout_link_service.create(
+                session=session,
+                checkout_link_create=checkout_link_create,
+                auth_subject=auth_subject,
+            )
+
+        # Create customers for organization (skip if seat_based_customers are defined)
+        num_customers = (
+            random.randint(0, 5) if not org_data.get("seat_based_customers") else 0
+        )
+        for i in range(num_customers):
+            # customer_email = f"customer_{org_data['slug']}_{i + 1}@example.com"
+            customer_email = f"customer_{org_data['slug']}_{i + 1}@polar.sh"
+            customer = await customer_service.create(
+                session=session,
+                customer_create=CustomerCreate(
+                    email=customer_email,
+                    name=f"Customer {i + 1}",
+                    organization_id=organization.id,
+                ),
+                auth_subject=auth_subject,
+            )
+
+            # Create meter events for ColdMail customers
+            if org_data["slug"] == "coldmail" and coldmail_meter and i == 0:
+                # Create events for the first customer showing usage over time
+                event_repository = EventRepository.from_session(session)
+                events_to_insert = []
+
+                # Create 150 email send events over the past 30 days
+                base_time = datetime.now(UTC) - timedelta(days=30)
+
+                for day in range(30):
+                    # Variable number of emails per day (between 1 and 10)
+                    num_emails = random.randint(1, 10)
+                    for _ in range(num_emails):
+                        event_time = base_time + timedelta(
+                            days=day,
+                            hours=random.randint(0, 23),
+                            minutes=random.randint(0, 59),
+                        )
+                        events_to_insert.append(
+                            {
+                                "name": "email_sent",
+                                "source": "user",
+                                "timestamp": event_time,
+                                "organization_id": organization.id,
+                                "customer_id": customer.id,
+                                "user_metadata": {
+                                    "type": "email_sent",
+                                    "recipient": f"user{random.randint(1, 100)}@example.com",
+                                    "subject": f"Email subject {random.randint(1, 1000)}",
+                                },
+                            }
+                        )
+
+                # Insert all events in batch
+                if events_to_insert:
+                    await event_repository.insert_batch(events_to_insert)
+
+            # TODO: Create some checkouts for customers
+            # This would require more complex checkout creation logic
+            pass
+
+        # Create seat-based customers with subscriptions and seats
+        seat_based_customers = org_data.get("seat_based_customers", [])
+        if seat_based_customers and seat_based_product and seat_based_price:
+            member_model_enabled = org_data.get("feature_settings", {}).get(
+                "member_model_enabled", False
+            )
+
+            for customer_data in seat_based_customers:
+                # Create the customer
+                seat_customer = await customer_service.create(
+                    session=session,
+                    customer_create=CustomerCreate(
+                        email=customer_data["email"],
+                        name=customer_data["name"],
+                        organization_id=organization.id,
+                    ),
+                    auth_subject=auth_subject,
+                )
+
+                seats_purchased = customer_data["seats_purchased"]
+                seats_allocated = customer_data["seats_allocated"]
+
+                # Create subscription with seats
+                subscription = Subscription(
+                    amount=seat_based_price.calculate_amount(seats_purchased),
+                    currency=seat_based_price.price_currency,
+                    recurring_interval=seat_based_product.recurring_interval,
+                    recurring_interval_count=1,
+                    status=SubscriptionStatus.active,
+                    current_period_start=utc_now(),
+                    current_period_end=utc_now() + timedelta(days=30),
+                    cancel_at_period_end=False,
+                    started_at=utc_now(),
+                    customer_id=seat_customer.id,
+                    product_id=seat_based_product.id,
+                    seats=seats_purchased,
+                )
+                session.add(subscription)
+                await session.flush()
+
+                # Create subscription product price
+                spp = SubscriptionProductPrice(
+                    subscription_id=subscription.id,
+                    product_price_id=seat_based_price.id,
+                    amount=seat_based_price.calculate_amount(seats_purchased),
+                )
+                session.add(spp)
+                await session.flush()
+
+                # Create members if member_model_enabled
+                members_for_seats = []
+                if member_model_enabled:
+                    # The customer_service.create() already created the owner member
+                    # when member_model_enabled is True. Fetch it from the database.
+                    owner_result = await session.execute(
+                        select(Member).where(
+                            Member.customer_id == seat_customer.id,
+                            Member.role == MemberRole.owner,
+                        )
+                    )
+                    owner_member = owner_result.scalar_one_or_none()
+                    if owner_member:
+                        members_for_seats.append(owner_member)
+
+                    # Create additional members for allocated seats (beyond the owner)
+                    for i in range(1, seats_allocated):
+                        member = Member(
+                            customer_id=seat_customer.id,
+                            organization_id=organization.id,
+                            email=f"member{i}@{customer_data['email'].split('@')[1]}",
+                            name=f"Team Member {i}",
+                            role=MemberRole.member,
+                        )
+                        session.add(member)
+                        await session.flush()
+                        members_for_seats.append(member)
+
+                # Create customer seats
+                for i in range(seats_purchased):
+                    if i < seats_allocated:
+                        # Allocated/claimed seats
+                        if member_model_enabled and i < len(members_for_seats):
+                            # With member - claimed
+                            seat = CustomerSeat(
+                                subscription_id=subscription.id,
+                                status=SeatStatus.claimed,
+                                customer_id=seat_customer.id,
+                                member_id=members_for_seats[i].id,
+                                email=members_for_seats[i].email,
+                                claimed_at=utc_now(),
+                            )
+                        else:
+                            # Without member model - create a Customer for each seat holder
+                            seat_holder_email = (
+                                f"seat{i + 1}@{customer_data['email'].split('@')[1]}"
+                            )
+                            seat_holder_customer = await customer_service.create(
+                                session=session,
+                                customer_create=CustomerCreate(
+                                    email=seat_holder_email,
+                                    name=f"Seat Holder {i + 1}",
+                                    organization_id=organization.id,
+                                ),
+                                auth_subject=auth_subject,
+                            )
+                            seat = CustomerSeat(
+                                subscription_id=subscription.id,
+                                status=SeatStatus.claimed,
+                                customer_id=seat_holder_customer.id,
+                                email=seat_holder_email,
+                                claimed_at=utc_now(),
+                            )
+                    else:
+                        # Pending seats (not yet allocated)
+                        seat = CustomerSeat(
+                            subscription_id=subscription.id,
+                            status=SeatStatus.pending,
+                            customer_id=seat_customer.id,
+                        )
+                    session.add(seat)
+
+                await session.flush()
+
+        # Downgrade user from admin (for non-admin users)
+        await user_repository.update(
+            user, update_dict={"is_admin": org_data.get("is_admin", False)}
+        )
+
+    await session.commit()
+    print("✅ Sample data created successfully!")
+    print("Created 3 organizations with users, products, benefits, and customers")
+
+
+@cli.command()
+def seeds_load() -> None:
+    """Load sample/test data into the database."""
+
+    async def run() -> None:
+        redis = create_redis("app")
+        async with JobQueueManager.open(dramatiq.get_broker(), redis):
+            engine = create_async_engine("script")
+            sessionmaker = create_async_sessionmaker(engine)
+            async with sessionmaker() as session:
+                await create_seed_data(session, redis)
+
+    asyncio.run(run())
+
+
+if __name__ == "__main__":
+    cli()

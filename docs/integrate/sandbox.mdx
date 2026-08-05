@@ -1,0 +1,101 @@
+---
+title: "Sandbox"
+description: "A fully isolated environment for testing your integration — no real money, no production data."
+---
+
+The Spaire sandbox is a completely separate server from production. It has its own database, its own API, and its own accounts. Nothing you do in the sandbox touches your live data, customers, or balance.
+
+Use it to build and test your integration before going live, simulate payment scenarios including failures and 3D Secure, and run automated tests against a real API without side effects.
+
+<Note>
+  The sandbox is a separate environment, not a test mode toggle. As a Merchant of Record handling real financial transactions, Spaire runs test data on entirely separate infrastructure — this ensures test records can never contaminate production accounting.
+</Note>
+
+## Access the sandbox
+
+Go to [sandbox.spairehq.com](https://sandbox.spairehq.com) or click **Go to sandbox** from the organization switcher in your dashboard at [app.spairehq.com](https://app.spairehq.com).
+
+Create a separate account and organization for the sandbox — your production credentials don't carry over. You can create as many sandbox accounts and organizations as you need, with no limits.
+
+## Test cards
+
+Use these card numbers to simulate different payment outcomes. Any future expiration date and any 3-digit CVC will work.
+
+| Scenario | Card number |
+|----------|-------------|
+| Successful payment | `4242 4242 4242 4242` |
+| Card declined | `4000 0000 0000 0002` |
+| Insufficient funds | `4000 0000 0000 9995` |
+| 3D Secure — passes automatically | `4000 0025 0000 3155` |
+| 3D Secure — requires interaction | `4000 0027 6000 3184` |
+| Card disputed after payment | `4000 0000 0000 0259` |
+
+For billing address, use any valid-looking address. Postal code `94103` works for US addresses.
+
+## API and SDK
+
+The sandbox API base URL is `https://sandbox-api.spairehq.com`.
+
+Generate an access token from your **sandbox** organization settings — production tokens don't work in the sandbox, and sandbox tokens don't work in production.
+
+<CodeGroup>
+
+```ts TypeScript
+import { Spaire } from '@spaire/sdk'
+
+const spaire = new Spaire({
+  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+  server: 'sandbox',
+})
+```
+
+```python Python
+from spaire_sdk import Spaire
+
+s = Spaire(
+    server="sandbox",
+    access_token="<YOUR_ACCESS_TOKEN>",
+)
+```
+
+```go Go
+s := spairego.New(
+    spairego.WithServer(spairego.ServerSandbox),
+    spairego.WithSecurity(os.Getenv("SPAIRE_ACCESS_TOKEN")),
+)
+```
+
+```php PHP
+$sdk = Spaire::builder()
+    ->setServer('sandbox')
+    ->setSecurity(getenv('SPAIRE_ACCESS_TOKEN'))
+    ->build();
+```
+
+```ruby Ruby
+s = OpenApiSDK::Spaire.new(
+  server_url: 'https://sandbox-api.spairehq.com',
+  access_token: ENV['SPAIRE_ACCESS_TOKEN']
+)
+```
+
+</CodeGroup>
+
+## Limitations
+
+These apply to the sandbox only. Production behavior is unaffected.
+
+- Subscriptions are automatically canceled **90 days after creation**
+- Payout operations are simulated — no real funds are transferred
+- Webhook delivery may have higher latency than production
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="bolt" href="/quickstart" title="Quickstart">
+    Walk through the full checkout flow using the sandbox.
+  </Card>
+  <Card icon="lock" href="/integrate/authentication" title="Authentication">
+    Generate your sandbox access token and make your first API call.
+  </Card>
+</CardGroup>

@@ -1,0 +1,127 @@
+import { useOrders } from '@/hooks/queries/orders'
+import { OrganizationContext } from '@/providers/maintainerOrganization'
+import ShoppingCartOutlined from '@mui/icons-material/ShoppingCartOutlined'
+import { schemas } from '@spaire/client'
+import { formatCurrency } from '@spaire/currency'
+import Button from '@spaire/ui/components/atoms/Button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from '@spaire/ui/components/atoms/Card'
+import { Status } from '@spaire/ui/components/atoms/Status'
+import Link from 'next/link'
+import { useContext } from 'react'
+import { twMerge } from 'tailwind-merge'
+
+const orderStatusBadgeClassNames = (order: schemas['Order']) => {
+  switch (order.status) {
+    case 'paid':
+      return 'bg-emerald-50 text-emerald-500'
+    case 'pending':
+      return 'bg-yellow-50 text-yellow-500'
+    case 'refunded':
+    case 'partially_refunded':
+      return 'bg-blue-50 text-blue-500 '
+  }
+}
+
+interface OrderCardProps {
+  className?: string
+  order: schemas['Order']
+}
+
+const OrderCard = ({ className, order }: OrderCardProps) => {
+  const createdAtDate = new Date(order.created_at)
+
+  const displayDate = createdAtDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    hour12: false,
+    hour: 'numeric',
+    minute: 'numeric',
+  })
+
+  return (
+    <Card
+      className={twMerge(
+        className,
+        ' flex flex-col gap-y-1 rounded-2xl border-none bg-white transition-opacity hover:opacity-60',
+      )}
+    >
+      <CardHeader className=" flex flex-row items-baseline justify-between bg-transparent p-4 pt-2 pb-0 text-sm text-gray-400">
+        <span>{displayDate}</span>
+        <Status
+          className={twMerge(
+            'px-1.5 py-0.5 text-xs capitalize',
+            orderStatusBadgeClassNames(order),
+          )}
+          status={order.status.split('_').join(' ')}
+        />
+      </CardHeader>
+      <CardContent className="flex flex-row justify-between gap-x-4 p-4 pt-0 pb-3">
+        <h3 className="min-w-0 truncate">{order.description}</h3>
+        <span className="">
+          {formatCurrency('compact')(order.net_amount, order.currency)}
+        </span>
+      </CardContent>
+    </Card>
+  )
+}
+
+export interface OrdersWidgetProps {
+  className?: string
+}
+
+export const OrdersWidget = ({ className }: OrdersWidgetProps) => {
+  const { organization: org } = useContext(OrganizationContext)
+
+  const orders = useOrders(org.id, { limit: 10, sorting: ['-created_at'] })
+
+  return (
+    <div
+      className={twMerge(
+        ' rounded-4xl bg-gray-50 p-2',
+        className,
+      )}
+    >
+      {(orders.data?.items.length ?? 0) > 0 ? (
+        <div className="flex flex-col">
+          <div className="flex items-center justify-between p-4">
+            <h3 className="text-lg">Recent Transactions</h3>
+            <Link href={`/dashboard/${org.slug}/sales`}>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="rounded-full border-none"
+              >
+                View All
+              </Button>
+            </Link>
+          </div>
+          <div className="flex flex-col gap-y-2 rounded-t-2xl rounded-b-4xl pb-4">
+            {orders.data?.items?.map((order) => (
+              <Link
+                key={order.id}
+                href={`/dashboard/${org.slug}/sales/${order.id}`}
+              >
+                <OrderCard order={order} />
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <Card className=" flex h-full flex-col items-center justify-center gap-y-4 bg-gray-50 p-6 text-center text-gray-400">
+          <ShoppingCartOutlined
+            className=" text-gray-300"
+            fontSize="large"
+          />
+          <div className="flex flex-col gap-y-1">
+            <h3 className="font-medium text-gray-700">No transactions yet</h3>
+            <p className="text-sm">Transactions will appear here as customers complete checkouts</p>
+          </div>
+        </Card>
+      )}
+    </div>
+  )
+}

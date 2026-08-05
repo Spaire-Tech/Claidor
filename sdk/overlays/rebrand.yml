@@ -1,0 +1,45 @@
+overlay: 1.0.0
+info:
+  title: Overlay to remove Polar branding from generated SDKs
+  version: 0.0.1
+actions:
+  - target: "$.components.schemas.SubscriptionCancel.properties.customer_cancellation_comment"
+    description: Replace Polar reference in customerCancellationComment description
+    update:
+      description: |
+        Customer feedback and why they decided to cancel.
+
+        **IMPORTANT:**
+        Do not use this to store internal notes! It's intended to be input
+        from the customer and is therefore also available in their
+        purchases library.
+
+        Only set this in case your own service is requesting the reason from the
+        customer. Or you copy a message directly from a customer
+        conversation, i.e support.
+  - target: "$.components.schemas.SubscriptionRevoke.properties.customer_cancellation_comment"
+    description: Replace Polar reference in customerCancellationComment description
+    update:
+      description: |
+        Customer feedback and why they decided to cancel.
+
+        **IMPORTANT:**
+        Do not use this to store internal notes! It's intended to be input
+        from the customer and is therefore also available in their
+        purchases library.
+
+        Only set this in case your own service is requesting the reason from the
+        customer. Or you copy a message directly from a customer
+        conversation, i.e support.
+  - target: "$.components.schemas.BenefitGitHubRepositoryCreateProperties.properties.repository_owner"
+    description: Replace polarsource example value
+    update:
+      example: spairesource
+  - target: "$.components.schemas.BenefitGitHubRepositoryProperties.properties.repository_owner"
+    description: Replace polarsource example value
+    update:
+      example: spairesource
+  - target: "$.components.schemas.BenefitGitHubRepositorySubscriberProperties.properties.repository_owner"
+    description: Replace polarsource example value
+    update:
+      example: spairesource

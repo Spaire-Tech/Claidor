@@ -1,0 +1,79 @@
+---
+title: "Credits"
+description: "Let customers pre-pay for usage. Credits are deducted first — overage is charged at the end of the billing period."
+---
+
+Credits are pre-purchased units that sit against a customer's meter balance. When events are ingested, Spaire deducts from the credit balance first. If the balance hits zero, usage continues and any overage is charged on the next invoice.
+
+This lets you offer prepaid plans — customers buy a block of credits and consume from it, rather than accumulating an unknown bill throughout the month.
+
+## How credits work
+
+1. You attach a **Credits benefit** to a product
+2. When a customer purchases or subscribes, Spaire issues credits to their meter balance
+3. Ingested events deduct from the credit balance first
+4. If credits run out, usage accrues and is charged at the end of the billing period via the metered price
+5. At the start of each new subscription cycle, credits are topped up again
+
+<Warning>
+  Spaire does not block usage when a customer's credit balance reaches zero. You are responsible for checking balances and enforcing limits in your application.
+</Warning>
+
+## Credits-only mode (no overage billing)
+
+To offer a pure prepaid model with no overage charges:
+
+1. Add a Credits benefit to your product
+2. **Do not** add a metered price to the product
+
+Without a metered price, billing is never triggered for the meter — only credits are consumed. Customers cannot be charged overage.
+
+Enforce usage limits in your application by checking the meter balance before allowing actions.
+
+## Issue credits with the Credits benefit
+
+The Credits benefit is configured per product and issues credits automatically at purchase time.
+
+**For subscription products** — credits are issued at the beginning of each billing cycle (monthly or yearly). On renewal, the balance is topped up to the specified amount.
+
+**For one-time products** — credits are issued once at time of purchase. They do not renew.
+
+To add a Credits benefit to a product:
+
+1. Open the product
+2. Under **Benefits**, add a **Meter Credits** benefit
+3. Select the meter this benefit applies to
+4. Set the number of units to issue
+
+## Check a customer's balance
+
+**Customer State API** — returns the full customer overview including active meter balances:
+
+```ts
+const state = await spaire.customerState.get({ externalCustomerId: 'your_user_id' })
+
+for (const meter of state.meters) {
+  console.log(`${meter.meter.name}: ${meter.balance} units remaining`)
+}
+```
+
+**Customer Meters API** — query the balance for a specific meter directly:
+
+```ts
+const meters = await spaire.customerMeters.list({
+  externalCustomerId: 'your_user_id',
+})
+```
+
+Use these before allowing usage in your application to enforce any limits you want to apply.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="bolt" href="/features/usage-based-billing/event-ingestion" title="Event Ingestion">
+    Ingest events that deduct from the credit balance.
+  </Card>
+  <Card icon="file-invoice-dollar" href="/features/usage-based-billing/billing" title="Billing">
+    How overage charges work when credits run out.
+  </Card>
+</CardGroup>

@@ -1,0 +1,61 @@
+import { Heading, Link, Preview, Section, Text } from '@react-email/components'
+import BodyText from '../components/BodyText'
+import Button from '../components/Button'
+import FooterCustomer from '../components/FooterCustomer'
+import WrapperOrganization from '../components/WrapperOrganization'
+import { organization, product } from '../preview'
+import type { schemas } from '../types'
+
+export function SubscriptionRevoked({
+  email,
+  organization,
+  product,
+  subscription,
+  url,
+}: schemas['SubscriptionRevokedProps']) {
+  return (
+    <WrapperOrganization organization={organization}>
+      <Preview>Your enrollment in {product.name} has now ended</Preview>
+      <Section>
+        <Heading as="h1" className="text-xl font-bold text-gray-900">
+          Your enrollment has now ended
+        </Heading>
+        <BodyText>
+          Thank you for being a student of{' '}
+          <span className="font-bold">{product.name}</span>.
+        </BodyText>
+        <BodyText>
+          We hope to see you again in the future - you're always welcome back.
+        </BodyText>
+      </Section>
+      <Section className="my-4 text-center">
+        <Button href={url}>View enrollment</Button>
+      </Section>
+      <Section className="mt-4 border-t border-gray-200 pt-2">
+        <Text className="text-sm text-gray-600">
+          If you're having trouble with the button above, copy and paste the URL
+          below into your web browser.
+        </Text>
+        <Text className="text-sm">
+          <Link href={url} className="text-blue-600 underline">
+            {url}
+          </Link>
+        </Text>
+      </Section>
+      <FooterCustomer organization={organization} email={email} />
+    </WrapperOrganization>
+  )
+}
+
+SubscriptionRevoked.PreviewProps = {
+  email: 'john@example.com',
+  organization,
+  product,
+  subscription: {
+    id: '12345',
+    status: 'canceled',
+  },
+  url: 'https://app.spairehq.com/acme-inc/portal/subscriptions/12345',
+}
+
+export default SubscriptionRevoked

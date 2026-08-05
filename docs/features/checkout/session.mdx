@@ -1,0 +1,203 @@
+---
+title: "Checkout Sessions"
+sidebarTitle: "Checkout Sessions"
+description: "Create checkout sessions from your backend for complete control over the payment flow."
+---
+
+Checkout sessions give you full programmatic control over what a customer sees at checkout — pre-filled fields, customer identity, metadata, custom pricing, and more. You create the session from your server, then redirect the customer to the session URL.
+
+Sessions expire after **one hour** if not completed.
+
+## When to use sessions
+
+Use sessions over [checkout links](/features/checkout/links) when you need to:
+- Pre-identify the customer using their account in your system
+- Attach metadata to the order (e.g., plan tier, referral source, internal IDs)
+- Apply a discount automatically without exposing a code
+- Create dynamic or ad-hoc pricing per customer
+- Control the success redirect URL per transaction
+
+## Create a session
+
+<CodeGroup>
+
+```ts TypeScript
+import { Spaire } from '@spaire/sdk'
+
+const spaire = new Spaire({
+  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+})
+
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+})
+
+// Redirect your customer to checkout.url
+console.log(checkout.url)
+```
+
+```python Python
+from spaire_sdk import Spaire
+
+with Spaire(access_token="<YOUR_ACCESS_TOKEN>") as spaire:
+    checkout = spaire.checkouts.create(request={
+        "products": ["<product_id>"],
+    })
+    print(checkout.url)
+```
+
+```bash cURL
+curl -X POST https://api.spairehq.com/v1/checkouts \
+  -H "Authorization: Bearer $SPAIRE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "products": ["<product_id>"]
+  }'
+```
+
+</CodeGroup>
+
+The response includes a `url` field. Redirect the customer there to complete payment.
+
+## Key parameters
+
+### Identify the customer
+
+Link the checkout to a customer in your system using `external_customer_id`. After a successful checkout, the Spaire customer will have this ID set as `external_id`, making it easy to look up billing state without storing Spaire IDs.
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  customerExternalId: 'your_internal_user_id',
+  customerEmail: 'jane@example.com',
+  customerName: 'Jane Smith',
+})
+```
+
+### Attach metadata
+
+Metadata is copied from the checkout to the resulting order and subscription. Use it for attribution, internal references, or anything you want to correlate later.
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  metadata: {
+    campaign: 'launch-2025',
+    referral: 'product-hunt',
+    plan_context: 'team',
+  },
+})
+```
+
+### Control the success redirect
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  successUrl: 'https://yourapp.com/welcome?order={CHECKOUT_ID}',
+})
+```
+
+The placeholder `{CHECKOUT_ID}` is replaced with the actual checkout session ID after payment.
+
+### Apply a discount automatically
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  discountId: '<discount_id>',
+  allowDiscountCodes: false, // prevent customers from changing it
+})
+```
+
+### Allow or block discount code entry
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  allowDiscountCodes: true, // default: true
+})
+```
+
+## Multiple products
+
+Pass multiple product IDs to let the customer choose between them at checkout — useful for presenting monthly and yearly pricing side by side.
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<monthly_product_id>', '<yearly_product_id>'],
+})
+```
+
+## Ad-hoc prices
+
+For dynamic pricing — individual customer deals, calculated tiers, or custom enterprise quotes — you can attach temporary prices to a checkout session. These prices exist only for the session and never appear in your product catalog.
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  prices: {
+    '<product_id>': [
+      {
+        amountType: 'fixed',
+        priceAmount: 19900, // $199.00
+        priceCurrency: 'usd',
+      },
+    ],
+  },
+})
+```
+
+Ad-hoc prices support all price types: `fixed`, `free`, `custom`, `seat_based`, and `metered_unit`. They are marked with `source: "ad_hoc"` in API responses.
+
+## Embedded checkout with sessions
+
+To use a session URL inside an [embedded checkout](/features/checkout/embed), set `embed_origin` to the origin of the page that will host the checkout frame:
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  embedOrigin: 'https://yourapp.com',
+})
+```
+
+Without `embed_origin`, the embedded checkout will be blocked by the browser's iframe security policy.
+
+## Custom fields
+
+Pre-fill custom field values when you already have the data:
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  customFieldData: {
+    terms_accepted: true,
+    company_name: 'Acme Inc.',
+  },
+})
+```
+
+## Localization
+
+Set the checkout language using the `locale` field. See [Localized Checkout](/features/checkout/localization) for the full list of supported locales.
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  locale: 'fr',
+})
+```
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="globe" href="/features/checkout/localization" title="Localized Checkout">
+    Serve checkout in 10 languages — set once or per-session.
+  </Card>
+  <Card icon="tag" href="/features/discounts" title="Discounts">
+    Create percentage and fixed-amount discounts to apply at checkout.
+  </Card>
+  <Card icon="webhook" href="/integrate/webhooks/endpoints" title="Handle webhooks">
+    React to `order.paid` and `subscription.active` in your backend.
+  </Card>
+</CardGroup>

@@ -1,0 +1,53 @@
+---
+title: "Refunds"
+sidebarTitle: "Refunds"
+description: "Issue full or partial refunds on any order — with control over whether benefits are revoked."
+---
+
+Spaire supports full and partial refunds on any paid order. Refunds are issued from your dashboard and the amount is deducted from your balance.
+
+<Note>
+  As Merchant of Record, Spaire may issue refunds on your behalf — even if your policy is no refunds. We reserve this right within 60 days of purchase to proactively prevent chargebacks. You'll be notified if this happens.
+</Note>
+
+## Issue a refund
+
+1. Go to **Sales → Orders** and open the order you want to refund
+2. Scroll to the **Refund** section
+3. Click **Refund**
+
+### Amount
+
+Defaults to the full order amount. Lower the amount to issue a partial refund instead.
+
+<Warning>
+  Payment processing fees are non-refundable. The fee charged on the original transaction remains and is deducted from your balance even when you issue a full refund to the customer. For example, a $30 order with ~$1.60 in fees: the customer receives $30, but your balance is reduced by ~$1.60 to cover the fee.
+</Warning>
+
+### Reason
+
+Select a reason for the refund. This is stored for your records and is visible to your team in the order details.
+
+### Revoke benefits
+
+**One-time purchases** — when refunding, you can choose whether to revoke the customer's access to product benefits (license keys, file downloads, custom entitlements, etc.). This defaults to on when issuing a full refund.
+
+**Subscriptions** — you cannot revoke access by refunding a subscription order. To end a subscriber's access, cancel the subscription. Spaire will revoke all benefit grants automatically once the subscription ends.
+
+## Order status after refund
+
+| Action | Resulting status |
+|--------|-----------------|
+| Full refund | `refunded` |
+| Partial refund | `partially_refunded` |
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="arrows-rotate" href="/core-concepts#subscriptions" title="Subscriptions">
+    Cancel a subscription to end recurring billing and revoke access.
+  </Card>
+  <Card icon="webhook" href="/integrate/webhooks/events" title="Webhook events">
+    Listen for `order.refunded` to sync refund state in your application.
+  </Card>
+</CardGroup>

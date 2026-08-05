@@ -1,0 +1,252 @@
+/* Universal course-editor dark mode.
+
+   Scoped to `.editor-dark` on the course-editor root. The editor is built with
+   hardcoded light Tailwind utilities (bg-white / bg-gray-50 / text-gray-900 /
+   border-gray-200 …), so this remaps those utilities to the same dark palette
+   the community hub and landing dark mode use. Accent blues are left untouched.
+   `bg-gray-900` / `bg-black` are intentional *dark* elements (primary buttons,
+   pills) — they stay dark+visible (elevated) rather than inverting to light.
+
+   First pass: tuned by surface kind. Report any screen that reads wrong and
+   it gets adjusted here in one place. */
+
+.editor-dark {
+  background-color: #141416 !important;
+  /* Dotted canvas — the same 22px dot grid used by the automation tree,
+     applied across the whole builder as its backdrop. */
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1px
+  ) !important;
+  background-size: 22px 22px !important;
+  color: #f5f5f7;
+  color-scheme: dark;
+
+  /* Re-tint the editor accent token for dark mode. The editor's light accent
+     (#0066cc) reads muddy on a dark canvas, so lift it to the community dark
+     accent (#2997ff). Because every editor surface now derives its blue from
+     `--color-ce-accent` (the single source of truth in globals.css), this one
+     override re-colours active tabs, focus borders, primary buttons, links,
+     toggles, sliders, sheets and styled-jsx alike — no per-class remaps. */
+  --color-ce-accent: #2997ff;
+  --color-ce-accent-hover: #1a85f0;
+  --color-ce-accent-contrast: #0b1220;
+  --color-ce-accent-ring: rgba(41, 151, 255, 0.45);
+  --color-ce-accent-tint: rgba(41, 151, 255, 0.14);
+  --color-ce-accent-tint-strong: rgba(41, 151, 255, 0.22);
+  --color-ce-accent-border: rgba(41, 151, 255, 0.4);
+}
+
+/* ---- surfaces (light → dark) ---- */
+.editor-dark .bg-white {
+  background-color: #1c1c1e !important;
+}
+.editor-dark .hover\:bg-white:hover {
+  background-color: #1c1c1e !important;
+}
+.editor-dark .bg-gray-50 {
+  background-color: #161618 !important;
+}
+.editor-dark .hover\:bg-gray-50:hover {
+  background-color: #202024 !important;
+}
+.editor-dark .bg-gray-100 {
+  background-color: #232327 !important;
+}
+.editor-dark .hover\:bg-gray-100:hover {
+  background-color: #2a2a2f !important;
+}
+.editor-dark .bg-gray-200 {
+  background-color: #2a2a2f !important;
+}
+.editor-dark .hover\:bg-gray-200:hover {
+  background-color: #34343a !important;
+}
+/* translucent header bar (bg-gray-50/85, bg-white/80, …) */
+.editor-dark [class*='bg-gray-50/'] {
+  background-color: rgba(20, 20, 22, 0.85) !important;
+}
+.editor-dark [class*='bg-white/'] {
+  background-color: rgba(28, 28, 30, 0.85) !important;
+}
+
+/* ---- dark accents (already dark — keep dark + visible, do not invert) ---- */
+.editor-dark .bg-gray-900 {
+  background-color: #2a2a2f !important;
+}
+.editor-dark .hover\:bg-gray-800:hover {
+  background-color: #34343a !important;
+}
+.editor-dark .hover\:bg-gray-700:hover {
+  background-color: #3c3c42 !important;
+}
+.editor-dark .bg-black {
+  background-color: #232327 !important;
+}
+.editor-dark .hover\:bg-black:hover {
+  background-color: #2a2a2f !important;
+}
+
+/* ---- text ---- */
+.editor-dark .text-gray-900 {
+  color: #f5f5f7 !important;
+}
+.editor-dark .text-gray-700 {
+  color: #d2d2d7 !important;
+}
+.editor-dark .text-gray-600 {
+  color: #b4b4bb !important;
+}
+.editor-dark .text-gray-500 {
+  color: #9a9aa2 !important;
+}
+.editor-dark .text-gray-400 {
+  color: #7e7e86 !important;
+}
+/* gray-300 / gray-200 are already used as *light* text (on dark accents) — leave */
+
+/* ---- borders ---- */
+.editor-dark .border-gray-200,
+.editor-dark .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+.editor-dark .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+.editor-dark .border-gray-900 {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+.editor-dark .hover\:border-gray-200:hover,
+.editor-dark .hover\:border-gray-300:hover,
+.editor-dark .hover\:border-gray-400:hover {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+.editor-dark .divide-gray-100 > * + *,
+.editor-dark .divide-gray-200 > * + * {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+.editor-dark .ring-gray-300 {
+  --tw-ring-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* ---- form fields ---- */
+/* Bare inputs/textareas/selects default to the UA white background (no bg
+   utility class to remap), so give them an explicit dark fill. Inputs that
+   carry an explicit bg-* class are handled by the surface rules above (higher
+   specificity wins). */
+.editor-dark
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+.editor-dark textarea,
+.editor-dark select {
+  background-color: #1c1c1e !important;
+  color: #f5f5f7;
+}
+.editor-dark input::placeholder,
+.editor-dark textarea::placeholder {
+  color: #7e7e86 !important;
+}
+
+/* ---- light-tint info / alert cards → dark tints ---- */
+.editor-dark .bg-blue-50,
+.editor-dark [class*='bg-blue-50/'] {
+  background-color: rgba(38, 92, 204, 0.12) !important;
+}
+.editor-dark .border-blue-100,
+.editor-dark .border-blue-200 {
+  border-color: rgba(60, 110, 230, 0.3) !important;
+}
+.editor-dark .bg-amber-50,
+.editor-dark .bg-yellow-50,
+.editor-dark [class*='bg-amber-50/'] {
+  background-color: rgba(190, 140, 30, 0.14) !important;
+}
+.editor-dark .border-amber-100,
+.editor-dark .border-amber-200 {
+  border-color: rgba(200, 150, 40, 0.3) !important;
+}
+.editor-dark .bg-green-50,
+.editor-dark .bg-emerald-50 {
+  background-color: rgba(40, 160, 90, 0.12) !important;
+}
+.editor-dark .border-green-100,
+.editor-dark .border-green-200 {
+  border-color: rgba(50, 170, 100, 0.3) !important;
+}
+.editor-dark .bg-red-50,
+.editor-dark .bg-rose-50 {
+  background-color: rgba(200, 60, 50, 0.12) !important;
+}
+.editor-dark .border-red-100,
+.editor-dark .border-red-200 {
+  border-color: rgba(210, 70, 60, 0.3) !important;
+}
+
+/* ---- community-blue accent: brighten to the community dark accent ----
+   The editor's accent is the community light blue (#0066cc). On a dark canvas
+   that reads muddy, so lift it to the community *dark* accent (#2997ff) — the
+   same blue the community hub uses in dark mode — for active tabs, focus
+   borders, primary buttons, links, toggles. */
+.editor-dark .text-\[\#0066cc\] {
+  color: #2997ff !important;
+}
+.editor-dark .border-\[\#0066cc\] {
+  border-color: #2997ff !important;
+}
+.editor-dark .bg-\[\#0066cc\] {
+  background-color: #2997ff !important;
+}
+/* Focus indicator on form fields: inputs use `focus:border-[#0066cc]` +
+   `focus:ring-blue-100`. The static `.border-[#0066cc]` remap above does NOT
+   match the focus-variant class, so without these the focused border stays the
+   muddy light-mode blue and the `ring-blue-100` halo (#dbeafe) reads near-white.
+   Remap both to the main editor dark blue so the focus outline matches the blue
+   used everywhere else (settings, pricing, etc.). */
+.editor-dark .focus\:border-\[\#0066cc\]:focus {
+  border-color: #2997ff !important;
+}
+.editor-dark .focus\:ring-blue-100:focus {
+  --tw-ring-color: rgba(41, 151, 255, 0.55) !important;
+}
+
+/* ---- lesson editor (LessonEditorV2) ----
+   The lesson editor is a self-contained design that themes via CSS variables on
+   its `.led` root. Its built-in dark override keys on `body.dark`, which the
+   course editor never sets (it uses `.editor-dark`). Re-map the same dark
+   palette under the editor root so the lesson editor goes dark with the rest of
+   the editor. Kept here (plain CSS) rather than in the component's styled-jsx so
+   it's reliable and lives alongside the other editor dark rules. */
+.editor-dark .led {
+  --bg: #141416 !important;
+  --card: #1d1d20 !important;
+  --text: #f5f5f7 !important;
+  --text-2: rgba(245, 245, 247, 0.6) !important;
+  --hair: rgba(245, 245, 247, 0.14) !important;
+  --ans: rgba(245, 245, 247, 0.78) !important;
+  --band: 29, 29, 32 !important;
+  /* Match the rest of the editor's dark accent: the lesson editor's built-in
+     blue is the light-mode #0066cc, which reads darker than the #2997ff the
+     editor uses everywhere else in dark mode. */
+  --blue: #2997ff !important;
+}
+
+/* ---- embedded community-hub panels (Settings / Pricing tabs) ----
+   The hub normally paints its own page background + fixed radial ambience.
+   Embedded as a tab panel that reads as a boxed-in slab over the dotted
+   editor canvas — make it transparent so the grouped-list cards float
+   directly on the dots. */
+.editor-dark .spaire-hub.hub-embed {
+  background: transparent !important;
+}
+.editor-dark .spaire-hub.hub-embed::before {
+  display: none;
+}
+
+/* ---- elevation reads softer on a dark canvas ---- */
+.editor-dark .shadow-sm,
+.editor-dark .shadow,
+.editor-dark .shadow-md,
+.editor-dark .shadow-lg,
+.editor-dark .shadow-xl,
+.editor-dark .shadow-2xl {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+}

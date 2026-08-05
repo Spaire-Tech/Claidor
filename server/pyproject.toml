@@ -1,0 +1,164 @@
+[project]
+name = "polar"
+version = "0.0.0"
+readme = "README.md"
+requires-python = ">=3.14.0"
+dependencies = [
+  "anthropic>=0.40.0",
+  "fastapi>=0.120.2",
+  "uvicorn[standard]>=0.31.1",
+  "asyncpg>=0.29.0",
+  "alembic>=1.9.2",
+  "sqlalchemy[asyncio]>=2.0.34",
+  "greenlet>=3.1.1",
+  "structlog>=24.4.0",
+  "githubkit==0.14.3",
+  "redis>=5.0.4",
+  "sse-starlette>=2.0.0",
+  "stripe>=14.3.0,<14.4",
+  "pyjwt>=2.6.0",
+  "pydantic>=2.11",
+  "sentry-sdk[fastapi,sqlalchemy]>=2.48.0",
+  "posthog>=3.6.0",
+  "python-slugify>=8.0.1",
+  "python-multipart>=0.0.12",
+  "safe-redirect-url>=0.1.1",
+  "httpx-oauth>=0.16.0",
+  "httpx>=0.23.0",
+  "pydantic-settings>=2.5.2",
+  "email-validator>=2.1.0.post1",
+  "python-dateutil>=2.9.0.post0",
+  "pydantic-extra-types>=2.9.0",
+  "sqlalchemy-utils>=0.41.1",
+  "authlib>=1.6.0",
+  "standardwebhooks>=1.0.0",
+  "typer>=0.12.5",
+  "logfire[fastapi,httpx,sqlalchemy,redis]>=2.6.0",
+  "makefun>=1.15.6",
+  "boto3>=1.38.30",
+  "itsdangerous>=2.2.0",
+  "cryptography>=43.0.1",
+  "babel>=2.16.0",
+  "pycountry>=24.6.1",
+  "python-stdnum>=2.1",
+  "ipinfo-db>=0.0.4",
+  "taskipy>=1.10.3",
+  "psycopg2-binary>=2.9.5",
+  "apscheduler>=3.10.4",
+  "plain-client>=0.0.3",
+  "tagflow>=0.7.0",
+  "exponent-server-sdk>=2.1.0",
+  "dramatiq[redis,watch]>=1.17.1",
+  "prometheus-client>=0.21.0",
+  "python-snappy>=0.7.3",
+  "fpdf2>=2.8.3",
+  "pydantic-ai-slim[openai]>=0.7.1",
+  "asgi-ratelimit>=0.10.0",
+  "aiocsv>=1.4.0",
+  "alembic-utils>=0.8.8",
+  "clickhouse-connect>=0.8.0",
+]
+
+[dependency-groups]
+dev = [
+  "mypy>=1.11",
+  "pytest<10",
+  "pytest-sugar>=1.0.0",
+  "typer>=0.12.5",
+  "coverage>=7.6.0",
+  "pytest-mock>=3.10.0",
+  "ruff>=0.6.9",
+  "pytest-asyncio>=0.24",
+  "types-redis>=4.6.0.20240903",
+  "pytest-subtests>=0.13.1",
+  "pytest-recording>=0.13.1",
+  "respx>=0.21.1",
+  "pytest-cov>=5.0.0",
+  "types-python-slugify>=8.0.0.3",
+  "types-requests>=2.31.0.10",
+  "boto3-stubs[s3]>=1.38.30",
+  "freezegun>=1.5.1",
+  "fakeredis[lua]>=2.26.1",
+  "pytest-xdist[psutil]>=3.6.1",
+  "sqlalchemy-utils>=0.41.2",
+  "minio>=7.2.9",
+  "polar-sdk==0.27.3",
+  "locust>=2.20.0",
+  "debugpy>=1.8.19",
+]
+
+[tool.taskipy.tasks]
+emails = { cmd = "cd emails && pnpm i --frozen-lockfile && pnpm run build", help = "build emails" }
+backoffice = { cmd = "pnpm -C polar/backoffice install && pnpm -C polar/backoffice build", help = "build backoffice CSS and JS" }
+api = { cmd = "env AUTHLIB_INSECURE_TRANSPORT=true uvicorn polar.app:app --reload --workers 1 --host 127.0.0.1 --port 8000", help = "run api service" }
+worker = { cmd = "dramatiq -p 1 -t 1 --watch polar -f polar.worker.scheduler:start polar.worker.run", help = "run worker" }
+test = { cmd = "POLAR_ENV=testing python -m pytest --cov polar/ --cov-report=term-missing", help = "run all tests" }
+test_fast = { cmd = "POLAR_ENV=testing python -m pytest -n auto -p no:sugar --no-cov", help = "run all tests, but fast" }
+loadtest = { cmd = "locust -f load_tests/locustfile.py --host=http://127.0.0.1:8000", help = "run load tests (interactive)" }
+lint = { cmd = "ruff format . && ruff check --fix .", help = "run linters with autofix" }
+lint_check = { cmd = "ruff format --check . && ruff check .", help = "run ruff linter" }
+lint_types = { cmd = "mypy polar scripts tests", help = "run mypy type verify" }
+db_migrate = { cmd = "python -m scripts.db upgrade", help = "run alembic upgrade" }
+db_recreate = { cmd = "python -m scripts.db recreate", help = "drop and recreate database" }
+db_reparent = { cmd = "python -m scripts.db reparent", help = "try to auto-fix conflicting migrations" }
+tb_deploy = { cmd = "python -m scripts.tinybird", help = "deploy tinybird datasources" }
+clean = { cmd = "find * -name '*.pyc' -delete && find * -name '__pycache__' -delete", help = "clean up .pyc and __pycache__" }
+verify_github_app = { cmd = "python -m polar.verify_github_app", help = "verify that the github app is correctly configured" }
+generate_dev_jwks = { cmd = "python -m polar.kit.jwk spaire_dev > ./.jwks.json", help = "generate a development JWKS file" }
+seeds_load = { cmd = "python -m scripts.seeds_load", help = "load sample/test data into the database" }
+loadtest_setup = { cmd = "python -m scripts.loadtest_setup", help = "setup load test data for event ingestion" }
+platform_verify = { cmd = "python -m scripts.platform verify", help = "verify SPAIRE_PLATFORM_ORG_ID points to a real organization" }
+seed_platform_products = { cmd = "python -m scripts.seed_platform_products", help = "idempotently seed Starter/Studio/Scale products and overage meters in the platform organization" }
+extend_platform_trial = { cmd = "python -m scripts.extend_platform_trial", help = "extend a creator org's Starter/Studio/Scale trial (operator override)" }
+pre_deploy = { cmd = "task db_migrate && task seed_platform_products", help = "Pre-deploy command run by Render. Migrates DB then re-seeds platform tier products so the startup check passes against any new code." }
+
+[tool.pytest.ini_options]
+markers = ["auth"]
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+concurrency = ["thread", "greenlet"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+] # See: https://github.com/nedbat/coveragepy/issues/831
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+extend-select = ["I", "UP", "T20", "B039", "PT", "RUF022", "RUF023", "RUF10", "RUF20"]
+ignore = [
+  "F841",  # remove unused variables
+  "PT012",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"migrations/*" = [
+  "F401", # remove unused import
+]
+"scripts/*" = ["T20"]
+
+[tool.mypy]
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+strict_equality = true
+disallow_untyped_defs = true
+skip_cache_mtime_checks = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = false
+warn_untyped_fields = true
+
+[tool.uv.sources]
+dramatiq = { git = "https://github.com/frankie567/dramatiq", rev = "memory-leak-asyncio-ter" }

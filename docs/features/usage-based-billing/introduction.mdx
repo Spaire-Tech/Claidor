@@ -1,0 +1,68 @@
+---
+title: "Usage-Based Billing"
+sidebarTitle: "Overview"
+description: "Charge customers based on what they actually use. Ingest events from your app, define meters, and Spaire handles the billing."
+---
+
+Usage-based billing lets you charge customers for what they consume — API calls, tokens, storage, messages, or any other measurable unit. You send events from your application, Spaire aggregates them through meters, and the charges flow automatically with the subscription invoice.
+
+## How it works
+
+Three components work together:
+
+**Events** — raw signals from your application. Each event has a name, a customer identifier, and optional metadata. Events are immutable once ingested.
+
+**Meters** — filter events and aggregate them into a usage number. You control the filter (which events count) and the aggregation function (how to sum them up).
+
+**Metered price** — links a meter to a product, setting the cost per unit. At the end of the billing period, Spaire multiplies units consumed by the price per unit and adds the amount to the subscription invoice.
+
+## Quickstart
+
+<Steps>
+  <Step title="Create a meter">
+    Go to **Catalog → Meters** and click **Create Meter**. Set the filter (e.g., events named `api_call`) and the aggregation (e.g., **Count**). Save it.
+  </Step>
+  <Step title="Add a metered price to a product">
+    Open a subscription product, add a metered price, select your meter, and set the price per unit. Save the product.
+  </Step>
+  <Step title="Ingest events from your app">
+    Call the Spaire API or SDK each time a billable action occurs. Pass the customer's ID and any metadata your meter needs.
+
+    ```ts
+    await spaire.events.ingest({
+      events: [{
+        name: 'api_call',
+        externalCustomerId: 'your_user_id',
+        metadata: { endpoint: '/v1/generate' },
+      }],
+    })
+    ```
+  </Step>
+  <Step title="Billing happens automatically">
+    At the end of each billing period, Spaire tallies the meter, calculates the charge, and adds it to the invoice. Customers can see their usage in the customer portal.
+  </Step>
+</Steps>
+
+## Key concepts
+
+<CardGroup cols={2}>
+  <Card icon="bolt" href="/features/usage-based-billing/event-ingestion" title="Event Ingestion">
+    Send events from your backend using the SDK or REST API.
+  </Card>
+  <Card icon="gauge" href="/features/usage-based-billing/meters" title="Meters">
+    Filter events and choose an aggregation function (count, sum, average, etc.).
+  </Card>
+  <Card icon="file-invoice-dollar" href="/features/usage-based-billing/billing" title="Billing">
+    How metered usage is invoiced alongside the base subscription.
+  </Card>
+  <Card icon="coins" href="/features/usage-based-billing/credits" title="Credits">
+    Let customers pre-pay for usage to avoid surprise invoices.
+  </Card>
+</CardGroup>
+
+## Important notes
+
+- Spaire **does not block usage** if a customer exceeds their balance or credit. You're responsible for enforcing limits in your application.
+- Events are **immutable** — once ingested, they cannot be updated or deleted.
+- Metered prices are only available on **subscription products**.
+- Discounts applied to a subscription are applied to the **entire invoice**, including metered usage.

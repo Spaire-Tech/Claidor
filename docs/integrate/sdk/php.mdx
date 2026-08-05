@@ -1,0 +1,50 @@
+---
+title: "PHP SDK"
+sidebarTitle: "PHP"
+icon: php
+description: SDK for PHP (>=8.2)
+---
+
+## Installation
+
+```bash Terminal
+composer require spaire-tech/spaire-php
+```
+
+## Quickstart
+
+```php index.php
+<?php
+
+declare(strict_types=1);
+
+require 'vendor/autoload.php';
+
+use Spaire\Spaire;
+
+$sdk = Spaire::builder()
+    ->setSecurity(getenv('SPAIRE_ACCESS_TOKEN'))
+    ->build();
+
+$responses = $sdk->organizations->list(
+    page: 1,
+    limit: 10
+);
+
+foreach ($responses as $response) {
+    if ($response->statusCode === 200) {
+        // handle response
+    }
+}
+```
+
+## Sandbox Environment
+
+You can configure the SDK to hit the [sandbox environment](/integrate/sandbox) instead of production by setting the server when building the client:
+
+```php
+$sdk = Spaire::builder()
+    ->setServer('sandbox')
+    ->setSecurity(getenv('SPAIRE_ACCESS_TOKEN'))
+    ->build();
+```

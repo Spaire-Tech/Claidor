@@ -1,0 +1,14 @@
+/* Solid, clearly-bordered writing boxes for the SEO fields — mirrors the Course
+ * editor's title / description inputs so they read as real writing surfaces
+ * (not the transparent grey fill) in both light and dark mode.
+ *
+ * Kept as a real class (not an inline style) so the `:focus` rule can take over:
+ * an inline `box-shadow` would beat `.input:focus` and kill the blue focus ring. */
+.spaire-hub .seo-box {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--hair);
+}
+.spaire-hub .seo-box:focus {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}

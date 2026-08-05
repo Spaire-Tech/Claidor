@@ -1,0 +1,1804 @@
+/* ─────────────────────────────────────────────────────────────────
+   Spaire editor canvas shell — verbatim from the design hand-off.
+   Mirrors /tmp/spaire-design/spaire-space/project/styles.css for
+   .toolbar, .canvas-wrap, .canvas, .col-left, .col-right,
+   .add-fab(-wrap), .side-panel, .unsaved-banner.
+   ───────────────────────────────────────────────────────────────── */
+
+.spaire-editor {
+  /* Tokens scoped to the editor; popovers + drag overlay re-use them. */
+  --accent: var(--color-ce-accent);
+  --accent-soft: color-mix(in oklab, var(--accent) 12%, white);
+  --accent-ink: color-mix(in oklab, var(--accent) 78%, black);
+  --canvas: #ffffff;
+  --ink: #0c0c14;
+  --ink-2: #2a2a35;
+  --muted: #6b6b78;
+  --muted-2: #9a9aa6;
+  --line: #e6e6ec;
+  --line-2: #ededf2;
+  --line-strong: #d8d8e0;
+  --green: #0c8a52;
+  --green-bg: #e6f5ec;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  font-family:
+    var(--font-inter),
+    'Inter',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  /* Editor background matches the public Spaire Space (white, not gray)
+     so the canvas reads as a true preview. The dashboard frame around
+     the editor is rounded white already; setting white here removes
+     the gray bleed at the top of the canvas. */
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Editor owns its own viewport-height column. The dashboard layout
+     wraps us in an overflow-y-auto box; making us w-full + h-full
+     ensures the toolbar can stick at the top while the canvas-wrap
+     scrolls independently (the parent's overflow-y-auto becomes a
+     no-op because content fits exactly). */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Prevent the editor's own bg leaking past the dashboard's rounded
+     corners. The dashboard wrapper has rounded-2xl + bg-white. */
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+/* ── Background blur when an overlay is open ───────────────────────
+   The Add-to-Space picker and the inline edit popovers portal their
+   backdrop to <body> (a sibling of the editor), so a `backdrop-filter`
+   on that backdrop was *meant* to blur the page behind it. In practice
+   it never composited reliably over the editor — and it can't touch
+   the embedded <iframe> players on the canvas, which kept poking
+   through sharp. So we blur the editor root *itself* with a real
+   `filter`, flipped on the instant a portaled overlay mounts via
+   :has(). The overlay lives outside .spaire-editor-root, so it stays
+   crisp while everything behind it goes soft. */
+.spaire-editor-root {
+  transition: filter 0.25s ease;
+}
+
+body:has(.picker-backdrop) .spaire-editor-root,
+body:has(.edit-pop-backdrop) .spaire-editor-root {
+  filter: blur(12px) saturate(115%);
+}
+
+/* ── Top toolbar ── */
+.spaire-editor .toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  /* Translucent white so the canvas behind reads as the public Space
+     even as content scrolls under the toolbar. */
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.spaire-editor .tb-left,
+.spaire-editor .tb-right {
+  /* Equal widths so the centered status pill is actually screen-
+     centered regardless of how wide the buttons on either side are. */
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spaire-editor .tb-left {
+  justify-content: flex-start;
+}
+
+.spaire-editor .tb-right {
+  justify-content: flex-end;
+}
+
+.spaire-editor .tb-center {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.spaire-editor .tb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 999px;
+  color: var(--ink-2);
+  font-weight: 500;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.spaire-editor .tb-back:hover {
+  border-color: var(--line-strong);
+}
+
+.spaire-editor .tb-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 12px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.spaire-editor .tb-status .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c0c0c8;
+}
+
+.spaire-editor .tb-status[data-pub='1'] .dot {
+  background: var(--green);
+  box-shadow: 0 0 0 3px var(--green-bg);
+}
+
+.spaire-editor .tb-status[data-pub='1'] {
+  color: var(--green);
+}
+
+.spaire-editor .tb-icon-btn {
+  height: 36px;
+  padding: 0 14px;
+  min-width: 36px;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--ink-2);
+  letter-spacing: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.spaire-editor .tb-icon-btn:hover {
+  border-color: var(--line-strong);
+  background: #fafafc;
+}
+
+.spaire-editor .tb-enable-toggle {
+  height: 36px;
+  padding: 0 14px 0 6px;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+  font-weight: 500;
+  white-space: nowrap;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.spaire-editor .tb-enable-toggle:hover {
+  border-color: var(--line-strong);
+  background: #fafafc;
+}
+
+.spaire-editor .tb-enable-toggle[data-on='1'] {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.spaire-editor .tb-enable-toggle .sp-toggle {
+  display: inline-block;
+  pointer-events: none;
+}
+
+.spaire-editor .tb-publish {
+  height: 36px;
+  padding: 0 18px;
+  background: var(--ink);
+  color: white;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.spaire-editor .tb-publish:hover {
+  background: #1a1a22;
+}
+
+.spaire-editor .tb-publish:disabled {
+  background: #b8b8c0;
+  border-color: #b8b8c0;
+  cursor: not-allowed;
+}
+
+/* ── Unsaved-changes banner ── */
+.spaire-editor .unsaved-banner {
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--accent) 10%, white),
+    color-mix(in oklab, var(--accent) 4%, white)
+  );
+  border-bottom: 1px solid color-mix(in oklab, var(--accent) 30%, white);
+}
+
+.spaire-editor .unsaved-banner > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.spaire-editor .unsaved-banner b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.spaire-editor .unsaved-banner button {
+  font-size: 12.5px;
+  background: transparent;
+  color: var(--accent-ink);
+  border: 0;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.spaire-editor .unsaved-banner button:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.spaire-editor .unsaved-banner button.discard {
+  color: var(--muted);
+}
+
+/* ── Canvas frame ──
+   The canvas-wrap is the scrolling container. Toolbar is sticky
+   above it. Inside the grid, col-left uses position:sticky so the
+   profile card stays parked at the top while col-right scrolls past.
+   140px bottom padding ensures the floating FAB never covers the
+   last row of products / links. */
+.spaire-editor .canvas-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 28px 16px 140px;
+  transition: padding-right 0.25s ease;
+  overflow-y: auto;
+  /* Smooth scroll feel on touch trackpads; falls back to default. */
+  -webkit-overflow-scrolling: touch;
+  background: #ffffff;
+  min-height: 0;
+}
+
+.spaire-editor .canvas-wrap.has-panel {
+  padding-right: 460px;
+}
+
+.spaire-editor .canvas {
+  width: 100%;
+  /* Match the public Spaire Space layout
+     (clients/apps/web/src/app/(main)/[organization]/(header)/layout.tsx):
+     PublicLayout `wide` is max-w-7xl (1280px), the profile aside is 420px and
+     the column gap is gap-12 (48px). The canvas must visually equal what
+     visitors see — no canvas-only sizing. */
+  max-width: 1280px;
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.spaire-editor .canvas .col-left {
+  /* Sticky relative to canvas-wrap (the scroll container). Card
+     parks just below the toolbar (~56px) with a comfortable 28px
+     breathing room. */
+  position: sticky;
+  top: 28px;
+  align-self: start;
+}
+
+.spaire-editor .canvas .col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  /* Without min-width:0 a child whose intrinsic width is larger than
+     the column allocation (e.g. the Links carousel) blows up the
+     grid track. min-width:0 lets the grid clip correctly and
+     overflow-x:auto inside the carousel takes over. */
+  min-width: 0;
+}
+
+@media (max-width: 920px) {
+  .spaire-editor .canvas {
+    grid-template-columns: 1fr;
+  }
+  .spaire-editor .canvas .col-left {
+    position: static;
+  }
+  .spaire-editor .canvas-wrap.has-panel {
+    padding-right: 16px;
+  }
+  .spaire-editor .add-fab-wrap.has-panel {
+    padding-right: 0;
+  }
+  .spaire-editor .side-panel {
+    width: 100%;
+  }
+}
+
+/* ── Floating Add-to-Space FAB ── */
+.spaire-editor .add-fab-wrap {
+  position: fixed;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 40;
+  transition: padding-right 0.25s ease;
+}
+
+.spaire-editor .add-fab-wrap.has-panel {
+  padding-right: 460px;
+}
+
+.spaire-editor .add-fab {
+  pointer-events: auto;
+  height: 52px;
+  padding: 0 22px 0 18px;
+  /* Solid ink — matches the toolbar Publish CTA so the FAB reads as
+     the primary action of the editor. */
+  background: var(--ink);
+  color: white;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow:
+    0 12px 32px -10px rgba(12, 12, 20, 0.5),
+    0 2px 0 rgba(255, 255, 255, 0.08) inset;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+.spaire-editor .add-fab:hover {
+  transform: translateY(-1px);
+  background: #1a1a22;
+  border-color: #1a1a22;
+  box-shadow:
+    0 16px 40px -10px rgba(12, 12, 20, 0.6),
+    0 2px 0 rgba(255, 255, 255, 0.08) inset;
+}
+
+.spaire-editor .add-fab .plus {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.spaire-editor .add-fab .kbd {
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+}
+
+/* ── Slide-in side panel (full design ships in PR D; shell is here
+       so the Settings button has somewhere to land) ── */
+.spaire-editor .side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 460px;
+  background: white;
+  border-left: 1px solid var(--line);
+  z-index: 60;
+  box-shadow: -24px 0 48px -16px rgba(15, 15, 30, 0.12);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.spaire-editor .side-panel.open {
+  transform: translateX(0);
+}
+
+.spaire-editor .sp-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spaire-editor .sp-head h2 {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.spaire-editor .sp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.spaire-editor .sp-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.spaire-editor .sp-section h3 {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.spaire-editor .sp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.spaire-editor .sp-row + .sp-row {
+  margin-top: 8px;
+}
+
+.spaire-editor .sp-row .lbl {
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.spaire-editor .sp-row .sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.spaire-editor .sp-input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: var(--r-sm);
+  padding: 0 14px;
+  outline: none;
+  font-size: 14px;
+  color: var(--ink);
+  font-family: inherit;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+
+.spaire-editor .sp-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.spaire-editor .sp-input::placeholder {
+  color: var(--muted-2);
+}
+
+.spaire-editor .sp-share-btns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.spaire-editor .sp-share-btn {
+  height: 40px;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+
+.spaire-editor .sp-share-btn:hover {
+  border-color: var(--line-strong);
+}
+
+.spaire-editor .sp-url-row {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.spaire-editor .sp-url-row input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  height: 40px;
+  padding: 0 14px;
+  outline: none;
+  font-size: 13px;
+  color: var(--ink-2);
+  font-family: inherit;
+}
+
+.spaire-editor .sp-url-row .sp-url-act {
+  width: 44px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: white;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spaire-editor .sp-url-row .sp-url-act:hover {
+  color: var(--ink);
+}
+
+/* Toggle (used in panel rows) — purple track when on, white knob. */
+.spaire-editor .sp-toggle {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border: 0;
+  border-radius: 999px;
+  background: #d6d6dd;
+  transition: background 0.15s;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.spaire-editor .sp-toggle[data-on='1'] {
+  background: var(--accent);
+}
+
+.spaire-editor .sp-toggle i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s;
+}
+
+.spaire-editor .sp-toggle[data-on='1'] i {
+  transform: translateX(16px);
+}
+
+.spaire-editor .sp-section-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spaire-editor .sp-secondary-btn {
+  height: 40px;
+  padding: 0 16px;
+  background: white;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-weight: 500;
+  font-size: 13.5px;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.spaire-editor .sp-secondary-btn:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* ── Profile/content card chrome on the canvas. The actual content
+       inside is rendered by our existing ProfileCard / Storefront
+       components. The chrome wraps them so PR C can attach hover
+       controls without changing the inner components. ── */
+.spaire-editor .canvas-card {
+  position: relative;
+}
+
+/* ── Block-level drag handles ─────────────────────────────────────
+   Visible at half-opacity at rest so creators know blocks can be
+   reordered; brightens on block hover. Sits in the gutter to the
+   left of the right column. */
+.spaire-editor .block-host {
+  position: relative;
+}
+
+.spaire-editor .block-drag-handle {
+  position: absolute;
+  left: -32px;
+  top: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.35;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+  cursor: grab;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  touch-action: none;
+}
+
+.spaire-editor .block-host:hover .block-drag-handle,
+.spaire-editor .block-drag-handle:focus,
+.spaire-editor .block-drag-handle:hover {
+  opacity: 1;
+  background: white;
+  border-color: var(--line);
+  color: var(--ink-2);
+}
+
+.spaire-editor .block-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Profile-card product carousel — looping marquee of the products
+   that appear on the user's Space. Track is duplicated in markup
+   (so the loop appears seamless) and shifts -50% over the duration.
+   iOS-Safari quirks worked around:
+     - Use translate3d so the animation is GPU-accelerated (otherwise
+       mobile Safari can freeze it after a few frames).
+     - Drop mask-image: on some webkit versions it pauses the
+       descendant's transform animation entirely.
+     - will-change + backface-visibility help iOS keep the layer hot. */
+.profile-card-marquee {
+  overflow: hidden;
+  position: relative;
+}
+
+.profile-card-marquee-track {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  width: max-content;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  animation: profile-card-marquee-scroll var(--marquee-duration, 30s) linear
+    infinite;
+}
+
+/* Pause on hover (desktop only — hover doesn't fire on touch). */
+@media (hover: hover) {
+  .profile-card-marquee:hover .profile-card-marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-card-marquee-track {
+    animation: none;
+  }
+}
+
+@keyframes profile-card-marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.spaire-editor .block-host.dragging .canvas-card {
+  opacity: 0.4;
+}
+
+/* DragOverlay — the floating element shown while dragging. */
+.spaire-editor .drag-overlay {
+  pointer-events: none;
+  border-radius: 24px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 30px 60px -12px rgba(20, 18, 30, 0.35),
+    0 8px 24px -8px rgba(20, 18, 30, 0.25);
+  cursor: grabbing;
+  transform: rotate(0.5deg);
+}
+
+/* Drop-line indicator between blocks. */
+.spaire-editor .drop-line {
+  height: 4px;
+  margin: -2px 0;
+  border-radius: 999px;
+  background: transparent;
+  transition: background 0.12s;
+}
+
+.spaire-editor .drop-line.active {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 16%, transparent);
+}
+
+/* ── Per-item hover overlays (links + product cards) ──────────────
+   Hover any link or product on the canvas to reveal an action row.
+   The actions stack in the top-right of the item. */
+.spaire-editor .item-hover {
+  position: relative;
+}
+
+.spaire-editor .item-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.spaire-editor .item-hover:hover .item-actions,
+.spaire-editor .item-hover:focus-within .item-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.spaire-editor .item-action {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: white;
+  font-size: 12px;
+  color: var(--ink-2);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow:
+    0 1px 0 rgba(15, 15, 30, 0.04),
+    0 4px 10px -4px rgba(15, 15, 30, 0.18);
+}
+
+.spaire-editor .item-action:hover {
+  border-color: var(--line-strong);
+  background: white;
+}
+
+.spaire-editor .item-action.danger:hover {
+  color: #b00020;
+  border-color: #f5c6c6;
+}
+
+/* Per-item drag handle — sits next to the Remove button in the
+   item-actions cluster. Same chrome as `.item-action` so the row
+   reads as one toolbar. */
+.spaire-editor .item-drag-handle {
+  height: 30px;
+  min-width: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: white;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  font-family: inherit;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 1px 0 rgba(15, 15, 30, 0.04),
+    0 4px 10px -4px rgba(15, 15, 30, 0.18);
+  touch-action: none;
+}
+
+.spaire-editor .item-drag-handle:hover {
+  color: var(--ink-2);
+  border-color: var(--line-strong);
+}
+
+.spaire-editor .item-drag-handle:active {
+  cursor: grabbing;
+}
+
+.spaire-editor .item-host {
+  position: relative;
+}
+
+.spaire-editor .item-host.dragging {
+  opacity: 0.5;
+}
+
+/* ── Layout picker on the Links section heading ──────────────────
+   Hover the section heading to reveal a small floating layout
+   switcher. Selection state matches the editor accent (community blue). */
+.spaire-editor .layout-picker {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 10px;
+  padding: 2px;
+  gap: 1px;
+  margin-left: 8px;
+  box-shadow: 0 1px 2px rgba(15, 15, 30, 0.04);
+}
+
+.spaire-editor .layout-picker button {
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  font-size: 11.5px;
+  color: var(--muted);
+  border-radius: 8px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.spaire-editor .layout-picker button:hover {
+  color: var(--ink-2);
+}
+
+.spaire-editor .layout-picker button[aria-pressed='true'] {
+  background: var(--accent);
+  color: white;
+}
+
+.spaire-editor .footer-note {
+  padding: 20px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── Inline edit primitives ────────────────────────────────────────
+   .editable wraps a contentEditable text node — outline lights up on
+   hover (dashed) / focus (solid). Matches the design hand-off. */
+.spaire-editor .editable {
+  cursor: text;
+  border-radius: 6px;
+  outline: 1px dashed transparent;
+  outline-offset: 3px;
+  transition:
+    outline-color 0.12s,
+    background 0.12s;
+  display: inline-block;
+  min-width: 1ch;
+}
+
+.spaire-editor .editable[data-block='true'] {
+  display: block;
+}
+
+.spaire-editor .editable:hover {
+  outline-color: color-mix(in oklab, var(--accent) 50%, white);
+}
+
+.spaire-editor .editable:focus {
+  outline: 1px solid var(--accent);
+  background: var(--accent-soft);
+}
+
+.spaire-editor .editable[data-empty='true']::before {
+  content: attr(data-placeholder);
+  color: var(--muted-2);
+  pointer-events: none;
+}
+
+/* Hover-revealed click affordance for non-text targets (cover, avatar,
+   pills, social row). Hidden until the parent .hover-zone is hovered. */
+.spaire-editor .hover-zone {
+  position: relative;
+}
+
+.spaire-editor .hover-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.spaire-editor .hover-zone:hover .hover-controls,
+.spaire-editor .hover-zone:focus-within .hover-controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.spaire-editor .hc-btn {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: white;
+  font-size: 12px;
+  color: var(--ink-2);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(15, 15, 30, 0.04),
+    0 1px 2px rgba(15, 15, 30, 0.04);
+}
+
+.spaire-editor .hc-btn:hover {
+  border-color: var(--line-strong);
+}
+
+.spaire-editor .hc-btn.danger:hover {
+  color: #b00020;
+  border-color: #f5c6c6;
+}
+
+/* The cover-image and avatar specifically: a soft dark scrim appears
+   on hover so the action buttons are legible regardless of the
+   underlying image. */
+.spaire-editor .editable-image {
+  position: relative;
+  cursor: pointer;
+}
+
+.spaire-editor .editable-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 30, 0.32);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+.spaire-editor .editable-image:hover::after {
+  opacity: 1;
+}
+
+.spaire-editor .editable-image .hover-controls {
+  opacity: 0;
+}
+
+.spaire-editor .editable-image:hover .hover-controls {
+  opacity: 1;
+}
+
+/* ── Edit popover ──────────────────────────────────────────────────
+   Shared overlay used for tag editors, social row, profile-title
+   select, available-for-work, etc. Backdrop is blurred per the
+   editor's "anything modal blurs the background" principle. */
+.spaire-editor .edit-pop-backdrop {
+  position: fixed;
+  inset: 0;
+  /* Transparent click-catcher only. The page blur is handled by the
+     `filter` on .spaire-editor-root (see top of file) — that one
+     actually reaches the canvas iframes, which backdrop-filter never
+     did. */
+  background: transparent;
+  z-index: 70;
+  animation: pk-fade-in 0.18s ease;
+}
+
+.spaire-editor .edit-pop {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(440px, calc(100vw - 32px));
+  max-height: min(80vh, 720px);
+  /* Above 70 (backdrop) and 80 (Radix popper SelectContent we bump). */
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  padding: 22px 22px 20px;
+  /* Solid-enough cream surface; backdrop layer behind handles the
+     blur (matches picker treatment so the two stay consistent). */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.85) 0%,
+      rgba(255, 255, 255, 0.7) 100%
+    ),
+    rgba(248, 246, 242, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 24px 48px -16px rgba(20, 18, 30, 0.3),
+    0 6px 18px -6px rgba(20, 18, 30, 0.18);
+  animation: wgIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.spaire-editor .edit-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.spaire-editor .edit-pop-title {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.spaire-editor .edit-pop-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.spaire-editor .edit-pop-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.spaire-editor .edit-pop-cta {
+  height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  /* Black — every editor CTA is ink (Subscribe is the only colored
+     button). The blue accent stays reserved for input focus, not buttons. */
+  background: var(--ink);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 12px -4px rgba(12, 12, 20, 0.45);
+}
+
+.spaire-editor .edit-pop-cta.ghost {
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+/* ── Arrange panel ─────────────────────────────────────────────────
+   Floating side panel for reordering Space contents in one place. */
+.spaire-editor .arrange-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 20px 80px;
+  gap: 18px;
+}
+
+.spaire-editor .arrange-panel .ap-header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.spaire-editor .arrange-panel h2 {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.spaire-editor .arrange-panel .ap-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+.spaire-editor .arrange-panel .ap-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.spaire-editor .arrange-panel .ap-close:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.spaire-editor .arrange-panel .ap-empty {
+  padding: 32px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+}
+
+.spaire-editor .arrange-panel .ap-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spaire-editor .arrange-panel .ap-section h3 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.spaire-editor .arrange-panel .ap-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spaire-editor .arrange-panel .ap-mini-action {
+  font-size: 11px;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.spaire-editor .arrange-panel .ap-mini-action:hover {
+  background: white;
+  color: var(--ink);
+}
+
+.spaire-editor .arrange-panel .ap-cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spaire-editor .arrange-panel .ap-cat {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: white;
+}
+
+.spaire-editor .arrange-panel .ap-cat-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.spaire-editor .arrange-panel .ap-cat-label {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.spaire-editor .arrange-panel .ap-count {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.spaire-editor .arrange-panel .ap-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spaire-editor .arrange-panel .ap-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 8px;
+  background: white;
+  transition: background 0.12s;
+}
+
+.spaire-editor .arrange-panel .ap-row:hover {
+  background: var(--surface-2);
+}
+
+.spaire-editor .arrange-panel .ap-row-muted {
+  opacity: 0.6;
+}
+
+.spaire-editor .arrange-panel .ap-grip {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.spaire-editor .arrange-panel .ap-grip:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.spaire-editor .arrange-panel .ap-grip:active {
+  cursor: grabbing;
+}
+
+.spaire-editor .arrange-panel .ap-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.spaire-editor .arrange-panel .ap-thumb-empty {
+  border: 1px dashed var(--line);
+}
+
+.spaire-editor .arrange-panel .ap-row-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spaire-editor .arrange-panel .ap-row-action {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spaire-editor .arrange-panel .ap-row-action:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.spaire-editor .arrange-panel .ap-hidden {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.spaire-editor .arrange-panel .ap-hidden summary {
+  cursor: pointer;
+  padding: 8px 4px;
+  border-radius: 8px;
+}
+
+.spaire-editor .arrange-panel .ap-hidden summary:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* ── Arrange panel — additions ─────────────────────────────────── */
+.spaire-editor .arrange-panel .ap-status {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+
+.spaire-editor .arrange-panel .ap-status[data-mode='curated'] {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.spaire-editor .arrange-panel .ap-cat-move {
+  display: inline-flex;
+  flex-direction: row;
+  gap: 2px;
+}
+
+.spaire-editor .arrange-panel .ap-arrow {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.spaire-editor .arrange-panel .ap-arrow:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.spaire-editor .arrange-panel .ap-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: transparent;
+  border-color: transparent;
+}
+
+/* dnd-kit clears its own transforms on drop, but we want a visible
+   lift during the drag itself. */
+.spaire-editor .arrange-panel .ap-sortable.ap-is-dragging {
+  z-index: 50;
+}
+
+.spaire-editor .arrange-panel .ap-sortable.ap-is-dragging .ap-row {
+  background: white;
+  box-shadow:
+    0 10px 24px -8px rgba(15, 15, 30, 0.18),
+    0 0 0 1px var(--line);
+  transform: scale(1.01);
+}
+
+.spaire-editor .arrange-panel .ap-row-action-danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ── Toolbar device toggle (desktop / mobile preview) ───────────── */
+.spaire-editor .tb-device {
+  display: inline-flex;
+  background: var(--surface-2, #f4f4f7);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.spaire-editor .tb-device-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+
+.spaire-editor .tb-device-btn:hover {
+  color: var(--ink-2);
+}
+
+.spaire-editor .tb-device-btn[data-active='1'] {
+  background: white;
+  color: var(--ink);
+  box-shadow:
+    0 1px 2px rgba(15, 15, 30, 0.06),
+    0 0 0 1px var(--line);
+}
+
+/* ── Mobile preview frame (iPhone-shaped, scrollable) ───────────── */
+.mobile-preview-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  /* canvas-wrap already has overflow-y: auto; we just center inside. */
+  min-height: 0;
+  transition: padding-right 0.25s ease;
+}
+
+.mobile-preview-wrap.has-panel {
+  padding-right: 460px;
+}
+
+.mobile-frame {
+  position: relative;
+  /* iPhone 14 logical size: 390 × 844 (9 : 19.5). Cap height so the
+     frame fits viewports comfortably; the inner scroll handles the
+     overflow. */
+  width: clamp(320px, 90vw, 390px);
+  aspect-ratio: 390 / 844;
+  max-height: calc(100vh - 160px);
+  background: #0c0c14;
+  border-radius: 56px;
+  padding: 11px;
+  box-shadow:
+    0 30px 60px -20px rgba(12, 12, 20, 0.45),
+    0 8px 20px -8px rgba(12, 12, 20, 0.3),
+    inset 0 0 0 1.5px #2a2a35;
+}
+
+/* Dynamic island. */
+.mobile-frame-island {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 30px;
+  background: #0c0c14;
+  border-radius: 999px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Home indicator. */
+.mobile-frame-home {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 2px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* The actual phone "screen": white inner panel that clips the content. */
+.mobile-frame-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: white;
+  border-radius: 46px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Scrollable container — own scroll, momentum on iOS-like trackpads. */
+.mobile-frame-scroll {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* Top padding clears the dynamic island; bottom padding clears the
+     home indicator. Side padding matches a real iPhone safe area. */
+  padding: 56px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* The mobile-targeted utilities inside ProfileCard / Storefront
+     stretch to 100% width by default — perfect for the narrow column. */
+}
+
+/* Hide the toolbar's scrollbar for the mobile frame's inner scroll
+   to keep the device chrome looking like a phone. */
+.mobile-frame-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.mobile-frame-scroll {
+  scrollbar-width: none;
+}
+
+/* ── Mobile preview: force REAL mobile rendering ────────────────────
+   The iPhone frame sits inside a desktop-viewport browser, so
+   Tailwind's `md:` utilities (active at ≥ 768 px) fire even though
+   the visible canvas is ~390 px. These overrides cancel the `md:`
+   modifiers that affect layout — collapsing the public page's
+   two-column desktop layout into the single-column mobile layout
+   the user actually sees on their phone.
+
+   Only the layout-affecting classes are reset. Spacing/colour
+   utilities (md:py-8, md:gap-12) get pinned to their mobile
+   equivalents (py-4, gap-8) so vertical rhythm matches a real
+   phone's rendering of the same Tailwind code.
+
+   Limited to .mobile-frame-scroll so the rest of the editor is
+   untouched. */
+
+/* Reset the page-wrapper paddings to the mobile defaults. */
+.mobile-frame-scroll .mp-page-wrap {
+  /* PublicLayout normally adds md:py-8; mobile gets py-4. Match
+     the smaller value here since `md:` would otherwise apply. */
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  width: 100%;
+}
+
+/* Two-column → single column. */
+.mobile-frame-scroll .md\:flex-row {
+  flex-direction: column !important;
+}
+.mobile-frame-scroll .md\:gap-12 {
+  gap: 2rem !important; /* same as gap-8 mobile default */
+}
+
+/* Profile card aside: full-width, not sticky, no fixed pixel width. */
+.mobile-frame-scroll .md\:sticky {
+  position: static !important;
+}
+.mobile-frame-scroll .md\:top-8 {
+  top: auto !important;
+}
+.mobile-frame-scroll .md\:self-start {
+  align-self: auto !important;
+}
+.mobile-frame-scroll .md\:w-\[420px\] {
+  width: 100% !important;
+}
+
+/* Product grid: one column on mobile. */
+.mobile-frame-scroll .md\:grid-cols-2 {
+  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+}
+.mobile-frame-scroll .md\:grid-cols-3 {
+  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+}
+.mobile-frame-scroll .md\:grid-cols-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* Link "Grid" layout: the wrapper is `grid-cols-2 sm:grid-cols-3`, so
+   on a real ~390px phone it shows TWO columns (sm: never fires). But
+   the iPhone frame sits in a desktop viewport, so `sm:` (≥640px) DOES
+   fire here and the preview rendered three cramped columns. Pin it
+   back to two so the preview matches what a phone actually shows. */
+.mobile-frame-scroll .sm\:grid-cols-3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* Re-show elements that the public page hides past `md:`. */
+.mobile-frame-scroll .md\:hidden {
+  display: revert !important;
+}
+/* And re-hide elements that the public page only shows past `md:`. */
+.mobile-frame-scroll .md\:block {
+  display: none !important;
+}
+.mobile-frame-scroll .md\:flex {
+  display: none !important;
+}
+.mobile-frame-scroll .md\:inline-flex {
+  display: none !important;
+}
+
+/* PublicLayout-style page paddings: pin to mobile values. */
+.mobile-frame-scroll .md\:py-8 {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+.mobile-frame-scroll .md\:px-8 {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+.mobile-frame-scroll .md\:pt-8 {
+  padding-top: 1rem !important;
+}
+
+/* Banner aspect: tame the desktop 16:5 a bit on phones. */
+.mobile-frame-scroll .md\:aspect-\[16\/5\] {
+  aspect-ratio: 16 / 9 !important;
+}
+
+/* min-h utilities that are desktop-only. */
+.mobile-frame-scroll .md\:overflow-hidden {
+  overflow: visible !important;
+}
+.mobile-frame-scroll .md\:overflow-y-auto {
+  overflow-y: visible !important;
+}
+.mobile-frame-scroll .md\:h-full {
+  height: auto !important;
+}
+.mobile-frame-scroll .md\:min-h-0 {
+  min-height: 0 !important;
+}
+
+/* Lead-magnet form: the LeadMagnetCard's own CSS only stacks on a real
+   mobile viewport (@media), which never fires inside this desktop-hosted
+   phone frame. Force the cover-on-top mobile layout here so the preview
+   matches a real phone. (We can't use a container query on the card
+   itself — desktop Space columns are ~600px and would wrongly stack.) */
+.mobile-frame-scroll .lm-frame,
+.mobile-frame-scroll .lm-frame.media-right {
+  flex-direction: column !important;
+  max-width: none !important;
+}
+.mobile-frame-scroll .lm-media {
+  flex: 0 0 200px !important;
+}
+.mobile-frame-scroll .lm-panel {
+  padding: 32px 26px 40px !important;
+  align-items: flex-start !important;
+}
+
+/* ── Preview-mode device toggle ─────────────────────────────────── */
+.preview-device {
+  display: inline-flex;
+  background: #f4f4f7;
+  border: 1px solid #e6e6ec;
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.preview-device-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b6b78;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+
+.preview-device-btn:hover {
+  color: #2a2a35;
+}
+
+.preview-device-btn[data-active='1'] {
+  background: white;
+  color: #0c0c14;
+  box-shadow:
+    0 1px 2px rgba(15, 15, 30, 0.06),
+    0 0 0 1px #e6e6ec;
+}

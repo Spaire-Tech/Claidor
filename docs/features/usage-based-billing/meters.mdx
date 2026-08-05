@@ -1,0 +1,119 @@
+---
+title: "Meters"
+description: "Define how events are filtered and aggregated into billable usage units."
+---
+
+A meter watches your event stream and produces a single number: the billable units consumed by a customer in a billing period. You define two things — a **filter** that selects which events count, and an **aggregation** that determines how to combine them.
+
+## Create a meter
+
+Go to **Catalog → Meters** and click **Create Meter**.
+
+Give the meter a name (e.g., `API Calls`, `Completion Tokens`), define its filter, and pick an aggregation. Use **Preview** to verify that your filter matches the events you expect before saving.
+
+<Note>
+  Once a meter has processed events or has customers with purchases, it becomes locked — you can no longer update its filter or aggregation. Plan your meter schema before going live.
+</Note>
+
+## Filters
+
+Filters select which events the meter counts. They're built from one or more **clauses** combined with `and`/`or` logic.
+
+### Clauses
+
+Each clause has three parts: **property**, **operator**, and **value**.
+
+**Property** — any field on the event. Use the event `name` field to match event types. For metadata, use the metadata key directly — no `metadata.` prefix needed.
+
+```
+name          → matches the event name
+tokens        → matches metadata.tokens
+model         → matches metadata.model
+```
+
+**Operators:**
+
+| Operator | Description |
+|----------|-------------|
+| `equals` | Exact match |
+| `not equals` | Excludes exact match |
+| `>` / `>=` | Greater than |
+| `<` / `<=` | Less than |
+| `contains` | String contains substring |
+| `not contains` | String does not contain substring |
+
+**Values** are auto-parsed: number → boolean → string.
+
+### Conjunctions
+
+- **`and`** — all clauses must match
+- **`or`** — at least one clause must match
+
+### Example: Count all `api_call` events
+
+| Property | Operator | Value |
+|----------|----------|-------|
+| `name` | equals | `api_call` |
+
+### Example: Sum token usage for a specific model
+
+| Property | Operator | Value |
+|----------|----------|-------|
+| `name` | equals | `api_call` |
+| `model` | equals | `gpt-4o` |
+
+Aggregation: **Sum** on `total_tokens`
+
+## Aggregations
+
+The aggregation runs over all filtered events for a customer in the billing period.
+
+| Function | What it computes |
+|----------|-----------------|
+| **Count** | Total number of matching events |
+| **Sum** | Sum of a numeric property across events |
+| **Average** | Mean value of a property |
+| **Minimum** | Lowest value of a property |
+| **Maximum** | Highest value of a property |
+| **Unique** | Number of distinct values of a property |
+
+For Sum, Average, Minimum, Maximum, and Unique — specify the property name to aggregate over (metadata key, no `metadata.` prefix).
+
+### Example
+
+Given these events for one customer:
+
+```json
+[
+  { "name": "ai_usage", "metadata": { "total_tokens": 10 } },
+  { "name": "ai_usage", "metadata": { "total_tokens": 20 } },
+  { "name": "ai_usage", "metadata": { "total_tokens": 30 } },
+  { "name": "ai_usage", "metadata": { "total_tokens": 30 } }
+]
+```
+
+Results on `total_tokens`:
+
+| Aggregation | Result |
+|-------------|--------|
+| Count | 4 |
+| Sum | 90 |
+| Average | 22.5 |
+| Minimum | 10 |
+| Maximum | 30 |
+| Unique | 3 (10, 20, 30) |
+
+## Attach a meter to a product
+
+A meter alone doesn't create charges. Connect it to a product by adding a **metered price**. See [Billing](/features/usage-based-billing/billing) for details on how that works.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="bolt" href="/features/usage-based-billing/event-ingestion" title="Event Ingestion">
+    Send events from your app that this meter will count.
+  </Card>
+  <Card icon="file-invoice-dollar" href="/features/usage-based-billing/billing" title="Billing">
+    Add a metered price to a product and control invoicing.
+  </Card>
+</CardGroup>

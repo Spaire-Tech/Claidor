@@ -1,0 +1,2613 @@
+import contextlib
+import typing
+import uuid
+from collections.abc import AsyncGenerator, AsyncIterator, Sequence
+
+import stripe as stripe_lib
+import structlog
+from pydantic import UUID4
+from pydantic import ValidationError as PydanticValidationError
+from sqlalchemy import func, select
+from sqlalchemy.exc import DBAPIError
+from sqlalchemy.orm import contains_eager, joinedload, selectinload
+
+from polar.auth.models import Anonymous, AuthSubject
+from polar.checkout.guard import has_product_checkout
+from polar.checkout.schemas import (
+    MINIMUM_PRICE_AMOUNT,
+    CheckoutConfirm,
+    CheckoutConfirmStripe,
+    CheckoutCreate,
+    CheckoutCreatePublic,
+    CheckoutPriceCreate,
+    CheckoutProductCreate,
+    CheckoutUpdate,
+    CheckoutUpdatePublic,
+    CustomerIPAddress,
+)
+from polar.config import settings
+from polar.custom_field.data import validate_custom_field_data
+from polar.customer.repository import CustomerRepository
+from polar.customer_session.service import customer_session as customer_session_service
+from polar.discount.service import DiscountNotRedeemableError
+from polar.discount.service import discount as discount_service
+from polar.enums import PaymentProcessor, TaxBehavior
+from polar.event.service import event as event_service
+from polar.event.system import (
+    CheckoutCreatedMetadata,
+    SystemEvent,
+    build_checkout_event,
+)
+from polar.exceptions import (
+    NotPermitted,
+    PaymentNotReady,
+    PolarError,
+    SpaireRequestValidationError,
+    ResourceNotFound,
+    ValidationError,
+)
+from polar.integrations.stripe.service import stripe as stripe_service
+from polar.integrations.stripe.utils import get_fingerprint
+from polar.kit.address import AddressInput
+from polar.kit.crypto import generate_token
+from polar.kit.currency import get_presentment_currency
+from polar.kit.db.locking import is_lock_not_available_error
+from polar.kit.operator import attrgetter
+from polar.kit.pagination import PaginationParams
+from polar.kit.sorting import Sorting
+from polar.kit.utils import utc_now
+from polar.logging import Logger
+from polar.member.service import member_service
+from polar.models import (
+    Account,
+    Checkout,
+    CheckoutLink,
+    Customer,
+    Discount,
+    LegacyRecurringProductPriceCustom,
+    LegacyRecurringProductPriceFixed,
+    Organization,
+    Payment,
+    PaymentMethod,
+    Product,
+    ProductPrice,
+    ProductVisibility,
+    Subscription,
+    User,
+)
+from polar.models.checkout import CheckoutStatus
+from polar.models.checkout_product import CheckoutProduct
+from polar.models.discount import DiscountDuration
+from polar.models.order import OrderBillingReasonInternal
+from polar.models.product_price import ProductPriceAmountType, ProductPriceSource
+from polar.models.webhook_endpoint import WebhookEventType
+from polar.observability.checkout_metrics import (
+    CHECKOUT_CREATED_TOTAL,
+    CHECKOUT_SUCCEEDED_TOTAL,
+)
+from polar.order.service import order as order_service
+from polar.organization.service import organization as organization_service
+from polar.postgres import AsyncReadSession, AsyncSession
+from polar.posthog import posthog
+from polar.product.guard import (
+    is_custom_price,
+    is_discount_applicable,
+    is_fixed_price,
+    is_seat_price,
+)
+from polar.product.price_set import NoPricesForCurrencies, PriceSet
+from polar.product.repository import ProductPriceRepository, ProductRepository
+from polar.product.schemas import ProductPriceCreateList
+from polar.product.service import product as product_service
+from polar.subscription.repository import SubscriptionRepository
+from polar.subscription.service import subscription as subscription_service
+from polar.tax.calculation import (
+    TaxCalculationError,
+    TaxCode,
+    get_tax_behavior_from_option,
+    get_tax_service,
+)
+from polar.tax.tax_id import InvalidTaxID, TaxID, to_stripe_tax_id, validate_tax_id
+from polar.trial_redemption.service import trial_redemption as trial_redemption_service
+from polar.webhook.service import webhook as webhook_service
+from polar.worker import enqueue_job
+
+from . import ip_geolocation
+from .eventstream import CheckoutEvent, publish_checkout_event
+from .repository import CheckoutRepository
+from .sorting import CheckoutSortProperty
+
+if typing.TYPE_CHECKING:
+    from stripe.params._customer_create_params import (
+        CustomerCreateParams,
+    )
+    from stripe.params._customer_modify_params import CustomerModifyParams
+    from stripe.params._payment_intent_create_params import PaymentIntentCreateParams
+    from stripe.params._setup_intent_create_params import SetupIntentCreateParams
+
+
+log: Logger = structlog.get_logger()
+
+
+class CheckoutError(PolarError): ...
+
+
+class ExpiredCheckoutError(CheckoutError):
+    def __init__(self) -> None:
+        message = "This checkout session has expired."
+        super().__init__(message, 410)
+
+
+class AlreadyActiveSubscriptionError(CheckoutError):
+    def __init__(self) -> None:
+        message = "You already have an active subscription."
+        super().__init__(message, 403)
+
+
+class PaymentError(CheckoutError):
+    def __init__(
+        self, checkout: Checkout, error_type: str | None, error: str | None
+    ) -> None:
+        self.checkout = checkout
+        self.error_type = error_type
+        self.error = error
+        message = (
+            f"The payment failed{f': {error}' if error else '.'} "
+            "Please try again with a different payment method."
+        )
+        super().__init__(message, 400)
+
+
+class CheckoutDoesNotExist(CheckoutError):
+    def __init__(self, checkout_id: uuid.UUID) -> None:
+        self.checkout_id = checkout_id
+        message = f"Checkout {checkout_id} does not exist."
+        super().__init__(message)
+
+
+class NotOpenCheckout(CheckoutError):
+    def __init__(self, checkout: Checkout) -> None:
+        self.checkout = checkout
+        self.status = checkout.status
+        message = f"Checkout {checkout.id} is not open: {checkout.status}"
+        super().__init__(message, 403)
+
+
+class NotConfirmedCheckout(CheckoutError):
+    def __init__(self, checkout: Checkout) -> None:
+        self.checkout = checkout
+        self.status = checkout.status
+        message = f"Checkout {checkout.id} is not confirmed: {checkout.status}"
+        super().__init__(message)
+
+
+class ArchivedPriceCheckout(CheckoutError):
+    def __init__(self, checkout: Checkout) -> None:
+        self.checkout = checkout
+        self.price = checkout.product_price
+        message = (
+            f"Checkout {checkout.id} has an archived price: {checkout.product_price_id}"
+        )
+        super().__init__(message)
+
+
+class NoPaymentMethodOnIntent(CheckoutError):
+    def __init__(self, checkout: Checkout, intent_id: str) -> None:
+        self.checkout = checkout
+        self.intent_id = intent_id
+        message = (
+            f"Intent {intent_id} for {checkout.id} has no payment method associated."
+        )
+        super().__init__(message)
+
+
+class TrialAlreadyRedeemed(CheckoutError):
+    def __init__(self, checkout: Checkout) -> None:
+        self.checkout = checkout
+        message = (
+            "You have already used a trial for this product. "
+            "Trials can only be used once per customer."
+        )
+        super().__init__(message, 403)
+
+
+class CheckoutLocked(CheckoutError):
+    """Raised when checkout is locked by another transaction."""
+
+    def __init__(self, checkout_id: uuid.UUID) -> None:
+        self.checkout_id = checkout_id
+        message = "Checkout is currently being processed. Please try again."
+        super().__init__(message, 409)
+
+
+CHECKOUT_CLIENT_SECRET_PREFIX = "spaire_c_"
+
+
+class CheckoutService:
+    async def list(
+        self,
+        session: AsyncReadSession,
+        auth_subject: AuthSubject[User | Organization],
+        *,
+        organization_id: Sequence[uuid.UUID] | None = None,
+        product_id: Sequence[uuid.UUID] | None = None,
+        customer_id: Sequence[uuid.UUID] | None = None,
+        external_customer_id: Sequence[str] | None = None,
+        status: Sequence[CheckoutStatus] | None = None,
+        query: str | None = None,
+        pagination: PaginationParams,
+        sorting: list[Sorting[CheckoutSortProperty]] = [
+            (CheckoutSortProperty.created_at, True)
+        ],
+    ) -> tuple[Sequence[Checkout], int]:
+        repository = CheckoutRepository.from_session(session)
+        statement = repository.get_readable_statement(auth_subject).options(
+            *repository.get_eager_options()
+        )
+
+        if organization_id is not None:
+            statement = statement.where(Checkout.organization_id.in_(organization_id))
+
+        if product_id is not None:
+            statement = statement.where(Checkout.product_id.in_(product_id))
+
+        if customer_id is not None:
+            statement = statement.where(Checkout.customer_id.in_(customer_id))
+
+        if external_customer_id is not None:
+            statement = statement.join(Customer).where(
+                Customer.external_id.in_(external_customer_id)
+            )
+
+        if status is not None:
+            statement = statement.where(Checkout.status.in_(status))
+
+        if query is not None:
+            statement = statement.where(Checkout.customer_email.ilike(f"%{query}%"))
+
+        statement = repository.apply_sorting(statement, sorting)
+
+        return await repository.paginate(
+            statement, limit=pagination.limit, page=pagination.page
+        )
+
+    async def get_by_id(
+        self,
+        session: AsyncReadSession,
+        auth_subject: AuthSubject[User | Organization],
+        id: uuid.UUID,
+    ) -> Checkout | None:
+        repository = CheckoutRepository.from_session(session)
+        statement = (
+            repository.get_readable_statement(auth_subject)
+            .where(Checkout.id == id)
+            .options(*repository.get_eager_options())
+        )
+        checkout = await repository.get_one_or_none(statement)
+
+        if checkout is None:
+            return None
+
+        if checkout.organization.is_blocked():
+            raise NotPermitted()
+
+        return checkout
+
+    async def create(
+        self,
+        session: AsyncSession,
+        checkout_create: CheckoutCreate,
+        auth_subject: AuthSubject[User | Organization],
+        ip_geolocation_client: ip_geolocation.IPGeolocationClient | None = None,
+    ) -> Checkout:
+        ip_country = self._get_ip_country(
+            ip_geolocation_client, checkout_create.customer_ip_address
+        )
+
+        ad_hoc_prices: dict[Product, Sequence[ProductPrice]] = {}
+        if isinstance(checkout_create, CheckoutPriceCreate):
+            products, product, price, currency = await self._get_validated_price(
+                session, auth_subject, checkout_create.product_price_id
+            )
+        elif isinstance(checkout_create, CheckoutProductCreate):
+            products, product, price, currency = await self._get_validated_product(
+                session,
+                auth_subject,
+                checkout_create.product_id,
+                checkout_create.currency,
+                ip_country,
+            )
+        else:
+            products = await self._get_validated_products(
+                session, auth_subject, checkout_create.products
+            )
+            product = products[0]
+            if checkout_create.prices:
+                ad_hoc_prices = await self._get_validated_prices(
+                    session,
+                    auth_subject,
+                    product.organization,
+                    products,
+                    checkout_create.prices,
+                )
+
+            currencies = self._get_currencies(
+                checkout_create.currency, product, product.organization, ip_country
+            )
+
+            try:
+                prices = ad_hoc_prices[product]
+            except KeyError:
+                prices = product.prices
+
+            try:
+                price_set = PriceSet.from_prices(prices, *currencies)
+                price = price_set.get_default_price()
+                currency = price_set.currency
+            except NoPricesForCurrencies as e:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "value_error",
+                            "loc": ("body", "products", 0),
+                            "msg": "Product is not available in the specified currency.",
+                            "input": checkout_create.products[0],
+                        }
+                    ]
+                ) from e
+
+        if product.organization.is_blocked():
+            raise NotPermitted()
+
+        if checkout_create.amount is not None and is_custom_price(price):
+            self._validate_custom_price_amount(price, checkout_create.amount)
+
+        discount: Discount | None = None
+        if checkout_create.discount_id is not None:
+            discount = await self._get_validated_discount(
+                session,
+                product.organization,
+                product,
+                price,
+                currency,
+                discount_id=checkout_create.discount_id,
+            )
+
+        customer_tax_id: TaxID | None = None
+        if checkout_create.customer_tax_id is not None:
+            if checkout_create.customer_billing_address is None:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "missing",
+                            "loc": ("body", "customer_billing_address"),
+                            "msg": "Country is required to validate tax ID.",
+                            "input": None,
+                        }
+                    ]
+                )
+            try:
+                customer_tax_id = validate_tax_id(
+                    checkout_create.customer_tax_id,
+                    checkout_create.customer_billing_address.country,
+                )
+            except InvalidTaxID as e:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "value_error",
+                            "loc": ("body", "customer_tax_id"),
+                            "msg": "Invalid tax ID.",
+                            "input": checkout_create.customer_tax_id,
+                        }
+                    ]
+                ) from e
+
+        # Validate seats for seat-based pricing
+        if is_seat_price(price):
+            if checkout_create.seats is None:
+                # Default to minimum seats if not specified
+                minimum_seats = price.get_minimum_seats()
+                checkout_create.seats = minimum_seats
+            self._validate_seat_limits(price, checkout_create.seats)
+        elif checkout_create.seats is not None:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "seats"),
+                        "msg": "Seats can only be set for seat-based pricing.",
+                        "input": checkout_create.seats,
+                    }
+                ]
+            )
+
+        product = await self._eager_load_product(session, product)
+
+        subscription: Subscription | None = None
+        customer: Customer | None = None
+        customer_repository = CustomerRepository.from_session(session)
+        if checkout_create.subscription_id is not None:
+            subscription, customer = await self._get_validated_subscription(
+                session, checkout_create.subscription_id, product.organization_id
+            )
+        elif checkout_create.customer_id is not None:
+            customer = await customer_repository.get_by_id_and_organization(
+                checkout_create.customer_id, product.organization_id
+            )
+            if customer is None:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "value_error",
+                            "loc": ("body", "customer_id"),
+                            "msg": "Customer does not exist.",
+                            "input": checkout_create.customer_id,
+                        }
+                    ]
+                )
+        elif checkout_create.external_customer_id is not None:
+            # Link customer by external ID, if it exists.
+            # It not, that's fine': we'll create a new customer on confirm.
+            customer = await customer_repository.get_by_external_id_and_organization(
+                checkout_create.external_customer_id, product.organization_id
+            )
+
+        amount = checkout_create.amount
+        if is_fixed_price(price):
+            amount = price.price_amount
+        elif is_custom_price(price):
+            if amount is None:
+                amount = price.preset_amount or price.minimum_amount
+        elif is_seat_price(price):
+            # Calculate amount based on seat count
+            # seats is guaranteed to be set above when is_seat_price(price) is True
+            assert checkout_create.seats is not None
+            amount = price.calculate_amount(checkout_create.seats)
+        else:
+            amount = 0
+
+        custom_field_data = validate_custom_field_data(
+            product.attached_custom_fields,
+            checkout_create.custom_field_data,
+            validate_required=False,
+        )
+
+        checkout_products = [
+            CheckoutProduct(product=product, order=i, ad_hoc_prices=[])
+            for i, product in enumerate(products)
+        ]
+
+        require_billing_address = False
+        customer_billing_address = checkout_create.customer_billing_address
+        if customer_billing_address is not None and any(
+            (
+                customer_billing_address.has_address(),
+                customer_billing_address.has_state()
+                and customer_billing_address.country not in {"US", "CA"},
+            )
+        ):
+            require_billing_address = True
+
+        checkout = Checkout(
+            payment_processor=PaymentProcessor.stripe,
+            client_secret=generate_token(prefix=CHECKOUT_CLIENT_SECRET_PREFIX),
+            amount=amount,
+            net_amount=amount,
+            currency=currency,
+            organization=product.organization,
+            checkout_products=checkout_products,
+            product=product,
+            product_price=price,
+            discount=discount,
+            customer_billing_address=customer_billing_address,
+            require_billing_address=require_billing_address,
+            customer_tax_id=customer_tax_id,
+            subscription=subscription,
+            customer=customer,
+            custom_field_data=custom_field_data,
+            tax_processor=settings.DEFAULT_TAX_PROCESSOR,
+            **checkout_create.model_dump(
+                exclude={
+                    "product_price_id",
+                    "product_id",
+                    "products",
+                    "prices",
+                    "amount",
+                    "currency",
+                    "customer_billing_address",
+                    "customer_tax_id",
+                    "subscription_id",
+                    "custom_field_data",
+                },
+                by_alias=True,
+            ),
+        )
+
+        if checkout.customer is not None:
+            prefill_attributes = (
+                "email",
+                "name",
+                "billing_name",
+                "billing_address",
+                "tax_id",
+            )
+            for attribute in prefill_attributes:
+                checkout_attribute = f"customer_{attribute}"
+                if getattr(checkout, checkout_attribute) is None:
+                    setattr(
+                        checkout,
+                        checkout_attribute,
+                        getattr(checkout.customer, attribute),
+                    )
+
+            # Copy locale from customer if not set on checkout
+            if checkout.locale is None and checkout.customer.locale is not None:
+                checkout.locale = checkout.customer.locale
+
+            # Auto-select business customer if they have both a billing name (without the fallback to customer.name)
+            # and a billing address since that means they've previously checked the is_business_customer checkbox
+            # Only auto-select if is_business_customer wasn't explicitly set in the request
+            if (
+                "is_business_customer" not in checkout_create.model_fields_set
+                and checkout.customer.actual_billing_name is not None
+                and checkout.customer.billing_address is not None
+                and checkout.customer.billing_address.has_address()
+            ):
+                checkout.is_business_customer = True
+
+        if checkout.payment_processor == PaymentProcessor.stripe:
+            checkout.payment_processor_metadata = {
+                **(checkout.payment_processor_metadata or {}),
+                "publishable_key": settings.STRIPE_PUBLISHABLE_KEY,
+            }
+            if checkout.customer and checkout.customer.stripe_customer_id is not None:
+                stripe_customer_session = await stripe_service.create_customer_session(
+                    checkout.customer.stripe_customer_id
+                )
+                checkout.payment_processor_metadata = {
+                    **(checkout.payment_processor_metadata or {}),
+                    "customer_session_client_secret": stripe_customer_session.client_secret,
+                }
+
+        session.add(checkout)
+
+        checkout = await self._update_ip_country(session, checkout, ip_country)
+        checkout = await self._update_trial_end(checkout)
+
+        try:
+            checkout = await self._update_checkout_tax(session, checkout)
+        # Swallow incomplete tax calculation error: require it only on confirm
+        except TaxCalculationError:
+            pass
+
+        await session.flush()
+
+        if ad_hoc_prices:
+            for checkout_product in checkout.checkout_products:
+                checkout_product.ad_hoc_prices = ad_hoc_prices.get(
+                    checkout_product.product, []
+                )
+                session.add(checkout_product)
+            await session.flush()
+
+        await self._after_checkout_created(session, checkout)
+
+        return checkout
+
+    async def client_create(
+        self,
+        session: AsyncSession,
+        checkout_create: CheckoutCreatePublic,
+        auth_subject: AuthSubject[User | Anonymous],
+        ip_geolocation_client: ip_geolocation.IPGeolocationClient | None = None,
+        ip_address: str | None = None,
+    ) -> Checkout:
+        product_repository = ProductRepository.from_session(session)
+        product = await product_repository.get_by_id(
+            checkout_create.product_id, options=product_repository.get_eager_options()
+        )
+
+        if product is None:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_id"),
+                        "msg": "Product does not exist.",
+                        "input": checkout_create.product_id,
+                    }
+                ]
+            )
+
+        if product.is_archived:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_id"),
+                        "msg": "Product is archived.",
+                        "input": checkout_create.product_id,
+                    }
+                ]
+            )
+
+        if product.visibility == ProductVisibility.draft:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_id"),
+                        "msg": "Product is a draft.",
+                        "input": checkout_create.product_id,
+                    }
+                ]
+            )
+
+        if product.organization.blocked_at is not None:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_id"),
+                        "msg": "Organization is blocked.",
+                        "input": checkout_create.product_id,
+                    }
+                ]
+            )
+
+        ip_country = self._get_ip_country(ip_geolocation_client, ip_address)
+        currencies = self._get_currencies(
+            None, product, product.organization, ip_country
+        )
+
+        try:
+            currency_prices = PriceSet.from_product(product, *currencies)
+        except NoPricesForCurrencies as e:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_id"),
+                        "msg": "Product is not available in the specified currency.",
+                        "input": checkout_create.product_id,
+                    }
+                ]
+            ) from e
+
+        price = currency_prices.get_default_price()
+        currency = currency_prices.currency
+
+        # Validate seats for seat-based pricing
+        if is_seat_price(price):
+            if checkout_create.seats is None:
+                # Default to minimum seats if not specified
+                minimum_seats = price.get_minimum_seats()
+                checkout_create.seats = minimum_seats
+            self._validate_seat_limits(price, checkout_create.seats)
+        elif checkout_create.seats is not None:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "seats"),
+                        "msg": "Seats can only be set for seat-based pricing.",
+                        "input": checkout_create.seats,
+                    }
+                ]
+            )
+
+        amount = 0
+        if is_fixed_price(price):
+            amount = price.price_amount
+        elif is_custom_price(price):
+            amount = price.preset_amount or price.minimum_amount
+        elif is_seat_price(price):
+            # Calculate amount based on seat count
+            # seats is guaranteed to be set above when is_seat_price(price) is True
+            assert checkout_create.seats is not None
+            amount = price.calculate_amount(checkout_create.seats)
+
+        checkout = Checkout(
+            payment_processor=PaymentProcessor.stripe,
+            client_secret=generate_token(prefix=CHECKOUT_CLIENT_SECRET_PREFIX),
+            amount=amount,
+            net_amount=amount,
+            currency=currency,
+            seats=checkout_create.seats,
+            allow_trial=True,
+            organization=product.organization,
+            checkout_products=[
+                CheckoutProduct(product=product, order=0, ad_hoc_prices=[])
+            ],
+            product=product,
+            product_price=price,
+            discount=None,
+            customer=None,
+            subscription=None,
+            customer_email=checkout_create.customer_email,
+            tax_processor=settings.DEFAULT_TAX_PROCESSOR,
+        )
+
+        if checkout.payment_processor == PaymentProcessor.stripe:
+            checkout.payment_processor_metadata = {
+                **(checkout.payment_processor_metadata or {}),
+                "publishable_key": settings.STRIPE_PUBLISHABLE_KEY,
+            }
+            if checkout.customer and checkout.customer.stripe_customer_id is not None:
+                stripe_customer_session = await stripe_service.create_customer_session(
+                    checkout.customer.stripe_customer_id
+                )
+                checkout.payment_processor_metadata = {
+                    **(checkout.payment_processor_metadata or {}),
+                    "customer_session_client_secret": stripe_customer_session.client_secret,
+                }
+
+        checkout.customer_ip_address = ip_address
+        checkout = await self._update_ip_country(session, checkout, ip_country)
+        checkout = await self._update_trial_end(checkout)
+
+        try:
+            checkout = await self._update_checkout_tax(session, checkout)
+        # Swallow incomplete tax calculation error: require it only on confirm
+        except TaxCalculationError:
+            pass
+
+        session.add(checkout)
+
+        await session.flush()
+        await self._after_checkout_created(session, checkout)
+
+        return checkout
+
+    async def checkout_link_create(
+        self,
+        session: AsyncSession,
+        checkout_link: CheckoutLink,
+        embed_origin: str | None = None,
+        ip_geolocation_client: ip_geolocation.IPGeolocationClient | None = None,
+        ip_address: str | None = None,
+        query_prefill: dict[str, str | UUID4 | dict[str, str] | None] | None = None,
+        **query_metadata: str | None,
+    ) -> Checkout:
+        products: list[Product] = []
+        for product in checkout_link.products:
+            if (
+                not product.is_archived
+                and product.visibility != ProductVisibility.draft
+            ):
+                products.append(product)
+
+        if len(products) == 0:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "products"),
+                        "msg": "No valid products.",
+                        "input": checkout_link.products,
+                    }
+                ]
+            )
+
+        # Pre-select product if product_id is provided and matches a configured product
+        product = products[0]
+        query_product_id = query_prefill.get("product_id") if query_prefill else None
+        product_id = (
+            query_product_id if isinstance(query_product_id, uuid.UUID) else None
+        )
+
+        if product_id is not None:
+            for p in products:
+                if p.id == product_id:
+                    product = p
+                    break
+
+        ip_country = self._get_ip_country(ip_geolocation_client, ip_address)
+        currencies = self._get_currencies(
+            None, product, product.organization, ip_country
+        )
+
+        try:
+            currency_prices = PriceSet.from_product(product, *currencies)
+        except NoPricesForCurrencies as e:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "products"),
+                        "msg": "Product is not available in the specified currency.",
+                        "input": str(product.id),
+                    }
+                ]
+            ) from e
+
+        price = currency_prices.get_default_price()
+        currency = currency_prices.currency
+
+        amount = 0
+        seats = None
+        if is_fixed_price(price):
+            amount = price.price_amount
+        elif is_custom_price(price):
+            query_amount_str = query_prefill.get("amount") if query_prefill else None
+
+            # Try to parse and validate query amount
+            valid_query_amount = None
+            if query_amount_str is not None and isinstance(query_amount_str, str):
+                try:
+                    query_amount_int = int(float(query_amount_str))
+                    self._validate_custom_price_amount(price, query_amount_int)
+                    valid_query_amount = query_amount_int
+                except (ValueError, TypeError, SpaireRequestValidationError):
+                    pass
+
+            amount = valid_query_amount or price.preset_amount or price.minimum_amount
+        elif is_seat_price(price):
+            # Default to minimum seats for checkout links with seat-based pricing
+            seats = price.get_minimum_seats()
+            amount = price.calculate_amount(seats)
+
+        discount: Discount | None = None
+        if checkout_link.discount_id is not None:
+            try:
+                discount = await self._get_validated_discount(
+                    session,
+                    product.organization,
+                    product,
+                    price,
+                    currency,
+                    discount_id=checkout_link.discount_id,
+                )
+            # If the discount is not valid, just ignore it
+            except SpaireRequestValidationError:
+                pass
+
+        checkout = Checkout(
+            client_secret=generate_token(prefix=CHECKOUT_CLIENT_SECRET_PREFIX),
+            amount=amount,
+            net_amount=amount,
+            currency=currency,
+            seats=seats,
+            trial_interval=checkout_link.trial_interval,
+            trial_interval_count=checkout_link.trial_interval_count,
+            allow_discount_codes=checkout_link.allow_discount_codes,
+            allow_trial=True,
+            require_billing_address=checkout_link.require_billing_address,
+            organization=checkout_link.organization,
+            checkout_products=[
+                CheckoutProduct(product=p, order=i, ad_hoc_prices=[])
+                for i, p in enumerate(products)
+            ],
+            product=product,
+            product_price=price,
+            discount=discount,
+            embed_origin=embed_origin,
+            customer_ip_address=ip_address,
+            payment_processor=checkout_link.payment_processor,
+            success_url=checkout_link.success_url,
+            user_metadata=checkout_link.user_metadata,
+            tax_processor=settings.DEFAULT_TAX_PROCESSOR,
+        )
+
+        # Handle query parameter prefill
+        if query_prefill:
+            customer_email = query_prefill.get("customer_email")
+            if customer_email is not None and isinstance(customer_email, str):
+                checkout.customer_email = customer_email
+
+            customer_name = query_prefill.get("customer_name")
+            if customer_name is not None and isinstance(customer_name, str):
+                checkout.customer_name = customer_name
+
+            locale = query_prefill.get("locale")
+            if locale is not None and isinstance(locale, str):
+                checkout.locale = locale
+
+            discount_code = query_prefill.get("discount_code")
+            if discount_code is not None and isinstance(discount_code, str):
+                try:
+                    discount = await self._get_validated_discount(
+                        session,
+                        product.organization,
+                        product,
+                        price,
+                        currency,
+                        discount_code=discount_code,
+                    )
+                    checkout.discount = discount
+                except SpaireRequestValidationError:
+                    pass
+
+            custom_field_data_value = query_prefill.get("custom_field_data")
+            if custom_field_data_value is not None and isinstance(
+                custom_field_data_value, dict
+            ):
+                valid_slugs = {
+                    cf.custom_field.slug for cf in product.attached_custom_fields
+                }
+
+                filtered_data = {
+                    slug: value
+                    for slug, value in custom_field_data_value.items()
+                    if slug in valid_slugs
+                }
+
+                if filtered_data:
+                    try:
+                        validated_data = validate_custom_field_data(
+                            product.attached_custom_fields,
+                            filtered_data,
+                            validate_required=False,
+                        )
+                        checkout.custom_field_data = {
+                            **(checkout.custom_field_data or {}),
+                            **validated_data,
+                        }
+                    except SpaireRequestValidationError:
+                        # If validation fails, just ignore the custom field data
+                        pass
+
+        for key, value in query_metadata.items():
+            if value is not None and key not in checkout.user_metadata:
+                checkout.user_metadata = {
+                    **(checkout.user_metadata or {}),
+                    key: value,
+                }
+
+        if checkout.payment_processor == PaymentProcessor.stripe:
+            checkout.payment_processor_metadata = {
+                **(checkout.payment_processor_metadata or {}),
+                "publishable_key": settings.STRIPE_PUBLISHABLE_KEY,
+            }
+
+        session.add(checkout)
+
+        checkout = await self._update_ip_country(session, checkout, ip_country)
+        checkout = await self._update_trial_end(checkout)
+
+        try:
+            checkout = await self._update_checkout_tax(session, checkout)
+        # Swallow incomplete tax calculation error: require it only on confirm
+        except TaxCalculationError:
+            pass
+
+        await session.flush()
+        await self._after_checkout_created(session, checkout)
+
+        return checkout
+
+    async def update(
+        self,
+        session: AsyncSession,
+        checkout: Checkout,
+        checkout_update: CheckoutUpdate | CheckoutUpdatePublic,
+        ip_geolocation_client: ip_geolocation.IPGeolocationClient | None = None,
+    ) -> Checkout:
+        async with self._lock_checkout_update(session, checkout) as checkout:
+            checkout = await self._update_checkout(
+                session, checkout, checkout_update, ip_geolocation_client
+            )
+            try:
+                checkout = await self._update_checkout_tax(session, checkout)
+            # Swallow incomplete tax calculation error: require it only on confirm
+            except TaxCalculationError:
+                pass
+
+            # Reset is_business_customer if payment form is no longer required
+            # This handles the case where a 100% discount is applied and the
+            # billing address section disappears from the frontend. Runs after
+            # the tax pass so is_payment_form_required reads the post-discount
+            # net_amount.
+            if (
+                not checkout.is_payment_form_required
+                and not checkout.require_billing_address
+            ):
+                checkout.is_business_customer = False
+
+            await self._after_checkout_updated(session, checkout)
+            return checkout
+
+    async def confirm(
+        self,
+        session: AsyncSession,
+        auth_subject: AuthSubject[User | Anonymous],
+        checkout: Checkout,
+        checkout_confirm: CheckoutConfirm,
+    ) -> Checkout:
+        async with self._lock_checkout_update(session, checkout) as checkout:
+            checkout = await self._update_checkout(session, checkout, checkout_confirm)
+            # When redeeming a discount, we need to lock the discount to prevent concurrent redemptions
+            if checkout.discount is not None:
+                try:
+                    async with discount_service.redeem_discount(
+                        session, checkout.discount
+                    ) as discount_redemption:
+                        discount_redemption.checkout = checkout
+                        return await self._confirm_inner(
+                            session, auth_subject, checkout, checkout_confirm
+                        )
+                except DiscountNotRedeemableError as e:
+                    raise SpaireRequestValidationError(
+                        [
+                            {
+                                "type": "value_error",
+                                "loc": ("body", "discount_id"),
+                                "msg": "Discount is no longer redeemable.",
+                                "input": checkout.discount.id,
+                            }
+                        ]
+                    ) from e
+
+            return await self._confirm_inner(
+                session, auth_subject, checkout, checkout_confirm
+            )
+
+    async def _confirm_inner(
+        self,
+        session: AsyncSession,
+        auth_subject: AuthSubject[User | Anonymous],
+        checkout: Checkout,
+        checkout_confirm: CheckoutConfirm,
+    ) -> Checkout:
+        errors: list[ValidationError] = []
+        try:
+            checkout = await self._update_checkout_tax(session, checkout)
+        except TaxCalculationError as e:
+            errors.append(
+                {
+                    "type": "value_error",
+                    "loc": ("body", "customer_billing_address"),
+                    "msg": e.message,  # pyright: ignore
+                    "input": None,
+                }
+            )
+
+        # Flush net_amount and tax_amount so they are persisted before
+        # the PaymentIntent is created.  The charge.succeeded webhook
+        # later reads these values to build the Order and asserts the
+        # amounts match.
+        session.add(checkout)
+        await session.flush()
+
+        # Case where the price was archived after the checkout was created
+        if has_product_checkout(checkout) and checkout.product_price.is_archived:
+            errors.append(
+                {
+                    "type": "value_error",
+                    "loc": ("body", "product_price_id"),
+                    "msg": "Price is archived.",
+                    "input": checkout.product_price_id,
+                }
+            )
+
+        # Check if organization can accept payments (only block paid transactions)
+        if (
+            checkout.is_payment_required
+            and not await organization_service.is_organization_ready_for_payment(
+                session, checkout.organization
+            )
+        ):
+            raise PaymentNotReady()
+
+        required_fields = self._get_required_confirm_fields(checkout)
+        for required_field in required_fields:
+            if (
+                attrgetter(checkout, required_field) is None
+                and attrgetter(checkout_confirm, required_field) is None
+            ):
+                errors.append(
+                    {
+                        "type": "missing",
+                        "loc": ("body", *required_field),
+                        "msg": "Field is required.",
+                        "input": None,
+                    }
+                )
+
+        if checkout.require_billing_address or checkout.is_business_customer:
+            if (
+                checkout.customer_billing_address is None
+                or not checkout.customer_billing_address.has_address()
+            ):
+                errors.append(
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "customer_billing_address"),
+                        "msg": "Full billing address is required.",
+                        "input": checkout.customer_billing_address,
+                    }
+                )
+
+        if (
+            checkout.is_payment_form_required
+            and checkout_confirm.confirmation_token_id is None
+        ):
+            errors.append(
+                {
+                    "type": "missing",
+                    "loc": ("body", "confirmation_token_id"),
+                    "msg": "Confirmation token is required.",
+                    "input": None,
+                }
+            )
+
+        if len(errors) > 0:
+            raise SpaireRequestValidationError(errors)
+
+        if checkout.payment_processor == PaymentProcessor.stripe:
+            async with self._create_or_update_customer(
+                session, auth_subject, checkout
+            ) as customer:
+                checkout.customer = customer
+                stripe_customer_id = customer.stripe_customer_id
+                assert stripe_customer_id is not None
+                checkout.payment_processor_metadata = {
+                    **checkout.payment_processor_metadata,
+                    "customer_id": stripe_customer_id,
+                }
+
+                intent: stripe_lib.PaymentIntent | stripe_lib.SetupIntent | None = None
+                if checkout.is_payment_form_required:
+                    assert checkout_confirm.confirmation_token_id is not None
+                    assert checkout.customer_billing_address is not None
+                    intent_metadata: dict[str, str] = {
+                        "checkout_id": str(checkout.id),
+                        "type": "product",
+                        "tax_amount": str(checkout.tax_amount),
+                        "tax_country": checkout.customer_billing_address.country,
+                    }
+                    if (
+                        state
+                        := checkout.customer_billing_address.get_unprefixed_state()
+                    ) is not None:
+                        intent_metadata["tax_state"] = state
+
+                    try:
+                        if checkout.is_payment_required:
+                            payment_intent_params: PaymentIntentCreateParams = {
+                                "amount": checkout.total_amount,
+                                "currency": checkout.currency,
+                                "automatic_payment_methods": {"enabled": True},
+                                "confirm": True,
+                                "confirmation_token": checkout_confirm.confirmation_token_id,
+                                "customer": stripe_customer_id,
+                                "statement_descriptor_suffix": checkout.organization.statement_descriptor(),
+                                "description": checkout.description,
+                                "metadata": intent_metadata,
+                                "return_url": settings.generate_frontend_url(
+                                    f"/checkout/{checkout.client_secret}/confirmation"
+                                ),
+                                "expand": ["payment_method"],
+                            }
+                            if checkout.should_save_payment_method:
+                                payment_intent_params["setup_future_usage"] = (
+                                    "off_session"
+                                )
+                            intent = await stripe_service.create_payment_intent(
+                                **payment_intent_params
+                            )
+                        else:
+                            setup_intent_params: SetupIntentCreateParams = {
+                                "automatic_payment_methods": {"enabled": True},
+                                "confirm": True,
+                                "confirmation_token": checkout_confirm.confirmation_token_id,
+                                "customer": stripe_customer_id,
+                                "description": checkout.description,
+                                "metadata": intent_metadata,
+                                "return_url": settings.generate_frontend_url(
+                                    f"/checkout/{checkout.client_secret}/confirmation"
+                                ),
+                                "expand": ["payment_method"],
+                            }
+                            intent = await stripe_service.create_setup_intent(
+                                **setup_intent_params
+                            )
+                    except stripe_lib.StripeError as e:
+                        error = e.error
+                        error_type = error.type if error is not None else None
+                        error_message = error.message if error is not None else None
+                        raise PaymentError(checkout, error_type, error_message) from e
+                    else:
+                        checkout.payment_processor_metadata = {
+                            **checkout.payment_processor_metadata,
+                            "intent_client_secret": intent.client_secret,
+                            "intent_status": intent.status,
+                        }
+
+                # Check for trial abuse
+                if (
+                    checkout.trial_end is not None
+                    and checkout.organization.prevent_trial_abuse
+                ):
+                    trial_already_redeemed = (
+                        await trial_redemption_service.check_trial_already_redeemed(
+                            session,
+                            checkout.organization,
+                            customer=customer,
+                            payment_method_fingerprint=get_fingerprint(
+                                typing.cast(
+                                    stripe_lib.PaymentMethod, intent.payment_method
+                                )
+                            )
+                            if (intent and intent.payment_method)
+                            else None,
+                        )
+                    )
+                    if trial_already_redeemed:
+                        raise TrialAlreadyRedeemed(checkout)
+
+        if not checkout.is_payment_form_required:
+            enqueue_job("checkout.handle_free_success", checkout_id=checkout.id)
+
+        checkout.status = CheckoutStatus.confirmed
+        session.add(checkout)
+
+        await self._after_checkout_updated(session, checkout)
+
+        assert checkout.customer is not None
+        (
+            customer_session_token,
+            _,
+        ) = await customer_session_service.create_customer_session(
+            session, checkout.customer
+        )
+        checkout.customer_session_token = customer_session_token
+
+        return checkout
+
+    async def handle_success(
+        self,
+        session: AsyncSession,
+        checkout: Checkout,
+        payment: Payment | None = None,
+        payment_method: PaymentMethod | None = None,
+    ) -> Checkout:
+        if checkout.status != CheckoutStatus.confirmed:
+            raise NotConfirmedCheckout(checkout)
+
+        if not has_product_checkout(checkout):
+            raise NotImplementedError()
+
+        product_price = checkout.product_price
+        if product_price.is_archived:
+            raise ArchivedPriceCheckout(checkout)
+
+        product = checkout.product
+        subscription: Subscription | None = None
+        if product.is_recurring:
+            (
+                subscription,
+                created,
+            ) = await subscription_service.create_or_update_from_checkout(
+                session, checkout, payment_method
+            )
+            await order_service.create_from_checkout_subscription(
+                session,
+                checkout,
+                subscription,
+                OrderBillingReasonInternal.subscription_create
+                if created
+                else OrderBillingReasonInternal.subscription_update,
+                payment,
+            )
+        else:
+            await order_service.create_from_checkout_one_time(
+                session, checkout, payment
+            )
+
+        # Create trial redemption record if this checkout had a trial period
+        if checkout.trial_end is not None:
+            assert checkout.customer is not None
+            await trial_redemption_service.create_trial_redemption(
+                session,
+                customer=checkout.customer,
+                product=product,
+                payment_method_fingerprint=payment_method.fingerprint
+                if payment_method
+                else None,
+            )
+
+        repository = CheckoutRepository.from_session(session)
+        checkout = await repository.update(
+            checkout,
+            update_dict={
+                "status": CheckoutStatus.succeeded,
+                "payment_processor_metadata": {
+                    **checkout.payment_processor_metadata,
+                    "intent_status": "succeeded",
+                },
+            },
+        )
+
+        await self._after_checkout_updated(session, checkout)
+
+        CHECKOUT_SUCCEEDED_TOTAL.inc()
+
+        distinct_id = (
+            (
+                checkout.analytics_metadata.get("distinct_id")
+                if checkout.analytics_metadata
+                else None
+            )
+            or checkout.customer_email
+            or f"checkout:{checkout.id}"
+        )
+
+        try:
+            posthog.capture(
+                distinct_id=distinct_id,
+                event="storefront:subscriptions:checkout:complete",
+                properties={
+                    "checkout_id": str(checkout.id),
+                    "organization_slug": checkout.organization.slug,
+                    "product_id": str(checkout.product_id)
+                    if checkout.product_id
+                    else None,
+                    "amount": checkout.amount,
+                },
+            )
+        except Exception as e:
+            log.error("Failed to capture PostHog event", error=str(e))
+
+        return checkout
+
+    async def handle_failure(
+        self, session: AsyncSession, checkout: Checkout, payment: Payment | None = None
+    ) -> Checkout:
+        # Checkout is in an unrecoverable status: do nothing
+        if checkout.status in {
+            CheckoutStatus.expired,
+            CheckoutStatus.succeeded,
+            CheckoutStatus.failed,
+        }:
+            return checkout
+
+        # Put back checkout in open state so the customer can try another payment method
+        checkout.status = CheckoutStatus.open
+        checkout.payment_processor_metadata = {
+            k: v
+            for k, v in checkout.payment_processor_metadata.items()
+            if k not in {"intent_status", "intent_client_secret"}
+        }
+        session.add(checkout)
+
+        # Make sure to remove the Discount Redemptions
+        # To avoid race conditions, we save the Discount Redemption when *confirming*
+        # the Checkout.
+        # However, if it ultimately fails, we need to free up the Discount Redemption.
+        await discount_service.remove_checkout_redemption(session, checkout)
+
+        await self._after_checkout_updated(session, checkout)
+
+        return checkout
+
+    async def get_by_client_secret(
+        self, session: AsyncSession, client_secret: str
+    ) -> Checkout:
+        repository = CheckoutRepository.from_session(session)
+        checkout = await repository.get_by_client_secret(
+            client_secret, options=repository.get_eager_options()
+        )
+        if checkout is None:
+            raise ResourceNotFound()
+        if checkout.is_expired:
+            raise ExpiredCheckoutError()
+        return checkout
+
+    async def mark_opened(
+        self, session: AsyncSession, checkout: Checkout, distinct_id: str | None = None
+    ) -> Checkout:
+        """
+        Mark a checkout as opened. This is called when the checkout page is first viewed.
+        Stores opened_at timestamp and posthog distinct_id in analytics_metadata.
+        """
+        # Already opened - no-op
+        if checkout.analytics_metadata and checkout.analytics_metadata.get("opened_at"):
+            return checkout
+
+        resolved_distinct_id = (
+            distinct_id or checkout.customer_email or f"checkout:{checkout.id}"
+        )
+
+        analytics_metadata = {
+            "opened_at": utc_now().isoformat(),
+            "distinct_id": resolved_distinct_id,
+        }
+
+        repository = CheckoutRepository.from_session(session)
+        checkout = await repository.update(
+            checkout,
+            update_dict={"analytics_metadata": analytics_metadata},
+        )
+
+        try:
+            posthog.capture(
+                distinct_id=resolved_distinct_id,
+                event="storefront:subscriptions:checkout:open",
+                properties={
+                    "checkout_id": str(checkout.id),
+                    "organization_slug": checkout.organization.slug,
+                    "product_id": str(checkout.product_id)
+                    if checkout.product_id
+                    else None,
+                    "amount": checkout.amount,
+                },
+            )
+        except Exception as e:
+            log.error("Failed to capture PostHog event", error=str(e))
+
+        return checkout
+
+    async def _get_validated_price(
+        self,
+        session: AsyncSession,
+        auth_subject: AuthSubject[User | Organization],
+        product_price_id: uuid.UUID,
+    ) -> tuple[Sequence[Product], Product, ProductPrice, str]:
+        product_price_repository = ProductPriceRepository.from_session(session)
+        price = await product_price_repository.get_readable_by_id(
+            product_price_id,
+            auth_subject,
+            options=(
+                contains_eager(ProductPrice.product).options(
+                    joinedload(Product.organization)
+                    .joinedload(Organization.account)
+                    .joinedload(Account.admin),
+                    selectinload(Product.prices),
+                ),
+            ),
+        )
+
+        if price is None:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_price_id"),
+                        "msg": "Price does not exist.",
+                        "input": product_price_id,
+                    }
+                ]
+            )
+
+        if price.is_archived:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_price_id"),
+                        "msg": "Price is archived.",
+                        "input": product_price_id,
+                    }
+                ]
+            )
+
+        product = price.product
+        if product.is_archived:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_price_id"),
+                        "msg": "Product is archived.",
+                        "input": product_price_id,
+                    }
+                ]
+            )
+
+        currency = price.price_currency
+
+        return [product], product, price, currency
+
+    async def _get_validated_product(
+        self,
+        session: AsyncSession,
+        auth_subject: AuthSubject[User | Organization],
+        product_id: uuid.UUID,
+        currency: str | None,
+        ip_country: str | None,
+    ) -> tuple[Sequence[Product], Product, ProductPrice, str]:
+        product = await product_service.get(session, auth_subject, product_id)
+
+        if product is None:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_id"),
+                        "msg": "Product does not exist.",
+                        "input": product_id,
+                    }
+                ]
+            )
+
+        if product.is_archived:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_id"),
+                        "msg": "Product is archived.",
+                        "input": product_id,
+                    }
+                ]
+            )
+
+        if product.visibility == ProductVisibility.draft:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_id"),
+                        "msg": "Product is a draft.",
+                        "input": product_id,
+                    }
+                ]
+            )
+
+        currencies = self._get_currencies(
+            currency, product, product.organization, ip_country
+        )
+        try:
+            currency_prices = PriceSet.from_product(product, *currencies)
+        except NoPricesForCurrencies as e:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "product_id"),
+                        "msg": "Product is not available in the specified currency.",
+                        "input": product_id,
+                    }
+                ]
+            ) from e
+
+        price = currency_prices.get_default_price()
+        currency = currency_prices.currency
+
+        return [product], product, price, currency
+
+    async def _get_validated_products(
+        self,
+        session: AsyncSession,
+        auth_subject: AuthSubject[User | Organization],
+        product_ids: Sequence[uuid.UUID],
+    ) -> Sequence[Product]:
+        products: list[Product] = []
+        errors: list[ValidationError] = []
+
+        for index, product_id in enumerate(product_ids):
+            product = await product_service.get(session, auth_subject, product_id)
+
+            if product is None:
+                errors.append(
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "products", index),
+                        "msg": "Product does not exist.",
+                        "input": product_id,
+                    }
+                )
+                continue
+
+            if product.is_archived:
+                errors.append(
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "products", index),
+                        "msg": "Product is archived.",
+                        "input": product_id,
+                    }
+                )
+                continue
+
+            if product.visibility == ProductVisibility.draft:
+                errors.append(
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "products", index),
+                        "msg": "Product is a draft.",
+                        "input": product_id,
+                    }
+                )
+                continue
+
+            products.append(product)
+
+        organization_ids = {product.organization_id for product in products}
+        if len(organization_ids) > 1:
+            errors.append(
+                {
+                    "type": "value_error",
+                    "loc": ("body", "products"),
+                    "msg": "Products must all belong to the same organization.",
+                    "input": products,
+                }
+            )
+
+        if len(errors) > 0:
+            raise SpaireRequestValidationError(errors)
+
+        return products
+
+    async def _get_validated_prices(
+        self,
+        session: AsyncSession,
+        auth_subject: AuthSubject[User | Organization],
+        organization: Organization,
+        products: Sequence[Product],
+        prices: dict[uuid.UUID, ProductPriceCreateList],
+    ) -> dict[Product, Sequence[ProductPrice]]:
+        validated_prices: dict[Product, Sequence[ProductPrice]] = {}
+        errors: list[ValidationError] = []
+        for product_id, product_prices in prices.items():
+            try:
+                product = next(p for p in products if p.id == product_id)
+            except StopIteration:
+                errors.append(
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "prices", str(product_id)),
+                        "msg": "Product is not set on that checkout.",
+                        "input": product_id,
+                    }
+                )
+                continue
+
+            (
+                validated_product_prices,
+                _,
+                _,
+                price_errors,
+            ) = await product_service.get_validated_prices(
+                session,
+                organization,
+                product_prices,
+                product.recurring_interval,
+                product,
+                auth_subject,
+                source=ProductPriceSource.ad_hoc,
+                error_prefix=(
+                    "body",
+                    "prices",
+                    str(product_id),
+                ),
+            )
+            errors = [*errors, *price_errors]
+            validated_prices[product] = validated_product_prices
+
+        if len(errors) > 0:
+            raise SpaireRequestValidationError(errors)
+
+        return validated_prices
+
+    @typing.overload
+    async def _get_validated_discount(
+        self,
+        session: AsyncSession,
+        organization: Organization,
+        product: Product,
+        price: ProductPrice,
+        currency: str,
+        *,
+        discount_id: uuid.UUID,
+    ) -> Discount: ...
+
+    @typing.overload
+    async def _get_validated_discount(
+        self,
+        session: AsyncSession,
+        organization: Organization,
+        product: Product,
+        price: ProductPrice,
+        currency: str,
+        *,
+        discount_code: str,
+    ) -> Discount: ...
+
+    async def _get_validated_discount(
+        self,
+        session: AsyncSession,
+        organization: Organization,
+        product: Product,
+        price: ProductPrice,
+        currency: str,
+        *,
+        discount_id: uuid.UUID | None = None,
+        discount_code: str | None = None,
+    ) -> Discount:
+        loc_field = "discount_id" if discount_id is not None else "discount_code"
+
+        if not any(is_discount_applicable(price) for price in product.prices):
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", loc_field),
+                        "msg": "Discounts are not applicable to this product.",
+                        "input": discount_id,
+                    }
+                ]
+            )
+
+        discount: Discount | None = None
+        if discount_id is not None:
+            discount = await discount_service.get_by_id_and_organization(
+                session,
+                discount_id,
+                organization,
+                currency=currency,
+                products=[product],
+            )
+        elif discount_code is not None:
+            discount = await discount_service.get_by_code_and_product(
+                session, discount_code, organization, product, currency
+            )
+
+        if discount is None:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", loc_field),
+                        "msg": "Discount does not exist.",
+                        "input": discount_id,
+                    }
+                ]
+            )
+
+        if (
+            product.recurring_interval is None
+            and not isinstance(
+                price,
+                LegacyRecurringProductPriceFixed | LegacyRecurringProductPriceCustom,
+            )
+            and discount.duration == DiscountDuration.repeating
+        ):
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", loc_field),
+                        "msg": "Discount is not applicable to this product.",
+                        "input": discount_id,
+                    }
+                ]
+            )
+
+        return discount
+
+    async def _get_validated_subscription(
+        self,
+        session: AsyncSession,
+        subscription_id: uuid.UUID,
+        organization_id: uuid.UUID,
+    ) -> tuple[Subscription, Customer]:
+        subscription_repository = SubscriptionRepository.from_session(session)
+        subscription = await subscription_repository.get_by_id_and_organization(
+            subscription_id,
+            organization_id,
+            options=(joinedload(Subscription.customer),),
+        )
+
+        if subscription is None:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "subscription_id"),
+                        "msg": "Subscription does not exist.",
+                        "input": subscription_id,
+                    }
+                ]
+            )
+
+        for price in subscription.prices:
+            if price.amount_type != ProductPriceAmountType.free:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "value_error",
+                            "loc": ("body", "subscription_id"),
+                            "msg": "Only free subscriptions can be upgraded.",
+                            "input": subscription_id,
+                        }
+                    ]
+                )
+
+        return subscription, subscription.customer
+
+    @contextlib.asynccontextmanager
+    async def _lock_checkout_update(
+        self, session: AsyncSession, checkout: Checkout
+    ) -> AsyncIterator[Checkout]:
+        """
+        Lock checkout with FOR UPDATE NOWAIT and reload fresh from database.
+
+        Uses PostgreSQL row-level locking instead of Redis distributed locks.
+        If another transaction holds the lock, immediately raises CheckoutLocked
+        instead of waiting (NOWAIT behavior).
+
+        Uses FOR UPDATE OF checkouts to lock only the checkout row while still
+        allowing eager loading of relationships via LEFT OUTER JOINs.
+
+        See: https://www.postgresql.org/docs/current/explicit-locking.html
+        """
+        repository = CheckoutRepository.from_session(session)
+        checkout_id = checkout.id
+
+        try:
+            locked_checkout = await repository.get_by_id_for_update(
+                checkout_id,
+                nowait=True,
+                options=repository.get_eager_options(),
+            )
+        except DBAPIError as e:
+            if is_lock_not_available_error(e):
+                raise CheckoutLocked(checkout_id) from e
+            raise
+
+        if locked_checkout is None:
+            raise ResourceNotFound()
+
+        yield locked_checkout
+
+    async def _update_checkout(
+        self,
+        session: AsyncSession,
+        checkout: Checkout,
+        checkout_update: CheckoutUpdate | CheckoutUpdatePublic | CheckoutConfirm,
+        ip_geolocation_client: ip_geolocation.IPGeolocationClient | None = None,
+    ) -> Checkout:
+        if checkout.status != CheckoutStatus.open:
+            raise NotOpenCheckout(checkout)
+
+        updated_currency = (
+            checkout_update.currency
+            if isinstance(checkout_update, CheckoutUpdate)
+            else None
+        )
+
+        # Currency is updated, but not the product, make sure the product supports it
+        if updated_currency and checkout_update.product_id is None:
+            assert checkout.product is not None
+            checkout.currency = updated_currency
+            try:
+                currency_prices = PriceSet.from_product(
+                    checkout.product, updated_currency
+                )
+            except NoPricesForCurrencies as e:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "value_error",
+                            "loc": ("body", "currency"),
+                            "msg": "Product is not available in the specified currency.",
+                            "input": updated_currency,
+                        }
+                    ]
+                ) from e
+            price = currency_prices.get_default_price()
+            checkout = await self._update_price(checkout, checkout_update, price)
+        # Product is updated
+        elif checkout_update.product_id is not None:
+            product_repository = ProductRepository.from_session(session)
+            product = await product_repository.get_by_id_and_checkout(
+                checkout_update.product_id,
+                checkout.id,
+                options=product_repository.get_eager_options(),
+            )
+
+            if product is None:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "value_error",
+                            "loc": ("body", "product_id"),
+                            "msg": "Product is not available in this checkout.",
+                            "input": checkout_update.product_id,
+                        }
+                    ]
+                )
+
+            if product.is_archived:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "value_error",
+                            "loc": ("body", "product_id"),
+                            "msg": "Product is archived.",
+                            "input": checkout_update.product_id,
+                        }
+                    ]
+                )
+
+            checkout.product = product
+
+            if checkout_update.product_price_id is not None:
+                try:
+                    price = next(
+                        p
+                        for p in checkout.prices[product.id]
+                        if p.id == checkout_update.product_price_id
+                    )
+                except StopIteration as e:
+                    raise SpaireRequestValidationError(
+                        [
+                            {
+                                "type": "value_error",
+                                "loc": ("body", "product_price_id"),
+                                "msg": "Price is not available in this checkout.",
+                                "input": checkout_update.product_price_id,
+                            }
+                        ]
+                    ) from e
+            else:
+                # Product and currency are both updated, make sure the product supports it
+                if updated_currency is not None:
+                    try:
+                        currency_prices = PriceSet.from_product(
+                            product, updated_currency
+                        )
+                        checkout.currency = updated_currency
+                    except NoPricesForCurrencies:
+                        raise SpaireRequestValidationError(
+                            [
+                                {
+                                    "type": "value_error",
+                                    "loc": ("body", "currency"),
+                                    "msg": "Product is not available in the specified currency.",
+                                    "input": updated_currency,
+                                }
+                            ]
+                        )
+                # Only product is updated, try to use the existing currency
+                # or fallback to default currency if existing currency is not supported
+                else:
+                    currency_prices = PriceSet.from_product(
+                        product,
+                        checkout.currency,
+                        product.organization.default_presentment_currency,
+                    )
+                    checkout.currency = currency_prices.currency
+
+                price = currency_prices.get_default_price()
+
+            checkout = await self._update_price(checkout, checkout_update, price)
+
+        # When changing product, remove the discount if it's not applicable
+        if (
+            has_product_checkout(checkout)
+            and checkout.discount is not None
+            and not checkout.discount.is_applicable(checkout.product, checkout.currency)
+        ):
+            checkout.discount = None
+
+        if (
+            has_product_checkout(checkout)
+            and checkout_update.amount is not None
+            and is_custom_price(checkout.product_price)
+        ):
+            self._validate_custom_price_amount(
+                checkout.product_price, checkout_update.amount
+            )
+            checkout.amount = checkout_update.amount
+
+        # Handle seat updates for seat-based pricing
+        if (
+            has_product_checkout(checkout)
+            and checkout_update.seats is not None
+            and is_seat_price(checkout.product_price)
+        ):
+            self._validate_seat_limits(checkout.product_price, checkout_update.seats)
+            checkout.seats = checkout_update.seats
+            checkout.amount = checkout.product_price.calculate_amount(
+                checkout_update.seats
+            )
+        elif checkout_update.seats is not None:
+            # Seats provided for non-seat-based pricing
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("body", "seats"),
+                        "msg": "Seats can only be set for seat-based pricing.",
+                        "input": checkout_update.seats,
+                    }
+                ]
+            )
+
+        if isinstance(checkout_update, CheckoutUpdate):
+            if (
+                has_product_checkout(checkout)
+                and checkout_update.discount_id is not None
+            ):
+                checkout.discount = await self._get_validated_discount(
+                    session,
+                    checkout.organization,
+                    checkout.product,
+                    checkout.product_price,
+                    checkout.currency,
+                    discount_id=checkout_update.discount_id,
+                )
+            # User explicitly removed the discount
+            elif "discount_id" in checkout_update.model_fields_set:
+                checkout.discount = None
+        elif (
+            isinstance(checkout_update, CheckoutUpdatePublic)
+            and checkout.allow_discount_codes
+        ):
+            if (
+                has_product_checkout(checkout)
+                and checkout_update.discount_code is not None
+            ):
+                discount = await self._get_validated_discount(
+                    session,
+                    checkout.organization,
+                    checkout.product,
+                    checkout.product_price,
+                    checkout.currency,
+                    discount_code=checkout_update.discount_code,
+                )
+                checkout.discount = discount
+            # User explicitly removed the discount
+            elif "discount_code" in checkout_update.model_fields_set:
+                checkout.discount = None
+
+        if checkout_update.customer_billing_address:
+            checkout.customer_billing_address = checkout_update.customer_billing_address
+
+        if (
+            checkout_update.customer_tax_id is None
+            and "customer_tax_id" in checkout_update.model_fields_set
+        ):
+            checkout.customer_tax_id = None
+        else:
+            customer_tax_id_number = (
+                checkout_update.customer_tax_id or checkout.customer_tax_id_number
+            )
+            if customer_tax_id_number is not None:
+                customer_billing_address = (
+                    checkout_update.customer_billing_address
+                    or checkout.customer_billing_address
+                )
+                if customer_billing_address is None:
+                    raise SpaireRequestValidationError(
+                        [
+                            {
+                                "type": "missing",
+                                "loc": ("body", "customer_billing_address"),
+                                "msg": "Country is required to validate tax ID.",
+                                "input": None,
+                            }
+                        ]
+                    )
+                try:
+                    checkout.customer_tax_id = validate_tax_id(
+                        customer_tax_id_number, customer_billing_address.country
+                    )
+                except InvalidTaxID as e:
+                    raise SpaireRequestValidationError(
+                        [
+                            {
+                                "type": "value_error",
+                                "loc": ("body", "customer_tax_id"),
+                                "msg": "Invalid tax ID.",
+                                "input": customer_tax_id_number,
+                            }
+                        ]
+                    ) from e
+
+        if (
+            has_product_checkout(checkout)
+            and checkout_update.custom_field_data is not None
+        ):
+            custom_field_data = validate_custom_field_data(
+                checkout.product.attached_custom_fields,
+                checkout_update.custom_field_data,
+                validate_required=isinstance(checkout_update, CheckoutConfirm),
+            )
+            checkout.custom_field_data = custom_field_data
+
+        ip_country = self._get_ip_country(
+            ip_geolocation_client, checkout.customer_ip_address
+        )
+        checkout = await self._update_ip_country(session, checkout, ip_country)
+
+        exclude = {
+            "product_id",
+            "product_price_id",
+            "amount",
+            "currency",
+            "customer_billing_address",
+            "customer_tax_id",
+            "custom_field_data",
+        }
+
+        if checkout.customer_id is not None:
+            exclude.add("customer_email")
+
+        for attr, value in checkout_update.model_dump(
+            exclude_unset=True, exclude=exclude, by_alias=True
+        ).items():
+            setattr(checkout, attr, value)
+
+        checkout = await self._update_trial_end(checkout)
+
+        session.add(checkout)
+
+        await self._validate_subscription_uniqueness(session, checkout)
+
+        return checkout
+
+    async def _update_price(
+        self,
+        checkout: Checkout,
+        checkout_update: CheckoutUpdate | CheckoutUpdatePublic | CheckoutConfirmStripe,
+        price: ProductPrice,
+    ) -> Checkout:
+        checkout.product_price = price
+        checkout.amount = 0
+        checkout.seats = None
+        if is_fixed_price(price):
+            checkout.amount = price.price_amount
+        elif is_custom_price(price):
+            checkout.amount = price.preset_amount or price.minimum_amount
+        elif is_seat_price(price):
+            # Use minimum_seats as default if no seats are set
+            minimum_seats = price.get_minimum_seats()
+            seats = checkout.seats or checkout_update.seats or minimum_seats
+            # Validate seat limits for the new price
+            self._validate_seat_limits(price, seats)
+            checkout.seats = seats
+            checkout.amount = price.calculate_amount(seats)
+
+        return checkout
+
+    async def _update_checkout_tax(
+        self, session: AsyncSession, checkout: Checkout
+    ) -> Checkout:
+        is_tax_applicable = True
+        tax_code = TaxCode.general_electronically_supplied_services
+        tax_behavior_option = checkout.organization.default_tax_behavior
+        if has_product_checkout(checkout):
+            is_tax_applicable = checkout.product.is_tax_applicable
+            tax_code = checkout.product.tax_code
+            if checkout.product_price.tax_behavior is not None:
+                tax_behavior_option = checkout.product_price.tax_behavior
+
+        # Update net_amount to reflect the post-discount amount
+        checkout.net_amount = checkout.amount - checkout.discount_amount
+
+        if not (checkout.is_payment_form_required and is_tax_applicable):
+            checkout.tax_amount = 0
+            checkout.tax_processor_id = None
+            session.add(checkout)
+            return checkout
+
+        if checkout.customer_billing_address is not None:
+            addr = checkout.customer_billing_address
+            # Stripe Tax requires state or postal_code for US/CA addresses.
+            # Skip calculation until the customer fills in those fields.
+            if addr.country in {"US", "CA"} and not addr.state and not addr.postal_code:
+                session.add(checkout)
+                return checkout
+
+            tax_behavior = get_tax_behavior_from_option(
+                tax_behavior_option, addr
+            )
+            tax_processor = checkout.tax_processor or settings.DEFAULT_TAX_PROCESSOR
+            tax_service = get_tax_service(tax_processor)
+            try:
+                tax_calculation = await tax_service.calculate(
+                    checkout.id,
+                    checkout.currency,
+                    checkout.net_amount,
+                    tax_behavior,
+                    tax_code,
+                    addr,
+                    (
+                        [checkout.customer_tax_id]
+                        if checkout.customer_tax_id is not None
+                        else []
+                    ),
+                    customer_exempt=False,
+                )
+                checkout.tax_amount = tax_calculation["amount"]
+                checkout.tax_behavior = tax_calculation["tax_behavior"]
+                checkout.net_amount = (
+                    checkout.net_amount - checkout.tax_amount
+                    if checkout.tax_behavior == TaxBehavior.inclusive
+                    else checkout.net_amount
+                )
+                checkout.tax_processor_id = tax_calculation["processor_id"]
+                checkout.taxability_reason = tax_calculation["taxability_reason"]
+                checkout.tax_rate = tax_calculation["tax_rate"]
+            except TaxCalculationError:
+                checkout.tax_amount = None
+                checkout.tax_behavior = None
+                checkout.tax_processor_id = None
+                checkout.taxability_reason = None
+                checkout.tax_rate = None
+                raise
+            finally:
+                session.add(checkout)
+
+        return checkout
+
+    def _get_ip_country(
+        self,
+        ip_geolocation_client: ip_geolocation.IPGeolocationClient | None,
+        ip_address: CustomerIPAddress | str | None,
+    ) -> str | None:
+        if ip_geolocation_client is None:
+            return None
+
+        if ip_address is None:
+            return None
+
+        return ip_geolocation.get_ip_country(ip_geolocation_client, str(ip_address))
+
+    def _get_currencies(
+        self,
+        currency_request: str | None,
+        product: Product,
+        organization: Organization,
+        ip_country: str | None,
+    ) -> Sequence[str]:
+        if currency_request is not None:
+            return [currency_request]
+
+        currencies: list[str] = []
+
+        if ip_country is not None:
+            if (country_currency := get_presentment_currency(ip_country)) is not None:
+                currencies.append(country_currency)
+
+        currencies.append(organization.default_presentment_currency)
+        return currencies
+
+    async def _update_ip_country(
+        self, session: AsyncSession, checkout: Checkout, ip_country: str | None
+    ) -> Checkout:
+        if ip_country is None:
+            return checkout
+
+        if checkout.customer_billing_address is not None:
+            return checkout
+
+        try:
+            address = AddressInput.model_validate({"country": ip_country})
+        except PydanticValidationError:
+            return checkout
+
+        checkout.customer_billing_address = address
+        session.add(checkout)
+        return checkout
+
+    async def _update_trial_end(self, checkout: Checkout) -> Checkout:
+        if not has_product_checkout(checkout):
+            checkout.trial_end = None
+            return checkout
+
+        if not checkout.product.is_recurring:
+            checkout.trial_end = None
+            return checkout
+
+        trial_interval = checkout.active_trial_interval
+        trial_interval_count = checkout.active_trial_interval_count
+
+        if trial_interval is not None and trial_interval_count is not None:
+            checkout.trial_end = trial_interval.get_end(utc_now(), trial_interval_count)
+        else:
+            checkout.trial_end = None
+
+        return checkout
+
+    async def _validate_subscription_uniqueness(
+        self, session: AsyncSession, checkout: Checkout
+    ) -> None:
+        organization = checkout.organization
+
+        # No product checkout
+        if not has_product_checkout(checkout):
+            return
+
+        # Multiple subscriptions allowed
+        if organization.allow_multiple_subscriptions:
+            return
+
+        # One-time purchase
+        if not checkout.product.is_recurring:
+            return
+
+        # Subscription upgrade
+        if checkout.subscription is not None:
+            return
+
+        # No information yet to check customer subscription uniqueness
+        if checkout.customer_id is None and checkout.customer_email is None:
+            return
+
+        statement = (
+            select(Subscription)
+            .join(Product, onclause=Product.id == Subscription.product_id)
+            .where(
+                Product.organization_id == organization.id,
+                Subscription.billable.is_(True),
+            )
+        )
+        if checkout.customer is not None:
+            statement = statement.where(
+                Subscription.customer_id == checkout.customer_id
+            )
+        elif checkout.customer_email is not None:
+            statement = statement.join(
+                Customer, onclause=Customer.id == Subscription.customer_id
+            ).where(
+                func.lower(Customer.email) == checkout.customer_email.lower(),
+                Customer.deleted_at.is_(None),
+            )
+
+        result = await session.execute(statement)
+        existing_subscriptions = result.scalars().all()
+
+        if len(existing_subscriptions) > 0:
+            raise AlreadyActiveSubscriptionError()
+
+    def _validate_custom_price_amount(
+        self,
+        price: ProductPrice,
+        amount: int,
+        loc: tuple[str, ...] = ("body", "amount"),
+    ) -> None:
+        """Validate that an amount is within the min/max bounds for a custom price."""
+        if not is_custom_price(price):
+            return
+
+        if price.minimum_amount == 0:
+            # Free is allowed: accept $0 or any amount >= MINIMUM_PRICE_AMOUNT
+            if amount == 0:
+                return
+
+            if 0 < amount < MINIMUM_PRICE_AMOUNT:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "invalid_amount",
+                            "loc": loc,
+                            "msg": "Amount must be $0 or at least $0.50.",
+                            "input": amount,
+                            "ctx": {"allowed": [0], "ge": MINIMUM_PRICE_AMOUNT},
+                        }
+                    ]
+                )
+        else:
+            if amount < price.minimum_amount:
+                raise SpaireRequestValidationError(
+                    [
+                        {
+                            "type": "greater_than_equal",
+                            "loc": loc,
+                            "msg": "Amount is below minimum.",
+                            "input": amount,
+                            "ctx": {"ge": price.minimum_amount},
+                        }
+                    ]
+                )
+
+        if price.maximum_amount is not None and amount > price.maximum_amount:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "less_than_equal",
+                        "loc": loc,
+                        "msg": "Amount is above maximum.",
+                        "input": amount,
+                        "ctx": {"le": price.maximum_amount},
+                    }
+                ]
+            )
+
+    def _validate_seat_limits(
+        self,
+        price: ProductPrice,
+        seats: int,
+        loc: tuple[str, ...] = ("body", "seats"),
+    ) -> None:
+        """Validate that a seat count is within the min/max bounds for a seat-based price."""
+        if not is_seat_price(price):
+            return
+
+        minimum_seats = price.get_minimum_seats()
+        maximum_seats = price.get_maximum_seats()
+
+        if seats < minimum_seats:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "greater_than_equal",
+                        "loc": loc,
+                        "msg": f"Minimum {minimum_seats} seats required.",
+                        "input": seats,
+                        "ctx": {"ge": minimum_seats},
+                    }
+                ]
+            )
+
+        if maximum_seats is not None and seats > maximum_seats:
+            raise SpaireRequestValidationError(
+                [
+                    {
+                        "type": "less_than_equal",
+                        "loc": loc,
+                        "msg": f"Maximum {maximum_seats} seats allowed.",
+                        "input": seats,
+                        "ctx": {"le": maximum_seats},
+                    }
+                ]
+            )
+
+    def _get_required_confirm_fields(self, checkout: Checkout) -> set[tuple[str, ...]]:
+        fields: set[tuple[str, ...]] = {("customer_email",)}
+        if checkout.is_payment_form_required:
+            fields.update({("customer_name",), ("customer_billing_address",)})
+            for (
+                address_field,
+                required,
+            ) in checkout.customer_billing_address_fields.items():
+                if required:
+                    fields.add(("customer_billing_address", address_field))
+        if checkout.is_business_customer:
+            fields.update({("customer_billing_name",), ("customer_billing_address",)})
+        return fields
+
+    @contextlib.asynccontextmanager
+    async def _create_or_update_customer(
+        self,
+        session: AsyncSession,
+        auth_subject: AuthSubject[User | Anonymous],
+        checkout: Checkout,
+    ) -> AsyncGenerator[Customer]:
+        repository = CustomerRepository.from_session(session)
+
+        created = False
+        customer = checkout.customer
+
+        if customer is None:
+            assert checkout.customer_email is not None
+            customer = await repository.get_by_email_and_organization(
+                checkout.customer_email, checkout.organization.id
+            )
+            if customer is None:
+                customer = Customer(
+                    external_id=checkout.external_customer_id,
+                    email=checkout.customer_email,
+                    email_verified=False,
+                    stripe_customer_id=None,
+                    organization=checkout.organization,
+                    user_metadata={},
+                )
+                created = True
+
+        stripe_customer_id = customer.stripe_customer_id
+        if stripe_customer_id is None:
+            create_params: CustomerCreateParams = {"email": customer.email}
+            if checkout.customer_billing_name is not None:
+                create_params["name"] = checkout.customer_billing_name
+            elif checkout.customer_name is not None:
+                create_params["name"] = checkout.customer_name
+            if checkout.customer_billing_address is not None:
+                create_params["address"] = checkout.customer_billing_address.to_dict()  # type: ignore
+            if checkout.customer_tax_id is not None:
+                create_params["tax_id_data"] = [
+                    to_stripe_tax_id(checkout.customer_tax_id)
+                ]
+            stripe_customer = await stripe_service.create_customer(**create_params)
+            stripe_customer_id = stripe_customer.id
+        else:
+            update_params: CustomerModifyParams = {"email": customer.email}
+            if checkout.customer_billing_name is not None:
+                update_params["name"] = checkout.customer_billing_name
+            elif checkout.customer_name is not None:
+                update_params["name"] = checkout.customer_name
+            if checkout.customer_billing_address is not None:
+                update_params["address"] = checkout.customer_billing_address.to_dict()  # type: ignore
+            await stripe_service.update_customer(
+                stripe_customer_id,
+                tax_id=(
+                    to_stripe_tax_id(checkout.customer_tax_id)
+                    if checkout.customer_tax_id is not None
+                    else None
+                ),
+                **update_params,
+            )
+
+        if checkout.customer_name is not None:
+            customer.name = checkout.customer_name
+        if checkout.customer_billing_name is not None:
+            customer.billing_name = checkout.customer_billing_name
+        if checkout.customer_billing_address is not None:
+            customer.billing_address = checkout.customer_billing_address
+        if checkout.customer_tax_id is not None:
+            customer.tax_id = checkout.customer_tax_id
+        if checkout.locale is not None:
+            customer.locale = checkout.locale
+
+        customer.stripe_customer_id = stripe_customer_id
+        customer.user_metadata = {
+            **customer.user_metadata,
+            **checkout.customer_metadata,
+        }
+
+        if created:
+            async with repository.create_context(customer, flush=False) as customer:
+                await member_service.create_owner_member(
+                    session, customer, checkout.organization
+                )
+                yield customer
+        else:
+            yield await repository.update(customer, flush=True)
+
+    async def _after_checkout_created(
+        self, session: AsyncSession, checkout: Checkout
+    ) -> None:
+        CHECKOUT_CREATED_TOTAL.inc()
+
+        metadata = CheckoutCreatedMetadata(
+            checkout_id=str(checkout.id),
+            checkout_status=checkout.status,
+        )
+        if checkout.product_id:
+            metadata["product_id"] = str(checkout.product_id)
+        await event_service.create_event(
+            session,
+            build_checkout_event(
+                SystemEvent.checkout_created,
+                checkout.organization,
+                metadata,
+            ),
+        )
+        await webhook_service.send(
+            session, checkout.organization, WebhookEventType.checkout_created, checkout
+        )
+
+    async def _after_checkout_updated(
+        self, session: AsyncSession, checkout: Checkout
+    ) -> None:
+        await publish_checkout_event(
+            checkout.client_secret, CheckoutEvent.updated, {"status": checkout.status}
+        )
+        events = await webhook_service.send(
+            session, checkout.organization, WebhookEventType.checkout_updated, checkout
+        )
+        # No webhook to send, publish the webhook_event immediately
+        if len(events) == 0:
+            await publish_checkout_event(
+                checkout.client_secret,
+                CheckoutEvent.webhook_event_delivered,
+                {"status": checkout.status},
+            )
+
+    async def send_expiration_events(
+        self, session: AsyncSession, checkout: Checkout
+    ) -> None:
+        await publish_checkout_event(
+            checkout.client_secret, CheckoutEvent.updated, {"status": checkout.status}
+        )
+        await webhook_service.send(
+            session, checkout.organization, WebhookEventType.checkout_expired, checkout
+        )
+
+    async def _eager_load_product(
+        self, session: AsyncSession, product: Product
+    ) -> Product:
+        await session.refresh(
+            product,
+            {"organization", "prices", "product_medias", "attached_custom_fields"},
+        )
+        return product
+
+
+checkout = CheckoutService()

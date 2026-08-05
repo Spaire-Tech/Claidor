@@ -1,0 +1,43 @@
+import { markdownOptions } from '@/utils/markdown'
+import type { CheckoutOrganization } from '@spaire/sdk/models/components/checkoutorganization'
+import type { CheckoutProduct } from '@spaire/sdk/models/components/checkoutproduct'
+import Avatar from '@spaire/ui/components/atoms/Avatar'
+import Markdown from 'markdown-to-jsx'
+import { Slideshow } from '../Products/Slideshow'
+
+interface CheckoutProductInfoProps {
+  organization: CheckoutOrganization
+  product: CheckoutProduct
+}
+
+const CheckoutProductInfo = ({
+  organization,
+  product,
+}: CheckoutProductInfoProps) => {
+  return (
+    <div className="contents">
+      <div className="flex flex-col gap-y-6 md:gap-y-8">
+        <Avatar
+          className="h-12 w-12 md:h-16 md:w-16"
+          avatar_url={organization.avatarUrl}
+          name={organization.name}
+        />
+        {product.name ? (
+          <h1 className="text-3xl">{product.name}</h1>
+        ) : (
+          <div className=" h-6 w-48 animate-pulse rounded-md bg-gray-200" />
+        )}
+      </div>
+      {product.medias.length > 0 && (
+        <Slideshow images={product.medias.map((m) => m.publicUrl)} />
+      )}
+      {product.description && (
+        <div className="prose prose-headings:mt-8 prose-headings:font-medium prose-headings:text-black prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-md prose-h5:text-sm prose-h6:text-sm   max-w-4xl leading-normal text-gray-800">
+          <Markdown options={markdownOptions}>{product.description}</Markdown>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default CheckoutProductInfo

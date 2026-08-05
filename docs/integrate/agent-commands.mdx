@@ -1,0 +1,168 @@
+---
+title: "AI Agent Commands"
+description: "Add Spaire checkout and usage billing to your project with guided AI agent commands in Claude Code"
+sidebarTitle: "Agent Commands"
+---
+
+Agent commands are [Claude Code custom commands](https://docs.anthropic.com/en/docs/claude-code/tutorials#create-custom-slash-commands) that teach the AI agent how to integrate Spaire into your project. The agent reads your codebase, detects your framework, and writes production-ready integration code — interactively, with your approval at every step.
+
+## How It Works
+
+Claude Code doesn't know about Spaire out of the box. The agent commands are Markdown files you add to your project's `.claude/commands/` directory. Once added, Claude Code loads them as custom slash commands and knows exactly how to set up Spaire checkout, usage billing, webhooks, and more — tailored to your stack.
+
+## Available Commands
+
+<CardGroup cols={2}>
+  <Card title="/setup-checkout" icon="cart-shopping" href="#setup-checkout">
+    Adds checkout buttons, embed scripts, success pages, and optionally customer portal and webhook handlers.
+  </Card>
+  <Card title="/setup-usage-billing" icon="gauge" href="#setup-usage-billing">
+    Sets up metered billing with SDK ingestion, meters, credits, and webhook handlers.
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Install Claude Code">
+    Install the Claude Code CLI globally:
+
+    ```bash
+    npm install -g @anthropic-ai/claude-code
+    ```
+  </Step>
+  <Step title="Add the command files to your project">
+    Create a `.claude/commands/` directory in your project root and download the Spaire command files:
+
+    ```bash
+    mkdir -p .claude/commands
+
+    # Checkout command
+    curl -o .claude/commands/setup-checkout.md \
+      https://raw.githubusercontent.com/polarsource/polar/main/.claude/commands/setup-checkout.md
+
+    # Usage billing command
+    curl -o .claude/commands/setup-usage-billing.md \
+      https://raw.githubusercontent.com/polarsource/polar/main/.claude/commands/setup-usage-billing.md
+    ```
+
+    <Tip>
+      Commit these files to your repo. Anyone on your team who uses Claude Code will automatically get the Spaire commands.
+    </Tip>
+  </Step>
+  <Step title="Launch Claude Code and run a command">
+    ```bash
+    cd your-project
+    claude
+    ```
+
+    Then type `/setup-checkout` or `/setup-usage-billing` and follow the agent's prompts.
+  </Step>
+</Steps>
+
+<Info>
+  **Why command files?** Claude Code custom commands are project-scoped. By adding the `.claude/commands/` files to your project, the agent gets detailed instructions on how to integrate Spaire — including which SDKs to use, what dashboard steps to guide you through, safety guardrails for production codebases, and framework-specific code templates. Without these files, Claude Code has no knowledge of Spaire.
+</Info>
+
+## Supported Frameworks
+
+The agent detects your framework automatically and tailors the generated code accordingly:
+
+| Framework | Checkout | Usage Billing |
+|---|---|---|
+| Next.js (App Router) | ✓ | ✓ |
+| Next.js (Pages Router) | ✓ | ✓ |
+| Express | ✓ | ✓ |
+| FastAPI | ✓ | ✓ |
+| Ruby on Rails | ✓ | ✓ |
+| Node Serverless (Vercel/Lambda) | ✓ | ✓ |
+| React (Vite, CRA) | ✓ | — |
+| Vue / Nuxt | ✓ | — |
+| Svelte / SvelteKit | ✓ | — |
+| Vanilla HTML/JS | ✓ | — |
+
+If the agent cannot confidently detect your framework, it will ask you to confirm before proceeding.
+
+## Safety Guardrails
+
+Agent commands are designed for production codebases that handle revenue. Every command enforces these guardrails:
+
+- **Pre-write confirmation** — Before writing any code, the agent shows a full change summary and waits for your explicit approval
+- **Git safety** — Checks for uncommitted changes and warns you to commit or stash first
+- **No secret handling** — Never hardcodes API keys or modifies `.env` values; only references variable names and tells you where to get the values
+- **Surgical edits** — When modifying existing files, patches only the necessary sections and preserves your formatting and code style
+- **No silent account mutations** — Never creates products, meters, or prices in your Spaire account; walks you through dashboard steps manually
+- **Idempotent webhooks** — All generated webhook handlers include signature verification and idempotency checks
+- **Revert instructions** — After every implementation, provides exact file paths, imports, and packages to remove
+
+<Tip>
+  Commit your current changes before running any agent command. This gives you a clean `git diff` to review and a one-command revert path.
+</Tip>
+
+## Setup Checkout
+
+The `/setup-checkout` command adds Spaire checkout to your project. The agent asks which approach you want:
+
+| Approach | Description | Best for |
+|---|---|---|
+| **Overlay** | Embed script + `data-spaire-checkout` links. No backend needed. | Landing pages, simple apps |
+| **Programmatic** | `SpaireEmbedCheckout.create()` for dynamic control. | Apps needing custom trigger logic |
+| **Server-side** | Checkout sessions via `@spaire/sdk` or `@spaire/nextjs`. | Apps with backends, dynamic pricing |
+
+### What the agent does
+
+1. Scans your project files to detect your framework
+2. Asks if you have products in Spaire (walks you through creation if not)
+3. Asks which checkout approach you want
+4. Finds your pricing pages, product pages, and CTA sections
+5. **Shows a full change summary and waits for confirmation**
+6. Adds the embed script to your layout
+7. Writes checkout buttons into your components
+8. Creates a success page
+9. Optionally wires up customer portal and webhook handler
+10. Provides revert instructions
+
+For full details on checkout options, see the [Checkout documentation](/features/checkout/embed).
+
+## Setup Usage Billing
+
+The `/setup-usage-billing` command sets up metered billing. The agent asks what you want to track:
+
+- **LLM tokens** — prompt, completion, and total tokens via `LLMStrategy`
+- **API calls** — request counting with custom metadata
+- **Storage** — bytes uploaded/downloaded via `S3Strategy`
+- **Compute time** — execution duration via `DeltaTimeStrategy`
+- **Custom metrics** — any event you define
+
+### What the agent does
+
+1. Scans your project files to detect your framework
+2. Asks what you want to meter and your pricing model
+3. Checks prerequisites (SDK installed, access token set)
+4. Tells you exactly what meter to create in the dashboard
+5. **Shows a full change summary and waits for confirmation**
+6. Writes ingestion code using the right SDK strategy
+7. Walks you through metered pricing setup
+8. Optionally sets up credits with balance-checking utilities
+9. Generates webhook handlers with signature verification
+10. Provides revert instructions
+
+For full details on metering, see the [Usage-Based Billing documentation](/features/usage-based-billing/introduction).
+
+## Production Awareness
+
+If the agent detects production indicators — `NODE_ENV=production`, deploy branch configurations, or CI/CD pipeline files — it warns you before making any changes.
+
+<Warning>
+  Agent commands write code directly into your project. Always review the generated code before deploying to production. Use [sandbox mode](/integrate/sandbox) for initial testing.
+</Warning>
+
+## Relationship to Other Integration Methods
+
+| Method | Best for |
+|---|---|
+| **Agent Commands** | Getting started fast — the agent writes the code for you |
+| [SDKs](/integrate/sdk/typescript) | Manual integration with full control |
+| [Framework Adapters](/integrate/sdk/adapters/nextjs) | Framework-specific helpers (Next.js, Express, etc.) |
+| [MCP](/integrate/mcp) | AI agents querying your Spaire data at runtime |
+| [Webhooks](/integrate/webhooks/endpoints) | Reacting to billing events server-side |

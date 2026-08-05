@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <filter id="organic-business" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018 0.015" numOctaves="5" seed="12" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g filter="url(#organic-business)">
+    <ellipse cx="248" cy="258" rx="188" ry="182" fill="#CEFAEA"/>
+    <ellipse cx="253" cy="253" rx="161" ry="155" fill="#A5EECE"/>
+    <ellipse cx="258" cy="249" rx="135" ry="130" fill="#7ADDB4"/>
+    <ellipse cx="262" cy="246" rx="110" ry="106" fill="#50C99A"/>
+    <ellipse cx="266" cy="244" rx="87" ry="83" fill="#2EAF82"/>
+    <ellipse cx="269" cy="242" rx="66" ry="63" fill="#169468"/>
+    <ellipse cx="272" cy="241" rx="47" ry="45" fill="#0A7852"/>
+    <ellipse cx="274" cy="240" rx="30" ry="29" fill="#065E3E"/>
+    <ellipse cx="276" cy="239" rx="16" ry="15" fill="#04462C"/>
+  </g>
+</svg>

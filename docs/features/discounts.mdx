@@ -1,0 +1,86 @@
+---
+title: "Discounts"
+description: "Create percentage and fixed-amount discounts, apply them at checkout, and control exactly who gets them and when."
+---
+
+Discounts reduce the amount charged at checkout. They work for both one-time purchases and subscriptions, and can be applied automatically by your backend or entered manually by customers at checkout.
+
+## Create a discount
+
+Go to **Catalog → Discounts** and click **New discount**.
+
+### Amount type
+
+**Percentage** — reduces the price by a percentage. Set to 100% to make a product free (useful for internal testing in production without needing a real card).
+
+**Fixed amount** — deducts a specific dollar (or currency) amount from the price.
+
+### Duration
+
+Controls how long a discount applies to a subscription. For one-time purchases, duration has no effect.
+
+| Duration | Behavior |
+|----------|----------|
+| **Once** | Applied to the first billing period only |
+| **Repeating** | Applied for a set number of months |
+| **Forever** | Applied to every billing period |
+
+### Redemption code
+
+Leave the code field empty to create a codeless discount — applied programmatically via the API or a checkout link. Add a code (case-insensitive) to let customers enter it manually at checkout.
+
+### Restrictions
+
+Control when and where the discount can be used:
+
+- **Products** — limit the discount to specific products. Without restrictions, it applies to all products including future ones.
+- **Starts at** — the discount isn't valid before this date
+- **Ends at** — the discount expires at this date
+- **Maximum redemptions** — cap the total number of times the discount can be used
+
+## Apply a discount
+
+### Via checkout link
+
+Select a discount when creating a checkout link. It's applied automatically when the customer opens the link — no code entry required.
+
+You can also control whether customers are allowed to enter their own codes on the link.
+
+### Via checkout session
+
+Pass `discount_id` when creating a session from your API:
+
+```ts
+const checkout = await spaire.checkouts.create({
+  products: ['<product_id>'],
+  discountId: '<discount_id>',
+  allowDiscountCodes: false, // prevent the customer from changing it
+})
+```
+
+### Customer entry at checkout
+
+If a discount has a redemption code and the checkout allows codes, the customer sees a discount code input and can apply it themselves.
+
+## Production testing
+
+A 100% percentage discount is the standard way to run test transactions in production without charging a real card:
+
+1. Go to **Catalog → Discounts → New discount**
+2. Set type to **Percentage**, value to **100%**
+3. Set duration to **Once**
+4. Optionally add a code like `TEST`
+5. Click **Create**
+
+Complete a checkout with this discount applied. Delete or deactivate it when done.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="cart-shopping" href="/features/checkout/links" title="Checkout Links">
+    Attach discounts to a checkout link so they apply automatically.
+  </Card>
+  <Card icon="server" href="/features/checkout/session" title="Checkout Sessions">
+    Apply discounts programmatically when creating sessions from your backend.
+  </Card>
+</CardGroup>

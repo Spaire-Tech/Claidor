@@ -1,0 +1,34 @@
+import { getServerSideAPI } from '@/utils/client/serverside'
+import { getOrganizationOrNotFound } from '@/utils/customerPortal'
+import { redirect } from 'next/navigation'
+import CoursesPage from './CoursesPage'
+
+export default async function Page(props: {
+  params: Promise<{ organization: string }>
+  searchParams: Promise<{
+    customer_session_token?: string
+    member_session_token?: string
+  }>
+}) {
+  const { customer_session_token, member_session_token } =
+    await props.searchParams
+  const params = await props.params
+  const token = customer_session_token ?? member_session_token
+
+  const api = await getServerSideAPI(token)
+  const { organization } = await getOrganizationOrNotFound(
+    api,
+    params.organization,
+  )
+
+  if (!token) {
+    redirect(`/${organization.slug}/portal/request`)
+  }
+
+  return (
+    <CoursesPage
+      organization={organization}
+      customerSessionToken={token}
+    />
+  )
+}

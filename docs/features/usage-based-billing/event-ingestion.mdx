@@ -1,0 +1,134 @@
+---
+title: "Event Ingestion"
+description: "Send billable events from your application to Spaire. Events are the raw signals that power usage-based billing."
+---
+
+An event is a signal from your application representing a billable action — an API call, a token consumed, a file processed, a message sent. You ingest events via the SDK or REST API, and Spaire aggregates them through [meters](/features/usage-based-billing/meters) to calculate charges.
+
+## Event structure
+
+Each event has:
+
+- **`name`** — identifies the event type. Used in meter filters.
+- **`externalCustomerId`** or **`customerId`** — identifies which customer the event belongs to. Use `externalCustomerId` to match against your own user IDs.
+- **`metadata`** — optional key-value pairs for additional data (e.g., token counts, model names, file sizes). Meters can filter and aggregate on these values.
+
+## Ingest events
+
+<CodeGroup>
+
+```ts TypeScript
+import { Spaire } from '@spaire/sdk'
+
+const spaire = new Spaire({
+  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+})
+
+await spaire.events.ingest({
+  events: [
+    {
+      name: 'api_call',
+      externalCustomerId: 'your_user_id',
+      metadata: {
+        model: 'gpt-4o',
+        prompt_tokens: 512,
+        completion_tokens: 128,
+      },
+    },
+  ],
+})
+```
+
+```python Python
+from spaire_sdk import Spaire
+
+with Spaire(access_token="<YOUR_ACCESS_TOKEN>") as spaire:
+    spaire.events.ingest(request={
+        "events": [
+            {
+                "name": "api_call",
+                "external_customer_id": "your_user_id",
+                "metadata": {
+                    "model": "gpt-4o",
+                    "prompt_tokens": 512,
+                    "completion_tokens": 128,
+                },
+            }
+        ]
+    })
+```
+
+```bash cURL
+curl -X POST https://api.spairehq.com/v1/events \
+  -H "Authorization: Bearer $SPAIRE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": [
+      {
+        "name": "api_call",
+        "external_customer_id": "your_user_id",
+        "metadata": {
+          "model": "gpt-4o",
+          "prompt_tokens": 512,
+          "completion_tokens": 128
+        }
+      }
+    ]
+  }'
+```
+
+</CodeGroup>
+
+## Batch ingestion
+
+You can send multiple events in a single request by adding more objects to the `events` array. Batching reduces API calls and is the recommended approach when handling high event volumes.
+
+```ts
+await spaire.events.ingest({
+  events: [
+    { name: 'api_call', externalCustomerId: 'user_1', metadata: { tokens: 200 } },
+    { name: 'api_call', externalCustomerId: 'user_2', metadata: { tokens: 450 } },
+    { name: 'api_call', externalCustomerId: 'user_3', metadata: { tokens: 100 } },
+  ],
+})
+```
+
+## Events are immutable
+
+Once an event is ingested, it cannot be updated or deleted. Design your event schema carefully — especially the metadata keys and value types your meters will depend on.
+
+## Spaire never blocks on balance
+
+Spaire does not prevent event ingestion or block customer actions if a customer runs out of credit or exceeds their meter cap. **You are responsible for checking balances and enforcing limits in your application** before allowing usage.
+
+Check a customer's current meter balance via [Customer State](/integrate/customer-state) or the [Customer Meters API](/api-reference/customer-meters/list).
+
+## Ingestion strategies
+
+For common event sources, Spaire provides pre-built adapters that handle event formatting and ingestion automatically.
+
+<CardGroup cols={2}>
+  <Card icon="brain" href="/features/usage-based-billing/ingestion-strategies/llm-strategy" title="LLM Strategy">
+    Wrap AI SDK models to auto-track prompt and completion tokens.
+  </Card>
+  <Card icon="bucket" href="/features/usage-based-billing/ingestion-strategies/s3-strategy" title="S3 Strategy">
+    Track S3 file upload events automatically.
+  </Card>
+  <Card icon="water" href="/features/usage-based-billing/ingestion-strategies/stream-strategy" title="Stream Strategy">
+    Ingest from continuous event streams.
+  </Card>
+  <Card icon="clock" href="/features/usage-based-billing/ingestion-strategies/delta-time-strategy" title="Delta Time Strategy">
+    Track time-based usage with delta intervals.
+  </Card>
+</CardGroup>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card icon="gauge" href="/features/usage-based-billing/meters" title="Meters">
+    Define how events are filtered and aggregated into billable units.
+  </Card>
+  <Card icon="file-invoice-dollar" href="/features/usage-based-billing/billing" title="Billing">
+    How meter totals are added to subscription invoices.
+  </Card>
+</CardGroup>

@@ -1,0 +1,125 @@
+---
+description: Spaire project conventions and integration pointers for Cursor
+alwaysApply: true
+---
+
+# Spaire — Cursor Rules
+
+This is **Spaire**, a payment infrastructure platform. Monorepo with a Python/FastAPI backend and Next.js frontend. Follow all conventions below when reading or editing code.
+
+---
+
+## Architecture
+
+```
+server/polar/           Backend modules
+  {module}/
+    endpoints.py        FastAPI routes
+    service.py          Business logic (singletons)
+    repository.py       Database queries (SQLAlchemy)
+    schemas.py          Pydantic models
+    tasks.py            Background jobs (Dramatiq)
+clients/
+  apps/web/             Next.js dashboard
+  packages/ui/          Shared React components
+```
+
+---
+
+## Backend Conventions
+
+- **All DB queries** go in `repository.py`. Never query the DB from service files.
+- **Never call `session.commit()`** — the framework commits at request/task end. Use `session.flush()` if you need constraints to run.
+- **Services are singletons**: `resource = ResourceService()` at module level.
+- **Session types**: `AsyncReadSession` for reads, `AsyncSession` for writes.
+- **Schemas**: separate `Read`, `Create`, `Update` schemas. Update schemas have all fields optional with `None` default.
+- **API fields**: snake_case always.
+- **Auth**: `AuthSubject[User | Organization | Customer]` — every endpoint must verify ownership.
+- **Repository init**: use `from_session(session)`, use `get_readable_statement(auth_subject)` for auth-aware queries.
+
+### HTTP Status Codes
+- POST → 201 Created
+- PATCH → 200 OK
+- DELETE → 204 No Content
+- List endpoints → `ListResource` with pagination
+- Validation errors → `PolarRequestValidationError`
+
+---
+
+## Frontend Conventions
+
+- **Design tokens**: `blue-500`, `gray-100`–`gray-900`, `polar-800` for dark mode
+- **Dark mode**: always include `dark:` variant for color classes
+- **Border radius**: `rounded-xl` (default), `rounded-2xl` (large cards)
+- **Data fetching**: TanStack Query (`useQuery`, `useMutation`)
+- **State**: Zustand
+- **Forms**: react-hook-form + zod
+- **Components**: CVA (class-variance-authority); live in `atoms/` or `molecules/`
+
+---
+
+## Package Manager
+
+This project uses **pnpm** for JavaScript and **uv** for Python. Never switch managers.
+
+```bash
+# JS
+pnpm install
+pnpm add <pkg>
+pnpm remove <pkg>
+
+# Python
+uv sync
+uv add <pkg>
+uv run task api
+```
+
+---
+
+## Running the Project
+
+```bash
+# Backend (http://127.0.0.1:8000)
+cd server && uv run task api
+
+# Frontend (http://127.0.0.1:3000)
+cd clients && pnpm dev
+
+# Tests
+cd server && uv run task test
+cd clients && pnpm test
+
+# Lint + type-check (backend)
+uv run task lint && uv run task lint_types
+```
+
+---
+
+## Spaire Integration Playbooks
+
+When the user asks you to **add checkout** or **set up usage-based billing**, follow the corresponding playbook exactly:
+
+| Task | Playbook |
+|------|---------|
+| Add Spaire checkout | `docs/agent-playbooks/setup-checkout.md` |
+| Set up usage-based billing | `docs/agent-playbooks/setup-usage-billing.md` |
+| Agent output contract | `docs/agent-playbooks/agent-output-contract.md` |
+
+### Mandatory Before Any Playbook Run
+
+Read `docs/agent-playbooks/agent-output-contract.md`. You must:
+
+1. Show **planned changes** (files to create/modify + one-line description each) and get confirmation before writing
+2. Report **every command** run with its result
+3. Run and report **linter, type check, tests** after changes
+4. Track **dashboard steps** completed vs pending
+5. Provide **exact rollback steps** when done
+
+### Safety Rules (Non-Negotiable)
+
+- Never hardcode secrets — reference env var names only
+- Never create products/meters/prices programmatically — walk user through dashboard manually
+- Never restructure the project — surgical edits only
+- Never switch the package manager
+- Always warn if production indicators detected (NODE\_ENV=production, deploy branch)
+- Always suggest sandbox mode first for Spaire testing
