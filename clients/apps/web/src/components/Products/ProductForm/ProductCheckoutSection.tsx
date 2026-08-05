@@ -1,20 +1,20 @@
 'use client'
 
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@spaire/ui/components/atoms/Accordion'
-import TextArea from '@spaire/ui/components/atoms/TextArea'
+} from '@claidor/ui/components/atoms/Accordion'
+import TextArea from '@claidor/ui/components/atoms/TextArea'
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import Link from 'next/link'
 import { useFormContext } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'

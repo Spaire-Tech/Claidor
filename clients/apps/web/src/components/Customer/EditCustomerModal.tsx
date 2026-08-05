@@ -1,18 +1,18 @@
 import revalidate from '@/app/actions'
 import { useUpdateCustomer } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
-import { enums, isValidationError, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import CountryPicker from '@spaire/ui/components/atoms/CountryPicker'
-import CountryStatePicker from '@spaire/ui/components/atoms/CountryStatePicker'
-import Input from '@spaire/ui/components/atoms/Input'
+import { enums, isValidationError, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
+import CountryStatePicker from '@claidor/ui/components/atoms/CountryStatePicker'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   Form,
   FormControl,
@@ -21,7 +21,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from '../Toast/use-toast'

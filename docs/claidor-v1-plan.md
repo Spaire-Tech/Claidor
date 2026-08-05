@@ -11,7 +11,7 @@ code. Target: a paying pilot in roughly 3–4 months.
 
 **Founder:**
 - Create a new private GitHub repository for Claidor (fresh repo, e.g.
-  `Spaire-Tech/claidor` or a new org) and grant Claude Code access to it.
+  `Claidor-Tech/claidor` or a new org) and grant Claude Code access to it.
 - Create an Anthropic API account (console.anthropic.com), add billing with a low
   monthly spend cap, generate a key named for testing (e.g. `claidor-test`). Needed
   from Phase 1 onward; a separate production key replaces it at launch. (Anthropic
@@ -22,12 +22,12 @@ code. Target: a paying pilot in roughly 3–4 months.
   Phase 3/4. Email-code login covers auth until Google sign-in lands.
 
 **Engineering:**
-- Copy the Spaire codebase into the new repo (Spaire untouched thereafter).
+- Copy the Claidor codebase into the new repo (Claidor untouched thereafter).
 - Prune the obvious non-Claidor verticals: courses, community, masterclass architect
   (keep its citation validator), mobile app, storefront. Keep the chassis: auth,
   organizations, seats, billing/self-billing, email (incl. broadcast machinery for
   future alerts), files, worker, backoffice, search, observability, tests.
-- Rebrand pass (names, cookies, env vars — finishing the rename Spaire started).
+- Rebrand pass (names, cookies, env vars — finishing the rename Claidor started).
 - Dev environment runs clean (API, worker, web, tests, migrations), CI green.
 
 ## Phase 1 — Proof: the librarian on a thin slice (2–3 weeks)

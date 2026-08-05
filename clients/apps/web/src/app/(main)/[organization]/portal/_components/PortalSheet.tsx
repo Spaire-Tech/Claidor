@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom'
 // (account hub, notifications, and later lesson outlines / comments). Renders
 // into document.body so the top bar's transform (hide-on-scroll) can't hijack
 // its fixed positioning, and re-applies the portal theme classes since it
-// mounts outside the .spaire-portal tree.
+// mounts outside the .claidor-portal tree.
 //
 // Behavior: slide-up panel over a dimmed backdrop; closes on backdrop tap,
 // Escape, or dragging the grab handle down past a threshold. Locks body
@@ -83,7 +83,7 @@ export const PortalSheet = ({
   if (!mounted || !open) return null
 
   return createPortal(
-    <div className={'spaire-portal sp-sheet-root' + (dark ? ' sp-dark' : '')}>
+    <div className={'claidor-portal sp-sheet-root' + (dark ? ' sp-dark' : '')}>
       <div className="sp-sheet-backdrop" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}

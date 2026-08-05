@@ -3,9 +3,9 @@ title: "BetterAuth"
 description: "Payments and Checkouts made dead simple with BetterAuth"
 ---
 
-## @spaire/better-auth
+## @claidor/better-auth
 
-A [Better Auth](https://www.better-auth.com) plugin for integrating [Spaire](https://www.spairehq.com) payments and subscriptions into your authentication flow.
+A [Better Auth](https://www.better-auth.com) plugin for integrating [Claidor](https://www.claidorhq.com) payments and subscriptions into your authentication flow.
 
 ### Features
 
@@ -14,62 +14,62 @@ A [Better Auth](https://www.better-auth.com) plugin for integrating [Spaire](htt
 - [Reference System to associate purchases with organizations](#3-2-orders)
 - [Checkout Integration](#checkout-plugin)
 - [Event Ingestion & Customer Meters for flexible Usage Based Billing](#usage-plugin)
-- [Handle Spaire Webhooks securely with signature verification](#webhooks-plugin)
+- [Handle Claidor Webhooks securely with signature verification](#webhooks-plugin)
 - [Customer Portal](#portal-plugin)
 
 ## Installation
 
-Install the required Better Auth and Spaire packages using the following command:
+Install the required Better Auth and Claidor packages using the following command:
 
 <Tabs>
   <Tab title="npm">
     ```bash Terminal
-    npm install better-auth @spaire/better-auth @spaire/sdk
+    npm install better-auth @claidor/better-auth @spaire/sdk
     ```
   </Tab>
   <Tab title="yarn">
     ```bash Terminal
-    yarn add better-auth @spaire/better-auth @spaire/sdk
+    yarn add better-auth @claidor/better-auth @spaire/sdk
     ```
   </Tab>
   <Tab title="pnpm">
     ```bash Terminal
-    pnpm add better-auth @spaire/better-auth @spaire/sdk
+    pnpm add better-auth @claidor/better-auth @spaire/sdk
     ```
   </Tab>
   <Tab title="bun">
     ```bash Terminal
-    bun add better-auth @spaire/better-auth @spaire/sdk
+    bun add better-auth @claidor/better-auth @spaire/sdk
     ```
   </Tab>
 </Tabs>
 
-## Integrate Spaire with BetterAuth
+## Integrate Claidor with BetterAuth
 
 <Steps>
-  <Step title="Configure Spaire Access Token">
-    Go to your Spaire Organization Settings, create an Organization Access Token, and add it to the environment variables of your application.
+  <Step title="Configure Claidor Access Token">
+    Go to your Claidor Organization Settings, create an Organization Access Token, and add it to the environment variables of your application.
 
     ```bash .env
-    SPAIRE_ACCESS_TOKEN=...
+    CLAIDOR_ACCESS_TOKEN=...
     ```
   </Step>
   <Step title="Configure BetterAuth Server">
-    The Spaire plugin comes with it's own set of plugins to add functionality to your stack:
+    The Claidor plugin comes with it's own set of plugins to add functionality to your stack:
 
     - **checkout** - Enable seamless checkout integration
     - **portal** - Make it possible for your customers to manage their orders, subscriptions & benefits
     - **usage** - List customer meters & ingest events for Usage Based Billing
-    - **webhooks** - Listen for relevant Spaire webhooks
+    - **webhooks** - Listen for relevant Claidor webhooks
 
-    ```typescript BetterAuth Server with Spaire Example icon=square-js
+    ```typescript BetterAuth Server with Claidor Example icon=square-js
     import { betterAuth } from "better-auth";
-    import { spaire, checkout, portal, usage, webhooks } from "@spaire/better-auth"; // [!code ++]
-    import { Spaire } from "@spaire/sdk"; // [!code ++]
+    import { claidor, checkout, portal, usage, webhooks } from "@claidor/better-auth"; // [!code ++]
+    import { Claidor } from "@spaire/sdk"; // [!code ++]
     
-    const spaireClient = new Spaire({ // [!code ++]
-        accessToken: process.env.SPAIRE_ACCESS_TOKEN, // [!code ++]
-        // Use 'sandbox' if you're using the Spaire Sandbox environment
+    const claidorClient = new Claidor({ // [!code ++]
+        accessToken: process.env.CLAIDOR_ACCESS_TOKEN, // [!code ++]
+        // Use 'sandbox' if you're using the Claidor Sandbox environment
         // Remember that access tokens, products, etc. are completely separated between environments.
         // Access tokens obtained in Production are for instance not usable in the Sandbox environment.
         server: 'sandbox' // [!code ++]
@@ -78,14 +78,14 @@ Install the required Better Auth and Spaire packages using the following command
     const auth = betterAuth({
         // ... Better Auth config
         plugins: [
-            spaire({ // [!code ++]
-                client: spaireClient, // [!code ++]
+            claidor({ // [!code ++]
+                client: claidorClient, // [!code ++]
                 createCustomerOnSignUp: true, // [!code ++]
                 use: [ // [!code ++]
                     checkout({ // [!code ++]
                         products: [ // [!code ++]
                             { // [!code ++]
-                                productId: "123-456-789", // ID of Product from Spaire Dashboard // [!code ++]
+                                productId: "123-456-789", // ID of Product from Claidor Dashboard // [!code ++]
                                 slug: "pro" // Custom slug for easy reference in Checkout URL, e.g. /checkout/pro // [!code ++]
                             } // [!code ++]
                         ], // [!code ++]
@@ -95,7 +95,7 @@ Install the required Better Auth and Spaire packages using the following command
                     portal(), // [!code ++]
                     usage(), // [!code ++]
                     webhooks({ // [!code ++]
-                        secret: process.env.SPAIRE_WEBHOOK_SECRET, // [!code ++]
+                        secret: process.env.CLAIDOR_WEBHOOK_SECRET, // [!code ++]
                         onCustomerStateChanged: (payload) => // Triggered when anything regarding a customer changes // [!code ++]
                         onOrderPaid: (payload) => // Triggered when an order was paid (purchase, subscription renewal, etc.) // [!code ++]
                         ...  // Over 25 granular webhook handlers // [!code ++]
@@ -107,7 +107,7 @@ Install the required Better Auth and Spaire packages using the following command
     });
     ```
 
-    #### Spaire Plugin Configuration Options
+    #### Claidor Plugin Configuration Options
 
     ```typescript
     // ...
@@ -115,8 +115,8 @@ Install the required Better Auth and Spaire packages using the following command
     const auth = betterAuth({
       // ... Better Auth config
       plugins: [
-        spaire({
-          client: spaireClient, // [!code ++]
+        claidor({
+          client: claidorClient, // [!code ++]
           createCustomerOnSignUp: true, // [!code ++]
           getCustomerCreateParams: ({ user }, request) => ({ // [!code ++]
             metadata: { // [!code ++]
@@ -124,29 +124,29 @@ Install the required Better Auth and Spaire packages using the following command
             }, // [!code ++]
           }), // [!code ++]
           use: [ // [!code ++]
-            // This is where you add Spaire plugins // [!code ++]
+            // This is where you add Claidor plugins // [!code ++]
           ], // [!code ++]
         }),
       ],
     });
     ```
 
-    - `client` (required): Spaire SDK client instance
-    - `createCustomerOnSignUp` (optional): Automatically create a Spaire customer when a user signs up
+    - `client` (required): Claidor SDK client instance
+    - `createCustomerOnSignUp` (optional): Automatically create a Claidor customer when a user signs up
     - `getCustomerCreateParams` (optional): Custom function to provide additional customer creation metadata
-    - `use` (optional): Array of Spaire plugins to enable specific functionality (checkout, portal, usage, and webhooks)
+    - `use` (optional): Array of Claidor plugins to enable specific functionality (checkout, portal, usage, and webhooks)
   </Step>
   <Step title="Configure BetterAuth Client">
-    You will be using the BetterAuth Client to interact with the Spaire functionalities.
+    You will be using the BetterAuth Client to interact with the Claidor functionalities.
 
-    ```typescript BetterAuth Client with Spaire Example icon=square-js
+    ```typescript BetterAuth Client with Claidor Example icon=square-js
     import { createAuthClient } from "better-auth/react";
-    import { spaireClient } from "@spaire/better-auth/client"; // [!code ++]
+    import { claidorClient } from "@claidor/better-auth/client"; // [!code ++]
     import { organizationClient } from "better-auth/client/plugins"; // [!code ++]
     
-    // All Spaire plugins, etc. should be attached to BetterAuth server
+    // All Claidor plugins, etc. should be attached to BetterAuth server
     export const authClient = createAuthClient({ // [!code ++]
-      plugins: [spaireClient()], // [!code ++]
+      plugins: [claidorClient()], // [!code ++]
     }); // [!code ++]
     ```
   </Step>
@@ -154,13 +154,13 @@ Install the required Better Auth and Spaire packages using the following command
 
 ## Automatic Customer creation on signup
 
-Enable the `createCustomerOnSignUp` [Spaire plugin configuration option](#spaire-plugin-configuration-options) to automatically create a new Spaire Customer when a new User is added in the BetterAuth database.
+Enable the `createCustomerOnSignUp` [Claidor plugin configuration option](#claidor-plugin-configuration-options) to automatically create a new Claidor Customer when a new User is added in the BetterAuth database.
 
-All new customers are created with an associated `externalId`, i.e. the ID of your User in the Database. This skips any Spaire to User mapping in your database.
+All new customers are created with an associated `externalId`, i.e. the ID of your User in the Database. This skips any Claidor to User mapping in your database.
 
 ## Sync Customer deletion
 
-To add user deletion logic with external Spaire customer deletion in BetterAuth, extend the user config of your betterAuth setup with the deleteUser option and an afterDelete hook. Here’s how to integrate this alongside your Spaire plugin and automatic customer creation:
+To add user deletion logic with external Claidor customer deletion in BetterAuth, extend the user config of your betterAuth setup with the deleteUser option and an afterDelete hook. Here’s how to integrate this alongside your Claidor plugin and automatic customer creation:
 
 ```typescript Customer Deletion Example icon=square-js
 const auth = betterAuth({
@@ -171,7 +171,7 @@ const auth = betterAuth({
       enabled: true, // [!code ++]
       afterDelete: async (user, request) => {
  // [!code ++]
-        await spaire.customers.deleteExternal({
+        await claidor.customers.deleteExternal({
  // [!code ++]
           externalId: user.id, // [!code ++]
         }); // [!code ++]
@@ -195,18 +195,18 @@ The checkout plugin accepts the following configuration options:
 
 <Steps>
   <Step title="Use Checkout Plugin">
-    Update the `use` property of the Spaire plugin for BetterAuth client to have the `checkout` plugin.
+    Update the `use` property of the Claidor plugin for BetterAuth client to have the `checkout` plugin.
 
     ```typescript Checkout Plugin Example icon=square-js
     import {
-      spaire,
+      claidor,
       checkout // [!code ++]
-    } from "@spaire/better-auth";
+    } from "@claidor/better-auth";
     
     const auth = betterAuth({
         // ... Better Auth config
         plugins: [
-            spaire({
+            claidor({
                 ...
                 use: [
                     checkout({ // [!code ++]
@@ -230,13 +230,13 @@ The checkout plugin accepts the following configuration options:
 
     The `checkout` method accepts the following properties:
 
-    - **`products`** (optional): An array of Spaire Product IDs.
+    - **`products`** (optional): An array of Claidor Product IDs.
     - **`slug`** (optional): A string that can be used as a reference to the `products` defined in the Checkout config
     - **`referenceId`** (optional): An identifier that will be saved in the metadata of the checkout, order & subscription object
 
-    ```typescript BetterAuth Checkout with Spaire Example icon=square-js
+    ```typescript BetterAuth Checkout with Claidor Example icon=square-js
     await authClient.checkout({
-      // Spaire Product IDs
+      // Claidor Product IDs
       products: ["e651f46d-ac20-4f26-b769-ad088b123df2"], // [!code ++]
       // OR
       // if "products" in passed in the checkout plugin's config, you may pass the slug
@@ -246,11 +246,11 @@ The checkout plugin accepts the following configuration options:
 
     This plugin supports the Organization plugin. If you pass the organization ID to the Checkout referenceId, you will be able to keep track of purchases made from organization members.
 
-    ```typescript BetterAuth Checkout with Spaire Organization Example icon=square-js
+    ```typescript BetterAuth Checkout with Claidor Organization Example icon=square-js
     const organizationId = (await authClient.organization.list())?.data?.[0]?.id,
     
     await authClient.checkout({
-        // Any Spaire Product ID can be passed here
+        // Any Claidor Product ID can be passed here
         products: ["e651f46d-ac20-4f26-b769-ad088b123df2"],
         // Or, if you setup "products" in the Checkout Config, you can pass the slug
         slug: 'pro',
@@ -269,14 +269,14 @@ To enable [usage based billing](/integrate/sdk/adapters/better-auth) in your app
 
 ```typescript Usage Plugin Example icon=square-js
 import {
-  spaire, checkout, portal,
+  claidor, checkout, portal,
   usage // [!code ++]
-} from "@spaire/better-auth";
+} from "@claidor/better-auth";
 
 const auth = betterAuth({
     // ... Better Auth config
     plugins: [
-        spaire({
+        claidor({
             ...
             use: [
                 checkout(...),
@@ -290,7 +290,7 @@ const auth = betterAuth({
 
 ### 1. Event Ingestion
 
-Spaire's Usage Based Billing builds entirely on event ingestion. Ingest events from your application, create Meters to represent that usage, and add metered prices to Products to charge for it.
+Claidor's Usage Based Billing builds entirely on event ingestion. Ingest events from your application, create Meters to represent that usage, and add metered prices to Products to charge for it.
 
 The `ingestion` method of the `usage` plugin accepts the following parameters:
 
@@ -339,19 +339,19 @@ The `meters` method returns the following fields in the response object:
 
 ## Webhooks Plugin
 
-The `webhooks` plugin can be used to capture incoming events from your Spaire organization.
+The `webhooks` plugin can be used to capture incoming events from your Claidor organization.
 
-To set up the Spaire `webhooks` plugin with the BetterAuth client, follow the steps below:
+To set up the Claidor `webhooks` plugin with the BetterAuth client, follow the steps below:
 
 <Steps>
-  <Step title="Configure Webhook Endpoints in Spaire">
-    Configure a Webhook endpoint in your Spaire Organization Settings page by following [this guide](/integrate/webhooks/endpoints). Webhook endpoint is configured at `/api/auth/spaire/webhooks`.
+  <Step title="Configure Webhook Endpoints in Claidor">
+    Configure a Webhook endpoint in your Claidor Organization Settings page by following [this guide](/integrate/webhooks/endpoints). Webhook endpoint is configured at `/api/auth/claidor/webhooks`.
   </Step>
   <Step title="Add the Webhook Secret">
-    Add the obtained webhook secret to your application environment as an environment variable (to be used as `process.env.SPAIRE_WEBHOOK_SECRET`):
+    Add the obtained webhook secret to your application environment as an environment variable (to be used as `process.env.CLAIDOR_WEBHOOK_SECRET`):
 
     ```bash .env
-    SPAIRE_WEBHOOK_SECRET="..."
+    CLAIDOR_WEBHOOK_SECRET="..."
     ```
   </Step>
   <Step title="Use Webhooks Plugin in BetterAuth client">
@@ -359,18 +359,18 @@ To set up the Spaire `webhooks` plugin with the BetterAuth client, follow the st
 
     ```typescript Webhooks Plugin Example icon=square-js
     import {
-      spaire,
+      claidor,
       webhooks // [!code ++]
-    } from "@spaire/better-auth";
+    } from "@claidor/better-auth";
     
     const auth = betterAuth({
         // ... Better Auth config
         plugins: [
-            spaire({
+            claidor({
                 ...
                 use: [
                     webhooks({ // [!code ++]
-                        secret: process.env.SPAIRE_WEBHOOK_SECRET, // [!code ++]
+                        secret: process.env.CLAIDOR_WEBHOOK_SECRET, // [!code ++]
                         onCustomerStateChanged: (payload) => // Triggered when anything regarding a customer changes // [!code ++]
                         onOrderPaid: (payload) => // Triggered when an order was paid (purchase, subscription renewal, etc.) // [!code ++]
                         ...  // Over 25 granular webhook handlers // [!code ++]
@@ -384,7 +384,7 @@ To set up the Spaire `webhooks` plugin with the BetterAuth client, follow the st
   </Step>
 </Steps>
 
-The `webhooks` plugin allows you to invoke handlers for all Spaire webhook events:
+The `webhooks` plugin allows you to invoke handlers for all Claidor webhook events:
 
 - `onPayload` - Catch-all handler for any incoming Webhook event
 - `onCheckoutCreated` - Triggered when a checkout is created
@@ -419,14 +419,14 @@ A plugin which enables customer management of their purchases, orders and subscr
 
 ```typescript Portal Plugin Example icon=square-js
 import {
-  spaire, checkout,
+  claidor, checkout,
   portal // [!code ++]
-} from "@spaire/better-auth";
+} from "@claidor/better-auth";
 
 const auth = betterAuth({
     // ... Better Auth config
     plugins: [
-        spaire({
+        claidor({
             ...
             use: [
                 checkout(...),
@@ -443,7 +443,7 @@ The `portal` plugin gives the BetterAuth Client a set of customer management met
 
 ### 1. Customer Portal Management
 
-The following method will redirect the user to the Spaire Customer Portal, where they can see their orders, purchases, subscriptions, benefits, etc.
+The following method will redirect the user to the Claidor Customer Portal, where they can see their orders, purchases, subscriptions, benefits, etc.
 
 ```typescript Open Customer Portal Example icon=square-js
 await authClient.customer.portal();
@@ -469,7 +469,7 @@ The customer state object contains:
 
 Using the customer state object, you can determine whether to provision access for the user to your service.
 
-Learn more about the Spaire Customer State [in the Spaire Docs](https://www.spairehq.com/docs/integrate/customer-state).
+Learn more about the Claidor Customer State [in the Claidor Docs](https://www.claidorhq.com/docs/integrate/customer-state).
 
 ### 3. Benefits, Orders & Subscriptions
 

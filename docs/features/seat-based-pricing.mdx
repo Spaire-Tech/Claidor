@@ -54,7 +54,7 @@ Via the customer portal (billing manager) or the API:
 <CodeGroup>
 
 ```ts TypeScript (subscription)
-await spaire.customerSeats.assign({
+await claidor.customerSeats.assign({
   subscriptionId: '<subscription_id>',
   email: 'teammate@company.com',
   metadata: {
@@ -65,7 +65,7 @@ await spaire.customerSeats.assign({
 ```
 
 ```ts TypeScript (one-time order)
-await spaire.customerSeats.assign({
+await claidor.customerSeats.assign({
   orderId: '<order_id>',
   email: 'teammate@company.com',
 })

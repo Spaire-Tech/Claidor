@@ -1,7 +1,7 @@
 from typing import Any, Protocol, cast
 
 from polar.auth.models import AuthSubject
-from polar.exceptions import PolarError, SpaireRequestValidationError, ValidationError
+from polar.exceptions import PolarError, ClaidorRequestValidationError, ValidationError
 from polar.models import Benefit, Customer, Member, Organization, User
 from polar.postgres import AsyncSession
 from polar.redis import Redis
@@ -12,7 +12,7 @@ from .properties import BenefitGrantProperties, BenefitProperties
 class BenefitServiceError(PolarError): ...
 
 
-class BenefitPropertiesValidationError(SpaireRequestValidationError):
+class BenefitPropertiesValidationError(ClaidorRequestValidationError):
     """
     Benefit properties validation error.
     """

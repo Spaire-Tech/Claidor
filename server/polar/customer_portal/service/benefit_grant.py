@@ -8,7 +8,7 @@ from sqlalchemy.orm import contains_eager, joinedload
 
 from polar.auth.models import AuthSubject, Customer, Member, is_customer, is_member
 from polar.customer.repository import CustomerRepository
-from polar.exceptions import NotPermitted, SpaireRequestValidationError
+from polar.exceptions import NotPermitted, ClaidorRequestValidationError
 from polar.kit.db.postgres import AsyncSession
 from polar.kit.pagination import PaginationParams, paginate
 from polar.kit.services import ResourceServiceReader
@@ -162,7 +162,7 @@ class CustomerBenefitGrantService(ResourceServiceReader[BenefitGrant]):
             raise NotPermitted("Cannot update a revoked benefit grant.")
 
         if benefit_grant_update.benefit_type != benefit_grant.benefit.type:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -202,7 +202,7 @@ class CustomerBenefitGrantService(ResourceServiceReader[BenefitGrant]):
                     oauth_account = customer.get_oauth_account(account_id, platform)
 
                 if oauth_account is None:
-                    raise SpaireRequestValidationError(
+                    raise ClaidorRequestValidationError(
                         [
                             {
                                 "type": "value_error",

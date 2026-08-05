@@ -1,5 +1,5 @@
-import { schemas } from '@spaire/client'
-import Pill from '@spaire/ui/components/atoms/Pill'
+import { schemas } from '@claidor/client'
+import Pill from '@claidor/ui/components/atoms/Pill'
 import { CircleX, Clock } from 'lucide-react'
 import { useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'

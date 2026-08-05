@@ -1,16 +1,16 @@
 import { useCreateRefund } from '@/hooks/queries'
-import { enums, schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import Button from '@spaire/ui/components/atoms/Button'
-import MoneyInput from '@spaire/ui/components/atoms/MoneyInput'
+import { enums, schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import Button from '@claidor/ui/components/atoms/Button'
+import MoneyInput from '@claidor/ui/components/atoms/MoneyInput'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
-import { Checkbox } from '@spaire/ui/components/ui/checkbox'
+} from '@claidor/ui/components/atoms/Select'
+import { Checkbox } from '@claidor/ui/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -18,7 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { Well, WellContent, WellFooter, WellHeader } from '../Shared/Well'
 import { toast } from '../Toast/use-toast'
@@ -192,7 +192,7 @@ export const RefundModal = ({ order, hide }: RefundModalProps) => {
             </WellContent>
             <WellFooter>
               <a
-                href="https://docs.spairehq.com/documentation/features/refunds"
+                href="https://docs.claidorhq.com/documentation/features/refunds"
                 className="text-blue-500"
                 target="_blank"
                 rel="noreferrer"

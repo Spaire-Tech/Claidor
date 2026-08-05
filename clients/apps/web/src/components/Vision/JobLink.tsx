@@ -18,7 +18,7 @@ export const JobLink = ({
 }: JobLinkProps) => {
   return (
     <Link
-      className="lg:group-hover:text-spaire-500 group/link hover:text-spaire-50! border-spaire-600 grid grid-cols-1 gap-6 text-sm md:border-t lg:grid-cols-4 lg:py-4"
+      className="lg:group-hover:text-claidor-500 group/link hover:text-claidor-50! border-claidor-600 grid grid-cols-1 gap-6 text-sm md:border-t lg:grid-cols-4 lg:py-4"
       href={link}
       target="_blank"
     >
@@ -29,12 +29,12 @@ export const JobLink = ({
         <div className="flex flex-col">
           <p>{location}</p>
           {experience && (
-            <p className=" group-hover/link:text-spaire-100 text-gray-500">
+            <p className=" group-hover/link:text-claidor-100 text-gray-500">
               {experience}
             </p>
           )}
         </div>
-        <p className=" group-hover/link:text-spaire-100 text-gray-500">
+        <p className=" group-hover/link:text-claidor-100 text-gray-500">
           {description}
         </p>
       </div>

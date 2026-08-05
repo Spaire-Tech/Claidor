@@ -1,6 +1,6 @@
 ---
 title: "Trials"
-description: "Let customers experience your product before they commit. Spaire handles the billing delay, payment collection, and abuse prevention automatically."
+description: "Let customers experience your product before they commit. Claidor handles the billing delay, payment collection, and abuse prevention automatically."
 ---
 
 A trial gives a customer full access to a subscription product for a set period before any charge occurs. Payment details are collected at checkout — but no money moves until the trial ends. If the customer cancels before the trial ends, they're never charged.
@@ -26,7 +26,7 @@ While creating or editing a product, toggle **Enable trial period** and set the 
 ### Set a trial on a checkout session
 
 ```ts
-const checkout = await spaire.checkouts.create({
+const checkout = await claidor.checkouts.create({
   products: ['<product_id>'],
   trialPeriodDays: 14,
 })
@@ -36,7 +36,7 @@ const checkout = await spaire.checkouts.create({
 
 1. Customer checks out — payment info is collected, no charge occurs
 2. Subscription status is set to `trialing`
-3. At the end of the trial, Spaire charges the customer automatically
+3. At the end of the trial, Claidor charges the customer automatically
 4. Subscription status moves to `active`
 
 If the customer cancels before the trial ends: no charge, subscription moves to `canceled`.
@@ -55,7 +55,7 @@ You can add, extend, or end a trial from the dashboard on any active subscriptio
 
 Enable **Prevent trial abuse** in **Settings → Subscriptions** to block customers from claiming multiple trials across your products.
 
-When enabled, Spaire blocks a new trial checkout if either of these matches a previous trial redemption:
+When enabled, Claidor blocks a new trial checkout if either of these matches a previous trial redemption:
 
 - **Email address** — normalized to strip aliases (e.g., `user+alias@gmail.com` is treated as `user@gmail.com`)
 - **Payment method fingerprint** — detects the same card even if a different email is used

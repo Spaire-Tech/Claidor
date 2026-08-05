@@ -1,11 +1,11 @@
 /* ─────────────────────────────────────────────────────────────────
-   Spaire editor canvas shell — verbatim from the design hand-off.
-   Mirrors /tmp/spaire-design/spaire-space/project/styles.css for
+   Claidor editor canvas shell — verbatim from the design hand-off.
+   Mirrors /tmp/claidor-design/claidor-space/project/styles.css for
    .toolbar, .canvas-wrap, .canvas, .col-left, .col-right,
    .add-fab(-wrap), .side-panel, .unsaved-banner.
    ───────────────────────────────────────────────────────────────── */
 
-.spaire-editor {
+.claidor-editor {
   /* Tokens scoped to the editor; popovers + drag overlay re-use them. */
   --accent: var(--color-ce-accent);
   --accent-soft: color-mix(in oklab, var(--accent) 12%, white);
@@ -33,7 +33,7 @@
   font-size: 14px;
   color: var(--ink);
   letter-spacing: -0.005em;
-  /* Editor background matches the public Spaire Space (white, not gray)
+  /* Editor background matches the public Claidor Space (white, not gray)
      so the canvas reads as a true preview. The dashboard frame around
      the editor is rounded white already; setting white here removes
      the gray bleed at the top of the canvas. */
@@ -63,19 +63,19 @@
    the embedded <iframe> players on the canvas, which kept poking
    through sharp. So we blur the editor root *itself* with a real
    `filter`, flipped on the instant a portaled overlay mounts via
-   :has(). The overlay lives outside .spaire-editor-root, so it stays
+   :has(). The overlay lives outside .claidor-editor-root, so it stays
    crisp while everything behind it goes soft. */
-.spaire-editor-root {
+.claidor-editor-root {
   transition: filter 0.25s ease;
 }
 
-body:has(.picker-backdrop) .spaire-editor-root,
-body:has(.edit-pop-backdrop) .spaire-editor-root {
+body:has(.picker-backdrop) .claidor-editor-root,
+body:has(.edit-pop-backdrop) .claidor-editor-root {
   filter: blur(12px) saturate(115%);
 }
 
 /* ── Top toolbar ── */
-.spaire-editor .toolbar {
+.claidor-editor .toolbar {
   position: sticky;
   top: 0;
   z-index: 50;
@@ -92,8 +92,8 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   flex-shrink: 0;
 }
 
-.spaire-editor .tb-left,
-.spaire-editor .tb-right {
+.claidor-editor .tb-left,
+.claidor-editor .tb-right {
   /* Equal widths so the centered status pill is actually screen-
      centered regardless of how wide the buttons on either side are. */
   flex: 1;
@@ -102,21 +102,21 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   gap: 8px;
 }
 
-.spaire-editor .tb-left {
+.claidor-editor .tb-left {
   justify-content: flex-start;
 }
 
-.spaire-editor .tb-right {
+.claidor-editor .tb-right {
   justify-content: flex-end;
 }
 
-.spaire-editor .tb-center {
+.claidor-editor .tb-center {
   flex: 0 0 auto;
   display: flex;
   justify-content: center;
 }
 
-.spaire-editor .tb-back {
+.claidor-editor .tb-back {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -131,11 +131,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   cursor: pointer;
 }
 
-.spaire-editor .tb-back:hover {
+.claidor-editor .tb-back:hover {
   border-color: var(--line-strong);
 }
 
-.spaire-editor .tb-status {
+.claidor-editor .tb-status {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -148,23 +148,23 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   font-weight: 500;
 }
 
-.spaire-editor .tb-status .dot {
+.claidor-editor .tb-status .dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #c0c0c8;
 }
 
-.spaire-editor .tb-status[data-pub='1'] .dot {
+.claidor-editor .tb-status[data-pub='1'] .dot {
   background: var(--green);
   box-shadow: 0 0 0 3px var(--green-bg);
 }
 
-.spaire-editor .tb-status[data-pub='1'] {
+.claidor-editor .tb-status[data-pub='1'] {
   color: var(--green);
 }
 
-.spaire-editor .tb-icon-btn {
+.claidor-editor .tb-icon-btn {
   height: 36px;
   padding: 0 14px;
   min-width: 36px;
@@ -183,12 +183,12 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   cursor: pointer;
 }
 
-.spaire-editor .tb-icon-btn:hover {
+.claidor-editor .tb-icon-btn:hover {
   border-color: var(--line-strong);
   background: #fafafc;
 }
 
-.spaire-editor .tb-enable-toggle {
+.claidor-editor .tb-enable-toggle {
   height: 36px;
   padding: 0 14px 0 6px;
   border: 1px solid var(--line);
@@ -205,22 +205,22 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   cursor: pointer;
 }
 
-.spaire-editor .tb-enable-toggle:hover {
+.claidor-editor .tb-enable-toggle:hover {
   border-color: var(--line-strong);
   background: #fafafc;
 }
 
-.spaire-editor .tb-enable-toggle[data-on='1'] {
+.claidor-editor .tb-enable-toggle[data-on='1'] {
   border-color: var(--accent);
   color: var(--ink);
 }
 
-.spaire-editor .tb-enable-toggle .sp-toggle {
+.claidor-editor .tb-enable-toggle .sp-toggle {
   display: inline-block;
   pointer-events: none;
 }
 
-.spaire-editor .tb-publish {
+.claidor-editor .tb-publish {
   height: 36px;
   padding: 0 18px;
   background: var(--ink);
@@ -234,18 +234,18 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   cursor: pointer;
 }
 
-.spaire-editor .tb-publish:hover {
+.claidor-editor .tb-publish:hover {
   background: #1a1a22;
 }
 
-.spaire-editor .tb-publish:disabled {
+.claidor-editor .tb-publish:disabled {
   background: #b8b8c0;
   border-color: #b8b8c0;
   cursor: not-allowed;
 }
 
 /* ── Unsaved-changes banner ── */
-.spaire-editor .unsaved-banner {
+.claidor-editor .unsaved-banner {
   display: flex;
   justify-content: center;
   background: linear-gradient(
@@ -256,7 +256,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   border-bottom: 1px solid color-mix(in oklab, var(--accent) 30%, white);
 }
 
-.spaire-editor .unsaved-banner > div {
+.claidor-editor .unsaved-banner > div {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -265,12 +265,12 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   color: var(--ink-2);
 }
 
-.spaire-editor .unsaved-banner b {
+.claidor-editor .unsaved-banner b {
   font-weight: 500;
   color: var(--ink);
 }
 
-.spaire-editor .unsaved-banner button {
+.claidor-editor .unsaved-banner button {
   font-size: 12.5px;
   background: transparent;
   color: var(--accent-ink);
@@ -282,11 +282,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   cursor: pointer;
 }
 
-.spaire-editor .unsaved-banner button:hover {
+.claidor-editor .unsaved-banner button:hover {
   background: rgba(255, 255, 255, 0.6);
 }
 
-.spaire-editor .unsaved-banner button.discard {
+.claidor-editor .unsaved-banner button.discard {
   color: var(--muted);
 }
 
@@ -296,7 +296,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
    profile card stays parked at the top while col-right scrolls past.
    140px bottom padding ensures the floating FAB never covers the
    last row of products / links. */
-.spaire-editor .canvas-wrap {
+.claidor-editor .canvas-wrap {
   flex: 1;
   display: flex;
   justify-content: center;
@@ -309,13 +309,13 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   min-height: 0;
 }
 
-.spaire-editor .canvas-wrap.has-panel {
+.claidor-editor .canvas-wrap.has-panel {
   padding-right: 460px;
 }
 
-.spaire-editor .canvas {
+.claidor-editor .canvas {
   width: 100%;
-  /* Match the public Spaire Space layout
+  /* Match the public Claidor Space layout
      (clients/apps/web/src/app/(main)/[organization]/(header)/layout.tsx):
      PublicLayout `wide` is max-w-7xl (1280px), the profile aside is 420px and
      the column gap is gap-12 (48px). The canvas must visually equal what
@@ -327,7 +327,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   align-items: start;
 }
 
-.spaire-editor .canvas .col-left {
+.claidor-editor .canvas .col-left {
   /* Sticky relative to canvas-wrap (the scroll container). Card
      parks just below the toolbar (~56px) with a comfortable 28px
      breathing room. */
@@ -336,7 +336,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   align-self: start;
 }
 
-.spaire-editor .canvas .col-right {
+.claidor-editor .canvas .col-right {
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -348,25 +348,25 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 }
 
 @media (max-width: 920px) {
-  .spaire-editor .canvas {
+  .claidor-editor .canvas {
     grid-template-columns: 1fr;
   }
-  .spaire-editor .canvas .col-left {
+  .claidor-editor .canvas .col-left {
     position: static;
   }
-  .spaire-editor .canvas-wrap.has-panel {
+  .claidor-editor .canvas-wrap.has-panel {
     padding-right: 16px;
   }
-  .spaire-editor .add-fab-wrap.has-panel {
+  .claidor-editor .add-fab-wrap.has-panel {
     padding-right: 0;
   }
-  .spaire-editor .side-panel {
+  .claidor-editor .side-panel {
     width: 100%;
   }
 }
 
 /* ── Floating Add-to-Space FAB ── */
-.spaire-editor .add-fab-wrap {
+.claidor-editor .add-fab-wrap {
   position: fixed;
   bottom: 28px;
   left: 0;
@@ -378,11 +378,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   transition: padding-right 0.25s ease;
 }
 
-.spaire-editor .add-fab-wrap.has-panel {
+.claidor-editor .add-fab-wrap.has-panel {
   padding-right: 460px;
 }
 
-.spaire-editor .add-fab {
+.claidor-editor .add-fab {
   pointer-events: auto;
   height: 52px;
   padding: 0 22px 0 18px;
@@ -407,7 +407,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
     box-shadow 0.15s;
 }
 
-.spaire-editor .add-fab:hover {
+.claidor-editor .add-fab:hover {
   transform: translateY(-1px);
   background: #1a1a22;
   border-color: #1a1a22;
@@ -416,7 +416,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
     0 2px 0 rgba(255, 255, 255, 0.08) inset;
 }
 
-.spaire-editor .add-fab .plus {
+.claidor-editor .add-fab .plus {
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -429,7 +429,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   line-height: 1;
 }
 
-.spaire-editor .add-fab .kbd {
+.claidor-editor .add-fab .kbd {
   margin-left: 6px;
   padding: 2px 6px;
   border-radius: 5px;
@@ -441,7 +441,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 
 /* ── Slide-in side panel (full design ships in PR D; shell is here
        so the Settings button has somewhere to land) ── */
-.spaire-editor .side-panel {
+.claidor-editor .side-panel {
   position: fixed;
   top: 0;
   right: 0;
@@ -457,11 +457,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-.spaire-editor .side-panel.open {
+.claidor-editor .side-panel.open {
   transform: translateX(0);
 }
 
-.spaire-editor .sp-head {
+.claidor-editor .sp-head {
   padding: 16px 20px;
   border-bottom: 1px solid var(--line);
   display: flex;
@@ -469,14 +469,14 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   justify-content: space-between;
 }
 
-.spaire-editor .sp-head h2 {
+.claidor-editor .sp-head h2 {
   font-size: 16px;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--ink);
 }
 
-.spaire-editor .sp-body {
+.claidor-editor .sp-body {
   flex: 1;
   overflow-y: auto;
   padding: 18px 20px 80px;
@@ -485,12 +485,12 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   gap: 22px;
 }
 
-.spaire-editor .sp-section {
+.claidor-editor .sp-section {
   display: flex;
   flex-direction: column;
 }
 
-.spaire-editor .sp-section h3 {
+.claidor-editor .sp-section h3 {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -499,7 +499,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   font-weight: 500;
 }
 
-.spaire-editor .sp-row {
+.claidor-editor .sp-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -509,23 +509,23 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   border-radius: var(--r-md);
 }
 
-.spaire-editor .sp-row + .sp-row {
+.claidor-editor .sp-row + .sp-row {
   margin-top: 8px;
 }
 
-.spaire-editor .sp-row .lbl {
+.claidor-editor .sp-row .lbl {
   font-size: 13.5px;
   color: var(--ink);
   font-weight: 500;
 }
 
-.spaire-editor .sp-row .sub {
+.claidor-editor .sp-row .sub {
   font-size: 12px;
   color: var(--muted);
   margin-top: 2px;
 }
 
-.spaire-editor .sp-input {
+.claidor-editor .sp-input {
   width: 100%;
   height: 40px;
   border: 1px solid var(--line);
@@ -541,22 +541,22 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
     box-shadow 0.12s;
 }
 
-.spaire-editor .sp-input:focus {
+.claidor-editor .sp-input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-.spaire-editor .sp-input::placeholder {
+.claidor-editor .sp-input::placeholder {
   color: var(--muted-2);
 }
 
-.spaire-editor .sp-share-btns {
+.claidor-editor .sp-share-btns {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
-.spaire-editor .sp-share-btn {
+.claidor-editor .sp-share-btn {
   height: 40px;
   border: 1px solid var(--line);
   background: white;
@@ -569,11 +569,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   transition: border-color 0.12s;
 }
 
-.spaire-editor .sp-share-btn:hover {
+.claidor-editor .sp-share-btn:hover {
   border-color: var(--line-strong);
 }
 
-.spaire-editor .sp-url-row {
+.claidor-editor .sp-url-row {
   display: flex;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
@@ -581,7 +581,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   background: var(--bg);
 }
 
-.spaire-editor .sp-url-row input {
+.claidor-editor .sp-url-row input {
   flex: 1;
   border: 0;
   background: transparent;
@@ -593,7 +593,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   font-family: inherit;
 }
 
-.spaire-editor .sp-url-row .sp-url-act {
+.claidor-editor .sp-url-row .sp-url-act {
   width: 44px;
   border: 0;
   border-left: 1px solid var(--line);
@@ -607,12 +607,12 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   justify-content: center;
 }
 
-.spaire-editor .sp-url-row .sp-url-act:hover {
+.claidor-editor .sp-url-row .sp-url-act:hover {
   color: var(--ink);
 }
 
 /* Toggle (used in panel rows) — purple track when on, white knob. */
-.spaire-editor .sp-toggle {
+.claidor-editor .sp-toggle {
   position: relative;
   width: 38px;
   height: 22px;
@@ -625,11 +625,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   flex-shrink: 0;
 }
 
-.spaire-editor .sp-toggle[data-on='1'] {
+.claidor-editor .sp-toggle[data-on='1'] {
   background: var(--accent);
 }
 
-.spaire-editor .sp-toggle i {
+.claidor-editor .sp-toggle i {
   position: absolute;
   top: 2px;
   left: 2px;
@@ -641,17 +641,17 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   transition: transform 0.15s;
 }
 
-.spaire-editor .sp-toggle[data-on='1'] i {
+.claidor-editor .sp-toggle[data-on='1'] i {
   transform: translateX(16px);
 }
 
-.spaire-editor .sp-section-stack {
+.claidor-editor .sp-section-stack {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.spaire-editor .sp-secondary-btn {
+.claidor-editor .sp-secondary-btn {
   height: 40px;
   padding: 0 16px;
   background: white;
@@ -669,7 +669,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   gap: 8px;
 }
 
-.spaire-editor .sp-secondary-btn:hover {
+.claidor-editor .sp-secondary-btn:hover {
   border-color: var(--line-strong);
   color: var(--ink);
 }
@@ -678,7 +678,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
        inside is rendered by our existing ProfileCard / Storefront
        components. The chrome wraps them so PR C can attach hover
        controls without changing the inner components. ── */
-.spaire-editor .canvas-card {
+.claidor-editor .canvas-card {
   position: relative;
 }
 
@@ -686,11 +686,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
    Visible at half-opacity at rest so creators know blocks can be
    reordered; brightens on block hover. Sits in the gutter to the
    left of the right column. */
-.spaire-editor .block-host {
+.claidor-editor .block-host {
   position: relative;
 }
 
-.spaire-editor .block-drag-handle {
+.claidor-editor .block-drag-handle {
   position: absolute;
   left: -32px;
   top: 8px;
@@ -716,16 +716,16 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   touch-action: none;
 }
 
-.spaire-editor .block-host:hover .block-drag-handle,
-.spaire-editor .block-drag-handle:focus,
-.spaire-editor .block-drag-handle:hover {
+.claidor-editor .block-host:hover .block-drag-handle,
+.claidor-editor .block-drag-handle:focus,
+.claidor-editor .block-drag-handle:hover {
   opacity: 1;
   background: white;
   border-color: var(--line);
   color: var(--ink-2);
 }
 
-.spaire-editor .block-drag-handle:active {
+.claidor-editor .block-drag-handle:active {
   cursor: grabbing;
 }
 
@@ -778,12 +778,12 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   }
 }
 
-.spaire-editor .block-host.dragging .canvas-card {
+.claidor-editor .block-host.dragging .canvas-card {
   opacity: 0.4;
 }
 
 /* DragOverlay — the floating element shown while dragging. */
-.spaire-editor .drag-overlay {
+.claidor-editor .drag-overlay {
   pointer-events: none;
   border-radius: 24px;
   box-shadow:
@@ -795,7 +795,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 }
 
 /* Drop-line indicator between blocks. */
-.spaire-editor .drop-line {
+.claidor-editor .drop-line {
   height: 4px;
   margin: -2px 0;
   border-radius: 999px;
@@ -803,7 +803,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   transition: background 0.12s;
 }
 
-.spaire-editor .drop-line.active {
+.claidor-editor .drop-line.active {
   background: var(--accent);
   box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 16%, transparent);
 }
@@ -811,11 +811,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 /* ── Per-item hover overlays (links + product cards) ──────────────
    Hover any link or product on the canvas to reveal an action row.
    The actions stack in the top-right of the item. */
-.spaire-editor .item-hover {
+.claidor-editor .item-hover {
   position: relative;
 }
 
-.spaire-editor .item-actions {
+.claidor-editor .item-actions {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -827,13 +827,13 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   pointer-events: none;
 }
 
-.spaire-editor .item-hover:hover .item-actions,
-.spaire-editor .item-hover:focus-within .item-actions {
+.claidor-editor .item-hover:hover .item-actions,
+.claidor-editor .item-hover:focus-within .item-actions {
   opacity: 1;
   pointer-events: auto;
 }
 
-.spaire-editor .item-action {
+.claidor-editor .item-action {
   height: 30px;
   padding: 0 10px;
   border-radius: 8px;
@@ -852,12 +852,12 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
     0 4px 10px -4px rgba(15, 15, 30, 0.18);
 }
 
-.spaire-editor .item-action:hover {
+.claidor-editor .item-action:hover {
   border-color: var(--line-strong);
   background: white;
 }
 
-.spaire-editor .item-action.danger:hover {
+.claidor-editor .item-action.danger:hover {
   color: #b00020;
   border-color: #f5c6c6;
 }
@@ -865,7 +865,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 /* Per-item drag handle — sits next to the Remove button in the
    item-actions cluster. Same chrome as `.item-action` so the row
    reads as one toolbar. */
-.spaire-editor .item-drag-handle {
+.claidor-editor .item-drag-handle {
   height: 30px;
   min-width: 30px;
   padding: 0 8px;
@@ -888,27 +888,27 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   touch-action: none;
 }
 
-.spaire-editor .item-drag-handle:hover {
+.claidor-editor .item-drag-handle:hover {
   color: var(--ink-2);
   border-color: var(--line-strong);
 }
 
-.spaire-editor .item-drag-handle:active {
+.claidor-editor .item-drag-handle:active {
   cursor: grabbing;
 }
 
-.spaire-editor .item-host {
+.claidor-editor .item-host {
   position: relative;
 }
 
-.spaire-editor .item-host.dragging {
+.claidor-editor .item-host.dragging {
   opacity: 0.5;
 }
 
 /* ── Layout picker on the Links section heading ──────────────────
    Hover the section heading to reveal a small floating layout
    switcher. Selection state matches the editor accent (community blue). */
-.spaire-editor .layout-picker {
+.claidor-editor .layout-picker {
   display: inline-flex;
   border: 1px solid var(--line);
   background: white;
@@ -919,7 +919,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   box-shadow: 0 1px 2px rgba(15, 15, 30, 0.04);
 }
 
-.spaire-editor .layout-picker button {
+.claidor-editor .layout-picker button {
   height: 26px;
   padding: 0 10px;
   border: 0;
@@ -932,16 +932,16 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   cursor: pointer;
 }
 
-.spaire-editor .layout-picker button:hover {
+.claidor-editor .layout-picker button:hover {
   color: var(--ink-2);
 }
 
-.spaire-editor .layout-picker button[aria-pressed='true'] {
+.claidor-editor .layout-picker button[aria-pressed='true'] {
   background: var(--accent);
   color: white;
 }
 
-.spaire-editor .footer-note {
+.claidor-editor .footer-note {
   padding: 20px 0 0;
   color: var(--muted);
   font-size: 12px;
@@ -951,7 +951,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 /* ── Inline edit primitives ────────────────────────────────────────
    .editable wraps a contentEditable text node — outline lights up on
    hover (dashed) / focus (solid). Matches the design hand-off. */
-.spaire-editor .editable {
+.claidor-editor .editable {
   cursor: text;
   border-radius: 6px;
   outline: 1px dashed transparent;
@@ -963,20 +963,20 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   min-width: 1ch;
 }
 
-.spaire-editor .editable[data-block='true'] {
+.claidor-editor .editable[data-block='true'] {
   display: block;
 }
 
-.spaire-editor .editable:hover {
+.claidor-editor .editable:hover {
   outline-color: color-mix(in oklab, var(--accent) 50%, white);
 }
 
-.spaire-editor .editable:focus {
+.claidor-editor .editable:focus {
   outline: 1px solid var(--accent);
   background: var(--accent-soft);
 }
 
-.spaire-editor .editable[data-empty='true']::before {
+.claidor-editor .editable[data-empty='true']::before {
   content: attr(data-placeholder);
   color: var(--muted-2);
   pointer-events: none;
@@ -984,11 +984,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 
 /* Hover-revealed click affordance for non-text targets (cover, avatar,
    pills, social row). Hidden until the parent .hover-zone is hovered. */
-.spaire-editor .hover-zone {
+.claidor-editor .hover-zone {
   position: relative;
 }
 
-.spaire-editor .hover-controls {
+.claidor-editor .hover-controls {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -1000,13 +1000,13 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   pointer-events: none;
 }
 
-.spaire-editor .hover-zone:hover .hover-controls,
-.spaire-editor .hover-zone:focus-within .hover-controls {
+.claidor-editor .hover-zone:hover .hover-controls,
+.claidor-editor .hover-zone:focus-within .hover-controls {
   opacity: 1;
   pointer-events: auto;
 }
 
-.spaire-editor .hc-btn {
+.claidor-editor .hc-btn {
   height: 28px;
   padding: 0 10px;
   border-radius: 8px;
@@ -1025,11 +1025,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
     0 1px 2px rgba(15, 15, 30, 0.04);
 }
 
-.spaire-editor .hc-btn:hover {
+.claidor-editor .hc-btn:hover {
   border-color: var(--line-strong);
 }
 
-.spaire-editor .hc-btn.danger:hover {
+.claidor-editor .hc-btn.danger:hover {
   color: #b00020;
   border-color: #f5c6c6;
 }
@@ -1037,12 +1037,12 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 /* The cover-image and avatar specifically: a soft dark scrim appears
    on hover so the action buttons are legible regardless of the
    underlying image. */
-.spaire-editor .editable-image {
+.claidor-editor .editable-image {
   position: relative;
   cursor: pointer;
 }
 
-.spaire-editor .editable-image::after {
+.claidor-editor .editable-image::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -1052,15 +1052,15 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   pointer-events: none;
 }
 
-.spaire-editor .editable-image:hover::after {
+.claidor-editor .editable-image:hover::after {
   opacity: 1;
 }
 
-.spaire-editor .editable-image .hover-controls {
+.claidor-editor .editable-image .hover-controls {
   opacity: 0;
 }
 
-.spaire-editor .editable-image:hover .hover-controls {
+.claidor-editor .editable-image:hover .hover-controls {
   opacity: 1;
 }
 
@@ -1068,11 +1068,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
    Shared overlay used for tag editors, social row, profile-title
    select, available-for-work, etc. Backdrop is blurred per the
    editor's "anything modal blurs the background" principle. */
-.spaire-editor .edit-pop-backdrop {
+.claidor-editor .edit-pop-backdrop {
   position: fixed;
   inset: 0;
   /* Transparent click-catcher only. The page blur is handled by the
-     `filter` on .spaire-editor-root (see top of file) — that one
+     `filter` on .claidor-editor-root (see top of file) — that one
      actually reaches the canvas iframes, which backdrop-filter never
      did. */
   background: transparent;
@@ -1080,7 +1080,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   animation: pk-fade-in 0.18s ease;
 }
 
-.spaire-editor .edit-pop {
+.claidor-editor .edit-pop {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -1110,21 +1110,21 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   animation: wgIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.spaire-editor .edit-pop-head {
+.claidor-editor .edit-pop-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 14px;
 }
 
-.spaire-editor .edit-pop-title {
+.claidor-editor .edit-pop-title {
   font-size: 16px;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--ink);
 }
 
-.spaire-editor .edit-pop-body {
+.claidor-editor .edit-pop-body {
   flex: 1;
   overflow-y: auto;
   display: flex;
@@ -1132,7 +1132,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   gap: 14px;
 }
 
-.spaire-editor .edit-pop-foot {
+.claidor-editor .edit-pop-foot {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -1141,7 +1141,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.spaire-editor .edit-pop-cta {
+.claidor-editor .edit-pop-cta {
   height: 38px;
   padding: 0 18px;
   border: 0;
@@ -1157,7 +1157,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   box-shadow: 0 4px 12px -4px rgba(12, 12, 20, 0.45);
 }
 
-.spaire-editor .edit-pop-cta.ghost {
+.claidor-editor .edit-pop-cta.ghost {
   background: transparent;
   color: var(--muted);
   box-shadow: none;
@@ -1165,7 +1165,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 
 /* ── Arrange panel ─────────────────────────────────────────────────
    Floating side panel for reordering Space contents in one place. */
-.spaire-editor .arrange-panel {
+.claidor-editor .arrange-panel {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1175,7 +1175,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   gap: 18px;
 }
 
-.spaire-editor .arrange-panel .ap-header {
+.claidor-editor .arrange-panel .ap-header {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
@@ -1185,7 +1185,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   border-bottom: 1px solid var(--line);
 }
 
-.spaire-editor .arrange-panel h2 {
+.claidor-editor .arrange-panel h2 {
   font-size: 16px;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -1193,14 +1193,14 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   margin: 0;
 }
 
-.spaire-editor .arrange-panel .ap-sub {
+.claidor-editor .arrange-panel .ap-sub {
   font-size: 12px;
   color: var(--muted);
   margin-top: 4px;
   line-height: 1.45;
 }
 
-.spaire-editor .arrange-panel .ap-close {
+.claidor-editor .arrange-panel .ap-close {
   width: 28px;
   height: 28px;
   border-radius: 8px;
@@ -1212,12 +1212,12 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   line-height: 1;
 }
 
-.spaire-editor .arrange-panel .ap-close:hover {
+.claidor-editor .arrange-panel .ap-close:hover {
   background: var(--surface-2);
   color: var(--ink);
 }
 
-.spaire-editor .arrange-panel .ap-empty {
+.claidor-editor .arrange-panel .ap-empty {
   padding: 32px 12px;
   text-align: center;
   font-size: 13px;
@@ -1226,13 +1226,13 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   border-radius: 12px;
 }
 
-.spaire-editor .arrange-panel .ap-section {
+.claidor-editor .arrange-panel .ap-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.spaire-editor .arrange-panel .ap-section h3 {
+.claidor-editor .arrange-panel .ap-section h3 {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -1241,13 +1241,13 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   margin: 0;
 }
 
-.spaire-editor .arrange-panel .ap-section-head {
+.claidor-editor .arrange-panel .ap-section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.spaire-editor .arrange-panel .ap-mini-action {
+.claidor-editor .arrange-panel .ap-mini-action {
   font-size: 11px;
   color: var(--ink-2);
   background: var(--surface-2);
@@ -1257,25 +1257,25 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   cursor: pointer;
 }
 
-.spaire-editor .arrange-panel .ap-mini-action:hover {
+.claidor-editor .arrange-panel .ap-mini-action:hover {
   background: white;
   color: var(--ink);
 }
 
-.spaire-editor .arrange-panel .ap-cat-list {
+.claidor-editor .arrange-panel .ap-cat-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.spaire-editor .arrange-panel .ap-cat {
+.claidor-editor .arrange-panel .ap-cat {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px;
   background: white;
 }
 
-.spaire-editor .arrange-panel .ap-cat-head {
+.claidor-editor .arrange-panel .ap-cat-head {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1284,7 +1284,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   border-bottom: 1px dashed var(--line);
 }
 
-.spaire-editor .arrange-panel .ap-cat-label {
+.claidor-editor .arrange-panel .ap-cat-label {
   flex: 1;
   font-size: 12px;
   font-weight: 600;
@@ -1292,7 +1292,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   letter-spacing: 0.02em;
 }
 
-.spaire-editor .arrange-panel .ap-count {
+.claidor-editor .arrange-panel .ap-count {
   font-size: 11px;
   color: var(--muted);
   background: var(--surface-2);
@@ -1300,13 +1300,13 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   padding: 2px 8px;
 }
 
-.spaire-editor .arrange-panel .ap-row-list {
+.claidor-editor .arrange-panel .ap-row-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.spaire-editor .arrange-panel .ap-row {
+.claidor-editor .arrange-panel .ap-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1316,15 +1316,15 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   transition: background 0.12s;
 }
 
-.spaire-editor .arrange-panel .ap-row:hover {
+.claidor-editor .arrange-panel .ap-row:hover {
   background: var(--surface-2);
 }
 
-.spaire-editor .arrange-panel .ap-row-muted {
+.claidor-editor .arrange-panel .ap-row-muted {
   opacity: 0.6;
 }
 
-.spaire-editor .arrange-panel .ap-grip {
+.claidor-editor .arrange-panel .ap-grip {
   width: 22px;
   height: 22px;
   border-radius: 5px;
@@ -1339,16 +1339,16 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   flex-shrink: 0;
 }
 
-.spaire-editor .arrange-panel .ap-grip:hover {
+.claidor-editor .arrange-panel .ap-grip:hover {
   color: var(--ink);
   background: var(--surface-2);
 }
 
-.spaire-editor .arrange-panel .ap-grip:active {
+.claidor-editor .arrange-panel .ap-grip:active {
   cursor: grabbing;
 }
 
-.spaire-editor .arrange-panel .ap-thumb {
+.claidor-editor .arrange-panel .ap-thumb {
   width: 32px;
   height: 32px;
   border-radius: 6px;
@@ -1361,11 +1361,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   color: var(--muted);
 }
 
-.spaire-editor .arrange-panel .ap-thumb-empty {
+.claidor-editor .arrange-panel .ap-thumb-empty {
   border: 1px dashed var(--line);
 }
 
-.spaire-editor .arrange-panel .ap-row-name {
+.claidor-editor .arrange-panel .ap-row-name {
   flex: 1;
   min-width: 0;
   font-size: 13px;
@@ -1375,7 +1375,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   text-overflow: ellipsis;
 }
 
-.spaire-editor .arrange-panel .ap-row-action {
+.claidor-editor .arrange-panel .ap-row-action {
   width: 28px;
   height: 28px;
   border-radius: 6px;
@@ -1388,30 +1388,30 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   justify-content: center;
 }
 
-.spaire-editor .arrange-panel .ap-row-action:hover {
+.claidor-editor .arrange-panel .ap-row-action:hover {
   background: var(--surface-2);
   color: var(--ink);
 }
 
-.spaire-editor .arrange-panel .ap-hidden {
+.claidor-editor .arrange-panel .ap-hidden {
   margin-top: 8px;
   font-size: 12px;
   color: var(--muted);
 }
 
-.spaire-editor .arrange-panel .ap-hidden summary {
+.claidor-editor .arrange-panel .ap-hidden summary {
   cursor: pointer;
   padding: 8px 4px;
   border-radius: 8px;
 }
 
-.spaire-editor .arrange-panel .ap-hidden summary:hover {
+.claidor-editor .arrange-panel .ap-hidden summary:hover {
   background: var(--surface-2);
   color: var(--ink);
 }
 
 /* ── Arrange panel — additions ─────────────────────────────────── */
-.spaire-editor .arrange-panel .ap-status {
+.claidor-editor .arrange-panel .ap-status {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1425,18 +1425,18 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   line-height: 1.45;
 }
 
-.spaire-editor .arrange-panel .ap-status[data-mode='curated'] {
+.claidor-editor .arrange-panel .ap-status[data-mode='curated'] {
   background: #eef2ff;
   color: #3730a3;
 }
 
-.spaire-editor .arrange-panel .ap-cat-move {
+.claidor-editor .arrange-panel .ap-cat-move {
   display: inline-flex;
   flex-direction: row;
   gap: 2px;
 }
 
-.spaire-editor .arrange-panel .ap-arrow {
+.claidor-editor .arrange-panel .ap-arrow {
   width: 28px;
   height: 28px;
   border-radius: 6px;
@@ -1454,13 +1454,13 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
     color 0.12s;
 }
 
-.spaire-editor .arrange-panel .ap-arrow:hover:not(:disabled) {
+.claidor-editor .arrange-panel .ap-arrow:hover:not(:disabled) {
   background: var(--surface-2);
   border-color: var(--ink);
   color: var(--ink);
 }
 
-.spaire-editor .arrange-panel .ap-arrow:disabled {
+.claidor-editor .arrange-panel .ap-arrow:disabled {
   opacity: 0.35;
   cursor: not-allowed;
   background: transparent;
@@ -1469,11 +1469,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
 
 /* dnd-kit clears its own transforms on drop, but we want a visible
    lift during the drag itself. */
-.spaire-editor .arrange-panel .ap-sortable.ap-is-dragging {
+.claidor-editor .arrange-panel .ap-sortable.ap-is-dragging {
   z-index: 50;
 }
 
-.spaire-editor .arrange-panel .ap-sortable.ap-is-dragging .ap-row {
+.claidor-editor .arrange-panel .ap-sortable.ap-is-dragging .ap-row {
   background: white;
   box-shadow:
     0 10px 24px -8px rgba(15, 15, 30, 0.18),
@@ -1481,13 +1481,13 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   transform: scale(1.01);
 }
 
-.spaire-editor .arrange-panel .ap-row-action-danger:hover {
+.claidor-editor .arrange-panel .ap-row-action-danger:hover {
   background: #fee2e2;
   color: #b91c1c;
 }
 
 /* ── Toolbar device toggle (desktop / mobile preview) ───────────── */
-.spaire-editor .tb-device {
+.claidor-editor .tb-device {
   display: inline-flex;
   background: var(--surface-2, #f4f4f7);
   border: 1px solid var(--line);
@@ -1496,7 +1496,7 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
   gap: 2px;
 }
 
-.spaire-editor .tb-device-btn {
+.claidor-editor .tb-device-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1517,11 +1517,11 @@ body:has(.edit-pop-backdrop) .spaire-editor-root {
     box-shadow 0.15s;
 }
 
-.spaire-editor .tb-device-btn:hover {
+.claidor-editor .tb-device-btn:hover {
   color: var(--ink-2);
 }
 
-.spaire-editor .tb-device-btn[data-active='1'] {
+.claidor-editor .tb-device-btn[data-active='1'] {
   background: white;
   color: var(--ink);
   box-shadow:

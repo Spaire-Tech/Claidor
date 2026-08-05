@@ -1,4 +1,4 @@
-import { getCurrencyDecimalFactor, isDecimalCurrency } from '@spaire/currency'
+import { getCurrencyDecimalFactor, isDecimalCurrency } from '@claidor/currency'
 import {
   ChangeEvent,
   FocusEvent,

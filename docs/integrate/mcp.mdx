@@ -1,28 +1,28 @@
 ---
-title: "Spaire over Model Context Protocol (MCP)"
-description: "Extend the capabilities of your AI agents with Spaire's MCP Server"
+title: "Claidor over Model Context Protocol (MCP)"
+description: "Extend the capabilities of your AI agents with Claidor's MCP Server"
 sidebarTitle: "Model Context Protocol (MCP)"
 hidden: true
 ---
 
-Supercharge your AI agents with Spaire as a Model Context Protocol (MCP) server.
+Supercharge your AI agents with Claidor as a Model Context Protocol (MCP) server.
 
 ## What is MCP?
 
 MCP is a protocol for integrating tools with AI agents. It can greatly enhance the capabilities of your AI agents by providing them with real-time data and context.
 
-Spaire offers a remote MCP server that you can connect to from most AI clients.
+Claidor offers a remote MCP server that you can connect to from most AI clients.
 
 ## How does it work?
 
-You need a MCP-capable agent environment to use Spaire over MCP. A few of them are Claude Desktop and Cursor.
+You need a MCP-capable agent environment to use Claidor over MCP. A few of them are Claude Desktop and Cursor.
 
-## Connecting to Spaire MCP
+## Connecting to Claidor MCP
 
-Spaire provides two MCP servers:
+Claidor provides two MCP servers:
 
-- **Production**: `https://mcp.spairehq.com/mcp/spaire-mcp` - Connect to your live Spaire organization
-- **Sandbox**: `https://mcp.spairehq.com/mcp/spaire-sandbox` - Connect to the Spaire sandbox environment for testing
+- **Production**: `https://mcp.claidorhq.com/mcp/claidor-mcp` - Connect to your live Claidor organization
+- **Sandbox**: `https://mcp.claidorhq.com/mcp/claidor-sandbox` - Connect to the Claidor sandbox environment for testing
 
 When you can specify a MCP URL, use one of the URLs above depending on your environment.
 
@@ -31,9 +31,9 @@ If you have to specify a command, use:
 ```json
 {
   "mcpServers": {
-    "Spaire": {
+    "Claidor": {
       "command": "npx",
-      "args": ["mcp-remote", "https://mcp.spairehq.com/mcp/spaire-mcp"]
+      "args": ["mcp-remote", "https://mcp.claidorhq.com/mcp/claidor-mcp"]
     }
   }
 }
@@ -44,9 +44,9 @@ For sandbox:
 ```json
 {
   "mcpServers": {
-    "Spaire Sandbox": {
+    "Claidor Sandbox": {
       "command": "npx",
-      "args": ["mcp-remote", "https://mcp.spairehq.com/mcp/spaire-sandbox"]
+      "args": ["mcp-remote", "https://mcp.claidorhq.com/mcp/claidor-sandbox"]
     }
   }
 }
@@ -59,8 +59,8 @@ In `.cursor/mcp.json`, add:
 ```json
 {
   "mcpServers": {
-    "Spaire": {
-      "url": "https://mcp.spairehq.com/mcp/spaire-mcp"
+    "Claidor": {
+      "url": "https://mcp.claidorhq.com/mcp/claidor-mcp"
     }
   }
 }
@@ -71,8 +71,8 @@ For sandbox:
 ```json
 {
   "mcpServers": {
-    "Spaire Sandbox": {
-      "url": "https://mcp.spairehq.com/mcp/spaire-sandbox"
+    "Claidor Sandbox": {
+      "url": "https://mcp.claidorhq.com/mcp/claidor-sandbox"
     }
   }
 }
@@ -85,9 +85,9 @@ In `mcp_config.json`, add:
 ```json
 {
   "mcpServers": {
-    "Spaire": {
+    "Claidor": {
       "command": "npx",
-      "args": ["mcp-remote", "https://mcp.spairehq.com/mcp/spaire-mcp"]
+      "args": ["mcp-remote", "https://mcp.claidorhq.com/mcp/claidor-mcp"]
     }
   }
 }
@@ -98,9 +98,9 @@ For sandbox:
 ```json
 {
   "mcpServers": {
-    "Spaire Sandbox": {
+    "Claidor Sandbox": {
       "command": "npx",
-      "args": ["mcp-remote", "https://mcp.spairehq.com/mcp/spaire-sandbox"]
+      "args": ["mcp-remote", "https://mcp.claidorhq.com/mcp/claidor-sandbox"]
     }
   }
 }
@@ -114,15 +114,15 @@ Add the following to your `~/.codex/config.toml`:
 [features]
 rmcp_client = true
 
-[mcp_servers.spaire]
+[mcp_servers.claidor]
 type = "http"
-url = "https://mcp.spairehq.com/mcp/spaire-mcp"
+url = "https://mcp.claidorhq.com/mcp/claidor-mcp"
 ```
 
 Then run:
 
 ```sh
-codex mcp login spaire
+codex mcp login claidor
 ```
 
 For sandbox:
@@ -131,15 +131,15 @@ For sandbox:
 [features]
 rmcp_client = true
 
-[mcp_servers.spaire_sandbox]
+[mcp_servers.claidor_sandbox]
 type = "http"
-url = "https://mcp.spairehq.com/mcp/spaire-sandbox"
+url = "https://mcp.claidorhq.com/mcp/claidor-sandbox"
 ```
 
 Then run:
 
 ```sh
-codex mcp login spaire_sandbox
+codex mcp login claidor_sandbox
 ```
 
 ### Claude Code
@@ -147,29 +147,29 @@ codex mcp login spaire_sandbox
 Run the following command:
 
 ```
-claude mcp add --transport http "Spaire" "https://mcp.spairehq.com/mcp/spaire-mcp"
+claude mcp add --transport http "Claidor" "https://mcp.claidorhq.com/mcp/claidor-mcp"
 ```
 
 For sandbox:
 
 ```
-claude mcp add --transport http "Spaire Sandbox" "https://mcp.spairehq.com/mcp/spaire-sandbox"
+claude mcp add --transport http "Claidor Sandbox" "https://mcp.claidorhq.com/mcp/claidor-sandbox"
 ```
 
 ### ChatGPT
 
 MCP is only available for paid users in beta on ChatGPT web, by enabling Developer Mode.
 
-Once Developer Mode is enabled, go to _Settings_ → _Connectors_ and add the MCP server using `https://mcp.spairehq.com/mcp/spaire-mcp`.
+Once Developer Mode is enabled, go to _Settings_ → _Connectors_ and add the MCP server using `https://mcp.claidorhq.com/mcp/claidor-mcp`.
 
-For sandbox, use `https://mcp.spairehq.com/mcp/spaire-sandbox` instead.
+For sandbox, use `https://mcp.claidorhq.com/mcp/claidor-sandbox` instead.
 
 ### Claude Desktop
 
 Go to _Settings_ → _Connectors_ and click _Add custom connector_.
 
-Name it "Spaire" and add `https://mcp.spairehq.com/mcp/spaire-mcp` as the server URL.
+Name it "Claidor" and add `https://mcp.claidorhq.com/mcp/claidor-mcp` as the server URL.
 
-For sandbox, use `https://mcp.spairehq.com/mcp/spaire-sandbox` as the server URL instead.
+For sandbox, use `https://mcp.claidorhq.com/mcp/claidor-sandbox` as the server URL instead.
 
-Save, and click _Connect_ to connect to your Spaire organization.
+Save, and click _Connect_ to connect to your Claidor organization.

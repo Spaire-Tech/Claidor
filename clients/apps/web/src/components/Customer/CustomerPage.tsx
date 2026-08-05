@@ -17,19 +17,19 @@ import { useOrders } from '@/hooks/queries/orders'
 import { useMemberModelEnabled } from '@/hooks/useMemberModelEnabled'
 import { formatPercentage, formatScalar } from '@/utils/formatters'
 import { getPreviousDateRange } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import Button from '@spaire/ui/components/atoms/Button'
-import { DataTable } from '@spaire/ui/components/atoms/DataTable'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
-import { Status } from '@spaire/ui/components/atoms/Status'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import Button from '@claidor/ui/components/atoms/Button'
+import { DataTable } from '@claidor/ui/components/atoms/DataTable'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@spaire/ui/components/atoms/Tabs'
+} from '@claidor/ui/components/atoms/Tabs'
 import Link from 'next/link'
 import React, { useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'

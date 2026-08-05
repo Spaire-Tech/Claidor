@@ -139,15 +139,15 @@ def _mark_sent(subscription: Subscription, marker: int) -> None:
 
 def _tier_label(subscription: Subscription) -> str:
     if subscription.product is None:
-        return "Spaire"
+        return "Claidor"
     tier_value = (subscription.product.user_metadata or {}).get("tier")
     if not isinstance(tier_value, str):
-        return "Spaire"
+        return "Claidor"
     try:
         tier = TierKey(tier_value)
     except ValueError:
-        return "Spaire"
-    return f"Spaire {tier.value.capitalize()}"
+        return "Claidor"
+    return f"Claidor {tier.value.capitalize()}"
 
 
 def _render(
@@ -193,7 +193,7 @@ def _render(
         '<html><body style="font-family:sans-serif;line-height:1.5;">'
         f"<h2>{subject}</h2>"
         f"<p>{body}</p>"
-        "<p>— Spaire</p>"
+        "<p>— Claidor</p>"
         "</body></html>"
     )
     return subject, html_content

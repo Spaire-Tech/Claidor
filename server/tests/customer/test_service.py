@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from polar.auth.models import AuthSubject, is_user
 from polar.customer.schemas.customer import CustomerCreate, CustomerUpdate
 from polar.customer.service import customer as customer_service
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.kit.address import AddressInput, CountryAlpha2, CountryAlpha2Input
 from polar.kit.pagination import PaginationParams
 from polar.member.repository import MemberRepository
@@ -87,7 +87,7 @@ class TestCreate:
         auth_subject: AuthSubject[User],
         organization: Organization,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_service.create(
                 session,
                 CustomerCreate(
@@ -114,7 +114,7 @@ class TestCreate:
         if is_user(auth_subject):
             payload["organization_id"] = str(organization.id)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_service.create(
                 session, CustomerCreate.model_validate(payload), auth_subject
             )
@@ -137,7 +137,7 @@ class TestCreate:
         if is_user(auth_subject):
             payload["organization_id"] = str(organization.id)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_service.create(
                 session, CustomerCreate.model_validate(payload), auth_subject
             )
@@ -416,7 +416,7 @@ class TestUpdate:
     async def test_existing_external_id(
         self, session: AsyncSession, customer: Customer, customer_external_id: Customer
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_service.update(
                 session,
                 customer,
@@ -437,7 +437,7 @@ class TestUpdate:
         session: AsyncSession,
         customer_external_id: Customer,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_service.update(
                 session,
                 customer_external_id,
@@ -448,7 +448,7 @@ class TestUpdate:
     async def test_existing_email(
         self, session: AsyncSession, customer: Customer, customer_second: Customer
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_service.update(
                 session,
                 customer,
@@ -584,7 +584,7 @@ class TestUpdate:
         customer.type = CustomerType.team
         await save_fixture(customer)
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await customer_service.update(
                 session,
                 customer,

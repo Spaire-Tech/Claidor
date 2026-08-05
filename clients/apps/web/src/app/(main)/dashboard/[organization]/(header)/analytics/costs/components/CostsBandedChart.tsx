@@ -11,7 +11,7 @@ import {
   Line,
   XAxis,
   YAxis,
-} from '@spaire/ui/components/ui/chart'
+} from '@claidor/ui/components/ui/chart'
 import { useMemo } from 'react'
 
 export interface CostsBandedChartProps {
@@ -110,7 +110,7 @@ export const CostsBandedChart = ({
               horizontal={false}
               vertical={true}
               stroke={
-                isDark ? 'var(--color-spaire-700)' : 'var(--color-gray-200)'
+                isDark ? 'var(--color-claidor-700)' : 'var(--color-gray-200)'
               }
               strokeDasharray="6 6"
             />

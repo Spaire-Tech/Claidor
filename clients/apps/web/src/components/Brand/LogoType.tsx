@@ -11,8 +11,8 @@ const LogoType = ({
 }) => {
   return (
     <img
-      src="/assets/logotype-spaire.png"
-      alt="Spaire"
+      src="/assets/logotype-claidor.png"
+      alt="Claidor"
       width={width}
       height={height}
       className={twMerge(className ? className : '')}

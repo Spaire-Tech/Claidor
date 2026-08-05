@@ -1,7 +1,7 @@
 'use client'
 
 import { useProduct } from '@/hooks/queries'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'

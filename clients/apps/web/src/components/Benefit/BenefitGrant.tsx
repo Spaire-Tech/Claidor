@@ -1,15 +1,15 @@
 import { useCustomerBenefitGrantUpdate } from '@/hooks/queries'
 import { markdownOptions } from '@/utils/markdown'
-import { Client, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { Client, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
+} from '@claidor/ui/components/atoms/Select'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
 import Markdown from 'markdown-to-jsx'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'

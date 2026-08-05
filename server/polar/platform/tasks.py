@@ -29,7 +29,7 @@ class PlatformTaskError(PolarTaskError): ...
 async def platform_fee_sync_task(organization_id: uuid.UUID) -> None:
     """Reconcile Account.platform_fee_* with the org's current tier list rate.
 
-    Triggered whenever the org's Spaire subscription changes (creation,
+    Triggered whenever the org's Claidor subscription changes (creation,
     upgrade, downgrade, cancellation) or when the Stripe Account is first
     attached to the org. Idempotent and a no-op when:
       - the org has no Account yet,

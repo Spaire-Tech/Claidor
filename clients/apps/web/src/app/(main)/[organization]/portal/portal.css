@@ -1,12 +1,12 @@
 /* =============================================================================
- * Spaire Customer Portal — design tokens + base styles.
- * Scoped under .spaire-portal so the redesign doesn't bleed into the rest
+ * Claidor Customer Portal — design tokens + base styles.
+ * Scoped under .claidor-portal so the redesign doesn't bleed into the rest
  * of the dashboard or marketing site.
  * ===========================================================================*/
 
 /* ── Boot loader ─────────────────────────────────────────────────────────
    The portal's single loading treatment: black screen, spinning ring with
-   a blue→white gradient tail. Deliberately NOT scoped to .spaire-portal so
+   a blue→white gradient tail. Deliberately NOT scoped to .claidor-portal so
    the immersive lesson viewer and community hub (which render outside the
    portal wrapper) can use it too. */
 .sp-boot {
@@ -58,7 +58,7 @@
 }
 /* Inline loads on the LIGHT portal page: the white tail would vanish on
    #f5f5f7, so the gradient runs light-blue → deep accent instead. */
-.spaire-portal:not(.sp-dark) .sp-boot--inline .sp-boot-ring {
+.claidor-portal:not(.sp-dark) .sp-boot--inline .sp-boot-ring {
   background: conic-gradient(
     from 210deg,
     rgba(0, 102, 204, 0) 0deg,
@@ -74,7 +74,7 @@
   }
 }
 
-.spaire-portal {
+.claidor-portal {
   /* Accent = the course-editor / community blue (#0066cc), NOT the
      app's tailwind blue-* (remapped to purple in globals.css) and NOT
      the wizard's indigo. Derived tints mirror --color-ce-accent-*. */
@@ -128,22 +128,22 @@
   text-rendering: optimizeLegibility;
 }
 
-.spaire-portal *,
-.spaire-portal *::before,
-.spaire-portal *::after {
+.claidor-portal *,
+.claidor-portal *::before,
+.claidor-portal *::after {
   box-sizing: border-box;
 }
 
-.spaire-portal ::selection {
+.claidor-portal ::selection {
   background: var(--sp-accent);
   color: #ffffff;
 }
 
-.spaire-portal button {
+.claidor-portal button {
   font-family: inherit;
 }
 
-.spaire-portal .sp-app {
+.claidor-portal .sp-app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -151,7 +151,7 @@
 }
 
 /* ── Top bar ──────────────────────────────────────────────────────────── */
-.spaire-portal .sp-topbar {
+.claidor-portal .sp-topbar {
   position: sticky;
   top: 0;
   z-index: 40;
@@ -164,15 +164,15 @@
 }
 /* Website-style hide-on-scroll: slide the sticky bar out of view when
    scrolling down, back in when scrolling up (toggled from TopBar). */
-.spaire-portal .sp-topbar--hidden {
+.claidor-portal .sp-topbar--hidden {
   transform: translateY(-100%);
 }
 @media (prefers-reduced-motion: reduce) {
-  .spaire-portal .sp-topbar {
+  .claidor-portal .sp-topbar {
     transition: none;
   }
 }
-.spaire-portal .sp-topbar-inner {
+.claidor-portal .sp-topbar-inner {
   max-width: 1280px;
   margin: 0 auto;
   min-height: 56px;
@@ -183,7 +183,7 @@
   align-items: stretch;
   gap: 24px;
 }
-.spaire-portal .sp-brand {
+.claidor-portal .sp-brand {
   display: flex;
   align-self: center;
   align-items: center;
@@ -193,7 +193,7 @@
   font-size: 18px;
   color: var(--sp-ink);
 }
-.spaire-portal .sp-brand-mark {
+.claidor-portal .sp-brand-mark {
   width: 28px;
   height: 28px;
   border-radius: 7px;
@@ -206,7 +206,7 @@
   letter-spacing: 0;
   overflow: hidden;
 }
-.spaire-portal .sp-brand-mark img {
+.claidor-portal .sp-brand-mark img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -215,14 +215,14 @@
 /* Community-hub tab pattern: text-only tabs, no pill — the active tab
    turns accent-blue and carries a 2px blue underline that sits on the
    bar's bottom hairline. */
-.spaire-portal .sp-tabs {
+.claidor-portal .sp-tabs {
   display: flex;
   align-items: stretch;
   align-self: stretch;
   gap: 28px;
   margin-left: 18px;
 }
-.spaire-portal .sp-tab {
+.claidor-portal .sp-tab {
   appearance: none;
   border: 0;
   background: transparent;
@@ -239,13 +239,13 @@
   letter-spacing: -0.014em;
   text-decoration: none;
 }
-.spaire-portal .sp-tab:hover {
+.claidor-portal .sp-tab:hover {
   color: var(--sp-ink);
 }
-.spaire-portal .sp-tab.is-active {
+.claidor-portal .sp-tab.is-active {
   color: var(--sp-accent);
 }
-.spaire-portal .sp-tab.is-active::after {
+.claidor-portal .sp-tab.is-active::after {
   content: '';
   position: absolute;
   left: 0;
@@ -256,14 +256,14 @@
   border-radius: 2px;
 }
 
-.spaire-portal .sp-right {
+.claidor-portal .sp-right {
   margin-left: auto;
   align-self: center;
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.spaire-portal .sp-iconbtn {
+.claidor-portal .sp-iconbtn {
   appearance: none;
   width: 36px;
   height: 36px;
@@ -277,15 +277,15 @@
   position: relative;
   transition: background 0.15s;
 }
-.spaire-portal .sp-iconbtn:hover {
+.claidor-portal .sp-iconbtn:hover {
   background: var(--sp-fill);
 }
 /* Mobile-only icon variants stay hidden on desktop and reveal at
    the mobile breakpoint via the media query below. */
-.spaire-portal .sp-iconbtn--mobile {
+.claidor-portal .sp-iconbtn--mobile {
   display: none;
 }
-.spaire-portal .sp-iconbtn .sp-dot {
+.claidor-portal .sp-iconbtn .sp-dot {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -295,7 +295,7 @@
   background: var(--sp-accent);
   box-shadow: 0 0 0 2px var(--sp-bg);
 }
-.spaire-portal .sp-search {
+.claidor-portal .sp-search {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -310,14 +310,14 @@
     width 0.25s,
     color 0.15s;
 }
-.spaire-portal .sp-search:hover {
+.claidor-portal .sp-search:hover {
   background: var(--sp-fill-2);
   color: var(--sp-ink-2);
 }
-.spaire-portal .sp-search:focus-within {
+.claidor-portal .sp-search:focus-within {
   width: 280px;
 }
-.spaire-portal .sp-search input {
+.claidor-portal .sp-search input {
   appearance: none;
   border: 0;
   background: transparent;
@@ -328,10 +328,10 @@
   padding: 0;
   min-width: 0;
 }
-.spaire-portal .sp-search input::placeholder {
+.claidor-portal .sp-search input::placeholder {
   color: var(--sp-muted);
 }
-.spaire-portal .sp-avatar {
+.claidor-portal .sp-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -350,30 +350,30 @@
 }
 /* Image-backed variant — used by the preview-customer flow that
    borrows the org's avatar so the top-right chip reads as the admin. */
-.spaire-portal .sp-avatar--image {
+.claidor-portal .sp-avatar--image {
   background: transparent;
 }
-.spaire-portal .sp-avatar--image img {
+.claidor-portal .sp-avatar--image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 /* Button variant — the avatar is also the dropdown trigger. */
-.spaire-portal .sp-avatar--btn {
+.claidor-portal .sp-avatar--btn {
   padding: 0;
   cursor: pointer;
   font-family: inherit;
 }
-.spaire-portal .sp-avatar--btn:hover {
+.claidor-portal .sp-avatar--btn:hover {
   filter: brightness(0.96);
 }
 
 /* Account dropdown — anchored to the avatar chip in the top-right. */
-.spaire-portal .sp-account {
+.claidor-portal .sp-account {
   position: relative;
 }
-.spaire-portal .sp-account-menu {
+.claidor-portal .sp-account-menu {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
@@ -385,26 +385,26 @@
   padding: 6px;
   z-index: 60;
 }
-.spaire-portal .sp-account-menu-head {
+.claidor-portal .sp-account-menu-head {
   padding: 8px 10px 10px;
   border-bottom: 1px solid var(--sp-line);
   margin-bottom: 6px;
 }
-.spaire-portal .sp-account-menu-name {
+.claidor-portal .sp-account-menu-name {
   font-size: 13px;
   font-weight: 600;
   color: var(--sp-ink);
   text-transform: none;
   letter-spacing: 0;
 }
-.spaire-portal .sp-account-menu-email {
+.claidor-portal .sp-account-menu-email {
   font-size: 11.5px;
   color: var(--sp-ink-2);
   margin-top: 2px;
   text-transform: none;
   letter-spacing: 0;
 }
-.spaire-portal .sp-account-menu-item {
+.claidor-portal .sp-account-menu-item {
   width: 100%;
   text-align: left;
   background: transparent;
@@ -416,28 +416,28 @@
   cursor: pointer;
   font-family: inherit;
 }
-.spaire-portal .sp-account-menu-item:hover {
+.claidor-portal .sp-account-menu-item:hover {
   background: rgba(0, 0, 0, 0.04);
 }
-.spaire-portal .sp-account-menu-item--danger {
+.claidor-portal .sp-account-menu-item--danger {
   color: #b23b3b;
 }
-.spaire-portal .sp-account-menu-item--danger:hover {
+.claidor-portal .sp-account-menu-item--danger:hover {
   background: rgba(178, 59, 59, 0.08);
 }
 /* The light hover tint above is invisible on the dark dropdown surface. */
-.spaire-portal.sp-dark .sp-account-menu-item:hover {
+.claidor-portal.sp-dark .sp-account-menu-item:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 
 /* ── Page ─────────────────────────────────────────────────────────────── */
-.spaire-portal .sp-page {
+.claidor-portal .sp-page {
   max-width: 1280px;
   margin: 0 auto;
   padding: 36px 28px 80px;
   width: 100%;
 }
-.spaire-portal .sp-page-head {
+.claidor-portal .sp-page-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -445,7 +445,7 @@
   gap: 24px;
   flex-wrap: wrap;
 }
-.spaire-portal .sp-page-title {
+.claidor-portal .sp-page-title {
   font-family: var(--sp-font-display);
   font-size: var(--sp-fs-page-title);
   font-weight: 600;
@@ -453,20 +453,20 @@
   margin: 0;
   color: var(--sp-ink);
 }
-.spaire-portal .sp-page-sub {
+.claidor-portal .sp-page-sub {
   color: var(--sp-muted);
   font-size: 14px;
   margin: 6px 0 0;
 }
 
 /* ── Chips ────────────────────────────────────────────────────────────── */
-.spaire-portal .sp-chips {
+.claidor-portal .sp-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 28px;
 }
-.spaire-portal .sp-chip {
+.claidor-portal .sp-chip {
   appearance: none;
   border: 1px solid var(--sp-line);
   background: var(--sp-surface);
@@ -482,34 +482,34 @@
   align-items: center;
   gap: 6px;
 }
-.spaire-portal .sp-chip:hover {
+.claidor-portal .sp-chip:hover {
   border-color: var(--sp-line-strong);
   background: var(--sp-fill);
 }
-.spaire-portal .sp-chip.is-active {
+.claidor-portal .sp-chip.is-active {
   background: var(--sp-ink);
   color: var(--sp-bg);
   border-color: var(--sp-ink);
 }
 
 /* ── Course grid ──────────────────────────────────────────────────────── */
-.spaire-portal .sp-grid {
+.claidor-portal .sp-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 28px 24px;
 }
 @media (max-width: 1000px) {
-  .spaire-portal .sp-grid {
+  .claidor-portal .sp-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 640px) {
-  .spaire-portal .sp-grid {
+  .claidor-portal .sp-grid {
     grid-template-columns: 1fr;
   }
 }
 
-.spaire-portal .sp-card {
+.claidor-portal .sp-card {
   background: transparent;
   border-radius: var(--sp-radius);
   overflow: visible;
@@ -518,24 +518,24 @@
   color: inherit;
   display: block;
 }
-.spaire-portal .sp-card-media {
+.claidor-portal .sp-card-media {
   position: relative;
   aspect-ratio: 4 / 3;
   border-radius: var(--sp-radius);
   overflow: hidden;
   background: var(--sp-fill-2);
 }
-.spaire-portal .sp-card-media img {
+.claidor-portal .sp-card-media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.spaire-portal .sp-card:hover .sp-card-media img {
+.claidor-portal .sp-card:hover .sp-card-media img {
   transform: scale(1.03);
 }
-.spaire-portal .sp-card-media-fallback {
+.claidor-portal .sp-card-media-fallback {
   width: 100%;
   height: 100%;
   display: grid;
@@ -547,7 +547,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.spaire-portal .sp-badge {
+.claidor-portal .sp-badge {
   position: absolute;
   top: 10px;
   left: 10px;
@@ -560,10 +560,10 @@
   border-radius: 6px;
   text-transform: uppercase;
 }
-.spaire-portal .sp-card-body {
+.claidor-portal .sp-card-body {
   padding: 14px 2px 0;
 }
-.spaire-portal .sp-card-title {
+.claidor-portal .sp-card-title {
   font-size: 15.5px;
   font-weight: 600;
   line-height: 1.35;
@@ -575,7 +575,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.spaire-portal .sp-card-meta {
+.claidor-portal .sp-card-meta {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -583,7 +583,7 @@
   font-size: 12.5px;
   min-height: 20px;
 }
-.spaire-portal .sp-check {
+.claidor-portal .sp-check {
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -593,7 +593,7 @@
   place-items: center;
   flex: none;
 }
-.spaire-portal .sp-progress {
+.claidor-portal .sp-progress {
   flex: 1;
   max-width: 140px;
   height: 5px;
@@ -601,14 +601,14 @@
   background: var(--sp-fill-2);
   overflow: hidden;
 }
-.spaire-portal .sp-progress > i {
+.claidor-portal .sp-progress > i {
   display: block;
   height: 100%;
   background: var(--sp-accent);
   border-radius: 999px;
   transition: width 0.4s ease;
 }
-.spaire-portal .sp-progress-pct {
+.claidor-portal .sp-progress-pct {
   font-variant-numeric: tabular-nums;
   color: var(--sp-ink-2);
   font-weight: 500;
@@ -619,7 +619,7 @@
 /* Editor convention: primary CTAs are INK pills, not blue — the accent
    stays reserved for links, active tabs, and focus states. Hover dims
    via opacity so the same rule works in light and dark. */
-.spaire-portal .sp-btn {
+.claidor-portal .sp-btn {
   appearance: none;
   border: 0;
   background: var(--sp-ink);
@@ -640,28 +640,28 @@
     background 0.18s;
   text-decoration: none;
 }
-.spaire-portal .sp-btn:hover {
+.claidor-portal .sp-btn:hover {
   opacity: 0.85;
 }
-.spaire-portal .sp-btn:active {
+.claidor-portal .sp-btn:active {
   transform: scale(0.97);
 }
-.spaire-portal .sp-btn.is-ghost {
+.claidor-portal .sp-btn.is-ghost {
   background: var(--sp-fill);
   color: var(--sp-ink);
   border: 0;
 }
-.spaire-portal .sp-btn.is-ghost:hover {
+.claidor-portal .sp-btn.is-ghost:hover {
   opacity: 1;
   background: var(--sp-fill-2);
 }
-.spaire-portal .sp-btn:disabled {
+.claidor-portal .sp-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* ── Manage links (Overview) ──────────────────────────────────────────── */
-.spaire-portal .sp-manage {
+.claidor-portal .sp-manage {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -669,13 +669,13 @@
 }
 
 /* ── Section header ───────────────────────────────────────────────────── */
-.spaire-portal .sp-sec-head {
+.claidor-portal .sp-sec-head {
   display: flex;
   align-items: end;
   justify-content: space-between;
   margin: 8px 0 16px;
 }
-.spaire-portal .sp-sec-title {
+.claidor-portal .sp-sec-title {
   font-family: var(--sp-font-display);
   font-size: var(--sp-fs-sec-title);
   font-weight: 600;
@@ -685,7 +685,7 @@
 }
 /* Links are accent-blue with an opacity hover, like the editor's
    text links. */
-.spaire-portal .sp-link {
+.claidor-portal .sp-link {
   color: var(--sp-accent);
   font-size: 13px;
   font-weight: 500;
@@ -699,12 +699,12 @@
   align-items: center;
   gap: 6px;
 }
-.spaire-portal .sp-link:hover {
+.claidor-portal .sp-link:hover {
   opacity: 0.7;
 }
 
 /* ── Pill / status ────────────────────────────────────────────────────── */
-.spaire-portal .sp-pill {
+.claidor-portal .sp-pill {
   font-size: 11.5px;
   font-weight: 600;
   padding: 4px 10px;
@@ -715,19 +715,19 @@
   display: inline-flex;
   align-items: center;
 }
-.spaire-portal .sp-pill.is-paid {
+.claidor-portal .sp-pill.is-paid {
   background: #eef9f1;
   color: #0e7a3a;
 }
-.spaire-portal .sp-pill.is-refunded {
+.claidor-portal .sp-pill.is-refunded {
   background: #f4f4f4;
   color: #6b6b6b;
 }
-.spaire-portal .sp-pill.is-pending {
+.claidor-portal .sp-pill.is-pending {
   background: #fff7e8;
   color: #a16207;
 }
-.spaire-portal .sp-pill.is-canceled {
+.claidor-portal .sp-pill.is-canceled {
   background: #fdecec;
   color: #b91c1c;
 }
@@ -743,15 +743,15 @@
     transform: none;
   }
 }
-.spaire-portal .sp-fade-in {
+.claidor-portal .sp-fade-in {
   animation: sp-fade-in 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-.spaire-portal .sp-route {
+.claidor-portal .sp-route {
   animation: sp-fade-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 /* ── Utility ──────────────────────────────────────────────────────────── */
-.spaire-portal .sp-stats {
+.claidor-portal .sp-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   border: 1px solid var(--sp-line);
@@ -761,32 +761,32 @@
   background: var(--sp-surface);
 }
 @media (max-width: 720px) {
-  .spaire-portal .sp-stats {
+  .claidor-portal .sp-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-.spaire-portal .sp-stat {
+.claidor-portal .sp-stat {
   padding: 22px 24px;
   border-right: 1px solid var(--sp-line);
 }
-.spaire-portal .sp-stat:last-child {
+.claidor-portal .sp-stat:last-child {
   border-right: none;
 }
 @media (max-width: 720px) {
-  .spaire-portal .sp-stat:nth-child(2n) {
+  .claidor-portal .sp-stat:nth-child(2n) {
     border-right: none;
   }
-  .spaire-portal .sp-stat:nth-child(-n + 2) {
+  .claidor-portal .sp-stat:nth-child(-n + 2) {
     border-bottom: 1px solid var(--sp-line);
   }
 }
-.spaire-portal .sp-stat-label {
+.claidor-portal .sp-stat-label {
   font-size: 12.5px;
   color: var(--sp-muted);
   margin-bottom: 8px;
   font-weight: 500;
 }
-.spaire-portal .sp-stat-value {
+.claidor-portal .sp-stat-value {
   font-size: var(--sp-fs-stat-value);
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -794,7 +794,7 @@
 }
 
 /* ── Plan card / dark section ─────────────────────────────────────────── */
-.spaire-portal .sp-plan-card {
+.claidor-portal .sp-plan-card {
   border: 1px solid var(--sp-line);
   border-radius: var(--sp-radius);
   background: var(--sp-ink);
@@ -807,7 +807,7 @@
   margin-bottom: 36px;
   flex-wrap: wrap;
 }
-.spaire-portal .sp-plan-eyebrow {
+.claidor-portal .sp-plan-eyebrow {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -815,18 +815,18 @@
   opacity: 0.55;
   margin-bottom: 10px;
 }
-.spaire-portal .sp-plan-title {
+.claidor-portal .sp-plan-title {
   font-family: var(--sp-font-display);
   font-size: var(--sp-fs-plan-title);
   font-weight: 600;
   letter-spacing: -0.02em;
   margin-bottom: 6px;
 }
-.spaire-portal .sp-plan-meta {
+.claidor-portal .sp-plan-meta {
   font-size: 13px;
   opacity: 0.7;
 }
-.spaire-portal .sp-plan-actions {
+.claidor-portal .sp-plan-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -834,7 +834,7 @@
 /* The plan card's bg is var(--sp-ink), so "on-card" colors derive from
    var(--sp-bg) — this keeps the ghost button visible in BOTH modes
    (in dark the card flips to a light surface with dark text). */
-.spaire-portal .sp-plan-actions .sp-btn-dark-ghost {
+.claidor-portal .sp-plan-actions .sp-btn-dark-ghost {
   appearance: none;
   border: 1px solid color-mix(in srgb, var(--sp-bg) 30%, transparent);
   background: transparent;
@@ -846,10 +846,10 @@
   font-size: 14px;
   cursor: pointer;
 }
-.spaire-portal .sp-plan-actions .sp-btn-dark-ghost:hover {
+.claidor-portal .sp-plan-actions .sp-btn-dark-ghost:hover {
   background: color-mix(in srgb, var(--sp-bg) 12%, transparent);
 }
-.spaire-portal .sp-plan-actions .sp-btn-light {
+.claidor-portal .sp-plan-actions .sp-btn-light {
   appearance: none;
   border: 0;
   background: var(--sp-surface);
@@ -863,7 +863,7 @@
 }
 
 /* ── Library footer ───────────────────────────────────────────────────── */
-.spaire-portal .sp-lib {
+.claidor-portal .sp-lib {
   margin-top: 56px;
   padding: 24px 28px;
   border: 1px solid var(--sp-line);
@@ -875,7 +875,7 @@
   background: var(--sp-surface-2);
   flex-wrap: wrap;
 }
-.spaire-portal .sp-lib-eyebrow {
+.claidor-portal .sp-lib-eyebrow {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -883,32 +883,32 @@
   color: var(--sp-muted);
   margin-bottom: 6px;
 }
-.spaire-portal .sp-lib-title {
+.claidor-portal .sp-lib-title {
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--sp-ink);
 }
-.spaire-portal .sp-lib-meta {
+.claidor-portal .sp-lib-meta {
   font-size: 13px;
   color: var(--sp-muted);
   margin-top: 4px;
 }
 
 /* ── Orders table / rows ──────────────────────────────────────────────── */
-.spaire-portal .sp-orders {
+.claidor-portal .sp-orders {
   border: 1px solid var(--sp-line);
   border-radius: var(--sp-radius);
   overflow: hidden;
   background: var(--sp-surface);
 }
-.spaire-portal .sp-order-row {
+.claidor-portal .sp-order-row {
   border-bottom: 1px solid var(--sp-line);
 }
-.spaire-portal .sp-order-row:last-child {
+.claidor-portal .sp-order-row:last-child {
   border-bottom: none;
 }
-.spaire-portal .sp-order-summary {
+.claidor-portal .sp-order-summary {
   width: 100%;
   appearance: none;
   border: 0;
@@ -924,55 +924,55 @@
   transition: background 0.15s;
   color: inherit;
 }
-.spaire-portal .sp-order-summary:hover {
+.claidor-portal .sp-order-summary:hover {
   background: var(--sp-surface-2);
 }
 @media (max-width: 720px) {
-  .spaire-portal .sp-order-summary {
+  .claidor-portal .sp-order-summary {
     grid-template-columns: 1fr auto;
     gap: 8px;
   }
-  .spaire-portal .sp-order-summary > .sp-hide-mobile {
+  .claidor-portal .sp-order-summary > .sp-hide-mobile {
     display: none;
   }
 }
-.spaire-portal .sp-order-id {
+.claidor-portal .sp-order-id {
   font-size: 14.5px;
   font-weight: 600;
   letter-spacing: -0.005em;
   color: var(--sp-ink);
 }
-.spaire-portal .sp-order-sub {
+.claidor-portal .sp-order-sub {
   font-size: 12.5px;
   color: var(--sp-muted);
   margin-top: 3px;
 }
-.spaire-portal .sp-order-cell {
+.claidor-portal .sp-order-cell {
   font-size: 13.5px;
   color: var(--sp-ink-2);
 }
-.spaire-portal .sp-order-total {
+.claidor-portal .sp-order-total {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--sp-ink);
   font-variant-numeric: tabular-nums;
 }
-.spaire-portal .sp-order-total.is-refunded {
+.claidor-portal .sp-order-total.is-refunded {
   color: var(--sp-muted);
   text-decoration: line-through;
 }
-.spaire-portal .sp-order-detail {
+.claidor-portal .sp-order-detail {
   padding: 4px 24px 22px;
   border-top: 1px solid var(--sp-line);
   background: var(--sp-surface-2);
 }
-.spaire-portal .sp-table {
+.claidor-portal .sp-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 14px;
 }
-.spaire-portal .sp-table th {
+.claidor-portal .sp-table th {
   text-align: left;
   padding: 10px 12px;
   font-size: 11.5px;
@@ -982,16 +982,16 @@
   text-transform: uppercase;
   border-bottom: 1px solid var(--sp-line);
 }
-.spaire-portal .sp-table td {
+.claidor-portal .sp-table td {
   padding: 12px;
   font-size: 13.5px;
   color: var(--sp-ink-2);
   border-bottom: 1px solid var(--sp-line);
 }
-.spaire-portal .sp-table tr:last-child td {
+.claidor-portal .sp-table tr:last-child td {
   border-bottom: none;
 }
-.spaire-portal .sp-tag {
+.claidor-portal .sp-tag {
   font-size: 11.5px;
   padding: 2px 8px;
   border: 1px solid var(--sp-line);
@@ -1003,7 +1003,7 @@
 }
 
 /* ── Payment method card ──────────────────────────────────────────────── */
-.spaire-portal .sp-pm {
+.claidor-portal .sp-pm {
   border: 1px solid var(--sp-line);
   border-radius: var(--sp-radius);
   padding: 20px 22px;
@@ -1014,12 +1014,12 @@
   background: var(--sp-surface);
   flex-wrap: wrap;
 }
-.spaire-portal .sp-pm-row {
+.claidor-portal .sp-pm-row {
   display: flex;
   align-items: center;
   gap: 16px;
 }
-.spaire-portal .sp-pm-brand {
+.claidor-portal .sp-pm-brand {
   width: 54px;
   height: 36px;
   border-radius: 7px;
@@ -1032,16 +1032,16 @@
   flex: none;
   background: linear-gradient(135deg, #2a2a2a, #4a4a4a);
 }
-.spaire-portal .sp-pm-brand.is-visa {
+.claidor-portal .sp-pm-brand.is-visa {
   background: linear-gradient(135deg, #1a1f71, #2d3a8c);
 }
-.spaire-portal .sp-pm-brand.is-mc {
+.claidor-portal .sp-pm-brand.is-mc {
   background: linear-gradient(135deg, #d83a1a, #f59e0b);
 }
-.spaire-portal .sp-pm-brand.is-amex {
+.claidor-portal .sp-pm-brand.is-amex {
   background: linear-gradient(135deg, #0066b2, #1e90ff);
 }
-.spaire-portal .sp-pm-title {
+.claidor-portal .sp-pm-title {
   font-size: 14px;
   font-weight: 500;
   color: var(--sp-ink);
@@ -1049,12 +1049,12 @@
   align-items: center;
   gap: 8px;
 }
-.spaire-portal .sp-pm-meta {
+.claidor-portal .sp-pm-meta {
   font-size: 12.5px;
   color: var(--sp-muted);
   margin-top: 3px;
 }
-.spaire-portal .sp-pm-primary {
+.claidor-portal .sp-pm-primary {
   font-size: 10.5px;
   font-weight: 600;
   padding: 2px 7px;
@@ -1064,33 +1064,33 @@
   letter-spacing: 0.02em;
 }
 
-.spaire-portal .sp-pm-grid {
+.claidor-portal .sp-pm-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 48px;
 }
 @media (max-width: 720px) {
-  .spaire-portal .sp-pm-grid {
+  .claidor-portal .sp-pm-grid {
     grid-template-columns: 1fr;
   }
 }
 
 /* ── Invoice table ────────────────────────────────────────────────────── */
-.spaire-portal .sp-inv {
+.claidor-portal .sp-inv {
   border: 1px solid var(--sp-line);
   border-radius: var(--sp-radius);
   overflow: hidden;
   background: var(--sp-surface);
 }
-.spaire-portal .sp-inv-head,
-.spaire-portal .sp-inv-row {
+.claidor-portal .sp-inv-head,
+.claidor-portal .sp-inv-row {
   display: grid;
   grid-template-columns: 1fr 1.3fr 2fr 1fr auto;
   gap: 16px;
   align-items: center;
 }
-.spaire-portal .sp-inv-head {
+.claidor-portal .sp-inv-head {
   padding: 14px 24px;
   background: var(--sp-surface-2);
   border-bottom: 1px solid var(--sp-line);
@@ -1100,35 +1100,35 @@
   text-transform: uppercase;
   color: var(--sp-muted);
 }
-.spaire-portal .sp-inv-row {
+.claidor-portal .sp-inv-row {
   padding: 16px 24px;
   border-bottom: 1px solid var(--sp-line);
   font-size: 13.5px;
 }
-.spaire-portal .sp-inv-row:last-child {
+.claidor-portal .sp-inv-row:last-child {
   border-bottom: none;
 }
 @media (max-width: 720px) {
-  .spaire-portal .sp-inv-head,
-  .spaire-portal .sp-inv-row {
+  .claidor-portal .sp-inv-head,
+  .claidor-portal .sp-inv-row {
     grid-template-columns: 1fr auto;
   }
-  .spaire-portal .sp-inv-head > *:nth-child(2),
-  .spaire-portal .sp-inv-head > *:nth-child(3),
-  .spaire-portal .sp-inv-row > *:nth-child(2),
-  .spaire-portal .sp-inv-row > *:nth-child(3) {
+  .claidor-portal .sp-inv-head > *:nth-child(2),
+  .claidor-portal .sp-inv-head > *:nth-child(3),
+  .claidor-portal .sp-inv-row > *:nth-child(2),
+  .claidor-portal .sp-inv-row > *:nth-child(3) {
     display: none;
   }
 }
 
-.spaire-portal .sp-empty {
+.claidor-portal .sp-empty {
   padding: 60px 20px;
   text-align: center;
   color: var(--sp-muted);
   border: 1px dashed var(--sp-line);
   border-radius: var(--sp-radius);
 }
-.spaire-portal .sp-empty-title {
+.claidor-portal .sp-empty-title {
   font-size: 15px;
   color: var(--sp-ink-2);
   font-weight: 500;
@@ -1136,7 +1136,7 @@
 }
 
 /* ── Skeleton ─────────────────────────────────────────────────────────── */
-.spaire-portal .sp-skel {
+.claidor-portal .sp-skel {
   border-radius: var(--sp-radius);
   background: linear-gradient(
     90deg,
@@ -1159,15 +1159,15 @@
 /* ────────────────────────────────────────────────────────────────────────
    Mobile bottom tab bar (only visible on mobile via media query below)
    ──────────────────────────────────────────────────────────────────────── */
-.spaire-portal .sp-tabbar {
+.claidor-portal .sp-tabbar {
   display: none;
 }
-.spaire-portal .sp-tabbar-inner {
+.claidor-portal .sp-tabbar-inner {
   display: grid;
   grid-template-columns: repeat(var(--sp-tabbar-cols, 5), 1fr);
   padding: 8px 6px max(8px, env(safe-area-inset-bottom));
 }
-.spaire-portal .sp-tabbar-item {
+.claidor-portal .sp-tabbar-item {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1180,10 +1180,10 @@
 }
 /* iOS tab-bar convention: the active item simply turns accent-blue —
    no background chip. */
-.spaire-portal .sp-tabbar-item.is-active {
+.claidor-portal .sp-tabbar-item.is-active {
   color: var(--sp-accent);
 }
-.spaire-portal .sp-tabbar-icon {
+.claidor-portal .sp-tabbar-icon {
   display: grid;
   place-items: center;
   width: 50px;
@@ -1191,16 +1191,16 @@
   border-radius: 14px;
   background: transparent;
 }
-.spaire-portal .sp-tabbar-label {
+.claidor-portal .sp-tabbar-label {
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.005em;
 }
-.spaire-portal .sp-tabbar-item.is-active .sp-tabbar-label {
+.claidor-portal .sp-tabbar-item.is-active .sp-tabbar-label {
   font-weight: 600;
 }
 /* The "You" tab renders the customer's avatar instead of a glyph. */
-.spaire-portal .sp-tabbar-avatar {
+.claidor-portal .sp-tabbar-avatar {
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -1208,17 +1208,17 @@
   display: block;
   background: var(--sp-fill-2);
 }
-.spaire-portal .sp-tabbar-avatar img {
+.claidor-portal .sp-tabbar-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-.spaire-portal .sp-tabbar-item.is-active .sp-tabbar-avatar {
+.claidor-portal .sp-tabbar-item.is-active .sp-tabbar-avatar {
   box-shadow: 0 0 0 2px var(--sp-accent);
 }
 /* The You tab is a <button>, not a Link — neutralize UA button chrome. */
-.spaire-portal button.sp-tabbar-item {
+.claidor-portal button.sp-tabbar-item {
   appearance: none;
   background: transparent;
   border: 0;
@@ -1226,15 +1226,15 @@
 }
 /* Mirror the top bar: slide out of view when scrolling down, back in when
    scrolling up (toggled from MobileTabBar via useHideOnScroll). */
-.spaire-portal .sp-tabbar {
+.claidor-portal .sp-tabbar {
   transition: transform 0.3s ease;
   will-change: transform;
 }
-.spaire-portal .sp-tabbar--hidden {
+.claidor-portal .sp-tabbar--hidden {
   transform: translateY(100%);
 }
 @media (prefers-reduced-motion: reduce) {
-  .spaire-portal .sp-tabbar {
+  .claidor-portal .sp-tabbar {
     transition: none;
   }
 }
@@ -1242,10 +1242,10 @@
 /* ────────────────────────────────────────────────────────────────────────
    Bottom sheet — the portal's primitive for mobile secondary surfaces
    (You hub, notifications; later lesson outlines / comments). Rendered
-   into document.body by PortalSheet.tsx, which re-applies .spaire-portal
+   into document.body by PortalSheet.tsx, which re-applies .claidor-portal
    (+ .sp-dark) on the root so the tokens resolve.
    ──────────────────────────────────────────────────────────────────────── */
-.spaire-portal.sp-sheet-root {
+.claidor-portal.sp-sheet-root {
   position: fixed;
   inset: 0;
   z-index: 90;
@@ -1254,13 +1254,13 @@
   flex-direction: column;
   justify-content: flex-end;
 }
-.spaire-portal .sp-sheet-backdrop {
+.claidor-portal .sp-sheet-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.42);
   animation: sp-sheet-fade 0.2s ease both;
 }
-.spaire-portal .sp-sheet {
+.claidor-portal .sp-sheet {
   position: relative;
   width: 100%;
   max-width: 480px;
@@ -1276,38 +1276,38 @@
   transition: transform 0.2s ease;
 }
 @media (prefers-reduced-motion: reduce) {
-  .spaire-portal .sp-sheet,
-  .spaire-portal .sp-sheet-backdrop {
+  .claidor-portal .sp-sheet,
+  .claidor-portal .sp-sheet-backdrop {
     animation: none;
   }
 }
-.spaire-portal .sp-sheet-grip {
+.claidor-portal .sp-sheet-grip {
   padding: 10px 0 6px;
   display: grid;
   place-items: center;
   touch-action: none;
   cursor: grab;
 }
-.spaire-portal .sp-sheet-handle {
+.claidor-portal .sp-sheet-handle {
   width: 36px;
   height: 4px;
   border-radius: 999px;
   background: var(--sp-line-strong);
 }
-.spaire-portal .sp-sheet-head {
+.claidor-portal .sp-sheet-head {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 2px 16px 12px;
   border-bottom: 1px solid var(--sp-line);
 }
-.spaire-portal .sp-sheet-title {
+.claidor-portal .sp-sheet-title {
   flex: 1;
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-.spaire-portal .sp-sheet-close {
+.claidor-portal .sp-sheet-close {
   appearance: none;
   width: 32px;
   height: 32px;
@@ -1319,7 +1319,7 @@
   place-items: center;
   cursor: pointer;
 }
-.spaire-portal .sp-sheet-body {
+.claidor-portal .sp-sheet-body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -1343,28 +1343,28 @@
 }
 
 /* ── You hub (profile sheet) ─────────────────────────────────────────── */
-.spaire-portal .sp-hub-head {
+.claidor-portal .sp-hub-head {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 6px 12px 14px;
 }
-.spaire-portal .sp-hub-name {
+.claidor-portal .sp-hub-name {
   font-size: 15px;
   font-weight: 600;
   color: var(--sp-ink);
 }
-.spaire-portal .sp-hub-email {
+.claidor-portal .sp-hub-email {
   font-size: 12.5px;
   color: var(--sp-muted);
   margin-top: 1px;
 }
-.spaire-portal .sp-hub-sep {
+.claidor-portal .sp-hub-sep {
   height: 1px;
   background: var(--sp-line);
   margin: 6px 2px;
 }
-.spaire-portal .sp-hub-item {
+.claidor-portal .sp-hub-item {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -1383,30 +1383,30 @@
   cursor: pointer;
   transition: background 0.15s;
 }
-.spaire-portal .sp-hub-item:hover,
-.spaire-portal .sp-hub-item:active {
+.claidor-portal .sp-hub-item:hover,
+.claidor-portal .sp-hub-item:active {
   background: var(--sp-surface-2);
 }
-.spaire-portal .sp-hub-icon {
+.claidor-portal .sp-hub-icon {
   width: 24px;
   display: grid;
   place-items: center;
   color: var(--sp-ink-2);
 }
-.spaire-portal .sp-hub-spacer {
+.claidor-portal .sp-hub-spacer {
   flex: 1;
 }
-.spaire-portal .sp-hub-value {
+.claidor-portal .sp-hub-value {
   font-size: 13px;
   font-weight: 400;
   color: var(--sp-muted);
 }
-.spaire-portal .sp-hub-item--danger,
-.spaire-portal .sp-hub-item--danger .sp-hub-icon {
+.claidor-portal .sp-hub-item--danger,
+.claidor-portal .sp-hub-item--danger .sp-hub-icon {
   color: #b23b3b;
 }
-.spaire-portal.sp-dark .sp-hub-item--danger,
-.spaire-portal.sp-dark .sp-hub-item--danger .sp-hub-icon {
+.claidor-portal.sp-dark .sp-hub-item--danger,
+.claidor-portal.sp-dark .sp-hub-item--danger .sp-hub-icon {
   color: #e07a7a;
 }
 
@@ -1415,7 +1415,7 @@
    ──────────────────────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
   /* Tab bar reveals on mobile and clears the home-indicator inset. */
-  .spaire-portal .sp-tabbar {
+  .claidor-portal .sp-tabbar {
     display: block;
     position: fixed;
     left: 0;
@@ -1429,81 +1429,81 @@
   }
   /* Push page content above the fixed tab bar — ~56px tab height plus
      the home-indicator inset plus a bit of breathing room. */
-  .spaire-portal.sp-app--mobile-tabs .sp-page,
-  .spaire-portal.sp-app--mobile-tabs .sp-course-portal {
+  .claidor-portal.sp-app--mobile-tabs .sp-page,
+  .claidor-portal.sp-app--mobile-tabs .sp-course-portal {
     padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Top bar collapses to brand + 3 icon buttons. The desktop search
      input is hidden; tapping the search-icon button is the mobile entry.
      The route tab strip is hidden — the bottom tab bar replaces it. */
-  .spaire-portal .sp-topbar-inner {
+  .claidor-portal .sp-topbar-inner {
     min-height: 52px;
     padding: 0 16px;
     gap: 8px;
   }
-  .spaire-portal .sp-tabs {
+  .claidor-portal .sp-tabs {
     display: none;
   }
-  .spaire-portal .sp-search {
+  .claidor-portal .sp-search {
     display: none;
   }
-  .spaire-portal .sp-iconbtn--mobile {
+  .claidor-portal .sp-iconbtn--mobile {
     display: grid;
   }
-  .spaire-portal .sp-right {
+  .claidor-portal .sp-right {
     gap: 2px;
   }
   /* Hide avatar on mobile — settings live behind a dedicated tab and
      the small avatar chip reads as visual noise on a narrow viewport. */
-  .spaire-portal .sp-avatar {
+  .claidor-portal .sp-avatar {
     display: none;
   }
-  .spaire-portal .sp-brand {
+  .claidor-portal .sp-brand {
     font-size: 16px;
   }
-  .spaire-portal .sp-brand-mark {
+  .claidor-portal .sp-brand-mark {
     width: 26px;
     height: 26px;
     border-radius: 7px;
     font-size: 12px;
   }
-  .spaire-portal .sp-iconbtn {
+  .claidor-portal .sp-iconbtn {
     width: 36px;
     height: 36px;
   }
 
   /* Page chrome — tighter padding, smaller title, stacked head row. */
-  .spaire-portal .sp-page {
+  .claidor-portal .sp-page {
     padding: 18px 16px 24px;
   }
-  .spaire-portal .sp-page-head {
+  .claidor-portal .sp-page-head {
     flex-direction: column;
     align-items: stretch;
     gap: 14px;
     margin-bottom: 18px;
   }
-  .spaire-portal .sp-page-title {
+  .claidor-portal .sp-page-title {
     letter-spacing: -0.03em;
     line-height: 1.1;
   }
-  .spaire-portal .sp-page-sub {
+  .claidor-portal .sp-page-sub {
     font-size: 13px;
   }
   /* Section heads tighten too. */
-  .spaire-portal .sp-sec-head {
+  .claidor-portal .sp-sec-head {
     margin: 24px 0 12px;
   }
 
   /* Course / download grids collapse to a single column. */
-  .spaire-portal .sp-grid {
+  .claidor-portal .sp-grid {
     grid-template-columns: 1fr;
     gap: 22px;
   }
   /* "Continue" becomes a Netflix-style horizontal rail: wide swipeable
      cards with scroll snap, bleeding to the page edges. Progress bars on
      the cards stay visible. */
-  .spaire-portal .sp-grid--rail {
+  .claidor-portal .sp-grid--rail {
     display: flex;
     gap: 12px;
     overflow-x: auto;
@@ -1515,51 +1515,51 @@
     margin-right: -16px;
     padding: 0 16px 6px;
   }
-  .spaire-portal .sp-grid--rail::-webkit-scrollbar {
+  .claidor-portal .sp-grid--rail::-webkit-scrollbar {
     display: none;
   }
-  .spaire-portal .sp-grid--rail > * {
+  .claidor-portal .sp-grid--rail > * {
     flex: 0 0 78%;
     scroll-snap-align: start;
   }
   /* A rail with a single card reads better full-width. */
-  .spaire-portal .sp-grid--rail > *:only-child {
+  .claidor-portal .sp-grid--rail > *:only-child {
     flex-basis: 100%;
   }
 
   /* Manage links become full-width tappable rows instead of small
      side-by-side ghost buttons. */
-  .spaire-portal .sp-manage {
+  .claidor-portal .sp-manage {
     flex-direction: column;
     gap: 8px;
     margin-bottom: 32px;
   }
-  .spaire-portal .sp-manage .sp-btn {
+  .claidor-portal .sp-manage .sp-btn {
     width: 100%;
     justify-content: space-between;
     padding: 14px 16px;
     font-size: 14px;
   }
-  .spaire-portal .sp-card-media {
+  .claidor-portal .sp-card-media {
     aspect-ratio: 16 / 10;
     border-radius: 14px;
   }
-  .spaire-portal .sp-card-title {
+  .claidor-portal .sp-card-title {
     font-size: 15.5px;
     letter-spacing: -0.01em;
   }
-  .spaire-portal .sp-card-body {
+  .claidor-portal .sp-card-body {
     padding: 10px 2px 0;
   }
   /* Hover-zoom on touch reads as jitter; pin the image. */
-  .spaire-portal .sp-card:hover .sp-card-media img,
-  .spaire-portal .sp-dl-card:hover .sp-dl-cover img {
+  .claidor-portal .sp-card:hover .sp-card-media img,
+  .claidor-portal .sp-dl-card:hover .sp-dl-cover img {
     transform: none;
   }
 
   /* Stats card row — the 4-up desktop bar becomes 2x2 with rounded
      individual cards rather than a single bordered strip. */
-  .spaire-portal .sp-stats {
+  .claidor-portal .sp-stats {
     border: 0;
     border-radius: 0;
     background: transparent;
@@ -1568,32 +1568,32 @@
     margin-bottom: 22px;
     overflow: visible;
   }
-  .spaire-portal .sp-stat,
-  .spaire-portal .sp-stat:nth-child(2n),
-  .spaire-portal .sp-stat:nth-child(-n + 2) {
+  .claidor-portal .sp-stat,
+  .claidor-portal .sp-stat:nth-child(2n),
+  .claidor-portal .sp-stat:nth-child(-n + 2) {
     border: 1px solid var(--sp-line);
     border-radius: 14px;
     padding: 14px 16px;
     background: var(--sp-surface);
   }
-  .spaire-portal .sp-stat-label {
+  .claidor-portal .sp-stat-label {
     font-size: 11px;
     margin-bottom: 6px;
   }
 
   /* Plan card — info stacks above the actions, buttons go full width
      instead of the desktop side-by-side wrap. */
-  .spaire-portal .sp-plan-card {
+  .claidor-portal .sp-plan-card {
     flex-direction: column;
     align-items: stretch;
     padding: 20px;
     gap: 18px;
   }
-  .spaire-portal .sp-plan-actions {
+  .claidor-portal .sp-plan-actions {
     flex-wrap: nowrap;
   }
-  .spaire-portal .sp-plan-actions .sp-btn-light,
-  .spaire-portal .sp-plan-actions .sp-btn-dark-ghost {
+  .claidor-portal .sp-plan-actions .sp-btn-light,
+  .claidor-portal .sp-plan-actions .sp-btn-dark-ghost {
     flex: 1;
     display: flex;
     align-items: center;
@@ -1602,18 +1602,18 @@
   }
 
   /* Library / subscription nudge at the bottom of Overview — soft card. */
-  .spaire-portal .sp-lib {
+  .claidor-portal .sp-lib {
     margin-top: 24px;
     border-radius: 14px;
     padding: 16px 18px;
   }
-  .spaire-portal .sp-lib-title {
+  .claidor-portal .sp-lib-title {
     font-size: 15px;
   }
 
   /* Filter chips already wrap on desktop; on mobile, make them a
      horizontal scroll strip so all categories fit one row. */
-  .spaire-portal .sp-chips {
+  .claidor-portal .sp-chips {
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
@@ -1625,10 +1625,10 @@
     margin-right: -16px;
     padding: 0 16px 4px;
   }
-  .spaire-portal .sp-chips::-webkit-scrollbar {
+  .claidor-portal .sp-chips::-webkit-scrollbar {
     display: none;
   }
-  .spaire-portal .sp-chip {
+  .claidor-portal .sp-chip {
     flex: none;
     white-space: nowrap;
     padding: 8px 14px;
@@ -1637,7 +1637,7 @@
 
   /* Downloads — compact row layout: 74-square thumb on left, title +
      meta on right, download button as a square on the right edge. */
-  .spaire-portal .sp-dl-card {
+  .claidor-portal .sp-dl-card {
     flex-direction: row;
     gap: 12px;
     align-items: stretch;
@@ -1646,27 +1646,27 @@
     padding: 10px;
     background: var(--sp-surface);
   }
-  .spaire-portal .sp-dl-cover {
+  .claidor-portal .sp-dl-cover {
     width: 74px;
     height: 74px;
     aspect-ratio: auto;
     border-radius: 10px;
     flex: none;
   }
-  .spaire-portal .sp-dl-format {
+  .claidor-portal .sp-dl-format {
     top: auto;
     bottom: 5px;
     left: 5px;
     padding: 2px 5px;
     font-size: 9.5px;
   }
-  .spaire-portal .sp-dl-done {
+  .claidor-portal .sp-dl-done {
     top: 5px;
     right: 5px;
     width: 20px;
     height: 20px;
   }
-  .spaire-portal .sp-dl-body {
+  .claidor-portal .sp-dl-body {
     padding: 2px 0;
     flex: 1;
     min-width: 0;
@@ -1674,16 +1674,16 @@
     flex-direction: column;
     justify-content: space-between;
   }
-  .spaire-portal .sp-dl-meta {
+  .claidor-portal .sp-dl-meta {
     font-size: 11.5px;
     margin-bottom: 0;
   }
-  .spaire-portal .sp-dl-actions {
+  .claidor-portal .sp-dl-actions {
     align-self: center;
     margin-top: 0;
     gap: 6px;
   }
-  .spaire-portal .sp-dl-actions .sp-btn {
+  .claidor-portal .sp-dl-actions .sp-btn {
     flex: none;
     width: 40px;
     height: 40px;
@@ -1692,14 +1692,14 @@
     background: var(--sp-ink);
     color: var(--sp-bg);
   }
-  .spaire-portal .sp-dl-actions .sp-btn span,
-  .spaire-portal .sp-dl-actions .sp-btn .sp-btn-label {
+  .claidor-portal .sp-dl-actions .sp-btn span,
+  .claidor-portal .sp-dl-actions .sp-btn .sp-btn-label {
     display: none;
   }
   /* If the download row has multiple action buttons, the leading text
      button drops back to icon-only, the trailing icon button stays a
      compact square. */
-  .spaire-portal .sp-dl-actions .sp-icon-action {
+  .claidor-portal .sp-dl-actions .sp-icon-action {
     width: 40px;
     height: 40px;
     border-radius: 10px;
@@ -1709,49 +1709,49 @@
 /* On very tight phones, the brand + 3 icons strip can crowd — shrink
    the brand mark and label one more notch. */
 @media (max-width: 380px) {
-  .spaire-portal .sp-brand {
+  .claidor-portal .sp-brand {
     font-size: 15px;
   }
-  .spaire-portal .sp-brand-mark {
+  .claidor-portal .sp-brand-mark {
     width: 24px;
     height: 24px;
   }
-  .spaire-portal .sp-iconbtn {
+  .claidor-portal .sp-iconbtn {
     width: 34px;
     height: 34px;
   }
 }
 
 /* ── Downloads ────────────────────────────────────────────────────────── */
-.spaire-portal .sp-chip-count {
+.claidor-portal .sp-chip-count {
   margin-left: 2px;
   opacity: 0.55;
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
 }
 
-.spaire-portal .sp-dl-card {
+.claidor-portal .sp-dl-card {
   display: flex;
   flex-direction: column;
 }
-.spaire-portal .sp-dl-cover {
+.claidor-portal .sp-dl-cover {
   position: relative;
   aspect-ratio: 4 / 3;
   border-radius: var(--sp-radius);
   overflow: hidden;
   background: var(--sp-fill-2);
 }
-.spaire-portal .sp-dl-cover img {
+.claidor-portal .sp-dl-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.spaire-portal .sp-dl-card:hover .sp-dl-cover img {
+.claidor-portal .sp-dl-card:hover .sp-dl-cover img {
   transform: scale(1.03);
 }
-.spaire-portal .sp-dl-cover-fallback {
+.claidor-portal .sp-dl-cover-fallback {
   width: 100%;
   height: 100%;
   display: grid;
@@ -1759,7 +1759,7 @@
   background: var(--sp-fill-2);
   color: var(--sp-muted);
 }
-.spaire-portal .sp-dl-format {
+.claidor-portal .sp-dl-format {
   position: absolute;
   top: 10px;
   left: 10px;
@@ -1777,7 +1777,7 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
-.spaire-portal .sp-dl-done {
+.claidor-portal .sp-dl-done {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -1791,13 +1791,13 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
-.spaire-portal .sp-dl-body {
+.claidor-portal .sp-dl-body {
   padding: 14px 2px 0;
   flex: 1;
   display: flex;
   flex-direction: column;
 }
-.spaire-portal .sp-dl-meta {
+.claidor-portal .sp-dl-meta {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1806,21 +1806,21 @@
   font-size: 12.5px;
   margin-bottom: 14px;
 }
-.spaire-portal .sp-dl-actions {
+.claidor-portal .sp-dl-actions {
   margin-top: auto;
   display: flex;
   gap: 6px;
 }
-.spaire-portal .sp-dl-actions .sp-btn {
+.claidor-portal .sp-dl-actions .sp-btn {
   flex: 1;
   justify-content: center;
   padding: 9px 14px;
   font-size: 13px;
 }
-.spaire-portal .sp-dl-actions .sp-icon-action {
+.claidor-portal .sp-dl-actions .sp-icon-action {
   padding: 9px 12px;
 }
-.spaire-portal .sp-dot-sep {
+.claidor-portal .sp-dot-sep {
   width: 3px;
   height: 3px;
   border-radius: 50%;
@@ -1834,7 +1834,7 @@
    Applied as .sp-dark on the portal root by PortalShell when an
    enrolled course's landing theme_mode is 'dark'.
    ============================================================ */
-.spaire-portal.sp-dark {
+.claidor-portal.sp-dark {
   /* Dark accent lift — mirrors editor-dark.css (--color-ce-accent). */
   --sp-accent: #2997ff;
   --sp-accent-hover: #1a85f0;
@@ -1864,107 +1864,107 @@
    atoms predate the portal token system and still use the light
    Tailwind gray palette. The app is force-locked to light, so their
    dark: variants never fire. Remap the specific utilities they use to
-   the portal tokens, scoped to .spaire-portal.sp-dark so light mode and
+   the portal tokens, scoped to .claidor-portal.sp-dark so light mode and
    any non-portal usage are unaffected, and at higher specificity than
    the single-class Tailwind utilities so these win without !important.
    (Native portal pages already use the sp- tokens; Stripe card forms
    render in an iframe CSS cannot reach and instead follow the theme
    preset passed in code.)
    ============================================================ */
-.spaire-portal.sp-dark .bg-white {
+.claidor-portal.sp-dark .bg-white {
   background-color: var(--sp-surface);
 }
-.spaire-portal.sp-dark .bg-white\/50 {
+.claidor-portal.sp-dark .bg-white\/50 {
   background-color: color-mix(in srgb, var(--sp-surface) 50%, transparent);
 }
-.spaire-portal.sp-dark .bg-gray-50,
-.spaire-portal.sp-dark .bg-gray-100 {
+.claidor-portal.sp-dark .bg-gray-50,
+.claidor-portal.sp-dark .bg-gray-100 {
   background-color: var(--sp-surface-2);
 }
-.spaire-portal.sp-dark .bg-gray-200 {
+.claidor-portal.sp-dark .bg-gray-200 {
   background-color: var(--sp-fill-2);
 }
-.spaire-portal.sp-dark .bg-gray-900 {
+.claidor-portal.sp-dark .bg-gray-900 {
   /* Stays an elevated dark surface, not inverted (editor-dark.css). */
   background-color: #2a2a2f;
 }
-.spaire-portal.sp-dark .hover\:bg-gray-50:hover,
-.spaire-portal.sp-dark .hover\:bg-gray-100:hover,
-.spaire-portal.sp-dark .hover\:bg-gray-200:hover {
+.claidor-portal.sp-dark .hover\:bg-gray-50:hover,
+.claidor-portal.sp-dark .hover\:bg-gray-100:hover,
+.claidor-portal.sp-dark .hover\:bg-gray-200:hover {
   background-color: var(--sp-surface-2);
 }
-.spaire-portal.sp-dark .text-gray-950,
-.spaire-portal.sp-dark .text-gray-900,
-.spaire-portal.sp-dark .text-gray-800,
-.spaire-portal.sp-dark .text-black {
+.claidor-portal.sp-dark .text-gray-950,
+.claidor-portal.sp-dark .text-gray-900,
+.claidor-portal.sp-dark .text-gray-800,
+.claidor-portal.sp-dark .text-black {
   color: var(--sp-ink);
 }
-.spaire-portal.sp-dark .text-gray-700 {
+.claidor-portal.sp-dark .text-gray-700 {
   color: var(--sp-ink-2);
 }
-.spaire-portal.sp-dark .text-gray-600,
-.spaire-portal.sp-dark .text-gray-500 {
+.claidor-portal.sp-dark .text-gray-600,
+.claidor-portal.sp-dark .text-gray-500 {
   color: var(--sp-muted);
 }
-.spaire-portal.sp-dark .text-gray-400 {
+.claidor-portal.sp-dark .text-gray-400 {
   color: var(--sp-muted-2);
 }
-.spaire-portal.sp-dark .border-gray-200,
-.spaire-portal.sp-dark .border-gray-100 {
+.claidor-portal.sp-dark .border-gray-200,
+.claidor-portal.sp-dark .border-gray-100 {
   border-color: var(--sp-line);
 }
-.spaire-portal.sp-dark .border-gray-300 {
+.claidor-portal.sp-dark .border-gray-300 {
   border-color: var(--sp-line-strong);
 }
 
 /* ProfileOnboarding / profile-settings modal. Its .po-* styles live in a
    global styled-jsx block with the light palette baked in; remap the surfaces
-   for dark. The modal renders inside .spaire-portal, so the tokens resolve. */
-.spaire-portal.sp-dark .po-card {
+   for dark. The modal renders inside .claidor-portal, so the tokens resolve. */
+.claidor-portal.sp-dark .po-card {
   background: var(--sp-surface);
 }
-.spaire-portal.sp-dark .po-title,
-.spaire-portal.sp-dark .po-avatar-placeholder,
-.spaire-portal.sp-dark .po-link,
-.spaire-portal.sp-dark .po-input {
+.claidor-portal.sp-dark .po-title,
+.claidor-portal.sp-dark .po-avatar-placeholder,
+.claidor-portal.sp-dark .po-link,
+.claidor-portal.sp-dark .po-input {
   color: var(--sp-ink);
 }
-.spaire-portal.sp-dark .po-eyebrow,
-.spaire-portal.sp-dark .po-sub,
-.spaire-portal.sp-dark .po-close,
-.spaire-portal.sp-dark .po-avatar-hint,
-.spaire-portal.sp-dark .po-avatar-label,
-.spaire-portal.sp-dark .po-label,
-.spaire-portal.sp-dark .po-link--muted,
-.spaire-portal.sp-dark .po-btn-back {
+.claidor-portal.sp-dark .po-eyebrow,
+.claidor-portal.sp-dark .po-sub,
+.claidor-portal.sp-dark .po-close,
+.claidor-portal.sp-dark .po-avatar-hint,
+.claidor-portal.sp-dark .po-avatar-label,
+.claidor-portal.sp-dark .po-label,
+.claidor-portal.sp-dark .po-link--muted,
+.claidor-portal.sp-dark .po-btn-back {
   color: var(--sp-muted);
 }
-.spaire-portal.sp-dark .po-close:hover {
+.claidor-portal.sp-dark .po-close:hover {
   background: rgba(245, 245, 247, 0.08);
   color: var(--sp-ink);
 }
-.spaire-portal.sp-dark .po-avatar,
-.spaire-portal.sp-dark .po-field {
+.claidor-portal.sp-dark .po-avatar,
+.claidor-portal.sp-dark .po-field {
   background: var(--sp-surface-2);
   border-color: var(--sp-line);
 }
-.spaire-portal.sp-dark .po-btn-cta {
+.claidor-portal.sp-dark .po-btn-cta {
   /* Inverted-ink CTA (white pill on dark), matching the editor's
      ink-button convention — blue stays reserved for links/focus. */
   background: var(--sp-ink);
   color: var(--sp-bg);
 }
-.spaire-portal.sp-dark .po-btn-back:hover {
+.claidor-portal.sp-dark .po-btn-back:hover {
   color: var(--sp-ink);
 }
-.spaire-portal.sp-dark .po-error {
+.claidor-portal.sp-dark .po-error {
   color: #e07a7a;
 }
 /* The floated label chip hardcodes a white bg + dark text in the
    styled-jsx block; restate both here for dark. (The jsx block loads
    after this sheet, so !important settles the tie.) */
-.spaire-portal.sp-dark .po-input:focus ~ .po-label,
-.spaire-portal.sp-dark .po-input:not(:placeholder-shown) ~ .po-label {
+.claidor-portal.sp-dark .po-input:focus ~ .po-label,
+.claidor-portal.sp-dark .po-input:not(:placeholder-shown) ~ .po-label {
   background: transparent !important;
   color: var(--sp-muted) !important;
 }
@@ -1979,49 +1979,49 @@
    (accent underline + fill hovers), so they need no dark restyle. */
 
 /* Search — translucent "water glass" dark, no black focus ring. */
-.spaire-portal.sp-dark .sp-search {
+.claidor-portal.sp-dark .sp-search {
   background: rgba(245, 245, 247, 0.08);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   backdrop-filter: blur(14px) saturate(140%);
   color: var(--sp-muted);
   box-shadow: inset 0 0 0 1px rgba(245, 245, 247, 0.08);
 }
-.spaire-portal.sp-dark .sp-search:hover {
+.claidor-portal.sp-dark .sp-search:hover {
   background: rgba(245, 245, 247, 0.14);
   color: var(--sp-ink-2);
 }
-.spaire-portal.sp-dark .sp-search:focus-within {
+.claidor-portal.sp-dark .sp-search:focus-within {
   box-shadow: inset 0 0 0 1px rgba(245, 245, 247, 0.18);
   outline: none;
 }
-.spaire-portal.sp-dark .sp-search input,
-.spaire-portal.sp-dark .sp-search input:focus {
+.claidor-portal.sp-dark .sp-search input,
+.claidor-portal.sp-dark .sp-search input:focus {
   outline: none;
   box-shadow: none;
 }
 
 /* Status pills — translucent tints that read on the dark surface. */
-.spaire-portal.sp-dark .sp-pill.is-pending {
+.claidor-portal.sp-dark .sp-pill.is-pending {
   background: rgba(245, 200, 120, 0.16);
   color: #f0c27b;
 }
-.spaire-portal.sp-dark .sp-pill.is-paid {
+.claidor-portal.sp-dark .sp-pill.is-paid {
   background: rgba(35, 160, 80, 0.18);
   color: #6fd693;
 }
-.spaire-portal.sp-dark .sp-pill.is-refunded {
+.claidor-portal.sp-dark .sp-pill.is-refunded {
   background: rgba(245, 245, 247, 0.1);
   color: var(--sp-muted);
 }
-.spaire-portal.sp-dark .sp-pill.is-canceled {
+.claidor-portal.sp-dark .sp-pill.is-canceled {
   background: rgba(239, 68, 68, 0.16);
   color: #f28b82;
 }
-.spaire-portal.sp-dark .sp-account-menu-item--danger {
+.claidor-portal.sp-dark .sp-account-menu-item--danger {
   color: #e07a7a;
 }
-.spaire-portal.sp-dark .sp-dl-format,
-.spaire-portal.sp-dark .sp-dl-done {
+.claidor-portal.sp-dark .sp-dl-format,
+.claidor-portal.sp-dark .sp-dl-done {
   background: rgba(20, 20, 22, 0.85);
   color: var(--sp-ink-2);
 }
@@ -2031,15 +2031,15 @@
    short pages (Courses / Downloads / Orders) leaked white below the
    content. .sp-app already fills 100vh; make the routed area grow into
    it and carry the theme bg. */
-.spaire-portal .sp-app {
+.claidor-portal .sp-app {
   background: var(--sp-bg);
 }
-.spaire-portal .sp-page,
-.spaire-portal .sp-course-portal {
+.claidor-portal .sp-page,
+.claidor-portal .sp-course-portal {
   flex: 1 1 auto;
   background: var(--sp-bg);
 }
-.spaire-portal .sp-route {
+.claidor-portal .sp-route {
   min-height: 100%;
 }
 
@@ -2050,7 +2050,7 @@
    shell root). Without this the tabs sat 56px down over a dead gap whenever
    the top bar hid. z-index stays below the top bar so the bar slides back
    in OVER the pinned tabs on scroll-up, then releases them back down. */
-.spaire-portal .spaire-hub .tabs {
+.claidor-portal .claidor-hub .tabs {
   position: sticky;
   top: 56px;
   z-index: 30;
@@ -2059,14 +2059,14 @@
     background 0.4s ease,
     border-color 0.4s ease;
 }
-.spaire-portal.sp-app--topbar-hidden .spaire-hub .tabs {
+.claidor-portal.sp-app--topbar-hidden .claidor-hub .tabs {
   top: 0;
 }
 @media (max-width: 720px) {
-  .spaire-portal .spaire-hub .tabs {
+  .claidor-portal .claidor-hub .tabs {
     top: 52px; /* mobile top bar is 52px tall */
   }
-  .spaire-portal.sp-app--topbar-hidden .spaire-hub .tabs {
+  .claidor-portal.sp-app--topbar-hidden .claidor-hub .tabs {
     top: 0;
   }
 }
@@ -2078,21 +2078,21 @@
    purple inside the portal. Re-point the utilities they use at the
    portal accent (the community blue) — tokens flip for dark mode.
    ============================================================ */
-.spaire-portal .text-blue-500,
-.spaire-portal .text-blue-600 {
+.claidor-portal .text-blue-500,
+.claidor-portal .text-blue-600 {
   color: var(--sp-accent);
 }
-.spaire-portal .bg-blue-50,
-.spaire-portal .bg-blue-100 {
+.claidor-portal .bg-blue-50,
+.claidor-portal .bg-blue-100 {
   background-color: var(--sp-accent-tint);
 }
-.spaire-portal .border-blue-500 {
+.claidor-portal .border-blue-500 {
   border-color: var(--sp-accent);
 }
-.spaire-portal .focus\:border-blue-300:focus {
+.claidor-portal .focus\:border-blue-300:focus {
   border-color: var(--sp-accent-border);
 }
-.spaire-portal .focus\:ring-blue-100:focus {
+.claidor-portal .focus\:ring-blue-100:focus {
   --tw-ring-color: var(--sp-accent-ring);
 }
 
@@ -2101,21 +2101,21 @@
    Desktop keeps the standard TopBar; ≤720px the course route swaps to
    this and drops the bottom tab bar.
    ============================================================ */
-.spaire-portal .sp-cnav {
+.claidor-portal .sp-cnav {
   display: none;
 }
 @media (max-width: 720px) {
-  .spaire-portal.sp-course-route .sp-topbar {
+  .claidor-portal.sp-course-route .sp-topbar {
     display: none;
   }
-  .spaire-portal.sp-course-route .sp-tabbar {
+  .claidor-portal.sp-course-route .sp-tabbar {
     display: none;
   }
-  .spaire-portal.sp-course-route.sp-app--mobile-tabs .sp-course-portal {
+  .claidor-portal.sp-course-route.sp-app--mobile-tabs .sp-course-portal {
     padding-bottom: 0;
   }
   /* Transparent, pinned — just the hamburger floating over the hero. */
-  .spaire-portal.sp-course-route .sp-cnav {
+  .claidor-portal.sp-course-route .sp-cnav {
     position: fixed;
     top: 0;
     left: 0;
@@ -2129,7 +2129,7 @@
     pointer-events: none;
     color: #fff;
   }
-  .spaire-portal .sp-cnav-btn {
+  .claidor-portal .sp-cnav-btn {
     pointer-events: auto;
     flex: none;
     width: 38px;

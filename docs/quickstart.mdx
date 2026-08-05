@@ -3,17 +3,17 @@ title: "Quickstart"
 description: "Create a product and run your first checkout in under 5 minutes."
 ---
 
-This guide walks you through your first Spaire checkout — creating a product, getting a checkout link, and running a test transaction. No code required.
+This guide walks you through your first Claidor checkout — creating a product, getting a checkout link, and running a test transaction. No code required.
 
 <Tip>
-  Start in the **sandbox** at [sandbox.spairehq.com](https://sandbox.spairehq.com) if you want to test with no real money involved. The sandbox is a fully isolated environment with its own accounts — see [Sandbox](/integrate/sandbox) for details.
+  Start in the **sandbox** at [sandbox.claidorhq.com](https://sandbox.claidorhq.com) if you want to test with no real money involved. The sandbox is a fully isolated environment with its own accounts — see [Sandbox](/integrate/sandbox) for details.
 </Tip>
 
 ## Step 1: Create your account
 
-Go to [app.spairehq.com](https://app.spairehq.com) and sign up. After verifying your email, you'll land in your organization dashboard.
+Go to [app.claidorhq.com](https://app.claidorhq.com) and sign up. After verifying your email, you'll land in your organization dashboard.
 
-Your **organization** is the container for everything in Spaire — your products, customers, orders, API tokens, webhooks, and payout account. You can run multiple organizations from one account if you have separate products or brands.
+Your **organization** is the container for everything in Claidor — your products, customers, orders, API tokens, webhooks, and payout account. You can run multiple organizations from one account if you have separate products or brands.
 
 ## Step 2: Create a product
 
@@ -31,7 +31,7 @@ Fill in the basics:
 | Recurring — yearly | Subscription billed every year |
 | One-time | Single charge, no renewal |
 
-Set your price and currency — Spaire supports 36 currencies including USD, EUR, GBP, CAD, AUD, JPY, and more.
+Set your price and currency — Claidor supports 36 currencies including USD, EUR, GBP, CAD, AUD, JPY, and more.
 
 Click **Create product**. It's immediately available to sell.
 
@@ -74,21 +74,21 @@ After a successful checkout, the order appears under **Orders** and the customer
 
 ## Step 5: Get your API key
 
-To integrate Spaire into your application — creating checkout sessions from your backend, querying customer state, handling webhooks — you need an access token.
+To integrate Claidor into your application — creating checkout sessions from your backend, querying customer state, handling webhooks — you need an access token.
 
 1. Go to **Settings → Developers → Access Tokens**
 2. Click **New token**, give it a name, and click **Create**
 3. Copy the token — it won't be shown again
 
 ```bash
-export SPAIRE_ACCESS_TOKEN="spaire_..."
+export CLAIDOR_ACCESS_TOKEN="claidor_..."
 ```
 
 Verify it works:
 
 ```bash
-curl https://api.spairehq.com/v1/products \
-  -H "Authorization: Bearer $SPAIRE_ACCESS_TOKEN"
+curl https://api.claidorhq.com/v1/products \
+  -H "Authorization: Bearer $CLAIDOR_ACCESS_TOKEN"
 ```
 
 <Warning>

@@ -4,7 +4,7 @@ import { EventCostCreationGuideModal } from '@/components/Events/EventCostCreati
 import { Modal } from '@/components/Modal'
 import { useModal } from '@/components/Modal/useModal'
 import { useNavigationHistory } from '@/providers/navigationHistory'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { ChevronRightIcon, CircleQuestionMarkIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'

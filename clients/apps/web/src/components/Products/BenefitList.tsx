@@ -1,4 +1,4 @@
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
 import React, { ReactNode, useState } from 'react'
 import { resolveBenefitIcon } from '../Benefit/utils'

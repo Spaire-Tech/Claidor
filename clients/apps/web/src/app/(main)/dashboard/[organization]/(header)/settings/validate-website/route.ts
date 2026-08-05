@@ -63,7 +63,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         signal: controller.signal,
         redirect: 'follow',
         headers: {
-          'User-Agent': 'Spaire URL Validator/1.0',
+          'User-Agent': 'Claidor URL Validator/1.0',
         },
       })
 

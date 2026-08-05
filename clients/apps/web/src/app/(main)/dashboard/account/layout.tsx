@@ -1,7 +1,7 @@
 import DashboardLayout, {
   DashboardBody,
 } from '@/components/Layout/DashboardLayout'
-import { SidebarProvider } from '@spaire/ui/components/ui/sidebar'
+import { SidebarProvider } from '@claidor/ui/components/ui/sidebar'
 import { cookies } from 'next/headers'
 
 export default async function Layout({

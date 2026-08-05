@@ -12,7 +12,7 @@ import {
   useEmailBroadcasts,
   useEmailSubscriberStats,
 } from '@/hooks/queries/emailMarketing'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useCallback, useState } from 'react'
 import './audience.css'
 import {
@@ -480,7 +480,7 @@ function BroadcastDetail({
                 Update preferences
               </a>
             </p>
-            <p className="small">Sent with Spaire</p>
+            <p className="small">Sent with Claidor</p>
           </div>
         </div>
       </div>

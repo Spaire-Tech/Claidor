@@ -1,5 +1,5 @@
 import TextureOutlined from '@mui/icons-material/TextureOutlined'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { twMerge } from 'tailwind-merge'
 
 export const ProductThumbnail = ({

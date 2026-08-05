@@ -5,27 +5,27 @@ description: "Payments and Checkouts made dead simple with Express"
 
 ## Installation
 
-Install the required Spaire packages using the following command:
+Install the required Claidor packages using the following command:
 
 <Tabs>
   <Tab title="npm">
     ```bash Terminal
-    npm install zod @spaire/express
+    npm install zod @claidor/express
     ```
   </Tab>
   <Tab title="yarn">
     ```bash Terminal
-    yarn add zod @spaire/express
+    yarn add zod @claidor/express
     ```
   </Tab>
   <Tab title="pnpm">
     ```bash Terminal
-    pnpm add zod @spaire/express
+    pnpm add zod @claidor/express
     ```
   </Tab>
   <Tab title="bun">
     ```bash Terminal
-    bun add zod @spaire/express
+    bun add zod @claidor/express
     ```
   </Tab>
 </Tabs>
@@ -36,17 +36,17 @@ Create a Checkout handler which takes care of redirections.
 
 ```typescript
 import express from "express";
-import { Checkout } from "@spaire/express";
+import { Checkout } from "@claidor/express";
 
 const app = express();
 
 app.get(
   "/checkout",
   Checkout({
-    accessToken: "xxx", // Or set an environment variable to SPAIRE_ACCESS_TOKEN
+    accessToken: "xxx", // Or set an environment variable to CLAIDOR_ACCESS_TOKEN
     successUrl: process.env.SUCCESS_URL,
     returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Checkout
-    server: "sandbox", // Use sandbox if you're testing Spaire - omit the parameter or pass 'production' otherwise
+    server: "sandbox", // Use sandbox if you're testing Claidor - omit the parameter or pass 'production' otherwise
     theme: "dark", // Enforces the theme - System-preferred theme will be set if left omitted
   })
 );
@@ -69,17 +69,17 @@ Create a customer portal where your customer can view orders and subscriptions.
 
 ```typescript
 import express from "express";
-import { CustomerPortal } from "@spaire/express";
+import { CustomerPortal } from "@claidor/express";
 
 const app = express();
 
 app.get(
   "/portal",
   CustomerPortal({
-    accessToken: "xxx", // Or set an environment variable to SPAIRE_ACCESS_TOKEN
-    getCustomerId: (event) => "", // Function to resolve a Spaire Customer ID
+    accessToken: "xxx", // Or set an environment variable to CLAIDOR_ACCESS_TOKEN
+    getCustomerId: (event) => "", // Function to resolve a Claidor Customer ID
     returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Customer Portal
-    server: "sandbox", // Use sandbox if you're testing Spaire - omit the parameter or pass 'production' otherwise
+    server: "sandbox", // Use sandbox if you're testing Claidor - omit the parameter or pass 'production' otherwise
   })
 );
 ```
@@ -90,14 +90,14 @@ A simple utility which resolves incoming webhook payloads by signing the webhook
 
 ```typescript
 import express from 'express'
-import { Webhooks } from "@spaire/express";
+import { Webhooks } from "@claidor/express";
 
 const app = express()
 
 app
 .use(express.json())
-.post('/spaire/webhooks', Webhooks({
-  webhookSecret: process.env.SPAIRE_WEBHOOK_SECRET!,
+.post('/claidor/webhooks', Webhooks({
+  webhookSecret: process.env.CLAIDOR_WEBHOOK_SECRET!,
   onPayload: async (payload) => /** Handle payload */,
 }))
 ```

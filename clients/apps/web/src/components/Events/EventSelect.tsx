@@ -6,7 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 
 const EventSelect: React.FC<
   React.ComponentProps<typeof Select> & {

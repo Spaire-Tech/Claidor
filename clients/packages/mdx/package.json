@@ -1,5 +1,5 @@
 {
-  "name": "@spaire/mdx",
+  "name": "@claidor/mdx",
   "version": "0.0.0",
   "license": "MIT",
   "main": "mdx-metadata.js",

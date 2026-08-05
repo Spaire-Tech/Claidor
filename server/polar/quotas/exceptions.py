@@ -22,7 +22,7 @@ class QuotaExceededError(PolarError):
         super().__init__(
             (
                 f"{label} quota exceeded. Your plan allows {limit} {unit} and "
-                f"you've used {result.used}. Upgrade your Spaire plan to "
+                f"you've used {result.used}. Upgrade your Claidor plan to "
                 f"raise this limit."
             ),
             402,

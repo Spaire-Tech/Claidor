@@ -44,11 +44,11 @@ export async function GET() {
 
 
 
-              Spaire is made by all of our wonderful contributors.
+              Claidor is made by all of our wonderful contributors.
 
-                    https://github.com/spaire-tech/spaire
+                    https://github.com/claidor-tech/claidor
 
-                Wanna work with us? https://spairehq.com/company#open-roles
+                Wanna work with us? https://claidorhq.com/company#open-roles
 
     `,
     {

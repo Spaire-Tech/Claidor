@@ -2,10 +2,10 @@
 
 import { useCustomerCustomerMeters } from '@/hooks/queries'
 import Search from '@mui/icons-material/Search'
-import { Client } from '@spaire/client'
-import { DataTable } from '@spaire/ui/components/atoms/DataTable'
-import Input from '@spaire/ui/components/atoms/Input'
-import { Tabs, TabsContent } from '@spaire/ui/components/atoms/Tabs'
+import { Client } from '@claidor/client'
+import { DataTable } from '@claidor/ui/components/atoms/DataTable'
+import Input from '@claidor/ui/components/atoms/Input'
+import { Tabs, TabsContent } from '@claidor/ui/components/atoms/Tabs'
 import { useMemo, useState } from 'react'
 import FormattedUnits from '../Meter/FormattedUnits'
 export interface CustomerUsageProps {

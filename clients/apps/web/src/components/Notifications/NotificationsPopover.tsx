@@ -3,15 +3,15 @@ import { useOutsideClick } from '@/utils/useOutsideClick'
 import BoltOutlined from '@mui/icons-material/BoltOutlined'
 import InfoOutlined from '@mui/icons-material/InfoOutlined'
 import ShoppingBagOutlined from '@mui/icons-material/ShoppingBagOutlined'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import Button from '@spaire/ui/components/atoms/Button'
-import SpaireTimeAgo from '@spaire/ui/components/atoms/SpaireTimeAgo'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import Button from '@claidor/ui/components/atoms/Button'
+import ClaidorTimeAgo from '@claidor/ui/components/atoms/ClaidorTimeAgo'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@spaire/ui/components/ui/popover'
+} from '@claidor/ui/components/ui/popover'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -151,7 +151,7 @@ const Item = ({
       <div>
         <div>{children.text}</div>
         <div className=" text-gray-500">
-          <SpaireTimeAgo date={new Date(n.created_at)} />
+          <ClaidorTimeAgo date={new Date(n.created_at)} />
         </div>
       </div>
     </div>

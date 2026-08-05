@@ -2,7 +2,7 @@
 
 import { ParsedMetricsResponse } from '@/hooks/queries'
 import { getTimestampFormatter } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   Bar,
   BarChart,
@@ -14,7 +14,7 @@ import {
   TooltipContentProps,
   XAxis,
   YAxis,
-} from '@spaire/ui/components/ui/chart'
+} from '@claidor/ui/components/ui/chart'
 import { useMemo } from 'react'
 import {
   CANCELLATION_REASONS,

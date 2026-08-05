@@ -11,7 +11,7 @@ from polar.discount.schemas import (
     DiscountUpdate,
 )
 from polar.discount.service import discount as discount_service
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.kit.utils import utc_now
 from polar.models import (
     Checkout,
@@ -89,7 +89,7 @@ class TestUpdate:
             organization=organization,
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await discount_service.update(
                 session,
                 discount,
@@ -111,7 +111,7 @@ class TestUpdate:
             organization=organization,
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await discount_service.update(
                 session,
                 discount,
@@ -158,7 +158,7 @@ class TestUpdate:
         )
         await session.refresh(discount)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await discount_service.update(
                 session,
                 discount,
@@ -361,7 +361,7 @@ class TestUpdate:
             code="OTHER",
         )
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await discount_service.update(
                 session,
                 discount_to_update,

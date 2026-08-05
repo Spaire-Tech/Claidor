@@ -2,7 +2,7 @@
 
 import DateRangePicker from '@/components/Metrics/DateRangePicker'
 import IntervalPicker from '@/components/Metrics/IntervalPicker'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 interface SpansHeaderProps {
   dateRange: { from: Date; to: Date }

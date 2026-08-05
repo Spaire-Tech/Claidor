@@ -7,12 +7,12 @@ import {
   useCustomerCancelSubscription,
   useCustomerUncancelSubscription,
 } from '@/hooks/queries'
-import { Client, schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import Button from '@spaire/ui/components/atoms/Button'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
-import { getThemePreset } from '@spaire/ui/hooks/theming'
+import { Client, schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import Button from '@claidor/ui/components/atoms/Button'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { getThemePreset } from '@claidor/ui/hooks/theming'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'

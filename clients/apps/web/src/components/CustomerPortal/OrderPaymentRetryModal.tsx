@@ -2,9 +2,9 @@
 
 import { toast } from '@/components/Toast/use-toast'
 import { useCustomerPaymentMethods } from '@/hooks/queries'
-import { type Client, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import { ThemingPresetProps } from '@spaire/ui/hooks/theming'
+import { type Client, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
 import { Elements, ElementsConsumer } from '@stripe/react-stripe-js'
 import { Stripe, loadStripe } from '@stripe/stripe-js'
 import { useEffect, useMemo, useState } from 'react'

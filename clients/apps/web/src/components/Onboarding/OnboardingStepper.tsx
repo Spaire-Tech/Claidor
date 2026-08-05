@@ -2,8 +2,8 @@
 
 import LogoIcon from '../Brand/LogoIcon'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
 import { twMerge } from 'tailwind-merge'
 
 export interface OnboardingStep {

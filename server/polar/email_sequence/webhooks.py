@@ -32,13 +32,13 @@ log = structlog.get_logger()
 
 
 # Signing secret for action webhooks. Receivers can verify by computing
-# `hmac_sha256(secret, raw_body)` and comparing to the `X-Spaire-Signature`
+# `hmac_sha256(secret, raw_body)` and comparing to the `X-Claidor-Signature`
 # header. Pulled from settings if available, else the SECRET key.
 def _signing_secret() -> str:
     return (
         getattr(settings, "EMAIL_SEQUENCE_WEBHOOK_SECRET", None)
         or getattr(settings, "SECRET", None)
-        or "spaire-dev-webhook-secret"
+        or "claidor-dev-webhook-secret"
     )
 
 
@@ -93,9 +93,9 @@ async def dispatch_action_webhook(
     signature = _sign(body)
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "Spaire-Webhooks/1.0",
-        "X-Spaire-Signature": f"sha256={signature}",
-        "X-Spaire-Event": "email_sequence.action",
+        "User-Agent": "Claidor-Webhooks/1.0",
+        "X-Claidor-Signature": f"sha256={signature}",
+        "X-Claidor-Event": "email_sequence.action",
     }
     try:
         async with httpx.AsyncClient(timeout=10) as client:

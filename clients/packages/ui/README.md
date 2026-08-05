@@ -1,4 +1,4 @@
-# @spaire/ui
+# @claidor/ui
 
 This is the UI library for the Polar project.
 

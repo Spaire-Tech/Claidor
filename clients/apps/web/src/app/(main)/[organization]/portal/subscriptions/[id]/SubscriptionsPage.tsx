@@ -2,7 +2,7 @@
 
 import CustomerPortalSubscription from '@/components/CustomerPortal/CustomerPortalSubscription'
 import { createClientSideAPI } from '@/utils/client'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 const ClientPage = ({
   subscription,

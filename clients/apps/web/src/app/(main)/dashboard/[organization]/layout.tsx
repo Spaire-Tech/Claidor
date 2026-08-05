@@ -1,8 +1,8 @@
-import PastDueBanner from '@/components/Settings/SpaireTier/PastDueBanner'
+import PastDueBanner from '@/components/Settings/ClaidorTier/PastDueBanner'
 import { OrganizationContextProvider } from '@/providers/maintainerOrganization'
 // Trial banner temporarily hidden per request — re-enable by uncommenting
 // this import and the <TrialBanner /> render below.
-// import TrialBanner from '@/components/Settings/SpaireTier/TrialBanner'
+// import TrialBanner from '@/components/Settings/ClaidorTier/TrialBanner'
 import { getServerSideAPI } from '@/utils/client/serverside'
 import { getOrganizationBySlugOrNotFound } from '@/utils/organization'
 import { getUserOrganizations } from '@/utils/user'
@@ -22,7 +22,7 @@ export async function generateMetadata(props: {
   )
   return {
     title: {
-      template: `%s | ${organization.name} | Spaire`,
+      template: `%s | ${organization.name} | Claidor`,
       default: organization.name,
     },
   }
@@ -72,7 +72,7 @@ export default async function Layout(props: {
   // a-payout flows initiated from the AI assistant can finish even
   // when the assistant marks onboarding complete from a side path.
   const requestHeaders = await headers()
-  const pathname = requestHeaders.get('x-spaire-pathname') ?? ''
+  const pathname = requestHeaders.get('x-claidor-pathname') ?? ''
   const orgPathPrefix = `/dashboard/${params.organization}`
   const isOnboardingRoute = pathname.startsWith(`${orgPathPrefix}/onboarding`)
   const isFinanceAccountRoute = pathname.startsWith(

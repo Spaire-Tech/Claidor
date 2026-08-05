@@ -1,7 +1,7 @@
 'use client'
 
 import { useMeter, useMeters } from '@/hooks/queries/meters'
-import { Combobox } from '@spaire/ui/components/atoms/Combobox'
+import { Combobox } from '@claidor/ui/components/atoms/Combobox'
 import { useState } from 'react'
 
 export default function MeterSelector({

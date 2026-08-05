@@ -81,7 +81,7 @@ class OrganizationFeatureSettings(Schema):
     course_player_white_label: bool = Field(
         False,
         description=(
-            "When true, the course lesson player hides Spaire branding. "
+            "When true, the course lesson player hides Claidor branding. "
             "Requires the white_label_course_player tier feature (Scale)."
         ),
     )
@@ -327,7 +327,7 @@ class OrganizationDetails(Schema):
         ..., description="Description of digital products being sold."
     )
     intended_use: str = Field(
-        "", description="How the organization will integrate and use Spaire."
+        "", description="How the organization will integrate and use Claidor."
     )
     customer_acquisition: list[str] = Field(
         default_factory=list, description="Main customer acquisition channels."
@@ -639,7 +639,7 @@ class OrganizationCreate(Schema):
     )
     details: OrganizationDetails | None = Field(
         None,
-        description="Additional, private, business details Spaire needs about active organizations for compliance (KYC).",
+        description="Additional, private, business details Claidor needs about active organizations for compliance (KYC).",
     )
     default_tax_behavior: TaxBehaviorOption = Field(
         default=TaxBehaviorOption.location,
@@ -683,7 +683,7 @@ class OrganizationUpdate(Schema):
     )
     details: OrganizationDetails | None = Field(
         None,
-        description="Additional, private, business details Spaire needs about active organizations for compliance (KYC).",
+        description="Additional, private, business details Claidor needs about active organizations for compliance (KYC).",
     )
     default_presentment_currency: PresentmentCurrency | None = Field(
         None,

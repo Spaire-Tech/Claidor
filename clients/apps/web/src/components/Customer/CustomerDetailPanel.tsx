@@ -1,8 +1,8 @@
 'use client'
 
 import { useCustomer } from '@/hooks/queries'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
 import { SpinnerNoMargin } from '../Shared/Spinner'
 import { CustomerPage } from './CustomerPage'
 import { InlineModalHeader } from '../Modal/InlineModal'
@@ -22,14 +22,14 @@ import { useDeleteCustomer } from '@/hooks/queries'
 import { api } from '@/utils/client'
 import { CONFIG } from '@/utils/config'
 import MoreVert from '@mui/icons-material/MoreVert'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/ui/dropdown-menu'
+} from '@claidor/ui/components/ui/dropdown-menu'
 
 interface CustomerDetailPanelProps {
   customerId: string

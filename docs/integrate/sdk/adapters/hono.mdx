@@ -5,31 +5,31 @@ description: "Payments and Checkouts made dead simple with Hono"
 
 ## Examples
 
-- [With Hono and Cloudflare Workers](https://github.com/spairehq/examples/tree/main/with-hono-cloudflare-workers)
+- [With Hono and Cloudflare Workers](https://github.com/claidorhq/examples/tree/main/with-hono-cloudflare-workers)
 
 ## Installation
 
-Install the required Spaire packages using the following command:
+Install the required Claidor packages using the following command:
 
 <Tabs>
   <Tab title="npm">
     ```bash Terminal
-    npm install zod @spaire/hono
+    npm install zod @claidor/hono
     ```
   </Tab>
   <Tab title="yarn">
     ```bash Terminal
-    yarn add zod @spaire/hono
+    yarn add zod @claidor/hono
     ```
   </Tab>
   <Tab title="pnpm">
     ```bash Terminal
-    pnpm add zod @spaire/hono
+    pnpm add zod @claidor/hono
     ```
   </Tab>
   <Tab title="bun">
     ```bash Terminal
-    bun add zod @spaire/hono
+    bun add zod @claidor/hono
     ```
   </Tab>
 </Tabs>
@@ -40,17 +40,17 @@ Create a Checkout handler which takes care of redirections.
 
 ```typescript
 import { Hono } from "hono";
-import { Checkout } from "@spaire/hono";
+import { Checkout } from "@claidor/hono";
 
 const app = new Hono();
 
 app.get(
   "/checkout",
   Checkout({
-    accessToken: "xxx", // Or set an environment variable to SPAIRE_ACCESS_TOKEN
+    accessToken: "xxx", // Or set an environment variable to CLAIDOR_ACCESS_TOKEN
     successUrl: process.env.SUCCESS_URL,
     returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Checkout
-    server: "sandbox", // Use sandbox if you're testing Spaire - omit the parameter or pass 'production' otherwise
+    server: "sandbox", // Use sandbox if you're testing Claidor - omit the parameter or pass 'production' otherwise
     theme: "dark", // Enforces the theme - System-preferred theme will be set if left omitted
   })
 );
@@ -73,17 +73,17 @@ Create a customer portal where your customer can view orders and subscriptions.
 
 ```typescript
 import { Hono } from "hono";
-import { CustomerPortal } from "@spaire/hono";
+import { CustomerPortal } from "@claidor/hono";
 
 const app = new Hono();
 
 app.get(
   "/portal",
   CustomerPortal({
-    accessToken: "xxx", // Or set an environment variable to SPAIRE_ACCESS_TOKEN
-    getCustomerId: (event) => "", // Function to resolve a Spaire Customer ID
+    accessToken: "xxx", // Or set an environment variable to CLAIDOR_ACCESS_TOKEN
+    getCustomerId: (event) => "", // Function to resolve a Claidor Customer ID
     returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Customer Portal
-    server: "sandbox", // Use sandbox if you're testing Spaire - omit the parameter or pass 'production' otherwise
+    server: "sandbox", // Use sandbox if you're testing Claidor - omit the parameter or pass 'production' otherwise
   })
 );
 ```
@@ -94,12 +94,12 @@ A simple utility which resolves incoming webhook payloads by signing the webhook
 
 ```typescript
 import { Hono } from 'hono'
-import { Webhooks } from "@spaire/hono";
+import { Webhooks } from "@claidor/hono";
 
 const app = new Hono()
 
-app.post('/spaire/webhooks', Webhooks({
-  webhookSecret: process.env.SPAIRE_WEBHOOK_SECRET!,
+app.post('/claidor/webhooks', Webhooks({
+  webhookSecret: process.env.CLAIDOR_WEBHOOK_SECRET!,
   onPayload: async (payload) => /** Handle payload */,
 }))
 ```

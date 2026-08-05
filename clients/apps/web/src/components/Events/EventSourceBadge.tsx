@@ -1,4 +1,4 @@
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { twMerge } from 'tailwind-merge'
 
 const getEventSourceStyle = (source: schemas['Event']['source']) => {

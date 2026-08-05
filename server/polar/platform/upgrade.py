@@ -1,5 +1,5 @@
 """Server-side helper that creates an upgrade checkout for a creator
-organization on Spaire's own platform-org products.
+organization on Claidor's own platform-org products.
 
 Used by polar.platform.endpoints.POST .../upgrade-checkout. Constructs
 an internal AuthSubject scoped to the platform organization so the
@@ -56,7 +56,7 @@ class TierNotUpgradeable(PlatformUpgradeError):
 class PlatformOrgNotConfigured(PlatformUpgradeError):
     def __init__(self) -> None:
         super().__init__(
-            "Spaire platform billing is not configured on this server.",
+            "Claidor platform billing is not configured on this server.",
             503,
         )
 
@@ -64,7 +64,7 @@ class PlatformOrgNotConfigured(PlatformUpgradeError):
 class TierProductNotFound(PlatformUpgradeError):
     def __init__(self, tier: TierKey) -> None:
         super().__init__(
-            f"Spaire {tier.value.capitalize()} product is not available. "
+            f"Claidor {tier.value.capitalize()} product is not available. "
             "Contact support.",
             503,
         )
@@ -73,7 +73,7 @@ class TierProductNotFound(PlatformUpgradeError):
 class AlreadyOnPaidTier(PlatformUpgradeError):
     def __init__(self) -> None:
         super().__init__(
-            "Your organization is already on a paid Spaire plan. Use the "
+            "Your organization is already on a paid Claidor plan. Use the "
             "subscription management flow to switch plans.",
             409,
         )
@@ -82,7 +82,7 @@ class AlreadyOnPaidTier(PlatformUpgradeError):
 class MissingPlatformCustomer(PlatformUpgradeError):
     def __init__(self) -> None:
         super().__init__(
-            "Your organization has not been provisioned on Spaire billing yet. "
+            "Your organization has not been provisioned on Claidor billing yet. "
             "Try again in a moment.",
             503,
         )
@@ -129,10 +129,10 @@ class PlatformUpgradeService:
         so Stripe receipts / tax invoices are deliverable.
 
         The platform `customers` table is unique on (organization_id,
-        lower(email)). A single person who owns several Spaire orgs has one
+        lower(email)). A single person who owns several Claidor orgs has one
         platform Customer per org; if they all share one real email, only
         the first can hold it verbatim. On that collision we do NOT fall
-        back to the undeliverable `@billing.spairehq.internal` placeholder —
+        back to the undeliverable `@billing.claidorhq.internal` placeholder —
         we adopt a plus-addressed variant (`name+{slug}@domain`) that routes
         to the same inbox at every major provider (RFC 5233 sub-addressing)
         but stays unique, so receipts still reach the creator for every org
@@ -292,7 +292,7 @@ class PlatformUpgradeService:
         # Put the creator's real email on the platform Customer (when it
         # doesn't collide with another of their orgs) so Stripe receipts
         # and tax invoices reach a real inbox instead of the synthetic
-        # `creator-{slug}@billing.spairehq.internal` placeholder.
+        # `creator-{slug}@billing.claidorhq.internal` placeholder.
         await self._apply_real_billing_email(
             session, customer, organization, billing_email
         )

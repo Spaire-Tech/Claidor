@@ -1,11 +1,11 @@
 import { useMetrics } from '@/hooks/queries'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@spaire/ui/components/ui/tooltip'
+} from '@claidor/ui/components/ui/tooltip'
 import {
   addMonths,
   endOfMonth,

@@ -4,14 +4,14 @@ import AddPhotoAlternateOutlined from '@mui/icons-material/AddPhotoAlternateOutl
 import AutoFixHighOutlined from '@mui/icons-material/AutoFixHighOutlined'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
-import { cn } from '@spaire/ui/lib/utils'
+import Button from '@claidor/ui/components/atoms/Button'
+import { cn } from '@claidor/ui/lib/utils'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@spaire/ui/components/ui/dialog'
+} from '@claidor/ui/components/ui/dialog'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type FrameStyle =

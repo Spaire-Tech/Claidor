@@ -1,7 +1,7 @@
 'use client'
 
-import { QuotaUsage, useSpaireUsage } from '@/hooks/queries/spaireTier'
-import { schemas } from '@spaire/client'
+import { QuotaUsage, useClaidorUsage } from '@/hooks/queries/claidorTier'
+import { schemas } from '@claidor/client'
 import { useMemo } from 'react'
 
 interface QuotaUsageCardProps {
@@ -18,7 +18,7 @@ const QUOTA_LABELS: Record<string, { label: string; unit: string }> = {
 const ORDER = ['storage_gb', 'video_hours_hosted', 'video_views_monthly']
 
 const QuotaUsageCard = ({ organization }: QuotaUsageCardProps) => {
-  const usage = useSpaireUsage(organization.id)
+  const usage = useClaidorUsage(organization.id)
 
   const sorted = useMemo(() => {
     if (!usage.data?.items) return []
@@ -29,7 +29,7 @@ const QuotaUsageCard = ({ organization }: QuotaUsageCardProps) => {
   }, [usage.data])
 
   return (
-    <div className="dark:border-spaire-700 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:bg-transparent">
+    <div className="dark:border-claidor-700 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:bg-transparent">
       {usage.isLoading ? (
         <div className="flex flex-col gap-y-6 p-6">
           {[0, 1, 2].map((i) => (
@@ -40,7 +40,7 @@ const QuotaUsageCard = ({ organization }: QuotaUsageCardProps) => {
           ))}
         </div>
       ) : (
-        <div className="dark:divide-spaire-700 divide-y divide-gray-100">
+        <div className="dark:divide-claidor-700 divide-y divide-gray-100">
           {sorted.map((q) => (
             <QuotaRow key={q.quota} quota={q} />
           ))}
@@ -95,7 +95,7 @@ const QuotaRow = ({ quota }: { quota: QuotaUsage }) => {
       </div>
 
       {!isUnlimited && (
-        <div className="dark:bg-spaire-700 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+        <div className="dark:bg-claidor-700 h-2 w-full overflow-hidden rounded-full bg-gray-100">
           <div
             className={`h-full rounded-full transition-all ${
               quota.is_exceeded ? 'bg-red-500' : 'bg-blue-500'

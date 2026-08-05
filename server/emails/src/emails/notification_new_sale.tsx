@@ -135,7 +135,7 @@ NotificationNewSale.PreviewProps = {
   order_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   order_date: '2024-11-05T20:41:00Z',
   order_url:
-    'https://app.spairehq.com/dashboard/acme-inc/sales/a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'https://app.claidorhq.com/dashboard/acme-inc/sales/a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   organization_name: 'Acme Inc.',
   organization_slug: 'acme-inc',
   billing_reason: 'purchase',

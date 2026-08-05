@@ -1,5 +1,5 @@
 {
-  "extends": "@spaire/typescript-config/react-library.json",
+  "extends": "@claidor/typescript-config/react-library.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src"

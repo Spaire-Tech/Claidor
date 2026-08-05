@@ -4,9 +4,9 @@ import { CONFIG } from '@/utils/config'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
 import ComputerOutlined from '@mui/icons-material/ComputerOutlined'
 import SmartphoneOutlined from '@mui/icons-material/SmartphoneOutlined'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
-import CopyToClipboardInput from '@spaire/ui/components/atoms/CopyToClipboardInput'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
+import CopyToClipboardInput from '@claidor/ui/components/atoms/CopyToClipboardInput'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
@@ -59,7 +59,7 @@ export const CheckoutLinkPreviewPage = ({
 
   const embedCode = useMemo(
     () =>
-      `<a href="${checkoutLink.url}" data-spaire-checkout>Buy Now</a>\n<script src="${CONFIG.CHECKOUT_EMBED_SCRIPT_SRC}" defer data-auto-init></script>`,
+      `<a href="${checkoutLink.url}" data-claidor-checkout>Buy Now</a>\n<script src="${CONFIG.CHECKOUT_EMBED_SCRIPT_SRC}" defer data-auto-init></script>`,
     [checkoutLink],
   )
 

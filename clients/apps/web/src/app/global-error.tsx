@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/nextjs'
 import Error from 'next/error'
 import { useEffect } from 'react'
 
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 
 export default function GlobalError({ error }: { error: Error }) {
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function GlobalError({ error }: { error: Error }) {
               window.location.href = '/'
             }}
           >
-            <span>Go back to Spaire</span>
+            <span>Go back to Claidor</span>
           </Button>
 
           <p className="pt-24 text-gray-400"></p>

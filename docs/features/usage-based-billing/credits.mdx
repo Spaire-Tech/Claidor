@@ -3,20 +3,20 @@ title: "Credits"
 description: "Let customers pre-pay for usage. Credits are deducted first — overage is charged at the end of the billing period."
 ---
 
-Credits are pre-purchased units that sit against a customer's meter balance. When events are ingested, Spaire deducts from the credit balance first. If the balance hits zero, usage continues and any overage is charged on the next invoice.
+Credits are pre-purchased units that sit against a customer's meter balance. When events are ingested, Claidor deducts from the credit balance first. If the balance hits zero, usage continues and any overage is charged on the next invoice.
 
 This lets you offer prepaid plans — customers buy a block of credits and consume from it, rather than accumulating an unknown bill throughout the month.
 
 ## How credits work
 
 1. You attach a **Credits benefit** to a product
-2. When a customer purchases or subscribes, Spaire issues credits to their meter balance
+2. When a customer purchases or subscribes, Claidor issues credits to their meter balance
 3. Ingested events deduct from the credit balance first
 4. If credits run out, usage accrues and is charged at the end of the billing period via the metered price
 5. At the start of each new subscription cycle, credits are topped up again
 
 <Warning>
-  Spaire does not block usage when a customer's credit balance reaches zero. You are responsible for checking balances and enforcing limits in your application.
+  Claidor does not block usage when a customer's credit balance reaches zero. You are responsible for checking balances and enforcing limits in your application.
 </Warning>
 
 ## Credits-only mode (no overage billing)
@@ -50,7 +50,7 @@ To add a Credits benefit to a product:
 **Customer State API** — returns the full customer overview including active meter balances:
 
 ```ts
-const state = await spaire.customerState.get({ externalCustomerId: 'your_user_id' })
+const state = await claidor.customerState.get({ externalCustomerId: 'your_user_id' })
 
 for (const meter of state.meters) {
   console.log(`${meter.meter.name}: ${meter.balance} units remaining`)
@@ -60,7 +60,7 @@ for (const meter of state.meters) {
 **Customer Meters API** — query the balance for a specific meter directly:
 
 ```ts
-const meters = await spaire.customerMeters.list({
+const meters = await claidor.customerMeters.list({
   externalCustomerId: 'your_user_id',
 })
 ```

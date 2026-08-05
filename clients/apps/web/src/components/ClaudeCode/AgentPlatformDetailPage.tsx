@@ -6,7 +6,7 @@ import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
 import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { useCallback, useContext, useState } from 'react'
 import { motion } from 'framer-motion'
@@ -146,12 +146,12 @@ export default function AgentPlatformDetailPage({
               </FadeUp>
             )}
 
-            {/* Load Spaire playbooks */}
+            {/* Load Claidor playbooks */}
             {platform.setupSnippet && (
               <FadeUp className="flex flex-col gap-y-6">
                 <div className="flex flex-row items-center justify-between">
                   <h2 className="text-base font-medium">
-                    {stepIndex++}. Add Spaire context to your project
+                    {stepIndex++}. Add Claidor context to your project
                   </h2>
                   <CopyButton
                     copied={setupCopied}

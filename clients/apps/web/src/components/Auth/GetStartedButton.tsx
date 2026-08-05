@@ -2,8 +2,8 @@
 
 import { usePostHog } from '@/hooks/posthog'
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import { ComponentProps, FormEvent, useCallback, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Modal } from '../Modal'

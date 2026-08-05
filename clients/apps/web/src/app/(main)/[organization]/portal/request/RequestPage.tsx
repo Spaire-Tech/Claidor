@@ -5,7 +5,7 @@ import { setValidationErrors } from '@/utils/api/errors'
 import { useRouter } from 'next/navigation'
 
 import { api } from '@/utils/client'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { PortalAuthScene } from '../_auth/PortalAuthScene'
@@ -13,7 +13,7 @@ import { PortalAuthScene } from '../_auth/PortalAuthScene'
 // Where the authenticate step reads the address back for the "we sent a code
 // to <email>" echo and for resending. sessionStorage (not a query param) keeps
 // the address out of the URL/history.
-export const PORTAL_EMAIL_KEY = 'spaire_portal_signin_email'
+export const PORTAL_EMAIL_KEY = 'claidor_portal_signin_email'
 
 interface CustomerSelectionOption {
   id: string
@@ -200,7 +200,7 @@ const ClientPage = ({
       <p className="spauth-footnote">
         By continuing you agree to the{' '}
         <a
-          href="https://www.spairehq.com/legal/terms-of-service"
+          href="https://www.claidorhq.com/legal/terms-of-service"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -208,7 +208,7 @@ const ClientPage = ({
         </a>{' '}
         &amp;{' '}
         <a
-          href="https://www.spairehq.com/legal/privacy-policy"
+          href="https://www.claidorhq.com/legal/privacy-policy"
           target="_blank"
           rel="noopener noreferrer"
         >

@@ -45,7 +45,7 @@ import ViewAgendaOutlined from '@mui/icons-material/ViewAgendaOutlined'
 import ViewCarouselOutlined from '@mui/icons-material/ViewCarouselOutlined'
 import ViewListOutlined from '@mui/icons-material/ViewListOutlined'
 import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
@@ -427,7 +427,7 @@ export const DraggableBlocks = ({
   useEffect(() => {
     if (!isEmpty || typeof window === 'undefined') return
     const leftCard = document.querySelector(
-      '.spaire-editor .col-left .canvas-card',
+      '.claidor-editor .col-left .canvas-card',
     ) as HTMLElement | null
     if (!leftCard) return
     const update = () =>

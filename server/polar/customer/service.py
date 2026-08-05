@@ -9,7 +9,7 @@ from sqlalchemy_utils.types.range import timedelta
 from polar.auth.models import AuthSubject
 from polar.benefit.grant.repository import BenefitGrantRepository
 from polar.customer_meter.repository import CustomerMeterRepository
-from polar.exceptions import SpaireRequestValidationError, ValidationError
+from polar.exceptions import ClaidorRequestValidationError, ValidationError
 from polar.kit.anonymization import (
     ANONYMIZED_EMAIL_DOMAIN,
     anonymize_email_for_deletion,
@@ -155,7 +155,7 @@ class CustomerService:
                 )
 
         if errors:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         async with repository.create_context(
             Customer(
@@ -261,7 +261,7 @@ class CustomerService:
             )
 
         if errors:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         return await repository.update(
             customer,

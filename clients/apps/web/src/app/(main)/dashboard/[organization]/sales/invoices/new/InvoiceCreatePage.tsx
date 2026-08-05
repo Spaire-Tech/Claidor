@@ -6,14 +6,14 @@ import {
 } from '@/components/Invoices/InvoiceForm'
 import { InvoicePreviewPanel } from '@/components/Invoices/InvoicePreviewPanel'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   Form,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import Switch from '@spaire/ui/components/atoms/Switch'
+import Switch from '@claidor/ui/components/atoms/Switch'
 
 export const InvoiceCreatePage = ({
   organization,
@@ -79,7 +79,7 @@ export const InvoiceCreatePage = ({
                 </label>
                 <label className="flex cursor-pointer items-center justify-between px-4 py-3">
                   <span className="text-sm text-gray-700">
-                    Show &ldquo;via Spaire&rdquo; attribution
+                    Show &ldquo;via Claidor&rdquo; attribution
                   </span>
                   <Switch
                     checked={showMorAttribution}

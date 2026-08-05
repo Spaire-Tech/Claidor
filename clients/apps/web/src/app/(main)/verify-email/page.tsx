@@ -1,6 +1,6 @@
 import LogoIcon from '@/components/Brand/LogoIcon'
 import { CONFIG } from '@/utils/config'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {

@@ -20,10 +20,10 @@ This guide covers both **subscription-based** and **one-time purchase** seat-bas
 
 ## Prerequisites
 
-- Spaire organization with `seat_based_pricing_enabled` feature flag
-- Spaire SDK installed (`npm install @spaire/sdk` or `pip install spaire-sdk`)
+- Claidor organization with `seat_based_pricing_enabled` feature flag
+- Claidor SDK installed (`npm install @spaire/sdk` or `pip install claidor-sdk`)
   - **Important:** Seat-based pricing requires the latest version of the SDK. Make sure to update to the latest version to access all seat-based pricing features.
-- Basic understanding of Spaire products and subscriptions
+- Basic understanding of Claidor products and subscriptions
 
 <Warning>
 Seat-based pricing is currently in **private beta**. To enable the `seat_based_pricing_enabled` feature flag for your organization, please contact our support team.
@@ -33,7 +33,7 @@ Seat-based pricing is currently in **private beta**. To enable the `seat_based_p
 
 <Steps>
   <Step title="Navigate to Products">
-    In the Spaire dashboard, go to **Products** and click **Create Product**.
+    In the Claidor dashboard, go to **Products** and click **Create Product**.
   </Step>
 
   <Step title="Configure basic settings">
@@ -80,7 +80,7 @@ You can also create seat-based products via API:
 **Subscription example:**
 
 ```typescript
-const subscriptionProduct = await spaire.products.create({
+const subscriptionProduct = await claidor.products.create({
   name: "Team Pro Plan",
   organization_id: "org_123",
   is_recurring: true,
@@ -101,7 +101,7 @@ const subscriptionProduct = await spaire.products.create({
 **One-time purchase example:**
 
 ```typescript
-const oneTimeProduct = await spaire.products.create({
+const oneTimeProduct = await claidor.products.create({
   name: "Enterprise License Pack",
   organization_id: "org_123",
   is_recurring: false,
@@ -123,7 +123,7 @@ const oneTimeProduct = await spaire.products.create({
 Create a checkout session that allows customers to select seat quantity:
 
 ```typescript
-const checkout = await spaire.checkouts.create({
+const checkout = await claidor.checkouts.create({
   product_price_id: "price_123",
   seats: 5, // Customer selects quantity
   success_url: "https://your-app.com/success",
@@ -148,7 +148,7 @@ Listen for purchase webhooks to know when a customer buys seats:
 
 ```typescript
 // Webhook handler
-app.post('/webhooks/spaire', async (req, res) => {
+app.post('/webhooks/claidor', async (req, res) => {
   const event = req.body;
 
   // For subscriptions
@@ -187,7 +187,7 @@ Create an interface for billing managers to assign seats:
 // List available seats (works for both subscriptions and orders)
 async function getSeatInfo(params: { subscription_id?: string; order_id?: string }) {
   const { seats, available_seats, total_seats } =
-    await spaire.customerSeats.list(params);
+    await claidor.customerSeats.list(params);
 
   return {
     seats,
@@ -204,7 +204,7 @@ async function assignSeat(
   metadata?: Record<string, any>
 ) {
   try {
-    const seat = await spaire.customerSeats.assign({
+    const seat = await claidor.customerSeats.assign({
       ...params,
       email: email,
       metadata: metadata // e.g., { department: "Engineering" }
@@ -328,7 +328,7 @@ When a team member receives an invitation email, they'll click a link with the i
 
 async function handleClaimPage(token: string) {
   // Get claim information (no auth required)
-  const claimInfo = await spaire.customerSeats.getClaimInfo({
+  const claimInfo = await claidor.customerSeats.getClaimInfo({
     invitation_token: token
   });
 
@@ -347,13 +347,13 @@ async function handleClaimPage(token: string) {
 
 async function claimSeat(token: string) {
   const { seat, customer_session_token } =
-    await spaire.customerSeats.claim({
+    await claidor.customerSeats.claim({
       invitation_token: token
     });
 
   // Store the customer session token
   // This allows immediate portal access
-  localStorage.setItem('spaire_session', customer_session_token);
+  localStorage.setItem('claidor_session', customer_session_token);
 
   return {
     success: true,
@@ -418,7 +418,7 @@ function ClaimPage() {
 After a seat is claimed, benefits are granted automatically via background jobs. Listen for webhooks to track this:
 
 ```typescript
-app.post('/webhooks/spaire', async (req, res) => {
+app.post('/webhooks/claidor', async (req, res) => {
   const event = req.body;
 
   if (event.type === 'benefit_grant.created') {
@@ -448,7 +448,7 @@ Allow billing managers to revoke seats:
 
 ```typescript
 async function revokeSeat(seatId: string) {
-  const revokedSeat = await spaire.customerSeats.revoke({
+  const revokedSeat = await claidor.customerSeats.revoke({
     seat_id: seatId
   });
 
@@ -472,7 +472,7 @@ Revoking a seat immediately removes access but does not issue a refund. The bill
 ```typescript
 async function addSeats(subscriptionId: string, newTotal: number) {
   // Update subscription seat count
-  const subscription = await spaire.subscriptions.update({
+  const subscription = await claidor.subscriptions.update({
     id: subscriptionId,
     seats: newTotal
   });
@@ -482,7 +482,7 @@ async function addSeats(subscriptionId: string, newTotal: number) {
 }
 
 async function reduceSeats(subscriptionId: string, newTotal: number) {
-  const { seats } = await spaire.customerSeats.list({
+  const { seats } = await claidor.customerSeats.list({
     subscription_id: subscriptionId
   });
 
@@ -495,7 +495,7 @@ async function reduceSeats(subscriptionId: string, newTotal: number) {
   }
 
   // Update will take effect at next renewal
-  const subscription = await spaire.subscriptions.update({
+  const subscription = await claidor.subscriptions.update({
     id: subscriptionId,
     seats: newTotal
   });
@@ -509,7 +509,7 @@ async function reduceSeats(subscriptionId: string, newTotal: number) {
 ```typescript
 async function purchaseMoreSeats(productId: string, additionalSeats: number) {
   // Create a new checkout for additional seats
-  const checkout = await spaire.checkouts.create({
+  const checkout = await claidor.checkouts.create({
     product_id: productId,
     seats: additionalSeats,
     success_url: "https://your-app.com/success"
@@ -548,7 +548,7 @@ if (available_seats === 0) {
 Store useful context in seat metadata:
 
 ```typescript
-await spaire.customerSeats.assign({
+await claidor.customerSeats.assign({
   subscription_id: subId,
   email: "dev@company.com",
   metadata: {
@@ -607,7 +607,7 @@ async function assignMultipleSeats(
 ) {
   const results = await Promise.allSettled(
     emails.map(email =>
-      spaire.customerSeats.assign({
+      claidor.customerSeats.assign({
         subscription_id: subscriptionId,
         email: email
       })
@@ -634,7 +634,7 @@ async function onUserSignup(email: string, organizationId: string) {
   const subscriptions = await getOrganizationSubscriptions(organizationId);
 
   for (const sub of subscriptions) {
-    const { seats } = await spaire.customerSeats.list({
+    const { seats } = await claidor.customerSeats.list({
       subscription_id: sub.id
     });
 
@@ -656,7 +656,7 @@ async function onUserSignup(email: string, organizationId: string) {
 ```typescript
 // Display team subscriptions in your app
 async function getTeamSubscriptions(customerId: string) {
-  const subs = await spaire.customerPortal.seats.listSubscriptions({
+  const subs = await claidor.customerPortal.seats.listSubscriptions({
     customer_id: customerId
   });
 
@@ -691,7 +691,7 @@ Make sure to revoke seats before reducing the subscription seat count. You canno
 Invitation tokens expire after 24 hours. Have the billing manager resend the invitation:
 
 ```typescript
-await spaire.customerSeats.resend({ seat_id: seatId });
+await claidor.customerSeats.resend({ seat_id: seatId });
 ```
 
 ## Next Steps

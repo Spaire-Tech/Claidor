@@ -5,8 +5,8 @@ import { isImpersonating } from '@/utils/impersonation'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown'
 import ScienceOutlined from '@mui/icons-material/ScienceOutlined'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
 import {
   Sidebar,
   SidebarContent,
@@ -17,21 +17,21 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
-} from '@spaire/ui/components/atoms/Sidebar'
+} from '@claidor/ui/components/atoms/Sidebar'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/ui/dropdown-menu'
-import { Separator } from '@spaire/ui/components/ui/separator'
+} from '@claidor/ui/components/ui/dropdown-menu'
+import { Separator } from '@claidor/ui/components/ui/separator'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
-import { SpaireLogotype } from '../Public/SpaireLogotype'
+import { ClaidorLogotype } from '../Public/ClaidorLogotype'
 import {
   AccountNavigation,
   OrganizationNavigation,
@@ -80,7 +80,7 @@ export const DashboardSidebar = ({
             : 'flex-row items-center justify-between',
         )}
       >
-        {/* Client org logo at top — replaces Spaire logo */}
+        {/* Client org logo at top — replaces Claidor logo */}
         {type === 'organization' && organization ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -137,7 +137,7 @@ export const DashboardSidebar = ({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <SpaireLogotype
+          <ClaidorLogotype
             size={32}
             href={organization ? `/dashboard/${organization.slug}` : '/dashboard'}
           />
@@ -172,7 +172,7 @@ export const DashboardSidebar = ({
         <Separator />
         {!CONFIG.IS_SANDBOX && (
           <Link
-            href="https://sandbox.spairehq.com/start"
+            href="https://sandbox.claidorhq.com/start"
             target="_blank"
             className={twMerge(
               'mt-2 flex cursor-pointer flex-row items-center rounded-lg border border-transparent px-2 text-sm transition-colors',
@@ -188,7 +188,7 @@ export const DashboardSidebar = ({
             'flex flex-row items-center rounded-lg border border-transparent text-sm transition-colors',
             ' text-gray-500 hover:text-black',
           )}
-          href="https://docs.spairehq.com"
+          href="https://docs.claidorhq.com"
           target="_blank"
         >
           <ArrowOutwardOutlined className="ml-2" fontSize="inherit" />

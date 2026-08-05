@@ -1,17 +1,17 @@
 'use client'
 
-import { formatCurrency } from '@spaire/currency'
+import { formatCurrency } from '@claidor/currency'
 import { CountryAlpha2Input } from '@spaire/sdk/models/components/addressinput'
 import type { CheckoutConfirmStripe } from '@spaire/sdk/models/components/checkoutconfirmstripe'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
 import type { CheckoutPublicConfirmed } from '@spaire/sdk/models/components/checkoutpublicconfirmed'
 import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
-import Button from '@spaire/ui/components/atoms/Button'
-import CountryPicker from '@spaire/ui/components/atoms/CountryPicker'
-import CountryStatePicker from '@spaire/ui/components/atoms/CountryStatePicker'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import Input from '@spaire/ui/components/atoms/Input'
-import { Checkbox } from '@spaire/ui/components/ui/checkbox'
+import Button from '@claidor/ui/components/atoms/Button'
+import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
+import CountryStatePicker from '@claidor/ui/components/atoms/CountryStatePicker'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import Input from '@claidor/ui/components/atoms/Input'
+import { Checkbox } from '@claidor/ui/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -19,9 +19,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
-import { ThemingPresetProps } from '@spaire/ui/hooks/theming'
-import { cn } from '@spaire/ui/lib/utils'
+} from '@claidor/ui/components/ui/form'
+import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
+import { cn } from '@claidor/ui/lib/utils'
 import {
   Elements,
   ElementsConsumer,
@@ -48,9 +48,9 @@ import {
 import AmountLabel from './AmountLabel'
 import CustomFieldInput from './CustomFieldInput'
 import MeteredPriceLabel from './MeteredPriceLabel'
-import SpaireLogo from './SpaireLogo'
-import type { AcceptedLocale } from '@spaire/i18n'
-import { DEFAULT_LOCALE, useTranslations } from '@spaire/i18n'
+import ClaidorLogo from './ClaidorLogo'
+import type { AcceptedLocale } from '@claidor/i18n'
+import { DEFAULT_LOCALE, useTranslations } from '@claidor/i18n'
 import { convertLocaleToStripeElementLocale } from '../utils/locale'
 
 const DetailRow = ({
@@ -905,12 +905,12 @@ const BaseCheckoutForm = ({
         </p>
       </div>
       <a
-        href="https://www.spairehq.com?utm_source=checkout"
+        href="https://www.claidorhq.com?utm_source=checkout"
         className=" flex w-full flex-row items-center justify-center gap-x-3 text-sm text-gray-400"
         target="_blank"
       >
         <span>{t('checkout.footer.poweredBy')}</span>
-        <SpaireLogo className="h-5" />
+        <ClaidorLogo className="h-5" />
       </a>
     </div>
   )

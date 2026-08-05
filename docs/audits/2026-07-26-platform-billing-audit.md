@@ -5,14 +5,14 @@
 > scheduler process is deployed; run `scripts/reconcile_quota_usage.py` and
 > let the new `platform.lapse_legacy_trials` cron clear the stranded-trial
 > backlog after deploy). Overage (§7) was resolved by making the promise
-> honest (durable `spaire.quota.overage` audit events, docs corrected)
+> honest (durable `claidor.quota.overage` audit events, docs corrected)
 > rather than silently shipping overage *billing*, which is a pricing
 > decision. One extra defect was found while fixing: reminder markers were
 > stored as a list in `user_metadata`, which crashes webhook payload
 > serialization for any subscription carrying them — now a scalar
 > comma-string.
 
-Scope: the Spaire platform-billing system (Spaire billing its own creator
+Scope: the Claidor platform-billing system (Claidor billing its own creator
 organizations — trials, plans, fees, invoices, emails) plus the settings
 billing UI. Four independent review passes: trial-to-charge trace, platform
 module audit, settings-UI audit, invoice/email/money-trail audit.
@@ -87,7 +87,7 @@ job exists. Add a reaper for stale `scheduler_locked_at` rows.
 ## 4. CRITICAL — Silent charging: money emails go to an undeliverable placeholder
 
 Platform Customers are created with
-`creator-{slug}@billing.spairehq.internal` (`platform/billing.py:61-68`).
+`creator-{slug}@billing.claidorhq.internal` (`platform/billing.py:61-68`).
 The real email is only applied at upgrade-checkout, and only when provided:
 
 - `platform/endpoints.py:355-357` falls back to the caller's email only for
@@ -139,10 +139,10 @@ Related reminder bugs:
   (`emails/src/emails/platform_receipt.tsx:31-34`) but the invoice is
   silently skipped when billing name/address is missing
   (`order/service.py:1547-1551`).
-- Invoice PDF footer says "issued by Spaire, Inc. on behalf of Spaire, Inc.
+- Invoice PDF footer says "issued by Claidor, Inc. on behalf of Claidor, Inc.
   … Merchant of Record" (`invoice/generator.py:310-312`) — wrong framing for
   first-party billing.
-- Only `send_confirmation_email` was Spaire-branded (c392069). Past-due /
+- Only `send_confirmation_email` was Claidor-branded (c392069). Past-due /
   revoked / canceled / uncanceled / updated emails still use
   creator-commerce templates with the platform org as "merchant"
   (`subscription/service.py:2360-2433`).
@@ -152,7 +152,7 @@ Related reminder bugs:
 `scripts/seed_platform_products.py:119-151` seeds overage meters on the
 platform org, but quota events are emitted with the **creator org's** id and
 no customer linkage (`quotas/producers.py:_add_quota_event`), so the meters
-can never match any event. The `spaire.email.sent` meter has no producer at
+can never match any event. The `claidor.email.sent` meter has no producer at
 all. `tiers.py:126-130` promises overage "recorded for billing
 reconciliation"; in reality it is only a log line. Promised overage revenue
 is silently never billed.
@@ -197,14 +197,14 @@ directly (`platform/billing.py:210-288`) and never stamped, so
 - Dashboard trial cancel is immediate (loses remaining days) while portal
   path and reminder emails promise access to trial end; the UI toast says
   "ended" while the endpoint only sets `cancel_at_period_end`
-  (`SpairePlanCards.tsx:133-141` vs `endpoints.py:430-461`) — the two cancel
+  (`ClaidorPlanCards.tsx:133-141` vs `endpoints.py:430-461`) — the two cancel
   paths disagree with each other *and* with their own copy.
 - No un-cancel path from the dashboard (`subscription/service.py:947-948`
   raises on canceled subs; no platform uncancel endpoint).
 - No lock on `switch_plan` (`management.py:135-206`) or upgrade-checkout →
   double-click can duplicate prorations/charges; superseded duplicate is
   canceled **without refund**.
-- Mid-trial tier switch sends a second "Welcome to Spaire… the next 14 days
+- Mid-trial tier switch sends a second "Welcome to Claidor… the next 14 days
   are yours" (routed via $0 trial order → `user_welcome`,
   `order/service.py:1505-1522`) even with 3 days left; no plan-change email
   exists.
@@ -233,7 +233,7 @@ classes are inert while `dark:text-white` / `dark:bg-white` work:
   white on the white card → the unreadable text reported.
 - `QuotaUsageCard.tsx:88-92` — bar fill becomes white on a light track →
   bar looks empty at any percentage.
-- Same pattern across `SpaireBillingManagement.tsx` (payment method, orders,
+- Same pattern across `ClaidorBillingManagement.tsx` (payment method, orders,
   billing address, modal heading).
 
 **Fix:** add `@custom-variant dark (&:where(.dark, .dark *));` to
@@ -242,14 +242,14 @@ or remove the `polar-*` palette.
 
 ## 13. MEDIUM — Settings UI correctness
 
-- `spaireTier.ts:568-586` `renewalSentence()` renders "Your trial ends on
+- `claidorTier.ts:568-586` `renewalSentence()` renders "Your trial ends on
   {date}. You won't be charged until then." with no past-date check (stale
   forever for §1 rows) and formats `current_period_end`, not `trial_end`.
   The copy also contradicts the card-on-file reality ("won't be charged" →
   "will be charged on {date} unless you cancel").
 - `trial_end` never cleared on conversion; endpoint returns it for any
   status (`endpoints.py:259/287` vs schema doc `platform/schemas.py:96-98`).
-- `SpairePlanCards.tsx:54-56` — interval toggle seeded from
+- `ClaidorPlanCards.tsx:54-56` — interval toggle seeded from
   possibly-undefined query data, never re-synced → annual subscribers see
   "Monthly" + "Switch" on their own plan.
 - `endpoints.py:254` — `monthly_price_cents = amount // 12` truncates
@@ -284,7 +284,7 @@ comment ("no payment method") is outdated.
   (`dev/docker/scripts/startup.sh:140`) — outbound webhooks pile up in that
   environment.
 - First platform order triggers "startup perks" logic for the platform org
-  itself and notifies Spaire's own members (`order/service.py:1901-1931`).
+  itself and notifies Claidor's own members (`order/service.py:1901-1931`).
 - `trial_reminders_sent` markers leak into cycle orders' metadata
   (`order/service.py:742`).
 - Auth: any-of scope semantics mean org-scoped third-party tokens can manage
@@ -375,7 +375,7 @@ Known behaviors (not bugs, but decisions to be aware of):
   0.5% subscription surcharge per renewal, and payout fees ($2/active
   month + 0.25% + 25¢, US) are charged to the creator. Example: one
   $10/month Starter subscriber nets the creator $8.95/month in balance and
-  ≈$15.61 in the bank after two months' withdrawal. Spaire eats the Stripe
+  ≈$15.61 in the bank after two months' withdrawal. Claidor eats the Stripe
   processing fee (~59¢) out of its ~105¢ gross take. If PRICING.md
   advertises flat "7% + 30¢", this is a disclosure mismatch to resolve.
 - **Residual risks (documented, not engineered around)**: order

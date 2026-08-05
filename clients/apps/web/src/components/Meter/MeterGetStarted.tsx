@@ -1,5 +1,5 @@
 import { CONFIG } from '@/utils/config'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 import {
   SyntaxHighlighterClient,
@@ -43,17 +43,17 @@ export const MeterGetStarted = ({ meter }: MeterGetStartedProps) => {
         <h2 className="text-xl">Get started with metering</h2>
         <p className=" text-gray-500">
           Meter usage by sending events which match the Meter Filter, to the
-          Spaire Ingestion API.
+          Claidor Ingestion API.
         </p>
       </div>
       <pre className=" rounded-lg bg-white p-4 font-mono text-sm">
         <SyntaxHighlighterProvider>
           <SyntaxHighlighterClient
             lang="typescript"
-            code={`import { Spaire } from "@spaire/sdk";
+            code={`import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env["SPAIRE_ACCESS_TOKEN"] ?? "",${
+const claidor = new Claidor({
+  accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] ?? "",${
     CONFIG.IS_SANDBOX
       ? `
   server: "sandbox",`
@@ -62,7 +62,7 @@ const spaire = new Spaire({
 });
 
 export const GET = async (req: Request, res: Response) => {
-  await spaire.events.ingest({
+  await claidor.events.ingest({
     events: [
       {
         name: "${nameClauseValue}",

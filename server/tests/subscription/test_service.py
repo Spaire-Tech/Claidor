@@ -27,7 +27,7 @@ from polar.event.system import SystemEvent
 from polar.exceptions import (
     BadRequest,
     ResourceUnavailable,
-    SpaireRequestValidationError,
+    ClaidorRequestValidationError,
 )
 from polar.kit.currency import PresentmentCurrency
 from polar.kit.pagination import PaginationParams
@@ -193,7 +193,7 @@ class TestCreate:
             customer_id=uuid.uuid4(),
         )
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await subscription_service.create(
                 session, subscription_create, auth_subject
             )
@@ -218,7 +218,7 @@ class TestCreate:
             customer_id=customer.id,
         )
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await subscription_service.create(
                 session, subscription_create, auth_subject
             )
@@ -241,7 +241,7 @@ class TestCreate:
             customer_id=customer.id,
         )
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await subscription_service.create(
                 session, subscription_create, auth_subject
             )
@@ -266,7 +266,7 @@ class TestCreate:
             customer_id=uuid.uuid4(),
         )
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await subscription_service.create(
                 session, subscription_create, auth_subject
             )
@@ -288,7 +288,7 @@ class TestCreate:
             external_customer_id="nonexistent",
         )
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await subscription_service.create(
                 session, subscription_create, auth_subject
             )
@@ -2059,7 +2059,7 @@ class TestUpdateProduct:
         )
         assert len(subscription.prices) == 1
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await subscription_service.update_product(
                 session,
                 subscription,
@@ -2123,7 +2123,7 @@ class TestUpdateProduct:
             seats=2,
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await subscription_service.update_product(
                 session,
                 subscription,
@@ -2156,7 +2156,7 @@ class TestUpdateProduct:
             customer=customer,
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await subscription_service.update_product(
                 session,
                 subscription,
@@ -2182,7 +2182,7 @@ class TestUpdateDiscount:
             discount=discount_percentage_50,
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await subscription_service.update_discount(
                 session, subscription, discount_id=uuid.uuid4()
             )
@@ -2203,7 +2203,7 @@ class TestUpdateDiscount:
             discount=discount_percentage_50,
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await subscription_service.update_discount(
                 session, subscription, discount_id=discount_percentage_50.id
             )
@@ -2341,7 +2341,7 @@ class TestUpdateTrial:
             customer=customer,
         )
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await subscription_service.update_trial(
                 session, subscription, trial_end="now"
             )
@@ -2394,7 +2394,7 @@ class TestUpdateTrial:
         assert subscription.current_period_end is not None
         trial_end_before_period = subscription.current_period_end - timedelta(days=1)
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await subscription_service.update_trial(
                 session, subscription, trial_end=trial_end_before_period
             )

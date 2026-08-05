@@ -158,7 +158,7 @@ def get_from_name(notification_type: str, payload: dict[str, Any]) -> str | None
 
     For community.event.* emails the recipient is an enrolled customer
     of the org, so the message reads more naturally as coming from the
-    creator (`Acme Inc.`) than from the platform (`Spaire`). The actual
+    creator (`Acme Inc.`) than from the platform (`Claidor`). The actual
     send address stays on the platform sender domain — this only
     overrides the human display name in the mail client.
 

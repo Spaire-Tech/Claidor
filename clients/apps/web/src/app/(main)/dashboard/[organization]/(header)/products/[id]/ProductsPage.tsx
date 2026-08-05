@@ -1,7 +1,7 @@
 'use client'
 
 import { ProductPage } from '@/components/Products/ProductPage/ProductPage'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 export default function Page({
   organization,

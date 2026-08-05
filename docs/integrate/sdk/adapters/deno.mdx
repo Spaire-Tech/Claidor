@@ -6,14 +6,14 @@ hidden: true
 
 ## Examples
 
-- [With Deno](https://github.com/spairehq/examples/tree/main/with-deno)
+- [With Deno](https://github.com/claidorhq/examples/tree/main/with-deno)
 
 ## Checkout
 
 Create a Checkout handler which takes care of redirections.
 
 ```typescript icon=square-js
-import { Checkout } from "jsr:@spaire/deno";
+import { Checkout } from "jsr:@claidor/deno";
 
 Deno.serve(
   Checkout({
@@ -40,7 +40,7 @@ Pass query params to this route.
 Create a customer portal where your customer can view orders and subscriptions.
 
 ```typescript icon=square-js
-import { CustomerPortal } from "jsr:@spaire/deno";
+import { CustomerPortal } from "jsr:@claidor/deno";
 
 Deno.serve(
   CustomerPortal({
@@ -57,11 +57,11 @@ Deno.serve(
 A simple utility which resolves incoming webhook payloads by signing the webhook secret properly.
 
 ```typescript icon=square-js
-import { Webhooks } from "jsr:@spaire/deno";
+import { Webhooks } from "jsr:@claidor/deno";
 
 Deno.serve(
     Webhooks({
-        webhookSecret: Deno.env.get('SPAIRE_WEBHOOK_SECRET'),
+        webhookSecret: Deno.env.get('CLAIDOR_WEBHOOK_SECRET'),
         onPayload: async (payload) => /** Handle payload */,
     })
 );

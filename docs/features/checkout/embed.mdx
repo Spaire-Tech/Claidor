@@ -1,10 +1,10 @@
 ---
 title: "Embedded Checkout"
 sidebarTitle: "Embedded Checkout"
-description: "Render the Spaire checkout as a modal or inline widget inside your own page — no redirect to an external URL."
+description: "Render the Claidor checkout as a modal or inline widget inside your own page — no redirect to an external URL."
 ---
 
-Embedded checkout keeps customers on your site. Instead of redirecting to a hosted payment page, Spaire renders the checkout as an overlay or inline frame directly in your UI.
+Embedded checkout keeps customers on your site. Instead of redirecting to a hosted payment page, Claidor renders the checkout as an overlay or inline frame directly in your UI.
 
 There are two ways to set it up: a no-code **HTML snippet** you can drop into any page, and a **JavaScript library** for React and other framework-based apps.
 
@@ -20,8 +20,8 @@ The snippet looks like this:
 ```html
 <a
   href="YOUR_CHECKOUT_LINK_URL"
-  data-spaire-checkout
-  data-spaire-checkout-theme="light"
+  data-claidor-checkout
+  data-claidor-checkout-theme="light"
 >
   Buy now
 </a>
@@ -29,13 +29,13 @@ The snippet looks like this:
 <script
   defer
   data-auto-init
-  src="https://cdn.jsdelivr.net/npm/@spaire/checkout@latest/dist/embed.global.js"
+  src="https://cdn.jsdelivr.net/npm/@claidor/checkout@latest/dist/embed.global.js"
 ></script>
 ```
 
-When clicked, the link opens the checkout as an overlay. Style the trigger element however you like — just keep the `data-spaire-checkout` attribute.
+When clicked, the link opens the checkout as an overlay. Style the trigger element however you like — just keep the `data-claidor-checkout` attribute.
 
-Change `data-spaire-checkout-theme` to `"dark"` for the dark variant.
+Change `data-claidor-checkout-theme` to `"dark"` for the dark variant.
 
 ## JavaScript library
 
@@ -44,35 +44,35 @@ For React and other component-based apps, import the library instead of adding a
 <CodeGroup>
 
 ```bash npm
-npm install @spaire/checkout
+npm install @claidor/checkout
 ```
 
 ```bash pnpm
-pnpm add @spaire/checkout
+pnpm add @claidor/checkout
 ```
 
 ```bash yarn
-yarn add @spaire/checkout
+yarn add @claidor/checkout
 ```
 
 </CodeGroup>
 
-Then import `SpaireEmbedCheckout` and call `init()` to attach handlers to all elements with `data-spaire-checkout`:
+Then import `ClaidorEmbedCheckout` and call `init()` to attach handlers to all elements with `data-claidor-checkout`:
 
 ```tsx
-import { SpaireEmbedCheckout } from '@spaire/checkout/embed'
+import { ClaidorEmbedCheckout } from '@claidor/checkout/embed'
 import { useEffect } from 'react'
 
 const BuyButton = () => {
   useEffect(() => {
-    SpaireEmbedCheckout.init()
+    ClaidorEmbedCheckout.init()
   }, [])
 
   return (
     <a
       href="YOUR_CHECKOUT_LINK_URL"
-      data-spaire-checkout
-      data-spaire-checkout-theme="light"
+      data-claidor-checkout
+      data-claidor-checkout-theme="light"
     >
       Buy now
     </a>
@@ -84,15 +84,15 @@ export default BuyButton
 
 ## Programmatic control
 
-For full control — opening checkout on custom triggers, handling events, managing the lifecycle — use `SpaireEmbedCheckout.create()` directly.
+For full control — opening checkout on custom triggers, handling events, managing the lifecycle — use `ClaidorEmbedCheckout.create()` directly.
 
 ### Open and listen for events
 
 ```ts
-import { SpaireEmbedCheckout } from '@spaire/checkout/embed'
+import { ClaidorEmbedCheckout } from '@claidor/checkout/embed'
 
 const openCheckout = async () => {
-  const checkout = await SpaireEmbedCheckout.create('YOUR_CHECKOUT_LINK_URL', {
+  const checkout = await ClaidorEmbedCheckout.create('YOUR_CHECKOUT_LINK_URL', {
     theme: 'light',
     onLoaded: () => {
       console.log('Checkout is ready')
@@ -107,7 +107,7 @@ const openCheckout = async () => {
   checkout.addEventListener('success', (event) => {
     // Purchase completed
     console.log('Purchase successful', event.detail)
-    // event.detail.redirect is true if Spaire will redirect automatically
+    // event.detail.redirect is true if Claidor will redirect automatically
     if (!event.detail.redirect) {
       showSuccessState()
     }
@@ -125,7 +125,7 @@ const openCheckout = async () => {
 let activeCheckout = null
 
 async function openCheckout() {
-  activeCheckout = await SpaireEmbedCheckout.create('YOUR_CHECKOUT_LINK_URL')
+  activeCheckout = await ClaidorEmbedCheckout.create('YOUR_CHECKOUT_LINK_URL')
   activeCheckout.addEventListener('close', () => {
     activeCheckout = null
   })
@@ -139,7 +139,7 @@ function closeCheckout() {
 ### React example with full lifecycle
 
 ```tsx
-import { SpaireEmbedCheckout } from '@spaire/checkout/embed'
+import { ClaidorEmbedCheckout } from '@claidor/checkout/embed'
 import { useState, useEffect } from 'react'
 
 const CheckoutButton = () => {
@@ -150,7 +150,7 @@ const CheckoutButton = () => {
   }, [checkout])
 
   const handleClick = async () => {
-    const instance = await SpaireEmbedCheckout.create('YOUR_CHECKOUT_LINK_URL', {
+    const instance = await ClaidorEmbedCheckout.create('YOUR_CHECKOUT_LINK_URL', {
       theme: 'light',
       onLoaded: () => console.log('Loaded'),
     })
@@ -188,7 +188,7 @@ See [Checkout Sessions](/features/checkout/session) for how to create session UR
 
 Wallet payment methods work automatically in hosted checkout (non-embedded). In embedded mode, your domain must be manually verified before wallet payments are enabled.
 
-To enable Apple Pay or Google Pay for your embedded checkout, email [support@spairehq.com](mailto:support@spairehq.com) with your organization slug and the domain you're embedding on.
+To enable Apple Pay or Google Pay for your embedded checkout, email [support@claidorhq.com](mailto:support@claidorhq.com) with your organization slug and the domain you're embedding on.
 
 ## What's next
 

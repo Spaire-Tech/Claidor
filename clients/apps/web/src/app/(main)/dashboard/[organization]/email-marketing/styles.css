@@ -1,4 +1,4 @@
-/* Email Marketing — scoped under `.spaire-email-app`.
+/* Email Marketing — scoped under `.claidor-email-app`.
 
    Re-skinned to match the project dashboard design system: Tailwind gray
    palette, blue-500 accent, dashboard radii (rounded-lg/xl/2xl), dashboard
@@ -13,7 +13,7 @@
    are intentionally preserved — only typography / colours are normalised.
 */
 
-.spaire-email-app {
+.claidor-email-app {
   /* Greys — mapped to Tailwind/oklch dashboard gray scale. */
   --bg: #ffffff;
   --bg-soft: oklch(0.985 0.002 247.839);   /* gray-50  */
@@ -71,13 +71,13 @@
   position: relative;
 }
 
-.spaire-email-app *,
-.spaire-email-app *::before,
-.spaire-email-app *::after {
+.claidor-email-app *,
+.claidor-email-app *::before,
+.claidor-email-app *::after {
   box-sizing: border-box;
 }
 
-.spaire-email-app button {
+.claidor-email-app button {
   font-family: inherit;
   cursor: pointer;
   border: none;
@@ -85,15 +85,15 @@
   padding: 0;
   color: inherit;
 }
-.spaire-email-app input,
-.spaire-email-app textarea,
-.spaire-email-app select {
+.claidor-email-app input,
+.claidor-email-app textarea,
+.claidor-email-app select {
   font-family: inherit;
   color: inherit;
 }
 
 /* Buttons — match dashboard Button atom: rounded-xl, h-10, blue-500 fill. */
-.spaire-email-app .btn {
+.claidor-email-app .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -108,30 +108,30 @@
   white-space: nowrap;
   border: 1px solid transparent;
 }
-.spaire-email-app .btn-primary {
+.claidor-email-app .btn-primary {
   background: var(--indigo); /* blue-500 */
   color: #fff;
 }
-.spaire-email-app .btn-primary:hover {
+.claidor-email-app .btn-primary:hover {
   background: var(--indigo-2); /* blue-600 */
 }
-.spaire-email-app .btn-secondary {
+.claidor-email-app .btn-secondary {
   background: var(--bg-softer); /* gray-100 */
   color: var(--ink);
   border-color: transparent;
 }
-.spaire-email-app .btn-secondary:hover {
+.claidor-email-app .btn-secondary:hover {
   background: var(--bg-soft);
 }
-.spaire-email-app .btn-ghost {
+.claidor-email-app .btn-ghost {
   background: transparent;
   color: var(--ink-2);
 }
-.spaire-email-app .btn-ghost:hover {
+.claidor-email-app .btn-ghost:hover {
   background: var(--bg-softer);
   color: var(--ink);
 }
-.spaire-email-app .btn-icon {
+.claidor-email-app .btn-icon {
   width: 36px;
   height: 36px;
   border-radius: 12px;
@@ -143,25 +143,25 @@
   color: var(--ink-2);
   transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
-.spaire-email-app .btn-icon:hover {
+.claidor-email-app .btn-icon:hover {
   background: var(--bg-softer);
   color: var(--ink);
 }
-.spaire-email-app .btn-icon-dark {
+.claidor-email-app .btn-icon-dark {
   background: var(--ink);
   color: #fff;
   border-color: var(--ink);
 }
-.spaire-email-app .btn-icon-dark:hover {
+.claidor-email-app .btn-icon-dark:hover {
   background: var(--black-hover);
 }
-.spaire-email-app .btn-sm {
+.claidor-email-app .btn-sm {
   height: 32px;
   padding: 0 12px;
   font-size: 13px;
   border-radius: 10px;
 }
-.spaire-email-app .btn-lg {
+.claidor-email-app .btn-lg {
   height: 48px;
   padding: 0 20px;
   font-size: 14px;
@@ -170,9 +170,9 @@
 
 /* Inputs — match dashboard atoms/Input: gray-200 border, rounded-xl,
    blue focus ring. */
-.spaire-email-app .input,
-.spaire-email-app .textarea,
-.spaire-email-app .select {
+.claidor-email-app .input,
+.claidor-email-app .textarea,
+.claidor-email-app .select {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--line);
@@ -183,24 +183,24 @@
   transition: border-color 0.15s, box-shadow 0.15s;
   outline: none;
 }
-.spaire-email-app .input:focus,
-.spaire-email-app .textarea:focus,
-.spaire-email-app .select:focus {
+.claidor-email-app .input:focus,
+.claidor-email-app .textarea:focus,
+.claidor-email-app .select:focus {
   border-color: var(--indigo);
   box-shadow: 0 0 0 3px oklch(0.932 0.032 235.243 / 0.5); /* blue-100 ring */
 }
-.spaire-email-app .input::placeholder,
-.spaire-email-app .textarea::placeholder {
+.claidor-email-app .input::placeholder,
+.claidor-email-app .textarea::placeholder {
   color: var(--ink-4);
 }
 
 /* Cards — dashboard `rounded-xl border border-gray-200 bg-white`. */
-.spaire-email-app .card {
+.claidor-email-app .card {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 12px;
 }
-.spaire-email-app .card-lift {
+.claidor-email-app .card-lift {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -208,7 +208,7 @@
 }
 
 /* Form labels — sentence-case, normal weight. No uppercase tracking. */
-.spaire-email-app .label {
+.claidor-email-app .label {
   font-size: 13px;
   font-weight: 500;
   color: var(--ink);
@@ -219,7 +219,7 @@
 }
 
 /* Eyebrow — secondary muted line above a heading. No indigo accent. */
-.spaire-email-app .eyebrow {
+.claidor-email-app .eyebrow {
   font-size: 12px;
   font-weight: 500;
   color: var(--ink-3);
@@ -228,49 +228,49 @@
 }
 
 /* Headings — dashboard scale. No negative letter-spacing, weight 500. */
-.spaire-email-app .h-display {
+.claidor-email-app .h-display {
   font-size: 30px;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.15;
   margin: 0;
 }
-.spaire-email-app .h1 {
+.claidor-email-app .h1 {
   font-size: 24px;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.2;
   margin: 0;
 }
-.spaire-email-app .h2 {
+.claidor-email-app .h2 {
   font-size: 18px;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.3;
   margin: 0;
 }
-.spaire-email-app .h3 {
+.claidor-email-app .h3 {
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0;
   margin: 0;
 }
 
-.spaire-email-app .muted {
+.claidor-email-app .muted {
   color: var(--ink-3);
 }
-.spaire-email-app .muted-2 {
+.claidor-email-app .muted-2 {
   color: var(--ink-4);
 }
 
-.spaire-email-app .divider {
+.claidor-email-app .divider {
   height: 1px;
   background: var(--line);
   border: none;
 }
 
 /* Chips — dashboard-aligned pill, sentence-case. */
-.spaire-email-app .chip {
+.claidor-email-app .chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -283,38 +283,38 @@
   color: var(--ink-2);
   border: 1px solid transparent;
 }
-.spaire-email-app .chip-success {
+.claidor-email-app .chip-success {
   background: var(--green-soft);
   color: var(--green);
   border-color: transparent;
 }
-.spaire-email-app .chip-warn {
+.claidor-email-app .chip-warn {
   background: var(--amber-soft);
   color: var(--amber);
   border-color: transparent;
 }
-.spaire-email-app .chip-error {
+.claidor-email-app .chip-error {
   background: var(--red-soft);
   color: var(--red);
   border-color: transparent;
 }
-.spaire-email-app .chip-info {
+.claidor-email-app .chip-info {
   background: var(--blue-soft);
   color: var(--indigo-2);
   border-color: transparent;
 }
-.spaire-email-app .chip-dark {
+.claidor-email-app .chip-dark {
   background: var(--ink);
   color: #fff;
   border-color: transparent;
 }
-.spaire-email-app .chip-indigo {
+.claidor-email-app .chip-indigo {
   background: var(--indigo-soft);
   color: var(--indigo-2);
   border-color: transparent;
 }
 
-.spaire-email-app .dot {
+.claidor-email-app .dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -324,7 +324,7 @@
 
 /* Top-nav tab pill group — preserved (user kept the top nav style).
    Greys retuned to dashboard tokens. */
-.spaire-email-app .tabs {
+.claidor-email-app .tabs {
   display: flex;
   gap: 2px;
   background: var(--bg-softer);
@@ -332,7 +332,7 @@
   border-radius: 12px;
   width: fit-content;
 }
-.spaire-email-app .tab {
+.claidor-email-app .tab {
   position: relative;
   padding: 8px 16px;
   font-size: 13.5px;
@@ -341,10 +341,10 @@
   color: var(--ink-3);
   transition: background-color 0.15s, color 0.15s;
 }
-.spaire-email-app .tab:hover {
+.claidor-email-app .tab:hover {
   color: var(--ink);
 }
-.spaire-email-app .tab-active {
+.claidor-email-app .tab-active {
   background: #fff;
   color: var(--ink);
   box-shadow:
@@ -354,26 +354,26 @@
 
 /* Brand lockup — preserved as part of top nav. League Spartan removed
    to match the dashboard's inherited font. */
-.spaire-email-app .brand {
+.claidor-email-app .brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   text-decoration: none;
   color: inherit;
 }
-.spaire-email-app .brand-text {
+.claidor-email-app .brand-text {
   display: inline-flex;
   align-items: center;
   line-height: 1;
 }
-.spaire-email-app .brand-name {
+.claidor-email-app .brand-name {
   font-family: inherit;
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0;
   color: var(--ink);
 }
-.spaire-email-app .brand-divider {
+.claidor-email-app .brand-divider {
   width: 1px;
   height: 24px;
   background: var(--line);
@@ -381,7 +381,7 @@
 }
 
 /* Selectable card — blue accent when active (was indigo). */
-.spaire-email-app .option-card {
+.claidor-email-app .option-card {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
@@ -391,17 +391,17 @@
   transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
   position: relative;
 }
-.spaire-email-app .option-card:hover {
+.claidor-email-app .option-card:hover {
   border-color: var(--ink-4);
 }
-.spaire-email-app .option-card.is-active {
+.claidor-email-app .option-card.is-active {
   border-color: var(--indigo); /* blue-500 */
   background: var(--indigo-soft); /* blue-50 */
   box-shadow: 0 0 0 1px var(--indigo) inset;
 }
 
 /* Avatar */
-.spaire-email-app .avatar {
+.claidor-email-app .avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -415,7 +415,7 @@
 }
 
 /* Animation */
-@keyframes spaireFadeUp {
+@keyframes claidorFadeUp {
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -425,12 +425,12 @@
     transform: translateY(0);
   }
 }
-.spaire-email-app .fade-up {
-  animation: spaireFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+.claidor-email-app .fade-up {
+  animation: claidorFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 /* Layout */
-.spaire-email-app .container {
+.claidor-email-app .container {
   max-width: 1440px;
   margin: 0 auto;
   padding: 0 32px;
@@ -438,39 +438,39 @@
   z-index: 1;
 }
 @media (min-width: 768px) {
-  .spaire-email-app .container {
+  .claidor-email-app .container {
     padding: 0 48px;
   }
 }
-.spaire-email-app .page-header {
+.claidor-email-app .page-header {
   padding: 40px 0 32px;
 }
 
 /* Metric tile — dashboard card proportions. */
-.spaire-email-app .metric {
+.claidor-email-app .metric {
   padding: 24px;
 }
-.spaire-email-app .metric-tile {
+.claidor-email-app .metric-tile {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
 }
-.spaire-email-app .metric-value {
+.claidor-email-app .metric-value {
   font-size: 30px;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.1;
   color: var(--ink);
 }
-.spaire-email-app .metric-label {
+.claidor-email-app .metric-label {
   font-size: 13px;
   color: var(--ink-3);
   margin-top: 8px;
   letter-spacing: 0;
 }
-.spaire-email-app .metric-delta {
+.claidor-email-app .metric-delta {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -479,16 +479,16 @@
   margin-top: 12px;
   color: var(--green);
 }
-.spaire-email-app .metric-delta-down {
+.claidor-email-app .metric-delta-down {
   color: var(--red);
 }
 
 /* Table — dashboard list pattern. */
-.spaire-email-app .table {
+.claidor-email-app .table {
   width: 100%;
   border-collapse: collapse;
 }
-.spaire-email-app .table th {
+.claidor-email-app .table th {
   text-align: left;
   font-size: 12px;
   font-weight: 500;
@@ -498,24 +498,24 @@
   letter-spacing: 0;
   text-transform: none;
 }
-.spaire-email-app .table td {
+.claidor-email-app .table td {
   padding: 14px 16px;
   font-size: 14px;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
 }
-.spaire-email-app .table tr:last-child td {
+.claidor-email-app .table tr:last-child td {
   border-bottom: none;
 }
-.spaire-email-app .table tbody tr {
+.claidor-email-app .table tbody tr {
   transition: background 0.12s;
 }
-.spaire-email-app .table tbody tr:hover {
+.claidor-email-app .table tbody tr:hover {
   background: var(--bg-soft);
 }
 
 /* Empty / placeholder image area */
-.spaire-email-app .placeholder-img {
+.claidor-email-app .placeholder-img {
   background: repeating-linear-gradient(
     135deg,
     var(--bg-soft),
@@ -535,7 +535,7 @@
 }
 
 /* Hatched cover/image placeholder. */
-.spaire-email-app .cover-placeholder {
+.claidor-email-app .cover-placeholder {
   background-color: var(--bg-softer);
   background-image: repeating-linear-gradient(
     45deg,
@@ -548,7 +548,7 @@
   flex-shrink: 0;
 }
 
-@keyframes spaire-email-fade-in {
+@keyframes claidor-email-fade-in {
   from {
     opacity: 0;
     transform: translateY(4px);
@@ -559,12 +559,12 @@
   }
 }
 
-.spaire-email-app .modal-fade-in {
-  animation: spaire-email-fade-in 0.18s ease-out;
+.claidor-email-app .modal-fade-in {
+  animation: claidor-email-fade-in 0.18s ease-out;
 }
 
 /* Empty contentEditable placeholder for the EditableText primitive. */
-.spaire-email-app
+.claidor-email-app
   [contenteditable][data-placeholder][data-empty]:empty::before {
   content: attr(data-placeholder);
   color: var(--ink-4);

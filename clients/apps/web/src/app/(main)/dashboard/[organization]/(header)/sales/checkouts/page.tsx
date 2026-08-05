@@ -1,7 +1,7 @@
 import { getServerSideAPI } from '@/utils/client/serverside'
 import { DataTableSearchParams, parseSearchParams } from '@/utils/datatable'
 import { getOrganizationBySlugOrNotFound } from '@/utils/organization'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { Metadata } from 'next'
 import CheckoutsPage from './CheckoutsPage'
 

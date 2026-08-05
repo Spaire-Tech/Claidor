@@ -83,17 +83,17 @@
   --color-gray-900: oklch(0.21 0.034 264.665);
   --color-gray-950: oklch(0.13 0.028 261.692);
 
-  --color-spaire-50: hsl(233, 5%, 85%);
-  --color-spaire-100: hsl(233, 5%, 79%);
-  --color-spaire-200: hsl(233, 5%, 68%);
-  --color-spaire-300: hsl(233, 5%, 62%);
-  --color-spaire-400: hsl(233, 5%, 52%);
-  --color-spaire-500: hsl(233, 5%, 46%);
-  --color-spaire-600: hsl(233, 5%, 24%);
-  --color-spaire-700: hsl(233, 5%, 7%);
-  --color-spaire-800: hsl(233, 5%, 4%);
-  --color-spaire-900: hsl(233, 5%, 2%);
-  --color-spaire-950: hsl(233, 5%, 1%);
+  --color-claidor-50: hsl(233, 5%, 85%);
+  --color-claidor-100: hsl(233, 5%, 79%);
+  --color-claidor-200: hsl(233, 5%, 68%);
+  --color-claidor-300: hsl(233, 5%, 62%);
+  --color-claidor-400: hsl(233, 5%, 52%);
+  --color-claidor-500: hsl(233, 5%, 46%);
+  --color-claidor-600: hsl(233, 5%, 24%);
+  --color-claidor-700: hsl(233, 5%, 7%);
+  --color-claidor-800: hsl(233, 5%, 4%);
+  --color-claidor-900: hsl(233, 5%, 2%);
+  --color-claidor-950: hsl(233, 5%, 1%);
 
   /* shadcn */
   --color-border: var(--border);

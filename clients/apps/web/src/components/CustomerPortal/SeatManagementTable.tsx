@@ -1,15 +1,15 @@
 'use client'
 
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
-import { DataTable } from '@spaire/ui/components/atoms/DataTable'
+import Button from '@claidor/ui/components/atoms/Button'
+import { DataTable } from '@claidor/ui/components/atoms/DataTable'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/atoms/DropdownMenu'
-import { Status } from '@spaire/ui/components/atoms/Status'
+} from '@claidor/ui/components/atoms/DropdownMenu'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 

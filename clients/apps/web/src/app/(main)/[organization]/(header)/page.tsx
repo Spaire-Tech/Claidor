@@ -24,11 +24,11 @@ export async function generateMetadata(props: {
   const description =
     settings?.meta_description ??
     settings?.description ??
-    `${organization.name}'s courses on Spaire`
+    `${organization.name}'s courses on Claidor`
   const ogImage =
     settings?.header_image_url ??
     organization.avatar_url ??
-    `https://spairehq.com/og?org=${organization.slug}`
+    `https://claidorhq.com/og?org=${organization.slug}`
   const canonicalUrl = storefrontLink(organization)
   // `index` defaults to true; only emit a robots directive when the creator
   // has explicitly turned indexing off.
@@ -44,7 +44,7 @@ export async function generateMetadata(props: {
     openGraph: {
       title,
       description,
-      siteName: 'Spaire',
+      siteName: 'Claidor',
       type: 'website',
       url: canonicalUrl,
       images: [

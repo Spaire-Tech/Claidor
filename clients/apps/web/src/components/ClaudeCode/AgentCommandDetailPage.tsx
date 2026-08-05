@@ -6,7 +6,7 @@ import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
 import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { useCallback, useContext, useState } from 'react'
 import { motion } from 'framer-motion'
@@ -25,9 +25,9 @@ interface AgentCommandDetailPageProps {
 
 const COMMAND_FILE_URLS: Record<string, string> = {
   'setup-checkout':
-    'https://cdn.spairehq.com/claude/commands/setup-checkout.md',
+    'https://cdn.claidorhq.com/claude/commands/setup-checkout.md',
   'setup-usage-billing':
-    'https://cdn.spairehq.com/claude/commands/setup-usage-billing.md',
+    'https://cdn.claidorhq.com/claude/commands/setup-usage-billing.md',
 }
 
 export default function AgentCommandDetailPage({
@@ -37,7 +37,7 @@ export default function AgentCommandDetailPage({
   const [setupCopied, setSetupCopied] = useState(false)
   const [commandCopied, setCommandCopied] = useState(false)
 
-  const setupSnippet = `mkdir -p .claude/commands\ncurl -sL -o .claude/commands/${command.slug}.md \\\n  ${COMMAND_FILE_URLS[command.slug] ?? `https://cdn.spairehq.com/claude/commands/${command.slug}.md`}`
+  const setupSnippet = `mkdir -p .claude/commands\ncurl -sL -o .claude/commands/${command.slug}.md \\\n  ${COMMAND_FILE_URLS[command.slug] ?? `https://cdn.claidorhq.com/claude/commands/${command.slug}.md`}`
 
   const handleCopySetup = useCallback(() => {
     navigator.clipboard.writeText(setupSnippet)

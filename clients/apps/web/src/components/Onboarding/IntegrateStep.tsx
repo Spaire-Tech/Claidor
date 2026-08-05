@@ -1,9 +1,9 @@
 import { useOnboardingTracking } from '@/hooks'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import { Tabs, TabsList, TabsTrigger } from '@spaire/ui/components/atoms/Tabs'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useContext, useEffect, useMemo, useState } from 'react'
@@ -45,35 +45,35 @@ const frameworks = (products: schemas['Product'][]) =>
     {
       slug: 'nextjs',
       name: 'Next.js',
-      link: 'https://docs.spairehq.com/integrate/sdk/adapters/nextjs',
+      link: 'https://docs.claidorhq.com/integrate/sdk/adapters/nextjs',
       icon: <NextJsIcon size={24} />,
-      packages: '@spaire/nextjs',
-      code: `import { Checkout } from "@spaire/nextjs";
+      packages: '@claidor/nextjs',
+      code: `import { Checkout } from "@claidor/nextjs";
 
 export const GET = Checkout({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
-  successUrl: process.env.SPAIRE_SUCCESS_URL
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
+  successUrl: process.env.CLAIDOR_SUCCESS_URL
 });`,
     },
     {
       slug: 'better-auth',
       name: 'BetterAuth',
-      link: 'https://docs.spairehq.com/integrate/sdk/adapters/better-auth',
+      link: 'https://docs.claidorhq.com/integrate/sdk/adapters/better-auth',
       icon: <BetterAuthIcon size={24} />,
-      packages: 'better-auth @spaire/better-auth @spaire/sdk',
+      packages: 'better-auth @claidor/better-auth @spaire/sdk',
       code: `import { betterAuth } from "better-auth";
-import { spaire, checkout, portal, usage, webhooks } from "@spaire/better-auth";
-import { Spaire } from "@spaire/sdk";
+import { claidor, checkout, portal, usage, webhooks } from "@claidor/better-auth";
+import { Claidor } from "@spaire/sdk";
 
-const spaireClient = new Spaire({
-    accessToken: process.env.SPAIRE_ACCESS_TOKEN
+const claidorClient = new Claidor({
+    accessToken: process.env.CLAIDOR_ACCESS_TOKEN
 });
 
 const auth = betterAuth({
     // ... Better Auth config
     plugins: [
-        spaire({
-            client: spaireClient,
+        claidor({
+            client: claidorClient,
             createCustomerOnSignUp: true,
             use: [
                 checkout({
@@ -87,7 +87,7 @@ ${products
   )
   .join(',\n')}
                     ],
-                    successUrl: process.env.SPAIRE_SUCCESS_URL,
+                    successUrl: process.env.CLAIDOR_SUCCESS_URL,
                     authenticatedUsersOnly: true
                 })
             ],
@@ -98,20 +98,20 @@ ${products
     {
       slug: 'nodejs',
       name: 'Node.js',
-      link: 'https://docs.spairehq.com/integrate/sdk/typescript',
+      link: 'https://docs.claidorhq.com/integrate/sdk/typescript',
       icon: <NodeJsIcon size={24} />,
       packages: '@spaire/sdk',
-      code: `import { Spaire } from "@spaire/sdk";
+      code: `import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 });
 
-const checkout = await spaire.checkouts.create({
+const checkout = await claidor.checkouts.create({
   products: [
 ${products.map((p) => `    "${p.id}"`).join(',\n')}
   ],
-  successUrl: process.env.SPAIRE_SUCCESS_URL
+  successUrl: process.env.CLAIDOR_SUCCESS_URL
 });
 
 redirect(checkout.url)`,
@@ -119,21 +119,21 @@ redirect(checkout.url)`,
     {
       slug: 'python',
       name: 'Python',
-      link: 'https://docs.spairehq.com/integrate/sdk/python',
+      link: 'https://docs.claidorhq.com/integrate/sdk/python',
       icon: <PythonIcon size={24} />,
-      pythonInstall: 'pip install spaire-sdk',
+      pythonInstall: 'pip install claidor-sdk',
       code: `import os
-from spaire_sdk import Spaire
+from claidor_sdk import Claidor
 
-with Spaire(
-    access_token=os.environ.get("SPAIRE_ACCESS_TOKEN"),
-) as spaire:
+with Claidor(
+    access_token=os.environ.get("CLAIDOR_ACCESS_TOKEN"),
+) as claidor:
 
-    res = spaire.checkouts.create(request={
+    res = claidor.checkouts.create(request={
         "products": [
 ${products.map((p) => `            "${p.id}"`).join(',\n')}
         ],
-        "success_url": os.environ.get("SPAIRE_SUCCESS_URL")
+        "success_url": os.environ.get("CLAIDOR_SUCCESS_URL")
     })
 
     # Handle response
@@ -228,7 +228,7 @@ export const IntegrateStep = ({ products }: IntegrateStepProps) => {
           </div>
           <div className="flex flex-col gap-y-3">
             <Link
-              href={`https://docs.spairehq.com/integrate/sdk/adapters/nextjs`}
+              href={`https://docs.claidorhq.com/integrate/sdk/adapters/nextjs`}
               target="_blank"
               className="w-full"
             >
@@ -288,8 +288,8 @@ export const IntegrateStep = ({ products }: IntegrateStepProps) => {
               <CodeWrapper>
                 <SyntaxHighlighterClient
                   lang="bash"
-                  code={`SPAIRE_ACCESS_TOKEN=${createdToken ?? 'XXX'}
-SPAIRE_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`}
+                  code={`CLAIDOR_ACCESS_TOKEN=${createdToken ?? 'XXX'}
+CLAIDOR_SUCCESS_URL=https://example.com/success?checkout_id={CHECKOUT_ID}`}
                 />
               </CodeWrapper>
             </div>

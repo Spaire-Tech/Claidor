@@ -1,6 +1,6 @@
 'use client'
 
-import { formatCurrency } from '@spaire/currency'
+import { formatCurrency } from '@claidor/currency'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
 import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
 import { ProductCheckoutPublic } from '../guards'

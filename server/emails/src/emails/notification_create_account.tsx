@@ -12,7 +12,7 @@ export function NotificationCreateAccount({
 }: schemas['MaintainerCreateAccountNotificationPayload']) {
   return (
     <WrapperPolar>
-      <Preview>Your Spaire account is being reviewed</Preview>
+      <Preview>Your Claidor account is being reviewed</Preview>
       <IntroWithHi>
         Now that you got your first payment to {organization_name}, you should
         create a payout account in order to receive your funds.
@@ -34,7 +34,7 @@ export function NotificationCreateAccount({
 
 NotificationCreateAccount.PreviewProps = {
   organization_name: 'Acme Inc.',
-  url: 'https://app.spairehq.com',
+  url: 'https://app.claidorhq.com',
 }
 
 export default NotificationCreateAccount

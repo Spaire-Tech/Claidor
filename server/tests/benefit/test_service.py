@@ -19,7 +19,7 @@ from polar.benefit.strategies.custom.schemas import (
     BenefitCustomCreateProperties,
     BenefitCustomUpdate,
 )
-from polar.exceptions import NotPermitted, SpaireRequestValidationError
+from polar.exceptions import NotPermitted, ClaidorRequestValidationError
 from polar.kit.pagination import PaginationParams
 from polar.models import Benefit, Organization, User, UserOrganization
 from polar.models.benefit import BenefitType
@@ -225,7 +225,7 @@ class TestUserCreate:
         # then
         session.expunge_all()
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await benefit_service.user_create(
                 session, redis, create_schema, auth_subject
             )
@@ -244,7 +244,7 @@ class TestUserCreate:
         # then
         session.expunge_all()
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await benefit_service.user_create(
                 session, redis, create_schema, auth_subject
             )
@@ -267,7 +267,7 @@ class TestUserCreate:
         # then
         session.expunge_all()
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await benefit_service.user_create(
                 session, redis, create_schema, auth_subject
             )
@@ -314,7 +314,7 @@ class TestUserCreate:
         # then
         session.expunge_all()
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await benefit_service.user_create(
                 session, redis, create_schema, auth_subject
             )

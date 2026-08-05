@@ -26,8 +26,8 @@ export const Console = ({
         className,
       )}
     >
-      <div className="border-spaire-200 bg-spaire-900 relative w-full border-2">
-        <div className="bg-spaire-200 flex flex-row justify-between px-2 py-1 text-xs text-black">
+      <div className="border-claidor-200 bg-claidor-900 relative w-full border-2">
+        <div className="bg-claidor-200 flex flex-row justify-between px-2 py-1 text-xs text-black">
           <span className="font-bold">{title ?? 'Terminal'}</span>
           <span className="mb-1 h-0.5 w-2 self-end bg-black" />
         </div>
@@ -43,7 +43,7 @@ export const Console = ({
           ) : (
             <pre className="flex flex-col gap-y-2 pb-4">
               <code>{input}</code>
-              <code className="text-spaire-500">{output}</code>
+              <code className="text-claidor-500">{output}</code>
             </pre>
           )}
         </div>

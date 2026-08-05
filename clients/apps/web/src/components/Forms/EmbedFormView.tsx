@@ -16,7 +16,7 @@ export const EmbedFormView = ({ formId }: { formId: string }) => {
     if (!el) return
     const post = () => {
       window.parent?.postMessage(
-        { type: 'spaire:embed:resize', formId, height: el.scrollHeight },
+        { type: 'claidor:embed:resize', formId, height: el.scrollHeight },
         '*',
       )
     }

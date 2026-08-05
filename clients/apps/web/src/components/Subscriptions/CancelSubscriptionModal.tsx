@@ -2,15 +2,15 @@
 
 import { useUpdateSubscription } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
-import { isValidationError, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { isValidationError, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   Form,
   FormControl,
@@ -19,7 +19,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from '../Toast/use-toast'

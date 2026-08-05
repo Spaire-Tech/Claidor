@@ -1,4 +1,4 @@
-import { Client, schemas } from '@spaire/client'
+import { Client, schemas } from '@claidor/client'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 

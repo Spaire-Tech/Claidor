@@ -5,10 +5,10 @@ import {
   useOrganizationReviewStatus,
 } from '@/hooks/queries/org'
 import { getQueryClient } from '@/utils/api/query'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import { Card } from '@spaire/ui/components/ui/card'
-import { Textarea } from '@spaire/ui/components/ui/textarea'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import { Card } from '@claidor/ui/components/ui/card'
+import { Textarea } from '@claidor/ui/components/ui/textarea'
 import { ArrowRight, Loader2, Send, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 

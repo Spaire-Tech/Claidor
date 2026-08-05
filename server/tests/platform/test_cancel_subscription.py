@@ -1,4 +1,4 @@
-"""Ending a Spaire subscription (incl. a trial) must return a serializable
+"""Ending a Claidor subscription (incl. a trial) must return a serializable
 Subscription — not 500.
 
 The platform cancel endpoint does SubscriptionSchema.model_validate() on the
@@ -38,7 +38,7 @@ async def _trialing_creator(
     save_fixture: SaveFixture,
     mocker: MockerFixture,
 ) -> Organization:
-    """A creator org on a trialing Starter Spaire subscription."""
+    """A creator org on a trialing Starter Claidor subscription."""
     platform_org = await create_organization(save_fixture)
     mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     prices: list[PriceFixtureType] = [(4900, "usd")]
@@ -54,7 +54,7 @@ async def _trialing_creator(
     customer = await create_customer(
         save_fixture,
         organization=platform_org,
-        email=f"creator-{creator.id}@billing.spaire",
+        email=f"creator-{creator.id}@billing.claidor",
         user_metadata={"creator_org_id": str(creator.id)},
     )
     await create_subscription(

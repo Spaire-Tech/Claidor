@@ -2,8 +2,8 @@
 
 import CustomerPortalOrder from '@/components/CustomerPortal/CustomerPortalOrder'
 import { createClientSideAPI } from '@/utils/client'
-import { schemas } from '@spaire/client'
-import { getThemePreset } from '@spaire/ui/hooks/theming'
+import { schemas } from '@claidor/client'
+import { getThemePreset } from '@claidor/ui/hooks/theming'
 import { usePortalTheme } from '../../usePortalTheme'
 
 const ClientPage = ({
@@ -29,7 +29,7 @@ const ClientPage = ({
       order={order}
       customerSessionToken={customerSessionToken}
       themingPreset={themingPreset}
-      modalWrapperClassName={'spaire-portal' + (dark ? ' sp-dark' : '')}
+      modalWrapperClassName={'claidor-portal' + (dark ? ' sp-dark' : '')}
     />
   )
 }

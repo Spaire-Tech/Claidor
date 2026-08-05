@@ -10,17 +10,17 @@ import {
   setValidationErrors,
 } from '@/utils/api/errors'
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
-import { isValidationError, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
-import Switch from '@spaire/ui/components/atoms/Switch'
+import { isValidationError, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
+import Switch from '@claidor/ui/components/atoms/Switch'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useCallback, useEffect, useMemo } from 'react'
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
 import ProductSelect from '../Products/ProductSelect'

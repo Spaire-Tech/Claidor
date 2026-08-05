@@ -124,7 +124,7 @@ const Button = ({ className, variant, size, ...props }) => (
 ### ShadowBox Pattern
 
 ```tsx
-import { ShadowBox } from '@spaire/ui'
+import { ShadowBox } from '@claidor/ui'
 ;<ShadowBox>{/* Content with consistent card styling */}</ShadowBox>
 ```
 
@@ -212,31 +212,31 @@ const MyForm = () => {
 }
 ```
 
-## Imports from @spaire/ui
+## Imports from @claidor/ui
 
 ```tsx
 // Atoms
-import Button from '@spaire/ui/components/atoms/Button'
-import { Input } from '@spaire/ui/components/atoms/Input'
+import Button from '@claidor/ui/components/atoms/Button'
+import { Input } from '@claidor/ui/components/atoms/Input'
 import {
   Card,
   CardHeader,
   CardContent,
-} from '@spaire/ui/components/atoms/Card'
-import { ShadowBox } from '@spaire/ui/components/atoms/ShadowBox'
-import { Avatar } from '@spaire/ui/components/atoms/Avatar'
+} from '@claidor/ui/components/atoms/Card'
+import { ShadowBox } from '@claidor/ui/components/atoms/ShadowBox'
+import { Avatar } from '@claidor/ui/components/atoms/Avatar'
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
-} from '@spaire/ui/components/atoms/Tabs'
+} from '@claidor/ui/components/atoms/Tabs'
 
 // Molecules
-import { Banner } from '@spaire/ui/components/molecules/Banner'
+import { Banner } from '@claidor/ui/components/molecules/Banner'
 
 // Utils
-import { cn } from '@spaire/ui/lib/utils' // className merger
+import { cn } from '@claidor/ui/lib/utils' // className merger
 ```
 
 ## Common Patterns

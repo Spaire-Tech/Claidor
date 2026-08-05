@@ -1,13 +1,13 @@
 ---
 rss: true
 title: Product Updates
-description: Stay up to date with the latest changes and improvements to Spaire.
+description: Stay up to date with the latest changes and improvements to Claidor.
 ---
 
 <Update label="2025-10-17">
   ## Ability to update subscription to an updated price of the product
 
-  Merchants can now [update existing subscriptions](https://www.spairehq.com/docs/api-reference/subscriptions/update#subscriptionupdateproduct) from archived pricing schemes to current ones within the same product.
+  Merchants can now [update existing subscriptions](https://www.claidorhq.com/docs/api-reference/subscriptions/update#subscriptionupdateproduct) from archived pricing schemes to current ones within the same product.
   - Enables migration from grandfathered pricing to current pricing schemes
   - Prorations calculated using active subscription prices
   - In the dashboard, a small badge **Upgrade pricing** will indicate that you can update to the same product, but with the new pricing scheme.
@@ -15,11 +15,11 @@ description: Stay up to date with the latest changes and improvements to Spaire.
 
   ## New IP ranges
 
-  From **October 27th, 2025**, [new IP ranges](https://www.spairehq.com/docs/integrate/webhooks/delivery#ip-allowlist) will be added.
+  From **October 27th, 2025**, [new IP ranges](https://www.claidorhq.com/docs/integrate/webhooks/delivery#ip-allowlist) will be added.
 
   ## Improved Subscription Cancellation Flow
 
-  [Benefits](https://www.spairehq.com/docs/features/benefits/introduction) attached to the subscription are now automatically revoked when the subscription is canceled.
+  [Benefits](https://www.claidorhq.com/docs/features/benefits/introduction) attached to the subscription are now automatically revoked when the subscription is canceled.
 
   ## Ability to specify External ID
 
@@ -28,11 +28,11 @@ description: Stay up to date with the latest changes and improvements to Spaire.
 
   ## Ability to set Return URL for Checkouts and Customer Portal
 
-  A Return URL can now be set while generating a [checkout session](https://www.spairehq.com/docs/api-reference/checkouts/create-session#body-return-url-one-of-0) or a [customer portal session](https://www.spairehq.com/docs/api-reference/customer-portal/sessions/create#body-one-of-0-return-url-one-of-0). This allows you to preserve the context for the end users who visit either if they wish to go back to the application.
+  A Return URL can now be set while generating a [checkout session](https://www.claidorhq.com/docs/api-reference/checkouts/create-session#body-return-url-one-of-0) or a [customer portal session](https://www.claidorhq.com/docs/api-reference/customer-portal/sessions/create#body-one-of-0-return-url-one-of-0). This allows you to preserve the context for the end users who visit either if they wish to go back to the application.
 
   ## Ability to search Customers via their External ID
 
-  The [List Customers API](https://www.spairehq.com/docs/api-reference/customers/list) now accepts Customer's External ID [in the **query** parameter](https://www.spairehq.com/docs/api-reference/customers/list#parameter-one-of-0).
+  The [List Customers API](https://www.claidorhq.com/docs/api-reference/customers/list) now accepts Customer's External ID [in the **query** parameter](https://www.claidorhq.com/docs/api-reference/customers/list#parameter-one-of-0).
 
   ## Ability to disable automatic customer emails
 
@@ -47,7 +47,7 @@ description: Stay up to date with the latest changes and improvements to Spaire.
 
 <img src="/assets/changelog/2025-10-10/launched-merchant-support.jpg" />
 
-We're excited to introduce a chat widget to the Spaire dashboard, making it easier than ever for merchants to get help directly within the product.
+We're excited to introduce a chat widget to the Claidor dashboard, making it easier than ever for merchants to get help directly within the product.
 
   ## Improved Checkout Flow for Invalid Discount Code
 
@@ -137,7 +137,7 @@ Now, only successfully paid and refunded orders are included in metrics calculat
 
 We've improved the branding of emails sent to your customers by using organization-specific 'From' and 'Reply-to' addresses.
 
-Customer emails now appear to come from your organization (e.g., "YourOrg (via Spaire)") with replies directed to your organization's email address, providing a more professional and branded experience for your customers.
+Customer emails now appear to come from your organization (e.g., "YourOrg (via Claidor)") with replies directed to your organization's email address, providing a more professional and branded experience for your customers.
 
 </Update>
 
@@ -215,7 +215,7 @@ Integrating authentication and billing for your users has never been easier.
 
 [Better Auth](https://www.better-auth.com/) is an authentication framework for
 TypeScript that is quickly becoming a favorite amongst developers. Today, we're
-thrilled to have shipped a Spaire plugin for Better Auth - in collaboration with them.
+thrilled to have shipped a Claidor plugin for Better Auth - in collaboration with them.
 
 Checkout our [integration guide](/integrate/sdk/adapters/better-auth).
 
@@ -224,18 +224,18 @@ Checkout our [integration guide](/integrate/sdk/adapters/better-auth).
 <Update label="2025-02-27">
   ## Customer External ID
 
-We've added support for an `external_id` field on Customers. We believe this will greatly simplify the reconciliation process between your system and Spaire.
+We've added support for an `external_id` field on Customers. We believe this will greatly simplify the reconciliation process between your system and Claidor.
 
 Previously, the recommended way to reconcile with your users was to use `metadata`. However, this was not always the most convenient method, especially if you needed to fetch a Customer from our API.
 
-With `external_id`, you can now fetch a Customer directly by their external ID through dedicated `GET`, `PATCH`, and `DELETE` endpoints. You don't even need to store Spaire's internal ID in your system anymore! [Read more](/features/customer-management#external-id)
+With `external_id`, you can now fetch a Customer directly by their external ID through dedicated `GET`, `PATCH`, and `DELETE` endpoints. You don't even need to store Claidor's internal ID in your system anymore! [Read more](/features/customer-management#external-id)
 
 Of course, you can also directly preset `external_customer_id` when creating a Checkout Session, and it will automatically be set on the newly created Customer after a successful checkout. [Read more](/features/checkout/session#external-customer-id)
 
 </Update>
 
 <Update label="2025-02-19">
-  ## Spaire's take on Product variants
+  ## Claidor's take on Product variants
 
 We've released big changes to how we handle products and pricing, allowing us to support a unique approach to what the industry typically calls **variants** 🔥
 

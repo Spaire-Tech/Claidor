@@ -1,11 +1,11 @@
 import { formatHumanFriendlyScalar } from '@/utils/formatters'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
 import {
   Card,
   CardContent,
   CardHeader,
-} from '@spaire/ui/components/atoms/Card'
+} from '@claidor/ui/components/atoms/Card'
 
 export interface MiniMetricBoxProps {
   title?: string

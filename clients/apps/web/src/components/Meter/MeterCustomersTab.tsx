@@ -2,17 +2,17 @@
 
 import { useCustomerMeters } from '@/hooks/queries/customerMeters'
 import { getAPIParams } from '@/utils/datatable'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
 import {
   DataTable,
   DataTableColumnHeader,
-} from '@spaire/ui/components/atoms/DataTable'
+} from '@claidor/ui/components/atoms/DataTable'
 import {
   DataTablePaginationState,
   DataTableSortingState,
-} from '@spaire/ui/components/atoms/datatable/DataTable'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
+} from '@claidor/ui/components/atoms/datatable/DataTable'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
 import Link from 'next/link'
 import { useState } from 'react'
 import FormattedUnits from './FormattedUnits'

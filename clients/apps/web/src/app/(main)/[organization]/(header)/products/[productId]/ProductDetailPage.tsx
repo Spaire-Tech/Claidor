@@ -8,8 +8,8 @@ import { useStorefrontSubscribe } from '@/hooks/queries/emailMarketing'
 import { CONFIG } from '@/utils/config'
 import { SUBTITLE_METADATA_KEY } from '@/utils/product'
 import { api } from '@/utils/client'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
 import { Poppins } from 'next/font/google'
 import Link from 'next/link'
 import {
@@ -747,7 +747,7 @@ export const ProductDetailPage = ({
       <footer>
         <div className="wrap foot-inner">
           <div className="l">
-            © {new Date().getFullYear()} {organization.name} · Powered by Spaire
+            © {new Date().getFullYear()} {organization.name} · Powered by Claidor
           </div>
         </div>
       </footer>
@@ -756,7 +756,7 @@ export const ProductDetailPage = ({
 }
 
 /* ============================================================
-   Scoped styles — ported 1:1 from the Spaire product-page design
+   Scoped styles — ported 1:1 from the Claidor product-page design
    (monochrome, Poppins). Every rule is namespaced under `.sppdp`
    so nothing leaks into the rest of the app.
    ============================================================ */

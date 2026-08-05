@@ -3,9 +3,9 @@
 import { useSendEmailUpdate } from '@/hooks/emailUpdate'
 import { setValidationErrors } from '@/utils/api/errors'
 import { FormControl } from '@mui/material'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
-import { Form, FormField, FormItem } from '@spaire/ui/components/ui/form'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
+import { Form, FormField, FormItem } from '@claidor/ui/components/ui/form'
 import { useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 

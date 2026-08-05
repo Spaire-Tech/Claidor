@@ -8,7 +8,7 @@ from sqlalchemy.orm import contains_eager
 from polar.auth.models import AuthSubject
 from polar.checkout_link.repository import CheckoutLinkRepository
 from polar.discount.service import discount as discount_service
-from polar.exceptions import SpaireRequestValidationError, ValidationError
+from polar.exceptions import ClaidorRequestValidationError, ValidationError
 from polar.kit.crypto import generate_token
 from polar.kit.pagination import PaginationParams
 from polar.kit.services import ResourceServiceReader
@@ -36,7 +36,7 @@ from .schemas import (
 )
 from .sorting import CheckoutLinkSortProperty
 
-CHECKOUT_LINK_CLIENT_SECRET_PREFIX = "spaire_cl_"
+CHECKOUT_LINK_CLIENT_SECRET_PREFIX = "claidor_cl_"
 
 
 class CheckoutLinkService(ResourceServiceReader[CheckoutLink]):
@@ -170,7 +170,7 @@ class CheckoutLinkService(ResourceServiceReader[CheckoutLink]):
                 session, checkout_link_update.products, auth_subject
             )
             if checkout_link.organization_id != products[0].organization_id:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -277,7 +277,7 @@ class CheckoutLinkService(ResourceServiceReader[CheckoutLink]):
             )
 
         if len(errors) > 0:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         return products
 
@@ -293,7 +293,7 @@ class CheckoutLinkService(ResourceServiceReader[CheckoutLink]):
         )
 
         if price is None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -305,7 +305,7 @@ class CheckoutLinkService(ResourceServiceReader[CheckoutLink]):
             )
 
         if price.is_archived:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -318,7 +318,7 @@ class CheckoutLinkService(ResourceServiceReader[CheckoutLink]):
 
         product = price.product
         if product.is_archived:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -330,7 +330,7 @@ class CheckoutLinkService(ResourceServiceReader[CheckoutLink]):
             )
 
         if product.visibility == ProductVisibility.draft:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -366,7 +366,7 @@ class CheckoutLinkService(ResourceServiceReader[CheckoutLink]):
         )
 
         if discount is None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",

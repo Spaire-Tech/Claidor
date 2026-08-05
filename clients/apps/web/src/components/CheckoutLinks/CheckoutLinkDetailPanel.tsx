@@ -9,14 +9,14 @@ import { toast } from '@/components/Toast/use-toast'
 import { useCheckoutLink, useDeleteCheckoutLink } from '@/hooks/queries'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/ui/dropdown-menu'
+} from '@claidor/ui/components/ui/dropdown-menu'
 
 interface CheckoutLinkDetailPanelProps {
   checkoutLinkId: string

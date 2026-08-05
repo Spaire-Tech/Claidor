@@ -1,9 +1,9 @@
 """Sync Account.platform_fee_* fields with the creator org's current
-Spaire tier.
+Claidor tier.
 
 Background: every transaction's platform fee is read from
 `Account._platform_fee_percent` / `_platform_fee_fixed`. The tier-list
-fee for a creator org is determined by which Spaire subscription they
+fee for a creator org is determined by which Claidor subscription they
 hold. This service keeps the two in sync.
 
 Override: `Account.platform_fee_locked_at` is the manual-negotiation
@@ -217,7 +217,7 @@ def enqueue_sync(organization_id: UUID) -> None:
 async def maybe_enqueue_sync_from_subscription(
     session: AsyncSession, subscription: Subscription
 ) -> None:
-    """If `subscription` is a platform-org subscription (Spaire selling to
+    """If `subscription` is a platform-org subscription (Claidor selling to
     a creator), enqueue a fee sync for that creator org. Otherwise a no-op.
 
     Called from subscription/service.py after subscription state changes
@@ -232,7 +232,7 @@ async def maybe_enqueue_sync_from_subscription(
 async def maybe_supersede_platform_trial(
     session: AsyncSession, subscription: Subscription
 ) -> None:
-    """When a creator's NEW paid-tier Spaire subscription is created (via
+    """When a creator's NEW paid-tier Claidor subscription is created (via
     the upgrade checkout — a first plan pick, a mid-trial tier switch, or a
     re-subscribe after churn), revoke their OTHER billable platform
     subscriptions so they end up holding exactly one. On a mid-trial switch

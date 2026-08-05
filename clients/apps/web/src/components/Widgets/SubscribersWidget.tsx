@@ -4,13 +4,13 @@ import {
   Card,
   CardFooter,
   CardHeader,
-} from '@spaire/ui/components/atoms/Card'
+} from '@claidor/ui/components/atoms/Card'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@spaire/ui/components/ui/tooltip'
+} from '@claidor/ui/components/ui/tooltip'
 import { useContext } from 'react'
 import { twMerge } from 'tailwind-merge'
 

@@ -7,7 +7,7 @@ from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, Mapper, ORMDescriptor, mapped_column
 
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 
 if TYPE_CHECKING:
     from polar.models import CustomField, Organization
@@ -76,6 +76,6 @@ def validate_custom_field_data(
     try:
         return schema.model_validate(data).model_dump(mode="json")
     except ValidationError as e:
-        raise SpaireRequestValidationError(
+        raise ClaidorRequestValidationError(
             [{**err, "loc": (*error_loc_prefix, *err["loc"])} for err in e.errors()]  # pyright: ignore
         )

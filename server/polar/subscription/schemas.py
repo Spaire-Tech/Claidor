@@ -241,7 +241,7 @@ class SubscriptionCreateExternalCustomer(SubscriptionCreateBase):
     external_customer_id: str = Field(
         description=(
             "The ID of the customer in your system to create the subscription for. "
-            "It must already exist in Spaire."
+            "It must already exist in Claidor."
         )
     )
 

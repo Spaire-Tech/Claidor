@@ -10,24 +10,24 @@ import { useUpdateSubscription } from '@/hooks/queries/subscriptions'
 import { setValidationErrors } from '@/utils/api/errors'
 import { getDiscountDisplay } from '@/utils/discount'
 import { hasLegacyRecurringPrices } from '@/utils/product'
-import { isValidationError, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import { Combobox } from '@spaire/ui/components/atoms/Combobox'
-import DateTimePicker from '@spaire/ui/components/atoms/DateTimePicker'
-import Pill from '@spaire/ui/components/atoms/Pill'
+import { isValidationError, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import { Combobox } from '@claidor/ui/components/atoms/Combobox'
+import DateTimePicker from '@claidor/ui/components/atoms/DateTimePicker'
+import Pill from '@claidor/ui/components/atoms/Pill'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@spaire/ui/components/atoms/Tabs'
+} from '@claidor/ui/components/atoms/Tabs'
 import {
   Form,
   FormControl,
@@ -36,7 +36,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'

@@ -1,4 +1,4 @@
-import Paginator from '@spaire/ui/components/atoms/Paginator'
+import Paginator from '@claidor/ui/components/atoms/Paginator'
 import {
   ReadonlyURLSearchParams,
   useRouter,

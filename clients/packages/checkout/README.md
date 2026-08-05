@@ -1,13 +1,13 @@
-# `@spaire/checkout`
+# `@claidor/checkout`
 
-JavaScript utilities for integrating Spaire Checkout into your website or application.
+JavaScript utilities for integrating Claidor Checkout into your website or application.
 
 ## Installation
 
 ```bash
-pnpm add @spaire/checkout
+pnpm add @claidor/checkout
 # or
-npm install @spaire/checkout
+npm install @claidor/checkout
 ```
 
 ## Embed Script (Recommended)
@@ -15,16 +15,16 @@ npm install @spaire/checkout
 The easiest way to add checkout is via the CDN embed script. Add it to your HTML layout:
 
 ```html
-<script defer data-auto-init src="https://cdn.spairehq.com/checkout/embed.js"></script>
+<script defer data-auto-init src="https://cdn.claidorhq.com/checkout/embed.js"></script>
 ```
 
-Then add checkout links with `data-spaire-checkout`:
+Then add checkout links with `data-claidor-checkout`:
 
 ```html
 <a
-  href="https://buy.spairehq.com/spaire_cl_YOUR_LINK_ID"
-  data-spaire-checkout
-  data-spaire-checkout-theme="light"
+  href="https://buy.claidorhq.com/claidor_cl_YOUR_LINK_ID"
+  data-claidor-checkout
+  data-claidor-checkout-theme="light"
 >
   Get Started
 </a>
@@ -34,12 +34,12 @@ The overlay opens automatically on click, and closes automatically on success.
 
 ## Programmatic API
 
-Use `window.Spaire.EmbedCheckout.create()` to open checkout from JavaScript:
+Use `window.Claidor.EmbedCheckout.create()` to open checkout from JavaScript:
 
 ```typescript
 // After the embed script has loaded
-const checkout = await window.Spaire.EmbedCheckout.create(
-  'https://buy.spairehq.com/spaire_cl_YOUR_LINK_ID',
+const checkout = await window.Claidor.EmbedCheckout.create(
+  'https://buy.claidorhq.com/claidor_cl_YOUR_LINK_ID',
   { theme: 'light' },
 )
 ```
@@ -48,10 +48,10 @@ const checkout = await window.Spaire.EmbedCheckout.create(
 
 ### TypeScript
 
-The embed script exposes `window.Spaire.EmbedCheckout`. To get types, import from this package:
+The embed script exposes `window.Claidor.EmbedCheckout`. To get types, import from this package:
 
 ```typescript
-import type { SpaireEmbedCheckout } from '@spaire/checkout'
+import type { ClaidorEmbedCheckout } from '@claidor/checkout'
 ```
 
 Or declare it yourself:
@@ -59,7 +59,7 @@ Or declare it yourself:
 ```typescript
 declare global {
   interface Window {
-    Spaire: {
+    Claidor: {
       EmbedCheckout: {
         create: (url: string, options?: { theme?: 'light' | 'dark' }) => Promise<void>
         init: () => void
@@ -74,7 +74,7 @@ declare global {
 You can listen to checkout lifecycle events:
 
 ```typescript
-const checkout = await window.Spaire.EmbedCheckout.create(url)
+const checkout = await window.Claidor.EmbedCheckout.create(url)
 
 checkout.addEventListener('confirmed', () => {
   // Payment confirmed — do not close the overlay
@@ -99,13 +99,13 @@ checkout.addEventListener('success', (event) => {
 
 ```typescript
 try {
-  await window.Spaire.EmbedCheckout.create(url)
+  await window.Claidor.EmbedCheckout.create(url)
 } catch (err) {
-  console.error(err) // '[Spaire Checkout] Checkout failed to load within 30 seconds'
+  console.error(err) // '[Claidor Checkout] Checkout failed to load within 30 seconds'
 }
 ```
 
-The auto-init click handler (via `data-spaire-checkout`) logs errors to the console automatically.
+The auto-init click handler (via `data-claidor-checkout`) logs errors to the console automatically.
 
 ## Next.js
 
@@ -116,11 +116,11 @@ import Script from 'next/script'
 <Script
   defer
   data-auto-init
-  src="https://cdn.spairehq.com/checkout/embed.js"
+  src="https://cdn.claidorhq.com/checkout/embed.js"
   strategy="afterInteractive"
 />
 ```
 
 Make sure your CSP includes:
-- `script-src`: `https://cdn.spairehq.com`
-- `frame-src`: `https://buy.spairehq.com`
+- `script-src`: `https://cdn.claidorhq.com`
+- `frame-src`: `https://buy.claidorhq.com`

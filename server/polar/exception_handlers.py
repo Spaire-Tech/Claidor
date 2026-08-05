@@ -11,7 +11,7 @@ from polar.exceptions import (
     PolarError,
     PolarRedirectionError,
     ResourceNotModified,
-    SpaireRequestValidationError,
+    ClaidorRequestValidationError,
 )
 
 log = structlog.get_logger()
@@ -26,7 +26,7 @@ async def polar_exception_handler(request: Request, exc: PolarError) -> JSONResp
 
 
 async def request_validation_exception_handler(
-    request: Request, exc: RequestValidationError | SpaireRequestValidationError
+    request: Request, exc: RequestValidationError | ClaidorRequestValidationError
 ) -> JSONResponse:
     return JSONResponse(
         status_code=422,
@@ -98,7 +98,7 @@ def add_exception_handlers(app: FastAPI) -> None:
         request_validation_exception_handler,  # type: ignore
     )
     app.add_exception_handler(
-        SpaireRequestValidationError,
+        ClaidorRequestValidationError,
         request_validation_exception_handler,  # type: ignore
     )
     app.add_exception_handler(PolarError, polar_exception_handler)  # type: ignore

@@ -8,12 +8,12 @@ description: "Ingestion strategy for S3 Operations"
 Wrap the official AWS S3 Client with our S3 Ingestion Strategy to automatically ingest bytes uploaded.
 
 ```
-pnpm add @spaire/ingestion @aws-sdk/client-s3
+pnpm add @claidor/ingestion @aws-sdk/client-s3
 ```
 
 ```typescript
-import { Ingestion } from "@spaire/ingestion";
-import { S3Strategy } from "@spaire/ingestion/strategies/S3";
+import { Ingestion } from "@claidor/ingestion";
+import { S3Strategy } from "@claidor/ingestion/strategies/S3";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client({
@@ -26,7 +26,7 @@ const s3Client = new S3Client({
 });
 
 // Setup the S3 Ingestion Strategy
-const s3Ingestion = Ingestion({ accessToken: process.env.SPAIRE_ACCESS_TOKEN })
+const s3Ingestion = Ingestion({ accessToken: process.env.CLAIDOR_ACCESS_TOKEN })
   .strategy(new S3Strategy(s3Client))
   .ingest("s3-uploads");
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     // Get the wrapped S3 Client
     // Pass Customer Id to properly annotate the ingestion events with a specific customer
     const s3 = s3Ingestion.client({
-      customerId: request.headers.get("X-Spaire-Customer-Id") ?? "",
+      customerId: request.headers.get("X-Claidor-Customer-Id") ?? "",
     });
 
     await s3.send(

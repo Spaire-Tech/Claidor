@@ -76,7 +76,7 @@ def _seconds_or_timedelta(value: object) -> object:
 SecondsTimedelta = Annotated[timedelta, BeforeValidator(_seconds_or_timedelta)]
 
 
-env = Environment(os.getenv("SPAIRE_ENV", Environment.development))
+env = Environment(os.getenv("CLAIDOR_ENV", Environment.development))
 if env == Environment.testing:
     env_file = ".env.testing"
 elif env == Environment.test:
@@ -124,8 +124,8 @@ class Settings(BaseSettings):
 
     SECRET: str = "super secret jwt secret"
     JWKS: JWKSFile = Field(default="./.jwks.json")
-    CURRENT_JWK_KID: str = "spaire_dev"
-    WWW_AUTHENTICATE_REALM: str = "spaire"
+    CURRENT_JWK_KID: str = "claidor_dev"
+    WWW_AUTHENTICATE_REALM: str = "claidor"
 
     # JSON list of accepted CORS origins
     CORS_ORIGINS: list[str] = []
@@ -136,15 +136,15 @@ class Settings(BaseSettings):
     # generate URLs to the backend accessible from the outside.
     BASE_URL: str = "http://127.0.0.1:8000"
     BACKOFFICE_HOST: str | None = None
-    CHECKOUT_LINK_HOST: str | None = None  # e.g., "buy.spairehq.com" in production
+    CHECKOUT_LINK_HOST: str | None = None  # e.g., "buy.claidorhq.com" in production
 
-    # URL to the storefront app (space.spairehq.com in production).
+    # URL to the storefront app (space.claidorhq.com in production).
     # Added to CORS allowed origins with credentials.
     STOREFRONT_BASE_URL: str = ""
 
     # Creator custom storefront domains (learn.creator.com).
     # CNAME target creators must point their subdomain at.
-    CUSTOM_DOMAIN_CNAME_TARGET: str = "domains.spairehq.com"
+    CUSTOM_DOMAIN_CNAME_TARGET: str = "domains.claidorhq.com"
     # DNS-over-HTTPS resolver used for domain verification (RFC 8484 JSON API).
     CUSTOM_DOMAIN_DOH_URL: str = "https://cloudflare-dns.com/dns-query"
     # Consecutive failed re-checks before an active domain is demoted to failed.
@@ -168,7 +168,7 @@ class Settings(BaseSettings):
 
     # User session
     USER_SESSION_TTL: timedelta = timedelta(days=31)
-    USER_SESSION_COOKIE_KEY: str = "spaire_session"
+    USER_SESSION_COOKIE_KEY: str = "claidor_session"
     USER_SESSION_COOKIE_DOMAIN: str = "127.0.0.1"
 
     # Customer session
@@ -177,8 +177,8 @@ class Settings(BaseSettings):
     CUSTOMER_SESSION_CODE_LENGTH: int = 6
 
     # Impersonation session
-    IMPERSONATION_COOKIE_KEY: str = "spaire_original_session"
-    IMPERSONATION_INDICATOR_COOKIE_KEY: str = "spaire_is_impersonating"
+    IMPERSONATION_COOKIE_KEY: str = "claidor_original_session"
+    IMPERSONATION_INDICATOR_COOKIE_KEY: str = "claidor_is_impersonating"
 
     # Login code
     LOGIN_CODE_TTL_SECONDS: int = 60 * 30  # 30 minutes
@@ -186,7 +186,7 @@ class Settings(BaseSettings):
 
     # OAuth state
     OAUTH_STATE_TTL: timedelta = timedelta(minutes=10)
-    OAUTH_STATE_COOKIE_KEY: str = "spaire_oauth_state"
+    OAUTH_STATE_COOKIE_KEY: str = "claidor_oauth_state"
 
     # App Review bypass (for testing login flow during Apple/Google app reviews)
     APP_REVIEW_EMAIL: str | None = None
@@ -201,11 +201,11 @@ class Settings(BaseSettings):
     IP_GEOLOCATION_DATABASE_NAME: str = "ip-geolocation.mmdb"
 
     # Database
-    POSTGRES_USER: str = "spaire"
-    POSTGRES_PWD: str = "spaire"
+    POSTGRES_USER: str = "claidor"
+    POSTGRES_PWD: str = "claidor"
     POSTGRES_HOST: str = "127.0.0.1"
     POSTGRES_PORT: int = 5432
-    POSTGRES_DATABASE: str = "spaire"
+    POSTGRES_DATABASE: str = "claidor"
     DATABASE_POOL_SIZE: int = 5
     DATABASE_SYNC_POOL_SIZE: int = 1  # Specific pool size for sync connection: since we only use it in OAuth2 router, don't waste resources.
     DATABASE_POOL_RECYCLE_SECONDS: int = 600  # 10 minutes
@@ -236,11 +236,11 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
     RESEND_API_BASE_URL: str = "https://api.resend.com"
     RESEND_WEBHOOK_SECRET: str = ""
-    EMAIL_FROM_NAME: str = "Spaire"
-    EMAIL_FROM_DOMAIN: str = "notifications.spairehq.com"
+    EMAIL_FROM_NAME: str = "Claidor"
+    EMAIL_FROM_DOMAIN: str = "notifications.claidorhq.com"
     EMAIL_FROM_LOCAL: str = "mail"
-    EMAIL_DEFAULT_REPLY_TO_NAME: str = "Spaire Support"
-    EMAIL_DEFAULT_REPLY_TO_EMAIL_ADDRESS: str = "support@spairehq.com"
+    EMAIL_DEFAULT_REPLY_TO_NAME: str = "Claidor Support"
+    EMAIL_DEFAULT_REPLY_TO_EMAIL_ADDRESS: str = "support@claidorhq.com"
 
     # Github App
     GITHUB_CLIENT_ID: str = ""
@@ -282,11 +282,11 @@ class Settings(BaseSettings):
     #
     # Read from the unprefixed `ANTHROPIC_API_KEY` (the name the Anthropic SDK
     # itself uses, and what's set in the deployment env), falling back to the
-    # `spaire_`-prefixed `SPAIRE_ANTHROPIC_API_KEY` for consistency with the
+    # `claidor_`-prefixed `CLAIDOR_ANTHROPIC_API_KEY` for consistency with the
     # rest of the settings. An explicit validation_alias overrides env_prefix.
     ANTHROPIC_API_KEY: str = Field(
         default="",
-        validation_alias=AliasChoices("ANTHROPIC_API_KEY", "SPAIRE_ANTHROPIC_API_KEY"),
+        validation_alias=AliasChoices("ANTHROPIC_API_KEY", "CLAIDOR_ANTHROPIC_API_KEY"),
     )
     # Lifecycle email copy generation — short, creative generation that
     # benefits from the strongest model.
@@ -304,7 +304,7 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_CONNECT_WEBHOOK_SECRET: str = ""
     STRIPE_V2_WEBHOOK_SECRET: str = ""
-    STRIPE_STATEMENT_DESCRIPTOR: str = "SPAIRE"
+    STRIPE_STATEMENT_DESCRIPTOR: str = "CLAIDOR"
 
     # Mux video
     # Signing key used to mint short-lived JWTs for signed playback URLs
@@ -369,30 +369,30 @@ class Settings(BaseSettings):
     PLAIN_CHAT_SECRET: str | None = None
 
     # AWS (File Downloads)
-    AWS_ACCESS_KEY_ID: str = "spaire-development"
-    AWS_SECRET_ACCESS_KEY: str = "spaire123456789"
+    AWS_ACCESS_KEY_ID: str = "claidor-development"
+    AWS_SECRET_ACCESS_KEY: str = "claidor123456789"
     AWS_REGION: str = "us-east-2"
     AWS_SIGNATURE_VERSION: str = "v4"
 
     # Downloadable files
-    S3_FILES_BUCKET_NAME: str = "spaire-s3"
-    S3_FILES_PUBLIC_BUCKET_NAME: str = "spaire-s3-public"
+    S3_FILES_BUCKET_NAME: str = "claidor-s3"
+    S3_FILES_PUBLIC_BUCKET_NAME: str = "claidor-s3-public"
     S3_FILES_PRESIGN_TTL: int = 3600  # 60 minutes
     S3_FILES_DOWNLOAD_SECRET: str = "supersecret"
     S3_FILES_DOWNLOAD_SALT: str = "saltysalty"
     # Override to http://127.0.0.1:9000 in .env during development
     S3_ENDPOINT_URL: str | None = None
 
-    MINIO_USER: str = "spaire"
-    MINIO_PWD: str = "spairespaire"
+    MINIO_USER: str = "claidor"
+    MINIO_PWD: str = "claidorclaidor"
 
     # Chargeback Stop
     CHARGEBACK_STOP_WEBHOOK_SECRET: str = ""
 
     # Invoices
-    S3_CUSTOMER_INVOICES_BUCKET_NAME: str = "spaire-customer-invoices"
-    S3_PAYOUT_INVOICES_BUCKET_NAME: str = "spaire-payout-invoices"
-    INVOICES_NAME: str = "Spaire, Inc."
+    S3_CUSTOMER_INVOICES_BUCKET_NAME: str = "claidor-customer-invoices"
+    S3_PAYOUT_INVOICES_BUCKET_NAME: str = "claidor-payout-invoices"
+    INVOICES_NAME: str = "Claidor, Inc."
     INVOICES_ADDRESS: Address = Address(
         line1="1111B S Governors Ave",
         line2="# 47283",
@@ -402,9 +402,9 @@ class Settings(BaseSettings):
         country=CountryAlpha2("US"),
     )
     INVOICES_ADDITIONAL_INFO: str | None = (
-        "[support@spairehq.com](mailto:support@spairehq.com)"
+        "[support@claidorhq.com](mailto:support@claidorhq.com)"
     )
-    PAYOUT_INVOICES_PREFIX: str = "SPAIRE-"
+    PAYOUT_INVOICES_PREFIX: str = "CLAIDOR-"
 
     # Bank transfer details shown on invoices (all optional; section hidden if INVOICES_BANK_NAME is unset)
     INVOICES_BANK_NAME: str | None = None
@@ -461,7 +461,7 @@ class Settings(BaseSettings):
     PLATFORM_FEE_BASIS_POINTS: int = 500
     PLATFORM_FEE_FIXED: int = 50
 
-    # The Organization that represents Spaire itself. This org sells the
+    # The Organization that represents Claidor itself. This org sells the
     # Starter/Studio/Scale subscriptions to every other creator org, and
     # every creator org is a Customer of it. Unset = no tier billing is
     # wired up (single-tenant / development).
@@ -510,7 +510,7 @@ class Settings(BaseSettings):
     DEFAULT_TAX_PROCESSOR: TaxProcessor = TaxProcessor.stripe
 
     model_config = SettingsConfigDict(
-        env_prefix="spaire_",
+        env_prefix="claidor_",
         env_file_encoding="utf-8",
         case_sensitive=False,
         env_file=env_file,
@@ -573,7 +573,7 @@ class Settings(BaseSettings):
         """
         if self.ENV == Environment.production:
             # Report the exact environment-variable names (with the configured
-            # prefix, e.g. SPAIRE_SECRET) so the fix is unambiguous.
+            # prefix, e.g. CLAIDOR_SECRET) so the fix is unambiguous.
             prefix = str(self.model_config.get("env_prefix", "")).upper()
             insecure: list[str] = []
             if self.SECRET == "super secret jwt secret":

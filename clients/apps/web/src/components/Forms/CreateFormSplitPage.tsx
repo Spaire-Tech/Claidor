@@ -2,7 +2,7 @@
 
 import { FormResource } from '@/hooks/queries/forms'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import Link from 'next/link'
 import { useState } from 'react'
 import { FormBuilder, FormBuilderValues } from './FormBuilder'

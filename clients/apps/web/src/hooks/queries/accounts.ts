@@ -1,5 +1,5 @@
 import { api } from '@/utils/client'
-import { schemas, unwrap } from '@spaire/client'
+import { schemas, unwrap } from '@claidor/client'
 import { UseQueryResult, useQuery } from '@tanstack/react-query'
 import { defaultRetry } from './retry'
 

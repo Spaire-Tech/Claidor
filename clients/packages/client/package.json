@@ -1,7 +1,7 @@
 {
-  "name": "@spaire/client",
-  "description": "Spaire Internal API Client",
-  "author": "Spaire",
+  "name": "@claidor/client",
+  "description": "Claidor Internal API Client",
+  "author": "Claidor",
   "license": "Apache-2.0",
   "type": "module",
   "private": true,
@@ -25,7 +25,7 @@
     }
   },
   "devDependencies": {
-    "@spaire/typescript-config": "workspace:*",
+    "@claidor/typescript-config": "workspace:*",
     "openapi-typescript": "^7.10.1",
     "tsup": "^8.5.1",
     "typescript": "latest"

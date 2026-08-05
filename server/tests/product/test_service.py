@@ -10,7 +10,7 @@ from polar.auth.models import AuthSubject
 from polar.entitlements.exceptions import FeatureNotInPlanError
 from polar.entitlements.tiers import TierKey
 from polar.enums import SubscriptionRecurringInterval
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.kit.currency import PresentmentCurrency
 from polar.kit.pagination import PaginationParams
 from polar.kit.trial import TrialInterval
@@ -349,7 +349,7 @@ class TestCreate:
             ],
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth
@@ -372,7 +372,7 @@ class TestCreate:
             ],
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth
@@ -448,7 +448,7 @@ class TestCreate:
             ],
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth(AuthSubjectFixture(subject="organization"))
@@ -495,7 +495,7 @@ class TestCreate:
             medias=[uuid.uuid4()],
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth
@@ -545,7 +545,7 @@ class TestCreate:
             medias=[file.id],
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(session, create_schema, auth_subject)
 
     @pytest.mark.auth
@@ -670,7 +670,7 @@ class TestCreate:
         user_organization: UserOrganization,
         meter: Meter,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateOneTime(
@@ -700,7 +700,7 @@ class TestCreate:
         organization: Organization,
         user_organization: UserOrganization,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateRecurring(
@@ -728,7 +728,7 @@ class TestCreate:
         user_organization: UserOrganization,
         meter: Meter,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateOneTime(
@@ -755,7 +755,7 @@ class TestCreate:
         user_organization: UserOrganization,
         meter: Meter,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateRecurring(
@@ -789,7 +789,7 @@ class TestCreate:
         user_organization: UserOrganization,
     ) -> None:
         """Test that multiple static prices in the same currency are not allowed"""
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateOneTime(
@@ -821,7 +821,7 @@ class TestCreate:
         meter: Meter,
     ) -> None:
         """Test that each currency must have the same set of prices"""
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateRecurring(
@@ -861,7 +861,7 @@ class TestCreate:
         meter: Meter,
     ) -> None:
         """Test that the default presentment currency is included in the product prices"""
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.create(
                 session,
                 ProductCreateRecurring(
@@ -1034,7 +1034,7 @@ class TestUpdate:
         user_organization: UserOrganization,
     ) -> None:
         update_schema = ProductUpdate(prices=[])
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1253,7 +1253,7 @@ class TestUpdate:
         user_organization: UserOrganization,
     ) -> None:
         update_schema = ProductUpdate(medias=[uuid.uuid4()])
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1299,7 +1299,7 @@ class TestUpdate:
         await save_fixture(file)
 
         update_schema = ProductUpdate(medias=[file.id])
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1359,7 +1359,7 @@ class TestUpdate:
             recurring_interval=SubscriptionRecurringInterval.year
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1383,7 +1383,7 @@ class TestUpdate:
         product to a one-time purchase."""
         update_schema = ProductUpdate(recurring_interval=None)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1404,7 +1404,7 @@ class TestUpdate:
     ) -> None:
         update_schema = ProductUpdate(recurring_interval_count=6)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1461,7 +1461,7 @@ class TestUpdate:
             ]
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product_recurring_monthly_and_yearly,
@@ -1558,7 +1558,7 @@ class TestUpdate:
                 ),
             ]
         )
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1587,7 +1587,7 @@ class TestUpdate:
                 ),
             ]
         )
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product,
@@ -1610,7 +1610,7 @@ class TestUpdate:
             trial_interval=TrialInterval.month, trial_interval_count=1
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update(
                 session,
                 product_one_time,
@@ -1662,7 +1662,7 @@ class TestUpdateBenefits:
         )
         assert len(product.product_benefits) == len(benefits)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update_benefits(
                 session,
                 product,
@@ -1869,7 +1869,7 @@ class TestUpdateBenefits:
             properties={"note": None},
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update_benefits(
                 session,
                 product,
@@ -1905,7 +1905,7 @@ class TestUpdateBenefits:
             benefits=[not_selectable_benefit],
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await product_service.update_benefits(
                 session,
                 product,

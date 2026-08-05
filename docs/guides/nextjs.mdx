@@ -1,51 +1,51 @@
 ---
-title: "Integrate Spaire with Next.js"
+title: "Integrate Claidor with Next.js"
 sidebarTitle: "Next.js"
-description: "In this guide, we'll show you how to integrate Spaire with Next.js."
+description: "In this guide, we'll show you how to integrate Claidor with Next.js."
 ---
 
 Feel free to use our quick-start script to get started inside a new Next.js project:
 
 ```bash Terminal
 # Inside a new Next.js project
-npx spaire-init
+npx claidor-init
 ```
 
-Consider following this guide while using the Spaire Sandbox Environment. This will allow you to test your integration without affecting your production data.
+Consider following this guide while using the Claidor Sandbox Environment. This will allow you to test your integration without affecting your production data.
 
-## Install the Spaire JavaScript SDK
+## Install the Claidor JavaScript SDK
 
-To get started, you need to install the Spaire JavaScript SDK and the Spaire Nextjs helper package. You can do this by running the following command:
+To get started, you need to install the Claidor JavaScript SDK and the Claidor Nextjs helper package. You can do this by running the following command:
 
 ```bash Terminal
-pnpm install @spaire/sdk @spaire/nextjs
+pnpm install @spaire/sdk @claidor/nextjs
 ```
 
 ## Setting up environment variables
 
-### Spaire Access Token
+### Claidor Access Token
 
-To authenticate with Spaire, you need to create an access token, and supply it to Next.js using a `SPAIRE_ACCESS_TOKEN` environment variable.
+To authenticate with Claidor, you need to create an access token, and supply it to Next.js using a `CLAIDOR_ACCESS_TOKEN` environment variable.
 
 You can create an organization access token from your organization settings.
 
-## Configuring a Spaire API Client
+## Configuring a Claidor API Client
 
-To interact with the Spaire API, you need to create a new instance of the `Spaire` class. This class uses the provided access token to authenticate with the Spaire API.
+To interact with the Claidor API, you need to create a new instance of the `Claidor` class. This class uses the provided access token to authenticate with the Claidor API.
 
 ```typescript
-// src/spaire.ts
-import { Spaire } from "@spaire/sdk";
+// src/claidor.ts
+import { Claidor } from "@spaire/sdk";
 
-export const api = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN!,
+export const api = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
   server: "sandbox", // Use this option if you're using the sandbox environment - else use 'production' or omit the parameter
 });
 ```
 
 Remember to replace `sandbox` with `production` when you're ready to switch to the production environment.
 
-## Generating Spaire Checkout Sessions
+## Generating Claidor Checkout Sessions
 
 Next up, we need to create a checkout endpoint to handle the creation of checkout sessions.
 
@@ -53,18 +53,18 @@ Go ahead and create a new GET route in Next.js.
 
 ```typescript
 // src/app/checkout/route.ts
-import { Checkout } from "@spaire/nextjs";
+import { Checkout } from "@claidor/nextjs";
 
 export const GET = Checkout({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN!,
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
   successUrl: "https://your-app.com/confirmation?checkout_id={CHECKOUT_ID}",
   server: "sandbox", // Use this option if you're using the sandbox environment - else use 'production' or omit the parameter
 });
 ```
 
-## Handling Spaire Webhooks
+## Handling Claidor Webhooks
 
-Spaire can send you events about various things happening in your organization. This is very useful for keeping your database in sync with Spaire checkouts, orders, subscriptions, etc.
+Claidor can send you events about various things happening in your organization. This is very useful for keeping your database in sync with Claidor checkouts, orders, subscriptions, etc.
 
 Configuring a webhook is simple. Head over to your organization's settings page and click on the "Add Endpoint" button to create a new webhook.
 
@@ -80,25 +80,25 @@ ngrok http 3000
 
 ### Add Webhook Endpoint
 
-1. Point the Webhook to `your-app.com/api/webhook/spaire`. This must be an absolute URL which Spaire can reach. If you use ngrok, the URL will look something like this: `https://<your-ngrok-id>.ngrok-free.app/api/webhook/spaire`.
+1. Point the Webhook to `your-app.com/api/webhook/claidor`. This must be an absolute URL which Claidor can reach. If you use ngrok, the URL will look something like this: `https://<your-ngrok-id>.ngrok-free.app/api/webhook/claidor`.
 2. Select which events you want to be notified about. You can read more about the available events in the [Events section](/api-reference#webhooks).
-3. Generate a secret key to sign the requests. This will allow you to verify that the requests are truly coming from Spaire.
+3. Generate a secret key to sign the requests. This will allow you to verify that the requests are truly coming from Claidor.
 4. Add the secret key to your environment variables.
 
 ```bash Terminal
 # .env
-SPAIRE_ACCESS_TOKEN="spaire_pat..."
-SPAIRE_WEBHOOK_SECRET="..."
+CLAIDOR_ACCESS_TOKEN="claidor_pat..."
+CLAIDOR_WEBHOOK_SECRET="..."
 ```
 
 ### Setting up the Webhook handler
 
 ```typescript
-// src/app/api/webhook/spaire/route.ts
-import { Webhooks } from "@spaire/nextjs";
+// src/app/api/webhook/claidor/route.ts
+import { Webhooks } from "@claidor/nextjs";
 
 export const POST = Webhooks({
-	webhookSecret: process.env.SPAIRE_WEBHOOK_SECRET,
+	webhookSecret: process.env.CLAIDOR_WEBHOOK_SECRET,
 	onPayload: async (payload) => // Handle payload...
 });
 ```
@@ -110,11 +110,11 @@ The webhook event is now verified and you can proceed to handle the payload data
 Depending on which events you've subscribed to, you'll receive different payloads. This is where you can update your database, send notifications, etc.
 
 ```typescript
-// src/app/api/webhook/spaire/route.ts
-import { Webhooks } from "@spaire/nextjs";
+// src/app/api/webhook/claidor/route.ts
+import { Webhooks } from "@claidor/nextjs";
 
 export const POST = Webhooks({
-  webhookSecret: process.env.SPAIRE_WEBHOOK_SECRET,
+  webhookSecret: process.env.CLAIDOR_WEBHOOK_SECRET,
   onPayload: async (payload) => ...,
   onOrderCreated: async (order) => ...,
   onCustomerStateChanged: async (customerState) => ...,

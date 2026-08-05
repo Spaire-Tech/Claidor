@@ -52,7 +52,7 @@ from polar.organization.schemas import OrganizationID
 _NAME_DESCRIPTION = "The name of the event."
 _SOURCE_DESCRIPTION = (
     "The source of the event. "
-    "`system` events are created by Spaire. "
+    "`system` events are created by Claidor. "
     "`user` events are the one you create through our ingestion API."
 )
 
@@ -158,14 +158,14 @@ class EventCreateBase(Schema):
         default=None,
         description=(
             "The ID of the parent event. "
-            "Can be either a Spaire event ID (UUID) or an external event ID."
+            "Can be either a Claidor event ID (UUID) or an external event ID."
         ),
     )
     metadata: EventMetadataInput = Field(
         description=METADATA_DESCRIPTION.format(
             heading=(
                 "Key-value object allowing you to store additional information about the event. "
-                "Some keys like `_llm` are structured data that are handled specially by Spaire."
+                "Some keys like `_llm` are structured data that are handled specially by Claidor."
             )
         ),
         default_factory=metadata_default_factory,
@@ -176,7 +176,7 @@ class EventCreateBase(Schema):
 class EventCreateCustomer(EventCreateBase):
     customer_id: UUID4 = Field(
         description=(
-            "ID of the customer in your Spaire organization associated with the event."
+            "ID of the customer in your Claidor organization associated with the event."
         )
     )
     member_id: UUID4 | None = Field(
@@ -222,7 +222,7 @@ class BaseEvent(IDSchema):
     )
     customer_id: UUID4 | None = Field(
         description=(
-            "ID of the customer in your Spaire organization associated with the event."
+            "ID of the customer in your Claidor organization associated with the event."
         )
     )
     customer: Customer | None = Field(
@@ -256,13 +256,13 @@ class BaseEvent(IDSchema):
 
 
 class SystemEventBase(BaseEvent):
-    """An event created by Spaire."""
+    """An event created by Claidor."""
 
     source: Literal[EventSource.system] = Field(description=_SOURCE_DESCRIPTION)
 
 
 class MeterCreditEvent(SystemEventBase):
-    """An event created by Spaire when credits are added to a customer meter."""
+    """An event created by Claidor when credits are added to a customer meter."""
 
     name: Literal[SystemEventEnum.meter_credited] = Field(description=_NAME_DESCRIPTION)
     metadata: MeterCreditedMetadata = Field(
@@ -271,7 +271,7 @@ class MeterCreditEvent(SystemEventBase):
 
 
 class MeterResetEvent(SystemEventBase):
-    """An event created by Spaire when a customer meter is reset."""
+    """An event created by Claidor when a customer meter is reset."""
 
     name: Literal[SystemEventEnum.meter_reset] = Field(description=_NAME_DESCRIPTION)
     metadata: MeterResetMetadata = Field(
@@ -280,7 +280,7 @@ class MeterResetEvent(SystemEventBase):
 
 
 class BenefitGrantedEvent(SystemEventBase):
-    """An event created by Spaire when a benefit is granted to a customer."""
+    """An event created by Claidor when a benefit is granted to a customer."""
 
     name: Literal[SystemEventEnum.benefit_granted] = Field(
         description=_NAME_DESCRIPTION
@@ -291,7 +291,7 @@ class BenefitGrantedEvent(SystemEventBase):
 
 
 class BenefitCycledEvent(SystemEventBase):
-    """An event created by Spaire when a benefit is cycled."""
+    """An event created by Claidor when a benefit is cycled."""
 
     name: Literal[SystemEventEnum.benefit_cycled] = Field(description=_NAME_DESCRIPTION)
     metadata: BenefitGrantMetadata = Field(
@@ -300,7 +300,7 @@ class BenefitCycledEvent(SystemEventBase):
 
 
 class BenefitUpdatedEvent(SystemEventBase):
-    """An event created by Spaire when a benefit is updated."""
+    """An event created by Claidor when a benefit is updated."""
 
     name: Literal[SystemEventEnum.benefit_updated] = Field(
         description=_NAME_DESCRIPTION
@@ -311,7 +311,7 @@ class BenefitUpdatedEvent(SystemEventBase):
 
 
 class BenefitRevokedEvent(SystemEventBase):
-    """An event created by Spaire when a benefit is revoked from a customer."""
+    """An event created by Claidor when a benefit is revoked from a customer."""
 
     name: Literal[SystemEventEnum.benefit_revoked] = Field(
         description=_NAME_DESCRIPTION
@@ -322,7 +322,7 @@ class BenefitRevokedEvent(SystemEventBase):
 
 
 class SubscriptionCreatedEvent(SystemEventBase):
-    """An event created by Spaire when a subscription is created."""
+    """An event created by Claidor when a subscription is created."""
 
     name: Literal[SystemEventEnum.subscription_created] = Field(
         description=_NAME_DESCRIPTION
@@ -333,7 +333,7 @@ class SubscriptionCreatedEvent(SystemEventBase):
 
 
 class SubscriptionCycledEvent(SystemEventBase):
-    """An event created by Spaire when a subscription is cycled."""
+    """An event created by Claidor when a subscription is cycled."""
 
     name: Literal[SystemEventEnum.subscription_cycled] = Field(
         description=_NAME_DESCRIPTION
@@ -344,7 +344,7 @@ class SubscriptionCycledEvent(SystemEventBase):
 
 
 class SubscriptionCanceledEvent(SystemEventBase):
-    """An event created by Spaire when a subscription is canceled."""
+    """An event created by Claidor when a subscription is canceled."""
 
     name: Literal[SystemEventEnum.subscription_canceled] = Field(
         description=_NAME_DESCRIPTION
@@ -355,7 +355,7 @@ class SubscriptionCanceledEvent(SystemEventBase):
 
 
 class SubscriptionRevokedEvent(SystemEventBase):
-    """An event created by Spaire when a subscription is revoked from a customer."""
+    """An event created by Claidor when a subscription is revoked from a customer."""
 
     name: Literal[SystemEventEnum.subscription_revoked] = Field(
         description=_NAME_DESCRIPTION
@@ -366,7 +366,7 @@ class SubscriptionRevokedEvent(SystemEventBase):
 
 
 class SubscriptionUncanceledEvent(SystemEventBase):
-    """An event created by Spaire when a subscription cancellation is reversed."""
+    """An event created by Claidor when a subscription cancellation is reversed."""
 
     name: Literal[SystemEventEnum.subscription_uncanceled] = Field(
         description=_NAME_DESCRIPTION
@@ -377,7 +377,7 @@ class SubscriptionUncanceledEvent(SystemEventBase):
 
 
 class SubscriptionProductUpdatedEvent(SystemEventBase):
-    """An event created by Spaire when a subscription changes the product."""
+    """An event created by Claidor when a subscription changes the product."""
 
     name: Literal[SystemEventEnum.subscription_product_updated] = Field(
         description=_NAME_DESCRIPTION
@@ -388,7 +388,7 @@ class SubscriptionProductUpdatedEvent(SystemEventBase):
 
 
 class SubscriptionSeatsUpdatedEvent(SystemEventBase):
-    """An event created by Spaire when a the seats on a subscription is changed."""
+    """An event created by Claidor when a the seats on a subscription is changed."""
 
     name: Literal[SystemEventEnum.subscription_seats_updated] = Field(
         description=_NAME_DESCRIPTION
@@ -399,7 +399,7 @@ class SubscriptionSeatsUpdatedEvent(SystemEventBase):
 
 
 class SubscriptionBillingPeriodUpdatedEvent(SystemEventBase):
-    """An event created by Spaire when a subscription billing period is updated."""
+    """An event created by Claidor when a subscription billing period is updated."""
 
     name: Literal[SystemEventEnum.subscription_billing_period_updated] = Field(
         description=_NAME_DESCRIPTION
@@ -410,7 +410,7 @@ class SubscriptionBillingPeriodUpdatedEvent(SystemEventBase):
 
 
 class OrderPaidEvent(SystemEventBase):
-    """An event created by Spaire when an order is paid."""
+    """An event created by Claidor when an order is paid."""
 
     name: Literal[SystemEventEnum.order_paid] = Field(description=_NAME_DESCRIPTION)
     metadata: OrderPaidMetadata = Field(
@@ -419,7 +419,7 @@ class OrderPaidEvent(SystemEventBase):
 
 
 class CustomerCreatedEvent(SystemEventBase):
-    """An event created by Spaire when a customer is created."""
+    """An event created by Claidor when a customer is created."""
 
     name: Literal[SystemEventEnum.customer_created] = Field(
         description=_NAME_DESCRIPTION
@@ -430,7 +430,7 @@ class CustomerCreatedEvent(SystemEventBase):
 
 
 class OrderRefundedEvent(SystemEventBase):
-    """An event created by Spaire when an order is refunded."""
+    """An event created by Claidor when an order is refunded."""
 
     name: Literal[SystemEventEnum.order_refunded] = Field(description=_NAME_DESCRIPTION)
     metadata: OrderRefundedMetadata = Field(
@@ -439,7 +439,7 @@ class OrderRefundedEvent(SystemEventBase):
 
 
 class CheckoutCreatedEvent(SystemEventBase):
-    """An event created by Spaire when a checkout is created."""
+    """An event created by Claidor when a checkout is created."""
 
     name: Literal[SystemEventEnum.checkout_created] = Field(
         description=_NAME_DESCRIPTION
@@ -450,7 +450,7 @@ class CheckoutCreatedEvent(SystemEventBase):
 
 
 class CustomerUpdatedEvent(SystemEventBase):
-    """An event created by Spaire when a customer is updated."""
+    """An event created by Claidor when a customer is updated."""
 
     name: Literal[SystemEventEnum.customer_updated] = Field(
         description=_NAME_DESCRIPTION
@@ -461,7 +461,7 @@ class CustomerUpdatedEvent(SystemEventBase):
 
 
 class CustomerDeletedEvent(SystemEventBase):
-    """An event created by Spaire when a customer is deleted."""
+    """An event created by Claidor when a customer is deleted."""
 
     name: Literal[SystemEventEnum.customer_deleted] = Field(
         description=_NAME_DESCRIPTION
@@ -472,7 +472,7 @@ class CustomerDeletedEvent(SystemEventBase):
 
 
 class BalanceOrderEvent(SystemEventBase):
-    """An event created by Spaire when an order is paid."""
+    """An event created by Claidor when an order is paid."""
 
     name: Literal[SystemEventEnum.balance_order] = Field(description=_NAME_DESCRIPTION)
     metadata: BalanceOrderMetadata = Field(
@@ -481,7 +481,7 @@ class BalanceOrderEvent(SystemEventBase):
 
 
 class BalanceCreditOrderEvent(SystemEventBase):
-    """An event created by Spaire when an order is paid via customer balance."""
+    """An event created by Claidor when an order is paid via customer balance."""
 
     name: Literal[SystemEventEnum.balance_credit_order] = Field(
         description=_NAME_DESCRIPTION
@@ -492,7 +492,7 @@ class BalanceCreditOrderEvent(SystemEventBase):
 
 
 class BalanceRefundEvent(SystemEventBase):
-    """An event created by Spaire when an order is refunded."""
+    """An event created by Claidor when an order is refunded."""
 
     name: Literal[SystemEventEnum.balance_refund] = Field(description=_NAME_DESCRIPTION)
     metadata: BalanceRefundMetadata = Field(
@@ -501,7 +501,7 @@ class BalanceRefundEvent(SystemEventBase):
 
 
 class BalanceRefundReversalEvent(SystemEventBase):
-    """An event created by Spaire when a refund is reverted."""
+    """An event created by Claidor when a refund is reverted."""
 
     name: Literal[SystemEventEnum.balance_refund_reversal] = Field(
         description=_NAME_DESCRIPTION
@@ -512,7 +512,7 @@ class BalanceRefundReversalEvent(SystemEventBase):
 
 
 class BalanceDisputeEvent(SystemEventBase):
-    """An event created by Spaire when an order is disputed."""
+    """An event created by Claidor when an order is disputed."""
 
     name: Literal[SystemEventEnum.balance_dispute] = Field(
         description=_NAME_DESCRIPTION
@@ -523,7 +523,7 @@ class BalanceDisputeEvent(SystemEventBase):
 
 
 class BalanceDisputeReversalEvent(SystemEventBase):
-    """An event created by Spaire when a dispute is won and funds are reinstated."""
+    """An event created by Claidor when a dispute is won and funds are reinstated."""
 
     name: Literal[SystemEventEnum.balance_dispute_reversal] = Field(
         description=_NAME_DESCRIPTION

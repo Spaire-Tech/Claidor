@@ -13,14 +13,14 @@ export function NotificationPerksUnlocked({
   return (
     <WrapperPolar>
       <Preview>
-        🎉 Congrats on your first sale! You've unlocked the Spaire Startup
+        🎉 Congrats on your first sale! You've unlocked the Claidor Startup
         Perks.
       </Preview>
       <IntroWithHi>
         Congrats on your first sale through <strong>{organization_name}</strong>!
       </IntroWithHi>
       <BodyText>
-        You've unlocked the <strong>Spaire Startup Stack</strong> — exclusive
+        You've unlocked the <strong>Claidor Startup Stack</strong> — exclusive
         perks, credits, and discounts from the tools trusted by founders around
         the world.
       </BodyText>
@@ -39,7 +39,7 @@ export function NotificationPerksUnlocked({
 
 NotificationPerksUnlocked.PreviewProps = {
   organization_name: 'Acme Inc.',
-  perks_url: 'https://spaire.com/dashboard/acme-inc/startup-stack',
+  perks_url: 'https://claidor.com/dashboard/acme-inc/startup-stack',
 }
 
 export default NotificationPerksUnlocked

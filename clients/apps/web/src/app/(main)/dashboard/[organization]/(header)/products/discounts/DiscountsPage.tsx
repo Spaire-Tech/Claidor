@@ -20,22 +20,22 @@ import { getDiscountDisplay } from '@/utils/discount'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
 import Search from '@mui/icons-material/Search'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   DataTable,
   DataTableColumnDef,
   DataTableColumnHeader,
-} from '@spaire/ui/components/atoms/DataTable'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import Input from '@spaire/ui/components/atoms/Input'
+} from '@claidor/ui/components/atoms/DataTable'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/ui/dropdown-menu'
+} from '@claidor/ui/components/ui/dropdown-menu'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useState } from 'react'
 

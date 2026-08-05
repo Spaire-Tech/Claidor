@@ -47,13 +47,13 @@ In addition, our webhooks offer built-in support for **Slack** & **Discord** for
       ngrok http 3000
       ```
 
-      Just be sure to provide the URL ngrok gives you as the webhook endpoint on Spaire.
+      Just be sure to provide the URL ngrok gives you as the webhook endpoint on Claidor.
     </Tip>
   </Step>
   <Step title="Choose a delivery format">
     For standard, custom integrations, leave this parameter on **Raw**. This will send a payload in JSON format.
 
-    If you wish to send notifications to a Discord or Slack channel, you can select the corresponding format here. Spaire will then adapt the payload so properly formatted messages are sent to your channel.
+    If you wish to send notifications to a Discord or Slack channel, you can select the corresponding format here. Claidor will then adapt the payload so properly formatted messages are sent to your channel.
 
     <img
       className="block dark:hidden"
@@ -63,7 +63,7 @@ In addition, our webhooks offer built-in support for **Slack** & **Discord** for
     If you paste a Discord or Slack Webhook URL, the format will be automatically selected.
   </Step>
   <Step title="Set a secret">
-    We cryptographically sign the requests using this secret. So you can easily verify them using our SDKs to ensure they are legitimate webhook payloads from Spaire.
+    We cryptographically sign the requests using this secret. So you can easily verify them using our SDKs to ensure they are legitimate webhook payloads from Claidor.
 
     You can set your own or generate a random one.
 

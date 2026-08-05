@@ -5,7 +5,7 @@ import {
   ChartContainer,
   ComposedChart,
   Line,
-} from '@spaire/ui/components/ui/chart'
+} from '@claidor/ui/components/ui/chart'
 import { useMemo } from 'react'
 
 // Find the least squares slope to determine trend direction

@@ -1,7 +1,7 @@
 'use client'
 
 // Shared empty-state hero used in three places:
-//   - The Spaire Space editor canvas (creator view, with the
+//   - The Claidor Space editor canvas (creator view, with the
 //     "Add to Space" CTA wired to the picker)
 //   - The in-editor preview when isSpaceEnabled && !isEditing
 //   - The public storefront a visitor sees at /<organization>

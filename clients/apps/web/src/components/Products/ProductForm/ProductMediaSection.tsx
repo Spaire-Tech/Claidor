@@ -1,13 +1,13 @@
 'use client'
 
 import { Section } from '@/components/Layout/Section'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useFormContext } from 'react-hook-form'
 import ProductMediasField from '../ProductMediasField'
 import { ProductFormType } from './ProductForm'
@@ -22,7 +22,7 @@ export const ProductMediaSection = ({
   return (
     <Section
       title="Product Media"
-      description="This image appears in Checkouts, your Spaire Space, in emails, social sharing and more."
+      description="This image appears in Checkouts, your Claidor Space, in emails, social sharing and more."
     >
       <FormField
         control={control}

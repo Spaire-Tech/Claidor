@@ -1,6 +1,6 @@
 'use client'
 
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useState } from 'react'
 import { Accept, FileRejection, useDropzone } from 'react-dropzone'
 import { FileRead, Upload } from './Upload'

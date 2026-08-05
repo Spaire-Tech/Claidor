@@ -1,10 +1,10 @@
 'use client'
 
 import { useListWebhooksEndpoints } from '@/hooks/queries'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import ShadowListGroup from '@spaire/ui/components/atoms/ShadowListGroup'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import ShadowListGroup from '@claidor/ui/components/atoms/ShadowListGroup'
 import { ArrowUpRightIcon } from 'lucide-react'
 import Link from 'next/link'
 import { InlineModal } from '../../Modal/InlineModal'
@@ -48,7 +48,7 @@ const WebhookSettings = (props: { org: schemas['Organization'] }) => {
               Add Endpoint
             </Button>
             <Link
-              href="https://docs.spairehq.com/integrate/webhooks/endpoints"
+              href="https://docs.claidorhq.com/integrate/webhooks/endpoints"
               className="shrink-0"
             >
               <Button className="gap-x-1" asChild variant="ghost">

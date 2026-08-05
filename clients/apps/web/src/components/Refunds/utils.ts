@@ -1,4 +1,4 @@
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 export const RefundStatusDisplayTitle: Record<schemas['RefundStatus'], string> =
   {

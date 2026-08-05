@@ -6,11 +6,11 @@ import {
   parseSearchParams,
   serializeSearchParams,
 } from '@/utils/datatable'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
-import Button from '@spaire/ui/components/atoms/Button'
-import { DataTable } from '@spaire/ui/components/atoms/DataTable'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
+import Button from '@claidor/ui/components/atoms/Button'
+import { DataTable } from '@claidor/ui/components/atoms/DataTable'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
 import { ColumnDef } from '@tanstack/react-table'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'

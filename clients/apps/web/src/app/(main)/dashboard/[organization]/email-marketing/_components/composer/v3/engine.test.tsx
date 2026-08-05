@@ -97,13 +97,13 @@ describe('v3 engine: insert + email output', () => {
       .focus()
       .extendMarkRange('link')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .setLink({ href: 'https://spaire.test/m' } as any)
+      .setLink({ href: 'https://claidor.test/m' } as any)
       .run()
     const doc = editor.getHTML()
     expect(doc).toMatch(/<em>|<i>/)
     expect(doc).toMatch(/<s>|<strike>/)
     const html = await emailHtml(editor)
-    expect(html).toMatch(/href="https:\/\/spaire\.test\/m"/)
+    expect(html).toMatch(/href="https:\/\/claidor\.test\/m"/)
     editor.destroy()
   })
 
@@ -136,12 +136,12 @@ describe('v3 engine: insert + email output', () => {
     setBlockAttr(editor, idx, {
       src: 'https://cdn.test/p.png',
       alt: 'A pie',
-      href: 'https://spaire.test/shop',
+      href: 'https://claidor.test/shop',
     })
     const html = await emailHtml(editor)
     expect(html).toMatch(/<img[^>]+src="https:\/\/cdn\.test\/p\.png"/i)
     expect(html).toMatch(/alt="A pie"/i)
-    expect(html).toMatch(/href="https:\/\/spaire\.test\/shop"/i)
+    expect(html).toMatch(/href="https:\/\/claidor\.test\/shop"/i)
     editor.destroy()
   })
 

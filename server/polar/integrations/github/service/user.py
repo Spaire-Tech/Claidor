@@ -36,7 +36,7 @@ class NoPrimaryEmailError(GithubUserServiceError):
 class CannotLinkUnverifiedEmailError(GithubUserServiceError):
     def __init__(self, email: str) -> None:
         message = (
-            f"An account already exists on Spaire under the email {email}. "
+            f"An account already exists on Claidor under the email {email}. "
             "We cannot automatically link it to your GitHub account since "
             "this email address is not verified on GitHub. "
             "Either verify your email address on GitHub and try again "
@@ -48,7 +48,7 @@ class CannotLinkUnverifiedEmailError(GithubUserServiceError):
 class AccountLinkedToAnotherUserError(GithubUserServiceError):
     def __init__(self) -> None:
         message = (
-            "This GitHub account is already linked to another user on Spaire. "
+            "This GitHub account is already linked to another user on Claidor. "
             "You may have already created another account "
             "with a different email address."
         )

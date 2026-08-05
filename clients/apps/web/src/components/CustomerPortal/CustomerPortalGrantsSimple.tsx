@@ -1,7 +1,7 @@
 'use client'
 
-import { Client, schemas } from '@spaire/client'
-import { List, ListItem } from '@spaire/ui/components/atoms/List'
+import { Client, schemas } from '@claidor/client'
+import { List, ListItem } from '@claidor/ui/components/atoms/List'
 import { BenefitGrant } from '../Benefit/BenefitGrant'
 
 export interface CustomerPortalGrantsSimpleProps {

@@ -12,47 +12,47 @@ x-common-env-file: &common-env-file
   - ../../server/.env
 
 x-common-backend-env: &common-backend-env
-  SPAIRE_ENV: development
-  SPAIRE_LOG_LEVEL: DEBUG
-  SPAIRE_TESTING: "0"
-  SPAIRE_SQLALCHEMY_DEBUG: "0"
-  SPAIRE_POSTHOG_DEBUG: "1"
+  CLAIDOR_ENV: development
+  CLAIDOR_LOG_LEVEL: DEBUG
+  CLAIDOR_TESTING: "0"
+  CLAIDOR_SQLALCHEMY_DEBUG: "0"
+  CLAIDOR_POSTHOG_DEBUG: "1"
   # Database - uses service name for container networking
-  SPAIRE_POSTGRES_USER: ${SPAIRE_POSTGRES_USER:-spaire}
-  SPAIRE_POSTGRES_PWD: ${SPAIRE_POSTGRES_PWD:-spaire}
-  SPAIRE_POSTGRES_HOST: db
-  SPAIRE_POSTGRES_PORT: "5432"
-  SPAIRE_POSTGRES_DATABASE: ${SPAIRE_POSTGRES_DATABASE:-spaire}
-  SPAIRE_POSTGRES_READ_USER: ${SPAIRE_POSTGRES_READ_USER:-spaire_read}
-  SPAIRE_POSTGRES_READ_PWD: ${SPAIRE_POSTGRES_READ_PWD:-spaire}
-  SPAIRE_POSTGRES_READ_HOST: db
-  SPAIRE_POSTGRES_READ_PORT: "5432"
-  SPAIRE_POSTGRES_READ_DATABASE: ${SPAIRE_POSTGRES_DATABASE:-spaire}
+  CLAIDOR_POSTGRES_USER: ${CLAIDOR_POSTGRES_USER:-claidor}
+  CLAIDOR_POSTGRES_PWD: ${CLAIDOR_POSTGRES_PWD:-claidor}
+  CLAIDOR_POSTGRES_HOST: db
+  CLAIDOR_POSTGRES_PORT: "5432"
+  CLAIDOR_POSTGRES_DATABASE: ${CLAIDOR_POSTGRES_DATABASE:-claidor}
+  CLAIDOR_POSTGRES_READ_USER: ${CLAIDOR_POSTGRES_READ_USER:-claidor_read}
+  CLAIDOR_POSTGRES_READ_PWD: ${CLAIDOR_POSTGRES_READ_PWD:-claidor}
+  CLAIDOR_POSTGRES_READ_HOST: db
+  CLAIDOR_POSTGRES_READ_PORT: "5432"
+  CLAIDOR_POSTGRES_READ_DATABASE: ${CLAIDOR_POSTGRES_DATABASE:-claidor}
   # Redis - uses service name for container networking
-  SPAIRE_REDIS_HOST: redis
-  SPAIRE_REDIS_PORT: "6379"
-  SPAIRE_REDIS_DB: "0"
+  CLAIDOR_REDIS_HOST: redis
+  CLAIDOR_REDIS_PORT: "6379"
+  CLAIDOR_REDIS_DB: "0"
   # S3/MinIO - uses service name for container networking
-  SPAIRE_S3_ENDPOINT_URL: http://minio:9000
-  SPAIRE_AWS_ACCESS_KEY_ID: ${SPAIRE_AWS_ACCESS_KEY_ID:-spaire-development}
-  SPAIRE_AWS_SECRET_ACCESS_KEY: ${SPAIRE_AWS_SECRET_ACCESS_KEY:-spaire123456789}
-  SPAIRE_S3_FILES_BUCKET_NAME: ${SPAIRE_S3_FILES_BUCKET_NAME:-spaire-s3}
-  SPAIRE_S3_FILES_PUBLIC_BUCKET_NAME: ${SPAIRE_S3_FILES_PUBLIC_BUCKET_NAME:-spaire-s3-public}
-  SPAIRE_S3_CUSTOMER_INVOICES_BUCKET_NAME: ${SPAIRE_S3_FILES_BUCKET_NAME:-spaire-s3}
-  SPAIRE_S3_PAYOUT_INVOICES_BUCKET_NAME: ${SPAIRE_S3_FILES_BUCKET_NAME:-spaire-s3}
+  CLAIDOR_S3_ENDPOINT_URL: http://minio:9000
+  CLAIDOR_AWS_ACCESS_KEY_ID: ${CLAIDOR_AWS_ACCESS_KEY_ID:-claidor-development}
+  CLAIDOR_AWS_SECRET_ACCESS_KEY: ${CLAIDOR_AWS_SECRET_ACCESS_KEY:-claidor123456789}
+  CLAIDOR_S3_FILES_BUCKET_NAME: ${CLAIDOR_S3_FILES_BUCKET_NAME:-claidor-s3}
+  CLAIDOR_S3_FILES_PUBLIC_BUCKET_NAME: ${CLAIDOR_S3_FILES_PUBLIC_BUCKET_NAME:-claidor-s3-public}
+  CLAIDOR_S3_CUSTOMER_INVOICES_BUCKET_NAME: ${CLAIDOR_S3_FILES_BUCKET_NAME:-claidor-s3}
+  CLAIDOR_S3_PAYOUT_INVOICES_BUCKET_NAME: ${CLAIDOR_S3_FILES_BUCKET_NAME:-claidor-s3}
   # CORS and allowed hosts - configured for Docker networking
-  SPAIRE_CORS_ORIGINS: '["http://localhost:${WEB_PORT:-3000}", "http://127.0.0.1:${WEB_PORT:-3000}", "http://web:3000"]'
-  SPAIRE_ALLOWED_HOSTS: '["localhost:${WEB_PORT:-3000}", "127.0.0.1:${WEB_PORT:-3000}"]'
-  SPAIRE_FRONTEND_BASE_URL: http://localhost:${WEB_PORT:-3000}
-  SPAIRE_CHECKOUT_BASE_URL: http://localhost:${API_PORT:-8000}/v1/checkout-links/{client_secret}/redirect
-  SPAIRE_USER_SESSION_COOKIE_DOMAIN: localhost
+  CLAIDOR_CORS_ORIGINS: '["http://localhost:${WEB_PORT:-3000}", "http://127.0.0.1:${WEB_PORT:-3000}", "http://web:3000"]'
+  CLAIDOR_ALLOWED_HOSTS: '["localhost:${WEB_PORT:-3000}", "127.0.0.1:${WEB_PORT:-3000}"]'
+  CLAIDOR_FRONTEND_BASE_URL: http://localhost:${WEB_PORT:-3000}
+  CLAIDOR_CHECKOUT_BASE_URL: http://localhost:${API_PORT:-8000}/v1/checkout-links/{client_secret}/redirect
+  CLAIDOR_USER_SESSION_COOKIE_DOMAIN: localhost
   # OAuth insecure transport for development
   AUTHLIB_INSECURE_TRANSPORT: "true"
-  # Note: Secrets like SPAIRE_GITHUB_CLIENT_ID, SPAIRE_STRIPE_* are loaded from
+  # Note: Secrets like CLAIDOR_GITHUB_CLIENT_ID, CLAIDOR_STRIPE_* are loaded from
   # env_file (server/.env) and NOT set here. Setting them here with ${VAR:-default}
   # would read from the HOST shell, not from env_file.
   # Prometheus (optional)
-  SPAIRE_PROMETHEUS_REMOTE_WRITE_URL: ${SPAIRE_PROMETHEUS_REMOTE_WRITE_URL:-}
+  CLAIDOR_PROMETHEUS_REMOTE_WRITE_URL: ${CLAIDOR_PROMETHEUS_REMOTE_WRITE_URL:-}
 
 x-api-volumes: &api-volumes
   - ../../server:/app/server:cached
@@ -76,11 +76,11 @@ services:
   db:
     image: postgres:15.1-bullseye
     environment:
-      POSTGRES_USER: ${SPAIRE_POSTGRES_USER:-spaire}
-      POSTGRES_PASSWORD: ${SPAIRE_POSTGRES_PWD:-spaire}
-      POSTGRES_DB: ${SPAIRE_POSTGRES_DATABASE:-spaire}
-      SPAIRE_READ_USER: ${SPAIRE_POSTGRES_READ_USER:-spaire_read}
-      SPAIRE_READ_PASSWORD: ${SPAIRE_POSTGRES_READ_PWD:-spaire}
+      POSTGRES_USER: ${CLAIDOR_POSTGRES_USER:-claidor}
+      POSTGRES_PASSWORD: ${CLAIDOR_POSTGRES_PWD:-claidor}
+      POSTGRES_DB: ${CLAIDOR_POSTGRES_DATABASE:-claidor}
+      CLAIDOR_READ_USER: ${CLAIDOR_POSTGRES_READ_USER:-claidor_read}
+      CLAIDOR_READ_PASSWORD: ${CLAIDOR_POSTGRES_READ_PWD:-claidor}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ../../server/init-readonly-user.sql:/docker-entrypoint-initdb.d/init-readonly-user.sql:ro
@@ -93,9 +93,9 @@ services:
           "pg_isready",
           "-q",
           "-d",
-          "${SPAIRE_POSTGRES_DATABASE:-spaire}",
+          "${CLAIDOR_POSTGRES_DATABASE:-claidor}",
           "-U",
-          "${SPAIRE_POSTGRES_USER:-spaire}",
+          "${CLAIDOR_POSTGRES_USER:-claidor}",
         ]
       interval: 2s
       timeout: 40s
@@ -119,8 +119,8 @@ services:
     volumes:
       - minio_data:/minio
     environment:
-      MINIO_ROOT_USER: ${SPAIRE_MINIO_USER:-spaire}
-      MINIO_ROOT_PASSWORD: ${SPAIRE_MINIO_PWD:-spairespaire}
+      MINIO_ROOT_USER: ${CLAIDOR_MINIO_USER:-claidor}
+      MINIO_ROOT_PASSWORD: ${CLAIDOR_MINIO_PWD:-claidorclaidor}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
@@ -136,13 +136,13 @@ services:
       - ../../server/.minio:/tmp/config:ro
     environment:
       MINIO_HOST: minio
-      MINIO_ROOT_USER: ${SPAIRE_MINIO_USER:-spaire}
-      MINIO_ROOT_PASSWORD: ${SPAIRE_MINIO_PWD:-spairespaire}
-      BUCKET_NAME: ${SPAIRE_S3_FILES_BUCKET_NAME:-spaire-s3}
-      PUBLIC_BUCKET_NAME: ${SPAIRE_S3_FILES_PUBLIC_BUCKET_NAME:-spaire-s3-public}
-      BUCKET_TESTING_NAME: testing-${SPAIRE_S3_FILES_BUCKET_NAME:-spaire-s3}
-      ACCESS_KEY: ${SPAIRE_AWS_ACCESS_KEY_ID:-spaire-development}
-      SECRET_ACCESS_KEY: ${SPAIRE_AWS_SECRET_ACCESS_KEY:-spaire123456789}
+      MINIO_ROOT_USER: ${CLAIDOR_MINIO_USER:-claidor}
+      MINIO_ROOT_PASSWORD: ${CLAIDOR_MINIO_PWD:-claidorclaidor}
+      BUCKET_NAME: ${CLAIDOR_S3_FILES_BUCKET_NAME:-claidor-s3}
+      PUBLIC_BUCKET_NAME: ${CLAIDOR_S3_FILES_PUBLIC_BUCKET_NAME:-claidor-s3-public}
+      BUCKET_TESTING_NAME: testing-${CLAIDOR_S3_FILES_BUCKET_NAME:-claidor-s3}
+      ACCESS_KEY: ${CLAIDOR_AWS_ACCESS_KEY_ID:-claidor-development}
+      SECRET_ACCESS_KEY: ${CLAIDOR_AWS_SECRET_ACCESS_KEY:-claidor123456789}
       POLICY_FILE: /tmp/config/policy.json
     entrypoint:
       ["bash", "-c", "bash /tmp/config/local.sh /tmp/config/configure.sh"]
@@ -203,8 +203,8 @@ services:
       NEXT_PUBLIC_BACKOFFICE_URL: http://localhost:${API_PORT:-8000}/backoffice
       # Note: NEXT_PUBLIC_STRIPE_KEY and NEXT_PUBLIC_GITHUB_APP_NAMESPACE
       # must be set in server/.env (they're loaded via env_file)
-      # SPAIRE_API_URL is for server-side requests (container-to-container)
-      SPAIRE_API_URL: http://api:8000
+      # CLAIDOR_API_URL is for server-side requests (container-to-container)
+      CLAIDOR_API_URL: http://api:8000
       S3_PUBLIC_IMAGES_BUCKET_PROTOCOL: http
       S3_PUBLIC_IMAGES_BUCKET_HOSTNAME: localhost
       S3_PUBLIC_IMAGES_BUCKET_PORT: "${MINIO_API_PORT:-9000}"
@@ -253,8 +253,8 @@ services:
       - ../../server/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     environment:
-      GF_SECURITY_ADMIN_USER: spaire
-      GF_SECURITY_ADMIN_PASSWORD: spaire
+      GF_SECURITY_ADMIN_USER: claidor
+      GF_SECURITY_ADMIN_PASSWORD: claidor
       GF_USERS_ALLOW_SIGN_UP: "false"
     depends_on:
       - prometheus

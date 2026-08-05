@@ -91,7 +91,7 @@ export default function EmailUnsubscribePage() {
             marginBottom: 24,
           }}
         >
-          spaire
+          claidor
         </div>
 
         {status === 'pending' && (

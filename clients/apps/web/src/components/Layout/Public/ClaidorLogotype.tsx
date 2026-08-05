@@ -9,13 +9,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/ui/dropdown-menu'
+} from '@claidor/ui/components/ui/dropdown-menu'
 import { ArrowDown, Clipboard } from 'lucide-react'
 import Link from 'next/link'
 import { MouseEventHandler, useCallback, useRef, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 
-export const SpaireLogotype = ({
+export const ClaidorLogotype = ({
   logoVariant = 'icon',
   size,
   className,
@@ -28,26 +28,26 @@ export const SpaireLogotype = ({
   logoClassName?: string
   href?: string
 }) => {
-  const SpaireLogotypeRef = useRef<HTMLDivElement>(null)
+  const ClaidorLogotypeRef = useRef<HTMLDivElement>(null)
 
-  useOutsideClick([SpaireLogotypeRef], () => setSpaireLogotypeOpen(false))
+  useOutsideClick([ClaidorLogotypeRef], () => setClaidorLogotypeOpen(false))
 
-  const [SpaireLogotypeOpen, setSpaireLogotypeOpen] = useState(false)
+  const [ClaidorLogotypeOpen, setClaidorLogotypeOpen] = useState(false)
 
   const handleTriggerClick: MouseEventHandler<HTMLElement> = useCallback(
     (e) => {
       e.preventDefault()
       e.stopPropagation()
-      setSpaireLogotypeOpen(true)
+      setClaidorLogotypeOpen(true)
     },
     [],
   )
 
   const handleCopyLogoToClipboard = useCallback(() => {
     navigator.clipboard.writeText(
-      logoVariant === 'icon' ? SpaireIconSVGString : SpaireLogoSVGString,
+      logoVariant === 'icon' ? ClaidorIconSVGString : ClaidorLogoSVGString,
     )
-    setSpaireLogotypeOpen(false)
+    setClaidorLogotypeOpen(false)
   }, [logoVariant])
 
   const LogoComponent =
@@ -68,7 +68,7 @@ export const SpaireLogotype = ({
 
   return (
     <div className={twMerge('relative flex flex-row items-center', className)}>
-      <DropdownMenu open={SpaireLogotypeOpen}>
+      <DropdownMenu open={ClaidorLogotypeOpen}>
         <DropdownMenuTrigger onContextMenu={handleTriggerClick}>
           {href ? (
             <Link href={href}>{LogoComponent}</Link>
@@ -76,7 +76,7 @@ export const SpaireLogotype = ({
             <div>{LogoComponent}</div>
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent ref={SpaireLogotypeRef} align="start">
+        <DropdownMenuContent ref={ClaidorLogotypeRef} align="start">
           <DropdownMenuItem
             className="flex flex-row gap-x-3"
             onClick={handleCopyLogoToClipboard}
@@ -86,10 +86,10 @@ export const SpaireLogotype = ({
           </DropdownMenuItem>
           <DropdownMenuItem
             className="flex flex-row gap-x-3"
-            onClick={() => setSpaireLogotypeOpen(false)}
+            onClick={() => setClaidorLogotypeOpen(false)}
           >
             <ArrowDown className="h-3 w-3" />
-            <Link href="/assets/brand/spaire_brand.zip">
+            <Link href="/assets/brand/claidor_brand.zip">
               Download Branding Assets
             </Link>
           </DropdownMenuItem>
@@ -99,6 +99,6 @@ export const SpaireLogotype = ({
   )
 }
 
-const SpaireIconSVGString = ''
+const ClaidorIconSVGString = ''
 
-const SpaireLogoSVGString = ''
+const ClaidorLogoSVGString = ''

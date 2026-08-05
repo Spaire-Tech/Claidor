@@ -15,7 +15,7 @@ export const CHECKOUT_COMMAND: AgentCommand = {
   name: 'Checkouts',
   tagline: 'Add checkout to your app automatically.',
   description:
-    'The agent reads your codebase, finds where to add buy buttons, and wires up Spaire checkout — overlay, programmatic, or server-side — directly in your project.',
+    'The agent reads your codebase, finds where to add buy buttons, and wires up Claidor checkout — overlay, programmatic, or server-side — directly in your project.',
   label: 'Checkouts',
   command: '/setup-checkout',
   howItWorks: [
@@ -38,17 +38,17 @@ export const CHECKOUT_COMMAND: AgentCommand = {
   whatTheAgentDoes: [
     'Checks for uncommitted changes and warns you to commit first',
     'Detects your framework (Next.js App Router, Pages Router, Express, FastAPI, Rails, serverless, etc.)',
-    'Asks if you have products created in Spaire yet — walks you through it if not',
+    'Asks if you have products created in Claidor yet — walks you through it if not',
     'Asks which checkout approach: overlay (simplest), programmatic (EmbedCheckout.create), or server-side (SDK)',
     'Scans your codebase for pricing pages, product pages, or CTA sections',
     'Shows a full change summary (files to create/modify) and asks for confirmation before writing anything',
-    'Adds the Spaire embed script tag to your layout',
+    'Adds the Claidor embed script tag to your layout',
     'Writes checkout buttons or links directly into your components',
     'Creates a /checkout/success confirmation page',
     'Optionally wires up customer portal link and idempotent webhook handler with signature verification',
     'Provides revert instructions so you can undo every change',
   ],
-  docsLink: 'https://docs.spairehq.com/integrate/agent-commands#setup-checkout',
+  docsLink: 'https://docs.claidorhq.com/integrate/agent-commands#setup-checkout',
 }
 
 export const USAGE_BILLING_COMMAND: AgentCommand = {
@@ -56,7 +56,7 @@ export const USAGE_BILLING_COMMAND: AgentCommand = {
   name: 'Usage Billing',
   tagline: 'Set up metered billing automatically.',
   description:
-    'The agent detects your stack, installs the Spaire SDK, creates meters, writes ingestion code, and wires up metered pricing — all interactively, right in your codebase.',
+    'The agent detects your stack, installs the Claidor SDK, creates meters, writes ingestion code, and wires up metered pricing — all interactively, right in your codebase.',
   label: 'Usage Billing',
   command: '/setup-usage-billing',
   howItWorks: [
@@ -84,14 +84,14 @@ export const USAGE_BILLING_COMMAND: AgentCommand = {
     'Checks prerequisites (SDK installed, access token set)',
     'Tells you exactly what meter to create in the dashboard — never creates billing objects silently',
     'Shows a full change summary and asks for confirmation before writing anything',
-    'Writes ingestion code directly into your project using the right SDK strategy (@spaire/ingestion for LLM/S3/Stream/DeltaTime, or @spaire/sdk for simple counting)',
+    'Writes ingestion code directly into your project using the right SDK strategy (@claidor/ingestion for LLM/S3/Stream/DeltaTime, or @spaire/sdk for simple counting)',
     'Walks you through metered pricing setup on your product',
     'Optionally sets up credits with balance-checking utilities',
     'Generates idempotent webhook handlers with signature verification',
     'Provides revert instructions so you can undo every change',
   ],
   docsLink:
-    'https://docs.spairehq.com/integrate/agent-commands#setup-usage-billing',
+    'https://docs.claidorhq.com/integrate/agent-commands#setup-usage-billing',
 }
 
 export const ALL_AGENT_COMMANDS: AgentCommand[] = [

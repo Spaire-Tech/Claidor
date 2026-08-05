@@ -1,7 +1,7 @@
 import { markdownOptions } from '@/utils/markdown'
 import type { CheckoutOrganization } from '@spaire/sdk/models/components/checkoutorganization'
 import type { CheckoutProduct } from '@spaire/sdk/models/components/checkoutproduct'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
 import Markdown from 'markdown-to-jsx'
 import { Slideshow } from '../Products/Slideshow'
 

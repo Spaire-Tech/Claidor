@@ -1,11 +1,11 @@
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import { twMerge } from 'tailwind-merge'
 import SubscriptionTierRecurringIntervalSwitch from '../Subscriptions/SubscriptionTierRecurringIntervalSwitch'
 

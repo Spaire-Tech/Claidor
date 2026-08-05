@@ -17,7 +17,7 @@ function blocksFor(triggerKey: string, themeKey = 'studio'): Block[] {
 
 const course: CourseData = {
   title: 'Italian Home Cooking',
-  eyebrow: 'A Spaire Series',
+  eyebrow: 'A Claidor Series',
   tagline: 'Pasta from scratch.',
   heroImage: 'https://cdn/hero.jpg',
   trailerImage: 'https://cdn/trailer.jpg',

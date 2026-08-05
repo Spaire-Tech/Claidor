@@ -1,7 +1,7 @@
 import revalidate from '@/app/actions'
 import { getQueryClient } from '@/utils/api/query'
 import { api } from '@/utils/client'
-import { operations, schemas, unwrap } from '@spaire/client'
+import { operations, schemas, unwrap } from '@claidor/client'
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { defaultRetry } from './retry'
 

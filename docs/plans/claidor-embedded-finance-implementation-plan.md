@@ -1,8 +1,8 @@
-# Spaire Embedded Finance — Implementation Plan
+# Claidor Embedded Finance — Implementation Plan
 
 ## Executive Summary
 
-This plan details how to evolve Spaire from "MoR + payouts" into a full business finance operating layer by integrating Stripe Treasury (Financial Accounts for platforms) and Stripe Issuing into the existing Polar codebase. Merchants will be able to hold funds in FDIC pass-through eligible accounts, spend via issued cards, and move money to vendors/contractors through ACH and wire transfers.
+This plan details how to evolve Claidor from "MoR + payouts" into a full business finance operating layer by integrating Stripe Treasury (Financial Accounts for platforms) and Stripe Issuing into the existing Polar codebase. Merchants will be able to hold funds in FDIC pass-through eligible accounts, spend via issued cards, and move money to vendors/contractors through ACH and wire transfers.
 
 **Key simplification:** There are no live merchants today. This eliminates migration risk entirely and lets us design the account architecture and fund lifecycle cleanly from day one.
 
@@ -116,7 +116,7 @@ The dual-track is a deliberate product architecture choice (two tiers of merchan
 
 ### Fund states
 
-Every dollar flowing through Spaire will be categorized by a formal lifecycle state:
+Every dollar flowing through Claidor will be categorized by a formal lifecycle state:
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -194,7 +194,7 @@ These states will be surfaced in organization payment-status APIs so the dashboa
 
 ```
                         ┌──────────────────────────────────────────┐
-                        │              Spaire Platform             │
+                        │              Claidor Platform             │
                         │         (Merchant of Record)             │
                         └──────────┬───────────────────────────────┘
                                    │
@@ -549,7 +549,7 @@ CREATE TABLE fund_policies (
 
 5. **Authorization handling**
    - `issuing_authorization.request` webhook → real-time approve/decline
-   - Apply Spaire-level controls on top of Stripe spending controls:
+   - Apply Claidor-level controls on top of Stripe spending controls:
      - Account `issuing_status` must be `issuing_active`
      - Financial Account has sufficient `spendable` balance (not `reserve`)
      - No MoR compliance holds or account restrictions active
@@ -601,7 +601,7 @@ CREATE TABLE fund_policies (
        currency="usd",
        destination_payment_method=payment_method_id,
        description="Invoice #1234 - Contractor payment",
-       statement_descriptor="SPAIRE PAY",
+       statement_descriptor="CLAIDOR PAY",
        stripe_account=connected_account_id,
    )
    ```
@@ -652,7 +652,7 @@ CREATE TABLE fund_policies (
 
 ### Phase 4: Frontend Embedded Components
 
-**Goal:** Merchants see their Financial Account, fund states, cards, transactions, and money movement controls in the Spaire dashboard.
+**Goal:** Merchants see their Financial Account, fund states, cards, transactions, and money movement controls in the Claidor dashboard.
 
 #### Stripe Connect Embedded Components
 
@@ -735,11 +735,11 @@ Stripe provides pre-built, PCI-compliant embedded components that dramatically r
    </ConnectComponentsProvider>
    ```
 
-4. **Fund state dashboard (custom, Spaire-built)**
+4. **Fund state dashboard (custom, Claidor-built)**
    - Visual breakdown: pending | available | reserve | spendable
    - Explanatory text for each state ("3 payments clearing in 4 days", "10% reserve held for risk coverage")
    - State transition history timeline
-   - This is NOT a Stripe embedded component — it's Spaire's value-add UX on top of the lifecycle engine
+   - This is NOT a Stripe embedded component — it's Claidor's value-add UX on top of the lifecycle engine
 
 5. **Custom UI for money movement**
    - Stripe doesn't provide embedded components for OutboundPayment/OutboundTransfer creation

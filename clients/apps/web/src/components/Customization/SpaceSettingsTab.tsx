@@ -2,15 +2,15 @@
 
 // Settings tab for the Space editor.
 //
-// Uses the `.spaire-hub` grouped-list design system (cards, rows, toggles,
+// Uses the `.claidor-hub` grouped-list design system (cards, rows, toggles,
 // sliding-pill segmented controls) with a light/dark palette (dark comes for
-// free via `.spaire-hub.dark`) — atoms + hub.css live in ./hubAtoms.
+// free via `.claidor-hub.dark`) — atoms + hub.css live in ./hubAtoms.
 //
 // Reads + writes via the surrounding react-hook-form context (same as the
 // canvas inline editors), so the Publish button stays in sync.
 
 import { storefrontLink } from '@/utils/nav'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useCallback, useEffect, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Field, Seg, Toggle } from './hubAtoms/atoms'
@@ -198,7 +198,7 @@ export const SpaceSettingsTab = ({
 
   return (
     <div
-      className={`spaire-hub${dark ? 'dark' : ''}`}
+      className={`claidor-hub${dark ? 'dark' : ''}`}
       style={{ background: 'var(--bg)', minHeight: '100%' }}
     >
       <div

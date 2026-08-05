@@ -1,6 +1,6 @@
 'use client'
 
-import { formatCurrency } from '@spaire/currency'
+import { formatCurrency } from '@claidor/currency'
 import { format } from 'date-fns'
 
 export interface InvoiceDocumentData {
@@ -71,7 +71,7 @@ const InvoiceDocument: React.FC<{
 }> = ({ data, isPreview }) => {
   const fmt = (cents: number) => formatCurrency('accounting')(cents, data.currency)
   const currency = data.currency.toUpperCase()
-  const sellerName = data.sellerName || 'Spaire, Inc.'
+  const sellerName = data.sellerName || 'Claidor, Inc.'
   const onBehalf = data.onBehalfOfLabel || data.organizationName || sellerName
 
   const headingItems: Array<{ label: string; value: string }> = [
@@ -124,7 +124,7 @@ const InvoiceDocument: React.FC<{
                 />
                 {data.showMorAttribution !== false && (
                   <span className="mt-1 text-center" style={{ fontSize: '6px', color: '#646464' }}>
-                    via spaire
+                    via claidor
                   </span>
                 )}
               </div>
@@ -273,7 +273,7 @@ const InvoiceDocument: React.FC<{
           <div style={{ borderTop: '1px solid #dcdcdc', paddingTop: '10px' }}>
             <div style={{ fontSize: '8px', color: '#646464', textAlign: 'center' }}>
               <p>
-                This invoice is issued by Spaire, Inc. on behalf of Spairehq. Spaire, Inc. acts as the Merchant of Record for this transaction. &copy; 2026 Spaire, Inc. All rights reserved.
+                This invoice is issued by Claidor, Inc. on behalf of Claidorhq. Claidor, Inc. acts as the Merchant of Record for this transaction. &copy; 2026 Claidor, Inc. All rights reserved.
               </p>
             </div>
           </div>

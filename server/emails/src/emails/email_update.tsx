@@ -43,7 +43,7 @@ export function EmailUpdate({
 EmailUpdate.PreviewProps = {
   email: 'john@example.com',
   token_lifetime_minutes: 30,
-  url: 'https://app.spairehq.com/settings/account/email/update?token=abc123',
+  url: 'https://app.claidorhq.com/settings/account/email/update?token=abc123',
 }
 
 export default EmailUpdate

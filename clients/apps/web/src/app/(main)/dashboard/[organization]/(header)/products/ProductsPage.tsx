@@ -14,17 +14,17 @@ import {
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
 import Search from '@mui/icons-material/Search'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
-import { List } from '@spaire/ui/components/atoms/List'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
+import { List } from '@claidor/ui/components/atoms/List'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import { usePathname, useRouter } from 'next/navigation'
 import { useQueryState } from 'nuqs'
 import { useCallback, useState } from 'react'
@@ -394,7 +394,7 @@ function ProductsEmptyHero({
                   MERCHANT OF RECORD
                 </span>
                 <span style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  Built with Spaire
+                  Built with Claidor
                 </span>
                 <span style={{ color: 'rgba(255,255,255,0.3)' }}>·</span>
                 <span style={{ color: 'rgba(255,255,255,0.6)' }}>
@@ -430,7 +430,7 @@ function ProductsEmptyHero({
                   lineHeight: 1.5,
                 }}
               >
-                From templates and ebooks to software and downloads, Spaire
+                From templates and ebooks to software and downloads, Claidor
                 helps you sell globally with built-in delivery, secure checkout,
                 and merchant of record handling taxes, compliance, and payments
                 for you.

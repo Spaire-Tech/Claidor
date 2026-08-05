@@ -11,18 +11,18 @@ import {
   isValidationError,
   type Client,
   type schemas,
-} from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import CountryPicker from '@spaire/ui/components/atoms/CountryPicker'
-import CountryStatePicker from '@spaire/ui/components/atoms/CountryStatePicker'
+} from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
+import CountryStatePicker from '@claidor/ui/components/atoms/CountryStatePicker'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/atoms/DropdownMenu'
-import Input from '@spaire/ui/components/atoms/Input'
-import { buttonVariants } from '@spaire/ui/components/ui/button'
+} from '@claidor/ui/components/atoms/DropdownMenu'
+import Input from '@claidor/ui/components/atoms/Input'
+import { buttonVariants } from '@claidor/ui/components/ui/button'
 import {
   Form,
   FormControl,
@@ -30,7 +30,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import EventEmitter from 'eventemitter3'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'

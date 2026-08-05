@@ -6,7 +6,7 @@ import {
 } from '@/hooks/queries'
 import { createClientSideAPI } from '@/utils/client'
 import { hasBillingPermission } from '@/utils/customerPortal'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useSearchParams } from 'next/navigation'
 import * as React from 'react'
 

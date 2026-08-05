@@ -3,13 +3,13 @@
 import { useCheckoutConfirmedRedirect } from '@/hooks/checkout'
 import { useCheckoutClientSSE } from '@/hooks/sse'
 import { getServerURL } from '@/utils/api'
-import { hasProductCheckout } from '@spaire/checkout/guards'
+import { hasProductCheckout } from '@claidor/checkout/guards'
 import { SpaireCore } from '@spaire/sdk/core'
 import { checkoutsClientGet } from '@spaire/sdk/funcs/checkoutsClientGet'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
-import Button from '@spaire/ui/components/atoms/Button'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
+import Button from '@claidor/ui/components/atoms/Button'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
 import { Elements, ElementsConsumer } from '@stripe/react-stripe-js'
 import { Stripe, loadStripe } from '@stripe/stripe-js'
 import { useRouter } from 'next/navigation'
@@ -216,7 +216,7 @@ export const CheckoutConfirmation = ({
               )}
             <p className=" text-center text-xs text-gray-500">
               This order was processed by our online reseller & Merchant of
-              Record, Spaire, who also handles order-related inquiries and
+              Record, Claidor, who also handles order-related inquiries and
               returns.
             </p>
           </>

@@ -36,7 +36,7 @@ class GoogleServiceError(PolarError): ...
 class CannotLinkUnverifiedEmailError(GoogleServiceError):
     def __init__(self, email: str) -> None:
         message = (
-            f"An account already exists on Spaire under the email {email}. "
+            f"An account already exists on Claidor under the email {email}. "
             "We cannot automatically link it to your Google account since "
             "this email address is not verified on Google. "
             "Either verify your email address on Google and try again "
@@ -48,7 +48,7 @@ class CannotLinkUnverifiedEmailError(GoogleServiceError):
 class AccountLinkedToAnotherUserError(GoogleServiceError):
     def __init__(self) -> None:
         message = (
-            "This Google account is already linked to another user on Spaire. "
+            "This Google account is already linked to another user on Claidor. "
             "You may have already created another account "
             "with a different email address."
         )

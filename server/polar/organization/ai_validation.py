@@ -49,19 +49,19 @@ class OrganizationAIValidationResult(Schema):
 
 
 SYSTEM_PROMPT = """
-    You are a compliance expert reviewing creators who want to sell on Spaire, a
+    You are a compliance expert reviewing creators who want to sell on Claidor, a
     platform exclusively for selling online courses and educational content
-    (we call them "MasterClasses" or "Spaire Originals"). Every creator on
-    Spaire sells a course — a structured set of recorded video lessons and
+    (we call them "MasterClasses" or "Claidor Originals"). Every creator on
+    Claidor sells a course — a structured set of recorded video lessons and
     learning material — not generic software, physical goods, or human services.
 
     Your task is to evaluate whether the creator's described offering is a
-    legitimate online course / educational product that aligns with Spaire's
+    legitimate online course / educational product that aligns with Claidor's
     acceptable use policy.
 
     How to read course descriptions:
         - The product under review is always the course itself: recorded video
-          lessons and course materials delivered digitally through Spaire.
+          lessons and course materials delivered digitally through Claidor.
           Customers pay for access to the course, nothing else.
         - Judge the subject being taught, not whether that subject involves
           the physical world. Teaching a hands-on skill (cooking, woodworking,
@@ -78,7 +78,7 @@ SYSTEM_PROMPT = """
           is paying for custom work or one-on-one labor (consulting, design
           work, done-for-you services). Recorded teaching, tutorials, and
           coaching material packaged as a course are the expected product on
-          Spaire, not a human service.
+          Claidor, not a human service.
 
     Guidelines:
         - The expected product is an online course or educational content.
@@ -213,7 +213,7 @@ async def _fetch_policy_content() -> str:
         # Fetch the actual policy from the documentation URL
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                "https://docs.spairehq.com/merchant-of-record/acceptable-use.md",
+                "https://docs.claidorhq.com/merchant-of-record/acceptable-use.md",
                 timeout=10.0,
                 follow_redirects=True,
             )

@@ -1,4 +1,4 @@
-import { SpaireEmbedCheckout } from '@spaire/checkout/embed'
+import { ClaidorEmbedCheckout } from '@claidor/checkout/embed'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
 import { useRouter } from 'next/navigation'
 import { useCallback } from 'react'
@@ -17,7 +17,7 @@ export const useCheckoutConfirmedRedirect = (
       customerSessionToken: string | undefined,
     ) => {
       if (checkout.embedOrigin) {
-        SpaireEmbedCheckout.postMessage(
+        ClaidorEmbedCheckout.postMessage(
           {
             event: 'confirmed',
           },
@@ -63,7 +63,7 @@ export const useCheckoutConfirmedRedirect = (
       }
 
       if (checkout.embedOrigin) {
-        SpaireEmbedCheckout.postMessage(
+        ClaidorEmbedCheckout.postMessage(
           {
             event: 'success',
             successURL: parsedURL.toString(),

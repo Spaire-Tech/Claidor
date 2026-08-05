@@ -3,8 +3,8 @@
 import { toast } from '@/components/Toast/use-toast'
 import {
   useCreateCustomerPortalSession,
-  useSpaireSubscription,
-} from '@/hooks/queries/spaireTier'
+  useClaidorSubscription,
+} from '@/hooks/queries/claidorTier'
 import { useCallback, useState } from 'react'
 
 interface PastDueBannerProps {
@@ -23,14 +23,14 @@ const formatDate = (iso: string | null): string | null => {
 }
 
 /**
- * Persistent banner shown across the dashboard while the creator's Spaire
+ * Persistent banner shown across the dashboard while the creator's Claidor
  * subscription is `past_due` (a charge failed). Polar's dunning is already
  * retrying the card; this surfaces the state and gives the creator a direct
  * "Pay now" path to the customer portal to update the card / settle the
  * balance before the suspension deadline. Renders nothing otherwise.
  */
 const PastDueBanner = ({ organizationId }: PastDueBannerProps) => {
-  const subscription = useSpaireSubscription(organizationId)
+  const subscription = useClaidorSubscription(organizationId)
   const createSession = useCreateCustomerPortalSession(organizationId)
   const [pending, setPending] = useState(false)
   const sub = subscription.data
@@ -61,7 +61,7 @@ const PastDueBanner = ({ organizationId }: PastDueBannerProps) => {
   return (
     <div className="flex flex-col items-start gap-2 border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between sm:px-8">
       <span>
-        <span className="font-medium">Your Spaire payment failed.</span>{' '}
+        <span className="font-medium">Your Claidor payment failed.</span>{' '}
         {payBy
           ? `Update your card and pay your balance by ${payBy} to keep your plan — after that your subscription is canceled and your org loses access.`
           : 'Update your card to settle your balance and keep your plan.'}

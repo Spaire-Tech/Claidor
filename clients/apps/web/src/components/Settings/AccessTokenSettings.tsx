@@ -4,10 +4,10 @@ import {
   useDeletePersonalAccessToken,
   usePersonalAccessTokens,
 } from '@/hooks/queries'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import ShadowListGroup from '@spaire/ui/components/atoms/ShadowListGroup'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import ShadowListGroup from '@claidor/ui/components/atoms/ShadowListGroup'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@spaire/ui/components/ui/alert-dialog'
+} from '@claidor/ui/components/ui/alert-dialog'
 import { useCallback } from 'react'
 import { toast } from '../Toast/use-toast'
 

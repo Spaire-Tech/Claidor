@@ -1,7 +1,7 @@
 'use client'
 
-import { schemas } from '@spaire/client'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
+import { schemas } from '@claidor/client'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
 import CopyToClipboardButton from '../CopyToClipboardButton/CopyToClipboardButton'
 import { DetailRow } from '../Shared/DetailRow'
 import { toast } from '../Toast/use-toast'

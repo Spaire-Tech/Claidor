@@ -3,7 +3,7 @@ title: "Billing"
 description: "How metered usage is charged alongside subscription invoices — including caps, discounts, and what happens at cancellation."
 ---
 
-Metered usage is billed as part of the subscription invoice. At the end of each billing period, Spaire tallies each meter, calculates the charge, and adds it to the invoice alongside the base subscription fee.
+Metered usage is billed as part of the subscription invoice. At the end of each billing period, Claidor tallies each meter, calculates the charge, and adds it to the invoice alongside the base subscription fee.
 
 ## Add a metered price to a product
 
@@ -48,7 +48,7 @@ If a subscription is revoked immediately, usage accrued up to that point is invo
 Use the charge preview API to show customers what they'll owe before the invoice is generated:
 
 ```ts
-const preview = await spaire.subscriptions.chargePreview('<subscription_id>')
+const preview = await claidor.subscriptions.chargePreview('<subscription_id>')
 
 console.log({
   base: preview.base_amount,

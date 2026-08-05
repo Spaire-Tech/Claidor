@@ -1,5 +1,5 @@
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { Well } from '../Shared/Well'
 import {
@@ -22,13 +22,13 @@ export const EventCostCreationGuideModal = () => {
         <Well className=" rounded-lg bg-gray-100 p-4 text-sm">
           <SyntaxHighlighterClient
             lang="typescript"
-            code={`import { Spaire } from "@spaire/sdk";
+            code={`import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env["SPAIRE_ACCESS_TOKEN"] ?? "",
+const claidor = new Claidor({
+  accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] ?? "",
 });
 
-const result = await spaire.events.ingest({
+const result = await claidor.events.ingest({
   events: [
     {
       name: "<value>",
@@ -47,7 +47,7 @@ const result = await spaire.events.ingest({
         </Well>
         <div className="flex flex-row items-center gap-x-4">
           <Link
-            href="https://docs.spairehq.com/features/cost-insights/cost-events"
+            href="https://docs.claidorhq.com/features/cost-insights/cost-events"
             target="_blank"
             className="flex flex-row items-center"
           >

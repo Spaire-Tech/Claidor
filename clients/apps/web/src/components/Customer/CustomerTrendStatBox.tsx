@@ -1,11 +1,11 @@
 import { formatHumanFriendlyScalar, formatPercentage } from '@/utils/formatters'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@spaire/ui/components/ui/tooltip'
+} from '@claidor/ui/components/ui/tooltip'
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { PropsWithChildren, useMemo } from 'react'
 import { CustomerStatBox, CustomerStatBoxProps } from './CustomerStatBox'

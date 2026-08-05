@@ -1,12 +1,12 @@
 import { DataTableSortingState } from '@/utils/datatable'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   DataTable,
   DataTableColumnDef,
   DataTableColumnHeader,
-} from '@spaire/ui/components/atoms/DataTable'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import { Status } from '@spaire/ui/components/atoms/Status'
+} from '@claidor/ui/components/atoms/DataTable'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import {
   OnChangeFn,
   PaginationState,

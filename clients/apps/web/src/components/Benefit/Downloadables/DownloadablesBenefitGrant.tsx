@@ -1,15 +1,15 @@
 import { useCustomerDownloadables } from '@/hooks/queries'
 import ArrowDownward from '@mui/icons-material/ArrowDownward'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
-import { Client, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import Pill from '@spaire/ui/components/atoms/Pill'
+import { Client, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import Pill from '@claidor/ui/components/atoms/Pill'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/ui/dropdown-menu'
+} from '@claidor/ui/components/ui/dropdown-menu'
 import { useCallback, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { FilePreview } from './FileList/FileListItem'

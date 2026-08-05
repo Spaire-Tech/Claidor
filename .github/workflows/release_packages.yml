@@ -49,4 +49,4 @@ jobs:
           cwd: ${{ github.workspace }}/clients
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SPAIRE_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS: "https://checkout.spairehq.com,https://sandbox-checkout.spairehq.com"
+          CLAIDOR_CHECKOUT_EMBED_SCRIPT_ALLOWED_ORIGINS: "https://checkout.claidorhq.com,https://sandbox-checkout.claidorhq.com"

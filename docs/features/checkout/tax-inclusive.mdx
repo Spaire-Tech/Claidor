@@ -4,13 +4,13 @@ sidebarTitle: "Tax-Inclusive Pricing"
 description: "Display prices with tax already included — the standard in France, Germany, and most of Europe."
 ---
 
-By default, Spaire displays prices exclusive of tax. Tax is calculated and shown separately at checkout before the customer confirms their purchase.
+By default, Claidor displays prices exclusive of tax. Tax is calculated and shown separately at checkout before the customer confirms their purchase.
 
 Tax-inclusive pricing flips this: the price you set **already includes tax**. The customer sees one number throughout — on your pricing page, in checkout, and on their receipt. This is the legal standard in France, Germany, and most EU markets, and the expected norm in many other countries.
 
 ## How it works
 
-When tax-inclusive pricing is set on a product price, Spaire back-calculates the tax component from the displayed price rather than adding it on top.
+When tax-inclusive pricing is set on a product price, Claidor back-calculates the tax component from the displayed price rather than adding it on top.
 
 **Example — €20 product in France (20% VAT):**
 
@@ -57,13 +57,13 @@ Set `tax_behavior` when creating or updating a product price:
 <CodeGroup>
 
 ```ts TypeScript
-import { Spaire } from '@spaire/sdk'
+import { Claidor } from '@spaire/sdk'
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 })
 
-const product = await spaire.products.create({
+const product = await claidor.products.create({
   name: 'Pro Plan',
   prices: [
     {
@@ -79,10 +79,10 @@ const product = await spaire.products.create({
 ```
 
 ```python Python
-from spaire_sdk import Spaire
+from claidor_sdk import Claidor
 
-with Spaire(access_token="<YOUR_ACCESS_TOKEN>") as spaire:
-    product = spaire.products.create(request={
+with Claidor(access_token="<YOUR_ACCESS_TOKEN>") as claidor:
+    product = claidor.products.create(request={
         "name": "Pro Plan",
         "prices": [
             {
@@ -98,8 +98,8 @@ with Spaire(access_token="<YOUR_ACCESS_TOKEN>") as spaire:
 ```
 
 ```bash cURL
-curl -X POST https://api.spairehq.com/v1/products \
-  -H "Authorization: Bearer $SPAIRE_ACCESS_TOKEN" \
+curl -X POST https://api.claidorhq.com/v1/products \
+  -H "Authorization: Bearer $CLAIDOR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Pro Plan",
@@ -141,7 +141,7 @@ For B2B sales where your customers are VAT-registered businesses, tax-exclusive 
 
 <CardGroup cols={2}>
   <Card icon="earth-europe" href="/merchant-of-record/introduction" title="Merchant of Record">
-    How Spaire handles tax collection and remittance on your behalf.
+    How Claidor handles tax collection and remittance on your behalf.
   </Card>
   <Card icon="globe" href="/features/checkout/localization" title="Checkout Localization">
     Serve checkout in your customer's language.

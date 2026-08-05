@@ -6,7 +6,7 @@ import {
   SyntaxHighlighterProvider,
 } from '@/components/SyntaxHighlighterShiki/SyntaxHighlighterClient'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { useContext } from 'react'
 
@@ -56,14 +56,14 @@ export const MeterIngestionGuide = () => {
           <Well className=" flex-1 shrink overflow-auto bg-white p-6 text-sm">
             <SyntaxHighlighterClient
               lang="typescript"
-              code={`import { Spaire } from "@spaire/sdk";
+              code={`import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env["SPAIRE_ACCESS_TOKEN"] ?? "",
+const claidor = new Claidor({
+  accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] ?? "",
 });
 
 export const GET = async (req: Request, res: Response) => {
-  await spaire.events.ingest({
+  await claidor.events.ingest({
     events: [
       {
         name: "api_call",

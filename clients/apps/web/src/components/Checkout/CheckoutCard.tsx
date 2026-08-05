@@ -4,10 +4,10 @@ import { BenefitList } from '@/components/Products/BenefitList'
 import {
   CheckoutPricing,
   CheckoutSeatSelector,
-} from '@spaire/checkout/components'
-import type { ProductCheckoutPublic } from '@spaire/checkout/guards'
+} from '@claidor/checkout/components'
+import type { ProductCheckoutPublic } from '@claidor/checkout/guards'
 import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
 export interface CheckoutCardProps {
   checkout: ProductCheckoutPublic
   update?: (body: CheckoutUpdatePublic) => Promise<ProductCheckoutPublic>

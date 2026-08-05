@@ -2,7 +2,7 @@
 
 > **You are modifying a production codebase that may handle revenue. Prioritize safety, minimalism, and explicit confirmation over speed.**
 
-This is the **platform-neutral** playbook for adding Spaire checkout to a user's project. It is consumed by thin adapter files for each AI coding environment:
+This is the **platform-neutral** playbook for adding Claidor checkout to a user's project. It is consumed by thin adapter files for each AI coding environment:
 
 | Platform | Adapter Location |
 |----------|-----------------|
@@ -15,9 +15,9 @@ This is the **platform-neutral** playbook for adding Spaire checkout to a user's
 
 ---
 
-You are an **AI agent** that adds Spaire checkout to the user's project. You don't just give instructions — you actively read their codebase, detect their stack, find the right place to add buy buttons, and wire up checkout directly in their files.
+You are an **AI agent** that adds Claidor checkout to the user's project. You don't just give instructions — you actively read their codebase, detect their stack, find the right place to add buy buttons, and wire up checkout directly in their files.
 
-**No extra API keys needed in the frontend.** Spaire checkout works via embed script + checkout links (overlay), `EmbedCheckout.create()` (programmatic), or server-side SDK sessions.
+**No extra API keys needed in the frontend.** Claidor checkout works via embed script + checkout links (overlay), `EmbedCheckout.create()` (programmatic), or server-side SDK sessions.
 
 ## Your Behavior as an Agent
 
@@ -54,7 +54,7 @@ If modifying an existing file, only patch the necessary section. Do not rewrite 
 - Never print or log secret values
 
 ### No Destructive Refactors
-Do not restructure the project. Only add or minimally modify files required for Spaire integration. Specifically, never:
+Do not restructure the project. Only add or minimally modify files required for Claidor integration. Specifically, never:
 - Reorganize project directory structure
 - Move or rename existing files
 - Replace routing systems or build configurations
@@ -73,7 +73,7 @@ Follow the project's existing UI conventions and component patterns. Do not add 
 Never log raw customer metadata, tokens, billing amounts, or PII in production logs. Use safe debug-level logging only.
 
 ### No Silent Account Mutations
-The agent writes code and guides dashboard steps. It must **never** silently create products, meters, prices, or any other billing objects in the user's Spaire account. Always walk the user through dashboard actions manually with explicit instructions.
+The agent writes code and guides dashboard steps. It must **never** silently create products, meters, prices, or any other billing objects in the user's Claidor account. Always walk the user through dashboard actions manually with explicit instructions.
 
 ## Phase 0: Pre-Flight Checks
 
@@ -137,14 +137,14 @@ If the framework is not in this list or detection confidence is low, tell the us
 
 Tell the user what you found: "I can see you're using Next.js App Router with React. I'll tailor the checkout setup for that."
 
-Then **ask if they have products created in Spaire**:
+Then **ask if they have products created in Claidor**:
 - If yes: ask them for the checkout link URL or product ID
-- If no: walk them through creating a product at https://app.spairehq.com/dashboard → Products → New Product
+- If no: walk them through creating a product at https://app.claidorhq.com/dashboard → Products → New Product
 
 Then **ask which checkout approach they want**:
 
 ### Option 1: Overlay (Simplest — no backend needed)
-- Embed script + `data-spaire-checkout` links
+- Embed script + `data-claidor-checkout` links
 - Zero backend code, zero API keys in the frontend
 - Best for: landing pages, simple apps, Lovable/Bolt/v0 projects
 
@@ -154,7 +154,7 @@ Then **ask which checkout approach they want**:
 - Best for: apps where you want to programmatically trigger checkout
 
 ### Option 3: Server-side (Most control)
-- Create checkout sessions via `@spaire/sdk` or `@spaire/nextjs`
+- Create checkout sessions via `@spaire/sdk` or `@claidor/nextjs`
 - Full control over line items, discounts, metadata
 - Best for: apps with existing backends, dynamic pricing
 
@@ -186,7 +186,7 @@ import Script from "next/script";
 <Script
   defer
   data-auto-init
-  src="https://cdn.spairehq.com/checkout/embed.js"
+  src="https://cdn.claidorhq.com/checkout/embed.js"
   strategy="afterInteractive"
 />
 ```
@@ -199,29 +199,29 @@ import Script from "next/script";
 <Script
   defer
   data-auto-init
-  src="https://cdn.spairehq.com/checkout/embed.js"
+  src="https://cdn.claidorhq.com/checkout/embed.js"
   strategy="afterInteractive"
 />
 ```
 
 **Express (serve static HTML or template):**
 ```html
-<script defer data-auto-init src="https://cdn.spairehq.com/checkout/embed.js"></script>
+<script defer data-auto-init src="https://cdn.claidorhq.com/checkout/embed.js"></script>
 ```
 
 **Rails (app/views/layouts/application.html.erb):**
 ```erb
-<script defer data-auto-init src="https://cdn.spairehq.com/checkout/embed.js"></script>
+<script defer data-auto-init src="https://cdn.claidorhq.com/checkout/embed.js"></script>
 ```
 
 **Vanilla HTML (index.html):**
 ```html
-<script defer data-auto-init src="https://cdn.spairehq.com/checkout/embed.js"></script>
+<script defer data-auto-init src="https://cdn.claidorhq.com/checkout/embed.js"></script>
 ```
 
 **React (index.html or public/index.html):**
 ```html
-<script defer data-auto-init src="https://cdn.spairehq.com/checkout/embed.js"></script>
+<script defer data-auto-init src="https://cdn.claidorhq.com/checkout/embed.js"></script>
 ```
 
 ### Step 2: Add checkout buttons/links
@@ -229,14 +229,14 @@ import Script from "next/script";
 ```html
 <a
   href="CHECKOUT_LINK_URL"
-  data-spaire-checkout
-  data-spaire-checkout-theme="light"
+  data-claidor-checkout
+  data-claidor-checkout-theme="light"
 >
   Get Started
 </a>
 ```
 
-If the user has their checkout link URL, replace `CHECKOUT_LINK_URL` with it. Otherwise, use a placeholder and tell them: "Replace CHECKOUT_LINK_URL with your actual link from Products → Checkout Links in the Spaire dashboard."
+If the user has their checkout link URL, replace `CHECKOUT_LINK_URL` with it. Otherwise, use a placeholder and tell them: "Replace CHECKOUT_LINK_URL with your actual link from Products → Checkout Links in the Claidor dashboard."
 
 ### Step 3: Create a success page
 
@@ -251,10 +251,10 @@ If the user chose programmatic:
 ### Step 2: Create a checkout utility
 
 ```typescript
-// lib/spaire-checkout.ts
+// lib/claidor-checkout.ts
 declare global {
   interface Window {
-    Spaire: {
+    Claidor: {
       EmbedCheckout: {
         create: (url: string, options?: {
           theme?: 'light' | 'dark'
@@ -269,16 +269,16 @@ export async function openCheckout(checkoutUrl: string, options?: {
   theme?: 'light' | 'dark'
 }) {
   try {
-    await window.Spaire.EmbedCheckout.create(checkoutUrl, {
+    await window.Claidor.EmbedCheckout.create(checkoutUrl, {
       theme: options?.theme ?? 'light',
     })
   } catch (err) {
-    console.error('[Spaire Checkout] Failed to open checkout:', err)
+    console.error('[Claidor Checkout] Failed to open checkout:', err)
   }
 }
 ```
 
-> **Note:** The global is `window.Spaire.EmbedCheckout`, not `window.EmbedCheckout`.
+> **Note:** The global is `window.Claidor.EmbedCheckout`, not `window.EmbedCheckout`.
 
 > **BetterAuth note:** If the project uses BetterAuth (`better-auth` in `package.json`), read the BetterAuth session to get the user's email and pass it as a query param on the checkout URL:
 > ```typescript
@@ -287,13 +287,13 @@ export async function openCheckout(checkoutUrl: string, options?: {
 > const session = await authClient.getSession()
 > const url = new URL('CHECKOUT_LINK_URL')
 > if (session?.user?.email) url.searchParams.set('customer_email', session.user.email)
-> await window.Spaire.EmbedCheckout.create(url.toString())
+> await window.Claidor.EmbedCheckout.create(url.toString())
 > ```
 
 ### Step 3: Wire it into their button
 
 ```typescript
-import { openCheckout } from '@/lib/spaire-checkout'
+import { openCheckout } from '@/lib/claidor-checkout'
 
 <button onClick={() => openCheckout("CHECKOUT_LINK_URL")}>
   Get Started
@@ -308,34 +308,34 @@ If the user chose server-side:
 
 Check existing dependency versions in `package.json` before installing. Install only stable versions. Use the project's existing package manager (detected per the [output contract](./agent-output-contract.md)).
 
-- Next.js: `pnpm add @spaire/nextjs` (or `@spaire/sdk` for other frameworks)
+- Next.js: `pnpm add @claidor/nextjs` (or `@spaire/sdk` for other frameworks)
 - Express: `pnpm add @spaire/sdk`
-- Python: `pip install spaire-sdk` (or `uv add spaire-sdk` if project uses uv)
-- Ruby: `gem install spaire-sdk`
-- Go: `go get github.com/spairehq/spaire-go`
+- Python: `pip install claidor-sdk` (or `uv add claidor-sdk` if project uses uv)
+- Ruby: `gem install claidor-sdk`
+- Go: `go get github.com/claidorhq/claidor-go`
 
 ### Step 2: Set environment variables
 
 Tell the user to add to their `.env`:
 ```
-SPAIRE_ACCESS_TOKEN=<your_access_token>
-SPAIRE_SUCCESS_URL=<your_success_url>
+CLAIDOR_ACCESS_TOKEN=<your_access_token>
+CLAIDOR_SUCCESS_URL=<your_success_url>
 ```
 
-Tell the user: "Get your access token from https://app.spairehq.com/dashboard → Settings → Access Tokens. Then set `SPAIRE_SUCCESS_URL` to your success page URL, e.g., `https://your-app.com/checkout/success?checkout_id={CHECKOUT_ID}`"
+Tell the user: "Get your access token from https://app.claidorhq.com/dashboard → Settings → Access Tokens. Then set `CLAIDOR_SUCCESS_URL` to your success page URL, e.g., `https://your-app.com/checkout/success?checkout_id={CHECKOUT_ID}`"
 
 **Do not write or modify the actual values in `.env`.** Only instruct the user to populate them.
 
 ### Step 3: Create the checkout route
 
-**Next.js App Router (using @spaire/nextjs):**
+**Next.js App Router (using @claidor/nextjs):**
 ```typescript
 // app/api/checkout/route.ts
-import { Checkout } from "@spaire/nextjs";
+import { Checkout } from "@claidor/nextjs";
 
 export const GET = Checkout({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
-  successUrl: process.env.SPAIRE_SUCCESS_URL,
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
+  successUrl: process.env.CLAIDOR_SUCCESS_URL,
 });
 ```
 
@@ -343,16 +343,16 @@ export const GET = Checkout({
 ```typescript
 // pages/api/checkout.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN!,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const checkout = await spaire.checkouts.create({
+  const checkout = await claidor.checkouts.create({
     products: [req.body.productId],
-    successUrl: process.env.SPAIRE_SUCCESS_URL!,
+    successUrl: process.env.CLAIDOR_SUCCESS_URL!,
   });
   res.json({ url: checkout.url });
 }
@@ -360,16 +360,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 **Express:**
 ```typescript
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 });
 
 app.post("/api/checkout", async (req, res) => {
-  const checkout = await spaire.checkouts.create({
+  const checkout = await claidor.checkouts.create({
     products: [req.body.productId],
-    successUrl: process.env.SPAIRE_SUCCESS_URL,
+    successUrl: process.env.CLAIDOR_SUCCESS_URL,
   });
   res.json({ url: checkout.url });
 });
@@ -378,15 +378,15 @@ app.post("/api/checkout", async (req, res) => {
 **FastAPI:**
 ```python
 import os
-from spaire_sdk import Spaire
+from claidor_sdk import Claidor
 
-client = Spaire(access_token=os.getenv("SPAIRE_ACCESS_TOKEN"))
+client = Claidor(access_token=os.getenv("CLAIDOR_ACCESS_TOKEN"))
 
 @app.post("/api/checkout")
 async def create_checkout(product_id: str):
     checkout = client.checkouts.create(request={
         "products": [product_id],
-        "success_url": os.getenv("SPAIRE_SUCCESS_URL"),
+        "success_url": os.getenv("CLAIDOR_SUCCESS_URL"),
     })
     return {"url": checkout.url}
 ```
@@ -396,10 +396,10 @@ async def create_checkout(product_id: str):
 # app/controllers/checkouts_controller.rb
 class CheckoutsController < ApplicationController
   def create
-    client = Spaire::Client.new(access_token: ENV["SPAIRE_ACCESS_TOKEN"])
+    client = Claidor::Client.new(access_token: ENV["CLAIDOR_ACCESS_TOKEN"])
     checkout = client.checkouts.create(
       products: [params[:product_id]],
-      success_url: ENV["SPAIRE_SUCCESS_URL"]
+      success_url: ENV["CLAIDOR_SUCCESS_URL"]
     )
     render json: { url: checkout.url }
   end
@@ -409,17 +409,17 @@ end
 **Node Serverless (Vercel):**
 ```typescript
 // api/checkout.ts
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 });
 
 export default async function handler(req: Request) {
   const { productId } = await req.json();
-  const checkout = await spaire.checkouts.create({
+  const checkout = await claidor.checkouts.create({
     products: [productId],
-    successUrl: process.env.SPAIRE_SUCCESS_URL,
+    successUrl: process.env.CLAIDOR_SUCCESS_URL,
   });
   return Response.json({ url: checkout.url });
 }
@@ -445,10 +445,10 @@ If the user wants customers to manage their subscriptions:
 
 ```typescript
 // Next.js: app/api/portal/route.ts
-import { CustomerPortal } from "@spaire/nextjs";
+import { CustomerPortal } from "@claidor/nextjs";
 
 export const GET = CustomerPortal({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 });
 ```
 
@@ -461,22 +461,22 @@ If the user needs to react to checkout events:
 **Important:** Webhook handlers must include signature verification and idempotent processing.
 
 ```typescript
-// app/api/webhook/spaire/route.ts
-import { Webhooks } from "@spaire/nextjs";
+// app/api/webhook/claidor/route.ts
+import { Webhooks } from "@claidor/nextjs";
 
 export const POST = Webhooks({
-  webhookSecret: process.env.SPAIRE_WEBHOOK_SECRET!,
+  webhookSecret: process.env.CLAIDOR_WEBHOOK_SECRET!,
   onOrderPaid: async (order) => {
     // Idempotency: check if this order was already processed
     // e.g., check your database for order.data.id before provisioning
     const alreadyProcessed = await db.orders.findUnique({
-      where: { spaire_order_id: order.data.id },
+      where: { claidor_order_id: order.data.id },
     });
     if (alreadyProcessed) return;
 
     // Provision access, send email, etc.
     await db.orders.create({
-      data: { spaire_order_id: order.data.id, status: "paid" },
+      data: { claidor_order_id: order.data.id, status: "paid" },
     });
   },
   onSubscriptionActive: async (subscription) => {
@@ -487,18 +487,18 @@ export const POST = Webhooks({
 ```
 
 **Webhook safety rules:**
-- Always verify the webhook signature (the `@spaire/nextjs` Webhooks helper does this automatically via `webhookSecret`)
+- Always verify the webhook signature (the `@claidor/nextjs` Webhooks helper does this automatically via `webhookSecret`)
 - Implement idempotent handling — check if the event was already processed before taking action
 - Never process the same event twice (use the event/order ID as a deduplication key)
 - Log webhook receipt at debug level, never log full payload in production
 
-Tell them: "Register this URL at https://app.spairehq.com/dashboard → Settings → Webhooks. Copy the webhook secret and add it to your `.env` as `SPAIRE_WEBHOOK_SECRET`."
+Tell them: "Register this URL at https://app.claidorhq.com/dashboard → Settings → Webhooks. Copy the webhook secret and add it to your `.env` as `CLAIDOR_WEBHOOK_SECRET`."
 
 ## Phase 8: Testing Checklist
 
 Walk the user through each step:
 
-1. **Product created** in the Spaire dashboard
+1. **Product created** in the Claidor dashboard
 2. **Checkout link or access token** configured
 3. **Embed script added** to the layout (for overlay/programmatic)
 4. **Checkout button** added to the right page
@@ -507,13 +507,13 @@ Walk the user through each step:
 7. **Complete a test purchase** (use test/sandbox mode if available)
 
 Present expected results at each step:
-- "When you click the checkout button, you should see the Spaire checkout overlay appear"
+- "When you click the checkout button, you should see the Claidor checkout overlay appear"
 - "After completing purchase, you should be redirected to your success page"
 - "If using webhooks, check your server logs for the webhook event"
 
 If something doesn't work, help debug:
 - "If the overlay doesn't appear, check the browser console for script loading errors"
-- "If the checkout link returns 404, verify the product is published in your Spaire dashboard"
+- "If the checkout link returns 404, verify the product is published in your Claidor dashboard"
 
 ## Phase 9: Revert Instructions
 
@@ -525,7 +525,7 @@ To revert these changes:
 2. Remove import: [list each import added to existing files]
 3. Remove code block: [describe each addition to existing files]
 4. Remove env var: [list each environment variable referenced]
-5. Uninstall package: [e.g., pnpm remove @spaire/nextjs]
+5. Uninstall package: [e.g., pnpm remove @claidor/nextjs]
 ```
 
 Be specific — list exact file paths and describe exactly what to remove.
@@ -553,8 +553,8 @@ Be specific — list exact file paths and describe exactly what to remove.
 - **Never log secrets, tokens, or billing amounts** in production code.
 
 ### Scope Discipline
-- **Do not restructure the project.** Only add or minimally modify files required for Spaire integration.
-- **Do not create products, meters, or prices** in the user's Spaire account. Walk them through dashboard steps manually.
+- **Do not restructure the project.** Only add or minimally modify files required for Claidor integration.
+- **Do not create products, meters, or prices** in the user's Claidor account. Walk them through dashboard steps manually.
 - **Do not add features beyond what was requested.** If the user asked for checkout, don't also set up usage billing.
 - **Follow the project's existing UI conventions** and component patterns. Don't inject alien styles.
 

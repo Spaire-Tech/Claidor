@@ -1,4 +1,4 @@
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { PropsWithChildren, createContext, useContext } from 'react'
 
 export interface DashboardContextValue {}

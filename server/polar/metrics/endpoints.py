@@ -5,7 +5,7 @@ from fastapi import Depends, Query
 from pydantic_extra_types.timezone_name import TimeZoneName
 
 from polar.customer.schemas.customer import CustomerID
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.kit.schemas import MultipleQueryFilter
 from polar.kit.time_queries import (
     MAX_INTERVAL_DAYS,
@@ -83,7 +83,7 @@ async def get(
     Currency values are output in cents.
     """
     if not is_under_limits(start_date, end_date, interval):
-        raise SpaireRequestValidationError(
+        raise ClaidorRequestValidationError(
             [
                 {
                     "loc": ("query",),
@@ -101,7 +101,7 @@ async def get(
         valid_slugs = {m.slug for m in METRICS}
         invalid_slugs = set(metrics) - valid_slugs
         if invalid_slugs:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "loc": ("query", "metrics"),

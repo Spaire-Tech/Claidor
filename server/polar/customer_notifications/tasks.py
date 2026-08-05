@@ -47,7 +47,7 @@ async def send_email(notification_id: UUID) -> None:
 
         # From-name override: for org-scoped notifications (community
         # events, activities) the customer expects mail from the
-        # creator's brand, not "Spaire". Send address stays on the
+        # creator's brand, not "Claidor". Send address stays on the
         # platform domain — only the human display name changes.
         from_name = get_from_name(notif.type, payload) or DEFAULT_FROM_NAME
 

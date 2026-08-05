@@ -3,7 +3,7 @@
 import { DashboardBody } from '@/components/Layout/DashboardLayout'
 import { MeterPage } from '@/components/Meter/MeterPage'
 import { useModal } from '@/components/Modal/useModal'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import React from 'react'
 
 interface ClientPageProps {

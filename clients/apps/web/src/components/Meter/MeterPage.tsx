@@ -9,18 +9,18 @@ import { ParsedMetricPeriod } from '@/hooks/queries/metrics'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { dateRangeToInterval } from '@/utils/metrics'
 import { UTCDate } from '@date-fns/utc'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   Card,
   CardContent,
   CardHeader,
-} from '@spaire/ui/components/atoms/Card'
+} from '@claidor/ui/components/atoms/Card'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@spaire/ui/components/atoms/Tabs'
+} from '@claidor/ui/components/atoms/Tabs'
 import { endOfMonth, startOfMonth, subMonths } from 'date-fns'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import DateRangePicker from '../Metrics/DateRangePicker'

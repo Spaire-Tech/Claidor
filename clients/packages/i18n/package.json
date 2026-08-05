@@ -1,5 +1,5 @@
 {
-  "name": "@spaire/i18n",
+  "name": "@claidor/i18n",
   "version": "0.1.0",
   "description": "Polar i18n - Locale files and translation utilities",
   "author": "Polar",
@@ -37,7 +37,7 @@
     "dist"
   ],
   "devDependencies": {
-    "@spaire/typescript-config": "workspace:*",
+    "@claidor/typescript-config": "workspace:*",
     "@types/react": "^19.2.14",
     "prettier": "^3.8.1",
     "react": "^19.2.4",

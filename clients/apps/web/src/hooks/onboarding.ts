@@ -1,7 +1,7 @@
 'use client'
 
 import { useExperiment } from '@/experiments/client'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { usePostHog } from 'posthog-js/react'
 import { useCallback, useMemo } from 'react'
 

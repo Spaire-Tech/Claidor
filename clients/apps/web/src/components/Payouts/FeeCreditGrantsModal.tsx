@@ -1,7 +1,7 @@
 import { useAccountCredits, useOrganizationAccount } from '@/hooks/queries'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import { formatCurrency } from '@spaire/currency'
-import { List, ListItem } from '@spaire/ui/components/atoms/List'
+import { formatCurrency } from '@claidor/currency'
+import { List, ListItem } from '@claidor/ui/components/atoms/List'
 import { useContext } from 'react'
 import { InlineModal } from '../Modal/InlineModal'
 

@@ -1,14 +1,14 @@
 {
-  "name": "@spaire/currency",
-  "description": "Spaire Currency Utilities",
-  "author": "Spaire",
+  "name": "@claidor/currency",
+  "description": "Claidor Currency Utilities",
+  "author": "Claidor",
   "license": "Apache-2.0",
   "type": "module",
   "private": true,
   "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Spaire-Tech/polar.git",
+    "url": "https://github.com/Claidor-Tech/polar.git",
     "directory": "clients/packages/currency"
   },
   "main": "./dist/index.cjs",
@@ -33,7 +33,7 @@
     }
   },
   "devDependencies": {
-    "@spaire/typescript-config": "workspace:*",
+    "@claidor/typescript-config": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "latest",
     "vitest": "^4.0.18"

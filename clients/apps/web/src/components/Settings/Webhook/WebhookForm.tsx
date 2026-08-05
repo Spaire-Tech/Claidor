@@ -1,21 +1,21 @@
-import { enums, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
+import { enums, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
-import { Checkbox } from '@spaire/ui/components/ui/checkbox'
+} from '@claidor/ui/components/atoms/Select'
+import { Checkbox } from '@claidor/ui/components/ui/checkbox'
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, type MouseEvent } from 'react'
 import { useFormContext } from 'react-hook-form'
@@ -161,7 +161,7 @@ export const FieldEvents = () => {
             control={control}
             name="events"
             render={({ field }) => {
-              const href = `https://docs.spairehq.com/api-reference/webhooks/${event}`
+              const href = `https://docs.claidorhq.com/api-reference/webhooks/${event}`
 
               return (
                 <FormItem className="flex flex-row items-center space-y-0 space-x-3">

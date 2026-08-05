@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 
 # Set up test environment before any polar imports
-os.environ["SPAIRE_ENV"] = "testing"
+os.environ["CLAIDOR_ENV"] = "testing"
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -10,7 +10,7 @@
   "ignore": [
     "web",
     "@examples/checkout-embed",
-    "@spaire/client",
-    "@spaire/customer-portal"
+    "@claidor/client",
+    "@claidor/customer-portal"
   ]
 }

@@ -30,7 +30,7 @@
 
 ## 1. Executive Summary
 
-This plan introduces a **US company formation feature** into the Spaire platform, allowing founders to incorporate directly from the Spaire dashboard. The integration uses **FileForms** as the backend fulfillment provider while Spaire owns the entire UX and payment flow.
+This plan introduces a **US company formation feature** into the Claidor platform, allowing founders to incorporate directly from the Claidor dashboard. The integration uses **FileForms** as the backend fulfillment provider while Claidor owns the entire UX and payment flow.
 
 **End-to-end flow:**
 
@@ -38,29 +38,29 @@ This plan introduces a **US company formation feature** into the Spaire platform
 Founder opens dashboard
   → Starts incorporation wizard
   → Fills multi-step form (entity type, details, founders, ownership)
-  → Pays via Spaire Checkout
-  → Spaire submits formation to FileForms
+  → Pays via Claidor Checkout
+  → Claidor submits formation to FileForms
   → FileForms files with state
   → Webhook updates status in real-time
-  → Formation documents stored in Spaire S3
-  → Founder downloads documents from Spaire dashboard
+  → Formation documents stored in Claidor S3
+  → Founder downloads documents from Claidor dashboard
 ```
 
 ### Architecture Diagram
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    Spaire Dashboard (Next.js)                │
+│                    Claidor Dashboard (Next.js)                │
 │                                                              │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────────┐ │
-│  │ Incorp.     │  │ Spaire       │  │ Document            │ │
+│  │ Incorp.     │  │ Claidor       │  │ Document            │ │
 │  │ Wizard      │──│ Checkout     │  │ Viewer              │ │
 │  └──────┬──────┘  └──────┬───────┘  └──────────┬──────────┘ │
 └─────────┼────────────────┼─────────────────────┼────────────┘
           │                │                     │
           ▼                ▼                     ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                  Spaire API (FastAPI)                         │
+│                  Claidor API (FastAPI)                         │
 │                                                              │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │             polar/incorporation/                        │ │
@@ -100,7 +100,7 @@ Founder opens dashboard
 
 ### Current Structure
 
-The Spaire backend (`server/polar/`) contains **59 modules**, each following a consistent pattern:
+The Claidor backend (`server/polar/`) contains **59 modules**, each following a consistent pattern:
 
 ```
 polar/{module}/
@@ -181,7 +181,7 @@ polar/incorporation/
 ### Sequence Diagram
 
 ```
-Spaire Dashboard          Spaire API                FileForms
+Claidor Dashboard          Claidor API                FileForms
      │                        │                         │
      │  1. Create draft       │                         │
      │───────────────────────►│                         │
@@ -288,7 +288,7 @@ class IncorporationService:
         """Step 1: Create local draft incorporation record."""
 
     async def initiate_checkout(self, session, auth_subject, incorporation_id):
-        """Step 2: Create Spaire checkout for incorporation fee."""
+        """Step 2: Create Claidor checkout for incorporation fee."""
 
     async def on_payment_confirmed(self, session, incorporation_id):
         """Step 3: Called when checkout succeeds. Enqueues FileForms submission."""
@@ -468,7 +468,7 @@ Initiate checkout for a draft incorporation.
 **Response:** `201 Created`
 ```json
 {
-  "checkout_url": "https://checkout.spairehq.com/...",
+  "checkout_url": "https://checkout.claidorhq.com/...",
   "checkout_id": "uuid"
 }
 ```
@@ -590,11 +590,11 @@ CREATE INDEX ix_incorporation_documents_created_at ON incorporation_documents(cr
 CREATE INDEX ix_incorporation_documents_deleted_at ON incorporation_documents(deleted_at);
 ```
 
-### Status Enum (Spaire internal)
+### Status Enum (Claidor internal)
 
 ```python
 class IncorporationStatus(StrEnum):
-    """Spaire-side lifecycle status."""
+    """Claidor-side lifecycle status."""
     draft = "draft"                     # Initial state, form being filled
     pending_payment = "pending_payment" # Checkout created, awaiting payment
     submitted = "submitted"             # Paid, submitted to FileForms
@@ -732,7 +732,7 @@ class IncorporationDocument(RecordModel):
 
 ### Flow
 
-The incorporation checkout follows the existing Spaire checkout pattern but is triggered for a **fixed-price service product**, not a recurring subscription.
+The incorporation checkout follows the existing Claidor checkout pattern but is triggered for a **fixed-price service product**, not a recurring subscription.
 
 ```
 ┌─────────┐     ┌──────────────┐     ┌──────────┐     ┌──────────────┐
@@ -746,9 +746,9 @@ The incorporation checkout follows the existing Spaire checkout pattern but is t
 
 ### Implementation
 
-**Step 1: Pre-create a "Company Formation" product in Spaire**
+**Step 1: Pre-create a "Company Formation" product in Claidor**
 
-A one-time product should be created in the Spaire product catalog for each formation package (e.g., "LLC Formation — Delaware" at $399). This can be seeded via a data migration or created via the admin backoffice.
+A one-time product should be created in the Claidor product catalog for each formation package (e.g., "LLC Formation — Delaware" at $399). This can be seeded via a data migration or created via the admin backoffice.
 
 **Step 2: Trigger checkout from incorporation**
 
@@ -776,7 +776,7 @@ async def initiate_checkout(
         session, incorporation.entity_type, incorporation.state
     )
 
-    # Create a Spaire checkout session
+    # Create a Claidor checkout session
     checkout = await checkout_service.create(
         session,
         auth_subject,
@@ -796,7 +796,7 @@ async def initiate_checkout(
 
 **Step 3: Handle payment confirmation**
 
-The existing checkout/order flow in Spaire fires events when payment succeeds. We hook into this via a background task:
+The existing checkout/order flow in Claidor fires events when payment succeeds. We hook into this via a background task:
 
 ```python
 # polar/incorporation/tasks.py
@@ -1107,11 +1107,11 @@ These are loaded from environment variables with `POLAR_` prefix.
 
 ### Key Design Decisions
 
-1. **Frontend never calls FileForms** — all requests go through the Spaire API.
+1. **Frontend never calls FileForms** — all requests go through the Claidor API.
 2. **`x-api-key` header** — matches FileForms auth pattern (not Bearer token as initially assumed).
 3. **Async httpx** — consistent with the existing async patterns in the codebase.
 4. **Singleton** — matches the service pattern used throughout the codebase.
-5. **Error mapping** — `FileFormsError` and `FileFormsConflictError` are caught in the service layer and mapped to appropriate Spaire errors.
+5. **Error mapping** — `FileFormsError` and `FileFormsConflictError` are caught in the service layer and mapped to appropriate Claidor errors.
 6. **Two-step document download** — `get_document()` returns metadata + presigned URL, then `download_document_content()` fetches the actual file bytes from S3.
 7. **409 handling** — `FileFormsConflictError` allows the service to handle idempotent user/company creation (look up existing on conflict).
 
@@ -1121,7 +1121,7 @@ These are loaded from environment variables with `POLAR_` prefix.
 
 ### Inbound Webhook Endpoint
 
-FileForms sends webhook events to a dedicated Spaire endpoint. This follows the pattern used by `integrations/chargeback_stop/` for inbound webhooks.
+FileForms sends webhook events to a dedicated Claidor endpoint. This follows the pattern used by `integrations/chargeback_stop/` for inbound webhooks.
 
 > **FileForms webhook payload structure (from API docs):**
 >
@@ -1295,7 +1295,7 @@ async def handle_status_change(
     if subscription_status is not None:
         incorporation.subscription_status = subscription_status
 
-    # Map FileForms filingStatus to Spaire internal status
+    # Map FileForms filingStatus to Claidor internal status
     status_map = {
         "submitted": IncorporationStatus.submitted,
         "pending": IncorporationStatus.processing,
@@ -1304,9 +1304,9 @@ async def handle_status_change(
         "cancelled": IncorporationStatus.cancelled,
     }
 
-    new_spaire_status = status_map.get(filing_status)
-    if new_spaire_status:
-        incorporation.status = new_spaire_status
+    new_claidor_status = status_map.get(filing_status)
+    if new_claidor_status:
+        incorporation.status = new_claidor_status
 
         if filing_status == "filed":
             incorporation.completed_at = utc_now()
@@ -1360,7 +1360,7 @@ router.include_router(fileforms_webhook_router)  # /webhooks/fileforms
 ```
 
 The webhook URL is configured in the FileForms partner dashboard to point to:
-`https://api.spairehq.com/v1/webhooks/fileforms`
+`https://api.claidorhq.com/v1/webhooks/fileforms`
 
 ---
 
@@ -1549,7 +1549,7 @@ clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/incorporate/
   - LLC → shows `structureType` sub-choice (Member-Managed / Manager-Managed)
   - CORP → shows `taxElection` sub-choice (C Corporation / S Corporation)
 - Brief description of each type
-- Reuse: `RadioGroup` from `@spaire/ui`, `Card` component
+- Reuse: `RadioGroup` from `@claidor/ui`, `Card` component
 
 #### Step 2 — Company Details
 
@@ -1559,7 +1559,7 @@ clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/incorporate/
 - Formation date (date picker, defaults to today)
 - Fiscal year end month (dropdown, defaults to December)
 - EIN (optional, format XX-XXXXXXX)
-- Reuse: `Input`, `Select` from `@spaire/ui`
+- Reuse: `Input`, `Select` from `@claidor/ui`
 
 #### Step 3 — Officers
 
@@ -1578,7 +1578,7 @@ clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/incorporate/
 - Company address: Street, City, State, Zip
 - Mailing address: Street, City, State, Zip (with "Same as company address" checkbox)
 - Include Registered Agent toggle (default: on)
-- Reuse: `Input`, `Select`, `Checkbox` from `@spaire/ui`
+- Reuse: `Input`, `Select`, `Checkbox` from `@claidor/ui`
 
 #### Step 5 — Review
 
@@ -1588,7 +1588,7 @@ clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/incorporate/
 
 #### Step 6 — Checkout
 
-- Redirect to Spaire Checkout (existing checkout flow)
+- Redirect to Claidor Checkout (existing checkout flow)
 - On success, redirect to incorporation status page
 - Reuse: Entire existing checkout infrastructure
 
@@ -1596,14 +1596,14 @@ clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/incorporate/
 
 | Component | Source | Usage |
 |-----------|--------|-------|
-| `Input` | `@spaire/ui` | All text fields |
-| `Select` | `@spaire/ui` | State selector, entity type |
-| `Button` | `@spaire/ui` | Navigation, submit |
-| `Card` | `@spaire/ui` | Step containers, review cards |
+| `Input` | `@claidor/ui` | All text fields |
+| `Select` | `@claidor/ui` | State selector, entity type |
+| `Button` | `@claidor/ui` | Navigation, submit |
+| `Card` | `@claidor/ui` | Step containers, review cards |
 | `Form` | React Hook Form + Zod | Form state management |
-| `Badge` | `@spaire/ui` | Status badges |
-| `Progress` | `@spaire/ui` | Step progress indicator |
-| `Tabs` | `@spaire/ui` | Step navigation |
+| `Badge` | `@claidor/ui` | Status badges |
+| `Progress` | `@claidor/ui` | Step progress indicator |
+| `Tabs` | `@claidor/ui` | Step navigation |
 | `DataTable` | existing | Document list |
 | `CopyToClipboardInput` | existing | Document download links |
 
@@ -1808,9 +1808,9 @@ def downgrade() -> None:
 
 ### Phase 3 — Checkout Integration (2 days)
 
-**Goal:** Incorporation payment via Spaire Checkout.
+**Goal:** Incorporation payment via Claidor Checkout.
 
-- [ ] Create formation products in Spaire (via migration or seed)
+- [ ] Create formation products in Claidor (via migration or seed)
 - [ ] Implement `initiate_checkout()` in service
 - [ ] Add `POST /v1/incorporations/{id}/checkout` endpoint
 - [ ] Add payment confirmation hook in order service

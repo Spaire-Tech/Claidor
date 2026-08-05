@@ -20,9 +20,9 @@ def is_github_configured() -> bool:
     """Check if GitHub App is configured."""
     if SECRETS_FILE.exists():
         content = SECRETS_FILE.read_text()
-        if "SPAIRE_GITHUB_CLIENT_ID=" in content:
+        if "CLAIDOR_GITHUB_CLIENT_ID=" in content:
             for line in content.split("\n"):
-                if line.startswith("SPAIRE_GITHUB_CLIENT_ID="):
+                if line.startswith("CLAIDOR_GITHUB_CLIENT_ID="):
                     value = line.split("=", 1)[1].strip().strip("\"'")
                     return bool(value)
     return False
@@ -32,7 +32,7 @@ def is_github_skipped() -> bool:
     """Check if user chose to skip GitHub setup."""
     if SECRETS_FILE.exists():
         for line in SECRETS_FILE.read_text().split("\n"):
-            if line.startswith("SPAIRE_SKIP_GITHUB_SETUP="):
+            if line.startswith("CLAIDOR_SKIP_GITHUB_SETUP="):
                 value = line.split("=", 1)[1].strip().strip("\"'")
                 return value.lower() == "true"
     return False
@@ -40,7 +40,7 @@ def is_github_skipped() -> bool:
 
 def set_github_skipped(skipped: bool = True) -> None:
     """Remember that user chose to skip GitHub setup."""
-    _update_secrets_file("SPAIRE_SKIP_GITHUB_SETUP", "true" if skipped else None)
+    _update_secrets_file("CLAIDOR_SKIP_GITHUB_SETUP", "true" if skipped else None)
 
 
 def is_stripe_configured() -> bool:
@@ -50,10 +50,10 @@ def is_stripe_configured() -> bool:
         has_secret = False
         has_publishable = False
         for line in content.split("\n"):
-            if line.startswith("SPAIRE_STRIPE_SECRET_KEY="):
+            if line.startswith("CLAIDOR_STRIPE_SECRET_KEY="):
                 value = line.split("=", 1)[1].strip().strip("\"'")
                 has_secret = bool(value)
-            if line.startswith("SPAIRE_STRIPE_PUBLISHABLE_KEY="):
+            if line.startswith("CLAIDOR_STRIPE_PUBLISHABLE_KEY="):
                 value = line.split("=", 1)[1].strip().strip("\"'")
                 has_publishable = bool(value)
         return has_secret and has_publishable
@@ -64,7 +64,7 @@ def is_stripe_skipped() -> bool:
     """Check if user chose to skip Stripe setup."""
     if SECRETS_FILE.exists():
         for line in SECRETS_FILE.read_text().split("\n"):
-            if line.startswith("SPAIRE_SKIP_STRIPE_SETUP="):
+            if line.startswith("CLAIDOR_SKIP_STRIPE_SETUP="):
                 value = line.split("=", 1)[1].strip().strip("\"'")
                 return value.lower() == "true"
     return False
@@ -72,15 +72,15 @@ def is_stripe_skipped() -> bool:
 
 def set_stripe_skipped(skipped: bool = True) -> None:
     """Remember that user chose to skip Stripe setup."""
-    _update_secrets_file("SPAIRE_SKIP_STRIPE_SETUP", "true" if skipped else None)
+    _update_secrets_file("CLAIDOR_SKIP_STRIPE_SETUP", "true" if skipped else None)
 
 
 def save_stripe_keys(secret_key: str, publishable_key: str, webhook_secret: str = "") -> None:
     """Save Stripe keys to the central secrets file."""
-    _update_secrets_file("SPAIRE_STRIPE_SECRET_KEY", secret_key)
-    _update_secrets_file("SPAIRE_STRIPE_PUBLISHABLE_KEY", publishable_key)
+    _update_secrets_file("CLAIDOR_STRIPE_SECRET_KEY", secret_key)
+    _update_secrets_file("CLAIDOR_STRIPE_PUBLISHABLE_KEY", publishable_key)
     if webhook_secret:
-        _update_secrets_file("SPAIRE_STRIPE_WEBHOOK_SECRET", webhook_secret)
+        _update_secrets_file("CLAIDOR_STRIPE_WEBHOOK_SECRET", webhook_secret)
 
 
 def _update_secrets_file(key: str, value: str | None) -> None:

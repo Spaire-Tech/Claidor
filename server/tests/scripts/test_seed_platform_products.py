@@ -177,14 +177,14 @@ class TestSeedPlatformProducts:
         # Starter — monthly $49 + annual $470 (~20% off 12 × $49 = $588,
         # rounded to a whole dollar).
         starter_monthly = await _find("starter", "month")
-        assert starter_monthly.name == "Spaire Starter"
+        assert starter_monthly.name == "Claidor Starter"
         assert starter_monthly.trial_interval_count == 14
         starter_monthly_price = await _price_for(starter_monthly)
         assert isinstance(starter_monthly_price, ProductPriceFixed)
         assert starter_monthly_price.price_amount == 4900
 
         starter_annual = await _find("starter", "year")
-        assert starter_annual.name == "Spaire Starter (Annual)"
+        assert starter_annual.name == "Claidor Starter (Annual)"
         assert starter_annual.trial_interval_count == 14
         starter_annual_price = await _price_for(starter_annual)
         assert isinstance(starter_annual_price, ProductPriceFixed)
@@ -192,28 +192,28 @@ class TestSeedPlatformProducts:
 
         # Studio — monthly $129 + annual $1,238.
         studio_monthly = await _find("studio", "month")
-        assert studio_monthly.name == "Spaire Studio"
+        assert studio_monthly.name == "Claidor Studio"
         assert studio_monthly.trial_interval_count == 14
         studio_monthly_price = await _price_for(studio_monthly)
         assert isinstance(studio_monthly_price, ProductPriceFixed)
         assert studio_monthly_price.price_amount == 12900
 
         studio_annual = await _find("studio", "year")
-        assert studio_annual.name == "Spaire Studio (Annual)"
+        assert studio_annual.name == "Claidor Studio (Annual)"
         studio_annual_price = await _price_for(studio_annual)
         assert isinstance(studio_annual_price, ProductPriceFixed)
         assert studio_annual_price.price_amount == 123800  # $1,238.00
 
         # Scale — monthly $299 + annual $2,870.
         scale_monthly = await _find("scale", "month")
-        assert scale_monthly.name == "Spaire Scale"
+        assert scale_monthly.name == "Claidor Scale"
         assert scale_monthly.trial_interval_count == 14
         scale_monthly_price = await _price_for(scale_monthly)
         assert isinstance(scale_monthly_price, ProductPriceFixed)
         assert scale_monthly_price.price_amount == 29900
 
         scale_annual = await _find("scale", "year")
-        assert scale_annual.name == "Spaire Scale (Annual)"
+        assert scale_annual.name == "Claidor Scale (Annual)"
         scale_annual_price = await _price_for(scale_annual)
         assert isinstance(scale_annual_price, ProductPriceFixed)
         assert scale_annual_price.price_amount == 287000  # $2,870.00
@@ -306,7 +306,7 @@ class TestSeedPlatformProducts:
         legacy_pro = await create_product(
             save_fixture,
             organization=platform_org,
-            name="Spaire Pro",
+            name="Claidor Pro",
             recurring_interval=SubscriptionRecurringInterval.month,
             prices=[(4900, "usd")],
         )
@@ -333,7 +333,7 @@ class TestSeedPlatformProducts:
         assert product.id == legacy_pro.id
         assert action == "updated"
         assert product.user_metadata["tier"] == "starter"
-        assert product.name == "Spaire Starter"
+        assert product.name == "Claidor Starter"
 
         total = (
             await session.execute(

@@ -6,14 +6,14 @@ import {
   useRecurringProductPrice,
 } from '@/hooks/products'
 import { markdownOptionsJustText } from '@/utils/markdown'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
-} from '@spaire/ui/components/atoms/Card'
+} from '@claidor/ui/components/atoms/Card'
 import Markdown from 'markdown-to-jsx'
 import { twMerge } from 'tailwind-merge'
 

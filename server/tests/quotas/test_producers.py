@@ -84,7 +84,7 @@ async def _subscribe(
     customer = await create_customer(
         save_fixture,
         organization=platform_org,
-        email=f"creator-{creator.id}@billing.spaire",
+        email=f"creator-{creator.id}@billing.claidor",
         user_metadata={"creator_org_id": str(creator.id)},
     )
     await create_subscription(
@@ -117,7 +117,7 @@ class TestEmitStorageDelta:
             .all()
         )
         assert len(events) == 1
-        assert events[0].name == "spaire.storage.bytes"
+        assert events[0].name == "claidor.storage.bytes"
         assert events[0].source == EventSource.system
         assert events[0].user_metadata["bytes_delta"] == 1234567
 

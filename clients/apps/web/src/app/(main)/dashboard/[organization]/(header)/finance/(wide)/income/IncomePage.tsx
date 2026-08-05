@@ -11,7 +11,7 @@ import {
   getAPIParams,
   serializeSearchParams,
 } from '@/utils/datatable'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { usePathname, useRouter } from 'next/navigation'
 
 export default function ClientPage({

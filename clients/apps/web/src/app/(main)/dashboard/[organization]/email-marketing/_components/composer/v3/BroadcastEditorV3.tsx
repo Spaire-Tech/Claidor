@@ -1,6 +1,6 @@
 'use client'
 
-// Spaire broadcast editor v3 — FRAME (brick 1).
+// Claidor broadcast editor v3 — FRAME (brick 1).
 //
 // Pixel-exact port of the uploaded design's chrome: top bar, left palette,
 // canvas (envelope + email surface), right inspector. Built as real React so

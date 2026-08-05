@@ -3,8 +3,8 @@
 import { Upload } from '@/components/FileUpload/Upload'
 import ImageOutlined from '@mui/icons-material/ImageOutlined'
 import OpenWithOutlined from '@mui/icons-material/OpenWithOutlined'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import { useCallback, useRef, useState } from 'react'
 
 const DEFAULT_POSITION = '50% 50%'

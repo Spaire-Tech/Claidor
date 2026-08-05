@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from polar.auth.models import AuthSubject
-from polar.exceptions import SpaireRequestValidationError, ValidationError
+from polar.exceptions import ClaidorRequestValidationError, ValidationError
 from polar.models.notification_recipient import NotificationRecipient
 from polar.models.user import User
 from polar.postgres import AsyncSession
@@ -50,7 +50,7 @@ class NotificationRecipientService:
             )
 
         if errors:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         return await repository.create(
             NotificationRecipient(

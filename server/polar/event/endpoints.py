@@ -8,7 +8,7 @@ from pydantic import UUID4, AwareDatetime, ValidationError
 from pydantic_extra_types.timezone_name import TimeZoneName
 
 from polar.customer.schemas.customer import CustomerID
-from polar.exceptions import ResourceNotFound, SpaireRequestValidationError
+from polar.exceptions import ResourceNotFound, ClaidorRequestValidationError
 from polar.kit.metadata import MetadataQuery, get_metadata_query_openapi_schema
 from polar.kit.pagination import (
     ListResource,
@@ -251,7 +251,7 @@ async def list_statistics_timeseries(
     """
     # Validate interval limits
     if not is_under_limits(start_date, end_date, interval):
-        raise SpaireRequestValidationError(
+        raise ClaidorRequestValidationError(
             [
                 {
                     "loc": ("query",),

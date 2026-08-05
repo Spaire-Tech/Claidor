@@ -40,7 +40,7 @@ class FeatureNotInPlanError(PolarError):
         super().__init__(
             (
                 f"{label} is not available on the {tier.value} plan. "
-                "Upgrade your Spaire plan to unlock it."
+                "Upgrade your Claidor plan to unlock it."
             ),
             402,
         )
@@ -54,7 +54,7 @@ class TierLimitReachedError(PolarError):
         super().__init__(
             (
                 f"Your {tier.value} plan allows {limit} {label}. Upgrade "
-                "your Spaire plan to raise this limit."
+                "your Claidor plan to raise this limit."
             ),
             402,
         )

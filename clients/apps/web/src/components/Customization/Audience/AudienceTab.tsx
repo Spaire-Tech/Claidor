@@ -11,7 +11,7 @@ import {
   useUpdateEmailSubscriber,
 } from '@/hooks/queries/emailMarketing'
 import { getServerURL } from '@/utils/api'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useCallback, useRef, useState } from 'react'
 import './audience.css'
 import {

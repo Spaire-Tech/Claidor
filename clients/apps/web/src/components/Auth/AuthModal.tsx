@@ -1,4 +1,4 @@
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import LogoIcon from '../Brand/LogoIcon'
 import Login from './Login'
 
@@ -19,7 +19,7 @@ export const AuthModal = ({
   const copy = isSignup ? (
     <p className=" text-xl text-gray-500">
       Join thousands of developers &amp; startups monetizing their products with
-      Spaire.
+      Claidor.
     </p>
   ) : null
 

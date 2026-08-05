@@ -1,17 +1,17 @@
 'use client'
 
-import { useCheckoutForm } from '@spaire/checkout/providers'
+import { useCheckoutForm } from '@claidor/checkout/providers'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
 import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useCallback, useState } from 'react'
 
 const XIcon = ({ className }: { className?: string }) => {

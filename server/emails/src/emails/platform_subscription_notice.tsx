@@ -52,12 +52,12 @@ export function PlatformSubscriptionNotice({
 
 PlatformSubscriptionNotice.PreviewProps = {
   email: 'creator@example.com',
-  title: 'Your Spaire payment failed',
+  title: 'Your Claidor payment failed',
   body_lines: [
-    "We couldn't charge your card for the Spaire Studio plan.",
+    "We couldn't charge your card for the Claidor Studio plan.",
     'We will retry automatically over the next few days. To keep your plan, update your payment method in Settings → Plan.',
   ],
-  url: 'https://app.spairehq.com/dashboard/spaire/settings',
+  url: 'https://app.claidorhq.com/dashboard/claidor/settings',
   cta_label: 'Update payment method',
 }
 

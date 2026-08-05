@@ -26,7 +26,7 @@ class ClientInvoiceLineItemPreview(Schema):
 
 
 class ClientInvoiceCreate(Schema):
-    customer_id: UUID4 = Field(description="ID of the Spaire customer to invoice.")
+    customer_id: UUID4 = Field(description="ID of the Claidor customer to invoice.")
     currency: str = Field(
         min_length=3, max_length=3, description="ISO 4217 currency code (e.g. 'usd')."
     )
@@ -69,7 +69,7 @@ class ClientInvoiceCreate(Schema):
     )
     show_mor_attribution: bool = Field(
         default=True,
-        description="Whether to show 'via spaire' label under the logo.",
+        description="Whether to show 'via claidor' label under the logo.",
     )
     user_metadata: dict[str, Any] | None = Field(
         default=None,
@@ -110,7 +110,7 @@ class ClientInvoicePreviewRequest(Schema):
     )
     show_mor_attribution: bool = Field(
         default=True,
-        description="Whether to show 'via spaire' label under the logo.",
+        description="Whether to show 'via claidor' label under the logo.",
     )
 
     # Customer address overrides (from the form)

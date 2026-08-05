@@ -14,19 +14,19 @@ import {
   isStaticPrice,
 } from '@/utils/product'
 import CloseOutlined from '@mui/icons-material/CloseOutlined'
-import { enums, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
-import MoneyInput from '@spaire/ui/components/atoms/MoneyInput'
+import { enums, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
+import MoneyInput from '@claidor/ui/components/atoms/MoneyInput'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
-import { Tabs, TabsList, TabsTrigger } from '@spaire/ui/components/atoms/Tabs'
+} from '@claidor/ui/components/atoms/Select'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
 import {
   FormControl,
   FormDescription,
@@ -34,12 +34,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
-import { Label } from '@spaire/ui/components/ui/label'
+} from '@claidor/ui/components/ui/form'
+import { Label } from '@claidor/ui/components/ui/label'
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@spaire/ui/components/ui/radio-group'
+} from '@claidor/ui/components/ui/radio-group'
 import { PlusIcon } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'

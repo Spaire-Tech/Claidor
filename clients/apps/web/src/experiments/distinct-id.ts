@@ -1,12 +1,12 @@
 import { nanoid } from 'nanoid'
 import { cookies, headers } from 'next/headers'
 
-const DISTINCT_ID_COOKIE = 'spaire_distinct_id'
+const DISTINCT_ID_COOKIE = 'claidor_distinct_id'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 export async function getDistinctId(): Promise<string> {
   const headerStore = await headers()
-  const headerDistinctId = headerStore.get('x-spaire-distinct-id')
+  const headerDistinctId = headerStore.get('x-claidor-distinct-id')
   if (headerDistinctId) {
     return headerDistinctId
   }
@@ -22,7 +22,7 @@ export async function getDistinctId(): Promise<string> {
 
 export async function getExistingDistinctId(): Promise<string | undefined> {
   const headerStore = await headers()
-  const headerDistinctId = headerStore.get('x-spaire-distinct-id')
+  const headerDistinctId = headerStore.get('x-claidor-distinct-id')
   if (headerDistinctId) {
     return headerDistinctId
   }

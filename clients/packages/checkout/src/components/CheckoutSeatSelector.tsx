@@ -1,10 +1,10 @@
 'use client'
 
-import { formatCurrency } from '@spaire/currency'
+import { formatCurrency } from '@claidor/currency'
 import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
 import { HTTPValidationError } from '@spaire/sdk/models/errors/httpvalidationerror'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
 import { useEffect, useState } from 'react'
 import type { ProductCheckoutPublic } from '../guards'
 import MeteredPricesDisplay from './MeteredPricesDisplay'

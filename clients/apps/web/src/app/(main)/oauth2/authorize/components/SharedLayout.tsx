@@ -1,6 +1,6 @@
 import LogoType from '@/components/Brand/LogoType'
 import AddOutlined from '@mui/icons-material/AddOutlined'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 export default function SharedLayout({
   client,

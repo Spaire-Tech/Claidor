@@ -210,7 +210,7 @@ export function createEditor(root: HTMLElement, opts: CreateEditorOpts = {}): Ed
   const themeOverrides: Record<string, unknown> = {}
   const theme = (): Theme => ({ ...THEMES[themeKey], ...themeOverrides }) as Theme
   const broadcast: BroadcastMeta = {
-    from: opts.fromName || 'Spaire',
+    from: opts.fromName || 'Claidor',
     audience: 'New enrollments',
     // Never fabricated: the count is the course's real enrolled total, shown
     // only once it loads. The old design's placeholder numbers (1,204/860/…)

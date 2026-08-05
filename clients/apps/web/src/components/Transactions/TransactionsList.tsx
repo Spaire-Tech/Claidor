@@ -3,15 +3,15 @@ import {
   DataTablePaginationState,
   DataTableSortingState,
 } from '@/utils/datatable'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
 import {
   DataTable,
   DataTableColumnDef,
   DataTableColumnHeader,
   ReactQueryLoading,
-} from '@spaire/ui/components/atoms/DataTable'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
+} from '@claidor/ui/components/atoms/DataTable'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
 import { useMemo } from 'react'
 
 const getTransactionMeta = (transaction: schemas['Transaction']) => {
@@ -89,7 +89,7 @@ export const platformFeesDisplayNames: {
   payout: 'Payout Fee',
   account: 'Active Payout Account Fee',
   dispute: 'Dispute Fee',
-  platform: 'Spaire Fee',
+  platform: 'Claidor Fee',
   fee_credit: 'Fee Credit',
 }
 

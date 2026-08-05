@@ -26,13 +26,13 @@ export async function generateMetadata(props: {
     openGraph: {
       title: `${product.name}`,
       description: product.description || `A product from ${organization.name}`,
-      siteName: 'Spaire',
+      siteName: 'Claidor',
       type: 'website',
       images: [
         {
           url:
             product.medias[0]?.public_url ??
-            `https://spairehq.com/og?org=${organization.slug}`,
+            `https://claidorhq.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
         },
@@ -43,7 +43,7 @@ export async function generateMetadata(props: {
         {
           url:
             product.medias[0]?.public_url ??
-            `https://spairehq.com/og?org=${organization.slug}`,
+            `https://claidorhq.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
           alt: `${product.name}`,

@@ -1,4 +1,4 @@
-# @spaire/ui
+# @claidor/ui
 
 ## 0.1.2
 

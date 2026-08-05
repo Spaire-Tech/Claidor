@@ -1,4 +1,4 @@
-"""Extend the trial on a creator org's Spaire subscription.
+"""Extend the trial on a creator org's Claidor subscription.
 
 Operator override for support cases where a creator needs more time on
 their Pro/Studio/Scale trial than the seeded 14-day period. Bumps
@@ -65,7 +65,7 @@ def typer_async(f):  # type: ignore
     return wrapper
 
 
-@cli.command(help="Extend a creator org's Spaire trial.")
+@cli.command(help="Extend a creator org's Claidor trial.")
 @typer_async
 async def run(
     org: str = typer.Option(..., "--org", help="Creator org slug or UUID."),

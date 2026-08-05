@@ -1,4 +1,4 @@
-"""End-to-end simulation of the owner's reported state: a Spaire plan
+"""End-to-end simulation of the owner's reported state: a Claidor plan
 trial started through checkout with a 100% FOREVER discount, whose
 trial_end is days in the past, still sitting in `trialing`.
 

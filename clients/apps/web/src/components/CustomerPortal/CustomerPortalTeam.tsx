@@ -11,16 +11,16 @@ import { createClientSideAPI } from '@/utils/client'
 import { validateEmail } from '@/utils/validation'
 import GroupOutlined from '@mui/icons-material/GroupOutlined'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
-import { DataTable } from '@spaire/ui/components/atoms/DataTable'
+import Button from '@claidor/ui/components/atoms/Button'
+import { DataTable } from '@claidor/ui/components/atoms/DataTable'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/atoms/DropdownMenu'
-import Input from '@spaire/ui/components/atoms/Input'
-import { Status } from '@spaire/ui/components/atoms/Status'
+} from '@claidor/ui/components/atoms/DropdownMenu'
+import Input from '@claidor/ui/components/atoms/Input'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { ConfirmModal } from '../Modal/ConfirmModal'

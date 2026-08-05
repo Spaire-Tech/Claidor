@@ -9,9 +9,9 @@ import {
   useInfiniteEvents,
 } from '@/hooks/queries/events'
 import { fromISODate, getTimestampFormatter } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import Button from '@claidor/ui/components/atoms/Button'
 import { endOfDay, format, subMonths } from 'date-fns'
 import {
   parseAsArrayOf,

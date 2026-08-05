@@ -13,7 +13,7 @@ from polar.dispute.repository import DisputeRepository
 from polar.enums import PaymentProcessor
 from polar.event.service import event as event_service
 from polar.event.system import OrderRefundedMetadata, SystemEvent, build_system_event
-from polar.exceptions import PolarError, ResourceNotFound, SpaireRequestValidationError
+from polar.exceptions import PolarError, ResourceNotFound, ClaidorRequestValidationError
 from polar.integrations.stripe.service import stripe as stripe_service
 from polar.integrations.stripe.utils import get_expandable_id
 from polar.kit.db.postgres import AsyncSession
@@ -169,7 +169,7 @@ class RefundService:
             .options(*order_repository.get_eager_options())
         )
         if not order:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -183,7 +183,7 @@ class RefundService:
         try:
             return await self.create(session, order, create_schema=create_schema)
         except RefundAmountTooHigh as e:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",

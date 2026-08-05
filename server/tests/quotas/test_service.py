@@ -88,7 +88,7 @@ async def _subscribe_to_tier(
     customer = await create_customer(
         save_fixture,
         organization=platform_org,
-        email=f"creator-{creator.id}@billing.spaire",
+        email=f"creator-{creator.id}@billing.claidor",
         user_metadata={"creator_org_id": str(creator.id)},
     )
     await create_subscription(
@@ -124,28 +124,28 @@ class TestGetUsage:
             save_fixture,
             organization=creator,
             source=EventSource.system,
-            name="spaire.storage.bytes",
+            name="claidor.storage.bytes",
             metadata={"bytes_delta": 5 * gb},
         )
         await create_event(
             save_fixture,
             organization=creator,
             source=EventSource.system,
-            name="spaire.storage.bytes",
+            name="claidor.storage.bytes",
             metadata={"bytes_delta": 5 * gb},
         )
         await create_event(
             save_fixture,
             organization=creator,
             source=EventSource.system,
-            name="spaire.storage.bytes",
+            name="claidor.storage.bytes",
             metadata={"bytes_delta": 5 * gb},
         )
         await create_event(
             save_fixture,
             organization=creator,
             source=EventSource.system,
-            name="spaire.storage.bytes",
+            name="claidor.storage.bytes",
             metadata={"bytes_delta": -5 * gb},
         )
 
@@ -203,7 +203,7 @@ class TestGetUsage:
             save_fixture,
             organization=creator,
             source=EventSource.system,
-            name="spaire.storage.bytes",
+            name="claidor.storage.bytes",
             metadata={"bytes_delta": gb - 100},
         )
 

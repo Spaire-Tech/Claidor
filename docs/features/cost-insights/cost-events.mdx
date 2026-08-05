@@ -3,7 +3,7 @@ title: Cost Events
 description: Track costs by adding cost metadata to your ingested events
 ---
 
-Cost Insights works by allowing you to add a special `_cost` property to any event you ingest through Spaire's Event Ingestion API. These costs are then aggregated and made available through the Metrics API alongside revenue metrics.
+Cost Insights works by allowing you to add a special `_cost` property to any event you ingest through Claidor's Event Ingestion API. These costs are then aggregated and made available through the Metrics API alongside revenue metrics.
 
 ## The `_cost` Property
 
@@ -12,13 +12,13 @@ Cost Insights works by allowing you to add a special `_cost` property to any eve
 To track costs, add a `_cost` property to your event's metadata when ingesting events.
 
 ```typescript icon="square-js" TypeScript (SDK)
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 });
 
-await spaire.events.ingest({
+await claidor.events.ingest({
   events: [
     {
       name: "llm.inference",
@@ -35,7 +35,7 @@ await spaire.events.ingest({
 ```
 
 ```json cURL
-POST https://api.spairehq.com/v1/events/ingest
+POST https://api.claidorhq.com/v1/events/ingest
 Content-Type: application/json
 Authorization: Bearer YOUR_ACCESS_TOKEN
 
@@ -81,11 +81,11 @@ The `_cost` property has the following structure:
 Track the cost of LLM API calls per customer:
 
 ```typescript icon="square-js" TypeScript
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 import OpenAI from "openai";
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 });
 
 const openai = new OpenAI({
@@ -103,8 +103,8 @@ const inputCost = ((completion.usage.prompt * tokens) / 1000) * 3; // in cents
 const outputCost = ((completion.usage.completion * tokens) / 1000) * 6; // in cents
 const totalCost = inputCost + outputCost;
 
-// Track the cost in Spaire
-await spaire.events.ingest({
+// Track the cost in Claidor
+await claidor.events.ingest({
   events: [
     {
       name: "gpt4.completion",
@@ -180,10 +180,10 @@ Track costs from external services:
 Ingest cost events as they occur to maintain accurate, up-to-date metrics:
 
 ```typescript icon="square-js" TypeScript
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 });
 
 // When making an LLM API call
@@ -194,7 +194,7 @@ const completion = await openai.chat.completions.create({
 
 const cost = calculateCost(completion.usage); // Cost should be in cents
 
-await spaire.events.ingest({
+await claidor.events.ingest({
   events: [
     {
       name: "llm.completion",

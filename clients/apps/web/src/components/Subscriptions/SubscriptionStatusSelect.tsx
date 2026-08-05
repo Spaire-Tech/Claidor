@@ -6,7 +6,7 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import React from 'react'
 import { subscriptionStatusDisplayNames } from './utils'
 

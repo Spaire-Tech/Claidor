@@ -97,7 +97,7 @@ def upgrade() -> None:
         sa.Column("organization_id", sa.Uuid(), nullable=False),
         sa.Column("subject", sa.String(255), nullable=False),
         sa.Column("sender_name", sa.String(100), nullable=False),
-        sa.Column("sender_email", sa.String(255), nullable=False, server_default="noreply@notifications.spairehq.com"),
+        sa.Column("sender_email", sa.String(255), nullable=False, server_default="noreply@notifications.claidorhq.com"),
         sa.Column("reply_to_email", sa.String(255), nullable=True),
         sa.Column("content_json", sa.dialects.postgresql.JSONB(), nullable=True),
         sa.Column("content_html", sa.Text(), nullable=True),

@@ -3,7 +3,7 @@
 import revalidate from '@/app/actions'
 import { ForceLightMode } from '@/components/Profile/ForceLightMode'
 import { toast } from '@/components/Toast/use-toast'
-import { useSpaireSubscription } from '@/hooks/queries/spaireTier'
+import { useClaidorSubscription } from '@/hooks/queries/claidorTier'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { api } from '@/utils/client'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -34,7 +34,7 @@ export default function ReviewPage() {
   const { organization } = useContext(OrganizationContext)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const subscriptionQuery = useSpaireSubscription(organization.id)
+  const subscriptionQuery = useClaidorSubscription(organization.id)
 
   // Polar redirects back here with ?upgraded=1 after checkout. Without it
   // there is nothing to finish — send the creator back to pick a plan.
@@ -90,7 +90,7 @@ export default function ReviewPage() {
       toast({
         title: 'Finish picking your plan',
         description:
-          "Looks like the Spaire checkout didn't finish — pick a plan to keep going.",
+          "Looks like the Claidor checkout didn't finish — pick a plan to keep going.",
       })
       router.replace(planPath)
     }

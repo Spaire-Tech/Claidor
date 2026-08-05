@@ -1,11 +1,11 @@
-# Claidor on the Spaire/Polar stack — reuse audit
+# Claidor on the Claidor/Polar stack — reuse audit
 
 **Question:** can this codebase be reused to build Claidor — the definitive record of OHADA
 law plus an AI librarian that answers questions in French with article-level citations,
 sold as seat-based subscriptions to law firms?
 
 **Verdict: yes, as a chassis — and this repo has already proven the playbook once.**
-This is not upstream Polar: it is the Spaire fork, which already repurposed Polar's
+This is not upstream Polar: it is the Claidor fork, which already repurposed Polar's
 payment-infrastructure codebase into a creator-course platform. In doing so it built the
 two things Claidor needs most and Polar never had: a **citation-grounded RAG pipeline over
 a text corpus** (`course_assistant`) and an **anti-fabrication citation validator**
@@ -29,7 +29,7 @@ permitted (keep the license/notice files).
 | Data | PostgreSQL 15 (single DB, `organization_id` tenancy), Redis, S3/MinIO, Tinybird/ClickHouse (analytics) |
 | Jobs | Dramatiq + Redis, APScheduler cron, post-commit enqueue, debouncing |
 | AI | Anthropic SDK (citations API, prompt caching, streaming), pydantic-ai, Vercel AI SDK v5 on the frontend |
-| Frontend | Next.js 16 / React 19 (App Router, Turbopack), Tailwind v4, shadcn/Radix (`@spaire/ui`), TanStack Query v5, `openapi-fetch` over generated types, TipTap, MDX + Shiki |
+| Frontend | Next.js 16 / React 19 (App Router, Turbopack), Tailwind v4, shadcn/Radix (`@claidor/ui`), TanStack Query v5, `openapi-fetch` over generated types, TipTap, MDX + Shiki |
 | Admin | Server-rendered FastAPI backoffice (Tagflow + HTMX + DaisyUI) |
 | Ops | Terraform → Render + AWS S3, GitHub Actions CI/deploy, Sentry, Logfire/OTel, Prometheus + Grafana, PostHog |
 | Monorepo | `server/` (uv, taskipy), `clients/` (pnpm + Turborepo + Changesets), strict mypy + ruff, pytest harness with per-worker DBs |
@@ -119,7 +119,7 @@ streaming-friendly memoized Markdown renderer, and TipTap/MDX/Shiki document plu
   instead of `'english'/'simple'`) is a parameter. This becomes lexical search over
   articles/decisions; the migrations from 2025-12 are a copyable template.
 - **Billing** — two viable paths:
-  1. **Keep the fork's self-billing** (`polar/platform`, "Spaire-on-Spaire"): the app
+  1. **Keep the fork's self-billing** (`polar/platform`, "Claidor-on-Claidor"): the app
      already sells its own tiered plans through itself, with 14-day trials, upgrades,
      entitlement gating (`polar/entitlements`), and seat management. Fastest path to
      charging firms; the cost is carrying the merchant-of-record machinery underneath.
@@ -171,7 +171,7 @@ keep its validator) and the Expo mobile app. Also drop the MUI/Emotion dependenc
    in `course_assistant` works to ~600k tokens; the full OHADA corpus (uniform acts +
    CCJA case law) will exceed a single context window, so retrieval-then-cite is
    required, not optional.
-4. **French-first UI.** `@spaire/i18n` is a sound 121-line runtime with 10 locales
+4. **French-first UI.** `@claidor/i18n` is a sound 121-line runtime with 10 locales
    including French — but it is wired into checkout only; the entire dashboard is
    hardcoded English and there is no locale routing. For a product whose primary
    language is French, build French-first (or swap in `next-intl`) rather than

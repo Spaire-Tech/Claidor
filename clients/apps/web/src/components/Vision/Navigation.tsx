@@ -13,7 +13,7 @@ export const Navigation = ({
 }) => {
   return (
     <div className="flex flex-col gap-y-8 text-xs md:flex-row md:gap-x-16">
-      <Link href="/">Spaire</Link>
+      <Link href="/">Claidor</Link>
       <ul className="flex flex-col gap-y-2 md:flex-row md:gap-x-8">
         <AnimatePresence key={activeIndex}>
           {sections.map((section, index) => (
@@ -21,8 +21,8 @@ export const Navigation = ({
               key={index}
               onClick={() => setIndex(index)}
               className={twMerge(
-                'hover:bg-spaire-200 cursor-default px-1 hover:text-black',
-                index === activeIndex ? 'bg-spaire-200 text-black' : '',
+                'hover:bg-claidor-200 cursor-default px-1 hover:text-black',
+                index === activeIndex ? 'bg-claidor-200 text-black' : '',
               )}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

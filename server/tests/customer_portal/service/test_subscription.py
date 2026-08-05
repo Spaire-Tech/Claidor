@@ -15,7 +15,7 @@ from polar.customer_portal.service.subscription import (
 from polar.customer_portal.service.subscription import (
     customer_subscription as customer_subscription_service,
 )
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.kit.pagination import PaginationParams
 from polar.models import (
     Customer,
@@ -223,7 +223,7 @@ class TestUpdate:
     async def test_not_existing_product(
         self, session: AsyncSession, subscription: Subscription
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_subscription_service.update(
                 session,
                 subscription,
@@ -240,7 +240,7 @@ class TestUpdate:
         product = await create_product(
             save_fixture, organization=organization, recurring_interval=None
         )
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_subscription_service.update(
                 session,
                 subscription,
@@ -253,7 +253,7 @@ class TestUpdate:
         subscription: Subscription,
         product_organization_second: Product,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_subscription_service.update(
                 session,
                 subscription,

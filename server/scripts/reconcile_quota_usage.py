@@ -1,7 +1,7 @@
 """Reconcile quota-usage events with the actual content in the database.
 
 Quota usage (the Settings usage bars AND limit enforcement) is computed
-from `spaire.storage.bytes` / `spaire.video.uploaded` events, which only
+from `claidor.storage.bytes` / `claidor.video.uploaded` events, which only
 started being emitted when the quota producers shipped. Content uploaded
 BEFORE that counts as zero: the dashboard under-reports and limits are
 under-enforced by exactly the pre-existing volume.

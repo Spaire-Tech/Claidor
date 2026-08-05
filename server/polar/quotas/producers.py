@@ -27,7 +27,7 @@ log: structlog.stdlib.BoundLogger = structlog.get_logger()
 # event (no QuotaDefinition references it) and not billed automatically —
 # it exists so overage volume is queryable from the database instead of
 # only greppable from logs.
-OVERAGE_EVENT_NAME = "spaire.quota.overage"
+OVERAGE_EVENT_NAME = "claidor.quota.overage"
 
 
 def _add_quota_event(

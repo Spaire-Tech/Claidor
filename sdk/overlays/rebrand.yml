@@ -34,12 +34,12 @@ actions:
   - target: "$.components.schemas.BenefitGitHubRepositoryCreateProperties.properties.repository_owner"
     description: Replace polarsource example value
     update:
-      example: spairesource
+      example: claidorsource
   - target: "$.components.schemas.BenefitGitHubRepositoryProperties.properties.repository_owner"
     description: Replace polarsource example value
     update:
-      example: spairesource
+      example: claidorsource
   - target: "$.components.schemas.BenefitGitHubRepositorySubscriberProperties.properties.repository_owner"
     description: Replace polarsource example value
     update:
-      example: spairesource
+      example: claidorsource

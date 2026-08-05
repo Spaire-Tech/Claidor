@@ -6,9 +6,9 @@ description: "Sell license key access to your service, software or APIs with eas
 
 <img src="/assets/features/benefits/license-keys/hero.jpeg" />
 
-You can easily sell software license keys with Spaire without having to deal with sales tax or hosting an API to validate them in real-time. License keys with Spaire come with a lot of powerful features built-in.
+You can easily sell software license keys with Claidor without having to deal with sales tax or hosting an API to validate them in real-time. License keys with Claidor come with a lot of powerful features built-in.
 
-* Brandable prefixes, e.g `SPAIRE_*****`
+* Brandable prefixes, e.g `CLAIDOR_*****`
 * Automatic expiration after `N` days, months or years
 * Limited number of user activations, e.g devices
 * Custom validation conditions
@@ -34,7 +34,7 @@ Want license keys to expire automatically after a certain time period from when 
 
 You can require license keys to be activated before future validation. A great feature in case you want to limit license key usage to a certain number of devices, IPs or other conditions.
 
-**Enable user to deactivate instances via Spaire.** Instead of building your own custom admin for customers to manage their activation instances - leave it to Spaire instead.
+**Enable user to deactivate instances via Claidor.** Instead of building your own custom admin for customers to manage their activation instances - leave it to Claidor instead.
 
 ### Usage Limit
 
@@ -55,7 +55,7 @@ Customers can:
 Integrate API
 --------------------
 
-It's super easy and straightforward to integrate Spaire license keys into your application, library or API.
+It's super easy and straightforward to integrate Claidor license keys into your application, library or API.
 
 ### Activate License Keys (Optional)
 
@@ -64,7 +64,7 @@ In case you've setup license keys to have a maximum amount of activation instanc
 **No activation limit?** You can skip this step.
 
 ```bash Terminal
-curl -X POST https://api.spairehq.com/v1/customer-portal/license-keys/activate
+curl -X POST https://api.claidorhq.com/v1/customer-portal/license-keys/activate
 -H "Content-Type: application/json"
 -d '{
   "key": "1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA",
@@ -130,7 +130,7 @@ For each session of your premium app, library or API, we recommend you validate 
 [`/v1/customer-portal/license-keys/validate`](/api-reference/customer-portal/license-keys/validate) endpoint.
 
 ```bash Terminal
-curl -X POST https://api.spairehq.com/v1/customer-portal/license-keys/validate
+curl -X POST https://api.claidorhq.com/v1/customer-portal/license-keys/validate
 -H "Content-Type: application/json"
 -d '{
   "key": "1C285B2D-6CE6-4BC7-B8BE-ADB6A7E304DA",
@@ -193,4 +193,4 @@ curl -X POST https://api.spairehq.com/v1/customer-portal/license-keys/validate
 
 Validate `benefit_id` in case of multiple license keys
 
-We require `organization_id` to be provided to avoid cases of Spaire license keys being used across Spaire organizations erroneously. Otherwise, a valid license key for one organization could be used on another.However, you are required to validate and scope license keys more narrowly within your organization if necessary. Offering more than one type of license key? Be sure to validate their unique benefit\_id in the responses.
+We require `organization_id` to be provided to avoid cases of Claidor license keys being used across Claidor organizations erroneously. Otherwise, a valid license key for one organization could be used on another.However, you are required to validate and scope license keys more narrowly within your organization if necessary. Offering more than one type of license key? Be sure to validate their unique benefit\_id in the responses.

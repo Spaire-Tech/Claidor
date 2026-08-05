@@ -1,14 +1,14 @@
 import { AnonymousCustomerAvatar } from '@/components/Customer/AnonymousCustomerAvatar'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { getAnonymousCustomerName } from '@/utils/anonymous-customer'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@spaire/ui/components/ui/popover'
+} from '@claidor/ui/components/ui/popover'
 import Link from 'next/link'
 import { useContext } from 'react'
 

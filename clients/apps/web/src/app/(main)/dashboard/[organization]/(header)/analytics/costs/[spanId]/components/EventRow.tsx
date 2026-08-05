@@ -7,9 +7,9 @@ import {
   SyntaxHighlighterProvider,
 } from '@/components/SyntaxHighlighterShiki/SyntaxHighlighterClient'
 import { useEvent, useInfiniteEvents } from '@/hooks/queries/events'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
 import {
   ArrowDownFromLineIcon,
   ArrowUpFromLineIcon,

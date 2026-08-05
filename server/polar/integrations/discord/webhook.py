@@ -67,14 +67,14 @@ def get_branded_discord_embed(embed: DiscordEmbed) -> DiscordEmbed:
     return {
         "color": 25343,
         "author": {
-            "name": "Spaire",
+            "name": "Claidor",
             "icon_url": settings.FAVICON_URL,
         },
         "thumbnail": {
             "url": settings.THUMBNAIL_URL,
         },
         "footer": {
-            "text": "Powered by Spaire",
+            "text": "Powered by Claidor",
         },
         **embed,
     }

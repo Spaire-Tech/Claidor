@@ -1,12 +1,12 @@
 'use client'
 
-import { enums } from '@spaire/client'
-import { Checkbox } from '@spaire/ui/components/ui/checkbox'
+import { enums } from '@claidor/client'
+import { Checkbox } from '@claidor/ui/components/ui/checkbox'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@spaire/ui/components/ui/popover'
+} from '@claidor/ui/components/ui/popover'
 import { ChevronDown } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 

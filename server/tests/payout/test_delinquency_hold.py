@@ -1,7 +1,7 @@
-"""Payout-hold: while a creator owes Spaire, their merchant balance is held.
+"""Payout-hold: while a creator owes Claidor, their merchant balance is held.
 
-Spaire is the merchant of record, so the balance we'd pay out is leverage.
-If a creator org's own Spaire subscription is `past_due` (a charge failed and
+Claidor is the merchant of record, so the balance we'd pay out is leverage.
+If a creator org's own Claidor subscription is `past_due` (a charge failed and
 dunning is running), both the payout *estimate* and *creation* are refused
 until they settle. A healthy plan — or no platform billing at all — lets
 payouts through unchanged.
@@ -59,7 +59,7 @@ async def _platform_plan(
     creator: Organization,
     status: SubscriptionStatus,
 ) -> None:
-    """Configure a platform org and give `creator` a Spaire subscription in
+    """Configure a platform org and give `creator` a Claidor subscription in
     the given status (the creator is a Customer of the platform org)."""
     platform_org = await create_organization(save_fixture)
     mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
@@ -75,7 +75,7 @@ async def _platform_plan(
     customer = await create_customer(
         save_fixture,
         organization=platform_org,
-        email=f"creator-{creator.id}@billing.spaire",
+        email=f"creator-{creator.id}@billing.claidor",
         user_metadata={"creator_org_id": str(creator.id)},
     )
     await create_subscription(
@@ -137,7 +137,7 @@ class TestDelinquencyHold:
         user: User,
         payout_transaction_service_mock: MagicMock,
     ) -> None:
-        # A healthy (active) Spaire plan does not hold payouts.
+        # A healthy (active) Claidor plan does not hold payouts.
         await _platform_plan(
             save_fixture,
             mocker,

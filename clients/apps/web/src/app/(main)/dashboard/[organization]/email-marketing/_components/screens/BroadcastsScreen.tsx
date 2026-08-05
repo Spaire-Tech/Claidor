@@ -9,7 +9,7 @@ import {
   useEmailBroadcasts,
   useEmailSubscriberStats,
 } from '@/hooks/queries/emailMarketing'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ActionMenu } from '../ActionMenu'

@@ -40,7 +40,7 @@ export const EditPopover = ({
   if (!open) return null
   return (
     <Portal>
-      <div className="spaire-editor">
+      <div className="claidor-editor">
         <div className="edit-pop-backdrop" onClick={onClose} />
         <div
           className="edit-pop"

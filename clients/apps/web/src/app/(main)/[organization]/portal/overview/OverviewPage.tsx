@@ -8,7 +8,7 @@ import {
 } from '@/hooks/queries'
 import { createClientSideAPI } from '@/utils/client'
 import { hasBillingPermission } from '@/utils/customerPortal'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'

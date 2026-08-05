@@ -505,7 +505,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that cannot change role when member is the only owner."""
-        from polar.exceptions import SpaireRequestValidationError
+        from polar.exceptions import ClaidorRequestValidationError
 
         customer = await create_customer(
             save_fixture,
@@ -522,7 +522,7 @@ class TestUpdate:
         )
         await save_fixture(owner)
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await member_service.update(session, owner, role=MemberRole.member)
 
         assert "must have exactly one owner" in str(exc_info.value).lower()
@@ -535,7 +535,7 @@ class TestUpdate:
         organization: Organization,
     ) -> None:
         """Test that cannot promote member to owner when an owner already exists."""
-        from polar.exceptions import SpaireRequestValidationError
+        from polar.exceptions import ClaidorRequestValidationError
 
         customer = await create_customer(
             save_fixture,
@@ -561,7 +561,7 @@ class TestUpdate:
         )
         await save_fixture(member)
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await member_service.update(session, member, role=MemberRole.owner)
 
         assert "only the owner can transfer ownership" in str(exc_info.value).lower()
@@ -653,7 +653,7 @@ class TestDelete:
         organization: Organization,
     ) -> None:
         """Test that the only owner cannot be deleted."""
-        from polar.exceptions import SpaireRequestValidationError
+        from polar.exceptions import ClaidorRequestValidationError
 
         customer = await create_customer(
             save_fixture,
@@ -670,7 +670,7 @@ class TestDelete:
         )
         await save_fixture(owner)
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await member_service.delete(session, owner)
 
         assert "only owner" in str(exc_info.value).lower()

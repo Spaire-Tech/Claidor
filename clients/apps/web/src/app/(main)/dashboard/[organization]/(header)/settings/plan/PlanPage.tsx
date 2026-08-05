@@ -2,10 +2,10 @@
 
 import { DashboardBody } from '@/components/Layout/DashboardLayout'
 import { Section, SectionDescription } from '@/components/Settings/Section'
-import QuotaUsageCard from '@/components/Settings/SpaireTier/QuotaUsageCard'
-import SpaireBillingManagement from '@/components/Settings/SpaireTier/SpaireBillingManagement'
-import SpairePlanCards from '@/components/Settings/SpaireTier/SpairePlanCards'
-import { schemas } from '@spaire/client'
+import QuotaUsageCard from '@/components/Settings/ClaidorTier/QuotaUsageCard'
+import ClaidorBillingManagement from '@/components/Settings/ClaidorTier/ClaidorBillingManagement'
+import ClaidorPlanCards from '@/components/Settings/ClaidorTier/ClaidorPlanCards'
+import { schemas } from '@claidor/client'
 
 export default function PlanPage({
   organization,
@@ -16,10 +16,10 @@ export default function PlanPage({
     <DashboardBody wrapperClassName="max-w-6xl" title="Subscription">
       <div className="flex flex-col gap-y-12">
         <Section id="plans">
-          <SpairePlanCards organization={organization} />
+          <ClaidorPlanCards organization={organization} />
         </Section>
 
-        <SpaireBillingManagement organization={organization} />
+        <ClaidorBillingManagement organization={organization} />
 
         <Section id="plan_usage">
           <SectionDescription

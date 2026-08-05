@@ -1,7 +1,7 @@
 """Resolve a real, deliverable human for a creator organization.
 
 Platform-billing Customers are provisioned with a synthetic address
-(``creator-{slug}@billing.spairehq.internal``) that can never receive
+(``creator-{slug}@billing.claidorhq.internal``) that can never receive
 mail. Any code path that is about to email a creator about money —
 receipts, trial reminders, dunning notices — must resolve an actual
 inbox instead of trusting ``customer.email`` blindly. This module is
@@ -21,7 +21,7 @@ from polar.user_organization.service import (
 
 log: structlog.stdlib.BoundLogger = structlog.get_logger()
 
-PLACEHOLDER_EMAIL_DOMAIN = "billing.spairehq.internal"
+PLACEHOLDER_EMAIL_DOMAIN = "billing.claidorhq.internal"
 
 
 def is_placeholder_email(email: str | None) -> bool:

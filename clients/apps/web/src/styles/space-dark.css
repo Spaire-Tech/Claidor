@@ -1,4 +1,4 @@
-/* Spaire Space — publishable dark theme.
+/* Claidor Space — publishable dark theme.
 
    Applied via `.space-dark` on the Space root, on BOTH surfaces that render a
    creator's Space:
@@ -21,7 +21,7 @@
 
 /* The editor canvas root sets its own white background (styles/editor.css);
    override it when the Space theme is dark. */
-.spaire-editor.space-dark {
+.claidor-editor.space-dark {
   background: #0c0c10 !important;
   /* editor.css drives most of its chrome/canvas off these tokens, so flipping
      them here themes everything that uses var(--ink/--line/--muted/…). The raw

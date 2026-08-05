@@ -15,24 +15,24 @@ import {
 } from '@/utils/datatable'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import Search from '@mui/icons-material/Search'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   DataTable,
   DataTableColumnDef,
   DataTableColumnHeader,
-} from '@spaire/ui/components/atoms/DataTable'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import Input from '@spaire/ui/components/atoms/Input'
+} from '@claidor/ui/components/atoms/DataTable'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
-import ShadowBoxOnMd from '@spaire/ui/components/atoms/ShadowBoxOnMd'
-import { formatCurrency } from '@spaire/currency'
+} from '@claidor/ui/components/atoms/Select'
+import ShadowBoxOnMd from '@claidor/ui/components/atoms/ShadowBoxOnMd'
+import { formatCurrency } from '@claidor/currency'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'

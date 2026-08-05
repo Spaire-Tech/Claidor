@@ -25,7 +25,7 @@ from polar.postgres import AsyncSession
 
 log: Logger = structlog.get_logger()
 
-TOKEN_PREFIX = "spaire_pat_"
+TOKEN_PREFIX = "claidor_pat_"
 
 
 class PersonalAccessTokenService(ResourceServiceReader[PersonalAccessToken]):
@@ -122,7 +122,7 @@ class PersonalAccessTokenService(ResourceServiceReader[PersonalAccessToken]):
 
         enqueue_email(
             to_email_addr=email,
-            subject="Security Notice - Your Spaire Personal Access Token has been leaked",
+            subject="Security Notice - Your Claidor Personal Access Token has been leaked",
             html_content=body,
         )
 

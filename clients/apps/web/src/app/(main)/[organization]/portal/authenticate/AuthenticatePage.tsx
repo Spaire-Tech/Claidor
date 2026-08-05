@@ -6,7 +6,7 @@ import {
 } from '@/hooks/queries'
 import { getQueryClient } from '@/utils/api/query'
 import { api } from '@/utils/client'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PortalAuthScene } from '../_auth/PortalAuthScene'

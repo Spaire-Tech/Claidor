@@ -6,7 +6,7 @@ import IntervalPicker, {
 } from '@/components/Metrics/IntervalPicker'
 import ProductSelect from '@/components/Products/ProductSelect'
 import { fromISODate, toISODate } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { subMonths } from 'date-fns/subMonths'
 import {
   createParser,

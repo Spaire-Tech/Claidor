@@ -3,7 +3,7 @@
 import { SpaceEmptyHero } from '@/components/Customization/SpaceEmptyHero'
 import { ProductCard } from '@/components/Products/ProductCard'
 import { FormPublic } from '@/hooks/queries/forms'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { CATEGORY_LABELS } from './categoryLabels'

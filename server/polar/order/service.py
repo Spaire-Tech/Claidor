@@ -34,7 +34,7 @@ from polar.event.system import (
     build_system_event,
 )
 from polar.eventstream.service import publish as eventstream_publish
-from polar.exceptions import PolarError, SpaireRequestValidationError, ValidationError
+from polar.exceptions import PolarError, ClaidorRequestValidationError, ValidationError
 from polar.file.s3 import S3_SERVICES
 from polar.held_balance.service import held_balance as held_balance_service
 from polar.integrations.stripe.service import stripe as stripe_service
@@ -411,7 +411,7 @@ class OrderService:
                 )
 
         if errors:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         order = await repository.update(
             order, update_dict=order_update.model_dump(exclude_unset=True)
@@ -1399,12 +1399,12 @@ class OrderService:
         organization_repository = OrganizationRepository.from_session(session)
         organization = await organization_repository.get_by_customer(order.customer_id)
 
-        # Spaire self-billing: when the seller IS the platform org, this order
-        # is Spaire billing a creator for their plan — not a creator billing
+        # Claidor self-billing: when the seller IS the platform org, this order
+        # is Claidor billing a creator for their plan — not a creator billing
         # their own customer. The creator-commerce templates below would
-        # render the platform org's own header ("Spaire / Spaire"), the
-        # "Merchant of Record … by Spaire" footer, and a $0 invoice for a free
-        # trial. Send the Spaire-branded transactional emails instead.
+        # render the platform org's own header ("Claidor / Claidor"), the
+        # "Merchant of Record … by Claidor" footer, and a $0 invoice for a free
+        # trial. Send the Claidor-branded transactional emails instead.
         if platform_service.is_platform_organization(organization.id):
             await self._send_platform_billing_email(session, order, organization)
             return
@@ -1534,13 +1534,13 @@ class OrderService:
     async def _send_platform_billing_email(
         self, session: AsyncSession, order: Order, organization: Organization
     ) -> None:
-        """Spaire-branded transactional email for a platform (self-billing)
-        order — Spaire billing a creator for their plan.
+        """Claidor-branded transactional email for a platform (self-billing)
+        order — Claidor billing a creator for their plan.
 
         A $0 trial-start order gets a welcome email and NO invoice (we don't
         invoice a free trial). Any real charge — trial conversion, renewal,
         or an immediate paid signup — gets a receipt with the invoice
-        attached. Both use the Spaire logo + transactional footer, never the
+        attached. Both use the Claidor logo + transactional footer, never the
         creator-commerce wrapper.
         """
         customer = order.customer
@@ -1594,7 +1594,7 @@ class OrderService:
                     "props": {"email": recipient},
                 }
             )
-            subject = "Welcome to Spaire"
+            subject = "Welcome to Claidor"
         else:
             token, _ = await customer_session_service.create_customer_session(
                 session, customer
@@ -1642,7 +1642,7 @@ class OrderService:
                     },
                 }
             )
-            subject = f"Your Spaire {plan_name} receipt"
+            subject = f"Your Claidor {plan_name} receipt"
 
         body = render_email_template(email)
         enqueue_email(
@@ -1937,8 +1937,8 @@ class OrderService:
         # automations. Renewal cycles and one-time purchases pass neither, so
         # they never re-trigger that welcome.
         #
-        # Skip entirely for platform (Spaire self-billing) orders: a creator
-        # starting a Spaire plan must NOT be enrolled into Spaire's own
+        # Skip entirely for platform (Claidor self-billing) orders: a creator
+        # starting a Claidor plan must NOT be enrolled into Claidor's own
         # marketing automation — that is what produced the empty, marketing-
         # styled "welcome" with an unsubscribe footer. Their welcome is the
         # transactional founder email (user_welcome) sent from the
@@ -2003,10 +2003,10 @@ class OrderService:
                     product_id=order.product_id,
                 )
 
-        # Unlock startup perks on first successful sale. Skip Spaire's own
-        # platform-billing orders: a creator paying for their Spaire plan is
+        # Unlock startup perks on first successful sale. Skip Claidor's own
+        # platform-billing orders: a creator paying for their Claidor plan is
         # not "the platform org's first sale", and unlocking used to notify
-        # Spaire's own members about it.
+        # Claidor's own members about it.
         org_repository = OrganizationRepository.from_session(session)
         organization = await org_repository.get_by_customer(order.customer_id)
         if (

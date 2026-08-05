@@ -9,8 +9,8 @@ import {
   useDeleteCustomerPaymentMethod,
 } from '@/hooks/queries'
 import { createClientSideAPI } from '@/utils/client'
-import { schemas } from '@spaire/client'
-import { getThemePreset } from '@spaire/ui/hooks/theming'
+import { schemas } from '@claidor/client'
+import { getThemePreset } from '@claidor/ui/hooks/theming'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
@@ -419,7 +419,7 @@ const BillingBody = ({
         title="Add payment method"
         isShown={isAddCardOpen}
         hide={hideAddCard}
-        wrapperClassName={'spaire-portal' + (dark ? ' sp-dark' : '')}
+        wrapperClassName={'claidor-portal' + (dark ? ' sp-dark' : '')}
         modalContent={
           <AddPaymentMethodModal
             api={api}

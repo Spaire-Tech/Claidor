@@ -2,13 +2,13 @@
 
 import AccountBalanceOutlined from '@mui/icons-material/AccountBalanceOutlined'
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
-} from '@spaire/ui/components/atoms/Card'
+} from '@claidor/ui/components/atoms/Card'
 import type { RecommendationOutput } from './recommendation'
 import { US_STATE_NAMES } from './recommendation'
 

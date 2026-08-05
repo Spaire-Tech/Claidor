@@ -1,5 +1,5 @@
 {
-  "extends": "@spaire/typescript-config/bundled.json",
+  "extends": "@claidor/typescript-config/bundled.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src"

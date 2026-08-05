@@ -1,6 +1,6 @@
 import { getServerURL } from '@/utils/api'
 import { getQueryClient } from '@/utils/api/query'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { defaultRetry } from './retry'
 

@@ -3,14 +3,14 @@
 Goal: let a creator serve their masterclass surfaces — landing page, course
 landing, public events, and the customer (student) portal — on their **own
 domain** (e.g. `learn.milesbecker.com`) instead of only
-`space.spairehq.com/{slug}`.
+`space.claidorhq.com/{slug}`.
 
 > **Product decisions (founder, 2026-07-07):**
 > 1. Hosted domain ships as a **Studio plan** feature — flip
 >    `custom_storefront_domain=True` for `TierKey.studio` (and presumably
 >    `scale`) in `entitlements/tiers.py`; it is currently `False` for all
 >    real tiers.
-> 2. **Spaire Space is hidden** — there is no multi-product storefront
+> 2. **Claidor Space is hidden** — there is no multi-product storefront
 >    anymore. The custom domain is the front door to the masterclass
 >    landing + student portal only, which simplifies scope: `spacePageLink`
 >    references below become "the platform-hosted fallback URL", and the
@@ -29,7 +29,7 @@ domain** (e.g. `learn.milesbecker.com`) instead of only
 | Public events | `/{slug}/events/{eventId}` (+ `/ics`) | `.../events/[eventId]/page.tsx` |
 | Student portal | `/{slug}/portal/*` (overview, courses, lesson viewer, community, orders, subscriptions, downloads, settings, team) | `app/(main)/[organization]/portal/` |
 | Portal auth | `/{slug}/portal/request`, `/authenticate`, `/claim` | same tree |
-| Checkout | `/checkout/{clientSecret}` — **not** org-scoped; also `buy.spairehq.com` (`CHECKOUT_LINK_HOST`) for checkout links | `app/checkout/` |
+| Checkout | `/checkout/{clientSecret}` — **not** org-scoped; also `buy.claidorhq.com` (`CHECKOUT_LINK_HOST`) for checkout links | `app/checkout/` |
 
 ### 1.2 How the org is resolved
 
@@ -40,7 +40,7 @@ domain** (e.g. `learn.milesbecker.com`) instead of only
   (`clients/apps/web/src/utils/customerPortal.ts:34`).
 - **No host→org mapping exists.** The only host-aware code is
   `clients/apps/web/src/proxy.ts:88–107`, which special-cases the shared
-  `space.spairehq.com` host (`SPACE_HOSTNAME`) to block dashboard-ish
+  `space.claidorhq.com` host (`SPACE_HOSTNAME`) to block dashboard-ish
   prefixes — it still expects `/{slug}/...` paths.
 
 ### 1.3 URL generation
@@ -69,7 +69,7 @@ domain** (e.g. `learn.milesbecker.com`) instead of only
   API calls are already served by the wildcard, non-credentialed CORS config
   (`server/polar/app.py:94–101`). **The portal is therefore
   domain-portable almost for free.**
-- The **creator dashboard** is cookie-bound (`spaire_session`,
+- The **creator dashboard** is cookie-bound (`claidor_session`,
   `USER_SESSION_COOKIE_DOMAIN`, `auth/service.py:141–156`) and must **never**
   be served from a custom domain.
 
@@ -140,10 +140,10 @@ OrganizationDomain
 - New module `server/polar/organization_domain/` (endpoints/service/
   repository/schemas/tasks per repo convention):
   - `PUT /v1/organizations/{id}/domain` — set/replace domain (validate
-    hostname: public-suffix check, not a spairehq.com host, lowercase).
+    hostname: public-suffix check, not a claidorhq.com host, lowercase).
   - `GET /v1/organizations/{id}/domain` — status + required DNS records
-    (CNAME `learn.creator.com → domains.spairehq.com`, TXT
-    `_spaire-verify.learn.creator.com = {token}`).
+    (CNAME `learn.creator.com → domains.claidorhq.com`, TXT
+    `_claidor-verify.learn.creator.com = {token}`).
   - `POST /v1/organizations/{id}/domain/verify` — trigger check now.
   - `DELETE /v1/organizations/{id}/domain`.
   - Gate all writes behind the existing `custom_storefront_domain`
@@ -186,7 +186,7 @@ Extend `clients/apps/web/src/proxy.ts`:
   (`/`, `/products`, `/events`, `/portal`); apply the same
   `SPACE_BLOCKED_PREFIXES` redirect for dashboard/login/checkout/etc.
   Skip the `/v1/users/me` dashboard-auth fetch entirely on custom hosts.
-- Set `x-spaire-storefront-host: learn.creator.com` on the rewritten
+- Set `x-claidor-storefront-host: learn.creator.com` on the rewritten
   request so server components can build host-correct canonical/OG URLs
   and know to render slug-less links.
 - Redirect `/{slug}/...` → `/...` when requested **on** the custom domain
@@ -223,7 +223,7 @@ Extend `clients/apps/web/src/proxy.ts`:
   cookie-credentialed ever runs on the custom domain, extend
   `polar_frontend_matcher` (`app.py:81`) with a Redis-cached set of active
   domains.
-- **Cookies**: never set `spaire_session` on custom domains (blocked
+- **Cookies**: never set `claidor_session` on custom domains (blocked
   prefixes prevent login/dashboard there). Keep
   `USER_SESSION_COOKIE_DOMAIN` untouched.
 - **Open redirect**: validate `return_url` / `success_url` hosts against

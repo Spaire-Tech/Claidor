@@ -2,7 +2,7 @@
 
 import { FeatureKey, useEntitlements } from '@/hooks/queries/entitlements'
 import LockOutlined from '@mui/icons-material/LockOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { ReactNode } from 'react'
 import { twMerge } from 'tailwind-merge'

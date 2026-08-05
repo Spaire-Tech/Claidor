@@ -8,17 +8,17 @@ description: "Ingestion strategy for Readable & Writable Streams"
 Wrap any Readable or Writable stream of choice to automatically ingest the bytes consumed.
 
 ```
-pnpm add @spaire/ingestion
+pnpm add @claidor/ingestion
 ```
 
 ```typescript
-import { Ingestion } from '@spaire/ingestion';
-import { StreamStrategy } from '@spaire/ingestion/strategies/Stream';
+import { Ingestion } from '@claidor/ingestion';
+import { StreamStrategy } from '@claidor/ingestion/strategies/Stream';
 
 const myReadstream = createReadStream(...);
 
 // Setup the Stream Ingestion Strategy
-const streamIngestion = Ingestion({ accessToken: process.env.SPAIRE_ACCESS_TOKEN })
+const streamIngestion = Ingestion({ accessToken: process.env.CLAIDOR_ACCESS_TOKEN })
   .strategy(new StreamStrategy(myReadstream))
   .ingest("my-stream");
 
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     // Get the wrapped stream
     // Pass Customer Id to properly annotate the ingestion events with a specific customer
     const stream = streamIngestion.client({
-      customerId: request.headers.get("X-Spaire-Customer-Id") ?? ""
+      customerId: request.headers.get("X-Claidor-Customer-Id") ?? ""
     });
 
     // Consume stream...

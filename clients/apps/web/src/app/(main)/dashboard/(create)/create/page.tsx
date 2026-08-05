@@ -1,7 +1,7 @@
 import revalidate from '@/app/actions'
 import { getServerSideAPI } from '@/utils/client/serverside'
 import { getAuthenticatedUser } from '@/utils/user'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import CreatePage from './CreatePage'

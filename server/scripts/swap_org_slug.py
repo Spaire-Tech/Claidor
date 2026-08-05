@@ -10,15 +10,15 @@ Read-only by default: it prints an inspection of BOTH orgs (name, status,
 counts of customers / orders / products) plus the exact plan, and changes
 nothing. Re-run with ``--apply`` to commit.
 
-Built for: moving "spaire" off a leftover test org onto the platform org so
+Built for: moving "claidor" off a leftover test org onto the platform org so
 invoices, card-statement descriptors, and billing-email From-addresses read
-"spaire" instead of the old slug.
+"claidor" instead of the old slug.
 
 Usage:
     python -m scripts.swap_org_slug run \
         --release-org <uuid currently holding the slug> \
         --claim-org   <uuid that should get the slug> \
-        [--slug spaire] [--release-slug spaire-test-xxxx] [--apply]
+        [--slug claidor] [--release-slug claidor-test-xxxx] [--apply]
 """
 
 import asyncio
@@ -256,7 +256,7 @@ async def run(
     claim_org: str = typer.Option(
         ..., "--claim-org", help="UUID of the org that should get the slug."
     ),
-    slug: str = typer.Option("spaire", "--slug", help="The slug to move."),
+    slug: str = typer.Option("claidor", "--slug", help="The slug to move."),
     release_slug: str | None = typer.Option(
         None,
         "--release-slug",

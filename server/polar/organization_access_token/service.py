@@ -34,7 +34,7 @@ from .sorting import OrganizationAccessTokenSortProperty
 
 log: Logger = structlog.get_logger()
 
-TOKEN_PREFIX = "spaire_oat_"
+TOKEN_PREFIX = "claidor_oat_"
 
 
 class OrganizationAccessTokenService:
@@ -193,7 +193,7 @@ class OrganizationAccessTokenService:
             )
             enqueue_email(
                 to_email_addr=email,
-                subject="Security Notice - Your Spaire Organization Access Token has been leaked",
+                subject="Security Notice - Your Claidor Organization Access Token has been leaked",
                 html_content=body,
             )
 

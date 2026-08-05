@@ -9,7 +9,7 @@ import { UserContextProvider } from '@/providers/auth'
 import { getServerSideAPI } from '@/utils/client/serverside'
 import { CONFIG } from '@/utils/config'
 import { getAuthenticatedUser, getUserOrganizations } from '@/utils/user'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 import { PHASE_PRODUCTION_BUILD } from 'next/constants'
@@ -68,27 +68,27 @@ const poppins = Poppins({
 export async function generateMetadata(): Promise<Metadata> {
   const baseMetadata: Metadata = {
     title: {
-      template: '%s | Spaire',
-      default: 'Spaire | Build and sell cinematic masterclasses',
+      template: '%s | Claidor',
+      default: 'Claidor | Build and sell cinematic masterclasses',
     },
     description: 'The Masterclass Builder for Creators.',
     openGraph: {
-      images: 'https://app.spairehq.com/assets/brand/spaire_og.jpg',
+      images: 'https://app.claidorhq.com/assets/brand/claidor_og.jpg',
       type: 'website',
-      siteName: 'Spaire',
-      title: 'Spaire | Build and sell cinematic masterclasses',
+      siteName: 'Claidor',
+      title: 'Claidor | Build and sell cinematic masterclasses',
       description: 'The Masterclass Builder for Creators.',
       locale: 'en_US',
     },
     twitter: {
-      images: 'https://app.spairehq.com/assets/brand/spaire_og.jpg',
+      images: 'https://app.claidorhq.com/assets/brand/claidor_og.jpg',
       card: 'summary_large_image',
-      title: 'Spaire | Build and sell cinematic masterclasses',
+      title: 'Claidor | Build and sell cinematic masterclasses',
       description: 'The Masterclass Builder for Creators.',
     },
-    metadataBase: new URL('https://app.spairehq.com/'),
+    metadataBase: new URL('https://app.claidorhq.com/'),
     alternates: {
-      canonical: 'https://app.spairehq.com/',
+      canonical: 'https://app.claidorhq.com/',
     },
   }
 

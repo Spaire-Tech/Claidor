@@ -1,4 +1,4 @@
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useMemo } from 'react'
 import { BenefitEventCard } from './EventCard/BenefitEventCard'
 import { LLMInferenceEventCard } from './EventCard/LLMInferenceEventCard'

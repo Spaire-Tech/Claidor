@@ -10,7 +10,7 @@ import {
   useEmailSequences,
   useUpdateEmailSequence,
 } from '@/hooks/queries/emailMarketing'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { ActionMenu } from '../ActionMenu'

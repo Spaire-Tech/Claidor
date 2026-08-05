@@ -5,7 +5,7 @@ import { toast } from '@/components/Toast/use-toast'
 import {
   BillingInterval,
   breakevenGmvDollars,
-  CurrentSpaireSubscription,
+  CurrentClaidorSubscription,
   formatDollarAmount,
   formatTransactionFee,
   headlinePriceForPlan,
@@ -13,21 +13,21 @@ import {
   renewalSentence,
   tierDisplayName,
   TierPlan,
-  useCancelSpaireSubscription,
+  useCancelClaidorSubscription,
   useCreateUpgradeCheckout,
-  useSpairePlans,
-  useSpaireSubscription,
-  useSwitchSpairePlan,
-} from '@/hooks/queries/spaireTier'
+  useClaidorPlans,
+  useClaidorSubscription,
+  useSwitchClaidorPlan,
+} from '@/hooks/queries/claidorTier'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { ConfirmModal } from '../../Modal/ConfirmModal'
 
-interface SpairePlanCardsProps {
+interface ClaidorPlanCardsProps {
   organization: schemas['Organization']
 }
 
@@ -41,13 +41,13 @@ interface SpairePlanCardsProps {
  * black CTA that maps to the right action ("Upgrade", "Switch to X",
  * or "Add payment & keep your plan" during a trial).
  */
-const SpairePlanCards = ({ organization }: SpairePlanCardsProps) => {
-  const plans = useSpairePlans()
-  const subscription = useSpaireSubscription(organization.id)
+const ClaidorPlanCards = ({ organization }: ClaidorPlanCardsProps) => {
+  const plans = useClaidorPlans()
+  const subscription = useClaidorSubscription(organization.id)
   const queryClient = useQueryClient()
   const createCheckout = useCreateUpgradeCheckout(organization.id)
-  const switchPlan = useSwitchSpairePlan(organization.id)
-  const cancelSub = useCancelSpaireSubscription(organization.id)
+  const switchPlan = useSwitchClaidorPlan(organization.id)
+  const cancelSub = useCancelClaidorSubscription(organization.id)
 
   const confirmCancel = useModal()
   const confirmSwitch = useModal()
@@ -113,7 +113,7 @@ const SpairePlanCards = ({ organization }: SpairePlanCardsProps) => {
           success_url: `${window.location.origin}/dashboard/${organization.slug}/settings/plan?upgraded=1`,
         })
         queryClient.invalidateQueries({
-          queryKey: ['spaire', 'subscription', organization.id],
+          queryKey: ['claidor', 'subscription', organization.id],
         })
         window.location.href = result.checkout_url
       } catch (err) {
@@ -133,10 +133,10 @@ const SpairePlanCards = ({ organization }: SpairePlanCardsProps) => {
         await switchPlan.mutateAsync({ tier, billing_interval: interval })
         toast({
           title: 'Plan updated',
-          description: `You're now on Spaire ${tierDisplayName(tier)}${interval === 'year' ? ' (annual)' : ''}.`,
+          description: `You're now on Claidor ${tierDisplayName(tier)}${interval === 'year' ? ' (annual)' : ''}.`,
         })
         queryClient.invalidateQueries({
-          queryKey: ['spaire', 'subscription', organization.id],
+          queryKey: ['claidor', 'subscription', organization.id],
         })
       } catch (err) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -180,10 +180,10 @@ const SpairePlanCards = ({ organization }: SpairePlanCardsProps) => {
           ? trialEndDate
             ? `Your trial continues until ${trialEndDate}. You won't be charged and your plan won't start — pick a plan any time to keep going.`
             : "Your trial continues until it ends. You won't be charged and your plan won't start — pick a plan any time to keep going."
-          : 'Your Spaire subscription will end at the close of the current billing period, after which your org will have no active plan until you pick one.',
+          : 'Your Claidor subscription will end at the close of the current billing period, after which your org will have no active plan until you pick one.',
       })
       queryClient.invalidateQueries({
-        queryKey: ['spaire', 'subscription', organization.id],
+        queryKey: ['claidor', 'subscription', organization.id],
       })
       confirmCancel.hide()
     } catch (err) {
@@ -252,7 +252,7 @@ const SpairePlanCards = ({ organization }: SpairePlanCardsProps) => {
       <ConfirmModal
         isShown={confirmCancel.isShown}
         hide={confirmCancel.hide}
-        title={isTrial ? 'Cancel your trial?' : 'Cancel your Spaire plan?'}
+        title={isTrial ? 'Cancel your trial?' : 'Cancel your Claidor plan?'}
         description={
           isTrial
             ? trialEndDate
@@ -277,12 +277,12 @@ const SpairePlanCards = ({ organization }: SpairePlanCardsProps) => {
         }}
         title={
           switchTarget
-            ? `Switch to Spaire ${tierDisplayName(switchTarget)}?`
+            ? `Switch to Claidor ${tierDisplayName(switchTarget)}?`
             : 'Switch plan?'
         }
         description={
           switchTarget
-            ? `You'll move to Spaire ${tierDisplayName(switchTarget)}${
+            ? `You'll move to Claidor ${tierDisplayName(switchTarget)}${
                 interval === 'year' ? ' (annual)' : ''
               } now. Your card on file is used and a prorated amount for the rest of this billing period is invoiced immediately. Your transaction fee updates to the new plan's rate right away.`
             : ''
@@ -294,7 +294,7 @@ const SpairePlanCards = ({ organization }: SpairePlanCardsProps) => {
 }
 
 interface HeaderProps {
-  sub: CurrentSpaireSubscription | undefined
+  sub: CurrentClaidorSubscription | undefined
   plansLoading: boolean
   subLoading: boolean
   interval: BillingInterval
@@ -377,7 +377,7 @@ interface PlanCardProps {
   plan: TierPlan
   previousPlan: TierPlan | null
   interval: BillingInterval
-  currentTier: CurrentSpaireSubscription['tier'] | undefined
+  currentTier: CurrentClaidorSubscription['tier'] | undefined
   currentInterval: BillingInterval | null
   isTrial: boolean
   status: string | null
@@ -527,7 +527,7 @@ type CtaKind =
 interface ResolveCtaArgs {
   plan: TierPlan
   interval: BillingInterval
-  currentTier: CurrentSpaireSubscription['tier'] | undefined
+  currentTier: CurrentClaidorSubscription['tier'] | undefined
   currentInterval: BillingInterval | null
   isTrial: boolean
   status: string | null
@@ -731,7 +731,7 @@ const formatCount = (n: number): string => {
 // in the card carries the inheritance, so re-listing identical rows
 // would just inflate the cards.
 const starterLines = (plan: TierPlan): string[] => [
-  'Merchant of Record — Spaire handles tax & VAT',
+  'Merchant of Record — Claidor handles tax & VAT',
   `${formatTransactionFee(plan.transaction_fee)} per transaction`,
   `${plan.limits.published_courses} published courses`,
   `${formatCount(plan.limits.email_subscribers ?? 0)} email subscribers`,
@@ -760,4 +760,4 @@ const scaleLines = (plan: TierPlan): string[] => [
   'Custom pricing above $50k/mo GMV',
 ]
 
-export default SpairePlanCards
+export default ClaidorPlanCards

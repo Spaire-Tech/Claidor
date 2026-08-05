@@ -1774,7 +1774,7 @@ export interface components {
       seat_based_pricing_enabled: boolean
       /**
        * Course Player White Label
-       * @description When true, the course lesson player hides Spaire branding. Requires the white_label_course_player tier feature (Scale).
+       * @description When true, the course lesson player hides Claidor branding. Requires the white_label_course_player tier feature (Scale).
        * @default false
        */
       course_player_white_label: boolean
@@ -2154,7 +2154,7 @@ export interface components {
     }
     /**
      * PlatformSubscriptionNoticeProps
-     * @description Spaire-branded lifecycle notice for the platform's own billing of a
+     * @description Claidor-branded lifecycle notice for the platform's own billing of a
      *     creator (payment failed, plan ended, cancellation scheduled, …). One
      *     generic branded shell; the Python side composes title/body per event so
      *     a new lifecycle message never needs a new template.

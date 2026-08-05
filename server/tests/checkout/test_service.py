@@ -43,7 +43,7 @@ from polar.enums import (
 )
 from polar.event.repository import EventRepository
 from polar.event.system import SystemEvent
-from polar.exceptions import PaymentNotReady, SpaireRequestValidationError
+from polar.exceptions import PaymentNotReady, ClaidorRequestValidationError
 from polar.integrations.stripe.service import StripeService
 from polar.kit.address import AddressInput
 from polar.kit.currency import PresentmentCurrency
@@ -393,7 +393,7 @@ class TestCreate:
     async def test_not_existing_price(
         self, session: AsyncSession, auth_subject: AuthSubject[User]
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -412,7 +412,7 @@ class TestCreate:
         auth_subject: AuthSubject[User | Organization],
         product_one_time: Product,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -438,7 +438,7 @@ class TestCreate:
             product=product_one_time,
             is_archived=True,
         )
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(product_price_id=price.id),
@@ -459,7 +459,7 @@ class TestCreate:
     ) -> None:
         product_one_time.is_archived = True
         await save_fixture(product_one_time)
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -488,7 +488,7 @@ class TestCreate:
         price.maximum_amount = 5000
         await save_fixture(price)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -520,7 +520,7 @@ class TestCreate:
         price = product_one_time.prices[0]
         assert isinstance(price, ProductPriceFixed)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate.model_validate(
@@ -547,7 +547,7 @@ class TestCreate:
         price = product.prices[0]
         assert isinstance(price, ProductPriceFixed)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -572,7 +572,7 @@ class TestCreate:
         price = product.prices[0]
         assert isinstance(price, ProductPriceFixed)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -597,7 +597,7 @@ class TestCreate:
         price = product_one_time_free_price.prices[0]
         assert isinstance(price, ProductPriceFree)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -625,7 +625,7 @@ class TestCreate:
             save_fixture, product=product, customer=customer
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutProductsCreate(
@@ -1033,7 +1033,7 @@ class TestCreate:
         price = product_custom_fields.prices[0]
         assert isinstance(price, ProductPriceFixed)
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -1170,7 +1170,7 @@ class TestCreate:
     async def test_product_not_existing(
         self, session: AsyncSession, auth_subject: AuthSubject[User]
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutProductCreate(
@@ -1189,7 +1189,7 @@ class TestCreate:
         auth_subject: AuthSubject[User | Organization],
         product_one_time: Product,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutProductCreate(
@@ -1211,7 +1211,7 @@ class TestCreate:
     ) -> None:
         product_one_time.is_archived = True
         await save_fixture(product_one_time)
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutProductCreate(
@@ -1339,7 +1339,7 @@ class TestCreate:
         product_one_time_multiple_currencies: Product,
         user_organization: UserOrganization,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutProductCreate(
@@ -1364,7 +1364,7 @@ class TestCreate:
     ) -> None:
         product_one_time.is_archived = True
         await save_fixture(product_one_time)
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutProductsCreate(products=[product_one_time.id, product.id]),
@@ -1390,7 +1390,7 @@ class TestCreate:
         )
         await save_fixture(user_organization)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutProductsCreate(
@@ -1447,7 +1447,7 @@ class TestCreate:
         price = product_one_time.prices[0]
         assert isinstance(price, ProductPriceFixed)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -1819,7 +1819,7 @@ class TestCreate:
     ) -> None:
         price = product_one_time.prices[0]
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -1878,7 +1878,7 @@ class TestCreate:
         assert isinstance(price, ProductPriceSeatUnit)
         assert price.get_minimum_seats() == 3
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -1936,7 +1936,7 @@ class TestCreate:
         assert isinstance(price, ProductPriceSeatUnit)
         assert price.get_maximum_seats() == 10
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.create(
                 session,
                 CheckoutPriceCreate(
@@ -2047,7 +2047,7 @@ class TestCreate:
         product: Product,
         product_one_time: Product,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.create(
                 session,
                 CheckoutProductsCreate(
@@ -2114,7 +2114,7 @@ class TestClientCreate:
     async def test_not_existing_product(
         self, session: AsyncSession, auth_subject: AuthSubject[Anonymous]
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.client_create(
                 session,
                 CheckoutCreatePublic(product_id=uuid.uuid4()),
@@ -2130,7 +2130,7 @@ class TestClientCreate:
     ) -> None:
         product_one_time.is_archived = True
         await save_fixture(product_one_time)
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.client_create(
                 session,
                 CheckoutCreatePublic(product_id=product_one_time.id),
@@ -2314,7 +2314,7 @@ class TestCheckoutLinkCreate:
             user_metadata={"key": "value"},
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.checkout_link_create(session, checkout_link)
 
     async def test_some_archived_products(
@@ -2596,7 +2596,7 @@ class TestUpdate:
         session: AsyncSession,
         checkout_one_time_fixed: Checkout,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout_one_time_fixed,
@@ -2611,7 +2611,7 @@ class TestUpdate:
         product_one_time_custom_price: Product,
         checkout_one_time_fixed: Checkout,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout_one_time_fixed,
@@ -2651,7 +2651,7 @@ class TestUpdate:
         price.maximum_amount = 5000
         await save_fixture(price)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout_one_time_custom,
@@ -2706,7 +2706,7 @@ class TestUpdate:
             setattr(checkout_recurring_fixed, key, value)
         await save_fixture(checkout_recurring_fixed)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout_recurring_fixed,
@@ -2718,7 +2718,7 @@ class TestUpdate:
         session: AsyncSession,
         checkout_one_time_fixed: Checkout,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout_one_time_fixed,
@@ -2732,7 +2732,7 @@ class TestUpdate:
         session: AsyncSession,
         checkout_one_time_fixed: Checkout,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout_one_time_fixed,
@@ -2747,7 +2747,7 @@ class TestUpdate:
         checkout_one_time_free: Checkout,
         discount_fixed_once: Discount,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout_one_time_free,
@@ -2760,7 +2760,7 @@ class TestUpdate:
         checkout_one_time_free: Checkout,
         discount_fixed_once: Discount,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout_one_time_free,
@@ -2784,7 +2784,7 @@ class TestUpdate:
             duration_in_months=12,
             organization=organization,
         )
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout_one_time_fixed,
@@ -3148,7 +3148,7 @@ class TestUpdate:
         session: AsyncSession,
         checkout_custom_fields: Checkout,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.update(
                 session,
                 checkout_custom_fields,
@@ -3414,7 +3414,7 @@ class TestUpdate:
         session: AsyncSession,
         checkout_one_time_fixed: Checkout,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.update(
                 session,
                 checkout_one_time_fixed,
@@ -3506,7 +3506,7 @@ class TestUpdate:
             seats=5,  # Start with valid seat count
         )
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.update(
                 session,
                 checkout,
@@ -3534,7 +3534,7 @@ class TestUpdate:
             seats=5,  # Start with valid seat count
         )
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.update(
                 session,
                 checkout,
@@ -3729,7 +3729,7 @@ class TestUpdate:
             currency="usd",
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.update(
                 session,
                 checkout,
@@ -3817,7 +3817,7 @@ class TestConfirm:
         auth_subject: AuthSubject[Anonymous],
         checkout_one_time_fixed: Checkout,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.confirm(
                 session,
                 auth_subject,
@@ -3860,7 +3860,7 @@ class TestConfirm:
         checkout_one_time_fixed.product_price = archived_price
         await save_fixture(checkout_one_time_fixed)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.confirm(
                 session,
                 auth_subject,
@@ -3881,7 +3881,7 @@ class TestConfirm:
         auth_subject: AuthSubject[Anonymous],
         checkout_custom_fields: Checkout,
     ) -> None:
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.confirm(
                 session,
                 auth_subject,
@@ -3907,7 +3907,7 @@ class TestConfirm:
         We had a bug where the custom fields validation was actually bypassed
         if the data was unset.
         """
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.confirm(
                 session,
                 auth_subject,
@@ -3931,7 +3931,7 @@ class TestConfirm:
     ) -> None:
         calculate_tax_mock.side_effect = TaxCalculationError("ERROR")
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.confirm(
                 session,
                 auth_subject,
@@ -3981,7 +3981,7 @@ class TestConfirm:
         checkout_one_time_fixed.is_business_customer = True
         await save_fixture(checkout_one_time_fixed)
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await checkout_service.confirm(
                 session,
                 auth_subject,
@@ -4594,7 +4594,7 @@ class TestConfirm:
         assert checkout_discount_percentage_100.is_payment_setup_required is True
         assert checkout_discount_percentage_100.is_payment_form_required is True
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await checkout_service.confirm(
                 session,
                 auth_subject,

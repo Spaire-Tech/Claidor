@@ -4,14 +4,14 @@ Adds a `user_organizations` row linking the user to the org, which is
 the same membership the dashboard uses for "this user can manage this
 org." Idempotent — re-running for an existing membership is a no-op.
 
-Primary use: granting Spaire staff full access to the Spaire platform
+Primary use: granting Claidor staff full access to the Claidor platform
 org so they can manage Pro/Studio/Scale subscriptions from inside the
 dashboard.
 
 Usage:
     # Grant by email + slug (most common):
     python -m scripts.grant_user_org_access run \\
-        --email robin@spaire.com --org spaire
+        --email robin@claidor.com --org claidor
 
     # Or by IDs if you have them:
     python -m scripts.grant_user_org_access run \\
@@ -19,7 +19,7 @@ Usage:
 
     # Dry-run prints intended change without writing.
     python -m scripts.grant_user_org_access run \\
-        --email robin@spaire.com --org spaire --dry-run
+        --email robin@claidor.com --org claidor --dry-run
 """
 
 import asyncio

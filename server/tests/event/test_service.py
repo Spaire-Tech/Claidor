@@ -19,7 +19,7 @@ from polar.event.service import event as event_service
 from polar.event.sorting import EventNamesSortProperty
 from polar.event.system import SystemEvent
 from polar.event_type.repository import EventTypeRepository
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.kit.pagination import PaginationParams
 from polar.kit.time_queries import TimeInterval
 from polar.kit.utils import utc_now
@@ -379,7 +379,7 @@ class TestIngest:
             ]
         )
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await event_service.ingest(session, auth_subject, ingest)
 
         errors = e.value.errors()
@@ -406,7 +406,7 @@ class TestIngest:
             ]
         )
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await event_service.ingest(session, auth_subject, ingest)
 
         errors = e.value.errors()
@@ -450,7 +450,7 @@ class TestIngest:
             ]
         )
 
-        with pytest.raises(SpaireRequestValidationError) as e:
+        with pytest.raises(ClaidorRequestValidationError) as e:
             await event_service.ingest(session, auth_subject, ingest)
 
         errors = e.value.errors()
@@ -719,7 +719,7 @@ class TestIngest:
             ]
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await event_service.ingest(session, auth_subject, ingest)
 
     @pytest.mark.auth(AuthSubjectFixture(subject="organization"))

@@ -2,22 +2,22 @@
 
 import { useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
-import { Label } from '@spaire/ui/components/ui/label'
+} from '@claidor/ui/components/ui/form'
+import { Label } from '@claidor/ui/components/ui/label'
 import { twMerge } from 'tailwind-merge'
 import { FadeUp } from '@/components/Animated/FadeUp'
 import { founderIntentSchema, type FounderIntentData } from '../types'

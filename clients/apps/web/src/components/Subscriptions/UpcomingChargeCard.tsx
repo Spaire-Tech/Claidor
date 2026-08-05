@@ -2,9 +2,9 @@
 
 import { DetailRow } from '@/components/Shared/DetailRow'
 import { useSubscriptionChargePreview } from '@/hooks/queries/subscriptions'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
 
 const UpcomingChargeCard = ({
   subscription,

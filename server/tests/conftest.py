@@ -1,6 +1,6 @@
 import os
 
-os.environ["SPAIRE_ENV"] = "testing"
+os.environ["CLAIDOR_ENV"] = "testing"
 
 
 from tests.fixtures import *  # noqa

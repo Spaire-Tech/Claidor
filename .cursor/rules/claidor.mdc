@@ -1,11 +1,11 @@
 ---
-description: Spaire project conventions and integration pointers for Cursor
+description: Claidor project conventions and integration pointers for Cursor
 alwaysApply: true
 ---
 
-# Spaire — Cursor Rules
+# Claidor — Cursor Rules
 
-This is **Spaire**, a payment infrastructure platform. Monorepo with a Python/FastAPI backend and Next.js frontend. Follow all conventions below when reading or editing code.
+This is **Claidor**, a payment infrastructure platform. Monorepo with a Python/FastAPI backend and Next.js frontend. Follow all conventions below when reading or editing code.
 
 ---
 
@@ -95,13 +95,13 @@ uv run task lint && uv run task lint_types
 
 ---
 
-## Spaire Integration Playbooks
+## Claidor Integration Playbooks
 
 When the user asks you to **add checkout** or **set up usage-based billing**, follow the corresponding playbook exactly:
 
 | Task | Playbook |
 |------|---------|
-| Add Spaire checkout | `docs/agent-playbooks/setup-checkout.md` |
+| Add Claidor checkout | `docs/agent-playbooks/setup-checkout.md` |
 | Set up usage-based billing | `docs/agent-playbooks/setup-usage-billing.md` |
 | Agent output contract | `docs/agent-playbooks/agent-output-contract.md` |
 
@@ -122,4 +122,4 @@ Read `docs/agent-playbooks/agent-output-contract.md`. You must:
 - Never restructure the project — surgical edits only
 - Never switch the package manager
 - Always warn if production indicators detected (NODE\_ENV=production, deploy branch)
-- Always suggest sandbox mode first for Spaire testing
+- Always suggest sandbox mode first for Claidor testing

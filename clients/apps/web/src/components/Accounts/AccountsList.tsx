@@ -1,7 +1,7 @@
 import { ACCOUNT_TYPE_DISPLAY_NAMES } from '@/utils/account'
 import { api } from '@/utils/client'
-import { schemas, unwrap } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas, unwrap } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import { useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 

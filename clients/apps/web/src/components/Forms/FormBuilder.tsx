@@ -8,25 +8,25 @@ import {
   useCreateForm,
   useUpdateForm,
 } from '@/hooks/queries/forms'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
-import Switch from '@spaire/ui/components/atoms/Switch'
-import TextArea from '@spaire/ui/components/atoms/TextArea'
+} from '@claidor/ui/components/atoms/Select'
+import Switch from '@claidor/ui/components/atoms/Switch'
+import TextArea from '@claidor/ui/components/atoms/TextArea'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'

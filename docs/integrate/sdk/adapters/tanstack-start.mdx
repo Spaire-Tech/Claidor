@@ -5,31 +5,31 @@ description: "Payments and Checkouts made dead simple with TanStack Start"
 
 ## Examples
 
-- [With TanStack Start](https://github.com/spairehq/examples/tree/main/with-tanstack-start)
+- [With TanStack Start](https://github.com/claidorhq/examples/tree/main/with-tanstack-start)
 
 ## Installation
 
-Install the required Spaire packages using the following command:
+Install the required Claidor packages using the following command:
 
 <Tabs>
   <Tab title="npm">
     ```bash Terminal
-    npm install zod @spaire/tanstack-start
+    npm install zod @claidor/tanstack-start
     ```
   </Tab>
   <Tab title="yarn">
     ```bash Terminal
-    yarn add zod @spaire/tanstack-start
+    yarn add zod @claidor/tanstack-start
     ```
   </Tab>
   <Tab title="pnpm">
     ```bash Terminal
-    pnpm add zod @spaire/tanstack-start
+    pnpm add zod @claidor/tanstack-start
     ```
   </Tab>
   <Tab title="bun">
     ```bash Terminal
-    bun add zod @spaire/tanstack-start
+    bun add zod @claidor/tanstack-start
     ```
   </Tab>
 </Tabs>
@@ -39,17 +39,17 @@ Install the required Spaire packages using the following command:
 Create a Checkout handler which takes care of redirections.
 
 ```typescript routes/api/checkout.ts icon=square-js
-import { Checkout } from "@spaire/tanstack-start";
+import { Checkout } from "@claidor/tanstack-start";
 import { createFileRoute } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/api/checkout")({
   server: {
     handlers: {
       GET: Checkout({
-        accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+        accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
         successUrl: process.env.SUCCESS_URL,
         returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Checkout
-        server: "sandbox", // Use sandbox if you're testing Spaire - omit the parameter or pass 'production' otherwise
+        server: "sandbox", // Use sandbox if you're testing Claidor - omit the parameter or pass 'production' otherwise
         theme: "dark", // Enforces the theme - System-preferred theme will be set if left omitted
       }),
     },
@@ -73,7 +73,7 @@ Pass query params to this route.
 Create a customer portal where your customer can view orders and subscriptions.
 
 ```typescript routes/api/portal.ts icon=square-js
-import { CustomerPortal } from "@spaire/tanstack-start";
+import { CustomerPortal } from "@claidor/tanstack-start";
 import { createFileRoute } from "@tanstack/react-start";
 import { getSupabaseServerClient } from "~/servers/supabase-server";
 
@@ -81,10 +81,10 @@ export const Route = createFileRoute("/api/portal")({
   server: {
     handlers: {
       GET: CustomerPortal({
-        accessToken: SPAIRE_ACCESS_TOKEN,
-        getCustomerId: async (request: Request) => "", // Function to resolve a Spaire Customer ID
+        accessToken: CLAIDOR_ACCESS_TOKEN,
+        getCustomerId: async (request: Request) => "", // Function to resolve a Claidor Customer ID
         returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Checkout
-        server: "sandbox", // Use sandbox if you're testing Spaire - omit the parameter or pass 'production' otherwise
+        server: "sandbox", // Use sandbox if you're testing Claidor - omit the parameter or pass 'production' otherwise
       }),
     },
   },
@@ -95,15 +95,15 @@ export const Route = createFileRoute("/api/portal")({
 
 A simple utility which resolves incoming webhook payloads by signing the webhook secret properly.
 
-```typescript routes/api/webhook/spaire.ts icon=square-js
-import { Webhooks } from "@spaire/tanstack-start";
+```typescript routes/api/webhook/claidor.ts icon=square-js
+import { Webhooks } from "@claidor/tanstack-start";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/api/webhook/spaire")({
+export const Route = createFileRoute("/api/webhook/claidor")({
   server: {
     handlers: {
       POST: Webhooks({
-        webhookSecret: process.env.SPAIRE_WEBHOOK_SECRET!,
+        webhookSecret: process.env.CLAIDOR_WEBHOOK_SECRET!,
         onPayload: async (payload) => {
           // Handle the payload
           // No need to return an acknowledge response

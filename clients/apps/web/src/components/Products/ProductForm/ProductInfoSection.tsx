@@ -1,22 +1,22 @@
 'use client'
 
 import { Section } from '@/components/Layout/Section'
-import Input from '@spaire/ui/components/atoms/Input'
-import TextArea from '@spaire/ui/components/atoms/TextArea'
+import Input from '@claidor/ui/components/atoms/Input'
+import TextArea from '@claidor/ui/components/atoms/TextArea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useFormContext } from 'react-hook-form'
 import { ProductFormType } from './ProductForm'
 

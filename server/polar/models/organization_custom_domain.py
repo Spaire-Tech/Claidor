@@ -58,7 +58,7 @@ class OrganizationCustomDomain(RecordModel):
         default=OrganizationCustomDomainStatus.pending,
     )
 
-    # Expected value of the TXT record at _spaire-verify.{domain},
+    # Expected value of the TXT record at _claidor-verify.{domain},
     # proving the creator controls the domain's DNS.
     verification_token: Mapped[str] = mapped_column(
         String(64), nullable=False, default=generate_verification_token

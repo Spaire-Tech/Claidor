@@ -21,14 +21,14 @@ import * as React from 'react'
 
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined'
-import { schemas } from '@spaire/client'
-import FormattedInterval from '@spaire/ui/components/atoms/FormattedInterval'
-import { Calendar } from '@spaire/ui/components/ui/calendar'
+import { schemas } from '@claidor/client'
+import FormattedInterval from '@claidor/ui/components/atoms/FormattedInterval'
+import { Calendar } from '@claidor/ui/components/ui/calendar'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@spaire/ui/components/ui/popover'
+} from '@claidor/ui/components/ui/popover'
 import { useContext } from 'react'
 import { twMerge } from 'tailwind-merge'
 

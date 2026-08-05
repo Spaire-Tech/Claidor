@@ -5,7 +5,7 @@ from pytest_mock import MockerFixture
 
 from polar.customer_portal.schemas.customer import CustomerPortalCustomerUpdate
 from polar.customer_portal.service.customer import customer as customer_service
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.integrations.stripe.service import StripeService
 from polar.kit.address import Address, AddressInput, CountryAlpha2, CountryAlpha2Input
 from polar.models import Organization
@@ -36,7 +36,7 @@ class TestUpdate:
             billing_address=None,
             tax_id=None,
         )
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_service.update(
                 session,
                 customer,
@@ -57,7 +57,7 @@ class TestUpdate:
             billing_address=Address(country=CountryAlpha2("GB")),
             tax_id=None,
         )
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_service.update(
                 session,
                 customer,
@@ -78,7 +78,7 @@ class TestUpdate:
             billing_address=Address(country=CountryAlpha2("FR")),
             tax_id=("FR61954506077", TaxIDFormat.eu_vat),
         )
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await customer_service.update(
                 session,
                 customer,

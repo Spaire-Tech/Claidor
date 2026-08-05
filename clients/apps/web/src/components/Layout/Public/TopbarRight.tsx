@@ -7,8 +7,8 @@ import { useModal } from '@/components/Modal/useModal'
 import PublicProfileDropdown from '@/components/Navigation/PublicProfileDropdown'
 import Popover from '@/components/Notifications/NotificationsPopover'
 import { usePostHog } from '@/hooks/posthog'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import { usePathname } from 'next/navigation'
 
 const TopbarRight = ({
@@ -49,7 +49,7 @@ const TopbarRight = ({
           <GetStartedButton
             className="hidden md:flex"
             size="default"
-            text="Sell with Spaire"
+            text="Sell with Claidor"
             storefrontOrg={storefrontOrg}
           />
 

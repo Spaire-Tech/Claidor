@@ -29,7 +29,7 @@ export default function EmailMarketingLayout({ children }: PropsWithChildren) {
     '/subscribers'
 
   return (
-    <div className="spaire-email-app">
+    <div className="claidor-email-app">
       <div
         className="sticky top-0 z-50 border-b border-[var(--line)] bg-white/85 backdrop-blur-md"
         data-email-marketing-chrome="true"
@@ -75,7 +75,7 @@ export default function EmailMarketingLayout({ children }: PropsWithChildren) {
         </div>
       </div>
 
-      {/* `.spaire-email-app .container { padding: 0 64px }` in styles.css
+      {/* `.claidor-email-app .container { padding: 0 64px }` in styles.css
           uses the shorthand which clobbers top/bottom padding to 0 — that
           selector outweighs Tailwind utilities on specificity. So we set
           the vertical padding inline (matching the original

@@ -89,7 +89,7 @@ const Footer = ({
       <Text className="text-gray-900">
         You&apos;re part of{' '}
         <span className="font-semibold">{organization.name}</span> on{' '}
-        <span className="font-semibold">Spaire</span>
+        <span className="font-semibold">Claidor</span>
       </Text>
     </Section>
   </>

@@ -1,4 +1,4 @@
-# @spaire/checkout
+# @claidor/checkout
 
 ## 0.2.0
 
@@ -27,7 +27,7 @@
 - d9a45ea: Bump dependencies and setup trusted publishing
 - 258bdb1: Dependency upgrades, including React 19 peer dependency support
 - Updated dependencies [258bdb1]
-  - @spaire/ui@0.1.2
+  - @claidor/ui@0.1.2
 
 ## 0.1.13
 
@@ -121,4 +121,4 @@
 
 ### Minor Changes
 
-- Initial release of @spaire/checkout
+- Initial release of @claidor/checkout

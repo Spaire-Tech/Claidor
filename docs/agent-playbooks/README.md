@@ -23,7 +23,7 @@ Shared playbooks contain all the logic. Platform adapters just point to them and
 
 | Playbook | Purpose |
 |----------|---------|
-| [setup-checkout.md](./setup-checkout.md) | Add Spaire checkout to a user's project |
+| [setup-checkout.md](./setup-checkout.md) | Add Claidor checkout to a user's project |
 | [setup-usage-billing.md](./setup-usage-billing.md) | Implement metered usage-based billing |
 | [agent-output-contract.md](./agent-output-contract.md) | What every agent must output (contract) |
 
@@ -43,7 +43,7 @@ Every agent on every platform must follow the [output contract](./agent-output-c
 |-------|----------------|--------------|
 | Claude Code | `/setup-checkout` slash command | `.claude/commands/setup-checkout.md` |
 | Claude Code | `/setup-usage-billing` slash command | `.claude/commands/setup-usage-billing.md` |
-| Cursor | Open chat, ask "run setup-checkout playbook" | `.cursor/rules/spaire.mdc` |
+| Cursor | Open chat, ask "run setup-checkout playbook" | `.cursor/rules/claidor.mdc` |
 | Codex CLI | `codex` with repo context | `AGENTS.md` |
 | GitHub Copilot | Copilot Chat with workspace context | `.github/copilot-instructions.md` |
 
@@ -52,7 +52,7 @@ Every agent on every platform must follow the [output contract](./agent-output-c
 1. Create `docs/agent-playbooks/your-playbook.md` — write it in neutral language using capability-based wording (see below)
 2. Update `.claude/commands/your-playbook.md` — thin wrapper for Claude Code
 3. Update `AGENTS.md` — reference the new playbook for Codex
-4. Update `.cursor/rules/spaire.mdc` — mention it for Cursor
+4. Update `.cursor/rules/claidor.mdc` — mention it for Cursor
 5. Update `.github/copilot-instructions.md` — mention it for Copilot
 
 ## Neutral Language Guidelines

@@ -7,7 +7,7 @@ from pytest_mock.plugin import MockerFixture
 
 from polar.auth.models import AuthSubject
 from polar.enums import SubscriptionRecurringInterval
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.meter.service import meter as meter_service
 from polar.models import Benefit, Customer, Meter, Organization, Product, Subscription
 from polar.models.benefit import BenefitType
@@ -71,7 +71,7 @@ class TestMeterArchive:
         auth_subject: AuthSubject[Organization],
     ) -> None:
         # Try to archive meter that's attached to an active product
-        with pytest.raises(SpaireRequestValidationError) as exc:
+        with pytest.raises(ClaidorRequestValidationError) as exc:
             await meter_service.archive(session, meter)
         assert "Cannot archive meter that is still attached to active products" in str(
             exc.value
@@ -114,7 +114,7 @@ class TestMeterArchive:
         await save_fixture(benefit)
 
         # Try to archive meter that's referenced by an active benefit
-        with pytest.raises(SpaireRequestValidationError) as exc:
+        with pytest.raises(ClaidorRequestValidationError) as exc:
             await meter_service.archive(session, meter)
         assert (
             "Cannot archive meter that is still referenced by active benefits"

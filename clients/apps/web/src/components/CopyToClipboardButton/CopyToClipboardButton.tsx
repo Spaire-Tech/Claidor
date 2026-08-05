@@ -1,6 +1,6 @@
 'use client'
 
-import Button, { ButtonProps } from '@spaire/ui/components/atoms/Button'
+import Button, { ButtonProps } from '@claidor/ui/components/atoms/Button'
 import { Clipboard, ClipboardCheck } from 'lucide-react'
 import { PropsWithChildren, useState } from 'react'
 

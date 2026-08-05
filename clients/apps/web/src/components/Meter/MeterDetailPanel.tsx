@@ -7,15 +7,15 @@ import { useToast } from '@/components/Toast/use-toast'
 import { useMeter, useUpdateMeter } from '@/hooks/queries/meters'
 import { apiErrorToast } from '@/utils/api/errors'
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import { Status } from '@spaire/ui/components/atoms/Status'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/ui/dropdown-menu'
+} from '@claidor/ui/components/ui/dropdown-menu'
 import { useCallback } from 'react'
 import { MeterPage } from './MeterPage'
 

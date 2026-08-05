@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormById, useFormSubmissions } from '@/hooks/queries/forms'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import Link from 'next/link'
 
 const formatDate = (value: string) => new Date(value).toLocaleString()

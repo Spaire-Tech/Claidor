@@ -8,7 +8,7 @@ When you want to prevent customers from changing their email address during the 
 
 ## Overview
 
-By passing either `customer_id` or `external_customer_id` when creating a checkout session, Spaire will:
+By passing either `customer_id` or `external_customer_id` when creating a checkout session, Claidor will:
 
 - Pre-fill the customer's information in the checkout form
 - **Disable the email field** so it cannot be edited
@@ -16,11 +16,11 @@ By passing either `customer_id` or `external_customer_id` when creating a checko
 
 ## Using Customer ID
 
-If you've already created a customer in Spaire and have their Spaire customer ID, you can use it directly.
+If you've already created a customer in Claidor and have their Claidor customer ID, you can use it directly.
 
 <Steps>
     <Step title = "Get the Customer ID">
-        Retrieve the customer ID from your Spaire dashboard or through the [Customers API](/api-reference/customers/list).
+        Retrieve the customer ID from your Claidor dashboard or through the [Customers API](/api-reference/customers/list).
         
         The customer ID is a UUID format like: `992fae2a-2a17-4b7a-8d9e-e287cf90131b`
     </Step>
@@ -29,11 +29,11 @@ If you've already created a customer in Spaire and have their Spaire customer ID
 
 <CodeGroup>
 ```ts TypeScript
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({ accessToken: process.env["SPAIRE_ACCESS_TOKEN"] });
+const claidor = new Claidor({ accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] });
 
-const checkout = await spaire.checkouts.create({
+const checkout = await claidor.checkouts.create({
     products: ["<product_id>"],
     customerId: "992fae2a-2a17-4b7a-8d9e-e287cf90131b", // [!code ++]
 });
@@ -42,13 +42,13 @@ console.log(checkout.url);
 ```
 
 ```py Python
-from spaire_sdk import Spaire
+from claidor_sdk import Claidor
 
-with Spaire(
+with Claidor(
     access_token="<YOUR_BEARER_TOKEN_HERE>",
-) as spaire:
+) as claidor:
 
-    checkout = spaire.checkouts.create(request={
+    checkout = claidor.checkouts.create(request={
         "products": ["<product_id>"],
         "customer_id": "992fae2a-2a17-4b7a-8d9e-e287cf90131b",  # [!code ++]
     })
@@ -58,7 +58,7 @@ with Spaire(
 
 ```bash cURL
 curl --request POST \
-  --url https://api.spairehq.com/v1/checkouts/ \
+  --url https://api.claidorhq.com/v1/checkouts/ \
   --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
   --header 'Content-Type: application/json' \
   --data '{
@@ -75,24 +75,24 @@ curl --request POST \
 
 ## Using External Customer ID
 
-If you have your own user management system, you can use your internal customer ID. This is the recommended approach as it makes reconciliation between your system and Spaire easier.
+If you have your own user management system, you can use your internal customer ID. This is the recommended approach as it makes reconciliation between your system and Claidor easier.
 
 <Steps>
     <Step title = "Use Your Internal Customer ID">
         When creating a checkout session, pass your application's user ID as the `external_customer_id`.
         
-        Spaire will:
+        Claidor will:
         - Look for an existing customer with this external ID
         - If found, link to that customer and pre-fill their data
     </Step>
     <Step title = "Create Checkout Session with external_customer_id">
 <CodeGroup>
 ```ts TypeScript
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({ accessToken: process.env["SPAIRE_ACCESS_TOKEN"] });
+const claidor = new Claidor({ accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] });
 
-const checkout = await spaire.checkouts.create({
+const checkout = await claidor.checkouts.create({
     products: ["<product_id>"],
     externalCustomerId: "user_12345", // Your application's user ID // [!code ++]
 });
@@ -101,13 +101,13 @@ console.log(checkout.url);
 ```
 
 ```py Python
-from spaire_sdk import Spaire
+from claidor_sdk import Claidor
 
-with Spaire(
+with Claidor(
     access_token="<YOUR_BEARER_TOKEN_HERE>",
-) as spaire:
+) as claidor:
 
-    checkout = spaire.checkouts.create(request={
+    checkout = claidor.checkouts.create(request={
         "products": ["<product_id>"],
         "external_customer_id": "user_12345",  # Your application's user ID # [!code ++]
     })
@@ -117,7 +117,7 @@ with Spaire(
 
 ```bash cURL
 curl --request POST \
-  --url https://api.spairehq.com/v1/checkouts/ \
+  --url https://api.claidorhq.com/v1/checkouts/ \
   --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
   --header 'Content-Type: application/json' \
   --data '{

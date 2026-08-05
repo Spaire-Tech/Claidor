@@ -1,6 +1,6 @@
-# Polar
+# Claidor
 
-Open source payment infrastructure platform for developers. Monorepo with Python/FastAPI backend and Next.js frontend.
+Legal research platform for OHADA law (see README.md). Monorepo with Python/FastAPI backend and Next.js frontend. NOTE: the backend Python package keeps the internal name `polar` (inherited from upstream).
 
 ## Quick Start
 

@@ -4,7 +4,7 @@ import { InlineModalHeader } from '@/components/Modal/InlineModal'
 import { type ContentBlock, type Perk, type PerkSection } from '@/constants/perksData'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
 
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 
@@ -163,7 +163,7 @@ const PerkDetailModalContent = ({
               <span>Claim Now</span>
             </Button>
             <p className="text-center text-xs text-gray-500">
-              Complete your first sale through Spaire to unlock this perk.
+              Complete your first sale through Claidor to unlock this perk.
             </p>
           </div>
         )}

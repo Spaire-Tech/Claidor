@@ -15,7 +15,7 @@ import SpaceDashboardOutlined from '@mui/icons-material/SpaceDashboardOutlined'
 import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined'
 import TrendingUp from '@mui/icons-material/TrendingUp'
 import TuneOutlined from '@mui/icons-material/TuneOutlined'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { usePathname } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
 

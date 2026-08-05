@@ -1,7 +1,7 @@
 'use client'
 
-import { DataTable } from '@spaire/ui/components/atoms/DataTable'
-import { Status } from '@spaire/ui/components/atoms/Status'
+import { DataTable } from '@claidor/ui/components/atoms/DataTable'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import { twMerge } from 'tailwind-merge'
 
 const seatStatusToDisplayName = {

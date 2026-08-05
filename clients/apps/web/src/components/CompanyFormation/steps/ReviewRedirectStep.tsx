@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 import ArrowForwardOutlined from '@mui/icons-material/ArrowForwardOutlined'
 import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import { FadeUp } from '@/components/Animated/FadeUp'
 import { US_STATE_NAMES } from '../recommendation'
 import {
@@ -15,7 +15,7 @@ import {
   type FormationStartedData,
 } from '../types'
 
-const DISCOUNT_CODE = 'DOOLASPAIRE10'
+const DISCOUNT_CODE = 'DOOLACLAIDOR10'
 
 interface ReviewRedirectStepProps {
   data: WizardFormData

@@ -8,13 +8,13 @@ description: SDK for Ruby (>=3.0)
 ## Installation
 
 ```bash Terminal
-gem install spaire
+gem install claidor
 ```
 
 Or add it to your `Gemfile`:
 
 ```ruby Gemfile
-gem 'spaire'
+gem 'claidor'
 ```
 
 Then run:
@@ -26,10 +26,10 @@ bundle install
 ## Quickstart
 
 ```ruby main.rb
-require 'spaire'
+require 'claidor'
 
-s = OpenApiSDK::Spaire.new(
-  access_token: ENV['SPAIRE_ACCESS_TOKEN']
+s = OpenApiSDK::Claidor.new(
+  access_token: ENV['CLAIDOR_ACCESS_TOKEN']
 )
 
 res = s.organizations.list(page: 1, limit: 10)
@@ -46,8 +46,8 @@ end
 You can configure the SDK to hit the [sandbox environment](/integrate/sandbox) instead of production by passing the server URL when instantiating the client:
 
 ```ruby
-s = OpenApiSDK::Spaire.new(
-  server_url: 'https://sandbox-api.spairehq.com',
-  access_token: ENV['SPAIRE_ACCESS_TOKEN']
+s = OpenApiSDK::Claidor.new(
+  server_url: 'https://sandbox-api.claidorhq.com',
+  access_token: ENV['CLAIDOR_ACCESS_TOKEN']
 )
 ```

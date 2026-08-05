@@ -16,7 +16,7 @@ from polar.entitlements.service import entitlements as entitlements_service
 from polar.exceptions import (
     NotPermitted,
     ResourceNotFound,
-    SpaireRequestValidationError,
+    ClaidorRequestValidationError,
     Unauthorized,
 )
 from polar.kit.pagination import ListResource, Pagination, PaginationParamsQuery
@@ -498,7 +498,7 @@ async def invite_member(
 
     enqueue_email(
         to_email_addr=email,
-        subject=f"You've been invited to {organization.name} on Spaire",
+        subject=f"You've been invited to {organization.name} on Claidor",
         html_content=body,
     )
 
@@ -685,7 +685,7 @@ async def submit_appeal(
             appeal_submitted_at=result.appeal_submitted_at,  # type: ignore[arg-type]
         )
     except ValueError as e:
-        raise SpaireRequestValidationError(
+        raise ClaidorRequestValidationError(
             [
                 {
                     "type": "value_error",

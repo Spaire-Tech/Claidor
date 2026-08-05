@@ -1,16 +1,16 @@
-import { formatCurrency } from '@spaire/currency'
+import { formatCurrency } from '@claidor/currency'
 import { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic.js'
 import { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic.js'
 import { ProductPriceCustom } from '@spaire/sdk/models/components/productpricecustom.js'
-import MoneyInput from '@spaire/ui/components/atoms/MoneyInput'
+import MoneyInput from '@claidor/ui/components/atoms/MoneyInput'
 import {
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
-import { ThemingPresetProps } from '@spaire/ui/hooks/theming'
+} from '@claidor/ui/components/ui/form'
+import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
 import { useCallback, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import useDebouncedCallback from '../hooks/debounce'

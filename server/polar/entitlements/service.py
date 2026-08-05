@@ -1,4 +1,4 @@
-"""Resolve a creator organization's active Spaire subscription tier and
+"""Resolve a creator organization's active Claidor subscription tier and
 return the entitlements (transaction fee, limits, feature flags) for it.
 
 Every downstream consumer that needs to gate behavior on a tier reads from

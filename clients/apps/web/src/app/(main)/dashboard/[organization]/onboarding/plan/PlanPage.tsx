@@ -3,7 +3,7 @@
 import { OnboardingProgressBar } from '@/components/Onboarding/OnboardingProgressBar'
 import LogoIcon from '@/components/Brand/LogoIcon'
 import { toast } from '@/components/Toast/use-toast'
-import { BillingInterval, PaidTierKey } from '@/hooks/queries/spaireTier'
+import { BillingInterval, PaidTierKey } from '@/hooks/queries/claidorTier'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { api } from '@/utils/client'
 import { ReactNode, useCallback, useContext, useEffect, useState } from 'react'
@@ -49,7 +49,7 @@ const TIERS: DesignTier[] = [
     recommended: false,
     includes: 'Includes',
     features: [
-      { label: <>Merchant of Record — Spaire handles tax &amp; VAT</>, shield: true },
+      { label: <>Merchant of Record — Claidor handles tax &amp; VAT</>, shield: true },
       { label: <>7% + $0.30 per transaction</> },
       { label: <>5 published courses</> },
       { label: <>10K email subscribers</> },
@@ -116,7 +116,7 @@ const TIERS: DesignTier[] = [
   },
 ]
 
-const BILLING_STORAGE_KEY = 'spaire_billing_cycle'
+const BILLING_STORAGE_KEY = 'claidor_billing_cycle'
 
 export default function PlanPage() {
   const { organization } = useContext(OrganizationContext)

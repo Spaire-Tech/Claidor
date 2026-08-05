@@ -8,7 +8,7 @@ import {
 import { defaultRetry } from './retry'
 
 /**
- * The Spaire-tier endpoints are generated into @spaire/client after
+ * The Claidor-tier endpoints are generated into @claidor/client after
  * `pnpm generate` runs against a deployed API. Until that's been
  * regenerated, the typed client doesn't know about these paths and
  * TypeScript would refuse to call api.GET('/v1/platform/plans'). We
@@ -23,7 +23,7 @@ const platformApi = api as unknown as any
 // Types — mirror polar/platform/schemas.py
 // -----------------------------------------------------------------------------
 
-export type SpaireTierKey =
+export type ClaidorTierKey =
   | 'starter'
   | 'studio'
   | 'scale'
@@ -72,7 +72,7 @@ export interface TierFeatures {
 }
 
 export interface Entitlements {
-  tier: SpaireTierKey
+  tier: ClaidorTierKey
   transaction_fee: TransactionFee
   limits: TierLimits
   features: TierFeatures
@@ -81,7 +81,7 @@ export interface Entitlements {
 }
 
 export interface TierPlan {
-  tier: SpaireTierKey
+  tier: ClaidorTierKey
   name: string
   description: string | null
   product_id: string | null
@@ -96,8 +96,8 @@ export interface TierPlan {
   limits: TierLimits
 }
 
-export interface CurrentSpaireSubscription {
-  tier: SpaireTierKey
+export interface CurrentClaidorSubscription {
+  tier: ClaidorTierKey
   billing_interval: BillingInterval | null
   status: string
   monthly_price_cents: number
@@ -105,7 +105,7 @@ export interface CurrentSpaireSubscription {
   current_period_end: string | null
   trial_end: string | null
   cancel_at_period_end: boolean
-  // Set only while status === 'past_due' (a Spaire charge failed). past_due_at
+  // Set only while status === 'past_due' (a Claidor charge failed). past_due_at
   // is when it first failed; suspension_at is the deadline to pay before the
   // subscription is canceled and the org drops to no-plan.
   past_due_at: string | null
@@ -145,9 +145,9 @@ export interface UpgradeCheckout {
 // Queries
 // -----------------------------------------------------------------------------
 
-export const useSpairePlans: () => UseQueryResult<{ items: TierPlan[] }> = () =>
+export const useClaidorPlans: () => UseQueryResult<{ items: TierPlan[] }> = () =>
   useQuery({
-    queryKey: ['spaire', 'plans'],
+    queryKey: ['claidor', 'plans'],
     queryFn: async () => {
       const { data, error } = await platformApi.GET('/v1/platform/plans')
       if (error) throw error
@@ -157,28 +157,28 @@ export const useSpairePlans: () => UseQueryResult<{ items: TierPlan[] }> = () =>
     staleTime: 5 * 60 * 1000, // 5 minutes — plans rarely change
   })
 
-export const useSpaireSubscription = (
+export const useClaidorSubscription = (
   organizationId: string | undefined,
-): UseQueryResult<CurrentSpaireSubscription> =>
+): UseQueryResult<CurrentClaidorSubscription> =>
   useQuery({
-    queryKey: ['spaire', 'subscription', organizationId],
+    queryKey: ['claidor', 'subscription', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/subscription',
         { params: { path: { organization_id: organizationId as string } } },
       )
       if (error) throw error
-      return data as CurrentSpaireSubscription
+      return data as CurrentClaidorSubscription
     },
     retry: defaultRetry,
     enabled: !!organizationId,
   })
 
-export const useSpaireUsage = (
+export const useClaidorUsage = (
   organizationId: string | undefined,
 ): UseQueryResult<OrganizationUsage> =>
   useQuery({
-    queryKey: ['spaire', 'usage', organizationId],
+    queryKey: ['claidor', 'usage', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/usage',
@@ -217,13 +217,13 @@ export const useCreateUpgradeCheckout = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['spaire', 'subscription', organizationId],
+        queryKey: ['claidor', 'subscription', organizationId],
       })
     },
   })
 }
 
-export const useSwitchSpairePlan = (organizationId: string) => {
+export const useSwitchClaidorPlan = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (input: {
@@ -242,13 +242,13 @@ export const useSwitchSpairePlan = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['spaire', 'subscription', organizationId],
+        queryKey: ['claidor', 'subscription', organizationId],
       })
     },
   })
 }
 
-export const useCancelSpaireSubscription = (organizationId: string) => {
+export const useCancelClaidorSubscription = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async () => {
@@ -264,7 +264,7 @@ export const useCancelSpaireSubscription = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['spaire', 'subscription', organizationId],
+        queryKey: ['claidor', 'subscription', organizationId],
       })
     },
   })
@@ -296,7 +296,7 @@ export const useCreateCustomerPortalSession = (organizationId: string) =>
 // download invoice, get/update billing address).
 // -----------------------------------------------------------------------------
 
-export interface SpairePaymentMethod {
+export interface ClaidorPaymentMethod {
   id: string
   type: string
   method_metadata: {
@@ -308,7 +308,7 @@ export interface SpairePaymentMethod {
   }
 }
 
-export interface SpaireBillingAddress {
+export interface ClaidorBillingAddress {
   line1: string | null
   line2: string | null
   postal_code: string | null
@@ -317,14 +317,14 @@ export interface SpaireBillingAddress {
   country: string | null
 }
 
-export interface SpaireBillingDetails {
+export interface ClaidorBillingDetails {
   billing_name: string | null
-  billing_address: SpaireBillingAddress | null
+  billing_address: ClaidorBillingAddress | null
   tax_id: [string, string] | null
   default_payment_method_id: string | null
 }
 
-export interface SpaireOrder {
+export interface ClaidorOrder {
   id: string
   created_at: string
   invoice_number: string | null
@@ -336,28 +336,28 @@ export interface SpaireOrder {
   is_invoice_generated: boolean
 }
 
-export const useSpairePaymentMethods = (
+export const useClaidorPaymentMethods = (
   organizationId: string | undefined,
-): UseQueryResult<{ items: SpairePaymentMethod[] }> =>
+): UseQueryResult<{ items: ClaidorPaymentMethod[] }> =>
   useQuery({
-    queryKey: ['spaire', 'payment-methods', organizationId],
+    queryKey: ['claidor', 'payment-methods', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/payment-methods',
         { params: { path: { organization_id: organizationId as string } } },
       )
       if (error) throw error
-      return data as { items: SpairePaymentMethod[] }
+      return data as { items: ClaidorPaymentMethod[] }
     },
     retry: defaultRetry,
     enabled: !!organizationId,
   })
 
-export const useSpaireOrders = (
+export const useClaidorOrders = (
   organizationId: string | undefined,
-): UseQueryResult<{ items: SpaireOrder[] }> =>
+): UseQueryResult<{ items: ClaidorOrder[] }> =>
   useQuery({
-    queryKey: ['spaire', 'orders', organizationId],
+    queryKey: ['claidor', 'orders', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/orders',
@@ -369,30 +369,30 @@ export const useSpaireOrders = (
         },
       )
       if (error) throw error
-      return data as { items: SpaireOrder[] }
+      return data as { items: ClaidorOrder[] }
     },
     retry: defaultRetry,
     enabled: !!organizationId,
   })
 
-export const useSpaireBillingDetails = (
+export const useClaidorBillingDetails = (
   organizationId: string | undefined,
-): UseQueryResult<SpaireBillingDetails> =>
+): UseQueryResult<ClaidorBillingDetails> =>
   useQuery({
-    queryKey: ['spaire', 'billing-details', organizationId],
+    queryKey: ['claidor', 'billing-details', organizationId],
     queryFn: async () => {
       const { data, error } = await platformApi.GET(
         '/v1/platform/organizations/{organization_id}/billing-details',
         { params: { path: { organization_id: organizationId as string } } },
       )
       if (error) throw error
-      return data as SpaireBillingDetails
+      return data as ClaidorBillingDetails
     },
     retry: defaultRetry,
     enabled: !!organizationId,
   })
 
-export const useDeleteSpairePaymentMethod = (organizationId: string) => {
+export const useDeleteClaidorPaymentMethod = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (paymentMethodId: string) => {
@@ -411,16 +411,16 @@ export const useDeleteSpairePaymentMethod = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['spaire', 'payment-methods', organizationId],
+        queryKey: ['claidor', 'payment-methods', organizationId],
       })
       queryClient.invalidateQueries({
-        queryKey: ['spaire', 'billing-details', organizationId],
+        queryKey: ['claidor', 'billing-details', organizationId],
       })
     },
   })
 }
 
-export const useSetDefaultSpairePaymentMethod = (organizationId: string) => {
+export const useSetDefaultClaidorPaymentMethod = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (paymentMethodId: string) => {
@@ -439,23 +439,23 @@ export const useSetDefaultSpairePaymentMethod = (organizationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['spaire', 'payment-methods', organizationId],
+        queryKey: ['claidor', 'payment-methods', organizationId],
       })
       queryClient.invalidateQueries({
-        queryKey: ['spaire', 'billing-details', organizationId],
+        queryKey: ['claidor', 'billing-details', organizationId],
       })
     },
   })
 }
 
-export const useUpdateSpaireBillingDetails = (organizationId: string) => {
+export const useUpdateClaidorBillingDetails = (organizationId: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (input: {
       billing_name?: string | null
-      billing_address?: Partial<SpaireBillingAddress> | null
+      billing_address?: Partial<ClaidorBillingAddress> | null
       tax_id?: string | null
-    }): Promise<SpaireBillingDetails> => {
+    }): Promise<ClaidorBillingDetails> => {
       const { data, error } = await platformApi.PATCH(
         '/v1/platform/organizations/{organization_id}/billing-details',
         {
@@ -464,17 +464,17 @@ export const useUpdateSpaireBillingDetails = (organizationId: string) => {
         },
       )
       if (error) throw error
-      return data as SpaireBillingDetails
+      return data as ClaidorBillingDetails
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['spaire', 'billing-details', organizationId],
+        queryKey: ['claidor', 'billing-details', organizationId],
       })
     },
   })
 }
 
-export const useGetSpaireOrderInvoice = (organizationId: string) =>
+export const useGetClaidorOrderInvoice = (organizationId: string) =>
   useMutation({
     mutationFn: async (orderId: string): Promise<{ url: string }> => {
       const { data, error } = await platformApi.GET(
@@ -581,7 +581,7 @@ export const breakevenGmvDollars = (
  * Returns null if there's no active subscription yet (no plan / pre-trial).
  */
 export const renewalSentence = (
-  sub: CurrentSpaireSubscription,
+  sub: CurrentClaidorSubscription,
 ): string | null => {
   const formatDate = (iso: string): string =>
     new Date(iso).toLocaleDateString('en-US', {
@@ -615,7 +615,7 @@ export const renewalSentence = (
   return `This site is charged on a ${cadence} basis and renews on ${formatted}.`
 }
 
-const TIER_DISPLAY_NAME: Record<SpaireTierKey, string> = {
+const TIER_DISPLAY_NAME: Record<ClaidorTierKey, string> = {
   starter: 'Starter',
   studio: 'Studio',
   scale: 'Scale',
@@ -626,5 +626,5 @@ const TIER_DISPLAY_NAME: Record<SpaireTierKey, string> = {
 // The Starter tier shipped originally as "pro". The backend now normalizes
 // it to "starter" everywhere, but tolerate a stale/cached "pro" value so the
 // UI never renders an empty plan name.
-export const tierDisplayName = (tier: SpaireTierKey | 'pro'): string =>
+export const tierDisplayName = (tier: ClaidorTierKey | 'pro'): string =>
   tier === 'pro' ? 'Starter' : TIER_DISPLAY_NAME[tier]

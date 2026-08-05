@@ -1,6 +1,6 @@
 {
-  "name": "@spaire/customer-portal",
-  "description": "Spaire Customer Portal SDK",
+  "name": "@claidor/customer-portal",
+  "description": "Claidor Customer Portal SDK",
   "version": "0.0.1",
   "type": "module",
   "exports": {
@@ -23,7 +23,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@spaire/client": "workspace:*"
+    "@claidor/client": "workspace:*"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
@@ -38,8 +38,8 @@
     }
   },
   "devDependencies": {
-    "@spaire/eslint-config": "workspace:*",
-    "@spaire/typescript-config": "workspace:*",
+    "@claidor/eslint-config": "workspace:*",
+    "@claidor/typescript-config": "workspace:*",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.10",
     "eslint": "^9.39.2",

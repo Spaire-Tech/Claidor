@@ -1,4 +1,4 @@
-import { nextJsConfig } from '@spaire/eslint-config/next-js'
+import { nextJsConfig } from '@claidor/eslint-config/next-js'
 
 /** @type {import("eslint").Linter.Config} */
 export default [

@@ -225,12 +225,12 @@ def resolve_creator_from_address(
     2. The creator just wants a custom *display name* (no custom
        domain, or didn't type an email at all) — honour the name and
        ship from the platform default email. ``Robin Kaye
-       <mail@notifications.spairehq.com>``. This always works on
+       <mail@notifications.claidorhq.com>``. This always works on
        every tier; before the Pro domain feature landed it was the
        only mode and it's what every existing creator depends on.
 
     3. No name, no domain — fall all the way back to the platform
-       default name+email. ``Spaire <mail@notifications.spairehq.com>``.
+       default name+email. ``Claidor <mail@notifications.claidorhq.com>``.
 
     The previous version of this function collapsed cases 2 and 3 into
     the fallback, which silently regressed every creator who'd typed a

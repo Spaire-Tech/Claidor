@@ -1,8 +1,8 @@
 import { getServerURL } from '@/utils/api'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
-import Button from '@spaire/ui/components/atoms/Button'
-import { List, ListItem } from '@spaire/ui/components/atoms/List'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
+import Button from '@claidor/ui/components/atoms/Button'
+import { List, ListItem } from '@claidor/ui/components/atoms/List'
 import SharedLayout from './components/SharedLayout'
 
 const isSubTypeOrganization = (

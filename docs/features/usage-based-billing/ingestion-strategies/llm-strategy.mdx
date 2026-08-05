@@ -10,17 +10,17 @@ description: "Ingestion strategy for LLM Usage"
 Wrap any LLM model from the `@ai-sdk/*` library, to automatically fire prompt- & completion tokens used by every model call.
 
 ```
-pnpm add @spaire/ingestion ai @ai-sdk/openai
+pnpm add @claidor/ingestion ai @ai-sdk/openai
 ```
 
 ```typescript
-import { Ingestion } from "@spaire/ingestion";
-import { LLMStrategy } from "@spaire/ingestion/strategies/LLM";
+import { Ingestion } from "@claidor/ingestion";
+import { LLMStrategy } from "@claidor/ingestion/strategies/LLM";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 
 // Setup the LLM Ingestion Strategy
-const llmIngestion = Ingestion({ accessToken: process.env.SPAIRE_ACCESS_TOKEN })
+const llmIngestion = Ingestion({ accessToken: process.env.CLAIDOR_ACCESS_TOKEN })
   .strategy(new LLMStrategy(openai("gpt-4o")))
   .cost((ctx) => ({ amount: 123, currency: "usd" })) // Optional: Set the cost of the LLM usage
   .ingest("openai-usage");
@@ -71,29 +71,29 @@ export async function POST(req: Request) {
 
 ## Python SDK
 
-Our Python SDK includes an ingestion helper and strategies for common use cases. It's installed as part of the Spaire SDK.
+Our Python SDK includes an ingestion helper and strategies for common use cases. It's installed as part of the Claidor SDK.
 
 <CodeGroup>
 
 ```bash pip
-pip install spaire-sdk
+pip install claidor-sdk
 ```
 
 ```bash uv
-uv add spaire-sdk
+uv add claidor-sdk
 ```
 
 </CodeGroup>
 
 ### Ingestion helper
 
-The ingestion helper is a simple wrapper around the Spaire events ingestion API. It takes care of batching and sending events to Spaire in the background, without blocking your main thread.
+The ingestion helper is a simple wrapper around the Claidor events ingestion API. It takes care of batching and sending events to Claidor in the background, without blocking your main thread.
 
 ```python
 import os
-from spaire_sdk.ingestion import Ingestion
+from claidor_sdk.ingestion import Ingestion
 
-ingestion = Ingestion(os.getenv("SPAIRE_ACCESS_TOKEN"))
+ingestion = Ingestion(os.getenv("CLAIDOR_ACCESS_TOKEN"))
 
 ingestion.ingest({
     "name": "my-event",
@@ -108,17 +108,17 @@ ingestion.ingest({
 
 [PydanticAI](https://ai.pydantic.dev) is an AI agent framework for Python. A common use-case with AI applications is to track the usage of LLMs, like the number of input and output tokens, and bill the customer accordingly.
 
-With our PydanticAI strategy, you can easily track the usage of LLMs and send the data to Spaire for billing.
+With our PydanticAI strategy, you can easily track the usage of LLMs and send the data to Claidor for billing.
 
 ```python
 import os
-from spaire_sdk.ingestion import Ingestion
-from spaire_sdk.ingestion.strategies import PydanticAIStrategy
+from claidor_sdk.ingestion import Ingestion
+from claidor_sdk.ingestion.strategies import PydanticAIStrategy
 from pydantic import BaseModel
 from pydantic_ai import Agent
 
 
-ingestion = Ingestion(os.getenv("SPAIRE_ACCESS_TOKEN"))
+ingestion = Ingestion(os.getenv("CLAIDOR_ACCESS_TOKEN"))
 strategy = ingestion.strategy(PydanticAIStrategy, "ai_usage")
 
 

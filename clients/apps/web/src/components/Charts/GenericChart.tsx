@@ -13,7 +13,7 @@ import {
   LineChart,
   XAxis,
   YAxis,
-} from '@spaire/ui/components/ui/chart'
+} from '@claidor/ui/components/ui/chart'
 import { useCallback, useId, useMemo, useState } from 'react'
 import type { ExternalMouseEvents } from 'recharts/types/chart/types'
 import type { AxisTick } from 'recharts/types/util/types'

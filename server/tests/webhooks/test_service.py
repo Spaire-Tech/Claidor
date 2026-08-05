@@ -8,7 +8,7 @@ from pytest_mock import MockerFixture
 from polar.auth.models import AuthSubject
 from polar.auth.scope import Scope
 from polar.checkout.eventstream import CheckoutEvent
-from polar.exceptions import ResourceNotFound, SpaireRequestValidationError
+from polar.exceptions import ResourceNotFound, ClaidorRequestValidationError
 from polar.kit.utils import utc_now
 from polar.models import (
     Organization,
@@ -51,7 +51,7 @@ class TestCreateEndpoint:
             organization_id=uuid.uuid4(),
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await webhook_service.create_endpoint(session, auth_subject, create_schema)
 
     @pytest.mark.auth(

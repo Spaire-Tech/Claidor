@@ -6,7 +6,7 @@ import OrganizationCustomerEmailSettings from '@/components/Settings/Organizatio
 import OrganizationCustomerPortalSettings from '@/components/Settings/OrganizationCustomerPortalSettings'
 import OrganizationSubscriptionSettings from '@/components/Settings/OrganizationSubscriptionSettings'
 import { Section, SectionDescription } from '@/components/Settings/Section'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 export default function BillingPage({
   organization: org,

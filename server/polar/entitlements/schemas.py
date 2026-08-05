@@ -100,7 +100,7 @@ class TierFeatures(Schema):
 
 
 class Entitlements(Schema):
-    tier: TierKey = Field(description="Current Spaire subscription tier.")
+    tier: TierKey = Field(description="Current Claidor subscription tier.")
     transaction_fee: TransactionFee = Field(
         description=(
             "List-price transaction fee for this tier. The actually-charged "
@@ -114,7 +114,7 @@ class Entitlements(Schema):
         description="API rate-limit group assigned to this tier."
     )
     monthly_price_cents: int = Field(
-        description="Monthly Spaire subscription price, in cents (0 = Legacy)."
+        description="Monthly Claidor subscription price, in cents (0 = Legacy)."
     )
 
     @classmethod

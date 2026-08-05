@@ -14,7 +14,7 @@ on "Multiple heads are present"):
 
   - cust_avatar_525    (2026-05-25 customer avatar_url)
   - 1f3a55e2b610       (2026-05-18 index_course_enrollments_by_course)
-  - 4f1cb78a2d6e       (2026-05-18 grant_spaire_staff_platform_org)
+  - 4f1cb78a2d6e       (2026-05-18 grant_claidor_staff_platform_org)
   - 6f4a9d2c1b08       (2026-05-17 add_course_sample)
   - e51c8d7a4b9c       (2026-05-11 email_sequences_course_lesson_links)
 

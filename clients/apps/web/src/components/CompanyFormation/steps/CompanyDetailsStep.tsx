@@ -4,23 +4,23 @@ import { useCallback, useMemo } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import CloseOutlined from '@mui/icons-material/CloseOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
-import { Label } from '@spaire/ui/components/ui/label'
+} from '@claidor/ui/components/ui/form'
+import { Label } from '@claidor/ui/components/ui/label'
 import { twMerge } from 'tailwind-merge'
 import { FadeUp } from '@/components/Animated/FadeUp'
 import {

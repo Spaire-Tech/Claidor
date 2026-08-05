@@ -4,7 +4,7 @@ from sqlalchemy.orm import joinedload
 
 from polar.auth.models import AuthSubject, Organization, User
 from polar.config import settings
-from polar.exceptions import NotPermitted, SpaireRequestValidationError
+from polar.exceptions import NotPermitted, ClaidorRequestValidationError
 from polar.kit.crypto import generate_token_hash_pair, get_token_hash
 from polar.kit.services import ResourceServiceReader
 from polar.logging import Logger
@@ -39,7 +39,7 @@ class MemberSessionService(ResourceServiceReader[MemberSession]):
         member = await repository.get_one_or_none(statement)
 
         if member is None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "loc": ("body", "member_id"),

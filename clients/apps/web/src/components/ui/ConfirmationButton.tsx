@@ -1,6 +1,6 @@
 'use client'
 
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import React, { useEffect, useState } from 'react'
 
 interface ConfirmationButtonProps {

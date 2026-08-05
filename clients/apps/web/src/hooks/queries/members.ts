@@ -1,5 +1,5 @@
 import { api } from '@/utils/client'
-import { operations, unwrap } from '@spaire/client'
+import { operations, unwrap } from '@claidor/client'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { defaultRetry } from './retry'
 

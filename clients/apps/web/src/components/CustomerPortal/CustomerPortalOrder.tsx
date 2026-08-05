@@ -8,12 +8,12 @@ import {
 } from '@/hooks/queries'
 import { canRetryOrderPayment } from '@/utils/order'
 import { validateEmail } from '@/utils/validation'
-import { Client, schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
-import { Status } from '@spaire/ui/components/atoms/Status'
-import { ThemingPresetProps } from '@spaire/ui/hooks/theming'
+import { Client, schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
+import { Status } from '@claidor/ui/components/atoms/Status'
+import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
 import React, { useMemo, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { DownloadInvoicePortal } from '../Orders/DownloadInvoice'
@@ -44,7 +44,7 @@ const CustomerPortalOrder = ({
   order: schemas['CustomerOrder']
   customerSessionToken: string
   themingPreset: ThemingPresetProps
-  /** Theme scope for portaled modals (e.g. 'spaire-portal sp-dark'). */
+  /** Theme scope for portaled modals (e.g. 'claidor-portal sp-dark'). */
   modalWrapperClassName?: string
 }) => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)

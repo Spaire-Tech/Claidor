@@ -1,11 +1,11 @@
 'use client'
 
-import { Tabs, TabsList, TabsTrigger } from '@spaire/ui/components/atoms/Tabs'
+import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
 import Link from 'next/link'
 import { useParams, usePathname } from 'next/navigation'
 import { PropsWithChildren } from 'react'
 
-// Reframed for individual creators (Spaire MasterClass builder).
+// Reframed for individual creators (Claidor MasterClass builder).
 // Enterprise/multi-tenant/dev tabs are gated off below via `enabled: false`.
 // Routes & page components are intentionally KEPT — only nav visibility changes,
 // so flipping `enabled` back to true fully restores each tab.

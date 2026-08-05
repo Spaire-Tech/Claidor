@@ -1,8 +1,8 @@
-# Spaire → "The MasterClass Builder" — Reposition Implementation Plan
+# Claidor → "The MasterClass Builder" — Reposition Implementation Plan
 
 > **Status:** Plan / not yet executed.
-> **Goal:** Strip the Spaire dashboard and buyer-facing surfaces down to a single, premium
-> course-creation product (internally "Spaire Originals"), hiding everything that belongs to the
+> **Goal:** Strip the Claidor dashboard and buyer-facing surfaces down to a single, premium
+> course-creation product (internally "Claidor Originals"), hiding everything that belongs to the
 > generic "run your digital business" (Whop/Kajabi) model — **without deleting any backend**.
 > **Source:** Multi-agent codebase audit (nav, settings, onboarding, payouts/KYC, product/benefit
 > coupling, marketing/automation, terminology) + architecture / legal-MoR / completeness critique.
@@ -47,7 +47,7 @@ mostly a buyer-facing + onboarding job; the dashboard nav is the easy 10%.
 
 > The founder's belief that payout verification can be dropped is **wrong**, and the gate is broader than
 > payouts: KYB business-details + identity verification gate **checkout itself** (`is_organization_ready_for_payment`
-> in `server/polar/organization/service.py`). As a Merchant of Record, Spaire eats chargeback liability.
+> in `server/polar/organization/service.py`). As a Merchant of Record, Claidor eats chargeback liability.
 
 - [ ] Confirm with legal/compliance that identity verification, KYB business-details, AI acceptable-use review,
       and volume/account review all **stay**. No code change until this returns.
@@ -147,11 +147,11 @@ an older test account won't reproduce the gate behavior. Verify: signup → plan
 - [ ] Creator notifications: `notification_new_sale.tsx`, `notification_new_subscription.tsx`
 - [ ] Hide `seat_invitation.tsx` (unless team licensing is intentionally kept — see open decisions)
 
-### 4b. SEO / OG metadata (leaks "Spaire Space" / "Customer Portal | … on Spaire" to Google + social)
+### 4b. SEO / OG metadata (leaks "Claidor Space" / "Customer Portal | … on Claidor" to Google + social)
 
-- [ ] Public storefront `generateMetadata`: `app/(main)/[organization]/(header)/page.tsx` (title `… — Spaire Space`)
-- [ ] All portal pages: `app/(main)/[organization]/portal/**/page.tsx` (title `Customer Portal | … on Spaire`)
-- [ ] `components/Customization/SpaceSettingsTab.tsx` placeholder `${name} — Spaire Space`
+- [ ] Public storefront `generateMetadata`: `app/(main)/[organization]/(header)/page.tsx` (title `… — Claidor Space`)
+- [ ] All portal pages: `app/(main)/[organization]/portal/**/page.tsx` (title `Customer Portal | … on Claidor`)
+- [ ] `components/Customization/SpaceSettingsTab.tsx` placeholder `${name} — Claidor Space`
 
 ### 4c. Dashboard + portal copy (cross-cutting renames)
 
@@ -203,7 +203,7 @@ an older test account won't reproduce the gate behavior. Verify: signup → plan
 - [ ] Migration for the existing install base:
   - [ ] Existing orgs with `storefront_enabled = true` — decide migrate vs grandfather; set new default.
   - [ ] Existing multi-org users / orgs with members / non-course products still live & billable — per-cohort decision.
-- [ ] Per-org `settings.index` defaults to indexable — decide de-index/301 policy so old "Spaire Space" titles leave Google.
+- [ ] Per-org `settings.index` defaults to indexable — decide de-index/301 policy so old "Claidor Space" titles leave Google.
 - [ ] Verify stored `success_url` deep-links (`/{slug}/portal/orders/{id}`) still resolve after any portal restructure
       (historical + in-flight orders must not 404).
 - [ ] Audit `app/embed/*` (generated-portal, watch, etc.) — this, plus Payment Links, is the real vehicle for the

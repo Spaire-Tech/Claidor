@@ -7,18 +7,18 @@ import { useCreateOrganization } from '@/hooks/queries'
 import { getServerURL } from '@/utils/api'
 import { setValidationErrors } from '@/utils/api/errors'
 import { FormControl } from '@mui/material'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
-import { Checkbox } from '@spaire/ui/components/ui/checkbox'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
+import { Checkbox } from '@claidor/ui/components/ui/checkbox'
 import {
   Form,
   FormField,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
-import { Label } from '@spaire/ui/components/ui/label'
+} from '@claidor/ui/components/ui/form'
+import { Label } from '@claidor/ui/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -226,12 +226,12 @@ const OrganizationSelectionPage = ({
                           className="cursor-pointer leading-relaxed font-medium"
                         >
                           I understand the restrictions above and agree to
-                          Spaire&rsquo;s terms
+                          Claidor&rsquo;s terms
                         </label>
                         <ul className=" flex flex-col gap-y-1 text-sm text-gray-500">
                           <li>
                             <a
-                              href="https://docs.spairehq.com/merchant-of-record/account-reviews"
+                              href="https://docs.claidorhq.com/merchant-of-record/account-reviews"
                               className="text-blue-600 hover:underline"
                               target="_blank"
                               rel="noreferrer"
@@ -243,7 +243,7 @@ const OrganizationSelectionPage = ({
                           </li>
                           <li>
                             <a
-                              href="https://www.spairehq.com/legal/terms-of-service"
+                              href="https://www.claidorhq.com/legal/terms-of-service"
                               className="text-blue-600 hover:underline"
                               target="_blank"
                               rel="noreferrer"
@@ -253,7 +253,7 @@ const OrganizationSelectionPage = ({
                           </li>
                           <li>
                             <a
-                              href="https://www.spairehq.com/legal/privacy-policy"
+                              href="https://www.claidorhq.com/legal/privacy-policy"
                               className="text-blue-600 hover:underline"
                               target="_blank"
                               rel="noreferrer"

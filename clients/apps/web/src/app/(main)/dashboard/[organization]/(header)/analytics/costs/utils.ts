@@ -1,5 +1,5 @@
 import { toISODate } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { endOfToday, subMonths } from 'date-fns'
 
 export const DEFAULT_INTERVAL: schemas['TimeInterval'] = 'day'

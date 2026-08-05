@@ -32,7 +32,7 @@
 //      that still read them don't break.
 
 import { FormPublic } from '@/hooks/queries/forms'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { StorefrontLinkItem } from './StorefrontLinks'
 
 export type SpaceItemKind = 'product' | 'link' | 'form'

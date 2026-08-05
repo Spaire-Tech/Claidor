@@ -3,11 +3,11 @@
 import GithubLoginButton from '@/components/Auth/GithubLoginButton'
 import { useAuth } from '@/hooks'
 import ArrowForwardOutlined from '@mui/icons-material/ArrowForwardOutlined'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { SpaireLogotype } from './SpaireLogotype'
+import { ClaidorLogotype } from './ClaidorLogotype'
 import TopbarRight from './TopbarRight'
 
 const Topbar = ({
@@ -49,7 +49,7 @@ const Topbar = ({
           <Link href="/dashboard/create">
             <Button type="button" className="space-x-2 p-2 px-4 text-sm">
               <div className="flex flex-row items-center gap-x-2">
-                <span className="whitespace-nowrap">Sell with Spaire</span>
+                <span className="whitespace-nowrap">Sell with Claidor</span>
                 <ArrowForwardOutlined fontSize="inherit" />
               </div>
             </Button>
@@ -74,7 +74,7 @@ const Topbar = ({
     <div className="z-50 flex w-full flex-col items-center py-4">
       <div className="flex w-full max-w-7xl flex-row flex-wrap justify-between gap-y-4 px-2">
         <div className="flex shrink-0 flex-row items-center gap-x-4 md:gap-x-12">
-          <SpaireLogotype />
+          <ClaidorLogotype />
         </div>
         {!hideProfile ? (
           <div className="relative flex flex-1 shrink-0 flex-row items-center justify-end gap-x-6 md:ml-0">

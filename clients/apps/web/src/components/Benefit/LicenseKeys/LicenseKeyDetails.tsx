@@ -1,6 +1,6 @@
-import { schemas } from '@spaire/client'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
+import { schemas } from '@claidor/client'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
 import { twMerge } from 'tailwind-merge'
 
 export interface LicenseKeyDetails {

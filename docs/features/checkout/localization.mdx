@@ -1,10 +1,10 @@
 ---
 title: "Localized Checkout"
 sidebarTitle: "Localization"
-description: "Serve checkout in your customer's language. Spaire supports 10 locales — set globally or per session."
+description: "Serve checkout in your customer's language. Claidor supports 10 locales — set globally or per session."
 ---
 
-Spaire renders checkout in the customer's language automatically. You can also override the language explicitly — useful when your app already knows the customer's locale or you want a consistent experience for a specific market.
+Claidor renders checkout in the customer's language automatically. You can also override the language explicitly — useful when your app already knows the customer's locale or you want a consistent experience for a specific market.
 
 ## Supported locales
 
@@ -28,31 +28,31 @@ Pass the `locale` field when creating a checkout session from your backend:
 <CodeGroup>
 
 ```ts TypeScript
-import { Spaire } from '@spaire/sdk'
+import { Claidor } from '@spaire/sdk'
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 })
 
-const checkout = await spaire.checkouts.create({
+const checkout = await claidor.checkouts.create({
   products: ['<product_id>'],
   locale: 'fr',
 })
 ```
 
 ```python Python
-from spaire_sdk import Spaire
+from claidor_sdk import Claidor
 
-with Spaire(access_token="<YOUR_ACCESS_TOKEN>") as spaire:
-    checkout = spaire.checkouts.create(request={
+with Claidor(access_token="<YOUR_ACCESS_TOKEN>") as claidor:
+    checkout = claidor.checkouts.create(request={
         "products": ["<product_id>"],
         "locale": "fr",
     })
 ```
 
 ```bash cURL
-curl -X POST https://api.spairehq.com/v1/checkouts \
-  -H "Authorization: Bearer $SPAIRE_ACCESS_TOKEN" \
+curl -X POST https://api.claidorhq.com/v1/checkouts \
+  -H "Authorization: Bearer $CLAIDOR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "products": ["<product_id>"],
@@ -64,11 +64,11 @@ curl -X POST https://api.spairehq.com/v1/checkouts \
 
 ## What gets translated
 
-When a locale is set, Spaire translates all checkout UI text — form labels, button text, error messages, and helper text. Customer-provided content (product names, descriptions, benefit names) is not translated and displays as entered.
+When a locale is set, Claidor translates all checkout UI text — form labels, button text, error messages, and helper text. Customer-provided content (product names, descriptions, benefit names) is not translated and displays as entered.
 
 ## Automatic detection
 
-If you don't set a `locale`, Spaire attempts to detect the customer's preferred language from their browser's `Accept-Language` header. If the detected language isn't supported, checkout defaults to English.
+If you don't set a `locale`, Claidor attempts to detect the customer's preferred language from their browser's `Accept-Language` header. If the detected language isn't supported, checkout defaults to English.
 
 For the most consistent experience in a known-locale context — such as a localized marketing page or an app with language settings — set the locale explicitly rather than relying on auto-detection.
 

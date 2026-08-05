@@ -21,23 +21,23 @@ import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
 import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined'
 import PowerSettingsNewOutlined from '@mui/icons-material/PowerSettingsNewOutlined'
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/atoms/DropdownMenu'
-import Input from '@spaire/ui/components/atoms/Input'
+} from '@claidor/ui/components/atoms/DropdownMenu'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@spaire/ui/components/ui/dialog'
+} from '@claidor/ui/components/ui/dialog'
 import {
   parseAsArrayOf,
   parseAsString,

@@ -1,8 +1,8 @@
 import { useCustomerMeters } from '@/hooks/queries/customerMeters'
 import { useMeterQuantities } from '@/hooks/queries/meters'
 import { useSubscriptions } from '@/hooks/queries/subscriptions'
-import { schemas } from '@spaire/client'
-import { TabsContent } from '@spaire/ui/components/atoms/Tabs'
+import { schemas } from '@claidor/client'
+import { TabsContent } from '@claidor/ui/components/atoms/Tabs'
 import { useMemo } from 'react'
 import { CustomerMeter } from './CustomerMeter'
 

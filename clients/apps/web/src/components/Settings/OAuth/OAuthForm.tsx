@@ -1,12 +1,12 @@
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   FormControl,
   FormDescription,
@@ -14,14 +14,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { type MouseEvent } from 'react'
 
 import ImageUpload from '@/components/Form/ImageUpload'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
-import { enums } from '@spaire/client'
-import { Checkbox } from '@spaire/ui/components/ui/checkbox'
+import { enums } from '@claidor/client'
+import { Checkbox } from '@claidor/ui/components/ui/checkbox'
 import Link from 'next/link'
 import { useCallback, useMemo } from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
@@ -85,7 +85,7 @@ export const FieldClientType = () => {
             <em>Confidential Client</em>.{' '}
             <Link
               className="text-blue-500 hover:text-blue-400 "
-              href="https://docs.spairehq.com/documentation/integration-guides/authenticating-with-spaire"
+              href="https://docs.claidorhq.com/documentation/integration-guides/authenticating-with-claidor"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -132,7 +132,7 @@ export const FieldClientSecret = ({
         SPA or mobile app.{' '}
         <Link
           className="text-blue-500 hover:text-blue-400 "
-          href="https://docs.spairehq.com/documentation/integration-guides/authenticating-with-spaire"
+          href="https://docs.claidorhq.com/documentation/integration-guides/authenticating-with-claidor"
           target="_blank"
           rel="noopener noreferrer"
         >

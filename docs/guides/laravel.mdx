@@ -1,31 +1,31 @@
 ---
-title: "Integrate Spaire with Laravel"
+title: "Integrate Claidor with Laravel"
 sidebarTitle: "Laravel"
-description: "In this guide, we'll show you how to integrate Spaire with Laravel."
+description: "In this guide, we'll show you how to integrate Claidor with Laravel."
 hidden: true
 ---
 
 <img src="/assets/guides/laravel/hero.jpeg" />
 
-Consider following this guide while using the Spaire Sandbox Environment. This will allow you to test your integration without affecting your production data.
+Consider following this guide while using the Claidor Sandbox Environment. This will allow you to test your integration without affecting your production data.
 
-Spaire Laravel Example App
+Claidor Laravel Example App
 --------------------------------
 
 We've created a simple example Laravel application that you can use as a reference.
 
-[View Code on GitHub](https://github.com/spairehq/spaire-laravel)
+[View Code on GitHub](https://github.com/claidorhq/claidor-laravel)
 
 Setting up environment variables
 ---------------------------------------
 
-### Spaire API Key
+### Claidor API Key
 
-To authenticate with Spaire, you need to create an access token, and supply it to Laravel using a `SPAIRE_API_KEY` environment variable.
+To authenticate with Claidor, you need to create an access token, and supply it to Laravel using a `CLAIDOR_API_KEY` environment variable.
 
 You can create an organization access token from your organization settings.
 
-Fetching Spaire Products for display
+Fetching Claidor Products for display
 ------------------------------------------
 
 ### Creating the Products Controller
@@ -53,9 +53,9 @@ class ProductsController extends Controller
 {
     public function handle(Request $request)
     {
-        // Change from sandbox-api.spairehq.com -> api.spairehq.com when ready to go live
-        // And don't forget to update the .env file with the correct SPAIRE_ORGANIZATION_ID and SPAIRE_WEBHOOK_SECRET
-        $data = Http::get('https://sandbox-api.spairehq.com/v1/products', [
+        // Change from sandbox-api.claidorhq.com -> api.claidorhq.com when ready to go live
+        // And don't forget to update the .env file with the correct CLAIDOR_ORGANIZATION_ID and CLAIDOR_WEBHOOK_SECRET
+        $data = Http::get('https://sandbox-api.claidorhq.com/v1/products', [
             'is_archived' => false,
         ]);
 
@@ -85,10 +85,10 @@ Notice that we create a link to `/checkout` with a query parameter `priceId`. Th
 
 That's it for the products page. You can now display the products to your users, and they will be able to buy them. Let's now create the checkout endpoint.
 
-Generating Spaire Checkout Sessions
+Generating Claidor Checkout Sessions
 -----------------------------------------
 
-This endpoint will be responsible for creating a new checkout session, redirecting the user to the Spaire Checkout page & redirect back to a configured confirmation page.
+This endpoint will be responsible for creating a new checkout session, redirecting the user to the Claidor Checkout page & redirect back to a configured confirmation page.
 
 Go ahead and create a new entry in your `routes/web.php` file:
 
@@ -114,15 +114,15 @@ class CheckoutController extends Controller
     public function handle(Request $request)
     {
         $productPriceId = $request->query('priceId', '');
-        // Spaire will replace {CHECKOUT_ID} with the actual checkout ID upon a confirmed checkout
+        // Claidor will replace {CHECKOUT_ID} with the actual checkout ID upon a confirmed checkout
         $confirmationUrl = $request->getSchemeAndHttpHost() . '/confirmation?checkout_id={CHECKOUT_ID}';
 
-        // Change from sandbox-api.spairehq.com -> api.spairehq.com when ready to go live
-        // And don't forget to update the .env file with the correct SPAIRE_ORGANIZATION_ID and SPAIRE_WEBHOOK_SECRET
+        // Change from sandbox-api.claidorhq.com -> api.claidorhq.com when ready to go live
+        // And don't forget to update the .env file with the correct CLAIDOR_ORGANIZATION_ID and CLAIDOR_WEBHOOK_SECRET
         $result = Http::withHeaders([
-            'Authorization' => 'Bearer ' . env('SPAIRE_API_KEY'),
+            'Authorization' => 'Bearer ' . env('CLAIDOR_API_KEY'),
             'Content-Type' => 'application/json',
-        ])->post('https://sandbox-api.spairehq.com/v1/checkouts/custom/', [
+        ])->post('https://sandbox-api.claidorhq.com/v1/checkouts/custom/', [
             'product_price_id' => $productPriceId,
             'success_url' => $confirmationUrl,
             'payment_processor' => 'stripe',
@@ -167,12 +167,12 @@ class ConfirmationController extends Controller
 {
     public function handle(Request $request)
     {
-        // Change from sandbox-api.spairehq.com -> api.spairehq.com when ready to go live
-        // And don't forget to update the .env file with the correct SPAIRE_ORGANIZATION_ID and SPAIRE_WEBHOOK_SECRET
+        // Change from sandbox-api.claidorhq.com -> api.claidorhq.com when ready to go live
+        // And don't forget to update the .env file with the correct CLAIDOR_ORGANIZATION_ID and CLAIDOR_WEBHOOK_SECRET
         $data = Http::withHeaders([
-            'Authorization' => 'Bearer ' . env('SPAIRE_API_KEY'),
+            'Authorization' => 'Bearer ' . env('CLAIDOR_API_KEY'),
             'Content-Type' => 'application/json',
-        ])->get('https://sandbox-api.spairehq.com/v1/checkouts/custom/' . $request->query('checkout_id'));
+        ])->get('https://sandbox-api.claidorhq.com/v1/checkouts/custom/' . $request->query('checkout_id'));
 
         $checkout = $data->json();
 
@@ -185,10 +185,10 @@ class ConfirmationController extends Controller
 
 The checkout is not considered "successful" yet however. It's initially marked as `confirmed` until you've received a webhook event `checkout.updated` with a status set to `succeeded`. We'll cover this in the next section.
 
-Handling Spaire Webhooks
+Handling Claidor Webhooks
 ------------------------------
 
-Spaire can send you events about various things happening in your organization. This is very useful for keeping your database in sync with Spaire checkouts, orders, subscriptions, etc.
+Claidor can send you events about various things happening in your organization. This is very useful for keeping your database in sync with Claidor checkouts, orders, subscriptions, etc.
 
 Configuring a webhook is simple. Head over to your organization's settings page and click on the "Add Endpoint" button to create a new webhook.
 
@@ -204,15 +204,15 @@ ngrok http 3000
 
 ### Add Webhook Endpoint
 
-1. Point the Webhook to `your-app.com/api/webhook/spaire`. This must be an absolute URL which Spaire can reach. If you use ngrok, the URL will look something like this: `https://<your-ngrok-id>.ngrok-free.app/api/webhook/spaire`.
+1. Point the Webhook to `your-app.com/api/webhook/claidor`. This must be an absolute URL which Claidor can reach. If you use ngrok, the URL will look something like this: `https://<your-ngrok-id>.ngrok-free.app/api/webhook/claidor`.
 2. Select which events you want to be notified about. You can read more about the available events in the [Events section](/api-reference#webhooks).
-3. Generate a secret key to sign the requests. This will allow you to verify that the requests are truly coming from Spaire.
+3. Generate a secret key to sign the requests. This will allow you to verify that the requests are truly coming from Claidor.
 4. Add the secret key to your environment variables.
 
 ```bash Terminal
 # .env
-SPAIRE_API_KEY="spaire_oat..."
-SPAIRE_WEBHOOK_SECRET="..."
+CLAIDOR_API_KEY="claidor_oat..."
+CLAIDOR_WEBHOOK_SECRET="..."
 ```
 ### Setting up the Webhook handler
 
@@ -226,7 +226,7 @@ Go and add a `routes/api.php` file and add the following entry:
 
 ```php
 // routes/api.php
-Route::webhooks('/webhook/spaire');
+Route::webhooks('/webhook/claidor');
 ```
 
 Make sure that it is included in the Bootstrap file.
@@ -286,7 +286,7 @@ return [
              * We expect that every webhook call will be signed using a secret. This secret
              * is used to verify that the payload has not been tampered with.
              */
-            'signing_secret' => env('SPAIRE_WEBHOOK_SECRET'),
+            'signing_secret' => env('CLAIDOR_WEBHOOK_SECRET'),
 
             /*
              * The name of the header containing the signature.
@@ -299,7 +299,7 @@ return [
              * It should implement \Spatie\WebhookClient\SignatureValidator\SignatureValidator
              */
             // 'signature_validator' => \Spatie\WebhookClient\SignatureValidator\DefaultSignatureValidator::class,
-            'signature_validator' => App\Handler\SpaireSignature::class,
+            'signature_validator' => App\Handler\ClaidorSignature::class,
 
             /*
              * This class determines if the webhook call should be stored and processed.
@@ -366,13 +366,13 @@ Let’s create our jobs table by running php artisan queue:table and then run th
 
 The next thing we do is to create a folder named Handler inside the app folder. Then inside this app/Handler, create two files which are
 
-* SpaireSignature.php
+* ClaidorSignature.php
 * ProcessWebhook.php
 
-Inside app/Handler/SpaireSignature.php, what we want to do is to validate that the request came from Spaire. Add the code to that file.
+Inside app/Handler/ClaidorSignature.php, what we want to do is to validate that the request came from Claidor. Add the code to that file.
 
 ```php
-// app/Handler/SpaireSignature.php
+// app/Handler/ClaidorSignature.php
 <?php
 
 namespace App\Handler;
@@ -382,7 +382,7 @@ use Spatie\WebhookClient\Exceptions\WebhookFailed;
 use Spatie\WebhookClient\WebhookConfig;
 use Spatie\WebhookClient\SignatureValidator\SignatureValidator;
 
-class SpaireSignature implements SignatureValidator
+class ClaidorSignature implements SignatureValidator
 {
     public function isValid(Request $request, WebhookConfig $config): bool
     {
@@ -477,12 +477,12 @@ Notifying the client about the event
 
 If you're building a real-time application, you might want to notify the client about the event. On the confirmation-page, you can listen for the `checkout.updated` event and update the UI accordingly when it reaches the succeeded status.
 
-Spaire Laravel Example App
+Claidor Laravel Example App
 --------------------------------
 
 We've created a simple example Laravel application that you can use as a reference
 
-[View Code on GitHub](https://github.com/spairehq/spaire-laravel)
+[View Code on GitHub](https://github.com/claidorhq/claidor-laravel)
 
 If you have issues or need support, feel free to join [our Discord](https://discord.gg/Pnhfz3UThd).
 

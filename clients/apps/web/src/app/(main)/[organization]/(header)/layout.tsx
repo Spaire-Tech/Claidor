@@ -7,7 +7,7 @@ import { ProfileCard } from '@/components/Profile/ProfileCard'
 import { SpaceDocumentBackground } from '@/components/Profile/SpaceDocumentBackground'
 import { getServerSideAPI } from '@/utils/client/serverside'
 import { getStorefrontOrNotFound } from '@/utils/storefront'
-import { cn } from '@spaire/ui/lib/utils'
+import { cn } from '@claidor/ui/lib/utils'
 import React from 'react'
 import '@/styles/space-dark.css'
 

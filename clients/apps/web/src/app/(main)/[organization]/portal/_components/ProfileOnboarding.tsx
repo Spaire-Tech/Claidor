@@ -5,7 +5,7 @@ import * as React from 'react'
 
 // Lightweight extension of the customer portal's authenticated-customer
 // shape with the `avatar_url` we added server-side. The generated
-// `@spaire/client` schemas don't know about it until `pnpm generate`
+// `@claidor/client` schemas don't know about it until `pnpm generate`
 // is rerun, so we type it locally and cast at the call sites.
 export type CustomerWithProfile = {
   id?: string

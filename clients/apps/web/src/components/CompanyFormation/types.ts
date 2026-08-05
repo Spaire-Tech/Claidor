@@ -71,10 +71,10 @@ export const INITIAL_WIZARD_DATA: WizardFormData = {
   recommendation: null,
 }
 
-export const DOOLA_AFFILIATE_URL = 'https://partnersps.doola.com/spaire'
+export const DOOLA_AFFILIATE_URL = 'https://partnersps.doola.com/claidor'
 
-export const STORAGE_KEY = 'spaire:formation-wizard-draft'
-export const FORMATION_STARTED_KEY = 'spaire:formation-started'
+export const STORAGE_KEY = 'claidor:formation-wizard-draft'
+export const FORMATION_STARTED_KEY = 'claidor:formation-started'
 
 export interface FormationStartedData {
   startedAt: string

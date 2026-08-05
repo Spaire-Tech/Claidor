@@ -18,7 +18,7 @@ class PlatformError(PolarError): ...
 class PlatformOrganizationNotConfigured(PlatformError):
     def __init__(self) -> None:
         super().__init__(
-            "SPAIRE_PLATFORM_ORG_ID is not set. "
+            "CLAIDOR_PLATFORM_ORG_ID is not set. "
             "Run `python -m scripts.platform verify` for setup instructions.",
             500,
         )
@@ -27,16 +27,16 @@ class PlatformOrganizationNotConfigured(PlatformError):
 class PlatformOrganizationNotFound(PlatformError):
     def __init__(self, organization_id: UUID) -> None:
         super().__init__(
-            f"SPAIRE_PLATFORM_ORG_ID={organization_id} does not match any "
+            f"CLAIDOR_PLATFORM_ORG_ID={organization_id} does not match any "
             "organization.",
             500,
         )
 
 
 class PlatformService:
-    """The Organization that represents Spaire itself.
+    """The Organization that represents Claidor itself.
 
-    Spaire sells Pro/Studio/Scale subscriptions to every other creator org
+    Claidor sells Pro/Studio/Scale subscriptions to every other creator org
     using its own product/subscription/checkout machinery. The platform
     organization is the seller; every creator org is a Customer of it.
     """
@@ -73,12 +73,12 @@ class PlatformService:
         session: AsyncReadSession,
         organization_id: UUID,
     ) -> Subscription | None:
-        """Return the org's platform (Spaire) subscription if it is
-        `past_due` — a Spaire charge failed and is in the dunning window —
+        """Return the org's platform (Claidor) subscription if it is
+        `past_due` — a Claidor charge failed and is in the dunning window —
         otherwise None.
 
         This is the signal behind the payout-hold: while a creator owes
-        Spaire, we hold their merchant-of-record balance as leverage rather
+        Claidor, we hold their merchant-of-record balance as leverage rather
         than letting them withdraw. Resolves the same org -> customer ->
         subscription chain as the entitlements service. Returns None when
         platform billing isn't configured, the org IS the platform org, or

@@ -1,6 +1,6 @@
 # Development Instructions for LLM agents
 
-This document provides essential guidance for AI agents contributing to the Spaire codebase. Imagine this file as a new joiner to the team who needs to understand the coding standards, practices, and conventions used in this repository.
+This document provides essential guidance for AI agents contributing to the Claidor codebase. Imagine this file as a new joiner to the team who needs to understand the coding standards, practices, and conventions used in this repository.
 
 ## General Guidelines
 
@@ -12,7 +12,7 @@ This document provides essential guidance for AI agents contributing to the Spai
 
 ## Architecture Overview
 
-Spaire is a payment infrastructure platform with a monorepo structure.
+Claidor is a payment infrastructure platform with a monorepo structure.
 
 - **`server/`**: The backend is a Python application built with the **FastAPI** framework.
     - **Database**: It uses **PostgreSQL** as its database, with **SQLAlchemy** as the ORM. Database models are located in `server/polar/models`.
@@ -81,7 +81,7 @@ uv run pytest tests/path/to/test_file.py::TestClassName::test_method_name
 
 ### Use `uv run` for Python Commands
 
-**CRITICAL:** Always prefix Python commands with `uv run` when working in the Spaire environment. This ensures:
+**CRITICAL:** Always prefix Python commands with `uv run` when working in the Claidor environment. This ensures:
 
 - The correct Python version (3.14) is used
 - All project dependencies are available
@@ -235,13 +235,13 @@ From the `docs/` directory, it can be built and served locally with:
 pnpm dev
 ```
 
-## Spaire Integration Playbooks
+## Claidor Integration Playbooks
 
-Agent workflow playbooks for Spaire checkout and billing integration live in `docs/agent-playbooks/`. These are platform-neutral and designed to work in any AI coding environment.
+Agent workflow playbooks for Claidor checkout and billing integration live in `docs/agent-playbooks/`. These are platform-neutral and designed to work in any AI coding environment.
 
 | Task | Playbook |
 |------|---------|
-| Add Spaire checkout to a user's project | `docs/agent-playbooks/setup-checkout.md` |
+| Add Claidor checkout to a user's project | `docs/agent-playbooks/setup-checkout.md` |
 | Implement metered usage-based billing | `docs/agent-playbooks/setup-usage-billing.md` |
 | Agent output contract (mandatory) | `docs/agent-playbooks/agent-output-contract.md` |
 
@@ -271,4 +271,4 @@ Use the project's existing package manager. Never switch without explicit instru
 - **No silent account mutations** — walk the user through dashboard steps manually
 - **No destructive refactors** — surgical edits only
 - **Confirm before every file write** — present a dry-run summary first
-- **Suggest sandbox mode first** — test in Spaire sandbox before going live
+- **Suggest sandbox mode first** — test in Claidor sandbox before going live

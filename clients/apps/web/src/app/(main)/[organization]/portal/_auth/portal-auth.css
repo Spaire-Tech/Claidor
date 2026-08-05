@@ -1,16 +1,16 @@
 /* =============================================================================
- * SPAIRE ORIGINALS — Customer portal sign-in (passwordless, email → code).
+ * CLAIDOR ORIGINALS — Customer portal sign-in (passwordless, email → code).
  *
  * Ported faithfully from the creator's "Client Sign In" design. Apple
  * restraint: one ink, grey secondaries, ONE accent. Split layout: the
  * creator's photo on the left (persists across every step), the flow on the
- * right. Light/dark follows the portal theme (.spaire-portal.sp-dark).
+ * right. Light/dark follows the portal theme (.claidor-portal.sp-dark).
  *
- * All classes are prefixed `spauth-` and scoped under .spaire-portal so the
+ * All classes are prefixed `spauth-` and scoped under .claidor-portal so the
  * design never leaks into the rest of the portal or the dashboard.
  * ===========================================================================*/
 
-.spaire-portal .spauth {
+.claidor-portal .spauth {
   --au-bg: #f5f5f7;
   --au-panel: #ffffff;
   --au-ink: #1d1d1f;
@@ -40,7 +40,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.spaire-portal.sp-dark .spauth {
+.claidor-portal.sp-dark .spauth {
   --au-bg: #0c0c10;
   --au-panel: #0e0e13;
   --au-ink: #f5f5f7;
@@ -54,9 +54,9 @@
   --au-visual-base: #161619;
 }
 
-.spaire-portal .spauth *,
-.spaire-portal .spauth *::before,
-.spaire-portal .spauth *::after {
+.claidor-portal .spauth *,
+.claidor-portal .spauth *::before,
+.claidor-portal .spauth *::after {
   box-sizing: border-box;
 }
 
@@ -513,7 +513,7 @@
 
 /* ---------- responsive: stack, photo on top ---------- */
 @media (max-width: 860px) {
-  .spaire-portal .spauth {
+  .claidor-portal .spauth {
     grid-template-columns: 1fr;
     grid-template-rows: 38vh 1fr;
   }
@@ -549,7 +549,7 @@
  * full-bleed under the tabs and makes the left photo editable in place
  * (upload + drag-to-reposition), mirroring the Landing canvas.
  * ===========================================================================*/
-.spaire-portal .spauth--embed {
+.claidor-portal .spauth--embed {
   min-height: 0;
   height: 100%;
 }

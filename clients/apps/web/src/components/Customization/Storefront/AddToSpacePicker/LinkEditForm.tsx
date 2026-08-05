@@ -1,7 +1,7 @@
 'use client'
 
 import { Upload } from '@/components/FileUpload/Upload'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import AddPhotoAlternateOutlined from '@mui/icons-material/AddPhotoAlternateOutlined'
 import { useRef, useState } from 'react'
 

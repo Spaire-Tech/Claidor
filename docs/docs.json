@@ -4,7 +4,7 @@
   "appearance": {
     "default": "system"
   },
-  "name": "Spaire | Documentations",
+  "name": "Claidor | Documentations",
   "description": "Discover the Cleverbridge Documentation featuring detailed guides and resources to help you navigate tools, streamline processes, and drive efficiency.",
   "colors": {
     "primary": "#000",
@@ -205,7 +205,7 @@
             "pages": [
               {
                 "group": "Checkout",
-                "openapi": "https://api.spairehq.com/openapi.json",
+                "openapi": "https://api.claidorhq.com/openapi.json",
                 "pages": [
                   "api-reference/checkouts/create-session",
                   "api-reference/checkouts/get-session",
@@ -619,23 +619,23 @@
   "logo": {
     "light": "./logo/light.png",
     "dark": "./logo/dark.png",
-    "href": "https://www.spairehq.com"
+    "href": "https://www.claidorhq.com"
   },
   "navbar": {
     "links": [
       {
         "label": "llms-full.txt",
-        "href": "https://www.spairehq.com/docs/llms-full.txt"
+        "href": "https://www.claidorhq.com/docs/llms-full.txt"
       },
       {
         "label": "Contact support",
-        "href": "https://www.spairehq.com/docs/support"
+        "href": "https://www.claidorhq.com/docs/support"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://www.spairehq.com"
+      "href": "https://www.claidorhq.com"
     }
   },
   "contextual": {
@@ -648,9 +648,9 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/spairehq",
-      "instagram": "https://www.instagram.com/spairehq",
-      "linkedin": "https://www.linkedin.com/company/spaire"
+      "x": "https://x.com/claidorhq",
+      "instagram": "https://www.instagram.com/claidorhq",
+      "linkedin": "https://www.linkedin.com/company/claidor"
     }
   },
   "redirects": [
@@ -691,15 +691,15 @@
       "destination": "/suppport"
     },
     {
-      "source": "/documentation/welcome-to-spaire",
+      "source": "/documentation/welcome-to-claidor",
       "destination": "/introduction"
     },
     {
-      "source": "/documentation/tools/spaire-migrate",
+      "source": "/documentation/tools/claidor-migrate",
       "destination": "/migrate"
     },
     {
-      "source": "/documentation/tools/spaire-init",
+      "source": "/documentation/tools/claidor-init",
       "destination": "/introduction#quickstart-from-cli"
     },
     {
@@ -803,15 +803,15 @@
       "destination": "/features/finance/payouts"
     },
     {
-      "source": "/documentation/integrations/spaire-for-raycast",
+      "source": "/documentation/integrations/claidor-for-raycast",
       "destination": "/features/integrations/raycast"
     },
     {
-      "source": "/documentation/integrations/spaire-for-framer",
+      "source": "/documentation/integrations/claidor-for-framer",
       "destination": "/features/integrations/framer"
     },
     {
-      "source": "/documentation/integrations/spaire-for-zapier",
+      "source": "/documentation/integrations/claidor-for-zapier",
       "destination": "/features/integrations/zapier"
     },
     {
@@ -827,7 +827,7 @@
       "destination": "/integrate/sandbox"
     },
     {
-      "source": "/documentation/integration-guides/authenticating-with-spaire",
+      "source": "/documentation/integration-guides/authenticating-with-claidor",
       "destination": "/integrate/authentication"
     },
     {
@@ -855,59 +855,59 @@
       "destination": "/integrate/sdk/go"
     },
     {
-      "source": "/documentation/adapters/spaire-shnextjs",
+      "source": "/documentation/adapters/claidor-shnextjs",
       "destination": "/integrate/sdk/adapters/nextjs"
     },
     {
-      "source": "/documentation/adapters/spaire-shastro",
+      "source": "/documentation/adapters/claidor-shastro",
       "destination": "/integrate/sdk/adapters/astro"
     },
     {
-      "source": "/documentation/adapters/spaire-shremix",
+      "source": "/documentation/adapters/claidor-shremix",
       "destination": "/integrate/sdk/adapters/remix"
     },
     {
-      "source": "/documentation/adapters/spaire-shsveltekit",
+      "source": "/documentation/adapters/claidor-shsveltekit",
       "destination": "/integrate/sdk/adapters/sveltekit"
     },
     {
-      "source": "/documentation/adapters/spaire-shdeno",
+      "source": "/documentation/adapters/claidor-shdeno",
       "destination": "/integrate/sdk/adapters/deno"
     },
     {
-      "source": "/documentation/adapters/spaire-shelysia",
+      "source": "/documentation/adapters/claidor-shelysia",
       "destination": "/integrate/sdk/adapters/elysia"
     },
     {
-      "source": "/documentation/adapters/spaire-shexpress",
+      "source": "/documentation/adapters/claidor-shexpress",
       "destination": "/integrate/sdk/adapters/express"
     },
     {
-      "source": "/documentation/adapters/spaire-shfastify",
+      "source": "/documentation/adapters/claidor-shfastify",
       "destination": "/integrate/sdk/adapters/fastify"
     },
     {
-      "source": "/documentation/adapters/spaire-shhono",
+      "source": "/documentation/adapters/claidor-shhono",
       "destination": "/integrate/sdk/adapters/hono"
     },
     {
-      "source": "/documentation/spaire-as-merchant-of-record/tax",
+      "source": "/documentation/claidor-as-merchant-of-record/tax",
       "destination": "/merchant-of-record/introduction"
     },
     {
-      "source": "/documentation/spaire-as-merchant-of-record/fees",
+      "source": "/documentation/claidor-as-merchant-of-record/fees",
       "destination": "/merchant-of-record/fees"
     },
     {
-      "source": "/documentation/spaire-as-merchant-of-record/supported-countries",
+      "source": "/documentation/claidor-as-merchant-of-record/supported-countries",
       "destination": "/merchant-of-record/supported-countries"
     },
     {
-      "source": "/documentation/spaire-as-merchant-of-record/acceptable-products-use",
+      "source": "/documentation/claidor-as-merchant-of-record/acceptable-products-use",
       "destination": "/merchant-of-record/acceptable-use"
     },
     {
-      "source": "/documentation/spaire-as-merchant-of-record/account-reviews",
+      "source": "/documentation/claidor-as-merchant-of-record/account-reviews",
       "destination": "/merchant-of-record/account-reviews"
     },
     {

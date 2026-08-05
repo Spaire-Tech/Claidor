@@ -6,7 +6,7 @@ import OrganizationDeleteSettings from '@/components/Settings/OrganizationDelete
 import OrganizationNotificationSettings from '@/components/Settings/OrganizationNotificationSettings'
 import OrganizationProfileSettings from '@/components/Settings/OrganizationProfileSettings'
 import { Section, SectionDescription } from '@/components/Settings/Section'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 // Gate for the alpha/beta "Features" (Cost Insights) section. Hidden for the
 // course-only creator experience; set to `true` to bring the section back.

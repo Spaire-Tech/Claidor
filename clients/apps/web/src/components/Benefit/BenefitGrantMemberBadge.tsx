@@ -1,5 +1,5 @@
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
 
 interface BenefitGrantMemberBadgeProps {
   member: schemas['Member'] | null | undefined

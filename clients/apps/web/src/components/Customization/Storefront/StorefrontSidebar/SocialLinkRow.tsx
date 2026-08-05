@@ -6,13 +6,13 @@ import {
 } from '@/components/Profile/socialPlatforms'
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined'
 import Public from '@mui/icons-material/Public'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { isValidSocialUrl, normalizeSocialUrl } from './utils'

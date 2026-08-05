@@ -85,21 +85,21 @@ class TestSwapOrgSlug:
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
         claim = await _org(save_fixture, slug="robin-kaye-x", prefix="ROBIN-KAYE-X")
-        release = await _org(save_fixture, slug="spaire", prefix="SPAIRE")
-        release_slug = _default_release_slug("spaire", release)
+        release = await _org(save_fixture, slug="claidor", prefix="CLAIDOR")
+        release_slug = _default_release_slug("claidor", release)
 
         await perform_swap(
             session,
             release_org=release,
             claim_org=claim,
-            slug="spaire",
+            slug="claidor",
             release_slug=release_slug,
         )
 
-        # The platform (claim) org now owns "spaire", invoice prefix follows.
-        assert claim.slug == "spaire"
-        assert claim.customer_invoice_prefix == "SPAIRE"
-        # The test (release) org was renamed off "spaire".
+        # The platform (claim) org now owns "claidor", invoice prefix follows.
+        assert claim.slug == "claidor"
+        assert claim.customer_invoice_prefix == "CLAIDOR"
+        # The test (release) org was renamed off "claidor".
         assert release.slug == release_slug
         assert release.customer_invoice_prefix == release_slug.upper()
 
@@ -107,26 +107,26 @@ class TestSwapOrgSlug:
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
         claim = await _org(save_fixture, slug="robin-kaye-y")
-        release = await _org(save_fixture, slug="not-spaire")
+        release = await _org(save_fixture, slug="not-claidor")
 
         with pytest.raises(SwapError):
             await perform_swap(
                 session,
                 release_org=release,
                 claim_org=claim,
-                slug="spaire",
-                release_slug="spaire-test-x",
+                slug="claidor",
+                release_slug="claidor-test-x",
             )
         # Nothing changed.
         assert claim.slug == "robin-kaye-y"
-        assert release.slug == "not-spaire"
+        assert release.slug == "not-claidor"
 
     async def test_aborts_if_release_slug_is_taken(
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
         claim = await _org(save_fixture, slug="robin-kaye-z")
-        release = await _org(save_fixture, slug="spaire")
-        release_slug = _default_release_slug("spaire", release)
+        release = await _org(save_fixture, slug="claidor")
+        release_slug = _default_release_slug("claidor", release)
         # A third org already holds the slug we'd rename the release org to.
         await _org(save_fixture, slug=release_slug)
 
@@ -135,11 +135,11 @@ class TestSwapOrgSlug:
                 session,
                 release_org=release,
                 claim_org=claim,
-                slug="spaire",
+                slug="claidor",
                 release_slug=release_slug,
             )
         assert claim.slug == "robin-kaye-z"
-        assert release.slug == "spaire"
+        assert release.slug == "claidor"
 
 
 @pytest.mark.asyncio
@@ -194,7 +194,7 @@ class TestRunFlow:
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         claim = await _org(save_fixture, slug="robin-kaye-dry")
-        release = await _org(save_fixture, slug="spaire")
+        release = await _org(save_fixture, slug="claidor")
         # Give the release (leftover) org an order so _inspect's join runs.
         customer = await create_customer(save_fixture, organization=release)
         product = await create_product(
@@ -209,7 +209,7 @@ class TestRunFlow:
             session,
             release_org=str(release.id),
             claim_org=str(claim.id),
-            slug="spaire",
+            slug="claidor",
             release_slug=None,
             apply=False,
         )
@@ -231,7 +231,7 @@ class TestRunFlow:
         save_fixture: SaveFixture,
     ) -> None:
         claim = await _org(save_fixture, slug="robin-kaye-apply")
-        release = await _org(save_fixture, slug="spaire")
+        release = await _org(save_fixture, slug="claidor")
 
         commit = mocker.patch.object(session, "commit")
         rollback = mocker.patch.object(session, "rollback")
@@ -240,7 +240,7 @@ class TestRunFlow:
             session,
             release_org=str(release.id),
             claim_org=str(claim.id),
-            slug="spaire",
+            slug="claidor",
             release_slug=None,
             apply=True,
         )
@@ -252,13 +252,13 @@ class TestRunFlow:
         # The swap was actually flushed: the claim org now holds the slug and
         # the release org was renamed off it. Re-read from the DB to be sure.
         held = await session.scalar(
-            select(Organization).where(Organization.slug == "spaire")
+            select(Organization).where(Organization.slug == "claidor")
         )
         assert held is not None
         assert held.id == claim.id
-        assert held.customer_invoice_prefix == "SPAIRE"
+        assert held.customer_invoice_prefix == "CLAIDOR"
         await session.refresh(release)
-        assert release.slug != "spaire"
+        assert release.slug != "claidor"
 
     async def test_aborts_when_release_org_missing(
         self,
@@ -276,7 +276,7 @@ class TestRunFlow:
                 session,
                 release_org=missing_id,
                 claim_org=str(claim.id),
-                slug="spaire",
+                slug="claidor",
                 release_slug=None,
                 apply=True,
             )

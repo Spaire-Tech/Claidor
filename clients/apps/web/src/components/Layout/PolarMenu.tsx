@@ -4,8 +4,8 @@ import PublicProfileDropdown from '@/components/Navigation/PublicProfileDropdown
 import { useLoginLink } from '@/hooks/login'
 import { usePostHog } from '@/hooks/posthog'
 import { CONFIG } from '@/utils/config'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import GetStartedButton from '../Auth/GetStartedButton'
 
@@ -59,7 +59,7 @@ const PolarMenu = ({
         <>
           <GetStartedButton
             size="sm"
-            text="Sell with Spaire"
+            text="Sell with Claidor"
             storefrontOrg={organization}
           />
           <Link

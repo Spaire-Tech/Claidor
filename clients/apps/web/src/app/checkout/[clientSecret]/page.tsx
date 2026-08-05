@@ -3,7 +3,7 @@ import { resolveLocale } from '@/utils/i18n'
 import {
   CheckoutFormProvider,
   CheckoutProvider,
-} from '@spaire/checkout/providers'
+} from '@claidor/checkout/providers'
 import { SpaireCore } from '@spaire/sdk/core'
 import { checkoutsClientGet } from '@spaire/sdk/funcs/checkoutsClientGet'
 import { ExpiredCheckoutError } from '@spaire/sdk/models/errors/expiredcheckouterror'

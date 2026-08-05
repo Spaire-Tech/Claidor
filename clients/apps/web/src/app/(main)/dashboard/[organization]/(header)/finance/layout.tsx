@@ -2,7 +2,7 @@
 
 import { useOrganizationAccount } from '@/hooks/queries'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
-import { cn } from '@spaire/ui/lib/utils'
+import { cn } from '@claidor/ui/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { PropsWithChildren, useContext } from 'react'

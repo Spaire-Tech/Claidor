@@ -1,11 +1,11 @@
 import { setValidationErrors } from '@/utils/api/errors'
-import { enums, type schemas } from '@spaire/client'
-import { isValidationError } from '@spaire/customer-portal/core'
-import { useCustomerPortalCustomer } from '@spaire/customer-portal/react'
-import Button from '@spaire/ui/components/atoms/Button'
-import CountryPicker from '@spaire/ui/components/atoms/CountryPicker'
-import CountryStatePicker from '@spaire/ui/components/atoms/CountryStatePicker'
-import Input from '@spaire/ui/components/atoms/Input'
+import { enums, type schemas } from '@claidor/client'
+import { isValidationError } from '@claidor/customer-portal/core'
+import { useCustomerPortalCustomer } from '@claidor/customer-portal/react'
+import Button from '@claidor/ui/components/atoms/Button'
+import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
+import CountryStatePicker from '@claidor/ui/components/atoms/CountryStatePicker'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Form,
   FormControl,
@@ -13,7 +13,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useCallback, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 

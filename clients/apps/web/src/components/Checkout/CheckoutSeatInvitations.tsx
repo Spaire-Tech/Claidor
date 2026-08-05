@@ -2,10 +2,10 @@
 
 import { useAssignSeatFromCheckout } from '@/hooks/queries'
 import { validateEmail } from '@/utils/validation'
-import { hasProductCheckout } from '@spaire/checkout/guards'
+import { hasProductCheckout } from '@claidor/checkout/guards'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
 import { CheckCircleIcon, PlusIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Well, WellContent, WellHeader } from '../Shared/Well'

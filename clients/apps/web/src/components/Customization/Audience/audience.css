@@ -1,12 +1,12 @@
 /* ============================================================
-   Audience / Broadcast tabs — Spaire Space editor.
+   Audience / Broadcast tabs — Claidor Space editor.
    Faithful port of the approved design (scoped under .aud).
    Loaded by the Audience + Broadcast tab components only.
    ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap');
 
 /* ============================================================
-   SPAIRE ORIGINALS — Audience · Subscribers
+   CLAIDOR ORIGINALS — Audience · Subscribers
    A real tab inside the creator console. Faithful recreation of
    the console shell (frosted nav · masthead · tabs) + the audience
    content, scoped under .aud so it can sit on the design canvas.

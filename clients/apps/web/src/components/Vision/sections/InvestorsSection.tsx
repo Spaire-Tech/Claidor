@@ -18,7 +18,7 @@ export const InvestorsSection = ({
             {investors.map((investor) => (
               <div className="flex flex-col" key={investor.name}>
                 <h4>{investor.name}</h4>
-                <span className="text-spaire-500">{investor.company}</span>
+                <span className="text-claidor-500">{investor.company}</span>
               </div>
             ))}
           </div>

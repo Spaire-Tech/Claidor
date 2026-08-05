@@ -1,5 +1,5 @@
 import { isCardPayment } from '@/utils/payment'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import CreditCardBrandIcon from '../CreditCardBrandIcon'
 
 const CardPaymentMethod = ({

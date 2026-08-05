@@ -30,9 +30,9 @@ import CloseOutlined from '@mui/icons-material/CloseOutlined'
 import EditOutlined from '@mui/icons-material/EditOutlined'
 import TranslateOutlined from '@mui/icons-material/TranslateOutlined'
 import Verified from '@mui/icons-material/Verified'
-import { isValidationError, schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
-import Switch from '@spaire/ui/components/atoms/Switch'
+import { isValidationError, schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
+import Switch from '@claidor/ui/components/atoms/Switch'
 import {
   closestCorners,
   DndContext,

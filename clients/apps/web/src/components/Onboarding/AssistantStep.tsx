@@ -12,8 +12,8 @@ import { MemoizedMarkdown } from '@/components/Markdown/MemoizedMarkdown'
 import { useOnboardingTracking } from '@/hooks/onboarding'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 
-import Button from '@spaire/ui/components/atoms/Button'
-import TextArea from '@spaire/ui/components/atoms/TextArea'
+import Button from '@claidor/ui/components/atoms/Button'
+import TextArea from '@claidor/ui/components/atoms/TextArea'
 
 import { FadeUp } from '../Animated/FadeUp'
 import { ToolCallGroup } from './ToolCallGroup'

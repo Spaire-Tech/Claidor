@@ -1,11 +1,11 @@
-"""Spaire self-billing emails use the Spaire-branded transactional templates
+"""Claidor self-billing emails use the Claidor-branded transactional templates
 — not the creator-commerce ones — and a $0 trial neither invoices the creator
-nor enrolls them in Spaire's marketing automation.
+nor enrolls them in Claidor's marketing automation.
 
-A creator's Spaire plan order is sold BY the platform org (Spaire) TO the
+A creator's Claidor plan order is sold BY the platform org (Claidor) TO the
 creator-as-customer. The generic order-confirmation path would render the
-platform org's own header ("Spaire / Spaire"), the "Merchant of Record … by
-Spaire, Inc" footer, and a $0 invoice for a free trial. These tests pin the
+platform org's own header ("Claidor / Claidor"), the "Merchant of Record … by
+Claidor, Inc" footer, and a $0 invoice for a free trial. These tests pin the
 new behavior:
   * trial start ($0)         -> platform_welcome, no invoice, no marketing
   * a real charge (> $0)     -> platform_receipt, with invoice
@@ -44,7 +44,7 @@ from tests.fixtures.random_objects import (
 async def _platform_setup(
     save_fixture: SaveFixture, mocker: MockerFixture
 ) -> tuple[Organization, Product, Customer]:
-    """A platform (Spaire) org with a Studio plan + a creator-customer."""
+    """A platform (Claidor) org with a Studio plan + a creator-customer."""
     platform_org = await create_organization(save_fixture)
     mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     product = await create_product(
@@ -81,7 +81,7 @@ def _order(
         applied_balance_amount=0,
         currency="usd",
         billing_reason=billing_reason,
-        invoice_number=f"SPAIRE-{uuid.uuid4().hex[:6].upper()}-0001",
+        invoice_number=f"CLAIDOR-{uuid.uuid4().hex[:6].upper()}-0001",
         customer=customer,
         product=product,
         subscription=subscription,
@@ -185,7 +185,7 @@ class TestPlatformConfirmationEmail:
 
         await order_service.send_confirmation_email(session, order)
 
-        # Spaire-branded receipt WITH the invoice attached.
+        # Claidor-branded receipt WITH the invoice attached.
         assert render.call_args.args[0].template == "platform_receipt"
         generate_invoice.assert_called_once()
         attachments = enqueue_email.call_args.kwargs["attachments"]
@@ -258,7 +258,7 @@ class TestPlatformMarketingSuppression:
             session, subscription, OrderBillingReasonInternal.subscription_create
         )
 
-        # The creator must NOT be enrolled into Spaire's marketing automation.
+        # The creator must NOT be enrolled into Claidor's marketing automation.
         subscribe_calls = [
             c
             for c in enqueue.call_args_list

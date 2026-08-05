@@ -1,6 +1,6 @@
 'use client'
 
-// Composer-local icon set. Distinct from Spaire's main Icon component;
+// Composer-local icon set. Distinct from Claidor's main Icon component;
 // names match the design bundle so the rest of the composer code reads 1:1.
 
 import type { CSSProperties } from 'react'

@@ -84,7 +84,7 @@ SubscriptionUpdated.PreviewProps = {
     status: 'active',
   },
   order,
-  url: 'https://app.spairehq.com/acme-inc/portal/subscriptions/12345',
+  url: 'https://app.claidorhq.com/acme-inc/portal/subscriptions/12345',
 }
 
 export default SubscriptionUpdated

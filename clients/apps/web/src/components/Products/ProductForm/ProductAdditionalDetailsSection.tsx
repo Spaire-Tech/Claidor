@@ -3,15 +3,15 @@
 import { Section } from '@/components/Layout/Section'
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
 import AddOutlined from '@mui/icons-material/AddOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import { useCallback, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { ProductFormType } from './ProductForm'

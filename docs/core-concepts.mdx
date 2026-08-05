@@ -1,9 +1,9 @@
 ---
 title: "Core Concepts"
-description: "The Spaire data model — organizations, products, customers, orders, subscriptions, and how they all connect."
+description: "The Claidor data model — organizations, products, customers, orders, subscriptions, and how they all connect."
 ---
 
-Before you integrate, it helps to understand how Spaire structures the world. Every object relates to the others in a predictable way, and knowing the shape of the data model makes the API, webhooks, and dashboard much easier to reason about.
+Before you integrate, it helps to understand how Claidor structures the world. Every object relates to the others in a predictable way, and knowing the shape of the data model makes the API, webhooks, and dashboard much easier to reason about.
 
 ## The data model
 
@@ -26,9 +26,9 @@ Organization
 
 ## Organization
 
-Your organization is the root object in Spaire. Everything lives under it — products, customers, webhooks, access tokens, and your payout account.
+Your organization is the root object in Claidor. Everything lives under it — products, customers, webhooks, access tokens, and your payout account.
 
-Each organization has a **slug** (e.g., `acme`) that appears in your dashboard URL. You can run multiple organizations from a single Spaire account if you have separate products or brands, each with its own billing, customers, and payout account.
+Each organization has a **slug** (e.g., `acme`) that appears in your dashboard URL. You can run multiple organizations from a single Claidor account if you have separate products or brands, each with its own billing, customers, and payout account.
 
 Key settings on an organization:
 - **Default currency** — used as a fallback when currency can't be inferred from the customer's location
@@ -41,7 +41,7 @@ Key settings on an organization:
 
 A **product** is what you're selling. It has a name, optional description, optional media, and one or more prices attached to it.
 
-A **price** defines the billing terms. Spaire supports five price types:
+A **price** defines the billing terms. Claidor supports five price types:
 
 | Type | Description |
 |------|-------------|
@@ -51,7 +51,7 @@ A **price** defines the billing terms. Spaire supports five price types:
 | `seat_based` | Tiered per-seat pricing, billed per seat count |
 | `metered_unit` | Billed per unit consumed, measured by a meter |
 
-A product can have multiple prices — for example, a monthly price and a yearly price for the same plan. Spaire supports 36 currencies including USD, EUR, GBP, CAD, AUD, JPY, BRL, INR, and more.
+A product can have multiple prices — for example, a monthly price and a yearly price for the same plan. Claidor supports 36 currencies including USD, EUR, GBP, CAD, AUD, JPY, BRL, INR, and more.
 
 <Warning>
   Billing cycle and price type cannot be changed after a price is created. Create a new price if you need different terms.
@@ -61,7 +61,7 @@ A product can have multiple prices — for example, a monthly price and a yearly
 
 ## Checkouts
 
-A **checkout** is a payment session — the moment a customer is about to pay. Spaire gives you three ways to create one:
+A **checkout** is a payment session — the moment a customer is about to pay. Claidor gives you three ways to create one:
 
 | Method | How it works | Best for |
 |--------|-------------|----------|
@@ -75,15 +75,15 @@ All three produce the same outcome: a completed order or subscription linked to 
 
 ## Customers
 
-A **customer** is a person or organization that has purchased from you or been created via the API. Spaire creates customers automatically on first checkout.
+A **customer** is a person or organization that has purchased from you or been created via the API. Claidor creates customers automatically on first checkout.
 
-The most important field for integration is `external_id` — set it to your internal user ID when creating or updating a customer. Once set, it's immutable and unique per organization. This lets you look up billing state using your own identifiers instead of storing Spaire IDs:
+The most important field for integration is `external_id` — set it to your internal user ID when creating or updating a customer. Once set, it's immutable and unique per organization. This lets you look up billing state using your own identifiers instead of storing Claidor IDs:
 
 ```bash
 GET /v1/customers/external/{your_internal_user_id}
 ```
 
-Customers have a self-service **portal** where they can view orders, manage subscriptions, update payment methods, and access files and license keys — hosted by Spaire, no code required on your side.
+Customers have a self-service **portal** where they can view orders, manage subscriptions, update payment methods, and access files and license keys — hosted by Claidor, no code required on your side.
 
 ---
 
@@ -114,7 +114,7 @@ Order statuses:
 
 ## Subscriptions
 
-A **subscription** is the ongoing billing relationship for a recurring product. Each billing period, Spaire automatically creates an order and attempts payment.
+A **subscription** is the ongoing billing relationship for a recurring product. Each billing period, Claidor automatically creates an order and attempts payment.
 
 Subscription lifecycle:
 
@@ -147,11 +147,11 @@ When a subscription ends, all benefit grants are automatically revoked.
 
 ## Benefits and Benefit Grants
 
-A **benefit** is an automated entitlement you attach to a product. When a customer purchases that product, Spaire immediately creates a **benefit grant** — activating the entitlement without any code from you.
+A **benefit** is an automated entitlement you attach to a product. When a customer purchases that product, Claidor immediately creates a **benefit grant** — activating the entitlement without any code from you.
 
 The six built-in benefit types:
 
-| Type | What Spaire does automatically |
+| Type | What Claidor does automatically |
 |------|-------------------------------|
 | `license_keys` | Generates a unique key and delivers it to the customer |
 | `meter_credit` | Adds credits to the customer's usage meter balance |
@@ -160,7 +160,7 @@ The six built-in benefit types:
 | `github_repository` | Grants access to a GitHub repository via OAuth |
 | `custom` | Calls a URL you define to provision and revoke |
 
-When a subscription is canceled or a refund is issued, Spaire automatically revokes all associated grants. For built-in types, no cleanup code is needed.
+When a subscription is canceled or a refund is issued, Claidor automatically revokes all associated grants. For built-in types, no cleanup code is needed.
 
 ---
 
@@ -177,7 +177,7 @@ They can apply **once**, **forever**, or for a **repeating** number of months. D
 
 ## Webhooks
 
-Webhooks are how Spaire tells your application that something changed. Every significant state change emits a signed event you subscribe to on your server:
+Webhooks are how Claidor tells your application that something changed. Every significant state change emits a signed event you subscribe to on your server:
 
 ```
 order.paid                → fulfill a purchase
@@ -194,12 +194,12 @@ All events follow the [Standard Webhooks](https://www.standardwebhooks.com) spec
 
 ## Account and Payouts
 
-Your **account** is your payout account — linked to your Spaire organization. You connect it once during onboarding.
+Your **account** is your payout account — linked to your Claidor organization. You connect it once during onboarding.
 
-Your balance grows as orders settle after Spaire's fee. You can view your current balance under **Finance → Balance** and withdraw to your bank at any time from **Finance → Payouts**.
+Your balance grows as orders settle after Claidor's fee. You can view your current balance under **Finance → Balance** and withdraw to your bank at any time from **Finance → Payouts**.
 
 <Info>
-  As Merchant of Record, Spaire is the legal seller on every transaction. We collect payment, remit taxes to the relevant authorities, and then pay out your earnings. See [how it works](/merchant-of-record/introduction).
+  As Merchant of Record, Claidor is the legal seller on every transaction. We collect payment, remit taxes to the relevant authorities, and then pay out your earnings. See [how it works](/merchant-of-record/introduction).
 </Info>
 
 ---
@@ -217,6 +217,6 @@ Your balance grows as orders settle after Spaire's fee. You can view your curren
     Query everything a customer can access in one call — the fastest way to gate features.
   </Card>
   <Card icon="key" href="/features/benefits/introduction" title="Automate entitlements">
-    Attach benefits to products and let Spaire handle provisioning and revocation.
+    Attach benefits to products and let Claidor handle provisioning and revocation.
   </Card>
 </CardGroup>

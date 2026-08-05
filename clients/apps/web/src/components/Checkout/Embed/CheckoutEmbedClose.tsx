@@ -1,6 +1,6 @@
 'use client'
 
-import { SpaireEmbedCheckout } from '@spaire/checkout/embed'
+import { ClaidorEmbedCheckout } from '@claidor/checkout/embed'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
 import { X } from 'lucide-react'
 import { useCallback, useEffect } from 'react'
@@ -16,23 +16,23 @@ const CheckoutEmbedClose: React.FC<
     if (!checkout.embedOrigin) {
       return
     }
-    SpaireEmbedCheckout.postMessage({ event: 'close' }, checkout.embedOrigin)
+    ClaidorEmbedCheckout.postMessage({ event: 'close' }, checkout.embedOrigin)
   }, [checkout])
 
   useEffect(() => {
     const outsideClickListener = (event: MouseEvent) => {
-      const contentElement = document.getElementById('spaire-embed-content')
+      const contentElement = document.getElementById('claidor-embed-content')
       if (contentElement && !contentElement.contains(event.target as Node)) {
         onClose()
       }
     }
     document
-      .getElementById('spaire-embed-layout')
+      .getElementById('claidor-embed-layout')
       ?.addEventListener('click', outsideClickListener)
 
     return () => {
       document
-        .getElementById('spaire-embed-layout')
+        .getElementById('claidor-embed-layout')
         ?.removeEventListener('click', outsideClickListener)
     }
   }, [onClose])

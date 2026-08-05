@@ -247,9 +247,9 @@ class ClientInvoiceService:
             )
 
         footer = (
-            f"This invoice is issued by Spaire, Inc. on behalf of {on_behalf_of_label}. "
-            f"Spaire, Inc. acts as the Merchant of Record for this transaction. "
-            f"© {date.today().year} Spaire, Inc. All rights reserved."
+            f"This invoice is issued by Claidor, Inc. on behalf of {on_behalf_of_label}. "
+            f"Claidor, Inc. acts as the Merchant of Record for this transaction. "
+            f"© {date.today().year} Claidor, Inc. All rights reserved."
         )
 
         new_id = uuid.uuid4()
@@ -258,7 +258,7 @@ class ClientInvoiceService:
         stripe_metadata: dict[str, str] = {
             "client_invoice_id": str(new_id),
             "organization_id": str(organization.id),
-            "spaire_mor": "true",
+            "claidor_mor": "true",
         }
         if create_schema.user_metadata:
             for k, v in create_schema.user_metadata.items():
@@ -431,7 +431,7 @@ class ClientInvoiceService:
         effective_logo = logo_bytes if invoice.show_logo else None
         effective_label: str | None = None
         if effective_logo and invoice.show_mor_attribution:
-            effective_label = "via spaire"
+            effective_label = "via claidor"
 
         generator = InvoiceGenerator(
             inv,
@@ -559,7 +559,7 @@ class ClientInvoiceService:
 
         logo_label: str | None = None
         if logo_bytes and preview.show_mor_attribution:
-            logo_label = "via spaire"
+            logo_label = "via claidor"
 
         generator = InvoiceGenerator(
             inv,

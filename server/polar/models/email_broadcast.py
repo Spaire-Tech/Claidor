@@ -33,7 +33,7 @@ class EmailBroadcast(RecordModel):
     )
     sender_name: Mapped[str] = mapped_column(String(100), nullable=False)
     sender_email: Mapped[str] = mapped_column(
-        String(255), nullable=False, default="noreply@notifications.spairehq.com"
+        String(255), nullable=False, default="noreply@notifications.claidorhq.com"
     )
     reply_to_email: Mapped[str | None] = mapped_column(
         String(255), nullable=True, default=None

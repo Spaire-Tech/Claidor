@@ -1,4 +1,4 @@
-import { formatCurrency } from '@spaire/currency'
+import { formatCurrency } from '@claidor/currency'
 import type { ProductPriceMeteredUnit } from '@spaire/sdk/models/components/productpricemeteredunit.js'
 
 interface MeteredPriceLabelProps {

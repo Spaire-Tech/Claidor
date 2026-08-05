@@ -1,5 +1,5 @@
 """The subscription cycle scheduler must not pick up legacy card-less
-Spaire trials (managed_by=trial) ON THE PLATFORM ORG — those carry no
+Claidor trials (managed_by=trial) ON THE PLATFORM ORG — those carry no
 payment method; cycling one would flip it to active and emit an
 uncollectable order. Their end-of-life is owned by the
 platform.lapse_legacy_trials cron.

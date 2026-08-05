@@ -11,7 +11,7 @@ const LogoIcon = ({
     <>
       {/* Light mode logo */}
       <img
-        src="/spaire-logo-light.png"
+        src="/claidor-logo-light.png"
         alt="Logo"
         width={size}
         height={size}
@@ -20,7 +20,7 @@ const LogoIcon = ({
 
       {/* Dark mode logo */}
       <img
-        src="/spaire-logo-dark.png"
+        src="/claidor-logo-dark.png"
         alt="Logo"
         width={size}
         height={size}

@@ -1,7 +1,7 @@
 'use client'
 
 import { fromISODate, toISODate } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { endOfDay, subMonths } from 'date-fns'
 import {
   parseAsArrayOf,
@@ -21,7 +21,7 @@ import DateRangePicker from '@/components/Metrics/DateRangePicker'
 import IntervalPicker from '@/components/Metrics/IntervalPicker'
 import { useEventHierarchyStats } from '@/hooks/queries/events'
 
-import { formatCurrency } from '@spaire/currency'
+import { formatCurrency } from '@claidor/currency'
 import {
   BadgeDollarSignIcon,
   CircleUserRound,

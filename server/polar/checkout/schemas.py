@@ -132,14 +132,14 @@ EmbedOrigin = Annotated[
         description=(
             "If you plan to embed the checkout session, "
             "set this to the Origin of the embedding page. "
-            "It'll allow the Spaire iframe to communicate with the parent page."
+            "It'll allow the Claidor iframe to communicate with the parent page."
         ),
     ),
 ]
 
 _external_customer_id_description = (
     "ID of the customer in your system. "
-    "If a matching customer exists on Spaire, the resulting order "
+    "If a matching customer exists on Claidor, the resulting order "
     "will be linked to this customer. "
     "Otherwise, a new customer will be created with this external ID set."
 )

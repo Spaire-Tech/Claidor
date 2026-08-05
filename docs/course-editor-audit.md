@@ -149,7 +149,7 @@ Architecture: editor preview (`CustomizeTab.tsx` → `CourseDesignEditor.tsx:790
 30. **FAKE** — `LandingOverrides.text/media/order/theme/textFormat/spacingBefore/ai_landing` (incl. LandingTheme system) never written/read — `courses.ts:215-232`.
 31. **FAKE (dead pipeline)** — `landing-style.ts` (SHARED_STYLEBOOK, `normalizeLandingCardinality`) and AI routes `courses/landing/route.ts` + `landing-rewrite/route.ts` have zero callers; the "✨ Rewrite" control described doesn't exist.
 32. **WORKS** — Theme toggle persists `theme_mode`; public + portal apply it.
-33. **BROKEN** — Course creation reads theme from app-global `localStorage['spaire_theme']` (written by unrelated tools); `WizardPortalPreview` screen is unreachable dead code — `CourseWizard.tsx:374-380,645-687`.
+33. **BROKEN** — Course creation reads theme from app-global `localStorage['claidor_theme']` (written by unrelated tools); `WizardPortalPreview` screen is unreachable dead code — `CourseWizard.tsx:374-380,645-687`.
 34. **INCONSISTENT** — Enrolled portal ignores per-lesson `thumbnail_object_position` and smears course cover onto tiles without thumbnails, contradicting GPP's media rule — `WatchHome.tsx:877-884` vs `GeneratedPortalPage.tsx:22-25`; also ignores `landing_overrides.visible`.
 
 ---
@@ -209,7 +209,7 @@ Architecture: editor preview (`CustomizeTab.tsx` → `CourseDesignEditor.tsx:790
 9. **BROKEN** — Fetch errors render as "No students enrolled yet." — `CustomersTab.tsx:74-75,188-193`.
 10. **FAKE (absent)** — No progress UI at all (no bars, percentages, last-active, per-customer view).
 11. **INCONSISTENT** — Real progress data exists server-side (`CourseLessonProgress` via portal complete endpoint — `WatchPlayer.tsx:344-349`, `WatchHome.tsx:454-466`, `courses.ts:1132-1148`, `customer_portal/endpoints/courses.py:659-685`) and is shown to students and used by automations — the instructor tab reads none of it.
-12. **BROKEN (design gap)** — Partial watch progress is localStorage-only (`spaire_watch:{courseId}`, `WatchHome.tsx:62-71,444-453`); only binary completion persisted; no server-side last-active possible.
+12. **BROKEN (design gap)** — Partial watch progress is localStorage-only (`claidor_watch:{courseId}`, `WatchHome.tsx:62-71,444-453`); only binary completion persisted; no server-side last-active possible.
 13. **WORKS (caveats)** — Remove student soft-deletes enrollment, but: confirm text "progress will be cleared" is false (rows orphaned); paid benefit grant NOT revoked → grant re-runs silently re-enroll; error swallowed to generic toast — `endpoints.py:415-429`, `service.py:579-587`, `CustomersTab.tsx:117,125-127`.
 14. **BROKEN** — CSV export = loaded page + fake admin + preview customers only — `CustomersTab.tsx:42-63,130-137`.
 15. **FAKE (absent)** — No manual enroll by email.

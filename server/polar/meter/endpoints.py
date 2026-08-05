@@ -5,7 +5,7 @@ from pydantic import AwareDatetime
 from pydantic_extra_types.timezone_name import TimeZoneName
 
 from polar.customer.schemas.customer import CustomerID
-from polar.exceptions import ResourceNotFound, SpaireRequestValidationError
+from polar.exceptions import ResourceNotFound, ClaidorRequestValidationError
 from polar.kit.metadata import MetadataQuery, get_metadata_query_openapi_schema
 from polar.kit.pagination import ListResource, PaginationParamsQuery
 from polar.kit.schemas import MultipleQueryFilter
@@ -140,7 +140,7 @@ async def quantities(
         raise ResourceNotFound()
 
     if not is_under_limits(start_timestamp, end_timestamp, interval):
-        raise SpaireRequestValidationError(
+        raise ClaidorRequestValidationError(
             [
                 {
                     "loc": ("query",),

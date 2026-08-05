@@ -1,7 +1,7 @@
 'use client'
 
 import { CreateProductSplitPage } from '@/components/Products/CreateProductSplitPage'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useSearchParams } from 'next/navigation'
 
 // Product creation routes straight into the generic digital-product flow

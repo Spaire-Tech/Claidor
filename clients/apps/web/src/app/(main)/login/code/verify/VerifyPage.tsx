@@ -1,19 +1,19 @@
 'use client'
 
 import { CONFIG } from '@/utils/config'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from '@spaire/ui/components/atoms/InputOTP'
+} from '@claidor/ui/components/atoms/InputOTP'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 

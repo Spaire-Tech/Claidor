@@ -1,5 +1,5 @@
 import CloseOutlined from '@mui/icons-material/CloseOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import { motion } from 'framer-motion'
 import React, {
   FunctionComponent,
@@ -19,7 +19,7 @@ export interface ModalProps {
   modalContent: JSX.Element
   className?: string
   /** Classes for the portaled root. The customer portal passes its theme
-   * scope ('spaire-portal sp-dark') here since the modal mounts on
+   * scope ('claidor-portal sp-dark') here since the modal mounts on
    * document.body, outside the themed tree. */
   wrapperClassName?: string
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import { ArrowRight, Building2, Loader2, ShieldAlert } from 'lucide-react'
 import React from 'react'
 
@@ -100,7 +100,7 @@ export default function AccountStep({
           Connect your payout account
         </h3>
         <p className=" mx-auto mt-1 max-w-sm text-sm text-gray-500">
-          Connect your bank account so Spaire can send you your earnings.
+          Connect your bank account so Claidor can send you your earnings.
           You&apos;ll be redirected to Stripe to complete this step.
         </p>
       </div>

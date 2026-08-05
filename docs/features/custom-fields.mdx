@@ -3,7 +3,7 @@ title: "Custom Fields"
 description: "Collect additional information from customers at checkout — terms acceptance, company names, referral sources, and more."
 ---
 
-By default, Spaire collects the minimum required for payment: name, email, and billing info. Custom fields let you add anything on top of that — terms of service checkboxes, company names, phone numbers, select menus, or any other data your business needs at the point of purchase.
+By default, Claidor collects the minimum required for payment: name, email, and billing info. Custom fields let you add anything on top of that — terms of service checkboxes, company names, phone numbers, select menus, or any other data your business needs at the point of purchase.
 
 Custom fields are defined once at the organization level, then attached to specific products.
 
@@ -35,7 +35,7 @@ The type determines what input is shown to the customer. You must choose a type 
 
 ### Slug and name
 
-The **slug** is the key used to identify this field in the API. It must be unique across your organization. You can change it later — Spaire will update existing data automatically.
+The **slug** is the key used to identify this field in the API. It must be unique across your organization. You can change it later — Claidor will update existing data automatically.
 
 The **name** is your internal label for the field in the dashboard. It's also used as the default label shown to customers at checkout, unless you override it in the form input options.
 
@@ -80,7 +80,7 @@ Submitted field data is available in two places:
 When creating a checkout session from your backend, you can pre-populate custom field values:
 
 ```ts
-const checkout = await spaire.checkouts.create({
+const checkout = await claidor.checkouts.create({
   products: ['<product_id>'],
   customFieldData: {
     company_name: 'Acme Inc.',

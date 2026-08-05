@@ -2,7 +2,7 @@
 
 // Static harness for the portal dark-mode CSS — renders the nav (tabs +
 // search + icons), a short page with a course-card progress bar, all under
-// .spaire-portal.sp-dark, importing the real portal.css. Verifies the
+// .claidor-portal.sp-dark, importing the real portal.css. Verifies the
 // dark overrides compute correctly (active tab text, search bg, progress
 // track, full-height dark).
 
@@ -10,7 +10,7 @@ import '../../(main)/[organization]/portal/portal.css'
 
 export default function PortalDarkEmbed() {
   return (
-    <div className="spaire-portal sp-app sp-app--mobile-tabs sp-dark">
+    <div className="claidor-portal sp-app sp-app--mobile-tabs sp-dark">
       <header className="sp-topbar" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 28px' }}>
         <nav className="sp-tabs" style={{ display: 'flex', gap: 6 }}>
           <a className="sp-tab is-active" href="#">Overview</a>

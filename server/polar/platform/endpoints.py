@@ -1,10 +1,10 @@
-"""Dashboard-facing endpoints for Spaire's own platform billing.
+"""Dashboard-facing endpoints for Claidor's own platform billing.
 
 GET  /v1/platform/plans
     Lists Pro/Studio/Scale with their pricing and entitlements.
 
 GET  /v1/platform/organizations/{organization_id}/subscription
-    Current Spaire subscription state for a creator org plus the
+    Current Claidor subscription state for a creator org plus the
     resolved entitlements.
 
 POST /v1/platform/organizations/{organization_id}/upgrade-checkout
@@ -86,8 +86,8 @@ from .repository import (
     platform_subscription_repository,
 )
 from .schemas import (
-    CancelSpaireSubscription,
-    CurrentSpaireSubscription,
+    CancelClaidorSubscription,
+    CurrentClaidorSubscription,
     CustomerPortalSession,
     CustomerPortalSessionCreate,
     EmailSenderDomainStatus,
@@ -111,9 +111,9 @@ router = APIRouter(prefix="/platform", tags=["platform", APITag.private])
 
 _PLAN_TIERS = (TierKey.starter, TierKey.studio, TierKey.scale)
 _TIER_NAMES = {
-    TierKey.starter: "Spaire Starter",
-    TierKey.studio: "Spaire Studio",
-    TierKey.scale: "Spaire Scale",
+    TierKey.starter: "Claidor Starter",
+    TierKey.studio: "Claidor Studio",
+    TierKey.scale: "Claidor Scale",
 }
 
 
@@ -195,14 +195,14 @@ async def _plan_for_tier(
 
 @router.get(
     "/plans",
-    summary="List Spaire Plans",
+    summary="List Claidor Plans",
     response_model=TierPlanList,
 )
 async def list_plans(
     auth_subject: auth.PlatformRead,
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> TierPlanList:
-    """Return the three subscribable Spaire plans (Pro, Studio, Scale)
+    """Return the three subscribable Claidor plans (Pro, Studio, Scale)
     with their list pricing, trial config, and entitlements.
 
     Used by the dashboard to render the upgrade modal.
@@ -219,15 +219,15 @@ async def list_plans(
 
 @router.get(
     "/organizations/{organization_id}/subscription",
-    summary="Get Current Spaire Subscription",
-    response_model=CurrentSpaireSubscription,
+    summary="Get Current Claidor Subscription",
+    response_model=CurrentClaidorSubscription,
 )
 async def get_subscription(
     organization_id: OrganizationID,
     auth_subject: auth.PlatformRead,
     session: AsyncReadSession = Depends(get_db_read_session),
-) -> CurrentSpaireSubscription:
-    """Return the creator org's current Spaire subscription state."""
+) -> CurrentClaidorSubscription:
+    """Return the creator org's current Claidor subscription state."""
     org_repository = OrganizationRepository.from_session(session)
     readable = org_repository.get_readable_statement(auth_subject).where(
         OrganizationRepository.model.id == organization_id
@@ -306,7 +306,7 @@ async def get_subscription(
                 managed_by = (subscription.user_metadata or {}).get("managed_by")
                 is_default_trial = managed_by == "trial"
 
-    return CurrentSpaireSubscription(
+    return CurrentClaidorSubscription(
         tier=entitlements_dataclass.tier,
         billing_interval=billing_interval,  # type: ignore[arg-type]
         status=status_label,
@@ -366,7 +366,7 @@ async def create_upgrade_checkout(
     locker: Locker = Depends(get_locker),
 ) -> UpgradeCheckout:
     """Create a Polar checkout for the target Pro/Scale tier on the
-    Spaire platform org. Returns a URL the creator visits to enter their
+    Claidor platform org. Returns a URL the creator visits to enter their
     card and complete the upgrade.
     """
     org_repository = OrganizationRepository.from_session(session)
@@ -382,7 +382,7 @@ async def create_upgrade_checkout(
     # the calling user's email; otherwise (organization tokens) resolve a
     # real member of the org. This must never stay None: the platform
     # Customer otherwise keeps its synthetic
-    # `creator-{slug}@billing.spairehq.internal` placeholder and every
+    # `creator-{slug}@billing.claidorhq.internal` placeholder and every
     # receipt, invoice, and dunning email for real charges goes to an
     # undeliverable address.
     billing_email = body.billing_email
@@ -436,7 +436,7 @@ async def _serialize_subscription(
 
 @router.post(
     "/organizations/{organization_id}/switch-plan",
-    summary="Switch Spaire Plan",
+    summary="Switch Claidor Plan",
     response_model=SubscriptionSchema,
 )
 async def switch_plan(
@@ -446,7 +446,7 @@ async def switch_plan(
     session: AsyncSession = Depends(get_db_session),
     locker: Locker = Depends(get_locker),
 ) -> SubscriptionSchema:
-    """Switch a creator's current Spaire subscription from one paid tier
+    """Switch a creator's current Claidor subscription from one paid tier
     to another (Starter <-> Studio <-> Scale). The card on file is reused;
     proration is invoiced immediately. Use the upgrade-checkout endpoint
     to convert a trialing subscription or start a new one, and the cancel
@@ -472,17 +472,17 @@ async def switch_plan(
 
 @router.post(
     "/organizations/{organization_id}/cancel",
-    summary="Cancel Spaire Subscription",
+    summary="Cancel Claidor Subscription",
     response_model=SubscriptionSchema,
 )
 async def cancel_subscription(
     organization_id: OrganizationID,
-    body: CancelSpaireSubscription,
+    body: CancelClaidorSubscription,
     auth_subject: auth.PlatformWrite,
     session: AsyncSession = Depends(get_db_session),
     locker: Locker = Depends(get_locker),
 ) -> SubscriptionSchema:
-    """Schedule the creator's current Spaire subscription to cancel at
+    """Schedule the creator's current Claidor subscription to cancel at
     the end of the current billing period (or, for a trialing
     subscription, at the end of the trial — the remaining trial days are
     kept and nothing is charged).
@@ -523,11 +523,11 @@ async def create_customer_portal_session(
     """Mint a short-lived customer-portal session for the platform-org
     customer that represents this creator. Returns a URL the creator
     can visit to view invoices, update payment methods, and cancel
-    their Spaire subscription.
+    their Claidor subscription.
 
     The session token authenticates as the platform-org customer, which
     is necessarily a different identity from the dashboard user — so the
-    portal shows the Spaire subscription (creator-as-buyer view), not the
+    portal shows the Claidor subscription (creator-as-buyer view), not the
     creator's own customers.
     """
     org_repository = OrganizationRepository.from_session(session)
@@ -540,7 +540,7 @@ async def create_customer_portal_session(
 
     if not platform_service.is_configured():
         raise ResourceNotFound(
-            "Spaire platform billing is not configured on this server."
+            "Claidor platform billing is not configured on this server."
         )
 
     platform_org_id = platform_service.get_id()
@@ -555,7 +555,7 @@ async def create_customer_portal_session(
         # Should have been created by PR 4 on org-create or by PR 6's
         # grandfather migration; surface as 404 if neither has run.
         raise ResourceNotFound(
-            "Your organization has not been provisioned on Spaire billing yet."
+            "Your organization has not been provisioned on Claidor billing yet."
         )
 
     return_url = body.return_url
@@ -661,9 +661,9 @@ async def verify_email_sender_domain(
 
 
 # ----------------------------------------------------------------------
-# Dashboard-native Spaire billing management
+# Dashboard-native Claidor billing management
 #
-# These let a creator manage their Spaire subscription — cards on file,
+# These let a creator manage their Claidor subscription — cards on file,
 # invoices, billing address — entirely inside their dashboard, with NO
 # redirect to the customer portal. Each resolves the org's platform
 # Customer via get_for_creator_org (after the standard org-readable check)
@@ -679,7 +679,7 @@ async def _billing_customer(
     auth_subject: AuthSubject[User | Organization],
     organization_id: UUID,
 ) -> Customer:
-    """Resolve the platform Customer holding this org's Spaire billing,
+    """Resolve the platform Customer holding this org's Claidor billing,
     after verifying the dashboard caller can manage the org."""
     org_repository = OrganizationRepository.from_session(session)
     readable = org_repository.get_readable_statement(auth_subject).where(
@@ -690,21 +690,21 @@ async def _billing_customer(
         raise ResourceNotFound("Organization not found.")
     if not platform_service.is_configured():
         raise ResourceNotFound(
-            "Spaire platform billing is not configured on this server."
+            "Claidor platform billing is not configured on this server."
         )
     customer = await platform_customer_repository(session).get_for_creator_org(
         platform_service.get_id(), organization.id
     )
     if customer is None:
         raise ResourceNotFound(
-            "Your organization has not been provisioned on Spaire billing yet."
+            "Your organization has not been provisioned on Claidor billing yet."
         )
     return customer
 
 
 @router.get(
     "/organizations/{organization_id}/payment-methods",
-    summary="List Spaire Payment Methods",
+    summary="List Claidor Payment Methods",
     response_model=ListResource[CustomerPaymentMethod],
 )
 async def list_payment_methods(
@@ -713,7 +713,7 @@ async def list_payment_methods(
     pagination: PaginationParamsQuery,
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> ListResource[CustomerPaymentMethod]:
-    """Cards on file the creator uses to pay for their Spaire subscription."""
+    """Cards on file the creator uses to pay for their Claidor subscription."""
     customer = await _billing_customer(session, auth_subject, organization_id)
     statement = (
         select(PaymentMethod)
@@ -730,7 +730,7 @@ async def list_payment_methods(
 
 @router.delete(
     "/organizations/{organization_id}/payment-methods/{payment_method_id}",
-    summary="Delete Spaire Payment Method",
+    summary="Delete Claidor Payment Method",
     status_code=204,
 )
 async def delete_payment_method(
@@ -757,7 +757,7 @@ async def delete_payment_method(
 
 @router.post(
     "/organizations/{organization_id}/payment-methods/{payment_method_id}/default",
-    summary="Set Default Spaire Payment Method",
+    summary="Set Default Claidor Payment Method",
     status_code=204,
 )
 async def set_default_payment_method(
@@ -766,7 +766,7 @@ async def set_default_payment_method(
     auth_subject: auth.PlatformWrite,
     session: AsyncSession = Depends(get_db_session),
 ) -> None:
-    """Make a card the one Spaire charges each billing period."""
+    """Make a card the one Claidor charges each billing period."""
     customer = await _billing_customer(session, auth_subject, organization_id)
     statement = select(PaymentMethod).where(
         PaymentMethod.id == payment_method_id,
@@ -796,12 +796,12 @@ def _order_description(order: Order) -> str:
         return order.product.name
     if order.items:
         return order.items[0].label
-    return order.invoice_number or "Spaire subscription"
+    return order.invoice_number or "Claidor subscription"
 
 
 @router.get(
     "/organizations/{organization_id}/orders",
-    summary="List Spaire Orders",
+    summary="List Claidor Orders",
     response_model=ListResource[PlatformOrder],
 )
 async def list_orders(
@@ -810,7 +810,7 @@ async def list_orders(
     pagination: PaginationParamsQuery,
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> ListResource[PlatformOrder]:
-    """Past invoices for the creator's Spaire subscription, newest first."""
+    """Past invoices for the creator's Claidor subscription, newest first."""
     customer = await _billing_customer(session, auth_subject, organization_id)
     base = (
         select(Order)
@@ -854,7 +854,7 @@ async def list_orders(
 
 @router.get(
     "/organizations/{organization_id}/orders/{order_id}/invoice",
-    summary="Get Spaire Order Invoice",
+    summary="Get Claidor Order Invoice",
     response_model=PlatformOrderInvoice,
 )
 async def get_order_invoice(
@@ -863,7 +863,7 @@ async def get_order_invoice(
     auth_subject: auth.PlatformRead,
     session: AsyncSession = Depends(get_db_session),
 ) -> PlatformOrderInvoice:
-    """A signed URL to download a Spaire invoice PDF, generating it first
+    """A signed URL to download a Claidor invoice PDF, generating it first
     if it has not been built yet."""
     customer = await _billing_customer(session, auth_subject, organization_id)
     statement = select(Order).where(
@@ -885,7 +885,7 @@ async def get_order_invoice(
 
 @router.get(
     "/organizations/{organization_id}/billing-details",
-    summary="Get Spaire Billing Details",
+    summary="Get Claidor Billing Details",
     response_model=PlatformBillingDetails,
 )
 async def get_billing_details(
@@ -893,7 +893,7 @@ async def get_billing_details(
     auth_subject: auth.PlatformRead,
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> PlatformBillingDetails:
-    """The name/address/tax-id shown on the creator's Spaire invoices."""
+    """The name/address/tax-id shown on the creator's Claidor invoices."""
     customer = await _billing_customer(session, auth_subject, organization_id)
     return PlatformBillingDetails(
         billing_name=customer.billing_name,
@@ -905,7 +905,7 @@ async def get_billing_details(
 
 @router.patch(
     "/organizations/{organization_id}/billing-details",
-    summary="Update Spaire Billing Details",
+    summary="Update Claidor Billing Details",
     response_model=PlatformBillingDetails,
 )
 async def update_billing_details(
@@ -914,7 +914,7 @@ async def update_billing_details(
     auth_subject: auth.PlatformWrite,
     session: AsyncSession = Depends(get_db_session),
 ) -> PlatformBillingDetails:
-    """Update the billing identity used on the creator's Spaire invoices."""
+    """Update the billing identity used on the creator's Claidor invoices."""
     customer = await _billing_customer(session, auth_subject, organization_id)
     customer = await customer_portal_customer_service.update(
         session,

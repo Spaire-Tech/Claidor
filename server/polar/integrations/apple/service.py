@@ -62,7 +62,7 @@ class AppleServiceError(PolarError): ...
 class CannotLinkUnverifiedEmailError(AppleServiceError):
     def __init__(self, email: str) -> None:
         message = (
-            f"An account already exists on Spaire under the email {email}. "
+            f"An account already exists on Claidor under the email {email}. "
             "We cannot automatically link it to your Apple account since "
             "this email address is not verified on Apple. "
             "Either verify your email address on Apple and try again "
@@ -74,7 +74,7 @@ class CannotLinkUnverifiedEmailError(AppleServiceError):
 class AccountLinkedToAnotherUserError(AppleServiceError):
     def __init__(self) -> None:
         message = (
-            "This Apple account is already linked to another user on Spaire. "
+            "This Apple account is already linked to another user on Claidor. "
             "You may have already created another account "
             "with a different email address."
         )

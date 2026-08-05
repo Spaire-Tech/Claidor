@@ -60,7 +60,7 @@ async def _setup_subscribed_creator(
     fee_fixed: int | None = None,
     platform_fee_locked: bool = False,
 ) -> tuple[Organization, Account, User]:
-    """Build a complete creator-org-with-active-Spaire-subscription scenario."""
+    """Build a complete creator-org-with-active-Claidor-subscription scenario."""
     platform_org = await create_organization(save_fixture)
     _patch_platform_org_id(mocker, platform_org.id)
 
@@ -86,7 +86,7 @@ async def _setup_subscribed_creator(
     customer = await create_customer(
         save_fixture,
         organization=platform_org,
-        email=f"creator-{creator.id}@billing.spaire",
+        email=f"creator-{creator.id}@billing.claidor",
         user_metadata={"creator_org_id": str(creator.id)},
     )
     await create_subscription(
@@ -346,7 +346,7 @@ class TestMaybeEnqueueFromSubscription:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.spaire",
+            email=f"creator-{creator.id}@billing.claidor",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         subscription = await create_subscription(
@@ -443,7 +443,7 @@ class TestMaybeEnqueueFromSubscription:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email="orphan@billing.spaire",
+            email="orphan@billing.claidor",
             user_metadata={},
         )
         subscription = await create_subscription(

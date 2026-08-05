@@ -13,7 +13,7 @@ The portal currently runs on **three unrelated responsive systems**, and mobile 
 | Surface | Styling system | Breakpoints | Mobile story |
 |---|---|---|---|
 | Portal shell + native pages | Hand-written `.sp-*` CSS (`portal/portal.css`, ~1,600 lines) | 720px, 380px | Decent per-page, but nav is broken (see below) |
-| Embedded widgets (Subscription, Team, Usage, Wallet, Seats) | Tailwind + `@spaire/ui` (`components/CustomerPortal/*`) | `sm/md/lg` (barely used) | Tables crush, fixed type, fragile dark mode |
+| Embedded widgets (Subscription, Team, Usage, Wallet, Seats) | Tailwind + `@claidor/ui` (`components/CustomerPortal/*`) | `sm/md/lg` (barely used) | Tables crush, fixed type, fragile dark mode |
 | Course home + player + reading view | styled-jsx CSS (`Courses/watch/WatchPageStyles.tsx`, `WatchStyles.tsx`) + inline styles | 1200px, 820px, 560px | Desktop DOM reused on phones; hover-driven UX dead on touch |
 
 ### Concrete defects (found in the code, with locations)

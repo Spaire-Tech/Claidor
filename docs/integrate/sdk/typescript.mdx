@@ -28,15 +28,15 @@ description: SDK for JavaScript runtimes (Node.js and Browser)
 ## Quickstart
 
 ```typescript icon="square-js" index.js
-import { Spaire } from '@spaire/sdk'
+import { Claidor } from '@spaire/sdk'
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
-  server: process.env.SPAIRE_MODE || 'sandbox' // sandbox or production
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
+  server: process.env.CLAIDOR_MODE || 'sandbox' // sandbox or production
 })
 
 async function run() {
-  const result = await spaire.users.benefits.list({})
+  const result = await claidor.users.benefits.list({})
   for await (const page of result) {
     // Handle the page
     console.log(page)

@@ -17,7 +17,7 @@ import type {
   StripeElements,
   StripeError,
 } from '@stripe/stripe-js'
-import { DEFAULT_LOCALE, useTranslations, type AcceptedLocale } from '@spaire/i18n'
+import { DEFAULT_LOCALE, useTranslations, type AcceptedLocale } from '@claidor/i18n'
 import { createContext, useCallback, useContext, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { useForm } from 'react-hook-form'

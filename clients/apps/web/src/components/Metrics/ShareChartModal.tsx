@@ -1,11 +1,11 @@
 import { ParsedMetricsResponse } from '@/hooks/queries/metrics'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@spaire/ui/components/ui/tooltip'
+} from '@claidor/ui/components/ui/tooltip'
 import domtoimage from 'dom-to-image'
 import { useCallback, useRef, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -63,7 +63,7 @@ export const ShareChartModal = ({
 
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      link.download = 'spaire-chart.png'
+      link.download = 'claidor-chart.png'
       link.click()
 
       toast({

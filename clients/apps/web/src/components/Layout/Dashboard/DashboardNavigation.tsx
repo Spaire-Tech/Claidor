@@ -1,7 +1,7 @@
 'use client'
 
 import ArrowBack from '@mui/icons-material/ArrowBack'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -9,7 +9,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   useSidebar,
-} from '@spaire/ui/components/atoms/Sidebar'
+} from '@claidor/ui/components/atoms/Sidebar'
 import Link from 'next/link'
 import { twMerge } from 'tailwind-merge'
 import {

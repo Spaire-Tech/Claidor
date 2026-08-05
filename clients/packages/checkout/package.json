@@ -1,13 +1,13 @@
 {
-  "name": "@spaire/checkout",
-  "description": "Spaire Checkout SDK",
-  "author": "Spaire",
+  "name": "@claidor/checkout",
+  "description": "Claidor Checkout SDK",
+  "author": "Claidor",
   "license": "Apache-2.0",
   "type": "module",
   "version": "0.2.4",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Spaire-Tech/polar.git",
+    "url": "https://github.com/Claidor-Tech/polar.git",
     "directory": "clients/packages/checkout"
   },
   "scripts": {
@@ -37,9 +37,9 @@
     }
   },
   "devDependencies": {
-    "@spaire/currency": "workspace:^",
-    "@spaire/i18n": "workspace:^",
-    "@spaire/typescript-config": "workspace:*",
+    "@claidor/currency": "workspace:^",
+    "@claidor/i18n": "workspace:^",
+    "@claidor/typescript-config": "workspace:*",
     "@stripe/react-stripe-js": "^4.0.2",
     "@stripe/stripe-js": "^7.9.0",
     "@types/react": "19.2.10",
@@ -53,7 +53,7 @@
   },
   "dependencies": {
     "@spaire/sdk": "^0.45.1",
-    "@spaire/ui": "workspace:^",
+    "@claidor/ui": "workspace:^",
     "event-source-plus": "^0.1.15",
     "eventemitter3": "^5.0.4",
     "markdown-to-jsx": "^8.0.0",

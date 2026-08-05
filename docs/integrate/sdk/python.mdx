@@ -10,14 +10,14 @@ Under the hood, schemas are validated by [Pydantic](https://docs.pydantic.dev/la
 ### Quickstart
 
 ```bash Terminal
-pip install spaire-sdk
+pip install claidor-sdk
 ```
 
 ```python
 # Synchronous Example
-from spaire_sdk import Spaire
+from claidor_sdk import Claidor
 
-s = Spaire(
+s = Claidor(
     access_token="<YOUR_BEARER_TOKEN_HERE>",
 )
 
@@ -38,7 +38,7 @@ if res is not None:
 You can configure the SDK so it hits the [sandbox environment](/integrate/sandbox) instead of the production one. You just need to add the `server` argument when instantiating the client:
 
 ```python
-s = Spaire(
+s = Claidor(
     server="sandbox",
     access_token="<YOUR_BEARER_TOKEN_HERE>",
 )

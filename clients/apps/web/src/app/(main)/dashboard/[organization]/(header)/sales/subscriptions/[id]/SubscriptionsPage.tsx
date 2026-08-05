@@ -20,10 +20,10 @@ import {
   useUncancelSubscription,
 } from '@/hooks/queries'
 import { useOrganizationSeats } from '@/hooks/queries/seats'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import { List } from '@spaire/ui/components/atoms/List'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import { List } from '@claidor/ui/components/atoms/List'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
 import React from 'react'
 
 interface ClientPageProps {

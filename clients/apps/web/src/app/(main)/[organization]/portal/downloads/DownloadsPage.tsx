@@ -2,7 +2,7 @@
 
 import { useCustomerDownloadables } from '@/hooks/queries'
 import { createClientSideAPI } from '@/utils/client'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import * as React from 'react'
 import {

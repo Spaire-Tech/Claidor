@@ -19,10 +19,10 @@ import {
   DataTablePaginationState,
   DataTableSortingState,
 } from '@/utils/datatable'
-import { operations, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import CopyToClipboardInput from '@spaire/ui/components/atoms/CopyToClipboardInput'
-import Switch from '@spaire/ui/components/atoms/Switch'
+import { operations, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import CopyToClipboardInput from '@claidor/ui/components/atoms/CopyToClipboardInput'
+import Switch from '@claidor/ui/components/atoms/Switch'
 import { useParams, useRouter } from 'next/navigation'
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs'
 import { useCallback, useState } from 'react'

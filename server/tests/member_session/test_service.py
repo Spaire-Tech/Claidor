@@ -6,7 +6,7 @@ from pydantic import HttpUrl
 
 from polar.auth.models import AuthSubject
 from polar.auth.scope import Scope
-from polar.exceptions import NotPermitted, SpaireRequestValidationError
+from polar.exceptions import NotPermitted, ClaidorRequestValidationError
 from polar.kit.utils import utc_now
 from polar.member_session.schemas import MemberSessionCreate
 from polar.member_session.service import member_session
@@ -168,7 +168,7 @@ class TestCreate:
         auth_subject = AuthSubject(user, {Scope.web_write}, None)
         create_schema = MemberSessionCreate(member_id=uuid.uuid4())
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await member_session.create(session, auth_subject, create_schema)
 
         assert exc_info.value.errors()[0]["loc"] == ("body", "member_id")
@@ -205,7 +205,7 @@ class TestCreate:
         auth_subject = AuthSubject(user, {Scope.web_write}, None)
         create_schema = MemberSessionCreate(member_id=member.id)
 
-        with pytest.raises(SpaireRequestValidationError) as exc_info:
+        with pytest.raises(ClaidorRequestValidationError) as exc_info:
             await member_session.create(session, auth_subject, create_schema)
 
         assert exc_info.value.errors()[0]["loc"] == ("body", "member_id")

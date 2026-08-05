@@ -1,8 +1,8 @@
 'use client'
 
-import { formatCurrency } from '@spaire/currency'
+import { formatCurrency } from '@claidor/currency'
 import type { CheckoutPublic } from '@spaire/sdk/models/components/checkoutpublic'
-import { cn } from '@spaire/ui/lib/utils'
+import { cn } from '@claidor/ui/lib/utils'
 import { PropsWithChildren, useMemo } from 'react'
 import { hasProductCheckout } from '../guards'
 import { getDiscountDisplay } from '../utils/discount'

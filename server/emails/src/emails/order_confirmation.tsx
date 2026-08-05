@@ -68,7 +68,7 @@ OrderConfirmation.PreviewProps = {
   organization,
   product,
   order,
-  url: 'https://app.spairehq.com/acme-inc/portal/orders/12345',
+  url: 'https://app.claidorhq.com/acme-inc/portal/orders/12345',
 }
 
 export default OrderConfirmation

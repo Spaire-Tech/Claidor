@@ -1,8 +1,8 @@
 const LogoType100 = () => {
   return (
     <img
-      src="/assets/logotype-spaire.png"
-      alt="Spaire"
+      src="/assets/logotype-claidor.png"
+      alt="Claidor"
       width={282}
       height={100}
     />

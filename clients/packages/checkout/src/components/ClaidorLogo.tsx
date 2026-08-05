@@ -1,4 +1,4 @@
-const SpaireLogo = ({
+const ClaidorLogo = ({
   className,
   width,
   height,
@@ -9,8 +9,8 @@ const SpaireLogo = ({
 }) => {
   return (
     <img
-      src="/assets/logotype-spaire.png"
-      alt="Spaire"
+      src="/assets/logotype-claidor.png"
+      alt="Claidor"
       className={className}
       width={width}
       height={height}
@@ -18,4 +18,4 @@ const SpaireLogo = ({
   )
 }
 
-export default SpaireLogo
+export default ClaidorLogo

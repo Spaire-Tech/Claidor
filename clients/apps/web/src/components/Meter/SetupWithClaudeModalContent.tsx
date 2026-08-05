@@ -11,13 +11,13 @@ import { OrganizationContext } from '@/providers/maintainerOrganization'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
 import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { useCallback, useContext, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 const COMMAND_FILE_URL =
-  'https://cdn.spairehq.com/claude/commands/setup-usage-billing.md'
+  'https://cdn.claidorhq.com/claude/commands/setup-usage-billing.md'
 
 interface SetupWithClaudeModalContentProps {
   hideModal: () => void

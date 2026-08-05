@@ -8,7 +8,7 @@ description: SDK for Go
 ## Installation
 
 ```bash Terminal
-go get app.spairehq.com/go
+go get app.claidorhq.com/go
 ```
 
 ## Quickstart
@@ -21,17 +21,17 @@ import (
 	"log"
 	"os"
 
-	spairego "app.spairehq.com/go"
+	claidorgo "app.claidorhq.com/go"
 )
 
 func main() {
 	ctx := context.Background()
 
-	s := spairego.New(
-		spairego.WithSecurity(os.Getenv("SPAIRE_ACCESS_TOKEN")),
+	s := claidorgo.New(
+		claidorgo.WithSecurity(os.Getenv("CLAIDOR_ACCESS_TOKEN")),
 	)
 
-	res, err := s.Organizations.List(ctx, nil, spairego.Pointer[int64](1), spairego.Pointer[int64](10), nil)
+	res, err := s.Organizations.List(ctx, nil, claidorgo.Pointer[int64](1), claidorgo.Pointer[int64](10), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -56,8 +56,8 @@ func main() {
 You can configure the SDK to hit the [sandbox environment](/integrate/sandbox) instead of production by passing the server name when instantiating the client:
 
 ```go
-s := spairego.New(
-	spairego.WithServer(spairego.ServerSandbox),
-	spairego.WithSecurity(os.Getenv("SPAIRE_ACCESS_TOKEN")),
+s := claidorgo.New(
+	claidorgo.WithServer(claidorgo.ServerSandbox),
+	claidorgo.WithSecurity(os.Getenv("CLAIDOR_ACCESS_TOKEN")),
 )
 ```

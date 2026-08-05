@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ============================================================
-# Upload Spaire CDN assets to Cloudflare R2
+# Upload Claidor CDN assets to Cloudflare R2
 #
 # Prerequisites:
 #   1. npm install -g wrangler
@@ -13,7 +13,7 @@ set -euo pipefail
 # ============================================================
 
 CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-a2492d824e26542c6a4455d350f05850}"
-BUCKET_NAME="${R2_BUCKET_NAME:-spaire-cdn}"
+BUCKET_NAME="${R2_BUCKET_NAME:-claidor-cdn}"
 
 # Check wrangler is installed
 if ! command -v wrangler &> /dev/null; then
@@ -83,6 +83,6 @@ echo "==========================================="
 echo "All files uploaded successfully!"
 echo ""
 echo "Verify with:"
-echo "  curl -I https://cdn.spairehq.com/checkout/embed.js"
-echo "  curl -I https://cdn.spairehq.com/claude/commands/setup-checkout.md"
-echo "  curl -I https://cdn.spairehq.com/claude/commands/setup-usage-billing.md"
+echo "  curl -I https://cdn.claidorhq.com/checkout/embed.js"
+echo "  curl -I https://cdn.claidorhq.com/claude/commands/setup-checkout.md"
+echo "  curl -I https://cdn.claidorhq.com/claude/commands/setup-usage-billing.md"

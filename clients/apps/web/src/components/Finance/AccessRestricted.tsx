@@ -1,4 +1,4 @@
-import { ShadowBoxOnMd } from '@spaire/ui/components/atoms/ShadowBox'
+import { ShadowBoxOnMd } from '@claidor/ui/components/atoms/ShadowBox'
 import { CircleAlertIcon } from 'lucide-react'
 
 export interface AccessRestrictedProps {

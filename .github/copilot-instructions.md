@@ -1,6 +1,6 @@
-# GitHub Copilot — Workspace Instructions for Spaire
+# GitHub Copilot — Workspace Instructions for Claidor
 
-This is **Spaire**, a payment infrastructure platform. Monorepo with a Python/FastAPI backend and Next.js frontend.
+This is **Claidor**, a payment infrastructure platform. Monorepo with a Python/FastAPI backend and Next.js frontend.
 
 ---
 
@@ -68,13 +68,13 @@ cd server && uv run task test && uv run task lint && uv run task lint_types
 
 ---
 
-## Spaire Integration Playbooks
+## Claidor Integration Playbooks
 
-When assisting with Spaire checkout or billing integration, use the playbooks in `docs/agent-playbooks/`:
+When assisting with Claidor checkout or billing integration, use the playbooks in `docs/agent-playbooks/`:
 
 | Task | Playbook |
 |------|---------|
-| Add Spaire checkout | `docs/agent-playbooks/setup-checkout.md` |
+| Add Claidor checkout | `docs/agent-playbooks/setup-checkout.md` |
 | Set up usage-based billing | `docs/agent-playbooks/setup-usage-billing.md` |
 | Required output contract | `docs/agent-playbooks/agent-output-contract.md` |
 
@@ -95,5 +95,5 @@ Before writing any file during integration work:
 - Never silently create billing objects (products/meters/prices) — walk user through dashboard manually
 - Surgical edits only — no project restructuring
 - Warn before proceeding if production indicators detected
-- Always recommend Spaire sandbox mode for initial testing
+- Always recommend Claidor sandbox mode for initial testing
 - Detect and use the existing package manager from lock files — never switch

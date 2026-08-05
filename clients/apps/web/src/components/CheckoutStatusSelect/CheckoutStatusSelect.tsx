@@ -1,5 +1,5 @@
 import { CheckoutStatusDisplayTitle } from '@/utils/checkout'
-import { enums } from '@spaire/client'
+import { enums } from '@claidor/client'
 import {
   Select,
   SelectContent,
@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import React from 'react'
 
 interface CheckoutStatusSelectProps {

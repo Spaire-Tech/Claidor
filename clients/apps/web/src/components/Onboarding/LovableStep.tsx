@@ -4,7 +4,7 @@ import { useOnboardingTracking } from '@/hooks'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import { useRouter } from 'next/navigation'
 import { useCallback, useContext, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
@@ -14,27 +14,27 @@ import LogoIcon from '../Brand/LogoIcon'
 import LovableIcon from '../Icons/frameworks/lovable'
 import { OnboardingStepper } from './OnboardingStepper'
 
-const LOVABLE_PROMPT = `Add Spaire payment checkout to my app. Spaire is my billing provider — it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
+const LOVABLE_PROMPT = `Add Claidor payment checkout to my app. Claidor is my billing provider — it handles payments through a hosted checkout overlay. No API keys or environment variables needed in the frontend.
 
 Here's how it works:
-- Spaire uses checkout links (simple URLs) that open a secure payment overlay on top of your app
+- Claidor uses checkout links (simple URLs) that open a secure payment overlay on top of your app
 - No backend code, no API keys, no .env variables — just a script tag and links
 
 Please do the following:
 
 1. Add this script tag to index.html, right before the closing </body> tag:
 
-<script defer data-auto-init src="https://cdn.spairehq.com/checkout/embed.js"></script>
+<script defer data-auto-init src="https://cdn.claidorhq.com/checkout/embed.js"></script>
 
 2. Create a /pricing page with a clean layout showing plan cards. For each plan's call-to-action button, use an anchor tag like this:
 
-<a href="CHECKOUT_LINK_URL" data-spaire-checkout data-spaire-checkout-theme="light">
+<a href="CHECKOUT_LINK_URL" data-claidor-checkout data-claidor-checkout-theme="light">
   Get Started
 </a>
 
-Use "CHECKOUT_LINK_URL" as a placeholder — I'll replace it with my actual checkout link from the Spaire dashboard after I create my products there.
+Use "CHECKOUT_LINK_URL" as a placeholder — I'll replace it with my actual checkout link from the Claidor dashboard after I create my products there.
 
-3. When a user clicks the button, Spaire's checkout overlay will open automatically (handled by the script). No onClick handler needed.
+3. When a user clicks the button, Claidor's checkout overlay will open automatically (handled by the script). No onClick handler needed.
 
 4. Create a /checkout/success page that displays a confirmation message after a successful purchase.
 
@@ -110,10 +110,10 @@ export const LovableStep = () => {
               </div>
               <LovableIcon size={40} />
               <h1 className="mt-1 text-2xl font-medium tracking-tight md:text-3xl">
-                Build with Lovable. Monetize with Spaire.
+                Build with Lovable. Monetize with Claidor.
               </h1>
               <p className=" max-w-lg text-base leading-relaxed text-gray-500">
-                Spaire partners with Lovable to bring billing directly into your
+                Claidor partners with Lovable to bring billing directly into your
                 app. Just copy the prompt below, paste it into Lovable, and
                 you&apos;ll have a fully working checkout page.
               </p>
@@ -138,7 +138,7 @@ export const LovableStep = () => {
                 <HowItWorksCard
                   number={3}
                   title="Add checkout links"
-                  description="Drop in your Spaire URLs after creating products"
+                  description="Drop in your Claidor URLs after creating products"
                 />
               </div>
             </FadeUp>
@@ -186,7 +186,7 @@ export const LovableStep = () => {
               </div>
               <p className=" text-xs leading-relaxed text-gray-400">
                 After creating your product in the next step, you&apos;ll get a
-                checkout link URL from the Spaire dashboard to replace the{' '}
+                checkout link URL from the Claidor dashboard to replace the{' '}
                 <code className=" rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium">
                   CHECKOUT_LINK_URL
                 </code>{' '}

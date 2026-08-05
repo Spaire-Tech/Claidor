@@ -2,8 +2,8 @@
 -- Note: PostgreSQL doesn't support environment variable substitution in SQL directly,
 -- so we use a shell script approach with envsubst
 
-\set read_user `echo "$SPAIRE_READ_USER"`
-\set read_password `echo "$SPAIRE_READ_PASSWORD"`
+\set read_user `echo "$CLAIDOR_READ_USER"`
+\set read_password `echo "$CLAIDOR_READ_PASSWORD"`
 \set database_name `echo "$POSTGRES_DB"`
 
 -- Create read-only user

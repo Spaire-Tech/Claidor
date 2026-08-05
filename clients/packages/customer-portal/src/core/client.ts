@@ -1,4 +1,4 @@
-import { createClient, type Client } from '@spaire/client'
+import { createClient, type Client } from '@claidor/client'
 import {
   PolarCustomerPortalError,
   RateLimitError,

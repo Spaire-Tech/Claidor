@@ -4,9 +4,9 @@ import {
   useOrganizationAIValidation,
   useOrganizationReviewStatus,
 } from '@/hooks/queries/org'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import { Card } from '@spaire/ui/components/ui/card'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import { Card } from '@claidor/ui/components/ui/card'
 import {
   AlertTriangle,
   ArrowRight,

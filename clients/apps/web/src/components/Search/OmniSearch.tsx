@@ -5,15 +5,15 @@ import {
   useOrganizationRoutes,
 } from '@/components/Dashboard/navigation'
 import { getServerURL } from '@/utils/api'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
 import {
   Command,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
-} from '@spaire/ui/components/ui/command'
+} from '@claidor/ui/components/ui/command'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'

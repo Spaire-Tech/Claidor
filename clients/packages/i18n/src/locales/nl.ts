@@ -3,13 +3,13 @@ export default {
     footer: {
       poweredBy: 'Mogelijk gemaakt door',
       merchantOfRecord:
-        'Deze bestelling wordt verwerkt door onze online wederverkoper & Merchant of Record, Spaire, die ook bestelgerelateerde vragen en terugbetalingen afhandelt.',
+        'Deze bestelling wordt verwerkt door onze online wederverkoper & Merchant of Record, Claidor, die ook bestelgerelateerde vragen en terugbetalingen afhandelt.',
       mandateSubscriptionTrial:
-        'Door op "{buttonLabel}" te klikken, machtigt u Spaire, Inc., onze online wederverkoper en merchant of record, om uw geselecteerde betaalmethode te belasten voor het hierboven getoonde bedrag aan het einde van uw proefperiode en op elke volgende factuurdatum totdat u opzegt. U kunt op elk moment vóór het einde van uw proefperiode opzeggen om kosten te voorkomen.',
+        'Door op "{buttonLabel}" te klikken, machtigt u Claidor, Inc., onze online wederverkoper en merchant of record, om uw geselecteerde betaalmethode te belasten voor het hierboven getoonde bedrag aan het einde van uw proefperiode en op elke volgende factuurdatum totdat u opzegt. U kunt op elk moment vóór het einde van uw proefperiode opzeggen om kosten te voorkomen.',
       mandateSubscription:
-        'Door op "{buttonLabel}" te klikken, machtigt u Spaire, Inc., onze online wederverkoper en merchant of record, om uw geselecteerde betaalmethode onmiddellijk te belasten voor het hierboven getoonde bedrag en om hetzelfde bedrag in rekening te brengen op elke volgende factuurdatum totdat u opzegt.',
+        'Door op "{buttonLabel}" te klikken, machtigt u Claidor, Inc., onze online wederverkoper en merchant of record, om uw geselecteerde betaalmethode onmiddellijk te belasten voor het hierboven getoonde bedrag en om hetzelfde bedrag in rekening te brengen op elke volgende factuurdatum totdat u opzegt.',
       mandateOneTime:
-        'Door op "{buttonLabel}" te klikken, machtigt u Spaire, Inc., onze online wederverkoper en merchant of record, om uw geselecteerde betaalmethode te belasten voor het hierboven getoonde bedrag. Dit is een eenmalige betaling.',
+        'Door op "{buttonLabel}" te klikken, machtigt u Claidor, Inc., onze online wederverkoper en merchant of record, om uw geselecteerde betaalmethode te belasten voor het hierboven getoonde bedrag. Dit is een eenmalige betaling.',
     },
     form: {
       email: 'E-mailadres',

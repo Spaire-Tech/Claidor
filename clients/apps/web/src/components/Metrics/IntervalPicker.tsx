@@ -1,11 +1,11 @@
-import { enums, schemas } from '@spaire/client'
+import { enums, schemas } from '@claidor/client'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import { differenceInDays } from 'date-fns'
 import { useMemo } from 'react'
 

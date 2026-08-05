@@ -1,8 +1,8 @@
 'use client'
 
 import { usePostHog, type EventName } from '@/hooks/posthog'
-import { schemas } from '@spaire/client'
-import LabeledSeparator from '@spaire/ui/components/atoms/LabeledSeparator'
+import { schemas } from '@claidor/client'
+import LabeledSeparator from '@claidor/ui/components/atoms/LabeledSeparator'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo } from 'react'
 import LoginCodeForm from '../Auth/LoginCodeForm'
@@ -89,17 +89,17 @@ const Login = ({
         <LoginCodeForm {...loginProps} />
       </div>
       <div className=" mt-6 text-center text-xs text-gray-400">
-        By using Spaire you agree to our{' '}
+        By using Claidor you agree to our{' '}
         <a
           className=" text-gray-600"
-          href="https://www.spairehq.com/legal/terms-of-service"
+          href="https://www.claidorhq.com/legal/terms-of-service"
         >
           Terms of Service
         </a>{' '}
         and{' '}
         <a
           className=" text-gray-600"
-          href="https://www.spairehq.com/legal/privacy-policy"
+          href="https://www.claidorhq.com/legal/privacy-policy"
         >
           Privacy Policy
         </a>

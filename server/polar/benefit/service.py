@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import case, delete
 
 from polar.auth.models import AuthSubject
-from polar.exceptions import NotPermitted, SpaireRequestValidationError
+from polar.exceptions import NotPermitted, ClaidorRequestValidationError
 from polar.kit.db.postgres import AsyncSession
 from polar.kit.metadata import MetadataQuery, apply_metadata_clause
 from polar.kit.pagination import PaginationParams
@@ -155,7 +155,7 @@ class BenefitService:
         auth_subject: AuthSubject[User | Organization],
     ) -> Benefit:
         if benefit_update.type != benefit.type:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",

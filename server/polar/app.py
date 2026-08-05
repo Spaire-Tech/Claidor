@@ -186,7 +186,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     await custom_domain_cors.refresh_active_domains(async_read_sessionmaker)
     custom_domain_cors.start_refresher(async_read_sessionmaker)
 
-    # Block boot if SPAIRE_PLATFORM_ORG_ID is set but the four tier
+    # Block boot if CLAIDOR_PLATFORM_ORG_ID is set but the four tier
     # products haven't been seeded — without them new signups get
     # legacy entitlements and undercharged transaction fees.
     async with async_sessionmaker() as bootstrap_session:

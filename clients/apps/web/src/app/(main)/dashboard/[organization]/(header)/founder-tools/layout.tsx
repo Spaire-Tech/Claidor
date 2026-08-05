@@ -1,6 +1,6 @@
 'use client'
 
-import { Tabs, TabsList, TabsTrigger } from '@spaire/ui/components/atoms/Tabs'
+import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
 import Link from 'next/link'
 import { useParams, usePathname } from 'next/navigation'
 import { PropsWithChildren } from 'react'

@@ -13,7 +13,7 @@ The Customer Portal is a destination where your customers can see their orders a
 
 ## Redirect to your Customer Portal
 
-The customer portal is directly available from the URL `https://www.spairehq.com/your-org-slug/portal`. Your customers will be able to authenticate there by entering the email they used to purchase or subscribe to your products.
+The customer portal is directly available from the URL `https://www.claidorhq.com/your-org-slug/portal`. Your customers will be able to authenticate there by entering the email they used to purchase or subscribe to your products.
 
 <img
   className="block dark:hidden"
@@ -26,17 +26,17 @@ Customer Portal Sign In
 
 You can provide a pre-authenticated Customer Portal Link to your customers. This is handy if you want to redirect them directly from your application.
 
-Using the Spaire API, all you need is to call the `customerSessions` endpoint. Here’s an example using our TypeScript SDK.
+Using the Claidor API, all you need is to call the `customerSessions` endpoint. Here’s an example using our TypeScript SDK.
 
 ```typescript
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-  accessToken: process.env["SPAIRE_ACCESS_TOKEN"] ?? "",
+const claidor = new Claidor({
+  accessToken: process.env["CLAIDOR_ACCESS_TOKEN"] ?? "",
 });
 
 async function run() {
-  const result = await spaire.customerSessions.create({
+  const result = await claidor.customerSessions.create({
     customerId: "<value>",
   });
 
@@ -50,11 +50,11 @@ Or, if you use Next.js as your framework, we have a handy utility which shortens
 
 ```typescript
 // app/portal/route.ts
-import { CustomerPortal } from "@spaire/nextjs";
+import { CustomerPortal } from "@claidor/nextjs";
 
 export const GET = CustomerPortal({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
   getCustomerId: async (req) => '<value>',
-  server: 'sandbox' // Use sandbox if you're testing Spaire - pass 'production' otherwise
+  server: 'sandbox' // Use sandbox if you're testing Claidor - pass 'production' otherwise
 });
 ```

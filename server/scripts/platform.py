@@ -45,11 +45,11 @@ def typer_async(f):  # type: ignore
 async def verify() -> None:
     if not platform_service.is_configured():
         typer.echo(
-            "SPAIRE_PLATFORM_ORG_ID is not set.\n"
+            "CLAIDOR_PLATFORM_ORG_ID is not set.\n"
             "\n"
             "To configure:\n"
             "  1. Run `python -m scripts.platform list` to find candidate orgs.\n"
-            "  2. Set SPAIRE_PLATFORM_ORG_ID=<uuid> in your environment.\n"
+            "  2. Set CLAIDOR_PLATFORM_ORG_ID=<uuid> in your environment.\n"
             "  3. Re-run this command to confirm.\n"
         )
         raise typer.Exit(code=1)
@@ -74,11 +74,11 @@ async def verify() -> None:
 @cli.command(
     help=(
         "List candidate organizations whose slug starts with the given prefix "
-        "(default: 'spaire')."
+        "(default: 'claidor')."
     )
 )
 @typer_async
-async def list(slug_prefix: str = "spaire") -> None:
+async def list(slug_prefix: str = "claidor") -> None:
     engine = create_async_engine("script")
     sessionmaker = create_async_sessionmaker(engine)
     async with sessionmaker() as session:
@@ -106,7 +106,7 @@ async def list(slug_prefix: str = "spaire") -> None:
         if configured_id is None:
             typer.echo(
                 "\nTo configure one of these as the platform org, set:\n"
-                "  SPAIRE_PLATFORM_ORG_ID=<id>\n"
+                "  CLAIDOR_PLATFORM_ORG_ID=<id>\n"
             )
 
 

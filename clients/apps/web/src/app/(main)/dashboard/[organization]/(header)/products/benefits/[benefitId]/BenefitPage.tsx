@@ -10,7 +10,7 @@ import { useModal } from '@/components/Modal/useModal'
 import { useToast } from '@/components/Toast/use-toast'
 import { useDeleteBenefit } from '@/hooks/queries'
 import { usePushRouteWithoutCache } from '@/utils/router'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import React, { useCallback } from 'react'
 
 interface ClientPageProps {

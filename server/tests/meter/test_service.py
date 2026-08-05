@@ -13,7 +13,7 @@ from polar.auth.models import AuthSubject
 from polar.enums import SubscriptionRecurringInterval
 from polar.event.service import event as event_service
 from polar.event.system import SystemEvent
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.kit.time_queries import TimeInterval
 from polar.kit.utils import utc_now
 from polar.meter.aggregation import (
@@ -149,7 +149,7 @@ class TestUpdate:
             save_fixture, organization=organization, last_billed_event=event
         )
 
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await meter_service.update(session, meter, meter_update)
 
     @pytest.mark.parametrize(

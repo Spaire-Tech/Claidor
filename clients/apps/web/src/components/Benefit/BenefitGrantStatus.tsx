@@ -1,10 +1,10 @@
-import { schemas } from '@spaire/client'
-import { Status } from '@spaire/ui/components/atoms/Status'
+import { schemas } from '@claidor/client'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@spaire/ui/components/ui/tooltip'
+} from '@claidor/ui/components/ui/tooltip'
 import { twMerge } from 'tailwind-merge'
 
 interface BenefitGrantStatusProps {

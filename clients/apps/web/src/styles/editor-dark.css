@@ -234,10 +234,10 @@
    Embedded as a tab panel that reads as a boxed-in slab over the dotted
    editor canvas — make it transparent so the grouped-list cards float
    directly on the dots. */
-.editor-dark .spaire-hub.hub-embed {
+.editor-dark .claidor-hub.hub-embed {
   background: transparent !important;
 }
-.editor-dark .spaire-hub.hub-embed::before {
+.editor-dark .claidor-hub.hub-embed::before {
   display: none;
 }
 

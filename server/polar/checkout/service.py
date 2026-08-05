@@ -43,7 +43,7 @@ from polar.exceptions import (
     PaymentNotReady,
     PolarError,
     ResourceNotFound,
-    SpaireRequestValidationError,
+    ClaidorRequestValidationError,
     ValidationError,
 )
 from polar.integrations.stripe.service import stripe as stripe_service
@@ -220,7 +220,7 @@ class CheckoutLocked(CheckoutError):
         super().__init__(message, 409)
 
 
-CHECKOUT_CLIENT_SECRET_PREFIX = "spaire_c_"
+CHECKOUT_CLIENT_SECRET_PREFIX = "claidor_c_"
 
 
 class CheckoutService:
@@ -345,7 +345,7 @@ class CheckoutService:
                 price = price_set.get_default_price()
                 currency = price_set.currency
             except NoPricesForCurrencies as e:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -376,7 +376,7 @@ class CheckoutService:
         customer_tax_id: TaxID | None = None
         if checkout_create.customer_tax_id is not None:
             if checkout_create.customer_billing_address is None:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "missing",
@@ -392,7 +392,7 @@ class CheckoutService:
                     checkout_create.customer_billing_address.country,
                 )
             except InvalidTaxID as e:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -411,7 +411,7 @@ class CheckoutService:
                 checkout_create.seats = minimum_seats
             self._validate_seat_limits(price, checkout_create.seats)
         elif checkout_create.seats is not None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -436,7 +436,7 @@ class CheckoutService:
                 checkout_create.customer_id, product.organization_id
             )
             if customer is None:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -609,7 +609,7 @@ class CheckoutService:
         )
 
         if product is None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -621,7 +621,7 @@ class CheckoutService:
             )
 
         if product.is_archived:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -633,7 +633,7 @@ class CheckoutService:
             )
 
         if product.visibility == ProductVisibility.draft:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -645,7 +645,7 @@ class CheckoutService:
             )
 
         if product.organization.blocked_at is not None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -664,7 +664,7 @@ class CheckoutService:
         try:
             currency_prices = PriceSet.from_product(product, *currencies)
         except NoPricesForCurrencies as e:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -686,7 +686,7 @@ class CheckoutService:
                 checkout_create.seats = minimum_seats
             self._validate_seat_limits(price, checkout_create.seats)
         elif checkout_create.seats is not None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -779,7 +779,7 @@ class CheckoutService:
                 products.append(product)
 
         if len(products) == 0:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -811,7 +811,7 @@ class CheckoutService:
         try:
             currency_prices = PriceSet.from_product(product, *currencies)
         except NoPricesForCurrencies as e:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -839,7 +839,7 @@ class CheckoutService:
                     query_amount_int = int(float(query_amount_str))
                     self._validate_custom_price_amount(price, query_amount_int)
                     valid_query_amount = query_amount_int
-                except (ValueError, TypeError, SpaireRequestValidationError):
+                except (ValueError, TypeError, ClaidorRequestValidationError):
                     pass
 
             amount = valid_query_amount or price.preset_amount or price.minimum_amount
@@ -860,7 +860,7 @@ class CheckoutService:
                     discount_id=checkout_link.discount_id,
                 )
             # If the discount is not valid, just ignore it
-            except SpaireRequestValidationError:
+            except ClaidorRequestValidationError:
                 pass
 
         checkout = Checkout(
@@ -916,7 +916,7 @@ class CheckoutService:
                         discount_code=discount_code,
                     )
                     checkout.discount = discount
-                except SpaireRequestValidationError:
+                except ClaidorRequestValidationError:
                     pass
 
             custom_field_data_value = query_prefill.get("custom_field_data")
@@ -944,7 +944,7 @@ class CheckoutService:
                             **(checkout.custom_field_data or {}),
                             **validated_data,
                         }
-                    except SpaireRequestValidationError:
+                    except ClaidorRequestValidationError:
                         # If validation fails, just ignore the custom field data
                         pass
 
@@ -1028,7 +1028,7 @@ class CheckoutService:
                             session, auth_subject, checkout, checkout_confirm
                         )
                 except DiscountNotRedeemableError as e:
-                    raise SpaireRequestValidationError(
+                    raise ClaidorRequestValidationError(
                         [
                             {
                                 "type": "value_error",
@@ -1133,7 +1133,7 @@ class CheckoutService:
             )
 
         if len(errors) > 0:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         if checkout.payment_processor == PaymentProcessor.stripe:
             async with self._create_or_update_customer(
@@ -1460,7 +1460,7 @@ class CheckoutService:
         )
 
         if price is None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1472,7 +1472,7 @@ class CheckoutService:
             )
 
         if price.is_archived:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1485,7 +1485,7 @@ class CheckoutService:
 
         product = price.product
         if product.is_archived:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1511,7 +1511,7 @@ class CheckoutService:
         product = await product_service.get(session, auth_subject, product_id)
 
         if product is None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1523,7 +1523,7 @@ class CheckoutService:
             )
 
         if product.is_archived:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1535,7 +1535,7 @@ class CheckoutService:
             )
 
         if product.visibility == ProductVisibility.draft:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1552,7 +1552,7 @@ class CheckoutService:
         try:
             currency_prices = PriceSet.from_product(product, *currencies)
         except NoPricesForCurrencies as e:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1627,7 +1627,7 @@ class CheckoutService:
             )
 
         if len(errors) > 0:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         return products
 
@@ -1678,7 +1678,7 @@ class CheckoutService:
             validated_prices[product] = validated_product_prices
 
         if len(errors) > 0:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         return validated_prices
 
@@ -1720,7 +1720,7 @@ class CheckoutService:
         loc_field = "discount_id" if discount_id is not None else "discount_code"
 
         if not any(is_discount_applicable(price) for price in product.prices):
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1746,7 +1746,7 @@ class CheckoutService:
             )
 
         if discount is None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1765,7 +1765,7 @@ class CheckoutService:
             )
             and discount.duration == DiscountDuration.repeating
         ):
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1792,7 +1792,7 @@ class CheckoutService:
         )
 
         if subscription is None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -1805,7 +1805,7 @@ class CheckoutService:
 
         for price in subscription.prices:
             if price.amount_type != ProductPriceAmountType.free:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -1878,7 +1878,7 @@ class CheckoutService:
                     checkout.product, updated_currency
                 )
             except NoPricesForCurrencies as e:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -1900,7 +1900,7 @@ class CheckoutService:
             )
 
             if product is None:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -1912,7 +1912,7 @@ class CheckoutService:
                 )
 
             if product.is_archived:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -1933,7 +1933,7 @@ class CheckoutService:
                         if p.id == checkout_update.product_price_id
                     )
                 except StopIteration as e:
-                    raise SpaireRequestValidationError(
+                    raise ClaidorRequestValidationError(
                         [
                             {
                                 "type": "value_error",
@@ -1952,7 +1952,7 @@ class CheckoutService:
                         )
                         checkout.currency = updated_currency
                     except NoPricesForCurrencies:
-                        raise SpaireRequestValidationError(
+                        raise ClaidorRequestValidationError(
                             [
                                 {
                                     "type": "value_error",
@@ -2007,7 +2007,7 @@ class CheckoutService:
             )
         elif checkout_update.seats is not None:
             # Seats provided for non-seat-based pricing
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -2073,7 +2073,7 @@ class CheckoutService:
                     or checkout.customer_billing_address
                 )
                 if customer_billing_address is None:
-                    raise SpaireRequestValidationError(
+                    raise ClaidorRequestValidationError(
                         [
                             {
                                 "type": "missing",
@@ -2088,7 +2088,7 @@ class CheckoutService:
                         customer_tax_id_number, customer_billing_address.country
                     )
                 except InvalidTaxID as e:
-                    raise SpaireRequestValidationError(
+                    raise ClaidorRequestValidationError(
                         [
                             {
                                 "type": "value_error",
@@ -2370,7 +2370,7 @@ class CheckoutService:
                 return
 
             if 0 < amount < MINIMUM_PRICE_AMOUNT:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "invalid_amount",
@@ -2383,7 +2383,7 @@ class CheckoutService:
                 )
         else:
             if amount < price.minimum_amount:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "greater_than_equal",
@@ -2396,7 +2396,7 @@ class CheckoutService:
                 )
 
         if price.maximum_amount is not None and amount > price.maximum_amount:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "less_than_equal",
@@ -2422,7 +2422,7 @@ class CheckoutService:
         maximum_seats = price.get_maximum_seats()
 
         if seats < minimum_seats:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "greater_than_equal",
@@ -2435,7 +2435,7 @@ class CheckoutService:
             )
 
         if maximum_seats is not None and seats > maximum_seats:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "less_than_equal",

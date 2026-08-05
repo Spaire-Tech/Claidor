@@ -5,24 +5,24 @@ import { Modal } from '@/components/Modal'
 import { useModal } from '@/components/Modal/useModal'
 import { Section, SectionDescription } from '@/components/Settings/Section'
 import {
-  SpaireBillingAddress,
-  SpaireOrder,
-  SpairePaymentMethod,
+  ClaidorBillingAddress,
+  ClaidorOrder,
+  ClaidorPaymentMethod,
   useCreateCustomerPortalSession,
-  useDeleteSpairePaymentMethod,
-  useGetSpaireOrderInvoice,
-  useSetDefaultSpairePaymentMethod,
-  useSpaireBillingDetails,
-  useSpaireOrders,
-  useSpairePaymentMethods,
-  useUpdateSpaireBillingDetails,
-} from '@/hooks/queries/spaireTier'
+  useDeleteClaidorPaymentMethod,
+  useGetClaidorOrderInvoice,
+  useSetDefaultClaidorPaymentMethod,
+  useClaidorBillingDetails,
+  useClaidorOrders,
+  useClaidorPaymentMethods,
+  useUpdateClaidorBillingDetails,
+} from '@/hooks/queries/claidorTier'
 import { createClientSideAPI } from '@/utils/client'
-import { enums, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import CountryPicker from '@spaire/ui/components/atoms/CountryPicker'
-import Input from '@spaire/ui/components/atoms/Input'
-import { getThemePreset } from '@spaire/ui/hooks/theming'
+import { enums, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
+import Input from '@claidor/ui/components/atoms/Input'
+import { getThemePreset } from '@claidor/ui/hooks/theming'
 import { useMemo, useState } from 'react'
 
 const formatCurrency = (amountCents: number, currency: string): string => {
@@ -58,7 +58,7 @@ const StatusChip = ({ status }: { status: string }) => {
     ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400'
     : /pending|processing|past_due|unpaid/.test(s)
       ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
-      : 'dark:bg-spaire-700 bg-gray-100 text-gray-600 dark:text-gray-300'
+      : 'dark:bg-claidor-700 bg-gray-100 text-gray-600 dark:text-gray-300'
   return (
     <span
       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${tone}`}
@@ -68,14 +68,14 @@ const StatusChip = ({ status }: { status: string }) => {
   )
 }
 
-const cardLabel = (pm: SpairePaymentMethod): string => {
+const cardLabel = (pm: ClaidorPaymentMethod): string => {
   if (pm.type !== 'card') return pm.type.replace(/_/g, ' ')
   const brand = pm.method_metadata.brand ?? 'card'
   const last4 = pm.method_metadata.last4 ?? '••••'
   return `${brand.charAt(0).toUpperCase()}${brand.slice(1)} ending in ${last4}`
 }
 
-const cardExpiry = (pm: SpairePaymentMethod): string | null => {
+const cardExpiry = (pm: ClaidorPaymentMethod): string | null => {
   const { exp_month, exp_year } = pm.method_metadata
   if (!exp_month || !exp_year) return null
   return `Expires ${String(exp_month).padStart(2, '0')}/${String(exp_year).slice(-2)}`
@@ -88,12 +88,12 @@ const PaymentMethodRow = ({
   canManage,
 }: {
   organizationId: string
-  paymentMethod: SpairePaymentMethod
+  paymentMethod: ClaidorPaymentMethod
   isDefault: boolean
   canManage: boolean
 }) => {
-  const setDefault = useSetDefaultSpairePaymentMethod(organizationId)
-  const remove = useDeleteSpairePaymentMethod(organizationId)
+  const setDefault = useSetDefaultClaidorPaymentMethod(organizationId)
+  const remove = useDeleteClaidorPaymentMethod(organizationId)
 
   const onRemove = async () => {
     if (!window.confirm('Remove this card? You can add it back any time.'))
@@ -108,14 +108,14 @@ const PaymentMethodRow = ({
   }
 
   return (
-    <div className="dark:border-spaire-700 flex flex-col gap-y-3 rounded-2xl border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between dark:bg-transparent">
+    <div className="dark:border-claidor-700 flex flex-col gap-y-3 rounded-2xl border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between dark:bg-transparent">
       <div className="flex flex-col gap-y-0.5">
         <div className="flex flex-row items-center gap-x-2">
           <span className="text-sm font-medium text-gray-900 dark:text-white">
             {cardLabel(paymentMethod)}
           </span>
           {isDefault && (
-            <span className="dark:bg-spaire-700 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-300">
+            <span className="dark:bg-claidor-700 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-300">
               Default
             </span>
           )}
@@ -161,12 +161,12 @@ const BillingAddressForm = ({
   organizationId: string
   initial: {
     billing_name: string | null
-    billing_address: SpaireBillingAddress | null
+    billing_address: ClaidorBillingAddress | null
     tax_id: [string, string] | null
   }
   onDone: () => void
 }) => {
-  const update = useUpdateSpaireBillingDetails(organizationId)
+  const update = useUpdateClaidorBillingDetails(organizationId)
   const [billingName, setBillingName] = useState(initial.billing_name ?? '')
   const [line1, setLine1] = useState(initial.billing_address?.line1 ?? '')
   const [line2, setLine2] = useState(initial.billing_address?.line2 ?? '')
@@ -280,9 +280,9 @@ const OrderRow = ({
   order,
 }: {
   organizationId: string
-  order: SpaireOrder
+  order: ClaidorOrder
 }) => {
-  const getInvoice = useGetSpaireOrderInvoice(organizationId)
+  const getInvoice = useGetClaidorOrderInvoice(organizationId)
   const refunded =
     order.refunded_amount >= order.total_amount && order.total_amount > 0
 
@@ -300,7 +300,7 @@ const OrderRow = ({
   }
 
   return (
-    <tr className="dark:hover:bg-spaire-800 hover:bg-gray-50">
+    <tr className="dark:hover:bg-claidor-800 hover:bg-gray-50">
       <td className="px-5 py-3.5">
         <div className="flex flex-col">
           <span className="font-medium text-gray-900 dark:text-white">
@@ -358,12 +358,12 @@ const OrderRow = ({
 }
 
 const EmptyState = ({ children }: { children: React.ReactNode }) => (
-  <div className="dark:border-spaire-700 rounded-2xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+  <div className="dark:border-claidor-700 rounded-2xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
     {children}
   </div>
 )
 
-export default function SpaireBillingManagement({
+export default function ClaidorBillingManagement({
   organization,
 }: {
   organization: schemas['Organization']
@@ -371,9 +371,9 @@ export default function SpaireBillingManagement({
   const orgId = organization.id
 
   const { data: paymentMethods, isLoading: pmLoading } =
-    useSpairePaymentMethods(orgId)
-  const { data: orders } = useSpaireOrders(orgId)
-  const { data: billingDetails } = useSpaireBillingDetails(orgId)
+    useClaidorPaymentMethods(orgId)
+  const { data: orders } = useClaidorOrders(orgId)
+  const { data: billingDetails } = useClaidorBillingDetails(orgId)
 
   const createSession = useCreateCustomerPortalSession(orgId)
   const [sessionToken, setSessionToken] = useState<string | null>(null)
@@ -420,7 +420,7 @@ export default function SpaireBillingManagement({
         <div className="flex flex-row items-start justify-between gap-x-4">
           <SectionDescription
             title="Payment methods"
-            description="Cards used to pay for your Spaire subscription."
+            description="Cards used to pay for your Claidor subscription."
           />
           <Button
             variant="secondary"
@@ -454,13 +454,13 @@ export default function SpaireBillingManagement({
         <div className="flex flex-row items-start justify-between gap-x-4">
           <SectionDescription
             title="Billing address"
-            description="Used on invoices for your Spaire subscription."
+            description="Used on invoices for your Claidor subscription."
           />
           <Button variant="secondary" onClick={editAddressModal.show}>
             {hasAddress ? 'Edit' : 'Add address'}
           </Button>
         </div>
-        <div className="dark:border-spaire-700 rounded-2xl border border-gray-200 bg-white p-6 dark:bg-transparent">
+        <div className="dark:border-claidor-700 rounded-2xl border border-gray-200 bg-white p-6 dark:bg-transparent">
           {hasAddress ? (
             <div className="flex flex-col gap-y-5">
               <div className="flex items-start gap-x-4">
@@ -505,7 +505,7 @@ export default function SpaireBillingManagement({
                 </div>
               </div>
               {billingDetails?.tax_id && (
-                <div className="dark:border-spaire-700 flex items-center justify-between border-t border-gray-100 pt-4">
+                <div className="dark:border-claidor-700 flex items-center justify-between border-t border-gray-100 pt-4">
                   <span className="text-xs font-medium tracking-wide text-gray-400 uppercase">
                     Tax ID
                   </span>
@@ -525,15 +525,15 @@ export default function SpaireBillingManagement({
       <Section id="orders">
         <SectionDescription
           title="Order history"
-          description="Past invoices for your Spaire subscription."
+          description="Past invoices for your Claidor subscription."
         />
         {orderItems.length === 0 ? (
           <EmptyState>No orders yet.</EmptyState>
         ) : (
-          <div className="dark:border-spaire-700 overflow-x-auto rounded-2xl border border-gray-200 bg-white dark:bg-transparent">
+          <div className="dark:border-claidor-700 overflow-x-auto rounded-2xl border border-gray-200 bg-white dark:bg-transparent">
             <table className="w-full min-w-[34rem] text-sm">
               <thead>
-                <tr className="dark:border-spaire-700 border-b border-gray-100 text-left text-xs tracking-wide text-gray-400 uppercase">
+                <tr className="dark:border-claidor-700 border-b border-gray-100 text-left text-xs tracking-wide text-gray-400 uppercase">
                   <th className="px-5 py-3 font-medium">Description</th>
                   <th className="px-5 py-3 font-medium">Date</th>
                   <th className="px-5 py-3 font-medium">Status</th>
@@ -541,7 +541,7 @@ export default function SpaireBillingManagement({
                   <th className="px-5 py-3 text-right font-medium">Invoice</th>
                 </tr>
               </thead>
-              <tbody className="dark:divide-spaire-700 divide-y divide-gray-100">
+              <tbody className="dark:divide-claidor-700 divide-y divide-gray-100">
                 {orderItems.map((order) => (
                   <OrderRow
                     key={order.id}

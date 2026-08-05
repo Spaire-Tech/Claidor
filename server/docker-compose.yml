@@ -2,24 +2,24 @@ services:
   redis:
     image: redis
     ports:
-      - "${SPAIRE_REDIS_PORT}:6379"
+      - "${CLAIDOR_REDIS_PORT}:6379"
 
   db:
     image: postgres:15.1-bullseye
     environment:
-      - POSTGRES_USER=${SPAIRE_POSTGRES_USER}
-      - POSTGRES_PASSWORD=${SPAIRE_POSTGRES_PWD}
-      - POSTGRES_DB=${SPAIRE_POSTGRES_DATABASE}
-      - POSTGRES_PORT=${SPAIRE_POSTGRES_PORT}
-      - SPAIRE_READ_USER=${SPAIRE_POSTGRES_READ_USER:-spaire_read}
-      - SPAIRE_READ_PASSWORD=${SPAIRE_POSTGRES_READ_PWD}
+      - POSTGRES_USER=${CLAIDOR_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${CLAIDOR_POSTGRES_PWD}
+      - POSTGRES_DB=${CLAIDOR_POSTGRES_DATABASE}
+      - POSTGRES_PORT=${CLAIDOR_POSTGRES_PORT}
+      - CLAIDOR_READ_USER=${CLAIDOR_POSTGRES_READ_USER:-claidor_read}
+      - CLAIDOR_READ_PASSWORD=${CLAIDOR_POSTGRES_READ_PWD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
       - ./init-readonly-user.sql:/docker-entrypoint-initdb.d/init-readonly-user.sql
     ports:
-      - "${SPAIRE_POSTGRES_PORT}:5432"
+      - "${CLAIDOR_POSTGRES_PORT}:5432"
     expose:
-      - ${SPAIRE_POSTGRES_PORT}
+      - ${CLAIDOR_POSTGRES_PORT}
     healthcheck:
       test:
         [
@@ -27,9 +27,9 @@ services:
           "pg_isready",
           "-q",
           "-d",
-          "${SPAIRE_POSTGRES_DATABASE}",
+          "${CLAIDOR_POSTGRES_DATABASE}",
           "-U",
-          "${SPAIRE_POSTGRES_USER}",
+          "${CLAIDOR_POSTGRES_USER}",
         ]
       timeout: 40s
       interval: 2s
@@ -43,8 +43,8 @@ services:
     volumes:
       - "minio_data:/minio"
     environment:
-      - MINIO_ROOT_USER=${SPAIRE_MINIO_USER}
-      - MINIO_ROOT_PASSWORD=${SPAIRE_MINIO_PWD}
+      - MINIO_ROOT_USER=${CLAIDOR_MINIO_USER}
+      - MINIO_ROOT_PASSWORD=${CLAIDOR_MINIO_PWD}
 
   minio-setup:
     image: bitnamilegacy/minio-client:2024.5.24
@@ -54,14 +54,14 @@ services:
       - ./.minio:/tmp/config
     environment:
       - MINIO_HOST=minio
-      - MINIO_ROOT_USER=${SPAIRE_MINIO_USER}
-      - MINIO_ROOT_PASSWORD=${SPAIRE_MINIO_PWD}
-      - BUCKET_NAME=${SPAIRE_S3_FILES_BUCKET_NAME}
-      - PUBLIC_BUCKET_NAME=${SPAIRE_S3_FILES_PUBLIC_BUCKET_NAME}
-      - BUCKET_TESTING_NAME=testing-${SPAIRE_S3_FILES_BUCKET_NAME}
+      - MINIO_ROOT_USER=${CLAIDOR_MINIO_USER}
+      - MINIO_ROOT_PASSWORD=${CLAIDOR_MINIO_PWD}
+      - BUCKET_NAME=${CLAIDOR_S3_FILES_BUCKET_NAME}
+      - PUBLIC_BUCKET_NAME=${CLAIDOR_S3_FILES_PUBLIC_BUCKET_NAME}
+      - BUCKET_TESTING_NAME=testing-${CLAIDOR_S3_FILES_BUCKET_NAME}
       - POLICY_FILE=/tmp/config/policy.json
-      - ACCESS_KEY=${SPAIRE_AWS_ACCESS_KEY_ID}
-      - SECRET_ACCESS_KEY=${SPAIRE_AWS_SECRET_ACCESS_KEY}
+      - ACCESS_KEY=${CLAIDOR_AWS_ACCESS_KEY_ID}
+      - SECRET_ACCESS_KEY=${CLAIDOR_AWS_SECRET_ACCESS_KEY}
     entrypoint:
       [
         "bash",
@@ -94,8 +94,8 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_USER=spaire
-      - GF_SECURITY_ADMIN_PASSWORD=spaire
+      - GF_SECURITY_ADMIN_USER=claidor
+      - GF_SECURITY_ADMIN_PASSWORD=claidor
       - GF_USERS_ALLOW_SIGN_UP=false
     depends_on:
       - prometheus

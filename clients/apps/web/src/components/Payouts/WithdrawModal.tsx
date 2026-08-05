@@ -1,8 +1,8 @@
 import { api } from '@/utils/client'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import { isValidationError, schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import Button from '@spaire/ui/components/atoms/Button'
+import { isValidationError, schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal } from '../Modal'
@@ -106,7 +106,7 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 </p>
                 <p>
                   <Link
-                    href="https://docs.spairehq.com/merchant-of-record/account-reviews"
+                    href="https://docs.claidorhq.com/merchant-of-record/account-reviews"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

@@ -1,9 +1,9 @@
 'use client'
 
 import { DashboardBody } from '@/components/Layout/DashboardLayout'
-import ShadowBoxOnMd from '@spaire/ui/components/atoms/ShadowBoxOnMd'
+import ShadowBoxOnMd from '@claidor/ui/components/atoms/ShadowBoxOnMd'
 import ArrowForwardOutlined from '@mui/icons-material/ArrowForwardOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
@@ -23,13 +23,13 @@ export default function FormationLandingPage() {
             />
             <span className=" text-2xl text-gray-300">×</span>
             <img
-              src="/spaire-logo.png"
-              alt="Spaire"
+              src="/claidor-logo.png"
+              alt="Claidor"
               className="h-12 w-12 rounded-xl object-contain"
             />
             <img
-              src="/spaire-logo.png"
-              alt="Spaire"
+              src="/claidor-logo.png"
+              alt="Claidor"
               className="hidden h-12 w-12 rounded-xl object-contain"
             />
           </div>
@@ -38,7 +38,7 @@ export default function FormationLandingPage() {
               Incorporate your Startup
             </h3>
             <p className=" text-gray-500">
-              Spaire partners with Doola to help you form a US company in
+              Claidor partners with Doola to help you form a US company in
               minutes — no matter where you are in the world. Get the legal
               foundation your startup needs to open a bank account, raise
               funding, and start selling.

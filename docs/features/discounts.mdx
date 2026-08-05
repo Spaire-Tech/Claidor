@@ -51,7 +51,7 @@ You can also control whether customers are allowed to enter their own codes on t
 Pass `discount_id` when creating a session from your API:
 
 ```ts
-const checkout = await spaire.checkouts.create({
+const checkout = await claidor.checkouts.create({
   products: ['<product_id>'],
   discountId: '<discount_id>',
   allowDiscountCodes: false, // prevent the customer from changing it

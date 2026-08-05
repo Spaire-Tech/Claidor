@@ -6,10 +6,10 @@ description: "Base URLs, authentication, pagination, rate limits, and the differ
 
 <CardGroup cols={2}>
   <Card title="Production Base URL" icon="globe">
-    `https://api.spairehq.com/v1`
+    `https://api.claidorhq.com/v1`
   </Card>
   <Card title="Sandbox Base URL" icon="flask">
-    `https://sandbox-api.spairehq.com/v1`
+    `https://sandbox-api.claidorhq.com/v1`
   </Card>
   <Card title="Auth (Organization)" icon="key" href="/integrate/oat">
     Use an **Organization Access Token (OAT)** in the `Authorization: Bearer`
@@ -28,8 +28,8 @@ description: "Base URLs, authentication, pagination, rate limits, and the differ
 
 | Environment | Base URL                          | Purpose                         |
 | ----------- | --------------------------------- | ------------------------------- |
-| Production  | `https://api.spairehq.com/v1`         | Real customers & live payments  |
-| Sandbox     | `https://sandbox-api.spairehq.com/v1` | Safe testing & integration work |
+| Production  | `https://api.claidorhq.com/v1`         | Real customers & live payments  |
+| Sandbox     | `https://sandbox-api.claidorhq.com/v1` | Safe testing & integration work |
 
 <Info>
   The sandbox environment is fully isolated—data, users, tokens, and
@@ -46,7 +46,7 @@ Read more: [Sandbox Environment](/integrate/sandbox)
 Use an **OAT** to act on behalf of your organization (manage products, prices, checkouts, orders, subscriptions, benefits, etc.).
 
 ```http
-Authorization: Bearer spaire_oat_xxxxxxxxxxxxxxxxx
+Authorization: Bearer claidor_oat_xxxxxxxxxxxxxxxxx
 ```
 
 <Tip>
@@ -84,20 +84,20 @@ Do **not** use OATs in the browser. For customer-facing flows, [generate a **Cus
 
 <CodeGroup>
 ```bash curl (Production - Core API)
-curl https://api.spairehq.com/v1/products/ \
-  -H "Authorization: Bearer $SPAIRE_OAT" \
+curl https://api.claidorhq.com/v1/products/ \
+  -H "Authorization: Bearer $CLAIDOR_OAT" \
   -H "Accept: application/json"
 ```
 
 ```bash curl (Sandbox - Core API)
-curl https://sandbox-api.spairehq.com/v1/products/ \
-  -H "Authorization: Bearer $SPAIRE_OAT_SANDBOX" \
+curl https://sandbox-api.claidorhq.com/v1/products/ \
+  -H "Authorization: Bearer $CLAIDOR_OAT_SANDBOX" \
   -H "Accept: application/json"
 ```
 
 ```bash curl (Customer Portal API)
-curl https://api.spairehq.com/v1/customer-portal/orders/ \
-  -H "Authorization: Bearer $SPAIRE_CUSTOMER_TOKEN" \
+curl https://api.claidorhq.com/v1/customer-portal/orders/ \
+  -H "Authorization: Bearer $CLAIDOR_CUSTOMER_TOKEN" \
   -H "Accept: application/json"
 ```
 
@@ -109,35 +109,35 @@ All official SDKs accept a `server` parameter for sandbox usage:
 
 <CodeGroup>
 ```ts TypeScript
-import { Spaire } from "@spaire/sdk";
+import { Claidor } from "@spaire/sdk";
 
-const spaire = new Spaire({
-accessToken: process.env.SPAIRE_ACCESS_TOKEN!,
+const claidor = new Claidor({
+accessToken: process.env.CLAIDOR_ACCESS_TOKEN!,
 server: "sandbox", // omit or use 'production' for live
 });
 
 ````
 
 ```py Python
-from spaire import Spaire
+from claidor import Claidor
 
-client = Spaire(
-    access_token=os.environ["SPAIRE_ACCESS_TOKEN"],
+client = Claidor(
+    access_token=os.environ["CLAIDOR_ACCESS_TOKEN"],
     server="sandbox",
 )
 ````
 
 ```go Go
-s := spairego.New(
-  spairego.WithServer("sandbox"),
-  spairego.WithSecurity(os.Getenv("SPAIRE_ACCESS_TOKEN")),
+s := claidorgo.New(
+  claidorgo.WithServer("sandbox"),
+  claidorgo.WithSecurity(os.Getenv("CLAIDOR_ACCESS_TOKEN")),
 )
 ```
 
 ```php PHP
-$sdk = Spaire\Spaire::builder()
+$sdk = Claidor\Claidor::builder()
     ->setServer('sandbox')
-    ->setSecurity(getenv('SPAIRE_ACCESS_TOKEN'))
+    ->setSecurity(getenv('CLAIDOR_ACCESS_TOKEN'))
     ->build();
 ```
 
@@ -145,7 +145,7 @@ $sdk = Spaire\Spaire::builder()
 
 ## Pagination
 
-List endpoints in the Spaire API support pagination to help you efficiently retrieve large datasets. Use the `page` and `limit` query parameters to control pagination.
+List endpoints in the Claidor API support pagination to help you efficiently retrieve large datasets. Use the `page` and `limit` query parameters to control pagination.
 
 ### Query Parameters
 
@@ -174,8 +174,8 @@ Let's say you want to fetch products with a limit of 100 items per page:
 
 <CodeGroup>
 ```bash Request
-curl https://api.spairehq.com/v1/products/?page=1&limit=100 \
-  -H "Authorization: Bearer $SPAIRE_OAT" \
+curl https://api.claidorhq.com/v1/products/?page=1&limit=100 \
+  -H "Authorization: Bearer $CLAIDOR_OAT" \
   -H "Accept: application/json"
 ```
 
@@ -210,7 +210,7 @@ In this example:
 
 ## Rate Limits
 
-Spaire API has rate limits to ensure fair usage and maintain performance. The limits are as follows:
+Claidor API has rate limits to ensure fair usage and maintain performance. The limits are as follows:
 
 - **300 requests per minute** per organization/customer or OAuth2 Client.
 - **3 requests per second** for unauthenticated license key [validation](/api-reference/customer-portal/license-keys/validate), [activation](/api-reference/customer-portal/license-keys/activate), and [deactivation](/api-reference/customer-portal/license-keys/deactivate) endpoints.

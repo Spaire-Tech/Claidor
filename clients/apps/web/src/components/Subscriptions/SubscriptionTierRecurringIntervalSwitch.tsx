@@ -1,5 +1,5 @@
-import { schemas } from '@spaire/client'
-import { Tabs, TabsList, TabsTrigger } from '@spaire/ui/components/atoms/Tabs'
+import { schemas } from '@claidor/client'
+import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
 import React, { useCallback } from 'react'
 
 interface SubscriptionTierRecurringIntervalSwitchProps {

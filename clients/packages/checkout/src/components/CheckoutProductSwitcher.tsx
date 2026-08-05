@@ -6,9 +6,9 @@ import type { ProductPrice } from '@spaire/sdk/models/components/productprice.js
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@spaire/ui/components/ui/radio-group'
-import { ThemingPresetProps } from '@spaire/ui/hooks/theming'
-import { cn } from '@spaire/ui/lib/utils'
+} from '@claidor/ui/components/ui/radio-group'
+import { ThemingPresetProps } from '@claidor/ui/hooks/theming'
+import { cn } from '@claidor/ui/lib/utils'
 import { Fragment, useCallback } from 'react'
 import type { ProductCheckoutPublic } from '../guards'
 import {

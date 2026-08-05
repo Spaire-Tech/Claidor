@@ -1,6 +1,6 @@
-"""The dashboard-native Spaire billing endpoints resolve the creator org's
+"""The dashboard-native Claidor billing endpoints resolve the creator org's
 platform Customer and return its cards / orders / billing details — so a
-creator manages their Spaire subscription inside the dashboard instead of
+creator manages their Claidor subscription inside the dashboard instead of
 being redirected to the customer portal.
 
 These drive the endpoint functions directly with an Organization auth
@@ -49,7 +49,7 @@ _PAGINATION = PaginationParams(page=1, limit=20)
 async def _setup(
     save_fixture: SaveFixture, mocker: MockerFixture
 ) -> tuple[Organization, Organization, Customer]:
-    """Platform (Spaire) org + a creator org that is its Customer."""
+    """Platform (Claidor) org + a creator org that is its Customer."""
     platform_org = await create_organization(save_fixture)
     mocker.patch("polar.platform.service.settings.PLATFORM_ORG_ID", platform_org.id)
     creator = await create_organization(save_fixture)
@@ -128,7 +128,7 @@ class TestPlatformBillingEndpoints:
             applied_balance_amount=0,
             currency="usd",
             billing_reason=OrderBillingReasonInternal.subscription_cycle,
-            invoice_number=f"SPAIRE-{uuid.uuid4().hex[:6].upper()}-0001",
+            invoice_number=f"CLAIDOR-{uuid.uuid4().hex[:6].upper()}-0001",
             customer=customer,
             items=[
                 OrderItem(
@@ -184,7 +184,7 @@ class TestPlatformBillingEndpoints:
                 applied_balance_amount=0,
                 currency="usd",
                 billing_reason=OrderBillingReasonInternal.subscription_create,
-                invoice_number=f"SPAIRE-{uuid.uuid4().hex[:6].upper()}-0001",
+                invoice_number=f"CLAIDOR-{uuid.uuid4().hex[:6].upper()}-0001",
                 customer=customer,
                 custom_field_data={},
                 user_metadata={},

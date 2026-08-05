@@ -1,12 +1,12 @@
 /* ===========================================================
-   Spaire broadcast composer — scoped styles
+   Claidor broadcast composer — scoped styles
    Ported from the design HTML/CSS bundle. Every selector is
    prefixed with .composer-shell so nothing leaks into or out of
-   Spaire's own dashboard CSS.
+   Claidor's own dashboard CSS.
    =========================================================== */
 
 .composer-shell {
-  /* Tokens mapped to the Spaire dashboard (see globals.css / atoms).
+  /* Tokens mapped to the Claidor dashboard (see globals.css / atoms).
      Gray scale = Tailwind gray-*, accent = the dashboard's purple
      (blue-* hue 272°). Kept the --c-* names so the rest of this file
      didn't need rewriting. */
@@ -789,7 +789,7 @@
 }
 
 /* =====================================================================
-   @react-email/editor — body + Spaire theme
+   @react-email/editor — body + Claidor theme
    ===================================================================== */
 
 /* Editor body: fills the document column under the To/Subject fields,
@@ -818,7 +818,7 @@
   pointer-events: none;
 }
 
-/* Spaire light theme for the editor's floating UI. The package's default
+/* Claidor light theme for the editor's floating UI. The package's default
    theme defines --re-* on :root and flips DARK via prefers-color-scheme /
    .dark — and the bubble/slash/forms portal to <body>, OUTSIDE
    .composer-shell. Pinning the palette on each floating container (an

@@ -2,7 +2,7 @@
 
 // Inbox preview (desktop / mobile). Uses real BlockBody read-only render.
 
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 import { BlockBody } from './blocks'
 import { Icon } from './Icon'
@@ -81,7 +81,7 @@ export function EmailPreview({
               <BlockBody key={b.id} b={b} readOnly />
             ))}
             <div className="pv-foot">
-              You&apos;re receiving this because you subscribed to {organization.name} on Spaire.
+              You&apos;re receiving this because you subscribed to {organization.name} on Claidor.
               <br />
               <a href="#">Unsubscribe</a>
               {webVersion && (

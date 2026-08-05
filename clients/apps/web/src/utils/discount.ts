@@ -1,5 +1,5 @@
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
 import { formatPercentage } from './formatters'
 
 type CheckoutDiscount =

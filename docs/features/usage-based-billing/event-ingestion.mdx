@@ -1,9 +1,9 @@
 ---
 title: "Event Ingestion"
-description: "Send billable events from your application to Spaire. Events are the raw signals that power usage-based billing."
+description: "Send billable events from your application to Claidor. Events are the raw signals that power usage-based billing."
 ---
 
-An event is a signal from your application representing a billable action — an API call, a token consumed, a file processed, a message sent. You ingest events via the SDK or REST API, and Spaire aggregates them through [meters](/features/usage-based-billing/meters) to calculate charges.
+An event is a signal from your application representing a billable action — an API call, a token consumed, a file processed, a message sent. You ingest events via the SDK or REST API, and Claidor aggregates them through [meters](/features/usage-based-billing/meters) to calculate charges.
 
 ## Event structure
 
@@ -18,13 +18,13 @@ Each event has:
 <CodeGroup>
 
 ```ts TypeScript
-import { Spaire } from '@spaire/sdk'
+import { Claidor } from '@spaire/sdk'
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
 })
 
-await spaire.events.ingest({
+await claidor.events.ingest({
   events: [
     {
       name: 'api_call',
@@ -40,10 +40,10 @@ await spaire.events.ingest({
 ```
 
 ```python Python
-from spaire_sdk import Spaire
+from claidor_sdk import Claidor
 
-with Spaire(access_token="<YOUR_ACCESS_TOKEN>") as spaire:
-    spaire.events.ingest(request={
+with Claidor(access_token="<YOUR_ACCESS_TOKEN>") as claidor:
+    claidor.events.ingest(request={
         "events": [
             {
                 "name": "api_call",
@@ -59,8 +59,8 @@ with Spaire(access_token="<YOUR_ACCESS_TOKEN>") as spaire:
 ```
 
 ```bash cURL
-curl -X POST https://api.spairehq.com/v1/events \
-  -H "Authorization: Bearer $SPAIRE_ACCESS_TOKEN" \
+curl -X POST https://api.claidorhq.com/v1/events \
+  -H "Authorization: Bearer $CLAIDOR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "events": [
@@ -84,7 +84,7 @@ curl -X POST https://api.spairehq.com/v1/events \
 You can send multiple events in a single request by adding more objects to the `events` array. Batching reduces API calls and is the recommended approach when handling high event volumes.
 
 ```ts
-await spaire.events.ingest({
+await claidor.events.ingest({
   events: [
     { name: 'api_call', externalCustomerId: 'user_1', metadata: { tokens: 200 } },
     { name: 'api_call', externalCustomerId: 'user_2', metadata: { tokens: 450 } },
@@ -97,15 +97,15 @@ await spaire.events.ingest({
 
 Once an event is ingested, it cannot be updated or deleted. Design your event schema carefully — especially the metadata keys and value types your meters will depend on.
 
-## Spaire never blocks on balance
+## Claidor never blocks on balance
 
-Spaire does not prevent event ingestion or block customer actions if a customer runs out of credit or exceeds their meter cap. **You are responsible for checking balances and enforcing limits in your application** before allowing usage.
+Claidor does not prevent event ingestion or block customer actions if a customer runs out of credit or exceeds their meter cap. **You are responsible for checking balances and enforcing limits in your application** before allowing usage.
 
 Check a customer's current meter balance via [Customer State](/integrate/customer-state) or the [Customer Meters API](/api-reference/customer-meters/list).
 
 ## Ingestion strategies
 
-For common event sources, Spaire provides pre-built adapters that handle event formatting and ingestion automatically.
+For common event sources, Claidor provides pre-built adapters that handle event formatting and ingestion automatically.
 
 <CardGroup cols={2}>
   <Card icon="brain" href="/features/usage-based-billing/ingestion-strategies/llm-strategy" title="LLM Strategy">

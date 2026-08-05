@@ -2,7 +2,7 @@
 
 // The portal's single loading treatment — black screen with the blue→white
 // gradient ring (styles in portal.css, unscoped so surfaces outside the
-// .spaire-portal wrapper can render it too).
+// .claidor-portal wrapper can render it too).
 //
 //   screen — fixed full-viewport black overlay; the portal boot state and
 //            cinematic surfaces (lesson viewer, community) use this.

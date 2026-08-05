@@ -4,21 +4,21 @@ import revalidate from '@/app/actions'
 import { Modal, ModalProps } from '@/components/Modal'
 import { useCustomerCancelSubscription } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
-import { isValidationError, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import TextArea from '@spaire/ui/components/atoms/TextArea'
+import { isValidationError, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import TextArea from '@claidor/ui/components/atoms/TextArea'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
-import { Label } from '@spaire/ui/components/ui/label'
+} from '@claidor/ui/components/ui/form'
+import { Label } from '@claidor/ui/components/ui/label'
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@spaire/ui/components/ui/radio-group'
+} from '@claidor/ui/components/ui/radio-group'
 import { useRouter } from 'next/navigation'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'

@@ -1,22 +1,22 @@
 'use client'
 
 import { api } from '@/utils/client'
-import { enums } from '@spaire/client'
-import CountryPicker from '@spaire/ui/components/atoms/CountryPicker'
-import Input from '@spaire/ui/components/atoms/Input'
+import { enums } from '@claidor/client'
+import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   Tabs,
   TabsList,
   TabsTrigger,
-} from '@spaire/ui/components/atoms/Tabs'
-import { formatCurrency } from '@spaire/currency'
+} from '@claidor/ui/components/atoms/Tabs'
+import { formatCurrency } from '@claidor/currency'
 import { useCallback, useEffect, useState } from 'react'
 
 interface TaxPreviewResult {

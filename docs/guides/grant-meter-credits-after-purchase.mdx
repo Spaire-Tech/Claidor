@@ -12,7 +12,7 @@ When building usage-based billing systems, you may want to give new customers an
 - Onboarding bonuses
 - Promotional credits for new signups or purchases
 
-There are two ways to grant initial meter credits in Spaire:
+There are two ways to grant initial meter credits in Claidor:
 
 1. **Meter Credits Benefit (Recommended)** - Automatically grant credits when a customer purchases a product
 2. **Webhook + Events API** - Programmatically grant credits for advanced use cases
@@ -101,11 +101,11 @@ This approach involves:
 
 ### Prerequisites
 
-- A Spaire account with an organization
+- A Claidor account with an organization
 - A meter created with **Sum** aggregation
 - A product with the meter attached
 - Webhooks enabled
-- A Spaire access token for API calls
+- A Claidor access token for API calls
 
 ### Step 1: Create a Meter
 
@@ -113,7 +113,7 @@ First, create a meter that will track your customers' usage.
 
 <Steps>
   <Step title="Navigate to Meters">
-    In the Spaire dashboard sidebar, click on **Products** > **Meters**.
+    In the Claidor dashboard sidebar, click on **Products** > **Meters**.
   </Step>
   <Step title="Create a new meter">
     Click **Create Meter** and configure:
@@ -151,8 +151,8 @@ Configure webhooks to receive notifications when users make purchases.
     Store your webhook secret securely in your environment variables.
     
     ```bash Terminal
-    SPAIRE_ACCESS_TOKEN="spaire_pat_..."
-    SPAIRE_WEBHOOK_SECRET="whsec_..."
+    CLAIDOR_ACCESS_TOKEN="claidor_pat_..."
+    CLAIDOR_WEBHOOK_SECRET="whsec_..."
     PRODUCT_ID="prod_..." # The product ID to grant credits for
     ```
   </Step>
@@ -164,20 +164,20 @@ Create a webhook handler that listens for `order.paid` events and grants initial
 
 #### Next.js Example
 
-```typescript icon="square-js" title="app/api/webhook/spaire/route.ts"
-import { Spaire } from "@spaire/sdk";
-import { Webhooks } from "@spaire/nextjs";
+```typescript icon="square-js" title="app/api/webhook/claidor/route.ts"
+import { Claidor } from "@spaire/sdk";
+import { Webhooks } from "@claidor/nextjs";
 
-const spaire = new Spaire({ accessToken: process.env.SPAIRE_ACCESS_TOKEN });
+const claidor = new Claidor({ accessToken: process.env.CLAIDOR_ACCESS_TOKEN });
 
 export const POST = Webhooks({
-  webhookSecret: process.env.SPAIRE_WEBHOOK_SECRET,
+  webhookSecret: process.env.CLAIDOR_WEBHOOK_SECRET,
   onOrderPaid: async (order) => {
     // Check if this is the product we want to grant credits for
     const targetProductId = process.env.PRODUCT_ID;
     if (order.data.product_id === targetProductId) {
       // Grant 10 credits by ingesting a negative event
-      await spaire.events.ingest({
+      await claidor.events.ingest({
         events: [
           {
             name: "meter-name",
@@ -201,7 +201,7 @@ Test that credits are properly granted when a customer makes a purchase.
 
 <Steps>
   <Step title="Use the sandbox environment">
-    Test your integration in Spaire's [sandbox environment](/integrate/sandbox) to avoid affecting production data.
+    Test your integration in Claidor's [sandbox environment](/integrate/sandbox) to avoid affecting production data.
   </Step>
   <Step title="Make a test purchase">
     Create a checkout session and complete a test purchase.
@@ -213,7 +213,7 @@ Test that credits are properly granted when a customer makes a purchase.
     Use the [Customer Meters API](/api-reference/customer-meters/list) to verify the credits were applied:
     
     ```typescript
-    const meters = await spaire.customerMeters.list({
+    const meters = await claidor.customerMeters.list({
       customerId: "cus_...",
     });
     
@@ -256,7 +256,7 @@ To avoid granting credits multiple times, consider:
 const hasGrantedCredits = await checkIfAlreadyGranted(order.id);
 
 if (!hasGrantedCredits) {
-  await spaire.events.ingest({
+  await claidor.events.ingest({
     events: [{
       name: "meter-name",
       customerId: order.data.customer_id,

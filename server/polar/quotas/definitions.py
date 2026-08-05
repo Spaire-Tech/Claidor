@@ -12,7 +12,7 @@ Each quota:
 Examples:
 
   video_views_monthly:
-    event_name = "spaire.video.viewed"
+    event_name = "claidor.video.viewed"
     aggregation = count
     scope = monthly (only events in current UTC calendar month count)
 
@@ -58,7 +58,7 @@ _BYTES_IN_GB = 1024 * 1024 * 1024
 _DEFINITIONS: dict[QuotaKey, QuotaDefinition] = {
     QuotaKey.storage_gb: QuotaDefinition(
         key=QuotaKey.storage_gb,
-        event_name="spaire.storage.bytes",
+        event_name="claidor.storage.bytes",
         aggregation="sum",
         aggregation_property="bytes_delta",
         scope="lifetime",

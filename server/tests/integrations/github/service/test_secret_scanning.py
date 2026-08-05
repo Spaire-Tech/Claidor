@@ -84,12 +84,12 @@ class TestValidatePayload:
                 [
                     {
                         "token": "TOKEN",
-                        "type": "spaire_personal_access_token",
+                        "type": "claidor_personal_access_token",
                         "source": "github",
                     },
                     {
                         "token": "TOKEN",
-                        "type": "spaire_client_secret",
+                        "type": "claidor_client_secret",
                         "source": "github",
                         "url": "https://example.com",
                     },

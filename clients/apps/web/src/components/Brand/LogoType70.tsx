@@ -3,8 +3,8 @@ import { twMerge } from 'tailwind-merge'
 const LogoType70 = ({ className }: { className?: string }) => {
   return (
     <img
-      src="/assets/logotype-spaire.png"
-      alt="Spaire"
+      src="/assets/logotype-claidor.png"
+      alt="Claidor"
       width={198}
       height={70}
       className={twMerge(className ? className : '')}

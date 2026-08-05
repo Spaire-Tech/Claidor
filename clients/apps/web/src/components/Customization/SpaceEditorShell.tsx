@@ -3,11 +3,11 @@
 import { ProfileCard } from '@/components/Profile/ProfileCard'
 import { useProducts } from '@/hooks/queries'
 import { DEFAULT_FORM_STYLE, FormPublic, useForms } from '@/hooks/queries/forms'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { DraggableBlocks } from './InlineEdit/DraggableBlocks'
 import { EditableProfileCard } from './InlineEdit/EditableProfileCard'
 
-// Renders the live preview of the user's Spaire Space inside the
+// Renders the live preview of the user's Claidor Space inside the
 // editor canvas. Both children subscribe to form state directly via
 // useFormContext, so we DON'T watch here — otherwise every keystroke
 // in the profile card would re-render the entire product/links grid.

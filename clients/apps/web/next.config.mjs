@@ -5,14 +5,14 @@ import { withSentryConfig } from '@sentry/nextjs'
 import { themeConfig } from './shiki.config.mjs'
 
 const POLAR_AUTH_COOKIE_KEY =
-  process.env.POLAR_AUTH_COOKIE_KEY || 'spaire_session'
+  process.env.POLAR_AUTH_COOKIE_KEY || 'claidor_session'
 const ENVIRONMENT =
   process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV || 'development'
 const CODESPACES = process.env.CODESPACES === 'true'
 
 const defaultFrontendHostname = process.env.NEXT_PUBLIC_FRONTEND_BASE_URL
   ? new URL(process.env.NEXT_PUBLIC_FRONTEND_BASE_URL).hostname
-  : 'app.spairehq.com'
+  : 'app.claidorhq.com'
 
 const S3_PUBLIC_IMAGES_BUCKET_ORIGIN = process.env
   .S3_PUBLIC_IMAGES_BUCKET_HOSTNAME
@@ -21,11 +21,11 @@ const S3_PUBLIC_IMAGES_BUCKET_ORIGIN = process.env
 const baseCSP = `
     default-src 'self';
     connect-src 'self' blob: ${process.env.NEXT_PUBLIC_API_URL} ${process.env.S3_UPLOAD_ORIGINS} https://api.stripe.com https://maps.googleapis.com https://*.google-analytics.com https://chat.uk.plain.com https://prod-uk-services-attachm-attachmentsuploadbucket2-1l2e4906o2asm.s3.eu-west-2.amazonaws.com https://*.mux.com https://api.giphy.com;
-    frame-src 'self' https://*.js.stripe.com https://js.stripe.com https://hooks.stripe.com https://customer-wl21dabnj6qtvcai.cloudflarestream.com videodelivery.net *.cloudflarestream.com https://buy.spairehq.com https://www.youtube.com https://youtube.com https://open.spotify.com https://w.soundcloud.com https://www.tiktok.com https://www.instagram.com https://player.vimeo.com https://embed.music.apple.com https://stream.mux.com;
-    media-src 'self' blob: https://*.mux.com https://stream.mux.com ${S3_PUBLIC_IMAGES_BUCKET_ORIGIN} https://spaire-production-files-public.s3.amazonaws.com https://spaire-production-files-public.s3.us-east-1.amazonaws.com https://prod-uk-services-workspac-workspacefilespublicbuck-vs4gjqpqjkh6.s3.amazonaws.com https://prod-uk-services-attachm-attachmentsbucket28b3ccf-uwfssb4vt2us.s3.eu-west-2.amazonaws.com;
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.js.stripe.com https://js.stripe.com https://maps.googleapis.com https://www.googletagmanager.com https://chat.cdn-plain.com https://embed.cloudflarestream.com https://static.cloudflareinsights.com https://cdn.spairehq.com;
+    frame-src 'self' https://*.js.stripe.com https://js.stripe.com https://hooks.stripe.com https://customer-wl21dabnj6qtvcai.cloudflarestream.com videodelivery.net *.cloudflarestream.com https://buy.claidorhq.com https://www.youtube.com https://youtube.com https://open.spotify.com https://w.soundcloud.com https://www.tiktok.com https://www.instagram.com https://player.vimeo.com https://embed.music.apple.com https://stream.mux.com;
+    media-src 'self' blob: https://*.mux.com https://stream.mux.com ${S3_PUBLIC_IMAGES_BUCKET_ORIGIN} https://claidor-production-files-public.s3.amazonaws.com https://claidor-production-files-public.s3.us-east-1.amazonaws.com https://prod-uk-services-workspac-workspacefilespublicbuck-vs4gjqpqjkh6.s3.amazonaws.com https://prod-uk-services-attachm-attachmentsbucket28b3ccf-uwfssb4vt2us.s3.eu-west-2.amazonaws.com;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.js.stripe.com https://js.stripe.com https://maps.googleapis.com https://www.googletagmanager.com https://chat.cdn-plain.com https://embed.cloudflarestream.com https://static.cloudflareinsights.com https://cdn.claidorhq.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    img-src 'self' blob: data: https://www.gravatar.com https://img.logo.dev https://lh3.googleusercontent.com https://avatars.githubusercontent.com ${S3_PUBLIC_IMAGES_BUCKET_ORIGIN} https://spaire-production-files-public.s3.amazonaws.com https://spaire-production-files-public.s3.us-east-1.amazonaws.com https://prod-uk-services-workspac-workspacefilespublicbuck-vs4gjqpqjkh6.s3.amazonaws.com https://prod-uk-services-attachm-attachmentsbucket28b3ccf-uwfssb4vt2us.s3.eu-west-2.amazonaws.com https://i0.wp.com https://img.youtube.com https://i.ytimg.com https://yt3.ggpht.com https://yt3.googleusercontent.com https://www.google.com https://i.scdn.co https://i1.sndcdn.com https://p16-sign.tiktokcdn-us.com https://p19-sign.tiktokcdn-us.com https://*.cdninstagram.com https://*.fbcdn.net https://i.vimeocdn.com https://*.mzstatic.com https://image.mux.com https://*.giphy.com https://cdn.jsdelivr.net;
+    img-src 'self' blob: data: https://www.gravatar.com https://img.logo.dev https://lh3.googleusercontent.com https://avatars.githubusercontent.com ${S3_PUBLIC_IMAGES_BUCKET_ORIGIN} https://claidor-production-files-public.s3.amazonaws.com https://claidor-production-files-public.s3.us-east-1.amazonaws.com https://prod-uk-services-workspac-workspacefilespublicbuck-vs4gjqpqjkh6.s3.amazonaws.com https://prod-uk-services-attachm-attachmentsbucket28b3ccf-uwfssb4vt2us.s3.eu-west-2.amazonaws.com https://i0.wp.com https://img.youtube.com https://i.ytimg.com https://yt3.ggpht.com https://yt3.googleusercontent.com https://www.google.com https://i.scdn.co https://i1.sndcdn.com https://p16-sign.tiktokcdn-us.com https://p19-sign.tiktokcdn-us.com https://*.cdninstagram.com https://*.fbcdn.net https://i.vimeocdn.com https://*.mzstatic.com https://image.mux.com https://*.giphy.com https://cdn.jsdelivr.net;
     font-src 'self';
     object-src 'none';
     base-uri 'self';
@@ -163,7 +163,7 @@ const nextConfig = {
       },
       {
         source: '/:path*',
-        destination: 'https://spairehq.com/:path*',
+        destination: 'https://claidorhq.com/:path*',
         has: [
           {
             type: 'host',
@@ -174,7 +174,7 @@ const nextConfig = {
       },
       {
         source: '/careers',
-        destination: 'https://spairehq.com/company',
+        destination: 'https://claidorhq.com/company',
         permanent: false,
       },
       {

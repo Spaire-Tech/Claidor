@@ -4,9 +4,9 @@ import {
   getTickFormatter,
   getTimestampFormatter,
 } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
 import {
   CartesianGrid,
   ChartContainer,
@@ -15,7 +15,7 @@ import {
   LineChart,
   XAxis,
   YAxis,
-} from '@spaire/ui/components/ui/chart'
+} from '@claidor/ui/components/ui/chart'
 import { forwardRef } from 'react'
 import { twMerge } from 'tailwind-merge'
 import Spinner from '../Shared/Spinner'

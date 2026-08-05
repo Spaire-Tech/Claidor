@@ -22,7 +22,7 @@ class TierPlan(Schema):
     """A subscribable tier plan, as exposed to creators in the upgrade UI."""
 
     tier: TierKey = Field(description="Tier identifier.")
-    name: str = Field(description="Display name, e.g. 'Spaire Starter'.")
+    name: str = Field(description="Display name, e.g. 'Claidor Starter'.")
     description: str | None = Field(description="Marketing description.")
     product_id: UUID | None = Field(
         description=(
@@ -64,8 +64,8 @@ class TierPlanList(Schema):
     items: list[TierPlan]
 
 
-class CurrentSpaireSubscription(Schema):
-    """The caller's current Spaire subscription state (billing-side info,
+class CurrentClaidorSubscription(Schema):
+    """The caller's current Claidor subscription state (billing-side info,
     complementary to the entitlements snapshot)."""
 
     tier: TierKey
@@ -100,7 +100,7 @@ class CurrentSpaireSubscription(Schema):
     past_due_at: datetime | None = Field(
         default=None,
         description=(
-            "When the subscription first entered `past_due` (a Spaire "
+            "When the subscription first entered `past_due` (a Claidor "
             "charge failed). None unless the subscription is past_due."
         ),
     )
@@ -150,7 +150,7 @@ class UpgradeCheckoutCreate(Schema):
     billing_email: str | None = Field(
         default=None,
         description=(
-            "Email address for Spaire's own billing of this subscription. "
+            "Email address for Claidor's own billing of this subscription. "
             "If omitted, the calling user's email is used. Stored on the "
             "platform-org customer record so invoices and receipts reach "
             "the creator."
@@ -182,8 +182,8 @@ class SwitchPlan(Schema):
     )
 
 
-class CancelSpaireSubscription(Schema):
-    """Schedule the current Spaire subscription for cancellation at the
+class CancelClaidorSubscription(Schema):
+    """Schedule the current Claidor subscription for cancellation at the
     end of the current billing period. When the cancellation revokes, the
     org has no active plan and resolves to `inactive` (no free fallback)."""
 
@@ -205,14 +205,14 @@ class CustomerPortalSession(Schema):
     expires_at: datetime
     customer_portal_url: str = Field(
         description=(
-            "URL the creator visits to manage their Spaire subscription "
+            "URL the creator visits to manage their Claidor subscription "
             "(view invoices, change payment method, cancel)."
         )
     )
 
 
 class PlatformBillingDetails(Schema):
-    """The billing identity used on the org's Spaire invoices — read off
+    """The billing identity used on the org's Claidor invoices — read off
     the org's platform Customer row. Powers the dashboard "Billing address"
     section so the creator never has to leave for the customer portal."""
 
@@ -220,7 +220,7 @@ class PlatformBillingDetails(Schema):
     billing_address: Address | None = Field(description="Address shown on invoices.")
     tax_id: TaxID | None = Field(description="Validated tax ID, if provided.")
     default_payment_method_id: UUID | None = Field(
-        description="Id of the card Spaire charges by default, if any."
+        description="Id of the card Claidor charges by default, if any."
     )
 
 
@@ -231,7 +231,7 @@ class PlatformBillingDetailsUpdate(Schema):
 
 
 class PlatformOrder(Schema):
-    """One past Spaire charge, trimmed to what the dashboard order-history
+    """One past Claidor charge, trimmed to what the dashboard order-history
     table renders (invoice number, date, description, amount, status,
     whether an invoice PDF is downloadable)."""
 

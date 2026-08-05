@@ -102,7 +102,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.spaire",
+            email=f"creator-{creator.id}@billing.claidor",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         # Subscription exists but is canceled.
@@ -147,7 +147,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.spaire",
+            email=f"creator-{creator.id}@billing.claidor",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(
@@ -177,7 +177,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.spaire",
+            email=f"creator-{creator.id}@billing.claidor",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(
@@ -197,7 +197,7 @@ class TestGetTier:
         session: AsyncSession,
         save_fixture: SaveFixture,
     ) -> None:
-        # While a Spaire charge is being retried (dunning window), the
+        # While a Claidor charge is being retried (dunning window), the
         # subscription is past_due but the creator KEEPS their tier — they
         # only drop to `inactive` once it's fully canceled.
         platform_org = await create_organization(save_fixture)
@@ -210,7 +210,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.spaire",
+            email=f"creator-{creator.id}@billing.claidor",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(
@@ -243,7 +243,7 @@ class TestGetTier:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.spaire",
+            email=f"creator-{creator.id}@billing.claidor",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(
@@ -289,7 +289,7 @@ class TestGetForOrganization:
         customer = await create_customer(
             save_fixture,
             organization=platform_org,
-            email=f"creator-{creator.id}@billing.spaire",
+            email=f"creator-{creator.id}@billing.claidor",
             user_metadata={"creator_org_id": str(creator.id)},
         )
         await create_subscription(

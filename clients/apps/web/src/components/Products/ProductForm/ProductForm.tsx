@@ -1,5 +1,5 @@
 import { Section } from '@/components/Layout/Section'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import Link from 'next/link'
 import { ProductAdditionalDetailsSection } from './ProductAdditionalDetailsSection'
 import { ProductCustomFieldSection } from './ProductCustomFieldSection'

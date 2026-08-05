@@ -190,7 +190,7 @@ async def export(
                 )
             )
 
-    filename = "spaire-customers.csv"
+    filename = "claidor-customers.csv"
     return StreamingResponse(
         create_csv(),
         media_type="text/csv",

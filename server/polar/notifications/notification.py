@@ -57,7 +57,7 @@ class MaintainerAccountUnderReviewNotificationPayload(NotificationPayloadBase):
     account_type: str
 
     def subject(self) -> str:
-        return "Your Spaire account is being reviewed"
+        return "Your Claidor account is being reviewed"
 
     @classmethod
     def template_name(cls) -> str:
@@ -209,7 +209,7 @@ class MaintainerPerksUnlockedNotificationPayload(NotificationPayloadBase):
 
     def subject(self) -> str:
         return (
-            "🎉 Congrats on your first sale! You've unlocked the Spaire Startup Perks."
+            "🎉 Congrats on your first sale! You've unlocked the Claidor Startup Perks."
         )
 
     @classmethod

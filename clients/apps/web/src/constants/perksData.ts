@@ -28,10 +28,10 @@ export interface Perk {
 export const PERKS: Perk[] = [
   {
     name: 'Deel',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/deel+logo.png',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/deel+logo.png',
     incentive: '$1,000 in Combined Credits',
     description:
-      'Through our partnership with Deel, startups receive $1,000 in onboarding value: $500 in Deel credits for global hiring and payroll, and $500 in Spaire credits to offset revenue fees as you scale internationally.',
+      'Through our partnership with Deel, startups receive $1,000 in onboarding value: $500 in Deel credits for global hiring and payroll, and $500 in Claidor credits to offset revenue fees as you scale internationally.',
     url: 'https://get.deel.com/i4rqw957p9cm',
     featured: true,
     details: {
@@ -78,7 +78,7 @@ export const PERKS: Perk[] = [
               label: 'Once completed, you receive:',
               items: [
                 '$500 in Deel billing credits (applied to eligible Deel fees)',
-                '$500 in Spaire revenue credits (applied toward your Spaire platform fees)',
+                '$500 in Claidor revenue credits (applied toward your Claidor platform fees)',
               ],
             },
           ],
@@ -101,14 +101,14 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Notion + Notion AI',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/notionhq_logo.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/notionhq_logo.jpeg',
     incentive: '6 Months Free + Notion AI',
     description:
-      'Spaire has partnered with Notion to give early-stage startups 6 months of Notion Business — with Notion AI included. One workspace for your docs, specs, roadmaps, and team knowledge, with AI built in from day one.',
-    url: 'https://ntn.so/spaire',
+      'Claidor has partnered with Notion to give early-stage startups 6 months of Notion Business — with Notion AI included. One workspace for your docs, specs, roadmaps, and team knowledge, with AI built in from day one.',
+    url: 'https://ntn.so/claidor',
     featured: true,
     details: {
-      claimUrl: 'https://ntn.so/spaire',
+      claimUrl: 'https://ntn.so/claidor',
       sections: [
         {
           heading: 'What is Notion?',
@@ -167,14 +167,14 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Mercury',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/mercurybank_logo.jpeg',
-    incentive: '$250 Mercury Credit + $250 Spaire Credit',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/mercurybank_logo.jpeg',
+    incentive: '$250 Mercury Credit + $250 Claidor Credit',
     description:
-      'Open a Mercury startup bank account through Spaire and receive $250 in Mercury credits plus $250 in Spaire platform credits. Mercury provides modern banking built for startups, with powerful financial tools and integrations.',
-    url: 'https://mercury.com/r/spaire',
+      'Open a Mercury startup bank account through Claidor and receive $250 in Mercury credits plus $250 in Claidor platform credits. Mercury provides modern banking built for startups, with powerful financial tools and integrations.',
+    url: 'https://mercury.com/r/claidor',
     featured: true,
     details: {
-      claimUrl: 'https://mercury.com/r/spaire',
+      claimUrl: 'https://mercury.com/r/claidor',
       sections: [
         {
           heading: 'What is Mercury?',
@@ -200,7 +200,7 @@ export const PERKS: Perk[] = [
               type: 'ordered-list',
               label: 'To qualify, you must:',
               items: [
-                'Open a new Mercury business account using the Spaire partner link',
+                'Open a new Mercury business account using the Claidor partner link',
                 'Deposit $10,000 into your Mercury account within your first 90 days',
               ],
             },
@@ -209,7 +209,7 @@ export const PERKS: Perk[] = [
               label: 'Once completed, you receive:',
               items: [
                 '$250 in cash from Mercury',
-                '$250 in Spaire platform credits',
+                '$250 in Claidor platform credits',
               ],
             },
           ],
@@ -222,7 +222,7 @@ export const PERKS: Perk[] = [
               items: [
                 'The $10,000 deposit must be completed within 90 days of opening your Mercury account.',
                 'The $250 reward is issued directly by Mercury once the requirement is met.',
-                'Spaire credits are applied to Spaire platform fees and are not paid out as cash.',
+                'Claidor credits are applied to Claidor platform fees and are not paid out as cash.',
                 'Mercury determines final eligibility and account approval.',
               ],
             },
@@ -233,7 +233,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'AWS',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/amazon_web_services_logo.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/amazon_web_services_logo.jpeg',
     incentive: '$5,000 in Credits',
     description:
       'Amazon Web Services is the backbone of modern cloud infrastructure. From compute and storage to machine learning and serverless, AWS gives you the scale and reliability that enterprise customers demand.',
@@ -241,7 +241,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Stripe Atlas',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/stripe_logo.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/stripe_logo.jpeg',
     incentive: '$500 in Processing Credits',
     description:
       'Stripe Atlas incorporates your Delaware C-Corp, sets up your bank account, and gives you the legal templates to get funded — in days, not weeks.',
@@ -249,7 +249,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'HubSpot',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/hubspot_logo.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/hubspot_logo.jpeg',
     incentive: '90% Off Year One',
     description:
       'HubSpot gives you CRM, email marketing, sales pipelines, and customer support in one platform — replacing the patchwork of disconnected tools that slow early teams down.',
@@ -257,7 +257,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'PostHog',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/posthog_logo.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/posthog_logo.jpeg',
     incentive: '$50K in Credits',
     description:
       'PostHog is the open-source product analytics suite that replaces Amplitude, LaunchDarkly, and Hotjar in one self-serve tool. Event tracking, feature flags, session recording, and A/B testing.',
@@ -265,7 +265,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Linear',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/linear.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/linear.jpeg',
     incentive: '6 Months Free',
     description:
       'Build and ship products faster with Linear. Plan features, track bugs, and keep your engineering team aligned with a project management tool designed for modern software teams.',
@@ -288,7 +288,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Spaire Startup Stack',
+          heading: 'What You Get Through the Claidor Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -346,7 +346,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Intercom',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/intercom_logo.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/intercom_logo.jpeg',
     incentive: 'Free for First Year',
     description:
       'Communicate with your users from day one using Intercom. Manage support conversations, onboard new customers, and automate responses with powerful messaging and AI tools.',
@@ -373,7 +373,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Spaire Startup Stack',
+          heading: 'What You Get Through the Claidor Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -419,7 +419,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Vercel',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/vercel_logo.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/vercel_logo.jpeg',
     incentive: '$3,000 in Credits',
     description:
       'Vercel is the deployment platform built for frontend teams. Instant global deploys, edge functions, and built-in analytics — purpose-built for Next.js but compatible with any framework.',
@@ -427,7 +427,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'OpenAI',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/open+ai+-+logo.jpg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/open+ai+-+logo.jpg',
     incentive: '$2,500 in API Credits',
     description:
       'OpenAI provides the foundational AI models that power the next generation of software products — from GPT-4 to embeddings and fine-tuning.',
@@ -435,7 +435,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Airtable',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/airtable-logo.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/airtable-logo.jpeg',
     incentive: '$2,000 in Credits',
     description:
       'Airtable is the programmable spreadsheet that ops teams use to build internal tools without engineering resources — from CRM to content calendars to inventory tracking.',
@@ -443,7 +443,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Mixpanel',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/mixpanel_inc__logo.jpeg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/mixpanel_inc__logo.jpeg',
     incentive: '$50K in Credits',
     description:
       'Mixpanel is the event-based analytics platform that tells you what users actually do in your product — funnels, retention analysis, and cohort breakdowns that drive real product decisions.',
@@ -451,14 +451,14 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Apollo',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/Apolo+logo.jpg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/Apolo+logo.jpg',
     incentive: '50% Off Annual Plan',
     description:
-      'Spaire startups receive 50% off Apollo\'s sales intelligence platform for one year. Access a database of over 270M contacts and powerful outreach tools to find customers, start conversations, and grow your first revenue.',
-    url: 'https://www.apollo.io/partners/partnership-startup-promo?utm_medium=partner&utm_source=communities_startup&utm_campaign=communities_spaire',
+      'Claidor startups receive 50% off Apollo\'s sales intelligence platform for one year. Access a database of over 270M contacts and powerful outreach tools to find customers, start conversations, and grow your first revenue.',
+    url: 'https://www.apollo.io/partners/partnership-startup-promo?utm_medium=partner&utm_source=communities_startup&utm_campaign=communities_claidor',
     featured: true,
     details: {
-      claimUrl: 'https://www.apollo.io/partners/partnership-startup-promo?utm_medium=partner&utm_source=communities_startup&utm_campaign=communities_spaire',
+      claimUrl: 'https://www.apollo.io/partners/partnership-startup-promo?utm_medium=partner&utm_source=communities_startup&utm_campaign=communities_claidor',
       sections: [
         {
           heading: 'What is Apollo?',
@@ -478,7 +478,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Spaire Startup Stack',
+          heading: 'What You Get Through the Claidor Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -529,10 +529,10 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'DocSend',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/doc+send+logo.png',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/doc+send+logo.png',
     incentive: '90% Off for the First Year',
     description:
-      'Share investor decks, fundraising materials, and key documents securely with DocSend. Spaire startups receive 90% off for the first year, with analytics that show who opened your documents and how they engaged with them.',
+      'Share investor decks, fundraising materials, and key documents securely with DocSend. Claidor startups receive 90% off for the first year, with analytics that show who opened your documents and how they engaged with them.',
     url: 'https://experience.docsend.com/dfyk3wcsklzs',
     featured: true,
     details: {
@@ -556,7 +556,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Spaire Startup Stack',
+          heading: 'What You Get Through the Claidor Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -601,10 +601,10 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Microsoft Azure',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/Microsoft+Logo.png',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/Microsoft+Logo.png',
     incentive: 'Up to $5,000 in Cloud Credits',
     description:
-      "Spaire startups can access up to $5,000 in Microsoft Azure credits to build and scale their products in the cloud. Use Azure's infrastructure to host applications, run databases, and power your startup's backend services.",
+      "Claidor startups can access up to $5,000 in Microsoft Azure credits to build and scale their products in the cloud. Use Azure's infrastructure to host applications, run databases, and power your startup's backend services.",
     url: 'https://www.microsoft.com/en-us/startups?utm_source=mercury',
     featured: true,
     details: {
@@ -628,7 +628,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Spaire Startup Stack',
+          heading: 'What You Get Through the Claidor Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -673,7 +673,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Carta',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/carta___logo.jpg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/carta___logo.jpg',
     incentive: '20% Off First Year',
     description:
       "Manage your company's ownership from the start with Carta. Track your cap table, issue equity to founders and employees, and stay organized as you raise funding and grow your team.",
@@ -700,7 +700,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Spaire Startup Stack',
+          heading: 'What You Get Through the Claidor Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -754,7 +754,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Upwork',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/upwork_logo.jpg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/upwork_logo.jpg',
     incentive: '50% Off for 90 Days',
     description:
       'Find specialized talent quickly with Upwork. Startups use Upwork to hire designers, engineers, marketers, and other experts from around the world without the overhead of traditional hiring.',
@@ -781,7 +781,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Spaire Startup Stack',
+          heading: 'What You Get Through the Claidor Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -842,7 +842,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Slack',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/slack_logo.jpg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/slack_logo.jpg',
     incentive: '25% Off for 12 Months',
     description:
       'Keep your team connected with Slack. Organize conversations in channels, collaborate in real time, and integrate the tools your startup uses to build and run its product.',
@@ -869,7 +869,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Spaire Startup Stack',
+          heading: 'What You Get Through the Claidor Startup Stack',
           blocks: [
             {
               type: 'unordered-list',
@@ -926,7 +926,7 @@ export const PERKS: Perk[] = [
   },
   {
     name: 'Google Cloud',
-    logo: 'https://spaire-production-files-public.s3.us-east-1.amazonaws.com/google_cloud_logo.jpg',
+    logo: 'https://claidor-production-files-public.s3.us-east-1.amazonaws.com/google_cloud_logo.jpg',
     incentive: 'Up to $200K in Credits',
     hidden: true,
     description:
@@ -954,7 +954,7 @@ export const PERKS: Perk[] = [
           ],
         },
         {
-          heading: 'What You Get Through the Spaire Startup Stack',
+          heading: 'What You Get Through the Claidor Startup Stack',
           blocks: [
             {
               type: 'unordered-list',

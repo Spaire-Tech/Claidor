@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
-import { Card, CardContent, CardFooter, CardHeader } from '@spaire/ui/components/atoms/Card'
+import Button from '@claidor/ui/components/atoms/Button'
+import { Card, CardContent, CardFooter, CardHeader } from '@claidor/ui/components/atoms/Card'
 import Link from 'next/link'
 import { FORMATION_STARTED_KEY, type FormationStartedData } from './types'
 

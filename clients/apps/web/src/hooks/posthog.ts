@@ -1,6 +1,6 @@
 'use client'
 
-import type { schemas } from '@spaire/client'
+import type { schemas } from '@claidor/client'
 import type { JsonType } from '@posthog/core'
 import { usePostHog as useOuterPostHog } from 'posthog-js/react'
 import { useCallback, useMemo } from 'react'

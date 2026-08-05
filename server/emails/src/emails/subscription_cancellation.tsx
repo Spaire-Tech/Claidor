@@ -83,7 +83,7 @@ SubscriptionCancellation.PreviewProps = {
   subscription: {
     ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
   },
-  url: 'https://app.spairehq.com/acme-inc/portal/subscriptions/12345',
+  url: 'https://app.claidorhq.com/acme-inc/portal/subscriptions/12345',
 }
 
 export default SubscriptionCancellation

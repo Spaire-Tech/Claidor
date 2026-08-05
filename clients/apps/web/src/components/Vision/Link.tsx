@@ -14,7 +14,7 @@ export const Link = ({ variant = 'primary', ...props }: LinkProps) => {
     <NextLink
       {...props}
       className={twMerge(
-        'border-spaire-200 focus-within:bg-spaire-200 hover:bg-spaire-200 flex w-fit cursor-default flex-row gap-x-1 py-px font-mono focus-within:text-black focus-within:outline-none hover:text-black',
+        'border-claidor-200 focus-within:bg-claidor-200 hover:bg-claidor-200 flex w-fit cursor-default flex-row gap-x-1 py-px font-mono focus-within:text-black focus-within:outline-none hover:text-black',
         variant === 'primary' ? primaryClassName : ghostClassName,
         props.className,
       )}

@@ -147,7 +147,7 @@ export const DEFAULT_STEP_VALUES = {
   email: (): EmailStepValue => ({
     subject: 'Welcome — you’re in',
     preview: 'A quick note about what to expect over the next few days.',
-    fromName: 'Spaire',
+    fromName: 'Claidor',
     fromEmail: 'hello@yoursite.com',
     template: 'plain',
     abTest: false,

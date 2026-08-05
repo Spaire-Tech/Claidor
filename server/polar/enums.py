@@ -98,15 +98,15 @@ class InvoiceNumbering(StrEnum):
 
 
 class TokenType(StrEnum):
-    client_secret = "spaire_client_secret"
-    client_registration_token = "spaire_client_registration_token"
-    authorization_code = "spaire_authorization_code"
-    access_token = "spaire_access_token"
-    refresh_token = "spaire_refresh_token"
-    personal_access_token = "spaire_personal_access_token"
-    organization_access_token = "spaire_organization_access_token"
-    customer_session_token = "spaire_customer_session_token"
-    user_session_token = "spaire_user_session_token"
+    client_secret = "claidor_client_secret"
+    client_registration_token = "claidor_client_registration_token"
+    authorization_code = "claidor_authorization_code"
+    access_token = "claidor_access_token"
+    refresh_token = "claidor_refresh_token"
+    personal_access_token = "claidor_personal_access_token"
+    organization_access_token = "claidor_organization_access_token"
+    customer_session_token = "claidor_customer_session_token"
+    user_session_token = "claidor_user_session_token"
 
 
 class RateLimitGroup(StrEnum):

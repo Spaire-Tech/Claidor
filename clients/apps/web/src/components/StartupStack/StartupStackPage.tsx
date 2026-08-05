@@ -7,7 +7,7 @@ import { FEATURED_PERKS, type Perk } from '@/constants/perksData'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { CONFIG } from '@/utils/config'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import { useContext, useState } from 'react'
 import PerkDetailModalContent from './PerkDetailModalContent'
 
@@ -78,7 +78,7 @@ export default function StartupStackPage() {
         </p>
         {!perksUnlocked && (
           <p className="text-sm text-blue-500">
-            Perks unlock after your first successful sale through Spaire. This
+            Perks unlock after your first successful sale through Claidor. This
             helps ensure the program supports founders who are actively building
             and launching their products.
           </p>

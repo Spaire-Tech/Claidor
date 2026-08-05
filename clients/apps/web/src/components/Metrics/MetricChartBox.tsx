@@ -4,24 +4,24 @@ import Spinner from '@/components/Shared/Spinner'
 import { ParsedMetricsResponse } from '@/hooks/queries'
 import { getFormattedMetricValue } from '@/utils/metrics'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import FormattedInterval from '@spaire/ui/components/atoms/FormattedInterval'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import FormattedInterval from '@claidor/ui/components/atoms/FormattedInterval'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
-import { Status } from '@spaire/ui/components/atoms/Status'
+} from '@claidor/ui/components/atoms/Select'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@spaire/ui/components/ui/tooltip'
+} from '@claidor/ui/components/ui/tooltip'
 import React, { useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Modal } from '../Modal'

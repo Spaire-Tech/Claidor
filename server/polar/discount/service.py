@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 
 from polar.auth.models import AuthSubject, is_organization, is_user
 from polar.discount.repository import DiscountRepository
-from polar.exceptions import PolarError, SpaireRequestValidationError
+from polar.exceptions import PolarError, ClaidorRequestValidationError
 from polar.kit.db.locking import is_lock_not_available_error
 from polar.kit.pagination import PaginationParams, paginate
 from polar.kit.services import ResourceServiceReader
@@ -115,7 +115,7 @@ class DiscountService(ResourceServiceReader[Discount]):
                 session, discount_create.code, organization, redeemable=False
             )
             if existing_discount is not None:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -134,7 +134,7 @@ class DiscountService(ResourceServiceReader[Discount]):
                     product_id, organization.id
                 )
                 if product is None:
-                    raise SpaireRequestValidationError(
+                    raise ClaidorRequestValidationError(
                         [
                             {
                                 "type": "value_error",
@@ -172,7 +172,7 @@ class DiscountService(ResourceServiceReader[Discount]):
             discount_update.duration is not None
             and discount_update.duration != discount.duration
         ):
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -184,7 +184,7 @@ class DiscountService(ResourceServiceReader[Discount]):
             )
 
         if discount_update.type is not None and discount_update.type != discount.type:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -200,7 +200,7 @@ class DiscountService(ResourceServiceReader[Discount]):
                 session, discount_update.code, discount.organization, redeemable=False
             )
             if existing_discount is not None and existing_discount.id != discount.id:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",
@@ -223,7 +223,7 @@ class DiscountService(ResourceServiceReader[Discount]):
                     discount_update_value is not None
                     and discount_update_value != getattr(discount, field, None)
                 ):
-                    raise SpaireRequestValidationError(
+                    raise ClaidorRequestValidationError(
                         [
                             {
                                 "type": "value_error",
@@ -249,7 +249,7 @@ class DiscountService(ResourceServiceReader[Discount]):
                 )
                 if product is None:
                     await nested.rollback()
-                    raise SpaireRequestValidationError(
+                    raise ClaidorRequestValidationError(
                         [
                             {
                                 "type": "value_error",

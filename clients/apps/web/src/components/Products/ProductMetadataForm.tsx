@@ -1,13 +1,13 @@
-import { FormField, FormLabel } from '@spaire/ui/components/ui/form'
+import { FormField, FormLabel } from '@claidor/ui/components/ui/form'
 
 import ClearOutlined from '@mui/icons-material/ClearOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   FormControl,
   FormItem,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useCallback } from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { ProductFormType } from './ProductForm/ProductForm'

@@ -1,4 +1,4 @@
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 export const onBenefitGranted = async (_: {
   subscription_benefit_id: string

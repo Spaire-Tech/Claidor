@@ -6,7 +6,7 @@
 **Date:** 2026-03-08
 **Status:** Design Proposal (V2 — replaces Incorporation UX Spec V1)
 **Related:** [incorporation-feature-plan.md](./incorporation-feature-plan.md)
-**Partner:** [doola](https://partnersps.doola.com/spaire)
+**Partner:** [doola](https://partnersps.doola.com/claidor)
 
 ---
 
@@ -37,21 +37,21 @@ Stripe Atlas succeeds because it:
 2. **Provides education inline** — tooltips and "Why does this matter?" sections reduce anxiety about legal decisions.
 3. **Defaults are smart** — Delaware is pre-selected, recommendations are explained.
 
-We preserve this UX philosophy but redirect the actual formation to our partner doola. Spaire acts as a **guided intake and recommendation layer** — we help founders understand what they need, then hand them off to doola to execute.
+We preserve this UX philosophy but redirect the actual formation to our partner doola. Claidor acts as a **guided intake and recommendation layer** — we help founders understand what they need, then hand them off to doola to execute.
 
-### Spaire Design Principles
+### Claidor Design Principles
 
-We inherit Spaire's existing design system:
+We inherit Claidor's existing design system:
 
 - **`DashboardBody`** for page chrome (title, context view, tabs)
-- **`@spaire/ui`** components (`Button`, `Input`, `Select`, `Card`, `Banner`)
+- **`@claidor/ui`** components (`Button`, `Input`, `Select`, `Card`, `Banner`)
 - **Framer Motion** for step transitions
 - **Dark mode first** with `dark:` Tailwind variants
 - **12-column grid** collapsing to single column on mobile
 
-### What Spaire Handles vs. doola
+### What Claidor Handles vs. doola
 
-| Concern | Spaire (V1) | doola |
+| Concern | Claidor (V1) | doola |
 |---|---|---|
 | Founder intent collection | Yes | — |
 | Entity type recommendation | Yes (rule-based) | — |
@@ -73,7 +73,7 @@ We inherit Spaire's existing design system:
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                 Spaire Dashboard                 │
+│                 Claidor Dashboard                 │
 │                                                  │
 │  ┌───────────┐  ┌───────────┐  ┌─────────────┐  │
 │  │  Step 1   │→ │  Step 2   │→ │   Step 3    │──┼──→ doola
@@ -91,7 +91,7 @@ We inherit Spaire's existing design system:
 1. **No backend formation API** — V1 does not create incorporations in the database.
 2. **Client-side state only** — wizard answers stored in `localStorage` for draft persistence and optionally sent to analytics.
 3. **Rule-based recommendation engine** — deterministic, explainable entity type + state recommendations. No AI/LLM.
-4. **Affiliate redirect** — final CTA opens `https://partnersps.doola.com/spaire` with optional query parameters.
+4. **Affiliate redirect** — final CTA opens `https://partnersps.doola.com/claidor` with optional query parameters.
 5. **Future-proof** — component structure allows restoring deep FileForms integration in V2.
 
 ---
@@ -359,7 +359,7 @@ const companyDetailsSchema = z.object({
 │  │  10 minutes.                                     │    │
 │  │                                                  │    │
 │  │  What's included:                                │    │
-│  │  ✓ 10% founder discount via Spaire               │    │
+│  │  ✓ 10% founder discount via Claidor               │    │
 │  │  ✓ Company formation & state filings             │    │
 │  │  ✓ Registered agent (1 year included)            │    │
 │  │  ✓ EIN (tax ID) assistance                       │    │
@@ -382,7 +382,7 @@ const companyDetailsSchema = z.object({
 **Redirect behavior:**
 
 ```typescript
-const DOOLA_AFFILIATE_URL = 'https://partnersps.doola.com/spaire'
+const DOOLA_AFFILIATE_URL = 'https://partnersps.doola.com/claidor'
 
 function handleContinueToDoola(formData: WizardFormData) {
   // Optional: send analytics event
@@ -657,7 +657,7 @@ The following components from the original spec are **not needed** in V1:
 
 - ~~IncorporationTimeline.tsx~~ — doola handles status tracking
 - ~~IncorporationDocuments.tsx~~ — doola delivers documents
-- ~~IncorporationStatusPage.tsx~~ — no post-submission dashboard in Spaire
+- ~~IncorporationStatusPage.tsx~~ — no post-submission dashboard in Claidor
 - ~~AddressStep.tsx~~ — doola collects addresses
 - ~~OfficerStep.tsx~~ — doola collects officer details
 - ~~PaymentStep.tsx~~ — doola processes payment
@@ -742,7 +742,7 @@ interface WizardFormData {
 ### Draft Persistence
 
 ```typescript
-const STORAGE_KEY = 'spaire:formation-wizard-draft'
+const STORAGE_KEY = 'claidor:formation-wizard-draft'
 
 function useDraftPersistence(formData: WizardFormData) {
   // Save on change
@@ -894,7 +894,7 @@ Subtle pulse on the "Start Formation with doola" button to draw attention:
 │   │                                                              │   │
 │   │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │   │
 │   │  │ 10% discount │  │ Company      │  │ Registered   │       │   │
-│   │  │ for Spaire   │  │ formation &  │  │ agent        │       │   │
+│   │  │ for Claidor   │  │ formation &  │  │ agent        │       │   │
 │   │  │ founders     │  │ state filing │  │ included     │       │   │
 │   │  └──────────────┘  └──────────────┘  └──────────────┘       │   │
 │   │                                                              │   │
@@ -997,7 +997,7 @@ Subtle pulse on the "Start Formation with doola" button to draw attention:
 │   │  │  You will complete company formation with our        │    │   │
 │   │  │  partner doola. This usually takes about 10 minutes. │    │   │
 │   │  │                                                      │    │   │
-│   │  │  ✓ 10% founder discount via Spaire                   │    │   │
+│   │  │  ✓ 10% founder discount via Claidor                   │    │   │
 │   │  │  ✓ Company formation & state filings                 │    │   │
 │   │  │  ✓ Registered agent (1 year)                         │    │   │
 │   │  │  ✓ EIN assistance                                    │    │   │
@@ -1025,7 +1025,7 @@ Subtle pulse on the "Start Formation with doola" button to draw attention:
 
 ```
 ┌─────────────────────────┐
-│  ≡  Spaire              │
+│  ≡  Claidor              │
 ├─────────────────────────┤
 │                         │
 │  ● 1 ─── ○ 2 ─── ○ 3   │
@@ -1078,7 +1078,7 @@ Subtle pulse on the "Start Formation with doola" button to draw attention:
 
 ```
 ┌─────────────────────────┐
-│  ≡  Spaire              │
+│  ≡  Claidor              │
 ├─────────────────────────┤
 │                         │
 │  ✓ 1 ─── ✓ 2 ─── ● 3   │
@@ -1127,17 +1127,17 @@ Subtle pulse on the "Start Formation with doola" button to draw attention:
 
 ### Problem
 
-After redirecting to doola, the founder may not return to Spaire. Without a re-engagement mechanism, we lose the user at the moment they become most valuable — right after forming their company.
+After redirecting to doola, the founder may not return to Claidor. Without a re-engagement mechanism, we lose the user at the moment they become most valuable — right after forming their company.
 
 ### Solution
 
-Store a `formation_started` flag in localStorage when the user clicks "Start Formation with doola". When the founder returns to the Spaire dashboard, display a **Company Setup Card** that guides them back into the product.
+Store a `formation_started` flag in localStorage when the user clicks "Start Formation with doola". When the founder returns to the Claidor dashboard, display a **Company Setup Card** that guides them back into the product.
 
 ### Implementation
 
 ```typescript
 // Set on redirect
-const FORMATION_STARTED_KEY = 'spaire:formation-started'
+const FORMATION_STARTED_KEY = 'claidor:formation-started'
 
 function handleContinueToDoola(formData: WizardFormData) {
   localStorage.setItem(FORMATION_STARTED_KEY, JSON.stringify({
@@ -1257,7 +1257,7 @@ This brings the total to **10 new files, 1 modified file**.
 | Company Info step | Simplified into Step 2 | Fewer fields |
 | People & Officers step | Removed | doola collects |
 | Address step | Removed | doola collects |
-| Review & Pay step | Replaced by Review & Redirect | No payment in Spaire |
+| Review & Pay step | Replaced by Review & Redirect | No payment in Claidor |
 | Post-submission dashboard | Removed | doola handles status |
 | IncorporationTimeline | Removed | Not applicable |
 | IncorporationDocuments | Removed | doola delivers |
@@ -1272,7 +1272,7 @@ This brings the total to **10 new files, 1 modified file**.
 When deep FileForms integration is restored:
 
 1. Re-add address and officer collection steps
-2. Add Spaire-managed checkout with Stripe
+2. Add Claidor-managed checkout with Stripe
 3. Build formation status polling and timeline dashboard
 4. Add document download functionality
 5. Expand formation state options beyond DE/WY

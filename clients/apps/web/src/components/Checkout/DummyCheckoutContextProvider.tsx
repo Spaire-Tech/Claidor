@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form'
 import {
   CheckoutContext,
   CheckoutFormContext,
-} from '@spaire/checkout/providers'
+} from '@claidor/checkout/providers'
 
 const DummyCheckoutContextProvider = ({
   checkout,

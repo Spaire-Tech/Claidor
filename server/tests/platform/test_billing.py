@@ -232,7 +232,7 @@ class TestEnsureStarterTrialSubscription:
         )
 
         existing_customer = Customer(
-            email=f"creator-{creator.slug}@billing.spairehq.internal",
+            email=f"creator-{creator.slug}@billing.claidorhq.internal",
             name=creator.name,
             organization_id=platform_org.id,
             user_metadata={"creator_org_id": str(creator.id)},

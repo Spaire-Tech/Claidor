@@ -1,5 +1,5 @@
 import AddPhotoAlternateOutlined from '@mui/icons-material/AddPhotoAlternateOutlined'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { ReactNode, useCallback, useState } from 'react'
 import { FileRejection } from 'react-dropzone'
 import { twMerge } from 'tailwind-merge'

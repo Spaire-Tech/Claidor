@@ -112,7 +112,7 @@ class UpdateOrganizationDetailsDataForm(forms.BaseForm):
         Field(
             min_length=1,
             title="Intended Use",
-            description="How the organization will integrate and use Spaire",
+            description="How the organization will integrate and use Claidor",
         ),
     ]
 

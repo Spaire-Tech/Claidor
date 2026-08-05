@@ -1,7 +1,7 @@
 """Tests for the platform upgrade-checkout flow and trial supersession.
 
 Covers the platform upgrade / supersession behavior:
-  - maybe_supersede_platform_trial: a new paid Spaire sub cancels the
+  - maybe_supersede_platform_trial: a new paid Claidor sub cancels the
     creator's leftover auto-trial, and is a no-op for the trial itself,
     non-platform subs, and non-paid subs.
   - PlatformUpgradeService.create_checkout: does NOT pre-revoke the trial,
@@ -79,7 +79,7 @@ async def _platform_customer(
     return await create_customer(
         save_fixture,
         organization=platform_org,
-        email=email or f"creator-{creator.slug}@billing.spairehq.internal",
+        email=email or f"creator-{creator.slug}@billing.claidorhq.internal",
         user_metadata={"creator_org_id": str(creator.id)},
     )
 
@@ -509,7 +509,7 @@ class TestCreateCheckout:
         await _tier_product(save_fixture, platform_org=platform_org, tier="starter")
         self._mock_checkout_create(mocker)
 
-        assert synthetic.endswith("@billing.spairehq.internal")
+        assert synthetic.endswith("@billing.claidorhq.internal")
 
         await platform_upgrade.create_checkout(
             session,
@@ -554,7 +554,7 @@ class TestCreateCheckout:
         assert customer_a.email == real_email
 
         # Org B (same person, same email) collides. It must NOT keep the
-        # @billing.spairehq.internal placeholder — it adopts a plus-addressed
+        # @billing.claidorhq.internal placeholder — it adopts a plus-addressed
         # variant that routes to the same inbox and stays unique.
         org_b = await create_organization(save_fixture)
         customer_b = await _platform_customer(
@@ -571,7 +571,7 @@ class TestCreateCheckout:
         expected = _plus_tagged_email(real_email, org_b.slug)
         assert customer_b.email == expected
         assert customer_b.email != real_email
-        assert "@billing.spairehq.internal" not in customer_b.email
+        assert "@billing.claidorhq.internal" not in customer_b.email
         # Same real mailbox: base local part + real domain.
         assert customer_b.email.split("+", 1)[0] == "niki"
         assert customer_b.email.endswith("@gmail.com")

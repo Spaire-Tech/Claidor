@@ -17,7 +17,7 @@ from sqlalchemy.orm import contains_eager
 
 from polar.auth.models import AuthSubject, is_organization, is_user
 from polar.custom_field.sorting import CustomFieldSortProperty
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.kit.pagination import PaginationParams, paginate
 from polar.kit.services import ResourceServiceReader
 from polar.kit.sorting import Sorting
@@ -108,7 +108,7 @@ class CustomFieldService(ResourceServiceReader[CustomField]):
             session, organization.id, custom_field_create.slug
         )
         if existing_field is not None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -136,7 +136,7 @@ class CustomFieldService(ResourceServiceReader[CustomField]):
         custom_field_update: CustomFieldUpdate,
     ) -> CustomField:
         if custom_field.type != custom_field_update.type:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -155,7 +155,7 @@ class CustomFieldService(ResourceServiceReader[CustomField]):
                 session, custom_field.organization_id, custom_field_update.slug
             )
             if existing_field is not None and existing_field.id != custom_field.id:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "value_error",

@@ -7,12 +7,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
-import { Label } from '@spaire/ui/components/ui/label'
+} from '@claidor/ui/components/ui/form'
+import { Label } from '@claidor/ui/components/ui/label'
 import {
   RadioGroup,
   RadioGroupItem,
-} from '@spaire/ui/components/ui/radio-group'
+} from '@claidor/ui/components/ui/radio-group'
 import { useFormContext } from 'react-hook-form'
 import { ProductFormType } from './ProductForm'
 

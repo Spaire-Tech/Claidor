@@ -13,22 +13,22 @@ import useDebounce from '@/utils/useDebounce'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import RefreshOutlined from '@mui/icons-material/RefreshOutlined'
 import Search from '@mui/icons-material/Search'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import Input from '@spaire/ui/components/atoms/Input'
-import { List, ListItem } from '@spaire/ui/components/atoms/List'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import Input from '@claidor/ui/components/atoms/Input'
+import { List, ListItem } from '@claidor/ui/components/atoms/List'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@spaire/ui/components/ui/tooltip'
+} from '@claidor/ui/components/ui/tooltip'
 import { endOfToday } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import {

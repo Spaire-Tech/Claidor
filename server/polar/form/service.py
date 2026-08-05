@@ -14,7 +14,7 @@ from polar.email_subscriber.service import (
     email_subscriber as email_subscriber_service,
 )
 from polar.entitlements.exceptions import TierLimitReachedError
-from polar.exceptions import SpaireRequestValidationError, ValidationError
+from polar.exceptions import ClaidorRequestValidationError, ValidationError
 from polar.file.repository import FileRepository
 from polar.file.service import file as file_service
 from polar.kit.pagination import PaginationParams
@@ -150,7 +150,7 @@ class FormService:
                     organization_id, normalized
                 )
                 if existing is not None and existing.id != form.id:
-                    raise SpaireRequestValidationError(
+                    raise ClaidorRequestValidationError(
                         [
                             {
                                 "type": "value_error",
@@ -290,7 +290,7 @@ class FormService:
             organization_id, {file_id}, service=FileServiceTypes.downloadable
         )
         if len(files) == 0:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -335,7 +335,7 @@ class FormService:
                 )
             )
         if errors:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
         form.attached_custom_fields = resolved
 
     async def _resolve_slug(

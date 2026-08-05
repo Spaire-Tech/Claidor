@@ -1,8 +1,8 @@
 'use client'
 
-import { enums, schemas } from '@spaire/client'
-import Input from '@spaire/ui/components/atoms/Input'
-import Switch from '@spaire/ui/components/atoms/Switch'
+import { enums, schemas } from '@claidor/client'
+import Input from '@claidor/ui/components/atoms/Input'
+import Switch from '@claidor/ui/components/atoms/Switch'
 
 import {
   Select,
@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   FormControl,
   FormDescription,
@@ -18,7 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { useCallback, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'

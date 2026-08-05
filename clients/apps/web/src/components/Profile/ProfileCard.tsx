@@ -7,14 +7,14 @@ import {
   type ResolvedSpaceItem,
 } from '@/components/Profile/spaceItems'
 import { StorefrontLinkItem } from '@/components/Profile/StorefrontLinks'
-import { schemas } from '@spaire/client'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
+import { schemas } from '@claidor/client'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@spaire/ui/components/ui/tooltip'
+} from '@claidor/ui/components/ui/tooltip'
 import TranslateOutlined from '@mui/icons-material/TranslateOutlined'
 import Verified from '@mui/icons-material/Verified'
 import Link from 'next/link'
@@ -390,7 +390,7 @@ export const ProfileCard = ({
           </form>
         )}
 
-        {/* Powered by Spaire */}
+        {/* Powered by Claidor */}
         <div className="mt-6 flex flex-row items-center justify-center gap-x-1.5 border-t border-gray-100 pt-4">
           <span className="text-[11px] text-gray-400">Powered by</span>
           <LogoType className="h-4" />

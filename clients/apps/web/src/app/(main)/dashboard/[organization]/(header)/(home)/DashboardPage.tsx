@@ -12,11 +12,11 @@ import {
   useOrganizationPaymentStatus,
 } from '@/hooks/queries'
 import { ALL_METRICS, getChartRangeParams } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import ArrowForwardOutlined from '@mui/icons-material/ArrowForwardOutlined'
 import CheckOutlined from '@mui/icons-material/CheckOutlined'
 import TuneOutlined from '@mui/icons-material/TuneOutlined'
-import Button from '@spaire/ui/components/atoms/Button'
+import Button from '@claidor/ui/components/atoms/Button'
 import Link from 'next/link'
 import { useCallback, useMemo, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -31,7 +31,7 @@ const DEFAULT_OVERVIEW_METRICS: (keyof schemas['Metrics'])[] = [
   'cumulative_revenue',
 ]
 
-const OVERVIEW_METRICS_KEY = 'spaire-overview-metrics'
+const OVERVIEW_METRICS_KEY = 'claidor-overview-metrics'
 
 function useOverviewMetrics() {
   const [metrics, setMetrics] = useState<(keyof schemas['Metrics'])[]>(() => {

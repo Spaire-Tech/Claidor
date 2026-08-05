@@ -3,7 +3,7 @@
 // Right-side panel: SendOptions by default, or per-block ContextPanel
 // (image, button, divider) when something selected.
 
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 import { ColorPicker } from './ColorPicker'
 import { Icon, type IconName } from './Icon'

@@ -89,7 +89,7 @@ class _PlatformSubscriptionRepository(RepositoryBase[Subscription]):
     async def get_active_for_customer(self, customer_id: UUID) -> Subscription | None:
         # Returns the customer's current *billable* subscription — active,
         # trialing, OR past_due. past_due is included on purpose: while a
-        # creator's Spaire charge is being retried (dunning window), they
+        # creator's Claidor charge is being retried (dunning window), they
         # keep their tier entitlements and the dashboard can surface the
         # "payment failed, pay by {date}" state. Only a fully canceled sub
         # drops them out (-> inactive).

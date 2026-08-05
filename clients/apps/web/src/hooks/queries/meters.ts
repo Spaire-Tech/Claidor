@@ -1,6 +1,6 @@
 import { getQueryClient } from '@/utils/api/query'
 import { api } from '@/utils/client'
-import { operations, schemas, unwrap } from '@spaire/client'
+import { operations, schemas, unwrap } from '@claidor/client'
 import {
   useInfiniteQuery,
   useMutation,

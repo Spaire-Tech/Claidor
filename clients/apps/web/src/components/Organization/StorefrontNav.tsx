@@ -3,7 +3,7 @@
 import { useCustomerOrders } from '@/hooks/queries'
 import { api } from '@/utils/client'
 import { organizationPageLink } from '@/utils/nav'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import Link from 'next/link'
 import { useSelectedLayoutSegment } from 'next/navigation'
 import { twMerge } from 'tailwind-merge'

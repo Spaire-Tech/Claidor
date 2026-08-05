@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────────────
    Add-to-Space picker — verbatim port from the design hand-off.
    Class names match the prototype (pk-library / wg-*) so anyone can
-   diff against /tmp/spaire-design/spaire-space/project/styles.css
+   diff against /tmp/claidor-design/claidor-space/project/styles.css
    and confirm 1:1.
    ───────────────────────────────────────────────────────────────── */
 
@@ -42,7 +42,7 @@
   position: fixed;
   inset: 0;
   /* Transparent click-catcher only. The page blur behind the picker is
-     done by the `filter` on .spaire-editor-root (see editor.css) —
+     done by the `filter` on .claidor-editor-root (see editor.css) —
      backdrop-filter here never reliably blurred the editor and could
      not blur the canvas's embedded iframes at all. */
   background: transparent;

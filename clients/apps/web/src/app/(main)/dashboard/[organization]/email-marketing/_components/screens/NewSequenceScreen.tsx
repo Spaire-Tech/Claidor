@@ -15,7 +15,7 @@ import {
   useUploadSequenceImage,
 } from '@/hooks/queries/emailMarketing'
 import { useProducts } from '@/hooks/queries/products'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -1659,14 +1659,14 @@ const SequenceEmailComposerModal = ({
   }
 
   // Portal to <body> so the modal escapes the dashboard's stacking
-  // context and the .spaire-email-app `zoom: 0.9` scale. Wrapping it
-  // back in a `.spaire-email-app` host preserves the scoped CSS used
+  // context and the .claidor-email-app `zoom: 0.9` scale. Wrapping it
+  // back in a `.claidor-email-app` host preserves the scoped CSS used
   // throughout the modal (`.btn`, `.input`, `.modal-fade-in`,
   // `--ink-*` tokens, …). Without this the modal mounted but was
   // hidden behind ancestor layers and the editor looked "dead".
   if (typeof window === 'undefined') return null
   return createPortal(
-    <div className="spaire-email-app">
+    <div className="claidor-email-app">
       <div
         className="modal-fade-in"
         style={{
@@ -1880,7 +1880,7 @@ export const NewSequenceRoute = ({
       // Posted from the iframe to the host page so the modal can close
       // and refresh its sequence list. Hosts listen on window 'message'.
       window.parent.postMessage(
-        { type: 'spaire.sequence-editor.close' },
+        { type: 'claidor.sequence-editor.close' },
         window.location.origin,
       )
       return
@@ -1899,7 +1899,7 @@ export const NewSequenceRoute = ({
           [data-dashboard-sidebar],
           [data-dashboard-mobile-nav],
           [data-email-marketing-chrome] { display: none !important; }
-          .spaire-email-app .container { max-width: none; padding: 0 !important; }
+          .claidor-email-app .container { max-width: none; padding: 0 !important; }
         `}</style>
       ) : null}
       <NewSequenceScreen

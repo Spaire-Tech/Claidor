@@ -55,7 +55,7 @@ SeatInvitation.PreviewProps = {
   organization,
   product_name: 'Premium Plan',
   billing_manager_email: 'admin@acme.com',
-  claim_url: 'https://app.spairehq.com/acme-inc/portal/seats/claim?token=abc123',
+  claim_url: 'https://app.claidorhq.com/acme-inc/portal/seats/claim?token=abc123',
 }
 
 export default SeatInvitation

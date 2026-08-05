@@ -16,13 +16,13 @@ export async function generateMetadata(props: {
   return {
     title: `Team | ${organization.name}`,
     openGraph: {
-      title: `Team | ${organization.name} on Spaire`,
-      description: `Manage team members | ${organization.name} on Spaire`,
-      siteName: 'Spaire',
+      title: `Team | ${organization.name} on Claidor`,
+      description: `Manage team members | ${organization.name} on Claidor`,
+      siteName: 'Claidor',
       type: 'website',
       images: [
         {
-          url: `https://spairehq.com/og?org=${organization.slug}`,
+          url: `https://claidorhq.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
         },
@@ -31,15 +31,15 @@ export async function generateMetadata(props: {
     twitter: {
       images: [
         {
-          url: `https://spairehq.com/og?org=${organization.slug}`,
+          url: `https://claidorhq.com/og?org=${organization.slug}`,
           width: 1200,
           height: 630,
-          alt: `${organization.name}'s masterclasses on Spaire`,
+          alt: `${organization.name}'s masterclasses on Claidor`,
         },
       ],
       card: 'summary_large_image',
-      title: `Team | ${organization.name} on Spaire`,
-      description: `Manage team members | ${organization.name} on Spaire`,
+      title: `Team | ${organization.name} on Claidor`,
+      description: `Manage team members | ${organization.name} on Claidor`,
     },
   }
 }

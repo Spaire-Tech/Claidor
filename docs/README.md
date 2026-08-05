@@ -1,4 +1,4 @@
-# Spaire docs
+# Claidor docs
 
 Using Mintlify.
 
@@ -27,7 +27,7 @@ We have a script that takes care of:
     * Existing pages are not updated, so you can safely edit them without losing your changes.
 
 ```bash Terminal
-./update-schema.sh https://spec.speakeasy.com/spaire/spaire-workspace/spaire-oas
+./update-schema.sh https://spec.speakeasy.com/claidor/claidor-workspace/claidor-oas
 ```
 
 The script is run automatically by the CI pipeline every day and opens a PR if there are changes.

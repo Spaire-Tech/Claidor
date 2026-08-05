@@ -20,7 +20,7 @@ import {
   type BroadcastWritePayload,
 } from '@/hooks/queries/emailMarketing'
 import { EmailEditor, type EmailEditorRef } from '@react-email/editor'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Fragment,

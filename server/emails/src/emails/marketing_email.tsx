@@ -37,7 +37,7 @@ MarketingEmail.PreviewProps = {
   organization_website: 'https://acme.com',
   html_content:
     '<h2>Hello there!</h2><p>This is your weekly newsletter from Acme Inc. We have some exciting news to share with you this week.</p><p>Stay tuned for more updates!</p>',
-  unsubscribe_url: 'https://app.spairehq.com/email/unsubscribe?sid=preview',
+  unsubscribe_url: 'https://app.claidorhq.com/email/unsubscribe?sid=preview',
   preview_text: 'Your weekly update from Acme Inc',
 } satisfies MarketingEmailProps
 

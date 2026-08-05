@@ -1,6 +1,6 @@
 'use client'
 
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import { MobileTabBar } from './_components/MobileTabBar'
@@ -42,7 +42,7 @@ export const PortalShell = ({
   // state as a class — sticky sub-bars read it to pin at the very top while
   // the bar is hidden instead of floating 56px down.
   const topbarHidden = useHideOnScroll()
-  const rootClass = `spaire-portal sp-app sp-app--mobile-tabs${
+  const rootClass = `claidor-portal sp-app sp-app--mobile-tabs${
     dark ? ' sp-dark' : ''
   }${topbarHidden ? ' sp-app--topbar-hidden' : ''}`
   const auth = isAuthRoute(pathname)
@@ -80,7 +80,7 @@ export const PortalShell = ({
     // it follows the org setting here, not usePortalTheme.
     const signInDark = organization.customer_portal_sign_in_theme === 'dark'
     return (
-      <div className={`spaire-portal sp-app ${signInDark ? 'sp-dark' : ''}`}>
+      <div className={`claidor-portal sp-app ${signInDark ? 'sp-dark' : ''}`}>
         {children}
       </div>
     )

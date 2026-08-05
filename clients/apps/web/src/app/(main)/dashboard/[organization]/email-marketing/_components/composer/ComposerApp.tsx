@@ -3,7 +3,7 @@
 // Top-level broadcast composer.
 //
 // Ports the design's single-page layout 1:1 and wires every action to the
-// existing Spaire email-broadcast API surface — no new endpoints needed.
+// existing Claidor email-broadcast API surface — no new endpoints needed.
 //
 //   - Subject, body blocks, attachments, audience, sender → persisted via
 //     useCreateEmailBroadcast / useUpdateEmailBroadcast
@@ -24,7 +24,7 @@ import {
   type BroadcastWritePayload,
   type FilterRules,
 } from '@/hooks/queries/emailMarketing'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Fragment,

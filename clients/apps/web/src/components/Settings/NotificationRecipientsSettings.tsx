@@ -1,8 +1,8 @@
 'use client'
 
 import { useListNotificationRecipients } from '@/hooks/queries/notifications'
-import { schemas } from '@spaire/client'
-import ShadowListGroup from '@spaire/ui/components/atoms/ShadowListGroup'
+import { schemas } from '@claidor/client'
+import ShadowListGroup from '@claidor/ui/components/atoms/ShadowListGroup'
 
 const NotificationRecipientItem = ({
   recipient,

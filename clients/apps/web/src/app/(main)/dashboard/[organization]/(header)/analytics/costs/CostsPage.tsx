@@ -3,7 +3,7 @@
 import { useEventTypes } from '@/hooks/queries/event_types'
 import { useInfiniteEvents } from '@/hooks/queries/events'
 import { fromISODate } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { endOfDay, subMonths } from 'date-fns'
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs'
 import { useMemo } from 'react'

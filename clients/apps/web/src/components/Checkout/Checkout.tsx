@@ -13,30 +13,30 @@ import {
   CheckoutProductSwitcher,
   CheckoutPWYWForm,
   CheckoutSeatSelector,
-} from '@spaire/checkout/components'
+} from '@claidor/checkout/components'
 import {
   enrichCheckout,
   hasProductCheckout,
   type ProductCheckoutPublic,
-} from '@spaire/checkout/guards'
-import { useCheckoutFulfillmentListener } from '@spaire/checkout/hooks'
-import { useCheckout, useCheckoutForm } from '@spaire/checkout/providers'
+} from '@claidor/checkout/guards'
+import { useCheckoutFulfillmentListener } from '@claidor/checkout/hooks'
+import { useCheckout, useCheckoutForm } from '@claidor/checkout/providers'
 import type { CheckoutConfirmStripe } from '@spaire/sdk/models/components/checkoutconfirmstripe'
 import type { CheckoutPublicConfirmed } from '@spaire/sdk/models/components/checkoutpublicconfirmed'
 import type { CheckoutUpdatePublic } from '@spaire/sdk/models/components/checkoutupdatepublic'
 import { ProductPriceCustom } from '@spaire/sdk/models/components/productpricecustom.js'
 import { ExpiredCheckoutError } from '@spaire/sdk/models/errors/expiredcheckouterror'
-import Alert from '@spaire/ui/components/atoms/Alert'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
-import ShadowBox from '@spaire/ui/components/atoms/ShadowBox'
+import Alert from '@claidor/ui/components/atoms/Alert'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
+import ShadowBox from '@claidor/ui/components/atoms/ShadowBox'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@spaire/ui/components/ui/dialog'
-import { getThemePreset } from '@spaire/ui/hooks/theming'
+} from '@claidor/ui/components/ui/dialog'
+import { getThemePreset } from '@claidor/ui/hooks/theming'
 import type { Stripe, StripeElements } from '@stripe/stripe-js'
 import Markdown from 'markdown-to-jsx'
 import Link from 'next/link'

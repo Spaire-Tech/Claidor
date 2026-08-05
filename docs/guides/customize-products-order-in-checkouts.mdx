@@ -12,15 +12,15 @@ description: "Learn how to customize the order in which products appear in check
 
 <Steps>
     <Step title = "Create a New Token">
-        Create a new organization token by following our [Organization Access Tokens](https://www.spairehq.com/docs/integrate/oat) guide.
+        Create a new organization token by following our [Organization Access Tokens](https://www.claidorhq.com/docs/integrate/oat) guide.
     </Step>
     <Step title = "Save your Access Token">
         After creating your access token, you will be able to view it. Please copy and save your access token.
         <img height="200" src="/assets/guides/customize-products-order-in-checkouts//access-token.png" />
     </Step>
     <Step title =  "Go to the Products Catalogue">
-        In the Spaire dashboard sidebar, navigate to **Products** > **Catalogue** for your organization.
-        You can also go directly to `https://www.spairehq.com/dashboard/${org_slug}/products`.
+        In the Claidor dashboard sidebar, navigate to **Products** > **Catalogue** for your organization.
+        You can also go directly to `https://www.claidorhq.com/dashboard/${org_slug}/products`.
         
         <img height="200" src="/assets/guides/customize-products-order-in-checkouts//products-catalogue.png" />
     </Step>
@@ -44,7 +44,7 @@ description: "Learn how to customize the order in which products appear in check
         - \<PRODUCT_ID_1\>, \<PRODUCT_ID_2\>, etc., with the product IDs in the order you want them to appear in the checkout.
         ```bash Terminal
         curl --request POST \
-            --url https://api.spairehq.com/v1/checkout-links/ \
+            --url https://api.claidorhq.com/v1/checkout-links/ \
             --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
             --header 'Content-Type: application/json' \
             --data '{
@@ -54,7 +54,7 @@ description: "Learn how to customize the order in which products appear in check
             ]
         }'
         ```
-    Find all the available parameters along with the description in the  [Create Checkout Link API](https://www.spairehq.com/docs/api-reference/checkout-links/create).
+    Find all the available parameters along with the description in the  [Create Checkout Link API](https://www.claidorhq.com/docs/api-reference/checkout-links/create).
     </Step>
     <Step title="Open the Checkout Link URL">
         The curl command returns a JSON. Access the checkout link URL from the <code>"url"</code> key of the JSON and open it.
@@ -63,7 +63,7 @@ description: "Learn how to customize the order in which products appear in check
         {
             "...": "...",
             "...": "...",
-            "url": "https://buy.spairehq.com/spaire_cl_..." // [!code ++]
+            "url": "https://buy.claidorhq.com/claidor_cl_..." // [!code ++]
         }
         ```
         It looks like below:
@@ -73,7 +73,7 @@ description: "Learn how to customize the order in which products appear in check
         If you want to change the order and make Product 2 appear before Product 1, place Product 2's ID first, followed by Product 1's ID in the API call.  
         ```bash Terminal
         curl --request POST \
-            --url https://api.spairehq.com/v1/checkouts/ \
+            --url https://api.claidorhq.com/v1/checkouts/ \
             --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
             --header 'Content-Type: application/json' \
             --data '{
@@ -101,7 +101,7 @@ description: "Learn how to customize the order in which products appear in check
         - \<PRODUCT_ID_1\>, \<PRODUCT_ID_2\>, etc., with the product IDs in the order you want them to appear in the checkout.
         ```bash Terminal
         curl --request POST \
-            --url https://api.spairehq.com/v1/checkouts/ \
+            --url https://api.claidorhq.com/v1/checkouts/ \
             --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
             --header 'Content-Type: application/json' \
             --data '{
@@ -111,7 +111,7 @@ description: "Learn how to customize the order in which products appear in check
             ]
         }'
         ```
-    Find all the available parameters along with the description in the [Create Checkout Session API](https://www.spairehq.com/docs/api-reference/checkouts/create-session).
+    Find all the available parameters along with the description in the [Create Checkout Session API](https://www.claidorhq.com/docs/api-reference/checkouts/create-session).
     </Step>
     <Step title="Open the Checkout Session URL">
         The curl command returns a JSON. Access the checkout session URL from the <code>"url"</code> key of the JSON and open it.
@@ -119,7 +119,7 @@ description: "Learn how to customize the order in which products appear in check
         ```json
         {
             "...": "...",
-            "url": "https://buy.spairehq.com/spaire_c_...", // [!code ++]
+            "url": "https://buy.claidorhq.com/claidor_c_...", // [!code ++]
             "...": "..."
         }
         ```
@@ -131,7 +131,7 @@ description: "Learn how to customize the order in which products appear in check
         If you want to change the order and make Product 2 appear before Product 1, place Product 2's ID first, followed by Product 1's ID in the API call.  
         ```bash Terminal
         curl --request POST \
-            --url https://api.spairehq.com/v1/checkouts/ \
+            --url https://api.claidorhq.com/v1/checkouts/ \
             --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
             --header 'Content-Type: application/json' \
             --data '{

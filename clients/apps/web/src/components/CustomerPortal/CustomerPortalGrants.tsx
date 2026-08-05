@@ -1,5 +1,5 @@
 import { useCustomerBenefitGrants } from '@/hooks/queries/customerPortal'
-import { Client, schemas } from '@spaire/client'
+import { Client, schemas } from '@claidor/client'
 import { CustomerPortalGrantsComplex } from './CustomerPortalGrantsComplex'
 import { CustomerPortalGrantsSimple } from './CustomerPortalGrantsSimple'
 

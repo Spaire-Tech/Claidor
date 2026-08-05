@@ -1,5 +1,5 @@
 """Seed the Starter/Studio/Scale subscription products and overage meters in
-the Spaire platform organization.
+the Claidor platform organization.
 
 Idempotent: re-running updates existing rows in place rather than creating
 duplicates. Products and meters are identified by metadata tier key and
@@ -81,7 +81,7 @@ def typer_async(f):  # type: ignore
 
 
 # ---------------------------------------------------------------------------
-# Specs — the source of truth for what Spaire Starter/Studio/Scale look like.
+# Specs — the source of truth for what Claidor Starter/Studio/Scale look like.
 # ---------------------------------------------------------------------------
 
 
@@ -120,30 +120,30 @@ METER_SPECS: list[MeterSpec] = [
     # Sum of duration_seconds on every video upload. Entitlements service
     # divides by 3600 to compare against the per-tier hour cap.
     MeterSpec(
-        name="spaire.video_hours_hosted",
-        event_name="spaire.video.uploaded",
+        name="claidor.video_hours_hosted",
+        event_name="claidor.video.uploaded",
         aggregation_func=AggregationFunction.sum,
         aggregation_property="duration_seconds",
     ),
     # Count of video plays. Compared against per-tier monthly view cap.
     MeterSpec(
-        name="spaire.video_views_monthly",
-        event_name="spaire.video.viewed",
+        name="claidor.video_views_monthly",
+        event_name="claidor.video.viewed",
         aggregation_func=AggregationFunction.cnt,
         aggregation_property=None,
     ),
     # Sum of bytes_delta (positive on upload, negative on delete). Entitlements
     # service divides by 1024^3 to compare against the per-tier GB cap.
     MeterSpec(
-        name="spaire.storage_bytes",
-        event_name="spaire.storage.bytes",
+        name="claidor.storage_bytes",
+        event_name="claidor.storage.bytes",
         aggregation_func=AggregationFunction.sum,
         aggregation_property="bytes_delta",
     ),
     # Count of outbound emails sent. Compared against per-tier monthly send cap.
     MeterSpec(
-        name="spaire.email_sends_monthly",
-        event_name="spaire.email.sent",
+        name="claidor.email_sends_monthly",
+        event_name="claidor.email.sent",
         aggregation_func=AggregationFunction.cnt,
         aggregation_property=None,
     ),
@@ -162,7 +162,7 @@ class PriceSpec:
     price_currency: str = "usd"
     price_amount_cents: int | None = None  # required if amount_type == fixed
     # tax_behavior=inclusive on Starter/Studio/Scale means the headline
-    # price ($49 / $129 / $299) is what the creator pays — Spaire absorbs
+    # price ($49 / $129 / $299) is what the creator pays — Claidor absorbs
     # the sales tax internally rather than tacking it on top. Legacy stays
     # None (no tax to compute on a $0 product).
     tax_behavior: TaxBehaviorOption | None = None
@@ -219,7 +219,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="starter",
         billing_interval="month",
-        name="Spaire Starter",
+        name="Claidor Starter",
         description=_STARTER_DESCRIPTION,
         recurring_interval=SubscriptionRecurringInterval.month,
         price=PriceSpec(
@@ -232,7 +232,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="starter",
         billing_interval="year",
-        name="Spaire Starter (Annual)",
+        name="Claidor Starter (Annual)",
         description=_STARTER_DESCRIPTION + " Save 20% with annual billing.",
         recurring_interval=SubscriptionRecurringInterval.year,
         price=PriceSpec(
@@ -246,7 +246,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="studio",
         billing_interval="month",
-        name="Spaire Studio",
+        name="Claidor Studio",
         description=_STUDIO_DESCRIPTION,
         recurring_interval=SubscriptionRecurringInterval.month,
         price=PriceSpec(
@@ -259,7 +259,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="studio",
         billing_interval="year",
-        name="Spaire Studio (Annual)",
+        name="Claidor Studio (Annual)",
         description=_STUDIO_DESCRIPTION + " Save 20% with annual billing.",
         recurring_interval=SubscriptionRecurringInterval.year,
         price=PriceSpec(
@@ -273,7 +273,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="scale",
         billing_interval="month",
-        name="Spaire Scale",
+        name="Claidor Scale",
         description=_SCALE_DESCRIPTION,
         recurring_interval=SubscriptionRecurringInterval.month,
         price=PriceSpec(
@@ -286,7 +286,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
     ProductSpec(
         tier="scale",
         billing_interval="year",
-        name="Spaire Scale (Annual)",
+        name="Claidor Scale (Annual)",
         description=_SCALE_DESCRIPTION + " Save 20% with annual billing.",
         recurring_interval=SubscriptionRecurringInterval.year,
         price=PriceSpec(

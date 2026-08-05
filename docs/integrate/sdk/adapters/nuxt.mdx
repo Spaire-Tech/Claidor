@@ -5,31 +5,31 @@ description: "Payments and Checkouts made dead simple with Nuxt"
 
 ## Examples
 
-- [With Nuxt](https://github.com/spairehq/examples/tree/main/with-nuxt)
+- [With Nuxt](https://github.com/claidorhq/examples/tree/main/with-nuxt)
 
 ## Installation
 
-Install the required Spaire packages using the following command:
+Install the required Claidor packages using the following command:
 
 <Tabs>
   <Tab title="npm">
     ```bash Terminal
-    npm install zod @spaire/nuxt
+    npm install zod @claidor/nuxt
     ```
   </Tab>
   <Tab title="yarn">
     ```bash Terminal
-    yarn add zod @spaire/nuxt
+    yarn add zod @claidor/nuxt
     ```
   </Tab>
   <Tab title="pnpm">
     ```bash Terminal
-    pnpm add zod @spaire/nuxt
+    pnpm add zod @claidor/nuxt
     ```
   </Tab>
   <Tab title="bun">
     ```bash Terminal
-    bun add zod @spaire/nuxt
+    bun add zod @claidor/nuxt
     ```
   </Tab>
 </Tabs>
@@ -40,7 +40,7 @@ Add the module to your `nuxt.config.ts`:
 
 ```typescript
 export default defineNuxtConfig({
-  modules: ["@spaire/nuxt"],
+  modules: ["@claidor/nuxt"],
 });
 ```
 
@@ -51,14 +51,14 @@ Create a Checkout handler which takes care of redirections.
 ```typescript server/routes/api/checkout.post.ts icon=square-js
 export default defineEventHandler((event) => {
   const {
-    private: { spaireAccessToken, spaireCheckoutSuccessUrl, spaireServer },
+    private: { claidorAccessToken, claidorCheckoutSuccessUrl, claidorServer },
   } = useRuntimeConfig();
 
   const checkoutHandler = Checkout({
-    accessToken: spaireAccessToken,
-    successUrl: spaireCheckoutSuccessUrl,
+    accessToken: claidorAccessToken,
+    successUrl: claidorCheckoutSuccessUrl,
     returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Checkout
-    server: spaireServer as "sandbox" | "production",
+    server: claidorServer as "sandbox" | "production",
     theme: "dark", // Enforces the theme - System-preferred theme will be set if left omitted
   });
 
@@ -84,13 +84,13 @@ Create a customer portal where your customer can view orders and subscriptions.
 ```typescript server/routes/api/portal.get.ts icon=square-js
 export default defineEventHandler((event) => {
   const {
-    private: { spaireAccessToken, spaireCheckoutSuccessUrl, spaireServer },
+    private: { claidorAccessToken, claidorCheckoutSuccessUrl, claidorServer },
   } = useRuntimeConfig();
 
   const customerPortalHandler = CustomerPortal({
-    accessToken: spaireAccessToken,
+    accessToken: claidorAccessToken,
     returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Customer Portal
-    server: spaireServer as "sandbox" | "production",
+    server: claidorServer as "sandbox" | "production",
     getCustomerId: (event) => {
       // Use your own logic to get the customer ID - from a database, session, etc.
       return Promise.resolve("9d89909b-216d-475e-8005-053dba7cff07");
@@ -105,14 +105,14 @@ export default defineEventHandler((event) => {
 
 A simple utility which resolves incoming webhook payloads by signing the webhook secret properly.
 
-```typescript server/routes/webhook/spaire.post.ts icon=square-js
+```typescript server/routes/webhook/claidor.post.ts icon=square-js
 export default defineEventHandler((event) => {
   const {
-    private: { spaireWebhookSecret },
+    private: { claidorWebhookSecret },
   } = useRuntimeConfig();
 
   const webhooksHandler = Webhooks({
-    webhookSecret: spaireWebhookSecret,
+    webhookSecret: claidorWebhookSecret,
     onPayload: async (payload) => {
       // Handle the payload
       // No need to return an acknowledge response

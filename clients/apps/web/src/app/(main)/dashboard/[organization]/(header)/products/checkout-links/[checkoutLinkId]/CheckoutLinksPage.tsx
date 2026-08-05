@@ -7,7 +7,7 @@ import { useModal } from '@/components/Modal/useModal'
 import { toast } from '@/components/Toast/use-toast'
 import { useDeleteCheckoutLink } from '@/hooks/queries'
 import { usePushRouteWithoutCache } from '@/utils/router'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import React from 'react'
 
 interface ClientPageProps {

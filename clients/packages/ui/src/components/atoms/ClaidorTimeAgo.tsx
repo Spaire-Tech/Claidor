@@ -1,6 +1,6 @@
 import TimeAgo from 'react-timeago'
 
-const SpaireTimeAgo = (props: { date: Date; suffix?: string }) => {
+const ClaidorTimeAgo = (props: { date: Date; suffix?: string }) => {
   return (
     <TimeAgo
       date={props.date}
@@ -16,4 +16,4 @@ const SpaireTimeAgo = (props: { date: Date; suffix?: string }) => {
   )
 }
 
-export default SpaireTimeAgo
+export default ClaidorTimeAgo

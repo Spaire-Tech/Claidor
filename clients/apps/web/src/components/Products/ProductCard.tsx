@@ -1,7 +1,7 @@
 'use client'
 
 import { hasLegacyRecurringPrices } from '@/utils/product'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useCallback, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import LogoIcon from '../Brand/LogoIcon'

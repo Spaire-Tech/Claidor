@@ -1,10 +1,10 @@
 import { InlineModal } from '@/components/Modal/InlineModal'
-import { enums, type schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import CountryPicker from '@spaire/ui/components/atoms/CountryPicker'
-import CountryStatePicker from '@spaire/ui/components/atoms/CountryStatePicker'
-import Input from '@spaire/ui/components/atoms/Input'
-import { DropdownMenuItem } from '@spaire/ui/components/ui/dropdown-menu'
+import { enums, type schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import CountryPicker from '@claidor/ui/components/atoms/CountryPicker'
+import CountryStatePicker from '@claidor/ui/components/atoms/CountryStatePicker'
+import Input from '@claidor/ui/components/atoms/Input'
+import { DropdownMenuItem } from '@claidor/ui/components/ui/dropdown-menu'
 import {
   Form,
   FormControl,
@@ -13,8 +13,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
-import { Textarea } from '@spaire/ui/components/ui/textarea'
+} from '@claidor/ui/components/ui/form'
+import { Textarea } from '@claidor/ui/components/ui/textarea'
 import { useCallback } from 'react'
 import { usePayoutContext } from './PayoutContext'
 import { useInvoiceDownload } from './useInvoiceDownload'

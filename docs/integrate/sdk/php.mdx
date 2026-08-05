@@ -8,7 +8,7 @@ description: SDK for PHP (>=8.2)
 ## Installation
 
 ```bash Terminal
-composer require spaire-tech/spaire-php
+composer require claidor-tech/claidor-php
 ```
 
 ## Quickstart
@@ -20,10 +20,10 @@ declare(strict_types=1);
 
 require 'vendor/autoload.php';
 
-use Spaire\Spaire;
+use Claidor\Claidor;
 
-$sdk = Spaire::builder()
-    ->setSecurity(getenv('SPAIRE_ACCESS_TOKEN'))
+$sdk = Claidor::builder()
+    ->setSecurity(getenv('CLAIDOR_ACCESS_TOKEN'))
     ->build();
 
 $responses = $sdk->organizations->list(
@@ -43,8 +43,8 @@ foreach ($responses as $response) {
 You can configure the SDK to hit the [sandbox environment](/integrate/sandbox) instead of production by setting the server when building the client:
 
 ```php
-$sdk = Spaire::builder()
+$sdk = Claidor::builder()
     ->setServer('sandbox')
-    ->setSecurity(getenv('SPAIRE_ACCESS_TOKEN'))
+    ->setSecurity(getenv('CLAIDOR_ACCESS_TOKEN'))
     ->build();
 ```

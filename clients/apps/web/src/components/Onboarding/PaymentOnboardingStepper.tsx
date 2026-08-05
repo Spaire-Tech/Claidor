@@ -2,8 +2,8 @@
 
 import { useOrganizationPaymentStatus } from '@/hooks/queries/org'
 import ArrowOutwardOutlined from '@mui/icons-material/ArrowOutwardOutlined'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import { AlertCircle, Building2, Code2, Fingerprint, Package } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'

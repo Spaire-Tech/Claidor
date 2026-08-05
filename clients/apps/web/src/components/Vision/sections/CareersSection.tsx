@@ -56,23 +56,23 @@ export const CareersSection = ({ active }: { active: boolean }) => {
     >
       <div className="flex flex-col gap-y-6">
         <div className="flex flex-col gap-y-1">
-          <h3 className="text-spaire-50">Momentum is Culture</h3>
-          <p className="text-spaire-500">
+          <h3 className="text-claidor-50">Momentum is Culture</h3>
+          <p className="text-claidor-500">
             We focus on keeping, celebrating and accelerating momentum. Allowing
             culture to be continuously improved and fluid vs. fixed.
           </p>
         </div>
         <div className="flex flex-col gap-y-1">
-          <h3 className="text-spaire-50">Ship / Refactor / Scale</h3>
-          <p className="text-spaire-500">
+          <h3 className="text-claidor-50">Ship / Refactor / Scale</h3>
+          <p className="text-claidor-500">
             Our #1 focus and drive is shipping and growing great product
             experiences that solves real problems for developers and their
             users.
           </p>
         </div>
         <div className="flex flex-col gap-y-1">
-          <h3 className="text-spaire-50">Do your life&apos;s work</h3>
-          <p className="text-spaire-500">
+          <h3 className="text-claidor-50">Do your life&apos;s work</h3>
+          <p className="text-claidor-500">
             We&apos;re not a 9-5 nor 24/7. We don&apos;t track time nor search
             for people who count it down. But we continuously push the envelope
             of our creativity & productivity.

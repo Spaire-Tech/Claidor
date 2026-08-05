@@ -74,19 +74,19 @@ export const CompanySection = ({ active }: { active: boolean }) => {
       <p>
         We believe the next unicorns will be created by individual developers.
         As lines blur between indie hackers, startups, and enterprises,
-        we&apos;re building Spaire to empower solo builders and early-stage
+        we&apos;re building Claidor to empower solo builders and early-stage
         startups – the future enterprises, without the headcount.
       </p>
       <p>
-        Spaire is a small team with big ambitions, empowered by a culture of
+        Claidor is a small team with big ambitions, empowered by a culture of
         ownership and autonomy. We&apos;re proud to be open source & built for
         transparency to shape the future with our community.
       </p>
       <div className="flex flex-col gap-y-2">
-        <Link href="https://github.com/spaire-tech" target="_blank" prefetch>
-          Spaire on GitHub →
+        <Link href="https://github.com/claidor-tech" target="_blank" prefetch>
+          Claidor on GitHub →
         </Link>
-        <Link href="https://x.com/spaire_hq" target="_blank" prefetch>
+        <Link href="https://x.com/claidor_hq" target="_blank" prefetch>
           Join the conversation →
         </Link>
       </div>
@@ -112,7 +112,7 @@ const Profile = ({ name, title, image }: ProfileProps) => {
       />
       <div className="flex flex-col text-left">
         <h1 className="text-xs">{name}</h1>
-        <h1 className="text-spaire-500 text-xs">{title}</h1>
+        <h1 className="text-claidor-500 text-xs">{title}</h1>
       </div>
     </div>
   )

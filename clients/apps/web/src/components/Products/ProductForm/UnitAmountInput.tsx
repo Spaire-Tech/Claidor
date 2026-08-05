@@ -1,5 +1,5 @@
-import { getCurrencyDecimalFactor } from '@spaire/currency'
-import Input from '@spaire/ui/components/atoms/Input'
+import { getCurrencyDecimalFactor } from '@claidor/currency'
+import Input from '@claidor/ui/components/atoms/Input'
 import Big from 'big.js'
 import React, { ComponentProps, useCallback, useMemo } from 'react'
 import { twMerge } from 'tailwind-merge'

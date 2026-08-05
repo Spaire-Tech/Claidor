@@ -2,7 +2,7 @@
 
 import MetricChartBox from '@/components/Metrics/MetricChartBox'
 import { ParsedMetricsResponse } from '@/hooks/queries'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { twMerge } from 'tailwind-merge'
 
 interface MetricGroupProps {

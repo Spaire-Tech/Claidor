@@ -23,7 +23,7 @@ from .schemas import CustomDomainDNSRecord
 
 log: structlog.stdlib.BoundLogger = structlog.get_logger()
 
-VERIFICATION_TXT_PREFIX = "_spaire-verify"
+VERIFICATION_TXT_PREFIX = "_claidor-verify"
 
 _LABEL_RE = re.compile(r"^(?!-)[a-z0-9-]{1,63}(?<!-)$")
 _TLD_RE = re.compile(r"^[a-z]{2,63}$")
@@ -84,7 +84,7 @@ def _platform_hostnames() -> set[str]:
 
 def _platform_parent_domains() -> set[str]:
     # Registrable parent (last two labels) of every platform hostname —
-    # good enough to fence off spairehq.com and its subdomains.
+    # good enough to fence off claidorhq.com and its subdomains.
     parents: set[str] = set()
     for hostname in _platform_hostnames():
         labels = hostname.split(".")

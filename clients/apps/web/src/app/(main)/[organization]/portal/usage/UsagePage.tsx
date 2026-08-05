@@ -2,7 +2,7 @@
 
 import { CustomerUsage } from '@/components/CustomerPortal/CustomerUsage'
 import { createClientSideAPI } from '@/utils/client'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 const ClientPage = ({
   customerSessionToken,

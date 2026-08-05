@@ -31,7 +31,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useMemo } from 'react'
 import { useFormContext } from 'react-hook-form'
 

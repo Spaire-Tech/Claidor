@@ -1,7 +1,7 @@
 import { toast } from '@/components/Toast/use-toast'
 import { useCustomerLicenseKey } from '@/hooks/queries'
-import { Client, schemas } from '@spaire/client'
-import CopyToClipboardInput from '@spaire/ui/components/atoms/CopyToClipboardInput'
+import { Client, schemas } from '@claidor/client'
+import CopyToClipboardInput from '@claidor/ui/components/atoms/CopyToClipboardInput'
 import { LicenseKeyActivations } from './LicenseKeyActivations'
 import { LicenseKeyDetails } from './LicenseKeyDetails'
 

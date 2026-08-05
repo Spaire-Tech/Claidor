@@ -2,7 +2,7 @@
 
 import { DashboardBody } from '@/components/Layout/DashboardLayout'
 import WebhookSettings from '@/components/Settings/Webhook/WebhookSettings'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 
 export default function ClientPage({
   organization: org,

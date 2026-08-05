@@ -4,7 +4,7 @@ from pydantic import UUID4
 from sqlalchemy import select
 
 from polar.auth.models import AuthSubject, is_organization
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.models import Organization, User, UserOrganization
 from polar.postgres import AsyncSession
 
@@ -29,7 +29,7 @@ async def get_payload_organization(
 
     if is_organization(auth_subject):
         if model.organization_id is not None:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "organization_token",
@@ -48,7 +48,7 @@ async def get_payload_organization(
         return auth_subject.subject
 
     if model.organization_id is None:
-        raise SpaireRequestValidationError(
+        raise ClaidorRequestValidationError(
             [
                 {
                     "type": "missing",
@@ -75,7 +75,7 @@ async def get_payload_organization(
     organization = result.scalar_one_or_none()
 
     if organization is None:
-        raise SpaireRequestValidationError(
+        raise ClaidorRequestValidationError(
             [
                 {
                     "loc": (

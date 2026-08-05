@@ -1,10 +1,10 @@
 import { toast } from '@/components/Toast/use-toast'
 import { useCustomerLicenseKeyDeactivate } from '@/hooks/queries'
 import CloseOutlined from '@mui/icons-material/CloseOutlined'
-import { Client, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import { List, ListItem } from '@spaire/ui/components/atoms/List'
+import { Client, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import { List, ListItem } from '@claidor/ui/components/atoms/List'
 import { useCallback } from 'react'
 
 interface LicenseKeyActivationsProps {

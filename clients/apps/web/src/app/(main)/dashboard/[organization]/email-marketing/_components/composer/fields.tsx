@@ -1,14 +1,14 @@
 'use client'
 
 // Audience picker + subject input — the header strip above the editor body.
-// Builds the segment list from real Spaire data (useEmailSegments +
+// Builds the segment list from real Claidor data (useEmailSegments +
 // useEmailSubscriberStats) plus a virtual "All subscribers" entry.
 
 import {
   useEmailSegments,
   useEmailSubscriberStats,
 } from '@/hooks/queries/emailMarketing'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { Fragment, useMemo, useState } from 'react'
 
 import { Icon, type IconName } from './Icon'

@@ -1,12 +1,12 @@
 import { getServerSideAPI } from '@/utils/client/serverside'
 import { getOrganizationBySlugOrNotFound } from '@/utils/organization'
-import { unwrap } from '@spaire/client'
+import { unwrap } from '@claidor/client'
 import { notFound } from 'next/navigation'
 import { isValidMetricType, MetricType } from '../components/metrics-config'
 import ClientPage from './ClientPage'
 
 import { fromISODate, toISODate } from '@/utils/metrics'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { endOfDay, max, subMonths } from 'date-fns'
 import { redirect, RedirectType } from 'next/navigation'
 

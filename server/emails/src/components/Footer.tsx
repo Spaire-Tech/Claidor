@@ -27,7 +27,7 @@ const Footer = ({ email }: { email: string | null }) => (
           .
         </Text>
       )}
-      <Text className="font-semibold text-gray-900">Spaire, Inc</Text>
+      <Text className="font-semibold text-gray-900">Claidor, Inc</Text>
     </Section>
   </>
 )

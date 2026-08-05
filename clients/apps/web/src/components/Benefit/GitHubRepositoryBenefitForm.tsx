@@ -4,15 +4,15 @@ import { useUserSSE } from '@/hooks/sse'
 import { getGitHubRepositoryBenefitAuthorizeURL } from '@/utils/auth'
 import { defaultApiUrl } from '@/utils/domain'
 import RefreshOutlined from '@mui/icons-material/RefreshOutlined'
-import { enums, schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
+import { enums, schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import {
   FormControl,
   FormDescription,
@@ -20,7 +20,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@spaire/ui/components/ui/form'
+} from '@claidor/ui/components/ui/form'
 import { usePathname } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
@@ -306,7 +306,7 @@ export const GitHubRepositoryBenefitForm = ({
         >
           Click here
         </Button>{' '}
-        to install it on Spaire.
+        to install it on Claidor.
       </FormDescription>
 
       {/* For error messages */}

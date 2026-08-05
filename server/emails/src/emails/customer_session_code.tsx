@@ -45,7 +45,7 @@ CustomerSessionCode.PreviewProps = {
   organization,
   code: 'ABC123',
   code_lifetime_minutes: 30,
-  url: 'https://app.spairehq.com/acme-inc/portal/authenticate',
+  url: 'https://app.claidorhq.com/acme-inc/portal/authenticate',
 }
 
 export default CustomerSessionCode

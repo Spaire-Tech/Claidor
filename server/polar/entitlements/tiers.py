@@ -115,14 +115,14 @@ class TierEntitlements:
     limits: TierLimits
     features: TierFeatures
     rate_limit_group: str
-    # The monthly fee Spaire charges for this tier itself (informational —
+    # The monthly fee Claidor charges for this tier itself (informational —
     # the actual billing is driven by the platform-org subscription).
     monthly_price_cents: int
     # Soft overage grace above the limit, expressed as a percent. Legacy
     # uses 0% (no enforcement anyway). Starter/Studio/Scale use 10% so
     # creators are not surprised by abrupt blocks when they slightly
     # exceed their cap. Overage inside the grace band is recorded as
-    # `spaire.quota.overage` events for operator review — it is NOT
+    # `claidor.quota.overage` events for operator review — it is NOT
     # billed automatically (the platform products carry no metered
     # prices; shipping overage billing is a deliberate pricing decision,
     # and these events would be its input).
@@ -256,7 +256,7 @@ _STARTER = TierEntitlements(
         cohort_analytics=False,
         custom_pricing_negotiation=False,
         customer_wallet=False,
-        # Sandbox is a separate environment (sandbox.spairehq.com)
+        # Sandbox is a separate environment (sandbox.claidorhq.com)
         # available to every creator; the entitlement is informational
         # and not used as a require_feature gate.
         sandbox_mode=True,

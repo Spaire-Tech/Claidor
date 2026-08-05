@@ -5,22 +5,22 @@ import { useMetrics, useUpdateProduct } from '@/hooks/queries'
 import { apiErrorToast } from '@/utils/api/errors'
 import { getChartRangeParams } from '@/utils/metrics'
 import MoreVert from '@mui/icons-material/MoreVert'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import { Status } from '@spaire/ui/components/atoms/Status'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@spaire/ui/components/atoms/Tabs'
+} from '@claidor/ui/components/atoms/Tabs'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@spaire/ui/components/ui/dropdown-menu'
+} from '@claidor/ui/components/ui/dropdown-menu'
 import { useRouter } from 'next/navigation'
 import { useCallback } from 'react'
 import { DashboardBody } from '../../Layout/DashboardLayout'

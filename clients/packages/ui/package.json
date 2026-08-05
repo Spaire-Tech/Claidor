@@ -1,12 +1,12 @@
 {
-  "name": "@spaire/ui",
+  "name": "@claidor/ui",
   "version": "0.1.4",
-  "description": "Spaire UI Components",
-  "author": "Spaire",
+  "description": "Claidor UI Components",
+  "author": "Claidor",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Spaire-Tech/polar.git",
+    "url": "https://github.com/Claidor-Tech/polar.git",
     "directory": "clients/packages/ui"
   },
   "publishConfig": {
@@ -63,8 +63,8 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@spaire/currency": "workspace:^",
-    "@spaire/typescript-config": "workspace:*",
+    "@claidor/currency": "workspace:^",
+    "@claidor/typescript-config": "workspace:*",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.2.3",
     "prettier": "^3.8.1",

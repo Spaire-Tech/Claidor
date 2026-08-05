@@ -80,7 +80,7 @@ Format:
 ```
 ## Dashboard Steps
 
-- [x] Product created in Spaire dashboard
+- [x] Product created in Claidor dashboard
 - [x] Meter configured: llm-token-usage
 - [ ] PENDING — Metered pricing: user must attach meter to product price
 - [ ] PENDING — Webhook URL registered at Settings → Webhooks
@@ -99,9 +99,9 @@ Format:
 1. Remove file: path/to/created/file.ts
 2. Remove import added to: path/to/modified/file.ts — "import { X } from '@spaire/sdk'"
 3. Remove code block in: path/to/modified/file.ts — lines 42-58 (the checkout handler)
-4. Remove env vars: SPAIRE_ACCESS_TOKEN, SPAIRE_WEBHOOK_SECRET (from .env)
-5. Uninstall packages: pnpm remove @spaire/sdk @spaire/nextjs
-6. Dashboard: delete meter "llm-token-usage" in Spaire → Products → Meters
+4. Remove env vars: CLAIDOR_ACCESS_TOKEN, CLAIDOR_WEBHOOK_SECRET (from .env)
+5. Uninstall packages: pnpm remove @spaire/sdk @claidor/nextjs
+6. Dashboard: delete meter "llm-token-usage" in Claidor → Products → Meters
 ```
 
 Be specific — list exact file paths and exact things to remove or undo.

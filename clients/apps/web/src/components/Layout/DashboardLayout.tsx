@@ -4,12 +4,12 @@ import LogoIcon from '@/components/Brand/LogoIcon'
 import { useAuth } from '@/hooks/auth'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import { setLastVisitedOrg } from '@/utils/cookies'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import {
   SidebarTrigger,
   useSidebar,
-} from '@spaire/ui/components/atoms/Sidebar'
-import { Tabs, TabsList, TabsTrigger } from '@spaire/ui/components/atoms/Tabs'
+} from '@claidor/ui/components/atoms/Sidebar'
+import { Tabs, TabsList, TabsTrigger } from '@claidor/ui/components/atoms/Tabs'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'

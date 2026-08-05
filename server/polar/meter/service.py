@@ -26,7 +26,7 @@ from polar.billing_entry.repository import BillingEntryRepository
 from polar.config import settings
 from polar.customer.repository import CustomerRepository
 from polar.event.repository import EventRepository
-from polar.exceptions import SpaireRequestValidationError, ValidationError
+from polar.exceptions import ClaidorRequestValidationError, ValidationError
 from polar.kit.metadata import MetadataQuery, apply_metadata_clause, get_metadata_clause
 from polar.kit.pagination import PaginationParams
 from polar.kit.sorting import Sorting
@@ -179,7 +179,7 @@ class MeterService:
                     )
 
         if errors:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         update_dict = meter_update.model_dump(
             by_alias=True,
@@ -214,7 +214,7 @@ class MeterService:
         )
 
         if active_prices and active_prices > 0:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",
@@ -235,7 +235,7 @@ class MeterService:
         )
 
         if active_benefits and active_benefits > 0:
-            raise SpaireRequestValidationError(
+            raise ClaidorRequestValidationError(
                 [
                     {
                         "type": "value_error",

@@ -1,20 +1,20 @@
-"""Grant Spaire staff (Robin Kaye) full access to the Spaire platform org
+"""Grant Claidor staff (Robin Kaye) full access to the Claidor platform org
 
 Revision ID: 4f1cb78a2d6e
 Revises: 9c4dbe7f1a02
 Create Date: 2026-05-18 09:00:00.000000
 
-The Spaire platform org is the Organization that sells the Pro / Studio /
-Scale subscriptions to creator orgs. Spaire staff need to be members of
+The Claidor platform org is the Organization that sells the Pro / Studio /
+Scale subscriptions to creator orgs. Claidor staff need to be members of
 that org so the dashboard renders subscription, payout, and customer
 management views for it.
 
 Idempotent. No-op on environments where:
   - the named user doesn't exist (dev / staging seed didn't include them),
-  - no organization with slug 'spaire' exists (single-tenant deploys),
+  - no organization with slug 'claidor' exists (single-tenant deploys),
   - or the membership already exists.
 
-If the platform org's slug differs from 'spaire' on this environment,
+If the platform org's slug differs from 'claidor' on this environment,
 this migration won't grant access — re-run scripts/grant_user_org_access
 manually with the correct slug.
 
@@ -29,7 +29,7 @@ depends_on: tuple[str] | None = None
 
 
 _ROBIN_KAYE_USER_ID = "ab463766-c434-44aa-b1fe-cc5615e314bb"
-_PLATFORM_ORG_SLUG = "spaire"
+_PLATFORM_ORG_SLUG = "claidor"
 
 
 def upgrade() -> None:
@@ -56,7 +56,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Intentional no-op: we don't want a `downgrade` to lock Spaire staff
+    # Intentional no-op: we don't want a `downgrade` to lock Claidor staff
     # out of the platform org. Use `scripts/grant_user_org_access` or
     # direct SQL to revoke if needed.
     pass

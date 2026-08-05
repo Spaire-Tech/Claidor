@@ -7,7 +7,7 @@
 // content_html = inbox-correct HTML). Mounted on a dedicated /studio route so
 // the existing composer is untouched.
 
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 

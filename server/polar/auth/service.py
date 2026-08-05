@@ -18,7 +18,7 @@ from polar.postgres import AsyncSession
 
 log: Logger = structlog.get_logger()
 
-USER_SESSION_TOKEN_PREFIX = "spaire_us_"
+USER_SESSION_TOKEN_PREFIX = "claidor_us_"
 
 R = TypeVar("R", bound=Response)
 

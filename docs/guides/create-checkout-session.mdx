@@ -8,16 +8,16 @@ description: "Learn how to create checkout sessions via API."
 
 <Steps>
     <Step title = "Create a New Token">
-        Create a new organization token by following our [Organization Access Tokens](https://www.spairehq.com/docs/integrate/oat) guide.
+        Create a new organization token by following our [Organization Access Tokens](https://www.claidorhq.com/docs/integrate/oat) guide.
     </Step>
     <Step title = "Save your Access Token">
         After creating your access token, you will be able to view it. Please copy and save your access token.
         <img height="200" src="/assets/guides/theme-switch-in-checkout/access-token.png" />
     </Step>
     <Step title =  "Go to the Products Catalogue">
-        In the Spaire dashboard sidebar, navigate to **Products** > **Catalogue** for your organization.
+        In the Claidor dashboard sidebar, navigate to **Products** > **Catalogue** for your organization.
         You can also go directly to:  
-        `https://www.spairehq.com/dashboard/${org_slug}/products`  
+        `https://www.claidorhq.com/dashboard/${org_slug}/products`  
         <img height="200" src="/assets/guides/theme-switch-in-checkout/products-catalogue.png" />
     </Step>
     <Step title = "Access the product IDs for checkout">
@@ -32,7 +32,7 @@ description: "Learn how to create checkout sessions via API."
         - \<PRODUCT_ID_1\>, \<PRODUCT_ID_2\>, etc., with the product IDs you want to include in the session
         ```bash Terminal
         curl --request POST \
-            --url https://api.spairehq.com/v1/checkouts/ \
+            --url https://api.claidorhq.com/v1/checkouts/ \
             --header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
             --header 'Content-Type: application/json' \
             --data '{
@@ -43,7 +43,7 @@ description: "Learn how to create checkout sessions via API."
             ]
         }'
         ```
-    Find the description of all the parameters in the [Create Checkout Session API](https://www.spairehq.com/docs/api-reference/checkouts/create-session).
+    Find the description of all the parameters in the [Create Checkout Session API](https://www.claidorhq.com/docs/api-reference/checkouts/create-session).
     </Step>
     <Step title="Access the Checkout Session URL">
         The curl command returns a JSON. Access the checkout URL from the <code>"url"</code> key of the JSON.
@@ -51,7 +51,7 @@ description: "Learn how to create checkout sessions via API."
         ```json
         {
             "...": "...",
-            "url": "https://buy.spairehq.com/spaire_c_...", // [!code ++]
+            "url": "https://buy.claidorhq.com/claidor_c_...", // [!code ++]
             "...": "..."
         }
         ```

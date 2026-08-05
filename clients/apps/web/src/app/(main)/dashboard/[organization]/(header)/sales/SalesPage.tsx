@@ -15,17 +15,17 @@ import {
 } from '@/utils/datatable'
 import { getChartRangeParams } from '@/utils/metrics'
 import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined'
-import { schemas } from '@spaire/client'
-import { formatCurrency } from '@spaire/currency'
-import Avatar from '@spaire/ui/components/atoms/Avatar'
-import Button from '@spaire/ui/components/atoms/Button'
+import { schemas } from '@claidor/client'
+import { formatCurrency } from '@claidor/currency'
+import Avatar from '@claidor/ui/components/atoms/Avatar'
+import Button from '@claidor/ui/components/atoms/Button'
 import {
   DataTable,
   DataTableColumnDef,
   DataTableColumnHeader,
-} from '@spaire/ui/components/atoms/DataTable'
-import FormattedDateTime from '@spaire/ui/components/atoms/FormattedDateTime'
-import { Status } from '@spaire/ui/components/atoms/Status'
+} from '@claidor/ui/components/atoms/DataTable'
+import FormattedDateTime from '@claidor/ui/components/atoms/FormattedDateTime'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import { RowSelectionState } from '@tanstack/react-table'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'

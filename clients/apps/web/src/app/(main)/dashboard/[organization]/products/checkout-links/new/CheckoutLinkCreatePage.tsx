@@ -3,7 +3,7 @@
 import { CheckoutLinkForm } from '@/components/CheckoutLinks/CheckoutLinkForm'
 import { CheckoutLinkPreviewPanel } from '@/components/CheckoutLinks/CheckoutLinkPreviewPanel'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'

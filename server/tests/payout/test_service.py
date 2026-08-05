@@ -7,7 +7,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from polar.config import settings
-from polar.exceptions import SpaireRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError
 from polar.integrations.stripe.service import StripeService
 from polar.kit.address import Address, CountryAlpha2
 from polar.kit.utils import utc_now
@@ -384,7 +384,7 @@ class TestTriggerInvoiceGeneration:
         await save_fixture(payout2)
 
         # Try to set the same invoice number on the second payout
-        with pytest.raises(SpaireRequestValidationError):
+        with pytest.raises(ClaidorRequestValidationError):
             await payout_service.trigger_invoice_generation(
                 session, payout2, PayoutGenerateInvoice(invoice_number=invoice_number)
             )

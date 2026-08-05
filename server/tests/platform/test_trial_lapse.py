@@ -56,7 +56,7 @@ async def _legacy_trial(
     customer = await create_customer(
         save_fixture,
         organization=platform_org,
-        email=f"creator-{creator.slug}@billing.spairehq.internal",
+        email=f"creator-{creator.slug}@billing.claidorhq.internal",
         user_metadata={"creator_org_id": str(creator.id)},
     )
     subscription = await create_subscription(

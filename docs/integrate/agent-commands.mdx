@@ -1,14 +1,14 @@
 ---
 title: "AI Agent Commands"
-description: "Add Spaire checkout and usage billing to your project with guided AI agent commands in Claude Code"
+description: "Add Claidor checkout and usage billing to your project with guided AI agent commands in Claude Code"
 sidebarTitle: "Agent Commands"
 ---
 
-Agent commands are [Claude Code custom commands](https://docs.anthropic.com/en/docs/claude-code/tutorials#create-custom-slash-commands) that teach the AI agent how to integrate Spaire into your project. The agent reads your codebase, detects your framework, and writes production-ready integration code — interactively, with your approval at every step.
+Agent commands are [Claude Code custom commands](https://docs.anthropic.com/en/docs/claude-code/tutorials#create-custom-slash-commands) that teach the AI agent how to integrate Claidor into your project. The agent reads your codebase, detects your framework, and writes production-ready integration code — interactively, with your approval at every step.
 
 ## How It Works
 
-Claude Code doesn't know about Spaire out of the box. The agent commands are Markdown files you add to your project's `.claude/commands/` directory. Once added, Claude Code loads them as custom slash commands and knows exactly how to set up Spaire checkout, usage billing, webhooks, and more — tailored to your stack.
+Claude Code doesn't know about Claidor out of the box. The agent commands are Markdown files you add to your project's `.claude/commands/` directory. Once added, Claude Code loads them as custom slash commands and knows exactly how to set up Claidor checkout, usage billing, webhooks, and more — tailored to your stack.
 
 ## Available Commands
 
@@ -32,7 +32,7 @@ Claude Code doesn't know about Spaire out of the box. The agent commands are Mar
     ```
   </Step>
   <Step title="Add the command files to your project">
-    Create a `.claude/commands/` directory in your project root and download the Spaire command files:
+    Create a `.claude/commands/` directory in your project root and download the Claidor command files:
 
     ```bash
     mkdir -p .claude/commands
@@ -47,7 +47,7 @@ Claude Code doesn't know about Spaire out of the box. The agent commands are Mar
     ```
 
     <Tip>
-      Commit these files to your repo. Anyone on your team who uses Claude Code will automatically get the Spaire commands.
+      Commit these files to your repo. Anyone on your team who uses Claude Code will automatically get the Claidor commands.
     </Tip>
   </Step>
   <Step title="Launch Claude Code and run a command">
@@ -61,7 +61,7 @@ Claude Code doesn't know about Spaire out of the box. The agent commands are Mar
 </Steps>
 
 <Info>
-  **Why command files?** Claude Code custom commands are project-scoped. By adding the `.claude/commands/` files to your project, the agent gets detailed instructions on how to integrate Spaire — including which SDKs to use, what dashboard steps to guide you through, safety guardrails for production codebases, and framework-specific code templates. Without these files, Claude Code has no knowledge of Spaire.
+  **Why command files?** Claude Code custom commands are project-scoped. By adding the `.claude/commands/` files to your project, the agent gets detailed instructions on how to integrate Claidor — including which SDKs to use, what dashboard steps to guide you through, safety guardrails for production codebases, and framework-specific code templates. Without these files, Claude Code has no knowledge of Claidor.
 </Info>
 
 ## Supported Frameworks
@@ -91,7 +91,7 @@ Agent commands are designed for production codebases that handle revenue. Every 
 - **Git safety** — Checks for uncommitted changes and warns you to commit or stash first
 - **No secret handling** — Never hardcodes API keys or modifies `.env` values; only references variable names and tells you where to get the values
 - **Surgical edits** — When modifying existing files, patches only the necessary sections and preserves your formatting and code style
-- **No silent account mutations** — Never creates products, meters, or prices in your Spaire account; walks you through dashboard steps manually
+- **No silent account mutations** — Never creates products, meters, or prices in your Claidor account; walks you through dashboard steps manually
 - **Idempotent webhooks** — All generated webhook handlers include signature verification and idempotency checks
 - **Revert instructions** — After every implementation, provides exact file paths, imports, and packages to remove
 
@@ -101,18 +101,18 @@ Agent commands are designed for production codebases that handle revenue. Every 
 
 ## Setup Checkout
 
-The `/setup-checkout` command adds Spaire checkout to your project. The agent asks which approach you want:
+The `/setup-checkout` command adds Claidor checkout to your project. The agent asks which approach you want:
 
 | Approach | Description | Best for |
 |---|---|---|
-| **Overlay** | Embed script + `data-spaire-checkout` links. No backend needed. | Landing pages, simple apps |
-| **Programmatic** | `SpaireEmbedCheckout.create()` for dynamic control. | Apps needing custom trigger logic |
-| **Server-side** | Checkout sessions via `@spaire/sdk` or `@spaire/nextjs`. | Apps with backends, dynamic pricing |
+| **Overlay** | Embed script + `data-claidor-checkout` links. No backend needed. | Landing pages, simple apps |
+| **Programmatic** | `ClaidorEmbedCheckout.create()` for dynamic control. | Apps needing custom trigger logic |
+| **Server-side** | Checkout sessions via `@spaire/sdk` or `@claidor/nextjs`. | Apps with backends, dynamic pricing |
 
 ### What the agent does
 
 1. Scans your project files to detect your framework
-2. Asks if you have products in Spaire (walks you through creation if not)
+2. Asks if you have products in Claidor (walks you through creation if not)
 3. Asks which checkout approach you want
 4. Finds your pricing pages, product pages, and CTA sections
 5. **Shows a full change summary and waits for confirmation**
@@ -164,5 +164,5 @@ If the agent detects production indicators — `NODE_ENV=production`, deploy bra
 | **Agent Commands** | Getting started fast — the agent writes the code for you |
 | [SDKs](/integrate/sdk/typescript) | Manual integration with full control |
 | [Framework Adapters](/integrate/sdk/adapters/nextjs) | Framework-specific helpers (Next.js, Express, etc.) |
-| [MCP](/integrate/mcp) | AI agents querying your Spaire data at runtime |
+| [MCP](/integrate/mcp) | AI agents querying your Claidor data at runtime |
 | [Webhooks](/integrate/webhooks/endpoints) | Reacting to billing events server-side |

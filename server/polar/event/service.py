@@ -26,7 +26,7 @@ from sqlalchemy.orm import contains_eager
 from polar.auth.models import AuthSubject, is_organization, is_user
 from polar.customer_meter.repository import CustomerMeterRepository
 from polar.event_type.repository import EventTypeRepository
-from polar.exceptions import PolarError, SpaireRequestValidationError, ValidationError
+from polar.exceptions import PolarError, ClaidorRequestValidationError, ValidationError
 from polar.integrations.tinybird.service import ingest_events
 from polar.kit.metadata import MetadataQuery, apply_metadata_clause
 from polar.kit.pagination import PaginationParams, paginate
@@ -180,7 +180,7 @@ class EventService:
             meter_repository = MeterRepository.from_session(session)
             meter = await meter_repository.get_readable_by_id(meter_id, auth_subject)
             if meter is None:
-                raise SpaireRequestValidationError(
+                raise ClaidorRequestValidationError(
                     [
                         {
                             "type": "meter_id",
@@ -635,7 +635,7 @@ class EventService:
                         processed_events[event_dict["id"]] = event_dict
 
         if len(errors) > 0:
-            raise SpaireRequestValidationError(errors)
+            raise ClaidorRequestValidationError(errors)
 
         repository = EventRepository.from_session(session)
         with logfire.span("insert_batch", event_count=len(events)):

@@ -2,7 +2,7 @@
 
 import AIValidationResult from '@/components/Organization/AIValidationResult'
 import OrganizationProfileSettings from '@/components/Settings/OrganizationProfileSettings'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { Check } from 'lucide-react'
 import React, { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -352,7 +352,7 @@ export default function StreamlinedAccountReview({
       {currentStep === 'account' && (
         <StepCard
           title="Payout Account"
-          subtitle="Connect your bank account to receive payouts from Spaire."
+          subtitle="Connect your bank account to receive payouts from Claidor."
         >
           <AccountStep
             organizationAccount={organizationAccount}

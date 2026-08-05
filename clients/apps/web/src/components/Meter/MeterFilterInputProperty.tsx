@@ -1,13 +1,13 @@
 'use client'
 
-import Input from '@spaire/ui/components/atoms/Input'
+import Input from '@claidor/ui/components/atoms/Input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@spaire/ui/components/atoms/Select'
+} from '@claidor/ui/components/atoms/Select'
 import { useEffect, useState } from 'react'
 import { ControllerRenderProps } from 'react-hook-form'
 

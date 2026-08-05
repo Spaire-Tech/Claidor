@@ -2,8 +2,8 @@ import {
   CheckoutStatusDisplayColor,
   CheckoutStatusDisplayTitle,
 } from '@/utils/checkout'
-import { schemas } from '@spaire/client'
-import { Status } from '@spaire/ui/components/atoms/Status'
+import { schemas } from '@claidor/client'
+import { Status } from '@claidor/ui/components/atoms/Status'
 import { twMerge } from 'tailwind-merge'
 
 const CheckoutStatus = ({

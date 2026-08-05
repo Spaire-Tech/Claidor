@@ -10,9 +10,9 @@ import {
   productToCreateForm,
   SUBTITLE_METADATA_KEY,
 } from '@/utils/product'
-import { schemas } from '@spaire/client'
-import Button from '@spaire/ui/components/atoms/Button'
-import { Form } from '@spaire/ui/components/ui/form'
+import { schemas } from '@claidor/client'
+import Button from '@claidor/ui/components/atoms/Button'
+import { Form } from '@claidor/ui/components/ui/form'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'

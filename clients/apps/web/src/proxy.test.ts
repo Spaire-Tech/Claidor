@@ -210,7 +210,7 @@ describe('middleware function', () => {
     })
 
     const request = new NextRequest('https://example.com/dashboard')
-    request.cookies.set('spaire_session', 'valid-session-token')
+    request.cookies.set('claidor_session', 'valid-session-token')
 
     const response = await proxy(request)
 
@@ -248,7 +248,7 @@ describe('middleware function', () => {
     })
 
     const request = new NextRequest('https://example.com/dashboard')
-    request.cookies.set('spaire_session', 'valid-session-token')
+    request.cookies.set('claidor_session', 'valid-session-token')
 
     const response = await proxy(request)
 
@@ -265,7 +265,7 @@ describe('middleware function', () => {
     })
 
     const request = new NextRequest('https://example.com/dashboard')
-    request.cookies.set('spaire_session', 'invalid-session-token')
+    request.cookies.set('claidor_session', 'invalid-session-token')
 
     const response = await proxy(request)
 

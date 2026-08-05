@@ -5,31 +5,31 @@ description: "Payments and Checkouts made dead simple with Fastify"
 
 ## Examples
 
-- [With Fastify](https://github.com/spairehq/examples/tree/main/with-fastify)
+- [With Fastify](https://github.com/claidorhq/examples/tree/main/with-fastify)
 
 ## Installation
 
-Install the required Spaire packages using the following command:
+Install the required Claidor packages using the following command:
 
 <Tabs>
   <Tab title="npm">
     ```bash Terminal
-    npm install zod @spaire/fastify
+    npm install zod @claidor/fastify
     ```
   </Tab>
   <Tab title="yarn">
     ```bash Terminal
-    yarn add zod @spaire/fastify
+    yarn add zod @claidor/fastify
     ```
   </Tab>
   <Tab title="pnpm">
     ```bash Terminal
-    pnpm add zod @spaire/fastify
+    pnpm add zod @claidor/fastify
     ```
   </Tab>
   <Tab title="bun">
     ```bash Terminal
-    bun add zod @spaire/fastify
+    bun add zod @claidor/fastify
     ```
   </Tab>
 </Tabs>
@@ -40,15 +40,15 @@ Create a Checkout handler which takes care of redirections.
 
 ```typescript
 import fastify from "fastify";
-import { Checkout } from "@spaire/fastify";
+import { Checkout } from "@claidor/fastify";
 
 fastify().get(
   "/checkout",
   Checkout({
-    accessToken: "xxx", // Or set an environment variable to SPAIRE_ACCESS_TOKEN
+    accessToken: "xxx", // Or set an environment variable to CLAIDOR_ACCESS_TOKEN
     successUrl: process.env.SUCCESS_URL,
     returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Checkout
-    server: "sandbox", // Use sandbox if you're testing Spaire - omit the parameter or pass 'production' otherwise
+    server: "sandbox", // Use sandbox if you're testing Claidor - omit the parameter or pass 'production' otherwise
     theme: "dark", // Enforces the theme - System-preferred theme will be set if left omitted
   })
 );
@@ -71,15 +71,15 @@ Create a customer portal where your customer can view orders and subscriptions.
 
 ```typescript
 import fastify from "fastify";
-import { CustomerPortal } from "@spaire/fastify";
+import { CustomerPortal } from "@claidor/fastify";
 
 fastify().get(
   "/portal",
   CustomerPortal({
-    accessToken: "xxx", // Or set an environment variable to SPAIRE_ACCESS_TOKEN
-    getCustomerId: (event) => "", // Function to resolve a Spaire Customer ID
+    accessToken: "xxx", // Or set an environment variable to CLAIDOR_ACCESS_TOKEN
+    getCustomerId: (event) => "", // Function to resolve a Claidor Customer ID
     returnUrl: "https://myapp.com", // An optional URL which renders a back-button in the Customer Portal
-    server: "sandbox", // Use sandbox if you're testing Spaire - omit the parameter or pass 'production' otherwise
+    server: "sandbox", // Use sandbox if you're testing Claidor - omit the parameter or pass 'production' otherwise
   })
 );
 ```
@@ -90,10 +90,10 @@ A simple utility which resolves incoming webhook payloads by signing the webhook
 
 ```typescript
 import fastify from 'fastify'
-import { Webhooks } from "@spaire/fastify";
+import { Webhooks } from "@claidor/fastify";
 
-fastify.post('/spaire/webhooks', Webhooks({
-  webhookSecret: process.env.SPAIRE_WEBHOOK_SECRET!,
+fastify.post('/claidor/webhooks', Webhooks({
+  webhookSecret: process.env.CLAIDOR_WEBHOOK_SECRET!,
   onPayload: async (payload) => /** Handle payload */,
 }))
 ```

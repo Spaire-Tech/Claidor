@@ -1,10 +1,10 @@
 ---
-title: "Affonso Affiliates with Spaire"
+title: "Affonso Affiliates with Claidor"
 sidebarTitle: "Affonso Affiliates"
 ---
 
 This guide explains how to integrate
-[Affonso](https://affonso.io)'s affiliate marketing software with your Spaire
+[Affonso](https://affonso.io)'s affiliate marketing software with your Claidor
 account to track and manage affiliate-driven sales for your SaaS business.
 
 ## What is Affonso?
@@ -18,11 +18,11 @@ account to track and manage affiliate-driven sales for your SaaS business.
 
 ## Integration Steps
 
-### 1. Create a Spaire Access Token for Affonso
+### 1. Create a Claidor Access Token for Affonso
 
-First, you'll need to create an API token in Spaire that Affonso can use to communicate with your account:
+First, you'll need to create an API token in Claidor that Affonso can use to communicate with your account:
 
-1. Login to your **Spaire Dashboard**
+1. Login to your **Claidor Dashboard**
 2. Navigate to **Settings** in the main menu
 3. Scroll down to the **Developers** section on the Settings page
 4. Click the **New token** button
@@ -45,16 +45,16 @@ First, you'll need to create an API token in Spaire that Affonso can use to comm
 
 <video controls width="600">
   <source
-  src="https://affonso-videos.s3.eu-central-1.amazonaws.com/Connect_Spaire_Affonso_1.mp4"
+  src="https://affonso-videos.s3.eu-central-1.amazonaws.com/Connect_Claidor_Affonso_1.mp4"
   type="video/mp4" />
 </video>
 
 
-### 2. Set Up Webhooks in Spaire
+### 2. Set Up Webhooks in Claidor
 
-After connecting your Spaire account with Affonso, you'll [receive a webhook URL and secret from Affonso](https://affonso.io/app/affiliate-program/connect). Add these to your Spaire account:
+After connecting your Claidor account with Affonso, you'll [receive a webhook URL and secret from Affonso](https://affonso.io/app/affiliate-program/connect). Add these to your Claidor account:
 
-1. Go to **Settings** → **Developers** → **Webhooks** in your Spaire Dashboard
+1. Go to **Settings** → **Developers** → **Webhooks** in your Claidor Dashboard
 2. Click the **"Add Endpoint"** button
 3. In the URL field, paste the webhook URL provided by Affonso
 4. For Format, select **RAW** from the dropdown
@@ -68,7 +68,7 @@ After connecting your Spaire account with Affonso, you'll [receive a webhook URL
 
 <video controls width="600">
   <source
-  src="https://affonso-videos.s3.eu-central-1.amazonaws.com/Connect_Spaire_Affonso_2.mp4"
+  src="https://affonso-videos.s3.eu-central-1.amazonaws.com/Connect_Claidor_Affonso_2.mp4"
   type="video/mp4" />
 </video>
 
@@ -103,7 +103,7 @@ For better conversion insights, you can track when users sign up through an affi
 window.Affonso.signup(userEmail);
 ```
 
-### 5. Pass Referral Data to Spaire Checkout
+### 5. Pass Referral Data to Claidor Checkout
 
 To ensure proper commission attribution, pass the referral data when creating checkout sessions:
 
@@ -111,8 +111,8 @@ To ensure proper commission attribution, pass the referral data when creating ch
 // Get the referral ID from the Affonso global variable
 const referralId = window.affonso_referral;
 
-// Create checkout session with Spaire
-const checkout = await spaire.checkouts.create({
+// Create checkout session with Claidor
+const checkout = await claidor.checkouts.create({
   products: ["your_product_id"],
   success_url: "https://your-app.com/success",
   metadata: {
@@ -128,8 +128,8 @@ window.location.href = checkout.url;
 
 1. When a user visits your site through an affiliate link, Affonso's script stores a unique identifier in a cookie
 2. If you've implemented signup tracking, Affonso records when the user creates an account
-3. When the user makes a purchase, the referral ID is passed to Spaire as metadata
-4. Spaire's webhook notifies Affonso about the purchase
+3. When the user makes a purchase, the referral ID is passed to Claidor as metadata
+4. Claidor's webhook notifies Affonso about the purchase
 5. Affonso attributes the sale to the correct affiliate and calculates the commission
 
 ## Benefits of the Integration
@@ -141,7 +141,7 @@ window.location.href = checkout.url;
 
 ## Getting Help
 
-More details about the integration: [Spaire Affiliate Program](https://affonso.io/spaire-affiliate-program)
+More details about the integration: [Claidor Affiliate Program](https://affonso.io/claidor-affiliate-program)
 
 If you need assistance with your Affonso integration, contact Affonso's support team:
 - Email: hello@affonso.io

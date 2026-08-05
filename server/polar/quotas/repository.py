@@ -40,7 +40,7 @@ class _QuotaEventRepository(RepositoryBase[Event]):
         base = select().where(
             Event.organization_id == organization_id,
             Event.name == definition.event_name,
-            # Use system events only — these are emitted by Spaire's own
+            # Use system events only — these are emitted by Claidor's own
             # producers (file uploads, mux webhooks, email sender). User-
             # submitted events with the same name should not be counted.
             Event.source == EventSource.system,

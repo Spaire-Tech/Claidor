@@ -22,7 +22,7 @@ export const hasProductCheckout = (
 /**
  * Enriches a CheckoutPublic with a derived productPrice.
  *
- * The Spaire SDK strips `product_price` from the backend response (it's not
+ * The Claidor SDK strips `product_price` from the backend response (it's not
  * in the Zod schema), so we derive it from `prices[productId]`. For seat-based
  * products there is exactly one price per product, so index [0] is always
  * correct. For legacy-recurring products with multiple prices the currently

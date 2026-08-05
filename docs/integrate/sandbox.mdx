@@ -3,17 +3,17 @@ title: "Sandbox"
 description: "A fully isolated environment for testing your integration — no real money, no production data."
 ---
 
-The Spaire sandbox is a completely separate server from production. It has its own database, its own API, and its own accounts. Nothing you do in the sandbox touches your live data, customers, or balance.
+The Claidor sandbox is a completely separate server from production. It has its own database, its own API, and its own accounts. Nothing you do in the sandbox touches your live data, customers, or balance.
 
 Use it to build and test your integration before going live, simulate payment scenarios including failures and 3D Secure, and run automated tests against a real API without side effects.
 
 <Note>
-  The sandbox is a separate environment, not a test mode toggle. As a Merchant of Record handling real financial transactions, Spaire runs test data on entirely separate infrastructure — this ensures test records can never contaminate production accounting.
+  The sandbox is a separate environment, not a test mode toggle. As a Merchant of Record handling real financial transactions, Claidor runs test data on entirely separate infrastructure — this ensures test records can never contaminate production accounting.
 </Note>
 
 ## Access the sandbox
 
-Go to [sandbox.spairehq.com](https://sandbox.spairehq.com) or click **Go to sandbox** from the organization switcher in your dashboard at [app.spairehq.com](https://app.spairehq.com).
+Go to [sandbox.claidorhq.com](https://sandbox.claidorhq.com) or click **Go to sandbox** from the organization switcher in your dashboard at [app.claidorhq.com](https://app.claidorhq.com).
 
 Create a separate account and organization for the sandbox — your production credentials don't carry over. You can create as many sandbox accounts and organizations as you need, with no limits.
 
@@ -34,48 +34,48 @@ For billing address, use any valid-looking address. Postal code `94103` works fo
 
 ## API and SDK
 
-The sandbox API base URL is `https://sandbox-api.spairehq.com`.
+The sandbox API base URL is `https://sandbox-api.claidorhq.com`.
 
 Generate an access token from your **sandbox** organization settings — production tokens don't work in the sandbox, and sandbox tokens don't work in production.
 
 <CodeGroup>
 
 ```ts TypeScript
-import { Spaire } from '@spaire/sdk'
+import { Claidor } from '@spaire/sdk'
 
-const spaire = new Spaire({
-  accessToken: process.env.SPAIRE_ACCESS_TOKEN,
+const claidor = new Claidor({
+  accessToken: process.env.CLAIDOR_ACCESS_TOKEN,
   server: 'sandbox',
 })
 ```
 
 ```python Python
-from spaire_sdk import Spaire
+from claidor_sdk import Claidor
 
-s = Spaire(
+s = Claidor(
     server="sandbox",
     access_token="<YOUR_ACCESS_TOKEN>",
 )
 ```
 
 ```go Go
-s := spairego.New(
-    spairego.WithServer(spairego.ServerSandbox),
-    spairego.WithSecurity(os.Getenv("SPAIRE_ACCESS_TOKEN")),
+s := claidorgo.New(
+    claidorgo.WithServer(claidorgo.ServerSandbox),
+    claidorgo.WithSecurity(os.Getenv("CLAIDOR_ACCESS_TOKEN")),
 )
 ```
 
 ```php PHP
-$sdk = Spaire::builder()
+$sdk = Claidor::builder()
     ->setServer('sandbox')
-    ->setSecurity(getenv('SPAIRE_ACCESS_TOKEN'))
+    ->setSecurity(getenv('CLAIDOR_ACCESS_TOKEN'))
     ->build();
 ```
 
 ```ruby Ruby
-s = OpenApiSDK::Spaire.new(
-  server_url: 'https://sandbox-api.spairehq.com',
-  access_token: ENV['SPAIRE_ACCESS_TOKEN']
+s = OpenApiSDK::Claidor.new(
+  server_url: 'https://sandbox-api.claidorhq.com',
+  access_token: ENV['CLAIDOR_ACCESS_TOKEN']
 )
 ```
 

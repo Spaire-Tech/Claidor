@@ -4,7 +4,7 @@ import InvoiceDocument, {
   type InvoiceDocumentData,
 } from '@/app/(main)/dashboard/[organization]/(header)/sales/invoices/InvoiceDocument'
 import { useCustomer } from '@/hooks/queries'
-import { schemas } from '@spaire/client'
+import { schemas } from '@claidor/client'
 import { format } from 'date-fns'
 import { useMemo } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
@@ -95,9 +95,9 @@ export const InvoicePreviewPanel = ({
       organizationLogoUrl: organization.avatar_url ?? undefined,
       showLogo,
       showMorAttribution,
-      sellerName: 'Spaire, Inc.',
+      sellerName: 'Claidor, Inc.',
       sellerAddress: '1111B S Governors Ave\n# 47283\nDover, US-DE 19904\nUnited States',
-      sellerAdditionalInfo: 'support@spairehq.com',
+      sellerAdditionalInfo: 'support@claidorhq.com',
       lineItems: items,
       subtotalAmount,
       discountAmount,
