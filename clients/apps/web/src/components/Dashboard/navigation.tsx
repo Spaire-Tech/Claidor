@@ -1,5 +1,6 @@
 import { PolarHog, usePostHog } from '@/hooks/posthog'
 import { useOrganizationAccount } from '@/hooks/queries'
+import { schemas } from '@claidor/client'
 import AttachMoneyOutlined from '@mui/icons-material/AttachMoneyOutlined'
 import CodeOutlined from '@mui/icons-material/CodeOutlined'
 import DiscountOutlined from '@mui/icons-material/DiscountOutlined'
@@ -7,6 +8,7 @@ import ExtensionOutlined from '@mui/icons-material/ExtensionOutlined'
 import HiveOutlined from '@mui/icons-material/HiveOutlined'
 import LayersOutlined from '@mui/icons-material/LayersOutlined'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
+import LocalLibraryOutlined from '@mui/icons-material/LocalLibraryOutlined'
 import MailOutlined from '@mui/icons-material/MailOutlined'
 import PeopleAltOutlined from '@mui/icons-material/PeopleAltOutlined'
 import ReceiptLongOutlined from '@mui/icons-material/ReceiptLongOutlined'
@@ -15,7 +17,6 @@ import SpaceDashboardOutlined from '@mui/icons-material/SpaceDashboardOutlined'
 import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined'
 import TrendingUp from '@mui/icons-material/TrendingUp'
 import TuneOutlined from '@mui/icons-material/TuneOutlined'
-import { schemas } from '@claidor/client'
 import { usePathname } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
 
@@ -177,6 +178,16 @@ const generalRoutesList = (org?: schemas['Organization']): Route[] => [
     link: `/dashboard/${org?.slug}`,
     checkIsActive: (currentRoute: string) =>
       currentRoute === `/dashboard/${org?.slug}`,
+    if: true,
+  },
+  {
+    id: 'librarian',
+    title: 'Bibliothécaire',
+    icon: <LocalLibraryOutlined fontSize="inherit" />,
+    link: `/dashboard/${org?.slug}/librarian`,
+    checkIsActive: (currentRoute: string): boolean => {
+      return currentRoute.startsWith(`/dashboard/${org?.slug}/librarian`)
+    },
     if: true,
   },
   {
