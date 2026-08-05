@@ -80,3 +80,27 @@ per row in the database (`provenance` JSONB on articles and decisions).
 The Claude Code environment's network policy must allow these hosts before
 harvesting can run from sessions: `www.ohada.com`, `senlii.org`,
 `juricaf.org`, `droitguineen.com`, `www.institut-idef.org`.
+
+## Acquisition log — 2026-08-05 (first harvest)
+
+- **2023 act**: SenLII AKN HTML acquired and parsed — 448 articles, zero
+  duplicates, numbering 1…338 with compound articles; loaded into the
+  database with provenance. Raw XML is not exposed (`.xml` 404s); the HTML
+  carries the full structure. commons.laws.africa serves PDF/EPUB renderings.
+- **1998 act**: NOT yet acquired. ohada.com gates its PDFs
+  (`/telechargement/actes-uniformes/AUPSRVE-1998_fr.pdf`) behind a free
+  account login; droitguineen carries only the 2023 revision;
+  agp.africanlii.org (which likely hosts the historical expression) is not in
+  the environment's network allowlist. Options: allowlist
+  `agp.africanlii.org` + `api.laws.africa`, or download via a free ohada.com
+  account and drop the PDF into corpus/raw/.
+- **Decisions**: 8 of 11 seeds harvested from Juricaf (raw pages in
+  corpus/raw/decisions/, parsed + loaded). URL/URN quirks found: older
+  records use a number-only suffix (`…-20100610-038`) and a year-less URN
+  tail. Not found on Juricaf: 221/2025 (probably not yet indexed),
+  054/2005 and 003/2005 (2005 coverage looks thin — try Ohadata/IDEF), and
+  026/2016 — a matching saisie-attribution case exists as **026/2021**
+  (25 Feb 2021, same day/month): the sheet's year may be wrong. Flagged for
+  the lawyer verification pass; 026/2021 acquired in the meantime.
+- Keyword headers: present on some pages (090/2018) but not all; treat as a
+  bonus signal, not a guaranteed one.
