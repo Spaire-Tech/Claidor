@@ -12,10 +12,43 @@ export interface LibrarianUsage {
   output_tokens: number
 }
 
+/**
+ * The librarian needs a date before it can answer: the clarifying question
+ * arrives instead of any answer text.
+ */
+export interface LibrarianClarification {
+  message: string
+  /** ISO date separating the 1998 and 2023 regimes, e.g. "2024-02-16". */
+  cutoff: string
+}
+
+export interface LibrarianAuthorityDecision {
+  id: string
+  number: string
+  decided_on: string
+}
+
+/**
+ * Authority signal emitted after the answer text, before `done` — replaces
+ * the old « Autorité : » line the model used to write in the markdown.
+ */
+export interface LibrarianAuthority {
+  label: string
+  count: number
+  decisions: LibrarianAuthorityDecision[]
+}
+
+export interface LibrarianDone extends LibrarianUsage {
+  /** Acte uniforme versions the answer relied on, e.g. ["1998", "2023"]. */
+  versions_used: string[]
+}
+
 export interface LibrarianStreamCallbacks {
   onText: (delta: string) => void
   onCitation: (citation: LibrarianCitation) => void
-  onDone: (usage: LibrarianUsage) => void
+  onClarification: (clarification: LibrarianClarification) => void
+  onAuthority: (authority: LibrarianAuthority) => void
+  onDone: (done: LibrarianDone) => void
   onError: (message: string) => void
 }
 
@@ -69,6 +102,7 @@ export const askLibrarian = async (
   question: string,
   callbacks: LibrarianStreamCallbacks,
   signal: AbortSignal,
+  answerBothVersions: boolean = false,
 ): Promise<void> => {
   const response = await fetch(getServerURL('/v1/librarian/ask'), {
     method: 'POST',
@@ -77,7 +111,10 @@ export const askLibrarian = async (
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
     },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({
+      question,
+      answer_both_versions: answerBothVersions,
+    }),
     signal,
   })
 
@@ -106,8 +143,26 @@ export const askLibrarian = async (
       case 'citation':
         callbacks.onCitation(data as LibrarianCitation)
         break
+      case 'clarification':
+        callbacks.onClarification({
+          message: typeof data.message === 'string' ? data.message : '',
+          cutoff: typeof data.cutoff === 'string' ? data.cutoff : '',
+        })
+        break
+      case 'authority':
+        callbacks.onAuthority({
+          label: typeof data.label === 'string' ? data.label : '',
+          count: typeof data.count === 'number' ? data.count : 0,
+          decisions: Array.isArray(data.decisions) ? data.decisions : [],
+        })
+        break
       case 'done':
-        callbacks.onDone(data as LibrarianUsage)
+        callbacks.onDone({
+          ...data,
+          versions_used: Array.isArray(data.versions_used)
+            ? data.versions_used
+            : [],
+        } as LibrarianDone)
         break
       case 'error':
         callbacks.onError(

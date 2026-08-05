@@ -4,13 +4,20 @@ import { DashboardBody } from '@/components/Layout/DashboardLayout'
 import Button from '@claidor/ui/components/atoms/Button'
 import TextArea from '@claidor/ui/components/atoms/TextArea'
 import ArrowUpwardOutlined from '@mui/icons-material/ArrowUpwardOutlined'
+import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined'
 import RestartAltOutlined from '@mui/icons-material/RestartAltOutlined'
 import { useCallback, useRef, useState } from 'react'
-import { LibrarianAnswer, SOURCE_ANCHOR_PREFIX } from './LibrarianAnswer'
+import {
+  formatFrenchDate,
+  LibrarianAnswer,
+  SOURCE_ANCHOR_PREFIX,
+} from './LibrarianAnswer'
 import { SourceCard } from './SourceCard'
 import {
   askLibrarian,
+  LibrarianAuthority,
   LibrarianCitation,
+  LibrarianClarification,
   LibrarianNotConfiguredError,
 } from './stream'
 
@@ -30,6 +37,10 @@ const LibrarianPage = () => {
   const [askedQuestion, setAskedQuestion] = useState<string | null>(null)
   const [answer, setAnswer] = useState('')
   const [citations, setCitations] = useState<LibrarianCitation[]>([])
+  const [clarification, setClarification] =
+    useState<LibrarianClarification | null>(null)
+  const [authority, setAuthority] = useState<LibrarianAuthority | null>(null)
+  const [versionsUsed, setVersionsUsed] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<Status>('idle')
 
@@ -38,7 +49,7 @@ const LibrarianPage = () => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   const ask = useCallback(
-    async (rawQuestion: string) => {
+    async (rawQuestion: string, answerBothVersions: boolean = false) => {
       const trimmed = rawQuestion.trim()
       if (!trimmed || status === 'streaming') {
         return
@@ -53,6 +64,9 @@ const LibrarianPage = () => {
       setQuestion('')
       setAnswer('')
       setCitations([])
+      setClarification(null)
+      setAuthority(null)
+      setVersionsUsed([])
       setError(null)
       setStatus('streaming')
 
@@ -73,13 +87,24 @@ const LibrarianPage = () => {
                   `${current}[${index}](${SOURCE_ANCHOR_PREFIX}${index})`,
               )
             },
-            onDone: () => setStatus('done'),
+            onClarification: (incoming) => {
+              setClarification(incoming)
+              // Preserve the original question in the textarea so the
+              // user only has to add the date and resubmit.
+              setQuestion(trimmed)
+            },
+            onAuthority: (incoming) => setAuthority(incoming),
+            onDone: (done) => {
+              setVersionsUsed(done.versions_used)
+              setStatus('done')
+            },
             onError: () => {
               setError(GENERIC_ERROR)
               setStatus('done')
             },
           },
           controller.signal,
+          answerBothVersions,
         )
         setStatus((current) => (current === 'streaming' ? 'done' : current))
       } catch (e) {
@@ -105,8 +130,21 @@ const LibrarianPage = () => {
     setQuestion('')
     setAnswer('')
     setCitations([])
+    setClarification(null)
+    setAuthority(null)
+    setVersionsUsed([])
     setError(null)
     setStatus('idle')
+  }, [])
+
+  const focusQuestion = useCallback(() => {
+    const element = textareaRef.current
+    if (!element) {
+      return
+    }
+    element.focus()
+    const end = element.value.length
+    element.setSelectionRange(end, end)
   }, [])
 
   const onKeyDown = useCallback(
@@ -187,7 +225,45 @@ const LibrarianPage = () => {
           </div>
         </div>
 
-        {answer.length > 0 && <LibrarianAnswer content={answer} />}
+        {answer.length > 0 && (
+          <LibrarianAnswer
+            content={answer}
+            authority={authority}
+            versionsUsed={versionsUsed}
+          />
+        )}
+
+        {clarification && (
+          <div className="flex flex-col gap-y-4 rounded-2xl border border-gray-300 bg-white p-5">
+            <div className="flex flex-row items-start gap-x-3">
+              <HelpOutlineOutlined
+                className="mt-0.5 flex-none text-gray-500"
+                sx={{ fontSize: 20 }}
+              />
+              <div className="flex min-w-0 flex-col gap-y-1">
+                <p className="text-sm leading-relaxed text-gray-900">
+                  {clarification.message}
+                </p>
+                {clarification.cutoff && (
+                  <p className="text-xs text-gray-500">
+                    Date charnière : {formatFrenchDate(clarification.cutoff)}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={focusQuestion}>
+                Préciser la date
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => askedQuestion && ask(askedQuestion, true)}
+              >
+                Répondre pour les deux régimes (1998 et 2023)
+              </Button>
+            </div>
+          </div>
+        )}
 
         {status === 'streaming' && (
           <div
@@ -205,6 +281,36 @@ const LibrarianPage = () => {
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
+        )}
+
+        {clarification && status === 'done' && (
+          <form
+            className="relative w-full"
+            onSubmit={(e) => {
+              e.preventDefault()
+              ask(question)
+            }}
+          >
+            <TextArea
+              ref={textareaRef}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Ajoutez la date (ex. saisie pratiquée le 12 mars 2024)…"
+              aria-label="Précisez votre question avec la date"
+              resizable={false}
+              className="min-h-[100px] pr-14"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={question.trim().length === 0}
+              className="absolute right-3 bottom-3 rounded-full"
+              aria-label="Envoyer la question"
+            >
+              <ArrowUpwardOutlined sx={{ fontSize: 16 }} />
+            </Button>
+          </form>
         )}
 
         {citations.length > 0 && (
