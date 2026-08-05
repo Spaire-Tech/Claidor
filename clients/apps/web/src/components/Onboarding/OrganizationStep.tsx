@@ -7,7 +7,6 @@ import { usePostHog } from '@/hooks/posthog'
 import { useCreateOrganization, useUpdateOrganization } from '@/hooks/queries'
 import { setValidationErrors } from '@/utils/api/errors'
 import { CONFIG } from '@/utils/config'
-import { FormControl } from '@mui/material'
 import { schemas } from '@claidor/client'
 import Avatar from '@claidor/ui/components/atoms/Avatar'
 import Button from '@claidor/ui/components/atoms/Button'
@@ -27,13 +26,14 @@ import {
 } from '@claidor/ui/components/ui/form'
 import { Label } from '@claidor/ui/components/ui/label'
 import AddPhotoAlternateOutlined from '@mui/icons-material/AddPhotoAlternateOutlined'
+import { FormControl } from '@mui/material'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import slugify from 'slugify'
-import { Upload } from '../FileUpload/Upload'
 import LogoIcon from '../Brand/LogoIcon'
+import { Upload } from '../FileUpload/Upload'
 import { CURRENCIES } from '../Settings/currencies'
 import { toast } from '../Toast/use-toast'
 import { getStatusRedirect } from '../Toast/utils'
@@ -166,6 +166,8 @@ export const OrganizationStep = ({
     const params = {
       name: data.name,
       slug: slug as string,
+      // Server-side default; the generated schema marks it required.
+      default_tax_behavior: 'location' as const,
     }
 
     posthog.capture('dashboard:organizations:create:submit', params)
@@ -307,7 +309,10 @@ export const OrganizationStep = ({
                         className="h-16 w-16"
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/20 opacity-0 transition-opacity hover:opacity-100">
-                        <AddPhotoAlternateOutlined className="text-white" fontSize="small" />
+                        <AddPhotoAlternateOutlined
+                          className="text-white"
+                          fontSize="small"
+                        />
                       </div>
                     </button>
                     <button
@@ -357,7 +362,7 @@ export const OrganizationStep = ({
                       <FormControl className="flex w-full flex-col gap-y-1.5">
                         <Label htmlFor="slug">Username</Label>
                         <div className="flex items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs transition-all focus-within:z-10 focus-within:border-blue-300 focus-within:ring-[3px] focus-within:ring-blue-100">
-                          <span className="select-none border-r border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-400">
+                          <span className="border-r border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-400 select-none">
                             claidorhq.com/
                           </span>
                           <input
@@ -366,7 +371,7 @@ export const OrganizationStep = ({
                             size={Math.max(slug?.length || 1, 6)}
                             placeholder="jane-doe"
                             onFocus={() => setEditedSlug(true)}
-                            className="flex-1 border-0 bg-white px-3 py-2.5 text-sm shadow-none outline-none ring-0 focus:ring-0"
+                            className="flex-1 border-0 bg-white px-3 py-2.5 text-sm shadow-none ring-0 outline-none focus:ring-0"
                           />
                         </div>
                       </FormControl>
@@ -382,9 +387,12 @@ export const OrganizationStep = ({
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <div className="flex flex-col gap-3">
                   <div>
-                    <Label className="text-sm font-medium">Default Currency</Label>
+                    <Label className="text-sm font-medium">
+                      Default Currency
+                    </Label>
                     <p className="mt-0.5 text-xs text-gray-400">
-                      Used for your products by default. You can change this later.
+                      Used for your products by default. You can change this
+                      later.
                     </p>
                   </div>
                   <Select
@@ -395,7 +403,9 @@ export const OrganizationStep = ({
                       <SelectValue>
                         {(() => {
                           const c = CURRENCIES.find((c) => c.code === currency)
-                          return c ? `${c.flag} ${c.code.toUpperCase()}` : currency.toUpperCase()
+                          return c
+                            ? `${c.flag} ${c.code.toUpperCase()}`
+                            : currency.toUpperCase()
                         })()}
                       </SelectValue>
                     </SelectTrigger>
@@ -418,11 +428,7 @@ export const OrganizationStep = ({
             <div className="flex flex-col gap-3 pt-2">
               <button
                 type="submit"
-                disabled={
-                  name.length === 0 ||
-                  slug.length === 0 ||
-                  submitting
-                }
+                disabled={name.length === 0 || slug.length === 0 || submitting}
                 className="w-full rounded-full bg-blue-600 py-4 text-sm font-semibold text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 {submitting ? 'Creating…' : 'Continue'}

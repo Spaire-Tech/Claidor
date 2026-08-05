@@ -13,7 +13,6 @@ import {
   isMeteredPrice,
   isStaticPrice,
 } from '@/utils/product'
-import CloseOutlined from '@mui/icons-material/CloseOutlined'
 import { enums, schemas } from '@claidor/client'
 import Button from '@claidor/ui/components/atoms/Button'
 import Input from '@claidor/ui/components/atoms/Input'
@@ -40,6 +39,7 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from '@claidor/ui/components/ui/radio-group'
+import CloseOutlined from '@mui/icons-material/CloseOutlined'
 import { PlusIcon } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
@@ -353,7 +353,7 @@ export const ProductPriceSeatBasedItem: React.FC<
         return (
           <div
             key={field.id}
-            className=" group relative rounded-2xl border border-gray-200 bg-white"
+            className="group relative rounded-2xl border border-gray-200 bg-white"
             role="group"
             aria-labelledby={`tier-title-${index}-${tierIndex}`}
           >
@@ -369,7 +369,7 @@ export const ProductPriceSeatBasedItem: React.FC<
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className=" -mr-2 h-7 w-7 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-600"
+                  className="-mr-2 h-7 w-7 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-600"
                   onClick={() => removeTier(tierIndex)}
                   aria-label={`Remove ${getTierTitle(tierIndex, currentTier)}`}
                 >
@@ -390,7 +390,7 @@ export const ProductPriceSeatBasedItem: React.FC<
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className=" text-xs text-gray-600">
+                    <FormLabel className="text-xs text-gray-600">
                       From
                     </FormLabel>
                     <FormControl>
@@ -436,12 +436,10 @@ export const ProductPriceSeatBasedItem: React.FC<
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className=" text-xs text-gray-600">
-                      To
-                    </FormLabel>
+                    <FormLabel className="text-xs text-gray-600">To</FormLabel>
                     <FormControl>
                       {isLast ? (
-                        <div className="  flex h-9 w-full items-center justify-center rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-sm font-medium text-gray-500">
+                        <div className="flex h-9 w-full items-center justify-center rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-sm font-medium text-gray-500">
                           ∞
                         </div>
                       ) : (
@@ -492,7 +490,7 @@ export const ProductPriceSeatBasedItem: React.FC<
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className=" text-xs text-gray-600">
+                    <FormLabel className="text-xs text-gray-600">
                       Price per seat
                     </FormLabel>
                     <FormControl>
@@ -628,7 +626,7 @@ export const ProductPriceMeteredUnitItem: React.FC<
                     <div className="flex items-center gap-x-2">
                       <button
                         type="button"
-                        className="flex flex-row items-center gap-x-1 text-sm font-medium text-blue-500 hover:text-blue-600 "
+                        className="flex flex-row items-center gap-x-1 text-sm font-medium text-blue-500 hover:text-blue-600"
                         onClick={(e) => {
                           e.preventDefault()
                           showClaudeModal()
@@ -864,8 +862,8 @@ const ProductPriceItem: React.FC<ProductPriceItemProps> = ({
                           ? 'cursor-not-allowed opacity-50'
                           : 'cursor-pointer',
                         field.value === option.value
-                          ? ' bg-gray-50'
-                          : '    border-gray-100 text-gray-500 hover:border-gray-200',
+                          ? 'bg-gray-50'
+                          : 'border-gray-100 text-gray-500 hover:border-gray-200',
                       )}
                     >
                       <div className="flex items-center gap-2.5 font-medium">
@@ -877,7 +875,7 @@ const ProductPriceItem: React.FC<ProductPriceItemProps> = ({
                         />
                         {option.title}
                       </div>
-                      <p className=" text-sm text-gray-500">
+                      <p className="text-sm text-gray-500">
                         {option.description}
                       </p>
                     </Label>
@@ -890,7 +888,7 @@ const ProductPriceItem: React.FC<ProductPriceItemProps> = ({
         }}
       />
       {amountType && amountType !== 'free' && (
-        <div className=" flex flex-col gap-3 rounded-2xl border border-gray-200 p-4">
+        <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 p-4">
           {amountType === 'fixed' && (
             <ProductPriceFixedItem
               index={index}
@@ -899,10 +897,18 @@ const ProductPriceItem: React.FC<ProductPriceItemProps> = ({
             />
           )}
           {amountType === 'custom' && (
-            <ProductPriceCustomItem index={index} currency={currency} currencyControl={currencyControl} />
+            <ProductPriceCustomItem
+              index={index}
+              currency={currency}
+              currencyControl={currencyControl}
+            />
           )}
           {amountType === 'seat_based' && (
-            <ProductPriceSeatBasedItem index={index} currency={currency} currencyControl={currencyControl} />
+            <ProductPriceSeatBasedItem
+              index={index}
+              currency={currency}
+              currencyControl={currencyControl}
+            />
           )}
           {amountType === 'metered_unit' && (
             <ProductPriceMeteredUnitItem
@@ -977,7 +983,7 @@ const CurrencyTabs: React.FC<CurrencyTabsProps> = ({
                         onRemoveCurrency(currency)
                       }
                     }}
-                    className=" cursor-pointer text-gray-400 hover:text-gray-600"
+                    className="cursor-pointer text-gray-400 hover:text-gray-600"
                   >
                     <CloseOutlined className="h-3.5 w-3.5" />
                   </span>
@@ -1147,6 +1153,7 @@ export const ProductPricingSection = ({
             ...base,
             amount_type: 'seat_based',
             seat_tiers: {
+              seat_tier_type: 'volume',
               tiers: [{ min_seats: 1, max_seats: null, price_per_seat: 0 }],
             },
           }
@@ -1203,10 +1210,16 @@ export const ProductPricingSection = ({
         }
 
         if (price.amount_type === 'fixed') {
-          const sourceAmount = 'price_amount' in price ? (price.price_amount ?? 0) : 0
-          newPrice = { ...baseCurrency, amount_type: 'fixed', price_amount: sourceAmount }
+          const sourceAmount =
+            'price_amount' in price ? (price.price_amount ?? 0) : 0
+          newPrice = {
+            ...baseCurrency,
+            amount_type: 'fixed',
+            price_amount: sourceAmount,
+          }
         } else if (price.amount_type === 'custom') {
-          const sourceMin = 'minimum_amount' in price ? (price.minimum_amount ?? 0) : 0
+          const sourceMin =
+            'minimum_amount' in price ? (price.minimum_amount ?? 0) : 0
           newPrice = {
             ...baseCurrency,
             amount_type: 'custom',
@@ -1230,7 +1243,13 @@ export const ProductPricingSection = ({
           newPrice = {
             ...baseCurrency,
             amount_type: 'seat_based',
-            seat_tiers: { tiers: seatTiers },
+            seat_tiers: {
+              seat_tier_type:
+                'seat_tiers' in price && price.seat_tiers?.seat_tier_type
+                  ? price.seat_tiers.seat_tier_type
+                  : 'volume',
+              tiers: seatTiers,
+            },
           }
         } else if (price.amount_type === 'metered_unit') {
           const meterId = 'meter_id' in price ? price.meter_id : ''
@@ -1325,7 +1344,7 @@ export const ProductPricingSection = ({
         className={className}
         compact={compact}
       >
-        <div className="prose  rounded-2xl bg-gray-100 p-6 text-sm text-gray-500">
+        <div className="prose rounded-2xl bg-gray-100 p-6 text-sm text-gray-500">
           <p>
             This product uses a deprecated pricing model with both a monthly and
             yearly pricing.
@@ -1365,8 +1384,8 @@ export const ProductPricingSection = ({
                 htmlFor={`price-type-${option}`}
                 className={`flex flex-col gap-3 rounded-2xl border p-5 font-normal transition-colors not-aria-disabled:cursor-pointer ${
                   productType === option
-                    ? ' bg-gray-50'
-                    : '    border-gray-100 text-gray-500 not-aria-disabled:hover:border-gray-200'
+                    ? 'bg-gray-50'
+                    : 'border-gray-100 text-gray-500 not-aria-disabled:hover:border-gray-200'
                 }`}
                 aria-disabled={update}
               >
@@ -1479,7 +1498,7 @@ export const ProductPricingSection = ({
           </RadioGroup>
         </div>
 
-        <hr className=" border-gray-200" />
+        <hr className="border-gray-200" />
 
         {/* Prices for selected currency — CurrencyTabs are inlined next to the price amount */}
         {pricesForSelectedCurrency.map(({ price, index }, position) => (
@@ -1513,9 +1532,9 @@ export const ProductPricingSection = ({
         ))}
 
         {update && recurringInterval && (
-          <ShadowBox className=" flex flex-col gap-2 rounded-2xl! border-none! p-4">
+          <ShadowBox className="flex flex-col gap-2 rounded-2xl! border-none! p-4">
             <h3 className="text-sm font-medium">Updating pricing model</h3>
-            <p className=" text-gray-5 00 text-sm">
+            <p className="text-gray-5 00 text-sm">
               Changing pricing model on subscription products will only affect
               new customers. Current customers will keep their original pricing
               model.

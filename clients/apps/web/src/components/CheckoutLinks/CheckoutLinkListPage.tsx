@@ -11,16 +11,6 @@ import {
   useUpdateCheckoutLink,
 } from '@/hooks/queries'
 import { useInViewport } from '@/hooks/utils'
-import AddOutlined from '@mui/icons-material/AddOutlined'
-import ArrowDownward from '@mui/icons-material/ArrowDownward'
-import ArrowUpward from '@mui/icons-material/ArrowUpward'
-import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined'
-import DriveFileRenameOutlineOutlined from '@mui/icons-material/DriveFileRenameOutlineOutlined'
-import FileCopyOutlined from '@mui/icons-material/FileCopyOutlined'
-import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
-import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined'
-import PowerSettingsNewOutlined from '@mui/icons-material/PowerSettingsNewOutlined'
-import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined'
 import { schemas } from '@claidor/client'
 import { formatCurrency } from '@claidor/currency'
 import Button from '@claidor/ui/components/atoms/Button'
@@ -38,15 +28,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@claidor/ui/components/ui/dialog'
+import AddOutlined from '@mui/icons-material/AddOutlined'
+import ArrowDownward from '@mui/icons-material/ArrowDownward'
+import ArrowUpward from '@mui/icons-material/ArrowUpward'
+import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined'
+import DriveFileRenameOutlineOutlined from '@mui/icons-material/DriveFileRenameOutlineOutlined'
+import FileCopyOutlined from '@mui/icons-material/FileCopyOutlined'
+import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined'
+import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined'
+import PowerSettingsNewOutlined from '@mui/icons-material/PowerSettingsNewOutlined'
+import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined'
+import { useRouter } from 'next/navigation'
 import {
   parseAsArrayOf,
   parseAsString,
   parseAsStringLiteral,
   useQueryState,
 } from 'nuqs'
-import ProductSelect from '../Products/ProductSelect'
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import ProductSelect from '../Products/ProductSelect'
 
 interface CheckoutLinkListPageProps {
   organization: schemas['Organization']
@@ -106,7 +106,9 @@ export const CheckoutLinkListPage = ({
   )
 
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null)
-  const [renameLink, setRenameLink] = useState<schemas['CheckoutLink'] | null>(null)
+  const [renameLink, setRenameLink] = useState<schemas['CheckoutLink'] | null>(
+    null,
+  )
   const [renameName, setRenameName] = useState('')
 
   const { ref: loadingRef, inViewport } = useInViewport<HTMLDivElement>()
@@ -122,7 +124,10 @@ export const CheckoutLinkListPage = ({
 
   const handleCopyUrl = (link: schemas['CheckoutLink']) => {
     navigator.clipboard.writeText(link.url)
-    toast({ title: 'Link Copied', description: 'Payment link copied to clipboard' })
+    toast({
+      title: 'Link Copied',
+      description: 'Payment link copied to clipboard',
+    })
   }
 
   const handleToggleActive = async (link: schemas['CheckoutLink']) => {
@@ -130,7 +135,12 @@ export const CheckoutLinkListPage = ({
     const newActive = !isLinkActive(link)
     await updateCheckoutLink({
       id: link.id,
-      body: { metadata: { ...meta, is_active: newActive } as Record<string, string | number | boolean> },
+      body: {
+        metadata: { ...meta, is_active: newActive } as Record<
+          string,
+          string | number | boolean
+        >,
+      },
     })
     toast({
       title: newActive ? 'Link Activated' : 'Link Deactivated',
@@ -139,13 +149,15 @@ export const CheckoutLinkListPage = ({
   }
 
   const handleDuplicate = async (link: schemas['CheckoutLink']) => {
-    const meta = (link.metadata ?? {}) as Record<string, string | number | boolean>
+    const meta = (link.metadata ?? {}) as Record<
+      string,
+      string | number | boolean
+    >
     await createCheckoutLink({
       payment_processor: 'stripe',
       products: link.products.map((p) => p.id),
       label: `${getLinkDisplayName(link)} (copy)`,
       allow_discount_codes: link.allow_discount_codes,
-      require_billing_address: link.require_billing_address,
       discount_id: link.discount_id ?? null,
       success_url: link.success_url ?? null,
       metadata: meta,
@@ -160,7 +172,10 @@ export const CheckoutLinkListPage = ({
 
   const handleRename = async () => {
     if (!renameLink) return
-    await updateCheckoutLink({ id: renameLink.id, body: { label: renameName || null } })
+    await updateCheckoutLink({
+      id: renameLink.id,
+      body: { label: renameName || null },
+    })
     toast({ title: 'Name Updated' })
     setRenameLink(null)
   }
@@ -202,14 +217,22 @@ export const CheckoutLinkListPage = ({
               </Button>
             </div>
 
-            <div className=" flex flex-col divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200">
+            <div className="flex flex-col divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200">
               {/* Header row */}
               <div className="flex flex-row items-center gap-3 px-6 py-2">
                 <div className="w-2 shrink-0" />
-                <span className="min-w-0 flex-1 text-xs font-medium text-gray-400">Name</span>
-                <span className="hidden w-28 shrink-0 text-right text-xs font-medium text-gray-400 sm:block">Price</span>
-                <span className="hidden w-28 shrink-0 text-right text-xs font-medium text-gray-400 md:block">Collected</span>
-                <span className="hidden w-32 shrink-0 text-right text-xs font-medium text-gray-400 lg:block">Created</span>
+                <span className="min-w-0 flex-1 text-xs font-medium text-gray-400">
+                  Name
+                </span>
+                <span className="hidden w-28 shrink-0 text-right text-xs font-medium text-gray-400 sm:block">
+                  Price
+                </span>
+                <span className="hidden w-28 shrink-0 text-right text-xs font-medium text-gray-400 md:block">
+                  Collected
+                </span>
+                <span className="hidden w-32 shrink-0 text-right text-xs font-medium text-gray-400 lg:block">
+                  Created
+                </span>
                 <div className="w-8 shrink-0" />
               </div>
               {checkoutLinks.map((link) => {
@@ -228,7 +251,7 @@ export const CheckoutLinkListPage = ({
                 return (
                   <div
                     key={link.id}
-                    className=" flex flex-row items-center gap-3 px-6 py-4 transition-colors hover:bg-gray-50"
+                    className="flex flex-row items-center gap-3 px-6 py-4 transition-colors hover:bg-gray-50"
                   >
                     {/* Active dot */}
                     <div
@@ -243,11 +266,11 @@ export const CheckoutLinkListPage = ({
                       onClick={() => setSelectedLinkId(link.id)}
                     >
                       <span
-                        className={`truncate text-sm font-medium ${active ? ' text-gray-900' : 'text-gray-400 line-through'}`}
+                        className={`truncate text-sm font-medium ${active ? 'text-gray-900' : 'text-gray-400 line-through'}`}
                       >
                         {name}
                       </span>
-                      <span className=" truncate text-xs text-gray-500">
+                      <span className="truncate text-xs text-gray-500">
                         {productLabel}
                       </span>
                     </button>
@@ -273,17 +296,18 @@ export const CheckoutLinkListPage = ({
                         <Button
                           size="icon"
                           variant="ghost"
-                          className=" h-8 w-8 shrink-0 text-gray-500"
+                          className="h-8 w-8 shrink-0 text-gray-500"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <MoreVertOutlined fontSize="small" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuItem
-                          onClick={() => handleCopyUrl(link)}
-                        >
-                          <ContentCopyOutlined fontSize="small" className="mr-2" />
+                        <DropdownMenuItem onClick={() => handleCopyUrl(link)}>
+                          <ContentCopyOutlined
+                            fontSize="small"
+                            className="mr-2"
+                          />
                           Copy URL
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -293,7 +317,10 @@ export const CheckoutLinkListPage = ({
                             )
                           }
                         >
-                          <VisibilityOutlined fontSize="small" className="mr-2" />
+                          <VisibilityOutlined
+                            fontSize="small"
+                            className="mr-2"
+                          />
                           Preview payment link
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openRename(link)}>
@@ -306,19 +333,24 @@ export const CheckoutLinkListPage = ({
                         <DropdownMenuItem
                           onClick={() => setSelectedLinkId(link.id)}
                         >
-                          <OpenInNewOutlined fontSize="small" className="mr-2" />
+                          <OpenInNewOutlined
+                            fontSize="small"
+                            className="mr-2"
+                          />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDuplicate(link)}
-                        >
+                        <DropdownMenuItem onClick={() => handleDuplicate(link)}>
                           <FileCopyOutlined fontSize="small" className="mr-2" />
                           Duplicate
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleToggleActive(link)}
-                          className={active ? 'text-red-500 focus:text-red-500' : 'text-green-600 focus:text-green-600'}
+                          className={
+                            active
+                              ? 'text-red-500 focus:text-red-500'
+                              : 'text-green-600 focus:text-green-600'
+                          }
                         >
                           <PowerSettingsNewOutlined
                             fontSize="small"
@@ -347,7 +379,10 @@ export const CheckoutLinkListPage = ({
       </div>
 
       {/* Rename dialog */}
-      <Dialog open={!!renameLink} onOpenChange={(open) => !open && setRenameLink(null)}>
+      <Dialog
+        open={!!renameLink}
+        onOpenChange={(open) => !open && setRenameLink(null)}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Change name</DialogTitle>
@@ -391,13 +426,23 @@ export const CheckoutLinkListPage = ({
 }
 
 // Empty state
-function StripeStyleEmptyState({ onCreateClick }: { onCreateClick: () => void }) {
+function StripeStyleEmptyState({
+  onCreateClick,
+}: {
+  onCreateClick: () => void
+}) {
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-8 text-center">
       {/* Geometric icon — Venn-diagram circles */}
       <div style={{ isolation: 'isolate' }} className="relative h-14 w-24">
-        <div style={{ mixBlendMode: 'multiply' }} className="absolute top-0 left-0 h-14 w-14 rounded-full bg-cyan-300" />
-        <div style={{ mixBlendMode: 'multiply' }} className="absolute top-0 right-0 h-14 w-14 rounded-full bg-blue-300" />
+        <div
+          style={{ mixBlendMode: 'multiply' }}
+          className="absolute top-0 left-0 h-14 w-14 rounded-full bg-cyan-300"
+        />
+        <div
+          style={{ mixBlendMode: 'multiply' }}
+          className="absolute top-0 right-0 h-14 w-14 rounded-full bg-blue-300"
+        />
       </div>
 
       {/* Title + description */}
@@ -406,8 +451,8 @@ function StripeStyleEmptyState({ onCreateClick }: { onCreateClick: () => void })
           Create a payment link in a few clicks
         </h2>
         <p className="text-gray-500">
-          Sell products, offer subscriptions, or accept donations with a
-          link—no code required.
+          Sell products, offer subscriptions, or accept donations with a link—no
+          code required.
         </p>
       </div>
 

@@ -118,10 +118,11 @@ export const useSubscriberDailyUnsubscribes = (
 export const useCreateEmailSubscriber = (organizationId: string) =>
   useMutation({
     mutationFn: (body: { email: string; name?: string }) =>
-      api.POST('/v1/email-subscribers/', {
-        params: { query: { organization_id: organizationId } },
+      fetchApiWrite<SubscriberRow>(
+        `/v1/email-subscribers/?organization_id=${organizationId}`,
+        'POST',
         body,
-      }),
+      ),
     onSuccess: () => {
       getQueryClient().invalidateQueries({
         queryKey: ['email_subscribers'],
@@ -141,10 +142,11 @@ export const useUpdateEmailSubscriber = () =>
       subscriberId: string
       body: { name?: string; status?: string }
     }) =>
-      api.PATCH('/v1/email-subscribers/{subscriber_id}', {
-        params: { path: { subscriber_id: subscriberId } },
+      fetchApiWrite<SubscriberRow>(
+        `/v1/email-subscribers/${subscriberId}`,
+        'PATCH',
         body,
-      }),
+      ),
     onSuccess: () => {
       getQueryClient().invalidateQueries({
         queryKey: ['email_subscribers'],
@@ -422,11 +424,7 @@ export const useEmailBroadcast = (broadcastId: string) =>
   useQuery({
     queryKey: ['email_broadcast', broadcastId],
     queryFn: () =>
-      api
-        .GET('/v1/email-broadcasts/{broadcast_id}', {
-          params: { path: { broadcast_id: broadcastId } },
-        })
-        .then((r) => r.data),
+      fetchApi<BroadcastRow>(`/v1/email-broadcasts/${broadcastId}`),
     retry: defaultRetry,
     enabled: !!broadcastId,
   })
@@ -806,15 +804,26 @@ export const useSegmentFilterPreview = (
 
 // ── Segments ──
 
+export type SegmentRow = {
+  id: string
+  organization_id: string
+  name: string
+  slug: string
+  type: string
+  product_id: string | null
+  is_system: boolean
+  subscriber_count: number
+  created_at: string
+  modified_at: string | null
+}
+
 export const useEmailSegments = (organizationId: string) =>
   useQuery({
     queryKey: ['email_segments', organizationId],
     queryFn: () =>
-      api
-        .GET('/v1/email-segments/', {
-          params: { query: { organization_id: organizationId } },
-        })
-        .then((r) => r.data),
+      fetchApi<SegmentRow[]>(
+        `/v1/email-segments/?organization_id=${organizationId}`,
+      ),
     retry: defaultRetry,
   })
 
@@ -826,10 +835,11 @@ export const useCreateEmailSegment = (organizationId: string) =>
       type?: string
       product_id?: string
     }) =>
-      api.POST('/v1/email-segments/', {
-        params: { query: { organization_id: organizationId } },
+      fetchApiWrite<SegmentRow>(
+        `/v1/email-segments/?organization_id=${organizationId}`,
+        'POST',
         body,
-      }),
+      ),
     onSuccess: () => {
       getQueryClient().invalidateQueries({
         queryKey: ['email_segments'],
@@ -840,9 +850,7 @@ export const useCreateEmailSegment = (organizationId: string) =>
 export const useDeleteEmailSegment = () =>
   useMutation({
     mutationFn: (segmentId: string) =>
-      api.DELETE('/v1/email-segments/{segment_id}', {
-        params: { path: { segment_id: segmentId } },
-      }),
+      fetchApiWrite<void>(`/v1/email-segments/${segmentId}`, 'DELETE'),
     onSuccess: () => {
       getQueryClient().invalidateQueries({
         queryKey: ['email_segments'],

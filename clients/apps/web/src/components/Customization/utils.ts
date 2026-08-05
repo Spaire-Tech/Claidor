@@ -19,6 +19,7 @@ const PRODUCT_PREVIEW: schemas['ProductStorefront'] = {
   id: '123',
   is_recurring: false,
   is_archived: false,
+  product_type: 'digital',
   modified_at: new Date().toISOString(),
   organization_id: '123',
   visibility: 'public',

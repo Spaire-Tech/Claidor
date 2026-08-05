@@ -1,6 +1,6 @@
 'use client'
 
-import { focalPointToObjectPosition } from '@/components/Customization/Storefront/StorefrontSidebar/utils'
+import LogoType from '@/components/Brand/LogoType'
 import {
   LANGUAGE_OPTIONS,
   PROFILE_TITLE_OPTIONS,
@@ -8,28 +8,22 @@ import {
 } from '@/components/Customization/Storefront/StorefrontSidebar/constants'
 import { SocialLinkRow } from '@/components/Customization/Storefront/StorefrontSidebar/SocialLinkRow'
 import { TagInput } from '@/components/Customization/Storefront/StorefrontSidebar/TagInput'
+import { focalPointToObjectPosition } from '@/components/Customization/Storefront/StorefrontSidebar/utils'
+import { type FileObject, useFileUpload } from '@/components/FileUpload'
 import {
-  type FileObject,
-  useFileUpload,
-} from '@/components/FileUpload'
-import LogoType from '@/components/Brand/LogoType'
-import {
-  SOCIAL_PLATFORMS,
   getSocialIcon,
+  SOCIAL_PLATFORMS,
 } from '@/components/Profile/socialPlatforms'
-import { StorefrontLinkItem } from '@/components/Profile/StorefrontLinks'
 import {
   removeSpaceItem,
   reorderSpaceItem,
-  resolveSpaceItems,
   type ResolvedSpaceItem,
+  resolveSpaceItems,
 } from '@/components/Profile/spaceItems'
+import { StorefrontLinkItem } from '@/components/Profile/StorefrontLinks'
 import { toast } from '@/components/Toast/use-toast'
-import AddOutlined from '@mui/icons-material/AddOutlined'
-import CloseOutlined from '@mui/icons-material/CloseOutlined'
-import EditOutlined from '@mui/icons-material/EditOutlined'
-import TranslateOutlined from '@mui/icons-material/TranslateOutlined'
-import Verified from '@mui/icons-material/Verified'
+import { useUpdateOrganization } from '@/hooks/queries'
+import { withStorefrontSettingsDefaults } from '@/utils/storefrontSettings'
 import { isValidationError, schemas } from '@claidor/client'
 import Avatar from '@claidor/ui/components/atoms/Avatar'
 import Switch from '@claidor/ui/components/atoms/Switch'
@@ -47,11 +41,21 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import AddOutlined from '@mui/icons-material/AddOutlined'
+import CloseOutlined from '@mui/icons-material/CloseOutlined'
+import EditOutlined from '@mui/icons-material/EditOutlined'
+import TranslateOutlined from '@mui/icons-material/TranslateOutlined'
+import Verified from '@mui/icons-material/Verified'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { type FileRejection } from 'react-dropzone'
 import { useFormContext } from 'react-hook-form'
-import { useUpdateOrganization } from '@/hooks/queries'
 import { AvatarCropModal } from './AvatarCropModal'
 import { Editable } from './Editable'
 import { EditPopover } from './EditPopover'
@@ -130,7 +134,7 @@ const DraggableHighlight = ({
         // overhang room — without that padding the overflow-x scroll
         // container clips the badge back inside the image, which is
         // the bug the user was seeing.
-        className="absolute -right-2.5 -top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-white opacity-0 shadow transition-opacity hover:bg-black focus:opacity-100 group-hover:opacity-100"
+        className="absolute -top-2.5 -right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-white opacity-0 shadow transition-opacity group-hover:opacity-100 hover:bg-black focus:opacity-100"
         aria-label={`Remove ${product.name} from carousel`}
       >
         <CloseOutlined style={{ fontSize: 12 }} />
@@ -195,7 +199,7 @@ const ProfileTitleCombo = ({
         onFocus={() => setShowDropdown(true)}
         onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:outline-none focus:ring-0"
+        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:ring-0 focus:outline-none"
       />
       {mounted &&
         showDropdown &&
@@ -271,7 +275,9 @@ export const EditableProfileCard = ({
   const { watch, setValue, resetField } =
     useFormContext<schemas['OrganizationUpdate']>()
   const watched = watch()
-  const settings = watched.storefront_settings ?? org.storefront_settings ?? {}
+  const settings = withStorefrontSettingsDefaults(
+    watched.storefront_settings ?? org.storefront_settings,
+  )
   const updateOrganization = useUpdateOrganization()
 
   // Sensors for the highlights-strip DnD context. Small activation
@@ -371,29 +377,27 @@ export const EditableProfileCard = ({
     }
   }, [])
 
-  const {
-    getInputProps: getBannerInputProps,
-    open: openBannerPicker,
-  } = useFileUpload({
-    organization: org,
-    service: 'storefront_header',
-    accept: {
-      'image/jpeg': [],
-      'image/png': [],
-      'image/gif': [],
-      'image/webp': [],
-      'image/svg+xml': [],
-      'image/heic': ['.heic'],
-      'image/heif': ['.heif'],
-      'image/avif': [],
-      'image/bmp': [],
-      'image/tiff': [],
-    },
-    maxSize: 10 * 1024 * 1024,
-    onFilesUpdated: onBannerFilesUpdated,
-    onFilesRejected,
-    initialFiles: [],
-  })
+  const { getInputProps: getBannerInputProps, open: openBannerPicker } =
+    useFileUpload({
+      organization: org,
+      service: 'storefront_header',
+      accept: {
+        'image/jpeg': [],
+        'image/png': [],
+        'image/gif': [],
+        'image/webp': [],
+        'image/svg+xml': [],
+        'image/heic': ['.heic'],
+        'image/heif': ['.heif'],
+        'image/avif': [],
+        'image/bmp': [],
+        'image/tiff': [],
+      },
+      maxSize: 10 * 1024 * 1024,
+      onFilesUpdated: onBannerFilesUpdated,
+      onFilesRejected,
+      initialFiles: [],
+    })
 
   // ── Avatar upload ──────────────────────────────────────────────
   // Auto-persist on upload — same rationale as the banner above. We
@@ -612,11 +616,7 @@ export const EditableProfileCard = ({
           onPointerUp={onCoverPointerUp}
           onPointerCancel={onCoverPointerUp}
           style={{
-            cursor: headerUrl
-              ? isDragging
-                ? 'grabbing'
-                : 'grab'
-              : 'pointer',
+            cursor: headerUrl ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
           }}
         >
           <input {...getBannerInputProps()} />
@@ -712,7 +712,9 @@ export const EditableProfileCard = ({
             can discover the field. The container's gap-y-0.5 + mt is
             preserved. */}
         {showName && (
-          <div className={`flex flex-col gap-y-0.5 ${showLogo ? 'mt-5' : 'mt-6'}`}>
+          <div
+            className={`flex flex-col gap-y-0.5 ${showLogo ? 'mt-5' : 'mt-6'}`}
+          >
             {profileTitle ? (
               <button
                 type="button"
@@ -733,7 +735,7 @@ export const EditableProfileCard = ({
             <div className="flex flex-row items-center gap-x-1.5">
               <Editable
                 as="h1"
-                className="text-[26px] font-bold leading-tight text-gray-950"
+                className="text-[26px] leading-tight font-bold text-gray-950"
                 value={name}
                 onCommit={(v) => v && updateName(v)}
                 placeholder="Your name"
@@ -925,14 +927,16 @@ export const EditableProfileCard = ({
             // the Remove button on the canvas. Drop the item from
             // space_items AND from featured_product_ids so the legacy
             // carousel-scoping path can't resurrect it.
-            const links = (settings?.storefront_links ?? []) as StorefrontLinkItem[]
+            const links = (settings?.storefront_links ??
+              []) as StorefrontLinkItem[]
             const removePatch = removeSpaceItem({
               settings,
               products,
               links,
               key: `product:${productId}`,
             })
-            const featuredIds = (settings?.featured_product_ids ?? []) as string[]
+            const featuredIds = (settings?.featured_product_ids ??
+              []) as string[]
             setValue(
               'storefront_settings',
               {
@@ -1017,8 +1021,8 @@ export const EditableProfileCard = ({
           options={PROFILE_TITLE_OPTIONS as unknown as string[]}
         />
         <p className="text-xs text-gray-500">
-          Pick from suggestions or type your own. Shown above your name in
-          small caps.
+          Pick from suggestions or type your own. Shown above your name in small
+          caps.
         </p>
       </EditPopover>
 
@@ -1071,8 +1075,7 @@ export const EditableProfileCard = ({
           if (scheme !== 'http' && scheme !== 'https' && scheme !== 'mailto') {
             toast({
               title: 'Contact link not saved',
-              description:
-                'Must start with https://, http://, or mailto:',
+              description: 'Must start with https://, http://, or mailto:',
             })
             return
           }
@@ -1103,7 +1106,7 @@ export const EditableProfileCard = ({
               value={contactDraft}
               onChange={(e) => setContactDraft(e.target.value)}
               placeholder=""
-              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:outline-none focus:ring-0"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0066cc] focus:ring-0 focus:outline-none"
             />
           </div>
         )}
@@ -1154,10 +1157,7 @@ export const EditableProfileCard = ({
               if (!next) return
               setValue(
                 'socials',
-                [
-                  ...socials,
-                  { platform: next.value, url: '' } as SocialLink,
-                ],
+                [...socials, { platform: next.value, url: '' } as SocialLink],
                 { shouldDirty: true },
               )
             }}

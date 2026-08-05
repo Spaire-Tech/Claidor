@@ -43,22 +43,10 @@ export type SpaceItem = {
   hidden?: boolean
 }
 
-// `space_items` isn't in the generated OpenAPI types yet (it lands the
-// next time `pnpm generate` runs against a backend that includes the
-// new field). Until then we pierce the cast at the boundary so the
-// rest of the codebase can treat it as a first-class field.
-type SettingsWithItems = schemas['OrganizationStorefrontSettings'] & {
-  space_items?: SpaceItem[]
-}
-
 export const readSpaceItems = (
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined,
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined,
 ): SpaceItem[] => {
-  const items = (settings as SettingsWithItems | null | undefined)
-    ?.space_items
+  const items = settings?.space_items
   return Array.isArray(items) ? items : []
 }
 
@@ -115,10 +103,7 @@ export const resolveSpaceItems = ({
   forms = [],
   includeHidden = false,
 }: {
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined
   products: schemas['ProductStorefront'][]
   links: StorefrontLinkItem[]
   // Published forms referenced by `kind: 'form'` items. Optional so editor
@@ -178,22 +163,18 @@ const deriveLegacySpaceItems = ({
   products,
   links,
 }: {
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined
   products: schemas['ProductStorefront'][]
   links: StorefrontLinkItem[]
 }): SpaceItem[] => {
   const featuredMode = settings?.featured_mode ?? 'curated'
   const featuredIds = (settings?.featured_product_ids ?? []) as string[]
   const blockOrder = ((
-    settings as { block_order?: ('products' | 'links' | 'forms')[] } | null | undefined
-  )?.block_order ?? ['products', 'links']) as (
-    | 'products'
-    | 'links'
-    | 'forms'
-  )[]
+    settings as
+      | { block_order?: ('products' | 'links' | 'forms')[] }
+      | null
+      | undefined
+  )?.block_order ?? ['products', 'links']) as ('products' | 'links' | 'forms')[]
 
   // Same product scoping the public storefront used before: in 'all'
   // mode show every product; in 'curated' mode show only featured ids.
@@ -244,16 +225,15 @@ const deriveLegacySpaceItems = ({
 // silently override a subsequent edit.
 
 export const withSpaceItems = (
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined,
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined,
   next: SpaceItem[],
-): { space_items: SpaceItem[] } => ({
+): { space_items: schemas['SpaceItem'][] } => ({
   // We only patch `space_items` here. Legacy fields stay untouched so
   // older client builds that still read them don't see a sudden order
   // change before they pick up this module.
-  space_items: next,
+  // The generated schema requires `hidden`, so normalise it here — the
+  // single point where local SpaceItems cross into the API type.
+  space_items: next.map((i) => ({ ...i, hidden: i.hidden ?? false })),
 })
 
 // Materialise `space_items` from the current resolver output. Used by
@@ -264,10 +244,7 @@ const materialise = ({
   products,
   links,
 }: {
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined
   products: schemas['ProductStorefront'][]
   links: StorefrontLinkItem[]
 }): SpaceItem[] => {
@@ -285,15 +262,12 @@ export const reorderSpaceItem = ({
   fromId,
   toId,
 }: {
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined
   products: schemas['ProductStorefront'][]
   links: StorefrontLinkItem[]
   fromId: string
   toId: string
-}): { space_items: SpaceItem[] } | null => {
+}): { space_items: schemas['SpaceItem'][] } | null => {
   if (fromId === toId) return null
   const list = materialise({ settings, products, links })
   const from = list.findIndex((i) => itemKey(i) === fromId)
@@ -311,14 +285,11 @@ export const removeSpaceItem = ({
   links,
   key,
 }: {
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined
   products: schemas['ProductStorefront'][]
   links: StorefrontLinkItem[]
   key: string
-}): { space_items: SpaceItem[] } => {
+}): { space_items: schemas['SpaceItem'][] } => {
   const list = materialise({ settings, products, links })
   return withSpaceItems(
     settings,
@@ -333,15 +304,12 @@ export const setItemHidden = ({
   key,
   hidden,
 }: {
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined
   products: schemas['ProductStorefront'][]
   links: StorefrontLinkItem[]
   key: string
   hidden: boolean
-}): { space_items: SpaceItem[] } => {
+}): { space_items: schemas['SpaceItem'][] } => {
   const list = materialise({ settings, products, links })
   return withSpaceItems(
     settings,
@@ -355,14 +323,11 @@ export const appendSpaceItem = ({
   links,
   item,
 }: {
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined
   products: schemas['ProductStorefront'][]
   links: StorefrontLinkItem[]
   item: SpaceItem
-}): { space_items: SpaceItem[] } => {
+}): { space_items: schemas['SpaceItem'][] } => {
   const list = materialise({ settings, products, links })
   // If the item is already in the list, unhide it and float it to the
   // end so the creator sees "I just added this" in a predictable spot.
@@ -385,20 +350,15 @@ export const reconcileSpaceProducts = ({
   addIds,
   removeIds,
 }: {
-  settings:
-    | schemas['OrganizationStorefrontSettings']
-    | null
-    | undefined
+  settings: schemas['OrganizationStorefrontSettings'] | null | undefined
   products: schemas['ProductStorefront'][]
   links: StorefrontLinkItem[]
   addIds: string[]
   removeIds: string[]
-}): { space_items: SpaceItem[] } => {
+}): { space_items: schemas['SpaceItem'][] } => {
   let list = materialise({ settings, products, links })
   const removed = new Set(removeIds)
-  list = list.filter(
-    (i) => !(i.kind === 'product' && removed.has(i.id)),
-  )
+  list = list.filter((i) => !(i.kind === 'product' && removed.has(i.id)))
   const presentProductIds = new Set(
     list.filter((i) => i.kind === 'product').map((i) => i.id),
   )

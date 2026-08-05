@@ -16,12 +16,13 @@ import { useStorefront } from '@/hooks/queries/storefront'
 import '@/styles/space-dark.css'
 import { setValidationErrors } from '@/utils/api/errors'
 import { storefrontLink } from '@/utils/nav'
-import ChevronLeftOutlined from '@mui/icons-material/ChevronLeftOutlined'
-import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined'
-import LightModeOutlined from '@mui/icons-material/LightModeOutlined'
+import { withStorefrontSettingsDefaults } from '@/utils/storefrontSettings'
 import { isValidationError, schemas } from '@claidor/client'
 import { Form } from '@claidor/ui/components/ui/form'
 import { cn } from '@claidor/ui/lib/utils'
+import ChevronLeftOutlined from '@mui/icons-material/ChevronLeftOutlined'
+import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined'
+import LightModeOutlined from '@mui/icons-material/LightModeOutlined'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
@@ -87,10 +88,11 @@ const Customization = ({
       name: organization.name,
       avatar_url: organization.avatar_url,
       socials: organization.socials,
-      // Fall back to an empty object so brand-new orgs (where
-      // storefront_settings is null) can still have settings flipped
-      // on. Spreading null is a silent no-op everywhere downstream.
-      storefront_settings: organization.storefront_settings ?? {},
+      // Fall back to the schema defaults so brand-new orgs (where
+      // storefront_settings is null) can still have settings flipped on.
+      storefront_settings: withStorefrontSettingsDefaults(
+        organization.storefront_settings,
+      ),
     },
   })
 
@@ -110,7 +112,9 @@ const Customization = ({
     'light'
   const dark = watchedTheme === 'dark'
   const toggleDark = () => {
-    const current = form.getValues('storefront_settings') ?? {}
+    const current = withStorefrontSettingsDefaults(
+      form.getValues('storefront_settings'),
+    )
     form.setValue(
       'storefront_settings',
       { ...current, theme: dark ? 'light' : 'dark' },
@@ -125,10 +129,11 @@ const Customization = ({
 
   const appendStorefrontLink = useCallback(
     (link: StorefrontLinkItem) => {
-      const settings = form.getValues('storefront_settings') ?? {}
+      const settings = withStorefrontSettingsDefaults(
+        form.getValues('storefront_settings'),
+      )
       const links = (
-        (settings as { storefront_links?: StorefrontLinkItem[] })
-          .storefront_links ?? []
+        (settings.storefront_links ?? []) as StorefrontLinkItem[]
       ).slice()
       links.push(link)
       // Also append to space_items so the new link shows up at the end
@@ -137,7 +142,7 @@ const Customization = ({
       // the first write that "locks in" the new ordering model for
       // Spaces still on the legacy fields.
       const itemPatch = appendSpaceItem({
-        settings: settings as schemas['OrganizationStorefrontSettings'],
+        settings,
         products: storefrontData?.products ?? [],
         links,
         item: { kind: 'link', id: link.id },
@@ -203,20 +208,18 @@ const Customization = ({
       // removes in place) and `featured_product_ids` (kept in sync
       // so older client builds + the carousel scoping in the profile
       // card don't see a stale list).
-      const settings = form.getValues('storefront_settings') ?? {}
-      const typed = settings as {
-        featured_product_ids?: string[]
-        storefront_links?: StorefrontLinkItem[]
-      }
-      const existing = typed.featured_product_ids ?? []
+      const settings = withStorefrontSettingsDefaults(
+        form.getValues('storefront_settings'),
+      )
+      const existing = settings.featured_product_ids ?? []
       const removed = new Set(removeIds)
       const nextFeatured = Array.from(
         new Set([...existing.filter((id) => !removed.has(id)), ...addIds]),
       )
       const itemPatch = reconcileSpaceProducts({
-        settings: settings as schemas['OrganizationStorefrontSettings'],
+        settings,
         products: storefrontData?.products ?? [],
-        links: typed.storefront_links ?? [],
+        links: (settings.storefront_links ?? []) as StorefrontLinkItem[],
         addIds,
         removeIds,
       })
@@ -246,13 +249,13 @@ const Customization = ({
       )
     },
     onAddForm: (payload) => {
-      const settings = form.getValues('storefront_settings') ?? {}
+      const settings = withStorefrontSettingsDefaults(
+        form.getValues('storefront_settings'),
+      )
       const itemPatch = appendSpaceItem({
-        settings: settings as schemas['OrganizationStorefrontSettings'],
+        settings,
         products: storefrontData?.products ?? [],
-        links:
-          (settings as { storefront_links?: StorefrontLinkItem[] })
-            .storefront_links ?? [],
+        links: (settings.storefront_links ?? []) as StorefrontLinkItem[],
         item: { kind: 'form', id: payload.id },
       })
       form.setValue(
@@ -451,7 +454,10 @@ const Customization = ({
           app in a bg-white container). */}
       <SpaceDocumentBackground dark={dark} />
       <div
-        className={cn('claidor-editor claidor-editor-root', dark && 'space-dark')}
+        className={cn(
+          'claidor-editor claidor-editor-root',
+          dark && 'space-dark',
+        )}
       >
         {/* ── Chrome: course-editor top bar + tabs ──────────────────
             The whole editor root carries `.space-dark` when the Space theme is

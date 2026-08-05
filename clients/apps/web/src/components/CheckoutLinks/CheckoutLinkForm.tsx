@@ -9,7 +9,6 @@ import {
   normalizeValidationErrors,
   setValidationErrors,
 } from '@/utils/api/errors'
-import ClearOutlined from '@mui/icons-material/ClearOutlined'
 import { isValidationError, schemas } from '@claidor/client'
 import Button from '@claidor/ui/components/atoms/Button'
 import Input from '@claidor/ui/components/atoms/Input'
@@ -21,6 +20,7 @@ import {
   FormItem,
   FormMessage,
 } from '@claidor/ui/components/ui/form'
+import ClearOutlined from '@mui/icons-material/ClearOutlined'
 import { useCallback, useEffect, useMemo } from 'react'
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
 import ProductSelect from '../Products/ProductSelect'
@@ -72,7 +72,6 @@ export const CheckoutLinkForm = ({
           .map(([key, value]) => ({ key, value })),
         products: checkoutLink.products.map(({ id }) => id),
         allow_discount_codes: checkoutLink.allow_discount_codes ?? true,
-        require_billing_address: checkoutLink.require_billing_address ?? false,
         success_url: checkoutLink.success_url ?? '',
         discount_id: checkoutLink.discount_id ?? '',
         show_logo: (meta.show_logo as boolean) ?? true,
@@ -86,7 +85,6 @@ export const CheckoutLinkForm = ({
       metadata: [],
       products: productIds ?? [],
       allow_discount_codes: true,
-      require_billing_address: false,
       success_url: '',
       discount_id: '',
       show_logo: true,
@@ -286,7 +284,7 @@ export const CheckoutLinkForm = ({
         </div>
 
         {/* Toggle rows */}
-        <div className=" flex flex-col divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200">
+        <div className="flex flex-col divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200">
           <ToggleRow
             label="Show organization logo"
             control={control}
@@ -307,28 +305,19 @@ export const CheckoutLinkForm = ({
             control={control}
             name="allow_discount_codes"
           />
-          <ToggleRow
-            label="Collect billing address"
-            control={control}
-            name="require_billing_address"
-          />
         </div>
 
         {/* Trial period (conditional) */}
         {hasRecurringProducts && (
           <div className="flex flex-col gap-3">
-            <h2 className="text-sm font-semibold">
-              Trial period
-            </h2>
+            <h2 className="text-sm font-semibold">Trial period</h2>
             <TrialConfigurationForm bottomText="Overrides the trial configuration set on individual products." />
           </div>
         )}
 
         {/* Redirect URL */}
         <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold">
-            Redirect URL
-          </h2>
+          <h2 className="text-sm font-semibold">Redirect URL</h2>
           <FormField
             control={control}
             name="success_url"
@@ -350,9 +339,7 @@ export const CheckoutLinkForm = ({
         {/* Custom data */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">
-              Custom data
-            </h2>
+            <h2 className="text-sm font-semibold">Custom data</h2>
             <button
               type="button"
               onClick={() => append({ key: '', value: '' })}
@@ -444,7 +431,7 @@ function ToggleRow({
       name={name as any}
       render={({ field }) => (
         <FormItem>
-          <div className=" flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-gray-50">
+          <div className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-gray-50">
             <span className="text-sm">{label}</span>
             <FormControl>
               <Switch

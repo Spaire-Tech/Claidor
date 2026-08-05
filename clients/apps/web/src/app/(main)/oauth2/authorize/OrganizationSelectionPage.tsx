@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks'
 import { useCreateOrganization } from '@/hooks/queries'
 import { getServerURL } from '@/utils/api'
 import { setValidationErrors } from '@/utils/api/errors'
-import { FormControl } from '@mui/material'
 import { schemas } from '@claidor/client'
 import Avatar from '@claidor/ui/components/atoms/Avatar'
 import Button from '@claidor/ui/components/atoms/Button'
@@ -19,6 +18,7 @@ import {
   FormMessage,
 } from '@claidor/ui/components/ui/form'
 import { Label } from '@claidor/ui/components/ui/label'
+import { FormControl } from '@mui/material'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -100,6 +100,8 @@ const OrganizationSelectionPage = ({
     const { data: organization, error } = await createOrganization.mutateAsync({
       name: data.name,
       slug: data.slug,
+      // Server-side default; the generated schema marks it required.
+      default_tax_behavior: 'location',
     })
 
     if (error) {
@@ -136,10 +138,7 @@ const OrganizationSelectionPage = ({
             Welcome to Polar!
             <br />
             Create an organization and connect to{' '}
-            <span className=" font-medium text-gray-700">
-              {clientName}
-            </span>
-            .
+            <span className="font-medium text-gray-700">{clientName}</span>.
           </>
         }
       >
@@ -149,7 +148,7 @@ const OrganizationSelectionPage = ({
             className="flex flex-col gap-y-6 lg:-mx-16"
             id="organization-create-form"
           >
-            <div className=" flex flex-col gap-y-4 rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex flex-col gap-y-4 rounded-2xl border border-gray-200 bg-white p-6">
               <FormField
                 control={control}
                 name="name"
@@ -198,11 +197,11 @@ const OrganizationSelectionPage = ({
               />
             </div>
 
-            <div className=" flex flex-col gap-y-4 rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex flex-col gap-y-4 rounded-2xl border border-gray-200 bg-white p-6">
               <SupportedUseCases />
             </div>
 
-            <div className=" gap-y- flex flex-col rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="gap-y- flex flex-col rounded-2xl border border-gray-200 bg-white p-6">
               <FormField
                 control={control}
                 name="terms"
@@ -228,7 +227,7 @@ const OrganizationSelectionPage = ({
                           I understand the restrictions above and agree to
                           Claidor&rsquo;s terms
                         </label>
-                        <ul className=" flex flex-col gap-y-1 text-sm text-gray-500">
+                        <ul className="flex flex-col gap-y-1 text-sm text-gray-500">
                           <li>
                             <a
                               href="https://docs.claidorhq.com/merchant-of-record/account-reviews"
@@ -304,19 +303,13 @@ const OrganizationSelectionPage = ({
           <div className="mt-4 text-center text-sm text-gray-500">
             Before using this app, you can review {clientName}&apos;s{' '}
             {client.tos_uri && (
-              <a
-                className=" text-gray-700"
-                href={client.tos_uri}
-              >
+              <a className="text-gray-700" href={client.tos_uri}>
                 Terms of Service
               </a>
             )}
             {client.tos_uri && client.policy_uri && ' and '}
             {client.policy_uri && (
-              <a
-                className=" text-gray-700"
-                href={client.policy_uri}
-              >
+              <a className="text-gray-700" href={client.policy_uri}>
                 Privacy Policy
               </a>
             )}
@@ -333,10 +326,8 @@ const OrganizationSelectionPage = ({
       client={client}
       introduction={
         <>
-          <span className=" font-medium text-gray-700">
-            {clientName}
-          </span>{' '}
-          wants to access one of your Polar organizations. Select one:
+          <span className="font-medium text-gray-700">{clientName}</span> wants
+          to access one of your Polar organizations. Select one:
         </>
       }
     >
@@ -347,7 +338,7 @@ const OrganizationSelectionPage = ({
               key={organization.id}
               href={buildOrganizationSelectionURL(organization)}
             >
-              <div className=" flex w-full flex-row items-center gap-2 rounded-2xl border border-gray-200 bg-white px-2.5 py-3 text-sm transition-colors hover:border-gray-300  ">
+              <div className="flex w-full flex-row items-center gap-2 rounded-2xl border border-gray-200 bg-white px-2.5 py-3 text-sm transition-colors hover:border-gray-300">
                 <Avatar
                   className="h-8 w-8"
                   avatar_url={organization.avatar_url}
@@ -373,19 +364,13 @@ const OrganizationSelectionPage = ({
           <div className="mt-8 text-center text-sm text-gray-500">
             Before using this app, you can review {clientName}&apos;s{' '}
             {client.tos_uri && (
-              <a
-                className=" text-gray-700"
-                href={client.tos_uri}
-              >
+              <a className="text-gray-700" href={client.tos_uri}>
                 Terms of Service
               </a>
             )}
             {client.tos_uri && client.policy_uri && ' and '}
             {client.policy_uri && (
-              <a
-                className=" text-gray-700"
-                href={client.policy_uri}
-              >
+              <a className="text-gray-700" href={client.policy_uri}>
                 Privacy Policy
               </a>
             )}

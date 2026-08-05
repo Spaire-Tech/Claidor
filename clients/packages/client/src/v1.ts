@@ -699,6 +699,39 @@ export interface paths {
     patch: operations['organizations:update']
     trace?: never
   }
+  '/v1/organizations/{id}/customer-portal-sign-in-image': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Upload Customer Portal Sign-In Image
+     * @description Upload the image shown on the customer portal sign-in screen.
+     *
+     *     The portal sign-in is org-scoped, so this image applies to every product
+     *     and course in the organization. Configured from the course builder's
+     *     "Auth" tab.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    post: operations['organizations:upload_customer_portal_sign_in_image']
+    /**
+     * Remove Customer Portal Sign-In Image
+     * @description Remove the custom sign-in image so the portal falls back to the
+     *     organization's most recent course thumbnail.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    delete: operations['organizations:delete_customer_portal_sign_in_image']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/organizations/{id}/account': {
     parameters: {
       query?: never
@@ -917,6 +950,68 @@ export interface paths {
     get: operations['organizations:get_review_status']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/organizations/{organization_id}/custom-domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Custom Storefront Domain Status
+     * @description Current state of the org's custom storefront domain: the configured
+     *     domain, its verification status, and the DNS records the creator must
+     *     install. All fields are None/empty when no domain is configured.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['custom_domains:get_custom_domain']
+    /**
+     * Set Custom Storefront Domain
+     * @description Set or replace the org's custom storefront domain. Requires the
+     *     custom_storefront_domain entitlement (Studio plan and above). Returns
+     *     the DNS records to install; verification runs automatically.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    put: operations['custom_domains:set_custom_domain']
+    post?: never
+    /**
+     * Remove Custom Storefront Domain
+     * @description Remove the org's custom domain. The storefront falls back to its
+     *     platform-hosted URL immediately.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    delete: operations['custom_domains:delete_custom_domain']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/organizations/{organization_id}/custom-domain/verify': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Verify Custom Storefront Domain
+     * @description Check the domain's DNS records now and return the updated state,
+     *     including which record checks passed.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    post: operations['custom_domains:verify_custom_domain']
     delete?: never
     options?: never
     head?: never
@@ -1624,6 +1719,29 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/products/tax-preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Preview Tax
+     * @description Estimate tax for a product price given a customer location and quantity.
+     *     Uses the configured tax provider (Stripe Tax) to calculate applicable taxes.
+     *
+     *     **Scopes**: `products:read` `products:write`
+     */
+    post: operations['products:products:preview_tax']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/orders/': {
     parameters: {
       query?: never
@@ -1718,6 +1836,189 @@ export interface paths {
      *     **Scopes**: `orders:read`
      */
     post: operations['orders:generate_invoice']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/client-invoices/': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Client Invoices
+     * @description List client invoices for the authenticated organization.
+     *
+     *     **Scopes**: `client_invoices:read`
+     */
+    get: operations['client_invoices:list_client_invoices']
+    put?: never
+    /**
+     * Create Client Invoice
+     * @description Create a new draft client invoice. Tax is calculated automatically.
+     *
+     *     **Scopes**: `client_invoices:write`
+     */
+    post: operations['client_invoices:create_client_invoice']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/client-invoices/preview-pdf': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Preview Client Invoice PDF
+     * @description Generate a real PDF preview from form data without creating anything.
+     *
+     *     **Scopes**: `client_invoices:read`
+     */
+    post: operations['client_invoices:preview_client_invoice_pdf']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/client-invoices/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Client Invoice
+     * @description Get a client invoice by ID.
+     *
+     *     **Scopes**: `client_invoices:read`
+     */
+    get: operations['client_invoices:get_client_invoice']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/client-invoices/{id}/pdf': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Download Client Invoice PDF
+     * @description Generate and download a PDF for the given client invoice.
+     *
+     *     **Scopes**: `client_invoices:read`
+     */
+    get: operations['client_invoices:download_client_invoice_pdf']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/client-invoices/{id}/finalize': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Finalize Client Invoice
+     * @description Finalize a draft invoice (generates PDF) without sending the email.
+     *     Status moves from draft → open. Use this to preview the invoice before sending.
+     *
+     *     **Scopes**: `client_invoices:write`
+     */
+    post: operations['client_invoices:finalize_client_invoice']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/client-invoices/{id}/send': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Send Client Invoice
+     * @description Finalize and send a draft invoice to the customer via Stripe.
+     *
+     *     **Scopes**: `client_invoices:write`
+     */
+    post: operations['client_invoices:send_client_invoice']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/client-invoices/{id}/mark-paid': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Mark Client Invoice as Paid
+     * @description Mark a draft or open invoice as paid manually without going through Stripe.
+     *
+     *     **Scopes**: `client_invoices:write`
+     */
+    post: operations['client_invoices:mark_client_invoice_paid']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/client-invoices/{id}/void': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Void Client Invoice
+     * @description Void a draft or open invoice.
+     *
+     *     **Scopes**: `client_invoices:write`
+     */
+    post: operations['client_invoices:void_client_invoice']
     delete?: never
     options?: never
     head?: never
@@ -1918,6 +2219,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/cli/listen/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * CLI Listen
+     * @description **Scopes**: `webhooks:read` `webhooks:write`
+     */
+    get: operations['cli:listen']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/files/': {
     parameters: {
       query?: never
@@ -2034,6 +2355,427 @@ export interface paths {
      *     **Scopes**: `metrics:read`
      */
     get: operations['metrics:limits']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/entitlements/{organization_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Entitlements
+     * @description Return the entitlements (tier, limits, features, fees) for the
+     *     organization. The caller must have read access to the organization.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['entitlements:get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/plans': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Claidor Plans
+     * @description Return the three subscribable Claidor plans (Pro, Studio, Scale)
+     *     with their list pricing, trial config, and entitlements.
+     *
+     *     Used by the dashboard to render the upgrade modal.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['platform:list_plans']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/subscription': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Current Claidor Subscription
+     * @description Return the creator org's current Claidor subscription state.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['platform:get_subscription']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/usage': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Quota Usage
+     * @description Current usage and tier-defined limit for every gated quota.
+     *
+     *     Returns one entry per QuotaKey (video hours, video views, storage).
+     *     Unlimited quotas surface as ``limit: null`` and ``remaining: null``.
+     *     Used by the dashboard's "Usage" widget and helpful for backoffice
+     *     debugging.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['platform:get_usage']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/upgrade-checkout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Create Upgrade Checkout
+     * @description Create a Polar checkout for the target Pro/Scale tier on the
+     *     Claidor platform org. Returns a URL the creator visits to enter their
+     *     card and complete the upgrade.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    post: operations['platform:create_upgrade_checkout']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/switch-plan': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Switch Claidor Plan
+     * @description Switch a creator's current Claidor subscription from one paid tier
+     *     to another (Starter <-> Studio <-> Scale). The card on file is reused;
+     *     proration is invoiced immediately. Use the upgrade-checkout endpoint
+     *     to convert a trialing subscription or start a new one, and the cancel
+     *     endpoint to end the paid subscription.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    post: operations['platform:switch_plan']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/cancel': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Cancel Claidor Subscription
+     * @description Schedule the creator's current Claidor subscription to cancel at
+     *     the end of the current billing period (or, for a trialing
+     *     subscription, at the end of the trial — the remaining trial days are
+     *     kept and nothing is charged).
+     *
+     *     After the subscription revokes, the org has no plan and resolves to
+     *     `inactive`: features are gated off until a new plan is picked through
+     *     the upgrade-checkout flow. There is no automatic free fallback.
+     *
+     *     Canceling with no paid subscription is a no-op.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    post: operations['platform:cancel_subscription']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/customer-portal-session': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Mint Customer Portal Session
+     * @description Mint a short-lived customer-portal session for the platform-org
+     *     customer that represents this creator. Returns a URL the creator
+     *     can visit to view invoices, update payment methods, and cancel
+     *     their Claidor subscription.
+     *
+     *     The session token authenticates as the platform-org customer, which
+     *     is necessarily a different identity from the dashboard user — so the
+     *     portal shows the Claidor subscription (creator-as-buyer view), not the
+     *     creator's own customers.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    post: operations['platform:create_customer_portal_session']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/email-sender-domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Custom Email Sender Domain Status
+     * @description Current state of the org's custom outbound email sender domain:
+     *     configured domain, Resend id, the DNS records the creator must
+     *     install, and whether DKIM has verified.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['platform:get_email_sender_domain']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/email-sender-domain/verify': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Verify Custom Email Sender Domain
+     * @description Ask Resend to re-check the domain's DKIM records and stamp the
+     *     verification timestamp if successful. Returns the updated state.
+     *
+     *     The creator must have installed the DNS records returned by the
+     *     GET endpoint before this call will succeed.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    post: operations['platform:verify_email_sender_domain']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/payment-methods': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Claidor Payment Methods
+     * @description Cards on file the creator uses to pay for their Claidor subscription.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['platform:list_payment_methods']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/payment-methods/{payment_method_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Claidor Payment Method
+     * @description Remove a card. The card backing the active subscription is reassigned
+     *     automatically; you can't remove your only card.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    delete: operations['platform:delete_payment_method']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/payment-methods/{payment_method_id}/default': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Set Default Claidor Payment Method
+     * @description Make a card the one Claidor charges each billing period.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    post: operations['platform:set_default_payment_method']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/orders': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Claidor Orders
+     * @description Past invoices for the creator's Claidor subscription, newest first.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['platform:list_orders']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/orders/{order_id}/invoice': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Claidor Order Invoice
+     * @description A signed URL to download a Claidor invoice PDF, generating it first
+     *     if it has not been built yet.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['platform:get_order_invoice']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/platform/organizations/{organization_id}/billing-details': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Claidor Billing Details
+     * @description The name/address/tax-id shown on the creator's Claidor invoices.
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['platform:get_billing_details']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Update Claidor Billing Details
+     * @description Update the billing identity used on the creator's Claidor invoices.
+     *
+     *     **Scopes**: `organizations:write`
+     */
+    patch: operations['platform:update_billing_details']
+    trace?: never
+  }
+  '/v1/audit-log/{organization_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Audit Log Entries
+     * @description List admin-relevant system events for the organization, newest
+     *     first. Gated on the audit_logs tier feature (Scale).
+     *
+     *     **Scopes**: `organizations:read` `organizations:write`
+     */
+    get: operations['audit_log:list_audit_log']
     put?: never
     post?: never
     delete?: never
@@ -2350,6 +3092,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/storefronts/lookup/domain/{hostname}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Organization Slug By Custom Domain
+     * @description Resolve an active custom storefront domain to its organization slug.
+     *     Used by the frontend middleware to route custom-domain requests.
+     */
+    get: operations['storefronts:get_organization_slug_by_custom_domain']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/storefronts/lookup/subscription/{subscription_id}': {
     parameters: {
       query?: never
@@ -2364,6 +3127,60 @@ export interface paths {
     get: operations['storefronts:get_organization_slug_by_subscription_id']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/storefronts/{slug}/subscribe': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Subscribe to Storefront
+     * @description Public endpoint: subscribe an email to an organization's storefront.
+     */
+    post: operations['storefronts:subscribe_to_storefront']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/product-reviews/product/{product_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Product Reviews */
+    get: operations['product-reviews:get_product_reviews']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/product-reviews/': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Submit Product Review */
+    post: operations['product-reviews:submit_review']
     delete?: never
     options?: never
     head?: never
@@ -2832,6 +3649,32 @@ export interface paths {
      * @description Update authenticated customer.
      */
     patch: operations['customer_portal:customers:update']
+    trace?: never
+  }
+  '/v1/customer-portal/customers/me/profile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Update Customer Profile
+     * @description First-sign-in + Settings menu's name + avatar editor.
+     *
+     *     Separate from PATCH /me because it doesn't touch billing data
+     *     and runs under a non-billing scope so any portal session can
+     *     customize the customer's display identity.
+     *
+     *     **Scopes**: `customer_portal:write`
+     */
+    patch: operations['customer_portal:customers:update_profile']
     trace?: never
   }
   '/v1/customer-portal/customers/me/payment-methods': {
@@ -3699,6 +4542,132 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/forms/': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Forms
+     * @description List lead-magnet forms.
+     *
+     *     **Scopes**: `forms:read` `forms:write`
+     */
+    get: operations['forms:list_forms']
+    put?: never
+    /**
+     * Create Form
+     * @description Create a lead-magnet form.
+     *
+     *     **Scopes**: `forms:write`
+     */
+    post: operations['forms:create_form']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/forms/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Form
+     * @description Get a form by ID.
+     *
+     *     **Scopes**: `forms:read` `forms:write`
+     */
+    get: operations['forms:get_form']
+    put?: never
+    post?: never
+    /**
+     * Delete Form
+     * @description Delete a form.
+     *
+     *     **Scopes**: `forms:write`
+     */
+    delete: operations['forms:delete_form']
+    options?: never
+    head?: never
+    /**
+     * Update Form
+     * @description Update a form.
+     *
+     *     **Scopes**: `forms:write`
+     */
+    patch: operations['forms:update_form']
+    trace?: never
+  }
+  '/v1/forms/{id}/submissions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Form Submissions
+     * @description List submissions for a form.
+     *
+     *     **Scopes**: `forms:read` `forms:write`
+     */
+    get: operations['forms:list_form_submissions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/forms/{id}/public': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Public Form
+     * @description Public endpoint: get a published form's renderable definition.
+     */
+    get: operations['forms:get_public_form']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/forms/{id}/submit': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Submit Form
+     * @description Public endpoint: submit a form. Enrolls the email as a subscriber and,
+     *     when the form has a lead magnet, returns an immediate download link and
+     *     emails one.
+     */
+    post: operations['forms:submit_form']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/email-update/request': {
     parameters: {
       query?: never
@@ -4317,33 +5286,18 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/v1/email-subscribers/': {
+  '/v1/customer-portal/notifications/': {
     parameters: {
       query?: never
       header?: never
       path?: never
       cookie?: never
     }
-    /** List Email Subscribers */
-    get: operations['email_subscribers:list']
-    put?: never
-    /** Create Email Subscriber */
-    post: operations['email_subscribers:create']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/email-subscribers/stats': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Email Subscriber Stats */
-    get: operations['email_subscribers:stats']
+    /**
+     * List Customer Notifications
+     * @description **Scopes**: `customer_portal:read` `customer_portal:write`
+     */
+    get: operations['customer_portal_notifications:list_notifications']
     put?: never
     post?: never
     delete?: never
@@ -4352,61 +5306,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/v1/email-subscribers/{subscriber_id}': {
+  '/v1/customer-portal/notifications/unread-count': {
     parameters: {
       query?: never
       header?: never
       path?: never
       cookie?: never
     }
-    /** Get Email Subscriber */
-    get: operations['email_subscribers:get']
+    /**
+     * Unread Notification Count
+     * @description **Scopes**: `customer_portal:read` `customer_portal:write`
+     */
+    get: operations['customer_portal_notifications:unread_count']
     put?: never
     post?: never
-    delete?: never
-    options?: never
-    head?: never
-    /** Update Email Subscriber */
-    patch: operations['email_subscribers:update']
-    trace?: never
-  }
-  '/v1/email-broadcasts/': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Email Broadcasts */
-    get: operations['email_broadcasts:list']
-    put?: never
-    /** Create Email Broadcast */
-    post: operations['email_broadcasts:create']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/v1/email-broadcasts/{broadcast_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Email Broadcast */
-    get: operations['email_broadcasts:get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    /** Update Email Broadcast */
-    patch: operations['email_broadcasts:update']
-    trace?: never
-  }
-  '/v1/email-broadcasts/{broadcast_id}/send': {
+  '/v1/customer-portal/notifications/{notification_id}/read': {
     parameters: {
       query?: never
       header?: never
@@ -4415,32 +5335,18 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Send Email Broadcast */
-    post: operations['email_broadcasts:send']
+    /**
+     * Mark Notification Read
+     * @description **Scopes**: `customer_portal:read` `customer_portal:write`
+     */
+    post: operations['customer_portal_notifications:mark_read']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/v1/email-broadcasts/{broadcast_id}/analytics': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Email Broadcast Analytics */
-    get: operations['email_broadcasts:analytics']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/storefronts/{slug}/subscribe': {
+  '/v1/customer-portal/notifications/read-all': {
     parameters: {
       query?: never
       header?: never
@@ -4449,83 +5355,39 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Subscribe to Storefront */
-    post: operations['storefronts:subscribe']
+    /**
+     * Mark All Notifications Read
+     * @description **Scopes**: `customer_portal:read` `customer_portal:write`
+     */
+    post: operations['customer_portal_notifications:mark_all_read']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/v1/email-subscribers/export': {
+  '/v1/customer-portal/notifications/preferences': {
     parameters: {
       query?: never
       header?: never
       path?: never
       cookie?: never
     }
-    /** Export Email Subscribers */
-    get: operations['email_subscribers:export']
+    /**
+     * Get Notification Preferences
+     * @description **Scopes**: `customer_portal:read` `customer_portal:write`
+     */
+    get: operations['customer_portal_notifications:get_preferences']
     put?: never
     post?: never
     delete?: never
     options?: never
     head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/email-segments/': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Email Segments */
-    get: operations['email_segments:list']
-    put?: never
-    /** Create Email Segment */
-    post: operations['email_segments:create']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/email-segments/{segment_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Delete Email Segment */
-    delete: operations['email_segments:delete']
-    options?: never
-    head?: never
-    /** Update Email Segment */
-    patch: operations['email_segments:update']
-    trace?: never
-  }
-  '/v1/email-segments/{segment_id}/subscribers': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Add Subscribers to Segment */
-    post: operations['email_segments:add_subscribers']
-    /** Remove Subscribers from Segment */
-    delete: operations['email_segments:remove_subscribers']
-    options?: never
-    head?: never
-    patch?: never
+    /**
+     * Update Notification Preferences
+     * @description **Scopes**: `customer_portal:read` `customer_portal:write`
+     */
+    patch: operations['customer_portal_notifications:update_preferences']
     trace?: never
   }
 }
@@ -4763,6 +5625,83 @@ export interface webhooks {
      *     This event is triggered when access to a seat is revoked, either manually by the organization or automatically when a subscription is canceled.
      */
     post: operations['_endpointcustomer_seat_revoked_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  'member.created': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * member.created
+     * @description Sent when a new member is created.
+     *
+     *     A member represents an individual within a customer (team).
+     *     This event is triggered when a member is added to a customer,
+     *     either programmatically via the API or when an owner is automatically
+     *     created for a new customer.
+     *
+     *     **Discord & Slack support:** Basic
+     */
+    post: operations['_endpointmember_created_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  'member.updated': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * member.updated
+     * @description Sent when a member is updated.
+     *
+     *     This event is triggered when member details are updated,
+     *     such as their name or role within the customer.
+     *
+     *     **Discord & Slack support:** Basic
+     */
+    post: operations['_endpointmember_updated_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  'member.deleted': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * member.deleted
+     * @description Sent when a member is deleted.
+     *
+     *     This event is triggered when a member is removed from a customer.
+     *     Any active seats assigned to the member will be automatically revoked.
+     *
+     *     **Discord & Slack support:** Basic
+     */
+    post: operations['_endpointmember_deleted_post']
     delete?: never
     options?: never
     head?: never
@@ -5364,6 +6303,17 @@ export interface components {
       expires_at: string | null
       /** Revoked At */
       revoked_at: string | null
+    }
+    /** AccountDelinquent */
+    AccountDelinquent: {
+      /**
+       * Error
+       * @example AccountDelinquent
+       * @constant
+       */
+      error: 'AccountDelinquent'
+      /** Detail */
+      detail: string
     }
     /** AccountLink */
     AccountLink: {
@@ -6018,6 +6968,41 @@ export interface components {
        */
       required: boolean
     }
+    /** AuditLogEntry */
+    AuditLogEntry: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * Timestamp
+       * Format: date-time
+       */
+      timestamp: string
+      /**
+       * Name
+       * @description Event name, e.g. 'subscription.created'.
+       */
+      name: string
+      /**
+       * Label
+       * @description Human-readable label, e.g. 'Subscription Created'.
+       */
+      label: string
+      /**
+       * Customer Id
+       * @description Linked customer id, when the action references a customer.
+       */
+      customer_id: string | null
+      /**
+       * User Metadata
+       * @description Event-specific structured data (subscription_id, amount, etc.).
+       */
+      user_metadata?: {
+        [key: string]: unknown
+      }
+    }
     /** AuthorizeOrganization */
     AuthorizeOrganization: {
       /**
@@ -6060,6 +7045,8 @@ export interface components {
        *       "organizations:write": "Create or modify organizations",
        *       "custom_fields:read": "Read custom fields",
        *       "custom_fields:write": "Create or modify custom fields",
+       *       "forms:read": "Read forms",
+       *       "forms:write": "Create or modify forms",
        *       "discounts:read": "Read discounts",
        *       "discounts:write": "Create or modify discounts",
        *       "checkout_links:read": "Read checkout links",
@@ -6096,6 +7083,8 @@ export interface components {
        *       "customer_seats:write": "Create or modify customer seats",
        *       "orders:read": "Read orders made on your organizations",
        *       "orders:write": "Modify orders made on your organizations",
+       *       "client_invoices:read": "Read client invoices",
+       *       "client_invoices:write": "Create or modify client invoices",
        *       "refunds:read": "Read refunds made on your organizations",
        *       "refunds:write": "Create or modify refunds",
        *       "payments:read": "Read payments made on your organizations",
@@ -6145,6 +7134,8 @@ export interface components {
        *       "organizations:write": "Create or modify organizations",
        *       "custom_fields:read": "Read custom fields",
        *       "custom_fields:write": "Create or modify custom fields",
+       *       "forms:read": "Read forms",
+       *       "forms:write": "Create or modify forms",
        *       "discounts:read": "Read discounts",
        *       "discounts:write": "Create or modify discounts",
        *       "checkout_links:read": "Read checkout links",
@@ -6181,6 +7172,8 @@ export interface components {
        *       "customer_seats:write": "Create or modify customer seats",
        *       "orders:read": "Read orders made on your organizations",
        *       "orders:write": "Modify orders made on your organizations",
+       *       "client_invoices:read": "Read client invoices",
+       *       "client_invoices:write": "Create or modify client invoices",
        *       "refunds:read": "Read refunds made on your organizations",
        *       "refunds:write": "Create or modify refunds",
        *       "payments:read": "Read payments made on your organizations",
@@ -6268,9 +7261,17 @@ export interface components {
       | 'customer_seats:write'
       | 'orders:read'
       | 'orders:write'
+      | 'client_invoices:read'
+      | 'client_invoices:write'
       | 'refunds:read'
       | 'refunds:write'
       | 'payments:read'
+      | 'email_subscribers:read'
+      | 'email_subscribers:write'
+      | 'email_broadcasts:read'
+      | 'email_broadcasts:write'
+      | 'forms:read'
+      | 'forms:write'
       | 'metrics:read'
       | 'webhooks:read'
       | 'webhooks:write'
@@ -6286,7 +7287,7 @@ export interface components {
       | 'organization_access_tokens:write'
     /**
      * BalanceCreditOrderEvent
-     * @description An event created by Polar when an order is paid via customer balance.
+     * @description An event created by Claidor when an order is paid via customer balance.
      */
     BalanceCreditOrderEvent: {
       /**
@@ -6310,7 +7311,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -6348,7 +7349,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -6382,7 +7383,7 @@ export interface components {
     }
     /**
      * BalanceDisputeEvent
-     * @description An event created by Polar when an order is disputed.
+     * @description An event created by Claidor when an order is disputed.
      */
     BalanceDisputeEvent: {
       /**
@@ -6406,7 +7407,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -6444,7 +7445,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -6488,7 +7489,7 @@ export interface components {
     }
     /**
      * BalanceDisputeReversalEvent
-     * @description An event created by Polar when a dispute is won and funds are reinstated.
+     * @description An event created by Claidor when a dispute is won and funds are reinstated.
      */
     BalanceDisputeReversalEvent: {
       /**
@@ -6512,7 +7513,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -6550,7 +7551,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -6563,7 +7564,7 @@ export interface components {
     }
     /**
      * BalanceOrderEvent
-     * @description An event created by Polar when an order is paid.
+     * @description An event created by Claidor when an order is paid.
      */
     BalanceOrderEvent: {
       /**
@@ -6587,7 +7588,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -6625,7 +7626,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -6648,6 +7649,8 @@ export interface components {
       subscription_id?: string
       /** Amount */
       amount: number
+      /** Net Amount */
+      net_amount?: number
       /** Currency */
       currency: string
       /** Presentment Amount */
@@ -6665,7 +7668,7 @@ export interface components {
     }
     /**
      * BalanceRefundEvent
-     * @description An event created by Polar when an order is refunded.
+     * @description An event created by Claidor when an order is refunded.
      */
     BalanceRefundEvent: {
       /**
@@ -6689,7 +7692,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -6727,7 +7730,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -6773,7 +7776,7 @@ export interface components {
     }
     /**
      * BalanceRefundReversalEvent
-     * @description An event created by Polar when a refund is reverted.
+     * @description An event created by Claidor when a refund is reverted.
      */
     BalanceRefundReversalEvent: {
       /**
@@ -6797,7 +7800,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -6835,7 +7838,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -7058,7 +8061,7 @@ export interface components {
     }
     /**
      * BenefitCycledEvent
-     * @description An event created by Polar when a benefit is cycled.
+     * @description An event created by Claidor when a benefit is cycled.
      */
     BenefitCycledEvent: {
       /**
@@ -7082,7 +8085,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -7120,7 +8123,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -8410,7 +9413,7 @@ export interface components {
       | components['schemas']['BenefitGrantMeterCreditWebhook']
     /**
      * BenefitGrantedEvent
-     * @description An event created by Polar when a benefit is granted to a customer.
+     * @description An event created by Claidor when a benefit is granted to a customer.
      */
     BenefitGrantedEvent: {
       /**
@@ -8434,7 +9437,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -8472,7 +9475,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -8976,7 +9979,7 @@ export interface components {
     }
     /**
      * BenefitRevokedEvent
-     * @description An event created by Polar when a benefit is revoked from a customer.
+     * @description An event created by Claidor when a benefit is revoked from a customer.
      */
     BenefitRevokedEvent: {
       /**
@@ -9000,7 +10003,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -9038,7 +10041,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -9101,6 +10104,21 @@ export interface components {
        * @description Avatar URL shown in checkout, customer portal, emails etc.
        */
       avatar_url: string | null
+      /**
+       * Customer Portal Sign In Image Url
+       * @description Image shown on the left panel of the customer portal sign-in screen. Configured from the course builder's Auth tab and applies to the whole organization's portal sign-in. When unset, the portal falls back to the organization's most recent course thumbnail.
+       */
+      customer_portal_sign_in_image_url?: string | null
+      /**
+       * Customer Portal Sign In Image Position
+       * @description CSS object-position (e.g. '50% 30%') for the customer portal sign-in image, set by dragging to reposition in the Auth tab.
+       */
+      customer_portal_sign_in_image_position?: string | null
+      /**
+       * Customer Portal Sign In Theme
+       * @description Creator-chosen appearance for the customer portal sign-in screen: 'light' or 'dark'. Null is treated as 'light'.
+       */
+      customer_portal_sign_in_theme?: string | null
       /** @description Proration behavior applied when customer updates their subscription from the portal. */
       proration_behavior: components['schemas']['SubscriptionProrationBehavior']
       /**
@@ -9122,7 +10140,7 @@ export interface components {
       | 'meter_credit'
     /**
      * BenefitUpdatedEvent
-     * @description An event created by Polar when a benefit is updated.
+     * @description An event created by Claidor when a benefit is updated.
      */
     BenefitUpdatedEvent: {
       /**
@@ -9146,7 +10164,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -9184,7 +10202,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -9244,6 +10262,21 @@ export interface components {
        */
       action: 'allow' | 'deny'
     }
+    /** Body_organizations:upload_customer_portal_sign_in_image */
+    Body_organizations_upload_customer_portal_sign_in_image: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string
+    }
+    /**
+     * CancelClaidorSubscription
+     * @description Schedule the current Claidor subscription for cancellation at the
+     *     end of the current billing period. When the cancellation revokes, the
+     *     org has no active plan and resolves to `inactive` (no free fallback).
+     */
+    CancelClaidorSubscription: Record<string, never>
     /**
      * CardPayment
      * @description Schema of a payment with a card payment method.
@@ -9428,6 +10461,11 @@ export interface components {
        */
       embed_origin: string | null
       /**
+       * Locale
+       * @description Locale of the customer, given as an IETF BCP 47 language tag. Used to localize the checkout page.
+       */
+      locale?: string | null
+      /**
        * Amount
        * @description Amount in cents, before discounts and taxes.
        */
@@ -9581,7 +10619,7 @@ export interface components {
       metadata: components['schemas']['MetadataOutputType']
       /**
        * External Customer Id
-       * @description ID of the customer in your system. If a matching customer exists on Polar, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
+       * @description ID of the customer in your system. If a matching customer exists on Claidor, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
        */
       external_customer_id: string | null
       /**
@@ -9676,6 +10714,11 @@ export interface components {
        * @description Number of seats for seat-based pricing.
        */
       seats?: number | null
+      /**
+       * Locale
+       * @description Locale of the customer, given as an IETF BCP 47 language tag. Used to localize the checkout page.
+       */
+      locale?: string | null
       /** Is Business Customer */
       is_business_customer?: boolean | null
       /** Customer Name */
@@ -9730,7 +10773,7 @@ export interface components {
     }
     /**
      * CheckoutCreatedEvent
-     * @description An event created by Polar when a checkout is created.
+     * @description An event created by Claidor when a checkout is created.
      */
     CheckoutCreatedEvent: {
       /**
@@ -9754,7 +10797,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -9792,7 +10835,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -10081,12 +11124,6 @@ export interface components {
        */
       allow_discount_codes: boolean
       /**
-       * Require Billing Address
-       * @description Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting.
-       * @default false
-       */
-      require_billing_address: boolean
-      /**
        * Discount Id
        * @description ID of the discount to apply to the checkout. If the discount is not applicable anymore when opening the checkout link, it'll be ignored.
        */
@@ -10151,12 +11188,6 @@ export interface components {
        */
       allow_discount_codes: boolean
       /**
-       * Require Billing Address
-       * @description Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting.
-       * @default false
-       */
-      require_billing_address: boolean
-      /**
        * Discount Id
        * @description ID of the discount to apply to the checkout. If the discount is not applicable anymore when opening the checkout link, it'll be ignored.
        */
@@ -10219,12 +11250,6 @@ export interface components {
        */
       allow_discount_codes: boolean
       /**
-       * Require Billing Address
-       * @description Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting.
-       * @default false
-       */
-      require_billing_address: boolean
-      /**
        * Discount Id
        * @description ID of the discount to apply to the checkout. If the discount is not applicable anymore when opening the checkout link, it'll be ignored.
        */
@@ -10280,24 +11305,8 @@ export interface components {
        * @description The description of the product.
        */
       description: string | null
-      /**
-       * Category
-       * @description The digital product category.
-       */
-      category:
-        | 'ebook'
-        | 'template'
-        | 'assets'
-        | 'course'
-        | 'guide'
-        | 'music'
-        | 'video'
-        | 'photo'
-        | 'software'
-        | 'coaching'
-        | 'membership'
-        | 'other'
-        | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The visibility of the product. */
       visibility: components['schemas']['ProductVisibility']
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. */
@@ -10319,6 +11328,12 @@ export interface components {
        * @description Whether the product is archived and no longer available.
        */
       is_archived: boolean
+      /**
+       * Product Type
+       * @description The type of product (e.g. 'digital', 'course').
+       * @default digital
+       */
+      product_type: string
       /**
        * Organization Id
        * Format: uuid4
@@ -10399,11 +11414,6 @@ export interface components {
        */
       allow_discount_codes?: boolean | null
       /**
-       * Require Billing Address
-       * @description Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting.
-       */
-      require_billing_address?: boolean | null
-      /**
        * Discount Id
        * @description ID of the discount to apply to the checkout. If the discount is not applicable anymore when opening the checkout link, it'll be ignored.
        */
@@ -10453,6 +11463,21 @@ export interface components {
        * @description Avatar URL shown in checkout, customer portal, emails etc.
        */
       avatar_url: string | null
+      /**
+       * Customer Portal Sign In Image Url
+       * @description Image shown on the left panel of the customer portal sign-in screen. Configured from the course builder's Auth tab and applies to the whole organization's portal sign-in. When unset, the portal falls back to the organization's most recent course thumbnail.
+       */
+      customer_portal_sign_in_image_url?: string | null
+      /**
+       * Customer Portal Sign In Image Position
+       * @description CSS object-position (e.g. '50% 30%') for the customer portal sign-in image, set by dragging to reposition in the Auth tab.
+       */
+      customer_portal_sign_in_image_position?: string | null
+      /**
+       * Customer Portal Sign In Theme
+       * @description Creator-chosen appearance for the customer portal sign-in screen: 'light' or 'dark'. Null is treated as 'light'.
+       */
+      customer_portal_sign_in_theme?: string | null
       /** @description Proration behavior applied when customer updates their subscription from the portal. */
       proration_behavior: components['schemas']['SubscriptionProrationBehavior']
       /**
@@ -10513,12 +11538,6 @@ export interface components {
        * @default true
        */
       allow_discount_codes: boolean
-      /**
-       * Require Billing Address
-       * @description Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting. If you preset the billing address, this setting will be automatically set to `true`.
-       * @default false
-       */
-      require_billing_address: boolean
       /** Amount */
       amount?: number | null
       /**
@@ -10526,6 +11545,11 @@ export interface components {
        * @description Number of seats for seat-based pricing. Required for seat-based products.
        */
       seats?: number | null
+      /**
+       * Locale
+       * @description Locale of the customer, given as an IETF BCP 47 language tag. Used to localize the checkout page.
+       */
+      locale?: string | null
       /**
        * Allow Trial
        * @description Whether to enable the trial period for the checkout session. If `false`, the trial period will be disabled, even if the selected product has a trial configured.
@@ -10545,7 +11569,7 @@ export interface components {
       is_business_customer: boolean
       /**
        * External Customer Id
-       * @description ID of the customer in your system. If a matching customer exists on Polar, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
+       * @description ID of the customer in your system. If a matching customer exists on Claidor, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
        */
       external_customer_id?: string | null
       /** Customer Name */
@@ -10593,7 +11617,7 @@ export interface components {
       return_url?: string | null
       /**
        * Embed Origin
-       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Polar iframe to communicate with the parent page.
+       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Claidor iframe to communicate with the parent page.
        */
       embed_origin?: string | null
       /**
@@ -10642,24 +11666,8 @@ export interface components {
        * @description The description of the product.
        */
       description: string | null
-      /**
-       * Category
-       * @description The digital product category.
-       */
-      category:
-        | 'ebook'
-        | 'template'
-        | 'assets'
-        | 'course'
-        | 'guide'
-        | 'music'
-        | 'video'
-        | 'photo'
-        | 'software'
-        | 'coaching'
-        | 'membership'
-        | 'other'
-        | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The visibility of the product. */
       visibility: components['schemas']['ProductVisibility']
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. */
@@ -10681,6 +11689,12 @@ export interface components {
        * @description Whether the product is archived and no longer available.
        */
       is_archived: boolean
+      /**
+       * Product Type
+       * @description The type of product (e.g. 'digital', 'course').
+       * @default digital
+       */
+      product_type: string
       /**
        * Organization Id
        * Format: uuid4
@@ -10758,12 +11772,6 @@ export interface components {
        * @default true
        */
       allow_discount_codes: boolean
-      /**
-       * Require Billing Address
-       * @description Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting. If you preset the billing address, this setting will be automatically set to `true`.
-       * @default false
-       */
-      require_billing_address: boolean
       /** Amount */
       amount?: number | null
       /**
@@ -10771,6 +11779,11 @@ export interface components {
        * @description Number of seats for seat-based pricing. Required for seat-based products.
        */
       seats?: number | null
+      /**
+       * Locale
+       * @description Locale of the customer, given as an IETF BCP 47 language tag. Used to localize the checkout page.
+       */
+      locale?: string | null
       /**
        * Allow Trial
        * @description Whether to enable the trial period for the checkout session. If `false`, the trial period will be disabled, even if the selected product has a trial configured.
@@ -10790,7 +11803,7 @@ export interface components {
       is_business_customer: boolean
       /**
        * External Customer Id
-       * @description ID of the customer in your system. If a matching customer exists on Polar, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
+       * @description ID of the customer in your system. If a matching customer exists on Claidor, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
        */
       external_customer_id?: string | null
       /** Customer Name */
@@ -10838,7 +11851,7 @@ export interface components {
       return_url?: string | null
       /**
        * Embed Origin
-       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Polar iframe to communicate with the parent page.
+       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Claidor iframe to communicate with the parent page.
        */
       embed_origin?: string | null
       currency?: components['schemas']['PresentmentCurrency'] | null
@@ -10900,12 +11913,6 @@ export interface components {
        * @default true
        */
       allow_discount_codes: boolean
-      /**
-       * Require Billing Address
-       * @description Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting. If you preset the billing address, this setting will be automatically set to `true`.
-       * @default false
-       */
-      require_billing_address: boolean
       /** Amount */
       amount?: number | null
       /**
@@ -10913,6 +11920,11 @@ export interface components {
        * @description Number of seats for seat-based pricing. Required for seat-based products.
        */
       seats?: number | null
+      /**
+       * Locale
+       * @description Locale of the customer, given as an IETF BCP 47 language tag. Used to localize the checkout page.
+       */
+      locale?: string | null
       /**
        * Allow Trial
        * @description Whether to enable the trial period for the checkout session. If `false`, the trial period will be disabled, even if the selected product has a trial configured.
@@ -10932,7 +11944,7 @@ export interface components {
       is_business_customer: boolean
       /**
        * External Customer Id
-       * @description ID of the customer in your system. If a matching customer exists on Polar, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
+       * @description ID of the customer in your system. If a matching customer exists on Claidor, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.
        */
       external_customer_id?: string | null
       /** Customer Name */
@@ -10980,7 +11992,7 @@ export interface components {
       return_url?: string | null
       /**
        * Embed Origin
-       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Polar iframe to communicate with the parent page.
+       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Claidor iframe to communicate with the parent page.
        */
       embed_origin?: string | null
       currency?: components['schemas']['PresentmentCurrency'] | null
@@ -11075,6 +12087,11 @@ export interface components {
        * @description When checkout is embedded, represents the Origin of the page embedding the checkout. Used as a security measure to send messages only to the embedding page.
        */
       embed_origin: string | null
+      /**
+       * Locale
+       * @description Locale of the customer, given as an IETF BCP 47 language tag. Used to localize the checkout page.
+       */
+      locale?: string | null
       /**
        * Amount
        * @description Amount in cents, before discounts and taxes.
@@ -11333,6 +12350,11 @@ export interface components {
        */
       embed_origin: string | null
       /**
+       * Locale
+       * @description Locale of the customer, given as an IETF BCP 47 language tag. Used to localize the checkout page.
+       */
+      locale?: string | null
+      /**
        * Amount
        * @description Amount in cents, before discounts and taxes.
        */
@@ -11567,6 +12589,11 @@ export interface components {
        * @description Number of seats for seat-based pricing.
        */
       seats?: number | null
+      /**
+       * Locale
+       * @description Locale of the customer, given as an IETF BCP 47 language tag. Used to localize the checkout page.
+       */
+      locale?: string | null
       /** Is Business Customer */
       is_business_customer?: boolean | null
       /** Customer Name */
@@ -11614,11 +12641,6 @@ export interface components {
        */
       allow_discount_codes?: boolean | null
       /**
-       * Require Billing Address
-       * @description Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting. If you preset the billing address, this setting will be automatically set to `true`.
-       */
-      require_billing_address?: boolean | null
-      /**
        * Allow Trial
        * @description Whether to enable the trial period for the checkout session. If `false`, the trial period will be disabled, even if the selected product has a trial configured.
        */
@@ -11654,7 +12676,7 @@ export interface components {
       return_url?: string | null
       /**
        * Embed Origin
-       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Polar iframe to communicate with the parent page.
+       * @description If you plan to embed the checkout session, set this to the Origin of the embedding page. It'll allow the Claidor iframe to communicate with the parent page.
        */
       embed_origin?: string | null
     }
@@ -11688,6 +12710,11 @@ export interface components {
        * @description Number of seats for seat-based pricing.
        */
       seats?: number | null
+      /**
+       * Locale
+       * @description Locale of the customer, given as an IETF BCP 47 language tag. Used to localize the checkout page.
+       */
+      locale?: string | null
       /** Is Business Customer */
       is_business_customer?: boolean | null
       /** Customer Name */
@@ -11709,6 +12736,425 @@ export interface components {
        * @description Disable the trial period for the checkout session. It's mainly useful when the trial is blocked because the customer already redeemed one.
        */
       allow_trial?: false | null
+    }
+    /** ClientInvoiceCreate */
+    ClientInvoiceCreate: {
+      /**
+       * Customer Id
+       * Format: uuid4
+       * @description ID of the Claidor customer to invoice.
+       */
+      customer_id: string
+      /**
+       * Currency
+       * @description ISO 4217 currency code (e.g. 'usd').
+       */
+      currency: string
+      /**
+       * Line Items
+       * @description Invoice line items. At least one required.
+       */
+      line_items: components['schemas']['ClientInvoiceLineItemCreate'][]
+      /**
+       * Due Date
+       * @description Payment due date. Determines days_until_due on the Stripe invoice.
+       */
+      due_date?: string | null
+      /**
+       * Memo
+       * @description Internal memo / invoice description.
+       */
+      memo?: string | null
+      /**
+       * Po Number
+       * @description Purchase order number.
+       */
+      po_number?: string | null
+      /**
+       * On Behalf Of Label
+       * @description Name shown in 'on behalf of' display on the invoice. Defaults to the organization name.
+       */
+      on_behalf_of_label?: string | null
+      /**
+       * Discount Amount
+       * @description Flat discount amount in the smallest currency unit (e.g. cents). Applied before tax.
+       * @default 0
+       */
+      discount_amount: number
+      /**
+       * Discount Label
+       * @description Label shown for the discount line on the invoice (e.g. 'Promo code').
+       */
+      discount_label?: string | null
+      /**
+       * Include Payment Link
+       * @description Whether to include a hosted payment link in the invoice email.
+       * @default true
+       */
+      include_payment_link: boolean
+      /**
+       * Show Logo
+       * @description Whether to show the organization logo on the PDF.
+       * @default true
+       */
+      show_logo: boolean
+      /**
+       * Show Mor Attribution
+       * @description Whether to show 'via claidor' label under the logo.
+       * @default true
+       */
+      show_mor_attribution: boolean
+      /**
+       * User Metadata
+       * @description Arbitrary key-value metadata to attach to the invoice.
+       */
+      user_metadata?: {
+        [key: string]: unknown
+      } | null
+    }
+    /** ClientInvoiceLineItemCreate */
+    ClientInvoiceLineItemCreate: {
+      /**
+       * Description
+       * @description Line item description shown on the invoice.
+       */
+      description: string
+      /**
+       * Quantity
+       * @description Quantity.
+       * @default 1
+       */
+      quantity: number
+      /**
+       * Unit Amount
+       * @description Unit price in the smallest currency unit (e.g. cents).
+       */
+      unit_amount: number
+    }
+    /**
+     * ClientInvoiceLineItemPreview
+     * @description Relaxed line item for preview — allows zero amounts for in-progress editing.
+     */
+    ClientInvoiceLineItemPreview: {
+      /**
+       * Description
+       * @description Line item description.
+       * @default —
+       */
+      description: string
+      /**
+       * Quantity
+       * @description Quantity.
+       * @default 1
+       */
+      quantity: number
+      /**
+       * Unit Amount
+       * @description Unit price in cents (0 allowed for preview).
+       * @default 0
+       */
+      unit_amount: number
+    }
+    /** ClientInvoiceLineItemSchema */
+    ClientInvoiceLineItemSchema: {
+      /**
+       * Id
+       * Format: uuid4
+       * @description The ID of the object.
+       */
+      id: string
+      /**
+       * Created At
+       * Format: date-time
+       * @description Creation timestamp of the object.
+       */
+      created_at: string
+      /**
+       * Modified At
+       * @description Last modification timestamp of the object.
+       */
+      modified_at: string | null
+      /**
+       * Client Invoice Id
+       * Format: uuid4
+       */
+      client_invoice_id: string
+      /** Stripe Invoice Item Id */
+      stripe_invoice_item_id: string | null
+      /** Description */
+      description: string
+      /** Quantity */
+      quantity: number
+      /** Unit Amount */
+      unit_amount: number
+      /** Currency */
+      currency: string
+      /** Amount */
+      amount: number
+      /** Tax Amount */
+      tax_amount: number
+    }
+    /**
+     * ClientInvoicePreviewRequest
+     * @description Request body for generating a real-time PDF preview without persisting.
+     */
+    ClientInvoicePreviewRequest: {
+      /**
+       * Organization Id
+       * Format: uuid4
+       * @description Organization ID.
+       */
+      organization_id: string
+      /**
+       * Customer Id
+       * @description Optional customer ID to pull name/address from.
+       */
+      customer_id?: string | null
+      /**
+       * Currency
+       * @description ISO 4217 currency code.
+       */
+      currency: string
+      /**
+       * Line Items
+       * @description Invoice line items.
+       */
+      line_items: components['schemas']['ClientInvoiceLineItemPreview'][]
+      /** Due Date */
+      due_date?: string | null
+      /** Memo */
+      memo?: string | null
+      /** Po Number */
+      po_number?: string | null
+      /** On Behalf Of Label */
+      on_behalf_of_label?: string | null
+      /**
+       * Discount Amount
+       * @default 0
+       */
+      discount_amount: number
+      /** Discount Label */
+      discount_label?: string | null
+      /**
+       * Include Payment Link
+       * @default true
+       */
+      include_payment_link: boolean
+      /** Checkout Link Url */
+      checkout_link_url?: string | null
+      /**
+       * Show Logo
+       * @description Whether to show the organization logo on the PDF.
+       * @default true
+       */
+      show_logo: boolean
+      /**
+       * Show Mor Attribution
+       * @description Whether to show 'via claidor' label under the logo.
+       * @default true
+       */
+      show_mor_attribution: boolean
+      /** Billing Name */
+      billing_name?: string | null
+      /** Billing Line1 */
+      billing_line1?: string | null
+      /** Billing Line2 */
+      billing_line2?: string | null
+      /** Billing City */
+      billing_city?: string | null
+      /** Billing State */
+      billing_state?: string | null
+      /** Billing Postal Code */
+      billing_postal_code?: string | null
+      /** Billing Country */
+      billing_country?: string | null
+    }
+    /** ClientInvoiceSchema */
+    ClientInvoiceSchema: {
+      /**
+       * Id
+       * Format: uuid4
+       * @description The ID of the object.
+       */
+      id: string
+      /**
+       * Created At
+       * Format: date-time
+       * @description Creation timestamp of the object.
+       */
+      created_at: string
+      /**
+       * Modified At
+       * @description Last modification timestamp of the object.
+       */
+      modified_at: string | null
+      /**
+       * Organization Id
+       * Format: uuid4
+       */
+      organization_id: string
+      /**
+       * Customer Id
+       * Format: uuid4
+       */
+      customer_id: string
+      /** Stripe Invoice Id */
+      stripe_invoice_id: string | null
+      status: components['schemas']['ClientInvoiceStatus']
+      /** Currency */
+      currency: string
+      /** Subtotal Amount */
+      subtotal_amount: number
+      /** Discount Amount */
+      discount_amount: number
+      /** Tax Amount */
+      tax_amount: number
+      /** Total Amount */
+      total_amount: number
+      /** Memo */
+      memo: string | null
+      /** Po Number */
+      po_number: string | null
+      /** Due Date */
+      due_date: string | null
+      /** On Behalf Of Label */
+      on_behalf_of_label: string | null
+      /** Discount Label */
+      discount_label: string | null
+      /** Include Payment Link */
+      include_payment_link: boolean
+      /** Show Logo */
+      show_logo: boolean
+      /** Show Mor Attribution */
+      show_mor_attribution: boolean
+      /** Stripe Hosted Invoice Url */
+      stripe_hosted_invoice_url: string | null
+      /** Invoice Pdf Url */
+      invoice_pdf_url: string | null
+      /** Checkout Link */
+      checkout_link: string | null
+      /** User Metadata */
+      user_metadata: {
+        [key: string]: unknown
+      } | null
+      /** Order Id */
+      order_id: string | null
+      /** Line Items */
+      line_items?: components['schemas']['ClientInvoiceLineItemSchema'][]
+    }
+    /**
+     * ClientInvoiceSortProperty
+     * @enum {string}
+     */
+    ClientInvoiceSortProperty:
+      | 'created_at'
+      | '-created_at'
+      | 'status'
+      | '-status'
+      | 'total_amount'
+      | '-total_amount'
+      | 'due_date'
+      | '-due_date'
+    /**
+     * ClientInvoiceStatus
+     * @enum {string}
+     */
+    ClientInvoiceStatus: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible'
+    /** CommunityPostNewOnCourseNotification */
+    CommunityPostNewOnCourseNotification: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'CommunityPostNewOnCourseNotification'
+      payload: components['schemas']['CommunityPostNewOnCourseNotificationPayload']
+    }
+    /**
+     * CommunityPostNewOnCourseNotificationPayload
+     * @description Bell notification for the course creator each time a student
+     *     posts something new in their community feed.
+     */
+    CommunityPostNewOnCourseNotificationPayload: {
+      /**
+       * Course Id
+       * Format: uuid4
+       */
+      course_id: string
+      /** Course Title */
+      course_title: string
+      /**
+       * Post Id
+       * Format: uuid4
+       */
+      post_id: string
+      /** Post Title */
+      post_title: string | null
+      /** Post Preview */
+      post_preview: string
+      /** Author Name */
+      author_name: string | null
+      /** Post Url */
+      readonly post_url: string
+    }
+    /** CommunityPostReplyNotification */
+    CommunityPostReplyNotification: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'CommunityPostReplyNotification'
+      payload: components['schemas']['CommunityPostReplyNotificationPayload']
+    }
+    /**
+     * CommunityPostReplyNotificationPayload
+     * @description Bell notification for the author of a post when someone replies.
+     */
+    CommunityPostReplyNotificationPayload: {
+      /**
+       * Course Id
+       * Format: uuid4
+       */
+      course_id: string
+      /** Course Title */
+      course_title: string
+      /**
+       * Post Id
+       * Format: uuid4
+       */
+      post_id: string
+      /** Post Title */
+      post_title: string | null
+      /**
+       * Comment Id
+       * Format: uuid4
+       */
+      comment_id: string
+      /** Comment Preview */
+      comment_preview: string
+      /** Replier Name */
+      replier_name: string | null
+      /** Post Url */
+      readonly post_url: string
     }
     /** CostMetadata */
     'CostMetadata-Input': {
@@ -12247,10 +13693,145 @@ export interface components {
       | 'ZA'
       | 'ZM'
       | 'ZW'
+    /**
+     * CurrentClaidorSubscription
+     * @description The caller's current Claidor subscription state (billing-side info,
+     *     complementary to the entitlements snapshot).
+     */
+    CurrentClaidorSubscription: {
+      tier: components['schemas']['TierKey']
+      /**
+       * Billing Interval
+       * @description The Product's recurring interval ('month' or 'year'). None when the creator has no platform-org subscription (no plan).
+       */
+      billing_interval: ('month' | 'year') | null
+      /**
+       * Status
+       * @description Subscription status — 'active', 'trialing', 'past_due', 'canceled', or 'none' when no subscription exists.
+       */
+      status: string
+      /**
+       * Monthly Price Cents
+       * @description Recurring monthly cost in cents (0 when no plan).
+       */
+      monthly_price_cents: number
+      /**
+       * Currency
+       * @default usd
+       */
+      currency: string
+      /**
+       * Current Period End
+       * @description When the current billing period ends — also the next renewal date for active subscriptions.
+       */
+      current_period_end: string | null
+      /**
+       * Trial End
+       * @description When the trial period ends, if currently trialing.
+       */
+      trial_end: string | null
+      /**
+       * Cancel At Period End
+       * @description Whether the subscription is scheduled to cancel.
+       */
+      cancel_at_period_end: boolean
+      /**
+       * Past Due At
+       * @description When the subscription first entered `past_due` (a Claidor charge failed). None unless the subscription is past_due.
+       */
+      past_due_at?: string | null
+      /**
+       * Suspension At
+       * @description The deadline by which the overdue balance must be paid before the subscription is canceled and the org loses access. Computed from past_due_at plus the dunning retry window. None unless past_due. The dashboard uses this for the 'pay by {date}' banner.
+       */
+      suspension_at?: string | null
+      /**
+       * Is Default Trial
+       * @description True when the active subscription is the auto-created Starter trial from the org-creation hook (i.e. `managed_by=trial`). Becomes False once the creator goes through upgrade-checkout and a payment method is captured. The onboarding review page uses this to verify a Stripe checkout actually completed when it sees `?upgraded=1` in the URL.
+       * @default false
+       */
+      is_default_trial: boolean
+      entitlements: components['schemas']['Entitlements']
+    }
     /** CursorPagination */
     CursorPagination: {
       /** Has Next Page */
       has_next_page: boolean
+    }
+    /**
+     * CustomDomainChecks
+     * @description Outcome of the most recent explicit DNS verification.
+     */
+    CustomDomainChecks: {
+      /**
+       * Cname Ok
+       * @description Whether the domain CNAMEs to the platform target.
+       */
+      cname_ok: boolean
+      /**
+       * Txt Ok
+       * @description Whether the ownership TXT record carries the expected token.
+       */
+      txt_ok: boolean
+    }
+    /**
+     * CustomDomainDNSRecord
+     * @description A DNS record the creator must install at their registrar.
+     */
+    CustomDomainDNSRecord: {
+      /**
+       * Type
+       * @description Record type (CNAME or TXT).
+       */
+      type: string
+      /**
+       * Name
+       * @description Fully-qualified record name.
+       */
+      name: string
+      /**
+       * Value
+       * @description Expected record value.
+       */
+      value: string
+    }
+    /** CustomDomainSet */
+    CustomDomainSet: {
+      /**
+       * Domain
+       * @description Subdomain to serve the storefront and customer portal from, e.g. learn.creator.com. Apex domains (creator.com) are not supported yet.
+       */
+      domain: string
+    }
+    /**
+     * CustomDomainStatus
+     * @description Current state of the organization's custom storefront domain.
+     */
+    CustomDomainStatus: {
+      /**
+       * Domain
+       * @description Configured custom domain (None if not configured).
+       */
+      domain: string | null
+      /** @description Verification lifecycle state (None if not configured). */
+      status: components['schemas']['OrganizationCustomDomainStatus'] | null
+      /**
+       * Verified At
+       * @description When DNS verification first succeeded.
+       */
+      verified_at: string | null
+      /**
+       * Last Checked At
+       * @description When DNS records were last checked.
+       */
+      last_checked_at: string | null
+      /**
+       * Dns Records
+       * @description DNS records the creator must install (empty if not configured).
+       */
+      dns_records: components['schemas']['CustomDomainDNSRecord'][]
+      /** @description Per-record outcome of the verification just performed. Only populated by the verify endpoint. */
+      checks?: components['schemas']['CustomDomainChecks'] | null
     }
     CustomField:
       | components['schemas']['CustomFieldText']
@@ -13490,7 +15071,7 @@ export interface components {
     }
     /**
      * CustomerCreatedEvent
-     * @description An event created by Polar when a customer is created.
+     * @description An event created by Claidor when a customer is created.
      */
     CustomerCreatedEvent: {
       /**
@@ -13514,7 +15095,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -13552,7 +15133,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -13683,7 +15264,7 @@ export interface components {
     }
     /**
      * CustomerDeletedEvent
-     * @description An event created by Polar when a customer is deleted.
+     * @description An event created by Claidor when a customer is deleted.
      */
     CustomerDeletedEvent: {
       /**
@@ -13707,7 +15288,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -13745,7 +15326,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -13859,6 +15440,54 @@ export interface components {
       error: 'CustomerNotReady'
       /** Detail */
       detail: string
+    }
+    /** CustomerNotificationPreferencesRead */
+    CustomerNotificationPreferencesRead: {
+      /** Email Enabled */
+      email_enabled: boolean
+      /**
+       * Bell Enabled
+       * @default true
+       */
+      bell_enabled: boolean
+    }
+    /**
+     * CustomerNotificationPreferencesUpdate
+     * @description Both fields optional — PATCH semantics; pass only what you want
+     *     to change.
+     */
+    CustomerNotificationPreferencesUpdate: {
+      /** Email Enabled */
+      email_enabled?: boolean | null
+      /** Bell Enabled */
+      bell_enabled?: boolean | null
+    }
+    /** CustomerNotificationRead */
+    CustomerNotificationRead: {
+      /**
+       * Created At
+       * Format: date-time
+       * @description Creation timestamp of the object.
+       */
+      created_at: string
+      /**
+       * Modified At
+       * @description Last modification timestamp of the object.
+       */
+      modified_at: string | null
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /** Type */
+      type: string
+      /** Payload */
+      payload: {
+        [key: string]: unknown
+      }
+      /** Read At */
+      read_at?: string | null
     }
     /**
      * CustomerOAuthPlatform
@@ -14116,24 +15745,8 @@ export interface components {
        * @description The description of the product.
        */
       description: string | null
-      /**
-       * Category
-       * @description The digital product category.
-       */
-      category:
-        | 'ebook'
-        | 'template'
-        | 'assets'
-        | 'course'
-        | 'guide'
-        | 'music'
-        | 'video'
-        | 'photo'
-        | 'software'
-        | 'coaching'
-        | 'membership'
-        | 'other'
-        | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The visibility of the product. */
       visibility: components['schemas']['ProductVisibility']
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. */
@@ -14155,6 +15768,12 @@ export interface components {
        * @description Whether the product is archived and no longer available.
        */
       is_archived: boolean
+      /**
+       * Product Type
+       * @description The type of product (e.g. 'digital', 'course').
+       * @default digital
+       */
+      product_type: string
       /**
        * Organization Id
        * Format: uuid4
@@ -14485,6 +16104,8 @@ export interface components {
       email_verified: boolean
       /** Name */
       name: string | null
+      /** Avatar Url */
+      avatar_url?: string | null
       /** Billing Name */
       billing_name: string | null
       billing_address: components['schemas']['Address'] | null
@@ -14497,6 +16118,13 @@ export interface components {
       /** Default Payment Method Id */
       default_payment_method_id?: string | null
       type?: components['schemas']['CustomerType'] | null
+    }
+    /** CustomerPortalCustomerProfileUpdate */
+    CustomerPortalCustomerProfileUpdate: {
+      /** Name */
+      name?: string | null
+      /** Avatar Url */
+      avatar_url?: string | null
     }
     /** CustomerPortalCustomerUpdate */
     CustomerPortalCustomerUpdate: {
@@ -14584,6 +16212,32 @@ export interface components {
       /** Account Username */
       account_username: string | null
     }
+    /** CustomerPortalSession */
+    CustomerPortalSession: {
+      /**
+       * Token
+       * @description Short-lived customer portal token.
+       */
+      token: string
+      /**
+       * Expires At
+       * Format: date-time
+       */
+      expires_at: string
+      /**
+       * Customer Portal Url
+       * @description URL the creator visits to manage their Claidor subscription (view invoices, change payment method, cancel).
+       */
+      customer_portal_url: string
+    }
+    /** CustomerPortalSessionCreate */
+    CustomerPortalSessionCreate: {
+      /**
+       * Return Url
+       * @description URL the customer portal will link back to (shows a 'Back' control). Use the dashboard URL the creator came from.
+       */
+      return_url?: string | null
+    }
     /** CustomerPortalSubscriptionSettings */
     CustomerPortalSubscriptionSettings: {
       /** Update Seats */
@@ -14635,24 +16289,8 @@ export interface components {
        * @description The description of the product.
        */
       description: string | null
-      /**
-       * Category
-       * @description The digital product category.
-       */
-      category:
-        | 'ebook'
-        | 'template'
-        | 'assets'
-        | 'course'
-        | 'guide'
-        | 'music'
-        | 'video'
-        | 'photo'
-        | 'software'
-        | 'coaching'
-        | 'membership'
-        | 'other'
-        | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The visibility of the product. */
       visibility: components['schemas']['ProductVisibility']
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. */
@@ -14674,6 +16312,12 @@ export interface components {
        * @description Whether the product is archived and no longer available.
        */
       is_archived: boolean
+      /**
+       * Product Type
+       * @description The type of product (e.g. 'digital', 'course').
+       * @default digital
+       */
+      product_type: string
       /**
        * Organization Id
        * Format: uuid4
@@ -15590,24 +17234,8 @@ export interface components {
        * @description The description of the product.
        */
       description: string | null
-      /**
-       * Category
-       * @description The digital product category.
-       */
-      category:
-        | 'ebook'
-        | 'template'
-        | 'assets'
-        | 'course'
-        | 'guide'
-        | 'music'
-        | 'video'
-        | 'photo'
-        | 'software'
-        | 'coaching'
-        | 'membership'
-        | 'other'
-        | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The visibility of the product. */
       visibility: components['schemas']['ProductVisibility']
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. */
@@ -15629,6 +17257,12 @@ export interface components {
        * @description Whether the product is archived and no longer available.
        */
       is_archived: boolean
+      /**
+       * Product Type
+       * @description The type of product (e.g. 'digital', 'course').
+       * @default digital
+       */
+      product_type: string
       /**
        * Organization Id
        * Format: uuid4
@@ -15775,7 +17409,7 @@ export interface components {
     }
     /**
      * CustomerUpdatedEvent
-     * @description An event created by Polar when a customer is updated.
+     * @description An event created by Claidor when a customer is updated.
      */
     CustomerUpdatedEvent: {
       /**
@@ -15799,7 +17433,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -15837,7 +17471,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -16946,24 +18580,8 @@ export interface components {
        * @description The description of the product.
        */
       description: string | null
-      /**
-       * Category
-       * @description The digital product category.
-       */
-      category:
-        | 'ebook'
-        | 'template'
-        | 'assets'
-        | 'course'
-        | 'guide'
-        | 'music'
-        | 'video'
-        | 'photo'
-        | 'software'
-        | 'coaching'
-        | 'membership'
-        | 'other'
-        | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The visibility of the product. */
       visibility: components['schemas']['ProductVisibility']
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. */
@@ -16985,6 +18603,12 @@ export interface components {
        * @description Whether the product is archived and no longer available.
        */
       is_archived: boolean
+      /**
+       * Product Type
+       * @description The type of product (e.g. 'digital', 'course').
+       * @default digital
+       */
+      product_type: string
       /**
        * Organization Id
        * Format: uuid4
@@ -17246,230 +18870,49 @@ export interface components {
        */
       benefit_id: string
       file: components['schemas']['FileDownload']
-    }
-    /** EmailUpdateRequest */
-    /** EmailSubscriber */
-    EmailSubscriber: {
-      /** Id */
-      id: string
-      /** @description Organization ID */
-      organization_id: string
-      /** Email */
-      email: string
-      /** Name */
-      name: string | null
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: 'active' | 'unsubscribed' | 'archived' | 'invalid'
-      /**
-       * Source
-       * @enum {string}
-       */
-      source: 'space_signup' | 'purchase' | 'manual' | 'import'
-      /** Import Source */
-      import_source: string | null
-      /** Customer Id */
-      customer_id: string | null
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /**
-       * Modified At
-       * Format: date-time
-       */
-      modified_at: string | null
-    }
-    /** EmailSubscriberCreate */
-    EmailSubscriberCreate: {
-      /** Email */
-      email: string
-      /** Name */
-      name?: string | null
-    }
-    /** EmailSubscriberUpdate */
-    EmailSubscriberUpdate: {
-      /** Name */
-      name?: string | null
-      /** Status */
-      status?: string | null
-    }
-    /** EmailSubscriberStats */
-    EmailSubscriberStats: {
-      /** Total */
-      total: number
-      /** Active */
-      active: number
-      /** Unsubscribed */
-      unsubscribed: number
-      /** Invalid */
-      invalid: number
-    }
-    /** ListResource[EmailSubscriber] */
-    ListResource_EmailSubscriber_: {
-      /** Items */
-      items: components['schemas']['EmailSubscriber'][]
-      pagination: components['schemas']['Pagination']
-    }
-    /** EmailBroadcast */
-    EmailBroadcast: {
-      /** Id */
-      id: string
-      /** @description Organization ID */
-      organization_id: string
-      /** Subject */
-      subject: string
-      /** Sender Name */
-      sender_name: string
-      /** Sender Email */
-      sender_email: string
-      /** Reply To Email */
-      reply_to_email: string | null
-      /** Content Json */
-      content_json: Record<string, unknown> | null
-      /** Content Html */
-      content_html: string | null
-      /** Segment Id */
-      segment_id: string | null
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: 'draft' | 'pending_approval' | 'sending' | 'sent' | 'failed' | 'scheduled'
-      /**
-       * Scheduled At
-       * Format: date-time
-       */
-      scheduled_at: string | null
-      /**
-       * Sent At
-       * Format: date-time
-       */
-      sent_at: string | null
-      /** Total Recipients */
-      total_recipients: number
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /**
-       * Modified At
-       * Format: date-time
-       */
-      modified_at: string | null
-    }
-    /** EmailBroadcastCreate */
-    EmailBroadcastCreate: {
-      /** Subject */
-      subject: string
-      /** Sender Name */
-      sender_name: string
-      /** Reply To Email */
-      reply_to_email?: string | null
-      /** Content Html */
-      content_html?: string | null
-      /** Content Json */
-      content_json?: Record<string, unknown> | null
-      /** Segment Id */
-      segment_id?: string | null
-    }
-    /** EmailBroadcastUpdate */
-    EmailBroadcastUpdate: {
-      /** Subject */
-      subject?: string | null
-      /** Sender Name */
-      sender_name?: string | null
-      /** Reply To Email */
-      reply_to_email?: string | null
-      /** Content Html */
-      content_html?: string | null
-      /** Content Json */
-      content_json?: Record<string, unknown> | null
-    }
-    /** EmailBroadcastAnalytics */
-    EmailBroadcastAnalytics: {
-      /** Total Recipients */
-      total_recipients: number
-      /** Delivered */
-      delivered: number
-      /** Opened */
-      opened: number
-      /** Clicked */
-      clicked: number
-      /** Bounced */
-      bounced: number
-      /** Open Rate */
-      open_rate: number
-      /** Click Rate */
-      click_rate: number
-    }
-    /** ListResource[EmailBroadcast] */
-    ListResource_EmailBroadcast_: {
-      /** Items */
-      items: components['schemas']['EmailBroadcast'][]
-      pagination: components['schemas']['Pagination']
-    }
-    /** StorefrontSubscribe */
-    StorefrontSubscribe: {
-      /** Email */
-      email: string
-      /** Name */
-      name?: string | null
-    }
-    /** EmailSegment */
-    EmailSegment: {
-      /** Id */
-      id: string
-      /** @description Organization ID */
-      organization_id: string
-      /** Name */
-      name: string
-      /** Slug */
-      slug: string
-      /** Type */
-      type: string
-      /** Product Id */
-      product_id: string | null
-      /** Is System */
-      is_system: boolean
-      /** Subscriber Count */
-      subscriber_count: number
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /**
-       * Modified At
-       * Format: date-time
-       */
-      modified_at: string | null
-    }
-    /** EmailSegmentCreate */
-    EmailSegmentCreate: {
-      /** Name */
-      name: string
-      /** Slug */
-      slug: string
-      /** Type */
-      type?: string
       /** Product Id */
       product_id?: string | null
+      /** Product Name */
+      product_name?: string | null
+      product_category?: components['schemas']['ProductCategory'] | null
+      /** Product Thumbnail Url */
+      product_thumbnail_url?: string | null
+      /**
+       * Downloaded Count
+       * @default 0
+       */
+      downloaded_count: number
+      /** Last Downloaded At */
+      last_downloaded_at?: string | null
     }
-    /** EmailSegmentUpdate */
-    EmailSegmentUpdate: {
-      /** Name */
-      name?: string | null
+    /** EmailSenderDomainStatus */
+    EmailSenderDomainStatus: {
+      /**
+       * Domain
+       * @description Configured custom sender domain (None if cleared).
+       */
+      domain: string | null
+      /**
+       * Verified At
+       * @description When DKIM verification last succeeded.
+       */
+      verified_at: string | null
+      /**
+       * Resend Id
+       * @description Resend's domain id, present once registered.
+       */
+      resend_id: string | null
+      /**
+       * Dns Records
+       * @description DNS records the creator must install (TXT/MX/CNAME). Each entry follows Resend's payload shape (record, name, value, type, status, ttl).
+       */
+      dns_records:
+        | {
+            [key: string]: string | number | null
+          }[]
+        | null
     }
-    /** EmailSegmentSubscriberAction */
-    EmailSegmentSubscriberAction: {
-      /** Subscriber Ids */
-      subscriber_ids: string[]
-    }
+    /** EmailUpdateRequest */
     EmailUpdateRequest: {
       /**
        * Email
@@ -17478,6 +18921,25 @@ export interface components {
       email: string
       /** Return To */
       return_to?: string | null
+    }
+    /** Entitlements */
+    Entitlements: {
+      /** @description Current Claidor subscription tier. */
+      tier: components['schemas']['TierKey']
+      /** @description List-price transaction fee for this tier. The actually-charged fee is on the merchant's Account record and may be lower for Scale customers with negotiated rates. */
+      transaction_fee: components['schemas']['TransactionFee']
+      limits: components['schemas']['TierLimits']
+      features: components['schemas']['TierFeatures']
+      /**
+       * Rate Limit Group
+       * @description API rate-limit group assigned to this tier.
+       */
+      rate_limit_group: string
+      /**
+       * Monthly Price Cents
+       * @description Monthly Claidor subscription price, in cents (0 = Legacy).
+       */
+      monthly_price_cents: number
     }
     Event:
       | components['schemas']['SystemEvent']
@@ -17507,11 +18969,11 @@ export interface components {
       external_id?: string | null
       /**
        * Parent Id
-       * @description The ID of the parent event. Can be either a Polar event ID (UUID) or an external event ID.
+       * @description The ID of the parent event. Can be either a Claidor event ID (UUID) or an external event ID.
        */
       parent_id?: string | null
       /**
-       * @description Key-value object allowing you to store additional information about the event. Some keys like `_llm` are structured data that are handled specially by Polar.
+       * @description Key-value object allowing you to store additional information about the event. Some keys like `_llm` are structured data that are handled specially by Claidor.
        *
        *     The key must be a string with a maximum length of **40 characters**.
        *     The value must be either:
@@ -17527,7 +18989,7 @@ export interface components {
       /**
        * Customer Id
        * Format: uuid4
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string
       /**
@@ -17561,11 +19023,11 @@ export interface components {
       external_id?: string | null
       /**
        * Parent Id
-       * @description The ID of the parent event. Can be either a Polar event ID (UUID) or an external event ID.
+       * @description The ID of the parent event. Can be either a Claidor event ID (UUID) or an external event ID.
        */
       parent_id?: string | null
       /**
-       * @description Key-value object allowing you to store additional information about the event. Some keys like `_llm` are structured data that are handled specially by Polar.
+       * @description Key-value object allowing you to store additional information about the event. Some keys like `_llm` are structured data that are handled specially by Claidor.
        *
        *     The key must be a string with a maximum length of **40 characters**.
        *     The value must be either:
@@ -17610,7 +19072,7 @@ export interface components {
        * @description The name of the event.
        */
       name: string
-      /** @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API. */
+      /** @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API. */
       source: components['schemas']['EventSource']
       /**
        * Occurrences
@@ -18065,6 +19527,291 @@ export interface components {
       | 'lte'
       | 'like'
       | 'not_like'
+    /** Form */
+    Form: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /**
+       * Created At
+       * Format: date-time
+       * @description Creation timestamp of the object.
+       */
+      created_at: string
+      /**
+       * Modified At
+       * @description Last modification timestamp of the object.
+       */
+      modified_at: string | null
+      /**
+       * Organization Id
+       * Format: uuid4
+       */
+      organization_id: string
+      /** Slug */
+      slug: string
+      /** Title */
+      title: string
+      /** Subtitle */
+      subtitle?: string | null
+      /** Button Label */
+      button_label: string
+      /** Success Message */
+      success_message?: string | null
+      status: components['schemas']['FormStatus']
+      /** File Id */
+      file_id?: string | null
+      /** Image Url */
+      image_url?: string | null
+      style?: components['schemas']['FormStyle']
+      /** Attached Custom Fields */
+      attached_custom_fields: components['schemas']['AttachedCustomField'][]
+    }
+    /** FormCreate */
+    FormCreate: {
+      /**
+       * Title
+       * @description Form heading.
+       */
+      title: string
+      /**
+       * Subtitle
+       * @description Supporting line under the title.
+       */
+      subtitle?: string | null
+      /**
+       * Button Label
+       * @description Submit button label.
+       * @default Submit
+       */
+      button_label: string
+      /**
+       * Success Message
+       * @description Message shown after a successful submission.
+       */
+      success_message?: string | null
+      /** @default draft */
+      status: components['schemas']['FormStatus']
+      /**
+       * Slug
+       * @description URL-friendly identifier, unique within the organization. Auto-generated from the title when omitted.
+       */
+      slug?: string | null
+      /**
+       * File Id
+       * @description ID of the uploaded file delivered as the lead magnet.
+       */
+      file_id?: string | null
+      /**
+       * Image Url
+       * @description Public URL of the cover image shown beside the form.
+       */
+      image_url?: string | null
+      style?: components['schemas']['FormStyle']
+      /**
+       * Attached Custom Fields
+       * @description List of custom fields to attach.
+       */
+      attached_custom_fields?: components['schemas']['AttachedCustomFieldCreate'][]
+      /**
+       * Organization Id
+       * @description The ID of the organization owning the form. Required when using a user token.
+       */
+      organization_id?: string | null
+    }
+    /** FormDownload */
+    FormDownload: {
+      /**
+       * Url
+       * @description Presigned, time-limited download URL.
+       */
+      url: string
+      /**
+       * Expires At
+       * Format: date-time
+       */
+      expires_at: string
+    }
+    /**
+     * FormPublic
+     * @description Renderable form definition exposed to anonymous visitors (Space card /
+     *     iframe embed). Never includes a download URL — that's issued only after a
+     *     successful submission.
+     */
+    FormPublic: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /**
+       * Organization Id
+       * Format: uuid4
+       */
+      organization_id: string
+      /** Title */
+      title: string
+      /** Subtitle */
+      subtitle?: string | null
+      /** Button Label */
+      button_label: string
+      /** Success Message */
+      success_message?: string | null
+      /**
+       * Has Lead Magnet
+       * @default false
+       */
+      has_lead_magnet: boolean
+      /** Lead Magnet Name */
+      lead_magnet_name?: string | null
+      /** Image Url */
+      image_url?: string | null
+      style?: components['schemas']['FormStyle']
+      /** Attached Custom Fields */
+      attached_custom_fields: components['schemas']['AttachedCustomField'][]
+    }
+    /**
+     * FormSortProperty
+     * @enum {string}
+     */
+    FormSortProperty:
+      | 'created_at'
+      | '-created_at'
+      | 'title'
+      | '-title'
+      | 'slug'
+      | '-slug'
+    /**
+     * FormStatus
+     * @enum {string}
+     */
+    FormStatus: 'draft' | 'published'
+    /**
+     * FormStyle
+     * @description Presentation options for the lead-magnet card.
+     */
+    FormStyle: {
+      /**
+       * Accent
+       * @description Accent hex.
+       * @default #3b49f4
+       */
+      accent: string
+      /**
+       * Corner
+       * @default sharp
+       * @enum {string}
+       */
+      corner: 'sharp' | 'rounded' | 'pill'
+      /**
+       * Media Side
+       * @default left
+       * @enum {string}
+       */
+      media_side: 'left' | 'right'
+      /**
+       * Show Consent
+       * @default true
+       */
+      show_consent: boolean
+      /**
+       * Media Position
+       * @description object-position of the cover image, as a CSS value (e.g. "50% 50%"). Lets the creator reposition the focal point.
+       * @default 50% 50%
+       */
+      media_position: string
+    }
+    /** FormSubmission */
+    FormSubmission: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /**
+       * Created At
+       * Format: date-time
+       * @description Creation timestamp of the object.
+       */
+      created_at: string
+      /**
+       * Modified At
+       * @description Last modification timestamp of the object.
+       */
+      modified_at: string | null
+      /**
+       * Form Id
+       * Format: uuid4
+       */
+      form_id: string
+      /** Email */
+      email: string
+      /** Name */
+      name?: string | null
+      /** Email Subscriber Id */
+      email_subscriber_id?: string | null
+      /** Custom Field Data */
+      custom_field_data?: {
+        [key: string]: string | number | boolean | null
+      }
+    }
+    /** FormSubmit */
+    FormSubmit: {
+      /**
+       * Custom Field Data
+       * @description Key-value object storing custom field values.
+       */
+      custom_field_data?: {
+        [key: string]: string | number | boolean | null
+      }
+      /**
+       * Email
+       * @description Subscriber email address
+       */
+      email: string
+      /**
+       * Name
+       * @description Subscriber name
+       */
+      name?: string | null
+    }
+    /** FormSubmitResult */
+    FormSubmitResult: {
+      /**
+       * Success
+       * @default true
+       */
+      success: boolean
+      /** Success Message */
+      success_message?: string | null
+      /** @description Immediate download for the lead magnet, when the form has one. */
+      download?: components['schemas']['FormDownload'] | null
+    }
+    /** FormUpdate */
+    FormUpdate: {
+      /** Title */
+      title?: string | null
+      /** Subtitle */
+      subtitle?: string | null
+      /** Button Label */
+      button_label?: string | null
+      /** Success Message */
+      success_message?: string | null
+      status?: components['schemas']['FormStatus'] | null
+      /** Slug */
+      slug?: string | null
+      /** File Id */
+      file_id?: string | null
+      /** Image Url */
+      image_url?: string | null
+      style?: components['schemas']['FormStyle'] | null
+      /** Attached Custom Fields */
+      attached_custom_fields?:
+        | components['schemas']['AttachedCustomFieldCreate'][]
+        | null
+    }
     /**
      * GenericPayment
      * @description Schema of a payment with a generic payment method.
@@ -18315,18 +20062,48 @@ export interface components {
        * @enum {string}
        */
       amount_type: 'custom'
+      /** @description The currency in which the customer will be charged. */
       price_currency: components['schemas']['PresentmentCurrency']
-      is_archived: boolean
-      /** @description Tax behavior for this price. Overrides the organization default if set. */
+      /** @description The tax behavior of the price. If null, it defaults to the organization's default tax behavior. */
       tax_behavior: components['schemas']['TaxBehaviorOption'] | null
+      /**
+       * Is Archived
+       * @description Whether the price is archived and no longer available.
+       */
+      is_archived: boolean
+      /**
+       * Product Id
+       * Format: uuid4
+       * @description The ID of the product owning the price.
+       */
       product_id: string
-      /** @constant */
+      /**
+       * Type
+       * @description The type of the price.
+       * @constant
+       */
       type: 'recurring'
+      /** @description The recurring interval of the price. */
       recurring_interval: components['schemas']['SubscriptionRecurringInterval']
+      /**
+       * Minimum Amount
+       * @description The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'. Defaults to 50 cents.
+       */
       minimum_amount: number
+      /**
+       * Maximum Amount
+       * @description The maximum amount the customer can pay.
+       */
       maximum_amount: number | null
+      /**
+       * Preset Amount
+       * @description The initial amount shown to the customer.
+       */
       preset_amount: number | null
-      /** @constant */
+      /**
+       * Legacy
+       * @constant
+       */
       readonly legacy: true
     }
     /**
@@ -18336,22 +20113,62 @@ export interface components {
      *     **Deprecated**: The recurring interval should be set on the product itself.
      */
     LegacyRecurringProductPriceFixed: {
+      /**
+       * Created At
+       * Format: date-time
+       * @description Creation timestamp of the object.
+       */
       created_at: string
+      /**
+       * Modified At
+       * @description Last modification timestamp of the object.
+       */
       modified_at: string | null
+      /**
+       * Id
+       * Format: uuid4
+       * @description The ID of the price.
+       */
       id: string
+      /** @description The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session. */
       source: components['schemas']['ProductPriceSource']
-      /** @enum {string} */
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
       amount_type: 'fixed'
+      /** @description The currency in which the customer will be charged. */
       price_currency: components['schemas']['PresentmentCurrency']
-      is_archived: boolean
-      /** @description Tax behavior for this price. Overrides the organization default if set. */
+      /** @description The tax behavior of the price. If null, it defaults to the organization's default tax behavior. */
       tax_behavior: components['schemas']['TaxBehaviorOption'] | null
+      /**
+       * Is Archived
+       * @description Whether the price is archived and no longer available.
+       */
+      is_archived: boolean
+      /**
+       * Product Id
+       * Format: uuid4
+       * @description The ID of the product owning the price.
+       */
       product_id: string
-      /** @constant */
+      /**
+       * Type
+       * @description The type of the price.
+       * @constant
+       */
       type: 'recurring'
+      /** @description The recurring interval of the price. */
       recurring_interval: components['schemas']['SubscriptionRecurringInterval']
+      /**
+       * Price Amount
+       * @description The price in cents.
+       */
       price_amount: number
-      /** @constant */
+      /**
+       * Legacy
+       * @constant
+       */
       readonly legacy: true
     }
     /**
@@ -18361,18 +20178,50 @@ export interface components {
      *     **Deprecated**: The recurring interval should be set on the product itself.
      */
     LegacyRecurringProductPriceFree: {
+      /**
+       * Created At
+       * Format: date-time
+       * @description Creation timestamp of the object.
+       */
       created_at: string
+      /**
+       * Modified At
+       * @description Last modification timestamp of the object.
+       */
       modified_at: string | null
+      /**
+       * Id
+       * Format: uuid4
+       * @description The ID of the price.
+       */
       id: string
+      /** @description The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session. */
       source: components['schemas']['ProductPriceSource']
-      /** @enum {string} */
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
       amount_type: 'free'
+      /** @description The currency in which the customer will be charged. */
       price_currency: components['schemas']['PresentmentCurrency']
-      is_archived: boolean
-      /** @description Tax behavior for this price. Overrides the organization default if set. */
+      /** @description The tax behavior of the price. If null, it defaults to the organization's default tax behavior. */
       tax_behavior: components['schemas']['TaxBehaviorOption'] | null
+      /**
+       * Is Archived
+       * @description Whether the price is archived and no longer available.
+       */
+      is_archived: boolean
+      /**
+       * Product Id
+       * Format: uuid4
+       * @description The ID of the product owning the price.
+       */
       product_id: string
-      /** @constant */
+      /**
+       * Type
+       * @description The type of the price.
+       * @constant
+       */
       type: 'recurring'
       /** @description The recurring interval of the price. */
       recurring_interval: components['schemas']['SubscriptionRecurringInterval']
@@ -18758,6 +20607,12 @@ export interface components {
       items: components['schemas']['Account'][]
       pagination: components['schemas']['Pagination']
     }
+    /** ListResource[AuditLogEntry] */
+    ListResource_AuditLogEntry_: {
+      /** Items */
+      items: components['schemas']['AuditLogEntry'][]
+      pagination: components['schemas']['Pagination']
+    }
     /** ListResource[BenefitGrant] */
     ListResource_BenefitGrant_: {
       /** Items */
@@ -18780,6 +20635,12 @@ export interface components {
     ListResource_Checkout_: {
       /** Items */
       items: components['schemas']['Checkout'][]
+      pagination: components['schemas']['Pagination']
+    }
+    /** ListResource[ClientInvoiceSchema] */
+    ListResource_ClientInvoiceSchema_: {
+      /** Items */
+      items: components['schemas']['ClientInvoiceSchema'][]
       pagination: components['schemas']['Pagination']
     }
     /** ListResource[CustomField] */
@@ -18884,6 +20745,18 @@ export interface components {
       )[]
       pagination: components['schemas']['Pagination']
     }
+    /** ListResource[FormSubmission] */
+    ListResource_FormSubmission_: {
+      /** Items */
+      items: components['schemas']['FormSubmission'][]
+      pagination: components['schemas']['Pagination']
+    }
+    /** ListResource[Form] */
+    ListResource_Form_: {
+      /** Items */
+      items: components['schemas']['Form'][]
+      pagination: components['schemas']['Pagination']
+    }
     /** ListResource[LicenseKeyRead] */
     ListResource_LicenseKeyRead_: {
       /** Items */
@@ -18948,6 +20821,12 @@ export interface components {
     ListResource_PersonalAccessToken_: {
       /** Items */
       items: components['schemas']['PersonalAccessToken'][]
+      pagination: components['schemas']['Pagination']
+    }
+    /** ListResource[PlatformOrder] */
+    ListResource_PlatformOrder_: {
+      /** Items */
+      items: components['schemas']['PlatformOrder'][]
       pagination: components['schemas']['Pagination']
     }
     /** ListResource[Product] */
@@ -19179,6 +21058,32 @@ export interface components {
       readonly formatted_address_country: string | null
       /** Order Url */
       readonly order_url: string | null
+    }
+    /** MaintainerPerksUnlockedNotification */
+    MaintainerPerksUnlockedNotification: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'MaintainerPerksUnlockedNotification'
+      payload: components['schemas']['MaintainerPerksUnlockedNotificationPayload']
+    }
+    /** MaintainerPerksUnlockedNotificationPayload */
+    MaintainerPerksUnlockedNotificationPayload: {
+      /** Organization Name */
+      organization_name: string
+      /** Perks Url */
+      readonly perks_url: string
     }
     /**
      * Member
@@ -19444,7 +21349,7 @@ export interface components {
     }
     /**
      * MeterCreditEvent
-     * @description An event created by Polar when credits are added to a customer meter.
+     * @description An event created by Claidor when credits are added to a customer meter.
      */
     MeterCreditEvent: {
       /**
@@ -19468,7 +21373,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -19506,7 +21411,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -19554,7 +21459,7 @@ export interface components {
     }
     /**
      * MeterResetEvent
-     * @description An event created by Polar when a customer meter is reset.
+     * @description An event created by Claidor when a customer meter is reset.
      */
     MeterResetEvent: {
       /**
@@ -19578,7 +21483,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -19616,7 +21521,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -20118,6 +22023,9 @@ export interface components {
         | components['schemas']['MaintainerNewProductSaleNotification']
         | components['schemas']['MaintainerCreateAccountNotification']
         | components['schemas']['MaintainerAccountCreditsGrantedNotification']
+        | components['schemas']['MaintainerPerksUnlockedNotification']
+        | components['schemas']['CommunityPostNewOnCourseNotification']
+        | components['schemas']['CommunityPostReplyNotification']
       )[]
       /** Last Read Notification Id */
       last_read_notification_id: string | null
@@ -20160,7 +22068,7 @@ export interface components {
       response_types: 'code'[]
       /**
        * Scope
-       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write refunds:read refunds:write payments:read metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write
+       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write
        */
       scope: string
       /** Client Name */
@@ -20225,7 +22133,7 @@ export interface components {
       response_types: 'code'[]
       /**
        * Scope
-       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write refunds:read refunds:write payments:read metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write
+       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write
        */
       scope: string
       /** Client Name */
@@ -20271,7 +22179,7 @@ export interface components {
       response_types: 'code'[]
       /**
        * Scope
-       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write refunds:read refunds:write payments:read metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write
+       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write
        */
       scope: string
       /** Client Name */
@@ -20521,6 +22429,7 @@ export interface components {
       | 'subscription_create'
       | 'subscription_cycle'
       | 'subscription_update'
+      | 'client_invoice'
     /**
      * OrderBillingReasonInternal
      * @description Internal billing reasons with additional granularity.
@@ -20532,6 +22441,7 @@ export interface components {
       | 'subscription_cycle'
       | 'subscription_cycle_after_trial'
       | 'subscription_update'
+      | 'client_invoice'
     /** OrderCustomer */
     OrderCustomer: {
       /**
@@ -20679,7 +22589,7 @@ export interface components {
     }
     /**
      * OrderPaidEvent
-     * @description An event created by Polar when an order is paid.
+     * @description An event created by Claidor when an order is paid.
      */
     OrderPaidEvent: {
       /**
@@ -20703,7 +22613,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -20741,7 +22651,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -20820,24 +22730,8 @@ export interface components {
        * @description The description of the product.
        */
       description: string | null
-      /**
-       * Category
-       * @description The digital product category.
-       */
-      category:
-        | 'ebook'
-        | 'template'
-        | 'assets'
-        | 'course'
-        | 'guide'
-        | 'music'
-        | 'video'
-        | 'photo'
-        | 'software'
-        | 'coaching'
-        | 'membership'
-        | 'other'
-        | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The visibility of the product. */
       visibility: components['schemas']['ProductVisibility']
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. */
@@ -20860,6 +22754,12 @@ export interface components {
        */
       is_archived: boolean
       /**
+       * Product Type
+       * @description The type of product (e.g. 'digital', 'course').
+       * @default digital
+       */
+      product_type: string
+      /**
        * Organization Id
        * Format: uuid4
        * @description The ID of the organization owning the product.
@@ -20868,7 +22768,7 @@ export interface components {
     }
     /**
      * OrderRefundedEvent
-     * @description An event created by Polar when an order is refunded.
+     * @description An event created by Claidor when an order is refunded.
      */
     OrderRefundedEvent: {
       /**
@@ -20892,7 +22792,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -20930,7 +22830,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -21213,6 +23113,11 @@ export interface components {
        * @description When the business details were submitted.
        */
       details_submitted_at: string | null
+      /**
+       * Ai Onboarding Completed At
+       * @description When the creator finished the onboarding flow (plan + review + assistant). Until this is set, the dashboard layout redirects the creator back to /onboarding/plan to prevent skipping the plan-selection step.
+       */
+      ai_onboarding_completed_at?: string | null
       /** @description Default presentment currency. Used as fallback in checkout and customer portal, if the customer's local currency is not available. */
       default_presentment_currency: components['schemas']['PresentmentCurrency']
       /** @description Default tax behavior applied on products. */
@@ -21230,7 +23135,7 @@ export interface components {
       /** @description Settings related to the customer portal */
       customer_portal_settings: components['schemas']['OrganizationCustomerPortalSettings']
       /** @description Storefront settings */
-      storefront_settings:
+      storefront_settings?:
         | components['schemas']['OrganizationStorefrontSettings']
         | null
     }
@@ -21348,7 +23253,7 @@ export interface components {
       mime_type: string
       /**
        * Size
-       * @description Size of the file. A maximum of 1 MB is allowed for this type of file.
+       * @description Size of the file. A maximum of 5 MB is allowed for this type of file.
        */
       size: number
       /** Checksum Sha256 Base64 */
@@ -21415,321 +23320,6 @@ export interface components {
       /** Public Url */
       readonly public_url: string
     }
-    /** OrganizationStorefrontSettings */
-    OrganizationStorefrontSettings: {
-      /**
-       * Enabled
-       * @description Whether the storefront is enabled
-       */
-      enabled?: boolean
-      /**
-       * Theme
-       * @description Color theme for the public storefront
-       * @default light
-       * @enum {string}
-       */
-      theme?: 'light' | 'dark'
-      /**
-       * Show Header
-       * @description Show the storefront header/banner
-       */
-      show_header?: boolean
-      /**
-       * Header Image Url
-       * @description URL of the storefront header/banner image
-       */
-      header_image_url?: string | null
-      /**
-       * Show Logo
-       * @description Show the organization logo
-       */
-      show_logo?: boolean
-      /**
-       * Show Name
-       * @description Show the organization name
-       */
-      show_name?: boolean
-      /**
-       * Show Description
-       * @description Show the storefront description
-       */
-      show_description?: boolean
-      /**
-       * Description
-       * @description Storefront description
-       */
-      description?: string | null
-      /**
-       * Meta Title
-       * @description SEO title for the storefront — used as the page <title> and social card title. Falls back to the organization name.
-       */
-      meta_title?: string | null
-      /**
-       * Meta Description
-       * @description SEO meta description / social card summary. Falls back to the storefront description.
-       */
-      meta_description?: string | null
-      /**
-       * Index
-       * @description Allow search engines to index the storefront
-       * @default true
-       */
-      index?: boolean
-      /**
-       * Thumbnail Size
-       * @description Product thumbnail size
-       * @enum {string}
-       */
-      thumbnail_size?: 'small' | 'medium' | 'large'
-      /**
-       * Show Product Details
-       * @description Show product details (name, price)
-       */
-      show_product_details?: boolean
-      /**
-       * Profile Title
-       * @description Profile title (e.g. Designer, 3D Artist)
-       */
-      profile_title?: string | null
-      /**
-       * Skills
-       * @description Skill/expertise tags displayed on the profile
-       */
-      skills?: string[]
-      /**
-       * Languages
-       * @description Languages spoken
-       */
-      languages?: string[]
-      /**
-       * Available For Work
-       * @description Show 'Available for work' badge on the profile
-       */
-      available_for_work?: boolean
-      /**
-       * Contact Url
-       * @description Where the 'Available for work' badge sends visitors. Accepts an https:// URL (e.g. a contact form, calendar booking link) or a mailto: URL. When unset, the badge is non-interactive.
-       */
-      contact_url?: string | null
-      /**
-       * Featured Mode
-       * @description How to choose which products appear on the storefront. 'all' (default) shows every active product, including ones created after the storefront was set up. 'curated' shows only the IDs in featured_product_ids.
-       * @default all
-       * @enum {string}
-       */
-      featured_mode?: 'all' | 'curated'
-      /**
-       * Featured Product Ids
-       * @description Product IDs to feature on the storefront when featured_mode is 'curated'. Ignored when featured_mode is 'all'.
-       */
-      featured_product_ids?: string[]
-      /**
-       * Show Card Products
-       * @description Show product images in the profile card
-       */
-      show_card_products?: boolean
-      /**
-       * Storefront Links
-       * @description Links displayed on the storefront
-       */
-      storefront_links?: {
-        id: string
-        url: string
-        title?: string | null
-        description?: string | null
-        image_url?: string | null
-        type?: 'standard' | 'embedded'
-        platform?: string | null
-      }[]
-      /**
-       * Links Position
-       * @description Where to show the links relative to products
-       * @enum {string}
-       */
-      links_position?: 'before_products' | 'after_products'
-      /**
-       * Block Order
-       * @description Explicit ordering for the storefront's content blocks. The renderer iterates this list top-to-bottom.
-       */
-      block_order?: ('products' | 'links' | 'forms')[]
-      /**
-       * Links Layout
-       * @description Visual layout for the links section
-       * @enum {string}
-       */
-      links_layout?: 'classic' | 'carousel' | 'image_grid' | 'card'
-      /**
-       * Header Focal Point
-       * @description CSS object-position value for the cover image focal point (e.g. '50% 30%')
-       */
-      header_focal_point?: string | null
-    }
-    /**
-     * StorefrontHeaderFileCreate
-     * @description Schema to create a file to be used as a storefront header/banner image.
-     */
-    StorefrontHeaderFileCreate: {
-      /** Organization Id */
-      organization_id?: string | null
-      /** Name */
-      name: string
-      /**
-       * Mime Type
-       * @description MIME type of the file. Only images are supported for this type of file.
-       */
-      mime_type: string
-      /**
-       * Size
-       * @description Size of the file. A maximum of 10 MB is allowed for this type of file.
-       */
-      size: number
-      /** Checksum Sha256 Base64 */
-      checksum_sha256_base64?: string | null
-      upload: components['schemas']['S3FileCreateMultipart']
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      service: 'storefront_header'
-      /** Version */
-      version?: string | null
-    }
-    /**
-     * StorefrontHeaderFileRead
-     * @description File to be used as a storefront header/banner image.
-     */
-    StorefrontHeaderFileRead: {
-      /**
-       * Id
-       * Format: uuid4
-       * @description The ID of the object.
-       */
-      id: string
-      /**
-       * Organization Id
-       * Format: uuid4
-       */
-      organization_id: string
-      /** Name */
-      name: string
-      /** Path */
-      path: string
-      /** Mime Type */
-      mime_type: string
-      /** Size */
-      size: number
-      /** Storage Version */
-      storage_version: string | null
-      /** Checksum Etag */
-      checksum_etag: string | null
-      /** Checksum Sha256 Base64 */
-      checksum_sha256_base64: string | null
-      /** Checksum Sha256 Hex */
-      checksum_sha256_hex: string | null
-      /** Last Modified At */
-      last_modified_at: string | null
-      /** Version */
-      version: string | null
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      service: 'storefront_header'
-      /** Is Uploaded */
-      is_uploaded: boolean
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Size Readable */
-      readonly size_readable: string
-      /** Public Url */
-      readonly public_url: string
-    }
-    /**
-     * StorefrontLinkFileCreate
-     * @description Schema to create a file to be used as a storefront link cover image.
-     */
-    StorefrontLinkFileCreate: {
-      /** Organization Id */
-      organization_id?: string | null
-      /** Name */
-      name: string
-      /**
-       * Mime Type
-       * @description MIME type of the file. Only images are supported for this type of file.
-       */
-      mime_type: string
-      /**
-       * Size
-       * @description Size of the file. A maximum of 5 MB is allowed for this type of file.
-       */
-      size: number
-      /** Checksum Sha256 Base64 */
-      checksum_sha256_base64?: string | null
-      upload: components['schemas']['S3FileCreateMultipart']
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      service: 'storefront_link'
-      /** Version */
-      version?: string | null
-    }
-    /**
-     * StorefrontLinkFileRead
-     * @description File to be used as a storefront link cover image.
-     */
-    StorefrontLinkFileRead: {
-      /**
-       * Id
-       * Format: uuid4
-       * @description The ID of the object.
-       */
-      id: string
-      /**
-       * Organization Id
-       * Format: uuid4
-       */
-      organization_id: string
-      /** Name */
-      name: string
-      /** Path */
-      path: string
-      /** Mime Type */
-      mime_type: string
-      /** Size */
-      size: number
-      /** Storage Version */
-      storage_version: string | null
-      /** Checksum Etag */
-      checksum_etag: string | null
-      /** Checksum Sha256 Base64 */
-      checksum_sha256_base64: string | null
-      /** Checksum Sha256 Hex */
-      checksum_sha256_hex: string | null
-      /** Last Modified At */
-      last_modified_at: string | null
-      /** Version */
-      version: string | null
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      service: 'storefront_link'
-      /** Is Uploaded */
-      is_uploaded: boolean
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Size Readable */
-      readonly size_readable: string
-      /** Public Url */
-      readonly public_url: string
-    }
     /** OrganizationCreate */
     OrganizationCreate: {
       /** Name */
@@ -21753,10 +23343,13 @@ export interface components {
        * @description Link to social profiles.
        */
       socials?: components['schemas']['OrganizationSocialLink'][] | null
-      /** @description Additional, private, business details Polar needs about active organizations for compliance (KYC). */
+      /** @description Additional, private, business details Claidor needs about active organizations for compliance (KYC). */
       details?: components['schemas']['OrganizationDetails'] | null
-      /** @description Default tax behavior applied on products. */
-      default_tax_behavior?: components['schemas']['TaxBehaviorOption'] | null
+      /**
+       * @description Default tax behavior applied on products.
+       * @default location
+       */
+      default_tax_behavior: components['schemas']['TaxBehaviorOption']
       feature_settings?:
         | components['schemas']['OrganizationFeatureSettings']
         | null
@@ -21776,6 +23369,18 @@ export interface components {
         | components['schemas']['OrganizationStorefrontSettings']
         | null
     }
+    /**
+     * OrganizationCustomDomainStatus
+     * @description Lifecycle of a creator's storefront domain.
+     *
+     *     pending: saved, waiting for the creator to install DNS records.
+     *     active: DNS verified; the domain serves the storefront/portal.
+     *     failed: was active (or verifying) but DNS checks have been failing
+     *         past the failure threshold; excluded from storefront lookup until
+     *         a check succeeds again.
+     * @enum {string}
+     */
+    OrganizationCustomDomainStatus: 'pending' | 'active' | 'failed'
     /** OrganizationCustomerEmailSettings */
     OrganizationCustomerEmailSettings: {
       /** Order Confirmation */
@@ -21835,6 +23440,7 @@ export interface components {
       /**
        * About
        * @description Brief information about you and your business.
+       * @default
        */
       about: string
       /**
@@ -21844,17 +23450,19 @@ export interface components {
       product_description: string
       /**
        * Intended Use
-       * @description How the organization will integrate and use Polar.
+       * @description How the organization will integrate and use Claidor.
+       * @default
        */
       intended_use: string
       /**
        * Customer Acquisition
        * @description Main customer acquisition channels.
        */
-      customer_acquisition: string[]
+      customer_acquisition?: string[]
       /**
        * Future Annual Revenue
        * @description Estimated revenue in the next 12 months
+       * @default 0
        */
       future_annual_revenue: number
       /**
@@ -21892,6 +23500,12 @@ export interface components {
        */
       seat_based_pricing_enabled: boolean
       /**
+       * Course Player White Label
+       * @description When true, the course lesson player hides Claidor branding. Requires the white_label_course_player tier feature (Scale).
+       * @default false
+       */
+      course_player_white_label: boolean
+      /**
        * Revops Enabled
        * @description If this organization has RevOps enabled
        * @default false
@@ -21921,6 +23535,12 @@ export interface components {
        * @default false
        */
       tinybird_compare: boolean
+      /**
+       * Perks Unlocked
+       * @description If this organization has unlocked the Startup Stack perks by completing their first sale
+       * @default false
+       */
+      perks_unlocked: boolean
     }
     /** OrganizationMember */
     OrganizationMember: {
@@ -22146,6 +23766,163 @@ export interface components {
       | 'ongoing_review'
       | 'denied'
       | 'active'
+    /** OrganizationStorefrontSettings */
+    OrganizationStorefrontSettings: {
+      /**
+       * Enabled
+       * @description Whether the storefront is enabled
+       * @default false
+       */
+      enabled: boolean
+      /**
+       * Theme
+       * @description Color theme for the public storefront
+       * @default light
+       * @enum {string}
+       */
+      theme: 'light' | 'dark'
+      /**
+       * Show Header
+       * @description Show the storefront header/banner
+       * @default true
+       */
+      show_header: boolean
+      /**
+       * Header Image Url
+       * @description URL of the storefront header/banner image
+       */
+      header_image_url?: string | null
+      /**
+       * Show Logo
+       * @description Show the organization logo
+       * @default true
+       */
+      show_logo: boolean
+      /**
+       * Show Name
+       * @description Show the organization name
+       * @default true
+       */
+      show_name: boolean
+      /**
+       * Show Description
+       * @description Show the storefront description
+       * @default true
+       */
+      show_description: boolean
+      /**
+       * Description
+       * @description Storefront description
+       */
+      description?: string | null
+      /**
+       * Meta Title
+       * @description SEO title for the storefront — used as the page <title> and social card title. Falls back to the organization name.
+       */
+      meta_title?: string | null
+      /**
+       * Meta Description
+       * @description SEO meta description / social card summary. Falls back to the storefront description.
+       */
+      meta_description?: string | null
+      /**
+       * Index
+       * @description Allow search engines to index the storefront
+       * @default true
+       */
+      index: boolean
+      /**
+       * Thumbnail Size
+       * @description Product thumbnail size
+       * @default large
+       * @enum {string}
+       */
+      thumbnail_size: 'small' | 'medium' | 'large'
+      /**
+       * Show Product Details
+       * @description Show product details (name, price)
+       * @default true
+       */
+      show_product_details: boolean
+      /**
+       * Profile Title
+       * @description Profile title (e.g. Designer, 3D Artist)
+       */
+      profile_title?: string | null
+      /**
+       * Skills
+       * @description Skill/expertise tags displayed on the profile
+       */
+      skills?: string[]
+      /**
+       * Languages
+       * @description Languages spoken
+       */
+      languages?: string[]
+      /**
+       * Available For Work
+       * @description Show 'Available for work' badge on the profile
+       * @default false
+       */
+      available_for_work: boolean
+      /**
+       * Contact Url
+       * @description Where the 'Available for work' badge sends visitors. Accepts an https:// URL (e.g. a contact form, calendar booking link) or a mailto: URL. When unset, the badge is non-interactive.
+       */
+      contact_url?: string | null
+      /**
+       * Featured Mode
+       * @description How to choose which products appear on the storefront. 'curated' (default) shows only the products the creator explicitly added via featured_product_ids. 'all' is a legacy mode that auto-shows every active product; kept so existing rows still validate.
+       * @default curated
+       * @enum {string}
+       */
+      featured_mode: 'all' | 'curated'
+      /**
+       * Featured Product Ids
+       * @description Product IDs to feature on the storefront when featured_mode is 'curated'. Ignored when featured_mode is 'all'.
+       */
+      featured_product_ids?: string[]
+      /**
+       * Show Card Products
+       * @description Show product images in the profile card
+       * @default true
+       */
+      show_card_products: boolean
+      /**
+       * Storefront Links
+       * @description Links displayed in a carousel on the storefront
+       */
+      storefront_links?: components['schemas']['StorefrontLink'][]
+      /**
+       * Links Position
+       * @description DEPRECATED — use block_order. Where to show the links section relative to products. Kept so existing rows still validate.
+       * @default after_products
+       * @enum {string}
+       */
+      links_position: 'before_products' | 'after_products'
+      /**
+       * Block Order
+       * @description Explicit ordering for the storefront's content blocks. The renderer iterates this list top-to-bottom, so creators can drag-reorder Products / Links / Forms freely. Backfilled from links_position for existing rows.
+       */
+      block_order?: ('products' | 'links' | 'forms')[]
+      /**
+       * Links Layout
+       * @description Visual layout for the links section (default per-link layout)
+       * @default classic
+       * @enum {string}
+       */
+      links_layout: 'classic' | 'carousel' | 'image_grid' | 'card'
+      /**
+       * Header Focal Point
+       * @description CSS object-position value for the cover image focal point (e.g. '50% 30%')
+       */
+      header_focal_point?: string | null
+      /**
+       * Space Items
+       * @description Flat ordered list of everything on the Space. When non-empty this is the single source of truth for the Space's render order — products and links interleave freely. When empty, the renderer falls back to deriving order from featured_product_ids + storefront_links + block_order for backwards compatibility with Spaces created before this model existed.
+       */
+      space_items?: components['schemas']['SpaceItem'][]
+    }
     /** OrganizationSubscribePromoteSettings */
     OrganizationSubscribePromoteSettings: {
       /**
@@ -22192,7 +23969,7 @@ export interface components {
       customer_portal_sign_in_image_position?: string | null
       /**
        * Customer Portal Sign In Theme
-       * @description Creator-chosen appearance for the customer portal sign-in screen.
+       * @description Creator-chosen appearance for the customer portal sign-in screen: 'light' or 'dark'.
        */
       customer_portal_sign_in_theme?: string | null
       /**
@@ -22210,10 +23987,12 @@ export interface components {
        * @description Links to social profiles.
        */
       socials?: components['schemas']['OrganizationSocialLink'][] | null
-      /** @description Additional, private, business details Polar needs about active organizations for compliance (KYC). */
+      /** @description Additional, private, business details Claidor needs about active organizations for compliance (KYC). */
       details?: components['schemas']['OrganizationDetails'] | null
       /** @description Default presentment currency for products and checkout. */
-      default_presentment_currency?: components['schemas']['PresentmentCurrency'] | null
+      default_presentment_currency?:
+        | components['schemas']['PresentmentCurrency']
+        | null
       /** @description Default tax behavior applied on products. */
       default_tax_behavior?: components['schemas']['TaxBehaviorOption'] | null
       feature_settings?:
@@ -22234,6 +24013,22 @@ export interface components {
       storefront_settings?:
         | components['schemas']['OrganizationStorefrontSettings']
         | null
+      /**
+       * Email Sender Domain
+       * @description Custom outbound email sender domain (Pro+). Setting this clears the verification timestamp; operations re-verifies DKIM and stamps email_sender_verified_at when ready. Pass an empty string to clear the domain (reverts to the platform default sender).
+       */
+      email_sender_domain?: string | null
+    }
+    /**
+     * OrganizationUsage
+     * @description Snapshot of every tier-gated quota for an organization.
+     */
+    OrganizationUsage: {
+      /**
+       * Items
+       * @description One entry per QuotaKey, in declaration order.
+       */
+      items: components['schemas']['QuotaUsage'][]
     }
     /**
      * OwnerCreate
@@ -22550,6 +24345,39 @@ export interface components {
       last_used_at: string | null
     }
     /**
+     * PlatformBillingDetails
+     * @description The billing identity used on the org's Claidor invoices — read off
+     *     the org's platform Customer row. Powers the dashboard "Billing address"
+     *     section so the creator never has to leave for the customer portal.
+     */
+    PlatformBillingDetails: {
+      /**
+       * Billing Name
+       * @description Name shown on invoices.
+       */
+      billing_name: string | null
+      /** @description Address shown on invoices. */
+      billing_address: components['schemas']['Address'] | null
+      /**
+       * Tax Id
+       * @description Validated tax ID, if provided.
+       */
+      tax_id: [string, components['schemas']['TaxIDFormat']] | null
+      /**
+       * Default Payment Method Id
+       * @description Id of the card Claidor charges by default, if any.
+       */
+      default_payment_method_id: string | null
+    }
+    /** PlatformBillingDetailsUpdate */
+    PlatformBillingDetailsUpdate: {
+      /** Billing Name */
+      billing_name?: string | null
+      billing_address?: components['schemas']['AddressInput'] | null
+      /** Tax Id */
+      tax_id?: string | null
+    }
+    /**
      * PlatformFeeType
      * @description Type of fees applied by Polar, and billed to the users.
      * @enum {string}
@@ -22565,6 +24393,64 @@ export interface components {
       | 'dispute'
       | 'fee_credit'
       | 'platform'
+    /**
+     * PlatformOrder
+     * @description One past Claidor charge, trimmed to what the dashboard order-history
+     *     table renders (invoice number, date, description, amount, status,
+     *     whether an invoice PDF is downloadable).
+     */
+    PlatformOrder: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /**
+       * Invoice Number
+       * @description Human invoice number.
+       */
+      invoice_number: string | null
+      /**
+       * Description
+       * @description What the charge was for.
+       */
+      description: string
+      /**
+       * Total Amount
+       * @description Charged amount in cents.
+       */
+      total_amount: number
+      /** Currency */
+      currency: string
+      /**
+       * Status
+       * @description Order status (paid, pending, refunded…).
+       */
+      status: string
+      /**
+       * Refunded Amount
+       * @description Refunded amount in cents.
+       */
+      refunded_amount: number
+      /**
+       * Is Invoice Generated
+       * @description Whether an invoice PDF exists to download.
+       */
+      is_invoice_generated: boolean
+    }
+    /** PlatformOrderInvoice */
+    PlatformOrderInvoice: {
+      /**
+       * Url
+       * @description Signed URL to download the invoice PDF.
+       */
+      url: string
+    }
     /**
      * PledgeState
      * @enum {string}
@@ -22790,24 +24676,8 @@ export interface components {
        * @description The description of the product.
        */
       description: string | null
-      /**
-       * Category
-       * @description The digital product category.
-       */
-      category:
-        | 'ebook'
-        | 'template'
-        | 'assets'
-        | 'course'
-        | 'guide'
-        | 'music'
-        | 'video'
-        | 'photo'
-        | 'software'
-        | 'coaching'
-        | 'membership'
-        | 'other'
-        | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The visibility of the product. */
       visibility: components['schemas']['ProductVisibility']
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. */
@@ -22829,6 +24699,12 @@ export interface components {
        * @description Whether the product is archived and no longer available.
        */
       is_archived: boolean
+      /**
+       * Product Type
+       * @description The type of product (e.g. 'digital', 'course').
+       * @default digital
+       */
+      product_type: string
       /**
        * Organization Id
        * Format: uuid4
@@ -22876,6 +24752,23 @@ export interface components {
      * @enum {string}
      */
     ProductBillingType: 'one_time' | 'recurring'
+    /**
+     * ProductCategory
+     * @enum {string}
+     */
+    ProductCategory:
+      | 'ebook'
+      | 'template'
+      | 'assets'
+      | 'course'
+      | 'guide'
+      | 'music'
+      | 'video'
+      | 'photo'
+      | 'software'
+      | 'coaching'
+      | 'membership'
+      | 'other'
     ProductCreate:
       | components['schemas']['ProductCreateRecurring']
       | components['schemas']['ProductCreateOneTime']
@@ -22908,6 +24801,8 @@ export interface components {
        * @description The description of the product.
        */
       description?: string | null
+      /** @description The digital product category (ebook, template, course, etc.). */
+      category?: components['schemas']['ProductCategory'] | null
       /**
        * @description The visibility of the product.
        * @default public
@@ -22979,6 +24874,8 @@ export interface components {
        * @description The description of the product.
        */
       description?: string | null
+      /** @description The digital product category (ebook, template, course, etc.). */
+      category?: components['schemas']['ProductCategory'] | null
       /**
        * @description The visibility of the product.
        * @default public
@@ -23146,13 +25043,13 @@ export interface components {
       amount_type: 'custom'
       /** @description The currency in which the customer will be charged. */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If null, it defaults to the organization's default tax behavior. */
+      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Is Archived
        * @description Whether the price is archived and no longer available.
        */
       is_archived: boolean
-      /** @description Tax behavior for this price. Overrides the organization default if set. */
-      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Product Id
        * Format: uuid4
@@ -23196,6 +25093,8 @@ export interface components {
        * @default usd
        */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If not set, it will default to the organization's default tax behavior. */
+      tax_behavior?: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Minimum Amount
        * @description The minimum amount the customer can pay. If set to 0, the price is 'free or pay what you want' and $0 is accepted. If set to a value between 1-49, it will be rejected. Defaults to 50 cents.
@@ -23244,13 +25143,13 @@ export interface components {
       amount_type: 'fixed'
       /** @description The currency in which the customer will be charged. */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If null, it defaults to the organization's default tax behavior. */
+      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Is Archived
        * @description Whether the price is archived and no longer available.
        */
       is_archived: boolean
-      /** @description Tax behavior for this price. Overrides the organization default if set. */
-      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Product Id
        * Format: uuid4
@@ -23284,6 +25183,8 @@ export interface components {
        * @default usd
        */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If not set, it will default to the organization's default tax behavior. */
+      tax_behavior?: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Price Amount
        * @description The price in cents.
@@ -23321,13 +25222,13 @@ export interface components {
       amount_type: 'free'
       /** @description The currency in which the customer will be charged. */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If null, it defaults to the organization's default tax behavior. */
+      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Is Archived
        * @description Whether the price is archived and no longer available.
        */
       is_archived: boolean
-      /** @description Tax behavior for this price. Overrides the organization default if set. */
-      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Product Id
        * Format: uuid4
@@ -23356,6 +25257,8 @@ export interface components {
        * @default usd
        */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If not set, it will default to the organization's default tax behavior. */
+      tax_behavior?: components['schemas']['TaxBehaviorOption'] | null
     }
     /**
      * ProductPriceMeter
@@ -23405,13 +25308,13 @@ export interface components {
       amount_type: 'metered_unit'
       /** @description The currency in which the customer will be charged. */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If null, it defaults to the organization's default tax behavior. */
+      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Is Archived
        * @description Whether the price is archived and no longer available.
        */
       is_archived: boolean
-      /** @description Tax behavior for this price. Overrides the organization default if set. */
-      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Product Id
        * Format: uuid4
@@ -23458,6 +25361,8 @@ export interface components {
        * @default usd
        */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If not set, it will default to the organization's default tax behavior. */
+      tax_behavior?: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Meter Id
        * Format: uuid4
@@ -23506,13 +25411,13 @@ export interface components {
       amount_type: 'seat_based'
       /** @description The currency in which the customer will be charged. */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If null, it defaults to the organization's default tax behavior. */
+      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Is Archived
        * @description Whether the price is archived and no longer available.
        */
       is_archived: boolean
-      /** @description Tax behavior for this price. Overrides the organization default if set. */
-      tax_behavior: components['schemas']['TaxBehaviorOption'] | null
       /**
        * Product Id
        * Format: uuid4
@@ -23530,7 +25435,10 @@ export interface components {
     }
     /**
      * ProductPriceSeatBasedCreate
-     * @description Schema to create a seat-based price with volume-based tiers.
+     * @description Schema to create a seat-based price with tiered pricing.
+     *
+     *     Supports volume pricing (all seats at matching tier's rate) and
+     *     graduated pricing (each tier's range priced independently).
      */
     ProductPriceSeatBasedCreate: {
       /**
@@ -23543,6 +25451,8 @@ export interface components {
        * @default usd
        */
       price_currency: components['schemas']['PresentmentCurrency']
+      /** @description The tax behavior of the price. If not set, it will default to the organization's default tax behavior. */
+      tax_behavior?: components['schemas']['TaxBehaviorOption'] | null
       /** @description Tiered pricing based on seat quantity */
       seat_tiers: components['schemas']['ProductPriceSeatTiers-Input']
     }
@@ -23576,8 +25486,11 @@ export interface components {
      *     - maximum_seats = last tier's max_seats (None for unlimited)
      */
     'ProductPriceSeatTiers-Input': {
-      /** @description How tiers are applied. 'volume' prices all seats at the matching tier's rate. 'graduated' prices each tier's range independently. */
-      seat_tier_type?: components['schemas']['SeatTierType']
+      /**
+       * @description How tiers are applied. 'volume' prices all seats at the matching tier's rate. 'graduated' prices each tier's range independently.
+       * @default volume
+       */
+      seat_tier_type: components['schemas']['SeatTierType']
       /**
        * Tiers
        * @description List of pricing tiers
@@ -23593,7 +25506,10 @@ export interface components {
      *     - maximum_seats = last tier's max_seats (None for unlimited)
      */
     'ProductPriceSeatTiers-Output': {
-      /** @description How tiers are applied. 'volume' prices all seats at the matching tier's rate. 'graduated' prices each tier's range independently. */
+      /**
+       * @description How tiers are applied. 'volume' prices all seats at the matching tier's rate. 'graduated' prices each tier's range independently.
+       * @default volume
+       */
       seat_tier_type: components['schemas']['SeatTierType']
       /**
        * Tiers
@@ -23612,12 +25528,6 @@ export interface components {
       readonly maximum_seats: number | null
     }
     /**
-     * SeatTierType
-     * @description How seat tiers are applied.
-     * @enum {string}
-     */
-    SeatTierType: 'volume' | 'graduated'
-    /**
      * ProductPriceSource
      * @enum {string}
      */
@@ -23627,6 +25537,80 @@ export interface components {
      * @enum {string}
      */
     ProductPriceType: 'one_time' | 'recurring'
+    /** ProductReviewCreate */
+    ProductReviewCreate: {
+      /**
+       * Product Id
+       * Format: uuid4
+       * @description The product ID to review.
+       */
+      product_id: string
+      /**
+       * Rating
+       * @description Rating from 1 to 5.
+       */
+      rating: number
+      /**
+       * Title
+       * @description Review title.
+       */
+      title?: string | null
+      /**
+       * Text
+       * @description Review body.
+       */
+      text?: string | null
+    }
+    /** ProductReviewListResponse */
+    ProductReviewListResponse: {
+      /** Reviews */
+      reviews: components['schemas']['ProductReviewRead'][]
+      stats: components['schemas']['ProductReviewStats']
+    }
+    /** ProductReviewRead */
+    ProductReviewRead: {
+      /**
+       * Created At
+       * Format: date-time
+       * @description Creation timestamp of the object.
+       */
+      created_at: string
+      /**
+       * Modified At
+       * @description Last modification timestamp of the object.
+       */
+      modified_at: string | null
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /**
+       * Product Id
+       * Format: uuid4
+       */
+      product_id: string
+      /** Rating */
+      rating: number
+      /** Title */
+      title: string | null
+      /** Text */
+      text: string | null
+      /** Customer Name */
+      customer_name: string
+    }
+    /** ProductReviewStats */
+    ProductReviewStats: {
+      /**
+       * Product Id
+       * Format: uuid4
+       */
+      product_id: string
+      /** Average Rating */
+      average_rating: number
+      /** Total Reviews */
+      total_reviews: number
+    }
     /**
      * ProductSortProperty
      * @enum {string}
@@ -23679,24 +25663,8 @@ export interface components {
        * @description The description of the product.
        */
       description: string | null
-      /**
-       * Category
-       * @description The digital product category.
-       */
-      category:
-        | 'ebook'
-        | 'template'
-        | 'assets'
-        | 'course'
-        | 'guide'
-        | 'music'
-        | 'video'
-        | 'photo'
-        | 'software'
-        | 'coaching'
-        | 'membership'
-        | 'other'
-        | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The visibility of the product. */
       visibility: components['schemas']['ProductVisibility']
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. */
@@ -23719,11 +25687,18 @@ export interface components {
        */
       is_archived: boolean
       /**
+       * Product Type
+       * @description The type of product (e.g. 'digital', 'course').
+       * @default digital
+       */
+      product_type: string
+      /**
        * Organization Id
        * Format: uuid4
        * @description The ID of the organization owning the product.
        */
       organization_id: string
+      metadata: components['schemas']['MetadataOutputType']
       /**
        * Prices
        * @description List of available prices for this product.
@@ -23742,13 +25717,57 @@ export interface components {
        * @description The medias associated to the product.
        */
       medias: components['schemas']['ProductMediaFileRead'][]
+    }
+    /**
+     * ProductTaxPreviewRequest
+     * @description Request body for previewing tax on a product price.
+     */
+    ProductTaxPreviewRequest: {
       /**
-       * Metadata
-       * @description Key-value object allowing you to store additional information.
+       * Amount
+       * @description Amount in smallest currency unit (e.g. cents for USD).
        */
-      metadata: {
-        [key: string]: string | number | boolean
-      }
+      amount: number
+      /**
+       * Currency
+       * @description ISO 4217 currency code (e.g. 'usd').
+       */
+      currency: string
+      /**
+       * Country
+       * @description ISO 3166-1 alpha-2 country code (e.g. 'AU').
+       */
+      country: string
+      /**
+       * Quantity
+       * @description Unit quantity for the preview calculation.
+       * @default 1
+       */
+      quantity: number
+      /**
+       * State
+       * @description State/province code for US/CA (e.g. 'WA' or 'US-WA').
+       */
+      state?: string | null
+    }
+    /**
+     * ProductTaxPreviewResponse
+     * @description Tax preview result for a product price.
+     */
+    ProductTaxPreviewResponse: {
+      /** Subtotal */
+      subtotal: number
+      /** Tax Amount */
+      tax_amount: number
+      /** Total */
+      total: number
+      /** Currency */
+      currency: string
+      /** Quantity */
+      quantity: number
+      tax_rate?: components['schemas']['TaxRatePreview'] | null
+      /** Taxability Reason */
+      taxability_reason?: string | null
     }
     /**
      * ProductUpdate
@@ -23786,6 +25805,8 @@ export interface components {
        * @description The description of the product.
        */
       description?: string | null
+      /** @description The digital product category. */
+      category?: components['schemas']['ProductCategory'] | null
       /** @description The recurring interval of the product. If `None`, the product is a one-time purchase. **Can only be set on legacy recurring products. Once set, it can't be changed.** */
       recurring_interval?:
         | components['schemas']['SubscriptionRecurringInterval']
@@ -23842,6 +25863,41 @@ export interface components {
       func: 'avg' | 'max' | 'min' | 'sum'
       /** Property */
       property: string
+    }
+    /**
+     * QuotaKey
+     * @enum {string}
+     */
+    QuotaKey: 'storage_gb'
+    /** QuotaUsage */
+    QuotaUsage: {
+      /** @description Quota key, e.g. 'storage_gb'. */
+      quota: components['schemas']['QuotaKey']
+      /**
+       * Limit
+       * @description Tier-defined limit in display units. null = unlimited.
+       */
+      limit: number | null
+      /**
+       * Used
+       * @description Current usage in display units (rounded down).
+       */
+      used: number
+      /**
+       * Used Exact
+       * @description Exact usage in display units (e.g. 0.87 GB) so usage under one whole unit doesn't render as zero.
+       * @default 0
+       */
+      used_exact: number
+      /**
+       * Remaining
+       * @description Remaining capacity in display units. null = unlimited.
+       */
+      remaining: number | null
+      /** Is Unlimited */
+      is_unlimited: boolean
+      /** Is Exceeded */
+      is_exceeded: boolean
     }
     /** Refund */
     Refund: {
@@ -24187,9 +26243,17 @@ export interface components {
       | 'customer_seats:write'
       | 'orders:read'
       | 'orders:write'
+      | 'client_invoices:read'
+      | 'client_invoices:write'
       | 'refunds:read'
       | 'refunds:write'
       | 'payments:read'
+      | 'email_subscribers:read'
+      | 'email_subscribers:write'
+      | 'email_broadcasts:read'
+      | 'email_broadcasts:write'
+      | 'forms:read'
+      | 'forms:write'
       | 'metrics:read'
       | 'webhooks:read'
       | 'webhooks:write'
@@ -24398,6 +26462,11 @@ export interface components {
      * @enum {string}
      */
     SeatStatus: 'pending' | 'claimed' | 'revoked'
+    /**
+     * SeatTierType
+     * @enum {string}
+     */
+    SeatTierType: 'volume' | 'graduated'
     /** SeatsList */
     SeatsList: {
       /**
@@ -24415,6 +26484,36 @@ export interface components {
        * @description Total number of seats for the subscription
        */
       total_seats: number
+    }
+    /**
+     * SpaceItem
+     * @description A single entry in the Space's ordered list. The Space renders
+     *     items in the order they appear in `space_items`; products and links
+     *     can interleave freely (e.g. link → product → link → course → link).
+     *     `kind` discriminates against ProductStorefront (`product`) vs a
+     *     StorefrontLink already stored in `storefront_links` (`link`).
+     *     `hidden` lets creators take an item off the Space without losing
+     *     the item itself — products restore via the picker, links by
+     *     flipping the flag.
+     */
+    SpaceItem: {
+      /**
+       * Kind
+       * @description What `id` refers to: a product, a storefront_links entry, or a form.
+       * @enum {string}
+       */
+      kind: 'product' | 'link' | 'form'
+      /**
+       * Id
+       * @description Identifier of the referenced product or link.
+       */
+      id: string
+      /**
+       * Hidden
+       * @description If true, the renderer skips this item. Lets creators hide an item without removing it from the Space's order or deleting it outright.
+       * @default false
+       */
+      hidden: boolean
     }
     /**
      * StatisticsPeriod
@@ -24465,6 +26564,11 @@ export interface components {
       products: components['schemas']['ProductStorefront'][]
       donation_product: components['schemas']['ProductStorefront'] | null
       customers: components['schemas']['StorefrontCustomers']
+      /**
+       * Forms
+       * @description Published lead-magnet forms featured on the storefront.
+       */
+      forms?: components['schemas']['FormPublic'][]
     }
     /** StorefrontCustomer */
     StorefrontCustomer: {
@@ -24477,6 +26581,234 @@ export interface components {
       total: number
       /** Customers */
       customers: components['schemas']['StorefrontCustomer'][]
+    }
+    /**
+     * StorefrontHeaderFileCreate
+     * @description Schema to create a file to be used as a storefront header/banner image.
+     */
+    StorefrontHeaderFileCreate: {
+      /** Organization Id */
+      organization_id?: string | null
+      /** Name */
+      name: string
+      /**
+       * Mime Type
+       * @description MIME type of the file. Only images are supported for this type of file.
+       */
+      mime_type: string
+      /**
+       * Size
+       * @description Size of the file. A maximum of 10 MB is allowed for this type of file.
+       */
+      size: number
+      /** Checksum Sha256 Base64 */
+      checksum_sha256_base64?: string | null
+      upload: components['schemas']['S3FileCreateMultipart']
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      service: 'storefront_header'
+      /** Version */
+      version?: string | null
+    }
+    /**
+     * StorefrontHeaderFileRead
+     * @description File to be used as a storefront header/banner image.
+     */
+    StorefrontHeaderFileRead: {
+      /**
+       * Id
+       * Format: uuid4
+       * @description The ID of the object.
+       */
+      id: string
+      /**
+       * Organization Id
+       * Format: uuid4
+       */
+      organization_id: string
+      /** Name */
+      name: string
+      /** Path */
+      path: string
+      /** Mime Type */
+      mime_type: string
+      /** Size */
+      size: number
+      /** Storage Version */
+      storage_version: string | null
+      /** Checksum Etag */
+      checksum_etag: string | null
+      /** Checksum Sha256 Base64 */
+      checksum_sha256_base64: string | null
+      /** Checksum Sha256 Hex */
+      checksum_sha256_hex: string | null
+      /** Last Modified At */
+      last_modified_at: string | null
+      /** Version */
+      version: string | null
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      service: 'storefront_header'
+      /** Is Uploaded */
+      is_uploaded: boolean
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Size Readable */
+      readonly size_readable: string
+      /** Public Url */
+      readonly public_url: string
+    }
+    /** StorefrontLink */
+    StorefrontLink: {
+      /**
+       * Id
+       * @description Unique identifier for the link
+       */
+      id: string
+      /**
+       * Url
+       * Format: uri
+       * @description The URL of the link
+       */
+      url: string
+      /**
+       * Title
+       * @description Display title for the link
+       */
+      title?: string | null
+      /**
+       * Description
+       * @description Short description shown on the card
+       */
+      description?: string | null
+      /**
+       * Image Url
+       * @description Thumbnail image URL for the link card
+       */
+      image_url?: string | null
+      /**
+       * Type
+       * @description Link type
+       * @default standard
+       * @enum {string}
+       */
+      type: 'standard' | 'embedded'
+      /**
+       * Platform
+       * @description Detected platform (youtube, spotify, tiktok, soundcloud, instagram)
+       */
+      platform?: string | null
+      /**
+       * Layout
+       * @description Per-link visual layout (list / cards / grid / carousel). Embeds ignore this — they always render full-width. When unset, the link falls back to the section's links_layout.
+       */
+      layout?: ('classic' | 'carousel' | 'image_grid' | 'card') | null
+    }
+    /**
+     * StorefrontLinkFileCreate
+     * @description Schema to create a file to be used as a storefront link cover image.
+     */
+    StorefrontLinkFileCreate: {
+      /** Organization Id */
+      organization_id?: string | null
+      /** Name */
+      name: string
+      /**
+       * Mime Type
+       * @description MIME type of the file. Only images are supported for this type of file.
+       */
+      mime_type: string
+      /**
+       * Size
+       * @description Size of the file. A maximum of 5 MB is allowed for this type of file.
+       */
+      size: number
+      /** Checksum Sha256 Base64 */
+      checksum_sha256_base64?: string | null
+      upload: components['schemas']['S3FileCreateMultipart']
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      service: 'storefront_link'
+      /** Version */
+      version?: string | null
+    }
+    /**
+     * StorefrontLinkFileRead
+     * @description File to be used as a storefront link cover image.
+     */
+    StorefrontLinkFileRead: {
+      /**
+       * Id
+       * Format: uuid4
+       * @description The ID of the object.
+       */
+      id: string
+      /**
+       * Organization Id
+       * Format: uuid4
+       */
+      organization_id: string
+      /** Name */
+      name: string
+      /** Path */
+      path: string
+      /** Mime Type */
+      mime_type: string
+      /** Size */
+      size: number
+      /** Storage Version */
+      storage_version: string | null
+      /** Checksum Etag */
+      checksum_etag: string | null
+      /** Checksum Sha256 Base64 */
+      checksum_sha256_base64: string | null
+      /** Checksum Sha256 Hex */
+      checksum_sha256_hex: string | null
+      /** Last Modified At */
+      last_modified_at: string | null
+      /** Version */
+      version: string | null
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      service: 'storefront_link'
+      /** Is Uploaded */
+      is_uploaded: boolean
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Size Readable */
+      readonly size_readable: string
+      /** Public Url */
+      readonly public_url: string
+    }
+    /**
+     * StorefrontSubscribe
+     * @description Public schema for Space card subscribe.
+     */
+    StorefrontSubscribe: {
+      /**
+       * Email
+       * @description Email address to subscribe
+       */
+      email: string
+      /**
+       * Name
+       * @description Optional name
+       */
+      name?: string | null
     }
     /**
      * StripeAccountCountry
@@ -24607,6 +26939,14 @@ export interface components {
      * @enum {string}
      */
     SubType: 'user' | 'organization'
+    /** SubscribeResponse */
+    SubscribeResponse: {
+      /**
+       * Success
+       * @default true
+       */
+      success: boolean
+    }
     /** Subscription */
     Subscription: {
       /**
@@ -24763,7 +27103,7 @@ export interface components {
     }
     /**
      * SubscriptionBillingPeriodUpdatedEvent
-     * @description An event created by Polar when a subscription billing period is updated.
+     * @description An event created by Claidor when a subscription billing period is updated.
      */
     SubscriptionBillingPeriodUpdatedEvent: {
       /**
@@ -24787,7 +27127,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -24825,7 +27165,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -24892,7 +27232,7 @@ export interface components {
     }
     /**
      * SubscriptionCanceledEvent
-     * @description An event created by Polar when a subscription is canceled.
+     * @description An event created by Claidor when a subscription is canceled.
      */
     SubscriptionCanceledEvent: {
       /**
@@ -24916,7 +27256,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -24954,7 +27294,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -25015,6 +27355,11 @@ export interface components {
        * @description Discount amount in cents
        */
       discount_amount: number
+      /**
+       * Net Amount
+       * @description Net amount in cents before taxes
+       */
+      net_amount: number
       /**
        * Tax Amount
        * @description Tax amount in cents
@@ -25094,13 +27439,13 @@ export interface components {
       product_id: string
       /**
        * External Customer Id
-       * @description The ID of the customer in your system to create the subscription for. It must already exist in Polar.
+       * @description The ID of the customer in your system to create the subscription for. It must already exist in Claidor.
        */
       external_customer_id: string
     }
     /**
      * SubscriptionCreatedEvent
-     * @description An event created by Polar when a subscription is created.
+     * @description An event created by Claidor when a subscription is created.
      */
     SubscriptionCreatedEvent: {
       /**
@@ -25124,7 +27469,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -25162,7 +27507,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -25263,7 +27608,7 @@ export interface components {
     }
     /**
      * SubscriptionCycledEvent
-     * @description An event created by Polar when a subscription is cycled.
+     * @description An event created by Claidor when a subscription is cycled.
      */
     SubscriptionCycledEvent: {
       /**
@@ -25287,7 +27632,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -25325,7 +27670,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -25414,7 +27759,7 @@ export interface components {
     }
     /**
      * SubscriptionProductUpdatedEvent
-     * @description An event created by Polar when a subscription changes the product.
+     * @description An event created by Claidor when a subscription changes the product.
      */
     SubscriptionProductUpdatedEvent: {
       /**
@@ -25438,7 +27783,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -25476,7 +27821,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -25552,7 +27897,7 @@ export interface components {
     }
     /**
      * SubscriptionRevokedEvent
-     * @description An event created by Polar when a subscription is revoked from a customer.
+     * @description An event created by Claidor when a subscription is revoked from a customer.
      */
     SubscriptionRevokedEvent: {
       /**
@@ -25576,7 +27921,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -25614,7 +27959,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -25642,7 +27987,7 @@ export interface components {
     }
     /**
      * SubscriptionSeatsUpdatedEvent
-     * @description An event created by Polar when a the seats on a subscription is changed.
+     * @description An event created by Claidor when a the seats on a subscription is changed.
      */
     SubscriptionSeatsUpdatedEvent: {
       /**
@@ -25666,7 +28011,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -25704,7 +28049,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -25763,7 +28108,7 @@ export interface components {
       | 'unpaid'
     /**
      * SubscriptionUncanceledEvent
-     * @description An event created by Polar when a subscription cancellation is reversed.
+     * @description An event created by Claidor when a subscription cancellation is reversed.
      */
     SubscriptionUncanceledEvent: {
       /**
@@ -25787,7 +28132,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -25825,7 +28170,7 @@ export interface components {
       label: string
       /**
        * Source
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API.
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API.
        * @constant
        */
       source: 'system'
@@ -25928,6 +28273,16 @@ export interface components {
       /** Github Username */
       github_username?: string | null
     }
+    /** SwitchPlan */
+    SwitchPlan: {
+      /** @description Target tier. Must be a different paid tier than the current one (e.g. starter -> studio, studio -> scale). Use the cancel endpoint to end your paid subscription. */
+      tier: components['schemas']['TierKey']
+      /**
+       * Billing Interval
+       * @description Optional new billing cadence. Omit to keep the current subscription's interval; set to 'year' or 'month' to switch annual <-> monthly on the same target tier.
+       */
+      billing_interval?: ('month' | 'year') | null
+    }
     SystemEvent:
       | components['schemas']['MeterCreditEvent']
       | components['schemas']['MeterResetEvent']
@@ -25955,6 +28310,11 @@ export interface components {
       | components['schemas']['BalanceRefundReversalEvent']
       | components['schemas']['BalanceDisputeEvent']
       | components['schemas']['BalanceDisputeReversalEvent']
+    /**
+     * TaxBehaviorOption
+     * @enum {string}
+     */
+    TaxBehaviorOption: 'location' | 'inclusive' | 'exclusive'
     /**
      * TaxIDFormat
      * @description List of supported tax ID formats.
@@ -26037,12 +28397,140 @@ export interface components {
       | 've_rif'
       | 'vn_tin'
       | 'za_vat'
+    /** TaxRatePreview */
+    TaxRatePreview: {
+      /** Display Name */
+      display_name: string
+      /** Percentage */
+      percentage?: number | null
+    }
+    /** TierFeatures */
+    TierFeatures: {
+      /** Drip Scheduling */
+      drip_scheduling: boolean
+      /** Email Sequences And Segments */
+      email_sequences_and_segments: boolean
+      /** Email Ab Testing */
+      email_ab_testing: boolean
+      /** Stackable Discounts */
+      stackable_discounts: boolean
+      /** Custom Email Sender Domain */
+      custom_email_sender_domain: boolean
+      /** Seat Based Product Pricing */
+      seat_based_product_pricing: boolean
+      /** Cohort Analytics */
+      cohort_analytics: boolean
+      /** Custom Pricing Negotiation */
+      custom_pricing_negotiation: boolean
+      /** Customer Wallet */
+      customer_wallet: boolean
+      /** Sandbox Mode */
+      sandbox_mode: boolean
+      /** Custom Storefront Domain */
+      custom_storefront_domain: boolean
+      /** Custom Checkout Domain */
+      custom_checkout_domain: boolean
+      /** Sso */
+      sso: boolean
+      /** Audit Logs */
+      audit_logs: boolean
+    }
     /**
-     * TaxBehaviorOption
-     * @description Tax behavior option for products and organizations.
+     * TierKey
      * @enum {string}
      */
-    TaxBehaviorOption: 'inclusive' | 'exclusive' | 'location'
+    TierKey: 'starter' | 'studio' | 'scale' | 'unmanaged' | 'inactive'
+    /** TierLimits */
+    TierLimits: {
+      /**
+       * Active Email Sequences
+       * @description Max simultaneously-active email sequences (null = unlimited).
+       */
+      active_email_sequences: number | null
+      /**
+       * Storage Gb
+       * @description Max downloadable file storage in GB (null = unlimited).
+       */
+      storage_gb: number | null
+      /**
+       * Email Subscribers
+       * @description Max email subscribers (null = unlimited).
+       */
+      email_subscribers: number | null
+      /**
+       * Email Sends Monthly
+       * @description Max outbound emails per month (null = unlimited).
+       */
+      email_sends_monthly: number | null
+      /**
+       * Dashboard Team Seats
+       * @description Max dashboard team members (null = unlimited).
+       */
+      dashboard_team_seats: number | null
+    }
+    /**
+     * TierPlan
+     * @description A subscribable tier plan, as exposed to creators in the upgrade UI.
+     */
+    TierPlan: {
+      /** @description Tier identifier. */
+      tier: components['schemas']['TierKey']
+      /**
+       * Name
+       * @description Display name, e.g. 'Claidor Starter'.
+       */
+      name: string
+      /**
+       * Description
+       * @description Marketing description.
+       */
+      description: string | null
+      /**
+       * Product Id
+       * @description Platform-org monthly Product id backing this tier (None if no product has been seeded yet). The annual Product id is exposed separately via annual_product_id.
+       */
+      product_id: string | null
+      /**
+       * Annual Product Id
+       * @description Platform-org annual Product id backing this tier (None if no annual product has been seeded yet).
+       */
+      annual_product_id: string | null
+      /**
+       * Monthly Price Cents
+       * @description Monthly recurring price for this tier, in cents.
+       */
+      monthly_price_cents: number
+      /**
+       * Annual Price Cents
+       * @description Total annual cost when billed yearly, in cents. None if annual billing isn't seeded for this tier.
+       */
+      annual_price_cents: number | null
+      /**
+       * Annual Savings Percent
+       * @description Discount applied when billed annually vs. 12x monthly. Source of truth for the upgrade-card 'save N%' label.
+       * @default 20
+       */
+      annual_savings_percent: number
+      /**
+       * Currency
+       * @description Currency code (lowercased).
+       * @default usd
+       */
+      currency: string
+      /**
+       * Trial Days
+       * @description Trial duration in days, if any.
+       */
+      trial_days: number | null
+      transaction_fee: components['schemas']['TransactionFee']
+      features: components['schemas']['TierFeatures']
+      limits: components['schemas']['TierLimits']
+    }
+    /** TierPlanList */
+    TierPlanList: {
+      /** Items */
+      items: components['schemas']['TierPlan'][]
+    }
     /**
      * TimeInterval
      * @enum {string}
@@ -26212,6 +28700,19 @@ export interface components {
       payout_transaction_id: string | null
       /** Incurred By Transaction Id */
       incurred_by_transaction_id: string | null
+    }
+    /** TransactionFee */
+    TransactionFee: {
+      /**
+       * Percent Basis Points
+       * @description Transaction fee percentage in basis points (500 = 5.00%).
+       */
+      percent_basis_points: number
+      /**
+       * Fixed Cents
+       * @description Per-transaction fixed fee, in the smallest currency unit (cents).
+       */
+      fixed_cents: number
     }
     /** TransactionIssueReward */
     TransactionIssueReward: {
@@ -26420,6 +28921,45 @@ export interface components {
       /** Property */
       property: string
     }
+    /** UnreadCountRead */
+    UnreadCountRead: {
+      /** Unread */
+      unread: number
+    }
+    /** UpgradeCheckout */
+    UpgradeCheckout: {
+      /**
+       * Checkout Id
+       * Format: uuid
+       */
+      checkout_id: string
+      /** Checkout Url */
+      checkout_url: string
+      /** Client Secret */
+      client_secret: string
+    }
+    /** UpgradeCheckoutCreate */
+    UpgradeCheckoutCreate: {
+      /** @description Target tier to upgrade to (must be Starter, Studio, or Scale). */
+      tier: components['schemas']['TierKey']
+      /**
+       * Billing Interval
+       * @description 'month' bills every 30 days. 'year' bills once annually at a ~20% discount (the exact price comes from the matching platform-org Product row, not the client).
+       * @default month
+       * @enum {string}
+       */
+      billing_interval: 'month' | 'year'
+      /**
+       * Success Url
+       * @description URL the customer will be redirected to after a successful checkout. The {CHECKOUT_ID} placeholder is replaced with the completed checkout's id.
+       */
+      success_url?: string | null
+      /**
+       * Billing Email
+       * @description Email address for Claidor's own billing of this subscription. If omitted, the calling user's email is used. Stored on the platform-org customer record so invoices and receipts reach the creator.
+       */
+      billing_email?: string | null
+    }
     /** UserBase */
     UserBase: {
       /**
@@ -26485,7 +29025,7 @@ export interface components {
       organization_id: string
       /**
        * Customer Id
-       * @description ID of the customer in your Polar organization associated with the event.
+       * @description ID of the customer in your Claidor organization associated with the event.
        */
       customer_id: string | null
       /** @description The customer associated with the event. */
@@ -26527,7 +29067,7 @@ export interface components {
        */
       name: string
       /**
-       * @description The source of the event. `system` events are created by Polar. `user` events are the one you create through our ingestion API. (enum property replaced by openapi-typescript)
+       * @description The source of the event. `system` events are created by Claidor. `user` events are the one you create through our ingestion API. (enum property replaced by openapi-typescript)
        * @enum {string}
        */
       source: 'user'
@@ -27190,7 +29730,7 @@ export interface components {
       /**
        * Secret
        * @description The secret used to sign the webhook events.
-       * @example polar_whs_ovyN6cPrTv56AApvzCaJno08SSmGJmgbWilb33N2JuK
+       * @example claidor_whs_ovyN6cPrTv56AApvzCaJno08SSmGJmgbWilb33N2JuK
        */
       secret: string
       /**
@@ -27332,6 +29872,9 @@ export interface components {
       | 'customer_seat.assigned'
       | 'customer_seat.claimed'
       | 'customer_seat.revoked'
+      | 'member.created'
+      | 'member.updated'
+      | 'member.deleted'
       | 'order.created'
       | 'order.updated'
       | 'order.paid'
@@ -27359,6 +29902,77 @@ export interface components {
      * @enum {string}
      */
     WebhookFormat: 'raw' | 'discord' | 'slack'
+    /**
+     * WebhookMemberCreatedPayload
+     * @description Sent when a new member is created.
+     *
+     *     A member represents an individual within a customer (team).
+     *     This event is triggered when a member is added to a customer,
+     *     either programmatically via the API or when an owner is automatically
+     *     created for a new customer.
+     *
+     *     **Discord & Slack support:** Basic
+     */
+    WebhookMemberCreatedPayload: {
+      /**
+       * Type
+       * @example member.created
+       * @constant
+       */
+      type: 'member.created'
+      /**
+       * Timestamp
+       * Format: date-time
+       */
+      timestamp: string
+      data: components['schemas']['Member']
+    }
+    /**
+     * WebhookMemberDeletedPayload
+     * @description Sent when a member is deleted.
+     *
+     *     This event is triggered when a member is removed from a customer.
+     *     Any active seats assigned to the member will be automatically revoked.
+     *
+     *     **Discord & Slack support:** Basic
+     */
+    WebhookMemberDeletedPayload: {
+      /**
+       * Type
+       * @example member.deleted
+       * @constant
+       */
+      type: 'member.deleted'
+      /**
+       * Timestamp
+       * Format: date-time
+       */
+      timestamp: string
+      data: components['schemas']['Member']
+    }
+    /**
+     * WebhookMemberUpdatedPayload
+     * @description Sent when a member is updated.
+     *
+     *     This event is triggered when member details are updated,
+     *     such as their name or role within the customer.
+     *
+     *     **Discord & Slack support:** Basic
+     */
+    WebhookMemberUpdatedPayload: {
+      /**
+       * Type
+       * @example member.updated
+       * @constant
+       */
+      type: 'member.updated'
+      /**
+       * Timestamp
+       * Format: date-time
+       */
+      timestamp: string
+      data: components['schemas']['Member']
+    }
     /**
      * WebhookOrderCreatedPayload
      * @description Sent when a new order is created.
@@ -29131,6 +31745,108 @@ export interface operations {
       }
     }
   }
+  'organizations:upload_customer_portal_sign_in_image': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_organizations_upload_customer_portal_sign_in_image']
+      }
+    }
+    responses: {
+      /** @description Image uploaded. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Organization']
+        }
+      }
+      /** @description You don't have the permission to update this organization. */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NotPermitted']
+        }
+      }
+      /** @description Organization not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'organizations:delete_customer_portal_sign_in_image': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Image removed; the portal reverts to the default. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Organization']
+        }
+      }
+      /** @description You don't have the permission to update this organization. */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NotPermitted']
+        }
+      }
+      /** @description Organization not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   'organizations:get_account': {
     parameters: {
       query?: never
@@ -29533,6 +32249,168 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['OrganizationReviewStatus']
+        }
+      }
+      /** @description Organization not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'custom_domains:get_custom_domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CustomDomainStatus']
+        }
+      }
+      /** @description Organization not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'custom_domains:set_custom_domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CustomDomainSet']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CustomDomainStatus']
+        }
+      }
+      /** @description Organization not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'custom_domains:delete_custom_domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Organization not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'custom_domains:verify_custom_domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CustomDomainStatus']
         }
       }
       /** @description Organization not found. */
@@ -31192,6 +34070,39 @@ export interface operations {
       }
     }
   }
+  'products:products:preview_tax': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProductTaxPreviewRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProductTaxPreviewResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   'orders:list': {
     parameters: {
       query?: {
@@ -31438,6 +34349,290 @@ export interface operations {
           'application/json':
             | components['schemas']['MissingInvoiceBillingDetails']
             | components['schemas']['NotPaidOrder']
+        }
+      }
+    }
+  }
+  'client_invoices:list_client_invoices': {
+    parameters: {
+      query?: {
+        /** @description Page number, defaults to 1. */
+        page?: number
+        /** @description Size of a page, defaults to 10. Maximum is 100. */
+        limit?: number
+        /** @description Sorting criterion. Several criteria can be used simultaneously and will be applied in order. Add a minus sign `-` before the criteria name to sort by descending order. */
+        sorting?: components['schemas']['ClientInvoiceSortProperty'][] | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListResource_ClientInvoiceSchema_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'client_invoices:create_client_invoice': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClientInvoiceCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClientInvoiceSchema']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'client_invoices:preview_client_invoice_pdf': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClientInvoicePreviewRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'client_invoices:get_client_invoice': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClientInvoiceSchema']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'client_invoices:download_client_invoice_pdf': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'client_invoices:finalize_client_invoice': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClientInvoiceSchema']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'client_invoices:send_client_invoice': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClientInvoiceSchema']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'client_invoices:mark_client_invoice_paid': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClientInvoiceSchema']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'client_invoices:void_client_invoice': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClientInvoiceSchema']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
         }
       }
     }
@@ -32024,6 +35219,55 @@ export interface operations {
       }
     }
   }
+  'cli:listen': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Organization updated. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description You don't have the permission to listen on this organization. */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NotPermitted']
+        }
+      }
+      /** @description Organization not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   'files:list': {
     parameters: {
       query?: {
@@ -32121,6 +35365,8 @@ export interface operations {
             | components['schemas']['DownloadableFileRead']
             | components['schemas']['ProductMediaFileRead']
             | components['schemas']['OrganizationAvatarFileRead']
+            | components['schemas']['StorefrontHeaderFileRead']
+            | components['schemas']['StorefrontLinkFileRead']
         }
       }
       /** @description You don't have the permission to update this file. */
@@ -32225,6 +35471,8 @@ export interface operations {
             | components['schemas']['DownloadableFileRead']
             | components['schemas']['ProductMediaFileRead']
             | components['schemas']['OrganizationAvatarFileRead']
+            | components['schemas']['StorefrontHeaderFileRead']
+            | components['schemas']['StorefrontLinkFileRead']
         }
       }
       /** @description You don't have the permission to update this file. */
@@ -32863,6 +36111,7 @@ export interface operations {
           | 'W-SU'
           | 'WET'
           | 'Zulu'
+          | 'localtime'
         /** @description Interval between two timestamps. */
         interval: components['schemas']['TimeInterval']
         /** @description Filter by organization ID. */
@@ -32921,6 +36170,587 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['MetricsLimits']
+        }
+      }
+    }
+  }
+  'entitlements:get': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Entitlements']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:list_plans': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TierPlanList']
+        }
+      }
+    }
+  }
+  'platform:get_subscription': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CurrentClaidorSubscription']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:get_usage': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrganizationUsage']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:create_upgrade_checkout': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpgradeCheckoutCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UpgradeCheckout']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:switch_plan': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SwitchPlan']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Subscription']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:cancel_subscription': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CancelClaidorSubscription']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Subscription']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:create_customer_portal_session': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CustomerPortalSessionCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CustomerPortalSession']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:get_email_sender_domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['EmailSenderDomainStatus']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:verify_email_sender_domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['EmailSenderDomainStatus']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:list_payment_methods': {
+    parameters: {
+      query?: {
+        /** @description Page number, defaults to 1. */
+        page?: number
+        /** @description Size of a page, defaults to 10. Maximum is 100. */
+        limit?: number
+      }
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListResource_CustomerPaymentMethod_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:delete_payment_method': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+        payment_method_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:set_default_payment_method': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+        payment_method_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:list_orders': {
+    parameters: {
+      query?: {
+        /** @description Page number, defaults to 1. */
+        page?: number
+        /** @description Size of a page, defaults to 10. Maximum is 100. */
+        limit?: number
+      }
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListResource_PlatformOrder_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:get_order_invoice': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+        order_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PlatformOrderInvoice']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:get_billing_details': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PlatformBillingDetails']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'platform:update_billing_details': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PlatformBillingDetailsUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PlatformBillingDetails']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'audit_log:list_audit_log': {
+    parameters: {
+      query?: {
+        /** @description Page number, defaults to 1. */
+        page?: number
+        /** @description Size of a page, defaults to 10. Maximum is 100. */
+        limit?: number
+      }
+      header?: never
+      path: {
+        organization_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListResource_AuditLogEntry_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
         }
       }
     }
@@ -33675,6 +37505,46 @@ export interface operations {
       }
     }
   }
+  'storefronts:get_organization_slug_by_custom_domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        hostname: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrganizationSlugLookup']
+        }
+      }
+      /** @description Organization not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   'storefronts:get_organization_slug_by_subscription_id': {
     parameters: {
       query?: never
@@ -33702,6 +37572,105 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'storefronts:subscribe_to_storefront': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        slug: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StorefrontSubscribe']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SubscribeResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'product-reviews:get_product_reviews': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        product_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProductReviewListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'product-reviews:submit_review': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProductReviewCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProductReviewRead']
         }
       }
       /** @description Validation Error */
@@ -34977,6 +38946,39 @@ export interface operations {
       }
     }
   }
+  'customer_portal:customers:update_profile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CustomerPortalCustomerProfileUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CustomerPortalCustomer']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   'customer_portal:customers:list_payment_methods': {
     parameters: {
       query?: {
@@ -36128,7 +40130,7 @@ export interface operations {
     parameters: {
       query: {
         platform: components['schemas']['CustomerOAuthPlatform']
-        customer_id: string
+        customer_id?: string | null
         return_to?: string | null
       }
       header?: never
@@ -37165,6 +41167,332 @@ export interface operations {
       }
     }
   }
+  'forms:list_forms': {
+    parameters: {
+      query?: {
+        /** @description Filter by organization ID. */
+        organization_id?: string | null
+        /** @description Filter by status. */
+        status?: string | null
+        /** @description Filter by title. */
+        query?: string | null
+        /** @description Page number, defaults to 1. */
+        page?: number
+        /** @description Size of a page, defaults to 10. Maximum is 100. */
+        limit?: number
+        /** @description Sorting criterion. Several criteria can be used simultaneously and will be applied in order. Add a minus sign `-` before the criteria name to sort by descending order. */
+        sorting?: components['schemas']['FormSortProperty'][] | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListResource_Form_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'forms:create_form': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FormCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Form']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'forms:get_form': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Form']
+        }
+      }
+      /** @description Form not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'forms:delete_form': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Form not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'forms:update_form': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FormUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Form']
+        }
+      }
+      /** @description Form not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'forms:list_form_submissions': {
+    parameters: {
+      query?: {
+        /** @description Page number, defaults to 1. */
+        page?: number
+        /** @description Size of a page, defaults to 10. Maximum is 100. */
+        limit?: number
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ListResource_FormSubmission_']
+        }
+      }
+      /** @description Form not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'forms:get_public_form': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FormPublic']
+        }
+      }
+      /** @description Form not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'forms:submit_form': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FormSubmit']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FormSubmitResult']
+        }
+      }
+      /** @description Form not found. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   'email-update:request_email_update': {
     parameters: {
       query?: never
@@ -37975,6 +42303,7 @@ export interface operations {
           | 'W-SU'
           | 'WET'
           | 'Zulu'
+          | 'localtime'
         /** @description Interval between two dates. */
         interval: components['schemas']['TimeInterval']
         /** @description Filter events following filter clauses. JSON string following the same schema a meter filter clause. */
@@ -39019,6 +43348,7 @@ export interface operations {
           | 'W-SU'
           | 'WET'
           | 'Zulu'
+          | 'localtime'
         /** @description Filter by customer ID. */
         customer_id?: string | string[] | null
         /** @description Filter by external customer ID. */
@@ -39487,6 +43817,15 @@ export interface operations {
           'application/json': components['schemas']['InsufficientBalance']
         }
       }
+      /** @description Payouts are held: a creator org on the account has a past_due Claidor subscription. */
+      402: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccountDelinquent']
+        }
+      }
       /** @description The account is under review or not ready. */
       403: {
         headers: {
@@ -39758,6 +44097,146 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ResourceNotFound']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'customer_portal_notifications:list_notifications': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CustomerNotificationRead'][]
+        }
+      }
+    }
+  }
+  'customer_portal_notifications:unread_count': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UnreadCountRead']
+        }
+      }
+    }
+  }
+  'customer_portal_notifications:mark_read': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        notification_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'customer_portal_notifications:mark_all_read': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  'customer_portal_notifications:get_preferences': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CustomerNotificationPreferencesRead']
+        }
+      }
+    }
+  }
+  'customer_portal_notifications:update_preferences': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CustomerNotificationPreferencesUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CustomerNotificationPreferencesRead']
         }
       }
       /** @description Validation Error */
@@ -40078,6 +44557,105 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': components['schemas']['WebhookCustomerSeatRevokedPayload']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  _endpointmember_created_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WebhookMemberCreatedPayload']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  _endpointmember_updated_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WebhookMemberUpdatedPayload']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  _endpointmember_deleted_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WebhookMemberDeletedPayload']
       }
     }
     responses: {
@@ -40827,520 +45405,6 @@ export interface operations {
       }
     }
   }
-  'email_subscribers:list': {
-    parameters: {
-      query?: {
-        organization_id?: string | string[] | null
-        status?: string | null
-        page?: number
-        limit?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['ListResource_EmailSubscriber_']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_subscribers:stats': {
-    parameters: {
-      query?: {
-        organization_id?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailSubscriberStats']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_subscribers:get': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        subscriber_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailSubscriber']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_subscribers:create': {
-    parameters: {
-      query?: {
-        organization_id?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailSubscriberCreate']
-      }
-    }
-    responses: {
-      201: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailSubscriber']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_subscribers:update': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        subscriber_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailSubscriberUpdate']
-      }
-    }
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailSubscriber']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_broadcasts:list': {
-    parameters: {
-      query?: {
-        organization_id?: string | string[] | null
-        page?: number
-        limit?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['ListResource_EmailBroadcast_']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_broadcasts:get': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        broadcast_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailBroadcast']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_broadcasts:create': {
-    parameters: {
-      query?: {
-        organization_id?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailBroadcastCreate']
-      }
-    }
-    responses: {
-      201: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailBroadcast']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_broadcasts:update': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        broadcast_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailBroadcastUpdate']
-      }
-    }
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailBroadcast']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_broadcasts:send': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        broadcast_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailBroadcast']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_broadcasts:analytics': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        broadcast_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailBroadcastAnalytics']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'storefronts:subscribe': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        slug: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['StorefrontSubscribe']
-      }
-    }
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailSubscriber']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_subscribers:export': {
-    parameters: {
-      query?: {
-        organization_id?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'text/csv': string
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_segments:list': {
-    parameters: {
-      query?: {
-        organization_id?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailSegment'][]
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_segments:create': {
-    parameters: {
-      query?: {
-        organization_id?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailSegmentCreate']
-      }
-    }
-    responses: {
-      201: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailSegment']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_segments:update': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        segment_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailSegmentUpdate']
-      }
-    }
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['EmailSegment']
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_segments:delete': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        segment_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      204: {
-        headers: { [name: string]: unknown }
-        content?: never
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_segments:add_subscribers': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        segment_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailSegmentSubscriberAction']
-      }
-    }
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': { added: number }
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  'email_segments:remove_subscribers': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        segment_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EmailSegmentSubscriberAction']
-      }
-    }
-    responses: {
-      200: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': { removed: number }
-        }
-      }
-      422: {
-        headers: { [name: string]: unknown }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
 }
 type FlattenedDeepRequired<T> = {
   [K in keyof T]-?: FlattenedDeepRequired<
@@ -41956,6 +46020,7 @@ export const pathsV1MetricsGetParametersQueryTimezoneValues: ReadonlyArray<
   'W-SU',
   'WET',
   'Zulu',
+  'localtime',
 ]
 export const pathsV1EventsStatisticsTimeseriesGetParametersQueryTimezoneValues: ReadonlyArray<
   FlattenedDeepRequired<paths>['/v1/events/statistics/timeseries']['get']['parameters']['query']['timezone']
@@ -42558,6 +46623,7 @@ export const pathsV1EventsStatisticsTimeseriesGetParametersQueryTimezoneValues: 
   'W-SU',
   'WET',
   'Zulu',
+  'localtime',
 ]
 export const pathsV1MetersIdQuantitiesGetParametersQueryTimezoneValues: ReadonlyArray<
   FlattenedDeepRequired<paths>['/v1/meters/{id}/quantities']['get']['parameters']['query']['timezone']
@@ -43160,6 +47226,7 @@ export const pathsV1MetersIdQuantitiesGetParametersQueryTimezoneValues: Readonly
   'W-SU',
   'WET',
   'Zulu',
+  'localtime',
 ]
 export const accountTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['AccountType']
@@ -43725,9 +47792,17 @@ export const availableScopeValues: ReadonlyArray<
   'customer_seats:write',
   'orders:read',
   'orders:write',
+  'client_invoices:read',
+  'client_invoices:write',
   'refunds:read',
   'refunds:write',
   'payments:read',
+  'email_subscribers:read',
+  'email_subscribers:write',
+  'email_broadcasts:read',
+  'email_broadcasts:write',
+  'forms:read',
+  'forms:write',
   'metrics:read',
   'webhooks:read',
   'webhooks:write',
@@ -43868,6 +47943,27 @@ export const checkoutSortPropertyValues: ReadonlyArray<
 export const checkoutStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['CheckoutStatus']
 > = ['open', 'expired', 'confirmed', 'succeeded', 'failed']
+export const clientInvoiceSortPropertyValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['ClientInvoiceSortProperty']
+> = [
+  'created_at',
+  '-created_at',
+  'status',
+  '-status',
+  'total_amount',
+  '-total_amount',
+  'due_date',
+  '-due_date',
+]
+export const clientInvoiceStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['ClientInvoiceStatus']
+> = ['draft', 'open', 'paid', 'void', 'uncollectible']
+export const communityPostNewOnCourseNotificationTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CommunityPostNewOnCourseNotification']['type']
+> = ['CommunityPostNewOnCourseNotification']
+export const communityPostReplyNotificationTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CommunityPostReplyNotification']['type']
+> = ['CommunityPostReplyNotification']
 export const countAggregationFuncValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['CountAggregation']['func']
 > = ['count']
@@ -44372,6 +48468,9 @@ export const countryAlpha2InputValues: ReadonlyArray<
   'ZM',
   'ZW',
 ]
+export const currentClaidorSubscriptionBilling_intervalAnyOf0Values: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CurrentClaidorSubscription']['billing_interval']
+> = ['month', 'year']
 export const customFieldCheckboxTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['CustomFieldCheckbox']['type']
 > = ['checkbox']
@@ -44659,13 +48758,31 @@ export const eventTypesSortPropertyValues: ReadonlyArray<
 ]
 export const fileServiceTypesValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FileServiceTypes']
-> = ['downloadable', 'product_media', 'organization_avatar']
+> = [
+  'downloadable',
+  'product_media',
+  'organization_avatar',
+  'storefront_header',
+  'storefront_link',
+]
 export const filterConjunctionValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FilterConjunction']
 > = ['and', 'or']
 export const filterOperatorValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FilterOperator']
 > = ['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'like', 'not_like']
+export const formSortPropertyValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['FormSortProperty']
+> = ['created_at', '-created_at', 'title', '-title', 'slug', '-slug']
+export const formStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['FormStatus']
+> = ['draft', 'published']
+export const formStyleCornerValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['FormStyle']['corner']
+> = ['sharp', 'rounded', 'pill']
+export const formStyleMedia_sideValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['FormStyle']['media_side']
+> = ['left', 'right']
 export const identityVerificationStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['IdentityVerificationStatus']
 > = ['unverified', 'pending', 'verified', 'failed']
@@ -44699,6 +48816,9 @@ export const maintainerNewPaidSubscriptionNotificationTypeValues: ReadonlyArray<
 export const maintainerNewProductSaleNotificationTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['MaintainerNewProductSaleNotification']['type']
 > = ['MaintainerNewProductSaleNotification']
+export const maintainerPerksUnlockedNotificationTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['MaintainerPerksUnlockedNotification']['type']
+> = ['MaintainerPerksUnlockedNotification']
 export const memberRoleValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['MemberRole']
 > = ['owner', 'billing_manager', 'member']
@@ -44748,6 +48868,7 @@ export const orderBillingReasonValues: ReadonlyArray<
   'subscription_create',
   'subscription_cycle',
   'subscription_update',
+  'client_invoice',
 ]
 export const orderBillingReasonInternalValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['OrderBillingReasonInternal']
@@ -44757,6 +48878,7 @@ export const orderBillingReasonInternalValues: ReadonlyArray<
   'subscription_cycle',
   'subscription_cycle_after_trial',
   'subscription_update',
+  'client_invoice',
 ]
 export const orderPaidEventNameValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['OrderPaidEvent']['name']
@@ -44807,6 +48929,9 @@ export const organizationAvatarFileCreateServiceValues: ReadonlyArray<
 export const organizationAvatarFileReadServiceValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['OrganizationAvatarFileRead']['service']
 > = ['organization_avatar']
+export const organizationCustomDomainStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['OrganizationCustomDomainStatus']
+> = ['pending', 'active', 'failed']
 export const organizationDeletionBlockedReasonValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['OrganizationDeletionBlockedReason']
 > = ['has_orders', 'has_active_subscriptions', 'stripe_account_deletion_failed']
@@ -44826,6 +48951,16 @@ export const organizationSocialPlatformsValues: ReadonlyArray<
   'youtube',
   'tiktok',
   'linkedin',
+  'whatsapp',
+  'spotify',
+  'threads',
+  'soundcloud',
+  'snapchat',
+  'pinterest',
+  'patreon',
+  'twitch',
+  'apple_music',
+  'website',
   'other',
 ]
 export const organizationSortPropertyValues: ReadonlyArray<
@@ -44852,6 +48987,24 @@ export const organizationStatusValues: ReadonlyArray<
   'denied',
   'active',
 ]
+export const organizationStorefrontSettingsThemeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['OrganizationStorefrontSettings']['theme']
+> = ['light', 'dark']
+export const organizationStorefrontSettingsThumbnail_sizeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['OrganizationStorefrontSettings']['thumbnail_size']
+> = ['small', 'medium', 'large']
+export const organizationStorefrontSettingsFeatured_modeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['OrganizationStorefrontSettings']['featured_mode']
+> = ['all', 'curated']
+export const organizationStorefrontSettingsLinks_positionValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['OrganizationStorefrontSettings']['links_position']
+> = ['before_products', 'after_products']
+export const organizationStorefrontSettingsBlock_orderValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['OrganizationStorefrontSettings']['block_order']
+> = ['products', 'links', 'forms']
+export const organizationStorefrontSettingsLinks_layoutValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['OrganizationStorefrontSettings']['links_layout']
+> = ['classic', 'carousel', 'image_grid', 'card']
 export const paymentProcessorValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['PaymentProcessor']
 > = ['stripe']
@@ -44916,13 +49069,156 @@ export const pledgeStateValues: ReadonlyArray<
 ]
 export const presentmentCurrencyValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['PresentmentCurrency']
-> = ['aed', 'all', 'amd', 'aoa', 'ars', 'aud', 'awg', 'azn', 'bam', 'bbd', 'bdt', 'bif', 'bmd', 'bnd', 'bob', 'brl', 'bsd', 'bwp', 'bzd', 'cad', 'cdf', 'chf', 'clp', 'cny', 'cop', 'crc', 'cve', 'czk', 'djf', 'dkk', 'dop', 'dzd', 'egp', 'etb', 'eur', 'fjd', 'fkp', 'gbp', 'gel', 'gip', 'gmd', 'gnf', 'gtq', 'gyd', 'hkd', 'hnl', 'htg', 'huf', 'idr', 'ils', 'inr', 'isk', 'jmd', 'jpy', 'kes', 'kgs', 'khr', 'kmf', 'krw', 'kyd', 'kzt', 'lak', 'lkr', 'lrd', 'lsl', 'mad', 'mdl', 'mga', 'mkd', 'mnt', 'mop', 'mur', 'mvr', 'mwk', 'mxn', 'myr', 'mzn', 'nad', 'ngn', 'nio', 'nok', 'npr', 'nzd', 'pab', 'pen', 'pgk', 'php', 'pkr', 'pln', 'pyg', 'qar', 'ron', 'rsd', 'rwf', 'sar', 'sbd', 'scr', 'sek', 'sgd', 'shp', 'sos', 'srd', 'szl', 'thb', 'tjs', 'top', 'try', 'ttd', 'twd', 'tzs', 'uah', 'ugx', 'usd', 'uyu', 'uzs', 'vnd', 'vuv', 'wst', 'xaf', 'xcd', 'xcg', 'xof', 'xpf', 'yer', 'zar', 'zmw']
+> = [
+  'aed',
+  'all',
+  'amd',
+  'aoa',
+  'ars',
+  'aud',
+  'awg',
+  'azn',
+  'bam',
+  'bbd',
+  'bdt',
+  'bif',
+  'bmd',
+  'bnd',
+  'bob',
+  'brl',
+  'bsd',
+  'bwp',
+  'bzd',
+  'cad',
+  'cdf',
+  'chf',
+  'clp',
+  'cny',
+  'cop',
+  'crc',
+  'cve',
+  'czk',
+  'djf',
+  'dkk',
+  'dop',
+  'dzd',
+  'egp',
+  'etb',
+  'eur',
+  'fjd',
+  'fkp',
+  'gbp',
+  'gel',
+  'gip',
+  'gmd',
+  'gnf',
+  'gtq',
+  'gyd',
+  'hkd',
+  'hnl',
+  'htg',
+  'huf',
+  'idr',
+  'ils',
+  'inr',
+  'isk',
+  'jmd',
+  'jpy',
+  'kes',
+  'kgs',
+  'khr',
+  'kmf',
+  'krw',
+  'kyd',
+  'kzt',
+  'lak',
+  'lkr',
+  'lrd',
+  'lsl',
+  'mad',
+  'mdl',
+  'mga',
+  'mkd',
+  'mnt',
+  'mop',
+  'mur',
+  'mvr',
+  'mwk',
+  'mxn',
+  'myr',
+  'mzn',
+  'nad',
+  'ngn',
+  'nio',
+  'nok',
+  'npr',
+  'nzd',
+  'pab',
+  'pen',
+  'pgk',
+  'php',
+  'pkr',
+  'pln',
+  'pyg',
+  'qar',
+  'ron',
+  'rsd',
+  'rwf',
+  'sar',
+  'sbd',
+  'scr',
+  'sek',
+  'sgd',
+  'shp',
+  'sos',
+  'srd',
+  'szl',
+  'thb',
+  'tjs',
+  'top',
+  'try',
+  'ttd',
+  'twd',
+  'tzs',
+  'uah',
+  'ugx',
+  'usd',
+  'uyu',
+  'uzs',
+  'vnd',
+  'vuv',
+  'wst',
+  'xaf',
+  'xcd',
+  'xcg',
+  'xof',
+  'xpf',
+  'yer',
+  'zar',
+  'zmw',
+]
 export const processorValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['Processor']
 > = ['stripe', 'manual']
 export const productBillingTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ProductBillingType']
 > = ['one_time', 'recurring']
+export const productCategoryValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['ProductCategory']
+> = [
+  'ebook',
+  'template',
+  'assets',
+  'course',
+  'guide',
+  'music',
+  'video',
+  'photo',
+  'software',
+  'coaching',
+  'membership',
+  'other',
+]
 export const productMediaFileCreateServiceValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ProductMediaFileCreate']['service']
 > = ['product_media']
@@ -44983,6 +49279,9 @@ export const productVisibilityValues: ReadonlyArray<
 export const propertyAggregationFuncValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['PropertyAggregation']['func']
 > = ['avg', 'max', 'min', 'sum']
+export const quotaKeyValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['QuotaKey']
+> = ['storage_gb']
 export const refundReasonValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['RefundReason']
 > = [
@@ -45050,9 +49349,17 @@ export const scopeValues: ReadonlyArray<
   'customer_seats:write',
   'orders:read',
   'orders:write',
+  'client_invoices:read',
+  'client_invoices:write',
   'refunds:read',
   'refunds:write',
   'payments:read',
+  'email_subscribers:read',
+  'email_subscribers:write',
+  'email_broadcasts:read',
+  'email_broadcasts:write',
+  'forms:read',
+  'forms:write',
   'metrics:read',
   'webhooks:read',
   'webhooks:write',
@@ -45082,9 +49389,33 @@ export const searchResultSubscriptionTypeValues: ReadonlyArray<
 export const seatStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['SeatStatus']
 > = ['pending', 'claimed', 'revoked']
+export const seatTierTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['SeatTierType']
+> = ['volume', 'graduated']
+export const spaceItemKindValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['SpaceItem']['kind']
+> = ['product', 'link', 'form']
 export const statusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['Status']
 > = ['created', 'onboarding_started', 'under_review', 'denied', 'active']
+export const storefrontHeaderFileCreateServiceValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['StorefrontHeaderFileCreate']['service']
+> = ['storefront_header']
+export const storefrontHeaderFileReadServiceValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['StorefrontHeaderFileRead']['service']
+> = ['storefront_header']
+export const storefrontLinkTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['StorefrontLink']['type']
+> = ['standard', 'embedded']
+export const storefrontLinkLayoutAnyOf0Values: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['StorefrontLink']['layout']
+> = ['classic', 'carousel', 'image_grid', 'card']
+export const storefrontLinkFileCreateServiceValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['StorefrontLinkFileCreate']['service']
+> = ['storefront_link']
+export const storefrontLinkFileReadServiceValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['StorefrontLinkFileRead']['service']
+> = ['storefront_link']
 export const stripeAccountCountryValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['StripeAccountCountry']
 > = [
@@ -45274,6 +49605,12 @@ export const subscriptionStatusValues: ReadonlyArray<
 export const subscriptionUncanceledEventNameValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['SubscriptionUncanceledEvent']['name']
 > = ['subscription.uncanceled']
+export const switchPlanBilling_intervalAnyOf0Values: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['SwitchPlan']['billing_interval']
+> = ['month', 'year']
+export const taxBehaviorOptionValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TaxBehaviorOption']
+> = ['location', 'inclusive', 'exclusive']
 export const taxIDFormatValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['TaxIDFormat']
 > = [
@@ -45352,6 +49689,9 @@ export const taxIDFormatValues: ReadonlyArray<
   'vn_tin',
   'za_vat',
 ]
+export const tierKeyValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TierKey']
+> = ['starter', 'studio', 'scale', 'unmanaged', 'inactive']
 export const timeIntervalValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['TimeInterval']
 > = ['year', 'month', 'week', 'day', 'hour']
@@ -45376,6 +49716,9 @@ export const trialIntervalValues: ReadonlyArray<
 export const uniqueAggregationFuncValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['UniqueAggregation']['func']
 > = ['unique']
+export const upgradeCheckoutCreateBilling_intervalValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['UpgradeCheckoutCreate']['billing_interval']
+> = ['month', 'year']
 export const userDeletionBlockedReasonValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['UserDeletionBlockedReason']
 > = ['has_active_organizations']
@@ -45404,6 +49747,9 @@ export const webhookEventTypeValues: ReadonlyArray<
   'customer_seat.assigned',
   'customer_seat.claimed',
   'customer_seat.revoked',
+  'member.created',
+  'member.updated',
+  'member.deleted',
   'order.created',
   'order.updated',
   'order.paid',
@@ -45439,9 +49785,3 @@ export const revokeTokenRequestToken_type_hintAnyOf0Values: ReadonlyArray<
 export const introspectTokenRequestToken_type_hintAnyOf0Values: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['IntrospectTokenRequest']['token_type_hint']
 > = ['access_token', 'refresh_token']
-export const taxBehaviorOptionValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['TaxBehaviorOption']
-> = ['inclusive', 'exclusive', 'location']
-export const seatTierTypeValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['SeatTierType']
-> = ['volume', 'graduated']

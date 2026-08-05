@@ -28,12 +28,13 @@ export default async function Page(props: {
 
   // Create the organization automatically if the slug is provided and auto is true
   if (auto === 'true' && slug) {
-
     const api = await getServerSideAPI()
     const { data: organization, error } = await api.POST('/v1/organizations/', {
       body: {
         name: slug,
         slug,
+        // Server-side default; the generated schema marks it required.
+        default_tax_behavior: 'location',
       },
     })
     if (error && error.detail) {

@@ -14,6 +14,7 @@ const BillingReasonDisplayName: Record<schemas['OrderBillingReason'], string> =
     subscription_create: 'Subscription Creation',
     subscription_cycle: 'Subscription Cycle',
     subscription_update: 'Subscription Update',
+    client_invoice: 'Client Invoice',
   }
 
 export interface OrderEventCardProps {
@@ -31,10 +32,7 @@ export const OrderEventCard = ({ event }: OrderEventCardProps) => {
 
     switch (event.name) {
       case 'order.paid':
-        return [
-          'Paid',
-          'bg-emerald-100 text-emerald-500 ',
-        ]
+        return ['Paid', 'bg-emerald-100 text-emerald-500 ']
       case 'order.refunded':
         return [
           order.status === 'partially_refunded'
@@ -81,15 +79,11 @@ export const OrderEventCard = ({ event }: OrderEventCardProps) => {
               <span className="">{order.product?.name}</span>
             </div>
             {billingReason && (
-              <span className=" text-gray-500">
-                {billingReason}
-              </span>
+              <span className="text-gray-500">{billingReason}</span>
             )}
           </div>
           <div className="flex flex-row items-center gap-x-4">
-            <span className=" text-gray-500">
-              {contextValue}
-            </span>
+            <span className="text-gray-500">{contextValue}</span>
             {status ? (
               <Status
                 status={status[0]}
