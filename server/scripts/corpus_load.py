@@ -13,6 +13,7 @@ script again after new acquisitions picks up whatever is new.
 
 import asyncio
 import hashlib
+import re
 from datetime import date
 from pathlib import Path
 
@@ -313,6 +314,129 @@ async def seed_links(session: AsyncSession) -> None:
     log.info("corpus.load.links", created=created)
 
 
+ARTICLE_CITE = re.compile(r"(?i)\bart(?:icles?|\.)\s[^.;]{0,120}?\b(\d+(?:-\d+)?)\b")
+ACT_CONTEXT = re.compile(
+    r"(?i)acte\s+uniforme|AUPSRVE|voies\s+d[’']ex[ée]cution|proc[ée]dures\s+simplifi[ée]es"
+)
+
+
+def _cited_numbers(text: str) -> set[str]:
+    """Article numbers cited in a decision, guarded by act-uniform context.
+
+    A number counts only when the surrounding passage (±240 chars) also
+    references the uniform act — so "article 1289 du code civil" or an
+    article of some national code never creates an edge.
+    """
+    found: set[str] = set()
+    for m in ARTICLE_CITE.finditer(text):
+        window = text[max(0, m.start() - 240) : m.end() + 240]
+        if ACT_CONTEXT.search(window):
+            found.add(m.group(1))
+    return found
+
+
+def _cites_loose(text: str, number: str) -> bool:
+    return (
+        re.search(
+            rf"(?i)\bart(?:icles?|\.)\s[^.;]{{0,120}}?\b{re.escape(number)}\b", text
+        )
+        is not None
+    )
+
+
+async def auto_verify_links(session: AsyncSession) -> None:
+    """Machine verification of the citation graph against decision text.
+
+    - Existing proposed edges: verified when the decision text cites the
+      article; otherwise they stay proposed with a note — and never surface.
+    - New edges: created directly as verified for every article the decision
+      text cites with act-uniform context, targeting the version in force
+      when the decision was rendered (pre-2024 decisions cite the 1998 text).
+    """
+    version_1998 = (
+        await session.execute(
+            select(LegalActVersion).where(LegalActVersion.label == "1998")
+        )
+    ).scalar_one_or_none()
+    if version_1998 is None:
+        return
+    articles_1998 = {
+        a.number: a
+        for a in (
+            await session.execute(
+                select(LegalArticle).where(
+                    LegalArticle.act_version_id == version_1998.id
+                )
+            )
+        ).scalars()
+    }
+
+    decisions = (await session.execute(select(CourtDecision))).scalars().all()
+    confirmed = unconfirmed = discovered = 0
+    for decision in decisions:
+        text = decision.full_text or ""
+        links = (
+            (
+                await session.execute(
+                    select(DecisionArticleLink).where(
+                        DecisionArticleLink.decision_id == decision.id
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        linked_article_ids = set()
+        for link in links:
+            article = articles_1998.get(
+                next(
+                    (n for n, a in articles_1998.items() if a.id == link.article_id),
+                    "",
+                )
+            )
+            linked_article_ids.add(link.article_id)
+            if article is None:
+                continue
+            if link.status == DecisionLinkStatus.proposed:
+                if _cites_loose(text, article.number):
+                    link.status = DecisionLinkStatus.verified
+                    link.note = (
+                        (link.note or "")
+                        + " [auto-vérifié : article cité dans le texte de la décision]"
+                    ).strip()
+                    session.add(link)
+                    confirmed += 1
+                else:
+                    link.note = (
+                        (link.note or "")
+                        + " [non confirmé : article introuvable dans le texte — à revoir]"
+                    ).strip()
+                    session.add(link)
+                    unconfirmed += 1
+        # Discover edges directly from the decision text.
+        if decision.decided_on < date(2024, 2, 16):
+            for number in _cited_numbers(text):
+                article = articles_1998.get(number)
+                if article is None or article.id in linked_article_ids:
+                    continue
+                session.add(
+                    DecisionArticleLink(
+                        decision_id=decision.id,
+                        article_id=article.id,
+                        status=DecisionLinkStatus.verified,
+                        seed_source="decision_text",
+                        note="[auto-vérifié : article cité dans le texte de la décision]",
+                    )
+                )
+                discovered += 1
+    log.info(
+        "corpus.load.auto_verify",
+        confirmed=confirmed,
+        unconfirmed=unconfirmed,
+        discovered=discovered,
+    )
+
+
 async def main() -> None:
     engine = create_async_engine("script")
     sessionmaker = create_async_sessionmaker(engine)
@@ -321,6 +445,7 @@ async def main() -> None:
         await load_act_1998(session)
         await load_decisions(session)
         await seed_links(session)
+        await auto_verify_links(session)
         await session.commit()
     await engine.dispose()
 
