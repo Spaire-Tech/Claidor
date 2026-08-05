@@ -56,16 +56,12 @@ async def list_email_sequences(
     auth_subject: EmailSequencesRead,
     pagination: PaginationParamsQuery,
     organization_id: UUID | None = Query(default=None),
-    course_id: UUID | None = Query(default=None),
-    lesson_id: UUID | None = Query(default=None),
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> ListResource[EmailSequenceSchema]:
     results, count = await sequence_service.list(
         session,
         auth_subject,
         organization_id=organization_id,
-        course_id=course_id,
-        lesson_id=lesson_id,
         pagination=pagination,
     )
     return ListResource.from_paginated_results(
@@ -95,14 +91,13 @@ async def create_email_sequence(
         description=sequence_create.description,
         trigger_type=sequence_create.trigger_type,
         trigger_config=trigger_config,
-        course_id=sequence_create.course_id,
-        lesson_id=sequence_create.lesson_id,
     )
     return EmailSequenceSchema.model_validate(sequence, from_attributes=True)
 
 
 # ── Templates ─────────────────────────────────────────────────────────────────
 # Registered before /{sequence_id} so the literal path wins.
+
 
 @router.get("/templates", response_model=list[EmailSequenceTemplateSchema])
 async def list_email_sequence_templates(
@@ -137,13 +132,12 @@ async def create_email_sequence_from_template(
         session,
         organization_id=organization_id,
         template=dict(template),
-        course_id=body.course_id,
-        lesson_id=body.lesson_id,
     )
     return EmailSequenceSchema.model_validate(sequence, from_attributes=True)
 
 
 # ── Image upload ──────────────────────────────────────────────────────────────
+
 
 @router.post("/upload-image")
 async def upload_sequence_image(
@@ -204,8 +198,6 @@ async def update_email_sequence(
         trigger_type=sequence_update.trigger_type,
         trigger_config=sequence_update.trigger_config,
         status=sequence_update.status,
-        course_id=sequence_update.course_id,
-        lesson_id=sequence_update.lesson_id,
     )
     return EmailSequenceSchema.model_validate(updated, from_attributes=True)
 
@@ -222,7 +214,9 @@ async def delete_email_sequence(
     await sequence_service.delete(session, sequence)
 
 
-@router.post("/{sequence_id}/duplicate", response_model=EmailSequenceSchema, status_code=201)
+@router.post(
+    "/{sequence_id}/duplicate", response_model=EmailSequenceSchema, status_code=201
+)
 async def duplicate_email_sequence(
     auth_subject: EmailSequencesWrite,
     sequence_id: UUID4,
@@ -237,6 +231,7 @@ async def duplicate_email_sequence(
 
 # ── Steps ─────────────────────────────────────────────────────────────────────
 
+
 @router.get("/{sequence_id}/steps", response_model=list[EmailSequenceStepSchema])
 async def list_sequence_steps(
     auth_subject: EmailSequencesRead,
@@ -247,10 +242,14 @@ async def list_sequence_steps(
     if sequence is None:
         raise ResourceNotFound()
     steps = await sequence_service.get_steps(session, sequence_id)
-    return [EmailSequenceStepSchema.model_validate(s, from_attributes=True) for s in steps]
+    return [
+        EmailSequenceStepSchema.model_validate(s, from_attributes=True) for s in steps
+    ]
 
 
-@router.post("/{sequence_id}/steps", response_model=EmailSequenceStepSchema, status_code=201)
+@router.post(
+    "/{sequence_id}/steps", response_model=EmailSequenceStepSchema, status_code=201
+)
 async def add_sequence_step(
     auth_subject: EmailSequencesWrite,
     sequence_id: UUID4,
@@ -349,7 +348,10 @@ async def delete_sequence_step(
 
 # ── Enrollments ───────────────────────────────────────────────────────────────
 
-@router.get("/{sequence_id}/enrollments", response_model=list[EmailSequenceEnrollmentSchema])
+
+@router.get(
+    "/{sequence_id}/enrollments", response_model=list[EmailSequenceEnrollmentSchema]
+)
 async def list_sequence_enrollments(
     auth_subject: EmailSequencesRead,
     sequence_id: UUID4,
@@ -359,10 +361,17 @@ async def list_sequence_enrollments(
     if sequence is None:
         raise ResourceNotFound()
     enrollments = await sequence_service.get_enrollments(session, sequence_id)
-    return [EmailSequenceEnrollmentSchema.model_validate(e, from_attributes=True) for e in enrollments]
+    return [
+        EmailSequenceEnrollmentSchema.model_validate(e, from_attributes=True)
+        for e in enrollments
+    ]
 
 
-@router.post("/{sequence_id}/enrollments", response_model=EmailSequenceEnrollmentSchema, status_code=201)
+@router.post(
+    "/{sequence_id}/enrollments",
+    response_model=EmailSequenceEnrollmentSchema,
+    status_code=201,
+)
 async def enroll_subscriber(
     auth_subject: EmailSequencesWrite,
     sequence_id: UUID4,
@@ -376,11 +385,15 @@ async def enroll_subscriber(
         raise ResourceNotFound()
 
     try:
-        enrollment = await sequence_service.enroll(session, sequence, enroll_request.subscriber_id)
+        enrollment = await sequence_service.enroll(
+            session, sequence, enroll_request.subscriber_id
+        )
     except AlreadyEnrolled as e:
         raise HTTPException(status_code=409, detail=str(e))
 
-    return EmailSequenceEnrollmentSchema.model_validate(enrollment, from_attributes=True)
+    return EmailSequenceEnrollmentSchema.model_validate(
+        enrollment, from_attributes=True
+    )
 
 
 @router.delete("/{sequence_id}/enrollments/{subscriber_id}", status_code=204)
@@ -397,6 +410,7 @@ async def unenroll_subscriber(
 
 
 # ── Step send-test ────────────────────────────────────────────────────────────
+
 
 @router.post("/{sequence_id}/steps/{step_id}/test", status_code=204)
 async def send_test_sequence_step(
@@ -421,6 +435,7 @@ async def send_test_sequence_step(
 
 
 # ── Analytics ─────────────────────────────────────────────────────────────────
+
 
 @router.get(
     "/{sequence_id}/step-analytics",
@@ -474,9 +489,7 @@ async def fire_sequence_event(
         subscriber_id=subscriber.id,
         event_name=body.event_name,
     )
-    return EmailSequenceFireEventResult(
-        woken_enrolment_ids=[w.id for w in woken]
-    )
+    return EmailSequenceFireEventResult(woken_enrolment_ids=[w.id for w in woken])
 
 
 @router.get("/{sequence_id}/analytics", response_model=EmailSequenceAnalytics)

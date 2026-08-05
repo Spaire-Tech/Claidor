@@ -14,7 +14,7 @@ doesn't accidentally lock everyone out.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -176,9 +176,7 @@ def _eval_string(actual: Any, op: str, value: Any) -> bool:
     return True
 
 
-def _eval_subscribed_for(
-    subscriber: EmailSubscriber, op: str, value: Any
-) -> bool:
+def _eval_subscribed_for(subscriber: EmailSubscriber, op: str, value: Any) -> bool:
     days = _parse_days(value)
     if days is None:
         return True
@@ -186,7 +184,7 @@ def _eval_subscribed_for(
     if created is None:
         return False
     if created.tzinfo is None:
-        created = created.replace(tzinfo=timezone.utc)
+        created = created.replace(tzinfo=UTC)
     elapsed_days = (utc_now() - created).total_seconds() / 86400.0
     if op == "is":
         return abs(elapsed_days - days) < 1.0

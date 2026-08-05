@@ -1,4 +1,5 @@
-from typing import Any, List
+import builtins
+from typing import Any
 
 from fastapi import Depends, Query
 from fastapi.responses import RedirectResponse
@@ -24,8 +25,8 @@ router = APIRouter(prefix="/downloadables", tags=["downloadables", APITag.public
 
 
 async def _enrich_downloadables(
-    session: AsyncSession, schemas: List[DownloadableRead]
-) -> List[DownloadableRead]:
+    session: AsyncSession, schemas: list[DownloadableRead]
+) -> list[DownloadableRead]:
     """Decorate each downloadable with the product it belongs to.
 
     Polar already stores `Product.category` (ebook / template / video / …),
@@ -54,7 +55,7 @@ async def _enrich_downloadables(
     for row in result.scalars().unique().all():
         product_by_benefit.setdefault(row.benefit_id, row.product)
 
-    enriched: List[DownloadableRead] = []
+    enriched: builtins.list[DownloadableRead] = []
     for schema in schemas:
         product: Product | None = product_by_benefit.get(schema.benefit_id)
         if product is None:

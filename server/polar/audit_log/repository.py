@@ -1,14 +1,13 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, select
 
 from polar.kit.pagination import PaginationParams
 from polar.kit.repository import RepositoryBase
 from polar.models import Event
 from polar.models.event import EventSource
 from polar.postgres import AsyncReadSession
-
 
 # Subset of SystemEvent names that represent admin-relevant state changes.
 # Tier consumption events (meter_credited, meter_reset) are excluded — those
@@ -62,9 +61,7 @@ class AuditLogRepository(RepositoryBase[Event]):
             )
             .order_by(desc(Event.timestamp), desc(Event.id))
         )
-        return await self.paginate(
-            base, limit=pagination.limit, page=pagination.page
-        )
+        return await self.paginate(base, limit=pagination.limit, page=pagination.page)
 
 
 def audit_log_repository(session: AsyncReadSession) -> AuditLogRepository:

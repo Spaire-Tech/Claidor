@@ -5,6 +5,8 @@ from typing import Annotated
 from fastapi import Depends, Query
 
 from polar.benefit.schemas import BenefitID
+from polar.config import settings
+from polar.enums import TaxBehavior
 from polar.exceptions import NotPermitted, ResourceNotFound
 from polar.kit.address import Address
 from polar.kit.metadata import MetadataQuery, get_metadata_query_openapi_schema
@@ -21,9 +23,7 @@ from polar.postgres import (
     get_db_read_session,
     get_db_session,
 )
-from polar.config import settings
 from polar.routing import APIRouter
-from polar.enums import TaxBehavior
 from polar.tax.calculation import get_tax_service
 from polar.tax.calculation.base import TaxCalculationError, TaxCode
 

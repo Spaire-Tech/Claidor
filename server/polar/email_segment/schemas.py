@@ -7,7 +7,9 @@ class EmailSegmentCreate(Schema):
     name: str = Field(description="Segment display name", max_length=100)
     slug: str = Field(description="URL-friendly identifier", max_length=100)
     type: str = Field(default="manual", description="Segment type")
-    product_id: UUID4 | None = Field(default=None, description="Product ID for product-specific segments")
+    product_id: UUID4 | None = Field(
+        default=None, description="Product ID for product-specific segments"
+    )
 
 
 class EmailSegmentUpdate(Schema):

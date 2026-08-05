@@ -21,21 +21,16 @@ from polar.models.benefit import BenefitType
 def _strip_internal_benefits(value: Any) -> Any:
     """Drop benefits that aren't part of the public Benefit discriminated union.
 
-    course_access (and any future internal-plumbing benefit type) is
-    attached to a course's product so the purchase pipeline enrolls
-    customers, but it has no corresponding API schema variant. Without
-    this strip, serializing a course product blew up the products list
-    with a Pydantic discriminator error — which is why the dashboard
-    Courses tab went empty after the backfill migration.
+    Internal-plumbing benefit types have no corresponding API schema
+    variant; without this strip, serializing such a product raises a
+    Pydantic discriminator error.
     """
     if not isinstance(value, list):
         return value
-    internal = {BenefitType.course_access}
-    return [
-        b
-        for b in value
-        if getattr(b, "type", None) not in internal
-    ]
+    internal: set[BenefitType] = set()
+    return [b for b in value if getattr(b, "type", None) not in internal]
+
+
 from polar.custom_field.schemas import (
     AttachedCustomField,
     AttachedCustomFieldListCreate,

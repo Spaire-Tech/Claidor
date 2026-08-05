@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator, AsyncIterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, Unpack, cast, overload
+from typing import TYPE_CHECKING, Literal, Unpack, overload
 
 import stripe as stripe_lib
 import structlog
@@ -148,7 +148,10 @@ class StripeService:
         return await stripe_lib.PaymentIntent.retrieve_async(id)
 
     async def create_account(
-        self, account: "AccountCreateForOrganization", name: str | None, email: str | None = None
+        self,
+        account: "AccountCreateForOrganization",
+        name: str | None,
+        email: str | None = None,
     ) -> V2AccountInfo:
         log.info(
             "stripe.v2.account.create",

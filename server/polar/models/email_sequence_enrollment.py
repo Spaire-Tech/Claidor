@@ -56,14 +56,14 @@ class EmailSequenceEnrollment(RecordModel):
     )
     # Position of the step we're waiting to send next (0-based, matches EmailSequenceStep.position).
     # Used by the legacy email-step walker; the flow_doc walker uses flow_index.
-    current_step_position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    current_step_position: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
     # Cursor into the parent sequence's flow_doc.steps array. Populated for
     # sequences that ship an authored flow_doc (templates, anything created
     # in the new editor). Legacy sequences leave this NULL and the worker
     # falls back to the email-step walker.
-    flow_index: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, default=None
-    )
+    flow_index: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
     # Tree cursor (Phase 3b): id of the next step to visit in the flow_doc
     # tree. Replaces flow_index for tree-shaped flows where branches carry
     # nested yes/no children — flow_index can't represent "we're inside the

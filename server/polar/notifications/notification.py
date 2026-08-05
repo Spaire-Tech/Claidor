@@ -208,7 +208,9 @@ class MaintainerPerksUnlockedNotificationPayload(NotificationPayloadBase):
         return f"{settings.FRONTEND_BASE_URL}/dashboard"
 
     def subject(self) -> str:
-        return "🎉 Congrats on your first sale! You've unlocked the Spaire Startup Perks."
+        return (
+            "🎉 Congrats on your first sale! You've unlocked the Spaire Startup Perks."
+        )
 
     @classmethod
     def template_name(cls) -> str:
@@ -239,8 +241,7 @@ class CommunityPostNewOnCourseNotificationPayload(NotificationPayloadBase):
     @computed_field
     def post_url(self) -> str:
         return (
-            f"{settings.FRONTEND_BASE_URL}/dashboard"
-            f"/courses/{self.course_id}/community"
+            f"{settings.FRONTEND_BASE_URL}/dashboard/courses/{self.course_id}/community"
         )
 
     def subject(self) -> str:

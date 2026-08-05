@@ -42,8 +42,8 @@ from polar.exceptions import (
     NotPermitted,
     PaymentNotReady,
     PolarError,
-    SpaireRequestValidationError,
     ResourceNotFound,
+    SpaireRequestValidationError,
     ValidationError,
 )
 from polar.integrations.stripe.service import stripe as stripe_service
@@ -2194,9 +2194,7 @@ class CheckoutService:
                 session.add(checkout)
                 return checkout
 
-            tax_behavior = get_tax_behavior_from_option(
-                tax_behavior_option, addr
-            )
+            tax_behavior = get_tax_behavior_from_option(tax_behavior_option, addr)
             tax_processor = checkout.tax_processor or settings.DEFAULT_TAX_PROCESSOR
             tax_service = get_tax_service(tax_processor)
             try:

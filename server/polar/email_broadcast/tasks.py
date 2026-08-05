@@ -5,9 +5,8 @@ import structlog
 from sqlalchemy import select
 
 from polar.email.compose import finalize_email_html
-from polar.email.personalize import build_variables
+from polar.email.personalize import build_variables, sample_subscriber
 from polar.email.personalize import render as personalize
-from polar.email.personalize import sample_subscriber
 from polar.email.sender import email_sender, resolve_creator_from_address
 from polar.kit.utils import utc_now
 from polar.models.email_broadcast import EmailBroadcast, EmailBroadcastStatus
@@ -91,7 +90,9 @@ async def send_broadcast_email(
         unsubscribe_url=unsubscribe_url,
         personalize_vars=personalize_vars,
     )
-    base_subject = subject_override if subject_override is not None else broadcast.subject
+    base_subject = (
+        subject_override if subject_override is not None else broadcast.subject
+    )
     if personalize_vars is not None and base_subject:
         # Subject lines aren't HTML; don't escape.
         base_subject = personalize(base_subject, personalize_vars, html=False)
@@ -132,9 +133,7 @@ async def send_broadcast_email(
 
 
 @actor(actor_name="email_broadcast.send_emails", priority=TaskPriority.MEDIUM)
-async def send_emails(
-    broadcast_id: UUID, variant_filter: str | None = None
-) -> None:
+async def send_emails(broadcast_id: UUID, variant_filter: str | None = None) -> None:
     """Send pending emails for a broadcast.
 
     `variant_filter` controls what gets released this pass:
@@ -291,9 +290,7 @@ async def send_test_inline(
                 subscriber=sample_subscriber(to_email),
             )
         except Exception:
-            log.exception(
-                "email_broadcast.send_test_inline_failed", to_email=to_email
-            )
+            log.exception("email_broadcast.send_test_inline_failed", to_email=to_email)
             raise
 
 
@@ -449,17 +446,14 @@ async def pick_ab_winner(ab_test_id: UUID) -> None:
         a = analytics.get("a", {})
         b = analytics.get("b", {})
         metric_key = (
-            "click_rate"
-            if ab_test.winner_metric == "click_rate"
-            else "open_rate"
+            "click_rate" if ab_test.winner_metric == "click_rate" else "open_rate"
         )
         events_key = "clicked" if metric_key == "click_rate" else "opened"
         a_events = int(a.get(events_key, 0) or 0)
         b_events = int(b.get(events_key, 0) or 0)
 
         insufficient = (
-            a_events < N_MIN_OPENS_PER_VARIANT
-            or b_events < N_MIN_OPENS_PER_VARIANT
+            a_events < N_MIN_OPENS_PER_VARIANT or b_events < N_MIN_OPENS_PER_VARIANT
         )
         if insufficient and not max_wait_elapsed:
             log.info(

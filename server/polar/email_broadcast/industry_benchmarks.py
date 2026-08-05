@@ -41,8 +41,12 @@ _BENCHMARKS: dict[str, IndustryBenchmark] = {
     b.slug: b
     for b in (
         IndustryBenchmark("all_industries", "All industries", 35.6, 2.6, 0.20),
-        IndustryBenchmark("agriculture", "Agriculture & food services", 36.7, 2.6, 0.27),
-        IndustryBenchmark("architecture", "Architecture & construction", 38.4, 2.5, 0.23),
+        IndustryBenchmark(
+            "agriculture", "Agriculture & food services", 36.7, 2.6, 0.27
+        ),
+        IndustryBenchmark(
+            "architecture", "Architecture & construction", 38.4, 2.5, 0.23
+        ),
         IndustryBenchmark("arts", "Arts & artists", 33.5, 2.7, 0.22),
         IndustryBenchmark("beauty", "Beauty & personal care", 33.4, 2.0, 0.23),
         IndustryBenchmark("business", "Business & finance", 38.6, 2.4, 0.20),
@@ -69,7 +73,9 @@ _BENCHMARKS: dict[str, IndustryBenchmark] = {
         IndustryBenchmark("pharmaceuticals", "Pharmaceuticals", 37.4, 2.6, 0.16),
         IndustryBenchmark("photo_video", "Photography & video", 39.3, 2.8, 0.30),
         IndustryBenchmark("politics", "Politics", 35.4, 2.6, 0.27),
-        IndustryBenchmark("professional_services", "Professional services", 38.2, 2.7, 0.20),
+        IndustryBenchmark(
+            "professional_services", "Professional services", 38.2, 2.7, 0.20
+        ),
         IndustryBenchmark("public_relations", "Public relations", 32.5, 1.7, 0.16),
         IndustryBenchmark("real_estate", "Real estate", 36.3, 2.5, 0.21),
         IndustryBenchmark("recruitment", "Recruitment & staffing", 34.4, 1.8, 0.30),

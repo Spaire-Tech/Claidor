@@ -281,9 +281,7 @@ def render(notification_type: str, payload: dict[str, Any]) -> tuple[str, str]:
         )
     elif notification_type == EVENT_RSVP_CONFIRMED:
         join_line = (
-            f'<p><a href="{ep.meeting_url}">Join link</a></p>'
-            if ep.meeting_url
-            else ""
+            f'<p><a href="{ep.meeting_url}">Join link</a></p>' if ep.meeting_url else ""
         )
         body = (
             f"<p>You're confirmed for <strong>{title}</strong> "
@@ -294,9 +292,7 @@ def render(notification_type: str, payload: dict[str, Any]) -> tuple[str, str]:
             "Google Calendar, Apple Calendar, or Outlook in one click.</p>"
         )
     elif notification_type == EVENT_STARTING_SOON_24H:
-        body = (
-            f"<p>Reminder — <strong>{title}</strong> starts tomorrow ({when}).</p>"
-        )
+        body = f"<p>Reminder — <strong>{title}</strong> starts tomorrow ({when}).</p>"
     elif notification_type == EVENT_STARTING_SOON_15M:
         body = f"<p><strong>{title}</strong> starts in 15 minutes.</p>"
     elif notification_type == EVENT_LIVE:

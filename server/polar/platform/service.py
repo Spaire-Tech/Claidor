@@ -63,9 +63,7 @@ class PlatformService:
     async def get(self, session: AsyncReadSession) -> Organization:
         organization_id = self.get_id()
         repository = OrganizationRepository.from_session(session)
-        organization = await repository.get_by_id(
-            organization_id, include_blocked=True
-        )
+        organization = await repository.get_by_id(organization_id, include_blocked=True)
         if organization is None:
             raise PlatformOrganizationNotFound(organization_id)
         return organization

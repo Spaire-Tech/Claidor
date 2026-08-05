@@ -86,8 +86,7 @@ async def list_notifications(
         session, customer_id=customer_id
     )
     return [
-        CustomerNotificationRead.model_validate(r, from_attributes=True)
-        for r in rows
+        CustomerNotificationRead.model_validate(r, from_attributes=True) for r in rows
     ]
 
 

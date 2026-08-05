@@ -158,8 +158,6 @@ class EmailSequenceService:
         auth_subject: AuthSubject[User | Organization],
         *,
         organization_id: UUID | None = None,
-        course_id: UUID | None = None,
-        lesson_id: UUID | None = None,
         pagination: PaginationParams,
     ) -> tuple[Sequence[EmailSequence], int]:
         repository = EmailSequenceRepository.from_session(session)
@@ -168,10 +166,6 @@ class EmailSequenceService:
             statement = statement.where(
                 EmailSequence.organization_id == organization_id
             )
-        if course_id is not None:
-            statement = statement.where(EmailSequence.course_id == course_id)
-        if lesson_id is not None:
-            statement = statement.where(EmailSequence.lesson_id == lesson_id)
         statement = statement.order_by(EmailSequence.created_at.desc())
         return await repository.paginate(
             statement, limit=pagination.limit, page=pagination.page
@@ -198,8 +192,6 @@ class EmailSequenceService:
         description: str | None = None,
         trigger_type: EmailSequenceTriggerType = EmailSequenceTriggerType.manual,
         trigger_config: dict | None = None,
-        course_id: UUID | None = None,
-        lesson_id: UUID | None = None,
     ) -> EmailSequence:
         # Email sequences require Pro+. The legacy tier exempts grandfathered
         # orgs so existing sequences don't break.
@@ -215,8 +207,6 @@ class EmailSequenceService:
             trigger_type=trigger_type,
             trigger_config=trigger_config or {},
             status=EmailSequenceStatus.draft,
-            course_id=course_id,
-            lesson_id=lesson_id,
         )
         sequence = await repository.create(sequence, flush=True)
         # The automation builder ships the authored email design inside
@@ -235,8 +225,6 @@ class EmailSequenceService:
         trigger_type: EmailSequenceTriggerType | None = None,
         trigger_config: dict | None = None,
         status: EmailSequenceStatus | None = None,
-        course_id: UUID | None = None,
-        lesson_id: UUID | None = None,
     ) -> EmailSequence:
         repository = EmailSequenceRepository.from_session(session)
         if name is not None:
@@ -268,10 +256,6 @@ class EmailSequenceService:
                     current=already_active,
                 )
             sequence.status = status
-        if course_id is not None:
-            sequence.course_id = course_id
-        if lesson_id is not None:
-            sequence.lesson_id = lesson_id
         sequence = await repository.update(sequence)
         # Re-materialise the flow_doc's email nodes whenever the authored doc
         # changes, so edits to the email body/subject reach the send path.
@@ -289,8 +273,6 @@ class EmailSequenceService:
         *,
         organization_id: UUID,
         template: dict,
-        course_id: UUID | None = None,
-        lesson_id: UUID | None = None,
     ) -> EmailSequence:
         repository = EmailSequenceRepository.from_session(session)
         # The template can ship a rich `flow_doc` with wait/branch/action/goal
@@ -308,8 +290,6 @@ class EmailSequenceService:
             trigger_type=template["trigger_type"],
             trigger_config=trigger_config,
             status=EmailSequenceStatus.draft,
-            course_id=course_id,
-            lesson_id=lesson_id,
         )
         sequence = await repository.create(sequence, flush=True)
 
@@ -732,19 +712,11 @@ class EmailSequenceService:
         subscriber_id: UUID,
         *,
         trigger_filter: dict | None = None,
-        lesson_id: UUID | None = None,
-        course_id: UUID | None = None,
     ) -> None:
-        """Find all active sequences matching this trigger and enqueue enrollment.
-
-        `lesson_id` narrows the match to sequences scoped to that lesson — used
-        by the per-lesson "completes this lesson" trigger so only that lesson's
-        automations enrol the subscriber. `course_id` narrows course-lifecycle
-        triggers (first lesson / halfway / completed) to that course's sequences.
-        """
+        """Find all active sequences matching this trigger and enqueue enrollment."""
         repository = EmailSequenceRepository.from_session(session)
         sequences = await repository.get_active_for_org_by_trigger(
-            organization_id, trigger_type, lesson_id=lesson_id, course_id=course_id
+            organization_id, trigger_type
         )
         from .audience import evaluate_audience
         from .tags import has_any_tag

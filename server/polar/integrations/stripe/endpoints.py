@@ -138,9 +138,7 @@ async def webhook_connect(
         return await enqueue(session, event)
 
 
-@router.post(
-    "/webhook-v2", status_code=202, name="integrations.stripe.webhook_v2"
-)
+@router.post("/webhook-v2", status_code=202, name="integrations.stripe.webhook_v2")
 async def webhook_v2(
     request: Request,
     session: AsyncSession = Depends(get_db_session),

@@ -4,9 +4,17 @@ from polar.kit.schemas import Schema
 
 from .tiers import (
     TierEntitlements as TierEntitlementsDataclass,
+)
+from .tiers import (
     TierFeatures as TierFeaturesDataclass,
+)
+from .tiers import (
     TierKey,
+)
+from .tiers import (
     TierLimits as TierLimitsDataclass,
+)
+from .tiers import (
     TransactionFee as TransactionFeeDataclass,
 )
 
@@ -128,9 +136,7 @@ class Entitlements(Schema):
     )
 
     @classmethod
-    def from_dataclass(
-        cls, source: TierEntitlementsDataclass
-    ) -> "Entitlements":
+    def from_dataclass(cls, source: TierEntitlementsDataclass) -> "Entitlements":
         return cls(
             tier=source.tier,
             transaction_fee=TransactionFee.from_dataclass(source.transaction_fee),

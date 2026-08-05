@@ -12,9 +12,15 @@ import structlog
 from sqlalchemy import select
 
 from polar.models import Organization
-from polar.worker import AsyncSessionMaker, CronTrigger, TaskPriority, actor, enqueue_job
+from polar.worker import (
+    AsyncSessionMaker,
+    CronTrigger,
+    TaskPriority,
+    actor,
+    enqueue_job,
+)
 
-from .notifications import check_organization, check_organization_by_id
+from .notifications import check_organization_by_id
 
 log: structlog.stdlib.BoundLogger = structlog.get_logger()
 

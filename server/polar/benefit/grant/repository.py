@@ -113,35 +113,6 @@ class BenefitGrantRepository(
         )
         return await self.get_all(statement)
 
-    async def list_granted_course_access(
-        self,
-        customer_id: UUID,
-        course_id: UUID,
-        *,
-        options: Options = (),
-    ) -> Sequence[BenefitGrant]:
-        """Granted course-access grants for a (customer, course) pair.
-
-        Used when an instructor removes a student from the course editor,
-        so the underlying entitlement is revoked too — not just the
-        enrollment row. Matched on the benefit's course_id rather than
-        the grant's enrollment_id property, because backfilled grants
-        and enrollments created before the property existed don't carry
-        an enrollment_id."""
-        statement = (
-            self.get_base_statement()
-            .join(Benefit)
-            .where(
-                Benefit.type == BenefitType.course_access,
-                Benefit.properties["course_id"].astext == str(course_id),
-                BenefitGrant.customer_id == customer_id,
-                BenefitGrant.is_granted.is_(True),
-                BenefitGrant.deleted_at.is_(None),
-            )
-            .options(*options)
-        )
-        return await self.get_all(statement)
-
     async def list_by_customer_and_benefit_type(
         self,
         customer: Customer,

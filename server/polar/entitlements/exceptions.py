@@ -8,7 +8,6 @@ from polar.exceptions import PolarError
 
 from .tiers import TierKey
 
-
 _FEATURE_LABEL: dict[str, str] = {
     "drip_scheduling": "Drip-scheduled lesson release",
     "email_sequences_and_segments": "Email sequences and segments",

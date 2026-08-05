@@ -70,18 +70,20 @@ class EmailSegmentService:
         results = []
         for segment in segments:
             count = await repository.count_subscribers(segment)
-            results.append({
-                "id": segment.id,
-                "organization_id": segment.organization_id,
-                "name": segment.name,
-                "slug": segment.slug,
-                "type": segment.type,
-                "product_id": segment.product_id,
-                "is_system": segment.is_system,
-                "created_at": segment.created_at,
-                "modified_at": segment.modified_at,
-                "subscriber_count": count,
-            })
+            results.append(
+                {
+                    "id": segment.id,
+                    "organization_id": segment.organization_id,
+                    "name": segment.name,
+                    "slug": segment.slug,
+                    "type": segment.type,
+                    "product_id": segment.product_id,
+                    "is_system": segment.is_system,
+                    "created_at": segment.created_at,
+                    "modified_at": segment.modified_at,
+                    "subscriber_count": count,
+                }
+            )
 
         return results
 
@@ -117,9 +119,7 @@ class EmailSegmentService:
         # Pre-check the (org, slug) uniqueness so we can raise a domain-
         # level exception the endpoint can map to 409, instead of letting
         # the DB constraint surface as a 500 IntegrityError.
-        existing = await repository.get_by_slug_and_organization(
-            slug, organization_id
-        )
+        existing = await repository.get_by_slug_and_organization(slug, organization_id)
         if existing is not None:
             raise EmailSegmentSlugTaken(slug)
 
@@ -182,14 +182,18 @@ class EmailSegmentService:
         from polar.models.email_subscriber import EmailSubscriber
 
         valid_ids = (
-            await session.execute(
-                select(EmailSubscriber.id).where(
-                    EmailSubscriber.id.in_(subscriber_ids),
-                    EmailSubscriber.organization_id == segment.organization_id,
-                    EmailSubscriber.deleted_at.is_(None),
+            (
+                await session.execute(
+                    select(EmailSubscriber.id).where(
+                        EmailSubscriber.id.in_(subscriber_ids),
+                        EmailSubscriber.organization_id == segment.organization_id,
+                        EmailSubscriber.deleted_at.is_(None),
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         valid_set = set(valid_ids)
 
         repository = EmailSegmentRepository.from_session(session)
@@ -235,13 +239,17 @@ class EmailSegmentService:
         from polar.models.email_subscriber import EmailSubscriber
 
         valid_ids = (
-            await session.execute(
-                select(EmailSubscriber.id).where(
-                    EmailSubscriber.id.in_(subscriber_ids),
-                    EmailSubscriber.organization_id == segment.organization_id,
+            (
+                await session.execute(
+                    select(EmailSubscriber.id).where(
+                        EmailSubscriber.id.in_(subscriber_ids),
+                        EmailSubscriber.organization_id == segment.organization_id,
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         valid_set = set(valid_ids)
 
         repository = EmailSegmentRepository.from_session(session)

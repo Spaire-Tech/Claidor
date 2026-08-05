@@ -1,7 +1,6 @@
 from urllib.parse import urlencode
 
 import structlog
-
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -11,8 +10,8 @@ from polar.config import settings
 from polar.exceptions import (
     PolarError,
     PolarRedirectionError,
-    SpaireRequestValidationError,
     ResourceNotModified,
+    SpaireRequestValidationError,
 )
 
 log = structlog.get_logger()
@@ -76,7 +75,10 @@ async def internal_server_error_handler(
             headers["Access-Control-Allow-Origin"] = "*"
     return JSONResponse(
         status_code=500,
-        content={"error": "InternalServerError", "detail": "An unexpected error occurred."},
+        content={
+            "error": "InternalServerError",
+            "detail": "An unexpected error occurred.",
+        },
         headers=headers,
     )
 

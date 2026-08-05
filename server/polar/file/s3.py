@@ -24,7 +24,4 @@ S3_SERVICES: dict[FileServiceTypes, S3Service] = {
     FileServiceTypes.storefront_link: _get_s3_service(
         settings.S3_FILES_PUBLIC_BUCKET_NAME
     ),
-    FileServiceTypes.community_post_image: _get_s3_service(
-        settings.S3_FILES_PUBLIC_BUCKET_NAME
-    ),
 }

@@ -152,9 +152,7 @@ class Customer(MetadataMixin, RecordModel):
     # onboarding flow + editable from the portal's Settings menu.
     # Stored as a Text URL (may be either a hosted file URL or a data:
     # URI for tiny client-side resized avatars).
-    avatar_url: Mapped[str | None] = mapped_column(
-        Text, nullable=True, default=None
-    )
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
     locale: Mapped[str | None] = mapped_column(String, nullable=True)
     _billing_name: Mapped[str | None] = mapped_column(
         "billing_name", String, nullable=True, default=None

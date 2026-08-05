@@ -35,7 +35,6 @@ class FileServiceTypes(StrEnum):
     # Community-post image attachments. Public-read like product_media —
     # rendered inline in the customer-portal feed and the editor's
     # moderation list.
-    community_post_image = "community_post_image"
 
 
 class File(RecordModel):
@@ -107,10 +106,4 @@ class StorefrontHeaderFile(File):
 class StorefrontLinkFile(File):
     __mapper_args__ = {
         "polymorphic_identity": FileServiceTypes.storefront_link,
-    }
-
-
-class CommunityPostImageFile(File):
-    __mapper_args__ = {
-        "polymorphic_identity": FileServiceTypes.community_post_image,
     }

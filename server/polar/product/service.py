@@ -9,9 +9,9 @@ from sqlalchemy.orm import contains_eager, selectinload
 
 from polar.auth.models import AuthSubject, is_user
 from polar.benefit.service import benefit as benefit_service
-from polar.entitlements.service import entitlements as entitlements_service
 from polar.checkout_link.repository import CheckoutLinkRepository
 from polar.custom_field.service import custom_field as custom_field_service
+from polar.entitlements.service import entitlements as entitlements_service
 from polar.enums import SubscriptionRecurringInterval
 from polar.exceptions import (
     SpaireRequestValidationError,
@@ -166,8 +166,7 @@ class ProductService:
         from polar.models.product_price import ProductPriceAmountType
 
         has_seat_price = any(
-            getattr(price, "amount_type", None)
-            == ProductPriceAmountType.seat_based
+            getattr(price, "amount_type", None) == ProductPriceAmountType.seat_based
             for price in (create_schema.prices or [])
         )
         if has_seat_price:
@@ -283,8 +282,7 @@ class ProductService:
             )
 
             payload_has_seat_price = any(
-                getattr(price, "amount_type", None)
-                == ProductPriceAmountType.seat_based
+                getattr(price, "amount_type", None) == ProductPriceAmountType.seat_based
                 for price in update_schema.prices
             )
             product_already_seat_priced = any(

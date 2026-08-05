@@ -72,9 +72,7 @@ class EntitlementsService:
             return TierKey.inactive
 
         subscription_repo = platform_subscription_repository(session)
-        subscription = await subscription_repo.get_active_for_customer(
-            customer.id
-        )
+        subscription = await subscription_repo.get_active_for_customer(customer.id)
         if subscription is None:
             return TierKey.inactive
 

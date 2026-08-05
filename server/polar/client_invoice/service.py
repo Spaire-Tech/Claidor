@@ -124,9 +124,7 @@ class ClientInvoiceService:
         customer_repository = CustomerRepository.from_session(session)
         customer = await customer_repository.get_by_id(create_schema.customer_id)
         if customer is None:
-            raise ClientInvoiceError(
-                f"Customer {create_schema.customer_id} not found."
-            )
+            raise ClientInvoiceError(f"Customer {create_schema.customer_id} not found.")
 
         # Resolve organization from auth subject or customer.
         # Access customer.organization_id (a plain column) rather than the
@@ -474,7 +472,9 @@ class ClientInvoiceService:
         assert organization is not None
 
         logo_bytes = await self._fetch_logo_bytes(organization.avatar_url)
-        return self._build_invoice_pdf_bytes(invoice, organization, customer, logo_bytes)
+        return self._build_invoice_pdf_bytes(
+            invoice, organization, customer, logo_bytes
+        )
 
     async def preview_pdf(
         self,
@@ -545,7 +545,9 @@ class ClientInvoiceService:
             tax_rate=None,
             currency=preview.currency,
             notes=preview.memo or None,
-            checkout_link=preview.checkout_link_url if preview.include_payment_link else None,
+            checkout_link=preview.checkout_link_url
+            if preview.include_payment_link
+            else None,
             due_date=preview.due_date,
             on_behalf_of_label=on_behalf_of_label,
         )
@@ -644,7 +646,9 @@ class ClientInvoiceService:
                 memo=invoice.memo,
             )
             email_obj = ClientInvoiceEmail(props=email_props)
-            html = render_email_template(EmailAdapter.validate_python(email_obj.model_dump()))
+            html = render_email_template(
+                EmailAdapter.validate_python(email_obj.model_dump())
+            )
             enqueue_email(
                 **organization.email_from_reply,
                 to_email_addr=customer.email,

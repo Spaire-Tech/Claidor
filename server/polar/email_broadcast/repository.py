@@ -82,9 +82,7 @@ class EmailBroadcastRepository(
         statement = (
             select(
                 EmailBroadcastSend.broadcast_id,
-                func.count(EmailBroadcastSend.id)
-                .filter(sent_or_later)
-                .label("total"),
+                func.count(EmailBroadcastSend.id).filter(sent_or_later).label("total"),
                 func.count(EmailBroadcastSend.id)
                 .filter(
                     EmailBroadcastSend.status.in_(
@@ -147,9 +145,7 @@ class EmailBroadcastRepository(
         result = await self.session.execute(statement)
         return list(result.scalars().all()), count
 
-    async def get_analytics_counts(
-        self, broadcast_id: UUID
-    ) -> dict[str, int]:
+    async def get_analytics_counts(self, broadcast_id: UUID) -> dict[str, int]:
         """Get status counts for a broadcast's real (non-test) sends."""
         statement = (
             select(EmailBroadcastSend.status, func.count(EmailBroadcastSend.id))
@@ -162,17 +158,12 @@ class EmailBroadcastRepository(
         result = await self.session.execute(statement)
         return {row[0]: row[1] for row in result.all()}
 
-    async def count_unsubscribed_for_broadcast(
-        self, broadcast_id: UUID
-    ) -> int:
+    async def count_unsubscribed_for_broadcast(self, broadcast_id: UUID) -> int:
         """Count sends that resulted in an unsubscribe."""
-        statement = (
-            select(func.count(EmailBroadcastSend.id))
-            .where(
-                EmailBroadcastSend.broadcast_id == broadcast_id,
-                EmailBroadcastSend.unsubscribed_at.isnot(None),
-                EmailBroadcastSend.deleted_at.is_(None),
-            )
+        statement = select(func.count(EmailBroadcastSend.id)).where(
+            EmailBroadcastSend.broadcast_id == broadcast_id,
+            EmailBroadcastSend.unsubscribed_at.isnot(None),
+            EmailBroadcastSend.deleted_at.is_(None),
         )
         result = await self.session.execute(statement)
         return result.scalar_one()
@@ -204,31 +195,39 @@ class EmailBroadcastRepository(
         # rationale.
         statement = (
             select(
-                func.count(EmailBroadcastSend.id).filter(
-                    EmailBroadcastSend.status.in_([
-                        EmailBroadcastSendStatus.sent,
-                        EmailBroadcastSendStatus.delivered,
-                        EmailBroadcastSendStatus.opened,
-                        EmailBroadcastSendStatus.clicked,
-                        EmailBroadcastSendStatus.bounced,
-                    ])
-                ).label("total_sent"),
-                func.count(EmailBroadcastSend.id).filter(
-                    EmailBroadcastSend.status.in_([
-                        EmailBroadcastSendStatus.delivered,
-                        EmailBroadcastSendStatus.opened,
-                        EmailBroadcastSendStatus.clicked,
-                    ])
-                ).label("delivered"),
-                func.count(EmailBroadcastSend.id).filter(
-                    EmailBroadcastSend.opened_at.is_not(None)
-                ).label("opened"),
-                func.count(EmailBroadcastSend.id).filter(
-                    EmailBroadcastSend.clicked_at.is_not(None)
-                ).label("clicked"),
-                func.count(EmailBroadcastSend.id).filter(
-                    EmailBroadcastSend.unsubscribed_at.isnot(None)
-                ).label("unsubscribed"),
+                func.count(EmailBroadcastSend.id)
+                .filter(
+                    EmailBroadcastSend.status.in_(
+                        [
+                            EmailBroadcastSendStatus.sent,
+                            EmailBroadcastSendStatus.delivered,
+                            EmailBroadcastSendStatus.opened,
+                            EmailBroadcastSendStatus.clicked,
+                            EmailBroadcastSendStatus.bounced,
+                        ]
+                    )
+                )
+                .label("total_sent"),
+                func.count(EmailBroadcastSend.id)
+                .filter(
+                    EmailBroadcastSend.status.in_(
+                        [
+                            EmailBroadcastSendStatus.delivered,
+                            EmailBroadcastSendStatus.opened,
+                            EmailBroadcastSendStatus.clicked,
+                        ]
+                    )
+                )
+                .label("delivered"),
+                func.count(EmailBroadcastSend.id)
+                .filter(EmailBroadcastSend.opened_at.is_not(None))
+                .label("opened"),
+                func.count(EmailBroadcastSend.id)
+                .filter(EmailBroadcastSend.clicked_at.is_not(None))
+                .label("clicked"),
+                func.count(EmailBroadcastSend.id)
+                .filter(EmailBroadcastSend.unsubscribed_at.isnot(None))
+                .label("unsubscribed"),
             )
             .join(EmailBroadcast, EmailBroadcastSend.broadcast_id == EmailBroadcast.id)
             .where(
@@ -363,9 +362,7 @@ class EmailBroadcastRepository(
             out.append({"url": url, "clicks": clicks, "ctr": ctr})
         return out
 
-    async def get_device_share(
-        self, organization_id: UUID, days: int
-    ) -> list[dict]:
+    async def get_device_share(self, organization_id: UUID, days: int) -> list[dict]:
         """Bucket last_user_agent strings into device families and return shares."""
         from datetime import timedelta
 
@@ -560,9 +557,7 @@ class EmailBroadcastRepository(
         result = await self.session.execute(statement)
         return [{"day": str(row[0]), "count": row[1]} for row in result.all()]
 
-    async def cancel_pending_sends_for_subscriber(
-        self, subscriber_id: UUID
-    ) -> int:
+    async def cancel_pending_sends_for_subscriber(self, subscriber_id: UUID) -> int:
         """Flip any still-pending broadcast sends for this subscriber to
         ``failed`` so the send actor stops picking them up.
 
@@ -588,9 +583,7 @@ class EmailBroadcastABTestRepository(
 ):
     model = EmailBroadcastABTest
 
-    async def get_by_broadcast(
-        self, broadcast_id: UUID
-    ) -> EmailBroadcastABTest | None:
+    async def get_by_broadcast(self, broadcast_id: UUID) -> EmailBroadcastABTest | None:
         statement = self.get_base_statement().where(
             EmailBroadcastABTest.broadcast_id == broadcast_id,
             EmailBroadcastABTest.deleted_at.is_(None),
@@ -676,9 +669,7 @@ class EmailBroadcastABTestRepository(
             )
         return out
 
-    async def assign_remainder_variant(
-        self, broadcast_id: UUID, variant: str
-    ) -> int:
+    async def assign_remainder_variant(self, broadcast_id: UUID, variant: str) -> int:
         """Set variant on all currently-unassigned sends for this broadcast."""
         statement = (
             update(EmailBroadcastSend)

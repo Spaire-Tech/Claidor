@@ -22,7 +22,6 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-
 # --------------------------------------------------------------------------- #
 # The six course-lifecycle moments (mirror of the editor's triggers).
 # --------------------------------------------------------------------------- #

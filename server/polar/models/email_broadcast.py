@@ -60,9 +60,7 @@ class EmailBroadcast(RecordModel):
     sent_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )
-    total_recipients: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
-    )
+    total_recipients: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     @declared_attr
     def organization(cls) -> Mapped["Organization"]:  # type: ignore[name-defined]  # noqa: F821

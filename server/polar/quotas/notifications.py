@@ -76,7 +76,7 @@ def _render_email(
 
     html_content = (
         "<!DOCTYPE html>"
-        "<html><body style=\"font-family:sans-serif;line-height:1.5;\">"
+        '<html><body style="font-family:sans-serif;line-height:1.5;">'
         f"<h2>{subject}</h2>"
         f"<p>Hi {organization.name},</p>"
         f"<p>{headline}</p>"
@@ -170,10 +170,7 @@ async def check_organization(
                 # For lifetime quotas, clear the old notification row so
                 # the next crossing can fire again. Monthly quotas reset
                 # naturally via period_key rollover.
-                if (
-                    definition.scope == "lifetime"
-                    and existing is not None
-                ):
+                if definition.scope == "lifetime" and existing is not None:
                     await repository.delete_lifetime_for(
                         organization_id=organization.id,
                         quota_key=quota.value,

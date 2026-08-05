@@ -29,9 +29,9 @@ from polar.discount.schemas import (
 from polar.enums import PaymentProcessor
 from polar.kit.address import Address, AddressInput
 from polar.kit.currency import PresentmentCurrency
-from polar.kit.locale import Locale
 from polar.kit.email import EmailStrDNS
 from polar.kit.http import SuccessUrl
+from polar.kit.locale import Locale
 from polar.kit.metadata import (
     METADATA_DESCRIPTION,
     MetadataField,

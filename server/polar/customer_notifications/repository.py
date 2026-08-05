@@ -52,9 +52,7 @@ class CustomerNotificationRepository(
         result = await self.session.execute(statement)
         return int(result.scalar_one())
 
-    async def mark_read(
-        self, customer_id: UUID, notification_id: UUID
-    ) -> None:
+    async def mark_read(self, customer_id: UUID, notification_id: UUID) -> None:
         now = utc_now()
         statement = (
             update(CustomerNotification)
@@ -116,9 +114,7 @@ class CustomerNotificationPreferencesRepository(
         insert_values["email_enabled"] = (
             True if email_enabled is None else email_enabled
         )
-        insert_values["bell_enabled"] = (
-            True if bell_enabled is None else bell_enabled
-        )
+        insert_values["bell_enabled"] = True if bell_enabled is None else bell_enabled
 
         update_values: dict = {}
         if email_enabled is not None:
@@ -126,9 +122,7 @@ class CustomerNotificationPreferencesRepository(
         if bell_enabled is not None:
             update_values["bell_enabled"] = bell_enabled
 
-        statement = pg_insert(CustomerNotificationPreferences).values(
-            **insert_values
-        )
+        statement = pg_insert(CustomerNotificationPreferences).values(**insert_values)
         if update_values:
             statement = statement.on_conflict_do_update(
                 index_elements=[CustomerNotificationPreferences.customer_id],

@@ -7,8 +7,6 @@ from fastapi import Depends, File, HTTPException, Query, Response, UploadFile
 from pydantic import UUID4
 
 from polar.config import settings
-from polar.course.repository import CourseRepository
-from polar.email_copy import ai as email_copy_ai
 from polar.email_subscriber.auth import EmailSubscribersRead, EmailSubscribersWrite
 from polar.exceptions import ResourceNotFound
 from polar.integrations.aws.s3 import S3Service
@@ -43,8 +41,6 @@ from .schemas import (
     EmailBroadcastTopLink,
     EmailBroadcastUpdate,
     EmailBroadcastWithAnalytics,
-    EmailCopyRequest,
-    EmailCopyResponse,
 )
 from .service import email_broadcast as email_broadcast_service
 
@@ -165,21 +161,43 @@ async def export_broadcast_analytics(
     prior = payload.get("prior") or {}
     delta = payload.get("delta") or {}
     rows = [
-        ("Total sent", current.get("total_sent"), prior.get("total_sent"), delta.get("total_sent_pct")),
-        ("Open rate %", current.get("open_rate"), prior.get("open_rate"), delta.get("open_rate_pt")),
-        ("Click rate %", current.get("click_rate"), prior.get("click_rate"), delta.get("click_rate_pt")),
-        ("Unsub rate %", current.get("unsub_rate"), prior.get("unsub_rate"), delta.get("unsub_rate_pt")),
+        (
+            "Total sent",
+            current.get("total_sent"),
+            prior.get("total_sent"),
+            delta.get("total_sent_pct"),
+        ),
+        (
+            "Open rate %",
+            current.get("open_rate"),
+            prior.get("open_rate"),
+            delta.get("open_rate_pt"),
+        ),
+        (
+            "Click rate %",
+            current.get("click_rate"),
+            prior.get("click_rate"),
+            delta.get("click_rate_pt"),
+        ),
+        (
+            "Unsub rate %",
+            current.get("unsub_rate"),
+            prior.get("unsub_rate"),
+            delta.get("unsub_rate_pt"),
+        ),
     ]
     for label, cur, pri, d in rows:
         writer.writerow([label, _cell(cur), _cell(pri), _cell(d)])
     writer.writerow([])
     writer.writerow(["Day", "Open rate %", "Click rate %"])
     for r in daily:
-        writer.writerow([
-            r.get("day"),
-            _cell(r.get("open_rate")),
-            _cell(r.get("click_rate")),
-        ])
+        writer.writerow(
+            [
+                r.get("day"),
+                _cell(r.get("open_rate")),
+                _cell(r.get("click_rate")),
+            ]
+        )
     writer.writerow([])
     writer.writerow(["Top links — URL", "Clicks", "CTR %"])
     for r in top_links:
@@ -245,9 +263,7 @@ async def get_broadcast_daily_sends(
     days: int = Query(default=30),
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> list[dict]:
-    return await email_broadcast_service.get_daily_sends(
-        session, organization_id, days
-    )
+    return await email_broadcast_service.get_daily_sends(session, organization_id, days)
 
 
 @router.post("/", response_model=EmailBroadcastSchema, status_code=201)
@@ -271,49 +287,6 @@ async def create_email_broadcast(
         filter_rules=broadcast_create.filter_rules,
     )
     return EmailBroadcastSchema.model_validate(broadcast, from_attributes=True)
-
-
-@router.post("/generate-copy", response_model=EmailCopyResponse)
-async def generate_email_copy(
-    auth_subject: EmailSubscribersWrite,
-    body: EmailCopyRequest,
-    session: AsyncReadSession = Depends(get_db_read_session),
-) -> EmailCopyResponse:
-    """Generate lifecycle email recap copy from a course (the Welcome note)."""
-    if not settings.ANTHROPIC_API_KEY:
-        raise HTTPException(
-            status_code=503, detail="AI copy generation is not configured."
-        )
-    course_repo = CourseRepository.from_session(session)
-    course = await course_repo.get_readable_by_id(body.course_id, auth_subject)
-    if course is None:
-        raise ResourceNotFound()
-
-    lessons = [
-        {"title": lesson.title}
-        for module in course.modules
-        for lesson in module.lessons
-    ]
-    brief = email_copy_ai.build_course_brief(
-        {
-            "title": course.title,
-            "description": course.description,
-            "instructor_name": course.instructor_name,
-            "lessons": lessons,
-        }
-    )
-    copy = await email_copy_ai.generate_email_copy(
-        api_key=settings.ANTHROPIC_API_KEY,
-        model=settings.EMAIL_COPY_MODEL,
-        brief=brief,
-        moment=body.moment,
-    )
-    return EmailCopyResponse(
-        subject=copy.subject,
-        preview=copy.preview,
-        heading=copy.heading,
-        body=copy.body,
-    )
 
 
 @router.get("/{broadcast_id}", response_model=EmailBroadcastSchema)
@@ -378,12 +351,14 @@ async def schedule_email_broadcast(
     if broadcast is None:
         raise ResourceNotFound()
     from .service import BroadcastAlreadySent
+
     try:
         scheduled = await email_broadcast_service.schedule(
             session, broadcast, scheduled_at=schedule.scheduled_at
         )
     except BroadcastAlreadySent as e:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=409, detail=str(e))
     return EmailBroadcastSchema.model_validate(scheduled, from_attributes=True)
 
@@ -403,9 +378,7 @@ async def get_email_broadcast_analytics(
     return EmailBroadcastAnalytics(**analytics)
 
 
-@router.get(
-    "/{broadcast_id}/sends", response_model=ListResource[EmailBroadcastSendRow]
-)
+@router.get("/{broadcast_id}/sends", response_model=ListResource[EmailBroadcastSendRow])
 async def list_email_broadcast_sends(
     auth_subject: EmailSubscribersRead,
     broadcast_id: UUID4,
@@ -440,7 +413,9 @@ async def list_email_broadcast_sends(
     return ListResource.from_paginated_results(items, count, pagination)
 
 
-@router.post("/{broadcast_id}/duplicate", response_model=EmailBroadcastSchema, status_code=201)
+@router.post(
+    "/{broadcast_id}/duplicate", response_model=EmailBroadcastSchema, status_code=201
+)
 async def duplicate_email_broadcast(
     auth_subject: EmailSubscribersWrite,
     broadcast_id: UUID4,
@@ -470,9 +445,7 @@ async def cancel_email_broadcast_schedule(
     return EmailBroadcastSchema.model_validate(updated, from_attributes=True)
 
 
-@router.get(
-    "/{broadcast_id}/ab-test", response_model=EmailBroadcastABTestState
-)
+@router.get("/{broadcast_id}/ab-test", response_model=EmailBroadcastABTestState)
 async def get_email_broadcast_ab_test(
     auth_subject: EmailSubscribersRead,
     broadcast_id: UUID4,
@@ -487,22 +460,16 @@ async def get_email_broadcast_ab_test(
     variants: dict[str, EmailBroadcastABVariantStats] | None = None
     if config is not None:
         raw = await email_broadcast_service.get_ab_analytics(session, broadcast_id)
-        variants = {
-            v: EmailBroadcastABVariantStats(**raw[v]) for v in raw
-        }
+        variants = {v: EmailBroadcastABVariantStats(**raw[v]) for v in raw}
     return EmailBroadcastABTestState(
-        config=EmailBroadcastABTestSchema.model_validate(
-            config, from_attributes=True
-        )
+        config=EmailBroadcastABTestSchema.model_validate(config, from_attributes=True)
         if config
         else None,
         variants=variants,
     )
 
 
-@router.put(
-    "/{broadcast_id}/ab-test", response_model=EmailBroadcastABTestSchema
-)
+@router.put("/{broadcast_id}/ab-test", response_model=EmailBroadcastABTestSchema)
 async def upsert_email_broadcast_ab_test(
     auth_subject: EmailSubscribersWrite,
     broadcast_id: UUID4,
@@ -529,9 +496,7 @@ async def upsert_email_broadcast_ab_test(
         )
     except BroadcastError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-    return EmailBroadcastABTestSchema.model_validate(
-        ab_test, from_attributes=True
-    )
+    return EmailBroadcastABTestSchema.model_validate(ab_test, from_attributes=True)
 
 
 @router.delete("/{broadcast_id}/ab-test", status_code=204)
@@ -600,9 +565,7 @@ async def send_test_email_broadcast(
     )
     if broadcast is None:
         raise ResourceNotFound()
-    await email_broadcast_service.send_test(
-        session, broadcast, to_email=body.email
-    )
+    await email_broadcast_service.send_test(session, broadcast, to_email=body.email)
 
 
 @router.post("/test-inline", status_code=204)

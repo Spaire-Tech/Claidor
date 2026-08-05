@@ -68,9 +68,7 @@ def _verify_svix_signature(
         return False
 
     signed = f"{msg_id}.{msg_timestamp}.".encode() + payload
-    expected = base64.b64encode(
-        hmac.new(key, signed, hashlib.sha256).digest()
-    ).decode()
+    expected = base64.b64encode(hmac.new(key, signed, hashlib.sha256).digest()).decode()
 
     for part in msg_signature.split():
         version, _, candidate = part.partition(",")

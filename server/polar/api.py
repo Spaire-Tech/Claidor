@@ -9,21 +9,6 @@ from polar.checkout.endpoints import router as checkout_router
 from polar.checkout_link.endpoints import router as checkout_link_router
 from polar.cli.endpoints import router as cli_router
 from polar.client_invoice.endpoints import router as client_invoice_router
-
-# Importing events_endpoints + activities_endpoints attaches their
-# routes onto the two community routers above. Keep these imports below
-# the router imports so the side effect is obvious.
-from polar.community import (
-    activities_endpoints as _community_activities_endpoints,  # noqa: F401
-)
-from polar.community import (
-    events_endpoints as _community_events_endpoints,  # noqa: F401
-)
-from polar.community.endpoints import creator_router as community_creator_router
-from polar.community.endpoints import customer_router as community_customer_router
-from polar.community.endpoints import public_router as community_public_router
-from polar.course.endpoints import router as course_router
-from polar.course_assistant.endpoints import router as course_assistant_router
 from polar.custom_field.endpoints import router as custom_field_router
 from polar.customer.endpoints import router as customer_router
 from polar.customer_meter.endpoints import router as customer_meter_router
@@ -33,7 +18,6 @@ from polar.customer_notifications.endpoints import (
 from polar.customer_portal.endpoints import router as customer_portal_router
 from polar.customer_seat.endpoints import router as customer_seat_router
 from polar.customer_session.endpoints import router as customer_session_router
-from polar.demo_portal.endpoints import router as demo_portal_router
 from polar.discount.endpoints import router as discount_router
 from polar.dispute.endpoints import router as dispute_router
 from polar.email_broadcast.endpoints import router as email_broadcast_router
@@ -62,9 +46,6 @@ from polar.integrations.resend.endpoints import router as resend_router
 from polar.integrations.stripe.endpoints import router as stripe_router
 from polar.license_key.endpoints import router as license_key_router
 from polar.login_code.endpoints import router as login_code_router
-from polar.masterclass_architect.endpoints import (
-    router as masterclass_architect_router,
-)
 from polar.member.endpoints import router as member_router
 from polar.member_session.endpoints import router as member_session_router
 from polar.meter.endpoints import router as meter_router
@@ -195,8 +176,6 @@ router.include_router(form_router)
 router.include_router(email_update_router)
 # /customer-sessions
 router.include_router(customer_session_router)
-# /demo-portal
-router.include_router(demo_portal_router)
 # /member-sessions
 router.include_router(member_session_router)
 # /integrations/plain
@@ -221,19 +200,7 @@ router.include_router(wallet_router)
 router.include_router(resend_router)
 # /integrations/chargeback-stop
 router.include_router(chargeback_stop_router)
-# /courses
-router.include_router(course_router)
 
-# /course-assistant
-router.include_router(course_assistant_router)
 
-# /masterclass-architect
-router.include_router(masterclass_architect_router)
-# /community (creator-side)
-router.include_router(community_creator_router)
-# /customer-portal/community (customer-side)
-router.include_router(community_customer_router)
-# /community/public (unauthenticated event share/embed surface)
-router.include_router(community_public_router)
 # /customer-portal/notifications (customer-side bell)
 router.include_router(customer_notifications_router)

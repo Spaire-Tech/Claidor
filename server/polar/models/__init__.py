@@ -11,29 +11,6 @@ from .checkout_link import CheckoutLink
 from .checkout_link_product import CheckoutLinkProduct
 from .checkout_product import CheckoutProduct
 from .client_invoice import ClientInvoice, ClientInvoiceLineItem, ClientInvoiceStatus
-from .community_activity import CommunityActivity
-from .community_activity_submission import CommunityActivitySubmission
-from .community_activity_submission_comment import (
-    CommunityActivitySubmissionComment,
-)
-from .community_comment import CommunityComment
-from .community_event import CommunityEvent
-from .community_event_announcement import CommunityEventAnnouncement
-from .community_event_rsvp import CommunityEventRsvp
-from .community_post import CommunityPost
-from .community_post_media import CommunityPostMedia
-from .community_reaction import CommunityReaction
-from .community_settings import CommunitySettings
-from .community_tag import CommunityTag
-from .course import Course
-from .course_assistant import CourseAssistant
-from .course_assistant_question import CourseAssistantQuestion
-from .course_enrollment import CourseEnrollment
-from .course_lesson import CourseLesson
-from .course_lesson_progress import CourseLessonProgress
-from .course_lesson_watch_progress import CourseLessonWatchProgress
-from .course_module import CourseModule
-from .course_note import CourseNote
 from .custom_field import CustomField
 from .customer import Customer
 from .customer_meter import CustomerMeter
@@ -73,8 +50,6 @@ from .form import Form, FormCustomField, FormStatus
 from .form_submission import FormSubmission
 from .held_balance import HeldBalance
 from .issue_reward import IssueReward
-from .lesson_comment import LessonComment
-from .lesson_comment_like import LessonCommentLike
 from .license_key import LicenseKey
 from .license_key_activation import LicenseKeyActivation
 from .login_code import LoginCode
@@ -150,27 +125,6 @@ __all__ = [
     "ClientInvoice",
     "ClientInvoiceLineItem",
     "ClientInvoiceStatus",
-    "CommunityActivity",
-    "CommunityActivitySubmission",
-    "CommunityActivitySubmissionComment",
-    "CommunityComment",
-    "CommunityEvent",
-    "CommunityEventAnnouncement",
-    "CommunityEventRsvp",
-    "CommunityPost",
-    "CommunityPostMedia",
-    "CommunityReaction",
-    "CommunitySettings",
-    "CommunityTag",
-    "Course",
-    "CourseAssistant",
-    "CourseAssistantQuestion",
-    "CourseEnrollment",
-    "CourseLesson",
-    "CourseLessonProgress",
-    "CourseLessonWatchProgress",
-    "CourseModule",
-    "CourseNote",
     "CustomField",
     "Customer",
     "CustomerMeter",
@@ -215,8 +169,6 @@ __all__ = [
     "LegacyRecurringProductPriceCustom",
     "LegacyRecurringProductPriceFixed",
     "LegacyRecurringProductPriceFree",
-    "LessonComment",
-    "LessonCommentLike",
     "LicenseKey",
     "LicenseKeyActivation",
     "LoginCode",

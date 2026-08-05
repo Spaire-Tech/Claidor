@@ -96,4 +96,6 @@ class OrderItem(RecordModel):
     @classmethod
     def from_wallet(cls, wallet: "Wallet", amount: int) -> Self:
         label = f"Wallet Top-Up for {wallet.organization.name}"
-        return cls(label=label, amount=amount, net_amount=amount, tax_amount=0, proration=False)
+        return cls(
+            label=label, amount=amount, net_amount=amount, tax_amount=0, proration=False
+        )

@@ -14,12 +14,18 @@ from polar.postgres import (
 from polar.routing import APIRouter
 
 from . import auth, sorting
-from .schemas import ClientInvoiceCreate, ClientInvoicePreviewRequest, ClientInvoiceSchema
+from .schemas import (
+    ClientInvoiceCreate,
+    ClientInvoicePreviewRequest,
+    ClientInvoiceSchema,
+)
 from .service import (
     ClientInvoiceAlreadyVoided,
     ClientInvoiceCannotMarkPaid,
     ClientInvoiceError,
     ClientInvoiceNotDraft,
+)
+from .service import (
     client_invoice as client_invoice_service,
 )
 
@@ -97,9 +103,7 @@ async def preview_client_invoice_pdf(
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={
-            "Content-Disposition": 'inline; filename="invoice-preview.pdf"'
-        },
+        headers={"Content-Disposition": 'inline; filename="invoice-preview.pdf"'},
     )
 
 

@@ -21,9 +21,7 @@ from polar.models.email_subscriber import (
 # JSON shape that the audience builder serializes:
 #   {"all": [{"field": "source", "op": "is", "value": "manual"}, ...]}
 # Supported field/op combos are listed in build_filter_query below.
-def build_filter_query(
-    organization_id: UUID, filter_rules: dict | None
-) -> Select:
+def build_filter_query(organization_id: UUID, filter_rules: dict | None) -> Select:
     """Compile a filter_rules JSON object into a select(EmailSubscriber)."""
     statement = select(EmailSubscriber).where(
         EmailSubscriber.organization_id == organization_id,
@@ -66,14 +64,10 @@ def build_filter_query(
 
         elif field == "import_source":
             if op == "is":
-                statement = statement.where(
-                    EmailSubscriber.import_source == value
-                )
+                statement = statement.where(EmailSubscriber.import_source == value)
             elif op == "contains" and isinstance(value, str):
                 statement = statement.where(
-                    func.lower(EmailSubscriber.import_source).like(
-                        f"%{value.lower()}%"
-                    )
+                    func.lower(EmailSubscriber.import_source).like(f"%{value.lower()}%")
                 )
 
         elif field == "subscribed_at":
@@ -83,13 +77,9 @@ def build_filter_query(
                 continue
             cutoff = utc_now() - timedelta(days=days)
             if op == "within_days":
-                statement = statement.where(
-                    EmailSubscriber.created_at >= cutoff
-                )
+                statement = statement.where(EmailSubscriber.created_at >= cutoff)
             elif op == "more_than_days_ago":
-                statement = statement.where(
-                    EmailSubscriber.created_at < cutoff
-                )
+                statement = statement.where(EmailSubscriber.created_at < cutoff)
 
         elif field == "last_opened_at":
             if last_open_subq is None:
@@ -116,9 +106,7 @@ def build_filter_query(
                     continue
                 cutoff = utc_now() - timedelta(days=days)
                 if op == "within_days":
-                    statement = statement.where(
-                        last_open_subq.c.last_open >= cutoff
-                    )
+                    statement = statement.where(last_open_subq.c.last_open >= cutoff)
                 elif op == "more_than_days_ago":
                     statement = statement.where(
                         or_(
@@ -220,9 +208,7 @@ class EmailSubscriberRepository(
         result = await self.session.execute(statement)
         return result.scalar_one()
 
-    async def count_by_status(
-        self, organization_id: UUID
-    ) -> dict[str, int]:
+    async def count_by_status(self, organization_id: UUID) -> dict[str, int]:
         statement = (
             select(EmailSubscriber.status, func.count(EmailSubscriber.id))
             .where(
@@ -268,14 +254,16 @@ class EmailSubscriberRepository(
         )
         return await self.get_all(statement)
 
-    async def get_all_for_export(
-        self, organization_id: UUID
-    ) -> list[EmailSubscriber]:
+    async def get_all_for_export(self, organization_id: UUID) -> list[EmailSubscriber]:
         """Get all subscribers (including non-active) for CSV export."""
-        statement = self.get_base_statement().where(
-            EmailSubscriber.organization_id == organization_id,
-            EmailSubscriber.deleted_at.is_(None),
-        ).order_by(EmailSubscriber.created_at.desc())
+        statement = (
+            self.get_base_statement()
+            .where(
+                EmailSubscriber.organization_id == organization_id,
+                EmailSubscriber.deleted_at.is_(None),
+            )
+            .order_by(EmailSubscriber.created_at.desc())
+        )
         return list(await self.get_all(statement))
 
     async def get_daily_counts(

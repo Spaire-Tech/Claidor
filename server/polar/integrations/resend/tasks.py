@@ -75,8 +75,7 @@ async def _stop_outbound_for_subscriber(
         update(EmailSequenceEnrollment)
         .where(
             EmailSequenceEnrollment.subscriber_id == subscriber_id,
-            EmailSequenceEnrollment.status
-            == EmailSequenceEnrollmentStatus.active,
+            EmailSequenceEnrollment.status == EmailSequenceEnrollmentStatus.active,
             EmailSequenceEnrollment.deleted_at.is_(None),
         )
         .values(
@@ -141,9 +140,7 @@ async def process_resend_event(
                         event_type=event_type,
                         email_id=email_id,
                     )
-                    .on_conflict_do_nothing(
-                        index_elements=["webhook_event_id"]
-                    )
+                    .on_conflict_do_nothing(index_elements=["webhook_event_id"])
                     .returning(ResendWebhookEvent.id)
                 )
                 result = await session.execute(stmt)
@@ -363,7 +360,9 @@ async def _apply_broadcast_event(
 
     elif event_type == "email.complained":
         send.unsubscribed_at = now
-        await session.execute(_update_subscriber_on_complaint(session, send.subscriber_id, now))
+        await session.execute(
+            _update_subscriber_on_complaint(session, send.subscriber_id, now)
+        )
         await _stop_outbound_for_subscriber(
             session, send.subscriber_id, reason="complaint", now=now
         )
@@ -426,7 +425,9 @@ async def _apply_sequence_event(
 
     elif event_type == "email.complained":
         send.unsubscribed_at = now
-        await session.execute(_update_subscriber_on_complaint(session, send.subscriber_id, now))
+        await session.execute(
+            _update_subscriber_on_complaint(session, send.subscriber_id, now)
+        )
         await _stop_outbound_for_subscriber(
             session, send.subscriber_id, reason="complaint", now=now
         )

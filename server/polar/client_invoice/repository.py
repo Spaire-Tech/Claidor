@@ -72,9 +72,7 @@ class ClientInvoiceRepository(
             statement = statement.where(ClientInvoice.status == status)
         return await self.get_all(statement)
 
-    def get_sorting_clause(
-        self, property: ClientInvoiceSortProperty
-    ) -> SortingClause:
+    def get_sorting_clause(self, property: ClientInvoiceSortProperty) -> SortingClause:
         match property:
             case ClientInvoiceSortProperty.created_at:
                 return ClientInvoice.created_at

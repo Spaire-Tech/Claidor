@@ -54,9 +54,7 @@ class TierPlan(Schema):
         ),
     )
     currency: str = Field(default="usd", description="Currency code (lowercased).")
-    trial_days: int | None = Field(
-        description="Trial duration in days, if any."
-    )
+    trial_days: int | None = Field(description="Trial duration in days, if any.")
     transaction_fee: TransactionFee
     features: TierFeatures
     limits: TierLimits
@@ -219,9 +217,7 @@ class PlatformBillingDetails(Schema):
     section so the creator never has to leave for the customer portal."""
 
     billing_name: str | None = Field(description="Name shown on invoices.")
-    billing_address: Address | None = Field(
-        description="Address shown on invoices."
-    )
+    billing_address: Address | None = Field(description="Address shown on invoices.")
     tax_id: TaxID | None = Field(description="Validated tax ID, if provided.")
     default_payment_method_id: UUID | None = Field(
         description="Id of the card Spaire charges by default, if any."

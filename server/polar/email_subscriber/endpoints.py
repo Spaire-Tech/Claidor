@@ -57,7 +57,10 @@ async def list_email_subscribers(
         sorting=sorting,
     )
     return ListResource.from_paginated_results(
-        [EmailSubscriberSchema.model_validate(r, from_attributes=True) for r in results],
+        [
+            EmailSubscriberSchema.model_validate(r, from_attributes=True)
+            for r in results
+        ],
         count,
         pagination,
     )
@@ -112,13 +115,15 @@ async def export_email_subscribers(
     writer = csv.writer(output)
     writer.writerow(["email", "name", "status", "source", "created_at"])
     for sub in subscribers:
-        writer.writerow([
-            sub.email,
-            sub.name or "",
-            sub.status,
-            sub.source,
-            sub.created_at.isoformat() if sub.created_at else "",
-        ])
+        writer.writerow(
+            [
+                sub.email,
+                sub.name or "",
+                sub.status,
+                sub.source,
+                sub.created_at.isoformat() if sub.created_at else "",
+            ]
+        )
 
     output.seek(0)
     return StreamingResponse(
@@ -214,9 +219,7 @@ async def remove_email_subscriber_tag(
     return await list_tags(session, subscriber.id)
 
 
-@router.get(
-    "/{subscriber_id}/custom-fields", response_model=dict[str, str | None]
-)
+@router.get("/{subscriber_id}/custom-fields", response_model=dict[str, str | None])
 async def list_email_subscriber_custom_fields(
     auth_subject: auth.EmailSubscribersRead,
     subscriber_id: UUID4,
@@ -310,9 +313,7 @@ async def delete_email_subscriber(
     )
     if subscriber is None:
         raise ResourceNotFound()
-    await email_subscriber_service.update(
-        session, subscriber, status="archived"
-    )
+    await email_subscriber_service.update(session, subscriber, status="archived")
 
 
 @router.delete("/{subscriber_id}/permanent", status_code=204)
@@ -369,9 +370,7 @@ async def unsubscribe_email_subscriber(
     return {"ok": True}
 
 
-@router.post(
-    "/segment-preview", response_model=EmailSubscriberFilterPreviewResult
-)
+@router.post("/segment-preview", response_model=EmailSubscriberFilterPreviewResult)
 async def preview_segment_filter(
     auth_subject: auth.EmailSubscribersRead,
     body: EmailSubscriberFilterPreview,
@@ -393,9 +392,7 @@ async def preview_segment_filter(
     )
 
 
-@router.post(
-    "/bulk", response_model=EmailSubscriberBulkResult, status_code=201
-)
+@router.post("/bulk", response_model=EmailSubscriberBulkResult, status_code=201)
 async def bulk_create_email_subscribers(
     auth_subject: auth.EmailSubscribersWrite,
     bulk: EmailSubscriberBulkCreate,
@@ -509,9 +506,7 @@ async def import_email_subscribers_csv(
             )
         email = (row.get(email_field) or "").strip()
         name = (
-            (row.get(name_field) or "").strip()
-            if name_field is not None
-            else ""
+            (row.get(name_field) or "").strip() if name_field is not None else ""
         ) or None
         if not email:
             errors.append(

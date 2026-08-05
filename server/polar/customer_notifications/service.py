@@ -44,9 +44,7 @@ class CustomerNotificationService:
         the bell channel and there's nothing to insert). Email is
         enqueued via dramatiq so the request thread isn't blocked on
         render."""
-        prefs_repo = CustomerNotificationPreferencesRepository.from_session(
-            session
-        )
+        prefs_repo = CustomerNotificationPreferencesRepository.from_session(session)
         # Load prefs once; cheap and avoids two roundtrips.
         prefs = await prefs_repo.get_for_customer(customer_id)
         bell_on = True if prefs is None else prefs.bell_enabled
@@ -114,9 +112,9 @@ class CustomerNotificationService:
                 from polar.customer.repository import CustomerRepository
                 from polar.email.sender import enqueue_email
 
-                customer = await CustomerRepository.from_session(
-                    session
-                ).get_by_id(customer_id)
+                customer = await CustomerRepository.from_session(session).get_by_id(
+                    customer_id
+                )
                 if customer is not None and customer.email:
                     subject, body = render(notification_type, payload)
                     enqueue_email(
@@ -173,9 +171,7 @@ class CustomerNotificationService:
         repo = CustomerNotificationRepository.from_session(session)
         return list(await repo.list_for_customer(customer_id, limit=limit))
 
-    async def unread_count(
-        self, session: AsyncSession, *, customer_id: UUID
-    ) -> int:
+    async def unread_count(self, session: AsyncSession, *, customer_id: UUID) -> int:
         repo = CustomerNotificationRepository.from_session(session)
         return await repo.unread_count(customer_id)
 

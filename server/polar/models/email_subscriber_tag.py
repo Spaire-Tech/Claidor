@@ -36,9 +36,7 @@ class EmailSubscriberTag(RecordModel):
         index=True,
     )
     tag: Mapped[str] = mapped_column(String(80), nullable=False)
-    added_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False
-    )
+    added_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
 
     @declared_attr
     def subscriber(cls) -> Mapped["EmailSubscriber"]:  # type: ignore[name-defined]  # noqa: F821

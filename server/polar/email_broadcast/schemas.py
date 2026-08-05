@@ -27,9 +27,15 @@ class EmailBroadcastCreate(Schema):
         ),
         max_length=255,
     )
-    reply_to_email: str | None = Field(default=None, description="Reply-to email address")
-    content_json: dict | None = Field(default=None, description="Structured editor content")
-    content_html: str | None = Field(default=None, description="HTML content for sending")
+    reply_to_email: str | None = Field(
+        default=None, description="Reply-to email address"
+    )
+    content_json: dict | None = Field(
+        default=None, description="Structured editor content"
+    )
+    content_html: str | None = Field(
+        default=None, description="HTML content for sending"
+    )
     segment_id: UUID4 | None = Field(default=None, description="Target segment ID")
     filter_rules: dict | None = Field(
         default=None,
@@ -65,27 +71,6 @@ class EmailBroadcast(TimestampedSchema, IDSchema):
     scheduled_at: datetime | None = None
     sent_at: datetime | None = None
     total_recipients: int = 0
-
-
-class EmailCopyRequest(Schema):
-    course_id: UUID4 = Field(description="Course to generate the recap copy from.")
-    moment: str = Field(
-        default="enrolment",
-        description=(
-            "Lifecycle moment: enrolment, firstLesson, specificLesson, halfway, "
-            "courseComplete, or inactive."
-        ),
-        max_length=40,
-    )
-
-
-class EmailCopyResponse(Schema):
-    subject: str = Field(description="Generated subject line.")
-    preview: str = Field(description="Generated inbox preview text.")
-    heading: str = Field(description="Generated welcome-note heading.")
-    body: list[str] = Field(
-        default_factory=list, description="Generated welcome-note paragraphs."
-    )
 
 
 class EmailBroadcastTestSend(Schema):

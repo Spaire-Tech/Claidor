@@ -33,7 +33,6 @@ class BenefitType(StrEnum):
     downloadables = "downloadables"
     license_keys = "license_keys"
     meter_credit = "meter_credit"
-    course_access = "course_access"
 
     def get_display_name(self) -> str:
         return {
@@ -43,7 +42,6 @@ class BenefitType(StrEnum):
             BenefitType.downloadables: "Downloadables",
             BenefitType.license_keys: "License Keys",
             BenefitType.meter_credit: "Meter Credit",
-            BenefitType.course_access: "Course Access",
         }[self]
 
     def is_tax_applicable(self) -> bool:
@@ -55,7 +53,6 @@ class BenefitType(StrEnum):
                 BenefitType.downloadables: True,
                 BenefitType.license_keys: True,
                 BenefitType.meter_credit: True,
-                BenefitType.course_access: True,
             }
             return _is_tax_applicable_map[self]
         except KeyError as e:

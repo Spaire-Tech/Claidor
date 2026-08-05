@@ -259,12 +259,8 @@ def resolve_creator_from_address(
             "email.sender_email_dropped_unverified_domain",
             organization_id=str(organization.id) if organization else None,
             requested_email=requested_email,
-            org_domain=(
-                organization.email_sender_domain if organization else None
-            ),
-            org_verified=bool(
-                organization and organization.has_verified_sender_domain
-            ),
+            org_domain=(organization.email_sender_domain if organization else None),
+            org_verified=bool(organization and organization.has_verified_sender_domain),
         )
     if requested_name:
         return (requested_name, DEFAULT_FROM_EMAIL_ADDRESS)

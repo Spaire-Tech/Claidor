@@ -383,7 +383,9 @@ class ProductPriceSeatUnit(NewProductPrice, ProductPrice):
         """Calculate total for graduated pricing: each tier's range is priced independently."""
         total = 0
         remaining = seats
-        for tier in sorted(self.seat_tiers.get("tiers", []), key=lambda t: t["min_seats"]):
+        for tier in sorted(
+            self.seat_tiers.get("tiers", []), key=lambda t: t["min_seats"]
+        ):
             min_seats = tier["min_seats"]
             max_seats = tier.get("max_seats")
             price_per_seat = tier["price_per_seat"]
@@ -391,7 +393,9 @@ class ProductPriceSeatUnit(NewProductPrice, ProductPrice):
             if remaining <= 0:
                 break
 
-            tier_size = (max_seats - min_seats + 1) if max_seats is not None else remaining
+            tier_size = (
+                (max_seats - min_seats + 1) if max_seats is not None else remaining
+            )
             seats_in_tier = min(remaining, tier_size)
             total += seats_in_tier * price_per_seat
             remaining -= seats_in_tier

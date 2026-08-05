@@ -80,9 +80,7 @@ async def v2_recipient_capability_status_updated(event_id: uuid.UUID) -> None:
             data = event.data
             related_object = data.get("related_object", {})
             account_id = (
-                related_object.get("id", "")
-                if isinstance(related_object, dict)
-                else ""
+                related_object.get("id", "") if isinstance(related_object, dict) else ""
             )
             log.info(
                 "Processing v2 recipient capability status update",
@@ -129,9 +127,7 @@ async def payment_intent_succeeded(event_id: uuid.UUID) -> None:
                             stripe as stripe_service,
                         )
 
-                        charge = await stripe_service.get_charge(
-                            str(latest_charge_id)
-                        )
+                        charge = await stripe_service.get_charge(str(latest_charge_id))
                         try:
                             await payment.handle_success(session, charge)
                         except (NotConfirmedCheckout, payment.OrderDoesNotExist) as e:

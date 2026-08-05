@@ -49,9 +49,7 @@ async def list_audit_log(
         raise ResourceNotFound("Organization not found.")
 
     # Tier gate — raises FeatureNotInPlanError (402) on Free/Pro.
-    await entitlements_service.require_feature(
-        session, organization.id, "audit_logs"
-    )
+    await entitlements_service.require_feature(session, organization.id, "audit_logs")
 
     repository = audit_log_repository(session)
     events, total = await repository.list_for_organization(

@@ -24,9 +24,7 @@ _SERVER_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def _get_alembic_config() -> Config:
     config = Config(os.path.join(_SERVER_DIR, "alembic.ini"))
     # Absolute paths so it works regardless of the process's working directory.
-    config.set_main_option(
-        "script_location", os.path.join(_SERVER_DIR, "migrations")
-    )
+    config.set_main_option("script_location", os.path.join(_SERVER_DIR, "migrations"))
     # Escape %-signs so Alembic doesn't treat them as interpolation markers.
     dsn = settings.get_postgres_dsn("psycopg2").replace("%", "%%")
     config.set_main_option("sqlalchemy.url", dsn)

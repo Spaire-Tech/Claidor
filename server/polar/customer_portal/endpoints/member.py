@@ -4,7 +4,11 @@ import structlog
 from fastapi import Depends
 
 from polar.auth.models import is_member
-from polar.exceptions import NotPermitted, SpaireRequestValidationError, ResourceNotFound
+from polar.exceptions import (
+    NotPermitted,
+    ResourceNotFound,
+    SpaireRequestValidationError,
+)
 from polar.member.service import member_service
 from polar.models.customer import CustomerType
 from polar.models.member import Member, MemberRole

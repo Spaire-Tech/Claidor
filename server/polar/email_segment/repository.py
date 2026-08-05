@@ -36,9 +36,7 @@ class EmailSegmentRepository(
             )
         return statement
 
-    async def get_by_organization(
-        self, organization_id: UUID
-    ) -> list[EmailSegment]:
+    async def get_by_organization(self, organization_id: UUID) -> list[EmailSegment]:
         statement = self.get_base_statement().where(
             EmailSegment.organization_id == organization_id,
             EmailSegment.deleted_at.is_(None),
@@ -56,9 +54,7 @@ class EmailSegmentRepository(
         )
         return await self.get_one_or_none(statement)
 
-    async def count_subscribers(
-        self, segment: EmailSegment
-    ) -> int:
+    async def count_subscribers(self, segment: EmailSegment) -> int:
         """Dynamically count subscribers in a segment."""
         if segment.type == EmailSegmentType.all:
             statement = select(func.count(EmailSubscriber.id)).where(
@@ -117,9 +113,7 @@ class EmailSegmentRepository(
         result = await self.session.execute(statement)
         return result.scalar_one()
 
-    async def get_subscriber_ids_for_segment(
-        self, segment: EmailSegment
-    ) -> list[UUID]:
+    async def get_subscriber_ids_for_segment(self, segment: EmailSegment) -> list[UUID]:
         """Get subscriber IDs matching a segment."""
         if segment.type == EmailSegmentType.all:
             statement = select(EmailSubscriber.id).where(
@@ -180,9 +174,7 @@ class EmailSegmentRepository(
         result = await self.session.execute(statement)
         return list(result.scalars().all())
 
-    async def get_manual_segment_subscriber_ids(
-        self, segment_id: UUID
-    ) -> list[UUID]:
+    async def get_manual_segment_subscriber_ids(self, segment_id: UUID) -> list[UUID]:
         """Get subscriber IDs in a manual segment."""
         statement = select(EmailSegmentSubscriber.subscriber_id).where(
             EmailSegmentSubscriber.segment_id == segment_id,

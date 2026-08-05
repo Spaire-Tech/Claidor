@@ -9,9 +9,7 @@ from polar.kit.db.models import RecordModel
 
 class EmailSequenceStep(RecordModel):
     __tablename__ = "email_sequence_steps"
-    __table_args__ = (
-        Index("ix_email_sequence_steps_sequence_id", "sequence_id"),
-    )
+    __table_args__ = (Index("ix_email_sequence_steps_sequence_id", "sequence_id"),)
 
     sequence_id: Mapped[UUID] = mapped_column(
         Uuid,
@@ -24,11 +22,17 @@ class EmailSequenceStep(RecordModel):
     delay_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     subject: Mapped[str] = mapped_column(String(255), nullable=False)
     sender_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    sender_email: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
-    reply_to_email: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    sender_email: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, default=None
+    )
+    reply_to_email: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, default=None
+    )
     content_html: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
     # Reserved for future rich editor (Tiptap/Lexical JSON)
-    content_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    content_json: Mapped[dict | None] = mapped_column(
+        JSONB, nullable=True, default=None
+    )
     # Stable client-authored id linking this row to a node in the flow_doc.
     # The editor materialises flow_doc email nodes into rows; we use this id
     # to align desired↔server steps on save (instead of array position, which

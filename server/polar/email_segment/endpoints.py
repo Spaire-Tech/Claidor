@@ -77,9 +77,7 @@ async def update_email_segment(
     segment_update: EmailSegmentUpdate,
     session: AsyncSession = Depends(get_db_session),
 ) -> EmailSegmentSchema:
-    segment = await email_segment_service.get_by_id(
-        session, auth_subject, segment_id
-    )
+    segment = await email_segment_service.get_by_id(session, auth_subject, segment_id)
     if segment is None:
         raise ResourceNotFound()
     updated = await email_segment_service.update(
@@ -105,9 +103,7 @@ async def delete_email_segment(
     segment_id: UUID4,
     session: AsyncSession = Depends(get_db_session),
 ) -> None:
-    segment = await email_segment_service.get_by_id(
-        session, auth_subject, segment_id
-    )
+    segment = await email_segment_service.get_by_id(session, auth_subject, segment_id)
     if segment is None:
         raise ResourceNotFound()
     await email_segment_service.delete(session, segment)
@@ -147,9 +143,7 @@ async def add_subscribers_to_segment(
     action: EmailSegmentSubscriberAction,
     session: AsyncSession = Depends(get_db_session),
 ) -> dict[str, int]:
-    segment = await email_segment_service.get_by_id(
-        session, auth_subject, segment_id
-    )
+    segment = await email_segment_service.get_by_id(session, auth_subject, segment_id)
     if segment is None:
         raise ResourceNotFound()
     added = await email_segment_service.add_subscribers(
@@ -165,9 +159,7 @@ async def remove_subscribers_from_segment(
     action: EmailSegmentSubscriberAction,
     session: AsyncSession = Depends(get_db_session),
 ) -> dict[str, int]:
-    segment = await email_segment_service.get_by_id(
-        session, auth_subject, segment_id
-    )
+    segment = await email_segment_service.get_by_id(session, auth_subject, segment_id)
     if segment is None:
         raise ResourceNotFound()
     removed = await email_segment_service.remove_subscribers(

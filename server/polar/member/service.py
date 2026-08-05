@@ -9,7 +9,11 @@ from sqlalchemy.orm import joinedload
 
 from polar.auth.models import AuthSubject, Organization, User
 from polar.customer.repository import CustomerRepository
-from polar.exceptions import NotPermitted, SpaireRequestValidationError, ResourceNotFound
+from polar.exceptions import (
+    NotPermitted,
+    ResourceNotFound,
+    SpaireRequestValidationError,
+)
 from polar.kit.pagination import PaginationParams
 from polar.kit.sorting import Sorting
 from polar.models.customer import Customer, CustomerType

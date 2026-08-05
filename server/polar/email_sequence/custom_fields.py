@@ -69,9 +69,7 @@ async def set_field(
     return row
 
 
-async def get_field(
-    session: AsyncSession, subscriber_id: UUID, key: str
-) -> str | None:
+async def get_field(session: AsyncSession, subscriber_id: UUID, key: str) -> str | None:
     key = _normalise_key(key)
     if not key:
         return None
@@ -103,9 +101,7 @@ async def list_fields(
     return {row[0]: row[1] for row in result.all()}
 
 
-async def delete_field(
-    session: AsyncSession, subscriber_id: UUID, key: str
-) -> None:
+async def delete_field(session: AsyncSession, subscriber_id: UUID, key: str) -> None:
     key = _normalise_key(key)
     if not key:
         return

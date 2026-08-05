@@ -2,9 +2,6 @@ from typing import Annotated
 
 from pydantic import UUID4, Discriminator
 
-from polar.benefit.strategies.course_access.properties import (
-    BenefitGrantCourseAccessProperties,
-)
 from polar.benefit.strategies.custom.properties import BenefitGrantCustomProperties
 from polar.benefit.strategies.discord.properties import BenefitGrantDiscordProperties
 from polar.benefit.strategies.downloadables.properties import (
@@ -31,9 +28,6 @@ from polar.models.benefit import BenefitType
 
 from .strategies import BenefitGrantProperties
 from .strategies.base.schemas import BenefitGrantBase, BenefitPublicBase
-from .strategies.course_access.schemas import (
-    BenefitCourseAccess,
-)
 from .strategies.custom.schemas import (
     BenefitCustom,
     BenefitCustomCreate,
@@ -103,8 +97,7 @@ Benefit = Annotated[
     | BenefitGitHubRepository
     | BenefitDownloadables
     | BenefitLicenseKeys
-    | BenefitMeterCredit
-    | BenefitCourseAccess,
+    | BenefitMeterCredit,
     SetSchemaReference("Benefit"),
     MergeJSONSchema({"title": "Benefit"}),
     ClassName("Benefit"),
@@ -117,7 +110,6 @@ benefit_schema_map: dict[BenefitType, type[Benefit]] = {
     BenefitType.downloadables: BenefitDownloadables,
     BenefitType.license_keys: BenefitLicenseKeys,
     BenefitType.meter_credit: BenefitMeterCredit,
-    BenefitType.course_access: BenefitCourseAccess,
 }
 
 
@@ -169,20 +161,13 @@ class BenefitGrantMeterCreditWebhook(BenefitGrantWebhookBase):
     previous_properties: BenefitGrantMeterCreditProperties | None = None
 
 
-class BenefitGrantCourseAccessWebhook(BenefitGrantWebhookBase):
-    benefit: BenefitCourseAccess
-    properties: BenefitGrantCourseAccessProperties
-    previous_properties: BenefitGrantCourseAccessProperties | None = None
-
-
 BenefitGrantWebhook = Annotated[
     BenefitGrantDiscordWebhook
     | BenefitGrantCustomWebhook
     | BenefitGrantGitHubRepositoryWebhook
     | BenefitGrantDownloadablesWebhook
     | BenefitGrantLicenseKeysWebhook
-    | BenefitGrantMeterCreditWebhook
-    | BenefitGrantCourseAccessWebhook,
+    | BenefitGrantMeterCreditWebhook,
     SetSchemaReference("BenefitGrantWebhook"),
     MergeJSONSchema({"title": "BenefitGrantWebhook"}),
     ClassName("BenefitGrantWebhook"),

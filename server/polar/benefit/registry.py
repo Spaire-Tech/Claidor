@@ -13,7 +13,6 @@ from .strategies import (
     BenefitServiceError,
     BenefitServiceProtocol,
 )
-from .strategies.course_access.service import BenefitCourseAccessService
 from .strategies.custom.service import BenefitCustomService
 from .strategies.discord.service import BenefitDiscordService
 from .strategies.downloadables.service import BenefitDownloadablesService
@@ -31,7 +30,6 @@ _STRATEGY_CLASS_MAP: dict[
     BenefitType.downloadables: BenefitDownloadablesService,
     BenefitType.license_keys: BenefitLicenseKeysService,
     BenefitType.meter_credit: BenefitMeterCreditService,
-    BenefitType.course_access: BenefitCourseAccessService,
 }
 
 

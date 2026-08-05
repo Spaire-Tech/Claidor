@@ -7,8 +7,12 @@ from polar.models.email_sequence import EmailSequenceStatus, EmailSequenceTrigge
 
 
 class EmailSequenceStepCreate(Schema):
-    position: int | None = Field(default=None, description="Position (auto-appended if omitted)")
-    delay_hours: int = Field(default=0, ge=0, description="Hours to wait before sending")
+    position: int | None = Field(
+        default=None, description="Position (auto-appended if omitted)"
+    )
+    delay_hours: int = Field(
+        default=0, ge=0, description="Hours to wait before sending"
+    )
     subject: str = Field(max_length=255)
     sender_name: str = Field(max_length=100)
     sender_email: str | None = None
@@ -57,8 +61,6 @@ class EmailSequenceCreate(Schema):
     description: str | None = None
     trigger_type: EmailSequenceTriggerType = EmailSequenceTriggerType.manual
     trigger_config: dict = Field(default_factory=dict)
-    course_id: UUID4 | None = None
-    lesson_id: UUID4 | None = None
     # Optional authored flow document. The editor sends this on first save so
     # a fresh sequence can ship with audience filters / waits / branches
     # already in place; without it the user has to PATCH right after creating.
@@ -74,8 +76,6 @@ class EmailSequenceUpdate(Schema):
     trigger_type: EmailSequenceTriggerType | None = None
     trigger_config: dict | None = None
     status: EmailSequenceStatus | None = None
-    course_id: UUID4 | None = None
-    lesson_id: UUID4 | None = None
 
 
 class EmailSequence(TimestampedSchema, IDSchema):
@@ -86,8 +86,6 @@ class EmailSequence(TimestampedSchema, IDSchema):
     trigger_type: str
     trigger_config: dict
     status: str
-    course_id: UUID4 | None = None
-    lesson_id: UUID4 | None = None
     step_count: int = 0
     enrollment_count: int = 0
 
@@ -153,8 +151,6 @@ class EmailSequenceTemplate(Schema):
 
 class EmailSequenceFromTemplate(Schema):
     slug: str
-    course_id: UUID4 | None = None
-    lesson_id: UUID4 | None = None
 
 
 class EmailSequenceAnalytics(Schema):

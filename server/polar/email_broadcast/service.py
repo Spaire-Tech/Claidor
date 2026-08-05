@@ -26,6 +26,7 @@ class BroadcastAlreadySent(BroadcastError):
     def __init__(self) -> None:
         super().__init__("Broadcast has already been sent or is currently sending.")
 
+
 from .render import render_blocks_to_html
 from .repository import EmailBroadcastABTestRepository, EmailBroadcastRepository
 
@@ -70,12 +71,12 @@ class EmailBroadcastService:
             from sqlalchemy import func
 
             like = f"%{q.strip().lower()}%"
-            statement = statement.where(
-                func.lower(EmailBroadcast.subject).like(like)
-            )
+            statement = statement.where(func.lower(EmailBroadcast.subject).like(like))
 
         statement = statement.order_by(EmailBroadcast.created_at.desc())
-        return await repository.paginate(statement, limit=pagination.limit, page=pagination.page)
+        return await repository.paginate(
+            statement, limit=pagination.limit, page=pagination.page
+        )
 
     async def list_analytics(
         self,
@@ -328,7 +329,9 @@ class EmailBroadcastService:
         # content_html, regenerate the HTML from the JSON so the worker stays
         # in sync. An explicit content_html in the same patch wins.
         if "content_json" in update and "content_html" not in update:
-            broadcast.content_html = render_blocks_to_html(broadcast.content_json) or broadcast.content_html
+            broadcast.content_html = (
+                render_blocks_to_html(broadcast.content_json) or broadcast.content_html
+            )
 
         return await repository.update(broadcast)
 
@@ -537,7 +540,11 @@ class EmailBroadcastService:
         opened = engagement.get("opened", 0)
         clicked = engagement.get("clicked", 0)
         bounced = counts.get(EmailBroadcastSendStatus.bounced, 0)
-        sent_count = total - counts.get(EmailBroadcastSendStatus.pending, 0) - counts.get(EmailBroadcastSendStatus.failed, 0)
+        sent_count = (
+            total
+            - counts.get(EmailBroadcastSendStatus.pending, 0)
+            - counts.get(EmailBroadcastSendStatus.failed, 0)
+        )
         unsubscribed = await repository.count_unsubscribed_for_broadcast(broadcast_id)
 
         # Same denominator fallback as the aggregate: prefer delivered,
@@ -567,7 +574,6 @@ class EmailBroadcastService:
             # banner instead of a misleading 0% engagement readout.
             "webhook_signal_present": delivered > 0 or opened > 0 or clicked > 0,
         }
-
 
     @staticmethod
     def _shape_aggregate(counts: dict[str, int]) -> dict[str, int | float | None]:
@@ -647,7 +653,9 @@ class EmailBroadcastService:
             )
             prior = self._shape_aggregate(prior_counts)
 
-            def _pt_delta(current_val: float | None, prior_val: float | None) -> float | None:
+            def _pt_delta(
+                current_val: float | None, prior_val: float | None
+            ) -> float | None:
                 # _shape_aggregate returns None for rates when the
                 # denominator is zero. Previously we float(None)'d both
                 # sides and 500'd. Return None so the UI renders "—".
@@ -659,15 +667,9 @@ class EmailBroadcastService:
                 "total_sent_pct": _pct_delta(
                     current["total_sent"], prior["total_sent"]
                 ),
-                "open_rate_pt": _pt_delta(
-                    current["open_rate"], prior["open_rate"]
-                ),
-                "click_rate_pt": _pt_delta(
-                    current["click_rate"], prior["click_rate"]
-                ),
-                "unsub_rate_pt": _pt_delta(
-                    current["unsub_rate"], prior["unsub_rate"]
-                ),
+                "open_rate_pt": _pt_delta(current["open_rate"], prior["open_rate"]),
+                "click_rate_pt": _pt_delta(current["click_rate"], prior["click_rate"]),
+                "unsub_rate_pt": _pt_delta(current["unsub_rate"], prior["unsub_rate"]),
             }
 
         # Industry benchmark (audit issue #10 / fix-list #29). The legacy
@@ -712,13 +714,9 @@ class EmailBroadcastService:
         null so the UI can render them as empty.
         """
         repository = EmailBroadcastRepository.from_session(session)
-        rows = await repository.get_send_engagement_heatmap(
-            organization_id, days=days
-        )
+        rows = await repository.get_send_engagement_heatmap(organization_id, days=days)
         threshold = 5
-        matrix: list[list[float | None]] = [
-            [None for _ in range(24)] for _ in range(7)
-        ]
+        matrix: list[list[float | None]] = [[None for _ in range(24)] for _ in range(7)]
         sample_total = 0
         for row in rows:
             sends = row["sends"]

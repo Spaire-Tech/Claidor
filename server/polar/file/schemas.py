@@ -82,28 +82,6 @@ class StorefrontHeaderFileCreate(FileCreateBase):
     )
 
 
-class CommunityPostImageFileCreate(FileCreateBase):
-    """Schema to create a file used as a community-post image attachment.
-
-    Public-read (rendered inline in the feed). Same MIME whitelist as
-    product_media — 10MB cap. Posts can attach up to 4 of these via
-    community_post_media rows."""
-
-    service: Literal[FileServiceTypes.community_post_image]
-    mime_type: str = Field(
-        description=(
-            "MIME type of the file. Only images are supported for this type of file."
-        ),
-        pattern=r"^image\/(jpeg|png|gif|webp|svg\+xml|heic|heif|avif)$",
-    )
-    size: int = Field(
-        description=(
-            "Size of the file. A maximum of 10 MB is allowed for this type of file."
-        ),
-        le=10 * 1024 * 1024,
-    )
-
-
 class StorefrontLinkFileCreate(FileCreateBase):
     """Schema to create a file to be used as a storefront link cover image."""
 
@@ -127,8 +105,7 @@ FileCreate = Annotated[
     | ProductMediaFileCreate
     | OrganizationAvatarFileCreate
     | StorefrontHeaderFileCreate
-    | StorefrontLinkFileCreate
-    | CommunityPostImageFileCreate,
+    | StorefrontLinkFileCreate,
     Discriminator("service"),
     SetSchemaReference("FileCreate"),
 ]
@@ -178,19 +155,12 @@ class StorefrontLinkFileRead(PublicFileReadBase):
     service: Literal[FileServiceTypes.storefront_link]
 
 
-class CommunityPostImageFileRead(PublicFileReadBase):
-    """File rendered inline in a community-post attachment."""
-
-    service: Literal[FileServiceTypes.community_post_image]
-
-
 FileRead = Annotated[
     DownloadableFileRead
     | ProductMediaFileRead
     | OrganizationAvatarFileRead
     | StorefrontHeaderFileRead
-    | StorefrontLinkFileRead
-    | CommunityPostImageFileRead,
+    | StorefrontLinkFileRead,
     Discriminator("service"),
     MergeJSONSchema({"title": "FileRead"}),
     ClassName("FileRead"),

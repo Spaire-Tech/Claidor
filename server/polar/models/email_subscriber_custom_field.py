@@ -37,9 +37,7 @@ class EmailSubscriberCustomField(RecordModel):
     )
     key: Mapped[str] = mapped_column(String(80), nullable=False)
     value: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    set_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False
-    )
+    set_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
 
     @declared_attr
     def subscriber(cls) -> Mapped["EmailSubscriber"]:  # type: ignore[name-defined]  # noqa: F821

@@ -9,7 +9,9 @@ from polar.models.product_review import ProductReview
 class ProductReviewRepository(RepositoryBase[ProductReview]):
     model = ProductReview
 
-    def get_by_product_statement(self, product_id: UUID) -> Select[tuple[ProductReview]]:
+    def get_by_product_statement(
+        self, product_id: UUID
+    ) -> Select[tuple[ProductReview]]:
         return (
             self.get_base_statement()
             .where(ProductReview.product_id == product_id)
@@ -25,9 +27,7 @@ class ProductReviewRepository(RepositoryBase[ProductReview]):
         )
         return await self.get_one_or_none(statement)
 
-    async def get_stats(
-        self, product_id: UUID
-    ) -> tuple[float, int]:
+    async def get_stats(self, product_id: UUID) -> tuple[float, int]:
         statement = select(
             func.coalesce(func.avg(ProductReview.rating), 0),
             func.count(ProductReview.id),

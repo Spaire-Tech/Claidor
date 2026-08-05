@@ -2,11 +2,6 @@ from polar.auth import tasks as auth
 from polar.benefit import tasks as benefit
 from polar.billing_entry import tasks as billing_entry
 from polar.checkout import tasks as checkout
-from polar.community import activities_tasks as community_activities
-from polar.community import events_tasks as community_events
-from polar.community import tasks as community
-from polar.course import tasks as course
-from polar.course_assistant import tasks as course_assistant
 from polar.customer import tasks as customer
 from polar.customer_meter import tasks as customer_meter
 from polar.customer_notifications import tasks as customer_notifications
@@ -25,7 +20,6 @@ from polar.integrations.chargeback_stop import tasks as chargeback_stop
 from polar.integrations.loops import tasks as loops
 from polar.integrations.resend import tasks as resend
 from polar.integrations.stripe import tasks as stripe
-from polar.masterclass_architect import tasks as masterclass_architect
 from polar.meter import tasks as meter
 from polar.notifications import tasks as notifications
 from polar.order import tasks as order
@@ -48,11 +42,6 @@ __all__ = [
     "billing_entry",
     "chargeback_stop",
     "checkout",
-    "community",
-    "community_activities",
-    "community_events",
-    "course",
-    "course_assistant",
     "customer",
     "customer_meter",
     "customer_notifications",
@@ -68,7 +57,6 @@ __all__ = [
     "external_event",
     "form",
     "loops",
-    "masterclass_architect",
     "meter",
     "notifications",
     "order",

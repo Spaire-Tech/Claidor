@@ -73,11 +73,14 @@ async def submit_review(
     product = await product_repo.get_by_id(body.product_id)
     if product is None:
         from polar.exceptions import ResourceNotFound
+
         raise ResourceNotFound()
 
     review = await product_review_service.create(
         session,
-        customer_id=body.customer_id if hasattr(body, 'customer_id') else product.organization_id,
+        customer_id=body.customer_id
+        if hasattr(body, "customer_id")
+        else product.organization_id,
         customer_name="Customer",
         organization_id=product.organization_id,
         create_schema=body,

@@ -35,17 +35,10 @@ async def fire_event(
     organization_id: UUID,
     subscriber_id: UUID,
     event_name: str,
-    course_id: UUID | None = None,
-    lesson_id: UUID | None = None,
 ) -> list[EmailSequenceEnrollment]:
     """Wake every parked enrolment whose preceding wait was waiting on
     this `event_name` for this subscriber. Returns the enrolments that
     were resumed so callers / tests can assert on the result.
-
-    When `course_id` / `lesson_id` are passed, sequences scoped to a
-    different course or lesson are skipped — so an event from course A
-    never wakes a sequence scoped to course B. Sequences with no scope
-    (course_id / lesson_id NULL) still match every event.
     """
     event_name = (event_name or "").strip()
     if not event_name or len(event_name) > 120:
@@ -76,21 +69,6 @@ async def fire_event(
 
     woken: list[EmailSequenceEnrollment] = []
     for enrolment, sequence in parked:
-        # Scope guard: don't wake a sequence bound to a different course/lesson
-        # than the one this event came from.
-        if (
-            course_id is not None
-            and sequence.course_id is not None
-            and sequence.course_id != course_id
-        ):
-            continue
-        if (
-            lesson_id is not None
-            and sequence.lesson_id is not None
-            and sequence.lesson_id != lesson_id
-        ):
-            continue
-
         flow = get_flow_doc(sequence)
         if flow is None:
             continue

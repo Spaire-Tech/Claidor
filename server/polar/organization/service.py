@@ -19,9 +19,9 @@ from polar.customer.repository import CustomerRepository
 from polar.entitlements.service import entitlements as entitlements_service
 from polar.enums import InvoiceNumbering
 from polar.exceptions import NotPermitted, PolarError, SpaireRequestValidationError
-from polar.integrations.resend import domains as resend_domains
 from polar.integrations.loops.service import loops as loops_service
 from polar.integrations.plain.service import plain as plain_service
+from polar.integrations.resend import domains as resend_domains
 from polar.kit.anonymization import anonymize_email_for_deletion, anonymize_for_deletion
 from polar.kit.pagination import PaginationParams
 from polar.kit.repository import Options

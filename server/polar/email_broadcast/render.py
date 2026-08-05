@@ -31,9 +31,7 @@ _HEADING_STYLES = {
     3: "font-size:17px;font-weight:600;letter-spacing:-0.01em;line-height:1.3;color:#1d1d1f;margin:0 0 12px",
 }
 
-_PARAGRAPH_STYLE = (
-    "font-size:14px;line-height:1.65;color:#424245;margin:0 0 16px"
-)
+_PARAGRAPH_STYLE = "font-size:14px;line-height:1.65;color:#424245;margin:0 0 16px"
 _BUTTON_WRAPPER_STYLE = "margin:24px 0"
 _BUTTON_STYLE = (
     "display:inline-block;background:#1d1d1f;color:#ffffff;"
@@ -102,7 +100,11 @@ def _render_image(block: dict[str, Any]) -> str:
     alt = _attr(block.get("alt") or "")
     img = f'<img src="{_attr(src)}" alt="{alt}" style="{_IMAGE_STYLE}">'
     href = _safe_url(block.get("href"))
-    inner = f'<a href="{_attr(href)}" target="_blank" rel="noreferrer">{img}</a>' if href else img
+    inner = (
+        f'<a href="{_attr(href)}" target="_blank" rel="noreferrer">{img}</a>'
+        if href
+        else img
+    )
     return f'<div style="margin:20px 0">{inner}</div>'
 
 
@@ -144,7 +146,7 @@ def _render_eyebrow(block: dict[str, Any], accent: str) -> str:
     text = _esc(block.get("text") or "")
     return (
         f'<div style="font-size:11px;letter-spacing:0.18em;'
-        f'text-transform:uppercase;color:{accent};font-weight:600;'
+        f"text-transform:uppercase;color:{accent};font-weight:600;"
         f'margin:0 0 8px">{text}</div>'
     )
 
@@ -161,7 +163,7 @@ def _render_badge(block: dict[str, Any]) -> str:
     text = _esc(block.get("text") or "")
     return (
         f'<span style="display:inline-block;font-size:12px;'
-        f'padding:5px 11px;background:#1d1d1f;color:#ffffff;'
+        f"padding:5px 11px;background:#1d1d1f;color:#ffffff;"
         f'border-radius:999px;font-weight:500;margin:0 0 14px">{text}</span>'
     )
 
@@ -184,8 +186,7 @@ def _render_list(block: dict[str, Any]) -> str:
         return ""
 
     cells = "".join(
-        f'<li style="margin-bottom:4px">{_esc(_item_text(it))}</li>'
-        for it in items
+        f'<li style="margin-bottom:4px">{_esc(_item_text(it))}</li>' for it in items
     )
     return (
         f'<{tag} style="margin:0 0 14px;padding-left:20px;color:#3a3a3c;'
@@ -223,20 +224,20 @@ def _render_columns(block: dict[str, Any]) -> str:
         if c.get("label"):
             parts.append(
                 f'<div style="font-size:10.5px;color:#86868b;'
-                f'text-transform:uppercase;letter-spacing:0.06em;'
+                f"text-transform:uppercase;letter-spacing:0.06em;"
                 f'font-weight:500;margin-bottom:4px">'
-                f'{_esc(c["label"])}</div>'
+                f"{_esc(c['label'])}</div>"
             )
         if c.get("title"):
             parts.append(
                 f'<div style="font-size:13px;font-weight:600;color:#1d1d1f;'
                 f'margin-bottom:4px;letter-spacing:-0.005em">'
-                f'{_esc(c["title"])}</div>'
+                f"{_esc(c['title'])}</div>"
             )
         if c.get("value"):
             parts.append(
                 f'<div style="font-size:13px;font-weight:500;color:#1d1d1f">'
-                f'{_esc(c["value"])}</div>'
+                f"{_esc(c['value'])}</div>"
             )
         if c.get("body"):
             parts.append(
@@ -246,7 +247,7 @@ def _render_columns(block: dict[str, Any]) -> str:
         cells.append(
             f'<td style="background:#fafafa;padding:14px;border-radius:8px;'
             f'border:1px solid #efefef;vertical-align:top;width:33%">'
-            f'{"".join(parts)}</td>'
+            f"{''.join(parts)}</td>"
         )
     return (
         '<table role="presentation" cellspacing="0" cellpadding="0" '
@@ -277,7 +278,7 @@ def _render_checklist(block: dict[str, Any], accent: str) -> str:
             f'<td valign="top" style="width:34px">'
             f'<div style="width:22px;height:22px;border-radius:50%;'
             f"background:{accent};color:#fff;display:inline-block;"
-            f'text-align:center;line-height:22px;font-size:11px;'
+            f"text-align:center;line-height:22px;font-size:11px;"
             f'font-weight:600">{i + 1}</div></td>'
             f'<td style="padding-left:12px">'
             f'<div style="font-size:13.5px;font-weight:600;color:#1d1d1f;'
@@ -286,7 +287,7 @@ def _render_checklist(block: dict[str, Any], accent: str) -> str:
     return (
         '<table role="presentation" cellspacing="0" cellpadding="0" '
         'border="0" style="margin:16px 0;background:#fafafa;'
-        'border:1px solid #efefef;border-radius:8px;padding:14px;'
+        "border:1px solid #efefef;border-radius:8px;padding:14px;"
         'width:100%">'
         + '<tr><td colspan="2" height="10"></td></tr>'.join(rows)
         + "</table>"
@@ -303,16 +304,16 @@ def _render_event_card(block: dict[str, Any], accent: str) -> str:
         f'padding-right:18px"><div style="background:rgba(255,255,255,0.15);'
         f'border-radius:8px;padding:10px;text-align:center">'
         f'<div style="font-size:10px;letter-spacing:0.1em;opacity:0.8">'
-        f'{_esc(block.get("day"))}</div>'
+        f"{_esc(block.get('day'))}</div>"
         f'<div style="font-size:18px;font-weight:700;'
         f'letter-spacing:-0.02em;margin-top:2px">'
-        f'{_esc(block.get("date"))}</div></div></td><td>'
+        f"{_esc(block.get('date'))}</div></div></td><td>"
         f'<div style="font-size:11px;opacity:0.7;text-transform:uppercase;'
-        f'letter-spacing:0.1em;margin-bottom:6px">You\'re invited</div>'
+        f"letter-spacing:0.1em;margin-bottom:6px\">You're invited</div>"
         f'<div style="font-size:17px;font-weight:600;letter-spacing:-0.01em;'
         f'margin-bottom:6px;line-height:1.25">{_esc(block.get("title"))}</div>'
         f'<div style="font-size:12px;opacity:0.85">'
-        f'{_esc(block.get("meta"))}</div></td></tr></table>'
+        f"{_esc(block.get('meta'))}</div></td></tr></table>"
         f"</td></tr></table>"
     )
 
@@ -327,30 +328,30 @@ def _render_receipt(block: dict[str, Any]) -> str:
             continue
         sub = (
             f'<div style="font-size:11.5px;color:#86868b;margin-top:2px">'
-            f'{_esc(it.get("sub"))}</div>'
+            f"{_esc(it.get('sub'))}</div>"
             if it.get("sub")
             else ""
         )
         rows.append(
             f'<tr><td style="padding:10px 0;border-bottom:1px solid #efefef">'
             f'<div style="font-size:13.5px;font-weight:500;color:#1d1d1f">'
-            f'{_esc(it.get("name"))}</div>{sub}</td>'
+            f"{_esc(it.get('name'))}</div>{sub}</td>"
             f'<td align="right" style="padding:10px 0;'
-            f'border-bottom:1px solid #efefef;font-size:13.5px;'
+            f"border-bottom:1px solid #efefef;font-size:13.5px;"
             f'font-weight:600;font-family:monospace">'
-            f'{_esc(it.get("price"))}</td></tr>'
+            f"{_esc(it.get('price'))}</td></tr>"
         )
     total = _esc(block.get("total") or "")
     return (
         '<table role="presentation" cellspacing="0" cellpadding="0" '
         'border="0" style="margin:16px 0;background:#fafafa;'
-        'border:1px solid #efefef;border-radius:10px;padding:20px;'
+        "border:1px solid #efefef;border-radius:10px;padding:20px;"
         'width:100%">'
         + "".join(rows)
         + f'<tr><td style="padding-top:12px;border-top:2px solid #1d1d1f;'
         f'font-size:13px;font-weight:600">Total</td>'
         f'<td align="right" style="padding-top:12px;'
-        f'border-top:2px solid #1d1d1f;font-size:15px;font-weight:700;'
+        f"border-top:2px solid #1d1d1f;font-size:15px;font-weight:700;"
         f'font-family:monospace">{total}</td></tr></table>'
     )
 
@@ -361,16 +362,16 @@ def _render_digest_item(block: dict[str, Any], accent: str) -> str:
         f'border="0" style="margin:14px 0;width:100%"><tr>'
         f'<td valign="top" style="width:48px;font-size:20px;font-weight:700;'
         f'color:{accent};font-family:monospace;line-height:1">'
-        f'{_esc(block.get("num"))}</td>'
+        f"{_esc(block.get('num'))}</td>"
         f'<td style="padding-left:14px">'
         f'<div style="font-size:15px;font-weight:600;color:#1d1d1f;'
         f'letter-spacing:-0.01em;margin-bottom:3px;line-height:1.3">'
-        f'{_esc(block.get("title"))}</div>'
+        f"{_esc(block.get('title'))}</div>"
         f'<div style="font-size:11px;color:#86868b;text-transform:uppercase;'
         f'letter-spacing:0.05em;margin-bottom:5px">'
-        f'{_esc(block.get("meta"))}</div>'
+        f"{_esc(block.get('meta'))}</div>"
         f'<div style="font-size:13px;color:#3a3a3c;line-height:1.55">'
-        f'{_esc(block.get("body"))}</div></td></tr></table>'
+        f"{_esc(block.get('body'))}</div></td></tr></table>"
     )
 
 
@@ -390,11 +391,7 @@ def _render_button_with_accent(block: dict[str, Any], accent: str) -> str:
     text = _esc(block.get("text") or "Learn more")
     size = block.get("size")
     padding = (
-        "13px 28px"
-        if size == "lg"
-        else "8px 16px"
-        if size == "sm"
-        else "10px 20px"
+        "13px 28px" if size == "lg" else "8px 16px" if size == "sm" else "10px 20px"
     )
     font_size = "14px" if size == "lg" else "13px"
     style = (

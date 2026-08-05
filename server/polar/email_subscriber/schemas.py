@@ -7,7 +7,9 @@ from polar.kit.schemas import IDSchema, Schema, TimestampedSchema
 
 class EmailSubscriberCreate(Schema):
     email: str = Field(description="Subscriber email address", max_length=320)
-    name: str | None = Field(default=None, description="Subscriber name", max_length=256)
+    name: str | None = Field(
+        default=None, description="Subscriber name", max_length=256
+    )
 
 
 class EmailSubscriberUpdate(Schema):

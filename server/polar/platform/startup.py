@@ -74,20 +74,14 @@ async def verify_platform_setup(session: AsyncSession) -> None:
             missing_tiers.append(f"{tier.value} (monthly)")
             continue
         if tier in _TRIAL_REQUIRED_TIERS:
-            if (
-                monthly.trial_interval is None
-                or monthly.trial_interval_count is None
-            ):
+            if monthly.trial_interval is None or monthly.trial_interval_count is None:
                 missing_trial_tiers.append(f"{tier.value} (monthly)")
             annual = await product_repo.get_by_tier_and_interval(
                 platform_org.id, tier.value, "year"
             )
             if annual is None:
                 missing_annual_tiers.append(tier.value)
-            elif (
-                annual.trial_interval is None
-                or annual.trial_interval_count is None
-            ):
+            elif annual.trial_interval is None or annual.trial_interval_count is None:
                 missing_trial_tiers.append(f"{tier.value} (annual)")
 
     # A seeding gap degrades NEW-signup provisioning — it must not crash the

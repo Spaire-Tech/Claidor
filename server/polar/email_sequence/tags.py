@@ -33,9 +33,7 @@ def normalize_tag(tag: str | None) -> str:
     return (tag or "").strip().lower()
 
 
-async def add_tag(
-    session: AsyncSession, subscriber_id: UUID, tag: str
-) -> None:
+async def add_tag(session: AsyncSession, subscriber_id: UUID, tag: str) -> None:
     tag = normalize_tag(tag)
     if not tag:
         return
@@ -58,9 +56,7 @@ async def add_tag(
     await session.flush()
 
 
-async def remove_tag(
-    session: AsyncSession, subscriber_id: UUID, tag: str
-) -> None:
+async def remove_tag(session: AsyncSession, subscriber_id: UUID, tag: str) -> None:
     tag = normalize_tag(tag)
     if not tag:
         return
@@ -77,9 +73,7 @@ async def remove_tag(
     await session.flush()
 
 
-async def has_tag(
-    session: AsyncSession, subscriber_id: UUID, tag: str
-) -> bool:
+async def has_tag(session: AsyncSession, subscriber_id: UUID, tag: str) -> bool:
     tag = normalize_tag(tag)
     if not tag:
         return False
@@ -92,9 +86,7 @@ async def has_tag(
     return result.first() is not None
 
 
-async def list_tags(
-    session: AsyncSession, subscriber_id: UUID
-) -> list[str]:
+async def list_tags(session: AsyncSession, subscriber_id: UUID) -> list[str]:
     statement = (
         select(EmailSubscriberTag.tag)
         .where(

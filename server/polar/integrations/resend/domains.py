@@ -58,16 +58,12 @@ def _client() -> httpx.AsyncClient:
     )
 
 
-async def create_domain(
-    *, name: str, region: str = "us-east-1"
-) -> dict[str, Any]:
+async def create_domain(*, name: str, region: str = "us-east-1") -> dict[str, Any]:
     """POST /domains. Returns the new domain payload including its id
     and the DNS records the creator needs to install.
     """
     async with _client() as http:
-        response = await http.post(
-            "/domains", json={"name": name, "region": region}
-        )
+        response = await http.post("/domains", json={"name": name, "region": region})
         body = response.json() if response.content else {}
         if response.status_code >= 400:
             raise ResendDomainsAPIError(response.status_code, body)

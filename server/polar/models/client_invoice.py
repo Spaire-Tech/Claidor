@@ -27,10 +27,16 @@ class ClientInvoice(RecordModel):
 
     # Relationships
     organization_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+        Uuid,
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     customer_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("customers.id", ondelete="RESTRICT"), nullable=False, index=True
+        Uuid,
+        ForeignKey("customers.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
 
     # Stripe
@@ -61,7 +67,9 @@ class ClientInvoice(RecordModel):
 
     # Metadata
     memo: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
-    po_number: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
+    po_number: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, default=None
+    )
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True, default=None)
     on_behalf_of_label: Mapped[str | None] = mapped_column(
         String, nullable=True, default=None
@@ -69,7 +77,9 @@ class ClientInvoice(RecordModel):
 
     # Discount (flat amount, pre-tax)
     discount_amount: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    discount_label: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
+    discount_label: Mapped[str | None] = mapped_column(
+        String, nullable=True, default=None
+    )
 
     # Payment link
     include_payment_link: Mapped[bool] = mapped_column(
@@ -95,7 +105,9 @@ class ClientInvoice(RecordModel):
     )
 
     # Pass-through metadata
-    user_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    user_metadata: Mapped[dict | None] = mapped_column(
+        JSONB, nullable=True, default=None
+    )
 
     # Linked order (set after payment)
     order_id: Mapped[UUID | None] = mapped_column(
@@ -113,7 +125,9 @@ class ClientInvoice(RecordModel):
 
     @declared_attr
     def order(cls) -> Mapped["Order | None"]:
-        return relationship("Order", lazy="raise", foreign_keys="[ClientInvoice.order_id]")
+        return relationship(
+            "Order", lazy="raise", foreign_keys="[ClientInvoice.order_id]"
+        )
 
     @declared_attr
     def line_items(cls) -> Mapped[list["ClientInvoiceLineItem"]]:

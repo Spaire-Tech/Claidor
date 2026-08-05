@@ -72,30 +72,18 @@ class EmailSequenceRepository(
         self,
         organization_id: UUID,
         trigger_type: EmailSequenceTriggerType,
-        *,
-        lesson_id: UUID | None = None,
-        course_id: UUID | None = None,
     ) -> list[EmailSequence]:
         statement = self.get_base_statement().where(
             EmailSequence.organization_id == organization_id,
             EmailSequence.status == EmailSequenceStatus.active,
             EmailSequence.trigger_type == trigger_type,
         )
-        # Lesson-completion triggers only fan out to sequences scoped to the
-        # lesson that was just completed.
-        if lesson_id is not None:
-            statement = statement.where(EmailSequence.lesson_id == lesson_id)
-        # Course-lifecycle triggers only fan out to sequences for that course,
-        # so a milestone in one course never enters another course's sequence.
-        if course_id is not None:
-            statement = statement.where(EmailSequence.course_id == course_id)
         return list(await self.get_all(statement))
 
     async def list_active_by_trigger(
         self, trigger_type: EmailSequenceTriggerType
     ) -> list[EmailSequence]:
-        """All active sequences with this trigger, across every org — used by
-        the daily inactivity scan to find which courses to check."""
+        """All active sequences with this trigger, across every org."""
         statement = self.get_base_statement().where(
             EmailSequence.status == EmailSequenceStatus.active,
             EmailSequence.trigger_type == trigger_type,
@@ -107,13 +95,10 @@ class EmailSequenceRepository(
         sequence_id: UUID,
         subscriber_id: UUID,
     ) -> EmailSequenceEnrollment | None:
-        statement = (
-            select(EmailSequenceEnrollment)
-            .where(
-                EmailSequenceEnrollment.sequence_id == sequence_id,
-                EmailSequenceEnrollment.subscriber_id == subscriber_id,
-                EmailSequenceEnrollment.deleted_at.is_(None),
-            )
+        statement = select(EmailSequenceEnrollment).where(
+            EmailSequenceEnrollment.sequence_id == sequence_id,
+            EmailSequenceEnrollment.subscriber_id == subscriber_id,
+            EmailSequenceEnrollment.deleted_at.is_(None),
         )
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
@@ -150,8 +135,7 @@ class EmailSequenceRepository(
             .where(
                 EmailSequence.organization_id == organization_id,
                 EmailSequenceEnrollment.subscriber_id == subscriber_id,
-                EmailSequenceEnrollment.status
-                == EmailSequenceEnrollmentStatus.active,
+                EmailSequenceEnrollment.status == EmailSequenceEnrollmentStatus.active,
                 EmailSequenceEnrollment.deleted_at.is_(None),
             )
         )
@@ -180,8 +164,7 @@ class EmailSequenceRepository(
             .where(
                 EmailSequence.organization_id == organization_id,
                 EmailSequenceEnrollment.subscriber_id == subscriber_id,
-                EmailSequenceEnrollment.status
-                == EmailSequenceEnrollmentStatus.active,
+                EmailSequenceEnrollment.status == EmailSequenceEnrollmentStatus.active,
                 EmailSequenceEnrollment.next_step_at.is_(None),
                 EmailSequenceEnrollment.deleted_at.is_(None),
             )
@@ -189,16 +172,15 @@ class EmailSequenceRepository(
         result = await self.session.execute(statement)
         return [(row[0], row[1]) for row in result.all()]
 
-    async def list_due_enrollments(self, now: datetime) -> list[EmailSequenceEnrollment]:
+    async def list_due_enrollments(
+        self, now: datetime
+    ) -> list[EmailSequenceEnrollment]:
         """All active enrollments where next_step_at has passed."""
-        statement = (
-            select(EmailSequenceEnrollment)
-            .where(
-                EmailSequenceEnrollment.status == EmailSequenceEnrollmentStatus.active,
-                EmailSequenceEnrollment.next_step_at <= now,
-                EmailSequenceEnrollment.next_step_at.isnot(None),
-                EmailSequenceEnrollment.deleted_at.is_(None),
-            )
+        statement = select(EmailSequenceEnrollment).where(
+            EmailSequenceEnrollment.status == EmailSequenceEnrollmentStatus.active,
+            EmailSequenceEnrollment.next_step_at <= now,
+            EmailSequenceEnrollment.next_step_at.isnot(None),
+            EmailSequenceEnrollment.deleted_at.is_(None),
         )
         result = await self.session.execute(statement)
         return list(result.scalars().all())
@@ -226,13 +208,10 @@ class EmailSequenceRepository(
     async def get_step_by_position(
         self, sequence_id: UUID, position: int
     ) -> EmailSequenceStep | None:
-        statement = (
-            select(EmailSequenceStep)
-            .where(
-                EmailSequenceStep.sequence_id == sequence_id,
-                EmailSequenceStep.position == position,
-                EmailSequenceStep.deleted_at.is_(None),
-            )
+        statement = select(EmailSequenceStep).where(
+            EmailSequenceStep.sequence_id == sequence_id,
+            EmailSequenceStep.position == position,
+            EmailSequenceStep.deleted_at.is_(None),
         )
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
@@ -430,8 +409,7 @@ class EmailSequenceRepository(
             sa_update(EmailSequenceEnrollment)
             .where(
                 EmailSequenceEnrollment.subscriber_id == subscriber_id,
-                EmailSequenceEnrollment.status
-                == EmailSequenceEnrollmentStatus.active,
+                EmailSequenceEnrollment.status == EmailSequenceEnrollmentStatus.active,
                 EmailSequenceEnrollment.deleted_at.is_(None),
             )
             .values(
