@@ -3,7 +3,6 @@
 import { DashboardBody } from '@/components/Layout/DashboardLayout'
 import Pagination from '@/components/Pagination/Pagination'
 import { ProductListItem } from '@/components/Products/ProductListItem'
-import { useOrganizationCourses } from '@/hooks/queries/courses'
 import { useProducts } from '@/hooks/queries/products'
 import { useDebouncedCallback } from '@/hooks/utils'
 import {
@@ -146,19 +145,12 @@ export default function ClientPage({
     is_archived: show === 'all' ? null : show === 'active' ? false : true,
   })
 
-  const courses = useOrganizationCourses(org.id)
-  const courseIdByProductId = new Map(
-    (courses.data ?? []).map((c) => [c.product_id, c.id] as const),
-  )
-
-  const nonCourseItems = (products.data?.items ?? []).filter(
-    (product) => !courseIdByProductId.has(product.id),
-  )
+  const items = products.data?.items ?? []
 
   return (
     <DashboardBody>
       <div className="flex flex-col gap-y-8">
-        {products.data && nonCourseItems.length > 0 ? (
+        {products.data && items.length > 0 ? (
           <>
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-col gap-4 md:flex-row md:items-center">
@@ -232,7 +224,7 @@ export default function ClientPage({
               onPageChange={onPageChange}
             >
               <List size="small">
-                {nonCourseItems
+                {items
                   .sort((a, b) => {
                     if (a.is_archived === b.is_archived) return 0
                     return a.is_archived ? 1 : -1
@@ -242,7 +234,6 @@ export default function ClientPage({
                       key={product.id}
                       organization={org}
                       product={product}
-                      courseId={courseIdByProductId.get(product.id)}
                     />
                   ))}
               </List>
@@ -315,161 +306,161 @@ function ProductsEmptyHero({
           <ArrowBackOutlined sx={{ fontSize: 20 }} />
         </button>
 
-      <div
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <section
+        <div
           style={{
-            position: 'relative',
             width: '100%',
-            maxWidth: 1280,
-            height: 'min(90vh, 820px)',
-            minHeight: 600,
-            borderRadius: 'calc(28px * var(--radius-mul, 1))',
-            overflow: 'hidden',
-            background: '#000',
-            isolation: 'isolate',
-            border: '1px solid oklch(0.92 0.003 280)',
-            boxShadow:
-              '0 2px 6px rgba(0,0,0,0.06), 0 24px 60px rgba(0,0,0,0.10)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          <img
-            src="/assets/products-empty-hero.jpg"
-            alt=""
-            aria-hidden="true"
+          <section
             style={{
-              position: 'absolute',
-              inset: 0,
+              position: 'relative',
               width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-          />
-
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 2,
-              pointerEvents: 'none',
-              background:
-                'linear-gradient(180deg, oklch(0 0 0 / 0.2) 0%, oklch(0 0 0 / 0) 30%, oklch(0 0 0 / 0) 45%, oklch(0 0 0 / 0.6) 80%, oklch(0 0 0 / 0.92) 100%)',
-            }}
-          />
-
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 3,
-              padding: '40px 48px 52px',
-              color: 'white',
-              fontFamily: FONT_VAR,
+              maxWidth: 1280,
+              height: 'min(90vh, 820px)',
+              minHeight: 600,
+              borderRadius: 'calc(28px * var(--radius-mul, 1))',
+              overflow: 'hidden',
+              background: '#000',
+              isolation: 'isolate',
+              border: '1px solid oklch(0.92 0.003 280)',
+              boxShadow:
+                '0 2px 6px rgba(0,0,0,0.06), 0 24px 60px rgba(0,0,0,0.10)',
             }}
           >
+            <img
+              src="/assets/products-empty-hero.jpg"
+              alt=""
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                marginBottom: 16,
-                fontSize: 12,
-                color: 'rgba(255,255,255,0.65)',
-                fontWeight: 500,
+                position: 'absolute',
+                inset: 0,
+                zIndex: 2,
+                pointerEvents: 'none',
+                background:
+                  'linear-gradient(180deg, oklch(0 0 0 / 0.2) 0%, oklch(0 0 0 / 0) 30%, oklch(0 0 0 / 0) 45%, oklch(0 0 0 / 0.6) 80%, oklch(0 0 0 / 0.92) 100%)',
+              }}
+            />
+
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 3,
+                padding: '40px 48px 52px',
+                color: 'white',
+                fontFamily: FONT_VAR,
               }}
             >
-              <span
+              <div
                 style={{
-                  padding: '3px 10px',
-                  background: 'rgba(255,255,255,0.12)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  borderRadius: 999,
-                  border: '1px solid rgba(255,255,255,0.18)',
-                  fontSize: 10,
-                  letterSpacing: '0.12em',
-                  fontWeight: 600,
-                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  marginBottom: 16,
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.65)',
+                  fontWeight: 500,
                 }}
               >
-                MERCHANT OF RECORD
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.6)' }}>
-                Built with Spaire
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.3)' }}>·</span>
-              <span style={{ color: 'rgba(255,255,255,0.6)' }}>
-                180+ countries
-              </span>
+                <span
+                  style={{
+                    padding: '3px 10px',
+                    background: 'rgba(255,255,255,0.12)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderRadius: 999,
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    fontSize: 10,
+                    letterSpacing: '0.12em',
+                    fontWeight: 600,
+                    color: 'white',
+                  }}
+                >
+                  MERCHANT OF RECORD
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  Built with Spaire
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.3)' }}>·</span>
+                <span style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  180+ countries
+                </span>
+              </div>
+
+              <h1
+                style={{
+                  fontSize:
+                    'calc(clamp(48px, 6.5vw, 84px) * var(--type-scale, 1))',
+                  fontWeight: 'var(--h-weight, 700)',
+                  fontStyle: 'var(--h-italic, normal)',
+                  letterSpacing: 'calc(var(--h-tracking, 0em) - 0.045em)',
+                  lineHeight: 'calc(var(--h-leading, 1) * 0.95)',
+                  margin: '0 0 18px',
+                  color: 'white',
+                  maxWidth: '14ch',
+                  textShadow: '0 2px 30px oklch(0 0 0 / 0.35)',
+                  fontFamily: HEADING_VAR,
+                }}
+              >
+                Sell anything digital
+              </h1>
+
+              <div
+                style={{
+                  fontSize: 'clamp(14px, 1.3vw, 18px)',
+                  fontWeight: 400,
+                  color: 'rgba(255,255,255,0.88)',
+                  maxWidth: 640,
+                  marginBottom: 30,
+                  lineHeight: 1.5,
+                }}
+              >
+                From templates and ebooks to software and downloads, Spaire
+                helps you sell globally with built-in delivery, secure checkout,
+                and merchant of record handling taxes, compliance, and payments
+                for you.
+              </div>
+
+              <button
+                type="button"
+                onClick={onStart}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '13px 22px',
+                  background: 'white',
+                  color: 'oklch(0.14 0.006 280)',
+                  borderRadius: 999,
+                  boxShadow: '0 8px 28px oklch(0 0 0 / 0.4)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  lineHeight: 1,
+                }}
+              >
+                Create a product →
+              </button>
             </div>
-
-            <h1
-              style={{
-                fontSize:
-                  'calc(clamp(48px, 6.5vw, 84px) * var(--type-scale, 1))',
-                fontWeight: 'var(--h-weight, 700)',
-                fontStyle: 'var(--h-italic, normal)',
-                letterSpacing: 'calc(var(--h-tracking, 0em) - 0.045em)',
-                lineHeight: 'calc(var(--h-leading, 1) * 0.95)',
-                margin: '0 0 18px',
-                color: 'white',
-                maxWidth: '14ch',
-                textShadow: '0 2px 30px oklch(0 0 0 / 0.35)',
-                fontFamily: HEADING_VAR,
-              }}
-            >
-              Sell anything digital
-            </h1>
-
-            <div
-              style={{
-                fontSize: 'clamp(14px, 1.3vw, 18px)',
-                fontWeight: 400,
-                color: 'rgba(255,255,255,0.88)',
-                maxWidth: 640,
-                marginBottom: 30,
-                lineHeight: 1.5,
-              }}
-            >
-              From templates and ebooks to software and downloads, Spaire helps
-              you sell globally with built-in delivery, secure checkout, and
-              merchant of record handling taxes, compliance, and payments for
-              you.
-            </div>
-
-            <button
-              type="button"
-              onClick={onStart}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '13px 22px',
-                background: 'white',
-                color: 'oklch(0.14 0.006 280)',
-                borderRadius: 999,
-                boxShadow: '0 8px 28px oklch(0 0 0 / 0.4)',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 14,
-                fontWeight: 600,
-                lineHeight: 1,
-              }}
-            >
-              Create a product →
-            </button>
-          </div>
-        </section>
-      </div>
+          </section>
+        </div>
       </div>
     </>
   )

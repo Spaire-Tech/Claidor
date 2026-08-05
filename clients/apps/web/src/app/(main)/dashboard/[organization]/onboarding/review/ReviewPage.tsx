@@ -12,7 +12,7 @@ import { useContext, useEffect, useRef } from 'react'
 /**
  * Onboarding completion step.
  *
- * In the course-only ("MasterClass builder") flow, onboarding is just two
+ * Onboarding is just two
  * visible steps — OrganizationStep ("name + slug + logo", /dashboard/create)
  * then PlanPage ("Choose your plan", /onboarding/plan). Plan selection hands
  * off to Polar-hosted checkout, which returns here with ?upgraded=1.
@@ -20,9 +20,8 @@ import { useContext, useEffect, useRef } from 'react'
  * This page no longer renders a "Create your Space Card" editor. It is an
  * invisible finishing step: it verifies the checkout actually converted the
  * auto-attached trial, stamps ai_onboarding_completed_at so the dashboard
- * plan-gate releases, then forwards the creator straight into the course
- * wizard ("Sell your expertise"). The public storefront is intentionally NOT
- * enabled here — Space is hidden in this build (see the Phase 6 reposition).
+ * plan-gate releases, then forwards the creator straight into product
+ * creation. The public storefront is intentionally NOT enabled here.
  */
 
 // The upgrade webhook can land a beat after Polar redirects back, so the
@@ -47,7 +46,7 @@ export default function ReviewPage() {
     if (ranRef.current) return
     ranRef.current = true
 
-    const courseWizardPath = `/dashboard/${organization.slug}/products/new?type=course`
+    const newProductPath = `/dashboard/${organization.slug}/products/new`
     const planPath = `/dashboard/${organization.slug}/onboarding/plan`
 
     if (!cameFromCheckout) {
@@ -81,7 +80,7 @@ export default function ReviewPage() {
         if (data && !data.is_default_trial) {
           await finishOnboarding()
           if (cancelled) return
-          router.replace(courseWizardPath)
+          router.replace(newProductPath)
           return
         }
         await new Promise((resolve) => setTimeout(resolve, VERIFY_INTERVAL_MS))

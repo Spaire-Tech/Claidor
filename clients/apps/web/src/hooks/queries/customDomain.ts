@@ -3,7 +3,7 @@
 import { getQueryClient } from '@/utils/api/query'
 import { useMutation, useQuery } from '@tanstack/react-query'
 
-// Hand-typed like hooks/queries/courses.ts — mirrors the backend's
+// Hand-typed — mirrors the backend's
 // polar/organization_custom_domain/schemas.py. Keep in sync.
 
 export type CustomDomainLifecycleStatus = 'pending' | 'active' | 'failed'

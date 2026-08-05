@@ -1,7 +1,6 @@
 'use client'
 
 import { useProducts } from '@/hooks/queries'
-import { useOrganizationCourses } from '@/hooks/queries/courses'
 import { schemas } from '@spaire/client'
 import { useEffect, useMemo, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
@@ -34,21 +33,17 @@ export const CatalogTab = ({
     is_archived: false,
     limit: 100,
   })
-  const { data: courses } = useOrganizationCourses(organization.id)
 
-  const products = useMemo(() => {
-    const courseProductIds = new Set((courses ?? []).map((c) => c.product_id))
-    const all = data?.items ?? []
-    return all.filter(
-      (p) => !courseProductIds.has(p.id) && p.category !== 'course',
-    )
-  }, [data, courses])
+  const products = useMemo(() => data?.items ?? [], [data])
 
   // Seed selection with whatever the creator already has on their Space
   // — but only IDs that belong to *this* tab's universe (catalog
-  // products, not courses). Otherwise toggling visible items would
-  // appear to re-feature hidden course items.
-  const visibleIds = useMemo(() => new Set(products.map((p) => p.id)), [products])
+  // products). Otherwise toggling visible items would appear to
+  // re-feature hidden items.
+  const visibleIds = useMemo(
+    () => new Set(products.map((p) => p.id)),
+    [products],
+  )
   const [seeded, setSeeded] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   useEffect(() => {
@@ -106,7 +101,11 @@ export const CatalogTab = ({
         </div>
       ) : (
         <div className="wg-grid three">
-          <button type="button" className="wg-tile create" onClick={onCreateNew}>
+          <button
+            type="button"
+            className="wg-tile create"
+            onClick={onCreateNew}
+          >
             <div className="wg-tile-art empty">+</div>
             <div className="wg-tile-meta">
               <div className="wg-tile-title">New product</div>

@@ -2,20 +2,19 @@
 
 import { SpaceEmptyHero } from '@/components/Customization/SpaceEmptyHero'
 import { ProductCard } from '@/components/Products/ProductCard'
-import { StorefrontCourseCard } from '@/components/Products/StorefrontCourseCard'
 import { FormPublic } from '@/hooks/queries/forms'
 import { schemas } from '@spaire/client'
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { CATEGORY_LABELS } from './categoryLabels'
 import { SectionLabel } from './SectionLabel'
+import { resolveSpaceItems, type ResolvedSpaceItem } from './spaceItems'
 import { StorefrontForm } from './StorefrontForm'
 import {
   LinksLayout,
   StorefrontLinkItem,
   StorefrontLinks,
 } from './StorefrontLinks'
-import { resolveSpaceItems, type ResolvedSpaceItem } from './spaceItems'
 
 // Render the public Space.
 //
@@ -53,7 +52,8 @@ export const Storefront = ({
     | 'small'
     | 'medium'
     | 'large'
-  const linksLayout: LinksLayout = (settings?.links_layout ?? 'classic') as LinksLayout
+  const linksLayout: LinksLayout = (settings?.links_layout ??
+    'classic') as LinksLayout
 
   const links = (settings?.storefront_links ?? []) as StorefrontLinkItem[]
 
@@ -72,9 +72,6 @@ export const Storefront = ({
     <div className="flex w-full flex-col gap-12">
       {chunks.map((chunk, idx) => {
         if (chunk.kind === 'product') {
-          // Courses get the Apple-TV-style tile (full-width, one per row) with
-          // a hover trailer; other products keep the 2-column card grid.
-          const isCourse = chunk.category === 'course'
           return (
             <section
               key={`p-${idx}`}
@@ -84,17 +81,9 @@ export const Storefront = ({
               <SectionLabel count={chunk.items.length}>
                 {CATEGORY_LABELS[chunk.category] ?? CATEGORY_LABELS.other}
               </SectionLabel>
-              <div
-                className={
-                  isCourse
-                    ? 'flex w-full flex-col gap-6'
-                    : 'grid w-full grid-cols-1 gap-6 md:grid-cols-2'
-                }
-              >
+              <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
                 {chunk.items.map((entry) => {
-                  const card = isCourse ? (
-                    <StorefrontCourseCard product={entry.product} />
-                  ) : (
+                  const card = (
                     <ProductCard
                       product={entry.product}
                       showDetails={showDetails}
@@ -202,4 +191,3 @@ const chunkByKindAndCategory = (items: ResolvedSpaceItem[]): Chunk[] => {
   }
   return out
 }
-

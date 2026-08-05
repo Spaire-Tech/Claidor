@@ -31,8 +31,6 @@ import { useCallback } from 'react'
 interface ProductListItemProps {
   product: schemas['Product'] | schemas['CheckoutProduct']
   organization: schemas['Organization']
-  /** When set, the row links straight to the course editor for this courseId. */
-  courseId?: string
 }
 
 type CategoryKey =
@@ -73,7 +71,6 @@ const CATEGORY_PILLS: Record<
 export const ProductListItem = ({
   product,
   organization,
-  courseId,
 }: ProductListItemProps) => {
   const router = useRouter()
   const {
@@ -114,18 +111,11 @@ export const ProductListItem = ({
     }
   }, [updateProduct, product])
 
-  const isCourseProduct = !!courseId
-  const itemHref = courseId
-    ? `/dashboard/${organization.slug}/courses/${courseId}`
-    : `/dashboard/${organization.slug}/products/${product.id}`
+  const itemHref = `/dashboard/${organization.slug}/products/${product.id}`
 
   // Category pill — uses the same category options shown in product creation.
-  // Courses always render the Course pill (overrides whatever category the
-  // backing product was created with).
   const rawCategory = (product as { category?: CategoryKey | null }).category
-  const categoryKey: CategoryKey | null = isCourseProduct
-    ? 'course'
-    : (rawCategory ?? null)
+  const categoryKey: CategoryKey | null = rawCategory ?? null
   const categoryTag = categoryKey ? CATEGORY_PILLS[categoryKey] : null
 
   return (
@@ -231,7 +221,7 @@ export const ProductListItem = ({
         isShown={isConfirmModalShown}
         hide={hideModal}
         title={`Archive "${product.name}"`}
-        description="Are you sure you want to archive this masterclass? This action cannot be undone."
+        description="Are you sure you want to archive this product? This action cannot be undone."
         onConfirm={onArchiveProduct}
         destructive
         destructiveText="Yes, archive"

@@ -217,9 +217,7 @@ export type SubscribersImportResult = {
  */
 export const useImportEmailSubscribersCsv = (organizationId: string) =>
   useMutation({
-    mutationFn: async (
-      file: File,
-    ): Promise<SubscribersImportResult> => {
+    mutationFn: async (file: File): Promise<SubscribersImportResult> => {
       const form = new FormData()
       form.append('file', file)
       const res = await fetch(
@@ -565,24 +563,6 @@ export const useDeleteEmailBroadcastABTest = () =>
         queryKey: ['email_broadcast_ab_test', broadcastId],
       })
     },
-  })
-
-export type GeneratedEmailCopy = {
-  subject: string
-  preview: string
-  heading: string
-  body: string[]
-}
-
-/** Generate lifecycle recap copy from a course (Claude) — brick 16. */
-export const useGenerateEmailCopy = () =>
-  useMutation({
-    mutationFn: ({ courseId, moment }: { courseId: string; moment: string }) =>
-      fetchApiWrite<GeneratedEmailCopy>(
-        `/v1/email-broadcasts/generate-copy`,
-        'POST',
-        { course_id: courseId, moment },
-      ),
   })
 
 export const useUploadEmailImage = (organizationId: string) =>

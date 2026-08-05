@@ -4,34 +4,34 @@ import { CustomizationProvider } from '@/components/Customization/CustomizationP
 import { ForceLightMode } from '@/components/Profile/ForceLightMode'
 import { detectPlatform } from '@/components/Profile/linkPlatforms'
 import { SpaceDocumentBackground } from '@/components/Profile/SpaceDocumentBackground'
-import { StorefrontLinkItem } from '@/components/Profile/StorefrontLinks'
 import {
   appendSpaceItem,
   reconcileSpaceProducts,
 } from '@/components/Profile/spaceItems'
+import { StorefrontLinkItem } from '@/components/Profile/StorefrontLinks'
 import { toast } from '@/components/Toast/use-toast'
 import { useUpdateOrganization } from '@/hooks/queries'
 import { FormPublic } from '@/hooks/queries/forms'
 import { useStorefront } from '@/hooks/queries/storefront'
+import '@/styles/space-dark.css'
 import { setValidationErrors } from '@/utils/api/errors'
 import { storefrontLink } from '@/utils/nav'
+import ChevronLeftOutlined from '@mui/icons-material/ChevronLeftOutlined'
+import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined'
+import LightModeOutlined from '@mui/icons-material/LightModeOutlined'
 import { isValidationError, schemas } from '@spaire/client'
 import { Form } from '@spaire/ui/components/ui/form'
+import { cn } from '@spaire/ui/lib/utils'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import ChevronLeftOutlined from '@mui/icons-material/ChevronLeftOutlined'
-import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined'
-import LightModeOutlined from '@mui/icons-material/LightModeOutlined'
-import { cn } from '@spaire/ui/lib/utils'
-import '@/styles/space-dark.css'
 import { AudienceTab } from './Audience/AudienceTab'
 import { BroadcastTab } from './Audience/BroadcastTab'
 import { ArrangePanel } from './InlineEdit/ArrangePanel'
 import { MobileSpacePreview } from './MobileSpacePreview'
-import { SpaceSettingsTab } from './SpaceSettingsTab'
 import { SpaceEditorCanvas } from './SpaceEditorShell'
+import { SpaceSettingsTab } from './SpaceSettingsTab'
 import {
   AddToSpacePicker,
   AddToSpacePickerCallbacks,
@@ -101,9 +101,11 @@ const Customization = ({
   // form so the editor chrome + canvas preview it, and Publish ships it to the
   // public Space page.
   const watchedTheme =
-    (form.watch('storefront_settings') as
-      | { theme?: 'light' | 'dark' }
-      | undefined)?.theme ??
+    (
+      form.watch('storefront_settings') as
+        | { theme?: 'light' | 'dark' }
+        | undefined
+    )?.theme ??
     organization.storefront_settings?.theme ??
     'light'
   const dark = watchedTheme === 'dark'
@@ -124,9 +126,10 @@ const Customization = ({
   const appendStorefrontLink = useCallback(
     (link: StorefrontLinkItem) => {
       const settings = form.getValues('storefront_settings') ?? {}
-      const links =
-        ((settings as { storefront_links?: StorefrontLinkItem[] })
-          .storefront_links ?? []).slice()
+      const links = (
+        (settings as { storefront_links?: StorefrontLinkItem[] })
+          .storefront_links ?? []
+      ).slice()
       links.push(link)
       // Also append to space_items so the new link shows up at the end
       // of the Space's flat order. appendSpaceItem materialises the
@@ -208,10 +211,7 @@ const Customization = ({
       const existing = typed.featured_product_ids ?? []
       const removed = new Set(removeIds)
       const nextFeatured = Array.from(
-        new Set([
-          ...existing.filter((id) => !removed.has(id)),
-          ...addIds,
-        ]),
+        new Set([...existing.filter((id) => !removed.has(id)), ...addIds]),
       )
       const itemPatch = reconcileSpaceProducts({
         settings: settings as schemas['OrganizationStorefrontSettings'],
@@ -230,8 +230,7 @@ const Customization = ({
         { shouldDirty: true },
       )
       const parts: string[] = []
-      if (addIds.length > 0)
-        parts.push(`Added ${addIds.length} to your Space`)
+      if (addIds.length > 0) parts.push(`Added ${addIds.length} to your Space`)
       if (removeIds.length > 0)
         parts.push(`Removed ${removeIds.length} from your Space`)
       toast({
@@ -244,13 +243,6 @@ const Customization = ({
       const returnTo = `/dashboard/${organization.slug}/storefront`
       router.push(
         `/dashboard/${organization.slug}/products/new?type=digital&returnTo=${encodeURIComponent(returnTo)}`,
-      )
-    },
-    onCreateCourse: () => {
-      if (!confirmIfDirty()) return
-      const returnTo = `/dashboard/${organization.slug}/storefront`
-      router.push(
-        `/dashboard/${organization.slug}/products/new?type=course&returnTo=${encodeURIComponent(returnTo)}`,
       )
     },
     onAddForm: (payload) => {
@@ -558,26 +550,26 @@ const Customization = ({
 
           {/* Tabs — Storefront · Settings (device toggle pinned right) */}
           <div className="relative flex flex-shrink-0 items-center justify-center border-b border-gray-200 bg-white">
-            {(
-              ['storefront', 'audience', 'broadcast', 'settings'] as const
-            ).map((tab) => {
-              const active = tab === activeTab
-              return (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={cn(
-                    '-mb-px border-b-2 px-4 py-2.5 text-[13px] capitalize tracking-tight transition-colors',
-                    active
-                      ? 'border-[#0066cc] font-medium text-[#0066cc]'
-                      : 'border-transparent text-gray-500 hover:text-gray-900',
-                  )}
-                >
-                  {tab}
-                </button>
-              )
-            })}
+            {(['storefront', 'audience', 'broadcast', 'settings'] as const).map(
+              (tab) => {
+                const active = tab === activeTab
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={cn(
+                      '-mb-px border-b-2 px-4 py-2.5 text-[13px] tracking-tight capitalize transition-colors',
+                      active
+                        ? 'border-[#0066cc] font-medium text-[#0066cc]'
+                        : 'border-transparent text-gray-500 hover:text-gray-900',
+                    )}
+                  >
+                    {tab}
+                  </button>
+                )
+              },
+            )}
             {activeTab === 'storefront' && (
               <div className="absolute right-4 flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 p-0.5">
                 {(
@@ -647,108 +639,117 @@ const Customization = ({
           ) : (
             <>
               {/* Canvas — ProfileCard + Storefront content blocks */}
-            <SpaceEditorCanvas
-              organization={organization}
-              hasSettingsPanel={linksMode || arrangeOpen}
-              onAddToSpace={() => setPickerOpen(true)}
-            />
-
-            {/* Arrange panel — single source of truth for reordering
-                every item in the Space (products, categories, links). */}
-            {arrangeOpen && (
-              <aside
-                className="side-panel open"
-                style={{ width: 'min(440px, 100vw)' }}
-                aria-label="Arrange items"
-              >
-                <ArrangePanel
-                  organization={organization}
-                  products={(storefrontData?.products ?? []) as schemas['ProductStorefront'][]}
-                  forms={
-                    ((storefrontData as { forms?: FormPublic[] } | undefined)
-                      ?.forms ?? []) as FormPublic[]
-                  }
-                  onClose={() => setArrangeOpen(false)}
-                />
-              </aside>
-            )}
-
-            {/* Manage Links side panel — opens from the Settings tab's
-                "Manage links" button. */}
-            {linksMode && (
-              <aside
-                className="side-panel open"
-                style={{ width: 'min(540px, 100vw)' }}
-                aria-label="Manage links"
-              >
-                <div className="sp-head">
-                  <h2>Manage links</h2>
-                  <button
-                    type="button"
-                    className="tb-icon-btn"
-                    onClick={() => setLinksMode(false)}
-                    aria-label="Close links panel"
-                  >
-                    {'×'}
-                  </button>
-                </div>
-                <div className="sp-body" style={{ padding: '20px 24px 80px' }}>
-                  <StorefrontLinksPanel
-                    organization={organization}
-                    onBack={() => setLinksMode(false)}
-                  />
-                </div>
-              </aside>
-            )}
-
-            {/* Floating Add-to-Space FAB — hidden when the canvas is
-                fully empty (the SpaceEmptyHero shows its own CTA). */}
-            {(() => {
-              const liveSettings = (form.watch('storefront_settings') as
-                | {
-                    featured_product_ids?: string[]
-                    storefront_links?: unknown[]
-                    featured_mode?: 'all' | 'curated'
-                  }
-                | undefined) ?? {}
-              const featuredMode = liveSettings.featured_mode ?? 'curated'
-              const featuredIds = liveSettings.featured_product_ids ?? []
-              const visibleProductCount =
-                featuredMode === 'curated'
-                  ? featuredIds.length
-                  : storefrontData?.products?.length ?? 0
-              const linkCount = liveSettings.storefront_links?.length ?? 0
-              if (visibleProductCount === 0 && linkCount === 0) return null
-              return (
-                <div
-                  className={`add-fab-wrap${linksMode || arrangeOpen ? ' has-panel' : ''}`}
-                >
-                  <button
-                    type="button"
-                    className="add-fab"
-                    onClick={() => setPickerOpen(true)}
-                  >
-                    <span className="plus">+</span>
-                    Add to Space
-                    <span className="kbd">{'⌘'}K</span>
-                  </button>
-                </div>
-              )
-            })()}
-
-            {pickerOpen && (
-              <AddToSpacePicker
+              <SpaceEditorCanvas
                 organization={organization}
-                alreadySelectedProductIds={
-                  ((form.getValues('storefront_settings') ?? {}) as {
-                    featured_product_ids?: string[]
-                  }).featured_product_ids ?? []
-                }
-                onClose={() => setPickerOpen(false)}
-                callbacks={pickerCallbacks}
-                dark={dark}
+                hasSettingsPanel={linksMode || arrangeOpen}
+                onAddToSpace={() => setPickerOpen(true)}
               />
-            )}
+
+              {/* Arrange panel — single source of truth for reordering
+                every item in the Space (products, categories, links). */}
+              {arrangeOpen && (
+                <aside
+                  className="side-panel open"
+                  style={{ width: 'min(440px, 100vw)' }}
+                  aria-label="Arrange items"
+                >
+                  <ArrangePanel
+                    organization={organization}
+                    products={
+                      (storefrontData?.products ??
+                        []) as schemas['ProductStorefront'][]
+                    }
+                    forms={
+                      ((storefrontData as { forms?: FormPublic[] } | undefined)
+                        ?.forms ?? []) as FormPublic[]
+                    }
+                    onClose={() => setArrangeOpen(false)}
+                  />
+                </aside>
+              )}
+
+              {/* Manage Links side panel — opens from the Settings tab's
+                "Manage links" button. */}
+              {linksMode && (
+                <aside
+                  className="side-panel open"
+                  style={{ width: 'min(540px, 100vw)' }}
+                  aria-label="Manage links"
+                >
+                  <div className="sp-head">
+                    <h2>Manage links</h2>
+                    <button
+                      type="button"
+                      className="tb-icon-btn"
+                      onClick={() => setLinksMode(false)}
+                      aria-label="Close links panel"
+                    >
+                      {'×'}
+                    </button>
+                  </div>
+                  <div
+                    className="sp-body"
+                    style={{ padding: '20px 24px 80px' }}
+                  >
+                    <StorefrontLinksPanel
+                      organization={organization}
+                      onBack={() => setLinksMode(false)}
+                    />
+                  </div>
+                </aside>
+              )}
+
+              {/* Floating Add-to-Space FAB — hidden when the canvas is
+                fully empty (the SpaceEmptyHero shows its own CTA). */}
+              {(() => {
+                const liveSettings =
+                  (form.watch('storefront_settings') as
+                    | {
+                        featured_product_ids?: string[]
+                        storefront_links?: unknown[]
+                        featured_mode?: 'all' | 'curated'
+                      }
+                    | undefined) ?? {}
+                const featuredMode = liveSettings.featured_mode ?? 'curated'
+                const featuredIds = liveSettings.featured_product_ids ?? []
+                const visibleProductCount =
+                  featuredMode === 'curated'
+                    ? featuredIds.length
+                    : (storefrontData?.products?.length ?? 0)
+                const linkCount = liveSettings.storefront_links?.length ?? 0
+                if (visibleProductCount === 0 && linkCount === 0) return null
+                return (
+                  <div
+                    className={`add-fab-wrap${linksMode || arrangeOpen ? 'has-panel' : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className="add-fab"
+                      onClick={() => setPickerOpen(true)}
+                    >
+                      <span className="plus">+</span>
+                      Add to Space
+                      <span className="kbd">{'⌘'}K</span>
+                    </button>
+                  </div>
+                )
+              })()}
+
+              {pickerOpen && (
+                <AddToSpacePicker
+                  organization={organization}
+                  alreadySelectedProductIds={
+                    (
+                      (form.getValues('storefront_settings') ?? {}) as {
+                        featured_product_ids?: string[]
+                      }
+                    ).featured_product_ids ?? []
+                  }
+                  onClose={() => setPickerOpen(false)}
+                  callbacks={pickerCallbacks}
+                  dark={dark}
+                />
+              )}
             </>
           )
         ) : activeTab === 'audience' ? (

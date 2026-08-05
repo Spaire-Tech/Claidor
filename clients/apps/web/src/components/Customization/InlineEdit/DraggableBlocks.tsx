@@ -2,9 +2,15 @@
 
 import { LeadMagnetCard } from '@/components/Forms/LeadMagnetCard'
 import { ProductCard } from '@/components/Products/ProductCard'
-import { StorefrontCourseCard } from '@/components/Products/StorefrontCourseCard'
 import { CATEGORY_LABELS } from '@/components/Profile/categoryLabels'
 import { SectionLabel } from '@/components/Profile/SectionLabel'
+import {
+  itemKey,
+  reorderSpaceItem,
+  type ResolvedSpaceItem,
+  resolveSpaceItems,
+  setItemHidden,
+} from '@/components/Profile/spaceItems'
 import {
   EmbedCard,
   isEmbeddableLink,
@@ -13,13 +19,6 @@ import {
   URL_LAYOUT_WRAPPERS,
   UrlLink,
 } from '@/components/Profile/StorefrontLinks'
-import {
-  itemKey,
-  reorderSpaceItem,
-  resolveSpaceItems,
-  setItemHidden,
-  type ResolvedSpaceItem,
-} from '@/components/Profile/spaceItems'
 import { toast } from '@/components/Toast/use-toast'
 import { FormPublic } from '@/hooks/queries/forms'
 import {
@@ -116,7 +115,7 @@ const LinkLayoutMenu = ({
           />
           <div
             role="menu"
-            className="absolute right-0 top-9 z-[8] w-36 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+            className="absolute top-9 right-0 z-[8] w-36 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
           >
             {LAYOUTS.map(({ value: v, label, Icon }) => (
               <button
@@ -176,7 +175,7 @@ const SortableItem = ({
   return (
     <div
       ref={setNodeRef}
-      className={`item-host${isDragging ? ' dragging' : ''}${
+      className={`item-host${isDragging ? 'dragging' : ''}${
         className ? ` ${className}` : ''
       }`}
       style={{
@@ -336,12 +335,11 @@ export const DraggableBlocks = ({
 }) => {
   const router = useRouter()
   const { watch, setValue } = useFormContext<schemas['OrganizationUpdate']>()
-  const settings = (watch('storefront_settings') ??
-    org.storefront_settings) as
+  const settings = (watch('storefront_settings') ?? org.storefront_settings) as
     | schemas['OrganizationStorefrontSettings']
     | undefined
 
-  const links = ((settings?.storefront_links ?? []) as StorefrontLinkItem[])
+  const links = (settings?.storefront_links ?? []) as StorefrontLinkItem[]
   const linksLayout: LinksLayout = (settings?.links_layout ??
     'classic') as LinksLayout
   const showDetails = settings?.show_product_details ?? true
@@ -369,7 +367,10 @@ export const DraggableBlocks = ({
   ) => {
     setValue(
       'storefront_settings',
-      { ...(settings ?? {}), ...patch } as schemas['OrganizationStorefrontSettings'],
+      {
+        ...(settings ?? {}),
+        ...patch,
+      } as schemas['OrganizationStorefrontSettings'],
       { shouldDirty: true },
     )
   }
@@ -511,7 +512,6 @@ export const DraggableBlocks = ({
         <div className="flex flex-col gap-12">
           {chunks.map((chunk, idx) => {
             if (chunk.kind === 'product') {
-              const isCourse = chunk.category === 'course'
               return (
                 <section
                   key={`p-${idx}`}
@@ -520,52 +520,41 @@ export const DraggableBlocks = ({
                   <SectionLabel count={chunk.items.length}>
                     {CATEGORY_LABELS[chunk.category] ?? CATEGORY_LABELS.other}
                   </SectionLabel>
-                  <div
-                    className={
-                      isCourse
-                        ? 'flex w-full flex-col gap-6'
-                        : 'grid w-full grid-cols-1 gap-6 md:grid-cols-2'
-                    }
-                  >
-                  {chunk.items.map((entry) => (
-                    <SortableItem key={itemKey(entry)} id={itemKey(entry)}>
-                      {({ listeners, attributes }) => (
-                        <div className="item-hover">
-                          {isCourse ? (
-                            <StorefrontCourseCard
-                              product={entry.product}
-                              previewStatic
-                            />
-                          ) : (
+                  <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
+                    {chunk.items.map((entry) => (
+                      <SortableItem key={itemKey(entry)} id={itemKey(entry)}>
+                        {({ listeners, attributes }) => (
+                          <div className="item-hover">
                             <ProductCard
                               product={entry.product}
                               showDetails={showDetails}
                               thumbnailSize={thumbnailSize}
                             />
-                          )}
-                          <div className="item-actions">
-                            <ItemDragHandle
-                              listeners={listeners}
-                              attributes={attributes}
-                              label={`Drag ${entry.product.name} to reorder`}
-                            />
-                            <button
-                              type="button"
-                              className="item-action"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onHide(itemKey(entry), entry.product.name)
-                              }}
-                              title="Hide from Space"
-                              aria-label={`Hide ${entry.product.name} from Space`}
-                            >
-                              <VisibilityOffOutlined style={{ fontSize: 16 }} />
-                            </button>
+                            <div className="item-actions">
+                              <ItemDragHandle
+                                listeners={listeners}
+                                attributes={attributes}
+                                label={`Drag ${entry.product.name} to reorder`}
+                              />
+                              <button
+                                type="button"
+                                className="item-action"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onHide(itemKey(entry), entry.product.name)
+                                }}
+                                title="Hide from Space"
+                                aria-label={`Hide ${entry.product.name} from Space`}
+                              >
+                                <VisibilityOffOutlined
+                                  style={{ fontSize: 16 }}
+                                />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </SortableItem>
-                  ))}
+                        )}
+                      </SortableItem>
+                    ))}
                   </div>
                 </section>
               )

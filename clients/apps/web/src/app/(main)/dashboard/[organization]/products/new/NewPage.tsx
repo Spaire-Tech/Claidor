@@ -1,17 +1,23 @@
 'use client'
 
-import CourseWizard from '@/components/Courses/CourseWizard'
+import { CreateProductSplitPage } from '@/components/Products/CreateProductSplitPage'
 import { schemas } from '@spaire/client'
+import { useSearchParams } from 'next/navigation'
 
-// Course-only ("MasterClass builder") reposition: product creation routes
-// straight into the course wizard. The generic digital-product flow
-// (CreateProductSplitPage) and the product-type chooser (ProductTypeDialog)
-// are hidden, not deleted — restore the `?type=` branching here to bring them
-// back.
+// Product creation routes straight into the generic digital-product flow
+// (CreateProductSplitPage). `?fromProductId=` pre-fills the form from an
+// existing product (the Duplicate action on the products list).
 export default function Page({
   organization,
 }: {
   organization: schemas['Organization']
 }) {
-  return <CourseWizard organization={organization} />
+  const searchParams = useSearchParams()
+  const fromProductId = searchParams?.get('fromProductId') ?? undefined
+  return (
+    <CreateProductSplitPage
+      organization={organization}
+      fromProductId={fromProductId}
+    />
+  )
 }

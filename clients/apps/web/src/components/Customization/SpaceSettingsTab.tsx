@@ -2,11 +2,9 @@
 
 // Settings tab for the Space editor.
 //
-// Styled to match the Community hub's settings surface 1:1 — same
-// `.spaire-hub` grouped-list design system (cards, rows, toggles, sliding-pill
-// segmented controls) and the same light/dark palette (dark comes for free via
-// `.spaire-hub.dark`). We reuse Community's Toggle/Seg atoms and hub.css so the
-// look stays in lockstep with that surface.
+// Uses the `.spaire-hub` grouped-list design system (cards, rows, toggles,
+// sliding-pill segmented controls) with a light/dark palette (dark comes for
+// free via `.spaire-hub.dark`) — atoms + hub.css live in ./hubAtoms.
 //
 // Reads + writes via the surrounding react-hook-form context (same as the
 // canvas inline editors), so the Publish button stays in sync.
@@ -15,8 +13,8 @@ import { storefrontLink } from '@/utils/nav'
 import { schemas } from '@spaire/client'
 import { useCallback, useEffect, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
-import { Field, Seg, Toggle } from '../Community/hub/atoms'
-import '../Community/hub/hub.css'
+import { Field, Seg, Toggle } from './hubAtoms/atoms'
+import './hubAtoms/hub.css'
 import './SpaceSettingsTab.css'
 
 type Settings = NonNullable<schemas['OrganizationStorefrontSettings']>

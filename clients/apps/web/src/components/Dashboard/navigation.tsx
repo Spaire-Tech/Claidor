@@ -8,7 +8,6 @@ import HiveOutlined from '@mui/icons-material/HiveOutlined'
 import LayersOutlined from '@mui/icons-material/LayersOutlined'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
 import MailOutlined from '@mui/icons-material/MailOutlined'
-import OndemandVideoOutlined from '@mui/icons-material/OndemandVideoOutlined'
 import PeopleAltOutlined from '@mui/icons-material/PeopleAltOutlined'
 import ReceiptLongOutlined from '@mui/icons-material/ReceiptLongOutlined'
 import ShoppingBagOutlined from '@mui/icons-material/ShoppingBagOutlined'
@@ -212,16 +211,6 @@ const generalRoutesList = (org?: schemas['Organization']): Route[] => [
       },
       { title: 'Files', link: `/dashboard/${org?.slug}/products/benefits` },
     ],
-  },
-  {
-    id: 'courses',
-    title: 'MasterClass',
-    icon: <OndemandVideoOutlined fontSize="inherit" />,
-    link: `/dashboard/${org?.slug}/courses`,
-    checkIsActive: (currentRoute: string): boolean => {
-      return currentRoute.startsWith(`/dashboard/${org?.slug}/courses`)
-    },
-    if: true,
   },
   {
     id: 'customers',

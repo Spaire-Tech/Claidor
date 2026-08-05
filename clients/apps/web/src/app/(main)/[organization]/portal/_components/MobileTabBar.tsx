@@ -1,7 +1,7 @@
 'use client'
 
 // Mobile-only bottom tab bar. Sticks to the bottom of the viewport and shows
-// the primary destinations (Overview / Courses / Community / Billing) plus a
+// the primary destinations (Overview / Billing) plus a
 // YouTube-style "You" tab that opens the profile hub sheet — the mobile home
 // for everything the desktop top bar keeps behind the avatar dropdown
 // (settings, log out, bookmarks, theme) and the tabs that don't fit here
@@ -35,29 +35,6 @@ const HomeIcon = (active: boolean) => (
     <path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-4v-7h-8v7H4a1 1 0 0 1-1-1v-8.5Z" />
   </svg>
 )
-const StackIcon = (active: boolean) => (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.7"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden
-  >
-    <rect
-      x="3"
-      y="4"
-      width="18"
-      height="6"
-      rx="1.5"
-      fill={active ? 'currentColor' : 'none'}
-    />
-    <rect x="3" y="14" width="18" height="6" rx="1.5" />
-  </svg>
-)
 const CardIcon = (active: boolean) => (
   <svg
     width="22"
@@ -82,21 +59,6 @@ const CardIcon = (active: boolean) => (
     <path d="M3 10h18M7 15h3" />
   </svg>
 )
-const ChatIcon = (active: boolean) => (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 24 24"
-    fill={active ? 'currentColor' : 'none'}
-    stroke="currentColor"
-    strokeWidth="1.7"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden
-  >
-    <path d="M21 12a8 8 0 0 1-12.7 6.5L3 20l1.5-5.3A8 8 0 1 1 21 12z" />
-  </svg>
-)
 const PersonIcon = (active: boolean) => (
   <svg
     width="22"
@@ -116,8 +78,6 @@ const PersonIcon = (active: boolean) => (
 
 const TAB_ICONS: Record<PortalTabKey, (active: boolean) => React.ReactNode> = {
   overview: HomeIcon,
-  courses: StackIcon,
-  community: ChatIcon,
   orders: CardIcon, // unused in the bar (Enrollments lives in the You hub)
   team: PersonIcon, // unused in the bar (Team lives in the You hub)
   settings: CardIcon,

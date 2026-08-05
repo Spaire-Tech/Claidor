@@ -4,7 +4,6 @@ import { Portal } from '@/components/Customization/InlineEdit/Portal'
 import { schemas } from '@spaire/client'
 import { useEffect, useState } from 'react'
 import { CatalogTab } from './CatalogTab'
-import { CourseTab } from './CourseTab'
 import { EmbedPickPayload, EmbedTab } from './EmbedTab'
 import { FormPickPayload, FormTab } from './FormTab'
 import { UrlPickPayload, UrlTab } from './UrlTab'
@@ -21,11 +20,10 @@ export type AddToSpacePickerCallbacks = {
   // selection state reflects what's actually featured.
   onChangeProducts: (addIds: string[], removeIds: string[]) => void
   onCreateProduct: () => void
-  onCreateCourse: () => void
   onAddForm: (payload: FormPickPayload) => void
 }
 
-const TABS = ['URL', 'Embed', 'Digital Product', 'Course', 'Form'] as const
+const TABS = ['URL', 'Embed', 'Digital Product', 'Form'] as const
 type Tab = (typeof TABS)[number]
 
 export const AddToSpacePicker = ({
@@ -38,9 +36,9 @@ export const AddToSpacePicker = ({
 }: {
   organization: schemas['Organization']
   initialTab?: Tab
-  // Product IDs already featured on the Space — both Catalog and
-  // Course tabs seed their selection set with these so creators see
-  // what's already in. Toggling off and clicking Save removes them.
+  // Product IDs already featured on the Space — the Catalog tab seeds
+  // its selection set with these so creators see what's already in.
+  // Toggling off and clicking Save removes them.
   alreadySelectedProductIds?: string[]
   onClose: () => void
   callbacks: AddToSpacePickerCallbacks
@@ -70,7 +68,7 @@ export const AddToSpacePicker = ({
     <Portal>
       <div className="picker-backdrop" onClick={onClose} />
       <div
-        className={`pk-library waterglass${dark ? ' space-dark' : ''}`}
+        className={`pk-library waterglass${dark ? 'space-dark' : ''}`}
         role="dialog"
         aria-label="Add to your Space"
         aria-modal="true"
@@ -123,20 +121,6 @@ export const AddToSpacePicker = ({
               onCreateNew={() => {
                 onClose()
                 callbacks.onCreateProduct()
-              }}
-            />
-          )}
-          {tab === 'Course' && (
-            <CourseTab
-              organization={organization}
-              alreadySelectedIds={alreadySelectedProductIds}
-              onSubmit={(addIds, removeIds) => {
-                callbacks.onChangeProducts(addIds, removeIds)
-                onClose()
-              }}
-              onCreateNew={() => {
-                onClose()
-                callbacks.onCreateCourse()
               }}
             />
           )}

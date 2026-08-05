@@ -4,20 +4,13 @@ import {
   useAuthenticatedCustomer,
   usePortalAuthenticatedUser,
 } from '@/hooks/queries'
-import { useCommunityEnrolledCourses } from '@/hooks/queries/community'
 import { createClientSideAPI } from '@/utils/client'
 import { hasBillingPermission } from '@/utils/customerPortal'
 import { schemas } from '@spaire/client'
 import { useSearchParams } from 'next/navigation'
 import * as React from 'react'
 
-export type PortalTabKey =
-  | 'overview'
-  | 'courses'
-  | 'community'
-  | 'orders'
-  | 'team'
-  | 'settings'
+export type PortalTabKey = 'overview' | 'orders' | 'team' | 'settings'
 
 export type PortalTab = {
   key: PortalTabKey
@@ -50,22 +43,14 @@ export const usePortalTabs = (
     usePortalAuthenticatedUser(api)
   const { data: customer, isLoading: customerLoading } =
     useAuthenticatedCustomer(api)
-  const { data: communityCourses, isLoading: communityLoading } =
-    useCommunityEnrolledCourses(token)
 
   // False until every tab-gating query has settled — PortalShell holds the
   // whole portal behind the boot loader on this, so the gated tabs
-  // (Community / Enrollments / Billing) never pop in after the fact.
+  // (Enrollments / Billing) never pop in after the fact.
   // (Disabled queries — no token — report isLoading: false, so a tokenless
   // visit doesn't hang here.)
-  const ready = !userLoading && !customerLoading && !communityLoading
+  const ready = !userLoading && !customerLoading
 
-  // Community is only surfaced once at least one enrolled course has a live,
-  // published community. Undefined data (still loading) keeps it hidden so we
-  // never flash a tab that then disappears.
-  const showCommunity = (communityCourses ?? []).some(
-    (c) => c.community_enabled,
-  )
   const canAccessBilling = hasBillingPermission(authenticatedUser)
   const isTeamCustomer = customer?.type === 'team'
   // Team management is shown to team customers whose billing-capable members
@@ -93,31 +78,7 @@ export const usePortalTabs = (
         desktop: true,
         mobile: true,
       },
-      {
-        key: 'courses',
-        href: `/${slug}/portal/courses`,
-        label: 'Masterclasses',
-        // Don't light up Courses while inside a course's community sub-route —
-        // that path belongs to the Community tab (matched below).
-        matches: (p) =>
-          p.includes('/portal/courses') &&
-          !/\/portal\/courses\/[^/]+\/community/.test(p),
-        desktop: true,
-        mobile: true,
-      },
     ]
-    if (showCommunity) {
-      list.push({
-        key: 'community',
-        href: `/${slug}/portal/community`,
-        label: 'Community',
-        matches: (p) =>
-          p.includes('/portal/community') ||
-          /\/portal\/courses\/[^/]+\/community/.test(p),
-        desktop: true,
-        mobile: true,
-      })
-    }
     // Phase 4d: Downloads tab hidden from the student portal nav. Route file
     // is kept; add an entry here to bring the tab back on both surfaces.
     if (canAccessBilling) {
@@ -151,7 +112,7 @@ export const usePortalTabs = (
       })
     }
     return list
-  }, [slug, showCommunity, canAccessBilling, showTeam])
+  }, [slug, canAccessBilling, showTeam])
 
   return {
     tabs,

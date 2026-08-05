@@ -9,7 +9,6 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "web",
-    "@spaire/app",
     "@examples/checkout-embed",
     "@spaire/client",
     "@spaire/customer-portal"

@@ -1,27 +1,14 @@
 'use client'
 
-import {
-  type CustomerNotificationRead,
-  useCustomerNotificationUnreadCount,
-  useCustomerNotifications,
-  useMarkAllCustomerNotificationsRead,
-  useMarkCustomerNotificationRead,
-} from '@/hooks/queries/community'
-import { useCustomerSSE } from '@/hooks/sse'
 import { schemas } from '@spaire/client'
-import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import * as React from 'react'
-import { usePortalTheme } from '../usePortalTheme'
-import { BellIcon, BookmarkIcon } from './icons'
-import { PortalSheet } from './PortalSheet'
 import {
   type CustomerWithProfile,
   OnboardingModal,
   SettingsModal,
 } from './ProfileOnboarding'
-import { useMediaMax } from './useMediaMax'
 import { usePortalTabs } from './usePortalTabs'
 
 const initialsFor = (name: string | null | undefined, email: string) => {
@@ -42,8 +29,8 @@ export const TopBar = ({
   hidden = false,
 }: {
   organization: schemas['CustomerOrganization']
-  /** Hide-on-scroll state, owned by PortalShell so the community hub's
-   *  sticky tab bar can coordinate with the bar via a root class. */
+  /** Hide-on-scroll state, owned by PortalShell so sticky sub-navigation
+   *  can coordinate with the bar via a root class. */
   hidden?: boolean
 }) => {
   const pathname = usePathname()
@@ -85,18 +72,6 @@ export const TopBar = ({
           ))}
         </nav>
         <div className="sp-right">
-          <NotificationsBell slug={organization.slug} token={token} />
-          <Link
-            href={buildHref(`/${organization.slug}/portal/bookmarks`)}
-            className={
-              'sp-iconbtn' +
-              (pathname.includes('/portal/bookmarks') ? ' is-active' : '')
-            }
-            aria-label="Bookmarks"
-            title="Bookmarks"
-          >
-            <BookmarkIcon />
-          </Link>
           <AccountAvatar
             authenticatedUser={authenticatedUser}
             customer={customer}
@@ -144,7 +119,7 @@ function AccountAvatar({
   // First-sign-in trigger. Real customers without a name picked land
   // on the onboarding modal once per portal session. Preview
   // customers skip it — they're really the admin and we already
-  // surface their identity from the course's instructor_name.
+  // surface their identity elsewhere.
   React.useEffect(() => {
     if (!customer || isPreviewCustomer) return
     if (onboardingShownRef.current) return
@@ -279,221 +254,4 @@ function AccountAvatar({
       )}
     </>
   )
-}
-
-// ---------------------------------------------------------------------
-// Notifications bell — dropdown over the existing bell icon on desktop,
-// a bottom sheet at the mobile breakpoint. Only the red dot is
-// conditional; the icon button stays put when there's no token
-// (preview/anonymous viewer) but opening is then disabled.
-// ---------------------------------------------------------------------
-
-function NotificationsBell({
-  slug,
-  token,
-}: {
-  slug: string
-  token: string | null
-}) {
-  const [open, setOpen] = React.useState(false)
-  const isMobile = useMediaMax(720)
-  const { dark } = usePortalTheme(slug, token ?? '')
-  const unreadQ = useCustomerNotificationUnreadCount(token)
-  const listQ = useCustomerNotifications(open ? token : null)
-  const markRead = useMarkCustomerNotificationRead(token)
-  const markAllRead = useMarkAllCustomerNotificationsRead(token)
-
-  // Live updates: subscribe to the customer SSE channel and invalidate
-  // the unread count + list the moment the server publishes a new
-  // notification. The 60s polling fallback in the query stays as a
-  // safety net for dropped SSE connections.
-  const queryClient = useQueryClient()
-  const sse = useCustomerSSE(token ?? undefined)
-  React.useEffect(() => {
-    if (!token) return
-    const onCreated = () => {
-      queryClient.invalidateQueries({
-        queryKey: ['customer-notifications-unread', token],
-      })
-      queryClient.invalidateQueries({
-        queryKey: ['customer-notifications', token],
-      })
-    }
-    sse.on('customer_notification.created', onCreated)
-    return () => {
-      sse.off('customer_notification.created', onCreated)
-    }
-  }, [sse, token, queryClient])
-
-  const unread = unreadQ.data?.unread ?? 0
-  const list = listQ.data ?? []
-
-  // If a mark-read mutation fails, re-sync from the server so the unread count
-  // and list reflect reality instead of a stale (optimistic) state.
-  const resyncNotifications = React.useCallback(() => {
-    queryClient.invalidateQueries({
-      queryKey: ['customer-notifications-unread', token],
-    })
-    queryClient.invalidateQueries({
-      queryKey: ['customer-notifications', token],
-    })
-  }, [queryClient, token])
-
-  const markAllReadButton =
-    unread > 0 ? (
-      <button
-        type="button"
-        className="sp-account-menu-item"
-        style={{ padding: '4px 8px', fontSize: 12, width: 'auto' }}
-        onClick={() =>
-          markAllRead.mutate(undefined, {
-            onError: resyncNotifications,
-          })
-        }
-      >
-        Mark all read
-      </button>
-    ) : null
-
-  const listContent = listQ.isLoading ? (
-    <div
-      style={{
-        padding: 16,
-        color: 'var(--sp-muted)',
-        fontSize: 13,
-      }}
-    >
-      Loading…
-    </div>
-  ) : list.length === 0 ? (
-    <div
-      style={{
-        padding: 16,
-        color: 'var(--sp-muted)',
-        fontSize: 13,
-      }}
-    >
-      You&apos;re all caught up.
-    </div>
-  ) : (
-    list.map((n) => (
-      <NotificationRow
-        key={n.id}
-        notif={n}
-        onMarkRead={() =>
-          markRead.mutate(n.id, { onError: resyncNotifications })
-        }
-      />
-    ))
-  )
-
-  return (
-    <div className="sp-account" style={{ position: 'relative' }}>
-      <button
-        type="button"
-        className="sp-iconbtn"
-        aria-label="Notifications"
-        title="Notifications"
-        aria-haspopup={isMobile ? 'dialog' : 'menu'}
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        disabled={!token}
-      >
-        <BellIcon />
-        {unread > 0 && <span className="sp-dot" aria-hidden />}
-      </button>
-      {isMobile ? (
-        <PortalSheet
-          open={open}
-          onClose={() => setOpen(false)}
-          title="Notifications"
-          dark={dark}
-          headerAction={markAllReadButton}
-        >
-          {listContent}
-        </PortalSheet>
-      ) : (
-        open && (
-          <div
-            className="sp-account-menu"
-            role="menu"
-            style={{
-              width: 'min(360px, calc(100vw - 32px))',
-              maxHeight: 480,
-              overflow: 'auto',
-            }}
-            onMouseLeave={() => setOpen(false)}
-          >
-            <div
-              className="sp-account-menu-head"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div className="sp-account-menu-name">Notifications</div>
-              {markAllReadButton}
-            </div>
-            {listContent}
-          </div>
-        )
-      )}
-    </div>
-  )
-}
-
-function NotificationRow({
-  notif,
-  onMarkRead,
-}: {
-  notif: CustomerNotificationRead
-  onMarkRead: () => void
-}) {
-  const title = String(
-    (notif.payload as Record<string, unknown>).title ?? 'Community update',
-  )
-  const courseName = String(
-    (notif.payload as Record<string, unknown>).course_name ?? '',
-  )
-  const subtitle = typeForCopy(notif.type, courseName)
-  const unread = notif.read_at === null
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      className="sp-account-menu-item"
-      onClick={onMarkRead}
-      style={{
-        display: 'block',
-        textAlign: 'left',
-        width: '100%',
-        padding: '10px 12px',
-        background: unread ? 'var(--sp-surface-2)' : 'transparent',
-      }}
-    >
-      <div style={{ fontWeight: unread ? 600 : 400, fontSize: 13 }}>
-        {title}
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--sp-muted)' }}>{subtitle}</div>
-    </button>
-  )
-}
-
-function typeForCopy(t: string, course: string) {
-  switch (t) {
-    case 'community.event.published':
-      return course ? `New event in ${course}` : 'New event scheduled'
-    case 'community.event.starting_soon_24h':
-      return 'Starts tomorrow'
-    case 'community.event.starting_soon_15m':
-      return 'Starts in 15 minutes'
-    case 'community.event.live':
-      return 'Live now'
-    case 'community.event.replay_nag_t2h':
-    case 'community.event.replay_nag_t24h':
-      return 'Add a replay?'
-    default:
-      return ''
-  }
 }

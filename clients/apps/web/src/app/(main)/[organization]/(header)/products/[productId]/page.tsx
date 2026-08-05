@@ -4,7 +4,7 @@ import { getServerSideAPI } from '@/utils/client/serverside'
 import { getStorefrontOrNotFound } from '@/utils/storefront'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { ProductLandingPage } from './ProductLandingPage'
+import { ProductDetailPage } from './ProductDetailPage'
 
 export async function generateMetadata(props: {
   params: Promise<{ organization: string; productId: string }>
@@ -86,10 +86,12 @@ export default async function Page(props: {
   })
   const otherProducts = resolved
     .filter((entry) => entry.kind === 'product' && entry.id !== product.id)
-    .map((entry) => (entry as Extract<typeof entry, { kind: 'product' }>).product)
+    .map(
+      (entry) => (entry as Extract<typeof entry, { kind: 'product' }>).product,
+    )
 
   return (
-    <ProductLandingPage
+    <ProductDetailPage
       organization={organization}
       product={product}
       otherProducts={otherProducts}

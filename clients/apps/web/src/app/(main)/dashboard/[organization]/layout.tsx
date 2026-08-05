@@ -1,5 +1,5 @@
-import { OrganizationContextProvider } from '@/providers/maintainerOrganization'
 import PastDueBanner from '@/components/Settings/SpaireTier/PastDueBanner'
+import { OrganizationContextProvider } from '@/providers/maintainerOrganization'
 // Trial banner temporarily hidden per request — re-enable by uncommenting
 // this import and the <TrialBanner /> render below.
 // import TrialBanner from '@/components/Settings/SpaireTier/TrialBanner'
@@ -126,44 +126,6 @@ export default async function Layout(props: {
 
   if (!planPicked && !isOnboardingRoute && !isFinanceAccountRoute) {
     return redirect(`${orgPathPrefix}/onboarding/plan`)
-  }
-
-  // Course-only ("MasterClass builder") reposition: the generic
-  // digital-business surfaces are removed from the dashboard nav
-  // (components/Dashboard/navigation.tsx) but remain reachable by direct
-  // URL, so we also gate them here and bounce to the course list. Payment
-  // Links (/products/checkout-links) and Discounts (/products/discounts)
-  // are intentionally kept, and product detail/edit plus course creation
-  // (/products/new) stay reachable — so under /products we gate only the
-  // catalog list and the digital-only delivery types. Reversible: remove
-  // this block (and restore the nav `if`) to bring a surface back.
-  const relPath = pathname.startsWith(orgPathPrefix)
-    ? pathname.slice(orgPathPrefix.length)
-    : ''
-  const hiddenSurfacePrefixes = [
-    '/storefront',
-    '/email-marketing',
-    '/developers',
-    '/founder-tools',
-    '/formation',
-    '/startup-stack',
-    '/claude-code',
-    // Usage-metering analytics — hidden from the Analytics tabs too. The
-    // Metrics tab (/analytics, /analytics/metrics) stays reachable.
-    '/analytics/events',
-    '/analytics/costs',
-  ]
-  const isHiddenSurface =
-    hiddenSurfacePrefixes.some(
-      (prefix) => relPath === prefix || relPath.startsWith(`${prefix}/`),
-    ) ||
-    relPath === '/products' ||
-    relPath === '/products/' ||
-    relPath.startsWith('/products/benefits') ||
-    relPath.startsWith('/products/meters') ||
-    relPath.startsWith('/products/lead-magnets')
-  if (isHiddenSurface && !isOnboardingRoute) {
-    return redirect(`${orgPathPrefix}/courses`)
   }
 
   return (

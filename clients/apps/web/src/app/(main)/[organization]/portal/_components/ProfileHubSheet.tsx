@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as React from 'react'
 import { usePortalTheme } from '../usePortalTheme'
-import { BookmarkIcon } from './icons'
+
 import { PortalSheet } from './PortalSheet'
 import { type CustomerWithProfile, SettingsModal } from './ProfileOnboarding'
 
@@ -139,7 +139,6 @@ export const ProfileHubSheet = ({
         {showUsage && navItem(`/${slug}/portal/usage`, 'Usage', <MeterGlyph />)}
         {showWallet &&
           navItem(`/${slug}/portal/wallet`, 'Wallet', <WalletGlyph />)}
-        {navItem(`/${slug}/portal/bookmarks`, 'Bookmarks', <BookmarkIcon />)}
         <div className="sp-hub-sep" role="separator" />
         {customerProfile && (
           <button
