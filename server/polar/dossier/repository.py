@@ -83,30 +83,28 @@ class DossierRepository(RepositoryBase[Dossier]):
         """Per-dossier counts for the index list ("14 pièces · 3 avocats")."""
         if not dossier_ids:
             return {}, {}
-        documents = dict(
-            (
-                await self.session.execute(
-                    select(DossierDocument.dossier_id, func.count(DossierDocument.id))
-                    .where(
-                        DossierDocument.dossier_id.in_(list(dossier_ids)),
-                        DossierDocument.deleted_at.is_(None),
-                    )
-                    .group_by(DossierDocument.dossier_id)
+        document_rows = (
+            await self.session.execute(
+                select(DossierDocument.dossier_id, func.count(DossierDocument.id))
+                .where(
+                    DossierDocument.dossier_id.in_(list(dossier_ids)),
+                    DossierDocument.deleted_at.is_(None),
                 )
-            ).tuples()
-        )
-        members = dict(
-            (
-                await self.session.execute(
-                    select(DossierMember.dossier_id, func.count(DossierMember.id))
-                    .where(
-                        DossierMember.dossier_id.in_(list(dossier_ids)),
-                        DossierMember.deleted_at.is_(None),
-                    )
-                    .group_by(DossierMember.dossier_id)
+                .group_by(DossierDocument.dossier_id)
+            )
+        ).all()
+        member_rows = (
+            await self.session.execute(
+                select(DossierMember.dossier_id, func.count(DossierMember.id))
+                .where(
+                    DossierMember.dossier_id.in_(list(dossier_ids)),
+                    DossierMember.deleted_at.is_(None),
                 )
-            ).tuples()
-        )
+                .group_by(DossierMember.dossier_id)
+            )
+        ).all()
+        documents = {dossier_id: count for dossier_id, count in document_rows}
+        members = {dossier_id: count for dossier_id, count in member_rows}
         return documents, members
 
     # --- writes ----------------------------------------------------------
@@ -179,7 +177,9 @@ class DossierRepository(RepositoryBase[Dossier]):
             .options(contains_eager(DossierMember.user))
             .order_by(DossierMember.created_at)
         )
-        return (await self.session.execute(statement)).scalars().all()
+        # unique(): User carries joined eager loads of its own (OAuth
+        # accounts), so the result contains collection joins.
+        return (await self.session.execute(statement)).unique().scalars().all()
 
     # --- documents -------------------------------------------------------
 
@@ -395,7 +395,5 @@ class DossierRepository(RepositoryBase[Dossier]):
             .join(User, User.id == DossierQuestion.asked_by_id)
             .where(DossierQuestion.id.in_(list(question_ids)))
         )
-        return {
-            qid: email
-            for qid, email in (await self.session.execute(statement)).tuples()
-        }
+        rows = (await self.session.execute(statement)).all()
+        return {qid: email for qid, email in rows}
