@@ -104,3 +104,33 @@ harvesting can run from sessions: `www.ohada.com`, `senlii.org`,
   the lawyer verification pass; 026/2021 acquired in the meantime.
 - Keyword headers: present on some pages (090/2018) but not all; treat as a
   bonus signal, not a guaranteed one.
+
+## Acquisition log — 2026-08-06 (the library, at scale)
+
+- **All SenLII works acquired**: eleven works (the revised Treaty + ten
+  uniform-act expressions) downloaded from SenLII's structured AKN HTML via
+  its search API and committed under `corpus/raw/acts/`. 3,272 articles
+  parse cleanly across all files. Two prior expressions came with the haul:
+  the **1997 AUDCG** and the current 2010 one — the first act besides the
+  AUPSRVE where we hold two versions.
+- **Act registry**: `server/scripts/corpus_registry.py` now declares every
+  work, its temporal versions with entry-into-force dates, and the per-act
+  citation-context pattern that guards edge discovery. The loader and the
+  citation-graph verifier are fully registry-driven.
+- **Missing from SenLII**: the accounting act (AUDCIF 2017) and most prior
+  expressions (AUS 1997, AUSCGIE 1997, AUPC 1998, AUA 1999, AUCTMR has no
+  prior). Decisions predating a loaded version create **no** edge for that
+  act (honest gap) until those texts are acquired.
+- **Juricaf full collection**: the OHADA facet holds 1,325 decision pages;
+  full polite crawl (1.2 s spacing) harvested into `corpus/raw/decisions/`.
+  Findings at scale:
+  - ~50 pages are the same decision listed under zero-padded and bare
+    numbers (035/2010 ≡ 35/2010) — deduplicated at load;
+  - CCJA chambers number independently from 2009: two 010/2009 exist;
+    decision identity is (number, date);
+  - 3 pages (1999 avis) don't carry a parseable number/date — skipped and
+    logged;
+  - two source misprints found by parsing, not by eye: the 2023 AUPSRVE
+    prints "Article 245 – 11" (compound number, now parsed as 245-11) and
+    the 1997 AUDCG prints "Article 215" for two different provisions
+    (almost certainly 215/216; first wins, flagged for gazette cross-check).
