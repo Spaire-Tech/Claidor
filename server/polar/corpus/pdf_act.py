@@ -12,7 +12,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 
-_HEADING = re.compile(r"(?m)^\s*Article\s+(\d+[\w-]*)\s*$")
+_HEADING = re.compile(r"(?m)^\s*Article\s+(\d+[\w-]*|premier)\s*\.?\s*$")
 
 
 @dataclass(frozen=True)

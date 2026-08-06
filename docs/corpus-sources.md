@@ -134,3 +134,22 @@ harvesting can run from sessions: `www.ohada.com`, `senlii.org`,
     prints "Article 245 – 11" (compound number, now parsed as 245-11) and
     the 1997 AUDCG prints "Article 215" for two different provisions
     (almost certainly 215/216; first wins, flagged for gazette cross-check).
+
+## Acquisition log — 2026-08-06 (prior versions + the accounting act)
+
+- **AUA 1999** and **AUSCGIE 1997**: official copies filed with the WTO
+  (Comoros accession series WTACCCOM12_LEG_9 / LEG_11).
+- **AUS 1997**: Droit-Afrique rendering (isfad-gn.org mirror).
+- **AUPC 1998**: Juriscope consolidation (leganet.cd).
+- **AUDCIF 2017**: text from LegalRDC; the **J.O. OHADA numéro spécial du
+  15 février 2017 itself** is also archived (its small-caps fonts defeat
+  text extraction, so it serves as the authority artifact, not the text
+  source).
+- Extraction is gated: `scripts.corpus_extract_pdfs` refuses to save unless
+  each source yields exactly the published article count (151 / 920 / 258 /
+  36 / 123). The gate caught a swallowed "Article 251." (trailing period),
+  page-number artifacts inside headings, and chapter-heading adjacency.
+- Still missing: the pre-2017 accounting act (2000), the original 1993
+  Treaty expression, and the CCJA arbitration Rules (a separate instrument
+  decisions cite often — worth acquiring so its citations are never
+  mistaken for AUA citations).

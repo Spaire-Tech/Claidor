@@ -25,7 +25,7 @@ class VersionSpec:
     label: str
     # Filename under corpus/raw/acts (Laws.Africa AKN HTML), or None when the
     # version comes from a non-AKN source handled by a dedicated loader
-    # (the 1998 AUPSRVE PDF).
+    # (the 1998 AUPSRVE PDF) or from an extracted PDF (``pdf_txt``).
     file: str | None
     akn_expression_uri: str | None
     adopted_on: date
@@ -33,6 +33,11 @@ class VersionSpec:
     in_force_from: date
     gazette_reference: str | None
     transitional_rule: str | None = None
+    # Normalized text extracted from an acquired PDF (see
+    # scripts.corpus_extract_pdfs), filename under corpus/raw/acts-pdf.
+    pdf_txt: str | None = None
+    # Human-readable provenance of the PDF source.
+    pdf_source: str | None = None
 
 
 @dataclass(frozen=True)
@@ -72,6 +77,9 @@ _W_AUPSRVE = (
     "organisation-des-procédures-simplifiées-de-recouvrement"
     "-et-des-voies-d-exécution"
 )
+# Not on SenLII/Laws.Africa — canonical URI constructed under the same AKN
+# naming scheme; sources are PDFs (see the AUDCIF entry).
+_W_AUDCIF = "/akn/aa-ohada/act/2017/droit-comptable-et-information-financiere"
 
 TRANSITIONAL_RULE_AUPSRVE_1998 = (
     "Les procédures et mesures d'exécution engagées avant le 16 février 2024 "
@@ -143,6 +151,19 @@ REGISTRY: tuple[ActSpec, ...] = (
         context_pattern=r"s[ûu]ret[ée]s|\bAUS\b",
         versions=(
             VersionSpec(
+                label="1997",
+                file=None,
+                akn_expression_uri=None,
+                adopted_on=date(1997, 4, 17),
+                published_on=date(1997, 10, 1),
+                in_force_from=date(1998, 1, 1),
+                gazette_reference="J.O. OHADA n° 3, 1er octobre 1997",
+                pdf_txt="aus-1997-droitafrique-extracted.txt",
+                pdf_source=(
+                    "Droit-Afrique.com rendering (via buv.isfad-gn.org mirror)"
+                ),
+            ),
+            VersionSpec(
                 label="2010",
                 file=(
                     "akn_aa-ohada_act_2010_organisation-des-sûretés"
@@ -168,6 +189,20 @@ REGISTRY: tuple[ActSpec, ...] = (
             r"\s+[ée]conomique|AUSCGIE"
         ),
         versions=(
+            VersionSpec(
+                label="1997",
+                file=None,
+                akn_expression_uri=None,
+                adopted_on=date(1997, 4, 17),
+                published_on=date(1997, 10, 1),
+                in_force_from=date(1998, 1, 1),
+                gazette_reference="J.O. OHADA n° 2, 1er octobre 1997",
+                pdf_txt="auscgie-1997-wto-extracted.txt",
+                pdf_source=(
+                    "Droit-Afrique.com rendering, filed with the WTO "
+                    "(Comoros accession, WTACCCOM12_LEG_11)"
+                ),
+            ),
             VersionSpec(
                 label="2014",
                 file=(
@@ -214,6 +249,17 @@ REGISTRY: tuple[ActSpec, ...] = (
         context_pattern=r"proc[ée]dures\s+collectives|apurement\s+du\s+passif|AUPC",
         versions=(
             VersionSpec(
+                label="1998",
+                file=None,
+                akn_expression_uri=None,
+                adopted_on=date(1998, 4, 10),
+                published_on=date(1998, 7, 1),
+                in_force_from=date(1999, 1, 1),
+                gazette_reference="J.O. OHADA n° 7, 1er juillet 1998",
+                pdf_txt="aupc-1998-juriscope-extracted.txt",
+                pdf_source="Juriscope consolidation (via leganet.cd)",
+            ),
+            VersionSpec(
                 label="2015",
                 file=(
                     "akn_aa-ohada_act_2015_organisation-des-procédures-collectives"
@@ -238,6 +284,20 @@ REGISTRY: tuple[ActSpec, ...] = (
             r"|droit\s+de\s+l[’']arbitrage|\bAUA\b"
         ),
         versions=(
+            VersionSpec(
+                label="1999",
+                file=None,
+                akn_expression_uri=None,
+                adopted_on=date(1999, 3, 11),
+                published_on=date(1999, 5, 15),
+                in_force_from=date(1999, 6, 11),
+                gazette_reference="J.O. OHADA n° 8, 15 mai 1999",
+                pdf_txt="aua-1999-wto-extracted.txt",
+                pdf_source=(
+                    "Official text filed with the WTO "
+                    "(Comoros accession, WTACCCOM12_LEG_9)"
+                ),
+            ),
             VersionSpec(
                 label="2017",
                 file="akn_aa-ohada_act_2017_droit-de-l-arbitrage_fra_at_2017-12-15.html",
@@ -290,6 +350,39 @@ REGISTRY: tuple[ActSpec, ...] = (
                 published_on=date(2003, 7, 31),
                 in_force_from=date(2004, 1, 1),
                 gazette_reference="J.O. OHADA n° 13, 31 juillet 2003",
+            ),
+        ),
+    ),
+    ActSpec(
+        short_code="AUDCIF",
+        title=(
+            "Acte uniforme relatif au droit comptable et à l'information financière"
+        ),
+        akn_work_uri=_W_AUDCIF,
+        context_pattern=(
+            r"droit\s+comptable|information\s+financi[èe]re|AUDCIF|SYSCOHADA"
+        ),
+        versions=(
+            VersionSpec(
+                label="2017",
+                file=None,
+                akn_expression_uri=None,
+                adopted_on=date(2017, 1, 26),
+                published_on=date(2017, 2, 15),
+                in_force_from=date(2018, 1, 1),
+                gazette_reference="J.O. OHADA, numéro spécial, 15 février 2017",
+                transitional_rule=(
+                    "Entré en vigueur le 1er janvier 2018 pour les comptes "
+                    "personnels des entités et le 1er janvier 2019 pour les "
+                    "comptes consolidés, les comptes combinés et les états "
+                    "financiers en normes IFRS."
+                ),
+                pdf_txt="audcif-2017-legalrdc-extracted.txt",
+                pdf_source=(
+                    "LegalRDC rendering; J.O. OHADA numéro spécial du "
+                    "15 février 2017 conservé comme référence "
+                    "(audcif-2017-jo-officiel.pdf)"
+                ),
             ),
         ),
     ),

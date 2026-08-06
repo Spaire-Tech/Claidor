@@ -23,7 +23,11 @@ from pathlib import Path
 import structlog
 from sqlalchemy import select
 
-from polar.corpus.akn import article_sort_key, parse_lawsafrica_act_html
+from polar.corpus.akn import (
+    article_sort_key,
+    normalize_article_number,
+    parse_lawsafrica_act_html,
+)
 from polar.corpus.juricaf import parse_juricaf_decision_html
 from polar.corpus.pdf_act import parse_pdf_act_text
 from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
@@ -36,13 +40,14 @@ from polar.models import (
     LegalArticle,
 )
 from polar.postgres import create_async_engine
-from scripts.corpus_registry import REGISTRY, ActSpec, version_for_date
+from scripts.corpus_registry import REGISTRY, ActSpec, VersionSpec, version_for_date
 from scripts.corpus_slice_seed import SEED_DECISIONS
 
 log = structlog.get_logger()
 
 RAW = Path(__file__).parent.parent.parent / "corpus" / "raw"
 ACTS_DIR = RAW / "acts"
+ACTS_PDF_DIR = RAW / "acts-pdf"
 DECISIONS_DIR = RAW / "decisions"
 TXT_1998 = RAW / "aupsrve-1998-leganet-extracted.txt"
 PDF_1998 = RAW / "aupsrve-1998-leganet.pdf"
@@ -109,7 +114,9 @@ async def load_acts(session: AsyncSession) -> None:
                 await session.flush()
 
             if vspec.file is None:
-                continue  # non-AKN source; dedicated loader below
+                if vspec.pdf_txt is not None:
+                    await _load_pdf_version(session, spec, vspec, version)
+                continue  # else: dedicated loader below (1998 AUPSRVE)
             path = ACTS_DIR / vspec.file
             if not path.exists():
                 log.warning(
@@ -185,6 +192,68 @@ async def load_acts(session: AsyncSession) -> None:
                 created=created,
                 updated=updated,
             )
+
+
+async def _load_pdf_version(
+    session: AsyncSession,
+    spec: ActSpec,
+    vspec: "VersionSpec",
+    version: LegalActVersion,
+) -> None:
+    """Articles for a version acquired as an extracted PDF text."""
+    txt_path = ACTS_PDF_DIR / vspec.pdf_txt  # type: ignore[operator]
+    if not txt_path.exists():
+        log.warning(
+            "corpus.load.pdf_txt_missing",
+            act=spec.short_code,
+            version=vspec.label,
+            file=vspec.pdf_txt,
+        )
+        return
+    pdf_path = ACTS_PDF_DIR / str(vspec.pdf_txt).replace("-extracted.txt", ".pdf")
+    parsed = parse_pdf_act_text(txt_path.read_text())
+    provenance = {
+        "source": vspec.pdf_source or "pdf",
+        "kind": "pdf-extraction",
+        "file": pdf_path.name,
+        "sha256": _sha256(pdf_path.read_bytes()) if pdf_path.exists() else None,
+        "extraction": "pypdf + scripts.corpus_extract_pdfs normalization",
+        "authority_crosscheck": (
+            f"pending ({vspec.gazette_reference or 'J.O. OHADA'})"
+        ),
+    }
+    existing = {
+        a.number: a
+        for a in (
+            await session.execute(
+                select(LegalArticle).where(LegalArticle.act_version_id == version.id)
+            )
+        ).scalars()
+    }
+    created = 0
+    for pa in parsed:
+        number = normalize_article_number(f"Article {pa.number}")
+        if number in existing:
+            continue
+        session.add(
+            LegalArticle(
+                act_version_id=version.id,
+                number=number,
+                sort_key=article_sort_key(number),
+                text=pa.text,
+                structure={"alineas": pa.alineas},
+                provenance=provenance,
+            )
+        )
+        existing[number] = None  # type: ignore[assignment]
+        created += 1
+    log.info(
+        "corpus.load.act_pdf",
+        act=spec.short_code,
+        version=vspec.label,
+        parsed=len(parsed),
+        created=created,
+    )
 
 
 async def load_act_1998_articles(session: AsyncSession) -> None:
