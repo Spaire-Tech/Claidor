@@ -1,0 +1,147 @@
+# Claidor on Render — infrastructure as a blueprint.
+#
+# Create with: Render dashboard → New → Blueprint → point at this repo.
+# Everything here is Claidor's own: a matter's documents and a client's
+# confidential file never share a database or a bucket with another product.
+#
+# Secrets are deliberately NOT in this file. Every `sync: false` value is
+# set once in the Render dashboard (or copied from another service) and
+# never committed.
+
+services:
+  - type: web
+    name: claidor-api
+    runtime: docker
+    repo: https://github.com/Spaire-Tech/Claidor
+    branch: main
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: starter
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: CLAIDOR_ENV
+        value: production
+      # Run alembic on boot so a deploy that adds a table needs no manual
+      # step. Only the web service does this — the worker must not race it.
+      - key: CLAIDOR_MIGRATE_ON_STARTUP
+        value: "true"
+      - key: CLAIDOR_LOG_LEVEL
+        value: INFO
+
+      # --- database (Render-managed, Claidor's own) ---
+      - key: CLAIDOR_POSTGRES_HOST
+        fromDatabase: { name: claidor-postgres, property: host }
+      - key: CLAIDOR_POSTGRES_PORT
+        fromDatabase: { name: claidor-postgres, property: port }
+      - key: CLAIDOR_POSTGRES_USER
+        fromDatabase: { name: claidor-postgres, property: user }
+      - key: CLAIDOR_POSTGRES_PWD
+        fromDatabase: { name: claidor-postgres, property: password }
+      - key: CLAIDOR_POSTGRES_DATABASE
+        fromDatabase: { name: claidor-postgres, property: database }
+      # The app also opens a read pool; same instance until there is a replica.
+      - key: CLAIDOR_POSTGRES_READ_HOST
+        fromDatabase: { name: claidor-postgres, property: host }
+      - key: CLAIDOR_POSTGRES_READ_PORT
+        fromDatabase: { name: claidor-postgres, property: port }
+      - key: CLAIDOR_POSTGRES_READ_USER
+        fromDatabase: { name: claidor-postgres, property: user }
+      - key: CLAIDOR_POSTGRES_READ_PWD
+        fromDatabase: { name: claidor-postgres, property: password }
+      - key: CLAIDOR_POSTGRES_READ_DATABASE
+        fromDatabase: { name: claidor-postgres, property: database }
+
+      # --- redis ---
+      - key: CLAIDOR_REDIS_HOST
+        fromService: { name: claidor-redis, type: keyvalue, property: host }
+      - key: CLAIDOR_REDIS_PORT
+        fromService: { name: claidor-redis, type: keyvalue, property: port }
+      - key: CLAIDOR_REDIS_DB
+        value: "0"
+
+      # --- URLs and cookies (see docs/claidor-deployment.md) ---
+      - key: CLAIDOR_BASE_URL
+        sync: false
+      - key: CLAIDOR_FRONTEND_BASE_URL
+        sync: false
+      - key: CLAIDOR_ALLOWED_HOSTS
+        sync: false
+      - key: CLAIDOR_CORS_ORIGINS
+        sync: false
+      - key: CLAIDOR_USER_SESSION_COOKIE_DOMAIN
+        sync: false
+
+      # --- secrets, generated once ---
+      - key: CLAIDOR_SECRET
+        generateValue: true
+      - key: CLAIDOR_ENCRYPTION_KEY
+        sync: false
+      - key: CLAIDOR_JWKS
+        sync: false
+      - key: CLAIDOR_CURRENT_JWK_KID
+        sync: false
+
+      # --- the librarian ---
+      - key: CLAIDOR_ANTHROPIC_API_KEY
+        sync: false
+
+      # --- sign-in ---
+      - key: CLAIDOR_GOOGLE_CLIENT_ID
+        sync: false
+      - key: CLAIDOR_GOOGLE_CLIENT_SECRET
+        sync: false
+
+      # --- storage: Claidor's own buckets, never shared ---
+      - key: CLAIDOR_AWS_ACCESS_KEY_ID
+        sync: false
+      - key: CLAIDOR_AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: CLAIDOR_AWS_REGION
+        sync: false
+      - key: CLAIDOR_S3_FILES_BUCKET_NAME
+        sync: false
+      - key: CLAIDOR_S3_FILES_PUBLIC_BUCKET_NAME
+        sync: false
+      - key: CLAIDOR_S3_FILES_DOWNLOAD_SECRET
+        generateValue: true
+
+      # --- email (login codes, alerts later) ---
+      - key: CLAIDOR_EMAIL_SENDER
+        sync: false
+      - key: CLAIDOR_RESEND_API_KEY
+        sync: false
+      - key: CLAIDOR_EMAIL_FROM_NAME
+        value: Claidor
+      - key: CLAIDOR_EMAIL_FROM_DOMAIN
+        sync: false
+
+  - type: worker
+    name: claidor-worker
+    runtime: docker
+    repo: https://github.com/Spaire-Tech/Claidor
+    branch: main
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: starter
+    autoDeploy: true
+    dockerCommand: uv run dramatiq -p 2 -t 4 -f polar.worker.scheduler:start polar.worker.run
+    envVars:
+      # The worker shares the web service's configuration exactly, minus
+      # migrations: two processes running alembic at once is how you get a
+      # half-applied schema.
+      - fromGroup: claidor-shared
+      - key: CLAIDOR_MIGRATE_ON_STARTUP
+        value: "false"
+
+  - type: keyvalue
+    name: claidor-redis
+    plan: free
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+
+databases:
+  - name: claidor-postgres
+    databaseName: claidor
+    plan: basic-256mb
+    postgresMajorVersion: "16"
