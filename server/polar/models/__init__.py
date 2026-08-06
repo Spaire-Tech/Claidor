@@ -16,6 +16,7 @@ from .court_decision import (
     DecisionArticleLink,
     DecisionArticleTreatment,
     DecisionLinkStatus,
+    TreatmentStatus,
 )
 from .custom_field import CustomField
 from .customer import Customer
@@ -145,6 +146,7 @@ __all__ = [
     "DecisionArticleLink",
     "DecisionArticleTreatment",
     "DecisionLinkStatus",
+    "TreatmentStatus",
     "Discount",
     "DiscountProduct",
     "DiscountRedemption",

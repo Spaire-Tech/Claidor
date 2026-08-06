@@ -57,6 +57,17 @@ class DecisionArticleTreatment(StrEnum):
     cites = "cites"
 
 
+class TreatmentStatus(StrEnum):
+    # No treatment claim may surface in the product unless a human accepted
+    # (or corrected) the proposed label. The link itself (the citation) is
+    # governed by DecisionLinkStatus; this governs only the HOW label.
+    unverified = "unverified"
+    proposed = "proposed"
+    accepted = "accepted"
+    corrected = "corrected"
+    rejected = "rejected"
+
+
 class DecisionLinkStatus(StrEnum):
     # Seeded from a source (e.g. the Juricaf keyword header) but not yet
     # verified against the decision body by a human.
@@ -92,6 +103,13 @@ class DecisionArticleLink(RecordModel):
     )
     treatment: Mapped[DecisionArticleTreatment] = mapped_column(
         String(32), nullable=False, default=DecisionArticleTreatment.cites
+    )
+    treatment_status: Mapped[TreatmentStatus] = mapped_column(
+        String(32), nullable=False, default=TreatmentStatus.unverified, index=True
+    )
+    # Short passage from the decision supporting the proposed treatment label.
+    treatment_quote: Mapped[str | None] = mapped_column(
+        Text, nullable=True, default=None
     )
     status: Mapped[DecisionLinkStatus] = mapped_column(
         String(32), nullable=False, default=DecisionLinkStatus.proposed, index=True
