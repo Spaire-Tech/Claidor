@@ -2,13 +2,16 @@
 
 Usage: ``uv run python -m scripts.corpus_load``
 
-Loads, from ``corpus/raw/`` at the repo root:
-- AUPSRVE act + 2023 version + all articles (SenLII AKN HTML)
-- Harvested CCJA decision pages (Juricaf HTML)
+Driven by ``scripts.corpus_registry``:
+- every registered act + its temporal versions + articles (Laws.Africa AKN
+  HTML under ``corpus/raw/acts/``), plus the 1998 AUPSRVE PDF extraction;
+- harvested CCJA decision pages (Juricaf HTML under ``corpus/raw/decisions/``);
+- the citation graph: seeded slice edges are confirmed against decision
+  text, and new edges are discovered from the text itself — an edge exists
+  only when the decision literally cites the article with act-identifying
+  context, targeting the version in force at the decision date.
 
-Decision→article links are seeded (status=proposed) only for decisions whose
-target 1998 articles exist — i.e. after the 1998 text is loaded. Running this
-script again after new acquisitions picks up whatever is new.
+Running the script again after new acquisitions picks up whatever is new.
 """
 
 import asyncio
@@ -20,7 +23,7 @@ from pathlib import Path
 import structlog
 from sqlalchemy import select
 
-from polar.corpus.akn import parse_lawsafrica_act_html
+from polar.corpus.akn import article_sort_key, parse_lawsafrica_act_html
 from polar.corpus.juricaf import parse_juricaf_decision_html
 from polar.corpus.pdf_act import parse_pdf_act_text
 from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
@@ -33,149 +36,174 @@ from polar.models import (
     LegalArticle,
 )
 from polar.postgres import create_async_engine
-from scripts.corpus_slice_seed import (
-    AKN_EXPRESSION_URI_2023,
-    AKN_WORK_URI_2023,
-    AUPSRVE_SHORT_CODE,
-    SEED_DECISIONS,
-    TRANSITIONAL_RULE_1998,
-)
+from scripts.corpus_registry import REGISTRY, ActSpec, version_for_date
+from scripts.corpus_slice_seed import SEED_DECISIONS
 
 log = structlog.get_logger()
 
 RAW = Path(__file__).parent.parent.parent / "corpus" / "raw"
-SENLII_HTML = RAW / "senlii-aupsrve-2023-fra@2024-07-02.html"
-TXT_1998 = RAW / "aupsrve-1998-leganet-extracted.txt"
+ACTS_DIR = RAW / "acts"
 DECISIONS_DIR = RAW / "decisions"
+TXT_1998 = RAW / "aupsrve-1998-leganet-extracted.txt"
+PDF_1998 = RAW / "aupsrve-1998-leganet.pdf"
 
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-async def load_act_2023(session: AsyncSession) -> None:
+def _decision_number_key(number: str) -> str:
+    """Zero-padding-insensitive decision number: "035/2010" ≡ "35/2010".
+
+    Juricaf lists some decisions under both spellings; they are the same
+    decision and must not enter the corpus twice.
+    """
+    m = re.match(r"^0*(\d+)\s*/\s*(\d{4})$", number.strip())
+    if m is None:
+        return number.strip()
+    return f"{int(m.group(1))}/{m.group(2)}"
+
+
+async def _upsert_act(session: AsyncSession, spec: ActSpec) -> LegalAct:
     act = (
         await session.execute(
-            select(LegalAct).where(LegalAct.akn_work_uri == AKN_WORK_URI_2023)
+            select(LegalAct).where(LegalAct.akn_work_uri == spec.akn_work_uri)
         )
     ).scalar_one_or_none()
     if act is None:
         act = LegalAct(
-            akn_work_uri=AKN_WORK_URI_2023,
-            short_code=AUPSRVE_SHORT_CODE,
-            title=(
-                "Acte uniforme portant organisation des procédures simplifiées "
-                "de recouvrement et des voies d'exécution"
-            ),
+            akn_work_uri=spec.akn_work_uri,
+            short_code=spec.short_code,
+            title=spec.title,
         )
         session.add(act)
         await session.flush()
+    return act
 
+
+async def load_acts(session: AsyncSession) -> None:
+    """Upsert every registered act, version and (AKN-sourced) article set."""
+    for spec in REGISTRY:
+        act = await _upsert_act(session, spec)
+        for vspec in spec.versions:
+            version = (
+                await session.execute(
+                    select(LegalActVersion).where(
+                        LegalActVersion.act_id == act.id,
+                        LegalActVersion.label == vspec.label,
+                    )
+                )
+            ).scalar_one_or_none()
+            if version is None:
+                version = LegalActVersion(
+                    act_id=act.id,
+                    akn_expression_uri=vspec.akn_expression_uri,
+                    label=vspec.label,
+                    adopted_on=vspec.adopted_on,
+                    published_on=vspec.published_on,
+                    gazette_reference=vspec.gazette_reference,
+                    in_force_from=vspec.in_force_from,
+                    transitional_rule=vspec.transitional_rule,
+                )
+                session.add(version)
+                await session.flush()
+
+            if vspec.file is None:
+                continue  # non-AKN source; dedicated loader below
+            path = ACTS_DIR / vspec.file
+            if not path.exists():
+                log.warning(
+                    "corpus.load.act_file_missing",
+                    act=spec.short_code,
+                    version=vspec.label,
+                    file=vspec.file,
+                )
+                continue
+
+            raw = path.read_bytes()
+            parsed = parse_lawsafrica_act_html(raw.decode("utf-8"))
+            provenance = {
+                "source": "senlii.org",
+                "kind": "akoma-ntoso-html",
+                "file": vspec.file,
+                "sha256": _sha256(raw),
+                "license": "CC BY 4.0 / no copyright in legislative content",
+                "authority_crosscheck": (
+                    f"pending ({vspec.gazette_reference or 'J.O. OHADA'})"
+                ),
+            }
+            existing = {
+                a.number: a
+                for a in (
+                    await session.execute(
+                        select(LegalArticle).where(
+                            LegalArticle.act_version_id == version.id
+                        )
+                    )
+                ).scalars()
+            }
+            created = updated = 0
+            seen: set[str] = set()
+            for pa in parsed.articles:
+                if pa.number in seen:
+                    # Source anomaly (one known dupe in the 1997 AUDCG
+                    # rendering): first occurrence wins, never silently
+                    # overwrite it.
+                    log.warning(
+                        "corpus.load.duplicate_article",
+                        act=spec.short_code,
+                        version=vspec.label,
+                        number=pa.number,
+                    )
+                    continue
+                seen.add(pa.number)
+                row = existing.get(pa.number)
+                if row is None:
+                    session.add(
+                        LegalArticle(
+                            act_version_id=version.id,
+                            number=pa.number,
+                            sort_key=pa.sort_key,
+                            text=pa.text,
+                            akn_eid=pa.akn_eid,
+                            structure={"alineas": pa.alineas, "label": pa.number_label},
+                            provenance=provenance,
+                        )
+                    )
+                    created += 1
+                elif row.text != pa.text:
+                    row.text = pa.text
+                    row.structure = {"alineas": pa.alineas, "label": pa.number_label}
+                    row.provenance = provenance
+                    session.add(row)
+                    updated += 1
+            log.info(
+                "corpus.load.act",
+                act=spec.short_code,
+                version=vspec.label,
+                parsed=len(parsed.articles),
+                created=created,
+                updated=updated,
+            )
+
+
+async def load_act_1998_articles(session: AsyncSession) -> None:
+    """The 1998 AUPSRVE text — PDF extraction, no AKN source available."""
     version = (
         await session.execute(
-            select(LegalActVersion).where(
-                LegalActVersion.akn_expression_uri == AKN_EXPRESSION_URI_2023
-            )
-        )
-    ).scalar_one_or_none()
-    if version is None:
-        version = LegalActVersion(
-            act_id=act.id,
-            akn_expression_uri=AKN_EXPRESSION_URI_2023,
-            label="2023",
-            adopted_on=date(2023, 10, 17),
-            published_on=date(2023, 11, 15),
-            gazette_reference="J.O. OHADA, numéro spécial, 15 novembre 2023",
-            in_force_from=date(2024, 2, 16),
-        )
-        session.add(version)
-        await session.flush()
-
-    raw = SENLII_HTML.read_bytes()
-    parsed = parse_lawsafrica_act_html(raw.decode("utf-8"))
-    provenance = {
-        "source": "senlii.org",
-        "kind": "akoma-ntoso-html",
-        "file": SENLII_HTML.name,
-        "sha256": _sha256(raw),
-        "license": "CC BY 4.0 / no copyright in legislative content",
-        "authority_crosscheck": "pending (J.O. OHADA special 2023-11-15)",
-    }
-
-    existing = {
-        a.number: a
-        for a in (
-            await session.execute(
-                select(LegalArticle).where(LegalArticle.act_version_id == version.id)
-            )
-        ).scalars()
-    }
-    created = updated = 0
-    for pa in parsed.articles:
-        row = existing.get(pa.number)
-        if row is None:
-            session.add(
-                LegalArticle(
-                    act_version_id=version.id,
-                    number=pa.number,
-                    sort_key=pa.sort_key,
-                    text=pa.text,
-                    akn_eid=pa.akn_eid,
-                    structure={"alineas": pa.alineas, "label": pa.number_label},
-                    provenance=provenance,
-                )
-            )
-            created += 1
-        elif row.text != pa.text:
-            row.text = pa.text
-            row.structure = {"alineas": pa.alineas, "label": pa.number_label}
-            row.provenance = provenance
-            session.add(row)
-            updated += 1
-    log.info(
-        "corpus.load.act_2023",
-        parsed=len(parsed.articles),
-        created=created,
-        updated=updated,
-    )
-
-
-async def load_act_1998(session: AsyncSession) -> None:
-    from polar.corpus.akn import article_sort_key
-
-    act = (
-        await session.execute(
-            select(LegalAct).where(LegalAct.akn_work_uri == AKN_WORK_URI_2023)
+            select(LegalActVersion)
+            .join(LegalAct)
+            .where(LegalAct.short_code == "AUPSRVE", LegalActVersion.label == "1998")
         )
     ).scalar_one()
-
-    version = (
-        await session.execute(
-            select(LegalActVersion).where(
-                LegalActVersion.act_id == act.id, LegalActVersion.label == "1998"
-            )
-        )
-    ).scalar_one_or_none()
-    if version is None:
-        version = LegalActVersion(
-            act_id=act.id,
-            label="1998",
-            adopted_on=date(1998, 4, 10),
-            published_on=date(1998, 6, 1),
-            gazette_reference="J.O. OHADA n° 6, 1er juin 1998",
-            in_force_from=date(1998, 7, 10),
-            transitional_rule=TRANSITIONAL_RULE_1998,
-        )
-        session.add(version)
-        await session.flush()
 
     raw = TXT_1998.read_bytes()
     parsed = parse_pdf_act_text(raw.decode("utf-8"))
     provenance = {
         "source": "leganet.cd",
         "kind": "pdf-extraction",
-        "file": "aupsrve-1998-leganet.pdf",
-        "sha256": _sha256((RAW / "aupsrve-1998-leganet.pdf").read_bytes()),
+        "file": PDF_1998.name,
+        "sha256": _sha256(PDF_1998.read_bytes()),
         "extraction": "pypdf; spacing artifacts possible",
         "authority_crosscheck": "pending (J.O. OHADA n° 6, 1998 / ohada.com PDF)",
     }
@@ -207,23 +235,45 @@ async def load_act_1998(session: AsyncSession) -> None:
 
 async def load_decisions(session: AsyncSession) -> None:
     seed_by_number = {d.number: d for d in SEED_DECISIONS}
-    created = skipped = 0
+    existing_urns = {
+        urn
+        for (urn,) in (await session.execute(select(CourtDecision.urn_lex))).tuples()
+        if urn is not None
+    }
+    existing_keys = {
+        (_decision_number_key(number), decided_on)
+        for number, decided_on in (
+            await session.execute(
+                select(CourtDecision.number, CourtDecision.decided_on).where(
+                    CourtDecision.court == "CCJA"
+                )
+            )
+        ).tuples()
+    }
+    created = skipped = unparsed = duplicates = 0
     for path in sorted(DECISIONS_DIR.glob("*.html")):
         raw = path.read_bytes()
         parsed = parse_juricaf_decision_html(raw.decode("utf-8", errors="replace"))
         if parsed.number is None or parsed.decided_on is None:
+            unparsed += 1
             log.warning("corpus.load.decision_unparsed", file=path.name)
             continue
-        existing = (
-            await session.execute(
-                select(CourtDecision).where(
-                    CourtDecision.urn_lex == parsed.urn_lex,
-                )
-            )
-        ).scalar_one_or_none()
-        if existing is not None:
+        if parsed.urn_lex in existing_urns:
             skipped += 1
             continue
+        key = (_decision_number_key(parsed.number), date.fromisoformat(parsed.decided_on))
+        if key in existing_keys:
+            # Juricaf occasionally lists the same decision under two slugs
+            # (e.g. an avis and its duplicate entry). First file wins.
+            duplicates += 1
+            log.warning(
+                "corpus.load.decision_duplicate",
+                file=path.name,
+                number=parsed.number,
+                decided_on=parsed.decided_on,
+            )
+            continue
+        existing_keys.add(key)
         seed = seed_by_number.get(parsed.number)
         session.add(
             CourtDecision(
@@ -246,8 +296,16 @@ async def load_decisions(session: AsyncSession) -> None:
                 },
             )
         )
+        if parsed.urn_lex is not None:
+            existing_urns.add(parsed.urn_lex)
         created += 1
-    log.info("corpus.load.decisions", created=created, already_present=skipped)
+    log.info(
+        "corpus.load.decisions",
+        created=created,
+        already_present=skipped,
+        unparsed=unparsed,
+        duplicates=duplicates,
+    )
 
 
 async def seed_links(session: AsyncSession) -> None:
@@ -257,7 +315,9 @@ async def seed_links(session: AsyncSession) -> None:
     """
     version_1998 = (
         await session.execute(
-            select(LegalActVersion).where(LegalActVersion.label == "1998")
+            select(LegalActVersion)
+            .join(LegalAct)
+            .where(LegalAct.short_code == "AUPSRVE", LegalActVersion.label == "1998")
         )
     ).scalar_one_or_none()
     if version_1998 is None:
@@ -315,24 +375,7 @@ async def seed_links(session: AsyncSession) -> None:
 
 
 ARTICLE_CITE = re.compile(r"(?i)\bart(?:icles?|\.)\s[^.;]{0,120}?\b(\d+(?:-\d+)?)\b")
-ACT_CONTEXT = re.compile(
-    r"(?i)acte\s+uniforme|AUPSRVE|voies\s+d[’']ex[ée]cution|proc[ée]dures\s+simplifi[ée]es"
-)
-
-
-def _cited_numbers(text: str) -> set[str]:
-    """Article numbers cited in a decision, guarded by act-uniform context.
-
-    A number counts only when the surrounding passage (±240 chars) also
-    references the uniform act — so "article 1289 du code civil" or an
-    article of some national code never creates an edge.
-    """
-    found: set[str] = set()
-    for m in ARTICLE_CITE.finditer(text):
-        window = text[max(0, m.start() - 240) : m.end() + 240]
-        if ACT_CONTEXT.search(window):
-            found.add(m.group(1))
-    return found
+_CITE_WINDOW = 240
 
 
 def _cites_loose(text: str, number: str) -> bool:
@@ -349,27 +392,53 @@ async def auto_verify_links(session: AsyncSession) -> None:
 
     - Existing proposed edges: verified when the decision text cites the
       article; otherwise they stay proposed with a note — and never surface.
-    - New edges: created directly as verified for every article the decision
-      text cites with act-uniform context, targeting the version in force
-      when the decision was rendered (pre-2024 decisions cite the 1998 text).
+    - New edges: for every "article N" mention whose surrounding passage
+      (±240 chars) names a registered act, an edge is created directly as
+      verified — targeting the version of THAT act in force at the decision
+      date. A mention with no recognizable act context ("article 1289 du
+      code civil") creates nothing; a decision predating every loaded
+      version of the named act creates nothing (honest gap until prior
+      versions are acquired).
     """
-    version_1998 = (
-        await session.execute(
-            select(LegalActVersion).where(LegalActVersion.label == "1998")
-        )
-    ).scalar_one_or_none()
-    if version_1998 is None:
-        return
-    articles_1998 = {
-        a.number: a
-        for a in (
+    # In-memory corpus index: per act, compiled context pattern and, per
+    # version, the article map. ~3,700 articles — comfortably in memory.
+    act_index: list[
+        tuple[ActSpec, re.Pattern[str], dict[str, dict[str, LegalArticle]]]
+    ] = []
+    articles_by_id: dict[object, LegalArticle] = {}
+    for spec in REGISTRY:
+        act = (
             await session.execute(
-                select(LegalArticle).where(
-                    LegalArticle.act_version_id == version_1998.id
+                select(LegalAct).where(LegalAct.akn_work_uri == spec.akn_work_uri)
+            )
+        ).scalar_one_or_none()
+        if act is None:
+            continue
+        by_version: dict[str, dict[str, LegalArticle]] = {}
+        versions = (
+            (
+                await session.execute(
+                    select(LegalActVersion).where(LegalActVersion.act_id == act.id)
                 )
             )
-        ).scalars()
-    }
+            .scalars()
+            .all()
+        )
+        for version in versions:
+            articles = {
+                a.number: a
+                for a in (
+                    await session.execute(
+                        select(LegalArticle).where(
+                            LegalArticle.act_version_id == version.id
+                        )
+                    )
+                ).scalars()
+            }
+            if articles:
+                by_version[version.label] = articles
+                articles_by_id.update({a.id: a for a in articles.values()})
+        act_index.append((spec, re.compile(spec.context_pattern, re.I), by_version))
 
     decisions = (await session.execute(select(CourtDecision))).scalars().all()
     confirmed = unconfirmed = discovered = 0
@@ -386,46 +455,55 @@ async def auto_verify_links(session: AsyncSession) -> None:
             .scalars()
             .all()
         )
-        linked_article_ids = set()
+        linked_article_ids = {link.article_id for link in links}
         for link in links:
-            article = articles_1998.get(
-                next(
-                    (n for n, a in articles_1998.items() if a.id == link.article_id),
-                    "",
-                )
-            )
-            linked_article_ids.add(link.article_id)
+            if link.status != DecisionLinkStatus.proposed:
+                continue
+            article = articles_by_id.get(link.article_id)
             if article is None:
                 continue
-            if link.status == DecisionLinkStatus.proposed:
-                if _cites_loose(text, article.number):
-                    link.status = DecisionLinkStatus.verified
-                    link.note = (
-                        (link.note or "")
-                        + " [auto-vérifié : article cité dans le texte de la décision]"
-                    ).strip()
-                    session.add(link)
-                    confirmed += 1
-                else:
-                    link.note = (
-                        (link.note or "")
-                        + " [non confirmé : article introuvable dans le texte — à revoir]"
-                    ).strip()
-                    session.add(link)
-                    unconfirmed += 1
+            if _cites_loose(text, article.number):
+                link.status = DecisionLinkStatus.verified
+                link.note = (
+                    (link.note or "")
+                    + " [auto-vérifié : article cité dans le texte de la décision]"
+                ).strip()
+                session.add(link)
+                confirmed += 1
+            else:
+                link.note = (
+                    (link.note or "")
+                    + " [non confirmé : article introuvable dans le texte — à revoir]"
+                ).strip()
+                session.add(link)
+                unconfirmed += 1
+
         # Discover edges directly from the decision text.
-        if decision.decided_on < date(2024, 2, 16):
-            for number in _cited_numbers(text):
-                article = articles_1998.get(number)
+        for m in ARTICLE_CITE.finditer(text):
+            window = text[max(0, m.start() - _CITE_WINDOW) : m.end() + _CITE_WINDOW]
+            number = m.group(1)
+            for spec, context, by_version in act_index:
+                if not context.search(window):
+                    continue
+                vspec = version_for_date(spec, decision.decided_on)
+                if vspec is None:
+                    continue
+                version_articles = by_version.get(vspec.label)
+                if version_articles is None:
+                    continue
+                article = version_articles.get(number)
                 if article is None or article.id in linked_article_ids:
                     continue
+                linked_article_ids.add(article.id)
                 session.add(
                     DecisionArticleLink(
                         decision_id=decision.id,
                         article_id=article.id,
                         status=DecisionLinkStatus.verified,
                         seed_source="decision_text",
-                        note="[auto-vérifié : article cité dans le texte de la décision]",
+                        note=(
+                            "[auto-vérifié : article cité dans le texte de la décision]"
+                        ),
                     )
                 )
                 discovered += 1
@@ -441,8 +519,8 @@ async def main() -> None:
     engine = create_async_engine("script")
     sessionmaker = create_async_sessionmaker(engine)
     async with sessionmaker() as session:
-        await load_act_2023(session)
-        await load_act_1998(session)
+        await load_acts(session)
+        await load_act_1998_articles(session)
         await load_decisions(session)
         await seed_links(session)
         await auto_verify_links(session)

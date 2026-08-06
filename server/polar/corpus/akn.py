@@ -24,6 +24,9 @@ _WORD_NUMBERS = {
     "première": "1",
     "1er": "1",
     "1re": "1",
+    # Known source typo (AUPC 2015 rendering): lowercase L for the digit 1
+    # in "article 5-l".
+    "l": "1",
 }
 
 
@@ -53,6 +56,11 @@ def normalize_article_number(label: str) -> str:
     s = label.strip()
     s = re.sub(r"^article\s+", "", s, flags=re.IGNORECASE)
     s = s.strip().rstrip(".").strip()
+    # Some acts print an inline heading after the number ("Article 1 –
+    # Définition", "Article 4 - Début de la procédure"). A space-surrounded
+    # dash never occurs inside compound numbers ("157-1"), so split there
+    # and keep the number part; the heading survives in number_label.
+    s = re.split(r"\s+[–—-]\s+|\s*[:.]\s+", s, maxsplit=1)[0].strip()
     segments = s.split("-")
     normalized = [
         _WORD_NUMBERS.get(seg.strip().lower(), seg.strip()) for seg in segments
