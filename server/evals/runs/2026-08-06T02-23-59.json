@@ -1,0 +1,308 @@
+{
+  "ran_at": "2026-08-06T02:23:59.666160+00:00",
+  "citation_precision": null,
+  "trap_refusal": 1.0,
+  "version_accuracy": 0.0,
+  "hard_fail": false,
+  "auxiliary_anchor_recall": 0.0,
+  "n_fixtures": 35,
+  "results": [
+    {
+      "id": "s01",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s02",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s03",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s04",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s05",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s06",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s07",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s08",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s09",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s10",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s11",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s12",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s13",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s14",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "s15",
+      "category": "substantive",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "v01",
+      "category": "version",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "version_ok": false,
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "v02",
+      "category": "version",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "version_ok": false,
+      "citations_supported": 0,
+      "anchor_hit": false
+    },
+    {
+      "id": "v03",
+      "category": "version",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "version_ok": false,
+      "citations_supported": 0
+    },
+    {
+      "id": "v04",
+      "category": "version",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "version_ok": false,
+      "citations_supported": 0
+    },
+    {
+      "id": "v05",
+      "category": "version",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "version_ok": false,
+      "citations_supported": 0
+    },
+    {
+      "id": "e01",
+      "category": "edge",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": []
+    },
+    {
+      "id": "e02",
+      "category": "edge",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": []
+    },
+    {
+      "id": "e03",
+      "category": "edge",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": []
+    },
+    {
+      "id": "e04",
+      "category": "edge",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": []
+    },
+    {
+      "id": "e05",
+      "category": "edge",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": []
+    },
+    {
+      "id": "t01",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    },
+    {
+      "id": "t02",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    },
+    {
+      "id": "t03",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    },
+    {
+      "id": "t04",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    },
+    {
+      "id": "t05",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    },
+    {
+      "id": "t06",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    },
+    {
+      "id": "t07",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    },
+    {
+      "id": "t08",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    },
+    {
+      "id": "t09",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    },
+    {
+      "id": "t10",
+      "category": "trap",
+      "n_citations": 0,
+      "clarified": false,
+      "versions_used": [],
+      "refused": true
+    }
+  ]
+}
