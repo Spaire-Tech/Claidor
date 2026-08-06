@@ -73,3 +73,19 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
             .order_by(CourtDecision.decided_on)
         )
         return (await self.session.execute(statement)).scalars().all()
+
+    async def list_equivalent_new_articles(
+        self, old_article_ids: Sequence[object]
+    ) -> Sequence[LegalArticle]:
+        """New-version articles mapped (via equivalences) from these articles."""
+        from polar.models import LegalArticleEquivalence
+
+        new_ids = select(LegalArticleEquivalence.new_article_id).where(
+            LegalArticleEquivalence.old_article_id.in_(list(old_article_ids))
+        )
+        statement = (
+            select(LegalArticle)
+            .where(LegalArticle.id.in_(new_ids))
+            .order_by(LegalArticle.sort_key)
+        )
+        return (await self.session.execute(statement)).scalars().all()

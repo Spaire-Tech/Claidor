@@ -86,8 +86,11 @@ class LibrarianService:
         arts_1998 = await repository.list_articles_by_numbers(
             version_1998.id, SLICE_ARTICLES_1998
         )
-        arts_2023 = await repository.list_articles_matching(
-            version_2023.id, "saisie-attribution"
+        # The 2023 side comes from the equivalence map — the mechanical
+        # 1998→2023 correspondence — not from keyword matching, which missed
+        # most of the renumber-free 2023 chapter.
+        arts_2023 = await repository.list_equivalent_new_articles(
+            [a.id for a in arts_1998]
         )
         for art, label in [
             *[(a, "1998") for a in arts_1998],
