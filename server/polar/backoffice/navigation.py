@@ -24,6 +24,11 @@ NAVIGATION = [
         "Payouts", "payouts:list", active_route_name_prefix="payouts:"
     ),
     navigation.NavigationItem(
+        "Corpus Links",
+        "corpus_links:list",
+        active_route_name_prefix="corpus_links:",
+    ),
+    navigation.NavigationItem(
         "External Events",
         "external_events:list",
         active_route_name_prefix="external_events:",

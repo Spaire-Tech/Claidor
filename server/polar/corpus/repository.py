@@ -8,11 +8,13 @@ from polar.kit.repository import RepositoryBase
 from polar.models import (
     CourtDecision,
     DecisionArticleLink,
+    DecisionArticleTreatment,
     DecisionLinkStatus,
     LegalAct,
     LegalActVersion,
     LegalArticle,
     LegalArticleEquivalence,
+    TreatmentStatus,
 )
 
 
@@ -180,6 +182,67 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         statement = select(CourtDecision).where(CourtDecision.id == decision_id)
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
+
+    async def list_links_by_treatment_status(
+        self, treatment_status: TreatmentStatus
+    ) -> Sequence[DecisionArticleLink]:
+        """Links in one treatment-review state, decision & article eagerly loaded."""
+        statement = (
+            select(DecisionArticleLink)
+            .join(DecisionArticleLink.decision)
+            .join(DecisionArticleLink.article)
+            .where(DecisionArticleLink.treatment_status == treatment_status)
+            .options(
+                contains_eager(DecisionArticleLink.decision),
+                contains_eager(DecisionArticleLink.article)
+                .joinedload(LegalArticle.act_version)
+                .joinedload(LegalActVersion.act),
+            )
+            .order_by(
+                CourtDecision.decided_on,
+                CourtDecision.number,
+                LegalArticle.sort_key,
+            )
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def count_links_by_treatment_status(self) -> dict[TreatmentStatus, int]:
+        """Link count keyed by treatment-review status."""
+        statement = select(
+            DecisionArticleLink.treatment_status, func.count(DecisionArticleLink.id)
+        ).group_by(DecisionArticleLink.treatment_status)
+        result = await self.session.execute(statement)
+        return {status: count for status, count in result.tuples().all()}
+
+    async def get_link_by_id(self, link_id: UUID) -> DecisionArticleLink | None:
+        """One link with its decision, article, version and act eagerly loaded."""
+        statement = (
+            select(DecisionArticleLink)
+            .where(DecisionArticleLink.id == link_id)
+            .options(
+                joinedload(DecisionArticleLink.decision),
+                joinedload(DecisionArticleLink.article)
+                .joinedload(LegalArticle.act_version)
+                .joinedload(LegalActVersion.act),
+            )
+        )
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def set_link_treatment_review(
+        self,
+        link: DecisionArticleLink,
+        *,
+        treatment_status: TreatmentStatus,
+        treatment: DecisionArticleTreatment | None = None,
+    ) -> DecisionArticleLink:
+        """Record a human review of the proposed treatment label."""
+        if treatment is not None:
+            link.treatment = treatment
+        link.treatment_status = treatment_status
+        self.session.add(link)
+        await self.session.flush()
+        return link
 
     async def list_verified_links_for_decision(
         self, decision_id: UUID
