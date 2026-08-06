@@ -28,21 +28,16 @@ hold a login.** Different registrable domains; the cookie is dropped, every
 request looks logged out. `.vercel.app` is on the Public Suffix List, so a
 shared cookie domain is not available either.
 
-**Decided: a domain.** Throughout this guide, `claidor.xyz` stands for
-whatever you register — substitute it everywhere.
+**Decided: `claidor.com`.** Registered. Every value below is final — no
+placeholders left to substitute.
 
-- frontend → `app.claidor.xyz` (Vercel custom domain)
-- API → `api.claidor.xyz` (Render custom domain)
-- `CLAIDOR_USER_SESSION_COOKIE_DOMAIN=.claidor.xyz` — the leading dot is what
+- frontend → `app.claidor.com` (Vercel custom domain)
+- API → `api.claidor.com` (Render custom domain)
+- `CLAIDOR_USER_SESSION_COOKIE_DOMAIN=.claidor.com` — the leading dot is what
   makes the cookie valid across both subdomains
 
 Same registrable domain, so `Lax` is satisfied and the login persists. This
 is the arrangement Spaire already uses with `api.spairehq.com`.
-
-Two notes on picking the name: buy it somewhere that gives free DNS
-management (Cloudflare, Namecheap), and **avoid `.app` and `.dev`** unless
-you want HSTS preloading forced on you — they are fine, but they make
-local testing over plain HTTP fail in confusing ways.
 
 <details>
 <summary>Fallback if the domain is ever unavailable</summary>
@@ -90,8 +85,9 @@ In the AWS console (Spaire's account is fine):
 2. Create an IAM user `claidor-app`, no console access, with an inline policy
    allowing `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`,
    `s3:ListBucket`, `s3:AbortMultipartUpload` **on those two buckets only**.
-3. Add CORS to `claidor-files` so browser uploads work — allowed origins are
-   your frontend URL, methods `GET, PUT, POST, HEAD`, allowed headers `*`.
+3. Add CORS to `claidor-files` so browser uploads work — allowed origin
+   `https://app.claidor.com`, methods `GET, PUT, POST, HEAD`, allowed
+   headers `*`.
 4. Save the access key pair.
 
 ### 3. Google OAuth
@@ -99,8 +95,8 @@ In the AWS console (Spaire's account is fine):
 Google Cloud console → Credentials → new OAuth client (Web application):
 
 - Authorised redirect URI:
-  `https://api.claidor.xyz/v1/integrations/google/callback`
-- Authorised JavaScript origin: `https://app.claidor.xyz`
+  `https://api.claidor.com/v1/integrations/google/callback`
+- Authorised JavaScript origin: `https://app.claidor.com`
 
 ### 4. Render — create the blueprint
 
@@ -116,11 +112,11 @@ Then fill the values marked `sync: false` (Render will prompt):
 
 | Variable | Value |
 |---|---|
-| `CLAIDOR_BASE_URL` | `https://api.claidor.xyz` |
-| `CLAIDOR_FRONTEND_BASE_URL` | `https://app.claidor.xyz` |
-| `CLAIDOR_ALLOWED_HOSTS` | `["api.claidor.xyz","app.claidor.xyz"]` |
-| `CLAIDOR_CORS_ORIGINS` | `["https://app.claidor.xyz"]` |
-| `CLAIDOR_USER_SESSION_COOKIE_DOMAIN` | `.claidor.xyz` |
+| `CLAIDOR_BASE_URL` | `https://api.claidor.com` |
+| `CLAIDOR_FRONTEND_BASE_URL` | `https://app.claidor.com` |
+| `CLAIDOR_ALLOWED_HOSTS` | `["api.claidor.com","app.claidor.com"]` |
+| `CLAIDOR_CORS_ORIGINS` | `["https://app.claidor.com"]` |
+| `CLAIDOR_USER_SESSION_COOKIE_DOMAIN` | `.claidor.com` |
 | `CLAIDOR_SECRET`, `CLAIDOR_S3_FILES_DOWNLOAD_SECRET`, `CLAIDOR_JWKS`, `CLAIDOR_CURRENT_JWK_KID` | from step 1 |
 | `CLAIDOR_ANTHROPIC_API_KEY` | the key already in use |
 | `CLAIDOR_GOOGLE_CLIENT_ID` / `_SECRET` | from step 3 |
@@ -129,7 +125,7 @@ Then fill the values marked `sync: false` (Render will prompt):
 | `CLAIDOR_S3_FILES_PUBLIC_BUCKET_NAME` | `claidor-files-public` |
 | `CLAIDOR_EMAIL_SENDER` | `resend` (or `logger` to defer email) |
 | `CLAIDOR_RESEND_API_KEY` | from Resend |
-| `CLAIDOR_EMAIL_FROM_DOMAIN` | your verified sending domain |
+| `CLAIDOR_EMAIL_FROM_DOMAIN` | `claidor.com` |
 
 > `ALLOWED_HOSTS` and `CORS_ORIGINS` are **JSON arrays** — verified against
 > the real config loader. A comma-separated value does not merely
@@ -175,9 +171,9 @@ Environment variables:
 
 | Variable | Value |
 |---|---|
-| `NEXT_PUBLIC_API_URL` | `https://api.claidor.xyz` |
-| `NEXT_PUBLIC_FRONTEND_BASE_URL` | `https://app.claidor.xyz` |
-| `S3_UPLOAD_ORIGINS` | `https://claidor-files.s3.<region>.amazonaws.com` |
+| `NEXT_PUBLIC_API_URL` | `https://api.claidor.com` |
+| `NEXT_PUBLIC_FRONTEND_BASE_URL` | `https://app.claidor.com` |
+| `S3_UPLOAD_ORIGINS` | `https://claidor-files.s3.eu-west-3.amazonaws.com` |
 
 ### 7. Load the corpus — the one-off that makes it Claidor
 
