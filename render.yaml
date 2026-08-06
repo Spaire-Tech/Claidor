@@ -5,8 +5,12 @@
 # confidential file never share a database or a bucket with another product.
 #
 # Secrets are deliberately NOT in this file. Every `sync: false` value is
-# set once in the Render dashboard (or copied from another service) and
-# never committed.
+# entered once in the Render dashboard and never committed.
+#
+# Shared configuration lives in the `claidor-shared` env var group declared
+# at the bottom of this file, so the API and the worker cannot drift apart.
+# Database and Redis links must stay inline per service: env var groups hold
+# literal values only, not `fromDatabase` / `fromService` references.
 
 services:
   - type: web
@@ -19,15 +23,13 @@ services:
     plan: starter
     healthCheckPath: /healthz
     autoDeploy: true
+    envVarGroups:
+      - claidor-shared
     envVars:
-      - key: CLAIDOR_ENV
-        value: production
       # Run alembic on boot so a deploy that adds a table needs no manual
-      # step. Only the web service does this — the worker must not race it.
+      # step. ONLY the web service does this — see the worker below.
       - key: CLAIDOR_MIGRATE_ON_STARTUP
         value: "true"
-      - key: CLAIDOR_LOG_LEVEL
-        value: INFO
 
       # --- database (Render-managed, Claidor's own) ---
       - key: CLAIDOR_POSTGRES_HOST
@@ -57,30 +59,98 @@ services:
         fromService: { name: claidor-redis, type: keyvalue, property: host }
       - key: CLAIDOR_REDIS_PORT
         fromService: { name: claidor-redis, type: keyvalue, property: port }
+
+  - type: worker
+    name: claidor-worker
+    runtime: docker
+    repo: https://github.com/Spaire-Tech/Claidor
+    branch: main
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: starter
+    autoDeploy: true
+    dockerCommand: uv run dramatiq -p 2 -t 4 -f polar.worker.scheduler:start polar.worker.run
+    envVarGroups:
+      - claidor-shared
+    envVars:
+      # Never on the worker: two processes running alembic at once is how
+      # you get a half-applied schema.
+      - key: CLAIDOR_MIGRATE_ON_STARTUP
+        value: "false"
+
+      - key: CLAIDOR_POSTGRES_HOST
+        fromDatabase: { name: claidor-postgres, property: host }
+      - key: CLAIDOR_POSTGRES_PORT
+        fromDatabase: { name: claidor-postgres, property: port }
+      - key: CLAIDOR_POSTGRES_USER
+        fromDatabase: { name: claidor-postgres, property: user }
+      - key: CLAIDOR_POSTGRES_PWD
+        fromDatabase: { name: claidor-postgres, property: password }
+      - key: CLAIDOR_POSTGRES_DATABASE
+        fromDatabase: { name: claidor-postgres, property: database }
+      - key: CLAIDOR_POSTGRES_READ_HOST
+        fromDatabase: { name: claidor-postgres, property: host }
+      - key: CLAIDOR_POSTGRES_READ_PORT
+        fromDatabase: { name: claidor-postgres, property: port }
+      - key: CLAIDOR_POSTGRES_READ_USER
+        fromDatabase: { name: claidor-postgres, property: user }
+      - key: CLAIDOR_POSTGRES_READ_PWD
+        fromDatabase: { name: claidor-postgres, property: password }
+      - key: CLAIDOR_POSTGRES_READ_DATABASE
+        fromDatabase: { name: claidor-postgres, property: database }
+
+      - key: CLAIDOR_REDIS_HOST
+        fromService: { name: claidor-redis, type: keyvalue, property: host }
+      - key: CLAIDOR_REDIS_PORT
+        fromService: { name: claidor-redis, type: keyvalue, property: port }
+
+  - type: keyvalue
+    name: claidor-redis
+    plan: free
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+
+databases:
+  - name: claidor-postgres
+    databaseName: claidor
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+
+# Everything both processes must agree on. Render prompts once for each
+# `sync: false` value when the blueprint is applied.
+envVarGroups:
+  - name: claidor-shared
+    envVars:
+      - key: CLAIDOR_ENV
+        value: production
+      - key: CLAIDOR_LOG_LEVEL
+        value: INFO
       - key: CLAIDOR_REDIS_DB
         value: "0"
 
-      # --- URLs and cookies (see docs/claidor-deployment.md) ---
+      # --- URLs and cookies ---
       - key: CLAIDOR_BASE_URL
-        sync: false
+        value: https://api.claidor.com
       - key: CLAIDOR_FRONTEND_BASE_URL
-        sync: false
+        value: https://app.claidor.com
+      # JSON arrays — a comma-separated value makes the app refuse to start.
       - key: CLAIDOR_ALLOWED_HOSTS
-        sync: false
+        value: '["api.claidor.com","app.claidor.com"]'
       - key: CLAIDOR_CORS_ORIGINS
-        sync: false
+        value: '["https://app.claidor.com"]'
+      # The leading dot is what makes the session valid across app. and api.
       - key: CLAIDOR_USER_SESSION_COOKIE_DOMAIN
-        sync: false
+        value: .claidor.com
 
-      # --- secrets, generated once ---
+      # --- secrets (generated once, pasted here) ---
       - key: CLAIDOR_SECRET
-        generateValue: true
-      - key: CLAIDOR_ENCRYPTION_KEY
+        sync: false
+      - key: CLAIDOR_S3_FILES_DOWNLOAD_SECRET
         sync: false
       - key: CLAIDOR_JWKS
         sync: false
       - key: CLAIDOR_CURRENT_JWK_KID
-        sync: false
+        value: claidor_prod
 
       # --- the librarian ---
       - key: CLAIDOR_ANTHROPIC_API_KEY
@@ -98,50 +168,20 @@ services:
       - key: CLAIDOR_AWS_SECRET_ACCESS_KEY
         sync: false
       - key: CLAIDOR_AWS_REGION
-        sync: false
+        value: eu-west-3
       - key: CLAIDOR_S3_FILES_BUCKET_NAME
-        sync: false
+        value: claidor-files
       - key: CLAIDOR_S3_FILES_PUBLIC_BUCKET_NAME
-        sync: false
-      - key: CLAIDOR_S3_FILES_DOWNLOAD_SECRET
-        generateValue: true
+        value: claidor-files-public
 
       # --- email (login codes, alerts later) ---
+      # Start with `logger` to get the app up without Resend; switch to
+      # `resend` once the sending domain is verified.
       - key: CLAIDOR_EMAIL_SENDER
-        sync: false
+        value: logger
       - key: CLAIDOR_RESEND_API_KEY
         sync: false
       - key: CLAIDOR_EMAIL_FROM_NAME
         value: Claidor
       - key: CLAIDOR_EMAIL_FROM_DOMAIN
-        sync: false
-
-  - type: worker
-    name: claidor-worker
-    runtime: docker
-    repo: https://github.com/Spaire-Tech/Claidor
-    branch: main
-    dockerfilePath: ./server/Dockerfile
-    dockerContext: ./server
-    plan: starter
-    autoDeploy: true
-    dockerCommand: uv run dramatiq -p 2 -t 4 -f polar.worker.scheduler:start polar.worker.run
-    envVars:
-      # The worker shares the web service's configuration exactly, minus
-      # migrations: two processes running alembic at once is how you get a
-      # half-applied schema.
-      - fromGroup: claidor-shared
-      - key: CLAIDOR_MIGRATE_ON_STARTUP
-        value: "false"
-
-  - type: keyvalue
-    name: claidor-redis
-    plan: free
-    maxmemoryPolicy: noeviction
-    ipAllowList: []
-
-databases:
-  - name: claidor-postgres
-    databaseName: claidor
-    plan: basic-256mb
-    postgresMajorVersion: "16"
+        value: claidor.com

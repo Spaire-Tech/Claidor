@@ -59,18 +59,20 @@ async rewrites() {
 
 ### 1. Secrets — one command
 
-On your machine, in `server/`:
+Anywhere with the repo checked out, in `server/`:
 
 ```bash
 uv run python -m scripts.production_secrets
 ```
 
-It prints the four values Claidor actually reads, ready to paste:
-`CLAIDOR_SECRET`, `CLAIDOR_S3_FILES_DOWNLOAD_SECRET`,
-`CLAIDOR_CURRENT_JWK_KID`, `CLAIDOR_JWKS`.
+It prints the values Claidor actually reads, ready to paste:
+`CLAIDOR_SECRET`, `CLAIDOR_S3_FILES_DOWNLOAD_SECRET`, `CLAIDOR_JWKS`
+(one long line), and `CLAIDOR_CURRENT_JWK_KID` (already committed in the
+blueprint as `claidor_prod`).
 
-Generate them **once**. Rotating `CLAIDOR_SECRET` signs everyone out;
-rotating the JWKS invalidates issued tokens.
+Generate them **once** and keep them in a password manager. Rotating
+`CLAIDOR_SECRET` signs everyone out; rotating the JWKS invalidates issued
+tokens.
 
 ### 2. AWS — two buckets and a scoped user
 
@@ -108,37 +110,35 @@ Blueprint** → pick `Spaire-Tech/Claidor` → apply. It creates:
 - `claidor-redis`
 - `claidor-postgres`
 
-Then fill the values marked `sync: false` (Render will prompt):
+Every URL, host list, cookie domain, bucket name and region is **already in
+the blueprint** — they are committed values, not blanks. Render prompts for
+exactly nine secrets:
 
-| Variable | Value |
+| Prompt | Where it comes from |
 |---|---|
-| `CLAIDOR_BASE_URL` | `https://api.claidor.com` |
-| `CLAIDOR_FRONTEND_BASE_URL` | `https://app.claidor.com` |
-| `CLAIDOR_ALLOWED_HOSTS` | `["api.claidor.com","app.claidor.com"]` |
-| `CLAIDOR_CORS_ORIGINS` | `["https://app.claidor.com"]` |
-| `CLAIDOR_USER_SESSION_COOKIE_DOMAIN` | `.claidor.com` |
-| `CLAIDOR_SECRET`, `CLAIDOR_S3_FILES_DOWNLOAD_SECRET`, `CLAIDOR_JWKS`, `CLAIDOR_CURRENT_JWK_KID` | from step 1 |
+| `CLAIDOR_SECRET` | step 1 |
+| `CLAIDOR_S3_FILES_DOWNLOAD_SECRET` | step 1 |
+| `CLAIDOR_JWKS` | step 1 (the long single line) |
 | `CLAIDOR_ANTHROPIC_API_KEY` | the key already in use |
-| `CLAIDOR_GOOGLE_CLIENT_ID` / `_SECRET` | from step 3 |
-| `CLAIDOR_AWS_ACCESS_KEY_ID` / `_SECRET_ACCESS_KEY` / `_REGION` | from step 2 |
-| `CLAIDOR_S3_FILES_BUCKET_NAME` | `claidor-files` |
-| `CLAIDOR_S3_FILES_PUBLIC_BUCKET_NAME` | `claidor-files-public` |
-| `CLAIDOR_EMAIL_SENDER` | `resend` (or `logger` to defer email) |
-| `CLAIDOR_RESEND_API_KEY` | from Resend |
-| `CLAIDOR_EMAIL_FROM_DOMAIN` | `claidor.com` |
+| `CLAIDOR_GOOGLE_CLIENT_ID` | step 3 |
+| `CLAIDOR_GOOGLE_CLIENT_SECRET` | step 3 |
+| `CLAIDOR_AWS_ACCESS_KEY_ID` | step 2 |
+| `CLAIDOR_AWS_SECRET_ACCESS_KEY` | step 2 |
+| `CLAIDOR_RESEND_API_KEY` | leave blank for now — email starts on `logger` |
 
-> `ALLOWED_HOSTS` and `CORS_ORIGINS` are **JSON arrays** — verified against
-> the real config loader. A comma-separated value does not merely
-> misbehave: the app refuses to start. Same for any list-valued setting.
-
-Create an env group named `claidor-shared` holding everything except
-`CLAIDOR_MIGRATE_ON_STARTUP`, so the worker inherits the same configuration
-without a second copy to drift.
+Shared configuration lives in an env var group named `claidor-shared`, which
+the blueprint **declares itself**. Both the API and the worker read from it,
+so they cannot drift apart. Database and Redis connection details stay
+inline on each service, because env var groups hold literal values only —
+they cannot carry `fromDatabase` / `fromService` references.
 
 > A safety net you already have: in `production` the app **refuses to boot**
 > if `CLAIDOR_SECRET` or `CLAIDOR_S3_FILES_DOWNLOAD_SECRET` are still their
 > development defaults. If a deploy dies at startup with "Insecure default
 > secret(s) detected", that is the guard doing its job, not a bug.
+
+Then: claidor-api → Settings → **Custom Domains** → add `api.claidor.com`
+and note the target Render shows.
 
 ### 5. DNS — two records
 
