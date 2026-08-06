@@ -5,6 +5,7 @@ import AttachMoneyOutlined from '@mui/icons-material/AttachMoneyOutlined'
 import CodeOutlined from '@mui/icons-material/CodeOutlined'
 import DiscountOutlined from '@mui/icons-material/DiscountOutlined'
 import ExtensionOutlined from '@mui/icons-material/ExtensionOutlined'
+import FolderOutlined from '@mui/icons-material/FolderOutlined'
 import HiveOutlined from '@mui/icons-material/HiveOutlined'
 import LayersOutlined from '@mui/icons-material/LayersOutlined'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
@@ -179,6 +180,16 @@ const generalRoutesList = (org?: schemas['Organization']): Route[] => [
     link: `/dashboard/${org?.slug}`,
     checkIsActive: (currentRoute: string) =>
       currentRoute === `/dashboard/${org?.slug}`,
+    if: true,
+  },
+  {
+    id: 'dossiers',
+    title: 'Dossiers',
+    icon: <FolderOutlined fontSize="inherit" />,
+    link: `/dashboard/${org?.slug}/dossiers`,
+    checkIsActive: (currentRoute: string): boolean => {
+      return currentRoute.startsWith(`/dashboard/${org?.slug}/dossiers`)
+    },
     if: true,
   },
   {

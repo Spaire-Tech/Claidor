@@ -214,6 +214,83 @@ class LibrarianService:
             )
         return documents, refs
 
+    async def find_anchor_in_file(
+        self, case_documents: Sequence["DossierDocument"]
+    ) -> dict[str, Any] | None:
+        """Read the date of commencement off the case file, or return None.
+
+        This is what a dossier is for: the rule turns on when the procedure
+        was commenced, and that date is in the pièces — so it is read, not
+        asked for. Two guards keep it honest:
+        - the model must return the literal sentence it read the date from,
+          and that sentence must appear in that document, or the finding is
+          discarded;
+        - anything short of an explicit date is discarded too, which sends
+          the question back to the clarification gate.
+        """
+        import anthropic
+
+        readable = [d for d in case_documents if (d.extracted_text or "").strip()]
+        if not readable:
+            return None
+
+        catalogue = "\n\n".join(
+            f"[{index}] PIÈCE n° {doc.piece_number} — {doc.title}\n"
+            f"{(doc.extracted_text or '')[:20_000]}"
+            for index, doc in enumerate(readable)
+        )
+        instruction = (
+            "Voici les pièces d'un dossier. Détermine à quelle date la "
+            "procédure ou la mesure d'exécution litigieuse a été ENGAGÉE "
+            "(par exemple la date de l'acte de saisie, non la date de "
+            "dénonciation ni celle du jugement servant de titre).\n\n"
+            "Réponds UNIQUEMENT en JSON :\n"
+            '{"found": bool, "date": "YYYY-MM-DD" ou null, '
+            '"document_index": entier ou null, '
+            '"quote": "la phrase EXACTE de la pièce qui porte cette date"}\n'
+            "Si aucune pièce n'établit explicitement cette date, réponds "
+            '{"found": false, "date": null, "document_index": null, '
+            '"quote": ""}.\n\n' + catalogue
+        )
+        try:
+            client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+            response = await client.messages.create(
+                model=CLASSIFIER_MODEL,
+                max_tokens=400,
+                messages=[{"role": "user", "content": instruction}],
+            )
+            text = "".join(b.text for b in response.content if b.type == "text").strip()
+            payload = json.loads(text[text.find("{") : text.rfind("}") + 1])
+        except Exception as e:
+            log.warning("librarian.anchor.failed", error=str(e)[:160])
+            return None
+
+        if not payload.get("found"):
+            return None
+        try:
+            anchor = date.fromisoformat(str(payload.get("date")))
+        except (TypeError, ValueError):
+            return None
+        index = payload.get("document_index")
+        quote = str(payload.get("quote") or "").strip()
+        if not isinstance(index, int) or not (0 <= index < len(readable)) or not quote:
+            return None
+        document = readable[index]
+        if normalize_quote(quote) not in normalize_quote(document.extracted_text or ""):
+            log.warning("librarian.anchor.unverifiable", document=str(document.id))
+            return None
+        piece = (
+            f"PIÈCE n° {document.piece_number} — {document.title}"
+            if document.piece_number is not None
+            else f"PIÈCE — {document.title}"
+        )
+        return {
+            "date": anchor,
+            "quote": quote[:400],
+            "document_id": str(document.id),
+            "title": piece,
+        }
+
     async def classify_question(self, question: str) -> dict[str, Any]:
         """Version-gate classifier — strict JSON, cheap model.
 
@@ -347,6 +424,13 @@ class LibrarianService:
                     anchor = date.fromisoformat(str(anchor_raw))
                 except ValueError:
                     anchor = None
+            # The question did not carry the date — but the file may. A
+            # dossier holds the facts the law needs, so read before asking.
+            anchor_fact: dict[str, Any] | None = None
+            if anchor is None and case_documents:
+                anchor_fact = await self.find_anchor_in_file(case_documents)
+                if anchor_fact is not None:
+                    anchor = anchor_fact["date"]
             if anchor is None:
                 yield {
                     "type": "clarification",
@@ -357,13 +441,33 @@ class LibrarianService:
             applicable = "2023" if anchor >= VERSION_CUTOFF else "1998"
             other = "1998" if applicable == "2023" else "2023"
             versions_used = [applicable]
-            steering = (
-                f"\n\n[Instruction système, déterminée par le droit "
-                f"transitoire : la procédure a été engagée le "
-                f"{anchor.isoformat()}, donc l'AUPSRVE {applicable} "
-                f"s'applique. Réponds sous ce régime ; ne mentionne l'acte "
-                f"de {other} qu'à titre de contexte.]"
-            )
+            if anchor_fact is not None:
+                # The date came from the file: surface it as a fact, with the
+                # pièce it was read from, before any rule is applied.
+                yield {
+                    "type": "citation",
+                    "nature": "fact",
+                    "title": anchor_fact["title"],
+                    "quote": anchor_fact["quote"],
+                    "source_kind": "document",
+                    "source_id": anchor_fact["document_id"],
+                }
+                steering = (
+                    f"\n\n[Instruction système : il ressort du dossier "
+                    f"({anchor_fact['title']}) que la procédure a été "
+                    f"engagée le {anchor.isoformat()}. Énonce ce fait et la "
+                    f"pièce dont il vient, puis applique l'AUPSRVE "
+                    f"{applicable} ; ne mentionne l'acte de {other} qu'à "
+                    f"titre de contexte.]"
+                )
+            else:
+                steering = (
+                    f"\n\n[Instruction système, déterminée par le droit "
+                    f"transitoire : la procédure a été engagée le "
+                    f"{anchor.isoformat()}, donc l'AUPSRVE {applicable} "
+                    f"s'applique. Réponds sous ce régime ; ne mentionne l'acte "
+                    f"de {other} qu'à titre de contexte.]"
+                )
         elif classification["version_dependent"] and answer_both_versions:
             versions_used = ["1998", "2023"]
             steering = (
