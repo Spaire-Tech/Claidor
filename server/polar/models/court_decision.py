@@ -2,8 +2,16 @@ from datetime import date
 from enum import StrEnum
 from uuid import UUID
 
-from sqlalchemy import Date, ForeignKey, String, Text, UniqueConstraint, Uuid
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import (
+    Computed,
+    Date,
+    ForeignKey,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+)
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from polar.kit.db.models import RecordModel
@@ -44,6 +52,18 @@ class CourtDecision(RecordModel):
     summary: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
     full_text: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
     provenance: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+
+    # Maintained by Postgres (see search migration); deferred so the vector
+    # never rides along with a decision read.
+    search_vector: Mapped[str | None] = mapped_column(
+        TSVECTOR,
+        Computed(
+            "setweight(to_tsvector('french', coalesce(number, '')), 'A') || setweight(to_tsvector('french', coalesce(keyword_header, '')), 'B') || setweight(to_tsvector('french', coalesce(summary, '')), 'B') || setweight(to_tsvector('french', coalesce(full_text, '')), 'C')",
+            persisted=True,
+        ),
+        nullable=True,
+        deferred=True,
+    )
 
     article_links: Mapped[list["DecisionArticleLink"]] = relationship(
         "DecisionArticleLink", back_populates="decision", lazy="raise"

@@ -1,7 +1,15 @@
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint, Uuid
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import (
+    Computed,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+)
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from polar.kit.db.models import RecordModel
@@ -44,6 +52,19 @@ class LegalArticle(RecordModel):
     # Where this text came from and how it was verified — provenance is part
     # of the product's trust claim, so it lives on the row, not in a log.
     provenance: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+
+    # Maintained by Postgres, never by application code: a newly loaded act
+    # is searchable the moment it is committed. Deferred — the vector is
+    # large and only the index needs it.
+    search_vector: Mapped[str | None] = mapped_column(
+        TSVECTOR,
+        Computed(
+            "setweight(to_tsvector('french', coalesce(number, '')), 'A') || setweight(to_tsvector('french', coalesce(heading, '')), 'B') || setweight(to_tsvector('french', coalesce(text, '')), 'C')",
+            persisted=True,
+        ),
+        nullable=True,
+        deferred=True,
+    )
 
     act_version: Mapped[LegalActVersion] = relationship("LegalActVersion", lazy="raise")
 

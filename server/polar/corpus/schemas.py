@@ -103,3 +103,48 @@ class CorpusDecisionDetail(Schema):
     summary: str | None
     full_text: str | None
     articles: list[CorpusDecisionArticle]
+
+
+class CorpusSearchInterpretation(Schema):
+    """How Claidor read the query — shown back, so it is never a mystery.
+
+    A lawyer who types « article 170 AUPSRVE » and gets a topic list should
+    see at once that the query was read as a topic, not as a citation.
+    """
+
+    kind: str = Field(description="article | decision | text")
+    number: str | None = None
+    act_code: str | None = None
+    year: int | None = None
+
+
+class CorpusSearchArticleResult(Schema):
+    id: UUID4
+    number: str
+    act_short_code: str
+    act_title: str
+    version_label: str
+    in_force_from: date | None
+    excerpt: str
+    exact: bool = Field(
+        default=False, description="An exact citation landing, not a text match."
+    )
+
+
+class CorpusSearchDecisionResult(Schema):
+    id: UUID4
+    number: str
+    decided_on: date
+    chamber: str | None
+    keyword_header: str | None
+    excerpt: str
+    exact: bool = False
+
+
+class CorpusSearchResults(Schema):
+    interpretation: CorpusSearchInterpretation
+    articles: list[CorpusSearchArticleResult]
+    decisions: list[CorpusSearchDecisionResult]
+    chambers: list[str] = Field(
+        default_factory=list, description="Distinct chambers, for the filter UI."
+    )

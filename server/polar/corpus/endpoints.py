@@ -1,6 +1,7 @@
+from datetime import date
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Query
 
 from polar.exceptions import ResourceNotFound
 from polar.kit.db.postgres import AsyncReadSession
@@ -21,7 +22,13 @@ from .schemas import (
     CorpusDecisionDetail,
     CorpusLinkedDecision,
     CorpusProvenance,
+    CorpusSearchArticleResult,
+    CorpusSearchDecisionResult,
+    CorpusSearchInterpretation,
+    CorpusSearchResults,
 )
+from .search_query import QueryKind, parse_query
+from .search_repository import SearchRepository
 
 router = APIRouter(prefix="/corpus", tags=["corpus", APITag.private])
 
@@ -191,4 +198,140 @@ async def get_decision(
             )
             for link in links
         ],
+    )
+
+
+def _excerpt(text: str | None, *, limit: int = 260) -> str:
+    """First readable lines of a document, for a result row."""
+    if not text:
+        return ""
+    collapsed = " ".join(text.split())
+    if len(collapsed) <= limit:
+        return collapsed
+    return collapsed[:limit].rsplit(" ", 1)[0] + "…"
+
+
+@router.get("/search", response_model=CorpusSearchResults)
+async def search(
+    auth_subject: auth.CorpusRead,
+    q: str = Query("", max_length=300, description="Query as a lawyer types it."),
+    act: str | None = Query(None, description="Registry short code, e.g. AUPSRVE."),
+    version: str | None = Query(None, description="Version label, e.g. 1998."),
+    decided_from: date | None = Query(None),
+    decided_to: date | None = Query(None),
+    chamber: str | None = Query(None),
+    limit: int = Query(20, ge=1, le=50),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> CorpusSearchResults:
+    """Search the corpus the way practitioners look things up.
+
+    A citation-shaped query (« article 170 AUPSRVE », « CCJA 090/2018 »)
+    lands on the document itself; anything else is full-text with filters.
+    How the query was read is returned alongside the results, so a
+    surprising result set is explainable rather than mysterious.
+    """
+    repository = SearchRepository.from_session(session)
+    parsed = parse_query(q)
+    act_code = act or parsed.act_code
+
+    articles: list[CorpusSearchArticleResult] = []
+    decisions: list[CorpusSearchDecisionResult] = []
+
+    if parsed.kind == QueryKind.article and parsed.number is not None:
+        for article in await repository.find_articles_by_number(
+            parsed.number, act_code=act_code, version_label=version
+        ):
+            articles.append(
+                CorpusSearchArticleResult(
+                    id=article.id,
+                    number=article.number,
+                    act_short_code=article.act_version.act.short_code,
+                    act_title=article.act_version.act.title,
+                    version_label=article.act_version.label,
+                    in_force_from=article.act_version.in_force_from,
+                    excerpt=_excerpt(article.text),
+                    exact=True,
+                )
+            )
+    elif parsed.kind == QueryKind.decision and parsed.number is not None:
+        for decision in await repository.find_decisions_by_number(parsed.number):
+            decisions.append(
+                CorpusSearchDecisionResult(
+                    id=decision.id,
+                    number=decision.number,
+                    decided_on=decision.decided_on,
+                    chamber=decision.chamber,
+                    keyword_header=decision.keyword_header,
+                    excerpt=_excerpt(decision.keyword_header or decision.full_text),
+                    exact=True,
+                )
+            )
+
+    # Text search always runs alongside an exact landing: a lawyer who
+    # types an article number often also wants what discusses it.
+    if q.strip():
+        for article, _score in await repository.search_articles(
+            q, act_code=act_code, version_label=version, limit=limit
+        ):
+            if any(existing.id == article.id for existing in articles):
+                continue
+            articles.append(
+                CorpusSearchArticleResult(
+                    id=article.id,
+                    number=article.number,
+                    act_short_code=article.act_version.act.short_code,
+                    act_title=article.act_version.act.title,
+                    version_label=article.act_version.label,
+                    in_force_from=article.act_version.in_force_from,
+                    excerpt=_excerpt(article.text),
+                )
+            )
+        for decision, _score in await repository.search_decisions(
+            q,
+            decided_from=decided_from,
+            decided_to=decided_to,
+            chamber=chamber,
+            limit=limit,
+        ):
+            if any(existing.id == decision.id for existing in decisions):
+                continue
+            decisions.append(
+                CorpusSearchDecisionResult(
+                    id=decision.id,
+                    number=decision.number,
+                    decided_on=decision.decided_on,
+                    chamber=decision.chamber,
+                    keyword_header=decision.keyword_header,
+                    excerpt=_excerpt(decision.keyword_header or decision.full_text),
+                )
+            )
+    elif decided_from or decided_to or chamber:
+        # Filters with no query: browsing, e.g. "all decisions since 2015".
+        for decision in await repository.list_decisions_filtered(
+            decided_from=decided_from,
+            decided_to=decided_to,
+            chamber=chamber,
+            limit=limit,
+        ):
+            decisions.append(
+                CorpusSearchDecisionResult(
+                    id=decision.id,
+                    number=decision.number,
+                    decided_on=decision.decided_on,
+                    chamber=decision.chamber,
+                    keyword_header=decision.keyword_header,
+                    excerpt=_excerpt(decision.keyword_header or decision.full_text),
+                )
+            )
+
+    return CorpusSearchResults(
+        interpretation=CorpusSearchInterpretation(
+            kind=str(parsed.kind),
+            number=parsed.number,
+            act_code=act_code,
+            year=parsed.year,
+        ),
+        articles=articles[:limit],
+        decisions=decisions[:limit],
+        chambers=list(await repository.list_chambers()),
     )
