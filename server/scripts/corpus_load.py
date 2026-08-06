@@ -263,7 +263,10 @@ async def load_decisions(session: AsyncSession) -> None:
         if parsed.urn_lex in existing_urns:
             skipped += 1
             continue
-        key = (_decision_number_key(parsed.number), date.fromisoformat(parsed.decided_on))
+        key = (
+            _decision_number_key(parsed.number),
+            date.fromisoformat(parsed.decided_on),
+        )
         if key in existing_keys:
             # Juricaf occasionally lists the same decision under two slugs
             # (e.g. an avis and its duplicate entry). First file wins.
@@ -380,7 +383,12 @@ async def seed_links(session: AsyncSession) -> None:
 
 
 ARTICLE_CITE = re.compile(r"(?i)\bart(?:icles?|\.)\s[^.;]{0,120}?\b(\d+(?:-\d+)?)\b")
-_CITE_WINDOW = 240
+# French citation names the act right after the number ("article 2 de l'Acte
+# uniforme…", "article 14 du Traité"); an act named there is authoritative.
+# Only when nothing follows ("article 49 du même Acte uniforme") do we fall
+# back to the preceding passage.
+_AFTER_WINDOW = 160
+_BEFORE_WINDOW = 240
 
 
 def _cites_loose(text: str, number: str) -> bool:
@@ -485,11 +493,16 @@ async def auto_verify_links(session: AsyncSession) -> None:
 
         # Discover edges directly from the decision text.
         for m in ARTICLE_CITE.finditer(text):
-            window = text[max(0, m.start() - _CITE_WINDOW) : m.end() + _CITE_WINDOW]
             number = m.group(1)
-            for spec, context, by_version in act_index:
-                if not context.search(window):
-                    continue
+            after = text[m.end() : m.end() + _AFTER_WINDOW]
+            after = re.split(r"[.;]", after, maxsplit=1)[0]
+            named_after = [entry for entry in act_index if entry[1].search(after)]
+            if named_after:
+                candidates = named_after
+            else:
+                before = text[max(0, m.start() - _BEFORE_WINDOW) : m.start()]
+                candidates = [entry for entry in act_index if entry[1].search(before)]
+            for spec, context, by_version in candidates:
                 vspec = version_for_date(spec, decision.decided_on)
                 if vspec is None:
                     continue

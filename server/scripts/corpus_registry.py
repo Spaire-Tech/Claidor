@@ -186,7 +186,9 @@ REGISTRY: tuple[ActSpec, ...] = (
         short_code="AUSCOOP",
         title="Acte uniforme relatif au droit des sociétés coopératives",
         akn_work_uri=_W_AUSCOOP,
-        context_pattern=r"coop[ée]rative",
+        # "société coopérative X" appears as a party name — require the act
+        # to be named.
+        context_pattern=r"acte\s+uniforme[^.;]{0,80}coop[ée]rative|\bAUSCOOP\b",
         versions=(
             VersionSpec(
                 label="2010",
@@ -229,7 +231,12 @@ REGISTRY: tuple[ActSpec, ...] = (
         short_code="AUA",
         title="Acte uniforme relatif au droit de l'arbitrage",
         akn_work_uri=_W_AUA,
-        context_pattern=r"arbitrage|\bAUA\b",
+        # "arbitrage" alone is in the court's own name (Cour Commune de
+        # Justice et d'Arbitrage) — require the act to be named.
+        context_pattern=(
+            r"acte\s+uniforme[^.;]{0,80}arbitrage"
+            r"|droit\s+de\s+l[’']arbitrage|\bAUA\b"
+        ),
         versions=(
             VersionSpec(
                 label="2017",
@@ -246,7 +253,9 @@ REGISTRY: tuple[ActSpec, ...] = (
         short_code="AUM",
         title="Acte uniforme relatif à la médiation",
         akn_work_uri=_W_AUM,
-        context_pattern=r"m[ée]diation",
+        # Court-annexed mediation gets discussed without the act — require
+        # the act to be named.
+        context_pattern=r"acte\s+uniforme[^.;]{0,80}m[ée]diation|\bAUM\b",
         versions=(
             VersionSpec(
                 label="2017",
