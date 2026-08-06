@@ -108,6 +108,7 @@ clean = { cmd = "find * -name '*.pyc' -delete && find * -name '__pycache__' -del
 verify_github_app = { cmd = "python -m polar.verify_github_app", help = "verify that the github app is correctly configured" }
 generate_dev_jwks = { cmd = "python -m polar.kit.jwk claidor_dev > ./.jwks.json", help = "generate a development JWKS file" }
 seeds_load = { cmd = "python -m scripts.seeds_load", help = "load sample/test data into the database" }
+librarian_eval = { cmd = "python -m scripts.librarian_eval", help = "graded legal-accuracy eval (separate from pytest)" }
 loadtest_setup = { cmd = "python -m scripts.loadtest_setup", help = "setup load test data for event ingestion" }
 platform_verify = { cmd = "python -m scripts.platform verify", help = "verify CLAIDOR_PLATFORM_ORG_ID points to a real organization" }
 seed_platform_products = { cmd = "python -m scripts.seed_platform_products", help = "idempotently seed Starter/Studio/Scale products and overage meters in the platform organization" }

@@ -10,6 +10,7 @@ import LayersOutlined from '@mui/icons-material/LayersOutlined'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
 import LocalLibraryOutlined from '@mui/icons-material/LocalLibraryOutlined'
 import MailOutlined from '@mui/icons-material/MailOutlined'
+import MenuBookOutlined from '@mui/icons-material/MenuBookOutlined'
 import PeopleAltOutlined from '@mui/icons-material/PeopleAltOutlined'
 import ReceiptLongOutlined from '@mui/icons-material/ReceiptLongOutlined'
 import ShoppingBagOutlined from '@mui/icons-material/ShoppingBagOutlined'
@@ -187,6 +188,16 @@ const generalRoutesList = (org?: schemas['Organization']): Route[] => [
     link: `/dashboard/${org?.slug}/librarian`,
     checkIsActive: (currentRoute: string): boolean => {
       return currentRoute.startsWith(`/dashboard/${org?.slug}/librarian`)
+    },
+    if: true,
+  },
+  {
+    id: 'bibliotheque',
+    title: 'Bibliothèque',
+    icon: <MenuBookOutlined fontSize="inherit" />,
+    link: `/dashboard/${org?.slug}/bibliotheque`,
+    checkIsActive: (currentRoute: string): boolean => {
+      return currentRoute.startsWith(`/dashboard/${org?.slug}/bibliotheque`)
     },
     if: true,
   },

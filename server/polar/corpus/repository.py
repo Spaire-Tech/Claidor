@@ -1,14 +1,18 @@
 from collections.abc import Sequence
+from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
+from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
 from polar.kit.repository import RepositoryBase
 from polar.models import (
     CourtDecision,
     DecisionArticleLink,
     DecisionLinkStatus,
+    LegalAct,
     LegalActVersion,
     LegalArticle,
+    LegalArticleEquivalence,
 )
 
 
@@ -78,14 +82,121 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         self, old_article_ids: Sequence[object]
     ) -> Sequence[LegalArticle]:
         """New-version articles mapped (via equivalences) from these articles."""
-        from polar.models import LegalArticleEquivalence
-
         new_ids = select(LegalArticleEquivalence.new_article_id).where(
             LegalArticleEquivalence.old_article_id.in_(list(old_article_ids))
         )
         statement = (
             select(LegalArticle)
             .where(LegalArticle.id.in_(new_ids))
+            .order_by(LegalArticle.sort_key)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def list_acts_with_versions(self) -> Sequence[LegalAct]:
+        """All acts with their versions eagerly loaded."""
+        statement = (
+            select(LegalAct)
+            .options(selectinload(LegalAct.versions))
+            .order_by(LegalAct.short_code)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def count_articles_per_version(self) -> dict[UUID, int]:
+        """Article count keyed by act version id."""
+        statement = select(
+            LegalArticle.act_version_id, func.count(LegalArticle.id)
+        ).group_by(LegalArticle.act_version_id)
+        result = await self.session.execute(statement)
+        return {version_id: count for version_id, count in result.tuples().all()}
+
+    async def get_version_by_id(self, version_id: UUID) -> LegalActVersion | None:
+        statement = select(LegalActVersion).where(LegalActVersion.id == version_id)
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def list_articles_for_version(
+        self, act_version_id: UUID
+    ) -> Sequence[LegalArticle]:
+        """Ordered articles of one version — the sidebar list."""
+        statement = (
+            select(LegalArticle)
+            .where(LegalArticle.act_version_id == act_version_id)
+            .order_by(LegalArticle.sort_key)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def get_article_by_id(self, article_id: UUID) -> LegalArticle | None:
+        """One article with its version and act eagerly loaded."""
+        statement = (
+            select(LegalArticle)
+            .where(LegalArticle.id == article_id)
+            .options(
+                joinedload(LegalArticle.act_version).joinedload(LegalActVersion.act)
+            )
+        )
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def list_equivalences_for_article(
+        self, article_id: UUID
+    ) -> Sequence[LegalArticleEquivalence]:
+        """Equivalence rows touching this article, in either direction."""
+        statement = (
+            select(LegalArticleEquivalence)
+            .where(
+                or_(
+                    LegalArticleEquivalence.old_article_id == article_id,
+                    LegalArticleEquivalence.new_article_id == article_id,
+                )
+            )
+            .options(
+                joinedload(LegalArticleEquivalence.old_article).joinedload(
+                    LegalArticle.act_version
+                ),
+                joinedload(LegalArticleEquivalence.new_article).joinedload(
+                    LegalArticle.act_version
+                ),
+            )
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def list_verified_links_for_article(
+        self, article_id: UUID
+    ) -> Sequence[DecisionArticleLink]:
+        """Verified decision links for one article, decisions eagerly loaded."""
+        statement = (
+            select(DecisionArticleLink)
+            .join(DecisionArticleLink.decision)
+            .where(
+                DecisionArticleLink.article_id == article_id,
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+            )
+            .options(contains_eager(DecisionArticleLink.decision))
+            .order_by(CourtDecision.decided_on)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def get_decision_by_id(self, decision_id: UUID) -> CourtDecision | None:
+        statement = select(CourtDecision).where(CourtDecision.id == decision_id)
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def list_verified_links_for_decision(
+        self, decision_id: UUID
+    ) -> Sequence[DecisionArticleLink]:
+        """Verified article links of one decision, articles eagerly loaded."""
+        statement = (
+            select(DecisionArticleLink)
+            .join(DecisionArticleLink.article)
+            .where(
+                DecisionArticleLink.decision_id == decision_id,
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+            )
+            .options(
+                contains_eager(DecisionArticleLink.article).joinedload(
+                    LegalArticle.act_version
+                )
+            )
             .order_by(LegalArticle.sort_key)
         )
         return (await self.session.execute(statement)).scalars().all()
