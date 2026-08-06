@@ -111,7 +111,16 @@ class LibrarianService:
             )
             refs.append(SourceRef(kind="article", id=str(art.id), title=title))
 
-        for d in await repository.list_decisions_with_verified_links():
+        # Decisions tied to the slice, most-linked first, capped: with the
+        # full CCJA collection loaded, "every decision with a verified link"
+        # no longer fits in one prompt. A decision citing four slice
+        # articles is worth more grounding than one citing a single article
+        # in passing. The authority line is unaffected — it is computed
+        # from the database, not from what the prompt happens to hold.
+        slice_article_ids = [a.id for a in arts_1998] + [a.id for a in arts_2023]
+        for d in await repository.list_top_decisions_for_articles(
+            slice_article_ids, limit=30
+        ):
             title = f"CCJA, arrêt n° {d.number} du {d.decided_on:%d/%m/%Y}"
             documents.append(
                 {

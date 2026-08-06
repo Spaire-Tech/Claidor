@@ -23,8 +23,19 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
 
     model = LegalArticle
 
-    async def get_version_by_label(self, label: str) -> LegalActVersion | None:
-        statement = select(LegalActVersion).where(LegalActVersion.label == label)
+    async def get_version_by_label(
+        self, label: str, *, act_short_code: str = "AUPSRVE"
+    ) -> LegalActVersion | None:
+        """A version by its label, scoped to one act — bare labels are
+        ambiguous ("1998" is both AUPSRVE 1998 and AUPC 1998)."""
+        statement = (
+            select(LegalActVersion)
+            .join(LegalAct)
+            .where(
+                LegalAct.short_code == act_short_code,
+                LegalActVersion.label == label,
+            )
+        )
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
 
@@ -77,6 +88,40 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
             select(CourtDecision)
             .where(CourtDecision.id.in_(decision_ids))
             .order_by(CourtDecision.decided_on)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def list_top_decisions_for_articles(
+        self, article_ids: Sequence[object], *, limit: int
+    ) -> Sequence[CourtDecision]:
+        """The decisions most tied to these articles, capped.
+
+        Ranked by number of verified links into the article set (a decision
+        citing four slice articles outranks one citing a single article),
+        then by recency — a deterministic relevance order that keeps the
+        prompt within model limits now that the corpus holds the full CCJA
+        collection.
+        """
+        link_counts = (
+            select(
+                DecisionArticleLink.decision_id.label("decision_id"),
+                func.count(DecisionArticleLink.id).label("n_links"),
+            )
+            .where(
+                DecisionArticleLink.article_id.in_(list(article_ids)),
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+            )
+            .group_by(DecisionArticleLink.decision_id)
+            .subquery()
+        )
+        statement = (
+            select(CourtDecision)
+            .join(link_counts, link_counts.c.decision_id == CourtDecision.id)
+            .order_by(
+                link_counts.c.n_links.desc(),
+                CourtDecision.decided_on.desc(),
+            )
+            .limit(limit)
         )
         return (await self.session.execute(statement)).scalars().all()
 
