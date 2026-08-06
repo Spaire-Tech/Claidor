@@ -1,0 +1,391 @@
+from uuid import UUID
+
+from fastapi import Depends, HTTPException, Query
+
+from polar.exceptions import ResourceNotFound
+from polar.file.repository import FileRepository
+from polar.kit.db.postgres import AsyncReadSession, AsyncSession
+from polar.librarian.service import librarian
+from polar.models import (
+    CitationNature,
+    Dossier,
+    DossierCitation,
+    DossierDocument,
+    DossierQuestion,
+    DossierRole,
+    ExtractionStatus,
+)
+from polar.models.file import FileServiceTypes
+from polar.openapi import APITag
+from polar.postgres import get_db_read_session, get_db_session
+from polar.routing import APIRouter
+
+from . import auth
+from .repository import DossierRepository
+from .schemas import (
+    DossierAsk,
+    DossierCitationRead,
+    DossierCreate,
+    DossierDocumentCreate,
+    DossierDocumentRead,
+    DossierDocumentUpdate,
+    DossierListItem,
+    DossierMemberAdd,
+    DossierMemberRead,
+    DossierQuestionRead,
+    DossierRead,
+    DossierUpdate,
+)
+from .service import dossier_service
+
+router = APIRouter(prefix="/dossiers", tags=["dossiers", APITag.private])
+
+NOT_FOUND = "Dossier introuvable."
+
+
+async def _get_dossier_or_404(
+    session: AsyncSession | AsyncReadSession, dossier_id: UUID, user_id: UUID
+) -> Dossier:
+    """A matter the caller is assigned to, or 404.
+
+    Not 403: a lawyer outside the matter learns nothing about it, not even
+    that it exists.
+    """
+    repository = DossierRepository.from_session(session)
+    dossier = await repository.get_for_user(dossier_id, user_id)
+    if dossier is None:
+        raise ResourceNotFound(NOT_FOUND)
+    return dossier
+
+
+async def _require_lead(session: AsyncSession, dossier_id: UUID, user_id: UUID) -> None:
+    repository = DossierRepository.from_session(session)
+    membership = await repository.get_membership(dossier_id, user_id)
+    if membership is None or membership.role != DossierRole.lead:
+        raise HTTPException(
+            status_code=403,
+            detail="Seul un responsable du dossier peut effectuer cette action.",
+        )
+
+
+def _document_schema(document: DossierDocument) -> DossierDocumentRead:
+    return DossierDocumentRead(
+        id=document.id,
+        title=document.title,
+        category=document.category,
+        piece_number=document.piece_number,
+        extraction_status=document.extraction_status,
+        file_name=document.file.name,
+        mime_type=document.file.mime_type,
+        size=document.file.size,
+        created_at=document.created_at,
+        readable=document.extraction_status == ExtractionStatus.extracted,
+    )
+
+
+def _citation_schema(citation: DossierCitation) -> DossierCitationRead:
+    return DossierCitationRead(
+        id=citation.id,
+        nature=citation.nature,
+        source_kind=citation.source_kind,
+        source_id=citation.source_id,
+        title=citation.title,
+        quote=citation.quote,
+    )
+
+
+def _question_schema(
+    question: DossierQuestion,
+    citations: list[DossierCitation],
+    asked_by: str | None,
+) -> DossierQuestionRead:
+    return DossierQuestionRead(
+        id=question.id,
+        question=question.question,
+        answer=question.answer,
+        status=question.status,
+        versions_used=question.versions_used,
+        authority_label=question.authority_label,
+        authority_count=question.authority_count,
+        asked_by=asked_by,
+        created_at=question.created_at,
+        answered_at=question.answered_at,
+        facts=[
+            _citation_schema(c) for c in citations if c.nature == CitationNature.fact
+        ],
+        law=[_citation_schema(c) for c in citations if c.nature == CitationNature.law],
+    )
+
+
+@router.get("", response_model=list[DossierListItem])
+async def list_dossiers(
+    auth_subject: auth.DossierRead,
+    organization_id: UUID = Query(...),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[DossierListItem]:
+    """The matters the caller is assigned to."""
+    repository = DossierRepository.from_session(session)
+    dossiers = await repository.list_for_user(
+        auth_subject.subject.id, organization_id=organization_id
+    )
+    documents, members = await repository.count_documents_and_members(
+        [d.id for d in dossiers]
+    )
+    return [
+        DossierListItem(
+            id=d.id,
+            name=d.name,
+            reference=d.reference,
+            client_name=d.client_name,
+            status=d.status,
+            document_count=documents.get(d.id, 0),
+            member_count=members.get(d.id, 0),
+            created_at=d.created_at,
+            modified_at=d.modified_at,
+        )
+        for d in dossiers
+    ]
+
+
+@router.post("", response_model=DossierRead, status_code=201)
+async def create_dossier(
+    body: DossierCreate,
+    auth_subject: auth.DossierWrite,
+    organization_id: UUID = Query(...),
+    session: AsyncSession = Depends(get_db_session),
+) -> DossierRead:
+    """Open a matter. The creator is assigned to it as lead."""
+    repository = DossierRepository.from_session(session)
+    dossier = await repository.create_dossier(
+        organization_id=organization_id,
+        name=body.name,
+        reference=body.reference,
+        client_name=body.client_name,
+        created_by_id=auth_subject.subject.id,
+    )
+    return await _read_schema(session, dossier)
+
+
+async def _read_schema(
+    session: AsyncSession | AsyncReadSession, dossier: Dossier
+) -> DossierRead:
+    repository = DossierRepository.from_session(session)
+    members = await repository.list_members(dossier.id)
+    documents = await repository.list_documents(dossier.id)
+    return DossierRead(
+        id=dossier.id,
+        name=dossier.name,
+        reference=dossier.reference,
+        client_name=dossier.client_name,
+        status=dossier.status,
+        notes=dossier.notes,
+        created_at=dossier.created_at,
+        members=[
+            DossierMemberRead(
+                id=m.id, user_id=m.user_id, email=m.user.email, role=m.role
+            )
+            for m in members
+        ],
+        documents=[_document_schema(d) for d in documents],
+    )
+
+
+@router.get("/{dossier_id}", response_model=DossierRead)
+async def get_dossier(
+    dossier_id: UUID,
+    auth_subject: auth.DossierRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> DossierRead:
+    dossier = await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    return await _read_schema(session, dossier)
+
+
+@router.patch("/{dossier_id}", response_model=DossierRead)
+async def update_dossier(
+    dossier_id: UUID,
+    body: DossierUpdate,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> DossierRead:
+    dossier = await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(dossier, field, value)
+    session.add(dossier)
+    await session.flush()
+    return await _read_schema(session, dossier)
+
+
+@router.post("/{dossier_id}/members", response_model=DossierMemberRead, status_code=201)
+async def add_member(
+    dossier_id: UUID,
+    body: DossierMemberAdd,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> DossierMemberRead:
+    """Assign a colleague to the matter — the only way to grant access."""
+    await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    await _require_lead(session, dossier_id, auth_subject.subject.id)
+    repository = DossierRepository.from_session(session)
+    await repository.add_member(
+        dossier_id=dossier_id, user_id=body.user_id, role=body.role
+    )
+    members = await repository.list_members(dossier_id)
+    member = next(m for m in members if m.user_id == body.user_id)
+    return DossierMemberRead(
+        id=member.id, user_id=member.user_id, email=member.user.email, role=member.role
+    )
+
+
+@router.delete("/{dossier_id}/members/{user_id}", status_code=204)
+async def remove_member(
+    dossier_id: UUID,
+    user_id: UUID,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    await _require_lead(session, dossier_id, auth_subject.subject.id)
+    repository = DossierRepository.from_session(session)
+    members = await repository.list_members(dossier_id)
+    if len([m for m in members if m.role == DossierRole.lead]) == 1 and any(
+        m.user_id == user_id and m.role == DossierRole.lead for m in members
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Le dossier doit conserver au moins un responsable.",
+        )
+    if not await repository.remove_member(dossier_id=dossier_id, user_id=user_id):
+        raise ResourceNotFound("Ce membre n'est pas affecté au dossier.")
+
+
+@router.post(
+    "/{dossier_id}/documents", response_model=DossierDocumentRead, status_code=201
+)
+async def add_document(
+    dossier_id: UUID,
+    body: DossierDocumentCreate,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> DossierDocumentRead:
+    """Register an uploaded file as a piece of this matter, and read it.
+
+    Extraction runs here, in the open: the response already says whether
+    the piece is readable, so nobody discovers weeks later that a scan
+    contributed nothing to the answers.
+    """
+    dossier = await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    file_repository = FileRepository.from_session(session)
+    file = await file_repository.get_by_id(body.file_id)
+    if (
+        file is None
+        or file.organization_id != dossier.organization_id
+        or file.service != FileServiceTypes.dossier_document
+        or not file.is_uploaded
+    ):
+        raise ResourceNotFound("Fichier introuvable ou non téléversé.")
+
+    repository = DossierRepository.from_session(session)
+    document = await repository.add_document(
+        dossier_id=dossier_id,
+        file_id=file.id,
+        title=body.title,
+        category=body.category,
+        piece_number=body.piece_number,
+        uploaded_by_id=auth_subject.subject.id,
+    )
+    await dossier_service.extract_document(session, document, file)
+    document.file = file
+    return _document_schema(document)
+
+
+@router.patch(
+    "/{dossier_id}/documents/{document_id}", response_model=DossierDocumentRead
+)
+async def update_document(
+    dossier_id: UUID,
+    document_id: UUID,
+    body: DossierDocumentUpdate,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> DossierDocumentRead:
+    await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    repository = DossierRepository.from_session(session)
+    document = await repository.get_document(document_id, dossier_id)
+    if document is None:
+        raise ResourceNotFound("Pièce introuvable.")
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(document, field, value)
+    session.add(document)
+    await session.flush()
+    return _document_schema(document)
+
+
+@router.delete("/{dossier_id}/documents/{document_id}", status_code=204)
+async def remove_document(
+    dossier_id: UUID,
+    document_id: UUID,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    """Remove a piece from the matter.
+
+    Answers that relied on it keep their quotes: the record of what was
+    said, and on what basis, does not change because a document was
+    withdrawn later.
+    """
+    await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    repository = DossierRepository.from_session(session)
+    document = await repository.get_document(document_id, dossier_id)
+    if document is None:
+        raise ResourceNotFound("Pièce introuvable.")
+    await repository.remove_document(document)
+
+
+@router.get("/{dossier_id}/questions", response_model=list[DossierQuestionRead])
+async def list_questions(
+    dossier_id: UUID,
+    auth_subject: auth.DossierRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[DossierQuestionRead]:
+    """The matter's shared record: every question asked, with its answer."""
+    await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    repository = DossierRepository.from_session(session)
+    questions = await repository.list_questions(dossier_id)
+    ids = [q.id for q in questions]
+    citations = await repository.list_citations(ids)
+    askers = await repository.list_askers(ids)
+    by_question: dict[UUID, list[DossierCitation]] = {}
+    for citation in citations:
+        by_question.setdefault(citation.question_id, []).append(citation)
+    return [
+        _question_schema(q, by_question.get(q.id, []), askers.get(q.id))
+        for q in questions
+    ]
+
+
+@router.post("/{dossier_id}/ask", response_model=DossierQuestionRead, status_code=201)
+async def ask(
+    dossier_id: UUID,
+    body: DossierAsk,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+    read_session: AsyncReadSession = Depends(get_db_read_session),
+) -> DossierQuestionRead:
+    """Ask inside the matter: the corpus supplies the law, the file the facts."""
+    if not librarian.is_configured():
+        raise HTTPException(
+            status_code=503, detail="Le bibliothécaire n'est pas configuré."
+        )
+    dossier = await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    question = await dossier_service.ask(
+        session,
+        read_session,
+        dossier=dossier,
+        user_id=auth_subject.subject.id,
+        question=body.question,
+        answer_both_versions=body.answer_both_versions,
+    )
+    repository = DossierRepository.from_session(session)
+    citations = list(await repository.list_citations([question.id]))
+    askers = await repository.list_askers([question.id])
+    return _question_schema(question, citations, askers.get(question.id))

@@ -21,6 +21,7 @@ from polar.customer_seat.endpoints import router as customer_seat_router
 from polar.customer_session.endpoints import router as customer_session_router
 from polar.discount.endpoints import router as discount_router
 from polar.dispute.endpoints import router as dispute_router
+from polar.dossier.endpoints import router as dossier_router
 from polar.email_broadcast.endpoints import router as email_broadcast_router
 from polar.email_segment.endpoints import router as email_segment_router
 from polar.email_sequence.endpoints import router as email_sequence_router
@@ -148,6 +149,8 @@ router.include_router(google_router)
 router.include_router(librarian_router)
 # /corpus
 router.include_router(corpus_router)
+# /dossiers
+router.include_router(dossier_router)
 # /license-keys
 router.include_router(license_key_router)
 # /checkout-links

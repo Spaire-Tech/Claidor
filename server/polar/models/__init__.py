@@ -32,6 +32,20 @@ from .discount import Discount
 from .discount_product import DiscountProduct
 from .discount_redemption import DiscountRedemption
 from .dispute import Dispute
+from .dossier import (
+    CitationNature,
+    CitationSourceKind,
+    DocumentCategory,
+    Dossier,
+    DossierCitation,
+    DossierDocument,
+    DossierMember,
+    DossierQuestion,
+    DossierRole,
+    DossierStatus,
+    ExtractionStatus,
+    QuestionStatus,
+)
 from .downloadable import Downloadable
 from .email_broadcast import EmailBroadcast
 from .email_broadcast_ab_test import EmailBroadcastABTest
@@ -151,6 +165,18 @@ __all__ = [
     "DiscountProduct",
     "DiscountRedemption",
     "Dispute",
+    "Dossier",
+    "DossierCitation",
+    "DossierDocument",
+    "DossierMember",
+    "DossierQuestion",
+    "DossierRole",
+    "DossierStatus",
+    "DocumentCategory",
+    "ExtractionStatus",
+    "QuestionStatus",
+    "CitationNature",
+    "CitationSourceKind",
     "Downloadable",
     "EmailBroadcast",
     "EmailBroadcastABTest",

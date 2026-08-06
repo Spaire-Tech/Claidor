@@ -10,10 +10,11 @@ Design (proven by scripts/librarian_prototype.py):
 """
 
 import json
-from collections.abc import AsyncIterator
+import re
+from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import structlog
 
@@ -21,6 +22,9 @@ from polar.config import settings
 from polar.corpus.repository import CorpusRepository
 from polar.corpus.slice import SLICE_ARTICLES_1998, TRANSITIONAL_RULE_1998
 from polar.kit.db.postgres import AsyncReadSession
+
+if TYPE_CHECKING:
+    from polar.models import DossierDocument
 
 log = structlog.get_logger()
 
@@ -62,9 +66,46 @@ Règles absolues :
 class SourceRef:
     """Metadata for one document block, index-aligned with the request."""
 
-    kind: str  # "article" | "decision"
+    kind: str  # "article" | "decision" | "document"
     id: str
     title: str
+    # Full text of the block, kept for "document" sources so a quote
+    # attributed to a case file can be verified against it before it is
+    # ever shown as a fact.
+    text: str | None = None
+
+
+def normalize_quote(text: str) -> str:
+    """Match-tolerant form: unify apostrophes/quotes, drop all whitespace.
+
+    Uploaded files carry curly apostrophes and PDF spacing artifacts; the
+    model reproduces clean typography. Removing whitespace and unifying
+    punctuation lets a genuine quote match through both, while a quote that
+    is not in the document still fails.
+    """
+    text = text.lower()
+    for ch in "’‘`´":
+        text = text.replace(ch, "'")
+    for ch in "«»“”":
+        text = text.replace(ch, '"')
+    return re.sub(r"\s+", "", text)
+
+
+DOSSIER_PROMPT_SUFFIX = """
+
+Ce dossier contient des pièces du client (contrats, PV, relevés,
+conclusions). Elles te sont fournies comme documents, préfixés « PIÈCE ».
+
+Règles supplémentaires, absolues :
+- Les PIÈCES établissent les FAITS de l'affaire ; les articles et arrêts
+  établissent le DROIT. Ne confonds jamais les deux : cite une pièce pour
+  un fait, un article ou un arrêt pour une règle.
+- N'invente aucun fait. Si une date, une somme, une juridiction ou une
+  qualité te manque pour répondre, dis lequel manque et indique ce qu'il
+  faudrait produire — ne suppose pas.
+- Quand un fait du dossier détermine la règle applicable (notamment la
+  date d'engagement de la procédure), énonce ce fait et la pièce dont il
+  vient AVANT d'appliquer la règle."""
 
 
 class LibrarianService:
@@ -72,7 +113,10 @@ class LibrarianService:
         return bool(settings.ANTHROPIC_API_KEY)
 
     async def build_documents(
-        self, session: AsyncReadSession
+        self,
+        session: AsyncReadSession,
+        *,
+        case_documents: Sequence["DossierDocument"] = (),
     ) -> tuple[list[dict[str, Any]], list[SourceRef]]:
         repository = CorpusRepository.from_session(session)
         version_1998 = await repository.get_version_by_label("1998")
@@ -136,10 +180,38 @@ class LibrarianService:
             )
             refs.append(SourceRef(kind="decision", id=str(d.id), title=title))
 
-        # Cache the stable corpus prefix: system prompt + documents are
-        # identical across questions, so mark the last document block.
+        # Cache the stable corpus prefix: system prompt + corpus documents
+        # are identical across questions AND across matters, so the cache
+        # breakpoint goes at the end of the corpus — case documents, which
+        # differ per dossier, come after it and never break the shared
+        # prefix.
         if documents:
             documents[-1]["cache_control"] = {"type": "ephemeral"}
+
+        for doc in case_documents:
+            text = doc.extracted_text or ""
+            if not text.strip():
+                continue
+            piece = (
+                f"PIÈCE n° {doc.piece_number} — {doc.title}"
+                if doc.piece_number is not None
+                else f"PIÈCE — {doc.title}"
+            )
+            documents.append(
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "text",
+                        "media_type": "text/plain",
+                        "data": text[:200_000],
+                    },
+                    "title": piece,
+                    "citations": {"enabled": True},
+                }
+            )
+            refs.append(
+                SourceRef(kind="document", id=str(doc.id), title=piece, text=text)
+            )
         return documents, refs
 
     async def classify_question(self, question: str) -> dict[str, Any]:
@@ -246,11 +318,19 @@ class LibrarianService:
         question: str,
         *,
         answer_both_versions: bool = False,
+        case_documents: Sequence["DossierDocument"] = (),
     ) -> AsyncIterator[dict[str, Any]]:
-        """Yield SSE events: clarification / text / citation / authority / done / error."""
+        """Yield SSE events: clarification / text / citation / authority / done / error.
+
+        With ``case_documents``, the answer is grounded in the matter's file
+        as well as the corpus, and every citation carries its ``nature``:
+        ``fact`` (from a pièce) or ``law`` (from an article or a decision).
+        """
         import anthropic
 
-        documents, refs = await self.build_documents(session)
+        documents, refs = await self.build_documents(
+            session, case_documents=case_documents
+        )
         if not documents:
             yield {"type": "error", "message": "corpus_empty"}
             return
@@ -305,7 +385,8 @@ class LibrarianService:
                 system=[
                     {
                         "type": "text",
-                        "text": SYSTEM_PROMPT,
+                        "text": SYSTEM_PROMPT
+                        + (DOSSIER_PROMPT_SUFFIX if case_documents else ""),
                         "cache_control": {"type": "ephemeral"},
                     }
                 ],
@@ -334,11 +415,33 @@ class LibrarianService:
                             )
                             if ref is not None and ref.kind == "article":
                                 cited_article_ids.append(ref.id)
+                            quote = (getattr(c, "cited_text", "") or "")[:400]
+                            # Fabrication guard for facts: a quote credited
+                            # to a pièce must appear literally in that
+                            # document. If it does not, the citation is
+                            # dropped rather than shown — a fact nobody can
+                            # check is worse than no fact.
+                            if (
+                                ref is not None
+                                and ref.kind == "document"
+                                and normalize_quote(quote)
+                                not in normalize_quote(ref.text or "")
+                            ):
+                                log.warning(
+                                    "librarian.fact.unverifiable",
+                                    document=ref.title,
+                                )
+                                continue
                             yield {
                                 "type": "citation",
+                                "nature": (
+                                    "fact"
+                                    if ref is not None and ref.kind == "document"
+                                    else "law"
+                                ),
                                 "title": getattr(c, "document_title", None)
                                 or (ref.title if ref else "?"),
-                                "quote": (getattr(c, "cited_text", "") or "")[:400],
+                                "quote": quote,
                                 "source_kind": ref.kind if ref else None,
                                 "source_id": ref.id if ref else None,
                             }
