@@ -56,11 +56,15 @@ def normalize_article_number(label: str) -> str:
     s = label.strip()
     s = re.sub(r"^article\s+", "", s, flags=re.IGNORECASE)
     s = s.strip().rstrip(".").strip()
-    # Some acts print an inline heading after the number ("Article 1 –
-    # Définition", "Article 4 - Début de la procédure"). A space-surrounded
-    # dash never occurs inside compound numbers ("157-1"), so split there
-    # and keep the number part; the heading survives in number_label.
-    s = re.split(r"\s+[–—-]\s+|\s*[:.]\s+", s, maxsplit=1)[0].strip()
+    # Compound numbers sometimes print with a spaced dash ("Article 245 – 11"
+    # is article 245-11): join them when what follows the dash is purely
+    # numeric. Otherwise a dash introduces an inline heading ("Article 1 –
+    # Définition") — strip it; it survives in number_label.
+    m = re.match(r"^(\d+)\s*[–—-]\s*(\d+(?:\s*[–—-]\s*\d+)*)$", s)
+    if m is not None:
+        s = m.group(1) + "-" + re.sub(r"\s*[–—-]\s*", "-", m.group(2))
+    else:
+        s = re.split(r"\s+[–—-]\s+|\s*[:.]\s+", s, maxsplit=1)[0].strip()
     segments = s.split("-")
     normalized = [
         _WORD_NUMBERS.get(seg.strip().lower(), seg.strip()) for seg in segments

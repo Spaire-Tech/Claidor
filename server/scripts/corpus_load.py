@@ -234,7 +234,9 @@ async def load_act_1998_articles(session: AsyncSession) -> None:
 
 
 async def load_decisions(session: AsyncSession) -> None:
-    seed_by_number = {d.number: d for d in SEED_DECISIONS}
+    # CCJA chambers number decisions independently (two 010/2009 exist), so
+    # seed identity is number + date.
+    seed_by_key = {(d.number, d.decided_on): d for d in SEED_DECISIONS}
     existing_urns = {
         urn
         for (urn,) in (await session.execute(select(CourtDecision.urn_lex))).tuples()
@@ -274,7 +276,7 @@ async def load_decisions(session: AsyncSession) -> None:
             )
             continue
         existing_keys.add(key)
-        seed = seed_by_number.get(parsed.number)
+        seed = seed_by_key.get((parsed.number, parsed.decided_on))
         session.add(
             CourtDecision(
                 court="CCJA",
@@ -338,7 +340,10 @@ async def seed_links(session: AsyncSession) -> None:
     for seed in SEED_DECISIONS:
         decision = (
             await session.execute(
-                select(CourtDecision).where(CourtDecision.number == seed.number)
+                select(CourtDecision).where(
+                    CourtDecision.number == seed.number,
+                    CourtDecision.decided_on == date.fromisoformat(seed.decided_on),
+                )
             )
         ).scalar_one_or_none()
         if decision is None:
