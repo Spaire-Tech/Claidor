@@ -5,7 +5,7 @@ Anthropic. Nothing here requires a new provider.
 
 ---
 
-## Part 0 — The two decisions to make first
+## Part 0 — Decisions
 
 ### Decision 1: what Claidor shares with Spaire, and what it must not
 
@@ -18,7 +18,7 @@ Anthropic. Nothing here requires a new provider.
 | **Google OAuth client** | New client for Claidor. | Redirect URIs are per-client; a new one is free and keeps the consent screen honest about which product is asking. |
 | **Resend / email domain** | New sending identity. | Login codes must arrive from Claidor, not from another brand. |
 
-### Decision 2: domain, or proxy — this one is load-bearing
+### Decision 2: the domain — this one is load-bearing
 
 The session cookie is `SameSite=Lax`. A cookie set by the API is only sent
 back when the browser considers the request same-site. So:
@@ -28,49 +28,54 @@ hold a login.** Different registrable domains; the cookie is dropped, every
 request looks logged out. `.vercel.app` is on the Public Suffix List, so a
 shared cookie domain is not available either.
 
-Two ways out:
-
-**Option A — a domain (recommended, ~$10–15/year).**
-Buy one (`claidor.app`, `claidorhq.com`, whatever is free), then:
+**Decided: a domain.** Throughout this guide, `claidor.xyz` stands for
+whatever you register — substitute it everywhere.
 
 - frontend → `app.claidor.xyz` (Vercel custom domain)
 - API → `api.claidor.xyz` (Render custom domain)
-- `CLAIDOR_USER_SESSION_COOKIE_DOMAIN=.claidor.xyz`
+- `CLAIDOR_USER_SESSION_COOKIE_DOMAIN=.claidor.xyz` — the leading dot is what
+  makes the cookie valid across both subdomains
 
-Same registrable domain, so `Lax` is satisfied and everything just works.
-This is exactly how Spaire is set up with `api.spairehq.com`, and it is the
-arrangement I would ship.
+Same registrable domain, so `Lax` is satisfied and the login persists. This
+is the arrangement Spaire already uses with `api.spairehq.com`.
 
-**Option B — no domain, proxy through Vercel (free).**
-Keep `claidor.vercel.app` and make the API same-origin by rewriting
-`/v1/*` to Render (config below). The browser sees one origin, the cookie is
-first-party, `Lax` is satisfied.
+Two notes on picking the name: buy it somewhere that gives free DNS
+management (Cloudflare, Namecheap), and **avoid `.app` and `.dev`** unless
+you want HSTS preloading forced on you — they are fine, but they make
+local testing over plain HTTP fail in confusing ways.
 
-- Cost: nothing.
-- Caveat to know about: every API call takes an extra hop through Vercel's
-  edge, and long requests (a dossier question can take 30–60 s) sit closer
-  to platform timeouts. Fine for a demo, worth revisiting before real users.
+<details>
+<summary>Fallback if the domain is ever unavailable</summary>
 
-Pick A if this is going in front of anyone who matters. Pick B to be live
-today for nothing.
+Keep `claidor.vercel.app` and make the API same-origin by rewriting `/v1/*`
+to Render in `next.config.mjs`. Free, but every call takes an extra edge
+hop and long requests sit closer to platform timeouts.
+
+```js
+async rewrites() {
+  return [{ source: '/v1/:path*', destination: 'https://claidor-api.onrender.com/v1/:path*' }]
+}
+```
+</details>
 
 ---
 
 ## Part 1 — What you do (about 45 minutes)
 
-### 1. Secrets to generate
+### 1. Secrets — one command
 
 On your machine, in `server/`:
 
 ```bash
-# JWKS (signing keys) — the whole JSON goes in CLAIDOR_JWKS
-uv run python -m polar.kit.jwk claidor_prod
-
-# Encryption key for stored credentials
-uv run python -c "import secrets; print(secrets.token_urlsafe(32))"
+uv run python -m scripts.production_secrets
 ```
 
-Keep the `kid` you passed (`claidor_prod`) — that is `CLAIDOR_CURRENT_JWK_KID`.
+It prints the four values Claidor actually reads, ready to paste:
+`CLAIDOR_SECRET`, `CLAIDOR_S3_FILES_DOWNLOAD_SECRET`,
+`CLAIDOR_CURRENT_JWK_KID`, `CLAIDOR_JWKS`.
+
+Generate them **once**. Rotating `CLAIDOR_SECRET` signs everyone out;
+rotating the JWKS invalidates issued tokens.
 
 ### 2. AWS — two buckets and a scoped user
 
@@ -93,8 +98,9 @@ In the AWS console (Spaire's account is fine):
 
 Google Cloud console → Credentials → new OAuth client (Web application):
 
-- Authorised redirect URI: `https://<API URL>/v1/integrations/google/callback`
-- Authorised JavaScript origin: your frontend URL
+- Authorised redirect URI:
+  `https://api.claidor.xyz/v1/integrations/google/callback`
+- Authorised JavaScript origin: `https://app.claidor.xyz`
 
 ### 4. Render — create the blueprint
 
@@ -108,20 +114,14 @@ Blueprint** → pick `Spaire-Tech/Claidor` → apply. It creates:
 
 Then fill the values marked `sync: false` (Render will prompt):
 
-| Variable | Value (Option A / Option B) |
+| Variable | Value |
 |---|---|
-| `CLAIDOR_BASE_URL` | `https://api.claidor.xyz` / `https://claidor.vercel.app` |
-| `CLAIDOR_FRONTEND_BASE_URL` | `https://app.claidor.xyz` / `https://claidor.vercel.app` |
-| `CLAIDOR_ALLOWED_HOSTS` | `["api.claidor.xyz","app.claidor.xyz"]` / `["claidor.vercel.app","claidor-api.onrender.com"]` |
-| `CLAIDOR_CORS_ORIGINS` | `["https://app.claidor.xyz"]` / `["https://claidor.vercel.app"]` |
-
-> Both of these are **JSON arrays**, verified against the real config loader.
-> A comma-separated list does not merely misbehave — the app refuses to
-> start. Same for any other list-valued setting.
-| `CLAIDOR_USER_SESSION_COOKIE_DOMAIN` | `.claidor.xyz` / `claidor.vercel.app` |
-| `CLAIDOR_JWKS` | the JSON from step 1 |
-| `CLAIDOR_CURRENT_JWK_KID` | `claidor_prod` |
-| `CLAIDOR_ENCRYPTION_KEY` | from step 1 |
+| `CLAIDOR_BASE_URL` | `https://api.claidor.xyz` |
+| `CLAIDOR_FRONTEND_BASE_URL` | `https://app.claidor.xyz` |
+| `CLAIDOR_ALLOWED_HOSTS` | `["api.claidor.xyz","app.claidor.xyz"]` |
+| `CLAIDOR_CORS_ORIGINS` | `["https://app.claidor.xyz"]` |
+| `CLAIDOR_USER_SESSION_COOKIE_DOMAIN` | `.claidor.xyz` |
+| `CLAIDOR_SECRET`, `CLAIDOR_S3_FILES_DOWNLOAD_SECRET`, `CLAIDOR_JWKS`, `CLAIDOR_CURRENT_JWK_KID` | from step 1 |
 | `CLAIDOR_ANTHROPIC_API_KEY` | the key already in use |
 | `CLAIDOR_GOOGLE_CLIENT_ID` / `_SECRET` | from step 3 |
 | `CLAIDOR_AWS_ACCESS_KEY_ID` / `_SECRET_ACCESS_KEY` / `_REGION` | from step 2 |
@@ -130,6 +130,10 @@ Then fill the values marked `sync: false` (Render will prompt):
 | `CLAIDOR_EMAIL_SENDER` | `resend` (or `logger` to defer email) |
 | `CLAIDOR_RESEND_API_KEY` | from Resend |
 | `CLAIDOR_EMAIL_FROM_DOMAIN` | your verified sending domain |
+
+> `ALLOWED_HOSTS` and `CORS_ORIGINS` are **JSON arrays** — verified against
+> the real config loader. A comma-separated value does not merely
+> misbehave: the app refuses to start. Same for any list-valued setting.
 
 Create an env group named `claidor-shared` holding everything except
 `CLAIDOR_MIGRATE_ON_STARTUP`, so the worker inherits the same configuration
@@ -140,7 +144,25 @@ without a second copy to drift.
 > development defaults. If a deploy dies at startup with "Insecure default
 > secret(s) detected", that is the guard doing its job, not a bug.
 
-### 5. Vercel — the frontend
+### 5. DNS — two records
+
+At your registrar, once Render and Vercel each show you a target:
+
+| Host | Type | Points at |
+|---|---|---|
+| `api` | CNAME | the target Render shows under claidor-api → Settings → Custom Domains |
+| `app` | CNAME | `cname.vercel-dns.com` (Vercel confirms the exact value) |
+
+Both platforms issue TLS certificates automatically once the record
+resolves — usually minutes, occasionally an hour. Add the custom domain in
+each dashboard *before* the record propagates; they poll and pick it up.
+
+If you use Cloudflare, set both records to **DNS only** (grey cloud) at
+first. Proxying through Cloudflare works, but it adds a second layer that
+buffers responses — which is the sort of thing that makes streamed answers
+mysteriously arrive all at once.
+
+### 6. Vercel — the frontend
 
 New project from the same repo:
 
@@ -153,24 +175,11 @@ Environment variables:
 
 | Variable | Value |
 |---|---|
-| `NEXT_PUBLIC_API_URL` | `https://api.claidor.xyz` (A) or `https://claidor.vercel.app` (B) |
-| `NEXT_PUBLIC_FRONTEND_BASE_URL` | your frontend URL |
+| `NEXT_PUBLIC_API_URL` | `https://api.claidor.xyz` |
+| `NEXT_PUBLIC_FRONTEND_BASE_URL` | `https://app.claidor.xyz` |
 | `S3_UPLOAD_ORIGINS` | `https://claidor-files.s3.<region>.amazonaws.com` |
 
-**Option B only** — add to `clients/apps/web/next.config.mjs`:
-
-```js
-async rewrites() {
-  return [
-    {
-      source: '/v1/:path*',
-      destination: 'https://claidor-api.onrender.com/v1/:path*',
-    },
-  ]
-}
-```
-
-### 6. Load the corpus — the one-off that makes it Claidor
+### 7. Load the corpus — the one-off that makes it Claidor
 
 A fresh database has the schema but no law in it. The corpus lives in the
 repo (`corpus/raw/`), so load it from your machine against the production
@@ -203,7 +212,7 @@ script is idempotent — safe to re-run after each new acquisition.
 `corpus/` and run these as Render Jobs. Loading from a laptop is fine while
 the corpus changes by hand.)
 
-### 7. First login
+### 8. First login
 
 Visit the frontend, sign in with Google. The first user needs an
 organization; create one through the dashboard, or seed one directly if the
@@ -234,15 +243,15 @@ Then, signed in through the browser:
 
 ## Costs, honestly
 
-| Item | Option A | Option B |
-|---|---|---|
-| Render web + worker | ~$14/mo (2 × starter) | same |
-| Render Postgres | ~$6/mo (basic-256mb) | same |
-| Render Redis | free | free |
-| Vercel | free (Hobby) | free |
-| S3 | pennies at this size | same |
-| Domain | ~$12/year | — |
-| Anthropic | usage; a few dollars a week at demo volume | same |
+| Item | Monthly |
+|---|---|
+| Render web + worker | ~$14 (2 × starter) |
+| Render Postgres | ~$6 (basic-256mb) |
+| Render Redis | free |
+| Vercel | free (Hobby) |
+| S3 | pennies at this size |
+| Domain | ~$12/year |
+| Anthropic | usage; a few dollars a week at demo volume |
 
 The free Render Postgres tier expires after 30 days, which is why the
 blueprint asks for the smallest paid one — losing the corpus a month in
@@ -256,7 +265,9 @@ would be an avoidable annoyance.
    array, and must be the frontend origin exactly, no trailing slash.
 3. **`Invalid host header`** → add both hosts to `CLAIDOR_ALLOWED_HOSTS`.
 4. **Uploads fail from the browser** → bucket CORS, not app config.
-5. **The librarian answers "corpus_empty"** → step 6 was not run against this
+5. **The librarian answers "corpus_empty"** → step 7 was not run against this
    database.
-6. **Migrations ran twice** → only the web service may have
+6. **Certificate pending forever** → the DNS record points somewhere else,
+   or Cloudflare is proxying before the certificate was issued.
+7. **Migrations ran twice** → only the web service may have
    `CLAIDOR_MIGRATE_ON_STARTUP=true`.
