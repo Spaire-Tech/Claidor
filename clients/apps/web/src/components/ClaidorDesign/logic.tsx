@@ -391,6 +391,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
   }
   mapLiveArticle(d) {
     return {
+      __raw: d,
       ref: 'Article ' + d.number,
       act: d.act_short_code,
       label: 'Art. ' + d.number + ', ' + d.act_short_code,
@@ -801,7 +802,49 @@ class ClaidorDesignApp extends React.Component<any, any> {
       }
     }
     let an = null, anIsAuth = false, anIsHist = false, anIsComp = false, anIsCite = false;
-    if (st.an) {
+    if (st.an && st.live && st.liveArticles[st.an.id] && !D.articles[st.an.id] && !D.authLines[st.an.id]) {
+      const la = st.liveArticles[st.an.id]
+      const raw = la.__raw
+      const t = st.an.type
+      const nextLive = (skip) => {
+        const out = []
+        if (skip !== 'hist' && (raw.equivalences || []).length) out.push({ label: D.AN.hist.name, go: () => this.openAnalysis('hist', st.an.id) })
+        if (skip !== 'cite') out.push({ label: D.AN.cite.name, go: () => this.openAnalysis('cite', st.an.id) })
+        if (skip !== 'auth') out.push({ label: D.AN.auth.name, go: () => this.openAnalysis('auth', st.an.id) })
+        return out
+      }
+      const decs = raw.decisions || []
+      if (t === 'hist') {
+        anIsHist = true
+        an = { kind: D.AN.hist.name, title: la.label, hasStatus: false,
+          vers: [
+            { v: raw.version_label, note: 'Version chargée dans le corpus', tag: 'chargée', hasTag: true },
+            ...(raw.equivalences || []).map((e) => ({ v: e.version_label, note: 'Art. ' + e.number + (e.note ? ' — ' + e.note : '') + ' (' + e.relation + ')', hasTag: false })),
+          ],
+          changes: [], next: nextLive('hist') }
+      } else if (t === 'auth') {
+        anIsAuth = true
+        const years = new Set(decs.map((x) => String(x.decided_on).slice(0, 4)))
+        const level = decs.length >= 4 && years.size >= 3 ? 'constante' : 'limitee'
+        an = { kind: D.AN.auth.name, title: la.label,
+          hasStatus: true,
+          status: decs.length === 0
+            ? 'Texte seul — aucune décision dans le corpus chargé'
+            : (level === 'constante'
+                ? 'Ligne jurisprudentielle constante · ' + decs.length + ' décisions vérifiées'
+                : 'Autorité limitée · ' + decs.length + (decs.length > 1 ? ' décisions vérifiées' : ' décision vérifiée')),
+          dot: level === 'constante' ? 'var(--green2)' : 'var(--amber2)',
+          rows: decs.map((x) => ({ y: String(x.decided_on).slice(0, 4), ref: 'CCJA ' + x.number, quote: x.summary ? '«\u202f' + x.summary.slice(0, 80) + '\u2026\u202f»' : '', open: () => this.openLivePanel('decision', x.id) })),
+          next: nextLive('auth') }
+      } else {
+        anIsCite = true
+        an = { kind: D.AN.cite.name,
+          title: la.label + ' — cité dans ' + decs.length + (decs.length > 1 ? ' décisions vérifiées' : ' décision vérifiée'),
+          hasStatus: false, citedWith: [],
+          rows: decs.map((x) => ({ ref: 'CCJA ' + x.number + ' — ' + x.decided_on, open: () => this.openLivePanel('decision', x.id) })),
+          next: nextLive('cite') }
+      }
+    } else if (st.an) {
       const t = st.an.type, id = st.an.id;
       const nextFor = artId => {
         const out = [];
@@ -1019,10 +1062,14 @@ class ClaidorDesignApp extends React.Component<any, any> {
         const a = D.articles[id] || st.liveArticles[id];
         if (!a) return null;
         if (st.liveArticles[id] && !D.articles[id]) {
+          const btns = []
+          if ((a.__raw.equivalences || []).length) btns.push({ label: D.AN.hist.name, go: () => this.openAnalysis('hist', id) })
+          btns.push({ label: D.AN.cite.name, go: () => this.openAnalysis('cite', id) })
+          btns.push({ label: D.AN.auth.name, go: () => this.openAnalysis('auth', id) })
           return { ...a,
             text: a.text.map((t) => ({ text: t, bg: 'transparent', pad: '0' })),
             topDecisions: a.top.map((did) => ({ label: a.__liveDecisions[did] || 'Décision', open: () => this.openLivePanel('decision', did) })),
-            analyses: [],
+            analyses: btns,
             watchLabel: 'Créer une veille', watchBorder: 'var(--b3)', watch: () => this.showToast('Veilles — bientôt sur le corpus réel') };
         }
         const btns = [];
