@@ -1,3 +1,4 @@
+import { DesignApp } from '@/components/ClaidorDesign/DesignApp'
 import { Metadata } from 'next'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -5,26 +6,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * The v1 design, byte-for-byte. The uploaded design file is fully
- * self-contained (its own runtime, fonts, mark, and all nine screens with
- * their scripted content), so it is served exactly as designed and mounted
- * full-viewport here — the whole dashboard IS the design.
- *
- * The plan of record: screens are re-implemented natively one at a time,
- * pixel-identical, with the scripted content replaced by the real corpus
- * and the real dossiers — and this frame shrinks until it disappears. The
- * design file stays in public/design/ as the reference the native screens
- * are diffed against.
+ * The v1 design, native. Verified against the designed original
+ * (public/design/claidor-v1.html) by headless side-by-side sweep: all nine
+ * views and the deep interactions render identical text, zero page errors
+ * (dev/design_port/). Being real code rather than a framed file, this is
+ * the version the corpus and dossiers wire into, screen by screen.
  */
 export default function Page() {
-  return (
-    <iframe
-      src="/design/claidor-v1.html?v=2"
-      title="Claidor"
-      // Viewport-sized, not h-full: nothing above this guarantees a height
-      // chain, and a 0-height iframe renders as a blank page.
-      className="h-dvh w-full"
-      style={{ border: 'none', display: 'block' }}
-    />
-  )
+  return <DesignApp />
 }
