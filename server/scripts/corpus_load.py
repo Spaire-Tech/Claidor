@@ -373,6 +373,10 @@ async def load_decisions(session: AsyncSession) -> None:
         if parsed.urn_lex is not None:
             existing_urns.add(parsed.urn_lex)
         created += 1
+        # Full-text rows are heavy; keep every INSERT batch far below the
+        # database command timeout.
+        if created % 100 == 0:
+            await session.flush()
     log.info(
         "corpus.load.decisions",
         created=created,
@@ -594,6 +598,8 @@ async def auto_verify_links(session: AsyncSession) -> None:
                     )
                 )
                 discovered += 1
+                if discovered % 500 == 0:
+                    await session.flush()
     log.info(
         "corpus.load.auto_verify",
         confirmed=confirmed,
@@ -606,10 +612,19 @@ async def main() -> None:
     engine = create_async_engine("script")
     sessionmaker = create_async_sessionmaker(engine)
     async with sessionmaker() as session:
+        # Flush between stages: without this, the first SELECT of a stage
+        # autoflushes everything the previous stage added — for the
+        # decisions, 1,268 full-text rows in one INSERT batch, which is
+        # exactly what blew the 30s command timeout on the smallest
+        # production Postgres.
         await load_acts(session)
+        await session.flush()
         await load_act_1998_articles(session)
+        await session.flush()
         await load_decisions(session)
+        await session.flush()
         await seed_links(session)
+        await session.flush()
         await auto_verify_links(session)
         await session.commit()
     await engine.dispose()
