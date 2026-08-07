@@ -36,18 +36,30 @@ class EmailSender(StrEnum):
     resend = "resend"
 
 
-def _validate_email_renderer_binary_path(value: Path) -> Path:
-    if not value.exists() and not value.is_file():
-        raise ValueError(
-            f"""
-        The provided email renderer binary path {value} is not a valid file path
-        or does not exist.\n
-        If you're in local development, you should build the email renderer binary
-        by running the following command:\n
-        uv run task emails\n
-        """
-        )
+EMAIL_RENDERER_MISSING_MESSAGE = """The email renderer binary was not found at {path}.
+Emails cannot be rendered until it is built:
+    uv run task emails
+(The Docker image builds it automatically.)"""
 
+
+def _validate_email_renderer_binary_path(value: Path) -> Path:
+    """Warn about a missing renderer; do not refuse to start.
+
+    The renderer is a Node artifact used only when an email is actually
+    rendered. Refusing to load settings without it meant the whole
+    application — the librarian, the corpus, every dossier — could not boot
+    on a deployment that has no email configured at all. The check now
+    happens where the binary is used, so a missing renderer breaks sending
+    email and nothing else.
+    """
+    if not value.is_file():
+        import structlog
+
+        structlog.get_logger().warning(
+            "config.email_renderer_missing",
+            path=str(value),
+            impact="email sending will fail until this binary exists",
+        )
     return value
 
 

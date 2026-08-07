@@ -18,6 +18,17 @@ def _transform_avatar_urls_for_email(props_json: str) -> str:
 
 
 def render_email_template(email: "Email") -> str:
+    # Checked here rather than at settings load: a missing renderer must
+    # break sending an email, not starting the application.
+    if not settings.EMAIL_RENDERER_BINARY_PATH.is_file():
+        from polar.config import EMAIL_RENDERER_MISSING_MESSAGE
+
+        raise RuntimeError(
+            EMAIL_RENDERER_MISSING_MESSAGE.format(
+                path=settings.EMAIL_RENDERER_BINARY_PATH
+            )
+        )
+
     props_json = email.props.model_dump_json()
     props_json = _transform_avatar_urls_for_email(props_json)
 
