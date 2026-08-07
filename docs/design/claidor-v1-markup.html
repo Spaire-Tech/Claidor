@@ -1,0 +1,952 @@
+
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("978bec4e-42f5-49e5-88a7-43c7108b5158") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("7a85d6b9-f86d-436c-8a04-8f3479d85851") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("aae9727b-5656-4e31-bd19-a021095f46a3") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("8d8a6b1e-cd44-49fa-be39-888680fb917e") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("388785dc-5acf-4274-90be-860d30418427") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("6794c23d-b3f9-4d8b-8c81-ca1b26bcf880") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("8604aefa-57fc-4e07-8a03-f299f29f934b") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("9ac5b563-b9f9-4a05-80f4-e5baad01cd4f") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("2eb0ae13-0352-4025-9efb-793deb0e74a2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("a8d10ffd-c772-4256-b664-8c9035d1a13a") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("edf9c2eb-2c9b-4cf5-8d41-1e02ca43b46f") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("a7dc248e-46b3-4eeb-a5d4-08b2397c7584") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+:root{--ink:#17181A;--ink2:#26272A;--black:#000000;--accent:#141517;--t1:#3A3C40;--t2:#5C5E63;--t3:#6E7075;--t4:#8B8D91;--t5:#9B9DA1;--t6:#B0B2B5;--t7:#C9C9C7;--surface:#FFFFFF;--s1:#FAFAF9;--s2:#F7F7F6;--s3:#F5F5F4;--s4:#F4F4F3;--s5:#F3F3F1;--s6:#F2F2F1;--s7:#F1F1EF;--s8:#F0F0EF;--s9:#ECECEA;--greenbg:#EAF3EC;--b1:#EEEEEC;--b2:#E9E9E7;--btnoff:#E7E7E5;--b3:#E3E3E2;--b4:#E0E0DE;--b5:#D8D8D6;--amber:#8A6A34;--amber2:#B8860B;--blue:#2F5FB0;--blue2:#3E4A68;--green:#3E6B51;--green2:#2F7A4D;--teal:#1F8A8C;--red:#7A3E3E;--red2:#B0533A;--hl:#FBF3D9;--sh1:rgba(20,21,23,0.1);--sh2:rgba(0,0,0,0.2);--sh3:rgba(20,21,23,0.03);--sh4:rgba(20,21,23,0.25);--on-accent:#FFFFFF;}
+html[data-claidor-dark]{--ink:#E8E5E1;--ink2:#DCD9D5;--black:#E8E5E1;--accent:#E8E5E1;--t1:#C9C6C1;--t2:rgba(255,255,255,0.66);--t3:rgba(255,255,255,0.55);--t4:rgba(255,255,255,0.48);--t5:rgba(255,255,255,0.42);--t6:rgba(255,255,255,0.34);--t7:rgba(255,255,255,0.30);--surface:#1F1D1A;--s1:#242220;--s2:#262421;--s3:#262421;--s4:#282623;--s5:#282623;--s6:#292724;--s7:#2A2825;--s8:#2A2825;--s9:#2E2C29;--greenbg:rgba(63,122,77,0.20);--b1:rgba(255,255,255,0.10);--b2:rgba(255,255,255,0.12);--btnoff:#33312E;--b3:rgba(255,255,255,0.14);--b4:rgba(255,255,255,0.16);--b5:rgba(255,255,255,0.22);--amber:#C9A35C;--amber2:#D4A93C;--blue:#7FA3E0;--blue2:#9FB0D6;--green:#7FB894;--green2:#6FBF8A;--teal:#5FBFC1;--red:#D08A8A;--red2:#D08A6E;--hl:rgba(251,243,217,0.16);--sh1:rgba(0,0,0,0.5);--sh2:rgba(0,0,0,0.6);--sh3:rgba(255,255,255,0.04);--sh4:rgba(0,0,0,0.55);--on-accent:#17181A;}
+html[data-claidor-dark] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);}
+html,body{margin:0;padding:0;height:100%;}
+body{background:var(--surface);color:var(--ink);-webkit-font-smoothing:antialiased;}
+a{color:var(--ink);text-decoration:none;}
+a:hover{color:var(--black);text-decoration:underline;}
+textarea{font:inherit;color:inherit;}
+*{box-sizing:border-box;}
+svg{display:block;flex:0 0 auto;}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-thumb{background:var(--b3);border-radius:8px;}
+html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+@keyframes rise{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+</style>
+</helmet>
+<div style="display:flex;height:100vh;width:100%;overflow:hidden;background:var(--surface);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;color:var(--ink);">
+  <div sc-camel-on-click="{{ toggleDark }}" title="{{ themeTitle }}" style="position:fixed;top:14px;right:16px;z-index:60;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);background:transparent;" style-hover="color:var(--ink);background:var(--s4);">
+    <sc-if value="{{ isDark }}" hint-placeholder-val="{{ false }}">
+      <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+    </sc-if>
+    <sc-if value="{{ isLight }}" hint-placeholder-val="{{ true }}">
+      <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+    </sc-if>
+  </div>
+
+  <!-- Sidebar -->
+  <div style="width:232px;flex:0 0 232px;background:var(--surface);border-right:1px solid var(--b1);display:flex;flex-direction:column;">
+    <div style="padding:16px 16px 4px;display:flex;align-items:center;gap:8px;">
+      <div style="font-family:'Source Serif 4',Georgia,serif;font-size:19px;font-weight:600;letter-spacing:-0.01em;">Claidor</div>
+      <div style="flex:1;"></div>
+      <span sc-camel-on-click="{{ openSearch }}" style="color:var(--t3);cursor:pointer;" style-hover="color:var(--ink);"><svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg></span>
+      <span style="color:var(--t3);cursor:pointer;margin-left:10px;" style-hover="color:var(--ink);"><svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="2"></rect><path d="M6 2.5v11"></path></svg></span>
+    </div>
+    <div style="padding:10px 12px 8px;">
+      <button sc-camel-on-click="{{ newChat }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;background:var(--surface);border:1px solid var(--b3);border-radius:8px;font:inherit;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;" style-hover="background:var(--s2);">
+        <svg width="12" height="12" sc-camel-view-box="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1.5v9M1.5 6h9"></path></svg> Créer
+      </button>
+    </div>
+    <div style="padding:4px 8px;display:flex;flex-direction:column;gap:1px;">
+      <div sc-camel-on-click="{{ goAssistant }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13.5px;cursor:pointer;color:{{ cAssistant }};background:{{ bgAssistant }};font-weight:{{ fwAssistant }};" style-hover="background:var(--s4);">
+        <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ icAssistant }}" stroke-width="1.4"><rect x="1.5" y="1.5" width="13" height="13" rx="3"></rect><path d="M8 4.8l0.9 2.3 2.3 0.9-2.3 0.9L8 11.2 7.1 8.9 4.8 8l2.3-0.9z" fill="{{ icAssistant }}" stroke="none"></path></svg>Assistant
+      </div>
+      <div sc-camel-on-click="{{ openRecherche }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13.5px;cursor:pointer;color:{{ cRecherche }};background:{{ bgRecherche }};font-weight:{{ fwRecherche }};" style-hover="background:var(--s4);">
+        <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ icRecherche }}" stroke-width="1.4"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>Recherche
+      </div>
+      <div sc-camel-on-click="{{ goDossiers }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13.5px;cursor:pointer;color:{{ cDossiers }};background:{{ bgDossiers }};font-weight:{{ fwDossiers }};" style-hover="background:var(--s4);">
+        <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ icDossiers }}" stroke-width="1.4"><path d="M1.5 4.5a2 2 0 012-2h3l1.5 2h4.5a2 2 0 012 2v5a2 2 0 01-2 2h-9a2 2 0 01-2-2z"></path></svg>Dossiers
+      </div>
+      <div sc-camel-on-click="{{ goAnalyses }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13.5px;cursor:pointer;color:{{ cAnalyses }};background:{{ bgAnalyses }};font-weight:{{ fwAnalyses }};" style-hover="background:var(--s4);">
+        <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ icAnalyses }}" stroke-width="1.4"><path d="M2 4h12M2 8h8M2 12h12M12 6.5L14 8l-2 1.5"></path></svg>Analyses
+      </div>
+      <div sc-camel-on-click="{{ goVeilles }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13.5px;cursor:pointer;color:{{ cVeilles }};background:{{ bgVeilles }};font-weight:{{ fwVeilles }};" style-hover="background:var(--s4);">
+        <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ icVeilles }}" stroke-width="1.4"><path d="M8 2a4 4 0 00-4 4v3l-1.5 2.5h11L12 9V6a4 4 0 00-4-4zM6.5 13.5a1.5 1.5 0 003 0"></path></svg>Veilles
+      </div>
+      <div sc-camel-on-click="{{ goLecteur }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13.5px;cursor:pointer;color:{{ cLecteur }};background:{{ bgLecteur }};font-weight:{{ fwLecteur }};" style-hover="background:var(--s4);">
+        <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ icLecteur }}" stroke-width="1.4"><path d="M3 1.5h7L13 4.5v10H3zM10 1.5v3h3"></path><circle cx="7" cy="8.5" r="2"></circle><path d="M8.5 10L10 11.5"></path></svg>Lecteur
+      </div>
+      <div sc-camel-on-click="{{ goHistorique }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13.5px;cursor:pointer;color:{{ cHistorique }};background:{{ bgHistorique }};font-weight:{{ fwHistorique }};" style-hover="background:var(--s4);">
+        <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ icHistorique }}" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 4.5V8l2.5 1.5"></path></svg>Historique
+      </div>
+      <div sc-camel-on-click="{{ goBiblio }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13.5px;cursor:pointer;color:{{ cBiblio }};background:{{ bgBiblio }};font-weight:{{ fwBiblio }};" style-hover="background:var(--s4);">
+        <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ icBiblio }}" stroke-width="1.4"><path d="M2.5 2.5v11M6 2.5v11M9.5 3.5l3 10"></path></svg>Bibliothèque
+      </div>
+      <div sc-camel-on-click="{{ goGuides }}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13.5px;cursor:pointer;color:{{ cGuides }};background:{{ bgGuides }};font-weight:{{ fwGuides }};" style-hover="background:var(--s4);">
+        <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ icGuides }}" stroke-width="1.4"><path d="M8 3.5C6.5 2.3 4.5 2 2 2v11c2.5 0 4.5 0.3 6 1.5 1.5-1.2 3.5-1.5 6-1.5V2c-2.5 0-4.5 0.3-6 1.5zM8 3.5v11"></path></svg>Guides
+      </div>
+    </div>
+    <div style="padding:14px 18px 4px;font-size:11px;font-weight:500;color:var(--t5);">Recherches récentes</div>
+    <div style="flex:1;overflow-y:auto;padding:2px 8px;">
+      <sc-for list="{{ convs }}" as="c" hint-placeholder-count="4">
+        <div sc-camel-on-click="{{ c.open }}" style="padding:6px 10px 6px 35px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:{{ c.bg }};" style-hover="background:var(--s4);">{{ c.title }}</div>
+      </sc-for>
+    </div>
+    <div style="border-top:1px solid var(--s7);padding:12px 16px;display:flex;align-items:center;gap:8px;">
+      <div style="flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:5px;cursor:pointer;">Diallo &amp; Associés <svg width="10" height="10" sc-camel-view-box="0 0 10 10" fill="none" stroke="var(--t4)" stroke-width="1.4"><path d="M2.5 4l2.5 2.5L7.5 4"></path></svg></div>
+      <span sc-camel-on-click="{{ goGuides }}" style="color:var(--t4);cursor:pointer;display:flex;" style-hover="color:var(--ink);" title="Aide"><svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"></circle><path d="M6.2 6.2a1.8 1.8 0 113 1.3c-0.6 0.5-1.2 0.8-1.2 1.6"></path><circle cx="8" cy="11.4" r="0.5" fill="currentColor"></circle></svg></span>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--surface);">
+
+    <sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:9vh 32px 32px;">
+        <div style="width:100%;max-width:820px;display:flex;flex-direction:column;align-items:center;">
+          <img src="440a34b3-5c36-4045-8b0e-711e27ec85bb" alt="Claidor" style="width:64px;height:64px;object-fit:contain;display:block;">
+          <div style="margin-top:18px;font-family:'Source Serif 4',Georgia,serif;font-size:30px;font-weight:600;letter-spacing:-0.01em;text-align:center;">{{ greeting }}</div>
+          <div style="margin-top:6vh;width:100%;">
+            <div style="display:flex;gap:22px;margin-bottom:12px;padding-left:4px;position:relative;">
+              <div sc-camel-on-click="{{ toggleDossierMenu }}" style="display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;" style-hover="color:var(--black);"><svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 4.5a2 2 0 012-2h3l1.5 2h4.5a2 2 0 012 2v5a2 2 0 01-2 2h-9a2 2 0 01-2-2z"></path></svg> {{ dossierBtnLabel }}</div>
+              <div sc-camel-on-click="{{ toggleClientMenu }}" style="display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;" style-hover="color:var(--black);"><svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="4.5" width="13" height="9" rx="2"></rect><path d="M5.5 4.5V3a1.5 1.5 0 011.5-1.5h2A1.5 1.5 0 0110.5 3v1.5"></path></svg> {{ clientBtnLabel }}</div>
+              <sc-if value="{{ menuIsDossier }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:26px;left:0;z-index:30;background:var(--surface);border:1px solid var(--b3);border-radius:10px;box-shadow:0 8px 24px var(--sh1);padding:6px;min-width:300px;">
+                  <sc-for list="{{ dossierMenu }}" as="d" hint-placeholder-count="3">
+                    <div sc-camel-on-click="{{ d.pick }}" style="padding:8px 11px;border-radius:7px;cursor:pointer;font-size:13px;" style-hover="background:var(--s4);">
+                      <div style="font-weight:500;">{{ d.name }}</div>
+                      <div style="font-size:11.5px;color:var(--t4);margin-top:1px;">{{ d.meta }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ menuIsClient }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:26px;left:160px;z-index:30;background:var(--surface);border:1px solid var(--b3);border-radius:10px;box-shadow:0 8px 24px var(--sh1);padding:6px;min-width:220px;">
+                  <sc-for list="{{ clientMenu }}" as="cl" hint-placeholder-count="3">
+                    <div sc-camel-on-click="{{ cl.pick }}" style="padding:8px 11px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;" style-hover="background:var(--s4);">{{ cl.name }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+            <div style="background:var(--s3);border-radius:16px;padding:16px 20px 14px;">
+              <sc-if value="{{ hasContext }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                  <sc-for list="{{ contextChips }}" as="ch" hint-placeholder-count="1">
+                    <div style="display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--b3);border-radius:8px;padding:6px 10px;font-size:12.5px;font-weight:500;">
+                      <svg width="13" height="13" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t2)" stroke-width="1.4"><path d="{{ ch.d }}"></path></svg>
+                      {{ ch.label }}
+                      <span sc-camel-on-click="{{ ch.remove }}" style="color:var(--t4);cursor:pointer;margin-left:2px;" style-hover="color:var(--ink);">×</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <textarea rows="4" placeholder="Posez votre question à Claidor…" value="{{ input }}" sc-camel-on-change="{{ onInput }}" sc-camel-on-key-down="{{ onKey }}" style="width:100%;border:none;outline:none;resize:none;background:transparent;font-size:15px;line-height:1.55;color:var(--ink);"></textarea>
+              <div style="display:flex;align-items:center;gap:18px;margin-top:10px;position:relative;">
+                <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--t1);cursor:pointer;" style-hover="color:var(--ink);"><svg width="12" height="12" sc-camel-view-box="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1.5v9M1.5 6h9"></path></svg> Fichiers et sources</div>
+                <div sc-camel-on-click="{{ togglePromptsMenu }}" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--t1);cursor:pointer;" style-hover="color:var(--ink);"><svg width="13" height="13" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h9M2 8h12M2 12h7"></path></svg> Prompts</div>
+                <div style="width:1px;height:16px;background:var(--b4);"></div>
+                <div sc-camel-on-click="{{ toggleCustomMenu }}" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--t1);cursor:pointer;" style-hover="color:var(--ink);"><svg width="13" height="13" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5h8M12.5 5H14M2 11h2M6.5 11H14"></path><circle cx="11" cy="5" r="1.6"></circle><circle cx="5" cy="11" r="1.6"></circle></svg> Personnaliser</div>
+                <div sc-camel-on-click="{{ improve }}" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--t1);cursor:pointer;" style-hover="color:var(--ink);"><svg width="13" height="13" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 13L11 5M9.5 2.5l0.5 1.5L11.5 4.5 10 5 9.5 6.5 9 5 7.5 4.5 9 4zM13 8l0.4 1.1L14.5 9.5 13.4 9.9 13 11l-0.4-1.1L11.5 9.5l1.1-0.4z"></path></svg> Améliorer</div>
+                <div style="flex:1;"></div>
+                <div sc-camel-on-click="{{ toggleDeep }}" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:{{ deepFw }};color:{{ deepColor }};cursor:pointer;" style-hover="color:var(--ink);"><svg width="14" height="14" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2"></circle><ellipse cx="8" cy="8" rx="6.5" ry="2.8" transform="rotate(-25 8 8)"></ellipse></svg> Recherche approfondie</div>
+                <button sc-camel-on-click="{{ onSend }}" style="border:none;border-radius:8px;padding:9px 18px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;background:{{ sendBg }};color:{{ sendFg }};">Demander à Claidor</button>
+                <sc-if value="{{ menuIsPrompts }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;bottom:38px;left:0;z-index:30;background:var(--surface);border:1px solid var(--b3);border-radius:10px;box-shadow:0 8px 24px var(--sh1);padding:6px;width:360px;">
+                    <sc-for list="{{ promptMenu }}" as="p" hint-placeholder-count="3">
+                      <div sc-camel-on-click="{{ p.use }}" style="padding:8px 11px;border-radius:7px;cursor:pointer;" style-hover="background:var(--s4);">
+                        <div style="font-size:13px;font-weight:500;">{{ p.title }}</div>
+                        <div style="font-size:11.5px;color:var(--t4);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.text }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ menuIsCustom }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;bottom:38px;left:120px;z-index:30;background:var(--surface);border:1px solid var(--b3);border-radius:10px;box-shadow:0 8px 24px var(--sh1);padding:10px 12px;width:260px;">
+                    <div sc-camel-on-click="{{ toggleConcise }}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;cursor:pointer;font-size:13px;">
+                      Réponses concises
+                      <span style="width:30px;height:17px;border-radius:9px;background:{{ conciseBg }};position:relative;display:inline-block;transition:background 0.15s;"><span style="position:absolute;top:2px;left:{{ conciseKnob }};width:13px;height:13px;border-radius:50%;background:var(--surface);transition:left 0.15s;box-shadow:0 1px 2px var(--sh2);"></span></span>
+                    </div>
+                    <div sc-camel-on-click="{{ toggleNotes }}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;cursor:pointer;font-size:13px;">
+                      Annotations des sources
+                      <span style="width:30px;height:17px;border-radius:9px;background:{{ notesBg }};position:relative;display:inline-block;transition:background 0.15s;"><span style="position:absolute;top:2px;left:{{ notesKnob }};width:13px;height:13px;border-radius:50%;background:var(--surface);transition:left 0.15s;box-shadow:0 1px 2px var(--sh2);"></span></span>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+            <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:9px;justify-content:center;">
+              <sc-for list="{{ sources }}" as="s" hint-placeholder-count="5">
+                <button sc-camel-on-click="{{ s.toggle }}" style="display:flex;align-items:center;gap:8px;border:1px solid {{ s.border }};background:var(--surface);border-radius:9px;padding:9px 14px;font:inherit;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;white-space:nowrap;" style-hover="background:var(--s2);">
+                  <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ s.color }}" stroke-width="1.35"><path d="{{ s.d }}"></path></svg>
+                  {{ s.label }} <span style="color:{{ s.plusColor }};font-weight:{{ s.plusFw }};">{{ s.plus }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="margin-top:9vh;width:100%;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div style="font-size:13.5px;font-weight:600;">Analyses recommandées</div>
+              <div style="display:flex;gap:16px;font-size:12.5px;color:var(--t2);align-items:center;">
+                <span sc-camel-on-click="{{ openSearch }}" style="display:flex;align-items:center;gap:5px;cursor:pointer;" style-hover="color:var(--ink);"><svg width="12" height="12" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg> Rechercher</span>
+                <span sc-camel-on-click="{{ goAnalyses }}" style="cursor:pointer;" style-hover="color:var(--ink);">Tout voir</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+              <sc-for list="{{ analysisCards }}" as="w" hint-placeholder-count="4">
+                <div sc-camel-on-click="{{ w.open }}" style="border:1px solid var(--s9);border-radius:10px;padding:14px 14px 12px;cursor:pointer;display:flex;flex-direction:column;gap:22px;background:var(--surface);" style-hover="border-color:var(--t7);">
+                  <div style="font-size:13px;font-weight:600;line-height:1.4;text-wrap:pretty;">{{ w.title }}</div>
+                  <div style="font-size:11.5px;color:var(--t4);">{{ w.meta }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isChat }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;">
+        <div ref="{{ scrollRef }}" style="flex:1;overflow-y:auto;padding:40px 44px 10px;">
+          <div style="max-width:640px;margin:0 auto;">
+            <sc-if value="{{ hasChatContext }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <sc-for list="{{ contextChips }}" as="ch" hint-placeholder-count="1">
+                  <div style="display:flex;align-items:center;gap:7px;background:var(--s3);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:500;color:var(--t1);">
+                    <svg width="12" height="12" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t2)" stroke-width="1.4"><path d="{{ ch.d }}"></path></svg>
+                    {{ ch.label }}
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="2">
+              <div style="animation:rise 0.2s ease;">
+                <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:26px 0 0;">
+                    <div style="font-size:17px;font-weight:600;line-height:1.5;color:var(--ink);letter-spacing:-0.005em;">{{ m.text }}</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ m.isAssistant }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:18px 0 40px;">
+                    <div style="font-size:14px;line-height:1.75;color:var(--ink2);white-space:pre-wrap;text-wrap:pretty;">{{ m.text }}<sc-if value="{{ m.showCursor }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;width:7px;height:15px;background:var(--ink);margin-left:2px;vertical-align:-2px;animation:blink 0.9s steps(1) infinite;"></span></sc-if></div>
+                    <sc-if value="{{ m.hasFact }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:20px;border:1px solid var(--s9);border-radius:10px;overflow:hidden;animation:rise 0.25s ease;">
+                        <div style="display:flex;gap:14px;padding:11px 15px;align-items:baseline;">
+                          <span style="width:104px;flex:0 0 auto;font-size:11.5px;font-weight:600;color:var(--amber);">Fait retenu</span>
+                          <span style="font-size:13px;color:var(--ink2);">{{ m.factText }}&nbsp;&nbsp;<span sc-camel-on-click="{{ m.factOpen }}" style="color:var(--t2);cursor:pointer;font-size:12.5px;text-decoration:underline;text-decoration-color:var(--b5);text-underline-offset:3px;" style-hover="color:var(--ink);">{{ m.factSrc }}</span></span>
+                        </div>
+                        <div style="display:flex;gap:14px;padding:11px 15px;align-items:baseline;border-top:1px solid var(--s7);">
+                          <span style="width:104px;flex:0 0 auto;font-size:11.5px;font-weight:600;color:var(--blue);">Droit applicable</span>
+                          <span style="font-size:13px;color:var(--ink2);">{{ m.law }}</span>
+                        </div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ m.showAuth }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:18px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t1);animation:rise 0.25s ease;">
+                        <span style="width:7px;height:7px;border-radius:50%;background:{{ m.authDot }};flex:0 0 auto;"></span>
+                        <span style="font-weight:600;">Autorité</span> {{ m.authLabel }}
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ m.hasSources }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:22px;animation:rise 0.25s ease;">
+                        <div style="font-size:12.5px;font-weight:600;color:var(--ink);padding-bottom:9px;border-bottom:1px solid var(--b1);">Sources</div>
+                        <sc-for list="{{ m.sources }}" as="a" hint-placeholder-count="3">
+                          <div sc-camel-on-click="{{ a.open }}" style="display:flex;align-items:center;gap:11px;padding:10px 2px;border-bottom:1px solid var(--s5);cursor:pointer;" style-hover="background:var(--s1);">
+                            <svg width="14" height="14" sc-camel-view-box="0 0 16 16" fill="none" stroke="{{ a.color }}" stroke-width="1.3"><path d="{{ a.d }}"></path></svg>
+                            <span style="width:58px;flex:0 0 auto;font-size:11px;font-weight:600;color:{{ a.color }};">{{ a.kind }}</span>
+                            <div style="min-width:0;flex:1;">
+                              <span style="font-size:13.5px;font-weight:500;">{{ a.label }}</span>
+                              <span style="font-size:12.5px;color:var(--t4);">&nbsp;&nbsp;{{ a.note }}</span>
+                            </div>
+                            <svg width="12" height="12" sc-camel-view-box="0 0 12 12" fill="none" stroke="var(--t4)" stroke-width="1.4"><path d="M3 9L9 3M4.5 3H9v4.5"></path></svg>
+                          </div>
+                        </sc-for>
+                        <div style="display:flex;gap:6px;margin-top:14px;">
+                          <span sc-camel-on-click="{{ m.copy }}" style="display:flex;align-items:center;gap:6px;border:1px solid var(--b2);border-radius:7px;padding:6px 11px;font-size:12px;color:var(--t1);cursor:pointer;" style-hover="background:var(--s2);"><svg width="12" height="12" sc-camel-view-box="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4.5" y="4.5" width="8" height="8" rx="1.5"></rect><path d="M9.5 4.5v-2a1 1 0 00-1-1h-6a1 1 0 00-1 1v6a1 1 0 001 1h2"></path></svg> Copier</span>
+                          <span sc-camel-on-click="{{ m.exportIt }}" style="display:flex;align-items:center;gap:6px;border:1px solid var(--b2);border-radius:7px;padding:6px 11px;font-size:12px;color:var(--t1);cursor:pointer;" style-hover="background:var(--s2);"><svg width="12" height="12" sc-camel-view-box="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M7 1.5v8M4 6.5l3 3 3-3M2 12.5h10"></path></svg> Exporter</span>
+                          <span sc-camel-on-click="{{ m.regen }}" style="display:flex;align-items:center;gap:6px;border:1px solid var(--b2);border-radius:7px;padding:6px 11px;font-size:12px;color:var(--t1);cursor:pointer;" style-hover="background:var(--s2);"><svg width="12" height="12" sc-camel-view-box="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 7a5 5 0 11-1.5-3.5M12 1.5v3h-3"></path></svg> Régénérer</span>
+                        </div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:0 0 auto;padding:8px 44px 18px;">
+          <div style="max-width:640px;margin:0 auto;">
+            <div style="background:var(--s3);border-radius:12px;padding:10px 14px;display:flex;align-items:flex-end;gap:10px;">
+              <textarea rows="1" placeholder="Poser une question complémentaire…" value="{{ input }}" sc-camel-on-change="{{ onInput }}" sc-camel-on-key-down="{{ onKey }}" style="flex:1;border:none;outline:none;resize:none;background:transparent;font-size:14px;line-height:1.5;"></textarea>
+              <button sc-camel-on-click="{{ onSend }}" style="border:none;border-radius:7px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:{{ sendBg }};color:{{ sendFg }};"><svg width="13" height="13" sc-camel-view-box="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 12V2M2.5 6.5L7 2l4.5 4.5"></path></svg></button>
+            </div>
+            <div style="text-align:center;font-size:11px;color:var(--t6);margin-top:8px;">Claidor peut commettre des erreurs. Vérifiez les sources citées.</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Analyses : liste -->
+    <sc-if value="{{ isAnalysesList }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:44px 48px;">
+        <div style="max-width:820px;margin:0 auto;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Analyses</div>
+          <div style="margin-top:6px;font-size:13.5px;color:var(--t3);line-height:1.5;max-width:600px;text-wrap:pretty;">Les questions qu’un avocat pose au droit chaque semaine, en un clic : cette solution est-elle constante, que disait le texte à l’époque, où vit cet article dans les cours.</div>
+          <div style="margin-top:26px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+            <sc-for list="{{ analysisList }}" as="w" hint-placeholder-count="4">
+              <div style="border:1px solid var(--s9);border-radius:12px;padding:20px;background:var(--surface);display:flex;flex-direction:column;gap:8px;">
+                <div style="font-size:14px;font-weight:600;">{{ w.title }}</div>
+                <div style="font-size:12.5px;color:var(--t3);line-height:1.5;text-wrap:pretty;">{{ w.desc }}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;">
+                  <sc-for list="{{ w.targets }}" as="t" hint-placeholder-count="3">
+                    <button sc-camel-on-click="{{ t.go }}" style="border:1px solid var(--b3);background:var(--surface);border-radius:999px;padding:5px 12px;font:inherit;font-size:12px;font-weight:500;color:var(--t1);cursor:pointer;" style-hover="border-color:var(--ink);color:var(--ink);">{{ t.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:20px;font-size:12px;color:var(--t4);line-height:1.6;max-width:600px;">Les analyses se lancent aussi depuis ce que vous lisez : une décision ouverte propose « Vérifier l’autorité », un article propose son historique, sa comparaison et ses citations. Chaque résultat enchaîne sur les analyses suivantes.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Analyse : résultat -->
+    <sc-if value="{{ isAnalysis }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:32px 48px 44px;">
+        <div style="max-width:680px;margin:0 auto;">
+          <div sc-camel-on-click="{{ goAnalyses }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--t2);cursor:pointer;" style-hover="color:var(--ink);"><svg width="13" height="13" sc-camel-view-box="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2L4 7l5 5"></path></svg> Analyses</div>
+          <div style="margin-top:14px;font-size:11.5px;font-weight:600;color:var(--t4);">{{ an.kind }}</div>
+          <div style="margin-top:6px;font-family:'Source Serif 4',Georgia,serif;font-size:23px;font-weight:600;">{{ an.title }}</div>
+          <sc-if value="{{ an.hasStatus }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t1);">
+              <span style="width:7px;height:7px;border-radius:50%;background:{{ an.dot }};flex:0 0 auto;"></span>
+              <span style="font-weight:600;">{{ an.status }}</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ anIsAuth }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:20px;border-top:1px solid var(--b1);">
+              <sc-for list="{{ an.rows }}" as="r" hint-placeholder-count="4">
+                <div sc-camel-on-click="{{ r.open }}" style="display:flex;align-items:baseline;gap:14px;padding:12px 2px;border-bottom:1px solid var(--s5);cursor:pointer;" style-hover="background:var(--s1);">
+                  <span style="width:40px;flex:0 0 auto;font-size:12.5px;color:var(--t4);font-variant-numeric:tabular-nums;">{{ r.y }}</span>
+                  <span style="width:130px;flex:0 0 auto;font-size:13.5px;font-weight:600;">{{ r.ref }}</span>
+                  <span style="flex:1;font-size:13px;color:var(--t3);font-family:'Source Serif 4',Georgia,serif;">{{ r.quote }}</span>
+                  <span style="font-size:12px;color:var(--t4);flex:0 0 auto;" style-hover="color:var(--ink);">ouvrir</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ anIsHist }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:20px;border-top:1px solid var(--b1);">
+              <sc-for list="{{ an.vers }}" as="v" hint-placeholder-count="2">
+                <div style="display:flex;align-items:baseline;gap:14px;padding:13px 2px;border-bottom:1px solid var(--s5);">
+                  <span style="width:52px;flex:0 0 auto;font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums;">{{ v.v }}</span>
+                  <span style="flex:1;font-size:13.5px;color:var(--ink2);">{{ v.note }}</span>
+                  <sc-if value="{{ v.hasTag }}" hint-placeholder-val="{{ false }}">
+                    <span style="border:1px solid var(--b5);background:var(--s3);border-radius:6px;padding:2px 9px;font-size:11px;font-weight:600;flex:0 0 auto;">{{ v.tag }}</span>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:22px;font-size:12px;font-weight:600;color:var(--t4);">Ce qui a changé</div>
+            <div style="margin-top:9px;">
+              <sc-for list="{{ an.changes }}" as="ch" hint-placeholder-count="2">
+                <div style="display:flex;gap:10px;font-size:13px;margin-bottom:6px;align-items:baseline;">
+                  <span style="font-weight:700;width:10px;color:{{ ch.color }};">{{ ch.sign }}</span>
+                  <span style="color:var(--t1);">{{ ch.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ anIsComp }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--s9);border-radius:10px;overflow:hidden;background:var(--surface);">
+              <div style="padding:20px 22px;border-right:1px solid var(--s9);">
+                <div style="font-size:12.5px;font-weight:700;">{{ an.leftTitle }}</div>
+                <div style="margin-top:14px;">
+                  <sc-for list="{{ an.left }}" as="p" hint-placeholder-count="2">
+                    <div style="font-family:'Source Serif 4',Georgia,serif;font-size:13.5px;line-height:1.75;color:var(--ink2);margin-bottom:12px;text-wrap:pretty;">{{ p }}</div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="padding:20px 22px;">
+                <div style="font-size:12.5px;font-weight:700;">{{ an.rightTitle }}</div>
+                <div style="margin-top:14px;">
+                  <sc-for list="{{ an.right }}" as="p" hint-placeholder-count="2">
+                    <div style="font-family:'Source Serif 4',Georgia,serif;font-size:13.5px;line-height:1.75;color:var(--ink2);margin-bottom:12px;text-wrap:pretty;background:{{ p.bg }};padding:{{ p.pad }};border-radius:4px;">{{ p.text }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:18px;font-size:12px;font-weight:600;color:var(--t4);">Ce qui a bougé entre les deux</div>
+            <div style="margin-top:9px;">
+              <sc-for list="{{ an.changes }}" as="ch" hint-placeholder-count="2">
+                <div style="display:flex;gap:10px;font-size:13px;margin-bottom:6px;align-items:baseline;">
+                  <span style="font-weight:700;width:10px;color:{{ ch.color }};">{{ ch.sign }}</span>
+                  <span style="color:var(--t1);">{{ ch.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ anIsCite }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:24px;font-size:12px;font-weight:600;color:var(--t4);">Le plus souvent cité avec</div>
+            <div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:8px;">
+              <sc-for list="{{ an.citedWith }}" as="cw" hint-placeholder-count="3">
+                <div style="border:1px solid var(--b2);background:var(--surface);border-radius:7px;padding:5px 11px;font-size:12.5px;color:var(--t1);">{{ cw }}</div>
+              </sc-for>
+            </div>
+            <div style="margin-top:22px;font-size:12px;font-weight:600;color:var(--t4);">Décisions principales</div>
+            <div style="margin-top:6px;">
+              <sc-for list="{{ an.rows }}" as="r" hint-placeholder-count="3">
+                <div sc-camel-on-click="{{ r.open }}" style="display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--s5);font-size:13px;cursor:pointer;" style-hover="background:var(--s1);">
+                  <svg width="13" height="13" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--red)" stroke-width="1.3"><path d="M8 2v11M5 13h6M8 3.5L3.5 5M8 3.5L12.5 5M3.5 5l-1.8 4a2.3 2.3 0 003.6 0zM12.5 5l-1.8 4a2.3 2.3 0 003.6 0z"></path></svg>
+                  <span style="font-weight:500;flex:1;">{{ r.ref }}</span>
+                  <span style="font-size:12px;color:var(--t4);">ouvrir</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <div style="margin-top:34px;font-size:12px;font-weight:600;color:var(--t4);">Analyses suivantes</div>
+          <div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:8px;">
+            <sc-for list="{{ an.next }}" as="n" hint-placeholder-count="3">
+              <button sc-camel-on-click="{{ n.go }}" style="border:1px solid var(--b3);background:var(--surface);border-radius:8px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer;" style-hover="border-color:var(--ink);">{{ n.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Dossiers : liste -->
+    <sc-if value="{{ isDossiersList }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:44px 48px;">
+        <div style="max-width:820px;margin:0 auto;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Dossiers</div>
+          <div style="margin-top:6px;font-size:13.5px;color:var(--t3);line-height:1.5;max-width:560px;text-wrap:pretty;">Un espace de travail par affaire. Les pièces d’un côté, le droit de l’autre — et des réponses qui s’appuient sur les deux.</div>
+          <div style="margin-top:28px;">
+            <div style="display:flex;gap:14px;padding:8px 2px;border-bottom:1px solid var(--b1);font-size:11.5px;color:var(--t4);font-weight:500;">
+              <span style="flex:1;">Affaire</span><span style="width:90px;">Pièces</span><span style="width:120px;">Équipe</span><span style="width:20px;"></span>
+            </div>
+            <sc-for list="{{ dossierCards }}" as="d" hint-placeholder-count="3">
+              <div sc-camel-on-click="{{ d.open }}" style="display:flex;gap:14px;align-items:center;padding:14px 2px;border-bottom:1px solid var(--s5);cursor:pointer;" style-hover="background:var(--s1);">
+                <span style="flex:1;display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;"><svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t1)" stroke-width="1.3"><path d="M1.5 4.5a2 2 0 012-2h3l1.5 2h4.5a2 2 0 012 2v5a2 2 0 01-2 2h-9a2 2 0 01-2-2z"></path></svg>{{ d.name }}</span>
+                <span style="width:90px;font-size:12.5px;color:var(--t3);">{{ d.pieces }}</span>
+                <span style="width:120px;display:flex;align-items:center;">
+                  <sc-for list="{{ d.team }}" as="t" hint-placeholder-count="3">
+                    <span style="width:22px;height:22px;border-radius:50%;background:var(--t1);color:var(--on-accent);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;border:1.5px solid var(--surface);margin-left:-5px;">{{ t }}</span>
+                  </sc-for>
+                </span>
+                <svg width="12" height="12" sc-camel-view-box="0 0 12 12" fill="none" stroke="var(--t6)" stroke-width="1.5"><path d="M4 2l4 4-4 4"></path></svg>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:20px;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t4);">
+            <svg width="12" height="12" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg>
+            Chaque dossier est fermé par défaut : seuls les avocats assignés voient ses pièces, ses questions et ses réponses.
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Dossier : détail -->
+    <sc-if value="{{ isDossierDetail }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:32px 48px 44px;">
+        <div style="max-width:820px;margin:0 auto;">
+          <div sc-camel-on-click="{{ goDossiers }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--t2);cursor:pointer;" style-hover="color:var(--ink);"><svg width="13" height="13" sc-camel-view-box="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2L4 7l5 5"></path></svg> Dossiers</div>
+          <div style="margin-top:14px;display:flex;align-items:flex-start;gap:16px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">{{ dd.name }}</div>
+              <div style="margin-top:6px;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--t3);white-space:nowrap;">
+                {{ dd.pieces }} · Client {{ dd.client }}
+                <span style="display:inline-flex;align-items:center;gap:5px;border:1px solid var(--b2);border-radius:999px;padding:2px 9px;font-size:11px;color:var(--t1);"><svg width="10" height="10" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg> Accès réservé à l’équipe</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;padding-top:6px;">
+              <sc-for list="{{ dd.team }}" as="t" hint-placeholder-count="3">
+                <span style="width:26px;height:26px;border-radius:50%;background:var(--t1);color:var(--on-accent);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;border:1.5px solid var(--surface);margin-left:-6px;">{{ t }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="margin-top:22px;background:var(--s3);border-radius:14px;padding:14px 16px;">
+            <textarea rows="2" placeholder="{{ dd.placeholder }}" value="{{ input }}" sc-camel-on-change="{{ onInput }}" sc-camel-on-key-down="{{ onKeyDossier }}" style="width:100%;border:none;outline:none;resize:none;background:transparent;font-size:14.5px;line-height:1.5;"></textarea>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+              <div style="font-size:12px;color:var(--t4);">Claidor lit les pièces du dossier avec le corpus OHADA — la réponse parle de cette affaire.</div>
+              <button sc-camel-on-click="{{ askDossier }}" style="border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);color:var(--on-accent);">Demander à Claidor</button>
+            </div>
+          </div>
+          <div style="margin-top:30px;font-size:13.5px;font-weight:600;">Questions du dossier</div>
+          <div style="margin-top:2px;font-size:12px;color:var(--t4);">Le registre partagé de l’équipe — chaque réponse reste attachée à l’affaire.</div>
+          <div style="margin-top:8px;">
+            <sc-for list="{{ dd.record }}" as="r" hint-placeholder-count="2">
+              <div sc-camel-on-click="{{ r.open }}" style="display:flex;align-items:center;gap:14px;padding:11px 2px;border-bottom:1px solid var(--s7);cursor:pointer;" style-hover="background:var(--s1);">
+                <span style="flex:1;font-size:13.5px;font-weight:500;">{{ r.q }}</span>
+                <span style="font-size:12px;color:var(--t4);">{{ r.user }}</span>
+                <span style="font-size:12px;color:var(--t4);width:80px;text-align:right;">{{ r.time }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:30px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:13.5px;font-weight:600;">Pièces</div>
+            <div style="display:flex;gap:8px;font-size:12.5px;color:var(--t2);">
+              <span style="border:1px solid var(--b2);border-radius:7px;padding:5px 11px;cursor:pointer;" style-hover="background:var(--s2);">Créer un dossier</span>
+              <span style="border:1px solid var(--b2);border-radius:7px;padding:5px 11px;cursor:pointer;" style-hover="background:var(--s2);">Importer des pièces</span>
+            </div>
+          </div>
+          <div style="margin-top:8px;">
+            <div style="display:flex;gap:14px;padding:8px 2px;border-bottom:1px solid var(--b1);font-size:11.5px;color:var(--t4);font-weight:500;">
+              <span style="flex:1;">Nom</span><span style="width:150px;">Catégorie</span><span style="width:110px;">Versée le</span><span style="width:60px;text-align:right;">Taille</span>
+            </div>
+            <sc-for list="{{ dd.files }}" as="f" hint-placeholder-count="4">
+              <div style="display:flex;gap:14px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--s5);font-size:13px;cursor:pointer;" style-hover="background:var(--s1);">
+                <span style="flex:1;display:flex;align-items:center;gap:9px;font-weight:500;"><svg width="13" height="13" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.3"><path d="M3 1.5h7L13 4.5v10H3z"></path><path d="M10 1.5v3h3"></path></svg>{{ f.name }}</span>
+                <span style="width:150px;"><span style="display:inline-flex;align-items:center;gap:6px;border:1px solid var(--b2);border-radius:999px;padding:2px 9px;font-size:11.5px;color:var(--t1);"><span style="width:5px;height:5px;border-radius:50%;background:{{ f.dot }};"></span>{{ f.cat }}</span></span>
+                <span style="width:110px;color:var(--t4);font-size:12.5px;">{{ f.date }}</span>
+                <span style="width:60px;text-align:right;color:var(--t4);font-size:12.5px;">{{ f.size }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Recherche -->
+    <sc-if value="{{ isRecherche }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:44px 48px;">
+        <div style="max-width:680px;margin:0 auto;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Recherche</div>
+          <div style="margin-top:6px;font-size:13.5px;color:var(--t3);">Trouver un texte ou une décision — par référence, par matière, par chambre.</div>
+          <div style="margin-top:18px;background:var(--s3);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:10px;">
+            <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.4"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+            <textarea rows="1" placeholder="Ex. : article 170 AUPSRVE, CCJA 090/2018…" value="{{ searchQ }}" sc-camel-on-change="{{ onSearchInput }}" style="flex:1;border:none;outline:none;resize:none;background:transparent;font-size:14px;line-height:1.4;height:20px;"></textarea>
+          </div>
+          <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+            <span style="font-size:11.5px;color:var(--t4);width:60px;flex:0 0 auto;">Matière</span>
+            <sc-for list="{{ fMatChips }}" as="c" hint-placeholder-count="3">
+              <button sc-camel-on-click="{{ c.pick }}" style="border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};border-radius:999px;padding:5px 12px;font:inherit;font-size:12px;font-weight:500;cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+            <span style="font-size:11.5px;color:var(--t4);width:60px;flex:0 0 auto;">Période</span>
+            <sc-for list="{{ fSinceChips }}" as="c" hint-placeholder-count="3">
+              <button sc-camel-on-click="{{ c.pick }}" style="border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};border-radius:999px;padding:5px 12px;font:inherit;font-size:12px;font-weight:500;cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+            <span style="font-size:11.5px;color:var(--t4);width:60px;flex:0 0 auto;">Chambre</span>
+            <sc-for list="{{ fChChips }}" as="c" hint-placeholder-count="3">
+              <button sc-camel-on-click="{{ c.pick }}" style="border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};border-radius:999px;padding:5px 12px;font:inherit;font-size:12px;font-weight:500;cursor:pointer;">{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <div style="margin-top:24px;font-size:12px;color:var(--t4);">{{ rescCount }}</div>
+          <div style="margin-top:4px;">
+            <sc-for list="{{ rescResults }}" as="r" hint-placeholder-count="5">
+              <div sc-camel-on-click="{{ r.open }}" style="display:flex;align-items:baseline;gap:12px;padding:11px 2px;border-bottom:1px solid var(--s5);cursor:pointer;" style-hover="background:var(--s1);">
+                <span style="width:64px;flex:0 0 auto;font-size:11px;font-weight:600;color:var(--t4);">{{ r.kind }}</span>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:13.5px;font-weight:600;">{{ r.label }}</div>
+                  <div style="font-size:12px;color:var(--t4);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.meta }}</div>
+                </div>
+                <span style="font-size:12px;color:var(--t4);flex:0 0 auto;">ouvrir</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Veilles -->
+    <sc-if value="{{ isVeilles }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:44px 48px;">
+        <div style="max-width:680px;margin:0 auto;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Veilles</div>
+          <div style="margin-top:6px;font-size:13.5px;color:var(--t3);line-height:1.5;max-width:560px;text-wrap:pretty;">Dites à Claidor ce qu’il faut surveiller. Quand une décision cite le texte ou qu’une réforme paraît, vous recevez un courriel le matin même.</div>
+          <div style="margin-top:26px;font-size:13.5px;font-weight:600;">Sous surveillance</div>
+          <div style="margin-top:4px;">
+            <sc-for list="{{ veilleRows }}" as="v" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:13px;padding:13px 2px;border-bottom:1px solid var(--s7);">
+                <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t2)" stroke-width="1.4"><path d="M8 2a4 4 0 00-4 4v3l-1.5 2.5h11L12 9V6a4 4 0 00-4-4zM6.5 13.5a1.5 1.5 0 003 0"></path></svg>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:13.5px;font-weight:500;">{{ v.label }}</div>
+                  <div style="font-size:12px;color:var(--t4);margin-top:1px;">{{ v.sub }}</div>
+                </div>
+                <span style="font-size:12px;color:var(--t4);">{{ v.last }}</span>
+                <span sc-camel-on-click="{{ v.toggle }}" style="width:30px;height:17px;border-radius:9px;background:{{ v.bg }};position:relative;display:inline-block;cursor:pointer;transition:background 0.15s;flex:0 0 auto;"><span style="position:absolute;top:2px;left:{{ v.knob }};width:13px;height:13px;border-radius:50%;background:var(--surface);transition:left 0.15s;box-shadow:0 1px 2px var(--sh2);"></span></span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--t4);">Depuis un article ouvert, « Créer une veille » l’ajoute ici.</div>
+          <div style="margin-top:30px;font-size:13.5px;font-weight:600;">Signaux récents</div>
+          <div style="margin-top:4px;">
+            <sc-for list="{{ alertRows }}" as="a" hint-placeholder-count="3">
+              <div sc-camel-on-click="{{ a.open }}" style="display:flex;align-items:baseline;gap:14px;padding:12px 2px;border-bottom:1px solid var(--s5);cursor:pointer;" style-hover="background:var(--s1);">
+                <span style="width:70px;flex:0 0 auto;font-size:12px;color:var(--t4);">{{ a.when }}</span>
+                <span style="flex:1;font-size:13.5px;">{{ a.text }}</span>
+                <span style="font-size:12px;color:var(--t4);">ouvrir</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Lecteur -->
+    <sc-if value="{{ isLecteur }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:44px 48px;">
+        <div style="max-width:680px;margin:0 auto;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Lecteur</div>
+          <div style="margin-top:6px;font-size:13.5px;color:var(--t3);line-height:1.5;max-width:580px;text-wrap:pretty;">Déposez un document — conclusions adverses, projet d’acte, jugement. Claidor relève chaque texte et chaque décision cités, les vérifie et signale les points faibles.</div>
+          <sc-if value="{{ readerIdle }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:26px;border:1.5px dashed var(--b5);border-radius:14px;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;">
+              <svg width="22" height="22" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.3"><path d="M3 1.5h7L13 4.5v10H3z"></path><path d="M10 1.5v3h3M5.5 8h5M5.5 10.5h5"></path></svg>
+              <div style="font-size:13.5px;color:var(--t3);">Glissez un PDF ou un document Word ici</div>
+              <button sc-camel-on-click="{{ runReader }}" style="border:none;border-radius:8px;padding:9px 18px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);color:var(--on-accent);">Analyser un exemple — conclusions adverses (SODICA)</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ readerDone }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:26px;display:flex;align-items:center;gap:12px;">
+              <svg width="17" height="17" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t1)" stroke-width="1.3"><path d="M3 1.5h7L13 4.5v10H3z"></path><path d="M10 1.5v3h3"></path></svg>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:600;">{{ readerName }}</div>
+                <div style="font-size:12px;color:var(--t4);margin-top:1px;">{{ readerMeta }}</div>
+              </div>
+              <button sc-camel-on-click="{{ resetReader }}" style="border:1px solid var(--b3);background:var(--surface);border-radius:8px;padding:6px 12px;font:inherit;font-size:12px;font-weight:500;color:var(--t1);cursor:pointer;flex:0 0 auto;" style-hover="border-color:var(--ink);">Analyser un autre document</button>
+            </div>
+            <div style="margin-top:16px;">
+              <sc-for list="{{ readerFindings }}" as="f" hint-placeholder-count="4">
+                <div style="display:flex;gap:12px;padding:13px 2px;border-bottom:1px solid var(--s7);align-items:baseline;">
+                  <span style="width:7px;height:7px;border-radius:50%;background:{{ f.dot }};flex:0 0 auto;position:relative;top:-1px;"></span>
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:baseline;gap:10px;">
+                      <span sc-camel-on-click="{{ f.open }}" style="font-size:13.5px;font-weight:600;cursor:pointer;" style-hover="text-decoration:underline;">{{ f.cite }}</span>
+                      <span style="font-size:11px;font-weight:600;color:{{ f.dot }};">{{ f.tag }}</span>
+                    </div>
+                    <div style="font-size:12.5px;color:var(--t3);margin-top:3px;line-height:1.55;text-wrap:pretty;">{{ f.note }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:14px;font-size:12px;color:var(--t4);">Le même contrôle fonctionne sur vos propres projets avant dépôt.</div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Historique -->
+    <sc-if value="{{ isHistorique }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:44px 48px;">
+        <div style="max-width:920px;margin:0 auto;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Historique</div>
+          <div style="margin-top:4px;font-size:13px;color:var(--t3);">Toutes les recherches du cabinet</div>
+          <div style="margin-top:22px;">
+            <div style="display:flex;gap:14px;padding:8px 2px;border-bottom:1px solid var(--b1);font-size:11.5px;color:var(--t4);font-weight:500;">
+              <span style="flex:1;">Requête</span><span style="width:110px;">Type</span><span style="width:200px;">Utilisateur</span><span style="width:110px;text-align:right;">Quand</span>
+            </div>
+            <sc-for list="{{ histRows }}" as="h" hint-placeholder-count="5">
+              <div sc-camel-on-click="{{ h.open }}" style="display:flex;gap:14px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--s5);font-size:13px;cursor:pointer;" style-hover="background:var(--s1);">
+                <span style="flex:1;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ h.q }}</span>
+                <span style="width:110px;color:var(--t1);font-size:12.5px;">{{ h.type }}</span>
+                <span style="width:200px;color:var(--t4);font-size:12.5px;">{{ h.user }}</span>
+                <span style="width:110px;text-align:right;color:var(--t4);font-size:12.5px;">{{ h.time }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Bibliothèque -->
+    <sc-if value="{{ isBiblio }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:44px 48px;">
+        <div style="max-width:760px;margin:0 auto;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Bibliothèque</div>
+          <div style="margin-top:4px;font-size:13px;color:var(--t3);">Prompts enregistrés par le cabinet</div>
+          <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px;">
+            <sc-for list="{{ promptRows }}" as="p" hint-placeholder-count="3">
+              <div style="border:1px solid var(--s9);border-radius:12px;padding:16px 18px;background:var(--surface);display:flex;align-items:center;gap:16px;">
+                <div style="min-width:0;flex:1;">
+                  <div style="font-size:13.5px;font-weight:600;">{{ p.title }}</div>
+                  <div style="font-size:12.5px;color:var(--t3);margin-top:4px;line-height:1.5;">{{ p.text }}</div>
+                </div>
+                <button sc-camel-on-click="{{ p.use }}" style="border:1px solid var(--b3);background:var(--surface);border-radius:8px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;flex:0 0 auto;" style-hover="border-color:var(--ink);">Utiliser</button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Guides -->
+    <sc-if value="{{ isGuides }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;">
+        <div style="width:300px;flex:0 0 300px;border-right:1px solid var(--b1);overflow-y:auto;padding:36px 20px;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:20px;font-weight:600;padding:0 8px;">Guides</div>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:2px;">
+            <sc-for list="{{ guideList }}" as="g" hint-placeholder-count="3">
+              <div sc-camel-on-click="{{ g.open }}" style="padding:9px 10px;border-radius:8px;cursor:pointer;background:{{ g.bg }};" style-hover="background:var(--s4);">
+                <div style="font-size:13px;font-weight:500;">{{ g.title }}</div>
+                <div style="font-size:11.5px;color:var(--t4);margin-top:2px;">{{ g.tag }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:44px 52px;">
+          <div style="max-width:600px;">
+            <div style="font-size:11.5px;font-weight:600;color:var(--t4);">{{ gg.tag }}</div>
+            <div style="margin-top:8px;font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">{{ gg.title }}</div>
+            <div style="margin-top:18px;">
+              <sc-for list="{{ gg.body }}" as="para" hint-placeholder-count="3">
+                <div style="font-size:14px;line-height:1.8;color:var(--ink2);margin-bottom:14px;text-wrap:pretty;">{{ para }}</div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- Source panel (partagé chat + analyses) -->
+  <sc-if value="{{ hasPanel }}" hint-placeholder-val="{{ false }}">
+    <div style="width:42%;max-width:560px;min-width:380px;flex:0 0 auto;background:var(--s1);border-left:1px solid var(--s9);display:flex;flex-direction:column;">
+      <div style="padding:12px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--s9);">
+        <div style="font-size:12.5px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:8px;">
+          <svg width="13" height="13" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t2)" stroke-width="1.4"><path d="M3 1.5h7L13 4.5v10H3z"></path><path d="M10 1.5v3h3"></path></svg>
+          {{ panelKind }}
+        </div>
+        <button sc-camel-on-click="{{ closePanel }}" style="border:none;background:none;color:var(--t4);cursor:pointer;padding:2px;line-height:0;" style-hover="color:var(--ink);"><svg width="13" height="13" sc-camel-view-box="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2l8 8M10 2l-8 8"></path></svg></button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:26px 30px 44px;">
+        <sc-if value="{{ panelIsDecision }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface);border:1px solid var(--s9);border-radius:10px;padding:30px 34px;box-shadow:0 1px 3px var(--sh3);">
+            <div style="font-family:'Source Serif 4',Georgia,serif;font-size:19px;font-weight:600;">{{ pd.title }}</div>
+            <div style="margin-top:5px;font-size:12.5px;color:var(--t3);">{{ pd.meta }}</div>
+            <div style="margin-top:8px;font-size:12.5px;color:var(--t1);">{{ pd.relevance }}</div>
+            <sc-if value="{{ pd.hasSum }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:18px;background:var(--s2);border-radius:8px;padding:13px 16px;">
+                <div style="display:flex;gap:12px;font-size:12.5px;line-height:1.55;margin-bottom:6px;"><span style="width:52px;flex:0 0 auto;font-weight:600;color:var(--t4);">Argué</span><span style="color:var(--ink2);">{{ pd.sum.arg }}</span></div>
+                <div style="display:flex;gap:12px;font-size:12.5px;line-height:1.55;margin-bottom:6px;"><span style="width:52px;flex:0 0 auto;font-weight:600;color:var(--t4);">Jugé</span><span style="color:var(--ink2);">{{ pd.sum.held }}</span></div>
+                <div style="display:flex;gap:12px;font-size:12.5px;line-height:1.55;"><span style="width:52px;flex:0 0 auto;font-weight:600;color:var(--t4);">Articles</span><span style="color:var(--ink2);">{{ pd.sum.arts }}</span></div>
+              </div>
+            </sc-if>
+            <div style="margin-top:22px;border-top:1px solid var(--s7);padding-top:20px;">
+              <sc-for list="{{ pd.extract }}" as="para" hint-placeholder-count="2">
+                <div style="font-family:'Source Serif 4',Georgia,serif;font-size:14px;line-height:1.8;color:var(--ink2);margin-bottom:14px;text-wrap:pretty;background:{{ para.bg }};padding:{{ para.pad }};border-radius:4px;">{{ para.text }}</div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="margin-top:20px;font-size:12px;font-weight:600;color:var(--t4);">Articles visés</div>
+          <div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:8px;">
+            <sc-for list="{{ pd.articles }}" as="ar" hint-placeholder-count="1">
+              <button sc-camel-on-click="{{ ar.open }}" style="display:flex;align-items:center;gap:7px;border:1px solid var(--b3);background:var(--surface);border-radius:8px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer;" style-hover="border-color:var(--ink);"><svg width="12" height="12" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--blue)" stroke-width="1.4"><path d="M8 2.5C6.5 1.6 4.5 1.4 2.5 1.4v11.2c2 0 4 0.2 5.5 1.1 1.5-0.9 3.5-1.1 5.5-1.1V1.4c-2 0-4 0.2-5.5 1.1zM8 2.5v11.2"></path></svg>{{ ar.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ pd.hasAnalyses }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:20px;font-size:12px;font-weight:600;color:var(--t4);">Analyses</div>
+            <div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:8px;">
+              <sc-for list="{{ pd.analyses }}" as="an" hint-placeholder-count="1">
+                <button sc-camel-on-click="{{ an.go }}" style="border:1px solid var(--b3);background:var(--surface);border-radius:8px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer;" style-hover="border-color:var(--ink);">{{ an.label }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ pd.hasSimilar }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:20px;font-size:12px;font-weight:600;color:var(--t4);">Décisions similaires</div>
+            <div style="margin-top:4px;display:flex;flex-direction:column;">
+              <sc-for list="{{ pd.similar }}" as="sd" hint-placeholder-count="2">
+                <div sc-camel-on-click="{{ sd.open }}" style="display:flex;align-items:baseline;gap:10px;padding:9px 2px;border-bottom:1px solid var(--s9);font-size:13px;cursor:pointer;" style-hover="background:var(--s6);">
+                  <span style="font-weight:500;flex:0 0 auto;">{{ sd.label }}</span>
+                  <span style="flex:1;font-size:12px;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ sd.sub }}</span>
+                  <span style="font-size:12px;color:var(--t4);">ouvrir</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ panelIsArticle }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface);border:1px solid var(--s9);border-radius:10px;padding:30px 34px;box-shadow:0 1px 3px var(--sh3);">
+            <div style="font-family:'Source Serif 4',Georgia,serif;font-size:20px;font-weight:600;">{{ pa.ref }}</div>
+            <div style="margin-top:4px;font-size:12.5px;color:var(--t3);line-height:1.5;">{{ pa.act }}</div>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;">
+              <div style="border:1px solid var(--b5);background:var(--s3);border-radius:6px;padding:3px 9px;font-weight:600;color:var(--ink);">{{ pa.current }}</div>
+              <sc-for list="{{ pa.versions }}" as="v" hint-placeholder-count="2">
+                <div style="border:1px solid var(--b2);border-radius:6px;padding:3px 9px;color:var(--t4);cursor:pointer;" style-hover="color:var(--ink);">{{ v }}</div>
+              </sc-for>
+            </div>
+            <div style="margin-top:24px;border-top:1px solid var(--s7);padding-top:20px;">
+              <sc-for list="{{ pa.text }}" as="para" hint-placeholder-count="2">
+                <div style="font-family:'Source Serif 4',Georgia,serif;font-size:14px;line-height:1.8;color:var(--ink2);margin-bottom:14px;text-wrap:pretty;background:{{ para.bg }};padding:{{ para.pad }};border-radius:4px;">{{ para.text }}</div>
+              </sc-for>
+            </div>
+            <div style="font-size:11.5px;color:var(--t5);">Le passage surligné fonde la réponse.</div>
+          </div>
+          <div style="margin-top:20px;font-size:12px;font-weight:600;color:var(--t4);">Analyses</div>
+          <div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:8px;">
+            <sc-for list="{{ pa.analyses }}" as="an" hint-placeholder-count="3">
+              <button sc-camel-on-click="{{ an.go }}" style="border:1px solid var(--b3);background:var(--surface);border-radius:8px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer;" style-hover="border-color:var(--ink);">{{ an.label }}</button>
+            </sc-for>
+            <button sc-camel-on-click="{{ pa.watch }}" style="display:flex;align-items:center;gap:7px;border:1px solid {{ pa.watchBorder }};background:var(--surface);border-radius:8px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer;" style-hover="border-color:var(--ink);"><svg width="12" height="12" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t2)" stroke-width="1.5"><path d="M8 2a4 4 0 00-4 4v3l-1.5 2.5h11L12 9V6a4 4 0 00-4-4zM6.5 13.5a1.5 1.5 0 003 0"></path></svg>{{ pa.watchLabel }}</button>
+          </div>
+          <div style="margin-top:22px;font-size:12px;font-weight:600;color:var(--t4);">Cité dans {{ pa.citedCount }} décisions CCJA</div>
+          <div style="margin-top:6px;display:flex;flex-direction:column;">
+            <sc-for list="{{ pa.topDecisions }}" as="td" hint-placeholder-count="3">
+              <div sc-camel-on-click="{{ td.open }}" style="display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--s9);font-size:13px;cursor:pointer;" style-hover="background:var(--s6);">
+                <svg width="13" height="13" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--red)" stroke-width="1.3"><path d="M8 2v11M5 13h6M8 3.5L3.5 5M8 3.5L12.5 5M3.5 5l-1.8 4a2.3 2.3 0 003.6 0zM12.5 5l-1.8 4a2.3 2.3 0 003.6 0z"></path></svg>
+                <span style="font-weight:500;flex:1;">{{ td.label }}</span>
+                <svg width="11" height="11" sc-camel-view-box="0 0 12 12" fill="none" stroke="var(--t4)" stroke-width="1.4"><path d="M3 9L9 3M4.5 3H9v4.5"></path></svg>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:20px;font-size:12px;font-weight:600;color:var(--t4);">Fréquemment cité avec</div>
+          <div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:8px;">
+            <sc-for list="{{ pa.citedWith }}" as="cw" hint-placeholder-count="3">
+              <div style="border:1px solid var(--b2);background:var(--surface);border-radius:7px;padding:5px 11px;font-size:12px;color:var(--t1);">{{ cw }}</div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ panelIsPiece }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface);border:1px solid var(--s9);border-radius:10px;padding:30px 34px;box-shadow:0 1px 3px var(--sh3);">
+            <div style="font-family:'Source Serif 4',Georgia,serif;font-size:19px;font-weight:600;">{{ pp.title }}</div>
+            <div style="margin-top:5px;font-size:12.5px;color:var(--t3);">{{ pp.meta }}</div>
+            <div style="margin-top:22px;border-top:1px solid var(--s7);padding-top:20px;">
+              <sc-for list="{{ pp.extract }}" as="para" hint-placeholder-count="2">
+                <div style="font-family:'Source Serif 4',Georgia,serif;font-size:14px;line-height:1.8;color:var(--ink2);margin-bottom:14px;text-wrap:pretty;background:{{ para.bg }};padding:{{ para.pad }};border-radius:4px;">{{ para.text }}</div>
+              </sc-for>
+            </div>
+            <div style="font-size:11.5px;color:var(--t5);">Le passage surligné fournit le fait retenu.</div>
+          </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t4);">
+            <svg width="12" height="12" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 015 0v2"></path></svg>
+            Pièce du dossier — visible uniquement par l’équipe assignée
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Search overlay -->
+  <sc-if value="{{ searchOpen }}" hint-placeholder-val="{{ false }}">
+    <div sc-camel-on-click="{{ closeSearch }}" style="position:fixed;inset:0;background:var(--sh4);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding-top:14vh;">
+      <div sc-camel-on-click="{{ stop }}" style="width:560px;background:var(--surface);border-radius:14px;box-shadow:0 20px 60px var(--sh4);overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--b1);">
+          <svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.4"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+          <textarea rows="1" placeholder="Rechercher dossiers, analyses, articles…" value="{{ searchQ }}" sc-camel-on-change="{{ onSearchInput }}" style="flex:1;border:none;outline:none;resize:none;background:transparent;font-size:14px;line-height:1.4;height:20px;"></textarea>
+        </div>
+        <div style="max-height:340px;overflow-y:auto;padding:6px;">
+          <sc-for list="{{ searchResults }}" as="r" hint-placeholder-count="4">
+            <div sc-camel-on-click="{{ r.go }}" style="display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;cursor:pointer;" style-hover="background:var(--s4);">
+              <span style="font-size:11px;font-weight:600;color:var(--t4);width:76px;flex:0 0 auto;">{{ r.kind }}</span>
+              <span style="font-size:13.5px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.label }}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ searchEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:18px 12px;font-size:13px;color:var(--t4);text-align:center;">Aucun résultat</div>
+          </sc-if>
+        </div>
+        <div sc-camel-on-click="{{ openRecherche }}" style="border-top:1px solid var(--b1);padding:11px 18px;font-size:12.5px;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;" style-hover="color:var(--ink);">Recherche avancée — matière, chambre, période <span>→</span></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Toast -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--on-accent);padding:9px 18px;border-radius:9px;font-size:13px;z-index:70;animation:rise 0.2s ease;">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<!-- APP SCRIPT EXTRACTED -->
+
+
