@@ -188,6 +188,14 @@ Environment variables:
 | `NEXT_PUBLIC_FRONTEND_BASE_URL` | `https://app.claidor.com` |
 | `S3_UPLOAD_ORIGINS` | `https://claidor-files.s3.eu-west-3.amazonaws.com` |
 
+**`CLAIDOR_CREATOR_ONBOARDING` — leave it unset.** The "choose your plan"
+funnel is inherited from the upstream payments platform. Claidor sells no
+plans, so the gate stands in front of a step that cannot be meaningfully
+completed, and it holds a signed-in user out of their own dashboard. With
+the variable unset, a first sign-in provisions a workspace named after the
+email local part and lands straight in the dashboard; rename it in settings.
+Set it to `true` to bring the funnel back when there is billing to gate on.
+
 ### 7. Load the corpus — the one-off that makes it Claidor
 
 A fresh database has the schema but no law in it. The corpus lives in the

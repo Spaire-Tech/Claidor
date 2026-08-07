@@ -4,6 +4,7 @@ import { OrganizationContextProvider } from '@/providers/maintainerOrganization'
 // this import and the <TrialBanner /> render below.
 // import TrialBanner from '@/components/Settings/ClaidorTier/TrialBanner'
 import { getServerSideAPI } from '@/utils/client/serverside'
+import { creatorOnboardingEnabled } from '@/utils/creatorOnboarding'
 import { getOrganizationBySlugOrNotFound } from '@/utils/organization'
 import { getUserOrganizations } from '@/utils/user'
 import { Metadata } from 'next'
@@ -84,7 +85,9 @@ export default async function Layout(props: {
     }
   ).ai_onboarding_completed_at
 
-  let planPicked = Boolean(onboardingCompletedAt)
+  // With the funnel off the gate is not merely skipped — there is no plan
+  // to pick, so there is nothing left for it to check.
+  let planPicked = !creatorOnboardingEnabled() || Boolean(onboardingCompletedAt)
   if (!planPicked && !isOnboardingRoute && !isFinanceAccountRoute) {
     // Second source of truth for "creator finished plan selection":
     // they have an active platform subscription that is NOT the

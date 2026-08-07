@@ -1,5 +1,6 @@
 import revalidate from '@/app/actions'
 import { getServerSideAPI } from '@/utils/client/serverside'
+import { creatorOnboardingEnabled } from '@/utils/creatorOnboarding'
 import { getAuthenticatedUser } from '@/utils/user'
 import { schemas } from '@claidor/client'
 import { Metadata } from 'next'
@@ -46,7 +47,11 @@ export default async function Page(props: {
       await revalidate(`storefront:${organization.slug}`)
       const currentUser = await getAuthenticatedUser()
       await revalidate(`users:${currentUser?.id}:organizations`, { expire: 0 })
-      return redirect(`/dashboard/${organization.slug}/onboarding/plan`)
+      return redirect(
+        creatorOnboardingEnabled()
+          ? `/dashboard/${organization.slug}/onboarding/plan`
+          : `/dashboard/${organization.slug}`,
+      )
     }
   }
 
