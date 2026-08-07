@@ -30,7 +30,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     revealed: 0, streamingIdx: -1, dossier: null, an: null, guide: 0, menu: null,
     searchOpen: false, searchQ: '', selSources: { au: true, cj: true }, dossierSel: null, dossierSelId: null, clientSel: null,
     deep: false, concise: false, notes: true, toast: '', hist: [],
-    live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [],
+    live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [], liveAnalysis: {},
     liveDossiers: null, liveDossierDetail: {}, liveDossierQuestions: {},
     modal: null, modalBusy: false, modalError: '',
     formName: '', formRef: '', formClient: '', formEmail: '', inviteRole: 'member',
@@ -835,8 +835,30 @@ class ClaidorDesignApp extends React.Component<any, any> {
       clientSel: d ? d.client : this.state.clientSel,
       messages: [ { role: 'user', text: q }, am ] });
   }
-  openAnalysis(type, id) {
-    this.nav('analysis', { an: { type, id }, panel: null });
+  openAnalysis(type, id, kind) {
+    const subject = kind || 'article'
+    this.nav('analysis', { an: { type, id, kind: subject }, panel: null });
+    if (this.state.live) this.fetchAnalysis(type, id, subject)
+  }
+  analysisKey(type, id, kind) { return type + ':' + (kind || 'article') + ':' + id }
+  fetchAnalysis(type, id, kind) {
+    const key = this.analysisKey(type, id, kind)
+    if (this.state.liveAnalysis[key]) return
+    const param = (kind === 'decision' ? 'decision_id=' : 'article_id=') + id
+    const path = {
+      auth: '/v1/analyses/authority?' + param,
+      hist: '/v1/analyses/history?article_id=' + id,
+      comp: '/v1/analyses/compare?article_id=' + id,
+      cite: '/v1/analyses/citations?article_id=' + id,
+    }[type]
+    if (!path) return
+    this.apiSend('GET', path).then(({ ok, data }) => {
+      // A refused comparison (no concordance recorded) is an answer, not a
+      // failure: it is stored as such so the screen can say so.
+      this.setState((st) => ({
+        liveAnalysis: { ...st.liveAnalysis, [key]: ok && data ? data : { __unavailable: true } },
+      }))
+    })
   }
   nav(view, patch) {
     clearInterval(this._t);
@@ -1021,46 +1043,80 @@ class ClaidorDesignApp extends React.Component<any, any> {
       }
     }
     let an = null, anIsAuth = false, anIsHist = false, anIsComp = false, anIsCite = false;
-    if (st.an && st.live && st.liveArticles[st.an.id] && !D.articles[st.an.id] && !D.authLines[st.an.id]) {
-      const la = st.liveArticles[st.an.id]
-      const raw = la.__raw
+    const liveAn = st.an && st.live ? st.liveAnalysis[this.analysisKey(st.an.type, st.an.id, st.an.kind)] : null
+    if (st.an && st.live && (liveAn || (!D.articles[st.an.id] && !D.authLines[st.an.id]))) {
       const t = st.an.type
+      const NAME = { auth: D.AN.auth.name, hist: D.AN.hist.name, comp: D.AN.comp.name, cite: D.AN.cite.name }
+      // The chain runs on the article the analysis settled on — from a
+      // decision, that is the provision its authority was anchored to.
+      const chainId = (liveAn && liveAn.subject && liveAn.subject.kind === 'article' && liveAn.subject.id)
+        || (liveAn && liveAn.anchor_article_id)
+        || (st.an.kind !== 'decision' ? st.an.id : null)
       const nextLive = (skip) => {
-        const out = []
-        if (skip !== 'hist' && (raw.equivalences || []).length) out.push({ label: D.AN.hist.name, go: () => this.openAnalysis('hist', st.an.id) })
-        if (skip !== 'cite') out.push({ label: D.AN.cite.name, go: () => this.openAnalysis('cite', st.an.id) })
-        if (skip !== 'auth') out.push({ label: D.AN.auth.name, go: () => this.openAnalysis('auth', st.an.id) })
-        return out
+        if (!chainId) return []
+        return ['hist', 'comp', 'cite', 'auth']
+          .filter((x) => x !== skip)
+          .map((x) => ({ label: NAME[x], go: () => this.openAnalysis(x, chainId, 'article') }))
       }
-      const decs = raw.decisions || []
-      if (t === 'hist') {
-        anIsHist = true
-        an = { kind: D.AN.hist.name, title: la.label, hasStatus: false,
-          vers: [
-            { v: raw.version_label, note: 'Version chargée dans le corpus', tag: 'chargée', hasTag: true },
-            ...(raw.equivalences || []).map((e) => ({ v: e.version_label, note: 'Art. ' + e.number + (e.note ? ' — ' + e.note : '') + ' (' + e.relation + ')', hasTag: false })),
-          ],
-          changes: [], next: nextLive('hist') }
+      const dateOf = (iso) => String(iso || '').split('-').reverse().join('.')
+      const chSign = (sign) => sign === '+' ? 'var(--green2)' : (sign === '−' ? 'var(--red2)' : 'var(--amber2)')
+      const empty = { rows: [], vers: [], changes: [], citedWith: [], leftTitle: '', rightTitle: '', left: [], right: [] }
+      anIsAuth = t === 'auth'; anIsHist = t === 'hist'; anIsComp = t === 'comp'; anIsCite = t === 'cite'
+      if (!liveAn) {
+        // Fetched when the analysis opens; until it lands the screen keeps
+        // its shape and says what it is doing, rather than showing a
+        // scripted answer that would then be replaced by a different one.
+        an = { ...empty, kind: NAME[t] || 'Analyse', title: 'Analyse en cours…', hasStatus: false, next: [] }
+      } else if (liveAn.__unavailable) {
+        an = { ...empty, kind: NAME[t] || 'Analyse', title: liveAn.subjectLabel || 'Analyse indisponible',
+          hasStatus: true, dot: 'var(--amber2)',
+          status: t === 'comp'
+            ? 'Aucune version correspondante n’est enregistrée pour cet article'
+            : 'Cette analyse n’est pas disponible pour cet élément',
+          next: nextLive(t) }
       } else if (t === 'auth') {
-        anIsAuth = true
-        const years = new Set(decs.map((x) => String(x.decided_on).slice(0, 4)))
-        const level = decs.length >= 4 && years.size >= 3 ? 'constante' : 'limitee'
-        an = { kind: D.AN.auth.name, title: la.label,
-          hasStatus: true,
-          status: decs.length === 0
-            ? 'Texte seul — aucune décision dans le corpus chargé'
-            : (level === 'constante'
-                ? 'Ligne jurisprudentielle constante · ' + decs.length + ' décisions vérifiées'
-                : 'Autorité limitée · ' + decs.length + (decs.length > 1 ? ' décisions vérifiées' : ' décision vérifiée')),
-          dot: level === 'constante' ? 'var(--green2)' : 'var(--amber2)',
-          rows: decs.map((x) => ({ y: String(x.decided_on).slice(0, 4), ref: 'CCJA ' + x.number, quote: x.summary ? '«\u202f' + x.summary.slice(0, 80) + '\u2026\u202f»' : '', open: () => this.openLivePanel('decision', x.id) })),
+        const dot = { constante: 'var(--green2)', limitee: 'var(--amber2)', isolee: 'var(--amber2)', aucune: 'var(--red2)' }
+        an = { ...empty, kind: NAME.auth,
+          title: liveAn.subject.label + ((liveAn.also_cited || []).length ? ' — aussi ' + liveAn.also_cited.join(', ') : ''),
+          hasStatus: true, status: liveAn.label, dot: dot[liveAn.level] || 'var(--amber2)',
+          rows: liveAn.rows.map((r) => ({ y: String(r.decided_on).slice(0, 4), ref: r.reference,
+            quote: r.quote ? '« ' + r.quote + ' »' : '',
+            open: () => this.openLivePanel('decision', r.decision_id) })),
           next: nextLive('auth') }
+      } else if (t === 'hist') {
+        an = { ...empty, kind: NAME.hist, title: liveAn.subject.label,
+          hasStatus: !!liveAn.governing_label, dot: 'var(--blue)',
+          status: liveAn.governing_label ? 'Version applicable à la date indiquée : ' + liveAn.governing_label : '',
+          vers: liveAn.versions.map((v) => {
+            const parts = []
+            parts.push(v.article_number ? 'art. ' + v.article_number + (v.note ? ' — ' + v.note : '') : 'aucune concordance enregistrée')
+            if (v.in_force_from && v.in_force_to) parts.push('applicable du ' + dateOf(v.in_force_from) + ' au ' + dateOf(v.in_force_to))
+            else if (v.in_force_from) parts.push('en vigueur depuis le ' + dateOf(v.in_force_from))
+            return { v: v.label, note: parts.join(' · '), hasTag: !!v.governs, tag: 'applicable' }
+          }),
+          changes: liveAn.changes_unavailable
+            ? [{ sign: '·', color: 'var(--t4)', text: 'Comparaison indisponible — aucune concordance enregistrée pour cet article.' }]
+            : liveAn.changes.map((c) => ({ sign: c.sign, color: chSign(c.sign), text: c.text })),
+          next: nextLive('hist') }
+      } else if (t === 'comp') {
+        const hl = new Set(liveAn.right.highlighted || [])
+        an = { ...empty, kind: NAME.comp, title: liveAn.subject.label,
+          hasStatus: !!liveAn.identical, dot: 'var(--blue)',
+          status: liveAn.identical ? 'Texte identique dans les deux versions' : '',
+          leftTitle: liveAn.left.title, rightTitle: liveAn.right.title,
+          left: liveAn.left.alineas,
+          right: liveAn.right.alineas.map((text, i) => ({ text,
+            bg: hl.has(i + 1) ? 'var(--greenbg)' : 'transparent',
+            pad: hl.has(i + 1) ? '8px 10px' : '0' })),
+          changes: liveAn.changes.map((c) => ({ sign: c.sign, color: chSign(c.sign), text: c.text })),
+          next: nextLive('comp') }
       } else {
-        anIsCite = true
-        an = { kind: D.AN.cite.name,
-          title: la.label + ' — cité dans ' + decs.length + (decs.length > 1 ? ' décisions vérifiées' : ' décision vérifiée'),
-          hasStatus: false, citedWith: [],
-          rows: decs.map((x) => ({ ref: 'CCJA ' + x.number + ' — ' + x.decided_on, open: () => this.openLivePanel('decision', x.id) })),
+        const n = liveAn.decision_count
+        an = { ...empty, kind: NAME.cite,
+          title: liveAn.subject.label + ' — cité dans ' + n + (n > 1 ? ' décisions vérifiées' : ' décision vérifiée'),
+          hasStatus: false, citedWith: liveAn.cited_with.map((c) => c.label + ' · ' + c.count),
+          rows: liveAn.rows.map((r) => ({ ref: r.reference + ' — ' + dateOf(r.decided_on),
+            open: () => this.openLivePanel('decision', r.decision_id) })),
           next: nextLive('cite') }
       }
     } else if (st.an) {
@@ -1345,7 +1401,12 @@ class ClaidorDesignApp extends React.Component<any, any> {
           return { ...d,
             extract: d.extract.map((t) => ({ text: t, bg: 'transparent', pad: '0' })),
             articles: d.articles.map((a) => ({ label: a.label, open: () => this.openLivePanel('article', a.article_id) })),
-            hasAnalyses: false, analyses: [], hasSum: false, sum: null, hasSimilar: false, similar: [] };
+            // « Vérifier l'autorité » runs on what you are reading: the
+            // decision itself, which the service anchors to the provision
+            // it applied.
+            hasAnalyses: true,
+            analyses: [{ label: D.AN.auth.name, go: () => this.openAnalysis('auth', st.panel.id, 'decision') }],
+            hasSum: false, sum: null, hasSimilar: false, similar: [] };
         }
         const line = this.authLineFor(st.panel.id);
         return { ...d, extract: d.extract.map((t, i) => ({ text: t, bg: i === d.hl ? 'var(--hl)' : 'transparent', pad: i === d.hl ? '8px 10px' : '0' })),
@@ -1361,10 +1422,13 @@ class ClaidorDesignApp extends React.Component<any, any> {
         const a = D.articles[id] || st.liveArticles[id];
         if (!a) return null;
         if (st.liveArticles[id] && !D.articles[id]) {
-          const btns = []
-          if ((a.__raw.equivalences || []).length) btns.push({ label: D.AN.hist.name, go: () => this.openAnalysis('hist', id) })
-          btns.push({ label: D.AN.cite.name, go: () => this.openAnalysis('cite', id) })
-          btns.push({ label: D.AN.auth.name, go: () => this.openAnalysis('auth', id) })
+          const btns = [{ label: D.AN.hist.name, go: () => this.openAnalysis('hist', id, 'article') }]
+          // Comparison is offered only where a concordance is recorded —
+          // the endpoint refuses otherwise, and a button that always fails
+          // is worse than no button.
+          if ((a.__raw.equivalences || []).length) btns.push({ label: D.AN.comp.name, go: () => this.openAnalysis('comp', id, 'article') })
+          btns.push({ label: D.AN.cite.name, go: () => this.openAnalysis('cite', id, 'article') })
+          btns.push({ label: D.AN.auth.name, go: () => this.openAnalysis('auth', id, 'article') })
           return { ...a,
             text: a.text.map((t) => ({ text: t, bg: 'transparent', pad: '0' })),
             topDecisions: a.top.map((did) => ({ label: a.__liveDecisions[did] || 'Décision', open: () => this.openLivePanel('decision', did) })),

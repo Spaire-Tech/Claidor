@@ -9,6 +9,7 @@ from polar.checkout.endpoints import router as checkout_router
 from polar.checkout_link.endpoints import router as checkout_link_router
 from polar.cli.endpoints import router as cli_router
 from polar.client_invoice.endpoints import router as client_invoice_router
+from polar.analysis.endpoints import router as analysis_router
 from polar.corpus.endpoints import router as corpus_router
 from polar.custom_field.endpoints import router as custom_field_router
 from polar.customer.endpoints import router as customer_router
@@ -149,6 +150,8 @@ router.include_router(google_router)
 router.include_router(librarian_router)
 # /corpus
 router.include_router(corpus_router)
+# /analyses
+router.include_router(analysis_router)
 # /dossiers
 router.include_router(dossier_router)
 # /license-keys

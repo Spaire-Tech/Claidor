@@ -154,6 +154,72 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         )
         return (await self.session.execute(statement)).scalars().all()
 
+    async def count_verified_decisions_for_article(self, article_id: UUID) -> int:
+        """How many decisions cite this article, verified links only.
+
+        The denominator behind « N décisions vérifiées ». Distinct
+        decisions, not links: a decision citing one article twice is one
+        decision, and an authority figure that double-counts is a lie.
+        """
+        statement = select(
+            func.count(func.distinct(DecisionArticleLink.decision_id))
+        ).where(
+            DecisionArticleLink.article_id == article_id,
+            DecisionArticleLink.status == DecisionLinkStatus.verified,
+        )
+        return (await self.session.execute(statement)).scalar_one()
+
+    async def list_co_cited_articles(
+        self, article_id: UUID, *, limit: int = 6
+    ) -> Sequence[tuple[LegalArticle, int]]:
+        """Articles that travel with this one, and how often.
+
+        Two verified links on one decision mean the court read the two
+        provisions together — that co-occurrence is the entire content of
+        « le plus souvent cité avec ». Nothing is inferred about why.
+        """
+        anchor = (
+            select(DecisionArticleLink.decision_id)
+            .where(
+                DecisionArticleLink.article_id == article_id,
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+            )
+            .subquery()
+        )
+        counts = (
+            select(
+                DecisionArticleLink.article_id.label("article_id"),
+                func.count(func.distinct(DecisionArticleLink.decision_id)).label("n"),
+            )
+            .where(
+                DecisionArticleLink.decision_id.in_(select(anchor.c.decision_id)),
+                DecisionArticleLink.article_id != article_id,
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+            )
+            .group_by(DecisionArticleLink.article_id)
+            .subquery()
+        )
+        statement = (
+            select(LegalArticle, counts.c.n)
+            .join(counts, counts.c.article_id == LegalArticle.id)
+            .options(
+                joinedload(LegalArticle.act_version).joinedload(LegalActVersion.act)
+            )
+            .order_by(counts.c.n.desc(), LegalArticle.sort_key)
+            .limit(limit)
+        )
+        return list((await self.session.execute(statement)).tuples().all())
+
+    async def list_versions_for_act(self, act_id: UUID) -> Sequence[LegalActVersion]:
+        """Every version of one act, oldest first, with the act loaded."""
+        statement = (
+            select(LegalActVersion)
+            .where(LegalActVersion.act_id == act_id)
+            .options(joinedload(LegalActVersion.act))
+            .order_by(LegalActVersion.label)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
     async def list_acts_with_versions(self) -> Sequence[LegalAct]:
         """All acts with their versions eagerly loaded."""
         statement = (
@@ -316,9 +382,11 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
                 DecisionArticleLink.status == DecisionLinkStatus.verified,
             )
             .options(
-                contains_eager(DecisionArticleLink.article).joinedload(
-                    LegalArticle.act_version
-                )
+                contains_eager(DecisionArticleLink.article)
+                .joinedload(LegalArticle.act_version)
+                # The act too: a citation is displayed as « art. 170
+                # (AUPSRVE 1998) », and the short code lives on the act.
+                .joinedload(LegalActVersion.act)
             )
             .order_by(LegalArticle.sort_key)
         )
