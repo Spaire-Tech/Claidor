@@ -34,6 +34,18 @@ The part that makes Claidor real rather than a demo:
   claidor-postgres → Connect → External Connection). Until then the
   assistant truthfully answers that the library is empty.
 
+## Update — 8 August, morning
+
+Phase B's open step closed: the corpus is LOADED in production (5,094
+articles, 1,268 decisions, 4,167 verified links, 14 equivalences), and the
+app flipped live. Four review cycles on real answers produced structural
+guarantees: deadlines computed in code (CCJA method, injected as fait
+foi), authority anchored to the first-cited article with a named
+denominator, corpus PDF word-breaks repaired, answer form contract
+(answer-first, one synthesis table), smooth word-level streaming, source
+dedupe + longer quotes, system labels hidden with a code-owned badge.
+The mentor's verdict on answer four: fit to put in front of a lawyer.
+
 ## Phase C — the design IS the product (CURRENT)
 
 Decision of record (founder, 7 Aug): **exact design first, features
