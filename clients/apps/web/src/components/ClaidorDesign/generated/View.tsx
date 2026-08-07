@@ -1586,26 +1586,26 @@ export const DesignView = ({ v }: { v: any }) => {
                   <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
                     Affaire
                   </div>
-                  <input value={v.formName} onChange={v.onFormName} placeholder="Ex. : Recouvrement — BICIS c/ SODICA" style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                  <input value={v.formName} onChange={v.onFormName} style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
                 </div>
                 <div style={{'display': 'flex', 'gap': '10px'}}>
                   <div style={{'flex': '1'}}>
                     <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
-                      Référence 
+                      Référence 
                       <span style={{'fontWeight': '400', 'color': 'var(--t5)'}}>
                         (optionnel)
                       </span>
                     </div>
-                    <input value={v.formRef} onChange={v.onFormRef} placeholder="Ex. : 2026-014" style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                    <input value={v.formRef} onChange={v.onFormRef} style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
                   </div>
                   <div style={{'flex': '1'}}>
                     <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
-                      Client 
+                      Client 
                       <span style={{'fontWeight': '400', 'color': 'var(--t5)'}}>
                         (optionnel)
                       </span>
                     </div>
-                    <input value={v.formClient} onChange={v.onFormClient} placeholder="Ex. : BICIS" style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                    <input value={v.formClient} onChange={v.onFormClient} style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
                   </div>
                 </div>
                 {(v.modalError) ? (

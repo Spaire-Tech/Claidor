@@ -336,9 +336,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
       .then((acts) => {
         if (Array.isArray(acts) ? acts.length : acts?.items?.length) {
           this.setState({ live: true })
-          this.apiGet('/v1/dossiers').then((ds) => {
-            if (Array.isArray(ds)) this.setState({ liveDossiers: ds })
-          })
+          this.refreshDossiers()
         }
       })
       .catch(() => {})
@@ -522,8 +520,13 @@ class ClaidorDesignApp extends React.Component<any, any> {
       body: body === undefined ? undefined : JSON.stringify(body),
     }).then(async (r) => ({ ok: r.ok, status: r.status, data: await r.json().catch(() => null) }))
   }
+  orgId() {
+    return this.props.organization && this.props.organization.id
+  }
   refreshDossiers() {
-    this.apiGet('/v1/dossiers').then((ds) => {
+    const org = this.orgId()
+    if (!org) return
+    this.apiGet('/v1/dossiers?organization_id=' + org).then((ds) => {
       if (Array.isArray(ds)) this.setState({ liveDossiers: ds })
     })
   }
@@ -542,7 +545,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     if (name.length < 2) { this.setState({ modalError: 'Donnez un nom à l\u2019affaire.' }); return }
     if (st.modalBusy) return
     this.setState({ modalBusy: true, modalError: '' })
-    this.apiSend('POST', '/v1/dossiers', {
+    this.apiSend('POST', '/v1/dossiers?organization_id=' + this.orgId(), {
       name,
       reference: st.formRef.trim() || null,
       client_name: st.formClient.trim() || null,
