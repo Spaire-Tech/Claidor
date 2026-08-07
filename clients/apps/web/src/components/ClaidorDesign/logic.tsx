@@ -6,6 +6,8 @@
 'use client'
 
 import React from 'react'
+import { mdLite } from './mdlite'
+import { StreamingAnswer, TextStream } from './StreamingAnswer'
 
 /** A short displayable excerpt: strips the quote's own guillemets before
  * wrapping, so cards never show doubled or empty « ». */
@@ -338,7 +340,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
       .catch(() => {})
   }
   componentDidUpdate(prevProps, prevState) {
-    if (this._sc && this.state.streamingIdx >= 0) this._sc.scrollTop = this._sc.scrollHeight;
+    if (this._sc && this.state.streamingIdx >= 0 && !this._userScrolledUp) this._sc.scrollTop = this._sc.scrollHeight;
     const st = this.state
     if (
       st.live &&
@@ -485,9 +487,19 @@ class ClaidorDesignApp extends React.Component<any, any> {
       .then((qr) => {
         this.setState((st) => {
           const m = st.messages.slice()
-          if (m[idx]) m[idx] = qr ? this.liveQuestionToMessage(qr) : { ...m[idx], done: true, answer: 'La réponse a échoué. Réessayez.' }
+          if (m[idx]) {
+            if (qr) {
+              const full = this.liveQuestionToMessage(qr)
+              const stream = new TextStream()
+              stream.push(full.answer || '')
+              stream.finish()
+              m[idx] = { ...full, done: false, stream }
+            } else {
+              m[idx] = { ...m[idx], done: true, answer: 'La réponse a échoué. Réessayez.' }
+            }
+          }
           const lq = qr ? { ...st.liveDossierQuestions, [dossierId]: [qr, ...(st.liveDossierQuestions[dossierId] || [])] } : st.liveDossierQuestions
-          return { messages: m, streamingIdx: -1, revealed: (m[idx].answer || '').length, liveDossierQuestions: lq }
+          return { messages: m, streamingIdx: qr ? idx : -1, revealed: 0, liveDossierQuestions: lq }
         })
       })
       .catch(() => {
@@ -548,29 +560,13 @@ class ClaidorDesignApp extends React.Component<any, any> {
     }
     const hist = [{ q, user: 'vous', time: 'À l\u2019instant' }, ...this.state.hist];
     clearInterval(this._t);
+    // The reveal is owned by <StreamingAnswer>: it drains this buffer on
+    // requestAnimationFrame inside its own subtree, so the app at large
+    // re-renders on chunk boundaries at most — not per animation frame.
+    const stream = new TextStream()
+    am.stream = stream
+    this._userScrolledUp = false
     this.setState({ view: 'assistant', chat: true, input: '', messages: msgs, activeConv: conv, extraConvs: extra, revealed: 0, streamingIdx: idx, panel: null, menu: null, hist });
-    // The API delivers text in chunks; revealing each chunk at once reads
-    // as stutter. Buffer the chunks and reveal at the design's own steady
-    // cadence — the same feel as the scripted stream, fed by real deltas.
-    this._liveDone = false
-    const cps = Math.max(1, Math.round(this.props.streamSpeed ?? 4)) * 90
-    this._t = setInterval(() => {
-      this.setState((st) => {
-        const m = st.messages[idx]
-        if (!m) return {}
-        const target = m.answer.length
-        if (st.revealed >= target) {
-          if (this._liveDone) {
-            clearInterval(this._t)
-            const mm = st.messages.slice()
-            mm[idx] = { ...mm[idx], done: true }
-            return { messages: mm, streamingIdx: -1, revealed: target }
-          }
-          return {}
-        }
-        return { revealed: Math.min(target, st.revealed + Math.max(2, Math.round(cps / 33))) }
-      })
-    }, 30)
     const patch = (fn) =>
       this.setState((st) => {
         const m = st.messages.slice();
@@ -579,7 +575,12 @@ class ClaidorDesignApp extends React.Component<any, any> {
         return { messages: m };
       });
     askLibrarian(q, {
-      onText: (delta) => patch((m) => ({ ...m, answer: m.answer + delta })),
+      onText: (delta) => {
+        stream.push(delta)
+        // Keep the canonical answer on the message without re-rendering:
+        // direct mutation on purpose — renderVals reads it only at done.
+        am.answer = am.answer + delta
+      },
       onCitation: (c) =>
         patch((m) => ({
           ...m,
@@ -590,21 +591,36 @@ class ClaidorDesignApp extends React.Component<any, any> {
             { k: c.source_kind === 'decision' ? 'decision' : 'article', id: c.source_id || null, live: true, label: c.title, note: quoteNote(c.quote) },
           ],
         })),
-      onClarification: (cl) => patch((m) => ({ ...m, answer: cl.message })),
+      onClarification: (cl) => {
+        am.answer = cl.message
+        stream.text = ''
+        stream.push(cl.message)
+      },
       onAuthority: (a) =>
         patch((m) => ({
           ...m,
           authority: { level: a.count >= 2 ? 'constante' : 'limitee', label: '\u2014 ' + a.label },
         })),
-      onDone: () => { this._liveDone = true },
+      onDone: () => { stream.finish() },
       onError: () => {
-        this._liveDone = true
-        patch((m) => ({ ...m, answer: m.answer || 'La réponse a échoué. Réessayez.' }))
+        if (!am.answer) { const msg = 'La réponse a échoué. Réessayez.'; am.answer = msg; stream.push(msg) }
+        stream.finish()
       },
     }).catch(() => {
-      this._liveDone = true
-      patch((m) => ({ ...m, answer: m.answer || 'La réponse a échoué. Réessayez.' }))
+      if (!am.answer) { const msg = 'La réponse a échoué. Réessayez.'; am.answer = msg; stream.push(msg) }
+      stream.finish()
     })
+  }
+  finishLiveMessage(idx) {
+    this.setState((st) => {
+      const m = st.messages.slice()
+      if (!m[idx]) return {}
+      m[idx] = { ...m[idx], done: true, answer: m[idx].answer || (m[idx].stream ? m[idx].stream.text : '') }
+      return { messages: m, streamingIdx: st.streamingIdx === idx ? -1 : st.streamingIdx }
+    })
+  }
+  requestAutoScroll() {
+    if (this._sc && !this._userScrolledUp) this._sc.scrollTop = this._sc.scrollHeight
   }
   send(text, dIdOverride) {
     const q = (text != null ? text : this.state.input).trim();
@@ -712,29 +728,6 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const showNotes = st.notes;
     const openPanel = p => () => this.setState({ panel: p });
     const chColor = ch => ({ ...ch, color: ch.sign === '+' ? 'var(--green2)' : 'var(--red2)' });
-    const mdLite = (text) => {
-      if (!text || (text.indexOf('**') < 0 && text.indexOf('#') < 0 && text.indexOf('---') < 0 && text.indexOf('|') < 0)) return text
-      const cleaned = text
-        .split('\n')
-        .filter((line) => !/^\s*[-*_]{3,}\s*$/.test(line))
-        .filter((line) => !/^\s*\|[\s:|-]+\|\s*$/.test(line))
-        .map((line) => {
-          const h = line.match(/^\s*#{1,4}\s+(.*)$/)
-          if (h) return '**' + h[1] + '**'
-          // Table rows read as prose: | a | b | -> a — b
-          if (/^\s*\|.*\|\s*$/.test(line)) {
-            const cells = line.split('|').map((c) => c.trim()).filter(Boolean)
-            return '\u2014 ' + cells.join(' : ')
-          }
-          return line
-        })
-        .join('\n')
-      const parts = cleaned.split(/\*\*([^*]+)\*\*/g)
-      if (parts.length === 1) return cleaned
-      return parts.map((part, i) =>
-        i % 2 === 1 ? React.createElement('strong', { key: i }, part) : part,
-      )
-    }
     const dedupeSources = (sources) => {
       const seen = new Map()
       for (const src of sources || []) {
@@ -750,10 +743,17 @@ class ClaidorDesignApp extends React.Component<any, any> {
       if (m.role === 'user') return { isUser: true, isAssistant: false, text: m.text };
       const streaming = i === st.streamingIdx;
       const level = m.authority && m.authority.level;
+      const liveStreaming = streaming && m.stream && !m.done
       return {
         isUser: false, isAssistant: true,
-        text: mdLite(streaming ? m.answer.slice(0, st.revealed) : m.answer),
-        showCursor: streaming,
+        text: liveStreaming
+          ? React.createElement(StreamingAnswer, {
+              stream: m.stream,
+              onDrained: () => this.finishLiveMessage(i),
+              onGrow: () => this.requestAutoScroll(),
+            })
+          : mdLite(streaming ? m.answer.slice(0, st.revealed) : m.answer),
+        showCursor: streaming && !liveStreaming,
         hasFact: !!m.done && !!m.fact,
         factText: m.fact ? m.fact.text : '', factSrc: m.fact ? '→ ' + m.fact.src : '',
         factOpen: m.fact ? openPanel({ type: 'piece', id: m.fact.piece }) : null,
@@ -1159,7 +1159,15 @@ class ClaidorDesignApp extends React.Component<any, any> {
       askDossier: () => this.askFromDossier(),
       newChat: () => this.nav('assistant', { chat: false, messages: [], activeConv: null, panel: null, input: '', dossierSel: null, dossierSelId: null, clientSel: null }),
       closePanel: () => this.setState({ panel: null }),
-      scrollRef: el => { this._sc = el; },
+      scrollRef: el => {
+        if (el && el !== this._sc) {
+          el.addEventListener('scroll', () => {
+            this._userScrolledUp =
+              el.scrollHeight - el.scrollTop - el.clientHeight > 80
+          }, { passive: true })
+        }
+        this._sc = el;
+      },
       searchOpen: st.searchOpen, searchQ: st.searchQ, searchResults, searchEmpty: searchResults.length === 0,
       openSearch: () => this.setState({ searchOpen: true, searchQ: '' }),
       closeSearch: () => this.setState({ searchOpen: false }),

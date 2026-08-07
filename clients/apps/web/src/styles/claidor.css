@@ -160,3 +160,26 @@
 .claidor-toast {
   animation: claidor-toast-in 0.15s ease;
 }
+
+/* Word-level reveal for streamed answers: fade + 3px rise, staggered by
+   arrival. Under prefers-reduced-motion words appear instantly (the
+   drain also reveals everything at once there). */
+@keyframes claidor-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.claidor-word {
+  display: inline-block;
+  animation: claidor-word-in 300ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .claidor-word {
+    animation: none;
+  }
+}
