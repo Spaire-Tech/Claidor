@@ -1,23 +1,14 @@
-import { getServerSideAPI } from '@/utils/client/serverside'
-import { getOrganizationBySlugOrNotFound } from '@/utils/organization'
-import { Metadata } from 'next'
-import DashboardPage from './DashboardPage'
+import { redirect } from 'next/navigation'
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Overview', // " | Polar is added by the template"
-  }
-}
-
+/**
+ * The organization root lands on the Assistant — the front door of the v1
+ * design. The inherited payments overview this page used to render is not
+ * Claidor's home; the old screens stay reachable at their own routes while
+ * they migrate to the new shell.
+ */
 export default async function Page(props: {
   params: Promise<{ organization: string }>
 }) {
   const params = await props.params
-  const api = await getServerSideAPI()
-  const organization = await getOrganizationBySlugOrNotFound(
-    api,
-    params.organization,
-  )
-
-  return <DashboardPage organization={organization} />
+  redirect(`/dashboard/${params.organization}/assistant`)
 }
