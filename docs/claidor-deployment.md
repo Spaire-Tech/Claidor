@@ -96,9 +96,22 @@ In the AWS console (Spaire's account is fine):
 
 Google Cloud console → Credentials → new OAuth client (Web application):
 
-- Authorised redirect URI:
-  `https://api.claidor.com/v1/integrations/google/callback`
+- Authorised redirect URIs — **both**, and the paths matter. Sign-in and
+  linking an existing account are separate routes, and Google rejects any
+  callback URL it was not told about, character for character:
+  - `https://api.claidor.com/v1/integrations/google/login/callback`
+  - `https://api.claidor.com/v1/integrations/google/link/callback`
 - Authorised JavaScript origin: `https://app.claidor.com`
+
+To read the URL back off the running app rather than trusting this page:
+
+```bash
+curl -s -o /dev/null -w '%{redirect_url}\n' \
+  'https://api.claidor.com/v1/integrations/google/login/authorize?return_to=/'
+```
+
+That prints the exact `redirect_uri` the API sends to Google — and its
+`client_id`, which is how you catch an unset one (see below).
 
 ### 4. Render — create the blueprint
 
@@ -267,3 +280,15 @@ would be an avoidable annoyance.
    or Cloudflare is proxying before the certificate was issued.
 7. **Migrations ran twice** → only the web service may have
    `CLAIDOR_MIGRATE_ON_STARTUP=true`.
+8. **Google says "Error 400: invalid_request — Missing required parameter:
+   client_id"** → `CLAIDOR_GOOGLE_CLIENT_ID` is empty on the service. Two
+   things make this one confusing. First, the app does not complain: an
+   empty client id is a valid string, so it boots happily and only Google
+   objects. Second, `google_oauth_client = GoogleOAuth2(...)` is built at
+   **module import**, so the value is read once at boot — saving the
+   variable in the dashboard changes nothing until the service restarts.
+   Set it, restart, then re-run the `curl` above and check `client_id=` is
+   no longer blank.
+9. **Google says "redirect_uri_mismatch"** → the URI registered on the
+   OAuth client is missing the `/login` (or `/link`) path segment. Take it
+   from the `curl` above, not from memory.
