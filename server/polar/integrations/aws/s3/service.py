@@ -216,8 +216,22 @@ class S3Service:
                 ChecksumMode="ENABLED",
                 **version_arguments,
             )
-        except ClientError:
-            raise S3FileError("No object on S3")
+        except ClientError as e:
+            code = e.response.get("Error", {}).get("Code", "unknown")
+            if version_arguments:
+                # Reading a named version is a distinct permission
+                # (s3:GetObjectVersion). Falling back to the current version
+                # is correct here — we only ever ask for the version we just
+                # stored — and keeps a narrower policy working.
+                log.warning(
+                    "s3.get_versioned_failed",
+                    bucket=self.bucket,
+                    path=path,
+                    code=code,
+                )
+                return self.get_object_or_raise(path)
+            log.error("s3.get_failed", bucket=self.bucket, path=path, code=code)
+            raise S3FileError(f"No object on S3 ({code})")
 
         return cast(dict[str, Any], obj)
 
@@ -231,6 +245,17 @@ class S3Service:
             # Surface the S3 error code (AccessDenied, NoSuchKey, …): "No
             # metadata from S3" alone has already cost a debugging session.
             code = e.response.get("Error", {}).get("Code", "unknown")
+            if version_arguments:
+                # s3:GetObject does not cover a versioned read — that is
+                # s3:GetObjectVersion. This call always follows a write we
+                # just made, so the current version IS the one we want.
+                log.warning(
+                    "s3.head_versioned_failed",
+                    bucket=self.bucket,
+                    path=path,
+                    code=code,
+                )
+                return self.get_head_or_raise(path)
             log.error("s3.head_failed", bucket=self.bucket, path=path, code=code)
             raise S3FileError(f"No metadata from S3 ({code})")
 
