@@ -538,12 +538,34 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const hist = [{ q, user: 'vous', time: 'À l\u2019instant' }, ...this.state.hist];
     clearInterval(this._t);
     this.setState({ view: 'assistant', chat: true, input: '', messages: msgs, activeConv: conv, extraConvs: extra, revealed: 0, streamingIdx: idx, panel: null, menu: null, hist });
+    // The API delivers text in chunks; revealing each chunk at once reads
+    // as stutter. Buffer the chunks and reveal at the design's own steady
+    // cadence — the same feel as the scripted stream, fed by real deltas.
+    this._liveDone = false
+    const cps = Math.max(1, Math.round(this.props.streamSpeed ?? 4)) * 90
+    this._t = setInterval(() => {
+      this.setState((st) => {
+        const m = st.messages[idx]
+        if (!m) return {}
+        const target = m.answer.length
+        if (st.revealed >= target) {
+          if (this._liveDone) {
+            clearInterval(this._t)
+            const mm = st.messages.slice()
+            mm[idx] = { ...mm[idx], done: true }
+            return { messages: mm, streamingIdx: -1, revealed: target }
+          }
+          return {}
+        }
+        return { revealed: Math.min(target, st.revealed + Math.max(2, Math.round(cps / 33))) }
+      })
+    }, 30)
     const patch = (fn) =>
       this.setState((st) => {
         const m = st.messages.slice();
         if (!m[idx]) return {};
         m[idx] = fn({ ...m[idx] });
-        return { messages: m, revealed: m[idx].answer.length };
+        return { messages: m };
       });
     askLibrarian(q, {
       onText: (delta) => patch((m) => ({ ...m, answer: m.answer + delta })),
@@ -563,17 +585,14 @@ class ClaidorDesignApp extends React.Component<any, any> {
           ...m,
           authority: { level: a.count >= 2 ? 'constante' : 'limitee', label: '\u2014 ' + a.label },
         })),
-      onDone: () => {
-        patch((m) => ({ ...m, done: true }))
-        this.setState({ streamingIdx: -1 })
-      },
+      onDone: () => { this._liveDone = true },
       onError: () => {
-        patch((m) => ({ ...m, done: true, answer: m.answer || 'La réponse a échoué. Réessayez.' }))
-        this.setState({ streamingIdx: -1 })
+        this._liveDone = true
+        patch((m) => ({ ...m, answer: m.answer || 'La réponse a échoué. Réessayez.' }))
       },
     }).catch(() => {
-      patch((m) => ({ ...m, done: true, answer: m.answer || 'La réponse a échoué. Réessayez.' }))
-      this.setState({ streamingIdx: -1 })
+      this._liveDone = true
+      patch((m) => ({ ...m, answer: m.answer || 'La réponse a échoué. Réessayez.' }))
     })
   }
   send(text, dIdOverride) {
@@ -682,13 +701,40 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const showNotes = st.notes;
     const openPanel = p => () => this.setState({ panel: p });
     const chColor = ch => ({ ...ch, color: ch.sign === '+' ? 'var(--green2)' : 'var(--red2)' });
+    const mdLite = (text) => {
+      if (!text || (text.indexOf('**') < 0 && text.indexOf('#') < 0 && text.indexOf('---') < 0)) return text
+      const cleaned = text
+        .split('\n')
+        .filter((line) => !/^\s*[-*_]{3,}\s*$/.test(line))
+        .map((line) => {
+          const h = line.match(/^\s*#{1,4}\s+(.*)$/)
+          return h ? '**' + h[1] + '**' : line
+        })
+        .join('\n')
+      const parts = cleaned.split(/\*\*([^*]+)\*\*/g)
+      if (parts.length === 1) return cleaned
+      return parts.map((part, i) =>
+        i % 2 === 1 ? React.createElement('strong', { key: i }, part) : part,
+      )
+    }
+    const dedupeSources = (sources) => {
+      const seen = new Map()
+      for (const src of sources || []) {
+        const key = src.k + '|' + src.label
+        const existing = seen.get(key)
+        if (!existing) seen.set(key, { ...src })
+        else if (src.note && existing.note && !existing.note.includes(src.note))
+          existing.note = existing.note + '\u2002' + src.note
+      }
+      return Array.from(seen.values())
+    }
     const msgs = st.messages.map((m, i) => {
       if (m.role === 'user') return { isUser: true, isAssistant: false, text: m.text };
       const streaming = i === st.streamingIdx;
       const level = m.authority && m.authority.level;
       return {
         isUser: false, isAssistant: true,
-        text: streaming ? m.answer.slice(0, st.revealed) : m.answer,
+        text: mdLite(streaming ? m.answer.slice(0, st.revealed) : m.answer),
         showCursor: streaming,
         hasFact: !!m.done && !!m.fact,
         factText: m.fact ? m.fact.text : '', factSrc: m.fact ? '→ ' + m.fact.src : '',
@@ -698,7 +744,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
         authLabel: m.authority ? m.authority.label : '',
         authDot: level === 'constante' ? 'var(--green2)' : 'var(--amber2)',
         hasSources: !!m.done && m.sources && m.sources.length > 0,
-        sources: (m.sources || []).map(s => ({
+        sources: dedupeSources(m.sources).map(s => ({
           kind: D.K[s.k].kind, color: D.K[s.k].color, d: D.K[s.k].d,
           label: s.label, note: showNotes ? s.note : '',
           open: s.id
