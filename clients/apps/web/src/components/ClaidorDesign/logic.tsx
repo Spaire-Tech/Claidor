@@ -12,7 +12,10 @@ import React from 'react'
 const quoteNote = (quote) => {
   const cleaned = (quote || '').replace(/^[\s«»"']+|[\s«»"']+$/g, '')
   if (!cleaned) return ''
-  return '«\u202f' + cleaned.slice(0, 90) + '\u2026\u202f»'
+  // Long enough to actually support the claim it anchors — a truncated
+  // half-sentence weakens the verification the product is built on.
+  if (cleaned.length <= 220) return '«\u202f' + cleaned + '\u202f»'
+  return '«\u202f' + cleaned.slice(0, 220) + '\u2026\u202f»'
 }
 import { askLibrarian } from '@/components/Librarian/stream'
 import { getServerURL } from '@/utils/api'

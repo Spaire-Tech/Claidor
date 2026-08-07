@@ -22,6 +22,7 @@ from polar.config import settings
 from polar.corpus.repository import CorpusRepository
 from polar.corpus.slice import SLICE_ARTICLES_1998, TRANSITIONAL_RULE_1998
 from polar.kit.db.postgres import AsyncReadSession
+from polar.librarian.deadline import month_franc_deadline, steering_block
 
 if TYPE_CHECKING:
     from polar.models import DossierDocument
@@ -76,10 +77,11 @@ Rigueur :
 - « En l'espèce » désigne l'affaire de la décision citée, jamais la
   situation de l'utilisateur. Pour la situation de l'utilisateur, écris
   « dans votre cas » ou « appliqué à votre date ».
-- Calculs de délais : cite la règle et montre le calcul pas à pas EN SUIVANT
-  EXACTEMENT la méthode de la décision citée ; si ta conclusion chiffrée ne
-  suit pas la méthode de ta propre citation, elle est fausse. En cas de
-  doute sur le décompte, donne la date la plus prudente et dis pourquoi.
+- Calculs de délais : si un bloc [CALCUL DE DÉLAI VÉRIFIÉ PAR CODE] figure
+  dans la question, sa date et sa dérivation FONT FOI — reprends-les telles
+  quelles, ne recalcule jamais. Sans ce bloc, cite la règle, suis
+  EXACTEMENT la méthode de la décision citée, et en cas de doute donne la
+  date la plus prudente en le disant.
 - N'écris JAMAIS de ligne « Autorité : … » — ce signal est calculé par le
   système à partir des liens vérifiés du corpus et ajouté après ta réponse."""
 
@@ -463,6 +465,17 @@ class LibrarianService:
             applicable = "2023" if anchor >= VERSION_CUTOFF else "1998"
             other = "1998" if applicable == "2023" else "2023"
             versions_used = [applicable]
+            # Deadlines are counted by code, never by the model: two
+            # production answers computed the art. 170 délai one day short
+            # while quoting the precedent that shows the correct count.
+            deadline_steering = ""
+            if re.search(
+                r"délai|delai|contest|forclusion|opposition|prescri|expir",
+                question,
+                re.IGNORECASE,
+            ):
+                computed = month_franc_deadline(anchor)
+                deadline_steering = steering_block(computed)
             if anchor_fact is not None:
                 # The date came from the file: surface it as a fact, with the
                 # pièce it was read from, before any rule is applied.
@@ -481,7 +494,7 @@ class LibrarianService:
                     f"pièce dont il vient, puis applique l'AUPSRVE "
                     f"{applicable} ; ne mentionne l'acte de {other} qu'à "
                     f"titre de contexte.]"
-                )
+                ) + deadline_steering
             else:
                 steering = (
                     f"\n\n[Instruction système, déterminée par le droit "
@@ -489,7 +502,7 @@ class LibrarianService:
                     f"{anchor.isoformat()}, donc l'AUPSRVE {applicable} "
                     f"s'applique. Réponds sous ce régime ; ne mentionne l'acte "
                     f"de {other} qu'à titre de contexte.]"
-                )
+                ) + deadline_steering
         elif classification["version_dependent"] and answer_both_versions:
             versions_used = ["1998", "2023"]
             steering = (
