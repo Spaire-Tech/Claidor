@@ -76,14 +76,14 @@ RUN --mount=type=bind,source=uv.lock,target=uv.lock \
 ADD . /app/server/
 
 COPY --from=build-emails-bin /app/bin/react-email-pkg /app/server/
-ENV POLAR_EMAIL_RENDERER_BINARY_PATH=/app/server/react-email-pkg
+ENV CLAIDOR_EMAIL_RENDERER_BINARY_PATH=/app/server/react-email-pkg
 
 COPY --from=build-backoffice /app/static /app/server/polar/backoffice/static
 RUN ls -la /app/server/polar/backoffice/static
 
 COPY --from=download-ipinfo /data /data
-ENV POLAR_IP_GEOLOCATION_DATABASE_DIRECTORY_PATH=/data
-ENV POLAR_IP_GEOLOCATION_DATABASE_NAME=country_asn.mmdb
+ENV CLAIDOR_IP_GEOLOCATION_DATABASE_DIRECTORY_PATH=/data
+ENV CLAIDOR_IP_GEOLOCATION_DATABASE_NAME=country_asn.mmdb
 
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
