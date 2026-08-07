@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 @import './editor.css';
 @import './picker.css';
+@import './claidor.css';
 
 /*
  * Bind the `dark:` variant to the `.dark` class instead of the OS

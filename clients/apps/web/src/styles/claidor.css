@@ -1,0 +1,162 @@
+/*
+ * Claidor design tokens — from docs/design/claidor-v1-styles.css.
+ *
+ * Scoped to .claidor-app rather than :root so the inherited dashboard
+ * chrome (which still serves the legacy routes) keeps its own palette
+ * while both live in the same bundle. Dark mode is an attribute on <html>
+ * (set before paint by the shell) so a reload does not flash light.
+ */
+
+.claidor-app {
+  --ink: #17181a;
+  --ink2: #26272a;
+  --black: #000000;
+  --accent: #141517;
+  --t1: #3a3c40;
+  --t2: #5c5e63;
+  --t3: #6e7075;
+  --t4: #8b8d91;
+  --t5: #9b9da1;
+  --t6: #b0b2b5;
+  --t7: #c9c9c7;
+  --surface: #ffffff;
+  --s1: #fafaf9;
+  --s2: #f7f7f6;
+  --s3: #f5f5f4;
+  --s4: #f4f4f3;
+  --s5: #f3f3f1;
+  --s6: #f2f2f1;
+  --s7: #f1f1ef;
+  --s8: #f0f0ef;
+  --s9: #ececea;
+  --greenbg: #eaf3ec;
+  --b1: #eeeeec;
+  --b2: #e9e9e7;
+  --btnoff: #e7e7e5;
+  --b3: #e3e3e2;
+  --b4: #e0e0de;
+  --b5: #d8d8d6;
+  --amber: #8a6a34;
+  --amber2: #b8860b;
+  --blue: #2f5fb0;
+  --blue2: #3e4a68;
+  --green: #3e6b51;
+  --green2: #2f7a4d;
+  --teal: #1f8a8c;
+  --red: #7a3e3e;
+  --red2: #b0533a;
+  --hl: #fbf3d9;
+  --sh1: rgba(20, 21, 23, 0.1);
+  --sh2: rgba(0, 0, 0, 0.2);
+  --sh3: rgba(20, 21, 23, 0.03);
+  --sh4: rgba(20, 21, 23, 0.25);
+  --on-accent: #ffffff;
+
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+}
+
+[data-claidor-dark] .claidor-app {
+  --ink: #e8e5e1;
+  --ink2: #dcd9d5;
+  --black: #e8e5e1;
+  --accent: #e8e5e1;
+  --t1: #c9c6c1;
+  --t2: rgba(255, 255, 255, 0.66);
+  --t3: rgba(255, 255, 255, 0.55);
+  --t4: rgba(255, 255, 255, 0.48);
+  --t5: rgba(255, 255, 255, 0.42);
+  --t6: rgba(255, 255, 255, 0.34);
+  --t7: rgba(255, 255, 255, 0.3);
+  --surface: #1f1d1a;
+  --s1: #242220;
+  --s2: #262421;
+  --s3: #262421;
+  --s4: #282623;
+  --s5: #282623;
+  --s6: #292724;
+  --s7: #2a2825;
+  --s8: #2a2825;
+  --s9: #2e2c29;
+  --greenbg: rgba(63, 122, 77, 0.2);
+  --b1: rgba(255, 255, 255, 0.1);
+  --b2: rgba(255, 255, 255, 0.12);
+  --btnoff: #33312e;
+  --b3: rgba(255, 255, 255, 0.14);
+  --b4: rgba(255, 255, 255, 0.16);
+  --b5: rgba(255, 255, 255, 0.22);
+  --amber: #c9a35c;
+  --amber2: #d4a93c;
+  --blue: #7fa3e0;
+  --blue2: #9fb0d6;
+  --green: #7fb894;
+  --green2: #6fbf8a;
+  --teal: #5fbfc1;
+  --red: #d08a8a;
+  --red2: #d08a6e;
+  --hl: rgba(251, 243, 217, 0.16);
+  --sh1: rgba(0, 0, 0, 0.5);
+  --sh2: rgba(0, 0, 0, 0.6);
+  --sh3: rgba(255, 255, 255, 0.03);
+  --sh4: rgba(0, 0, 0, 0.55);
+  --on-accent: #1f1d1a;
+}
+
+.claidor-serif {
+  font-family: var(--font-claidor-serif, 'Source Serif 4'), Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+/* The design expresses hover states inline; components use this class. */
+.claidor-hover-row {
+  transition: background 0.1s ease;
+}
+.claidor-hover-row:hover {
+  background: var(--s4);
+}
+
+.claidor-app ::selection {
+  background: var(--hl);
+}
+
+.claidor-app textarea,
+.claidor-app input {
+  font: inherit;
+  color: inherit;
+}
+
+@keyframes claidor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.claidor-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  background: var(--ink);
+  vertical-align: -2px;
+  margin-left: 1px;
+  animation: claidor-blink 0.9s steps(1) infinite;
+}
+
+@keyframes claidor-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.claidor-toast {
+  animation: claidor-toast-in 0.15s ease;
+}

@@ -19,6 +19,7 @@ import {
   Inter,
   Instrument_Serif,
   Poppins,
+  Source_Serif_4,
 } from 'next/font/google'
 import { Metadata } from 'next/types'
 import {
@@ -55,6 +56,14 @@ const barlowCondensed = Barlow_Condensed({
   weight: ['700', '800'],
   style: ['normal', 'italic'],
   variable: '--font-barlow-condensed',
+  display: 'swap',
+})
+
+// Source Serif 4 — the Claidor display face (docs/design).
+const sourceSerif = Source_Serif_4({
+  subsets: ['latin'],
+  weight: ['400', '600'],
+  variable: '--font-claidor-serif',
   display: 'swap',
 })
 
@@ -155,7 +164,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`antialiased ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${barlowCondensed.variable} ${poppins.variable}`}
+      className={`antialiased ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${instrumentSerif.variable} ${dmSans.variable} ${barlowCondensed.variable} ${poppins.variable} ${sourceSerif.variable}`}
     >
       <head>
         {CONFIG.ENVIRONMENT === 'development' ? (
