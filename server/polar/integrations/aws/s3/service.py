@@ -227,16 +227,31 @@ class S3Service:
             head = self.client.head_object(
                 Bucket=self.bucket, Key=path, **version_arguments
             )
-        except ClientError:
-            raise S3FileError("No metadata from S3")
+        except ClientError as e:
+            # Surface the S3 error code (AccessDenied, NoSuchKey, …): "No
+            # metadata from S3" alone has already cost a debugging session.
+            code = e.response.get("Error", {}).get("Code", "unknown")
+            log.error("s3.head_failed", bucket=self.bucket, path=path, code=code)
+            raise S3FileError(f"No metadata from S3 ({code})")
 
         return cast(dict[str, Any], head)
 
     def complete_multipart_upload(self, data: S3FileUploadCompleted) -> S3File:
         boto_arguments = data.get_boto3_arguments()
-        response = self.client.complete_multipart_upload(
-            Bucket=self.bucket, Key=data.path, **boto_arguments
-        )
+        try:
+            response = self.client.complete_multipart_upload(
+                Bucket=self.bucket, Key=data.path, **boto_arguments
+            )
+        except ClientError as e:
+            code = e.response.get("Error", {}).get("Code", "unknown")
+            log.error(
+                "s3.complete_multipart_failed",
+                bucket=self.bucket,
+                path=data.path,
+                code=code,
+                message=e.response.get("Error", {}).get("Message", ""),
+            )
+            raise S3FileError(f"S3 rejected the completed upload ({code})")
         if not response:
             raise S3FileError("No response from S3")
 

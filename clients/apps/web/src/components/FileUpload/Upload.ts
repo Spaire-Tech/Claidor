@@ -213,9 +213,15 @@ export class Upload {
 
     if (error) {
       if (this.onFileError) {
+        // Keep the API's own words: the response body names the actual
+        // failure (S3 code, validation error, permission), and swallowing
+        // it leaves the user staring at a generic failure state.
         this.onFileError(
           createFileResponse.id,
-          new Error('Failed to complete file upload'),
+          new Error(
+            'Failed to complete file upload: ' +
+              JSON.stringify(error).slice(0, 300),
+          ),
         )
       }
       return
@@ -230,7 +236,13 @@ export class Upload {
     const { data: createFileResponse, error } = await this.create()
     if (error) {
       if (this.onFileError) {
-        this.onFileError(this.tempId, new Error('Failed to create file upload'))
+        this.onFileError(
+          this.tempId,
+          new Error(
+            'Failed to create file upload: ' +
+              JSON.stringify(error).slice(0, 300),
+          ),
+        )
       }
       return
     }

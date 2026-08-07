@@ -600,12 +600,20 @@ class ClaidorDesignApp extends React.Component<any, any> {
               category: row.cat,
               piece_number: n,
             }).then(({ ok, data }) => {
-              if (!ok || !data) setRow(row.file, { status: 'error' })
-              else setRow(row.file, { status: data.readable ? 'ok' : 'unreadable' })
+              if (!ok || !data) {
+                setRow(row.file, { status: 'error' })
+                const detail = data && typeof data.detail === 'string' ? data.detail : ''
+                if (detail) this.setState({ modalError: detail })
+              } else setRow(row.file, { status: data.readable ? 'ok' : 'unreadable' })
               resolve(null)
             })
           },
-          onFileError: () => { setRow(row.file, { status: 'error' }); resolve(null) },
+          onFileError: (id, err) => {
+            setRow(row.file, { status: 'error' })
+            // The real reason (S3 code, API detail) beats a mute « Échec ».
+            if (err && err.message) this.setState({ modalError: err.message })
+            resolve(null)
+          },
         })
         upload.run().catch(() => { setRow(row.file, { status: 'error' }); resolve(null) })
       })
