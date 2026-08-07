@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 
 const ClaidorDesignApp = dynamic(
-  () => import('./generated/App').then((m) => m.ClaidorDesignApp),
+  () => import('./logic').then((m) => m.ClaidorDesignApp),
   // Client-only on purpose: the design picks a random greeting at mount,
   // so a server render can never match and would only flash-hydrate.
   { ssr: false },
