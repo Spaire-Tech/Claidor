@@ -78,6 +78,15 @@ Rigueur :
 - Chaque affirmation est soit ancrée par une citation, soit signalée comme
   non sourcée. N'insère JAMAIS une assertion de pratique (« en pratique,
   … ») sans source au milieu d'un raisonnement sourcé.
+- Ne reproduis JAMAIS une étiquette système entre crochets — [CALCUL DE
+  DÉLAI VÉRIFIÉ PAR CODE] ou toute autre — dans ta réponse. Utilise leur
+  contenu ; l'étiquette est de la machinerie, pas du droit.
+- Chaque document que tu cites doit fonder une affirmation PRÉSENTE dans la
+  réponse. Si une décision fonde un recours résiduel utile (par exemple la
+  répétition de l'indu après forclusion), énonce ce recours — une source
+  attachée à aucune affirmation est une promesse non tenue.
+- Énonce chaque règle UNE seule fois, à sa meilleure place — jamais la même
+  solution répétée dans deux sections.
 - Ne cite JAMAIS l'en-tête procédural d'une décision (numéro de pourvoi,
   arrêt attaqué, juridiction d'origine) comme fondement d'une affirmation :
   cite le motif qui énonce la règle. Une citation qui ne soutient pas
@@ -460,6 +469,7 @@ class LibrarianService:
         classification = await self.classify_question(question)
         versions_used: list[str]
         steering = ""
+        deadline_steering = ""
         if classification["version_dependent"] and not answer_both_versions:
             anchor_raw = classification.get("anchor_date")
             anchor: date | None = None
@@ -488,7 +498,6 @@ class LibrarianService:
             # Deadlines are counted by code, never by the model: two
             # production answers computed the art. 170 délai one day short
             # while quoting the precedent that shows the correct count.
-            deadline_steering = ""
             if re.search(
                 r"délai|delai|contest|forclusion|opposition|prescri|expir",
                 question,
@@ -605,9 +614,15 @@ class LibrarianService:
                                 "source_id": ref.id if ref else None,
                             }
                 final = await stream.get_final_message()
-                yield await self.compute_authority(
+                authority = await self.compute_authority(
                     session, list(dict.fromkeys(cited_article_ids))
                 )
+                if deadline_steering:
+                    # The mentor's badge: the fact that the date came from
+                    # code is worth showing — quietly, on the line the code
+                    # already owns, not shouted inside the answer.
+                    authority["label"] += " · délai calculé par code"
+                yield authority
                 yield {
                     "type": "done",
                     "versions_used": versions_used,

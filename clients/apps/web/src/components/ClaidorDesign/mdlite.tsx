@@ -13,11 +13,13 @@ export const mdCleanLines = (text: string): string => {
     (text.indexOf('**') < 0 &&
       text.indexOf('#') < 0 &&
       text.indexOf('---') < 0 &&
+      text.indexOf('[CALCUL') < 0 &&
       text.indexOf('|') < 0)
   ) {
     return text
   }
   return text
+    .replace(/\[CALCUL DE DÉLAI VÉRIFIÉ PAR CODE\]\s*/g, '')
     .split('\n')
     .filter((line) => !/^\s*[-*_]{3,}\s*$/.test(line))
     .filter((line) => !/^\s*\|[\s:|-]+\|\s*$/.test(line))
