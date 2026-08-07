@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function Page() {
   return (
     <iframe
-      src="/design/claidor-v1.html"
+      src="/design/claidor-v1.html?v=2"
       title="Claidor"
       // Viewport-sized, not h-full: nothing above this guarantees a height
       // chain, and a 0-height iframe renders as a blank page.
