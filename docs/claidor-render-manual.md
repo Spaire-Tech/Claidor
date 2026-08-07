@@ -18,20 +18,74 @@ every key.
 |---|---|---|
 | `claidor-postgres` | PostgreSQL 16 | plan `basic-256mb`; the free tier expires after 30 days |
 | `claidor-redis` | Key Value | free plan, maxmemory policy `noeviction` |
-| `claidor-api` | Web Service, Docker | root `./server`, health check `/healthz` |
-| `claidor-worker` | Background Worker, Docker | root `./server`, same image, different command |
+| `claidor-api` | Web Service, Python 3 | **Root Directory `server`**, health check `/healthz` |
+| `claidor-worker` | Background Worker, Python 3 | **Root Directory `server`**, same build, different start command |
 
-Both services: repo `Spaire-Tech/Claidor`, branch `main`, Dockerfile
-`./server/Dockerfile`, Docker context `./server`, auto-deploy on.
+Both services: repo `Spaire-Tech/Claidor`, branch `main`, auto-deploy on.
 
-The worker's start command:
+### Root Directory is the setting that breaks everything
+
+Set it to `server` on **both** services. This is not cosmetic. The Python
+project lives in `server/`, so a service left at the repository root fails
+its very first build with:
+
+```
+error: No `pyproject.toml` found in current directory or any parent directory
+```
+
+The message reads like a missing file. It is a missing *directory setting* —
+the file is there, one level down, and Render never looked.
+
+### Build and start commands
+
+Build, both services:
+
+```
+pip install uv && uv sync
+```
+
+Start — the API:
+
+```
+uv run uvicorn polar.app:app --host 0.0.0.0 --port $PORT
+```
+
+Use `$PORT`, not a hard-coded number: Render assigns it, and a service
+listening anywhere else fails its health check while looking perfectly
+healthy in the logs.
+
+Start — the worker:
 
 ```
 uv run dramatiq -p 2 -t 4 -f polar.worker.scheduler:start polar.worker.run
 ```
 
-The API needs no command override — the Dockerfile already serves on the
-port Render expects.
+### About `task emails` in the build command
+
+Render's suggested build command for this repo includes `uv run task emails`.
+Leave it out for now, on both services.
+
+That task builds the react-email renderer — `cd emails && pnpm i && pnpm run
+build` — which needs Node and pnpm that the Python runtime does not provide
+on its own, and produces a 108 MB binary that is git-ignored (so it is never
+in the checkout; it has to be built or it does not exist). Adding minutes and
+two more failure modes to every deploy buys nothing while
+`CLAIDOR_EMAIL_SENDER=logger`.
+
+What you give up by omitting it, precisely — because "emails are broken" is
+too vague to plan around:
+
+- **Google sign-in: unaffected.** No email is rendered anywhere in that flow.
+- **Email login codes: will fail** at the moment of sending, with a clear
+  `RuntimeError` naming the missing binary. `render_email_template` checks
+  for the renderer at use rather than at boot, deliberately — a missing
+  renderer must break sending an email, not starting the application.
+- **Worker-side email** (organization invites, broadcasts, sequences) fails
+  the same way. Claidor does not use these yet.
+
+When email does matter, the build becomes `pip install uv && uv sync &&
+corepack enable pnpm && uv run task emails` and the service needs Node —
+`server/.nvmrc` pins 24 so Render provisions it under the `server` root.
 
 ---
 
