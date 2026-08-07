@@ -26,12 +26,17 @@ the designed original — identical every time, zero page errors).
    fact/law split and open live panels; record entries replay their
    answered exchange.
 
+6. **Analyses wired (C3-6, three of four).** Autorité, Historique and
+   Citations run on any live article from its detail — authority level
+   computed with the librarian's own thresholds, rows opening live
+   decision panels, analyses chaining as designed. Comparer stays
+   scripted until the diff engine exists.
+
 ## Where the next session picks up
 
 - **Historique**: needs small backend persistence for general (non-dossier)
   questions; dossier questions already journalize.
-- **Analyses**: wire autorité / historique / citations from existing data;
-  Comparer needs the diff engine (task #15).
+- **Comparer**: the word-level diff engine (task #15).
 - **Panel extras**: résumés + décisions similaires (task #14).
 - **Veilles**, **Lecteur**: new backends (plan C3-8/9).
 - **Corpus load into production** — still the single blocking step for
