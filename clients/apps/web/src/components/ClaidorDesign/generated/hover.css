@@ -28,8 +28,8 @@
 
 
 .claidor-design{--ink:#17181A;--ink2:#26272A;--black:#000000;--accent:#141517;--t1:#3A3C40;--t2:#5C5E63;--t3:#6E7075;--t4:#8B8D91;--t5:#9B9DA1;--t6:#B0B2B5;--t7:#C9C9C7;--surface:#FFFFFF;--s1:#FAFAF9;--s2:#F7F7F6;--s3:#F5F5F4;--s4:#F4F4F3;--s5:#F3F3F1;--s6:#F2F2F1;--s7:#F1F1EF;--s8:#F0F0EF;--s9:#ECECEA;--greenbg:#EAF3EC;--b1:#EEEEEC;--b2:#E9E9E7;--btnoff:#E7E7E5;--b3:#E3E3E2;--b4:#E0E0DE;--b5:#D8D8D6;--amber:#8A6A34;--amber2:#B8860B;--blue:#2F5FB0;--blue2:#3E4A68;--green:#3E6B51;--green2:#2F7A4D;--teal:#1F8A8C;--red:#7A3E3E;--red2:#B0533A;--hl:#FBF3D9;--sh1:rgba(20,21,23,0.1);--sh2:rgba(0,0,0,0.2);--sh3:rgba(20,21,23,0.03);--sh4:rgba(20,21,23,0.25);--on-accent:#FFFFFF;}
-html[data-claidor-dark]{--ink:#E8E5E1;--ink2:#DCD9D5;--black:#E8E5E1;--accent:#E8E5E1;--t1:#C9C6C1;--t2:rgba(255,255,255,0.66);--t3:rgba(255,255,255,0.55);--t4:rgba(255,255,255,0.48);--t5:rgba(255,255,255,0.42);--t6:rgba(255,255,255,0.34);--t7:rgba(255,255,255,0.30);--surface:#1F1D1A;--s1:#242220;--s2:#262421;--s3:#262421;--s4:#282623;--s5:#282623;--s6:#292724;--s7:#2A2825;--s8:#2A2825;--s9:#2E2C29;--greenbg:rgba(63,122,77,0.20);--b1:rgba(255,255,255,0.10);--b2:rgba(255,255,255,0.12);--btnoff:#33312E;--b3:rgba(255,255,255,0.14);--b4:rgba(255,255,255,0.16);--b5:rgba(255,255,255,0.22);--amber:#C9A35C;--amber2:#D4A93C;--blue:#7FA3E0;--blue2:#9FB0D6;--green:#7FB894;--green2:#6FBF8A;--teal:#5FBFC1;--red:#D08A8A;--red2:#D08A6E;--hl:rgba(251,243,217,0.16);--sh1:rgba(0,0,0,0.5);--sh2:rgba(0,0,0,0.6);--sh3:rgba(255,255,255,0.04);--sh4:rgba(0,0,0,0.55);--on-accent:#17181A;}
-html[data-claidor-dark] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);}
+html[data-claidor-dark] .claidor-design{--ink:#E8E5E1;--ink2:#DCD9D5;--black:#E8E5E1;--accent:#E8E5E1;--t1:#C9C6C1;--t2:rgba(255,255,255,0.66);--t3:rgba(255,255,255,0.55);--t4:rgba(255,255,255,0.48);--t5:rgba(255,255,255,0.42);--t6:rgba(255,255,255,0.34);--t7:rgba(255,255,255,0.30);--surface:#1F1D1A;--s1:#242220;--s2:#262421;--s3:#262421;--s4:#282623;--s5:#282623;--s6:#292724;--s7:#2A2825;--s8:#2A2825;--s9:#2E2C29;--greenbg:rgba(63,122,77,0.20);--b1:rgba(255,255,255,0.10);--b2:rgba(255,255,255,0.12);--btnoff:#33312E;--b3:rgba(255,255,255,0.14);--b4:rgba(255,255,255,0.16);--b5:rgba(255,255,255,0.22);--amber:#C9A35C;--amber2:#D4A93C;--blue:#7FA3E0;--blue2:#9FB0D6;--green:#7FB894;--green2:#6FBF8A;--teal:#5FBFC1;--red:#D08A8A;--red2:#D08A6E;--hl:rgba(251,243,217,0.16);--sh1:rgba(0,0,0,0.5);--sh2:rgba(0,0,0,0.6);--sh3:rgba(255,255,255,0.04);--sh4:rgba(0,0,0,0.55);--on-accent:#17181A;}
+html[data-claidor-dark] .claidor-design ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);}
 html,body{margin:0;padding:0;height:100%;}
 body{background:var(--surface);color:var(--ink);-webkit-font-smoothing:antialiased;}
 a{color:var(--ink);text-decoration:none;}
@@ -39,10 +39,43 @@ textarea{font:inherit;color:inherit;}
 svg{display:block;flex:0 0 auto;}
 ::-webkit-scrollbar{width:8px;}
 ::-webkit-scrollbar-thumb{background:var(--b3);border-radius:8px;}
-html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
+html[data-claidor-dark] .claidor-design img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
 @keyframes rise{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 
+
+/* Host neutralization: the surrounding app ships @tailwindcss/forms,
+   which gives every input a border, its own padding and a blue focus
+   ring. None of that exists in the design's own page, so none of it may
+   reach the design's fields; the design styles its fields inline. */
+.claidor-design input,
+.claidor-design textarea,
+.claidor-design select,
+.claidor-design button {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  line-height: inherit;
+  color: inherit;
+  border-radius: 0;
+  box-shadow: none;
+}
+.claidor-design input:focus,
+.claidor-design textarea:focus,
+.claidor-design select:focus,
+.claidor-design button:focus,
+.claidor-design input:focus-visible,
+.claidor-design textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  border-color: inherit;
+}
 
 .dh-0c63183b:hover { background: var(--s6) !important; }
 .dh-28f3eee9:hover { border-color: var(--t7) !important; }

@@ -158,7 +158,7 @@ export const DesignView = ({ v }: { v: any }) => {
             <>
             <div style={{'flex': '1', 'overflowY': 'auto', 'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'padding': '9vh 32px 32px'}}>
               <div style={{'width': '100%', 'maxWidth': '820px', 'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center'}}>
-                <img src="440a34b3-5c36-4045-8b0e-711e27ec85bb" alt="Claidor" style={{'width': '64px', 'height': '64px', 'objectFit': 'contain', 'display': 'block'}} />
+                <img src="/claidor-mark.png" alt="Claidor" style={{'width': '64px', 'height': '64px', 'objectFit': 'contain', 'display': 'block'}} />
                 <div style={{'marginTop': '18px', 'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '30px', 'fontWeight': '600', 'letterSpacing': '-0.01em', 'textAlign': 'center'}}>
                   {v.greeting}
                 </div>
