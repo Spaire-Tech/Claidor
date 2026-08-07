@@ -38,9 +38,7 @@ class TestDossierAccess:
         # ...and a colleague in the same firm is not.
         assert await repository.get_for_user(dossier.id, outsider.id) is None
         assert (
-            await repository.list_for_user(
-                outsider.id, organization_id=organization.id
-            )
+            await repository.list_for_user(outsider.id, organization_id=organization.id)
             == []
         )
 
@@ -91,6 +89,74 @@ class TestDossierAccess:
         assert dossier.deleted_at is not None
 
 
+class TestPieceUploadPath:
+    """The browser's upload flow must survive the file API's typed unions.
+
+    The intake UI posts ``service: dossier_document`` to ``POST /v1/files/``
+    and reads the completed file back — both go through discriminated
+    unions that silently reject any service left out of them. This broke in
+    production once (422 on create); these tests pin the whole path.
+    """
+
+    def test_file_create_accepts_a_dossier_piece(self) -> None:
+        from uuid import uuid4
+
+        from pydantic import TypeAdapter
+
+        from polar.file.schemas import DossierDocumentFileCreate, FileCreate
+
+        parsed = TypeAdapter(FileCreate).validate_python(
+            {
+                "organization_id": str(uuid4()),
+                "name": "PV de saisie.pdf",
+                "mime_type": "application/pdf",
+                "size": 123_456,
+                "service": "dossier_document",
+                "upload": {
+                    "parts": [{"number": 1, "chunk_start": 0, "chunk_end": 123_455}]
+                },
+            }
+        )
+        assert isinstance(parsed, DossierDocumentFileCreate)
+
+    def test_file_read_serializes_a_dossier_piece(self) -> None:
+        from uuid import uuid4
+
+        from polar.file.schemas import DossierDocumentFileRead, FileReadAdapter
+
+        read = FileReadAdapter.validate_python(
+            {
+                "id": str(uuid4()),
+                "organization_id": str(uuid4()),
+                "name": "PV de saisie.pdf",
+                "path": "dossier_document/x/PV de saisie.pdf",
+                "mime_type": "application/pdf",
+                "size": 123_456,
+                "storage_version": None,
+                "checksum_etag": None,
+                "checksum_sha256_base64": None,
+                "checksum_sha256_hex": None,
+                "last_modified_at": None,
+                "version": None,
+                "service": "dossier_document",
+                "is_uploaded": True,
+                "created_at": "2026-08-08T08:00:00Z",
+            }
+        )
+        assert isinstance(read, DossierDocumentFileRead)
+        # A pièce is never a public file — no public_url on this variant.
+        assert not hasattr(read, "public_url")
+
+    def test_pieces_are_not_gated_by_the_content_storage_quota(self) -> None:
+        from polar.file.service import STORAGE_EXEMPT_SERVICES
+        from polar.models.file import FileServiceTypes
+
+        # Claidor workspaces are auto-provisioned without a plan
+        # (storage_gb=0): if a pièce counted against that quota, every
+        # upload would be rejected.
+        assert FileServiceTypes.dossier_document in STORAGE_EXEMPT_SERVICES
+
+
 class TestExtraction:
     def test_readable_text_is_extracted(self) -> None:
         payload = (
@@ -121,9 +187,7 @@ class TestExtraction:
             dossier_service.guess_category("PV de saisie-attribution.pdf")
             == DocumentCategory.exhibit
         )
-        assert (
-            dossier_service.guess_category("scan001.pdf") == DocumentCategory.other
-        )
+        assert dossier_service.guess_category("scan001.pdf") == DocumentCategory.other
 
 
 @pytest.mark.asyncio
