@@ -175,12 +175,14 @@ export const ClaidorShell = ({
             className="flex items-center gap-2 px-4 py-3"
             style={{ borderTop: '1px solid var(--s7)' }}
           >
-            <div
+            <Link
+              href={`${base}/settings`}
+              title="Réglages du cabinet"
               className="min-w-0 flex-1 truncate text-[13.5px] font-semibold"
               style={{ color: 'var(--ink)' }}
             >
               {organizationName}
-            </div>
+            </Link>
             <Link
               href={`${base}/guides`}
               title="Aide"

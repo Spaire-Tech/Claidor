@@ -1,6 +1,6 @@
 'use client'
 
-import { DashboardBody } from '@/components/Layout/DashboardLayout'
+import { DashboardBody } from '@/components/Claidor/Body'
 import { formatFrenchDate } from '@/components/Librarian/LibrarianAnswer'
 import InfoOutlined from '@mui/icons-material/InfoOutlined'
 import MenuBookOutlined from '@mui/icons-material/MenuBookOutlined'

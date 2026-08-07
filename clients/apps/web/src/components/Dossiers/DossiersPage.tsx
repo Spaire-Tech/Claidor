@@ -1,6 +1,6 @@
 'use client'
 
-import { DashboardBody } from '@/components/Layout/DashboardLayout'
+import { DashboardBody } from '@/components/Claidor/Body'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined'
 import FolderOutlined from '@mui/icons-material/FolderOutlined'
