@@ -17,6 +17,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     searchOpen: false, searchQ: '', selSources: { au: true, cj: true }, dossierSel: null, dossierSelId: null, clientSel: null,
     deep: false, concise: false, notes: true, toast: '', hist: [],
     live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [],
+    liveDossiers: null, liveDossierDetail: {}, liveDossierQuestions: {},
     readerDone: false, fMat: null, fSince: null, fCh: null,
     veilles: [
       { id: 'a170', label: 'Art. 170, AUPSRVE', sub: 'Nouvelle décision · révision du texte', on: true, last: 'Signal ce matin' },
@@ -318,6 +319,9 @@ class ClaidorDesignApp extends React.Component<any, any> {
       .then((acts) => {
         if (Array.isArray(acts) ? acts.length : acts?.items?.length) {
           this.setState({ live: true })
+          this.apiGet('/v1/dossiers').then((ds) => {
+            if (Array.isArray(ds)) this.setState({ liveDossiers: ds })
+          })
         }
       })
       .catch(() => {})
@@ -417,6 +421,71 @@ class ClaidorDesignApp extends React.Component<any, any> {
       articles: (d.articles || []).map((a) => ({ __live: true, article_id: a.article_id, label: 'Art. ' + a.number + ' (' + a.version_label + ')' })),
     }
   }
+  openLiveDossier(id) {
+    this.nav('dossierDetail', { dossier: id, input: '' })
+    if (!this.state.liveDossierDetail[id]) {
+      this.apiGet('/v1/dossiers/' + id).then((d) => {
+        if (d) this.setState((st) => ({ liveDossierDetail: { ...st.liveDossierDetail, [id]: d } }))
+      })
+      this.apiGet('/v1/dossiers/' + id + '/questions').then((qs) => {
+        if (Array.isArray(qs)) this.setState((st) => ({ liveDossierQuestions: { ...st.liveDossierQuestions, [id]: qs } }))
+      })
+    }
+  }
+  liveQuestionToMessage(qr) {
+    const sources = [
+      ...(qr.facts || []).map((c) => ({ k: 'piece', id: null, label: c.title, note: c.quote ? '«\u202f' + c.quote.slice(0, 90) + '\u2026\u202f»' : '' })),
+      ...(qr.law || []).map((c) => ({ k: c.source_kind === 'decision' ? 'decision' : 'article', id: c.source_id || null, live: true, label: c.title, note: c.quote ? '«\u202f' + c.quote.slice(0, 90) + '\u2026\u202f»' : '' })),
+    ]
+    const fact = (qr.facts && qr.facts[0]) ? { text: qr.facts[0].quote.slice(0, 90), src: qr.facts[0].title, piece: null } : null
+    return {
+      role: 'assistant',
+      answer: qr.answer || '',
+      authority: qr.authority_label ? { level: (qr.authority_count || 0) >= 2 ? 'constante' : 'limitee', label: '\u2014 ' + qr.authority_label } : null,
+      fact,
+      law: qr.versions_used && qr.versions_used.length ? 'Version(s) appliquée(s) : ' + qr.versions_used.join(', ') : '',
+      sources, panel: null, done: true,
+    }
+  }
+  openLiveQuestion(dossierId, qr) {
+    clearInterval(this._t)
+    const d = (this.state.liveDossiers || []).find((x) => x.id === dossierId)
+    this.setState({
+      view: 'assistant', chat: true, input: '', streamingIdx: -1, revealed: 0, menu: null,
+      activeConv: null, panel: null,
+      dossierSel: d ? d.name : this.state.dossierSel, dossierSelId: dossierId,
+      clientSel: d && d.client_name ? d.client_name : this.state.clientSel,
+      messages: [{ role: 'user', text: qr.question }, this.liveQuestionToMessage(qr)],
+    })
+  }
+  sendDossierLive(q, dossierId) {
+    const am = { role: 'assistant', answer: '', authority: null, sources: [], panel: null, done: false }
+    const msgs = [...this.state.messages, { role: 'user', text: q }, am]
+    const idx = msgs.length - 1
+    clearInterval(this._t)
+    this.setState({ view: 'assistant', chat: true, input: '', messages: msgs, revealed: 0, streamingIdx: idx, panel: null, menu: null })
+    fetch(getServerURL('/v1/dossiers/' + dossierId + '/ask'), {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((qr) => {
+        this.setState((st) => {
+          const m = st.messages.slice()
+          if (m[idx]) m[idx] = qr ? this.liveQuestionToMessage(qr) : { ...m[idx], done: true, answer: 'La réponse a échoué. Réessayez.' }
+          const lq = qr ? { ...st.liveDossierQuestions, [dossierId]: [qr, ...(st.liveDossierQuestions[dossierId] || [])] } : st.liveDossierQuestions
+          return { messages: m, streamingIdx: -1, revealed: (m[idx].answer || '').length, liveDossierQuestions: lq }
+        })
+      })
+      .catch(() => {
+        this.setState((st) => {
+          const m = st.messages.slice()
+          if (m[idx]) m[idx] = { ...m[idx], done: true, answer: 'La réponse a échoué. Réessayez.' }
+          return { messages: m, streamingIdx: -1 }
+        })
+      })
+  }
   matchGeneral(q) {
     const D = this.data(); const ql = q.toLowerCase();
     return D.scripted.find(x => x.keys.some(k => ql.includes(k))) || D.fallback;
@@ -510,6 +579,8 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const q = (text != null ? text : this.state.input).trim();
     if (!q) return;
     const dId = dIdOverride === undefined ? this.state.dossierSelId : dIdOverride;
+    const liveDossier = dId && (this.state.liveDossiers || []).some((x) => x.id === dId)
+    if (this.state.live && liveDossier) { this.sendDossierLive(q, dId); return; }
     if (this.state.live && !dId) { this.sendLive(q); return; }
     const am = this.buildMsg(q, dId);
     const msgs = [...this.state.messages, { role: 'user', text: q }, am];
@@ -570,6 +641,15 @@ class ClaidorDesignApp extends React.Component<any, any> {
     this.setState(Object.assign({ view, menu: null, searchOpen: false, streamingIdx: -1 }, patch || {}));
   }
   askFromDossier() {
+    const st = this.state
+    const liveD = (st.liveDossiers || []).find((x) => x.id === st.dossier)
+    if (st.live && liveD) {
+      const q = st.input.trim()
+      if (!q) return
+      this.setState({ dossierSel: liveD.name, dossierSelId: liveD.id, clientSel: liveD.client_name || null })
+      this.sendDossierLive(q, liveD.id)
+      return
+    }
     const d = this.data().dossiers.find(x => x.id === this.state.dossier);
     if (!d) return;
     const q = this.state.input.trim() || d.matterQAs[0].q;
@@ -660,8 +740,25 @@ class ClaidorDesignApp extends React.Component<any, any> {
       { type: 'cite', targets: [['a45', 'Art. 45, AUPSRVE'], ['a170', 'Art. 170, AUPSRVE'], ['a14', 'Art. 14, AUS']] },
     ].map(x => ({ title: D.AN[x.type].name, desc: D.AN[x.type].desc,
       targets: x.targets.map(t => ({ label: t[1], go: () => this.openAnalysis(x.type, t[0]) })) }));
-    const dossierCards = D.dossiers.map(d => ({ name: d.name, pieces: d.pieces, team: d.team, open: () => this.nav('dossierDetail', { dossier: d.id, input: '' }) }));
-    const dossierMenu = D.dossiers.map(d => ({ name: d.name, meta: d.pieces + ' · ' + d.team.length + ' avocats', pick: () => { this.setState({ dossierSel: d.name, dossierSelId: d.id, clientSel: d.client, menu: null }); this.showToast('Dossier rattaché — Claidor lira ses pièces'); } }));
+    const CAT_LABEL = { pleading: 'Acte de procédure', exhibit: 'Pièce', contract: 'Contrat', statement: 'Pièce financière', correspondence: 'Correspondance', decision: 'Décision', other: 'Document' }
+    const CAT_DOT = { pleading: 'var(--blue2)', exhibit: 'var(--amber)', contract: 'var(--blue2)', statement: 'var(--green)', correspondence: 'var(--amber)', decision: 'var(--red)', other: 'var(--t5)' }
+    const frDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
+    const frSize = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(n / 1024)) + ' Ko')
+    const dossierCards = (st.live && st.liveDossiers)
+      ? st.liveDossiers.map((d) => ({
+          name: d.name,
+          pieces: d.document_count + (d.document_count > 1 ? ' pièces' : ' pièce'),
+          team: [],
+          open: () => this.openLiveDossier(d.id),
+        }))
+      : D.dossiers.map(d => ({ name: d.name, pieces: d.pieces, team: d.team, open: () => this.nav('dossierDetail', { dossier: d.id, input: '' }) }));
+    const dossierMenu = (st.live && st.liveDossiers)
+      ? st.liveDossiers.map((d) => ({
+          name: d.name,
+          meta: d.document_count + ' pièces · ' + d.member_count + (d.member_count > 1 ? ' avocats' : ' avocat'),
+          pick: () => { this.setState({ dossierSel: d.name, dossierSelId: d.id, clientSel: d.client_name || null, menu: null }); this.showToast('Dossier rattaché — Claidor lira ses pièces'); },
+        }))
+      : D.dossiers.map(d => ({ name: d.name, meta: d.pieces + ' · ' + d.team.length + ' avocats', pick: () => { this.setState({ dossierSel: d.name, dossierSelId: d.id, clientSel: d.client, menu: null }); this.showToast('Dossier rattaché — Claidor lira ses pièces'); } }));
     const clientMenu = D.clients.map(name => ({ name, pick: () => this.setState({ clientSel: name, menu: null }) }));
     const promptMenu = D.prompts.map(p => ({ title: p.title, text: p.text, use: () => this.setState({ input: p.text, menu: null }) }));
     const promptRows = D.prompts.map(p => ({ title: p.title, text: p.text, use: () => this.nav('assistant', { chat: false, input: p.text }) }));
@@ -670,9 +767,38 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const gg = D.guides[st.guide];
     let dd = null;
     if (st.dossier) {
-      const d = D.dossiers.find(x => x.id === st.dossier);
-      dd = { ...d,
-        record: d.record.map(r => ({ q: d.matterQAs[r.mq].q, user: r.user, time: r.time, open: () => this.openQA(d.matterQAs[r.mq].q, d.id) })) };
+      const liveDetail = st.live ? st.liveDossierDetail[st.dossier] : null
+      if (liveDetail) {
+        const qs = st.liveDossierQuestions[st.dossier] || []
+        dd = {
+          id: liveDetail.id,
+          name: liveDetail.name,
+          pieces: liveDetail.documents.length + (liveDetail.documents.length > 1 ? ' pièces' : ' pièce'),
+          team: liveDetail.members.map((m) => (m.email || '?').slice(0, 2).toUpperCase()),
+          client: liveDetail.client_name || '',
+          placeholder: 'Posez une question sur ce dossier\u2026',
+          files: liveDetail.documents.map((doc) => ({
+            name: doc.title || doc.file_name,
+            cat: CAT_LABEL[doc.category] || 'Document',
+            dot: doc.readable ? (CAT_DOT[doc.category] || 'var(--t5)') : 'var(--t6)',
+            date: frDate(doc.created_at),
+            size: frSize(doc.size),
+          })),
+          record: qs.map((qr) => ({
+            q: qr.question,
+            user: qr.asked_by || '\u2014',
+            time: frDate(qr.created_at),
+            open: () => this.openLiveQuestion(liveDetail.id, qr),
+          })),
+        }
+      } else if (st.live && st.liveDossiers && st.liveDossiers.some((x) => x.id === st.dossier)) {
+        const li = st.liveDossiers.find((x) => x.id === st.dossier)
+        dd = { id: li.id, name: li.name, pieces: '\u2026', team: [], client: li.client_name || '', placeholder: 'Posez une question sur ce dossier\u2026', files: [], record: [] }
+      } else {
+        const d = D.dossiers.find(x => x.id === st.dossier);
+        if (d) dd = { ...d,
+          record: d.record.map(r => ({ q: d.matterQAs[r.mq].q, user: r.user, time: r.time, open: () => this.openQA(d.matterQAs[r.mq].q, d.id) })) };
+      }
     }
     let an = null, anIsAuth = false, anIsHist = false, anIsComp = false, anIsCite = false;
     if (st.an) {
