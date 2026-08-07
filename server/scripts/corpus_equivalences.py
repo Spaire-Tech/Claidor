@@ -19,6 +19,7 @@ from sqlalchemy import select
 from polar.corpus.slice import SLICE_ARTICLES_1998
 from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
 from polar.models import (
+    LegalAct,
     LegalActVersion,
     LegalArticle,
     LegalArticleEquivalence,
@@ -58,8 +59,20 @@ def _shares_domain(a: str, b: str) -> bool:
 
 
 async def build(session: AsyncSession) -> None:
+    # Scoped to AUPSRVE: version labels are NOT globally unique — AUPC also
+    # has a "1998" — and an unscoped {label: version} dict resolves to
+    # whichever row the database returns last. In development that happened
+    # to be AUPSRVE and the script worked by luck; in production it was
+    # AUPC, and the map came out empty.
     versions = {
-        v.label: v for v in (await session.execute(select(LegalActVersion))).scalars()
+        v.label: v
+        for v in (
+            await session.execute(
+                select(LegalActVersion)
+                .join(LegalAct)
+                .where(LegalAct.short_code == "AUPSRVE")
+            )
+        ).scalars()
     }
     arts_1998 = {
         a.number: a
