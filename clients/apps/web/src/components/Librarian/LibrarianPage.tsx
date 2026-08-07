@@ -30,6 +30,24 @@ const EXAMPLE_QUESTIONS = [
 const GENERIC_ERROR = 'La réponse a échoué. Réessayez.'
 const NOT_CONFIGURED_ERROR = 'Le bibliothécaire n’est pas configuré.'
 
+/**
+ * The stream reports a machine code, not a sentence.
+ *
+ * Collapsing every code into "réessayez" told the reader to retry an empty
+ * library — which no number of retries fills — and made a corpus that was
+ * never loaded indistinguishable from a transient model failure. The two
+ * need different actions, so they say different things.
+ */
+const STREAM_ERRORS: Record<string, string> = {
+  corpus_empty:
+    'La bibliothèque est vide : aucun texte n’a encore été chargé. ' +
+    'Réessayer n’y changera rien.',
+  answer_failed: GENERIC_ERROR,
+}
+
+const messageForStreamError = (code: string): string =>
+  STREAM_ERRORS[code] ?? GENERIC_ERROR
+
 type Status = 'idle' | 'streaming' | 'done'
 
 const LibrarianPage = () => {
@@ -98,8 +116,8 @@ const LibrarianPage = () => {
               setVersionsUsed(done.versions_used)
               setStatus('done')
             },
-            onError: () => {
-              setError(GENERIC_ERROR)
+            onError: (code) => {
+              setError(messageForStreamError(code))
               setStatus('done')
             },
           },
