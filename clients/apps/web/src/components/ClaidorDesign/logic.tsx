@@ -6,6 +6,7 @@
 'use client'
 
 import React from 'react'
+import { Upload } from '@/components/FileUpload/Upload'
 import { mdLite } from './mdlite'
 import { StreamingAnswer, TextStream } from './StreamingAnswer'
 
@@ -31,6 +32,9 @@ class ClaidorDesignApp extends React.Component<any, any> {
     deep: false, concise: false, notes: true, toast: '', hist: [],
     live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [],
     liveDossiers: null, liveDossierDetail: {}, liveDossierQuestions: {},
+    modal: null, modalBusy: false, modalError: '',
+    formName: '', formRef: '', formClient: '', formEmail: '', inviteRole: 'member',
+    importStaged: [],
     readerDone: false, fMat: null, fSince: null, fCh: null,
     veilles: [
       { id: 'a170', label: 'Art. 170, AUPSRVE', sub: 'Nouvelle décision · révision du texte', on: true, last: 'Signal ce matin' },
@@ -509,6 +513,125 @@ class ClaidorDesignApp extends React.Component<any, any> {
           return { messages: m, streamingIdx: -1 }
         })
       })
+  }
+  apiSend(method, path, body) {
+    return fetch(getServerURL(path), {
+      method,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }).then(async (r) => ({ ok: r.ok, status: r.status, data: await r.json().catch(() => null) }))
+  }
+  refreshDossiers() {
+    this.apiGet('/v1/dossiers').then((ds) => {
+      if (Array.isArray(ds)) this.setState({ liveDossiers: ds })
+    })
+  }
+  refreshDossierDetail(id) {
+    this.apiGet('/v1/dossiers/' + id).then((d) => {
+      if (d) this.setState((st) => ({ liveDossierDetail: { ...st.liveDossierDetail, [id]: d } }))
+    })
+  }
+  closeModal() {
+    if (this.state.modalBusy) return
+    this.setState({ modal: null, modalError: '', formName: '', formRef: '', formClient: '', formEmail: '', importStaged: [] })
+  }
+  createDossierSubmit() {
+    const st = this.state
+    const name = st.formName.trim()
+    if (name.length < 2) { this.setState({ modalError: 'Donnez un nom à l\u2019affaire.' }); return }
+    if (st.modalBusy) return
+    this.setState({ modalBusy: true, modalError: '' })
+    this.apiSend('POST', '/v1/dossiers', {
+      name,
+      reference: st.formRef.trim() || null,
+      client_name: st.formClient.trim() || null,
+    }).then(({ ok, data }) => {
+      if (!ok || !data) { this.setState({ modalBusy: false, modalError: 'La création a échoué. Réessayez.' }); return }
+      // One atomic close: closeModal() would read the stale busy flag.
+      this.setState({ modal: null, modalBusy: false, modalError: '', formName: '', formRef: '', formClient: '' })
+      this.refreshDossiers()
+      this.setState((s2) => ({ liveDossierDetail: { ...s2.liveDossierDetail, [data.id]: data }, liveDossierQuestions: { ...s2.liveDossierQuestions, [data.id]: [] } }))
+      this.nav('dossierDetail', { dossier: data.id, input: '' })
+      this.showToast('Dossier créé — importez ses pièces')
+    })
+  }
+  onPickFiles(e) {
+    const files = Array.from((e.target && e.target.files) || [])
+    if (!files.length) return
+    this.setState((st) => ({
+      importStaged: [
+        ...st.importStaged,
+        ...files.map((file) => ({ file, name: file.name, cat: 'exhibit', status: 'ready' })),
+      ],
+    }))
+    if (e.target) e.target.value = ''
+  }
+  startImport() {
+    const st = this.state
+    const dossierId = st.dossier
+    const detail = st.liveDossierDetail[dossierId]
+    const pending = st.importStaged.filter((f) => f.status === 'ready' || f.status === 'error')
+    if (!pending.length || st.modalBusy || !detail) return
+    this.setState({ modalBusy: true, modalError: '' })
+    const setRow = (file, patch) =>
+      this.setState((s2) => ({ importStaged: s2.importStaged.map((row) => (row.file === file ? { ...row, ...patch } : row)) }))
+    let pieceNumber = (detail.documents || []).length
+    const uploadOne = (row) =>
+      new Promise((resolve) => {
+        setRow(row.file, { status: 'uploading' })
+        pieceNumber += 1
+        const n = pieceNumber
+        const upload = new Upload({
+          organization: this.props.organization,
+          service: 'dossier_document',
+          file: row.file,
+          onFileProcessing: () => {},
+          onFileCreate: () => {},
+          onFileUploadProgress: () => {},
+          onFileUploaded: (fileRead) => {
+            setRow(row.file, { status: 'reading' })
+            this.apiSend('POST', '/v1/dossiers/' + dossierId + '/documents', {
+              file_id: fileRead.id,
+              title: row.name.replace(/\.[a-z0-9]+$/i, ''),
+              category: row.cat,
+              piece_number: n,
+            }).then(({ ok, data }) => {
+              if (!ok || !data) setRow(row.file, { status: 'error' })
+              else setRow(row.file, { status: data.readable ? 'ok' : 'unreadable' })
+              resolve(null)
+            })
+          },
+          onFileError: () => { setRow(row.file, { status: 'error' }); resolve(null) },
+        })
+        upload.run().catch(() => { setRow(row.file, { status: 'error' }); resolve(null) })
+      })
+    // Sequential on purpose: pièce numbers follow the order on screen.
+    pending.reduce((chain, row) => chain.then(() => uploadOne(row)), Promise.resolve()).then(() => {
+      this.setState({ modalBusy: false })
+      this.refreshDossierDetail(dossierId)
+      this.refreshDossiers()
+    })
+  }
+  inviteSubmit() {
+    const st = this.state
+    const email = st.formEmail.trim().toLowerCase()
+    if (!email || email.indexOf('@') < 1) { this.setState({ modalError: 'Adresse e-mail invalide.' }); return }
+    if (st.modalBusy) return
+    this.setState({ modalBusy: true, modalError: '' })
+    this.apiSend('POST', '/v1/dossiers/' + st.dossier + '/members', {
+      email,
+      role: st.inviteRole,
+    }).then(({ ok, status, data }) => {
+      if (!ok) {
+        const detail = data && typeof data.detail === 'string' ? data.detail : null
+        this.setState({ modalBusy: false, modalError: detail || (status === 403 ? 'Seul le responsable du dossier peut inviter.' : 'L\u2019invitation a échoué. Réessayez.') })
+        return
+      }
+      this.setState({ modal: null, modalBusy: false, modalError: '', formEmail: '' })
+      this.refreshDossierDetail(st.dossier)
+      this.showToast('Accès accordé — le dossier est partagé')
+    })
   }
   matchGeneral(q) {
     const D = this.data(); const ql = q.toLowerCase();
@@ -1018,10 +1141,80 @@ class ClaidorDesignApp extends React.Component<any, any> {
       ...D.guides.map((g, i) => ({ kind: 'Guide', label: g.title, go: () => this.nav('guides', { guide: i }) })),
     ];
     const searchResults = (tokens.length ? all.filter(r => { const h = normTxt(r.label); return tokens.every(t => h.includes(t)); }) : all).slice(0, 9);
+    const CAT_ORDER = ['exhibit', 'pleading', 'contract', 'statement', 'correspondence', 'decision', 'other']
+    const IMPORT_STATUS = {
+      ready: ['Prêt', 'var(--t4)'],
+      uploading: ['Téléversement\u2026', 'var(--t3)'],
+      reading: ['Lecture\u2026', 'var(--t3)'],
+      ok: ['Lisible \u2713', 'var(--green2)'],
+      unreadable: ['Illisible — scan ?', 'var(--amber2)'],
+      error: ['Échec — réessayer', 'var(--red2)'],
+    }
+    const importPendingCount = st.importStaged.filter((f) => f.status === 'ready' || f.status === 'error').length
+    const dossierVals = {
+      modalNewDossierOpen: st.modal === 'new',
+      modalImportOpen: st.modal === 'import',
+      modalInviteOpen: st.modal === 'invite',
+      modalError: st.modalError,
+      formName: st.formName, formRef: st.formRef, formClient: st.formClient, formEmail: st.formEmail,
+      onFormName: (e) => this.setState({ formName: e.target.value }),
+      onFormRef: (e) => this.setState({ formRef: e.target.value }),
+      onFormClient: (e) => this.setState({ formClient: e.target.value }),
+      onFormEmail: (e) => this.setState({ formEmail: e.target.value }),
+      openNewDossier: () => {
+        if (!st.live) { this.showToast('Disponible une fois le corpus connecté'); return }
+        this.setState({ modal: 'new', modalError: '' })
+      },
+      openImportPieces: () => {
+        if (!st.live || !st.liveDossierDetail[st.dossier]) { this.showToast('Créez d\u2019abord un dossier réel'); return }
+        this.setState({ modal: 'import', modalError: '' })
+      },
+      openInvite: () => {
+        if (!st.live || !st.liveDossierDetail[st.dossier]) { this.showToast('Créez d\u2019abord un dossier réel'); return }
+        this.setState({ modal: 'invite', modalError: '' })
+      },
+      closeModal: () => this.closeModal(),
+      createDossierSubmit: () => this.createDossierSubmit(),
+      createDossierLabel: st.modalBusy ? 'Création\u2026' : 'Créer le dossier',
+      modalSubmitBg: st.modalBusy ? 'var(--btnoff)' : 'var(--accent)',
+      modalSubmitFg: st.modalBusy ? 'var(--t5)' : 'var(--on-accent)',
+      pickRef: (el) => { this._pick = el },
+      triggerPick: () => { if (this._pick) this._pick.click() },
+      onPickFiles: (e) => this.onPickFiles(e),
+      startImport: () => this.startImport(),
+      importLabel: st.modalBusy
+        ? 'Téléversement\u2026'
+        : importPendingCount
+          ? 'Téléverser ' + importPendingCount + (importPendingCount > 1 ? ' pièces' : ' pièce')
+          : 'Téléverser',
+      importRows: st.importStaged.map((row) => ({
+        name: row.name,
+        cat: CAT_LABEL[row.cat] || row.cat,
+        status: (IMPORT_STATUS[row.status] || ['', ''])[0],
+        statusColor: (IMPORT_STATUS[row.status] || ['', 'var(--t4)'])[1],
+        cycleCat: () => {
+          if (row.status !== 'ready') return
+          this.setState((s2) => ({
+            importStaged: s2.importStaged.map((r2) =>
+              r2.file === row.file
+                ? { ...r2, cat: CAT_ORDER[(CAT_ORDER.indexOf(r2.cat) + 1) % CAT_ORDER.length] }
+                : r2,
+            ),
+          }))
+        },
+      })),
+      inviteSubmit: () => this.inviteSubmit(),
+      inviteLabel: st.modalBusy ? 'Ajout\u2026' : 'Donner accès',
+      pickRoleMember: () => this.setState({ inviteRole: 'member' }),
+      pickRoleLead: () => this.setState({ inviteRole: 'lead' }),
+      roleMemberBorder: st.inviteRole === 'member' ? 'var(--accent)' : 'var(--b3)',
+      roleLeadBorder: st.inviteRole === 'lead' ? 'var(--accent)' : 'var(--b3)',
+    }
     const canSend = st.input.trim().length > 0;
     const isChatView = st.view === 'assistant' && st.chat;
     const isAnalysisView = st.view === 'analysis';
     return {
+      ...dossierVals,
       greeting: this._greeting,
       isDark: !!st.dark, isLight: !st.dark,
       themeTitle: st.dark ? 'Mode clair' : 'Mode sombre',

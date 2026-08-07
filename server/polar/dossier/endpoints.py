@@ -19,6 +19,7 @@ from polar.models.file import FileServiceTypes
 from polar.openapi import APITag
 from polar.postgres import get_db_read_session, get_db_session
 from polar.routing import APIRouter
+from polar.user.repository import UserRepository
 
 from . import auth
 from .repository import DossierRepository
@@ -222,15 +223,34 @@ async def add_member(
     auth_subject: auth.DossierWrite,
     session: AsyncSession = Depends(get_db_session),
 ) -> DossierMemberRead:
-    """Assign a colleague to the matter — the only way to grant access."""
+    """Assign a colleague to the matter — the only way to grant access.
+
+    By id, or by the email the colleague signs in with. Email resolution
+    requires an existing Claidor account: access is granted to a person the
+    system knows, never to an address on faith. (Inviting people who have
+    no account yet is an email feature, deliberately deferred until
+    sending is set up.)
+    """
     await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
     await _require_lead(session, dossier_id, auth_subject.subject.id)
+    user_id = body.user_id
+    if user_id is None:
+        if not body.email:
+            raise ResourceNotFound("Indiquez un utilisateur ou une adresse e-mail.")
+        user_repository = UserRepository.from_session(session)
+        user = await user_repository.get_by_email(body.email.strip().lower())
+        if user is None:
+            raise ResourceNotFound(
+                "Aucun compte Claidor avec cette adresse. Votre confrère doit "
+                "d'abord se connecter une première fois."
+            )
+        user_id = user.id
     repository = DossierRepository.from_session(session)
     await repository.add_member(
-        dossier_id=dossier_id, user_id=body.user_id, role=body.role
+        dossier_id=dossier_id, user_id=user_id, role=body.role
     )
     members = await repository.list_members(dossier_id)
-    member = next(m for m in members if m.user_id == body.user_id)
+    member = next(m for m in members if m.user_id == user_id)
     return DossierMemberRead(
         id=member.id, user_id=member.user_id, email=member.user.email, role=member.role
     )

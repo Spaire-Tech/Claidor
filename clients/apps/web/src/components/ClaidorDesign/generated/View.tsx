@@ -768,11 +768,18 @@ export const DesignView = ({ v }: { v: any }) => {
             <>
             <div style={{'flex': '1', 'overflowY': 'auto', 'padding': '44px 48px'}}>
               <div style={{'maxWidth': '820px', 'margin': '0 auto'}}>
-                <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '24px', 'fontWeight': '600'}}>
-                  Dossiers
-                </div>
-                <div style={{'marginTop': '6px', 'fontSize': '13.5px', 'color': 'var(--t3)', 'lineHeight': '1.5', 'maxWidth': '560px', 'textWrap': 'pretty'}}>
-                  Un espace de travail par affaire. Les pièces d’un côté, le droit de l’autre — et des réponses qui s’appuient sur les deux.
+                <div style={{'display': 'flex', 'alignItems': 'flex-start', 'justifyContent': 'space-between', 'gap': '16px'}}>
+                  <div>
+                    <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '24px', 'fontWeight': '600'}}>
+                      Dossiers
+                    </div>
+                    <div style={{'marginTop': '6px', 'fontSize': '13.5px', 'color': 'var(--t3)', 'lineHeight': '1.5', 'maxWidth': '560px', 'textWrap': 'pretty'}}>
+                      Un espace de travail par affaire. Les pièces d’un côté, le droit de l’autre — et des réponses qui s’appuient sur les deux.
+                    </div>
+                  </div>
+                  <button onClick={v.openNewDossier} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': 'var(--accent)', 'color': 'var(--on-accent)', 'flex': '0 0 auto', 'marginTop': '4px'}}>
+                    + Nouveau dossier
+                  </button>
                 </div>
                 <div style={{'marginTop': '28px'}}>
                   <div style={{'display': 'flex', 'gap': '14px', 'padding': '8px 2px', 'borderBottom': '1px solid var(--b1)', 'fontSize': '11.5px', 'color': 'var(--t4)', 'fontWeight': '500'}}>
@@ -864,6 +871,9 @@ export const DesignView = ({ v }: { v: any }) => {
                       </span>
                       </Fragment>
                     ))}
+                    <span onClick={v.openInvite} title="Inviter un confrère" style={{'width': '26px', 'height': '26px', 'borderRadius': '50%', 'border': '1.5px dashed var(--b5)', 'color': 'var(--t3)', 'display': 'inline-flex', 'alignItems': 'center', 'justifyContent': 'center', 'fontSize': '13px', 'cursor': 'pointer', 'marginLeft': '-2px', 'background': 'var(--surface)'}} className="dh-72018fb5">
+                      +
+                    </span>
                   </div>
                 </div>
                 <div style={{'marginTop': '22px', 'background': 'var(--s3)', 'borderRadius': '14px', 'padding': '14px 16px'}}>
@@ -905,10 +915,10 @@ export const DesignView = ({ v }: { v: any }) => {
                     Pièces
                   </div>
                   <div style={{'display': 'flex', 'gap': '8px', 'fontSize': '12.5px', 'color': 'var(--t2)'}}>
-                    <span style={{'border': '1px solid var(--b2)', 'borderRadius': '7px', 'padding': '5px 11px', 'cursor': 'pointer'}} className="dh-63a957d0">
+                    <span onClick={v.openNewDossier} style={{'border': '1px solid var(--b2)', 'borderRadius': '7px', 'padding': '5px 11px', 'cursor': 'pointer'}} className="dh-63a957d0">
                       Créer un dossier
                     </span>
-                    <span style={{'border': '1px solid var(--b2)', 'borderRadius': '7px', 'padding': '5px 11px', 'cursor': 'pointer'}} className="dh-63a957d0">
+                    <span onClick={v.openImportPieces} style={{'border': '1px solid var(--b2)', 'borderRadius': '7px', 'padding': '5px 11px', 'cursor': 'pointer'}} className="dh-63a957d0">
                       Importer des pièces
                     </span>
                   </div>
@@ -1555,6 +1565,174 @@ export const DesignView = ({ v }: { v: any }) => {
                 </div>
                 </>
               ) : null}
+            </div>
+          </div>
+          </>
+        ) : null}
+        {(v.modalNewDossierOpen) ? (
+          <>
+          <div onClick={v.closeModal} style={{'position': 'fixed', 'inset': '0', 'background': 'var(--sh4)', 'zIndex': '60', 'display': 'flex', 'alignItems': 'flex-start', 'justifyContent': 'center', 'paddingTop': '16vh'}}>
+            <div onClick={v.stop} style={{'width': '460px', 'background': 'var(--surface)', 'borderRadius': '14px', 'boxShadow': '0 20px 60px var(--sh4)', 'overflow': 'hidden'}}>
+              <div style={{'padding': '18px 20px 4px'}}>
+                <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '18px', 'fontWeight': '600'}}>
+                  Nouveau dossier
+                </div>
+                <div style={{'marginTop': '4px', 'fontSize': '12.5px', 'color': 'var(--t3)'}}>
+                  Un espace fermé par défaut — seule l’équipe de l’affaire y accède.
+                </div>
+              </div>
+              <div style={{'padding': '14px 20px 0', 'display': 'flex', 'flexDirection': 'column', 'gap': '12px'}}>
+                <div>
+                  <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
+                    Affaire
+                  </div>
+                  <input value={v.formName} onChange={v.onFormName} placeholder="Ex. : Recouvrement — BICIS c/ SODICA" style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                </div>
+                <div style={{'display': 'flex', 'gap': '10px'}}>
+                  <div style={{'flex': '1'}}>
+                    <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
+                      Référence 
+                      <span style={{'fontWeight': '400', 'color': 'var(--t5)'}}>
+                        (optionnel)
+                      </span>
+                    </div>
+                    <input value={v.formRef} onChange={v.onFormRef} placeholder="Ex. : 2026-014" style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                  </div>
+                  <div style={{'flex': '1'}}>
+                    <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
+                      Client 
+                      <span style={{'fontWeight': '400', 'color': 'var(--t5)'}}>
+                        (optionnel)
+                      </span>
+                    </div>
+                    <input value={v.formClient} onChange={v.onFormClient} placeholder="Ex. : BICIS" style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                  </div>
+                </div>
+                {(v.modalError) ? (
+                  <>
+                  <div style={{'fontSize': '12.5px', 'color': 'var(--red2)'}}>
+                    {v.modalError}
+                  </div>
+                  </>
+                ) : null}
+              </div>
+              <div style={{'display': 'flex', 'justifyContent': 'flex-end', 'gap': '8px', 'padding': '16px 20px'}}>
+                <button onClick={v.closeModal} style={{'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '8px 14px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '500', 'cursor': 'pointer', 'background': 'var(--surface)', 'color': 'var(--ink)'}} className="dh-63a957d0">
+                  Annuler
+                </button>
+                <button onClick={v.createDossierSubmit} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.modalSubmitBg, 'color': v.modalSubmitFg}}>
+                  {v.createDossierLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+          </>
+        ) : null}
+        {(v.modalImportOpen) ? (
+          <>
+          <div onClick={v.closeModal} style={{'position': 'fixed', 'inset': '0', 'background': 'var(--sh4)', 'zIndex': '60', 'display': 'flex', 'alignItems': 'flex-start', 'justifyContent': 'center', 'paddingTop': '12vh'}}>
+            <div onClick={v.stop} style={{'width': '560px', 'background': 'var(--surface)', 'borderRadius': '14px', 'boxShadow': '0 20px 60px var(--sh4)', 'overflow': 'hidden'}}>
+              <div style={{'padding': '18px 20px 4px'}}>
+                <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '18px', 'fontWeight': '600'}}>
+                  Importer des pièces
+                </div>
+                <div style={{'marginTop': '4px', 'fontSize': '12.5px', 'color': 'var(--t3)'}}>
+                  Chaque pièce est lue dès son arrivée — vous savez immédiatement si Claidor peut s’en servir.
+                </div>
+              </div>
+              <div style={{'padding': '14px 20px 0'}}>
+                <input type="file" multiple ref={v.pickRef} onChange={v.onPickFiles} style={{'display': 'none'}} />
+                <div onClick={v.triggerPick} style={{'border': '1.5px dashed var(--b4)', 'borderRadius': '12px', 'padding': '26px 16px', 'textAlign': 'center', 'cursor': 'pointer', 'color': 'var(--t3)', 'fontSize': '13px'}} className="dh-14a25b5f">
+                  
+            Déposez vos fichiers ici, ou cliquez pour parcourir
+            
+                  <div style={{'marginTop': '4px', 'fontSize': '11.5px', 'color': 'var(--t5)'}}>
+                    PDF, Word, images — les scans illisibles seront signalés
+                  </div>
+                </div>
+                {(v.importRows).map((sf, sfIdx) => (
+                  <Fragment key={sfIdx}>
+                  <div style={{'display': 'flex', 'alignItems': 'center', 'gap': '10px', 'padding': '10px 2px', 'borderBottom': '1px solid var(--s6)', 'fontSize': '13px'}}>
+                    <span style={{'flex': '1', 'minWidth': '0', 'overflow': 'hidden', 'textOverflow': 'ellipsis', 'whiteSpace': 'nowrap', 'fontWeight': '500'}}>
+                      {sf.name}
+                    </span>
+                    <span onClick={sf.cycleCat} title="Cliquer pour changer la catégorie" style={{'border': '1px solid var(--b2)', 'borderRadius': '999px', 'padding': '2px 10px', 'fontSize': '11.5px', 'color': 'var(--t1)', 'cursor': 'pointer', 'whiteSpace': 'nowrap'}} className="dh-76e01d09">
+                      {sf.cat}
+                    </span>
+                    <span style={{'width': '120px', 'textAlign': 'right', 'fontSize': '12px', 'color': sf.statusColor}}>
+                      {sf.status}
+                    </span>
+                  </div>
+                  </Fragment>
+                ))}
+                {(v.modalError) ? (
+                  <>
+                  <div style={{'marginTop': '8px', 'fontSize': '12.5px', 'color': 'var(--red2)'}}>
+                    {v.modalError}
+                  </div>
+                  </>
+                ) : null}
+              </div>
+              <div style={{'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'center', 'gap': '8px', 'padding': '16px 20px'}}>
+                <div style={{'fontSize': '11.5px', 'color': 'var(--t5)'}}>
+                  La catégorie se change d’un clic sur son étiquette.
+                </div>
+                <div style={{'display': 'flex', 'gap': '8px'}}>
+                  <button onClick={v.closeModal} style={{'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '8px 14px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '500', 'cursor': 'pointer', 'background': 'var(--surface)', 'color': 'var(--ink)'}} className="dh-63a957d0">
+                    Fermer
+                  </button>
+                  <button onClick={v.startImport} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.modalSubmitBg, 'color': v.modalSubmitFg}}>
+                    {v.importLabel}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          </>
+        ) : null}
+        {(v.modalInviteOpen) ? (
+          <>
+          <div onClick={v.closeModal} style={{'position': 'fixed', 'inset': '0', 'background': 'var(--sh4)', 'zIndex': '60', 'display': 'flex', 'alignItems': 'flex-start', 'justifyContent': 'center', 'paddingTop': '16vh'}}>
+            <div onClick={v.stop} style={{'width': '420px', 'background': 'var(--surface)', 'borderRadius': '14px', 'boxShadow': '0 20px 60px var(--sh4)', 'overflow': 'hidden'}}>
+              <div style={{'padding': '18px 20px 4px'}}>
+                <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '18px', 'fontWeight': '600'}}>
+                  Inviter au dossier
+                </div>
+                <div style={{'marginTop': '4px', 'fontSize': '12.5px', 'color': 'var(--t3)'}}>
+                  Votre confrère doit s’être connecté à Claidor au moins une fois.
+                </div>
+              </div>
+              <div style={{'padding': '14px 20px 0', 'display': 'flex', 'flexDirection': 'column', 'gap': '12px'}}>
+                <div>
+                  <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
+                    Adresse e-mail
+                  </div>
+                  <input value={v.formEmail} onChange={v.onFormEmail} placeholder="prenom@cabinet.com" style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                </div>
+                <div style={{'display': 'flex', 'gap': '6px'}}>
+                  <span onClick={v.pickRoleMember} style={{'border': `1px solid ${v.roleMemberBorder}`, 'borderRadius': '999px', 'padding': '4px 12px', 'fontSize': '12px', 'cursor': 'pointer', 'color': 'var(--t1)'}}>
+                    Membre
+                  </span>
+                  <span onClick={v.pickRoleLead} style={{'border': `1px solid ${v.roleLeadBorder}`, 'borderRadius': '999px', 'padding': '4px 12px', 'fontSize': '12px', 'cursor': 'pointer', 'color': 'var(--t1)'}}>
+                    Responsable
+                  </span>
+                </div>
+                {(v.modalError) ? (
+                  <>
+                  <div style={{'fontSize': '12.5px', 'color': 'var(--red2)'}}>
+                    {v.modalError}
+                  </div>
+                  </>
+                ) : null}
+              </div>
+              <div style={{'display': 'flex', 'justifyContent': 'flex-end', 'gap': '8px', 'padding': '16px 20px'}}>
+                <button onClick={v.closeModal} style={{'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '8px 14px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '500', 'cursor': 'pointer', 'background': 'var(--surface)', 'color': 'var(--ink)'}} className="dh-63a957d0">
+                  Annuler
+                </button>
+                <button onClick={v.inviteSubmit} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.modalSubmitBg, 'color': v.modalSubmitFg}}>
+                  {v.inviteLabel}
+                </button>
+              </div>
             </div>
           </div>
           </>

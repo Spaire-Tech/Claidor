@@ -1,6 +1,8 @@
 'use client'
 
+import { OrganizationContext } from '@/providers/maintainerOrganization'
 import dynamic from 'next/dynamic'
+import { useContext } from 'react'
 
 const ClaidorDesignApp = dynamic(
   () => import('./logic').then((m) => m.ClaidorDesignApp),
@@ -15,8 +17,13 @@ const ClaidorDesignApp = dynamic(
  * .claidor-design scope that carries the design's stylesheet. Fidelity
  * fixes go into the converter, never into generated/.
  */
-export const DesignApp = () => (
-  <div className="claidor-design h-dvh w-full overflow-hidden">
-    <ClaidorDesignApp />
-  </div>
-)
+export const DesignApp = () => {
+  // The workspace the dashboard is mounted under — uploads and dossier
+  // creation are scoped to it.
+  const { organization } = useContext(OrganizationContext)
+  return (
+    <div className="claidor-design h-dvh w-full overflow-hidden">
+      <ClaidorDesignApp organization={organization} />
+    </div>
+  )
+}

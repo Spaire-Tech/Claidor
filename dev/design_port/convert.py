@@ -213,6 +213,8 @@ def emit(node, scope: set[str], indent: int) -> str:
     classes = []
     for name, value in node.attrs:
         if value is None:
+            # Bare boolean attribute (multiple, disabled…) → JSX boolean.
+            parts.append(ATTR_RENAMES.get(name, name))
             continue
         if name == "style":
             parts.append(f"style={style_to_jsx(value, scope)}")

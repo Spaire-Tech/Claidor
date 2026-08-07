@@ -77,7 +77,10 @@ class DossierUpdate(Schema):
 
 
 class DossierMemberAdd(Schema):
-    user_id: UUID
+    """Assign by id, or by the email a colleague signs in with."""
+
+    user_id: UUID | None = None
+    email: str | None = Field(default=None, max_length=320)
     role: DossierRole = DossierRole.member
 
 
