@@ -78,6 +78,10 @@ Rigueur :
 - Chaque affirmation est soit ancrée par une citation, soit signalée comme
   non sourcée. N'insère JAMAIS une assertion de pratique (« en pratique,
   … ») sans source au milieu d'un raisonnement sourcé.
+- Ne cite JAMAIS l'en-tête procédural d'une décision (numéro de pourvoi,
+  arrêt attaqué, juridiction d'origine) comme fondement d'une affirmation :
+  cite le motif qui énonce la règle. Une citation qui ne soutient pas
+  l'affirmation à laquelle elle est attachée est pire qu'aucune citation.
 - « En l'espèce » désigne l'affaire de la décision citée, jamais la
   situation de l'utilisateur. Pour la situation de l'utilisateur, écris
   « dans votre cas » ou « appliqué à votre date ».
@@ -381,28 +385,40 @@ class LibrarianService:
     ) -> dict[str, Any]:
         """Authority signal computed from verified links — never by the model.
 
+        Anchored to the FIRST cited article — the one the answer's opening
+        line rests on. Aggregating over every cited article made the number
+        depend on how many side-articles a given run happened to mention
+        (36, then 40, then 150 for the same question); anchored to one
+        article, the same citation yields the same number every time, and
+        the label says which article it counts.
+
         Fixed thresholds; copy names its own scope (« dans le corpus
         chargé ») so the label can never claim more than the data holds.
         """
         repository = CorpusRepository.from_session(session)
+        primary = cited_article_ids[0] if cited_article_ids else None
         decisions = (
-            await repository.list_verified_decisions_for_articles(cited_article_ids)
-            if cited_article_ids
+            await repository.list_verified_decisions_for_articles([primary])
+            if primary is not None
             else []
         )
+        ref = await repository.get_article_ref(primary) if primary else None
+        on_article = f"sur l'art. {ref[0]} ({ref[1]} {ref[2]}) " if ref else ""
         count = len(decisions)
         years = {d.decided_on.year for d in decisions}
         if count == 0:
             label = "texte seul — aucune décision dans le corpus chargé"
         elif count == 1:
-            label = "autorité limitée — décision unique dans le corpus chargé"
+            label = (
+                f"autorité limitée — décision unique {on_article}dans le corpus chargé"
+            )
         elif count >= 4 and len(years) >= 3:
             label = (
                 f"ligne jurisprudentielle constante — {count} décisions "
-                "dans le corpus chargé"
+                f"{on_article}dans le corpus chargé"
             )
         else:
-            label = f"plusieurs décisions ({count}) dans le corpus chargé"
+            label = f"plusieurs décisions ({count}) {on_article}dans le corpus chargé"
         return {
             "type": "authority",
             "label": label,

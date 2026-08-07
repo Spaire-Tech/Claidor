@@ -76,6 +76,21 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         )
         return (await self.session.execute(statement)).scalars().all()
 
+    async def get_article_ref(self, article_id: object) -> tuple[str, str, str] | None:
+        """(number, act short code, version label) — for authority labels."""
+        statement = (
+            select(
+                LegalArticle.number,
+                LegalAct.short_code,
+                LegalActVersion.label,
+            )
+            .join(LegalActVersion, LegalActVersion.id == LegalArticle.act_version_id)
+            .join(LegalAct, LegalAct.id == LegalActVersion.act_id)
+            .where(LegalArticle.id == article_id)
+        )
+        row = (await self.session.execute(statement)).first()
+        return (row[0], row[1], row[2]) if row else None
+
     async def list_verified_decisions_for_articles(
         self, article_ids: Sequence[object]
     ) -> Sequence[CourtDecision]:
