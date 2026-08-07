@@ -16,6 +16,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     revealed: 0, streamingIdx: -1, dossier: null, an: null, guide: 0, menu: null,
     searchOpen: false, searchQ: '', selSources: { au: true, cj: true }, dossierSel: null, dossierSelId: null, clientSel: null,
     deep: false, concise: false, notes: true, toast: '', hist: [],
+    live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [],
     readerDone: false, fMat: null, fSince: null, fCh: null,
     veilles: [
       { id: 'a170', label: 'Art. 170, AUPSRVE', sub: 'Nouvelle décision · révision du texte', on: true, last: 'Signal ce matin' },
@@ -321,11 +322,101 @@ class ClaidorDesignApp extends React.Component<any, any> {
       })
       .catch(() => {})
   }
-  componentDidUpdate() {
+  componentDidUpdate(prevProps, prevState) {
     if (this._sc && this.state.streamingIdx >= 0) this._sc.scrollTop = this._sc.scrollHeight;
+    const st = this.state
+    if (
+      st.live &&
+      st.view === 'recherche' &&
+      (prevState.searchQ !== st.searchQ ||
+        prevState.fMat !== st.fMat ||
+        prevState.fSince !== st.fSince ||
+        prevState.fCh !== st.fCh ||
+        (prevState.view !== 'recherche' && !st.liveSearch))
+    ) {
+      this.scheduleLiveSearch()
+    }
   }
-  componentWillUnmount() { clearInterval(this._t); clearTimeout(this._toastT); }
+  componentWillUnmount() { clearInterval(this._t); clearTimeout(this._toastT); clearTimeout(this._searchT); }
 
+  apiGet(path) {
+    return fetch(getServerURL(path), { credentials: 'include' }).then((r) =>
+      r.ok ? r.json() : null,
+    )
+  }
+  scheduleLiveSearch() {
+    clearTimeout(this._searchT)
+    this._searchT = setTimeout(() => this.fetchLiveSearch(), 300)
+  }
+  fetchLiveSearch() {
+    const st = this.state
+    if (!st.live) return
+    // The matière chips are legal topics; live, a topic is either the
+    // query itself (browsing) or an act filter alongside the typed query.
+    const actByMat = { 'Saisie-attribution': 'AUPSRVE', 'Cautionnement': 'AUS', 'Injonction de payer': 'AUPSRVE', 'Sociétés': 'AUSCGIE' }
+    const q = st.searchQ && st.searchQ.trim() ? st.searchQ.trim() : (st.fMat || '')
+    const params = new URLSearchParams()
+    params.set('q', q)
+    if (st.searchQ && st.fMat && actByMat[st.fMat]) params.set('act', actByMat[st.fMat])
+    if (st.fSince) params.set('decided_from', st.fSince + '-01-01')
+    if (st.fCh && st.liveChambers.includes(st.fCh)) params.set('chamber', st.fCh)
+    const seq = (this._searchSeq = (this._searchSeq || 0) + 1)
+    this.apiGet('/v1/corpus/search?' + params.toString()).then((data) => {
+      if (data && seq === this._searchSeq) {
+        const patch = { liveSearch: data }
+        if (data.chambers && data.chambers.length) patch.liveChambers = data.chambers
+        this.setState(patch)
+      }
+    })
+  }
+  openLivePanel(type, id) {
+    const cacheKey = type === 'article' ? 'liveArticles' : 'liveDecisions'
+    if (this.state[cacheKey][id]) {
+      this.setState({ panel: { type, id } })
+      return
+    }
+    const path = type === 'article' ? '/v1/corpus/articles/' + id : '/v1/corpus/decisions/' + id
+    this.apiGet(path).then((d) => {
+      if (!d) return
+      const mapped = type === 'article' ? this.mapLiveArticle(d) : this.mapLiveDecision(d)
+      this.setState((st) => ({
+        [cacheKey]: { ...st[cacheKey], [id]: mapped },
+        panel: { type, id },
+      }))
+    })
+  }
+  mapLiveArticle(d) {
+    return {
+      ref: 'Article ' + d.number,
+      act: d.act_short_code,
+      label: 'Art. ' + d.number + ', ' + d.act_short_code,
+      current: 'Version ' + d.version_label,
+      versions: [],
+      hl: -1,
+      changes: [],
+      text: d.alineas && d.alineas.length ? d.alineas : [d.text],
+      citedCount: (d.decisions || []).length,
+      top: (d.decisions || []).slice(0, 3).map((x) => x.id),
+      citedWith: [],
+      __liveDecisions: Object.fromEntries(
+        (d.decisions || []).map((x) => [x.id, 'CCJA ' + x.number + ' — ' + x.decided_on]),
+      ),
+    }
+  }
+  mapLiveDecision(d) {
+    const paras = (d.full_text || d.summary || '')
+      .split(/\n\n+/)
+      .map((t) => t.trim())
+      .filter(Boolean)
+    return {
+      title: 'CCJA, arrêt n° ' + d.number + ' — ' + d.decided_on,
+      meta: [d.chamber, d.ohadata_code].filter(Boolean).join(' · '),
+      relevance: d.summary ? d.summary.slice(0, 120) : '',
+      hl: -1,
+      extract: paras.slice(0, 3),
+      articles: (d.articles || []).map((a) => ({ __live: true, article_id: a.article_id, label: 'Art. ' + a.number + ' (' + a.version_label + ')' })),
+    }
+  }
   matchGeneral(q) {
     const D = this.data(); const ql = q.toLowerCase();
     return D.scripted.find(x => x.keys.some(k => ql.includes(k))) || D.fallback;
@@ -393,7 +484,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
             ...m.sources,
             // Real citations carry corpus UUIDs the scripted panels don't
             // know; the panel opens once Bibliothèque is wired.
-            { k: c.source_kind === 'decision' ? 'decision' : 'article', id: null, label: c.title, note: c.quote ? '«\u202f' + c.quote.slice(0, 90) + '\u2026\u202f»' : '' },
+            { k: c.source_kind === 'decision' ? 'decision' : 'article', id: c.source_id || null, live: true, label: c.title, note: c.quote ? '«\u202f' + c.quote.slice(0, 90) + '\u2026\u202f»' : '' },
           ],
         })),
       onClarification: (cl) => patch((m) => ({ ...m, answer: cl.message })),
@@ -529,7 +620,11 @@ class ClaidorDesignApp extends React.Component<any, any> {
         sources: (m.sources || []).map(s => ({
           kind: D.K[s.k].kind, color: D.K[s.k].color, d: D.K[s.k].d,
           label: s.label, note: showNotes ? s.note : '',
-          open: s.id ? openPanel({ type: s.k === 'piece' ? 'piece' : (s.k === 'article' ? 'article' : 'decision'), id: s.id }) : undefined })),
+          open: s.id
+            ? (s.live
+                ? () => this.openLivePanel(s.k === 'decision' ? 'decision' : 'article', s.id)
+                : openPanel({ type: s.k === 'piece' ? 'piece' : (s.k === 'article' ? 'article' : 'decision'), id: s.id }))
+            : undefined })),
         copy: () => { try { navigator.clipboard.writeText(m.answer); } catch (e) {} this.showToast('Réponse copiée'); },
         exportIt: () => this.showToast('Export PDF ajouté à la file'),
         regen: () => this.regen(i),
@@ -647,7 +742,23 @@ class ClaidorDesignApp extends React.Component<any, any> {
         mat: matOf(d.articles[0]), open: openPanel({ type: 'decision', id }) }); });
     Object.keys(D.articles).forEach(id => { const a = D.articles[id];
       docs.push({ kind: 'Article', label: a.label, meta: a.act, year: 0, ch: '', mat: matOf(id), open: openPanel({ type: 'article', id }) }); });
-    const rescResults = docs.filter(dc => {
+    const liveResc = (st.live && st.liveSearch)
+      ? [
+          ...st.liveSearch.decisions.map(dd => ({
+            kind: 'Décision',
+            label: 'CCJA ' + dd.number + (dd.exact ? ' — citation exacte' : ''),
+            meta: [dd.decided_on, dd.chamber, dd.keyword_header || dd.excerpt].filter(Boolean).join(' · ').slice(0, 140),
+            open: () => this.openLivePanel('decision', dd.id),
+          })),
+          ...st.liveSearch.articles.map(ar => ({
+            kind: 'Article',
+            label: 'Art. ' + ar.number + ', ' + ar.act_short_code + (ar.exact ? ' — citation exacte' : ''),
+            meta: (ar.act_title + ' · ' + ar.version_label + ' · ' + ar.excerpt).slice(0, 140),
+            open: () => this.openLivePanel('article', ar.id),
+          })),
+        ]
+      : null
+    const rescResults = liveResc !== null ? liveResc : docs.filter(dc => {
       const hay = normTxt(dc.label + ' ' + dc.meta);
       if (tokens.length && !tokens.every(t => hay.includes(t))) return false;
       if (st.fMat && dc.mat !== st.fMat) return false;
@@ -660,7 +771,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
       pick: () => this.setState({ [key]: st[key] === val ? null : val }) });
     const fMatChips = ['Saisie-attribution', 'Cautionnement', 'Injonction de payer', 'Sociétés'].map(m => mkChip(m, 'fMat', m));
     const fSinceChips = [2010, 2015, 2020].map(y => mkChip('Depuis ' + y, 'fSince', y));
-    const fChChips = ['1re ch.', '2e ch.', '3e ch.'].map(c => mkChip(c, 'fCh', c));
+    const fChChips = (st.live && st.liveChambers.length ? st.liveChambers : ['1re ch.', '2e ch.', '3e ch.']).map(c => mkChip(c, 'fCh', c));
     const all = [
       ...['d8', 'd1', 'd4', 'd6', 'd9'].map(id => ({ kind: 'Document', label: D.shortRef[id] + ' — ' + D.decisions[id].title, go: () => this.nav('recherche', { panel: { type: 'decision', id } }) })),
       ...['a170', 'a45', 'a14', 'a10'].map(id => ({ kind: 'Document', label: D.articles[id].label, go: () => this.nav('recherche', { panel: { type: 'article', id } }) })),
@@ -756,12 +867,18 @@ class ClaidorDesignApp extends React.Component<any, any> {
         this.showToast('Question restructurée');
       },
       hasPanel: !!st.panel && (isChatView || isAnalysisView || st.view === 'recherche' || st.view === 'lecteur' || st.view === 'veilles'),
-      panelIsDecision: !!st.panel && st.panel.type === 'decision' && !!D.decisions[st.panel.id],
-      panelIsArticle: !!st.panel && st.panel.type === 'article' && !!D.articles[st.panel.id],
+      panelIsDecision: !!st.panel && st.panel.type === 'decision' && !!(D.decisions[st.panel.id] || st.liveDecisions[st.panel.id]),
+      panelIsArticle: !!st.panel && st.panel.type === 'article' && !!(D.articles[st.panel.id] || st.liveArticles[st.panel.id]),
       panelIsPiece: !!st.panel && st.panel.type === 'piece' && !!D.pieces[st.panel.id],
       pd: (() => { if (!st.panel || st.panel.type !== 'decision') return null;
-        const d = D.decisions[st.panel.id];
+        const d = D.decisions[st.panel.id] || st.liveDecisions[st.panel.id];
         if (!d) return null;
+        if (st.liveDecisions[st.panel.id] && !D.decisions[st.panel.id]) {
+          return { ...d,
+            extract: d.extract.map((t) => ({ text: t, bg: 'transparent', pad: '0' })),
+            articles: d.articles.map((a) => ({ label: a.label, open: () => this.openLivePanel('article', a.article_id) })),
+            hasAnalyses: false, analyses: [], hasSum: false, sum: null, hasSimilar: false, similar: [] };
+        }
         const line = this.authLineFor(st.panel.id);
         return { ...d, extract: d.extract.map((t, i) => ({ text: t, bg: i === d.hl ? 'var(--hl)' : 'transparent', pad: i === d.hl ? '8px 10px' : '0' })),
           articles: d.articles.map(id => ({ label: D.articles[id].label, open: openPanel({ type: 'article', id }) })),
@@ -773,8 +890,15 @@ class ClaidorDesignApp extends React.Component<any, any> {
           similar: (D.similars[st.panel.id] || []).map(did => ({ label: D.shortRef[did] || D.decisions[did].title, sub: D.decisions[did].relevance, open: openPanel({ type: 'decision', id: did }) })) }; })(),
       pa: (() => { if (!st.panel || st.panel.type !== 'article') return null;
         const id = st.panel.id;
-        const a = D.articles[id];
+        const a = D.articles[id] || st.liveArticles[id];
         if (!a) return null;
+        if (st.liveArticles[id] && !D.articles[id]) {
+          return { ...a,
+            text: a.text.map((t) => ({ text: t, bg: 'transparent', pad: '0' })),
+            topDecisions: a.top.map((did) => ({ label: a.__liveDecisions[did] || 'Décision', open: () => this.openLivePanel('decision', did) })),
+            analyses: [],
+            watchLabel: 'Créer une veille', watchBorder: 'var(--b3)', watch: () => this.showToast('Veilles — bientôt sur le corpus réel') };
+        }
         const btns = [];
         if (D.artHist[id]) btns.push({ label: D.AN.hist.name, go: () => this.openAnalysis('hist', id) });
         if (D.artComp[id]) btns.push({ label: D.AN.comp.name, go: () => this.openAnalysis('comp', id) });
