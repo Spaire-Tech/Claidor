@@ -6,6 +6,14 @@
 'use client'
 
 import React from 'react'
+
+/** A short displayable excerpt: strips the quote's own guillemets before
+ * wrapping, so cards never show doubled or empty « ». */
+const quoteNote = (quote) => {
+  const cleaned = (quote || '').replace(/^[\s«»"']+|[\s«»"']+$/g, '')
+  if (!cleaned) return ''
+  return '«\u202f' + cleaned.slice(0, 90) + '\u2026\u202f»'
+}
 import { askLibrarian } from '@/components/Librarian/stream'
 import { getServerURL } from '@/utils/api'
 import { DesignView } from './generated/View'
@@ -435,8 +443,8 @@ class ClaidorDesignApp extends React.Component<any, any> {
   }
   liveQuestionToMessage(qr) {
     const sources = [
-      ...(qr.facts || []).map((c) => ({ k: 'piece', id: null, label: c.title, note: c.quote ? '«\u202f' + c.quote.slice(0, 90) + '\u2026\u202f»' : '' })),
-      ...(qr.law || []).map((c) => ({ k: c.source_kind === 'decision' ? 'decision' : 'article', id: c.source_id || null, live: true, label: c.title, note: c.quote ? '«\u202f' + c.quote.slice(0, 90) + '\u2026\u202f»' : '' })),
+      ...(qr.facts || []).map((c) => ({ k: 'piece', id: null, label: c.title, note: quoteNote(c.quote) })),
+      ...(qr.law || []).map((c) => ({ k: c.source_kind === 'decision' ? 'decision' : 'article', id: c.source_id || null, live: true, label: c.title, note: quoteNote(c.quote) })),
     ]
     const fact = (qr.facts && qr.facts[0]) ? { text: qr.facts[0].quote.slice(0, 90), src: qr.facts[0].title, piece: null } : null
     return {
@@ -576,7 +584,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
             ...m.sources,
             // Real citations carry corpus UUIDs the scripted panels don't
             // know; the panel opens once Bibliothèque is wired.
-            { k: c.source_kind === 'decision' ? 'decision' : 'article', id: c.source_id || null, live: true, label: c.title, note: c.quote ? '«\u202f' + c.quote.slice(0, 90) + '\u2026\u202f»' : '' },
+            { k: c.source_kind === 'decision' ? 'decision' : 'article', id: c.source_id || null, live: true, label: c.title, note: quoteNote(c.quote) },
           ],
         })),
       onClarification: (cl) => patch((m) => ({ ...m, answer: cl.message })),
@@ -702,13 +710,20 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const openPanel = p => () => this.setState({ panel: p });
     const chColor = ch => ({ ...ch, color: ch.sign === '+' ? 'var(--green2)' : 'var(--red2)' });
     const mdLite = (text) => {
-      if (!text || (text.indexOf('**') < 0 && text.indexOf('#') < 0 && text.indexOf('---') < 0)) return text
+      if (!text || (text.indexOf('**') < 0 && text.indexOf('#') < 0 && text.indexOf('---') < 0 && text.indexOf('|') < 0)) return text
       const cleaned = text
         .split('\n')
         .filter((line) => !/^\s*[-*_]{3,}\s*$/.test(line))
+        .filter((line) => !/^\s*\|[\s:|-]+\|\s*$/.test(line))
         .map((line) => {
           const h = line.match(/^\s*#{1,4}\s+(.*)$/)
-          return h ? '**' + h[1] + '**' : line
+          if (h) return '**' + h[1] + '**'
+          // Table rows read as prose: | a | b | -> a — b
+          if (/^\s*\|.*\|\s*$/.test(line)) {
+            const cells = line.split('|').map((c) => c.trim()).filter(Boolean)
+            return '\u2014 ' + cells.join(' : ')
+          }
+          return line
         })
         .join('\n')
       const parts = cleaned.split(/\*\*([^*]+)\*\*/g)
