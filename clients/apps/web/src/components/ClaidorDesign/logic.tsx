@@ -616,6 +616,27 @@ class ClaidorDesignApp extends React.Component<any, any> {
       this.refreshDossiers()
     })
   }
+  deleteDossierSubmit() {
+    const st = this.state
+    const dossierId = st.dossier
+    if (st.modalBusy || !dossierId) return
+    this.setState({ modalBusy: true, modalError: '' })
+    // 204 on success — apiSend resolves data to null, only `ok` matters.
+    this.apiSend('DELETE', '/v1/dossiers/' + dossierId).then(({ ok, status, data }) => {
+      if (!ok) {
+        const detail = data && typeof data.detail === 'string' ? data.detail : null
+        this.setState({ modalBusy: false, modalError: detail || (status === 403 ? 'Seul un responsable du dossier peut le supprimer.' : 'La suppression a échoué. Réessayez.') })
+        return
+      }
+      this.setState((s2) => ({
+        modal: null, modalBusy: false, modalError: '',
+        liveDossiers: (s2.liveDossiers || []).filter((d) => d.id !== dossierId),
+      }))
+      this.refreshDossiers()
+      this.nav('dossiers', { dossier: null })
+      this.showToast('Dossier supprimé')
+    })
+  }
   inviteSubmit() {
     const st = this.state
     const email = st.formEmail.trim().toLowerCase()
@@ -1158,6 +1179,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
       modalNewDossierOpen: st.modal === 'new',
       modalImportOpen: st.modal === 'import',
       modalInviteOpen: st.modal === 'invite',
+      modalDeleteOpen: st.modal === 'delete',
       modalError: st.modalError,
       formName: st.formName, formRef: st.formRef, formClient: st.formClient, formEmail: st.formEmail,
       onFormName: (e) => this.setState({ formName: e.target.value }),
@@ -1206,6 +1228,15 @@ class ClaidorDesignApp extends React.Component<any, any> {
           }))
         },
       })),
+      openDeleteDossier: () => {
+        if (!st.live || !st.liveDossierDetail[st.dossier]) { this.showToast('Créez d’abord un dossier réel'); return }
+        this.setState({ modal: 'delete', modalError: '' })
+      },
+      deleteDossierSubmit: () => this.deleteDossierSubmit(),
+      deleteLabel: st.modalBusy ? 'Suppression…' : 'Supprimer',
+      deleteSubmitBg: st.modalBusy ? 'var(--btnoff)' : 'var(--red2)',
+      deleteSubmitFg: st.modalBusy ? 'var(--t5)' : '#fff',
+      deleteTargetName: (st.liveDossierDetail[st.dossier] || {}).name || '',
       inviteSubmit: () => this.inviteSubmit(),
       inviteLabel: st.modalBusy ? 'Ajout\u2026' : 'Donner accès',
       pickRoleMember: () => this.setState({ inviteRole: 'member' }),

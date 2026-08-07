@@ -143,6 +143,14 @@ class DossierRepository(RepositoryBase[Dossier]):
         await self.session.flush()
         return dossier
 
+    async def remove_dossier(self, dossier: Dossier) -> None:
+        """Soft-delete the matter: gone from every list and lookup here
+        (they all filter ``deleted_at``), while the journalized record —
+        questions, answers, citations — survives in the database."""
+        dossier.set_deleted_at()
+        self.session.add(dossier)
+        await self.session.flush()
+
     async def add_member(
         self, *, dossier_id: UUID, user_id: UUID, role: DossierRole
     ) -> DossierMember:

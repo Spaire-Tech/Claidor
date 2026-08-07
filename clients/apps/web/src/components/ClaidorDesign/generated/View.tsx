@@ -964,6 +964,11 @@ export const DesignView = ({ v }: { v: any }) => {
                     </Fragment>
                   ))}
                 </div>
+                <div style={{'marginTop': '36px', 'display': 'flex', 'justifyContent': 'flex-end'}}>
+                  <span onClick={v.openDeleteDossier} style={{'fontSize': '12px', 'color': 'var(--t5)', 'cursor': 'pointer'}} className="dh-bb6ab6eb">
+                    Supprimer le dossier
+                  </span>
+                </div>
               </div>
             </div>
             </>
@@ -1731,6 +1736,39 @@ export const DesignView = ({ v }: { v: any }) => {
                 </button>
                 <button onClick={v.inviteSubmit} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.modalSubmitBg, 'color': v.modalSubmitFg}}>
                   {v.inviteLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+          </>
+        ) : null}
+        {(v.modalDeleteOpen) ? (
+          <>
+          <div onClick={v.closeModal} style={{'position': 'fixed', 'inset': '0', 'background': 'var(--sh4)', 'zIndex': '60', 'display': 'flex', 'alignItems': 'flex-start', 'justifyContent': 'center', 'paddingTop': '16vh'}}>
+            <div onClick={v.stop} style={{'width': '440px', 'background': 'var(--surface)', 'borderRadius': '14px', 'boxShadow': '0 20px 60px var(--sh4)', 'overflow': 'hidden'}}>
+              <div style={{'padding': '18px 20px 4px'}}>
+                <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '18px', 'fontWeight': '600'}}>
+                  Supprimer le dossier
+                </div>
+                <div style={{'marginTop': '4px', 'fontSize': '12.5px', 'color': 'var(--t3)'}}>
+                  « {v.deleteTargetName} » disparaîtra pour toute l’équipe — ses pièces, ses questions et ses réponses ne seront plus accessibles.
+                </div>
+              </div>
+              <div style={{'padding': '10px 20px 0'}}>
+                {(v.modalError) ? (
+                  <>
+                  <div style={{'fontSize': '12.5px', 'color': 'var(--red2)'}}>
+                    {v.modalError}
+                  </div>
+                  </>
+                ) : null}
+              </div>
+              <div style={{'display': 'flex', 'justifyContent': 'flex-end', 'gap': '8px', 'padding': '16px 20px'}}>
+                <button onClick={v.closeModal} style={{'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '8px 14px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '500', 'cursor': 'pointer', 'background': 'var(--surface)', 'color': 'var(--ink)'}} className="dh-63a957d0">
+                  Annuler
+                </button>
+                <button onClick={v.deleteDossierSubmit} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.deleteSubmitBg, 'color': v.deleteSubmitFg}}>
+                  {v.deleteLabel}
                 </button>
               </div>
             </div>

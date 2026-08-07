@@ -68,6 +68,28 @@ class TestDossierAccess:
         await repository.remove_member(dossier_id=dossier.id, user_id=colleague.id)
         assert await repository.get_for_user(dossier.id, colleague.id) is None
 
+    async def test_deleted_matter_disappears_but_the_row_survives(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        organization = await create_organization(save_fixture)
+        repository = DossierRepository.from_session(session)
+        dossier = await repository.create_dossier(
+            organization_id=organization.id,
+            name="Bail commercial — SCI Palmeraie",
+            created_by_id=user.id,
+        )
+
+        await repository.remove_dossier(dossier)
+
+        # Gone from every product-facing read, even for its own lead...
+        assert await repository.get_for_user(dossier.id, user.id) is None
+        assert (
+            await repository.list_for_user(user.id, organization_id=organization.id)
+            == []
+        )
+        # ...but the record itself is a soft delete, not destruction.
+        assert dossier.deleted_at is not None
+
 
 class TestExtraction:
     def test_readable_text_is_extracted(self) -> None:

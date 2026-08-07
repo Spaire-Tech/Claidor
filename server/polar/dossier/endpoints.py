@@ -216,6 +216,25 @@ async def update_dossier(
     return await _read_schema(session, dossier)
 
 
+@router.delete("/{dossier_id}", status_code=204)
+async def delete_dossier(
+    dossier_id: UUID,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    """Delete a matter — lead only.
+
+    A soft delete: the dossier disappears from the product (every read
+    filters on it), but its journalized record — who asked what, answered
+    on what basis — survives in the database. A matter's history is not
+    something a click should be able to destroy.
+    """
+    dossier = await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+    await _require_lead(session, dossier_id, auth_subject.subject.id)
+    repository = DossierRepository.from_session(session)
+    await repository.remove_dossier(dossier)
+
+
 @router.post("/{dossier_id}/members", response_model=DossierMemberRead, status_code=201)
 async def add_member(
     dossier_id: UUID,
