@@ -323,6 +323,11 @@ html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
                 <sc-if value="{{ m.isAssistant }}" hint-placeholder-val="{{ false }}">
                   <div style="margin:18px 0 40px;">
                     <div style="font-size:14px;line-height:1.75;color:var(--ink2);white-space:pre-wrap;text-wrap:pretty;">{{ m.text }}<sc-if value="{{ m.showCursor }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;width:7px;height:15px;background:var(--ink);margin-left:2px;vertical-align:-2px;animation:blink 0.9s steps(1) infinite;"></span></sc-if></div>
+                    <sc-if value="{{ m.hasClarify }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:16px;animation:rise 0.25s ease;">
+                        <button sc-camel-on-click="{{ m.answerBoth }}" style="border:1px solid var(--b3);background:var(--surface);border-radius:8px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer;" style-hover="border-color:var(--ink);">Répondre pour les deux régimes</button>
+                      </div>
+                    </sc-if>
                     <sc-if value="{{ m.hasFact }}" hint-placeholder-val="{{ false }}">
                       <div style="margin-top:20px;border:1px solid var(--s9);border-radius:10px;overflow:hidden;animation:rise 0.25s ease;">
                         <div style="display:flex;gap:14px;padding:11px 15px;align-items:baseline;">

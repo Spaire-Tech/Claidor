@@ -719,8 +719,8 @@ class ClaidorDesignApp extends React.Component<any, any> {
       panel: s.article ? { type: 'article', id: s.article } : null, done: false };
   }
 
-  sendLive(q) {
-    const am = { role: 'assistant', answer: '', authority: null, sources: [], panel: null, done: false };
+  sendLive(q, answerBoth) {
+    const am = { role: 'assistant', answer: '', authority: null, sources: [], panel: null, done: false, question: q };
     const msgs = [...this.state.messages, { role: 'user', text: q }, am];
     const idx = msgs.length - 1;
     let conv = this.state.activeConv, extra = this.state.extraConvs;
@@ -763,6 +763,10 @@ class ClaidorDesignApp extends React.Component<any, any> {
         })),
       onClarification: (cl) => {
         am.answer = cl.message
+        // The version gate asked for a date. Rather than leaving the
+        // lawyer to retype the question, the answer offers to run both
+        // regimes — the backend has always supported it.
+        am.clarified = true
         stream.text = ''
         stream.push(cl.message)
       },
@@ -776,10 +780,25 @@ class ClaidorDesignApp extends React.Component<any, any> {
         if (!am.answer) { const msg = 'La réponse a échoué. Réessayez.'; am.answer = msg; stream.push(msg) }
         stream.finish()
       },
-    }).catch(() => {
+      // Third argument is the abort signal (unused here); fourth asks the
+      // librarian to answer under BOTH regimes instead of gating on a date.
+    }, undefined, !!answerBoth).catch(() => {
       if (!am.answer) { const msg = 'La réponse a échoué. Réessayez.'; am.answer = msg; stream.push(msg) }
       stream.finish()
     })
+  }
+  answerBothRegimes(question, index) {
+    if (!question) return
+    // The offer is spent once taken: the clarification stays in the
+    // record, but its button does not invite a second identical run.
+    this.setState(
+      (st) => {
+        const m = st.messages.slice()
+        if (m[index]) m[index] = { ...m[index], clarified: false }
+        return { messages: m }
+      },
+      () => this.sendLive(question, true),
+    )
   }
   finishLiveMessage(idx) {
     this.setState((st) => {
@@ -946,6 +965,8 @@ class ClaidorDesignApp extends React.Component<any, any> {
             })
           : mdLite(streaming ? m.answer.slice(0, st.revealed) : m.answer),
         showCursor: streaming && !liveStreaming,
+        hasClarify: !!m.done && !!m.clarified && !!m.question,
+        answerBoth: () => this.answerBothRegimes(m.question, i),
         hasFact: !!m.done && !!m.fact,
         factText: m.fact ? m.fact.text : '', factSrc: m.fact ? '→ ' + m.fact.src : '',
         factOpen: m.fact ? openPanel({ type: 'piece', id: m.fact.piece }) : null,

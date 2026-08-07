@@ -413,6 +413,15 @@ export const DesignView = ({ v }: { v: any }) => {
                               </>
                             ) : null}
                           </div>
+                          {(m.hasClarify) ? (
+                            <>
+                            <div style={{'marginTop': '16px', 'animation': 'rise 0.25s ease'}}>
+                              <button onClick={m.answerBoth} style={{'border': '1px solid var(--b3)', 'background': 'var(--surface)', 'borderRadius': '8px', 'padding': '8px 14px', 'font': 'inherit', 'fontSize': '12.5px', 'fontWeight': '500', 'color': 'var(--ink)', 'cursor': 'pointer'}} className="dh-e5c6466d">
+                                Répondre pour les deux régimes
+                              </button>
+                            </div>
+                            </>
+                          ) : null}
                           {(m.hasFact) ? (
                             <>
                             <div style={{'marginTop': '20px', 'border': '1px solid var(--s9)', 'borderRadius': '10px', 'overflow': 'hidden', 'animation': 'rise 0.25s ease'}}>
