@@ -22,7 +22,7 @@ from polar.config import settings
 from polar.corpus.repository import CorpusRepository
 from polar.corpus.slice import SLICE_ARTICLES_1998, TRANSITIONAL_RULE_1998
 from polar.kit.db.postgres import AsyncReadSession
-from polar.librarian.deadline import month_franc_deadline, steering_block
+from polar.librarian.deadline import deadline_for, identify_delay, steering_block
 
 if TYPE_CHECKING:
     from polar.models import DossierDocument
@@ -498,12 +498,13 @@ class LibrarianService:
             # Deadlines are counted by code, never by the model: two
             # production answers computed the art. 170 délai one day short
             # while quoting the precedent that shows the correct count.
-            if re.search(
-                r"délai|delai|contest|forclusion|opposition|prescri|expir",
-                question,
-                re.IGNORECASE,
-            ):
-                computed = month_franc_deadline(anchor)
+            # Which delay the question is about decides the arithmetic.
+            # A bare « délai » is not enough: computing one month for a
+            # question about the fifteen-day appeal delay would inject a
+            # wrong date marked as verified by code.
+            delay_rule = identify_delay(question)
+            if delay_rule is not None:
+                computed = deadline_for(anchor, delay_rule)
                 deadline_steering = steering_block(computed)
             if anchor_fact is not None:
                 # The date came from the file: surface it as a fact, with the

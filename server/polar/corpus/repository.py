@@ -210,6 +210,45 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         )
         return list((await self.session.execute(statement)).tuples().all())
 
+    async def list_similar_decisions(
+        self, decision_id: UUID, *, limit: int = 5
+    ) -> Sequence[tuple[CourtDecision, int]]:
+        """Decisions reading the same provisions, most overlap first.
+
+        Similarity here is citation overlap and nothing else: two decisions
+        that turn on the same articles are the ones a lawyer wants side by
+        side. It is a claim about the corpus, not about the reasoning, so
+        the count of shared provisions travels with each row.
+        """
+        mine = (
+            select(DecisionArticleLink.article_id)
+            .where(
+                DecisionArticleLink.decision_id == decision_id,
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+            )
+            .subquery()
+        )
+        counts = (
+            select(
+                DecisionArticleLink.decision_id.label("decision_id"),
+                func.count(func.distinct(DecisionArticleLink.article_id)).label("n"),
+            )
+            .where(
+                DecisionArticleLink.article_id.in_(select(mine.c.article_id)),
+                DecisionArticleLink.decision_id != decision_id,
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+            )
+            .group_by(DecisionArticleLink.decision_id)
+            .subquery()
+        )
+        statement = (
+            select(CourtDecision, counts.c.n)
+            .join(counts, counts.c.decision_id == CourtDecision.id)
+            .order_by(counts.c.n.desc(), CourtDecision.decided_on.desc())
+            .limit(limit)
+        )
+        return list((await self.session.execute(statement)).tuples().all())
+
     async def list_versions_for_act(self, act_id: UUID) -> Sequence[LegalActVersion]:
         """Every version of one act, oldest first, with the act loaded."""
         statement = (

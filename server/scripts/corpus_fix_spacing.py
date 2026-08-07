@@ -27,7 +27,7 @@ import re
 import structlog
 from sqlalchemy import select
 
-from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
+from polar.kit.db.postgres import create_async_sessionmaker
 from polar.models import LegalArticle
 from polar.postgres import create_async_engine
 
@@ -69,8 +69,14 @@ def repair(text: str, vocab: set[str]) -> tuple[str, list[str]]:
         left, sep, right = tokens[i], tokens[i + 1], tokens[i + 2]
         if left[0].isalpha() and sep in (" ", "\u00a0") and right[0].isalpha():
             joined = (left + right).lower()
+            # « l a saisie » is out of reach of the rule below: both « l »
+            # and « a » occur in the corpus, so neither side is unknown. But
+            # an isolated single letter is never a French word — except
+            # « a » (verb), « y » and « à » — so a lone letter glued onto a
+            # word that does exist is a break, not two words.
+            orphan_letter = len(left) == 1 and left.lower() not in ("a", "y", "à")
             if joined in vocab and (
-                left.lower() not in vocab or right.lower() not in vocab
+                orphan_letter or left.lower() not in vocab or right.lower() not in vocab
             ):
                 examples.append(f"{left} {right} -> {left + right}")
                 tokens[i : i + 3] = [left + right]

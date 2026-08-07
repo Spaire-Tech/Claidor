@@ -90,6 +90,17 @@ class CorpusDecisionArticle(Schema):
     version_label: str
 
 
+class CorpusSimilarDecision(Schema):
+    """Another decision turning on the same provisions."""
+
+    decision_id: UUID4
+    number: str
+    decided_on: date
+    #: How many provisions the two decisions share — the whole basis of
+    #: the claim, shown so it is never mistaken for an opinion.
+    shared_articles: int
+
+
 class CorpusDecisionDetail(Schema):
     """Full decision detail for the reading room decision page."""
 
@@ -103,6 +114,11 @@ class CorpusDecisionDetail(Schema):
     summary: str | None
     full_text: str | None
     articles: list[CorpusDecisionArticle]
+    #: Extracted verbatim from the judgment (see decision_summary.py), or
+    #: absent when its structure was not recognised. Never generated.
+    argued: str | None = None
+    held: str | None = None
+    similar: list[CorpusSimilarDecision] = []
 
 
 class CorpusSearchInterpretation(Schema):

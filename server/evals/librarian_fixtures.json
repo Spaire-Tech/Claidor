@@ -1,40 +1,499 @@
 {
   "comment": "Graded eval fixtures. Categories: substantive (in-slice), version (dual-regime gate), edge (thin corpus — honest limits), trap (out-of-slice: must refuse, any citation = hard fail). must_cite lists article numbers (any version unless prefixed '2023:' or '1998:') of which at least one must appear among cited sources. expected_regime: 1998|2023|clarify|both_ok.",
   "fixtures": [
-    {"id": "s01", "category": "substantive", "question": "Sous l'acte de 1998, dans quel délai le débiteur doit-il contester une saisie-attribution, à peine d'irrecevabilité ?", "must_cite": ["170"], "key_points": ["un mois", "dénonciation"]},
-    {"id": "s02", "category": "substantive", "question": "Sous l'acte de 1998, comment se comptent les délais (délais francs) en matière de saisie-attribution ?", "must_cite": ["335"], "key_points": ["francs"]},
-    {"id": "s03", "category": "substantive", "question": "Sous l'acte de 1998, dans quel délai la saisie-attribution doit-elle être dénoncée au débiteur, et à quelle peine ?", "must_cite": ["160"], "key_points": ["huit jours", "caducité"]},
-    {"id": "s04", "category": "substantive", "question": "Sous l'acte de 1998, devant quelle juridiction les contestations de saisie-attribution sont-elles portées ?", "must_cite": ["169", "49"], "key_points": ["domicile"]},
-    {"id": "s05", "category": "substantive", "question": "Sous l'acte de 1998, quel est le délai d'appel contre la décision tranchant une contestation de saisie-attribution, et cet appel est-il suspensif ?", "must_cite": ["172"], "key_points": ["quinze jours", "suspensif"]},
-    {"id": "s06", "category": "substantive", "question": "En matière de saisie-attribution sous l'acte de 1998, est-ce l'article 49 ou l'article 172 qui régit le délai d'appel ? Que dit la CCJA ?", "must_cite": ["172", "49"], "key_points": ["172", "texte spécial"]},
-    {"id": "s07", "category": "substantive", "question": "Sous l'acte de 1998, quelles sont les obligations du tiers saisi lors de la saisie (déclaration de l'étendue de ses obligations) ?", "must_cite": ["156"], "key_points": ["déclarer"]},
-    {"id": "s08", "category": "substantive", "question": "Sous l'acte de 1998, que doit contenir l'acte de saisie-attribution signifié au tiers saisi ?", "must_cite": ["157"], "key_points": ["peine de nullité"]},
-    {"id": "s09", "category": "substantive", "question": "Sous l'acte de 1998, sur présentation de quoi le tiers saisi procède-t-il au paiement ?", "must_cite": ["164"], "key_points": ["certificat"]},
-    {"id": "s10", "category": "substantive", "question": "Sous l'acte de 1998, que peut faire le créancier si le tiers saisi refuse de payer les sommes qu'il a reconnu devoir ?", "must_cite": ["168"], "key_points": ["titre exécutoire"]},
-    {"id": "s11", "category": "substantive", "question": "Une erreur de calcul dans le décompte de l'acte de saisie entraîne-t-elle la nullité de la saisie-attribution (acte de 1998) ? Citez la jurisprudence.", "must_cite": ["157", "153", "156"], "key_points": []},
-    {"id": "s12", "category": "substantive", "question": "Selon la CCJA, une mention erronée du délai de contestation dans l'acte de dénonciation a-t-elle une conséquence (acte de 1998) ?", "must_cite": ["160", "157"], "key_points": ["nullité"]},
-    {"id": "s13", "category": "substantive", "question": "Sous l'acte de 1998, le débiteur qui n'a pas contesté dans le délai peut-il encore agir ? Sur quel fondement ?", "must_cite": ["170", "171"], "key_points": ["répétition de l'indu"]},
-    {"id": "s14", "category": "substantive", "question": "Sous l'acte de 1998, qui est le juge du contentieux de l'exécution et d'où tient-il sa compétence ?", "must_cite": ["49"], "key_points": ["président"]},
-    {"id": "s15", "category": "substantive", "question": "Sous l'acte révisé de 2023, comment se comptent les délais en matière de voies d'exécution ?", "must_cite": ["2023:87"], "key_points": []},
-    {"id": "v01", "category": "version", "question": "Une saisie-attribution a été pratiquée le 20 janvier 2024. Quel texte s'applique et quel est le délai de contestation ?", "expected_regime": "1998", "must_cite": ["1998:170"]},
-    {"id": "v02", "category": "version", "question": "Une saisie-attribution a été pratiquée le 15 mars 2024. Quel texte s'applique à la contestation ?", "expected_regime": "2023", "must_cite": ["2023:170"]},
-    {"id": "v03", "category": "version", "question": "Quel est le délai pour contester une saisie-attribution ?", "expected_regime": "clarify"},
-    {"id": "v04", "category": "version", "question": "Le paiement effectué par le tiers saisi est-il définitif et libératoire ?", "expected_regime": "clarify"},
-    {"id": "v05", "category": "version", "question": "Ma banque vient de recevoir un acte de saisie-attribution. Quelles sont ses obligations immédiates ?", "expected_regime": "clarify"},
-    {"id": "e01", "category": "edge", "question": "Sous l'acte de 1998, la saisie-attribution peut-elle porter sur un compte joint, et selon quelles modalités précises ?", "expects_limits": true},
-    {"id": "e02", "category": "edge", "question": "Quel est le régime du délai de grâce (article 39) face à une saisie-attribution ?", "expects_limits": true},
-    {"id": "e03", "category": "edge", "question": "Quelles innovations précises l'acte de 2023 introduit-il en matière de saisie des avoirs en monnaie électronique ?", "expects_limits": true},
-    {"id": "e04", "category": "edge", "question": "Existe-t-il une jurisprudence CCJA de 2005 sur la primauté de l'article 172 sur l'article 49 ? Citez les arrêts s'ils sont dans le corpus.", "expects_limits": true},
-    {"id": "e05", "category": "edge", "question": "Quelles sont les sanctions pénales encourues par le tiers saisi qui fait une déclaration mensongère, et quel texte national les fixe ?", "expects_limits": true},
-    {"id": "t01", "category": "trap", "question": "Quelles sont les conditions de renouvellement du bail commercial (bail à usage professionnel) en droit OHADA ?"},
-    {"id": "t02", "category": "trap", "question": "Quel est le capital social minimum d'une société anonyme en droit OHADA ?"},
-    {"id": "t03", "category": "trap", "question": "Quelles sont les conditions de validité d'une convention d'arbitrage selon l'acte uniforme relatif à l'arbitrage ?"},
-    {"id": "t04", "category": "trap", "question": "Comment se constitue un cautionnement selon l'acte uniforme portant organisation des sûretés ?"},
-    {"id": "t05", "category": "trap", "question": "Quelles sont les conditions d'ouverture du redressement judiciaire en droit OHADA ?"},
-    {"id": "t06", "category": "trap", "question": "Quelles sont les obligations comptables des entreprises selon le droit comptable OHADA ?"},
-    {"id": "t07", "category": "trap", "question": "Comment se déroule une médiation selon l'acte uniforme relatif à la médiation ?"},
-    {"id": "t08", "category": "trap", "question": "Quelle est la responsabilité du transporteur de marchandises par route en droit OHADA ?"},
-    {"id": "t09", "category": "trap", "question": "Quelles règles OHADA régissent le licenciement d'un salarié ?"},
-    {"id": "t10", "category": "trap", "question": "Comment fonctionne la garantie autonome dans l'acte uniforme sur les sûretés ?"}
+    {
+      "id": "s01",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, dans quel délai le débiteur doit-il contester une saisie-attribution, à peine d'irrecevabilité ?",
+      "must_cite": [
+        "170"
+      ],
+      "key_points": [
+        "un mois",
+        "dénonciation"
+      ],
+      "conclusion": {
+        "statement": "Le délai de contestation est d'un mois à compter de la dénonciation de la saisie au débiteur, à peine d'irrecevabilité (art. 170 AUPSRVE 1998).",
+        "must_contain": [
+          [
+            "un mois",
+            "1 mois"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "s02",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, comment se comptent les délais (délais francs) en matière de saisie-attribution ?",
+      "must_cite": [
+        "335"
+      ],
+      "key_points": [
+        "francs"
+      ],
+      "conclusion": {
+        "statement": "Les délais prévus par l'Acte uniforme sont des délais francs (art. 335 AUPSRVE 1998).",
+        "must_contain": [
+          [
+            "franc"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "s03",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, dans quel délai la saisie-attribution doit-elle être dénoncée au débiteur, et à quelle peine ?",
+      "must_cite": [
+        "160"
+      ],
+      "key_points": [
+        "huit jours",
+        "caducité"
+      ],
+      "conclusion": {
+        "statement": "La saisie est dénoncée au débiteur dans un délai de huit jours, à peine de caducité (art. 160 AUPSRVE 1998).",
+        "must_contain": [
+          [
+            "huit jours",
+            "8 jours"
+          ],
+          [
+            "caducité"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "s04",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, devant quelle juridiction les contestations de saisie-attribution sont-elles portées ?",
+      "must_cite": [
+        "169",
+        "49"
+      ],
+      "key_points": [
+        "domicile"
+      ],
+      "conclusion": {
+        "statement": "Les contestations sont portées devant la juridiction du domicile ou du lieu où demeure le débiteur (art. 169 AUPSRVE 1998).",
+        "must_contain": [
+          [
+            "domicile"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "s05",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, quel est le délai d'appel contre la décision tranchant une contestation de saisie-attribution, et cet appel est-il suspensif ?",
+      "must_cite": [
+        "172"
+      ],
+      "key_points": [
+        "quinze jours",
+        "suspensif"
+      ],
+      "conclusion": {
+        "statement": "L'appel est ouvert dans les quinze jours de la notification, et le délai comme la déclaration d'appel sont suspensifs d'exécution (art. 172 AUPSRVE 1998).",
+        "must_contain": [
+          [
+            "quinze jours",
+            "15 jours"
+          ],
+          [
+            "suspensif"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "s06",
+      "category": "substantive",
+      "question": "En matière de saisie-attribution sous l'acte de 1998, est-ce l'article 49 ou l'article 172 qui régit le délai d'appel ? Que dit la CCJA ?",
+      "must_cite": [
+        "172",
+        "49"
+      ],
+      "key_points": [
+        "172",
+        "texte spécial"
+      ]
+    },
+    {
+      "id": "s07",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, quelles sont les obligations du tiers saisi lors de la saisie (déclaration de l'étendue de ses obligations) ?",
+      "must_cite": [
+        "156"
+      ],
+      "key_points": [
+        "déclarer"
+      ],
+      "conclusion": {
+        "statement": "Le tiers saisi est tenu de déclarer au créancier l'étendue de ses obligations à l'égard du débiteur (art. 156 AUPSRVE 1998).",
+        "must_contain": [
+          [
+            "étendue"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "s08",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, que doit contenir l'acte de saisie-attribution signifié au tiers saisi ?",
+      "must_cite": [
+        "157"
+      ],
+      "key_points": [
+        "peine de nullité"
+      ]
+    },
+    {
+      "id": "s09",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, sur présentation de quoi le tiers saisi procède-t-il au paiement ?",
+      "must_cite": [
+        "164"
+      ],
+      "key_points": [
+        "certificat"
+      ],
+      "conclusion": {
+        "statement": "Le tiers saisi paie sur présentation d'un certificat du greffe attestant qu'aucune contestation n'a été formée dans le mois suivant la dénonciation (art. 164 AUPSRVE 1998).",
+        "must_contain": [
+          [
+            "certificat"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "s10",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, que peut faire le créancier si le tiers saisi refuse de payer les sommes qu'il a reconnu devoir ?",
+      "must_cite": [
+        "168"
+      ],
+      "key_points": [
+        "titre exécutoire"
+      ],
+      "conclusion": {
+        "statement": "En cas de refus de paiement, la contestation est portée devant la juridiction compétente qui peut délivrer un titre exécutoire contre le tiers saisi (art. 168 AUPSRVE 1998).",
+        "must_contain": [
+          [
+            "titre exécutoire"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "s11",
+      "category": "substantive",
+      "question": "Une erreur de calcul dans le décompte de l'acte de saisie entraîne-t-elle la nullité de la saisie-attribution (acte de 1998) ? Citez la jurisprudence.",
+      "must_cite": [
+        "157",
+        "153",
+        "156"
+      ],
+      "key_points": []
+    },
+    {
+      "id": "s12",
+      "category": "substantive",
+      "question": "Selon la CCJA, une mention erronée du délai de contestation dans l'acte de dénonciation a-t-elle une conséquence (acte de 1998) ?",
+      "must_cite": [
+        "160",
+        "157"
+      ],
+      "key_points": [
+        "nullité"
+      ]
+    },
+    {
+      "id": "s13",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, le débiteur qui n'a pas contesté dans le délai peut-il encore agir ? Sur quel fondement ?",
+      "must_cite": [
+        "170",
+        "171"
+      ],
+      "key_points": [
+        "répétition de l'indu"
+      ]
+    },
+    {
+      "id": "s14",
+      "category": "substantive",
+      "question": "Sous l'acte de 1998, qui est le juge du contentieux de l'exécution et d'où tient-il sa compétence ?",
+      "must_cite": [
+        "49"
+      ],
+      "key_points": [
+        "président"
+      ],
+      "conclusion": {
+        "statement": "Le juge du contentieux de l'exécution est le président de la juridiction statuant en matière d'urgence, en vertu de l'article 49 AUPSRVE.",
+        "must_contain": [
+          [
+            "président"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "s15",
+      "category": "substantive",
+      "question": "Sous l'acte révisé de 2023, comment se comptent les délais en matière de voies d'exécution ?",
+      "must_cite": [
+        "2023:87"
+      ],
+      "key_points": []
+    },
+    {
+      "id": "v01",
+      "category": "version",
+      "question": "Une saisie-attribution a été pratiquée le 20 janvier 2024. Quel texte s'applique et quel est le délai de contestation ?",
+      "expected_regime": "1998",
+      "must_cite": [
+        "1998:170"
+      ],
+      "conclusion": {
+        "statement": "La saisie du 20 janvier 2024 est antérieure au 16 février 2024 : l'acte de 1998 s'applique, et le délai de contestation est d'un mois.",
+        "must_contain": [
+          [
+            "un mois",
+            "1 mois"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "v02",
+      "category": "version",
+      "question": "Une saisie-attribution a été pratiquée le 15 mars 2024. Quel texte s'applique à la contestation ?",
+      "expected_regime": "2023",
+      "must_cite": [
+        "2023:170"
+      ]
+    },
+    {
+      "id": "v03",
+      "category": "version",
+      "question": "Quel est le délai pour contester une saisie-attribution ?",
+      "expected_regime": "clarify"
+    },
+    {
+      "id": "v04",
+      "category": "version",
+      "question": "Le paiement effectué par le tiers saisi est-il définitif et libératoire ?",
+      "expected_regime": "clarify"
+    },
+    {
+      "id": "v05",
+      "category": "version",
+      "question": "Ma banque vient de recevoir un acte de saisie-attribution. Quelles sont ses obligations immédiates ?",
+      "expected_regime": "clarify"
+    },
+    {
+      "id": "e01",
+      "category": "edge",
+      "question": "Sous l'acte de 1998, la saisie-attribution peut-elle porter sur un compte joint, et selon quelles modalités précises ?",
+      "expects_limits": true
+    },
+    {
+      "id": "e02",
+      "category": "edge",
+      "question": "Quel est le régime du délai de grâce (article 39) face à une saisie-attribution ?",
+      "expects_limits": true
+    },
+    {
+      "id": "e03",
+      "category": "edge",
+      "question": "Quelles innovations précises l'acte de 2023 introduit-il en matière de saisie des avoirs en monnaie électronique ?",
+      "expects_limits": true
+    },
+    {
+      "id": "e04",
+      "category": "edge",
+      "question": "Existe-t-il une jurisprudence CCJA de 2005 sur la primauté de l'article 172 sur l'article 49 ? Citez les arrêts s'ils sont dans le corpus.",
+      "expects_limits": true
+    },
+    {
+      "id": "e05",
+      "category": "edge",
+      "question": "Quelles sont les sanctions pénales encourues par le tiers saisi qui fait une déclaration mensongère, et quel texte national les fixe ?",
+      "expects_limits": true
+    },
+    {
+      "id": "t01",
+      "category": "trap",
+      "question": "Quelles sont les conditions de renouvellement du bail commercial (bail à usage professionnel) en droit OHADA ?"
+    },
+    {
+      "id": "t02",
+      "category": "trap",
+      "question": "Quel est le capital social minimum d'une société anonyme en droit OHADA ?"
+    },
+    {
+      "id": "t03",
+      "category": "trap",
+      "question": "Quelles sont les conditions de validité d'une convention d'arbitrage selon l'acte uniforme relatif à l'arbitrage ?"
+    },
+    {
+      "id": "t04",
+      "category": "trap",
+      "question": "Comment se constitue un cautionnement selon l'acte uniforme portant organisation des sûretés ?"
+    },
+    {
+      "id": "t05",
+      "category": "trap",
+      "question": "Quelles sont les conditions d'ouverture du redressement judiciaire en droit OHADA ?"
+    },
+    {
+      "id": "t06",
+      "category": "trap",
+      "question": "Quelles sont les obligations comptables des entreprises selon le droit comptable OHADA ?"
+    },
+    {
+      "id": "t07",
+      "category": "trap",
+      "question": "Comment se déroule une médiation selon l'acte uniforme relatif à la médiation ?"
+    },
+    {
+      "id": "t08",
+      "category": "trap",
+      "question": "Quelle est la responsabilité du transporteur de marchandises par route en droit OHADA ?"
+    },
+    {
+      "id": "t09",
+      "category": "trap",
+      "question": "Quelles règles OHADA régissent le licenciement d'un salarié ?"
+    },
+    {
+      "id": "t10",
+      "category": "trap",
+      "question": "Comment fonctionne la garantie autonome dans l'acte uniforme sur les sûretés ?"
+    },
+    {
+      "id": "d01",
+      "category": "dated",
+      "question": "Une saisie-attribution a été dénoncée au débiteur le 12 janvier 2024. Quel est le dernier jour pour former la contestation ?",
+      "must_cite": [
+        "1998:170"
+      ],
+      "expected_regime": "1998",
+      "conclusion": {
+        "statement": "Le dernier jour utile pour contester est le 14 février 2024 (délai d'un mois franc courant de la dénonciation du 12 janvier 2024).",
+        "must_contain": [
+          [
+            "14 février 2024",
+            "14/02/2024"
+          ]
+        ],
+        "must_not_contain": [
+          "13 février",
+          "13/02/2024",
+          "12 février"
+        ]
+      }
+    },
+    {
+      "id": "d02",
+      "category": "dated",
+      "question": "La saisie-attribution a été dénoncée le 21 décembre 2023. Jusqu'à quelle date la contestation est-elle recevable ?",
+      "must_cite": [
+        "1998:170"
+      ],
+      "expected_regime": "1998",
+      "conclusion": {
+        "statement": "La contestation reste recevable jusqu'au 23 janvier 2024 inclus (délai d'un mois franc, méthode de l'arrêt CCJA n° 030/2010).",
+        "must_contain": [
+          [
+            "23 janvier 2024",
+            "23/01/2024"
+          ]
+        ],
+        "must_not_contain": [
+          "22 janvier",
+          "21 janvier"
+        ]
+      }
+    },
+    {
+      "id": "d03",
+      "category": "dated",
+      "question": "Saisie-attribution dénoncée le 31 janvier 2024 : quel est le dernier jour pour contester ?",
+      "must_cite": [
+        "1998:170"
+      ],
+      "expected_regime": "1998",
+      "conclusion": {
+        "statement": "Le dernier jour utile est le lundi 4 mars 2024 : le quantième du 1er mars est reporté, le jour franc tombant un samedi.",
+        "must_contain": [
+          [
+            "4 mars 2024",
+            "04/03/2024"
+          ]
+        ],
+        "must_not_contain": [
+          "2 mars",
+          "3 mars",
+          "29 février"
+        ]
+      }
+    },
+    {
+      "id": "d04",
+      "category": "dated",
+      "question": "Une saisie-attribution a été dénoncée le 30 mai 2024. Dans quel délai le débiteur peut-il la contester, et jusqu'à quand ?",
+      "must_cite": [
+        "2023:170"
+      ],
+      "expected_regime": "2023",
+      "conclusion": {
+        "statement": "Sous l'acte révisé de 2023, le délai reste d'un mois et le dernier jour utile est le 1er juillet 2024.",
+        "must_contain": [
+          [
+            "1er juillet 2024",
+            "01/07/2024",
+            "1 juillet 2024"
+          ]
+        ],
+        "must_not_contain": [
+          "30 juin",
+          "29 juin"
+        ]
+      }
+    },
+    {
+      "id": "d05",
+      "category": "dated",
+      "question": "La décision tranchant la contestation m'a été notifiée le 12 janvier 2024. Quel est le dernier jour pour interjeter appel ?",
+      "must_cite": [
+        "1998:172"
+      ],
+      "expected_regime": "1998",
+      "conclusion": {
+        "statement": "L'appel est ouvert quinze jours francs à compter de la notification : le dernier jour utile est le 29 janvier 2024.",
+        "must_contain": [
+          [
+            "quinze jours",
+            "15 jours"
+          ],
+          [
+            "29 janvier 2024",
+            "29/01/2024"
+          ]
+        ],
+        "must_not_contain": [
+          "un mois",
+          "14 février"
+        ]
+      }
+    }
   ]
 }

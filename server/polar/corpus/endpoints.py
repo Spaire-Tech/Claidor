@@ -11,6 +11,7 @@ from polar.postgres import get_db_read_session
 from polar.routing import APIRouter
 
 from . import auth
+from .decision_summary import summarize
 from .repository import CorpusRepository
 from .schemas import (
     CorpusAct,
@@ -26,6 +27,7 @@ from .schemas import (
     CorpusSearchDecisionResult,
     CorpusSearchInterpretation,
     CorpusSearchResults,
+    CorpusSimilarDecision,
 )
 from .search_query import QueryKind, parse_query
 from .search_repository import SearchRepository
@@ -180,7 +182,20 @@ async def get_decision(
         raise ResourceNotFound()
 
     links = await repository.list_verified_links_for_decision(decision_id)
+    summary = summarize(decision.full_text)
+    similar = await repository.list_similar_decisions(decision_id)
     return CorpusDecisionDetail(
+        argued=summary.argued,
+        held=summary.held,
+        similar=[
+            CorpusSimilarDecision(
+                decision_id=other.id,
+                number=other.number,
+                decided_on=other.decided_on,
+                shared_articles=shared,
+            )
+            for other, shared in similar
+        ],
         id=decision.id,
         number=decision.number,
         decided_on=decision.decided_on,

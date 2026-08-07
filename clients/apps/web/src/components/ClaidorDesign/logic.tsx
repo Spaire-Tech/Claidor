@@ -435,6 +435,21 @@ class ClaidorDesignApp extends React.Component<any, any> {
       hl: -1,
       extract: paras.slice(0, 3),
       articles: (d.articles || []).map((a) => ({ __live: true, article_id: a.article_id, label: 'Art. ' + a.number + ' (' + a.version_label + ')' })),
+      // Argué / Jugé are quoted from the judgment itself, and are absent
+      // when its structure was not recognised — the block then stays hidden
+      // rather than showing an empty frame.
+      __sum: (d.argued || d.held)
+        ? {
+            arg: d.argued || 'Non identifié dans le texte de l\u2019arrêt',
+            held: d.held || 'Non identifié dans le texte de l\u2019arrêt',
+            arts: (d.articles || []).map((a) => 'art. ' + a.number + ' (' + a.version_label + ')').join(' · ') || '—',
+          }
+        : null,
+      __similar: (d.similar || []).map((x) => ({
+        id: x.decision_id,
+        label: 'CCJA ' + x.number,
+        sub: x.shared_articles + (x.shared_articles > 1 ? ' articles en commun' : ' article en commun') + ' · ' + x.decided_on,
+      })),
     }
   }
   openLiveDossier(id) {
@@ -1406,7 +1421,10 @@ class ClaidorDesignApp extends React.Component<any, any> {
             // it applied.
             hasAnalyses: true,
             analyses: [{ label: D.AN.auth.name, go: () => this.openAnalysis('auth', st.panel.id, 'decision') }],
-            hasSum: false, sum: null, hasSimilar: false, similar: [] };
+            hasSum: !!d.__sum, sum: d.__sum,
+            hasSimilar: (d.__similar || []).length > 0,
+            similar: (d.__similar || []).map((x) => ({ label: x.label, sub: x.sub,
+              open: () => this.openLivePanel('decision', x.id) })) };
         }
         const line = this.authLineFor(st.panel.id);
         return { ...d, extract: d.extract.map((t, i) => ({ text: t, bg: i === d.hl ? 'var(--hl)' : 'transparent', pad: i === d.hl ? '8px 10px' : '0' })),
