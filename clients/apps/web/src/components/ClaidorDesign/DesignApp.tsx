@@ -1,5 +1,6 @@
 'use client'
 
+import { useAuth } from '@/hooks/auth'
 import { OrganizationContext } from '@/providers/maintainerOrganization'
 import dynamic from 'next/dynamic'
 import { useContext } from 'react'
@@ -21,9 +22,12 @@ export const DesignApp = () => {
   // The workspace the dashboard is mounted under — uploads and dossier
   // creation are scoped to it.
   const { organization } = useContext(OrganizationContext)
+  // Who is looking: Réglages offers « Retirer » only to the cabinet's
+  // administrator, and never against their own row.
+  const { currentUser } = useAuth()
   return (
     <div className="claidor-design h-dvh w-full overflow-hidden">
-      <ClaidorDesignApp organization={organization} />
+      <ClaidorDesignApp organization={organization} currentUser={currentUser} />
     </div>
   )
 }

@@ -36,6 +36,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     formName: '', formRef: '', formClient: '', formEmail: '', inviteRole: 'member',
     importStaged: [],
     readerDone: false, liveReader: null, readerBusy: false, fMat: null, fSince: null, fCh: null,
+    liveTeam: null, liveOrgName: null, formOrgName: '', orgSaving: false, removeTarget: null,
     veilles: [
       { id: 'a170', label: 'Art. 170, AUPSRVE', sub: 'Nouvelle décision · révision du texte', on: true, last: 'Signal ce matin' },
       { id: 'aupsrve', label: 'AUPSRVE — acte entier', sub: 'Réformes publiées au JO', on: true, last: 'Signal le 12 juil.' },
@@ -340,6 +341,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
           this.refreshHistory()
           this.refreshPrompts()
           this.refreshVeilles()
+          this.refreshTeam()
         }
       })
       .catch(() => {})
@@ -541,6 +543,12 @@ class ClaidorDesignApp extends React.Component<any, any> {
   orgId() {
     return this.props.organization && this.props.organization.id
   }
+  orgName() {
+    return this.props.organization && this.props.organization.name
+  }
+  currentUserId() {
+    return this.props.currentUser && this.props.currentUser.id
+  }
   refreshVeilles() {
     const org = this.orgId()
     if (!org || !this.state.live) return
@@ -576,6 +584,61 @@ class ClaidorDesignApp extends React.Component<any, any> {
     if (!org || !this.state.live) return
     this.apiGet('/v1/prompts?organization_id=' + org).then((rows) => {
       if (Array.isArray(rows)) this.setState({ livePrompts: rows })
+    })
+  }
+  // --- Réglages ----------------------------------------------------------
+  refreshTeam() {
+    const org = this.orgId()
+    if (!org || !this.state.live) return
+    this.apiGet('/v1/organizations/' + org + '/members').then((data) => {
+      const rows = data && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : null)
+      if (rows) this.setState({ liveTeam: rows })
+    })
+  }
+  saveOrgName() {
+    const org = this.orgId()
+    const name = (this.state.formOrgName || '').trim()
+    if (!org || name.length < 2) { this.showToast('Donnez un nom au cabinet'); return }
+    if (this.state.orgSaving) return
+    this.setState({ orgSaving: true })
+    this.apiSend('PATCH', '/v1/organizations/' + org, { name }).then(({ ok, data }) => {
+      this.setState({ orgSaving: false })
+      if (!ok) { this.showToast('Enregistrement impossible'); return }
+      this.setState({ liveOrgName: (data && data.name) || name })
+      this.showToast('Nom du cabinet enregistré')
+    })
+  }
+  teamInviteSubmit() {
+    const st = this.state
+    const email = (st.formEmail || '').trim().toLowerCase()
+    if (!email || email.indexOf('@') < 1) { this.setState({ modalError: 'Adresse e-mail invalide.' }); return }
+    if (st.modalBusy) return
+    this.setState({ modalBusy: true, modalError: '' })
+    this.apiSend('POST', '/v1/organizations/' + this.orgId() + '/members/invite', { email }).then(({ ok, status, data }) => {
+      if (!ok) {
+        const detail = data && typeof data.detail === 'string' ? data.detail : null
+        this.setState({ modalBusy: false, modalError: detail || (status === 403 ? 'Seul l’administrateur du cabinet peut inviter.' : 'L’invitation a échoué. Réessayez.') })
+        return
+      }
+      this.setState({ modal: null, modalBusy: false, modalError: '', formEmail: '' })
+      this.refreshTeam()
+      this.showToast('Invitation envoyée')
+    })
+  }
+  teamRemoveSubmit() {
+    const st = this.state
+    const target = st.removeTarget
+    if (!target || st.modalBusy) return
+    this.setState({ modalBusy: true, modalError: '' })
+    this.apiSend('DELETE', '/v1/organizations/' + this.orgId() + '/members/' + target.user_id).then(({ ok, status, data }) => {
+      if (!ok) {
+        const detail = data && typeof data.detail === 'string' ? data.detail : null
+        this.setState({ modalBusy: false, modalError: detail || (status === 403 ? 'Seul l’administrateur du cabinet peut retirer un confrère.' : 'Le retrait a échoué. Réessayez.') })
+        return
+      }
+      this.setState({ modal: null, modalBusy: false, modalError: '', removeTarget: null })
+      this.refreshTeam()
+      this.showToast('Confrère retiré du cabinet')
     })
   }
   // --- Lecteur -----------------------------------------------------------
@@ -665,7 +728,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
   }
   closeModal() {
     if (this.state.modalBusy) return
-    this.setState({ modal: null, modalError: '', formName: '', formRef: '', formClient: '', formEmail: '', importStaged: [], formPromptTitle: '', formPromptText: '' })
+    this.setState({ modal: null, modalError: '', formName: '', formRef: '', formClient: '', formEmail: '', importStaged: [], formPromptTitle: '', formPromptText: '', removeTarget: null })
   }
   createDossierSubmit() {
     const st = this.state
@@ -1552,11 +1615,62 @@ class ClaidorDesignApp extends React.Component<any, any> {
       roleMemberBorder: st.inviteRole === 'member' ? 'var(--accent)' : 'var(--b3)',
       roleLeadBorder: st.inviteRole === 'lead' ? 'var(--accent)' : 'var(--b3)',
     }
+    // --- Réglages (addition) ---------------------------------------------
+    const me = this.currentUserId()
+    const workspaceName = st.liveOrgName || this.orgName() || 'Diallo & Associés'
+    const iAmAdmin = !!(me && (st.liveTeam || []).some((m) => m.is_admin && m.user_id === me))
+    const sinceLabel = (iso) => {
+      const d = new Date(iso)
+      if (isNaN(d.getTime())) return ''
+      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+    }
+    const teamRows = (st.liveTeam || []).map((m) => {
+      // Only the administrator removes, and never their own row: the API
+      // refuses both, and an affordance that always fails is a lie.
+      const removable = iAmAdmin && !m.is_admin && m.user_id !== me
+      return {
+        email: m.email + (m.user_id === me ? ' (vous)' : ''),
+        role: m.is_admin ? 'Administrateur' : 'Membre',
+        since: sinceLabel(m.created_at),
+        action: removable ? 'Retirer' : '',
+        actionColor: removable ? 'var(--red2)' : 'transparent',
+        actionCursor: removable ? 'pointer' : 'default',
+        remove: () => { if (removable) this.setState({ modal: 'teamRemove', modalError: '', removeTarget: m }) },
+      }
+    })
+    const reglagesVals = {
+      isReglages: st.view === 'reglages',
+      workspaceName,
+      menuIsWorkspace: st.menu === 'workspace',
+      toggleWorkspaceMenu: () => this.setState({ menu: st.menu === 'workspace' ? null : 'workspace' }),
+      goReglages: () => {
+        if (!st.live) { this.showToast('Disponible une fois le corpus connecté'); return }
+        this.setState({ formOrgName: workspaceName })
+        this.refreshTeam()
+        this.nav('reglages', { panel: null })
+      },
+      formOrgName: st.formOrgName,
+      onFormOrgName: (e) => this.setState({ formOrgName: e.target.value }),
+      saveOrgName: () => this.saveOrgName(),
+      orgSaveLabel: st.orgSaving ? 'Enregistrement…' : 'Enregistrer',
+      orgSaveBg: st.orgSaving ? 'var(--btnoff)' : 'var(--accent)',
+      orgSaveFg: st.orgSaving ? 'var(--t5)' : 'var(--on-accent)',
+      teamRows,
+      openTeamInvite: () => this.setState({ modal: 'teamInvite', modalError: '', formEmail: '' }),
+      modalTeamInviteOpen: st.modal === 'teamInvite',
+      modalTeamRemoveOpen: st.modal === 'teamRemove',
+      teamInviteSubmit: () => this.teamInviteSubmit(),
+      teamInviteLabel: st.modalBusy ? 'Invitation…' : 'Inviter',
+      teamRemoveSubmit: () => this.teamRemoveSubmit(),
+      teamRemoveLabel: st.modalBusy ? 'Retrait…' : 'Retirer',
+      removeTargetName: (st.removeTarget || {}).email || '',
+    }
     const canSend = st.input.trim().length > 0;
     const isChatView = st.view === 'assistant' && st.chat;
     const isAnalysisView = st.view === 'analysis';
     return {
       ...dossierVals,
+      ...reglagesVals,
       greeting: this._greeting,
       isDark: !!st.dark, isLight: !st.dark,
       themeTitle: st.dark ? 'Mode clair' : 'Mode sombre',

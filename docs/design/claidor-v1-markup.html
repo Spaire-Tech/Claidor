@@ -187,8 +187,15 @@ html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
         <div sc-camel-on-click="{{ c.open }}" style="padding:6px 10px 6px 35px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:{{ c.bg }};" style-hover="background:var(--s4);">{{ c.title }}</div>
       </sc-for>
     </div>
-    <div style="border-top:1px solid var(--s7);padding:12px 16px;display:flex;align-items:center;gap:8px;">
-      <div style="flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:5px;cursor:pointer;">Diallo &amp; Associés <svg width="10" height="10" sc-camel-view-box="0 0 10 10" fill="none" stroke="var(--t4)" stroke-width="1.4"><path d="M2.5 4l2.5 2.5L7.5 4"></path></svg></div>
+    <div style="border-top:1px solid var(--s7);padding:12px 16px;display:flex;align-items:center;gap:8px;position:relative;">
+      <!-- ADDITION : le chevron dessiné n'ouvrait rien ; il ouvre le seul
+           menu du cabinet — ses réglages. Le nom est celui du cabinet. -->
+      <sc-if value="{{ menuIsWorkspace }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;bottom:46px;left:12px;z-index:30;background:var(--surface);border:1px solid var(--b3);border-radius:10px;box-shadow:0 8px 24px var(--sh1);padding:6px;min-width:200px;">
+          <div sc-camel-on-click="{{ goReglages }}" style="padding:8px 11px;border-radius:7px;cursor:pointer;font-size:13px;" style-hover="background:var(--s4);">Réglages du cabinet</div>
+        </div>
+      </sc-if>
+      <div sc-camel-on-click="{{ toggleWorkspaceMenu }}" style="flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:5px;cursor:pointer;">{{ workspaceName }} <svg width="10" height="10" sc-camel-view-box="0 0 10 10" fill="none" stroke="var(--t4)" stroke-width="1.4"><path d="M2.5 4l2.5 2.5L7.5 4"></path></svg></div>
       <span sc-camel-on-click="{{ goGuides }}" style="color:var(--t4);cursor:pointer;display:flex;" style-hover="color:var(--ink);" title="Aide"><svg width="15" height="15" sc-camel-view-box="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"></circle><path d="M6.2 6.2a1.8 1.8 0 113 1.3c-0.6 0.5-1.2 0.8-1.2 1.6"></path><circle cx="8" cy="11.4" r="0.5" fill="currentColor"></circle></svg></span>
     </div>
   </div>
@@ -821,6 +828,47 @@ html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
         </div>
       </div>
     </sc-if>
+
+    <!-- Réglages — ADDITION (le design n'a pas d'écran Réglages ; écrit
+         dans sa langue : titre sérif, sous-titre, table à la Historique,
+         mêmes boutons et mêmes modales que les Dossiers). -->
+    <sc-if value="{{ isReglages }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow-y:auto;padding:44px 48px;">
+        <div style="max-width:760px;margin:0 auto;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Réglages</div>
+          <div style="margin-top:4px;font-size:13px;color:var(--t3);">Le cabinet et les confrères qui y travaillent</div>
+
+          <div style="margin-top:28px;font-size:11.5px;font-weight:600;color:var(--t4);">CABINET</div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:flex-end;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:11.5px;font-weight:600;color:var(--t3);margin-bottom:5px;">Nom du cabinet</div>
+              <input value="{{ formOrgName }}" sc-camel-on-change="{{ onFormOrgName }}" placeholder="Diallo &amp; Associés" style="width:100%;border:1px solid var(--b3);border-radius:8px;padding:9px 11px;font:inherit;font-size:13.5px;background:var(--surface);color:var(--ink);outline:none;" />
+            </div>
+            <button sc-camel-on-click="{{ saveOrgName }}" style="border:none;border-radius:8px;padding:9px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:{{ orgSaveBg }};color:{{ orgSaveFg }};">{{ orgSaveLabel }}</button>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--t4);">C&rsquo;est le nom que voient vos confrères, en bas de la barre latérale.</div>
+
+          <div style="margin-top:34px;display:flex;align-items:baseline;justify-content:space-between;">
+            <div style="font-size:11.5px;font-weight:600;color:var(--t4);">ÉQUIPE</div>
+            <span sc-camel-on-click="{{ openTeamInvite }}" style="font-size:12.5px;font-weight:500;color:var(--t2);cursor:pointer;" style-hover="color:var(--ink);">+ Inviter un confrère</span>
+          </div>
+          <div style="margin-top:12px;">
+            <div style="display:flex;gap:14px;padding:8px 2px;border-bottom:1px solid var(--b1);font-size:11.5px;color:var(--t4);font-weight:500;">
+              <span style="flex:1;">Confrère</span><span style="width:140px;">Rôle</span><span style="width:120px;">Depuis</span><span style="width:70px;text-align:right;"></span>
+            </div>
+            <sc-for list="{{ teamRows }}" as="m" hint-placeholder-count="3">
+              <div style="display:flex;gap:14px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--s5);font-size:13px;">
+                <span style="flex:1;min-width:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.email }}</span>
+                <span style="width:140px;color:var(--t1);font-size:12.5px;">{{ m.role }}</span>
+                <span style="width:120px;color:var(--t4);font-size:12.5px;">{{ m.since }}</span>
+                <span sc-camel-on-click="{{ m.remove }}" style="width:70px;text-align:right;font-size:12.5px;color:{{ m.actionColor }};cursor:{{ m.actionCursor }};" style-hover="text-decoration:underline;">{{ m.action }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:14px;font-size:12px;color:var(--t4);">Retirer un confrère lui ferme l&rsquo;accès au cabinet ; les dossiers et leurs pièces restent.</div>
+        </div>
+      </div>
+    </sc-if>
   </div>
 
   <!-- Source panel (partagé chat + analyses) -->
@@ -1036,6 +1084,52 @@ html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
         <div style="display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;">
           <button sc-camel-on-click="{{ closeModal }}" style="border:1px solid var(--b3);border-radius:8px;padding:8px 14px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--ink);" style-hover="background:var(--s2);">Annuler</button>
           <button sc-camel-on-click="{{ inviteSubmit }}" style="border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:{{ modalSubmitBg }};color:{{ modalSubmitFg }};">{{ inviteLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Cabinet : inviter — ADDITION, même grammaire que « Inviter au dossier ». -->
+  <sc-if value="{{ modalTeamInviteOpen }}" hint-placeholder-val="{{ false }}">
+    <div sc-camel-on-click="{{ closeModal }}" style="position:fixed;inset:0;background:var(--sh4);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding-top:16vh;">
+      <div sc-camel-on-click="{{ stop }}" style="width:420px;background:var(--surface);border-radius:14px;box-shadow:0 20px 60px var(--sh4);overflow:hidden;">
+        <div style="padding:18px 20px 4px;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:18px;font-weight:600;">Inviter au cabinet</div>
+          <div style="margin-top:4px;font-size:12.5px;color:var(--t3);">Votre confrère recevra un courriel et rejoindra le cabinet à sa première connexion.</div>
+        </div>
+        <div style="padding:14px 20px 0;display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--t3);margin-bottom:5px;">Adresse e-mail</div>
+            <input value="{{ formEmail }}" sc-camel-on-change="{{ onFormEmail }}" placeholder="prenom@cabinet.com" style="width:100%;border:1px solid var(--b3);border-radius:8px;padding:9px 11px;font:inherit;font-size:13.5px;background:var(--surface);color:var(--ink);outline:none;" />
+          </div>
+          <sc-if value="{{ modalError }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12.5px;color:var(--red2);">{{ modalError }}</div>
+          </sc-if>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;">
+          <button sc-camel-on-click="{{ closeModal }}" style="border:1px solid var(--b3);border-radius:8px;padding:8px 14px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--ink);" style-hover="background:var(--s2);">Annuler</button>
+          <button sc-camel-on-click="{{ teamInviteSubmit }}" style="border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:{{ modalSubmitBg }};color:{{ modalSubmitFg }};">{{ teamInviteLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Cabinet : retirer un confrère — ADDITION. -->
+  <sc-if value="{{ modalTeamRemoveOpen }}" hint-placeholder-val="{{ false }}">
+    <div sc-camel-on-click="{{ closeModal }}" style="position:fixed;inset:0;background:var(--sh4);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding-top:16vh;">
+      <div sc-camel-on-click="{{ stop }}" style="width:440px;background:var(--surface);border-radius:14px;box-shadow:0 20px 60px var(--sh4);overflow:hidden;">
+        <div style="padding:18px 20px 4px;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:18px;font-weight:600;">Retirer du cabinet</div>
+          <div style="margin-top:4px;font-size:12.5px;color:var(--t3);">« {{ removeTargetName }} » perdra l&rsquo;accès à Claidor pour ce cabinet. Les dossiers, les pièces et les réponses restent.</div>
+        </div>
+        <div style="padding:10px 20px 0;">
+          <sc-if value="{{ modalError }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12.5px;color:var(--red2);">{{ modalError }}</div>
+          </sc-if>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;">
+          <button sc-camel-on-click="{{ closeModal }}" style="border:1px solid var(--b3);border-radius:8px;padding:8px 14px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--ink);" style-hover="background:var(--s2);">Annuler</button>
+          <button sc-camel-on-click="{{ teamRemoveSubmit }}" style="border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:{{ deleteSubmitBg }};color:{{ deleteSubmitFg }};">{{ teamRemoveLabel }}</button>
         </div>
       </div>
     </div>

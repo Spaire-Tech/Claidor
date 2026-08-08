@@ -137,9 +137,18 @@ export const DesignView = ({ v }: { v: any }) => {
               </Fragment>
             ))}
           </div>
-          <div style={{'borderTop': '1px solid var(--s7)', 'padding': '12px 16px', 'display': 'flex', 'alignItems': 'center', 'gap': '8px'}}>
-            <div style={{'flex': '1', 'minWidth': '0', 'fontSize': '13.5px', 'fontWeight': '600', 'color': 'var(--ink)', 'display': 'flex', 'alignItems': 'center', 'gap': '5px', 'cursor': 'pointer'}}>
-              Diallo & Associés 
+          <div style={{'borderTop': '1px solid var(--s7)', 'padding': '12px 16px', 'display': 'flex', 'alignItems': 'center', 'gap': '8px', 'position': 'relative'}}>
+            {(v.menuIsWorkspace) ? (
+              <>
+              <div style={{'position': 'absolute', 'bottom': '46px', 'left': '12px', 'zIndex': '30', 'background': 'var(--surface)', 'border': '1px solid var(--b3)', 'borderRadius': '10px', 'boxShadow': '0 8px 24px var(--sh1)', 'padding': '6px', 'minWidth': '200px'}}>
+                <div onClick={v.goReglages} style={{'padding': '8px 11px', 'borderRadius': '7px', 'cursor': 'pointer', 'fontSize': '13px'}} className="dh-627e4583">
+                  Réglages du cabinet
+                </div>
+              </div>
+              </>
+            ) : null}
+            <div onClick={v.toggleWorkspaceMenu} style={{'flex': '1', 'minWidth': '0', 'fontSize': '13.5px', 'fontWeight': '600', 'color': 'var(--ink)', 'display': 'flex', 'alignItems': 'center', 'gap': '5px', 'cursor': 'pointer'}}>
+              {v.workspaceName} 
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--t4)" strokeWidth="1.4">
                 <path d="M2.5 4l2.5 2.5L7.5 4" />
               </svg>
@@ -1343,6 +1352,80 @@ export const DesignView = ({ v }: { v: any }) => {
             </div>
             </>
           ) : null}
+          {(v.isReglages) ? (
+            <>
+            <div style={{'flex': '1', 'overflowY': 'auto', 'padding': '44px 48px'}}>
+              <div style={{'maxWidth': '760px', 'margin': '0 auto'}}>
+                <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '24px', 'fontWeight': '600'}}>
+                  Réglages
+                </div>
+                <div style={{'marginTop': '4px', 'fontSize': '13px', 'color': 'var(--t3)'}}>
+                  Le cabinet et les confrères qui y travaillent
+                </div>
+                <div style={{'marginTop': '28px', 'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t4)'}}>
+                  CABINET
+                </div>
+                <div style={{'marginTop': '12px', 'display': 'flex', 'gap': '10px', 'alignItems': 'flex-end'}}>
+                  <div style={{'flex': '1', 'minWidth': '0'}}>
+                    <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
+                      Nom du cabinet
+                    </div>
+                    <input value={v.formOrgName} onChange={v.onFormOrgName} placeholder="Diallo &amp; Associés" style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                  </div>
+                  <button onClick={v.saveOrgName} style={{'border': 'none', 'borderRadius': '8px', 'padding': '9px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.orgSaveBg, 'color': v.orgSaveFg}}>
+                    {v.orgSaveLabel}
+                  </button>
+                </div>
+                <div style={{'marginTop': '8px', 'fontSize': '12px', 'color': 'var(--t4)'}}>
+                  C’est le nom que voient vos confrères, en bas de la barre latérale.
+                </div>
+                <div style={{'marginTop': '34px', 'display': 'flex', 'alignItems': 'baseline', 'justifyContent': 'space-between'}}>
+                  <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t4)'}}>
+                    ÉQUIPE
+                  </div>
+                  <span onClick={v.openTeamInvite} style={{'fontSize': '12.5px', 'fontWeight': '500', 'color': 'var(--t2)', 'cursor': 'pointer'}} className="dh-7797a855">
+                    + Inviter un confrère
+                  </span>
+                </div>
+                <div style={{'marginTop': '12px'}}>
+                  <div style={{'display': 'flex', 'gap': '14px', 'padding': '8px 2px', 'borderBottom': '1px solid var(--b1)', 'fontSize': '11.5px', 'color': 'var(--t4)', 'fontWeight': '500'}}>
+                    <span style={{'flex': '1'}}>
+                      Confrère
+                    </span>
+                    <span style={{'width': '140px'}}>
+                      Rôle
+                    </span>
+                    <span style={{'width': '120px'}}>
+                      Depuis
+                    </span>
+                    <span style={{'width': '70px', 'textAlign': 'right'}} />
+                  </div>
+                  {(v.teamRows).map((m, mIdx) => (
+                    <Fragment key={mIdx}>
+                    <div style={{'display': 'flex', 'gap': '14px', 'alignItems': 'center', 'padding': '12px 2px', 'borderBottom': '1px solid var(--s5)', 'fontSize': '13px'}}>
+                      <span style={{'flex': '1', 'minWidth': '0', 'fontWeight': '500', 'whiteSpace': 'nowrap', 'overflow': 'hidden', 'textOverflow': 'ellipsis'}}>
+                        {m.email}
+                      </span>
+                      <span style={{'width': '140px', 'color': 'var(--t1)', 'fontSize': '12.5px'}}>
+                        {m.role}
+                      </span>
+                      <span style={{'width': '120px', 'color': 'var(--t4)', 'fontSize': '12.5px'}}>
+                        {m.since}
+                      </span>
+                      <span onClick={m.remove} style={{'width': '70px', 'textAlign': 'right', 'fontSize': '12.5px', 'color': m.actionColor, 'cursor': m.actionCursor}} className="dh-b03bc2dc">
+                        {m.action}
+                      </span>
+                    </div>
+                    </Fragment>
+                  ))}
+                </div>
+                <div style={{'marginTop': '14px', 'fontSize': '12px', 'color': 'var(--t4)'}}>
+                  Retirer un confrère lui ferme l’accès au cabinet ; les dossiers et leurs pièces restent.
+                </div>
+              </div>
+            </div>
+            </>
+          ) : null}
         </div>
         {(v.hasPanel) ? (
           <>
@@ -1758,6 +1841,78 @@ export const DesignView = ({ v }: { v: any }) => {
                 </button>
                 <button onClick={v.inviteSubmit} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.modalSubmitBg, 'color': v.modalSubmitFg}}>
                   {v.inviteLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+          </>
+        ) : null}
+        {(v.modalTeamInviteOpen) ? (
+          <>
+          <div onClick={v.closeModal} style={{'position': 'fixed', 'inset': '0', 'background': 'var(--sh4)', 'zIndex': '60', 'display': 'flex', 'alignItems': 'flex-start', 'justifyContent': 'center', 'paddingTop': '16vh'}}>
+            <div onClick={v.stop} style={{'width': '420px', 'background': 'var(--surface)', 'borderRadius': '14px', 'boxShadow': '0 20px 60px var(--sh4)', 'overflow': 'hidden'}}>
+              <div style={{'padding': '18px 20px 4px'}}>
+                <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '18px', 'fontWeight': '600'}}>
+                  Inviter au cabinet
+                </div>
+                <div style={{'marginTop': '4px', 'fontSize': '12.5px', 'color': 'var(--t3)'}}>
+                  Votre confrère recevra un courriel et rejoindra le cabinet à sa première connexion.
+                </div>
+              </div>
+              <div style={{'padding': '14px 20px 0', 'display': 'flex', 'flexDirection': 'column', 'gap': '12px'}}>
+                <div>
+                  <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
+                    Adresse e-mail
+                  </div>
+                  <input value={v.formEmail} onChange={v.onFormEmail} placeholder="prenom@cabinet.com" style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                </div>
+                {(v.modalError) ? (
+                  <>
+                  <div style={{'fontSize': '12.5px', 'color': 'var(--red2)'}}>
+                    {v.modalError}
+                  </div>
+                  </>
+                ) : null}
+              </div>
+              <div style={{'display': 'flex', 'justifyContent': 'flex-end', 'gap': '8px', 'padding': '16px 20px'}}>
+                <button onClick={v.closeModal} style={{'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '8px 14px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '500', 'cursor': 'pointer', 'background': 'var(--surface)', 'color': 'var(--ink)'}} className="dh-63a957d0">
+                  Annuler
+                </button>
+                <button onClick={v.teamInviteSubmit} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.modalSubmitBg, 'color': v.modalSubmitFg}}>
+                  {v.teamInviteLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+          </>
+        ) : null}
+        {(v.modalTeamRemoveOpen) ? (
+          <>
+          <div onClick={v.closeModal} style={{'position': 'fixed', 'inset': '0', 'background': 'var(--sh4)', 'zIndex': '60', 'display': 'flex', 'alignItems': 'flex-start', 'justifyContent': 'center', 'paddingTop': '16vh'}}>
+            <div onClick={v.stop} style={{'width': '440px', 'background': 'var(--surface)', 'borderRadius': '14px', 'boxShadow': '0 20px 60px var(--sh4)', 'overflow': 'hidden'}}>
+              <div style={{'padding': '18px 20px 4px'}}>
+                <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '18px', 'fontWeight': '600'}}>
+                  Retirer du cabinet
+                </div>
+                <div style={{'marginTop': '4px', 'fontSize': '12.5px', 'color': 'var(--t3)'}}>
+                  « {v.removeTargetName} » perdra l’accès à Claidor pour ce cabinet. Les dossiers, les pièces et les réponses restent.
+                </div>
+              </div>
+              <div style={{'padding': '10px 20px 0'}}>
+                {(v.modalError) ? (
+                  <>
+                  <div style={{'fontSize': '12.5px', 'color': 'var(--red2)'}}>
+                    {v.modalError}
+                  </div>
+                  </>
+                ) : null}
+              </div>
+              <div style={{'display': 'flex', 'justifyContent': 'flex-end', 'gap': '8px', 'padding': '16px 20px'}}>
+                <button onClick={v.closeModal} style={{'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '8px 14px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '500', 'cursor': 'pointer', 'background': 'var(--surface)', 'color': 'var(--ink)'}} className="dh-63a957d0">
+                  Annuler
+                </button>
+                <button onClick={v.teamRemoveSubmit} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.deleteSubmitBg, 'color': v.deleteSubmitFg}}>
+                  {v.teamRemoveLabel}
                 </button>
               </div>
             </div>
