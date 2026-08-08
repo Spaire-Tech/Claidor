@@ -235,3 +235,125 @@ class TestStoredSources:
         ).json()
 
         assert rows[0]["sources"] is None
+
+
+@pytest.mark.asyncio
+class TestDeletingQuestions:
+    """Historique is a record you can clear.
+
+    Trial questions accumulate, and a list that can only grow becomes noise
+    a lawyer scrolls past. Deletion is real — the row is struck, not hidden
+    on the client — and scoped to the asker, for the same reason reading is.
+    """
+
+    @pytest.mark.auth
+    async def test_a_question_can_be_removed(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        organization: Organization,
+        user: User,
+        user_organization: UserOrganization,
+    ) -> None:
+        repository = LibrarianQuestionRepository.from_session(session)
+        row = await repository.create_question(
+            user_id=user.id, organization_id=organization.id, question="à retirer"
+        )
+
+        response = await client.delete(
+            f"/v1/librarian/questions/{row.id}?organization_id={organization.id}"
+        )
+
+        assert response.status_code == 204
+        rows = (
+            await client.get(
+                f"/v1/librarian/questions?organization_id={organization.id}"
+            )
+        ).json()
+        assert rows == []
+
+    @pytest.mark.auth
+    async def test_the_whole_history_can_be_cleared(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        organization: Organization,
+        user: User,
+        user_organization: UserOrganization,
+    ) -> None:
+        repository = LibrarianQuestionRepository.from_session(session)
+        for text in ("une", "deux", "trois"):
+            await repository.create_question(
+                user_id=user.id, organization_id=organization.id, question=text
+            )
+
+        response = await client.delete(
+            f"/v1/librarian/questions?organization_id={organization.id}"
+        )
+
+        assert response.status_code == 204
+        rows = (
+            await client.get(
+                f"/v1/librarian/questions?organization_id={organization.id}"
+            )
+        ).json()
+        assert rows == []
+
+    @pytest.mark.auth
+    async def test_a_colleagues_question_cannot_be_removed(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: object,
+        organization: Organization,
+        user_organization: UserOrganization,
+    ) -> None:
+        # 404 rather than 403: whether a colleague's question exists is
+        # itself none of your business.
+        from tests.fixtures.random_objects import create_user
+
+        colleague = await create_user(save_fixture)  # type: ignore[arg-type]
+        repository = LibrarianQuestionRepository.from_session(session)
+        row = await repository.create_question(
+            user_id=colleague.id,
+            organization_id=organization.id,
+            question="la question du confrère",
+        )
+
+        response = await client.delete(
+            f"/v1/librarian/questions/{row.id}?organization_id={organization.id}"
+        )
+
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_clearing_leaves_a_colleagues_history_alone(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: object,
+        organization: Organization,
+        user: User,
+        user_organization: UserOrganization,
+    ) -> None:
+        from tests.fixtures.random_objects import create_user
+
+        colleague = await create_user(save_fixture)  # type: ignore[arg-type]
+        repository = LibrarianQuestionRepository.from_session(session)
+        await repository.create_question(
+            user_id=user.id, organization_id=organization.id, question="la mienne"
+        )
+        kept = await repository.create_question(
+            user_id=colleague.id,
+            organization_id=organization.id,
+            question="la sienne",
+        )
+
+        await client.delete(
+            f"/v1/librarian/questions?organization_id={organization.id}"
+        )
+
+        remaining = await repository.list_for_user(
+            colleague.id, organization_id=organization.id
+        )
+        assert [r.id for r in remaining] == [kept.id]

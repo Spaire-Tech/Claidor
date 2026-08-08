@@ -128,11 +128,17 @@ for (const demo of DEMO_CONVERSATIONS) {
 // answer without its citations is a legal conclusion standing on nothing,
 // and Historique showed exactly that for as long as the sources went
 // unrecorded.
-await page.getByText(STORED_MARK).first().click()
-await page.waitForTimeout(800)
-const reopened = await page.locator('.claidor-design').innerText()
-if (!reopened.includes('SOURCE ENREGISTRÉE')) {
-  failures.push('the stored answer reopened with none of its sources')
+try {
+  await page.getByText(STORED_MARK).first().click({ timeout: 5000 })
+  await page.waitForTimeout(800)
+  const reopened = await page.locator('.claidor-design').innerText()
+  if (!reopened.includes('SOURCE ENREGISTRÉE')) {
+    failures.push('the stored answer reopened with none of its sources')
+  }
+} catch {
+  // Already reported above as "not on screen"; do not drown that in a
+  // stack trace for a row that was never rendered.
+  if (!failures.length) failures.push('the stored question could not be opened')
 }
 
 await browser.close()

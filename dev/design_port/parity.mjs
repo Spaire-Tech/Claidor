@@ -60,6 +60,30 @@ const ADDITIONS = [
   // Bibliothèque: the design lists saved prompts without a way to add one.
   '+ Nouveau prompt ',
   ' + Nouveau prompt',
+  // Historique: the design draws a list that can only grow. A record of
+  // trial questions with no way to clear it becomes noise a lawyer scrolls
+  // past, so each row carries a × and the header a « Tout effacer ».
+  'Tout effacer ',
+  ' Tout effacer',
+  // …and the per-row × that removes a single question.
+  ' ×',
+  '× ',
+]
+
+/**
+ * Replacements: text the design draws that the port deliberately words
+ * differently. Written as [design, port] and checked as a substitution
+ * before the comparison, so the rest of the screen is still compared
+ * exactly.
+ */
+const REPLACEMENTS = [
+  // The design's example button names an invented client. Offering an
+  // example is right; naming a fictional party on a real lawyer's screen
+  // is the habit this product is trying to lose.
+  [
+    'Analyser un exemple — conclusions adverses (SODICA)',
+    'Analyser un exemple de conclusions',
+  ],
 ]
 
 /**
@@ -115,7 +139,10 @@ if (port.errors.length) {
 for (const view of VIEWS) {
   let left = original.seen[view]
   let right = port.seen[view]
-  for (const addition of ADDITIONS) right = right.replace(addition, '')
+  // replaceAll, not replace: a per-row control appears once per row, and
+  // documenting it should not mean documenting it five times.
+  for (const addition of ADDITIONS) right = right.replaceAll(addition, '')
+  for (const [drawn, worded] of REPLACEMENTS) left = left.replace(drawn, worded)
   for (const greeting of GREETINGS) {
     left = left.replace(greeting, '<G>')
     right = right.replace(greeting, '<G>')

@@ -1160,7 +1160,7 @@ export const DesignView = ({ v }: { v: any }) => {
                       Glissez un PDF ou un document Word ici
                     </div>
                     <button onClick={v.runReader} style={{'border': 'none', 'borderRadius': '8px', 'padding': '9px 18px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': 'var(--accent)', 'color': 'var(--on-accent)'}}>
-                      Analyser un exemple — conclusions adverses (SODICA)
+                      Analyser un exemple de conclusions
                     </button>
                   </div>
                   </>
@@ -1222,8 +1222,17 @@ export const DesignView = ({ v }: { v: any }) => {
                 <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '24px', 'fontWeight': '600'}}>
                   Historique
                 </div>
-                <div style={{'marginTop': '4px', 'fontSize': '13px', 'color': 'var(--t3)'}}>
-                  Toutes les recherches du cabinet
+                <div style={{'marginTop': '4px', 'display': 'flex', 'alignItems': 'baseline', 'justifyContent': 'space-between', 'gap': '16px'}}>
+                  <div style={{'fontSize': '13px', 'color': 'var(--t3)'}}>
+                    {v.histSubtitle}
+                  </div>
+                  {(v.histAny) ? (
+                    <>
+                    <span onClick={v.histClear} style={{'fontSize': '12.5px', 'color': 'var(--t4)', 'cursor': 'pointer', 'whiteSpace': 'nowrap'}} className="dh-26a2dff5">
+                      Tout effacer
+                    </span>
+                    </>
+                  ) : null}
                 </div>
                 <div style={{'marginTop': '22px'}}>
                   <div style={{'display': 'flex', 'gap': '14px', 'padding': '8px 2px', 'borderBottom': '1px solid var(--b1)', 'fontSize': '11.5px', 'color': 'var(--t4)', 'fontWeight': '500'}}>
@@ -1239,6 +1248,7 @@ export const DesignView = ({ v }: { v: any }) => {
                     <span style={{'width': '110px', 'textAlign': 'right'}}>
                       Quand
                     </span>
+                    <span style={{'width': '22px'}} />
                   </div>
                   {(v.histRows).map((h, hIdx) => (
                     <Fragment key={hIdx}>
@@ -1254,6 +1264,9 @@ export const DesignView = ({ v }: { v: any }) => {
                       </span>
                       <span style={{'width': '110px', 'textAlign': 'right', 'color': 'var(--t4)', 'fontSize': '12.5px'}}>
                         {h.time}
+                      </span>
+                      <span onClick={h.remove} title="Retirer de l'historique" style={{'width': '22px', 'textAlign': 'right', 'color': 'var(--t5)', 'fontSize': '14px', 'cursor': 'pointer'}} className="dh-26a2dff5">
+                        ×
                       </span>
                     </div>
                     </Fragment>

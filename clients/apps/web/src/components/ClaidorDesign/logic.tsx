@@ -337,11 +337,27 @@ class ClaidorDesignApp extends React.Component<any, any> {
       .then((r) => (r.ok ? r.json() : null))
       .then((acts) => {
         if (Array.isArray(acts) ? acts.length : acts?.items?.length) {
+          this._live = true
           this.setState({ live: true })
           this.loadLiveLists()
         }
       })
       .catch(() => {})
+  }
+  // Is the library live? Read from the instance, not from state.
+  //
+  // `live` is set in a promise callback, and React batches state updates
+  // there: every loader below used to test `this.state.live` on the line
+  // after `setState({live: true})` and read `false`, so five of the six
+  // silently declined and the screens kept the scripted demo. Only
+  // Dossiers, which never had the guard, actually loaded — which is why a
+  // real matter appeared beside invented lawyers and invented arrêts.
+  //
+  // In development this hid itself: StrictMode mounts twice, and the
+  // second componentDidMount sees the first mount's `live` already true.
+  // It only ever failed in a production build.
+  isLive() {
+    return this._live || this.state.live
   }
   // Everything scoped to the workspace, fetched together.
   //
@@ -614,7 +630,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
   }
   refreshVeilles() {
     const org = this.orgId()
-    if (!org || !this.state.live) return
+    if (!org || !this.isLive()) return
     this.loadList('/v1/veilles?organization_id=' + org, 'liveVeilles')
     this.loadList('/v1/veilles/signals?organization_id=' + org, 'liveSignals')
   }
@@ -640,12 +656,12 @@ class ClaidorDesignApp extends React.Component<any, any> {
   }
   refreshPrompts() {
     const org = this.orgId()
-    if (!org || !this.state.live) return
+    if (!org || !this.isLive()) return
     this.loadList('/v1/prompts?organization_id=' + org, 'livePrompts')
   }
   // --- Réglages ----------------------------------------------------------
   refreshAnalysisSuggestions() {
-    if (!this.state.live) return
+    if (!this.isLive()) return
     // Where to start, ranked out of the corpus. The four drawn examples
     // were a demonstration; these are the lawyer's own library.
     this.apiGet('/v1/analyses/suggestions').then((data) => {
@@ -658,7 +674,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
   }
   refreshTeam() {
     const org = this.orgId()
-    if (!org || !this.state.live) return
+    if (!org || !this.isLive()) return
     this.loadList('/v1/organizations/' + org + '/members', 'liveTeam',
       (data) => (data && Array.isArray(data.items) ? data.items : data))
   }
@@ -774,9 +790,36 @@ class ClaidorDesignApp extends React.Component<any, any> {
       this.refreshPrompts()
     })
   }
+  // Remove one question from Historique, or empty it.
+  //
+  // Real deletions, not a hidden flag on the client: a lawyer clearing a
+  // list of trial questions expects them gone from the record, and a list
+  // that only looks shorter is another thing the dashboard would be
+  // telling them that is not true.
+  removeQuestion(id) {
+    const org = this.orgId()
+    if (!org) return
+    this.setState((st) => ({
+      liveHistory: (st.liveHistory || []).filter((h) => h.id !== id),
+    }))
+    this.apiSend('DELETE', '/v1/librarian/questions/' + id + '?organization_id=' + org).then(({ ok }) => {
+      if (!ok) { this.showToast('Suppression impossible'); }
+      this.refreshHistory()
+    })
+  }
+  clearHistory() {
+    const org = this.orgId()
+    if (!org) return
+    this.setState({ liveHistory: [] })
+    this.apiSend('DELETE', '/v1/librarian/questions?organization_id=' + org).then(({ ok }) => {
+      if (!ok) { this.showToast('Suppression impossible'); }
+      this.refreshHistory()
+      this.showToast('Historique effacé')
+    })
+  }
   refreshHistory() {
     const org = this.orgId()
-    if (!org || !this.state.live) return
+    if (!org || !this.isLive()) return
     this.loadList('/v1/librarian/questions?organization_id=' + org, 'liveHistory')
   }
   refreshDossiers() {
@@ -1278,7 +1321,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
           bg: h.id === st.activeConv ? 'var(--s8)' : 'transparent',
           open: () => this.openStoredQuestion(h),
         }))
-      : [...st.extraConvs, ...D.convs].map(c => ({
+      : (st.live ? [] : [...st.extraConvs, ...D.convs]).map(c => ({
           title: c.title,
           bg: c.id === st.activeConv ? 'var(--s8)' : 'transparent',
           open: () => this.openQA(c.q, c.dossierId),
@@ -1337,7 +1380,9 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const analysisList = ['auth', 'hist', 'comp', 'cite'].map((type) => ({
       title: D.AN[type].name,
       desc: D.AN[type].desc,
-      targets: liveTargets(type) || scriptedTargets[type].map(t => ({ label: t[1], go: () => this.openAnalysis(type, t[0]) })),
+      targets: st.live
+        ? (liveTargets(type) || [])
+        : scriptedTargets[type].map(t => ({ label: t[1], go: () => this.openAnalysis(type, t[0]) })),
     }));
     const CAT_LABEL = { pleading: 'Acte de procédure', exhibit: 'Pièce', contract: 'Contrat', statement: 'Pièce financière', correspondence: 'Correspondance', decision: 'Décision', other: 'Document' }
     const CAT_DOT = { pleading: 'var(--blue2)', exhibit: 'var(--amber)', contract: 'var(--blue2)', statement: 'var(--green)', correspondence: 'var(--amber)', decision: 'var(--red)', other: 'var(--t5)' }
@@ -1394,8 +1439,9 @@ class ClaidorDesignApp extends React.Component<any, any> {
           user: 'vous',
           time: histAgo(h.created_at),
           open: () => this.openStoredQuestion(h),
+          remove: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.removeQuestion(h.id) },
         }))
-      : [...st.hist, ...D.seededHist].map(h => ({ q: h.q, type: h.dossierId ? 'Dossier' : 'Recherche', user: h.user, time: h.time, open: () => this.openQA(h.q, h.dossierId) }));
+      : (st.live ? [] : [...st.hist, ...D.seededHist]).map(h => ({ q: h.q, type: h.dossierId ? 'Dossier' : 'Recherche', user: h.user, time: h.time, open: () => this.openQA(h.q, h.dossierId), remove: (e) => { if (e && e.stopPropagation) e.stopPropagation(); } }));
     const guideList = D.guides.map((g, i) => ({ title: g.title, tag: g.tag, bg: i === st.guide ? 'var(--s8)' : 'transparent', open: () => this.setState({ guide: i }) }));
     const gg = D.guides[st.guide];
     let dd = null;
@@ -1577,7 +1623,10 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const scriptedVeilleRows = st.veilles.map((v, i) => ({ label: v.label, sub: v.sub, last: v.last,
       bg: v.on ? '#2897FF' : 'var(--b5)', knob: v.on ? '15px' : '2px',
       toggle: () => { const vs = st.veilles.slice(); vs[i] = { ...v, on: !v.on }; this.setState({ veilles: vs }); } }));
-    const veilleRows = liveVeilleRows || scriptedVeilleRows;
+    // Live, an empty list is an empty list. The scripted watches are the
+    // demonstration and belong to the empty-library state alone — a lawyer
+    // with a real workspace must never be shown a watch they never created.
+    const veilleRows = st.live ? (liveVeilleRows || []) : scriptedVeilleRows;
     const liveAlertRows = (st.live && st.liveSignals)
       ? st.liveSignals.map((sg) => ({
           when: signalAgo(sg.created_at),
@@ -1587,7 +1636,10 @@ class ClaidorDesignApp extends React.Component<any, any> {
       : null
     const scriptedAlertRows = D.alertFeed.map(a => ({ when: a.when, text: a.text,
       open: () => { if (a.an) this.openAnalysis(a.an[0], a.an[1]); else this.setState({ view: 'veilles', panel: { type: a.k, id: a.id } }); } }));
-    const alertRows = liveAlertRows || scriptedAlertRows;
+    // The gravest of these: D.alertFeed contains an invented CCJA arrêt.
+    // Shown live it is fabricated case law presented as this cabinet's
+    // signal, which is the single worst thing this dashboard could do.
+    const alertRows = st.live ? (liveAlertRows || []) : scriptedAlertRows;
     const stTag = { ok: ['var(--green2)', 'Vérifiée'], warn: ['var(--amber2)', 'À vérifier'], weak: ['var(--red2)', 'Point faible'] };
     const scriptedFindings = D.readerDoc.findings.map(f => ({ cite: f.cite, note: f.note,
       dot: stTag[f.status][0], tag: stTag[f.status][1],
@@ -1606,7 +1658,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
           }
         })
       : null
-    const readerFindings = liveReaderFindings || scriptedFindings;
+    const readerFindings = st.live ? (liveReaderFindings || []) : scriptedFindings;
     const normTxt = s => s.toLowerCase().replace(/article\s/g, 'art. ').replace(/\s+/g, ' ').trim();
     const tokens = normTxt(st.searchQ || '').split(' ').filter(Boolean);
     const matOf = a0 => a0 === 'a14' ? 'Cautionnement' : (a0 === 'a10' ? 'Injonction de payer' : (a0 === 'a387' ? 'Sociétés' : 'Saisie-attribution'));
@@ -1617,15 +1669,20 @@ class ClaidorDesignApp extends React.Component<any, any> {
         mat: matOf(d.articles[0]), open: openPanel({ type: 'decision', id }) }); });
     Object.keys(D.articles).forEach(id => { const a = D.articles[id];
       docs.push({ kind: 'Article', label: a.label, meta: a.act, year: 0, ch: '', mat: matOf(id), open: openPanel({ type: 'article', id }) }); });
+    // Read defensively: an unexpected shape here used to throw inside
+    // render, and a thrown render unmounts the whole dashboard — a white
+    // screen, which is worse than any wrong list.
+    const searchDecisions = (st.liveSearch && st.liveSearch.decisions) || []
+    const searchArticles = (st.liveSearch && st.liveSearch.articles) || []
     const liveResc = (st.live && st.liveSearch)
       ? [
-          ...st.liveSearch.decisions.map(dd => ({
+          ...searchDecisions.map(dd => ({
             kind: 'Décision',
             label: 'CCJA ' + dd.number + (dd.exact ? ' — citation exacte' : ''),
             meta: [dd.decided_on, dd.chamber, dd.keyword_header || dd.excerpt].filter(Boolean).join(' · ').slice(0, 140),
             open: () => this.openLivePanel('decision', dd.id),
           })),
-          ...st.liveSearch.articles.map(ar => ({
+          ...searchArticles.map(ar => ({
             kind: 'Article',
             label: 'Art. ' + ar.number + ', ' + ar.act_short_code + (ar.exact ? ' — citation exacte' : ''),
             meta: (ar.act_title + ' · ' + ar.version_label + ' · ' + ar.excerpt).slice(0, 140),
@@ -1676,7 +1733,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
           ...D.guides.map((g, i) => ({ kind: 'Guide', label: g.title, go: () => this.nav('guides', { guide: i }) })),
         ]
       : null
-    const all = livePalette || scriptedPalette;
+    const all = st.live ? (livePalette || []) : scriptedPalette;
     const searchResults = (tokens.length ? all.filter(r => { const h = normTxt(r.label); return tokens.every(t => h.includes(t)); }) : all).slice(0, 9);
     const CAT_ORDER = ['exhibit', 'pleading', 'contract', 'statement', 'correspondence', 'decision', 'other']
     const IMPORT_STATUS = {
@@ -1870,12 +1927,25 @@ class ClaidorDesignApp extends React.Component<any, any> {
       goHistorique: () => this.nav('historique'),
       goBiblio: () => this.nav('biblio'),
       goGuides: () => this.nav('guides'),
-      msgs, convs, analysisCards: liveCards || scriptedAnalysisCards, analysisList, dossierCards, dossierMenu, clientMenu, promptMenu, promptRows, histRows, guideList, gg, dd,
+      // « Toutes les recherches du cabinet » was true of the drawn demo and
+      // false of the product: Historique is scoped to the person who asked,
+      // because a colleague cannot read your Assistant questions.
+      histSubtitle: st.live ? 'Vos recherches' : 'Toutes les recherches du cabinet',
+      histAny: histRows.length > 0,
+      histClear: () => (st.live ? this.clearHistory() : undefined),
+      msgs, convs, analysisCards: st.live ? (liveCards || []) : scriptedAnalysisCards, analysisList, dossierCards, dossierMenu, clientMenu, promptMenu, promptRows, histRows, guideList, gg, dd,
       an, anIsAuth, anIsHist, anIsComp, anIsCite,
       veilleRows, alertRows, readerFindings, fMatChips, fSinceChips, fChChips, rescResults,
       rescCount: rescResults.length + (rescResults.length > 1 ? ' documents' : ' document'),
-      readerName: (st.live && st.liveReader) ? st.liveReader.document_name : D.readerDoc.name,
-      readerMeta: (st.live && st.liveReader) ? st.liveReader.meta : D.readerDoc.meta,
+      // Before anything is read, the Lecteur names no document. It used to
+      // name an invented one — « Conclusions adverses — SODICA c/ BICIS.pdf »
+      // — which a lawyer opening the screen would read as a file of theirs.
+      readerName: st.live
+        ? (st.liveReader ? st.liveReader.document_name : 'Aucun document lu')
+        : D.readerDoc.name,
+      readerMeta: st.live
+        ? (st.liveReader ? st.liveReader.meta : 'Déposez un acte ou des conclusions pour en vérifier les citations.')
+        : D.readerDoc.meta,
       readerIdle: !st.readerDone, readerDone: st.readerDone,
       // Live, the example runs the real check on a fictional filing; the
       // scripted path stays the fallback of an empty library.

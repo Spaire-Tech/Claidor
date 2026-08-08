@@ -15,14 +15,26 @@ import { notFound } from 'next/navigation'
  * (dev/design_port/history-audit.mjs).
  *
  * Development only. In production this is a demo surface with no place in
- * a product that holds clients' files, so it 404s.
+ * a product that holds clients' files, so it 404s — unless
+ * CLAIDOR_DESIGN_PREVIEW=1 is set explicitly, which the harnesses use to
+ * drive a *production* build locally.
+ *
+ * That escape hatch is not a convenience. React's development mode mounts
+ * every component twice, and the second componentDidMount sees the first
+ * one's state already applied — which masked a loader that read `live`
+ * before setState had been flushed. It passed every check on the dev
+ * server and failed for every real user. A harness that only ever runs
+ * against `next dev` cannot see that class of bug at all.
  */
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ org?: string; orgDelay?: string }>
 }) {
-  if (process.env.NODE_ENV === 'production') {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.CLAIDOR_DESIGN_PREVIEW !== '1'
+  ) {
     notFound()
   }
   const { org, orgDelay } = await searchParams

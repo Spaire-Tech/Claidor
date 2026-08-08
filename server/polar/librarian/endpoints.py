@@ -104,6 +104,41 @@ async def list_questions(
     ]
 
 
+@router.delete("/questions", status_code=204)
+async def clear_questions(
+    auth_subject: auth.LibrarianRead,
+    organization_id: UUID = Query(...),
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    """Empty your own Historique for this workspace."""
+    repository = LibrarianQuestionRepository.from_session(session)
+    await repository.clear_for_user(
+        user_id=auth_subject.subject.id, organization_id=organization_id
+    )
+
+
+@router.delete("/questions/{question_id}", status_code=204)
+async def delete_question(
+    question_id: UUID,
+    auth_subject: auth.LibrarianRead,
+    organization_id: UUID = Query(...),
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    """Remove one question from your Historique.
+
+    404 rather than 403 when it is not yours: whether a colleague's question
+    exists is itself none of your business.
+    """
+    repository = LibrarianQuestionRepository.from_session(session)
+    removed = await repository.delete_for_user(
+        question_id,
+        user_id=auth_subject.subject.id,
+        organization_id=organization_id,
+    )
+    if not removed:
+        raise HTTPException(status_code=404, detail="Question not found.")
+
+
 @router.post("/ask")
 async def ask(
     ask_body: LibrarianAsk,

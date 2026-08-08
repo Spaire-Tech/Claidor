@@ -79,6 +79,7 @@ html[data-claidor-dark] .claidor-design img[alt="Claidor"]{filter:invert(1) hue-
 
 .dh-0c63183b:hover { background: var(--s6) !important; }
 .dh-14a25b5f:hover { border-color: var(--t3) !important; color: var(--ink) !important; }
+.dh-26a2dff5:hover { color: var(--red) !important; }
 .dh-28f3eee9:hover { border-color: var(--t7) !important; }
 .dh-45ca78de:hover { color: var(--ink) !important; background: var(--s4) !important; }
 .dh-627e4583:hover { background: var(--s4) !important; }
