@@ -30,7 +30,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     revealed: 0, streamingIdx: -1, dossier: null, an: null, guide: 0, menu: null,
     searchOpen: false, searchQ: '', selSources: { au: true, cj: true }, dossierSel: null, dossierSelId: null, clientSel: null,
     deep: false, concise: false, notes: true, toast: '', hist: [],
-    live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [], liveAnalysis: {}, liveHistory: null, livePrompts: null, formPromptTitle: '', formPromptText: '',
+    live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [], liveAnalysis: {}, liveHistory: null, livePrompts: null, formPromptTitle: '', formPromptText: '', liveVeilles: null, liveSignals: null,
     liveDossiers: null, liveDossierDetail: {}, liveDossierQuestions: {},
     modal: null, modalBusy: false, modalError: '',
     formName: '', formRef: '', formClient: '', formEmail: '', inviteRole: 'member',
@@ -339,6 +339,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
           this.refreshDossiers()
           this.refreshHistory()
           this.refreshPrompts()
+          this.refreshVeilles()
         }
       })
       .catch(() => {})
@@ -539,6 +540,36 @@ class ClaidorDesignApp extends React.Component<any, any> {
   }
   orgId() {
     return this.props.organization && this.props.organization.id
+  }
+  refreshVeilles() {
+    const org = this.orgId()
+    if (!org || !this.state.live) return
+    this.apiGet('/v1/veilles?organization_id=' + org).then((rows) => {
+      if (Array.isArray(rows)) this.setState({ liveVeilles: rows })
+    })
+    this.apiGet('/v1/veilles/signals?organization_id=' + org).then((rows) => {
+      if (Array.isArray(rows)) this.setState({ liveSignals: rows })
+    })
+  }
+  createVeille(articleId) {
+    const org = this.orgId()
+    if (!org) return
+    // No label from here: the server derives « Art. 170 (AUPSRVE 1998) »
+    // from the corpus, which keeps the version in it — art. 49 of 1998 is
+    // not art. 49 of 2023, and a watch that hides that is misleading.
+    this.apiSend('POST', '/v1/veilles?organization_id=' + org, {
+      target: 'article', target_id: articleId,
+    }).then(({ ok }) => {
+      this.showToast(ok ? 'Veille créée — vous serez prévenu' : 'Création impossible')
+      if (ok) this.refreshVeilles()
+    })
+  }
+  toggleLiveVeille(id, active) {
+    this.apiSend('PATCH', '/v1/veilles/' + id + '?organization_id=' + this.orgId(), { active }).then(({ ok }) => {
+      if (!ok) { this.showToast('Modification impossible'); return }
+      this.setState((st) => ({ liveVeilles: (st.liveVeilles || []).map((v) => (v.id === id ? { ...v, active } : v)) }))
+      this.showToast(active ? 'Veille réactivée' : 'Veille suspendue')
+    })
   }
   refreshPrompts() {
     const org = this.orgId()
@@ -1288,11 +1319,36 @@ class ClaidorDesignApp extends React.Component<any, any> {
           next: nextFor(id) };
       }
     }
-    const veilleRows = st.veilles.map((v, i) => ({ label: v.label, sub: v.sub, last: v.last,
+    const signalAgo = (iso) => {
+      const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
+      if (seconds < 5400) return 'Il y a ' + Math.max(1, Math.round(seconds / 60)) + ' min'
+      if (seconds < 172800) return 'Il y a ' + Math.round(seconds / 3600) + ' h'
+      return new Date(iso).toLocaleDateString('fr-FR')
+    }
+    const liveVeilleRows = (st.live && st.liveVeilles)
+      ? st.liveVeilles.map((v) => ({
+          label: v.label,
+          sub: v.signal_count ? v.signal_count + (v.signal_count > 1 ? ' signaux' : ' signal') : 'Aucun signal pour l\u2019instant',
+          last: v.last_signal_at ? signalAgo(v.last_signal_at) : '—',
+          bg: v.active ? '#2897FF' : 'var(--b5)',
+          knob: v.active ? '15px' : '2px',
+          toggle: () => this.toggleLiveVeille(v.id, !v.active),
+        }))
+      : null
+    const scriptedVeilleRows = st.veilles.map((v, i) => ({ label: v.label, sub: v.sub, last: v.last,
       bg: v.on ? '#2897FF' : 'var(--b5)', knob: v.on ? '15px' : '2px',
       toggle: () => { const vs = st.veilles.slice(); vs[i] = { ...v, on: !v.on }; this.setState({ veilles: vs }); } }));
-    const alertRows = D.alertFeed.map(a => ({ when: a.when, text: a.text,
+    const veilleRows = liveVeilleRows || scriptedVeilleRows;
+    const liveAlertRows = (st.live && st.liveSignals)
+      ? st.liveSignals.map((sg) => ({
+          when: signalAgo(sg.created_at),
+          text: sg.text,
+          open: () => { if (sg.source_kind === 'decision' && sg.source_id) this.openLivePanel('decision', sg.source_id) },
+        }))
+      : null
+    const scriptedAlertRows = D.alertFeed.map(a => ({ when: a.when, text: a.text,
       open: () => { if (a.an) this.openAnalysis(a.an[0], a.an[1]); else this.setState({ view: 'veilles', panel: { type: a.k, id: a.id } }); } }));
+    const alertRows = liveAlertRows || scriptedAlertRows;
     const stTag = { ok: ['var(--green2)', 'Vérifiée'], warn: ['var(--amber2)', 'À vérifier'], weak: ['var(--red2)', 'Point faible'] };
     const readerFindings = D.readerDoc.findings.map(f => ({ cite: f.cite, note: f.note,
       dot: stTag[f.status][0], tag: stTag[f.status][1],
@@ -1556,6 +1612,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
         const a = D.articles[id] || st.liveArticles[id];
         if (!a) return null;
         if (st.liveArticles[id] && !D.articles[id]) {
+          const watched = (st.liveVeilles || []).some((v) => v.target_id === id && v.active)
           const btns = [{ label: D.AN.hist.name, go: () => this.openAnalysis('hist', id, 'article') }]
           // Comparison is offered only where a concordance is recorded —
           // the endpoint refuses otherwise, and a button that always fails
@@ -1567,7 +1624,13 @@ class ClaidorDesignApp extends React.Component<any, any> {
             text: a.text.map((t) => ({ text: t, bg: 'transparent', pad: '0' })),
             topDecisions: a.top.map((did) => ({ label: a.__liveDecisions[did] || 'Décision', open: () => this.openLivePanel('decision', did) })),
             analyses: btns,
-            watchLabel: 'Créer une veille', watchBorder: 'var(--b3)', watch: () => this.showToast('Veilles — bientôt sur le corpus réel') };
+            watchLabel: watched ? 'Veille active ✓' : 'Créer une veille',
+            watchBorder: watched ? 'var(--accent)' : 'var(--b3)',
+            watch: () => {
+              const existing = (st.liveVeilles || []).find((v) => v.target_id === id)
+              if (existing) this.toggleLiveVeille(existing.id, !existing.active)
+              else this.createVeille(id)
+            } };
         }
         const btns = [];
         if (D.artHist[id]) btns.push({ label: D.AN.hist.name, go: () => this.openAnalysis('hist', id) });

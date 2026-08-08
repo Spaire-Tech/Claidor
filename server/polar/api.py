@@ -76,6 +76,7 @@ from polar.storefront.endpoints import router as storefront_router
 from polar.subscription.endpoints import router as subscription_router
 from polar.transaction.endpoints import router as transaction_router
 from polar.user.endpoints import router as user_router
+from polar.veille.endpoints import router as veille_router
 from polar.wallet.endpoints import router as wallet_router
 from polar.webhook.endpoints import router as webhook_router
 
@@ -155,6 +156,8 @@ router.include_router(corpus_router)
 router.include_router(analysis_router)
 # /prompts
 router.include_router(prompt_router)
+# /veilles
+router.include_router(veille_router)
 # /dossiers
 router.include_router(dossier_router)
 # /license-keys
