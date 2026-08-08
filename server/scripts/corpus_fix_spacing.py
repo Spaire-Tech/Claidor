@@ -38,6 +38,15 @@ WORD = re.compile(r"[a-zà-ÿœæ'’-]+", re.IGNORECASE)
 #: Words and everything between them, preserved verbatim.
 TOKEN = re.compile(r"[a-zà-ÿœæ]+|[^a-zà-ÿœæ]+", re.IGNORECASE)
 
+#: The only single letters that stand alone in French. Everything else on
+#: its own — « peu t », « pou r », « a u » — is a broken word, on whichever
+#: side of the space it fell.
+STANDALONE_LETTERS = frozenset({"a", "y", "à"})
+
+
+def is_orphan_letter(token: str) -> bool:
+    return len(token) == 1 and token.lower() not in STANDALONE_LETTERS
+
 
 def is_pdf_extracted(provenance: object) -> bool:
     if not isinstance(provenance, dict):
@@ -51,6 +60,11 @@ def build_vocab(texts: list[str]) -> set[str]:
     vocab: set[str] = set()
     for text in texts:
         for token in WORD.findall(text.lower()):
+            # A stray « t » in a clean source is that source's own artifact,
+            # and admitting it as a word is what let « peu t » survive: both
+            # halves looked known, so the pair looked like two words.
+            if is_orphan_letter(token):
+                continue
             vocab.add(token)
     return vocab
 
@@ -69,12 +83,20 @@ def repair(text: str, vocab: set[str]) -> tuple[str, list[str]]:
         left, sep, right = tokens[i], tokens[i + 1], tokens[i + 2]
         if left[0].isalpha() and sep in (" ", "\u00a0") and right[0].isalpha():
             joined = (left + right).lower()
+            # \u00ab de s'inscrire \u00bb: the apostrophe means \u00ab s \u00bb is an elision,
+            # a whole word already, so the pair is not a broken one \u2014 even
+            # though \u00ab des \u00bb is in the vocabulary.
+            elided = i + 3 < len(tokens) and tokens[i + 3][:1] in ("'", "\u2019")
+            if elided:
+                i += 1
+                continue
             # « l a saisie » is out of reach of the rule below: both « l »
             # and « a » occur in the corpus, so neither side is unknown. But
             # an isolated single letter is never a French word — except
             # « a » (verb), « y » and « à » — so a lone letter glued onto a
-            # word that does exist is a break, not two words.
-            orphan_letter = len(left) == 1 and left.lower() not in ("a", "y", "à")
+            # word that does exist is a break, not two words. The break
+            # falls on either side: « l a saisie » and « peu t » alike.
+            orphan_letter = is_orphan_letter(left) or is_orphan_letter(right)
             if joined in vocab and (
                 orphan_letter or left.lower() not in vocab or right.lower() not in vocab
             ):

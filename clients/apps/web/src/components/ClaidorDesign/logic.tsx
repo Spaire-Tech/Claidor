@@ -35,7 +35,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     modal: null, modalBusy: false, modalError: '',
     formName: '', formRef: '', formClient: '', formEmail: '', inviteRole: 'member',
     importStaged: [],
-    readerDone: false, fMat: null, fSince: null, fCh: null,
+    readerDone: false, liveReader: null, readerBusy: false, fMat: null, fSince: null, fCh: null,
     veilles: [
       { id: 'a170', label: 'Art. 170, AUPSRVE', sub: 'Nouvelle décision · révision du texte', on: true, last: 'Signal ce matin' },
       { id: 'aupsrve', label: 'AUPSRVE — acte entier', sub: 'Réformes publiées au JO', on: true, last: 'Signal le 12 juil.' },
@@ -577,6 +577,48 @@ class ClaidorDesignApp extends React.Component<any, any> {
     this.apiGet('/v1/prompts?organization_id=' + org).then((rows) => {
       if (Array.isArray(rows)) this.setState({ livePrompts: rows })
     })
+  }
+  // --- Lecteur -----------------------------------------------------------
+  // The document is sent, read and dropped: an opposing party's filing is
+  // checked, never stored.
+  readDocument(file) {
+    if (this.state.readerBusy) return
+    this.setState({ readerBusy: true })
+    const finish = (data, message) => {
+      if (!data) {
+        this.setState({ readerBusy: false })
+        this.showToast(message || 'Lecture impossible')
+        return
+      }
+      this.setState({ liveReader: data, readerDone: true, readerBusy: false, panel: null })
+    }
+    if (!file) {
+      this.apiSend('POST', '/v1/lecteur/review/example').then(({ ok, data }) =>
+        finish(ok ? data : null, 'Exemple indisponible'),
+      )
+      return
+    }
+    this.showToast('Lecture en cours…')
+    const form = new FormData()
+    form.append('file', file)
+    fetch(getServerURL('/v1/lecteur/review'), { method: 'POST', credentials: 'include', body: form })
+      .then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => null) }))
+      .then(({ ok, data }) => finish(ok ? data : null, data && data.detail))
+      .catch(() => finish(null))
+  }
+  pickReaderFile() {
+    const input = document.getElementById('claidor-reader-file')
+    if (input) input.click()
+  }
+  onReaderFile(e) {
+    const file = e && e.target && e.target.files && e.target.files[0]
+    if (file) this.readDocument(file)
+    if (e && e.target) e.target.value = ''
+  }
+  dropReaderFile(e) {
+    e.preventDefault()
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]
+    if (file) this.readDocument(file)
   }
   savePromptSubmit() {
     const st = this.state
@@ -1350,9 +1392,24 @@ class ClaidorDesignApp extends React.Component<any, any> {
       open: () => { if (a.an) this.openAnalysis(a.an[0], a.an[1]); else this.setState({ view: 'veilles', panel: { type: a.k, id: a.id } }); } }));
     const alertRows = liveAlertRows || scriptedAlertRows;
     const stTag = { ok: ['var(--green2)', 'Vérifiée'], warn: ['var(--amber2)', 'À vérifier'], weak: ['var(--red2)', 'Point faible'] };
-    const readerFindings = D.readerDoc.findings.map(f => ({ cite: f.cite, note: f.note,
+    const scriptedFindings = D.readerDoc.findings.map(f => ({ cite: f.cite, note: f.note,
       dot: stTag[f.status][0], tag: stTag[f.status][1],
       open: openPanel({ type: f.k === 'article' ? 'article' : 'decision', id: f.id }) }));
+    // The API's three verdicts carry the design's three colours.
+    const verdictKey = { verified: 'ok', unverified: 'warn', weak: 'weak' };
+    const liveReaderFindings = (st.live && st.liveReader)
+      ? st.liveReader.findings.map((f) => {
+          const tag = stTag[verdictKey[f.status] || 'warn']
+          return {
+            cite: f.cite, note: f.note, dot: tag[0], tag: tag[1],
+            open: () => {
+              if (f.article_id) this.openLivePanel('article', f.article_id)
+              else if (f.decision_id) this.openLivePanel('decision', f.decision_id)
+            },
+          }
+        })
+      : null
+    const readerFindings = liveReaderFindings || scriptedFindings;
     const normTxt = s => s.toLowerCase().replace(/article\s/g, 'art. ').replace(/\s+/g, ' ').trim();
     const tokens = normTxt(st.searchQ || '').split(' ').filter(Boolean);
     const matOf = a0 => a0 === 'a14' ? 'Cautionnement' : (a0 === 'a10' ? 'Injonction de payer' : (a0 === 'a387' ? 'Sociétés' : 'Saisie-attribution'));
@@ -1551,10 +1608,21 @@ class ClaidorDesignApp extends React.Component<any, any> {
       an, anIsAuth, anIsHist, anIsComp, anIsCite,
       veilleRows, alertRows, readerFindings, fMatChips, fSinceChips, fChChips, rescResults,
       rescCount: rescResults.length + (rescResults.length > 1 ? ' documents' : ' document'),
-      readerName: D.readerDoc.name, readerMeta: D.readerDoc.meta,
+      readerName: (st.live && st.liveReader) ? st.liveReader.document_name : D.readerDoc.name,
+      readerMeta: (st.live && st.liveReader) ? st.liveReader.meta : D.readerDoc.meta,
       readerIdle: !st.readerDone, readerDone: st.readerDone,
-      runReader: () => this.setState({ readerDone: true, panel: null }),
-      resetReader: () => this.setState({ readerDone: false, panel: null }),
+      // Live, the example runs the real check on a fictional filing; the
+      // scripted path stays the fallback of an empty library.
+      runReader: (e) => {
+        if (e && e.stopPropagation) e.stopPropagation()
+        if (st.live) this.readDocument(null)
+        else this.setState({ readerDone: true, panel: null })
+      },
+      pickReaderFile: () => { if (st.live) this.pickReaderFile() },
+      onReaderFile: (e) => this.onReaderFile(e),
+      dropReaderFile: (e) => { if (st.live) this.dropReaderFile(e); else e.preventDefault() },
+      allowReaderDrop: (e) => e.preventDefault(),
+      resetReader: () => this.setState({ readerDone: false, liveReader: null, panel: null }),
       input: st.input, contextChips, hasContext: contextChips.length > 0, hasChatContext: contextChips.length > 0 && st.messages.length > 0,
       sources,
       dossierBtnLabel: st.dossierSel ? st.dossierSel : 'Choisir un dossier',

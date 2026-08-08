@@ -1141,11 +1141,12 @@ export const DesignView = ({ v }: { v: any }) => {
                 </div>
                 {(v.readerIdle) ? (
                   <>
-                  <div style={{'marginTop': '26px', 'border': '1.5px dashed var(--b5)', 'borderRadius': '14px', 'padding': '44px 24px', 'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'gap': '14px'}}>
+                  <div onClick={v.pickReaderFile} onDrop={v.dropReaderFile} onDragOver={v.allowReaderDrop} style={{'marginTop': '26px', 'border': '1.5px dashed var(--b5)', 'borderRadius': '14px', 'padding': '44px 24px', 'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'gap': '14px', 'cursor': 'pointer'}}>
                     <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="var(--t4)" strokeWidth="1.3">
                       <path d="M3 1.5h7L13 4.5v10H3z" />
                       <path d="M10 1.5v3h3M5.5 8h5M5.5 10.5h5" />
                     </svg>
+                    <input type="file" id="claidor-reader-file" onChange={v.onReaderFile} style={{'display': 'none'}} />
                     <div style={{'fontSize': '13.5px', 'color': 'var(--t3)'}}>
                       Glissez un PDF ou un document Word ici
                     </div>

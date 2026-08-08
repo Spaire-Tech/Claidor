@@ -706,8 +706,11 @@ html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
           <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Lecteur</div>
           <div style="margin-top:6px;font-size:13.5px;color:var(--t3);line-height:1.5;max-width:580px;text-wrap:pretty;">Déposez un document — conclusions adverses, projet d’acte, jugement. Claidor relève chaque texte et chaque décision cités, les vérifie et signale les points faibles.</div>
           <sc-if value="{{ readerIdle }}" hint-placeholder-val="{{ true }}">
-            <div style="margin-top:26px;border:1.5px dashed var(--b5);border-radius:14px;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;">
+            <!-- The zone says « Glissez … ici », so it accepts a drop and a
+                 click to browse. Drawn text, layout and copy unchanged. -->
+            <div sc-camel-on-click="{{ pickReaderFile }}" sc-camel-on-drop="{{ dropReaderFile }}" sc-camel-on-drag-over="{{ allowReaderDrop }}" style="margin-top:26px;border:1.5px dashed var(--b5);border-radius:14px;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;cursor:pointer;">
               <svg width="22" height="22" sc-camel-view-box="0 0 16 16" fill="none" stroke="var(--t4)" stroke-width="1.3"><path d="M3 1.5h7L13 4.5v10H3z"></path><path d="M10 1.5v3h3M5.5 8h5M5.5 10.5h5"></path></svg>
+              <input type="file" id="claidor-reader-file" sc-camel-on-change="{{ onReaderFile }}" style="display:none;" />
               <div style="font-size:13.5px;color:var(--t3);">Glissez un PDF ou un document Word ici</div>
               <button sc-camel-on-click="{{ runReader }}" style="border:none;border-radius:8px;padding:9px 18px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);color:var(--on-accent);">Analyser un exemple — conclusions adverses (SODICA)</button>
             </div>

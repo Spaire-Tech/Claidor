@@ -16,6 +16,7 @@ reports what the texts say, and the lawyer draws the consequence.
 """
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from enum import StrEnum
@@ -26,6 +27,47 @@ _WORD_SPLIT = re.compile(r"(\s+)")
 
 #: Below this, two alinéas are different provisions rather than one edited.
 ALIGN_THRESHOLD = 0.55
+
+#: Typography that differs between our sources and never between two
+#: legislative texts: the 1998 acts come from PDF extraction (straight
+#: apostrophes, unaccented capitals), the 2023 ones from Akoma Ntoso
+#: (typographic apostrophes, accented capitals). Reporting « l'étendue →
+#: l’étendue » as an amendment would bury the real changes under noise.
+_TYPOGRAPHY = str.maketrans(
+    {
+        "’": "'",
+        "‘": "'",
+        "“": '"',
+        "”": '"',
+        " ": " ",
+        " ": " ",
+        "–": "-",
+        "—": "-",
+        "…": "...",
+        "À": "A",
+        "Â": "A",
+        "É": "E",
+        "È": "E",
+        "Ê": "E",
+        "Ë": "E",
+        "Î": "I",
+        "Ï": "I",
+        "Ô": "O",
+        "Ù": "U",
+        "Û": "U",
+        "Ç": "C",
+    }
+)
+
+
+def fold(text: str) -> str:
+    """The text as it is *compared* — never as it is displayed.
+
+    Folding happens on the comparison key only: every excerpt and every
+    word run still carries the source's own characters, so what the reader
+    sees is the text as published.
+    """
+    return unicodedata.normalize("NFC", text).translate(_TYPOGRAPHY)
 
 
 class ChangeKind(StrEnum):
@@ -98,7 +140,7 @@ def split_alineas(text: str) -> list[str]:
 
 
 def similarity(left: str, right: str) -> float:
-    return SequenceMatcher(None, left, right).ratio()
+    return SequenceMatcher(None, fold(left), fold(right)).ratio()
 
 
 def diff_words(old: str, new: str) -> list[WordRun]:
@@ -119,7 +161,12 @@ def diff_words(old: str, new: str) -> list[WordRun]:
         else:
             runs.append(WordRun(text=text, op=op))
 
-    matcher = SequenceMatcher(None, old_tokens, new_tokens, autojunk=False)
+    matcher = SequenceMatcher(
+        None,
+        [fold(t) for t in old_tokens],
+        [fold(t) for t in new_tokens],
+        autojunk=False,
+    )
     for op, i1, i2, j1, j2 in matcher.get_opcodes():
         if op == "equal":
             push("equal", "".join(old_tokens[i1:i2]))

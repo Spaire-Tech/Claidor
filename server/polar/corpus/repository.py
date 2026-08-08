@@ -178,6 +178,29 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         )
         return (await self.session.execute(statement)).scalar_one()
 
+    async def count_verified_decisions_for_article_set(
+        self, article_ids: Sequence[UUID]
+    ) -> int:
+        """The same count over one article across every rédaction.
+
+        Decisions attach to the wording they read, so the case law on
+        « article 170 » sits on the 1998 row and none of it on the 2023
+        one. Counting the set is the only way « N décisions vérifiées »
+        means what a lawyer reads it to mean.
+        """
+        if not article_ids:
+            return 0
+        statement = (
+            select(func.count(func.distinct(DecisionArticleLink.decision_id)))
+            .join(CourtDecision, CourtDecision.id == DecisionArticleLink.decision_id)
+            .where(
+                DecisionArticleLink.article_id.in_(list(article_ids)),
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+                CourtDecision.kind == DecisionKind.arret,
+            )
+        )
+        return (await self.session.execute(statement)).scalar_one()
+
     async def list_co_cited_articles(
         self, article_id: UUID, *, limit: int = 6
     ) -> Sequence[tuple[LegalArticle, int]]:
@@ -277,6 +300,64 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         )
         return (await self.session.execute(statement)).scalars().all()
 
+    async def get_act_by_short_code(self, short_code: str) -> LegalAct | None:
+        """One act by the code practitioners cite, versions loaded."""
+        statement = (
+            select(LegalAct)
+            .where(LegalAct.short_code == short_code)
+            .options(selectinload(LegalAct.versions))
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    async def list_articles_by_number_for_act(
+        self, act_id: UUID, number: str
+    ) -> Sequence[LegalArticle]:
+        """One article number across every version of an act, oldest first.
+
+        The same number is not the same provision in every act: AUPSRVE
+        kept its numbering in 2023, AUS renumbered wholesale in 2010. So
+        this returns what each version actually holds under that number and
+        leaves the comparison to the caller.
+        """
+        statement = (
+            select(LegalArticle)
+            .join(LegalActVersion, LegalActVersion.id == LegalArticle.act_version_id)
+            .where(
+                LegalActVersion.act_id == act_id,
+                LegalArticle.number == number,
+            )
+            .options(
+                joinedload(LegalArticle.act_version).joinedload(LegalActVersion.act)
+            )
+            .order_by(LegalActVersion.label)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def get_decision_by_number(
+        self, number: str, *, court: str = "CCJA"
+    ) -> CourtDecision | None:
+        """A decision as it is cited — « 090/2018 ».
+
+        Numbers repeat across years only with the year attached, so the
+        pair is unique in practice; where it is not, the earliest is
+        returned rather than an arbitrary one.
+        """
+        statement = (
+            select(CourtDecision)
+            .where(CourtDecision.court == court, CourtDecision.number == number)
+            .order_by(CourtDecision.decided_on)
+            .limit(1)
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    async def count_decisions_by_kind(self) -> dict[DecisionKind, int]:
+        """How much of the collection is loaded — the honest denominator."""
+        statement = select(CourtDecision.kind, func.count(CourtDecision.id)).group_by(
+            CourtDecision.kind
+        )
+        result = await self.session.execute(statement)
+        return {kind: count for kind, count in result.tuples().all()}
+
     async def count_articles_per_version(self) -> dict[UUID, int]:
         """Article count keyed by act version id."""
         statement = select(
@@ -352,11 +433,7 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
             .where(
                 DecisionArticleLink.article_id == article_id,
                 DecisionArticleLink.status == DecisionLinkStatus.verified,
-                *(
-                    [CourtDecision.kind == DecisionKind.arret]
-                    if judgments_only
-                    else []
-                ),
+                *([CourtDecision.kind == DecisionKind.arret] if judgments_only else []),
             )
             .options(contains_eager(DecisionArticleLink.decision))
             .order_by(CourtDecision.decided_on)

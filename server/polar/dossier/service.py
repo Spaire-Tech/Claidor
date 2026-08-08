@@ -15,7 +15,6 @@ and persisted within the request that asked for it, so what the team reads
 later is exactly what was stored — never a stream the client reassembled.
 """
 
-import io
 from typing import Any
 from uuid import UUID
 
@@ -23,6 +22,7 @@ import structlog
 
 from polar.file.s3 import S3_SERVICES
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession
+from polar.kit.document_text import UnsupportedDocument, read_document
 from polar.librarian.service import librarian
 from polar.models import (
     CitationNature,
@@ -45,18 +45,9 @@ log = structlog.get_logger()
 # document we can honestly claim to have read.
 MIN_EXTRACTED_CHARS = 40
 
-TEXT_MIME_PREFIXES = ("text/",)
-PDF_MIME_TYPES = ("application/pdf",)
-
 
 class DossierService:
     # --- reading the file ------------------------------------------------
-
-    def _extract_pdf(self, payload: bytes) -> str:
-        from pypdf import PdfReader
-
-        reader = PdfReader(io.BytesIO(payload))
-        return "\n".join(page.extract_text() or "" for page in reader.pages)
 
     def extract_text(self, payload: bytes, mime_type: str) -> tuple[str | None, str]:
         """Return ``(text, reason)`` — text is None when nothing readable.
@@ -65,12 +56,9 @@ class DossierService:
         rather than an empty document silently entering an answer.
         """
         try:
-            if mime_type in PDF_MIME_TYPES:
-                text = self._extract_pdf(payload)
-            elif mime_type.startswith(TEXT_MIME_PREFIXES):
-                text = payload.decode("utf-8", errors="replace")
-            else:
-                return None, "unsupported_type"
+            text = read_document(payload, mime_type).text
+        except UnsupportedDocument:
+            return None, "unsupported_type"
         except Exception as e:
             log.warning("dossier.extract.failed", error=str(e)[:160])
             return None, "extraction_failed"

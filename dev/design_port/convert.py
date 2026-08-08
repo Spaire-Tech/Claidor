@@ -7,6 +7,7 @@ template DSL rendered by the file's own runtime:
   sc-if value="{{ x }}"          conditional block (element vanishes)
   sc-for list="{{ xs }}" as="c"  repetition (element vanishes)
   sc-camel-on-click="{{ f }}"    onClick handler
+  sc-camel-on-drop="{{ f }}"     onDrop / onDragOver (the Lecteur dropzone)
   sc-camel-view-box="…"          viewBox (camelised attribute)
   style-hover="…"                hover style, applied by the runtime
 
@@ -226,11 +227,19 @@ def emit(node, scope: set[str], indent: int) -> str:
             m = re.search(r"\{\{(.*?)\}\}", value)
             if m:
                 parts.append(f"onClick={{{scope_expr(m.group(1), scope)}}}")
-        elif name in ("sc-camel-on-input", "sc-camel-on-key-down", "sc-camel-on-change"):
+        elif name in (
+            "sc-camel-on-input",
+            "sc-camel-on-key-down",
+            "sc-camel-on-change",
+            "sc-camel-on-drop",
+            "sc-camel-on-drag-over",
+        ):
             event = {
                 "sc-camel-on-input": "onInput",
                 "sc-camel-on-change": "onChange",
                 "sc-camel-on-key-down": "onKeyDown",
+                "sc-camel-on-drop": "onDrop",
+                "sc-camel-on-drag-over": "onDragOver",
             }[name]
             m = re.search(r"\{\{(.*?)\}\}", value)
             if m:
