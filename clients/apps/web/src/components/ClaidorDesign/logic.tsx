@@ -1003,6 +1003,10 @@ class ClaidorDesignApp extends React.Component<any, any> {
       onError: () => {
         if (!am.answer) { const msg = 'La réponse a échoué. Réessayez.'; am.answer = msg; stream.push(msg) }
         stream.finish()
+        // A question that failed is still a question that was asked, and
+        // the server recorded it before the first token. Refresh so the
+        // sidebar shows the record rather than losing it.
+        this.refreshHistory()
       },
       // Third argument is the abort signal (unused here); fourth asks the
       // librarian to answer under BOTH regimes instead of gating on a date.
@@ -1230,29 +1234,25 @@ class ClaidorDesignApp extends React.Component<any, any> {
         regen: () => this.regen(i),
       };
     });
-    const sessionConvs = st.extraConvs.map(c => ({
-      title: c.title,
-      bg: c.id === st.activeConv ? 'var(--s8)' : 'transparent',
-      open: () => this.openQA(c.q, c.dossierId),
-    }));
-    // « Recherches récentes » is Historique, shortened — the same record
-    // the Historique screen shows, not a second scripted one beside it.
-    // Questions asked in this session sit on top until a refresh picks
-    // them up from the server.
+    // « Recherches récentes » is Historique and nothing else once live.
+    //
+    // The session list cannot be shown beside it: the server records every
+    // question before the first token, so the same question would appear
+    // twice — and the two rows do not even agree. A session row replays
+    // through openQA, which answers from the scripted demo, so clicking it
+    // showed a canned answer to a real legal question. One record, one row,
+    // one answer: the one that was actually given.
     const convs = (st.live && st.liveHistory)
-      ? [
-          ...sessionConvs,
-          ...st.liveHistory.slice(0, 8).map((h) => ({
-            title: h.question.length > 42 ? h.question.slice(0, 42) + '…' : h.question,
-            bg: 'transparent',
-            open: () => this.openStoredQuestion(h),
-          })),
-        ]
-      : [...sessionConvs, ...D.convs.map(c => ({
+      ? st.liveHistory.slice(0, 8).map((h) => ({
+          title: h.question.length > 42 ? h.question.slice(0, 42) + '…' : h.question,
+          bg: h.id === st.activeConv ? 'var(--s8)' : 'transparent',
+          open: () => this.openStoredQuestion(h),
+        }))
+      : [...st.extraConvs, ...D.convs].map(c => ({
           title: c.title,
           bg: c.id === st.activeConv ? 'var(--s8)' : 'transparent',
           open: () => this.openQA(c.q, c.dossierId),
-        }))];
+        }));
     const dossierIconD = 'M1.5 4.5a2 2 0 012-2h3l1.5 2h4.5a2 2 0 012 2v5a2 2 0 01-2 2h-9a2 2 0 01-2-2z';
     const clientIconD = 'M1.5 4.5h13v9h-13zM5.5 4.5V3a1.5 1.5 0 011.5-1.5h2A1.5 1.5 0 0110.5 3v1.5';
     const contextChips = [];
