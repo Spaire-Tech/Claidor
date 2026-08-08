@@ -146,7 +146,11 @@ class AnalysisService:
                 rows=[],
             )
 
-        links = await repository.list_verified_links_for_article(anchor.id)
+        # Judgments only: « ligne jurisprudentielle » is a claim about
+        # cases decided, and an avis decided none.
+        links = await repository.list_verified_links_for_article(
+            anchor.id, judgments_only=True
+        )
         by_decision: dict[UUID, AuthorityRow] = {}
         for link in links:
             decision = link.decision

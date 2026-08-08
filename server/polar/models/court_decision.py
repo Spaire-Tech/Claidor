@@ -19,6 +19,20 @@ from polar.kit.db.models import RecordModel
 from .legal_article import LegalArticle
 
 
+class DecisionKind(StrEnum):
+    """What the Court produced.
+
+    An avis consultatif answers a question put by a member State or a
+    national court (Treaty art. 14); it is not a judgment between parties.
+    Counting the two together would inflate « ligne jurisprudentielle
+    constante » with documents that decided no case, so the distinction is
+    carried in the data rather than left to the reader.
+    """
+
+    arret = "arret"
+    avis = "avis"
+
+
 class CourtDecision(RecordModel):
     """A published court decision (CCJA in v1).
 
@@ -31,6 +45,9 @@ class CourtDecision(RecordModel):
     __table_args__ = (UniqueConstraint("court", "number", "decided_on"),)
 
     court: Mapped[str] = mapped_column(String(32), nullable=False, default="CCJA")
+    kind: Mapped[DecisionKind] = mapped_column(
+        String(16), nullable=False, default=DecisionKind.arret, index=True
+    )
     # As cited: "022/2014", "221/2025".
     number: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     decided_on: Mapped[date] = mapped_column(Date, nullable=False, index=True)

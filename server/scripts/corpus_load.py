@@ -352,6 +352,7 @@ async def load_decisions(session: AsyncSession) -> None:
         session.add(
             CourtDecision(
                 court="CCJA",
+                kind=parsed.kind,
                 number=parsed.number,
                 decided_on=date.fromisoformat(parsed.decided_on),
                 chamber=seed.chamber if seed else None,

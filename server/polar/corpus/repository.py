@@ -9,6 +9,7 @@ from polar.models import (
     CourtDecision,
     DecisionArticleLink,
     DecisionArticleTreatment,
+    DecisionKind,
     DecisionLinkStatus,
     LegalAct,
     LegalActVersion,
@@ -101,7 +102,12 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         )
         statement = (
             select(CourtDecision)
-            .where(CourtDecision.id.in_(decision_ids))
+            .where(
+                CourtDecision.id.in_(decision_ids),
+                # The authority signal counts judgments; an avis is quoted
+                # on its own terms, never as one more case in a line.
+                CourtDecision.kind == DecisionKind.arret,
+            )
             .order_by(CourtDecision.decided_on)
         )
         return (await self.session.execute(statement)).scalars().all()
@@ -161,11 +167,14 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         decisions, not links: a decision citing one article twice is one
         decision, and an authority figure that double-counts is a lie.
         """
-        statement = select(
-            func.count(func.distinct(DecisionArticleLink.decision_id))
-        ).where(
-            DecisionArticleLink.article_id == article_id,
-            DecisionArticleLink.status == DecisionLinkStatus.verified,
+        statement = (
+            select(func.count(func.distinct(DecisionArticleLink.decision_id)))
+            .join(CourtDecision, CourtDecision.id == DecisionArticleLink.decision_id)
+            .where(
+                DecisionArticleLink.article_id == article_id,
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+                CourtDecision.kind == DecisionKind.arret,
+            )
         )
         return (await self.session.execute(statement)).scalar_one()
 
@@ -328,15 +337,26 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         return (await self.session.execute(statement)).scalars().all()
 
     async def list_verified_links_for_article(
-        self, article_id: UUID
+        self, article_id: UUID, *, judgments_only: bool = False
     ) -> Sequence[DecisionArticleLink]:
-        """Verified decision links for one article, decisions eagerly loaded."""
+        """Verified decision links for one article, decisions eagerly loaded.
+
+        ``judgments_only`` excludes avis consultatifs. An advisory opinion
+        decided no case between parties, so it cannot be evidence that a
+        solution is *held* — the authority line asks for judgments, the
+        citation map asks for citations of any kind.
+        """
         statement = (
             select(DecisionArticleLink)
             .join(DecisionArticleLink.decision)
             .where(
                 DecisionArticleLink.article_id == article_id,
                 DecisionArticleLink.status == DecisionLinkStatus.verified,
+                *(
+                    [CourtDecision.kind == DecisionKind.arret]
+                    if judgments_only
+                    else []
+                ),
             )
             .options(contains_eager(DecisionArticleLink.decision))
             .order_by(CourtDecision.decided_on)
