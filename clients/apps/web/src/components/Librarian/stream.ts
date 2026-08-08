@@ -98,12 +98,28 @@ const parseRawEvent = (raw: string): RawSSEEvent | null => {
  * reconnect would re-submit the question), so a small purpose-built parser
  * is the simplest correct tool.
  */
+/**
+ * The composer's own switches. Each one changes what the server does:
+ * `sources` and `deep` change what is retrieved, `concise` changes how the
+ * answer is written. A control that reaches this object does something —
+ * one that cannot should not be on screen.
+ */
+export interface LibrarianAskOptions {
+  /** Source kinds to ground in: 'au' (actes) and/or 'cj' (jurisprudence). */
+  sources?: string[]
+  /** Reach further into the decision collection we actually hold. */
+  deep?: boolean
+  /** Three sentences at most, every citation kept. */
+  concise?: boolean
+}
+
 export const askLibrarian = async (
   question: string,
   callbacks: LibrarianStreamCallbacks,
   signal: AbortSignal,
   answerBothVersions: boolean = false,
   organizationId: string | null = null,
+  options: LibrarianAskOptions = {},
 ): Promise<void> => {
   const response = await fetch(getServerURL('/v1/librarian/ask'), {
     method: 'POST',
@@ -117,6 +133,9 @@ export const askLibrarian = async (
       answer_both_versions: answerBothVersions,
       // Given, the question and its answer are kept in Historique.
       organization_id: organizationId ?? null,
+      ...(options.sources ? { sources: options.sources } : {}),
+      ...(options.deep ? { deep: true } : {}),
+      ...(options.concise ? { concise: true } : {}),
     }),
     signal,
   })

@@ -15,7 +15,7 @@ from polar.routing import APIRouter
 
 from . import auth
 from .repository import LibrarianQuestionRepository
-from .service import librarian
+from .service import ALL_SOURCES, librarian
 
 router = APIRouter(prefix="/librarian", tags=["librarian", APITag.private])
 
@@ -35,6 +35,26 @@ class LibrarianAsk(Schema):
             "Workspace the question belongs to. When given, the question and "
             "its answer are kept in Historique."
         ),
+    )
+    sources: list[str] | None = Field(
+        default=None,
+        description=(
+            "Source kinds to ground the answer in: 'au' (actes uniformes) "
+            "and/or 'cj' (jurisprudence). Omitted means both. A kind left "
+            "out is not retrieved at all."
+        ),
+    )
+    deep: bool = Field(
+        default=False,
+        description=(
+            "Widen retrieval: more of the decision collection enters the "
+            "request. It reaches further into what we hold, not into "
+            "sources we do not have."
+        ),
+    )
+    concise: bool = Field(
+        default=False,
+        description="Answer in three sentences at most, keeping every citation.",
     )
 
 
@@ -114,6 +134,13 @@ async def ask(
             read_session,
             ask_body.question,
             answer_both_versions=ask_body.answer_both_versions,
+            sources=(
+                frozenset(ask_body.sources)
+                if ask_body.sources is not None
+                else ALL_SOURCES
+            ),
+            deep=ask_body.deep,
+            concise=ask_body.concise,
         ):
             kind = event["type"]
             if kind == "text":

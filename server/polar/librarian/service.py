@@ -148,6 +148,27 @@ Règles supplémentaires, absolues :
   date d'engagement de la procédure), énonce ce fait et la pièce dont il
   vient AVANT d'appliquer la règle."""
 
+#: « Concis » shortens the answer and nothing else. It rides on the user
+#: turn rather than the system prompt, which is cached across every
+#: question and must stay byte-identical whether the switch is on or off.
+CONCISE_STEERING = """
+
+Réponds en trois phrases au maximum. Conserve chaque citation et chaque
+mention de version — la brièveté ne retire jamais une source."""
+
+
+#: How many decisions enter the prompt. « Recherche approfondie » widens
+#: the same ranking rather than reaching for a different corpus — there is
+#: no doctrine to index and no second collection to open, so the only
+#: honest meaning of « approfondie » is *more of what we hold*.
+DECISIONS_NORMAL = 30
+DECISIONS_DEEP = 80
+
+#: The source kinds the composer's chips switch on and off.
+SOURCE_ACTS = "au"
+SOURCE_CASE_LAW = "cj"
+ALL_SOURCES = frozenset({SOURCE_ACTS, SOURCE_CASE_LAW})
+
 
 class LibrarianService:
     def is_configured(self) -> bool:
@@ -158,7 +179,16 @@ class LibrarianService:
         session: AsyncReadSession,
         *,
         case_documents: Sequence["DossierDocument"] = (),
+        sources: frozenset[str] = ALL_SOURCES,
+        deep: bool = False,
     ) -> tuple[list[dict[str, Any]], list[SourceRef]]:
+        """Assemble the grounding documents.
+
+        ``sources`` and ``deep`` are the composer's own switches, honoured
+        here rather than described in the prompt: turning off jurisprudence
+        removes the decisions from the request, it does not ask the model
+        to ignore them.
+        """
         repository = CorpusRepository.from_session(session)
         version_1998 = await repository.get_version_by_label("1998")
         version_2023 = await repository.get_version_by_label("2023")
@@ -177,10 +207,14 @@ class LibrarianService:
         arts_2023 = await repository.list_equivalent_new_articles(
             [a.id for a in arts_1998]
         )
-        for art, label in [
-            *[(a, "1998") for a in arts_1998],
-            *[(a, "2023") for a in arts_2023],
-        ]:
+        for art, label in (
+            [
+                *[(a, "1998") for a in arts_1998],
+                *[(a, "2023") for a in arts_2023],
+            ]
+            if SOURCE_ACTS in sources
+            else []
+        ):
             title = f"AUPSRVE ({label}) — Article {art.number}"
             documents.append(
                 {
@@ -203,9 +237,15 @@ class LibrarianService:
         # in passing. The authority line is unaffected — it is computed
         # from the database, not from what the prompt happens to hold.
         slice_article_ids = [a.id for a in arts_1998] + [a.id for a in arts_2023]
-        for d in await repository.list_top_decisions_for_articles(
-            slice_article_ids, limit=30
-        ):
+        decisions = (
+            await repository.list_top_decisions_for_articles(
+                slice_article_ids,
+                limit=DECISIONS_DEEP if deep else DECISIONS_NORMAL,
+            )
+            if SOURCE_CASE_LAW in sources
+            else []
+        )
+        for d in decisions:
             title = f"CCJA, arrêt n° {d.number} du {d.decided_on:%d/%m/%Y}"
             documents.append(
                 {
@@ -449,20 +489,33 @@ class LibrarianService:
         *,
         answer_both_versions: bool = False,
         case_documents: Sequence["DossierDocument"] = (),
+        sources: frozenset[str] = ALL_SOURCES,
+        deep: bool = False,
+        concise: bool = False,
     ) -> AsyncIterator[dict[str, Any]]:
         """Yield SSE events: clarification / text / citation / authority / done / error.
 
         With ``case_documents``, the answer is grounded in the matter's file
         as well as the corpus, and every citation carries its ``nature``:
         ``fact`` (from a pièce) or ``law`` (from an article or a decision).
+
+        ``sources``, ``deep`` and ``concise`` are the composer's switches.
+        The first two change what is *retrieved*, so switching off
+        jurisprudence means the decisions are not in the request at all —
+        not that the model was asked politely to look away.
         """
         import anthropic
 
         documents, refs = await self.build_documents(
-            session, case_documents=case_documents
+            session, case_documents=case_documents, sources=sources, deep=deep
         )
         if not documents:
-            yield {"type": "error", "message": "corpus_empty"}
+            # Both source kinds off is a question with nothing to answer
+            # from, and saying so beats answering from the model's memory.
+            yield {
+                "type": "error",
+                "message": "no_sources" if not sources else "corpus_empty",
+            }
             return
 
         # Version gate — enforced in code, not in the prompt.
@@ -564,7 +617,15 @@ class LibrarianService:
                         "role": "user",
                         "content": cast(
                             Any,
-                            [*documents, {"type": "text", "text": question + steering}],
+                            [
+                                *documents,
+                                {
+                                    "type": "text",
+                                    "text": question
+                                    + steering
+                                    + (CONCISE_STEERING if concise else ""),
+                                },
+                            ],
                         ),
                     }
                 ],

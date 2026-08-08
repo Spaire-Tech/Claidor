@@ -546,6 +546,16 @@ class ClaidorDesignApp extends React.Component<any, any> {
   orgName() {
     return this.props.organization && this.props.organization.name
   }
+  // The composer's switches, as the server will act on them. Every control
+  // on screen ends up here; anything that cannot does not belong there.
+  askOptions() {
+    const st = this.state
+    return {
+      sources: Object.keys(st.selSources).filter((k) => st.selSources[k]),
+      deep: !!st.deep,
+      concise: !!st.concise,
+    }
+  }
   currentUserId() {
     return this.props.currentUser && this.props.currentUser.id
   }
@@ -879,7 +889,9 @@ class ClaidorDesignApp extends React.Component<any, any> {
   prep(answer) {
     let a = answer;
     if (this.state.concise) a = a.split('\n\n')[0];
-    if (this.state.deep) a = 'Recherche approfondie — corpus élargi (actes uniformes, jurisprudence CCJA, doctrine indexée).\n\n' + a;
+    // No doctrine is indexed and none is claimed: « approfondie » means
+    // more of the collection we hold, in the demo as in the real answer.
+    if (this.state.deep) a = 'Recherche approfondie — davantage de décisions CCJA consultées.\n\n' + a;
     return a;
   }
   buildMsg(q, dossierId) {
@@ -958,7 +970,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
       },
       // Third argument is the abort signal (unused here); fourth asks the
       // librarian to answer under BOTH regimes instead of gating on a date.
-    }, undefined, !!answerBoth, this.orgId() || null).catch(() => {
+    }, undefined, !!answerBoth, this.orgId() || null, this.askOptions()).catch(() => {
       if (!am.answer) { const msg = 'La réponse a échoué. Réessayez.'; am.answer = msg; stream.push(msg) }
       stream.finish()
     })
@@ -1197,7 +1209,13 @@ class ClaidorDesignApp extends React.Component<any, any> {
       return { label: s.label, color: s.color, d: s.d,
         border: on ? 'var(--accent)' : 'var(--b2)',
         plus: on ? '✓' : '+', plusColor: on ? 'var(--accent)' : 'var(--t4)', plusFw: on ? 700 : 400,
-        toggle: () => { const sel = { ...st.selSources }; if (on) delete sel[s.id]; else sel[s.id] = true; this.setState({ selSources: sel }); this.showToast(on ? s.label + ' retiré des sources' : s.label + ' ajouté aux sources'); } };
+        // Removing the last source would leave nothing to answer from, and
+        // an answer with no source is the one thing Claidor never gives.
+        toggle: () => { const sel = { ...st.selSources };
+          if (on && Object.keys(sel).filter((k) => sel[k]).length <= 1) { this.showToast('Gardez au moins une source — une réponse sans source n’en est pas une'); return; }
+          if (on) delete sel[s.id]; else sel[s.id] = true;
+          this.setState({ selSources: sel });
+          this.showToast(on ? s.label + ' retiré des sources' : s.label + ' ajouté aux sources'); } };
     });
     const analysisCards = [
       { title: D.AN.auth.name, meta: 'CCJA 090/2018', open: () => this.openAnalysis('auth', 'd8') },
@@ -1750,7 +1768,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
       toggleNotes: () => this.setState({ notes: !st.notes }),
       conciseBg: st.concise ? '#2897FF' : 'var(--b5)', conciseKnob: st.concise ? '15px' : '2px',
       notesBg: st.notes ? '#2897FF' : 'var(--b5)', notesKnob: st.notes ? '15px' : '2px',
-      toggleDeep: () => { this.setState({ deep: !st.deep }); this.showToast(!st.deep ? 'Recherche approfondie activée' : 'Recherche approfondie désactivée'); },
+      toggleDeep: () => { this.setState({ deep: !st.deep }); this.showToast(!st.deep ? 'Recherche approfondie — davantage de décisions consultées' : 'Recherche approfondie désactivée'); },
       deepFw: st.deep ? 700 : 500, deepColor: st.deep ? 'var(--accent)' : 'var(--t1)',
       improve: () => {
         const q = st.input.trim();
