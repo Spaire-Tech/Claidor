@@ -224,6 +224,13 @@ async def run_eval() -> dict[str, Any]:
                 verdicts.append(await judge_citation(client, c))
             row["citations_supported"] = sum(1 for v in verdicts if v == "supported")
             row["citations_empty"] = sum(1 for v in verdicts if v == "empty")
+            # Keep the offending quotes, not just the count: a rate tells
+            # you there is a problem, the quotes tell you what to fix.
+            row["empty_quotes"] = [
+                {"title": c.get("title"), "quote": (c.get("quote") or "")[:200]}
+                for c, verdict in zip(r["citations"], verdicts, strict=False)
+                if verdict == "empty"
+            ]
             must = set(f.get("must_cite", []))
             if must:
                 row["anchor_hit"] = bool(must & cited_numbers(r["citations"]))
@@ -331,6 +338,11 @@ async def main() -> None:
         print("\n  conclusions manquées :")
         for r in wrong:
             print(f"    {r['id']}: {'; '.join(r['conclusion_failures']) or 'juge'}")
+    empties = [q for r in summary["results"] for q in r.get("empty_quotes", [])]
+    if empties:
+        print(f"\n  citations sans portée ({len(empties)}) :")
+        for q in empties[:8]:
+            print(f"    {q['title']} — « {q['quote'][:90]}… »")
     if summary["hard_fail"]:
         print("  *** HARD FAIL: fabricated citation on a trap question ***")
     diff_previous(summary)

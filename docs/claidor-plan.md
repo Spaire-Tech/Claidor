@@ -46,6 +46,39 @@ denominator, corpus PDF word-breaks repaired, answer form contract
 dedupe + longer quotes, system labels hidden with a code-owned badge.
 The mentor's verdict on answer four: fit to put in front of a lawyer.
 
+## Update — 8 August, evening
+
+Dossiers finished (create / import / invite / delete, and the pièce
+upload path repaired end to end), Analyses shipped — all four, computed
+from verified data — then a correctness pass on what the product asserts:
+
+- **The delay computer knew only one rule.** It fired on any dated
+  question mentioning a délai and always computed one month, so an appeal
+  question (fifteen days, art. 172) would have received a one-month date
+  under a « vérifié par code » banner. The guard against that was a
+  sentence in the prompt — the approach that already failed three times.
+  The delay is now identified in code, computed with its own arithmetic,
+  and a delay we do not model (prescription runs in years) produces no
+  computation rather than a confident wrong one.
+- **The eval gained the dimension it was missing**: conclusion
+  correctness — deterministic on dates and figures, then judged on
+  substance — plus an empty-citation rate for quotes that are real,
+  verified, and support nothing. Five dated fixtures encode the deadline
+  regression, every expected date computed and hand-checked.
+- **Decision panels**: « Argué / Jugé » extracted verbatim from the
+  judgment (never generated; hidden when the structure is unrecognised)
+  and « Décisions similaires » from citation overlap.
+- Corpus word-break repair extended to single orphan letters (« l a
+  saisie »); 113 further breaks fixed locally. **Still to run in
+  production**: `uv run python -m scripts.corpus_fix_spacing`.
+
+Eval status: the run stopped at fixture 36 of 40 — the Anthropic credit
+balance ran out mid-run. Over the 35 completed fixtures:
+conclusion_correctness 10/10, citation_precision 0.736 (from 0.648),
+empty_citation_rate 0.113, traps 10/10 with no fabricated citation. The
+dated fixtures were verified individually beforehand. A full archived run
+needs credit.
+
 ## Phase C — the design IS the product (CURRENT)
 
 Decision of record (founder, 7 Aug): **exact design first, features
