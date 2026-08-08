@@ -1204,11 +1204,29 @@ class ClaidorDesignApp extends React.Component<any, any> {
         regen: () => this.regen(i),
       };
     });
-    const convs = [...st.extraConvs, ...D.convs].map(c => ({
+    const sessionConvs = st.extraConvs.map(c => ({
       title: c.title,
       bg: c.id === st.activeConv ? 'var(--s8)' : 'transparent',
       open: () => this.openQA(c.q, c.dossierId),
     }));
+    // « Recherches récentes » is Historique, shortened — the same record
+    // the Historique screen shows, not a second scripted one beside it.
+    // Questions asked in this session sit on top until a refresh picks
+    // them up from the server.
+    const convs = (st.live && st.liveHistory)
+      ? [
+          ...sessionConvs,
+          ...st.liveHistory.slice(0, 8).map((h) => ({
+            title: h.question.length > 42 ? h.question.slice(0, 42) + '…' : h.question,
+            bg: 'transparent',
+            open: () => this.openStoredQuestion(h),
+          })),
+        ]
+      : [...sessionConvs, ...D.convs.map(c => ({
+          title: c.title,
+          bg: c.id === st.activeConv ? 'var(--s8)' : 'transparent',
+          open: () => this.openQA(c.q, c.dossierId),
+        }))];
     const dossierIconD = 'M1.5 4.5a2 2 0 012-2h3l1.5 2h4.5a2 2 0 012 2v5a2 2 0 01-2 2h-9a2 2 0 01-2-2z';
     const clientIconD = 'M1.5 4.5h13v9h-13zM5.5 4.5V3a1.5 1.5 0 011.5-1.5h2A1.5 1.5 0 0110.5 3v1.5';
     const contextChips = [];
@@ -1284,7 +1302,14 @@ class ClaidorDesignApp extends React.Component<any, any> {
           pick: () => { this.setState({ dossierSel: d.name, dossierSelId: d.id, clientSel: d.client_name || null, menu: null }); this.showToast('Dossier rattaché — Claidor lira ses pièces'); },
         }))
       : D.dossiers.map(d => ({ name: d.name, meta: d.pieces + ' · ' + d.team.length + ' avocats', pick: () => { this.setState({ dossierSel: d.name, dossierSelId: d.id, clientSel: d.client, menu: null }); this.showToast('Dossier rattaché — Claidor lira ses pièces'); } }));
-    const clientMenu = D.clients.map(name => ({ name, pick: () => this.setState({ clientSel: name, menu: null }) }));
+    // A client is not an entity of its own — it is a name carried by a
+    // dossier — so the menu is the distinct client names the cabinet's own
+    // matters already hold. No new model, and nothing offered that does
+    // not exist somewhere in the workspace.
+    const liveClients = (st.live && st.liveDossiers)
+      ? Array.from(new Set(st.liveDossiers.map((d) => d.client_name).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'fr'))
+      : null
+    const clientMenu = (liveClients || D.clients).map(name => ({ name, pick: () => this.setState({ clientSel: name, menu: null }) }));
     // The cabinet's own library replaces the scripted one once live; an
     // empty library shows as empty rather than as somebody else's demo.
     const promptSource = (st.live && st.livePrompts)
@@ -1566,7 +1591,11 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const fMatChips = ['Saisie-attribution', 'Cautionnement', 'Injonction de payer', 'Sociétés'].map(m => mkChip(m, 'fMat', m));
     const fSinceChips = [2010, 2015, 2020].map(y => mkChip('Depuis ' + y, 'fSince', y));
     const fChChips = (st.live && st.liveChambers.length ? st.liveChambers : ['1re ch.', '2e ch.', '3e ch.']).map(c => mkChip(c, 'fCh', c));
-    const all = [
+    // Live, the palette offers what the workspace holds: its matters, its
+    // record, the analyses the corpus suggests, and whatever the search
+    // backend returns for what is typed. The demo entries are the empty
+    // library's palette, not a garnish on top of a real one.
+    const scriptedPalette = [
       ...['d8', 'd1', 'd4', 'd6', 'd9'].map(id => ({ kind: 'Document', label: D.shortRef[id] + ' — ' + D.decisions[id].title, go: () => this.nav('recherche', { panel: { type: 'decision', id } }) })),
       ...['a170', 'a45', 'a14', 'a10'].map(id => ({ kind: 'Document', label: D.articles[id].label, go: () => this.nav('recherche', { panel: { type: 'article', id } }) })),
       ...D.dossiers.map(d => ({ kind: 'Dossier', label: d.name, go: () => this.nav('dossierDetail', { dossier: d.id, input: '' }) })),
@@ -1578,6 +1607,20 @@ class ClaidorDesignApp extends React.Component<any, any> {
       ...D.convs.map(c => ({ kind: 'Recherche', label: c.title, go: () => this.openQA(c.q, c.dossierId) })),
       ...D.guides.map((g, i) => ({ kind: 'Guide', label: g.title, go: () => this.nav('guides', { guide: i }) })),
     ];
+    const livePalette = st.live
+      ? [
+          ...(liveResc || []).slice(0, 6).map((r) => ({ kind: r.kind === 'Décision' ? 'Document' : 'Article', label: r.label, go: r.open })),
+          ...(st.liveDossiers || []).map((d) => ({ kind: 'Dossier', label: d.name, go: () => this.nav('dossierDetail', { dossier: d.id, input: '' }) })),
+          ...['auth', 'hist', 'comp', 'cite'].flatMap((type) => {
+            const first = (liveTargets(type) || [])[0]
+            return first ? [{ kind: 'Analyse', label: D.AN[type].name + ' — ' + first.label, go: first.go }] : []
+          }),
+          ...(st.liveHistory || []).slice(0, 5).map((h) => ({ kind: 'Recherche', label: h.question, go: () => this.openStoredQuestion(h) })),
+          // Guides are written content, not data: the same on both sides.
+          ...D.guides.map((g, i) => ({ kind: 'Guide', label: g.title, go: () => this.nav('guides', { guide: i }) })),
+        ]
+      : null
+    const all = livePalette || scriptedPalette;
     const searchResults = (tokens.length ? all.filter(r => { const h = normTxt(r.label); return tokens.every(t => h.includes(t)); }) : all).slice(0, 9);
     const CAT_ORDER = ['exhibit', 'pleading', 'contract', 'statement', 'correspondence', 'decision', 'other']
     const IMPORT_STATUS = {
