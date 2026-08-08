@@ -390,6 +390,90 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         )
         return (await self.session.execute(statement)).scalars().all()
 
+    async def list_articles_by_number_any_act(
+        self, number: str, *, limit: int = 8
+    ) -> Sequence[LegalArticle]:
+        """One article number wherever it exists, across every act.
+
+        For a question that cites « l'article 170 » without naming the act.
+        Guessing which act was meant would be the wrong kind of help; the
+        honest move is to offer each article that answers to that number
+        and let the rest of the retrieval narrow it.
+        """
+        statement = (
+            select(LegalArticle)
+            .where(LegalArticle.number == number)
+            .options(
+                joinedload(LegalArticle.act_version).joinedload(LegalActVersion.act)
+            )
+            .order_by(LegalArticle.sort_key)
+            .limit(limit)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def list_counterpart_articles(
+        self, article_ids: Sequence[UUID]
+    ) -> Sequence[LegalArticle]:
+        """The same provisions in their other rédaction, both directions.
+
+        Retrieval that pulls the 1998 text and not the 2023 one would hand
+        the version gate a single side and let it conclude from silence.
+        Whichever rédaction the question reached, its counterpart travels
+        with it.
+        """
+        if not article_ids:
+            return []
+        ids = list(article_ids)
+        counterparts = select(LegalArticleEquivalence.new_article_id).where(
+            LegalArticleEquivalence.old_article_id.in_(ids)
+        )
+        backwards = select(LegalArticleEquivalence.old_article_id).where(
+            LegalArticleEquivalence.new_article_id.in_(ids)
+        )
+        statement = (
+            select(LegalArticle)
+            .where(
+                LegalArticle.id.in_(counterparts.union(backwards)),
+                LegalArticle.id.not_in(ids),
+            )
+            .options(
+                joinedload(LegalArticle.act_version).joinedload(LegalActVersion.act)
+            )
+            .order_by(LegalArticle.sort_key)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def list_links_into_articles(
+        self, article_ids: Sequence[UUID]
+    ) -> Sequence[DecisionArticleLink]:
+        """Verified links from any judgment into this set of articles.
+
+        The edge itself is the retrieval unit: it carries both ends, so a
+        decision arrives with the provisions that put it there — which is
+        what makes the set explainable to a lawyer rather than merely
+        small.
+        """
+        if not article_ids:
+            return []
+        statement = (
+            select(DecisionArticleLink)
+            .join(DecisionArticleLink.decision)
+            .join(DecisionArticleLink.article)
+            .where(
+                DecisionArticleLink.article_id.in_(list(article_ids)),
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+                CourtDecision.kind == DecisionKind.arret,
+            )
+            .options(
+                contains_eager(DecisionArticleLink.decision),
+                contains_eager(DecisionArticleLink.article)
+                .joinedload(LegalArticle.act_version)
+                .joinedload(LegalActVersion.act),
+            )
+            .order_by(CourtDecision.decided_on.desc())
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
     async def get_act_by_short_code(self, short_code: str) -> LegalAct | None:
         """One act by the code practitioners cite, versions loaded."""
         statement = (

@@ -15,10 +15,9 @@ from datetime import date
 import pytest
 
 from polar.kit.db.postgres import AsyncSession
+from polar.librarian.retrieval import MAX_DECISIONS
 from polar.librarian.service import (
     ALL_SOURCES,
-    DECISIONS_DEEP,
-    DECISIONS_NORMAL,
     SOURCE_ACTS,
     SOURCE_CASE_LAW,
     librarian,
@@ -38,16 +37,17 @@ from tests.fixtures.database import SaveFixture
 #: One of the slice articles, so build_documents actually retrieves it.
 SLICE_NUMBER = "170"
 
+#: Names the article outright, so retrieval resolves it through the graph
+#: rather than widening — these tests are about the switches, not the
+#: mapping.
+QUESTION = "Que dit l'article 170 de l'AUPSRVE ?"
+
 
 async def _corpus(save_fixture: SaveFixture, *, decisions: int = 3) -> None:
     act = LegalAct(short_code="AUPSRVE", title="Voies d'exécution")
     await save_fixture(act)
-    old = LegalActVersion(
-        act_id=act.id, label="1998", in_force_from=date(1998, 7, 10)
-    )
-    new = LegalActVersion(
-        act_id=act.id, label="2023", in_force_from=date(2024, 2, 16)
-    )
+    old = LegalActVersion(act_id=act.id, label="1998", in_force_from=date(1998, 7, 10))
+    new = LegalActVersion(act_id=act.id, label="2023", in_force_from=date(2024, 2, 16))
     await save_fixture(old)
     await save_fixture(new)
 
@@ -89,15 +89,17 @@ class TestSourceSwitches:
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
         await _corpus(save_fixture)
-        _, refs = await librarian.build_documents(session, sources=ALL_SOURCES)
+        _, refs, _r = await librarian.build_documents(
+            session, question=QUESTION, sources=ALL_SOURCES
+        )
         assert _kinds(refs) == {"article", "decision"}
 
     async def test_turning_off_jurisprudence_removes_the_decisions(
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
         await _corpus(save_fixture)
-        _, refs = await librarian.build_documents(
-            session, sources=frozenset({SOURCE_ACTS})
+        _, refs, _r = await librarian.build_documents(
+            session, question=QUESTION, sources=frozenset({SOURCE_ACTS})
         )
         assert _kinds(refs) == {"article"}
 
@@ -105,8 +107,8 @@ class TestSourceSwitches:
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
         await _corpus(save_fixture)
-        _, refs = await librarian.build_documents(
-            session, sources=frozenset({SOURCE_CASE_LAW})
+        _, refs, _r = await librarian.build_documents(
+            session, question=QUESTION, sources=frozenset({SOURCE_CASE_LAW})
         )
         assert _kinds(refs) == {"decision"}
 
@@ -116,8 +118,8 @@ class TestSourceSwitches:
         # The endpoint turns this into an error rather than an answer: a
         # reply grounded in nothing is the one thing never on offer.
         await _corpus(save_fixture)
-        documents, refs = await librarian.build_documents(
-            session, sources=frozenset()
+        documents, refs, _r = await librarian.build_documents(
+            session, question=QUESTION, sources=frozenset()
         )
         assert documents == []
         assert refs == []
@@ -125,27 +127,32 @@ class TestSourceSwitches:
 
 @pytest.mark.asyncio
 class TestDepth:
-    async def test_deep_reaches_further_into_the_collection(
+    async def test_deep_reaches_further_into_the_linked_set(
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
-        # More decisions than the normal cap, fewer than the deep one, so
-        # the two settings must disagree on the count.
-        await _corpus(save_fixture, decisions=DECISIONS_NORMAL + 5)
-        _, shallow = await librarian.build_documents(session)
-        _, deep = await librarian.build_documents(session, deep=True)
+        # More judgments on the article than the ordinary cap allows, so
+        # the two settings must disagree on how many travel. Both sets are
+        # linked to the question's article either way — « approfondie »
+        # reaches further into the same graph, never outside it.
+        await _corpus(save_fixture, decisions=MAX_DECISIONS + 4)
+        _, shallow, _s = await librarian.build_documents(session, question=QUESTION)
+        _, deep, _d = await librarian.build_documents(
+            session, question=QUESTION, deep=True
+        )
 
         shallow_decisions = [r for r in shallow if r.kind == "decision"]
         deep_decisions = [r for r in deep if r.kind == "decision"]
-        assert len(shallow_decisions) == DECISIONS_NORMAL
-        assert len(deep_decisions) == DECISIONS_NORMAL + 5
-        assert len(deep_decisions) <= DECISIONS_DEEP
+        assert len(shallow_decisions) == MAX_DECISIONS
+        assert len(deep_decisions) == MAX_DECISIONS + 4
 
     async def test_depth_does_not_change_the_articles(
         self, session: AsyncSession, save_fixture: SaveFixture
     ) -> None:
         await _corpus(save_fixture)
-        _, shallow = await librarian.build_documents(session)
-        _, deep = await librarian.build_documents(session, deep=True)
+        _, shallow, _s = await librarian.build_documents(session, question=QUESTION)
+        _, deep, _d = await librarian.build_documents(
+            session, question=QUESTION, deep=True
+        )
         assert [r.title for r in shallow if r.kind == "article"] == [
             r.title for r in deep if r.kind == "article"
         ]

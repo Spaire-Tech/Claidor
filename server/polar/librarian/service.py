@@ -20,12 +20,13 @@ import structlog
 
 from polar.config import settings
 from polar.corpus.repository import CorpusRepository
-from polar.corpus.slice import SLICE_ARTICLES_1998, TRANSITIONAL_RULE_1998
+from polar.corpus.slice import TRANSITIONAL_RULE_1998
 from polar.kit.db.postgres import AsyncReadSession
 from polar.librarian.deadline import deadline_for, identify_delay, steering_block
+from polar.librarian.retrieval import Retrieval, decision_text, retrieve
 
 if TYPE_CHECKING:
-    from polar.models import DossierDocument
+    from polar.models import DossierDocument, LegalArticle
 
 log = structlog.get_logger()
 
@@ -103,6 +104,11 @@ Rigueur :
   système à partir des liens vérifiés du corpus et ajouté après ta réponse."""
 
 
+def _article_label(article: "LegalArticle") -> str:
+    version = article.act_version
+    return f"art. {article.number} ({version.act.short_code} {version.label})"
+
+
 @dataclass(frozen=True)
 class SourceRef:
     """Metadata for one document block, index-aligned with the request."""
@@ -157,13 +163,6 @@ Réponds en trois phrases au maximum. Conserve chaque citation et chaque
 mention de version — la brièveté ne retire jamais une source."""
 
 
-#: How many decisions enter the prompt. « Recherche approfondie » widens
-#: the same ranking rather than reaching for a different corpus — there is
-#: no doctrine to index and no second collection to open, so the only
-#: honest meaning of « approfondie » is *more of what we hold*.
-DECISIONS_NORMAL = 30
-DECISIONS_DEEP = 80
-
 #: The source kinds the composer's chips switch on and off.
 SOURCE_ACTS = "au"
 SOURCE_CASE_LAW = "cj"
@@ -178,11 +177,18 @@ class LibrarianService:
         self,
         session: AsyncReadSession,
         *,
+        question: str = "",
         case_documents: Sequence["DossierDocument"] = (),
         sources: frozenset[str] = ALL_SOURCES,
         deep: bool = False,
-    ) -> tuple[list[dict[str, Any]], list[SourceRef]]:
-        """Assemble the grounding documents.
+    ) -> tuple[list[dict[str, Any]], list[SourceRef], Retrieval | None]:
+        """Assemble the grounding documents for one question.
+
+        What travels is chosen by the citation graph (see
+        :mod:`polar.librarian.retrieval`): the articles the question is
+        about, and the judgments with a verified link into them. Nothing
+        else. Every document in the request can therefore be traced to the
+        provision that put it there.
 
         ``sources`` and ``deep`` are the composer's own switches, honoured
         here rather than described in the prompt: turning off jurisprudence
@@ -193,29 +199,17 @@ class LibrarianService:
         version_1998 = await repository.get_version_by_label("1998")
         version_2023 = await repository.get_version_by_label("2023")
         if version_1998 is None or version_2023 is None:
-            return [], []
+            return [], [], None
 
         documents: list[dict[str, Any]] = []
         refs: list[SourceRef] = []
 
-        arts_1998 = await repository.list_articles_by_numbers(
-            version_1998.id, SLICE_ARTICLES_1998
-        )
-        # The 2023 side comes from the equivalence map — the mechanical
-        # 1998→2023 correspondence — not from keyword matching, which missed
-        # most of the renumber-free 2023 chapter.
-        arts_2023 = await repository.list_equivalent_new_articles(
-            [a.id for a in arts_1998]
-        )
-        for art, label in (
-            [
-                *[(a, "1998") for a in arts_1998],
-                *[(a, "2023") for a in arts_2023],
-            ]
-            if SOURCE_ACTS in sources
-            else []
-        ):
-            title = f"AUPSRVE ({label}) — Article {art.number}"
+        retrieval = await retrieve(session, question, deep=deep)
+
+        for retrieved in retrieval.articles if SOURCE_ACTS in sources else []:
+            art = retrieved.article
+            version = art.act_version
+            title = f"{version.act.short_code} ({version.label}) — Article {art.number}"
             documents.append(
                 {
                     "type": "document",
@@ -230,22 +224,13 @@ class LibrarianService:
             )
             refs.append(SourceRef(kind="article", id=str(art.id), title=title))
 
-        # Decisions tied to the slice, most-linked first, capped: with the
-        # full CCJA collection loaded, "every decision with a verified link"
-        # no longer fits in one prompt. A decision citing four slice
-        # articles is worth more grounding than one citing a single article
-        # in passing. The authority line is unaffected — it is computed
-        # from the database, not from what the prompt happens to hold.
-        slice_article_ids = [a.id for a in arts_1998] + [a.id for a in arts_2023]
-        decisions = (
-            await repository.list_top_decisions_for_articles(
-                slice_article_ids,
-                limit=DECISIONS_DEEP if deep else DECISIONS_NORMAL,
-            )
-            if SOURCE_CASE_LAW in sources
-            else []
-        )
-        for d in decisions:
+        # Judgments verified as reading those provisions. The authority
+        # line is unaffected either way — it is computed from the database,
+        # not from what the prompt happens to hold.
+        for retrieved_decision in (
+            retrieval.decisions if SOURCE_CASE_LAW in sources else []
+        ):
+            d = retrieved_decision.decision
             title = f"CCJA, arrêt n° {d.number} du {d.decided_on:%d/%m/%Y}"
             documents.append(
                 {
@@ -253,7 +238,7 @@ class LibrarianService:
                     "source": {
                         "type": "text",
                         "media_type": "text/plain",
-                        "data": (d.full_text or "")[:60_000],
+                        "data": decision_text(d.full_text),
                     },
                     "title": title,
                     "citations": {"enabled": True},
@@ -261,11 +246,13 @@ class LibrarianService:
             )
             refs.append(SourceRef(kind="decision", id=str(d.id), title=title))
 
-        # Cache the stable corpus prefix: system prompt + corpus documents
-        # are identical across questions AND across matters, so the cache
-        # breakpoint goes at the end of the corpus — case documents, which
-        # differ per dossier, come after it and never break the shared
-        # prefix.
+        # The corpus block is no longer identical across questions — it is
+        # this question's sources — so the breakpoint no longer earns a hit
+        # from the next lawyer's unrelated question. It still pays for the
+        # cases that repeat a request verbatim: « répondre pour les deux
+        # régimes » re-asks the same question, and a re-opened matter asks
+        # it again with the same file. A write costs a quarter more; those
+        # hits save nine tenths.
         if documents:
             documents[-1]["cache_control"] = {"type": "ephemeral"}
 
@@ -293,7 +280,7 @@ class LibrarianService:
             refs.append(
                 SourceRef(kind="document", id=str(doc.id), title=piece, text=text)
             )
-        return documents, refs
+        return documents, refs, retrieval
 
     async def find_anchor_in_file(
         self, case_documents: Sequence["DossierDocument"]
@@ -506,8 +493,12 @@ class LibrarianService:
         """
         import anthropic
 
-        documents, refs = await self.build_documents(
-            session, case_documents=case_documents, sources=sources, deep=deep
+        documents, refs, retrieval = await self.build_documents(
+            session,
+            question=question,
+            case_documents=case_documents,
+            sources=sources,
+            deep=deep,
         )
         if not documents:
             # Both source kinds off is a question with nothing to answer
@@ -690,6 +681,30 @@ class LibrarianService:
                     "versions_used": versions_used,
                     "input_tokens": final.usage.input_tokens,
                     "output_tokens": final.usage.output_tokens,
+                    # Why these sources and no others. Retrieval went
+                    # through the citation graph, so every judgment here
+                    # can name the provision that put it in the request —
+                    # and a widened read says so rather than passing for a
+                    # precise one.
+                    "retrieval": (
+                        {
+                            "widened": retrieval.widened,
+                            "reason": retrieval.reason,
+                            "articles": [
+                                {"label": _article_label(r.article), "why": r.reason}
+                                for r in retrieval.articles
+                            ],
+                            "decisions": [
+                                {
+                                    "reference": f"CCJA {r.decision.number}",
+                                    "why": r.reason,
+                                }
+                                for r in retrieval.decisions
+                            ],
+                        }
+                        if retrieval is not None
+                        else None
+                    ),
                 }
         except anthropic.AnthropicError as e:
             log.warning("librarian.answer.error", error=str(e))
