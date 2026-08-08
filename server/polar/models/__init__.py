@@ -120,6 +120,7 @@ from .product_review import ProductReview
 from .quota_notification import QuotaNotification
 from .refund import Refund
 from .resend_webhook_event import ResendWebhookEvent
+from .saved_prompt import SavedPrompt
 from .subscription import Subscription
 from .subscription_meter import SubscriptionMeter
 from .subscription_product_price import SubscriptionProductPrice
@@ -260,6 +261,7 @@ __all__ = [
     "QuotaNotification",
     "Refund",
     "ResendWebhookEvent",
+    "SavedPrompt",
     "SeatStatus",
     "Subscription",
     "SubscriptionMeter",

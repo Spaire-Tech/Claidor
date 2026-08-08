@@ -30,7 +30,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     revealed: 0, streamingIdx: -1, dossier: null, an: null, guide: 0, menu: null,
     searchOpen: false, searchQ: '', selSources: { au: true, cj: true }, dossierSel: null, dossierSelId: null, clientSel: null,
     deep: false, concise: false, notes: true, toast: '', hist: [],
-    live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [], liveAnalysis: {}, liveHistory: null,
+    live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [], liveAnalysis: {}, liveHistory: null, livePrompts: null, formPromptTitle: '', formPromptText: '',
     liveDossiers: null, liveDossierDetail: {}, liveDossierQuestions: {},
     modal: null, modalBusy: false, modalError: '',
     formName: '', formRef: '', formClient: '', formEmail: '', inviteRole: 'member',
@@ -338,6 +338,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
           this.setState({ live: true })
           this.refreshDossiers()
           this.refreshHistory()
+          this.refreshPrompts()
         }
       })
       .catch(() => {})
@@ -539,6 +540,37 @@ class ClaidorDesignApp extends React.Component<any, any> {
   orgId() {
     return this.props.organization && this.props.organization.id
   }
+  refreshPrompts() {
+    const org = this.orgId()
+    if (!org || !this.state.live) return
+    this.apiGet('/v1/prompts?organization_id=' + org).then((rows) => {
+      if (Array.isArray(rows)) this.setState({ livePrompts: rows })
+    })
+  }
+  savePromptSubmit() {
+    const st = this.state
+    const title = st.formPromptTitle.trim()
+    const text = st.formPromptText.trim()
+    if (title.length < 2 || text.length < 3) {
+      this.setState({ modalError: 'Donnez un intitulé et la question à enregistrer.' })
+      return
+    }
+    if (st.modalBusy) return
+    this.setState({ modalBusy: true, modalError: '' })
+    this.apiSend('POST', '/v1/prompts?organization_id=' + this.orgId(), { title, text }).then(({ ok }) => {
+      if (!ok) { this.setState({ modalBusy: false, modalError: 'L\u2019enregistrement a échoué. Réessayez.' }); return }
+      this.setState({ modal: null, modalBusy: false, modalError: '', formPromptTitle: '', formPromptText: '' })
+      this.refreshPrompts()
+      this.showToast('Prompt enregistré pour le cabinet')
+    })
+  }
+  removePrompt(id) {
+    this.apiSend('DELETE', '/v1/prompts/' + id + '?organization_id=' + this.orgId()).then(({ ok }) => {
+      if (!ok) { this.showToast('Suppression impossible'); return }
+      this.setState((st) => ({ livePrompts: (st.livePrompts || []).filter((p) => p.id !== id) }))
+      this.refreshPrompts()
+    })
+  }
   refreshHistory() {
     const org = this.orgId()
     if (!org || !this.state.live) return
@@ -560,7 +592,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
   }
   closeModal() {
     if (this.state.modalBusy) return
-    this.setState({ modal: null, modalError: '', formName: '', formRef: '', formClient: '', formEmail: '', importStaged: [] })
+    this.setState({ modal: null, modalError: '', formName: '', formRef: '', formClient: '', formEmail: '', importStaged: [], formPromptTitle: '', formPromptText: '' })
   }
   createDossierSubmit() {
     const st = this.state
@@ -1064,8 +1096,18 @@ class ClaidorDesignApp extends React.Component<any, any> {
         }))
       : D.dossiers.map(d => ({ name: d.name, meta: d.pieces + ' · ' + d.team.length + ' avocats', pick: () => { this.setState({ dossierSel: d.name, dossierSelId: d.id, clientSel: d.client, menu: null }); this.showToast('Dossier rattaché — Claidor lira ses pièces'); } }));
     const clientMenu = D.clients.map(name => ({ name, pick: () => this.setState({ clientSel: name, menu: null }) }));
-    const promptMenu = D.prompts.map(p => ({ title: p.title, text: p.text, use: () => this.setState({ input: p.text, menu: null }) }));
-    const promptRows = D.prompts.map(p => ({ title: p.title, text: p.text, use: () => this.nav('assistant', { chat: false, input: p.text }) }));
+    // The cabinet's own library replaces the scripted one once live; an
+    // empty library shows as empty rather than as somebody else's demo.
+    const promptSource = (st.live && st.livePrompts)
+      ? st.livePrompts.map((p) => ({ id: p.id, title: p.title, text: p.text, saved: true }))
+      : D.prompts.map((p) => ({ id: null, title: p.title, text: p.text, saved: false }));
+    const promptMenu = promptSource.map(p => ({ title: p.title, text: p.text, use: () => this.setState({ input: p.text, menu: null }) }));
+    const promptRows = promptSource.map(p => ({
+      title: p.title, text: p.text,
+      use: () => this.nav('assistant', { chat: false, input: p.text }),
+      canRemove: !!p.saved,
+      remove: () => { if (p.id) this.removePrompt(p.id) },
+    }));
     const histAgo = (iso) => {
       const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
       if (seconds < 90) return 'À l\u2019instant'
@@ -1323,6 +1365,16 @@ class ClaidorDesignApp extends React.Component<any, any> {
       modalImportOpen: st.modal === 'import',
       modalInviteOpen: st.modal === 'invite',
       modalDeleteOpen: st.modal === 'delete',
+      modalPromptOpen: st.modal === 'prompt',
+      formPromptTitle: st.formPromptTitle, formPromptText: st.formPromptText,
+      onFormPromptTitle: (e) => this.setState({ formPromptTitle: e.target.value }),
+      onFormPromptText: (e) => this.setState({ formPromptText: e.target.value }),
+      openNewPrompt: () => {
+        if (!st.live) { this.showToast('Disponible une fois le corpus connecté'); return }
+        this.setState({ modal: 'prompt', modalError: '' })
+      },
+      savePromptSubmit: () => this.savePromptSubmit(),
+      savePromptLabel: st.modalBusy ? 'Enregistrement…' : 'Enregistrer',
       modalError: st.modalError,
       formName: st.formName, formRef: st.formRef, formClient: st.formClient, formEmail: st.formEmail,
       onFormName: (e) => this.setState({ formName: e.target.value }),

@@ -769,7 +769,10 @@ html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
       <div style="flex:1;overflow-y:auto;padding:44px 48px;">
         <div style="max-width:760px;margin:0 auto;">
           <div style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:600;">Bibliothèque</div>
-          <div style="margin-top:4px;font-size:13px;color:var(--t3);">Prompts enregistrés par le cabinet</div>
+          <div style="margin-top:4px;display:flex;align-items:baseline;justify-content:space-between;gap:16px;">
+            <div style="font-size:13px;color:var(--t3);">Prompts enregistrés par le cabinet</div>
+            <span sc-camel-on-click="{{ openNewPrompt }}" style="border:1px solid var(--b2);border-radius:7px;padding:5px 11px;font-size:12.5px;color:var(--t2);cursor:pointer;white-space:nowrap;" style-hover="background:var(--s2);">+ Nouveau prompt</span>
+          </div>
           <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px;">
             <sc-for list="{{ promptRows }}" as="p" hint-placeholder-count="3">
               <div style="border:1px solid var(--s9);border-radius:12px;padding:16px 18px;background:var(--surface);display:flex;align-items:center;gap:16px;">
@@ -778,6 +781,9 @@ html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
                   <div style="font-size:12.5px;color:var(--t3);margin-top:4px;line-height:1.5;">{{ p.text }}</div>
                 </div>
                 <button sc-camel-on-click="{{ p.use }}" style="border:1px solid var(--b3);background:var(--surface);border-radius:8px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;flex:0 0 auto;" style-hover="border-color:var(--ink);">Utiliser</button>
+                <sc-if value="{{ p.canRemove }}" hint-placeholder-val="{{ false }}">
+                  <span sc-camel-on-click="{{ p.remove }}" title="Retirer de la bibliothèque" style="font-size:12px;color:var(--t5);cursor:pointer;flex:0 0 auto;" style-hover="color:var(--red2)">Retirer</span>
+                </sc-if>
               </div>
             </sc-for>
           </div>
@@ -1048,6 +1054,35 @@ html[data-claidor-dark] img[alt="Claidor"]{filter:invert(1) hue-rotate(180deg);}
         <div style="display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;">
           <button sc-camel-on-click="{{ closeModal }}" style="border:1px solid var(--b3);border-radius:8px;padding:8px 14px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--ink);" style-hover="background:var(--s2);">Annuler</button>
           <button sc-camel-on-click="{{ deleteDossierSubmit }}" style="border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:{{ deleteSubmitBg }};color:{{ deleteSubmitFg }};">{{ deleteLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Bibliothèque : nouveau prompt -->
+  <sc-if value="{{ modalPromptOpen }}" hint-placeholder-val="{{ false }}">
+    <div sc-camel-on-click="{{ closeModal }}" style="position:fixed;inset:0;background:var(--sh4);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding-top:14vh;">
+      <div sc-camel-on-click="{{ stop }}" style="width:520px;background:var(--surface);border-radius:14px;box-shadow:0 20px 60px var(--sh4);overflow:hidden;">
+        <div style="padding:18px 20px 4px;">
+          <div style="font-family:'Source Serif 4',Georgia,serif;font-size:18px;font-weight:600;">Nouveau prompt</div>
+          <div style="margin-top:4px;font-size:12.5px;color:var(--t3);">Enregistré pour tout le cabinet — la façon de poser la question devient celle de l&rsquo;équipe.</div>
+        </div>
+        <div style="padding:14px 20px 0;display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--t3);margin-bottom:5px;">Intitulé</div>
+            <input value="{{ formPromptTitle }}" sc-camel-on-change="{{ onFormPromptTitle }}" style="width:100%;border:1px solid var(--b3);border-radius:8px;padding:9px 11px;font:inherit;font-size:13.5px;background:var(--surface);color:var(--ink);outline:none;" />
+          </div>
+          <div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--t3);margin-bottom:5px;">Question</div>
+            <textarea rows="4" value="{{ formPromptText }}" sc-camel-on-change="{{ onFormPromptText }}" style="width:100%;border:1px solid var(--b3);border-radius:8px;padding:9px 11px;font:inherit;font-size:13.5px;line-height:1.5;resize:none;background:var(--surface);color:var(--ink);outline:none;"></textarea>
+          </div>
+          <sc-if value="{{ modalError }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12.5px;color:var(--red2);">{{ modalError }}</div>
+          </sc-if>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;">
+          <button sc-camel-on-click="{{ closeModal }}" style="border:1px solid var(--b3);border-radius:8px;padding:8px 14px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--ink);" style-hover="background:var(--s2);">Annuler</button>
+          <button sc-camel-on-click="{{ savePromptSubmit }}" style="border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:{{ modalSubmitBg }};color:{{ modalSubmitFg }};">{{ savePromptLabel }}</button>
         </div>
       </div>
     </div>

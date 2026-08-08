@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from polar.account.endpoints import router as accounts_router
+from polar.analysis.endpoints import router as analysis_router
 from polar.audit_log.endpoints import router as audit_log_router
 from polar.auth.endpoints import router as auth_router
 from polar.benefit.endpoints import router as benefits_router
@@ -9,7 +10,6 @@ from polar.checkout.endpoints import router as checkout_router
 from polar.checkout_link.endpoints import router as checkout_link_router
 from polar.cli.endpoints import router as cli_router
 from polar.client_invoice.endpoints import router as client_invoice_router
-from polar.analysis.endpoints import router as analysis_router
 from polar.corpus.endpoints import router as corpus_router
 from polar.custom_field.endpoints import router as custom_field_router
 from polar.customer.endpoints import router as customer_router
@@ -70,6 +70,7 @@ from polar.personal_access_token.endpoints import router as pat_router
 from polar.platform.endpoints import router as platform_router
 from polar.product.endpoints import router as product_router
 from polar.product_review.endpoints import router as product_review_router
+from polar.prompt.endpoints import router as prompt_router
 from polar.refund.endpoints import router as refund_router
 from polar.storefront.endpoints import router as storefront_router
 from polar.subscription.endpoints import router as subscription_router
@@ -152,6 +153,8 @@ router.include_router(librarian_router)
 router.include_router(corpus_router)
 # /analyses
 router.include_router(analysis_router)
+# /prompts
+router.include_router(prompt_router)
 # /dossiers
 router.include_router(dossier_router)
 # /license-keys

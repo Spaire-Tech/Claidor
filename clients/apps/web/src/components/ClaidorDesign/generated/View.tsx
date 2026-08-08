@@ -1260,8 +1260,13 @@ export const DesignView = ({ v }: { v: any }) => {
                 <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '24px', 'fontWeight': '600'}}>
                   Bibliothèque
                 </div>
-                <div style={{'marginTop': '4px', 'fontSize': '13px', 'color': 'var(--t3)'}}>
-                  Prompts enregistrés par le cabinet
+                <div style={{'marginTop': '4px', 'display': 'flex', 'alignItems': 'baseline', 'justifyContent': 'space-between', 'gap': '16px'}}>
+                  <div style={{'fontSize': '13px', 'color': 'var(--t3)'}}>
+                    Prompts enregistrés par le cabinet
+                  </div>
+                  <span onClick={v.openNewPrompt} style={{'border': '1px solid var(--b2)', 'borderRadius': '7px', 'padding': '5px 11px', 'fontSize': '12.5px', 'color': 'var(--t2)', 'cursor': 'pointer', 'whiteSpace': 'nowrap'}} className="dh-63a957d0">
+                    + Nouveau prompt
+                  </span>
                 </div>
                 <div style={{'marginTop': '22px', 'display': 'flex', 'flexDirection': 'column', 'gap': '10px'}}>
                   {(v.promptRows).map((p, pIdx) => (
@@ -1278,6 +1283,13 @@ export const DesignView = ({ v }: { v: any }) => {
                       <button onClick={p.use} style={{'border': '1px solid var(--b3)', 'background': 'var(--surface)', 'borderRadius': '8px', 'padding': '7px 14px', 'font': 'inherit', 'fontSize': '12.5px', 'fontWeight': '500', 'cursor': 'pointer', 'flex': '0 0 auto'}} className="dh-e5c6466d">
                         Utiliser
                       </button>
+                      {(p.canRemove) ? (
+                        <>
+                        <span onClick={p.remove} title="Retirer de la bibliothèque" style={{'fontSize': '12px', 'color': 'var(--t5)', 'cursor': 'pointer', 'flex': '0 0 auto'}} className="dh-a012ff94">
+                          Retirer
+                        </span>
+                        </>
+                      ) : null}
                     </div>
                     </Fragment>
                   ))}
@@ -1778,6 +1790,51 @@ export const DesignView = ({ v }: { v: any }) => {
                 </button>
                 <button onClick={v.deleteDossierSubmit} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.deleteSubmitBg, 'color': v.deleteSubmitFg}}>
                   {v.deleteLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+          </>
+        ) : null}
+        {(v.modalPromptOpen) ? (
+          <>
+          <div onClick={v.closeModal} style={{'position': 'fixed', 'inset': '0', 'background': 'var(--sh4)', 'zIndex': '60', 'display': 'flex', 'alignItems': 'flex-start', 'justifyContent': 'center', 'paddingTop': '14vh'}}>
+            <div onClick={v.stop} style={{'width': '520px', 'background': 'var(--surface)', 'borderRadius': '14px', 'boxShadow': '0 20px 60px var(--sh4)', 'overflow': 'hidden'}}>
+              <div style={{'padding': '18px 20px 4px'}}>
+                <div style={{'fontFamily': "var(--font-claidor-serif),Georgia,serif", 'fontSize': '18px', 'fontWeight': '600'}}>
+                  Nouveau prompt
+                </div>
+                <div style={{'marginTop': '4px', 'fontSize': '12.5px', 'color': 'var(--t3)'}}>
+                  Enregistré pour tout le cabinet — la façon de poser la question devient celle de l’équipe.
+                </div>
+              </div>
+              <div style={{'padding': '14px 20px 0', 'display': 'flex', 'flexDirection': 'column', 'gap': '12px'}}>
+                <div>
+                  <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
+                    Intitulé
+                  </div>
+                  <input value={v.formPromptTitle} onChange={v.onFormPromptTitle} style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                </div>
+                <div>
+                  <div style={{'fontSize': '11.5px', 'fontWeight': '600', 'color': 'var(--t3)', 'marginBottom': '5px'}}>
+                    Question
+                  </div>
+                  <textarea rows="4" value={v.formPromptText} onChange={v.onFormPromptText} style={{'width': '100%', 'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '9px 11px', 'font': 'inherit', 'fontSize': '13.5px', 'lineHeight': '1.5', 'resize': 'none', 'background': 'var(--surface)', 'color': 'var(--ink)', 'outline': 'none'}} />
+                </div>
+                {(v.modalError) ? (
+                  <>
+                  <div style={{'fontSize': '12.5px', 'color': 'var(--red2)'}}>
+                    {v.modalError}
+                  </div>
+                  </>
+                ) : null}
+              </div>
+              <div style={{'display': 'flex', 'justifyContent': 'flex-end', 'gap': '8px', 'padding': '16px 20px'}}>
+                <button onClick={v.closeModal} style={{'border': '1px solid var(--b3)', 'borderRadius': '8px', 'padding': '8px 14px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '500', 'cursor': 'pointer', 'background': 'var(--surface)', 'color': 'var(--ink)'}} className="dh-63a957d0">
+                  Annuler
+                </button>
+                <button onClick={v.savePromptSubmit} style={{'border': 'none', 'borderRadius': '8px', 'padding': '8px 16px', 'font': 'inherit', 'fontSize': '13px', 'fontWeight': '600', 'cursor': 'pointer', 'background': v.modalSubmitBg, 'color': v.modalSubmitFg}}>
+                  {v.savePromptLabel}
                 </button>
               </div>
             </div>
