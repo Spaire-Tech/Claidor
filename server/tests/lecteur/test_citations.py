@@ -41,6 +41,11 @@ class TestArticles:
     def test_a_date_after_a_comma_is_not_an_article(self) -> None:
         assert numbers("l'article 170, 12 avril 2023, a été respecté") == ["170"]
 
+    def test_the_verb_a_is_not_a_range(self) -> None:
+        # « à » ranges; « a » is the verb. Reading the second as the first
+        # would invent an article 5 that the document never cites.
+        assert numbers("l'article 3 a 5 alinéas") == ["3"]
+
     def test_abbreviated_form(self) -> None:
         assert numbers("art. 49 AUPSRVE") == ["49"]
 

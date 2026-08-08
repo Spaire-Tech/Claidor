@@ -60,7 +60,11 @@ async def review_document(
     if len(payload) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="Document trop volumineux (25 Mo).")
     try:
-        document = read_document(payload, upload.content_type or "application/pdf")
+        document = read_document(
+            payload,
+            upload.content_type or "application/octet-stream",
+            filename=upload.filename,
+        )
     except UnsupportedDocument:
         raise HTTPException(
             status_code=415,

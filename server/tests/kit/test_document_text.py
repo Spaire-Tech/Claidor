@@ -62,7 +62,32 @@ class TestPlainText:
         assert document.text == "l'article 49 AUPSRVE"
 
 
+class TestDeclaredType:
+    def test_a_generic_type_falls_back_to_the_filename(self) -> None:
+        # Browsers and mail clients send application/octet-stream often
+        # enough that refusing on the declared type alone would turn a
+        # perfectly readable filing away.
+        document = read_document(
+            _docx(), "application/octet-stream", filename="conclusions.docx"
+        )
+        assert "PAR CES MOTIFS" in document.text
+
+    def test_a_specific_declared_type_wins_over_the_filename(self) -> None:
+        document = read_document(
+            _docx(),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            filename="mislabelled.pdf",
+        )
+        assert "PAR CES MOTIFS" in document.text
+
+
 class TestUnsupported:
     def test_an_unknown_type_raises_rather_than_returning_nothing(self) -> None:
         with pytest.raises(UnsupportedDocument):
             read_document(b"\x00\x01", "application/msword")
+
+    def test_an_unreadable_extension_raises_too(self) -> None:
+        # Legacy .doc is a binary format we do not parse; saying so beats
+        # returning an empty document that reads as « aucune référence ».
+        with pytest.raises(UnsupportedDocument):
+            read_document(b"\x00\x01", "application/octet-stream", filename="scan.doc")

@@ -39,7 +39,9 @@ ACT_PATTERNS: dict[str, str] = {
 _ARTICLE_HEAD = re.compile(r"\b(?:articles?|art\.)\s*(?=\d)", re.IGNORECASE)
 _NUMBER = re.compile(r"(\d{1,4})(?:\s*[-–]\s*(\d{1,2})\b)?")
 #: What joins two numbers under one « articles » — comma, « et », « à ».
-_SEPARATOR = re.compile(r"\s*(?:,|;|\bet\b|\b[àa]\b|&)\s*(?=\d)", re.IGNORECASE)
+#: « à » only with its accent: « l'article 3 a 5 alinéas » is a sentence
+#: about one article, not a range over three.
+_SEPARATOR = re.compile(r"\s*(?:,|;|\bet\b|\bà\b|&)\s*(?=\d)", re.IGNORECASE)
 #: A number followed by a month is a date, not an article: « l'article 170,
 #: 12 avril 2023 » cites one article, not two.
 _MONTH = re.compile(

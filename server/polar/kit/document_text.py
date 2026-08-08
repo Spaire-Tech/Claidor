@@ -61,13 +61,31 @@ def _read_docx(payload: bytes) -> ReadDocument:
     return ReadDocument(text="\n".join(lines), page_count=None)
 
 
-def read_document(payload: bytes, mime_type: str) -> ReadDocument:
+#: Browsers and mail clients send « application/octet-stream » often
+#: enough that refusing on the declared type alone would turn a perfectly
+#: readable filing away.
+_BY_SUFFIX = {
+    ".pdf": PDF_MIME_TYPES[0],
+    ".docx": DOCX_MIME_TYPES[0],
+    ".txt": "text/plain",
+    ".md": "text/plain",
+}
+
+
+def read_document(
+    payload: bytes, mime_type: str, *, filename: str | None = None
+) -> ReadDocument:
     """The document's text, or :class:`UnsupportedDocument`.
 
     Raises rather than returning an empty string: the difference between
     "this document cites nothing" and "we could not read this document" is
     the whole difference between a useful check and a false clean bill.
     """
+    if filename and mime_type not in PDF_MIME_TYPES + DOCX_MIME_TYPES:
+        for suffix, declared in _BY_SUFFIX.items():
+            if filename.lower().endswith(suffix):
+                mime_type = declared
+                break
     if mime_type in PDF_MIME_TYPES:
         return _read_pdf(payload)
     if mime_type in DOCX_MIME_TYPES:
