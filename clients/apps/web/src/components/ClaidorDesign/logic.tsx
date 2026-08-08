@@ -388,11 +388,18 @@ class ClaidorDesignApp extends React.Component<any, any> {
     if (st.fCh && st.liveChambers.includes(st.fCh)) params.set('chamber', st.fCh)
     const seq = (this._searchSeq = (this._searchSeq || 0) + 1)
     this.apiGet('/v1/corpus/search?' + params.toString()).then((data) => {
-      if (data && seq === this._searchSeq) {
-        const patch = { liveSearch: data }
-        if (data.chambers && data.chambers.length) patch.liveChambers = data.chambers
-        this.setState(patch)
+      // A late answer to a superseded query is not this query's answer.
+      if (seq !== this._searchSeq) return
+      if (!data) {
+        // Same rule as every other list: a failed search shows no
+        // results, never the demo corpus.
+        this.setState({ liveSearch: { decisions: [], articles: [], chambers: [] } })
+        this.reportLoadFailure()
+        return
       }
+      const patch = { liveSearch: data }
+      if (data.chambers && data.chambers.length) patch.liveChambers = data.chambers
+      this.setState(patch)
     })
   }
   openLivePanel(type, id) {
@@ -561,15 +568,38 @@ class ClaidorDesignApp extends React.Component<any, any> {
   currentUserId() {
     return this.props.currentUser && this.props.currentUser.id
   }
+  // Load a live list into state, and never leave it unset on failure.
+  //
+  // A failed request used to leave the state null, and null is what the
+  // screens read as « no corpus yet » — so a server having a bad afternoon
+  // showed the lawyer three watches they never created and matters that
+  // were not theirs, with nothing to say anything was wrong. Failure is
+  // not emptiness, but it is certainly not the demo: the screen goes empty
+  // and the toast says why.
+  loadList(path, key, pick) {
+    return this.apiGet(path).then((data) => {
+      const rows = pick ? pick(data) : data
+      if (Array.isArray(rows)) {
+        this.setState({ [key]: rows })
+        return
+      }
+      this.setState({ [key]: [] })
+      this.reportLoadFailure()
+    })
+  }
+  reportLoadFailure() {
+    // One message however many requests failed together.
+    if (this._loadFailed) return
+    this._loadFailed = true
+    this.showToast('Certaines données n’ont pas pu être chargées')
+    clearTimeout(this._loadFailedT)
+    this._loadFailedT = setTimeout(() => { this._loadFailed = false }, 10000)
+  }
   refreshVeilles() {
     const org = this.orgId()
     if (!org || !this.state.live) return
-    this.apiGet('/v1/veilles?organization_id=' + org).then((rows) => {
-      if (Array.isArray(rows)) this.setState({ liveVeilles: rows })
-    })
-    this.apiGet('/v1/veilles/signals?organization_id=' + org).then((rows) => {
-      if (Array.isArray(rows)) this.setState({ liveSignals: rows })
-    })
+    this.loadList('/v1/veilles?organization_id=' + org, 'liveVeilles')
+    this.loadList('/v1/veilles/signals?organization_id=' + org, 'liveSignals')
   }
   createVeille(articleId) {
     const org = this.orgId()
@@ -594,9 +624,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
   refreshPrompts() {
     const org = this.orgId()
     if (!org || !this.state.live) return
-    this.apiGet('/v1/prompts?organization_id=' + org).then((rows) => {
-      if (Array.isArray(rows)) this.setState({ livePrompts: rows })
-    })
+    this.loadList('/v1/prompts?organization_id=' + org, 'livePrompts')
   }
   // --- Réglages ----------------------------------------------------------
   refreshAnalysisSuggestions() {
@@ -604,16 +632,18 @@ class ClaidorDesignApp extends React.Component<any, any> {
     // Where to start, ranked out of the corpus. The four drawn examples
     // were a demonstration; these are the lawyer's own library.
     this.apiGet('/v1/analyses/suggestions').then((data) => {
-      if (data) this.setState({ liveSuggestions: data })
+      if (data) { this.setState({ liveSuggestions: data }); return }
+      // Same rule as the lists: an unanswered request must not become the
+      // four drawn examples.
+      this.setState({ liveSuggestions: { authority: [], history: [], compare: [], citations: [] } })
+      this.reportLoadFailure()
     })
   }
   refreshTeam() {
     const org = this.orgId()
     if (!org || !this.state.live) return
-    this.apiGet('/v1/organizations/' + org + '/members').then((data) => {
-      const rows = data && Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : null)
-      if (rows) this.setState({ liveTeam: rows })
-    })
+    this.loadList('/v1/organizations/' + org + '/members', 'liveTeam',
+      (data) => (data && Array.isArray(data.items) ? data.items : data))
   }
   saveOrgName() {
     const org = this.orgId()
@@ -730,16 +760,12 @@ class ClaidorDesignApp extends React.Component<any, any> {
   refreshHistory() {
     const org = this.orgId()
     if (!org || !this.state.live) return
-    this.apiGet('/v1/librarian/questions?organization_id=' + org).then((rows) => {
-      if (Array.isArray(rows)) this.setState({ liveHistory: rows })
-    })
+    this.loadList('/v1/librarian/questions?organization_id=' + org, 'liveHistory')
   }
   refreshDossiers() {
     const org = this.orgId()
     if (!org) return
-    this.apiGet('/v1/dossiers?organization_id=' + org).then((ds) => {
-      if (Array.isArray(ds)) this.setState({ liveDossiers: ds })
-    })
+    this.loadList('/v1/dossiers?organization_id=' + org, 'liveDossiers')
   }
   refreshDossierDetail(id) {
     this.apiGet('/v1/dossiers/' + id).then((d) => {
