@@ -30,6 +30,7 @@ from polar.corpus.akn import (
 )
 from polar.corpus.juricaf import parse_juricaf_decision_html
 from polar.corpus.pdf_act import parse_pdf_act_text
+from polar.corpus.sources import read_corpus_text
 from polar.kit.db.postgres import AsyncSession, create_async_sessionmaker
 from polar.models import (
     CourtDecision,
@@ -128,7 +129,7 @@ async def load_acts(session: AsyncSession) -> None:
                 continue
 
             raw = path.read_bytes()
-            parsed = parse_lawsafrica_act_html(raw.decode("utf-8"))
+            parsed = parse_lawsafrica_act_html(raw.decode("utf-8", errors="replace"))
             provenance = {
                 "source": "senlii.org",
                 "kind": "akoma-ntoso-html",
@@ -211,7 +212,7 @@ async def _load_pdf_version(
         )
         return
     pdf_path = ACTS_PDF_DIR / str(vspec.pdf_txt).replace("-extracted.txt", ".pdf")
-    parsed = parse_pdf_act_text(txt_path.read_text())
+    parsed = parse_pdf_act_text(read_corpus_text(txt_path))
     provenance = {
         "source": vspec.pdf_source or "pdf",
         "kind": "pdf-extraction",

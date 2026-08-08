@@ -26,6 +26,7 @@ import structlog
 from sqlalchemy import or_, select
 
 from polar.corpus.juricaf import parse_juricaf_decision_html
+from polar.corpus.sources import read_corpus_text
 from polar.kit.db.postgres import create_async_sessionmaker
 from polar.models import CourtDecision, DecisionKind
 from polar.postgres import create_async_engine
@@ -58,7 +59,7 @@ async def main() -> None:
     changed = 0
     async with sessionmaker() as session:
         for path in sorted(DECISIONS_DIR.glob("*.html")):
-            parsed = parse_juricaf_decision_html(path.read_text(errors="replace"))
+            parsed = parse_juricaf_decision_html(read_corpus_text(path))
             if parsed.kind != "avis" or not parsed.number or not parsed.decided_on:
                 continue
 
