@@ -74,6 +74,7 @@ from .held_balance import HeldBalance
 from .issue_reward import IssueReward
 from .legal_act import ArticleEquivalenceRelation, LegalAct, LegalActVersion
 from .legal_article import LegalArticle, LegalArticleEquivalence
+from .librarian_question import LibrarianQuestion
 from .license_key import LicenseKey
 from .license_key_activation import LicenseKeyActivation
 from .login_code import LoginCode
@@ -213,6 +214,7 @@ __all__ = [
     "LegalActVersion",
     "LegalArticle",
     "LegalArticleEquivalence",
+    "LibrarianQuestion",
     "LicenseKey",
     "LicenseKeyActivation",
     "LoginCode",

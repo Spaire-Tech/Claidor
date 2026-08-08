@@ -103,6 +103,7 @@ export const askLibrarian = async (
   callbacks: LibrarianStreamCallbacks,
   signal: AbortSignal,
   answerBothVersions: boolean = false,
+  organizationId: string | null = null,
 ): Promise<void> => {
   const response = await fetch(getServerURL('/v1/librarian/ask'), {
     method: 'POST',
@@ -114,6 +115,8 @@ export const askLibrarian = async (
     body: JSON.stringify({
       question,
       answer_both_versions: answerBothVersions,
+      // Given, the question and its answer are kept in Historique.
+      organization_id: organizationId ?? null,
     }),
     signal,
   })

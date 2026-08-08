@@ -30,7 +30,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     revealed: 0, streamingIdx: -1, dossier: null, an: null, guide: 0, menu: null,
     searchOpen: false, searchQ: '', selSources: { au: true, cj: true }, dossierSel: null, dossierSelId: null, clientSel: null,
     deep: false, concise: false, notes: true, toast: '', hist: [],
-    live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [], liveAnalysis: {},
+    live: false, liveSearch: null, liveArticles: {}, liveDecisions: {}, liveChambers: [], liveAnalysis: {}, liveHistory: null,
     liveDossiers: null, liveDossierDetail: {}, liveDossierQuestions: {},
     modal: null, modalBusy: false, modalError: '',
     formName: '', formRef: '', formClient: '', formEmail: '', inviteRole: 'member',
@@ -337,6 +337,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
         if (Array.isArray(acts) ? acts.length : acts?.items?.length) {
           this.setState({ live: true })
           this.refreshDossiers()
+          this.refreshHistory()
         }
       })
       .catch(() => {})
@@ -537,6 +538,13 @@ class ClaidorDesignApp extends React.Component<any, any> {
   }
   orgId() {
     return this.props.organization && this.props.organization.id
+  }
+  refreshHistory() {
+    const org = this.orgId()
+    if (!org || !this.state.live) return
+    this.apiGet('/v1/librarian/questions?organization_id=' + org).then((rows) => {
+      if (Array.isArray(rows)) this.setState({ liveHistory: rows })
+    })
   }
   refreshDossiers() {
     const org = this.orgId()
@@ -775,14 +783,14 @@ class ClaidorDesignApp extends React.Component<any, any> {
           ...m,
           authority: { level: a.count >= 2 ? 'constante' : 'limitee', label: '\u2014 ' + a.label },
         })),
-      onDone: () => { stream.finish() },
+      onDone: () => { stream.finish(); this.refreshHistory() },
       onError: () => {
         if (!am.answer) { const msg = 'La réponse a échoué. Réessayez.'; am.answer = msg; stream.push(msg) }
         stream.finish()
       },
       // Third argument is the abort signal (unused here); fourth asks the
       // librarian to answer under BOTH regimes instead of gating on a date.
-    }, undefined, !!answerBoth).catch(() => {
+    }, undefined, !!answerBoth, this.orgId() || null).catch(() => {
       if (!am.answer) { const msg = 'La réponse a échoué. Réessayez.'; am.answer = msg; stream.push(msg) }
       stream.finish()
     })
@@ -868,6 +876,24 @@ class ClaidorDesignApp extends React.Component<any, any> {
       dossierSel: d ? d.name : this.state.dossierSel, dossierSelId: dossierId || this.state.dossierSelId,
       clientSel: d ? d.client : this.state.clientSel,
       messages: [ { role: 'user', text: q }, am ] });
+  }
+  openStoredQuestion(row) {
+    // What was answered then, not what would be answered now: re-running
+    // would quietly replace the record the lawyer came back for.
+    const stream = new TextStream()
+    stream.push(row.answer || 'La réponse a échoué.')
+    stream.finish()
+    const answer = {
+      role: 'assistant', answer: row.answer || 'La réponse a échoué.', done: true,
+      authority: row.authority_label ? { level: (row.authority_count || 0) >= 2 ? 'constante' : 'limitee', label: '\u2014 ' + row.authority_label } : null,
+      sources: [], panel: null, stream,
+    }
+    clearInterval(this._t)
+    this.setState({
+      view: 'assistant', chat: true, input: '', panel: null, menu: null,
+      streamingIdx: -1, activeConv: null,
+      messages: [{ role: 'user', text: row.question }, answer],
+    })
   }
   openAnalysis(type, id, kind) {
     const subject = kind || 'article'
@@ -1040,7 +1066,24 @@ class ClaidorDesignApp extends React.Component<any, any> {
     const clientMenu = D.clients.map(name => ({ name, pick: () => this.setState({ clientSel: name, menu: null }) }));
     const promptMenu = D.prompts.map(p => ({ title: p.title, text: p.text, use: () => this.setState({ input: p.text, menu: null }) }));
     const promptRows = D.prompts.map(p => ({ title: p.title, text: p.text, use: () => this.nav('assistant', { chat: false, input: p.text }) }));
-    const histRows = [...st.hist, ...D.seededHist].map(h => ({ q: h.q, type: h.dossierId ? 'Dossier' : 'Recherche', user: h.user, time: h.time, open: () => this.openQA(h.q, h.dossierId) }));
+    const histAgo = (iso) => {
+      const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
+      if (seconds < 90) return 'À l\u2019instant'
+      if (seconds < 5400) return 'Il y a ' + Math.round(seconds / 60) + ' min'
+      if (seconds < 172800) return 'Il y a ' + Math.round(seconds / 3600) + ' h'
+      return new Date(iso).toLocaleDateString('fr-FR')
+    }
+    // The stored record replaces the scripted one wholesale once live —
+    // and an empty record shows as empty, not as somebody else's demo.
+    const histRows = (st.live && st.liveHistory)
+      ? st.liveHistory.map((h) => ({
+          q: h.question,
+          type: h.status === 'clarification_requested' ? 'Précision' : (h.status === 'failed' ? 'Échec' : 'Recherche'),
+          user: 'vous',
+          time: histAgo(h.created_at),
+          open: () => this.openStoredQuestion(h),
+        }))
+      : [...st.hist, ...D.seededHist].map(h => ({ q: h.q, type: h.dossierId ? 'Dossier' : 'Recherche', user: h.user, time: h.time, open: () => this.openQA(h.q, h.dossierId) }));
     const guideList = D.guides.map((g, i) => ({ title: g.title, tag: g.tag, bg: i === st.guide ? 'var(--s8)' : 'transparent', open: () => this.setState({ guide: i }) }));
     const gg = D.guides[st.guide];
     let dd = null;
