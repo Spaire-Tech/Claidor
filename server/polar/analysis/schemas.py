@@ -108,3 +108,26 @@ class CitationsAnalysis(Schema):
     decision_count: int
     cited_with: list[CoCitedArticle]
     rows: list[CitationRow]
+
+
+class AnalysisTarget(Schema):
+    """One thing worth running an analysis on, as the corpus ranked it."""
+
+    kind: str  # "article" | "decision"
+    id: UUID
+    label: str
+
+
+class AnalysisSuggestions(Schema):
+    """Entry points for the Analyses screen, computed from the corpus.
+
+    Four lists, one per analysis, each drawn from what the collection
+    actually holds: the most-cited provisions, the judgments that turn on
+    the most of them. Nothing here is chosen by hand, so the screen cannot
+    drift away from the corpus behind it.
+    """
+
+    authority: list[AnalysisTarget]
+    history: list[AnalysisTarget]
+    compare: list[AnalysisTarget]
+    citations: list[AnalysisTarget]

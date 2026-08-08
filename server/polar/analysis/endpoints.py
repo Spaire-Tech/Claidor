@@ -11,6 +11,7 @@ from polar.postgres import get_db_read_session
 from polar.routing import APIRouter
 
 from .schemas import (
+    AnalysisSuggestions,
     AuthorityAnalysis,
     CitationsAnalysis,
     CompareAnalysis,
@@ -21,6 +22,15 @@ from .service import analysis_service
 router = APIRouter(prefix="/analyses", tags=["analyses", APITag.private])
 
 NOT_FOUND = "Introuvable dans le corpus chargé."
+
+
+@router.get("/suggestions", response_model=AnalysisSuggestions)
+async def suggestions(
+    auth_subject: auth.CorpusRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> AnalysisSuggestions:
+    """Where to start, ranked out of the corpus rather than chosen by hand."""
+    return await analysis_service.suggestions(session)
 
 
 @router.get("/authority", response_model=AuthorityAnalysis)

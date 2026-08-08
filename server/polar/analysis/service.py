@@ -27,6 +27,8 @@ from polar.models import CourtDecision, DecisionArticleTreatment, LegalArticle
 from .diff import ChangeKind, compare_articles
 from .schemas import (
     AnalysisSubject,
+    AnalysisSuggestions,
+    AnalysisTarget,
     AuthorityAnalysis,
     AuthorityRow,
     ChangeRow,
@@ -38,6 +40,13 @@ from .schemas import (
     HistoryAnalysis,
     VersionRow,
 )
+
+#: Kept out of « what should I analyse » — not out of the corpus. The
+#: Treaty's jurisdictional articles are recited by nearly every arrêt
+#: (art. 13 in 1,036 of 1,264), so by raw citation count they outrank every
+#: substantive provision in OHADA law while telling a lawyer nothing.
+#: Analysing them on purpose stays perfectly possible.
+SUGGESTION_EXCLUDED_ACTS = ("TRAITE",)
 
 #: A line of cases, not a lucky pair: repeated holdings across several
 #: years. Kept as constants because the threshold is a claim about the law
@@ -82,6 +91,50 @@ def _clip(text: str | None) -> str | None:
 
 
 class AnalysisService:
+    # --- where to start ---------------------------------------------------
+
+    async def suggestions(self, session: AsyncReadSession) -> AnalysisSuggestions:
+        """What is worth analysing, according to the corpus itself.
+
+        The Analyses screen used to open on four hand-picked examples.
+        Fine as a drawing, wrong as a product: a lawyer clicking one got a
+        demonstration rather than their own library. Everything here is
+        ranked out of the collection, so the screen cannot drift from what
+        is loaded behind it — and an empty corpus honestly offers nothing
+        rather than four dead links.
+        """
+        repository = CorpusRepository.from_session(session)
+        cited = await repository.list_most_cited_articles(
+            limit=3, exclude_acts=SUGGESTION_EXCLUDED_ACTS
+        )
+        # History and compare both need a provision that exists in more
+        # than one rédaction; offering either on a single-version article
+        # opens a screen with nothing on it.
+        comparable = await repository.list_most_cited_articles(
+            limit=3, with_equivalence=True, exclude_acts=SUGGESTION_EXCLUDED_ACTS
+        )
+        decisions = await repository.list_most_linked_decisions(limit=3)
+
+        def article_target(article: LegalArticle) -> AnalysisTarget:
+            return AnalysisTarget(
+                kind="article", id=article.id, label=_article_label(article)
+            )
+
+        versioned = [article_target(article) for article, _ in comparable]
+        return AnalysisSuggestions(
+            authority=[
+                AnalysisTarget(
+                    kind="decision",
+                    id=decision.id,
+                    label=_decision_reference(decision),
+                )
+                for decision, _ in decisions
+            ],
+            history=versioned,
+            compare=versioned,
+            citations=[article_target(article) for article, _ in cited],
+        )
+
     # --- vérifier l'autorité ---------------------------------------------
 
     async def authority(

@@ -37,6 +37,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
     importStaged: [],
     readerDone: false, liveReader: null, readerBusy: false, fMat: null, fSince: null, fCh: null,
     liveTeam: null, liveOrgName: null, formOrgName: '', orgSaving: false, removeTarget: null,
+    liveSuggestions: null,
     veilles: [
       { id: 'a170', label: 'Art. 170, AUPSRVE', sub: 'Nouvelle décision · révision du texte', on: true, last: 'Signal ce matin' },
       { id: 'aupsrve', label: 'AUPSRVE — acte entier', sub: 'Réformes publiées au JO', on: true, last: 'Signal le 12 juil.' },
@@ -342,6 +343,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
           this.refreshPrompts()
           this.refreshVeilles()
           this.refreshTeam()
+          this.refreshAnalysisSuggestions()
         }
       })
       .catch(() => {})
@@ -597,6 +599,14 @@ class ClaidorDesignApp extends React.Component<any, any> {
     })
   }
   // --- Réglages ----------------------------------------------------------
+  refreshAnalysisSuggestions() {
+    if (!this.state.live) return
+    // Where to start, ranked out of the corpus. The four drawn examples
+    // were a demonstration; these are the lawyer's own library.
+    this.apiGet('/v1/analyses/suggestions').then((data) => {
+      if (data) this.setState({ liveSuggestions: data })
+    })
+  }
   refreshTeam() {
     const org = this.orgId()
     if (!org || !this.state.live) return
@@ -1217,19 +1227,44 @@ class ClaidorDesignApp extends React.Component<any, any> {
           this.setState({ selSources: sel });
           this.showToast(on ? s.label + ' retiré des sources' : s.label + ' ajouté aux sources'); } };
     });
-    const analysisCards = [
+    const scriptedAnalysisCards = [
       { title: D.AN.auth.name, meta: 'CCJA 090/2018', open: () => this.openAnalysis('auth', 'd8') },
       { title: D.AN.hist.name, meta: 'Art. 170, AUPSRVE', open: () => this.openAnalysis('hist', 'a170') },
       { title: D.AN.comp.name, meta: 'Art. 170 : 1998 ↔ 2023', open: () => this.openAnalysis('comp', 'a170') },
       { title: D.AN.cite.name, meta: 'Art. 45, AUPSRVE', open: () => this.openAnalysis('cite', 'a45') },
     ];
-    const analysisList = [
-      { type: 'auth', targets: [['d8', 'CCJA 090/2018'], ['d1', 'CCJA 084/2018'], ['d6', 'CCJA 118/2022']] },
-      { type: 'hist', targets: [['a170', 'Art. 170, AUPSRVE'], ['a45', 'Art. 45, AUPSRVE'], ['a14', 'Art. 14, AUS']] },
-      { type: 'comp', targets: [['a170', 'Art. 170 : 1998 ↔ 2023'], ['a14', 'Art. 14 : 1997 ↔ 2010'], ['a45', 'Art. 45 : 2021 ↔ 2024']] },
-      { type: 'cite', targets: [['a45', 'Art. 45, AUPSRVE'], ['a170', 'Art. 170, AUPSRVE'], ['a14', 'Art. 14, AUS']] },
-    ].map(x => ({ title: D.AN[x.type].name, desc: D.AN[x.type].desc,
-      targets: x.targets.map(t => ({ label: t[1], go: () => this.openAnalysis(x.type, t[0]) })) }));
+    // Live, the entry points are ranked out of the corpus rather than
+    // drawn: the four examples were a demonstration, and a lawyer clicking
+    // one deserves their own library. An empty corpus offers nothing here
+    // rather than four links into somebody else's demo.
+    const SUGGESTION_KEY = { auth: 'authority', hist: 'history', comp: 'compare', cite: 'citations' }
+    const liveTargets = (type) => {
+      const rows = st.liveSuggestions && st.liveSuggestions[SUGGESTION_KEY[type]]
+      if (!rows) return null
+      return rows.map((t) => ({
+        label: t.label,
+        go: () => this.openAnalysis(type, t.id, t.kind),
+      }))
+    }
+    const scriptedTargets = {
+      auth: [['d8', 'CCJA 090/2018'], ['d1', 'CCJA 084/2018'], ['d6', 'CCJA 118/2022']],
+      hist: [['a170', 'Art. 170, AUPSRVE'], ['a45', 'Art. 45, AUPSRVE'], ['a14', 'Art. 14, AUS']],
+      comp: [['a170', 'Art. 170 : 1998 ↔ 2023'], ['a14', 'Art. 14 : 1997 ↔ 2010'], ['a45', 'Art. 45 : 2021 ↔ 2024']],
+      cite: [['a45', 'Art. 45, AUPSRVE'], ['a170', 'Art. 170, AUPSRVE'], ['a14', 'Art. 14, AUS']],
+    }
+    const liveCards = (st.live && st.liveSuggestions)
+      ? ['auth', 'hist', 'comp', 'cite'].map((type) => {
+          const first = (liveTargets(type) || [])[0]
+          return first
+            ? { title: D.AN[type].name, meta: first.label, open: first.go }
+            : null
+        }).filter(Boolean)
+      : null
+    const analysisList = ['auth', 'hist', 'comp', 'cite'].map((type) => ({
+      title: D.AN[type].name,
+      desc: D.AN[type].desc,
+      targets: liveTargets(type) || scriptedTargets[type].map(t => ({ label: t[1], go: () => this.openAnalysis(type, t[0]) })),
+    }));
     const CAT_LABEL = { pleading: 'Acte de procédure', exhibit: 'Pièce', contract: 'Contrat', statement: 'Pièce financière', correspondence: 'Correspondance', decision: 'Décision', other: 'Document' }
     const CAT_DOT = { pleading: 'var(--blue2)', exhibit: 'var(--amber)', contract: 'var(--blue2)', statement: 'var(--green)', correspondence: 'var(--amber)', decision: 'var(--red)', other: 'var(--t5)' }
     const frDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
@@ -1736,7 +1771,7 @@ class ClaidorDesignApp extends React.Component<any, any> {
       goHistorique: () => this.nav('historique'),
       goBiblio: () => this.nav('biblio'),
       goGuides: () => this.nav('guides'),
-      msgs, convs, analysisCards, analysisList, dossierCards, dossierMenu, clientMenu, promptMenu, promptRows, histRows, guideList, gg, dd,
+      msgs, convs, analysisCards: liveCards || scriptedAnalysisCards, analysisList, dossierCards, dossierMenu, clientMenu, promptMenu, promptRows, histRows, guideList, gg, dd,
       an, anIsAuth, anIsHist, anIsComp, anIsCite,
       veilleRows, alertRows, readerFindings, fMatChips, fSinceChips, fChChips, rescResults,
       rescCount: rescResults.length + (rescResults.length > 1 ? ' documents' : ' document'),

@@ -201,6 +201,96 @@ class CorpusRepository(RepositoryBase[LegalArticle]):
         )
         return (await self.session.execute(statement)).scalar_one()
 
+    async def list_most_cited_articles(
+        self,
+        *,
+        limit: int = 6,
+        with_equivalence: bool = False,
+        exclude_acts: Sequence[str] = (),
+    ) -> Sequence[tuple[LegalArticle, int]]:
+        """The provisions the courts return to, most-cited first.
+
+        This is what the Analyses screen offers as a starting point, so it
+        has to be the corpus's own answer rather than a hand-picked list:
+        whichever articles the collection actually turns on, in the order
+        the collection puts them.
+
+        ``with_equivalence`` keeps only articles that have a counterpart in
+        another rédaction — « Comparer les versions » has nothing to show
+        for a provision that exists once.
+
+        ``exclude_acts`` drops whole acts from the ranking. Raw citation
+        counts are dominated by procedural recital: Treaty art. 13 appears
+        in 1,036 of 1,264 arrêts because it is the jurisdictional clause
+        every appeal opens with, which says nothing about the provision
+        being worth reading.
+        """
+        counts = (
+            select(
+                DecisionArticleLink.article_id.label("article_id"),
+                func.count(func.distinct(DecisionArticleLink.decision_id)).label("n"),
+            )
+            .join(CourtDecision, CourtDecision.id == DecisionArticleLink.decision_id)
+            .where(
+                DecisionArticleLink.status == DecisionLinkStatus.verified,
+                CourtDecision.kind == DecisionKind.arret,
+            )
+            .group_by(DecisionArticleLink.article_id)
+            .subquery()
+        )
+        statement = (
+            select(LegalArticle, counts.c.n)
+            .join(counts, counts.c.article_id == LegalArticle.id)
+            .options(
+                joinedload(LegalArticle.act_version).joinedload(LegalActVersion.act)
+            )
+            .order_by(counts.c.n.desc(), LegalArticle.sort_key)
+            .limit(limit)
+        )
+        if with_equivalence:
+            mapped = select(LegalArticleEquivalence.old_article_id).union(
+                select(LegalArticleEquivalence.new_article_id)
+            )
+            statement = statement.where(LegalArticle.id.in_(mapped))
+        if exclude_acts:
+            excluded = (
+                select(LegalArticle.id)
+                .join(
+                    LegalActVersion, LegalActVersion.id == LegalArticle.act_version_id
+                )
+                .join(LegalAct, LegalAct.id == LegalActVersion.act_id)
+                .where(LegalAct.short_code.in_(list(exclude_acts)))
+            )
+            statement = statement.where(LegalArticle.id.not_in(excluded))
+        return list((await self.session.execute(statement)).tuples().all())
+
+    async def list_most_linked_decisions(
+        self, *, limit: int = 6
+    ) -> Sequence[tuple[CourtDecision, int]]:
+        """Judgments that turn on the most provisions, most first.
+
+        « Vérifier l'autorité » needs a decision worth checking, and the
+        one that reads four provisions is a better starting point than the
+        one that mentions a single article in passing.
+        """
+        counts = (
+            select(
+                DecisionArticleLink.decision_id.label("decision_id"),
+                func.count(func.distinct(DecisionArticleLink.article_id)).label("n"),
+            )
+            .where(DecisionArticleLink.status == DecisionLinkStatus.verified)
+            .group_by(DecisionArticleLink.decision_id)
+            .subquery()
+        )
+        statement = (
+            select(CourtDecision, counts.c.n)
+            .join(counts, counts.c.decision_id == CourtDecision.id)
+            .where(CourtDecision.kind == DecisionKind.arret)
+            .order_by(counts.c.n.desc(), CourtDecision.decided_on.desc())
+            .limit(limit)
+        )
+        return list((await self.session.execute(statement)).tuples().all())
+
     async def list_co_cited_articles(
         self, article_id: UUID, *, limit: int = 6
     ) -> Sequence[tuple[LegalArticle, int]]:
