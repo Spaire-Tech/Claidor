@@ -338,19 +338,36 @@ class ClaidorDesignApp extends React.Component<any, any> {
       .then((acts) => {
         if (Array.isArray(acts) ? acts.length : acts?.items?.length) {
           this.setState({ live: true })
-          this.refreshDossiers()
-          this.refreshHistory()
-          this.refreshPrompts()
-          this.refreshVeilles()
-          this.refreshTeam()
-          this.refreshAnalysisSuggestions()
+          this.loadLiveLists()
         }
       })
       .catch(() => {})
   }
+  // Everything scoped to the workspace, fetched together.
+  //
+  // Asked for on mount *and* whenever the workspace arrives, because on a
+  // cold load it arrives second: the dashboard mounts, its context resolves
+  // the organization a moment later, and a load that only ever ran in
+  // componentDidMount had already declined — every one of these guards on
+  // orgId(). Nothing errored; the screens simply kept showing the scripted
+  // demo, so Historique lost the lawyer's own questions on every page load
+  // and the placeholders looked like the product.
+  loadLiveLists() {
+    if (!this.orgId()) return
+    this.refreshDossiers()
+    this.refreshHistory()
+    this.refreshPrompts()
+    this.refreshVeilles()
+    this.refreshTeam()
+    this.refreshAnalysisSuggestions()
+  }
   componentDidUpdate(prevProps, prevState) {
     if (this._sc && this.state.streamingIdx >= 0 && !this._userScrolledUp) this._sc.scrollTop = this._sc.scrollHeight;
     const st = this.state
+    const previousOrg = prevProps.organization && prevProps.organization.id
+    if (st.live && this.orgId() && previousOrg !== this.orgId()) {
+      this.loadLiveLists()
+    }
     if (
       st.live &&
       st.view === 'recherche' &&
@@ -1100,13 +1117,26 @@ class ClaidorDesignApp extends React.Component<any, any> {
   openStoredQuestion(row) {
     // What was answered then, not what would be answered now: re-running
     // would quietly replace the record the lawyer came back for.
+    //
+    // With the citations it was given with. An answer reopened without its
+    // sources is a legal conclusion standing on nothing, which is the one
+    // thing Claidor never puts on screen — and for a long while this was
+    // exactly what Historique showed, because the sources were never kept.
+    // Questions answered before that was fixed have none, and show none.
     const stream = new TextStream()
     stream.push(row.answer || 'La réponse a échoué.')
     stream.finish()
     const answer = {
       role: 'assistant', answer: row.answer || 'La réponse a échoué.', done: true,
       authority: row.authority_label ? { level: (row.authority_count || 0) >= 2 ? 'constante' : 'limitee', label: '\u2014 ' + row.authority_label } : null,
-      sources: [], panel: null, stream,
+      sources: (row.sources || []).map((s) => ({
+        k: s.kind === 'decision' ? 'decision' : (s.kind === 'document' ? 'piece' : 'article'),
+        id: s.id || null,
+        live: !!s.id,
+        label: s.title || '?',
+        note: quoteNote(s.quote),
+      })),
+      panel: null, stream,
     }
     clearInterval(this._t)
     this.setState({

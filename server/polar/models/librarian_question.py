@@ -45,6 +45,12 @@ class LibrarianQuestion(RecordModel):
     versions_used: Mapped[list | None] = mapped_column(
         JSONB, nullable=True, default=None
     )
+    #: What the answer stood on, as it was shown when it was given: one
+    #: entry per citation, with the quote that was verified against the
+    #: source text. Kept because an answer reopened next week without its
+    #: citations is a claim rather than a record, and a legal conclusion
+    #: with nothing under it is the one thing Claidor never shows.
+    sources: Mapped[list | None] = mapped_column(JSONB, nullable=True, default=None)
     authority_label: Mapped[str | None] = mapped_column(
         Text, nullable=True, default=None
     )

@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Query
@@ -66,6 +67,9 @@ class LibrarianQuestionRead(Schema):
     answer: str | None
     status: QuestionStatus
     versions_used: list[str] | None
+    #: The citations the answer stood on, as they were shown. Null for
+    #: questions answered before they were kept.
+    sources: list[dict[str, Any]] | None
     authority_label: str | None
     authority_count: int | None
     created_at: datetime
@@ -90,6 +94,7 @@ async def list_questions(
             answer=row.answer,
             status=row.status,
             versions_used=row.versions_used,
+            sources=row.sources,
             authority_label=row.authority_label,
             authority_count=row.authority_count,
             created_at=row.created_at,
@@ -126,6 +131,10 @@ async def ask(
         parts: list[str] = []
         status = QuestionStatus.failed
         versions_used: list[str] | None = None
+        # The citations as they were shown, kept so that reopening the
+        # question next week shows the answer standing on the same sources
+        # instead of standing on nothing.
+        sources: list[dict[str, Any]] = []
         authority_label: str | None = None
         authority_count: int | None = None
         clarification: str | None = None
@@ -145,6 +154,16 @@ async def ask(
             kind = event["type"]
             if kind == "text":
                 parts.append(event["delta"])
+            elif kind == "citation":
+                sources.append(
+                    {
+                        "kind": event.get("source_kind"),
+                        "id": event.get("source_id"),
+                        "title": event.get("title"),
+                        "quote": event.get("quote"),
+                        "nature": event.get("nature"),
+                    }
+                )
             elif kind == "authority":
                 authority_label = event.get("label")
                 authority_count = event.get("count")
@@ -164,6 +183,7 @@ async def ask(
                 answer="".join(parts) or clarification,
                 status=status,
                 versions_used=versions_used,
+                sources=sources or None,
                 authority_label=authority_label,
                 authority_count=authority_count,
             )

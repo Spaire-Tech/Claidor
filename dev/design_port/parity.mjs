@@ -27,9 +27,12 @@
  * Exit code 0 = identical (modulo the documented additions), 1 = drift.
  */
 
-const { chromium } = await import(
+const playwright = await import(
   process.env.PLAYWRIGHT_CORE || 'playwright-core'
 )
+// PLAYWRIGHT_CORE may point at the CommonJS entry point, which arrives
+// under `default`; a bare package name resolves to the namespace directly.
+const { chromium } = playwright.chromium ? playwright : playwright.default
 
 const PORT_URL = process.argv[2] || 'http://127.0.0.1:8914/design-preview'
 const ORIGINAL_URL =

@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -39,12 +40,14 @@ class LibrarianQuestionRepository(RepositoryBase[LibrarianQuestion]):
         answer: str | None,
         status: QuestionStatus,
         versions_used: list[str] | None = None,
+        sources: list[dict[str, Any]] | None = None,
         authority_label: str | None = None,
         authority_count: int | None = None,
     ) -> LibrarianQuestion:
         row.answer = answer
         row.status = status
         row.versions_used = versions_used
+        row.sources = sources
         row.authority_label = authority_label
         row.authority_count = authority_count
         row.answered_at = datetime.now(UTC)
