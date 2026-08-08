@@ -11,6 +11,10 @@
  * third case. Adding a line to this list is the act of documenting a
  * divergence; nothing else in the harness lets one through.
  *
+ * The port side is the /design-preview route, which exists in development
+ * builds only and 404s in production — it carries no workspace, so it
+ * renders scripted, which is the state the original is in.
+ *
  * Usage (with the app running, and the original served beside it):
  *
  *   node dev/design_port/parity.mjs [portURL] [originalURL]
