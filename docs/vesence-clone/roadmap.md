@@ -1,261 +1,223 @@
-# The road to a complete clone
+# The road to a complete clone — revised
 
-Written 2026-08-09, after the first build day. Measured against `spec.md`,
-which was read from vesence.com rather than inferred.
+Revised 2026-08-09 after verifying three components claimed to exist.
+Supersedes the first version, which assumed the add-in and the OOXML
+engine both had to be written from nothing.
 
-Estimates are **[estimate]** unless marked otherwise. They come from the
-shape of the work and from what one day actually produced, not from
-anything measured. The further down the page, the wider the range.
+Estimates are **[estimate]** unless marked. The further down, the wider.
+
+---
+
+## What was verified, and what it is worth
+
+| Claimed | Verified | What it actually is |
+|---|---|---|
+| Claude for Word / Excel / PowerPoint | **Real.** GA 7 May 2026 | A finished competing product. No API, no fork. **Worth nothing to our build.** |
+| `claude-for-legal` | **Real.** Apache 2.0, 90+ agents | Markdown prompts. Domain content, not an app. |
+| Vaquill statutes API | **Real.** 4.8M sections | A supplier, if we ever need US law. Not yet. |
+| `@ansonlai/docx-redline-js` | **Real.** MIT, v0.2.1 | Host-independent OOXML engine with tracked changes. One dependency. **Young — six releases.** |
+| `yuch85/office-word-diff` | **Real.** | Word-level diffs through Office.js with tracked changes, cascading fallback. |
+| **`Vaquill-AI/ms-word-addin`** | **Real. Apache 2.0** — confirmed from the LICENSE file, which `package.json` omits | **Source for the add-in we are building.** |
+
+That last row is the finding. Everything above it shaves weeks; this one
+changes what we do next.
+
+### What is in it
+
+Vite + React 18 + TypeScript task pane, Office.js, Supabase auth through
+the Office Dialog API with PKCE — the same architecture chosen here
+independently. Four tabs:
+
+- **Assistant** — grounded chat over the open contract, plus an Edit mode
+  turning plain English into tracked changes
+- **Review** — contract-type detection, severity-flagged redlines against
+  a playbook, change triage, document comparison, citation verification
+- **Draft** — agreements from a brief, with template constraints
+- **Tools** — clean copy, **defined-term checking, cross-reference
+  validation**, send-ready verification
+
+That last tab is what was built here today, in Python, deterministically.
+
+A **community build** runs standalone on your own key across six
+providers, with no backend at all.
+
+---
+
+## The decision this forces
+
+**Fork their add-in, or keep building ours?**
+
+Not answerable from a README, and it will not be answered from one. It
+needs an hour reading their source, against four questions:
+
+1. **Are their checks deterministic or a model call?** Ours are
+   arithmetic — a defined term is undefined or it is not. If theirs asks a
+   model the same question, the thing we have is not duplicated by the
+   thing they have, and the panel is what we would be adopting.
+2. **How much is theirs coupled to their backend?** The community build
+   suggests the coupling is real but removable.
+3. **Is the code worth living in?** A fork is a marriage.
+4. **What does Apache 2.0 oblige?** Notice, licence, statement of changes.
+   Cheap, and it must be done properly if we ship commercially.
+
+**Until that hour is spent, the plan below assumes we keep ours**, because
+that is the position that is true today. If the answer comes back
+favourable, Phase 1 shortens by roughly half.
 
 ---
 
 ## Where we are
 
-**Phase 1 of 8. Roughly 60% of Phase 1, roughly 8% of the product.**
-
-That second number looks harsh next to a day that produced eleven checks,
-four API routes, an add-in and 299 tests. It is honest anyway: Check is
-one of five Word actions, Word is one of five surfaces, and the hardest
-single component — the engine that edits a `.docx` without breaking it —
-has not been started.
+**Phase 1, roughly 75% done.** Up from 60%, because playbooks landed and
+the engine question resolved.
 
 ### Built and measured
 
 | | State |
 |---|---|
-| **Check** — 9 mechanical checks | Working. 43.6 → 20.3 findings per real agreement, measured on 30 SEC filings |
-| **Check** — 2 judgement checks | Working. Every quote verified, every sum recomputed; 3 of 4 model proposals rejected on real documents |
-| **Format** — house style | Working. 1.1 findings per real agreement across dates, currency, quotes, numbering |
-| **Terms index** | Working. 22 terms per agreement in 0.02s, with linked-term graph |
-| API: `/check`, `/check/document`, `/judge`, `/terms` | Working, authenticated, nothing persisted |
-| Word add-in panel | Built, typechecked, bundles — **never run in Word** |
-| Tests | 194 backend, 25 add-in, 299 across neighbouring modules |
-
-### The two things that are true and uncomfortable
-
-**Nothing has run inside Word.** Every Office.js call is written and
-unproven. This is the single cheapest risk to retire and it needs ten
-minutes of somebody's real Word.
-
-**No lawyer has seen a finding.** The checks are measured against
-documents, not against judgement. 20 findings per agreement is a number,
-not a verdict; whether those 20 are worth a partner's time is unknown.
+| 10 mechanical checks | 43.6 → 20.3 findings per real agreement, on 30 SEC filings |
+| 2 judgement checks | Every quote verified, every sum recomputed; 3 of 4 model proposals rejected |
+| Playbooks | Three-layer model, two verification gates, 16 tests |
+| Terms index | 22 terms per agreement in 0.02s, with the linked-term graph |
+| .docx engine core | Round-trip verified on real Word files, tracked replacement across real run boundaries |
+| `/check`, `/judge`, `/terms`, `/fix/document` | Authenticated, nothing persisted |
+| Word panel | Built, typechecked, bundles — **never run in Word** |
+| Tests | 274 redline, 25 add-in, 379 across neighbouring modules |
 
 ---
 
-## Phase 1 — Word, the Check surface  *(60% done)*
-
-What remains before this phase is finished:
+## Phase 1 — Word, the Check surface  *(75%)*
 
 | Work | Estimate | Blocked on |
 |---|---|---|
-| **Verify in Word** — the README checklist, seven steps | 1 day | 10 minutes of a real Word |
+| **Read the Vaquill add-in and decide** | 1 day | — |
+| **Verify in Word** | 1 day | 10 minutes of a real Word |
 | **Microsoft Entra SSO** | 4–6 days | An Entra app registration |
-| **Deploy the add-in** to public HTTPS | 1 day | A host decision |
-| **Review against playbooks** | 2 weeks | A real playbook to test against |
-| Panel polish — empty states, errors, keyboard | 3 days | — |
+| **Deploy** | 1 day | A name |
+| Panel polish — empty, error, too-much states | 3 days | Your designs |
 
-**Entra SSO is not optional and not deferrable.** Their FAQ: *"there is no
-separate Vesence password."* Microsoft sign-in is the only door. The
-bearer-token layer already built is the right shape; what changes is where
-the token comes from.
-
-**Playbooks** are the last read-only action. A playbook is an
-organisation-level checklist — their page names seven: Buy-Side SPA
-(Locked Box), Buy-Side SPA (Closing Accounts), Sell-Side SPA,
-Shareholders' Agreement, Due Diligence Report, LMA Loan, Merger Agreement.
-The work is storage, upload, and a model pass held to the same discipline
-as the judgement checks: **every finding quotes the document and quotes
-the playbook clause it fails.** Both verifiable in code.
-
-**Phase 1 complete: ~4 weeks.**
+**~2 weeks**, or ~1 if the fork lands.
 
 ---
 
-## Phase 2 — The OOXML engine  *(not started; the gate on everything that writes)*
+## Phase 2 — The web workspace
 
-A `.docx` is a zip of XML. Text in `document.xml`, styles in `styles.xml`,
-list numbering in `numbering.xml`, cross-references as field codes and
-bookmarks, tracked changes as `w:ins` / `w:del` marks around runs. Tools
-that read visible text and write it back destroy everything they did not
-model.
+Promoted from Phase 4. It was behind the OOXML engine; it no longer is.
 
-Vesence built this from scratch and says so. Harvey shipped their own in
-September 2025. Two well-funded teams independently concluded it could not
-be bought — that is the strongest evidence available about how hard it is.
+Matters, files, chat, document preview, firm settings. `dossier` already
+holds matters with documents, members, invitations and deletion, tested —
+which is why this is weeks rather than months.
 
-What it has to do, in order:
-
-1. **Round-trip.** Open and re-save a real agreement byte-identically for
-   every part not touched. This is the whole foundation and it is testable
-   against the 30 filings already in hand.
-2. **Replace text as a revision.** `w:ins` and `w:del` around targeted
-   runs, preserving run properties.
-3. **Preserve numbering and styles** through an edit.
-4. **Update cross-references** when a clause moves or is renumbered.
-5. **Preserve existing tracked changes and comments** — a document already
-   under review must survive.
-
-Their own example of what "done" means: rename *Locked Box* to *Closing
-Accounts*, update 23 cross-references, resequence clauses 4.2–4.9, break
-nothing.
-
-**Estimate: 6–10 weeks.** The widest range on this page, and the item most
-likely to overrun. Python with `lxml`, in the existing backend —
-`python-docx` does not model revisions and is not a starting point.
-
-**What it unlocks:** every writing action, plus checking documents that
-arrive from a filing system rather than being open in Word.
+**4–6 weeks.** At the end of this, there is a product to look at.
 
 ---
 
-## Phase 3 — Word, the writing surface  *(after Phase 2)*
+## Phase 3 — Word, the writing surface
 
-- **Draft** — *"apply complex edits inline while keeping terminology
-  consistent and the document coherent end-to-end"*
-- **Create** — generate a first draft from a firm template with matter
-  context
+Draft and Create. The agent loop exists; what is new is the tool surface —
+read a range, replace a clause, insert a section, rename a term
+everywhere, each landing as a revision.
 
-The agent loop exists (`librarian/service.py` already streams with tool
-use). What is new is the tool surface: read a range, replace a clause,
-insert a section, rename a term everywhere — each landing as a revision.
+`office-word-diff` covers word-level diffing through Office.js and is
+worth evaluating here rather than writing our own.
 
-**Estimate: 3–4 weeks after the engine.**
+**3–4 weeks.**
 
 ---
 
-## Phase 4 — The web app
+## Phase 4 — Outlook
 
-Their web surface: matters, files, chat, bulk review across hundreds of
-files, an **All Tracked Changes** view, admin.
+The pre-send check: language, recipients, attachments, subject,
+consistency against the thread. Different host, same architecture.
 
-Most of this exists. `dossier` is already a per-matter workspace with
-documents, members and invitations, tested. What is new is the bulk-review
-view and the tracked-changes review across documents.
-
-**Estimate: 4–6 weeks.**
+**3–4 weeks.**
 
 ---
 
-## Phase 5 — Outlook
+## Phase 5 — Excel and PowerPoint
 
-Four capabilities; the pre-send **Check** is the flagship and their own
-example is precise: a misspelling, *"Hi John"* to a recipient named Jon, a
-file referenced in the body but not attached, and two version
-contradictions against earlier messages in the thread.
+Thinner than Word and Outlook, and both reuse the panel.
 
-Different host, same architecture. The new work is reading a thread and
-its attachments, and editing an email body as a tracked change.
-
-**Estimate: 3–4 weeks.**
+**3 weeks each.**
 
 ---
 
-## Phase 6 — Excel and PowerPoint
+## Phase 6 — Bulk review, and the rest of the .docx engine
 
-**Excel** — Check, Format Sheet, Explain: explain a formula, find workbook
-issues, cross-check figures against source documents.
-**PowerPoint** — Assist: slide wording, layout, consistency.
+The point at which server-side editing is actually needed: reviewing
+hundreds of files without opening Word, and the All Tracked Changes view
+across documents.
 
-Both are thinner than Word and Outlook, and both reuse the panel wholesale.
+The core is built. What remains is numbering preservation,
+cross-reference updating and structural edits — and
+`@ansonlai/docx-redline-js` (MIT) is a candidate to replace rather than
+extend it. At v0.2.1 it is young, so that is a build-or-adopt call made on
+evidence at the time, not now.
 
-**Estimate: 3 weeks each.**
+**4–8 weeks**, down from 6–10, and no longer blocking anything.
 
 ---
 
 ## Phase 7 — Connectors
 
-SharePoint, OneDrive, Teams via Microsoft Graph; iManage and NetDocuments
-as optional per-organisation integrations in the attach menu. Nothing is
-written back without review — changes are staged.
+SharePoint, OneDrive, Teams via Graph; iManage and NetDocuments. MCP
+connectors for several of these already exist in `claude-for-legal`.
 
-Technically a few days each. What makes it slow is that every one needs a
-firm's IT to approve it, and that clock is not ours.
+Slow for political reasons — each needs a firm's IT to approve it.
 
-**Estimate: 4–6 weeks.**
+**3–5 weeks**, down from 4–6.
 
 ---
 
-## Phase 8 — The workspace and the agent
+## Phase 8 — The workspace sandbox and the agent
 
-The part of their architecture I understand least, and the part that
-explains their three-supplier disclosure.
+Browser-local files, a per-chat sandbox, sub-agents, custom agents. The
+least understood part and the least reliable number.
 
-- **Files stay in the browser.** *"Workspace files are stored locally in
-  your browser rather than on a Vesence server."*
-- **Each chat gets a "virtual computer"** — a sandbox where the agent runs
-  code and edits files.
-- **The agent writes and runs code**, and delegates to sub-agents in
-  parallel.
-- **Custom agents** — private or organisation-wide, with their own system
-  prompt, optionally bound to specific folders and surfaces.
-
-**Estimate: 6–8 weeks**, and the least reliable number here. It is also
-where the OOXML engine may need to be compiled to WebAssembly, since
-theirs powers both the add-in and the web app.
+**6–8 weeks.**
 
 ---
 
 ## Totals
 
-| | |
-|---|---|
-| **Phase 1 complete** | ~4 weeks |
-| **Something that demonstrates the product** — Phase 1 + a minimal web workspace | **5–7 weeks** |
-| **Word fully complete** — through Phase 3 | ~4 months |
-| **All five surfaces, feature parity** | **8–11 months** |
+| | Before | Revised |
+|---|---|---|
+| Phase 1 complete | 4 weeks | **2 weeks** (1 if the fork lands) |
+| **Something that demonstrates the product** | 5–7 weeks | **6–8 weeks** |
+| Word fully complete | ~4 months | **~2.5 months** |
+| All five surfaces, parity | 8–11 months | **7–9 months** |
 
-The middle row is the one that matters for *"at least I'll get something
-to look at."*
-
----
-
-## The critical path, in order
-
-1. **Verify in Word.** Ten minutes of yours. Everything else assumes the
-   panel works.
-2. **Entra SSO.** It is the only login there is.
-3. **Deploy.** An add-in on `localhost` is a demo for one machine.
-4. **Playbooks.** Finishes the read-only surface.
-5. **The OOXML engine.** Start early; it is the long pole and everything
-   that writes waits behind it.
-6. **The web workspace.** Turns an add-in into a product.
-
-Everything after that is repetition of a known shape.
+The demo number moved *later* by a week despite everything getting
+shorter, and that is deliberate: the web workspace is now inside it. A
+panel with no product behind it is not a demonstration.
 
 ---
 
-## What is needed from you, and when
+## What is needed from you
 
 | | When | Why |
 |---|---|---|
 | **10 minutes of a real Word** | Now | Retires the biggest cheap risk |
-| **A Microsoft Entra app registration** | Before Phase 1 ends | Free; it is the only sign-in |
-| **A name** | Before deploying | It goes in the manifest and on the sign-in screen |
-| **One real playbook** | Phase 1 | A checklist the check can be measured against |
+| **A Microsoft Entra app registration** | Before Phase 1 ends | Free; it is the only sign-in there is |
+| **A name** | Before deploying | Goes in the manifest and on the sign-in screen |
+| **The panel designs** | Phase 1 | Six screens, four states each |
 | **A lawyer, for one hour** | As soon as the panel runs | Nobody has judged whether 20 findings per agreement is useful or noise |
-| **A hosting decision** | Before deploying | Render and Vercel work today; Azure is the alternative and is not urgent |
 
 ---
 
-## Risks, ranked by what they would cost
+## Risks, ranked
 
-**The OOXML engine overruns.** The widest estimate here, and everything
-that writes is behind it. Mitigation: start it in parallel with Phase 1
-rather than after, and make round-trip fidelity the first milestone — if a
-real agreement cannot be opened and re-saved unchanged, nothing later
-matters.
+**The checks are noise.** Still first. 20 findings per agreement is
+measured; whether they are worth reading is not. One lawyer, one
+afternoon.
 
-**The checks are noise.** 20 findings per agreement is measured; whether
-they are worth reading is not. One lawyer and one afternoon settles it,
-and settling it late means tuning against the wrong target for months.
+**A fork we regret.** Adopting somebody's add-in is a marriage, and the
+hour of reading is what decides it. Doing it on the strength of a README
+would be the same mistake as reasoning about Vesence from press coverage.
 
-**Word behaves differently from the documentation.** Four assumptions in
-the ledger are unresolved and all of them are Office.js. Cheap to retire,
-expensive to discover in month three.
+**Word behaves differently from the documentation.** Four Office.js
+assumptions still unresolved. Cheap now, expensive in month three.
 
 **Scope by imitation.** Vesence has five surfaces, custom agents,
-sub-agents, a code sandbox and six connectors. Building all of it before
-anyone uses any of it is the most likely way this ends up nowhere. The
-phase order above is deliberately a sequence of things that are useful on
-their own.
+sub-agents, a sandbox and six connectors. The phase order above is
+deliberately a sequence of things useful on their own.
