@@ -40,10 +40,15 @@ log = structlog.get_logger()
 
 OPINION_PATH = "/api/rest/v4/opinions/{opinion_id}/"
 
-#: Seconds between requests. A member account allows roughly 25 a minute;
-#: this stays comfortably under it, because the run has all day and the
-#: people serving the data do not owe us their capacity.
-REQUEST_DELAY = 3.0
+#: Seconds between requests. Measured against the live token rather than
+#: assumed: this account allows **10/min, 75/hour, 300/day** (Tier 1),
+#: read from ``/api/rest/v4/api-usage/``.
+#:
+#: 6.5s keeps us under the per-minute limit. The hourly cap binds first and
+#: is handled by backing off on 429 rather than by pacing at one request
+#: every 48 seconds, because a run that produces nothing for an hour is
+#: indistinguishable from a run that has hung.
+REQUEST_DELAY = 6.5
 
 MAX_RETRIES = 4
 
@@ -87,11 +92,17 @@ async def _get_opinion(client: httpx.AsyncClient, opinion_id: str) -> dict | Non
         try:
             response = await client.get(OPINION_PATH.format(opinion_id=opinion_id))
             if response.status_code == 429:
-                # Distinguish a momentary burst limit from the daily
-                # allowance: retrying into an exhausted day is pointless and
-                # rude, and the caller needs to know to come back tomorrow.
-                retry_after = response.headers.get("retry-after")
-                if retry_after and int(retry_after) > 3600:
+                # Two throttles bind here, and only one is worth waiting out.
+                # The per-minute limit clears in seconds; the hourly and
+                # daily allowances do not, and backing off four times over
+                # ninety seconds then raising — which is what this did — would
+                # abort a run that had merely reached its quota for the hour.
+                #
+                # So: retry a few times for the burst case, and if the limit
+                # is still there, stop cleanly. The work done is committed
+                # and the queue is « candidates with no text », so the next
+                # run simply resumes.
+                if attempt == MAX_RETRIES - 1:
                     return "throttled"
                 await asyncio.sleep(REQUEST_DELAY * (2 ** (attempt + 1)))
                 continue

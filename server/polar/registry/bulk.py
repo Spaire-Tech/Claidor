@@ -60,14 +60,23 @@ CSV_FIELD_LIMIT = 200 * 1024 * 1024
 #: text; the HTML variants are different editions of the same opinion held
 #: by different providers. We take text over markup, and never touch a West
 #: or Lexis editorial layer — there is none in this file, which is the point.
+#: Order matters, and ``html_with_citations`` is deliberately last: it is
+#: CourtListener's own enrichment of one of the other columns, with citation
+#: links injected. For a registry that quotes clause wording verbatim, the
+#: unmodified source is the one to read.
+#:
+#: Measured on *Dresser v. Page Petroleum*, where ``plain_text`` is empty:
+#: stripping ``xml_harvard`` gave 25,090 characters and
+#: ``html_with_citations`` 25,105, the same passage in both. Close enough
+#: that either would do, and no reason to prefer the derived one.
 TEXT_COLUMNS = (
     "plain_text",
-    "html_with_citations",
     "html",
     "html_lawbox",
     "html_columbia",
     "html_anon_2020",
     "xml_harvard",
+    "html_with_citations",
 )
 
 

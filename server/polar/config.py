@@ -300,6 +300,18 @@ class Settings(BaseSettings):
         default="",
         validation_alias=AliasChoices("ANTHROPIC_API_KEY", "CLAIDOR_ANTHROPIC_API_KEY"),
     )
+    # CourtListener (Free Law Project) — the clause failure registry's
+    # source of court opinions. Search is open; fetching an opinion's text
+    # needs this token. Empty means the registry can harvest candidates but
+    # not read them, which the fetcher says out loud rather than storing
+    # nothing and looking successful.
+    COURTLISTENER_API_TOKEN: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "COURTLISTENER_API_TOKEN", "CLAIDOR_COURTLISTENER_API_TOKEN"
+        ),
+    )
+
     # Lifecycle email copy generation — short, creative generation that
     # benefits from the strongest model.
     EMAIL_COPY_MODEL: str = "claude-opus-4-8"
