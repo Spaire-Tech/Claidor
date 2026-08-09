@@ -29,7 +29,7 @@ import bz2
 import csv
 import hashlib
 import io
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -168,19 +168,36 @@ class BulkLoadReport:
         )
 
 
-def iter_rows(stream: io.RawIOBase) -> Iterator[dict[str, str]]:
-    """Every row of the bulk CSV, as a dict keyed by the header."""
+def iter_rows(
+    stream: io.RawIOBase,
+    wanted_ids: set[str] | None = None,
+    on_progress: "Callable[[int], None] | None" = None,
+) -> Iterator[dict[str, str]]:
+    """Every row of the bulk CSV, as a dict keyed by the header.
+
+    ``wanted_ids`` filters on the id column *before* a dict is built. The
+    file holds around ten million opinions and we want a few hundred;
+    constructing a twenty-two key dict for each of the rest was most of the
+    parsing cost, and parsing is what has to keep up with the download.
+    """
     csv.field_size_limit(CSV_FIELD_LIMIT)
-    buffered = io.BufferedReader(stream, buffer_size=1024 * 1024)  # type: ignore[arg-type]
+    buffered = io.BufferedReader(stream, buffer_size=4 * 1024 * 1024)  # type: ignore[arg-type]
     text = io.TextIOWrapper(buffered, encoding="utf-8", errors="replace", newline="")
     # doublequote=False + escapechar: established against the real file.
     reader = csv.reader(text, doublequote=False, escapechar="\\")
     header = next(reader)
+    width = len(header)
+    scanned = 0
     for row in reader:
-        if len(row) != len(header):
+        scanned += 1
+        if on_progress is not None and scanned % 250_000 == 0:
+            on_progress(scanned)
+        if len(row) != width:
             # A width mismatch means the parse has desynchronised. With the
             # wrong escape convention this fires on essentially every row,
             # which is exactly how the convention was established.
+            continue
+        if wanted_ids is not None and row[0] not in wanted_ids:
             continue
         yield dict(zip(header, row, strict=True))
 
@@ -210,13 +227,29 @@ async def load_texts(
     log.info("registry.bulk.start", url=url, wanted=len(wanted), doctrine=doctrine)
 
     outstanding = set(wanted)
+    # No read timeout. We consume the stream at whatever rate decompression
+    # and parsing allow, which measured slightly slower than it arrives; a
+    # read deadline turns that ordinary backpressure into a failed run, as
+    # it did on the first attempt.
     with httpx.stream(
-        "GET", url, timeout=httpx.Timeout(60.0, read=300.0), follow_redirects=True
+        "GET", url, timeout=httpx.Timeout(60.0, read=None), follow_redirects=True
     ) as response:
         response.raise_for_status()
-        stream = _StreamingBz2(response.iter_bytes(chunk_size=1024 * 1024))
-        for row in iter_rows(stream):
-            report.rows_scanned += 1
+        stream = _StreamingBz2(response.iter_bytes(chunk_size=4 * 1024 * 1024))
+
+        def progress(scanned: int) -> None:
+            report.rows_scanned = scanned
+            log.info(
+                "registry.bulk.progress",
+                rows=scanned,
+                found=report.matched,
+                outstanding=len(outstanding),
+                gb=round(stream.compressed_bytes / 1_073_741_824, 2),
+            )
+
+        for row in iter_rows(
+            stream, wanted_ids=outstanding.copy(), on_progress=progress
+        ):
             opinion_id = row.get("id")
             if opinion_id not in outstanding:
                 continue

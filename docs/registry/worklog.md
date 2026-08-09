@@ -155,3 +155,95 @@ there is nothing to read.
 2. Step 2: screening — on-point or passing mention.
 3. Step 6 in parallel: the gold set. Needs a human who can read a US
    commercial judgment; a gold set graded by a model measures nothing.
+
+---
+
+## 2026-08-09 — Step 1b: opinion text. Two routes tried, one abandoned.
+
+### Objective
+
+Fill in `plain_text` for the 419 harvested candidates.
+
+### What was verified
+
+**API limits.** CourtListener throttles an authenticated account to
+**5 requests/minute, 50/hour, 125/day**. 419 opinions is four days on a
+free account; the whole registry is weeks. A Free Law Project membership
+($10/mo, $100/yr) raises this to roughly 1,000–1,400/day.
+
+**Bulk export.** Public, unthrottled, and it contains `plain_text`.
+Two format facts established against the real file, either of which would
+have corrupted text silently rather than raising:
+
+- The CSV escapes quotes with a **backslash**, not by doubling them. On a
+  12 MB sample, Python's default parsing gave 76,172 rows of which
+  **76,151 had the wrong field count**; `escapechar='\\'` gave 250 rows
+  and **none** malformed.
+- Opinion text contains **raw newlines inside quoted fields**, so the file
+  cannot be processed line by line.
+
+Also: the bulk export types opinions `010combined` / `040dissent` where
+the search API says `combined-opinion` / `dissent`. Both now pass through
+`normalise_opinion_type`, so the dissent guard holds either way.
+
+### What went wrong
+
+**Attempt 1 — `httpx.ReadTimeout` after ~35 minutes, nothing loaded.**
+Root cause was mine, in three parts:
+
+1. A 300s read timeout on a stream we consume at our own pace. Measured
+   parsing at 66 MB/s decompressed against ~75 MB/s arriving, so ordinary
+   backpressure became a failed run.
+2. A dict of 22 keys built for every one of ~10M rows, to keep 419.
+3. **No progress logging at all**, which is why the failure told me
+   nothing about how far it had got. That was the worst of the three.
+
+All three fixed: read timeout removed, id filtered before the dict is
+built, progress logged every 250,000 rows.
+
+**Attempt 2 — abandoned.** With the fixes it ran, but throughput collapsed:
+~171 MB read in roughly ten minutes, against an earlier burst measurement
+of 50 MB/s. At that rate a 50 GB file is around two days. Sustained large
+downloads appear to be shaped in this environment; the earlier
+twenty-second measurement was not representative, and I should not have
+planned a twenty-minute stream on it.
+
+### Decision
+
+**The API is the right route for this volume; bulk was over-engineering.**
+419 opinions is 419 requests — resumable, observable, and it fails one
+opinion at a time instead of losing an entire pass. Bulk remains correct
+and is the right tool at tens of thousands of opinions, so the code stays,
+tested, as the fallback and the route at scale.
+
+Written down because the reverse — quietly deleting the bulk loader and
+presenting the API as the plan all along — would hide a real mistake.
+
+### Changes
+
+- `polar/registry/bulk.py` — streaming loader, three defects fixed
+- `polar/registry/fetch.py` — API fetcher; resumable by construction,
+  distinguishes a burst limit from an exhausted daily allowance, and fails
+  loudly with no token rather than quietly doing nothing
+- `tests/registry/test_bulk.py` — format facts pinned as tests
+
+### Verification
+
+47 registry tests pass. The API fetcher has **not** been run end to end —
+there is no token yet, and I will not claim a path works before it has
+carried a single opinion.
+
+### Blocked
+
+**`COURTLISTENER_API_TOKEN`.** Free at
+https://www.courtlistener.com/profile/api-token/ after registering.
+
+With the membership active, one run of ~21 minutes covers all 419.
+Without it, the free allowance covers 125 a day and the fetcher stops
+cleanly and resumes the next day.
+
+### Next
+
+1. Token → run `fetch_texts`, verify text against source, then screening.
+2. The gold set, in parallel — still needs a human who can read a US
+   commercial judgment.
