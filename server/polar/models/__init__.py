@@ -98,6 +98,10 @@ from .payment import Payment
 from .payment_method import PaymentMethod
 from .payout import Payout
 from .personal_access_token import PersonalAccessToken
+from .playbook import (
+    Playbook,
+    PlaybookRule,
+)
 from .pledge import Pledge
 from .pledge_transaction import PledgeTransaction
 from .processor_transaction import ProcessorTransaction
@@ -250,6 +254,8 @@ __all__ = [
     "PaymentMethod",
     "Payout",
     "PersonalAccessToken",
+    "Playbook",
+    "PlaybookRule",
     "Pledge",
     "PledgeTransaction",
     "ProcessorTransaction",

@@ -111,9 +111,7 @@ class DossierMember(RecordModel):
 
     @declared_attr
     def user(cls) -> Mapped["User"]:
-        return relationship(
-            "User", lazy="raise", foreign_keys="DossierMember.user_id"
-        )
+        return relationship("User", lazy="raise", foreign_keys="DossierMember.user_id")
 
 
 class DocumentCategory(StrEnum):
@@ -276,9 +274,7 @@ class DossierCitation(RecordModel):
     nature: Mapped[CitationNature] = mapped_column(
         String(8), nullable=False, index=True
     )
-    source_kind: Mapped[CitationSourceKind] = mapped_column(
-        String(16), nullable=False
-    )
+    source_kind: Mapped[CitationSourceKind] = mapped_column(String(16), nullable=False)
     # Points at a dossier_documents.id, legal_articles.id or
     # court_decisions.id depending on source_kind. Deliberately not a
     # foreign key: an answer's record must survive a document being

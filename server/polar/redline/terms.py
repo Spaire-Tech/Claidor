@@ -161,6 +161,7 @@ class Defect(StrEnum):
     contradiction = "contradiction"
     miscalculation = "miscalculation"
     inconsistent_style = "inconsistent_style"
+    playbook_deviation = "playbook_deviation"
 
 
 class Severity(StrEnum):
@@ -198,6 +199,10 @@ SEVERITY: dict[Defect, Severity] = {
     # House style is the firm's call, not ours. An inconsistency is worth
     # seeing and is never urgent.
     Defect.inconsistent_style: Severity.to_review,
+    # A default only. A playbook rule states how loudly its own breach is
+    # reported — that is the point of the governance layer — so
+    # polar.redline.playbook overrides this per finding.
+    Defect.playbook_deviation: Severity.warning,
 }
 
 
@@ -460,12 +465,17 @@ def _finding(
     end: int,
     certainty: Certainty,
     note: str,
+    severity: Severity | None = None,
 ) -> Finding:
     """Build a finding, deriving everything derivable.
 
     Severity comes from the defect, context and occurrence index from the
     span. Passing them in by hand at eleven call sites is how a finding
     ends up with a severity that contradicts its own defect.
+
+    ``severity`` is the one deliberate exception: a playbook rule states
+    how loudly its own breach is reported, which no table keyed on the
+    defect can know. Everything else leaves it alone.
     """
     literal = text[start:end]
     return Finding(
@@ -474,7 +484,7 @@ def _finding(
         start=start,
         end=end,
         certainty=certainty,
-        severity=SEVERITY[defect],
+        severity=severity if severity is not None else SEVERITY[defect],
         note=note,
         context=_context(text, start, end),
         occurrence=located.index_of(literal, start),
