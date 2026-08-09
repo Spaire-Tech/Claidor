@@ -469,3 +469,108 @@ class TestARealWordFile:
             + "</w:p>"
         )
         assert read(xml).text == "Only one paragraph here."
+
+
+class TestWordsRealFragmentation:
+    """How Word actually splits runs, reproduced from a real file.
+
+    A document Word saved — 6,061 characters, 182 runs — was measured on
+    2026-08-09. The shortest run held **one character** and the median
+    held fourteen. Word had split a single word into three runs at an
+    accented letter, because the diacritic is a proofing-language
+    boundary:
+
+        "s   |   è   |   ming"
+
+    My generated fixtures split runs where I chose to, which means they
+    only ever tested cases I had already imagined. This is the case I had
+    not: an edit that starts inside one run, consumes another whole, and
+    ends inside a third, with punctuation on both ends that has to
+    survive.
+
+    The document itself is somebody's unpublished creative work and is not
+    committed. What is committed is the shape of it.
+    """
+
+    #: « “sèming” » as Word wrote it: quotes attached to the outer runs, so
+    #: an edit of the word alone only partly covers the first and last.
+    FRAGMENTED = document_xml(
+        paragraph(
+            run("Short film about a "),
+            run("pre-adolescent"),
+            run(" (age range: 9-13) "),
+            run("“s"),
+            run("è"),
+            run("ming”"),
+            run(" around her neighborhood."),
+        )
+    )
+
+    def test_a_word_split_across_three_runs_reads_as_one_word(self) -> None:
+        assert "sèming" in read(self.FRAGMENTED).text
+
+    def test_it_really_is_three_runs(self) -> None:
+        reading = read(self.FRAGMENTED)
+        start = reading.text.index("sèming")
+        assert len(reading.runs_covering(start, start + len("sèming"))) == 3
+
+    def test_editing_across_the_boundary_keeps_the_punctuation(self) -> None:
+        # The quotes live in the first and last runs, outside the edit.
+        # Losing them is the failure this test exists for.
+        reading = read(self.FRAGMENTED)
+        start = reading.text.index("sèming")
+        edited = replace_tracked(
+            self.FRAGMENTED,
+            [Edit(start, start + len("sèming"), "seeming")],
+        )
+
+        after = read(edited).text
+        assert "“seeming”" in after
+        assert "sèming" not in after
+
+    def test_the_edit_is_tracked(self) -> None:
+        reading = read(self.FRAGMENTED)
+        start = reading.text.index("sèming")
+        edited = replace_tracked(
+            self.FRAGMENTED,
+            [Edit(start, start + len("sèming"), "seeming")],
+        )
+
+        assert b"<w:ins " in edited
+        assert b"<w:delText" in edited
+
+    def test_the_map_survives_the_edit(self) -> None:
+        reading = read(self.FRAGMENTED)
+        start = reading.text.index("sèming")
+        edited = replace_tracked(
+            self.FRAGMENTED,
+            [Edit(start, start + len("sèming"), "seeming")],
+        )
+
+        after = read(edited)
+        assert len(after.offsets) == len(after.text)
+        for position, character in enumerate(after.text):
+            index, within = after.offsets[position]
+            if index >= 0:
+                assert after.runs[index].text[within] == character
+
+    def test_a_single_character_run_is_editable_on_its_own(self) -> None:
+        reading = read(self.FRAGMENTED)
+        at = reading.text.index("è")
+        edited = replace_tracked(self.FRAGMENTED, [Edit(at, at + 1, "e")])
+
+        assert "seming" in read(edited).text
+
+    def test_binary_parts_survive_a_save(self) -> None:
+        # The real file carried two PNGs. An image corrupted by a redline
+        # is the kind of damage nobody checks for until a client does.
+        image = b"\x89PNG\r\n\x1a\n" + bytes(range(256)) * 4
+        package = Package.open(docx(self.FRAGMENTED, {"word/media/image1.png": image}))
+        reading = package.read()
+        start = reading.text.index("sèming")
+        package.document = replace_tracked(
+            package.document,
+            [Edit(start, start + len("sèming"), "seeming")],
+        )
+
+        assert Package.open(package.save()).part("word/media/image1.png") == image
