@@ -119,6 +119,12 @@ from .product_price import (
 from .product_review import ProductReview
 from .quota_notification import QuotaNotification
 from .refund import Refund
+from .registry import (
+    OpinionSource,
+    RegistryCandidate,
+    RegistryOpinion,
+    ScreeningVerdict,
+)
 from .resend_webhook_event import ResendWebhookEvent
 from .saved_prompt import SavedPrompt
 from .subscription import Subscription
@@ -233,6 +239,7 @@ __all__ = [
     "OAuth2Grant",
     "OAuth2Token",
     "OAuthAccount",
+    "OpinionSource",
     "Order",
     "OrderItem",
     "Organization",
@@ -261,8 +268,11 @@ __all__ = [
     "QuestionStatus",
     "QuotaNotification",
     "Refund",
+    "RegistryCandidate",
+    "RegistryOpinion",
     "ResendWebhookEvent",
     "SavedPrompt",
+    "ScreeningVerdict",
     "SeatStatus",
     "Subscription",
     "SubscriptionMeter",
