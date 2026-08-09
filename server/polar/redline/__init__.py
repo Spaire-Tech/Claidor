@@ -17,17 +17,21 @@ are always right will read the judgement ones properly.
 """
 
 from .terms import (
+    SEVERITY,
     Certainty,
     Defect,
     Definition,
     Finding,
+    Severity,
     review_terms,
 )
 
 __all__ = [
+    "SEVERITY",
     "Certainty",
     "Defect",
     "Definition",
     "Finding",
+    "Severity",
     "review_terms",
 ]

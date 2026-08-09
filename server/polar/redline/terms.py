@@ -1,49 +1,59 @@
-"""Defined terms, and the four ways they go wrong.
+"""Defined terms, and the five ways they go wrong.
 
 A defined term is the one thing in a contract that is unambiguously
 mechanical. « "Closing Date" means … » creates an object; every later
-« Closing Date » refers to it. So the defects are decidable:
+« Closing Date » refers to it.
 
-- **Defined and never used.** The definition is dead. Usually the clause it
-  served was deleted, and the definition survived — which means a reader
-  looking for the deleted obligation finds evidence it once existed.
-- **Defined twice.** Two definitions of one term, and the document does not
-  say which governs. This is what assembling from precedents produces.
-- **Used before defined.** The reader meets the term before its meaning.
-- **Wrong case.** « Closing date » where « Closing Date » was defined. In a
-  document where capitals carry meaning, this silently turns a defined term
-  into ordinary prose, and the difference has been litigated.
+The defect names and severities are **Vesence's own**, taken from the
+screenshot published on their Word page, because this is a clone and a
+finding should be comparable to theirs without translation:
 
-Each of those is true of the text or it is not. Nothing here asks a model,
-because a model that is wrong about a defined term is wrong in a way the
-reader cannot see, and a reader who has to check the checker is doing the
-work twice.
+- **Undefined term** *(critical)*. A phrase used as a defined term that the
+  document never defines. A hole in the agreement.
+- **Unused definition** *(warning)*. The definition is dead — usually the
+  clause it served was deleted and the definition survived.
+- **Multiple definitions** *(warning)*. Two definitions of one term, and
+  nothing says which governs. This is what assembling from precedents does.
+- **Unordered definitions** *(to review)*. The definitions list is not
+  alphabetical.
+- **Wrong case** *(warning)*. Ours, not theirs; it probably sits under
+  their « language » heading. « Closing date » where « Closing Date » was
+  defined turns a defined term into ordinary prose.
 
-Findings carry both a character span and an occurrence index. The span is
-for anything reading the text; the occurrence index is for Word, where
-locating a phrase means ``Range.search()`` and then choosing the nth hit.
+Nothing here asks a model. A model that is wrong about a defined term is
+wrong in a way the reader cannot see, and a reader who has to check the
+checker is doing the work twice. Four of the five checks are *certain* —
+true of the text as arithmetic. Only **undefined term** is *probable*, and
+it says so, because a contract capitalises Delaware and Tuesday as well as
+Purchase Price.
+
+Findings carry a character span and an occurrence index. The span is for
+anything reading the text; the index is for Word, where locating a phrase
+means ``Range.search()`` and then choosing the nth hit.
 
 **Known limits, stated rather than discovered later.**
 
 - Only double quotes are read as definitional — straight ``"`` and curly
-  ``“ ”``. UK drafting that defines with single quotes (« 'the Company'
-  means ») is not seen, because admitting apostrophes as quotes turns every
-  possessive into a candidate.
+  ``“ ”``. UK drafting that defines with single quotes is not seen, because
+  admitting apostrophes as quotes makes every possessive a candidate.
 - Nested parentheses are not parsed.
-- **Case is only checked on terms of two words or more.** « Company »,
-  « Closing » and « Shares » are also ordinary English words, and « a
-  Washington limited liability company » is not a miscased defined term.
-  There is no mechanical way to tell those apart, so single-word terms are
-  not case-checked at all. Real single-word miscasings are therefore
-  missed. That is the deliberate trade: a check that is right every time on
-  a subset is worth more than one that is right half the time on
-  everything, because the second teaches a reader to skim.
-- **« Used before defined » is suppressed for terms defined inside a
-  definitions block.** A contract with a « 1. DEFINITIONS » clause is meant
-  to be read with the recitals first; reporting every recital would put
-  findings on every well-drafted document.
+- **Case is only checked on terms of two words or more.** « Company » and
+  « Shares » are ordinary English, and « a Washington limited liability
+  company » is not a miscased defined term. Single-word miscasings are
+  therefore missed. A check that is right every time on a subset is worth
+  more than one right half the time on everything, because the second
+  teaches a reader to skim.
+- **An undefined-term candidate must follow a definite determiner.** « the
+  Long Stop Date » is reported; « in Seattle, Washington » and « means Acme
+  Operating Co. » are not. So a term used without a determiner —
+  « Consideration shall be paid » — is missed.
+- **There is no « used before defined » check.** It was built, and it
+  reported every term named in the recitals of a correctly drafted
+  contract, because recitals precede clause 1 in every agreement ever
+  written. Vesence does not have this check either. Removed rather than
+  patched.
 
-Every one of those produces a *missed* finding rather than a false one,
+Every limit above produces a *missed* finding rather than a false one,
 which is the right direction to fail.
 """
 
@@ -85,10 +95,9 @@ CONTEXT = 120
 #: « CLOSING DATE » as a section title is correct drafting.
 _ALL_CAPS = re.compile(r"\A[^a-z]+\Z")
 
-#: Definitions this close together, this many in a row, are a definitions
-#: clause rather than terms defined where they are first needed.
-BLOCK_RUN = 3
-BLOCK_SPAN = 4000
+#: Fewer entries than this is not a definitions list, and calling it
+#: unordered would be pedantry.
+MIN_LIST = 3
 
 #: How far a definition's own explanatory text can run. Inside it the
 #: drafter is describing the term in ordinary words — « "Conditions" means
@@ -102,11 +111,48 @@ _SENTENCE_END = re.compile(r"\.(?:\s|\Z)")
 
 
 class Defect(StrEnum):
-    defined_never_used = "defined_never_used"
-    defined_twice = "defined_twice"
-    used_before_defined = "used_before_defined"
+    """The defect names are theirs, deliberately.
+
+    Vesence publishes its own taxonomy in a screenshot on the Word page —
+    *Undefined term*, *Unused definition*, *Multiple definitions*,
+    *Unordered definitions* — and this is a clone. Matching the vocabulary
+    means a finding can be compared against theirs directly instead of
+    translated first.
+
+    ``case_mismatch`` is ours and has no counterpart there; it most likely
+    sits under their « language » category.
+    """
+
+    undefined_term = "undefined_term"
+    unused_definition = "unused_definition"
+    multiple_definitions = "multiple_definitions"
+    unordered_definitions = "unordered_definitions"
     case_mismatch = "case_mismatch"
-    quoted_but_undefined = "quoted_but_undefined"
+
+
+class Severity(StrEnum):
+    """Their four buckets, in their order.
+
+    *Ignored* is a state a reader puts a finding into, not one the engine
+    assigns, so it is stored per document rather than computed here.
+    """
+
+    critical = "critical"
+    warning = "warning"
+    to_review = "to_review"
+    ignored = "ignored"
+
+
+#: Which bucket each defect falls in. Undefined terms are critical because
+#: a term with no meaning is a hole in the agreement; an unused definition
+#: is untidy but harmless.
+SEVERITY: dict[Defect, Severity] = {
+    Defect.undefined_term: Severity.critical,
+    Defect.unused_definition: Severity.warning,
+    Defect.multiple_definitions: Severity.warning,
+    Defect.case_mismatch: Severity.warning,
+    Defect.unordered_definitions: Severity.to_review,
+}
 
 
 class Certainty(StrEnum):
@@ -128,6 +174,12 @@ class Definition:
     #: Span of the quoted term itself, not of the whole definition.
     start: int
     end: int
+    #: ``means`` for « "Closing Date" means … », the entries of a
+    #: definitions clause. ``aside`` for « Acme Holdings Inc. (the
+    #: "Seller") », which names a party where it first appears. Only the
+    #: first kind belongs to a definitions list, which is why the
+    #: alphabetical-order check must be able to tell them apart.
+    kind: str = "means"
 
 
 @dataclass(frozen=True)
@@ -137,6 +189,7 @@ class Finding:
     start: int
     end: int
     certainty: Certainty
+    severity: Severity
     #: One sentence, checkable against the span. No adjectives.
     note: str
     context: str
@@ -166,20 +219,28 @@ def _flexible(term: str) -> str:
     return r"\s+".join(re.escape(word) for word in term.split())
 
 
-def _definitions_block(definitions: list["Definition"]) -> int | None:
-    """Where the document's definitions clause starts, if it has one.
+def definitions_list(definitions: list["Definition"]) -> list["Definition"]:
+    """The document's definitions list, in the order it is written.
 
-    A contract with « 1. DEFINITIONS » is written to be read with the
-    recitals first: every operative term is used in the recitals before the
-    clause that defines it, and that is correct drafting rather than a
-    defect. So a run of definitions close together marks a block, and terms
-    defined inside it are exempt from « used before defined ».
+    Two exclusions, both of which were false positives first:
+
+    - **Parenthetical asides.** « Acme Holdings Inc. (the "Seller") » names
+      a party in the parties clause. It is not an entry in a definitions
+      list, and counting it made a correctly alphabetised contract look
+      unordered because Seller and Buyer come before Accounts.
+    - **Repeat definitions.** A term defined twice appears twice in the
+      sequence and breaks the ordering. That is already reported as
+      :data:`Defect.multiple_definitions`; reporting it again here would
+      be the same defect twice under two names.
     """
-    for index in range(len(definitions) - BLOCK_RUN + 1):
-        run = definitions[index : index + BLOCK_RUN]
-        if run[-1].start - run[0].start <= BLOCK_SPAN:
-            return run[0].start
-    return None
+    seen: set[str] = set()
+    entries: list[Definition] = []
+    for definition in definitions:
+        if definition.kind != "means" or definition.term in seen:
+            continue
+        seen.add(definition.term)
+        entries.append(definition)
+    return entries
 
 
 def _body_end(text: str, definition: "Definition") -> int:
@@ -258,12 +319,45 @@ def find_definitions(text: str) -> tuple[list[Definition], list[Definition]]:
             None,
         )
         if inside is not None and len(inside) <= 120 and "." not in inside:
-            definitions.append(Definition(term=term, start=start, end=end))
+            definitions.append(
+                Definition(term=term, start=start, end=end, kind="aside")
+            )
             continue
 
         quoted_uses.append(Definition(term=term, start=start, end=end))
 
     return definitions, quoted_uses
+
+
+def _finding(
+    text: str,
+    *,
+    defect: Defect,
+    term: str,
+    start: int,
+    end: int,
+    certainty: Certainty,
+    note: str,
+) -> Finding:
+    """Build a finding, deriving everything derivable.
+
+    Severity comes from the defect, context and occurrence index from the
+    span. Passing them in by hand at eleven call sites is how a finding
+    ends up with a severity that contradicts its own defect.
+    """
+    literal = text[start:end]
+    return Finding(
+        defect=defect,
+        term=term,
+        start=start,
+        end=end,
+        certainty=certainty,
+        severity=SEVERITY[defect],
+        note=note,
+        context=_context(text, start, end),
+        occurrence=_occurrence_index(text, literal, start),
+        literal=literal,
+    )
 
 
 def _occurrence_index(text: str, literal: str, start: int) -> int:
@@ -280,6 +374,175 @@ def _occurrence_index(text: str, literal: str, start: int) -> int:
     return max(1, count)
 
 
+#: A run of Title-Case words — how a defined term is written when it is
+#: used. Four words is the practical ceiling; longer runs are headings.
+_TITLE_RUN = re.compile(r"\b[A-Z][a-z]{1,}(?:\s+[A-Z][a-z]{1,}){0,3}\b")
+
+#: Determiners that ride in front of a term and are not part of it.
+#: « The Purchase Price » is a use of « Purchase Price ».
+_LEADING = ("The ", "Any ", "Each ", "Such ", "This ", "That ", "No ", "All ", "Its ")
+
+#: An indefinite article in front of a capitalised phrase means it is not a
+#: defined term. A defined term names one specific thing, so it takes
+#: « the »; « a Delaware corporation » and « a Washington limited liability
+#: company » are descriptions, and both were false positives before this
+#: rule existed. The cost is missing « on a Business Day », which is a
+#: missed finding rather than a wrong one.
+_INDEFINITE = re.compile(r"\b(?:a|an)\s+$", re.IGNORECASE)
+
+#: Capitalised words that are never defined terms. Structural references,
+#: dates, and the furniture of a contract's own prose.
+_NOT_A_TERM = frozenset(
+    {
+        # Structure
+        "clause",
+        "clauses",
+        "section",
+        "sections",
+        "schedule",
+        "schedules",
+        "exhibit",
+        "exhibits",
+        "annex",
+        "annexes",
+        "appendix",
+        "appendices",
+        "part",
+        "parts",
+        "article",
+        "articles",
+        "paragraph",
+        "paragraphs",
+        "recital",
+        "recitals",
+        "page",
+        "pages",
+        "chapter",
+        "table",
+        # Instrument furniture
+        "whereas",
+        "witnesseth",
+        "now therefore",
+        "in witness whereof",
+        "definitions",
+        "interpretation",
+        "background",
+        "between",
+        "signed",
+        # Time
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    }
+)
+
+#: A candidate must be preceded by one of these. A defined term names one
+#: specific thing, so it is introduced by a definite determiner: « the Long
+#: Stop Date », « such Material Adverse Change ». A proper noun is not:
+#: « in Seattle, Washington », « means Acme Operating Co. ». This one rule
+#: removed four false positives that no stoplist could have covered,
+#: because states and company names cannot be enumerated.
+_DETERMINER = re.compile(
+    r"\b(?:the|this|that|these|those|such|each|any|all|its|said|both|every)\s+$",
+    re.IGNORECASE,
+)
+
+#: Capitalised function words that open a sentence or a clause. « At
+#: Closing, the Purchaser shall pay » is a use of « Closing », not of « At
+#: Closing ».
+_OPENER = re.compile(
+    r"\A(?:At|In|On|For|By|To|From|With|If|Where|When|Upon|Subject|Save|"
+    r"Notwithstanding|Following|During|Under|Pursuant)\s+"
+)
+
+#: A candidate must be seen this many times before it is reported.
+MIN_SIGHTINGS = 1
+
+
+def _sentence_starts(text: str) -> set[int]:
+    """Offsets where a capital is grammar rather than a defined term."""
+    starts = {0}
+    #: A clause number sits between the break and the first word:
+    #: « 3.2 If the Conditions », « (a) The Seller ». Without consuming it
+    #: the capital after it looks mid-sentence, and « If » and « In » get
+    #: reported as undefined terms — both were false positives here.
+    for match in re.finditer(r"(?:[.!?:;]|\n)\s*(?:\(?[0-9a-z]{1,4}[.)]\s*)*", text):
+        starts.add(match.end())
+    return starts
+
+
+def find_undefined(text: str, defined: set[str]) -> list[tuple[str, int, int]]:
+    """Title-Case phrases used as terms that the document never defines.
+
+    This is the check Vesence ranks *Critical*, and it is the only one here
+    that cannot be made exact: a contract capitalises defined terms, but it
+    also capitalises Delaware, Acme Holdings and Tuesday. So the rules
+    below are all about *not* reporting, and the honest label on the result
+    is « probable ».
+    """
+    known = {form for term in defined for form in _plurals(term)}
+    sentence_starts = _sentence_starts(text)
+
+    sightings: dict[str, list[tuple[int, int]]] = {}
+    for match in _TITLE_RUN.finditer(text):
+        start, end = match.start(), match.end()
+        phrase = re.sub(r"\s+", " ", match.group(0))
+
+        if _INDEFINITE.search(text[max(0, start - 6) : start]):
+            continue
+
+        # « The Purchase Price » is a use of « Purchase Price ».
+        for article in _LEADING:
+            if phrase.startswith(article):
+                start += len(article)
+                phrase = phrase[len(article) :]
+                break
+
+        # « At Closing, … » is a use of « Closing ».
+        opener = _OPENER.match(phrase)
+        if opener and start in sentence_starts:
+            start += opener.end()
+            phrase = phrase[opener.end() :]
+
+        if not _DETERMINER.search(text[max(0, start - 12) : start]):
+            continue
+
+        if not phrase or phrase in known or phrase.lower() in _NOT_A_TERM:
+            continue
+        # A single capitalised word opening a sentence is grammar. If it is
+        # really a defined term it will also appear mid-sentence, and it is
+        # reported there.
+        if " " not in phrase and start in sentence_starts:
+            continue
+        # Part of a longer term the document does define.
+        if any(phrase in term for term in defined):
+            continue
+
+        sightings.setdefault(phrase, []).append((start, end))
+
+    return [
+        (phrase, spans[0][0], spans[0][1])
+        for phrase, spans in sightings.items()
+        if len(spans) >= MIN_SIGHTINGS
+    ]
+
+
 def review_terms(text: str) -> list[Finding]:
     """Every defined-term defect in the document, in document order."""
     if not text:
@@ -294,7 +557,6 @@ def review_terms(text: str) -> list[Finding]:
 
     defined_spans = [(d.start, d.end) for d in definitions]
     body_spans = [(d.start, _body_end(text, d)) for d in definitions]
-    block_start = _definitions_block(definitions)
 
     def _in_a_definition(at: int) -> bool:
         return any(start <= at < end for start, end in defined_spans)
@@ -309,8 +571,9 @@ def review_terms(text: str) -> list[Finding]:
         # because the first one is not the problem.
         for repeat in occurrences[1:]:
             findings.append(
-                Finding(
-                    defect=Defect.defined_twice,
+                _finding(
+                    text,
+                    defect=Defect.multiple_definitions,
                     term=term,
                     start=repeat.start,
                     end=repeat.end,
@@ -320,9 +583,6 @@ def review_terms(text: str) -> list[Finding]:
                         f"{first.start}. The document does not say which "
                         f"definition governs."
                     ),
-                    context=_context(text, repeat.start, repeat.end),
-                    occurrence=_occurrence_index(text, term, repeat.start),
-                    literal=term,
                 )
             )
 
@@ -340,8 +600,9 @@ def review_terms(text: str) -> list[Finding]:
 
         if not uses:
             findings.append(
-                Finding(
-                    defect=Defect.defined_never_used,
+                _finding(
+                    text,
+                    defect=Defect.unused_definition,
                     term=term,
                     start=first.start,
                     end=first.end,
@@ -351,28 +612,6 @@ def review_terms(text: str) -> list[Finding]:
                         f"clause it served was removed, or a use of it is "
                         f"miscased."
                     ),
-                    context=_context(text, first.start, first.end),
-                    occurrence=_occurrence_index(text, term, first.start),
-                    literal=term,
-                )
-            )
-        elif uses[0] < first.start and not (
-            block_start is not None and first.start >= block_start
-        ):
-            findings.append(
-                Finding(
-                    defect=Defect.used_before_defined,
-                    term=term,
-                    start=uses[0],
-                    end=uses[0] + len(term),
-                    certainty=Certainty.certain,
-                    note=(
-                        f'"{term}" is used here, before it is defined at '
-                        f"character {first.start}."
-                    ),
-                    context=_context(text, uses[0], uses[0] + len(term)),
-                    occurrence=_occurrence_index(text, term, uses[0]),
-                    literal=text[uses[0] : uses[0] + len(term)],
                 )
             )
 
@@ -399,7 +638,8 @@ def review_terms(text: str) -> list[Finding]:
             if _in_a_definition_body(match.start()):
                 continue
             findings.append(
-                Finding(
+                _finding(
+                    text,
                     defect=Defect.case_mismatch,
                     term=term,
                     start=match.start(),
@@ -410,32 +650,80 @@ def review_terms(text: str) -> list[Finding]:
                         f'"{term}". As written this is ordinary prose, not '
                         f"the defined term."
                     ),
-                    context=_context(text, match.start(), match.end()),
-                    occurrence=_occurrence_index(text, literal, match.start()),
-                    literal=literal,
                 )
             )
 
-    # A phrase the drafter put in quotes but never defined.
+    # Undefined terms — their « Critical » bucket. Two sources: a phrase
+    # the drafter put in quotation marks, which is close to an admission
+    # that they believed it was defined; and a Title-Case phrase used
+    # repeatedly that the document never defines.
+    reported: set[str] = set()
     for quoted in quoted_uses:
-        if quoted.term in by_term:
+        if quoted.term in by_term or quoted.term in reported:
             continue
+        reported.add(quoted.term)
         findings.append(
-            Finding(
-                defect=Defect.quoted_but_undefined,
+            _finding(
+                text,
+                defect=Defect.undefined_term,
                 term=quoted.term,
                 start=quoted.start,
                 end=quoted.end,
                 certainty=Certainty.probable,
                 note=(
-                    f'"{quoted.term}" is written as a defined term but no '
-                    f"definition appears in this document."
+                    f'"{quoted.term}" is written in quotation marks as a '
+                    f"defined term, but no definition appears in this "
+                    f"document."
                 ),
-                context=_context(text, quoted.start, quoted.end),
-                occurrence=_occurrence_index(text, quoted.term, quoted.start),
-                literal=quoted.term,
             )
         )
+
+    for phrase, start, end in find_undefined(text, set(by_term)):
+        if phrase in reported:
+            continue
+        reported.add(phrase)
+        findings.append(
+            _finding(
+                text,
+                defect=Defect.undefined_term,
+                term=phrase,
+                start=start,
+                end=end,
+                certainty=Certainty.probable,
+                note=(
+                    f'"{phrase}" is capitalised as a defined term throughout '
+                    f"but no definition appears in this document."
+                ),
+            )
+        )
+
+    # Definitions out of alphabetical order — their « To review » bucket.
+    entries = definitions_list(definitions)
+    if len(entries) >= MIN_LIST:
+        ordered = sorted(entries, key=lambda d: d.term.lower())
+        if [d.term for d in entries] != [d.term for d in ordered]:
+            first_wrong = next(
+                (
+                    later
+                    for earlier, later in zip(entries, entries[1:], strict=False)
+                    if later.term.lower() < earlier.term.lower()
+                ),
+                entries[0],
+            )
+            findings.append(
+                _finding(
+                    text,
+                    defect=Defect.unordered_definitions,
+                    term=first_wrong.term,
+                    start=first_wrong.start,
+                    end=first_wrong.end,
+                    certainty=Certainty.certain,
+                    note=(
+                        f"The definitions are not in alphabetical order; "
+                        f'"{first_wrong.term}" is the first out of place.'
+                    ),
+                )
+            )
 
     # One miscased phrase is one defect. Where terms nest — « Adverse
     # Change » inside « Material Adverse Change » — the longer term is the
