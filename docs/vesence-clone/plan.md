@@ -169,9 +169,17 @@ runs, leaving every part we did not touch byte-identical. Python fits the
 existing backend and the language barely matters for XML tree surgery.
 `python-docx` is not sufficient — it does not model revisions.
 
-The sequencing insight: **Path B is not needed for a demo.** If the
-document is open in Word, Office.js does everything. That takes the single
-riskiest component off the critical path for the first eight weeks.
+The sequencing insight: **Path B is not needed for a review-only v1.**
+Reporting a finding needs no engine, and substitution-class fixes — a
+defined term, a party name, a cross-reference number — are range edits that
+Word turns into tracked changes by itself.
+
+> **Corrected 2026-08-09.** This originally read "not needed for a demo …
+> Office.js does everything", which was too strong. Vesence's own
+> disclosure says the same OOXML engine powers both their add-in and their
+> web app, so add-in edits likely round-trip through it. Anything that
+> rewrites a clause's structure needs the engine on day one of drafting —
+> earlier than this section first claimed. See `decisions.md`.
 
 ---
 
@@ -211,9 +219,10 @@ anything measured. Treat them as the honest midpoint of a wide range.
 
 ## Open questions
 
-- **The stack you are researching.** Send it and I will say specifically
-  what it changes. My prior is: nothing on the server, and the client is
-  TypeScript/React either way because Office.js gives you no choice.
+- ~~The stack you are researching.~~ **Answered** — see `stack.md` and
+  `decisions.md`. The prior held: nothing changes on the server, and the
+  client is TypeScript/React either way because Office.js gives no choice.
+  What did change is hosting posture, auth, and the model layer.
 - **A name.** "Vesence clone" is fine in a repo and not fine on a manifest.
 - **Repo.** I would build in this one — the 21,300 reusable lines are worth
   more than a clean slate — and delete the payments modules first.
