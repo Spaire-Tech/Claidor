@@ -57,6 +57,7 @@ Every limit above produces a *missed* finding rather than a false one,
 which is the right direction to fail.
 """
 
+import bisect
 import re
 from dataclasses import dataclass
 from enum import StrEnum
@@ -201,6 +202,69 @@ class Finding:
     literal: str
 
 
+class _Spans:
+    """Regions of the document, answering « is this offset inside one? ».
+
+    A linear scan here cost sixteen of twenty seconds on a 186-page
+    document — their own example size — because every candidate match was
+    compared against every definition. Sorted starts with a running
+    maximum end give the same answer in a binary search, and the running
+    maximum is what makes it correct when two regions overlap.
+    """
+
+    __slots__ = ("_reach", "_starts")
+
+    def __init__(self, spans: list[tuple[int, int]]) -> None:
+        ordered = sorted(spans)
+        self._starts = [start for start, _ in ordered]
+        self._reach: list[int] = []
+        furthest = -1
+        for _, end in ordered:
+            furthest = max(furthest, end)
+            self._reach.append(furthest)
+
+    def contains(self, at: int) -> bool:
+        index = bisect.bisect_right(self._starts, at) - 1
+        return index >= 0 and at < self._reach[index]
+
+
+class _Occurrences:
+    """Where each literal appears, computed once per literal.
+
+    Word locates a phrase by searching and taking the nth hit, so every
+    finding needs its index among its own occurrences. Computing that by
+    walking from the start of the document per finding is quadratic, and
+    it showed: 2.6 million string searches on one document.
+    """
+
+    __slots__ = ("_cache", "_text")
+
+    def __init__(self, text: str) -> None:
+        self._text = text
+        self._cache: dict[str, list[int]] = {}
+
+    def _positions(self, literal: str) -> list[int]:
+        known = self._cache.get(literal)
+        if known is None:
+            known = []
+            at = self._text.find(literal)
+            while at != -1:
+                known.append(at)
+                at = self._text.find(literal, at + 1)
+            self._cache[literal] = known
+        return known
+
+    def index_of(self, literal: str, start: int) -> int:
+        """1-based index of the occurrence at ``start``."""
+        if not literal:
+            return 1
+        positions = self._positions(literal)
+        at = bisect.bisect_left(positions, start)
+        if at < len(positions) and positions[at] == start:
+            return at + 1
+        return max(1, at)
+
+
 def _context(text: str, start: int, end: int) -> str:
     left = max(0, start - CONTEXT)
     right = min(len(text), end + CONTEXT)
@@ -331,6 +395,7 @@ def find_definitions(text: str) -> tuple[list[Definition], list[Definition]]:
 
 def _finding(
     text: str,
+    located: "_Occurrences",
     *,
     defect: Defect,
     term: str,
@@ -355,23 +420,9 @@ def _finding(
         severity=SEVERITY[defect],
         note=note,
         context=_context(text, start, end),
-        occurrence=_occurrence_index(text, literal, start),
+        occurrence=located.index_of(literal, start),
         literal=literal,
     )
-
-
-def _occurrence_index(text: str, literal: str, start: int) -> int:
-    """Which hit this is, when Word searches the document for ``literal``."""
-    if not literal:
-        return 1
-    count = 0
-    at = text.find(literal)
-    while at != -1 and at <= start:
-        count += 1
-        if at == start:
-            return count
-        at = text.find(literal, at + 1)
-    return max(1, count)
 
 
 #: A run of Title-Case words — how a defined term is written when it is
@@ -543,6 +594,37 @@ def find_undefined(text: str, defined: set[str]) -> list[tuple[str, int, int]]:
     ]
 
 
+def _scan(
+    text: str, forms: dict[str, str], *, ignore_case: bool
+) -> dict[str, list[tuple[int, int]]]:
+    """Find every surface form of every term in one pass.
+
+    A regex per term costs one scan of the document per defined term. A
+    real share purchase agreement has around 170 of them, and that was
+    five seconds. One alternation is one scan.
+
+    Longest form first, so « Closing Date » wins over « Closing » where
+    both are defined — regex alternation takes the first branch that
+    matches, so the order *is* the disambiguation rule.
+    """
+    if not forms:
+        return {}
+    ordered = sorted(forms, key=len, reverse=True)
+    pattern = re.compile(
+        r"\b(?:" + "|".join(_flexible(form) for form in ordered) + r")\b",
+        re.IGNORECASE if ignore_case else 0,
+    )
+    lookup = {(k.lower() if ignore_case else k): v for k, v in forms.items()}
+
+    hits: dict[str, list[tuple[int, int]]] = {}
+    for match in pattern.finditer(text):
+        written = re.sub(r"\s+", " ", match.group(0))
+        term = lookup.get(written.lower() if ignore_case else written)
+        if term is not None:
+            hits.setdefault(term, []).append((match.start(), match.end()))
+    return hits
+
+
 def review_terms(text: str) -> list[Finding]:
     """Every defined-term defect in the document, in document order."""
     if not text:
@@ -555,24 +637,31 @@ def review_terms(text: str) -> list[Finding]:
     for definition in definitions:
         by_term.setdefault(definition.term, []).append(definition)
 
-    defined_spans = [(d.start, d.end) for d in definitions]
-    body_spans = [(d.start, _body_end(text, d)) for d in definitions]
+    located = _Occurrences(text)
+    defined_spans = _Spans([(d.start, d.end) for d in definitions])
+    body_spans = _Spans([(d.start, _body_end(text, d)) for d in definitions])
+    _in_a_definition = defined_spans.contains
+    _in_a_definition_body = body_spans.contains
 
-    def _in_a_definition(at: int) -> bool:
-        return any(start <= at < end for start, end in defined_spans)
+    # Every surface form of every term, found in two passes over the
+    # document rather than two per term.
+    use_forms = {form: term for term in by_term for form in _plurals(term)}
+    used_at = _scan(text, use_forms, ignore_case=False)
+    # Case is only checked on terms of two words or more — see the module
+    # docstring for why single words cannot be checked at all.
+    loose_forms = {term: term for term in by_term if len(term.split()) >= 2}
+    written_at = _scan(text, loose_forms, ignore_case=True)
 
-    def _in_a_definition_body(at: int) -> bool:
-        return any(start <= at < end for start, end in body_spans)
-
-    for term, occurrences in by_term.items():
-        first = occurrences[0]
+    for term, defined_at in by_term.items():
+        first = defined_at[0]
 
         # Defined twice. Reported on the second and any later definition,
         # because the first one is not the problem.
-        for repeat in occurrences[1:]:
+        for repeat in defined_at[1:]:
             findings.append(
                 _finding(
                     text,
+                    located,
                     defect=Defect.multiple_definitions,
                     term=term,
                     start=repeat.start,
@@ -586,22 +675,17 @@ def review_terms(text: str) -> list[Finding]:
                 )
             )
 
-        # Uses: the term or a plural of it, matched case-sensitively,
-        # anywhere outside a definition's own quoted span.
-        uses: list[int] = []
-        for form in _plurals(term):
-            pattern = re.compile(rf"\b{_flexible(form)}\b")
-            uses.extend(
-                match.start()
-                for match in pattern.finditer(text)
-                if not _in_a_definition(match.start())
-            )
-        uses.sort()
+        # Uses: the term or a plural of it, anywhere outside a definition's
+        # own quoted span.
+        uses = [
+            start for start, _ in used_at.get(term, ()) if not _in_a_definition(start)
+        ]
 
         if not uses:
             findings.append(
                 _finding(
                     text,
+                    located,
                     defect=Defect.unused_definition,
                     term=term,
                     start=first.start,
@@ -615,35 +699,27 @@ def review_terms(text: str) -> list[Finding]:
                 )
             )
 
-        # Wrong case. Only for terms of two words or more: « company »,
-        # « closing » and « shares » are ordinary English, and no rule
-        # distinguishes « a Washington limited liability company » from a
-        # miscased defined term. See the module docstring.
-        if len(term.split()) < 2:
-            continue
-
-        loose = re.compile(rf"\b{_flexible(term)}\b", re.IGNORECASE)
-        for match in loose.finditer(text):
-            literal = match.group(0)
+        # Wrong case.
+        for start, end in written_at.get(term, ()):
+            literal = text[start:end]
             # « Escrow\nAmount » is the term, wrapped. Comparing raw would
             # report every multi-word term that crosses a line break.
             if re.sub(r"\s+", " ", literal) == term:
                 continue
-            if _in_a_definition(match.start()):
-                continue
-            if _ALL_CAPS.match(literal):
+            if _in_a_definition(start) or _ALL_CAPS.match(literal):
                 continue
             # Inside a definition's own explanatory text the drafter is
             # describing the term in ordinary words, not using it.
-            if _in_a_definition_body(match.start()):
+            if _in_a_definition_body(start):
                 continue
             findings.append(
                 _finding(
                     text,
+                    located,
                     defect=Defect.case_mismatch,
                     term=term,
-                    start=match.start(),
-                    end=match.end(),
+                    start=start,
+                    end=end,
                     certainty=Certainty.certain,
                     note=(
                         f'Written "{literal}" where the defined term is '
@@ -665,6 +741,7 @@ def review_terms(text: str) -> list[Finding]:
         findings.append(
             _finding(
                 text,
+                located,
                 defect=Defect.undefined_term,
                 term=quoted.term,
                 start=quoted.start,
@@ -685,6 +762,7 @@ def review_terms(text: str) -> list[Finding]:
         findings.append(
             _finding(
                 text,
+                located,
                 defect=Defect.undefined_term,
                 term=phrase,
                 start=start,
@@ -713,6 +791,7 @@ def review_terms(text: str) -> list[Finding]:
             findings.append(
                 _finding(
                     text,
+                    located,
                     defect=Defect.unordered_definitions,
                     term=first_wrong.term,
                     start=first_wrong.start,
