@@ -1,14 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Word add-in manifest.
-
-  Requirements are deliberately set at WordApi 1.3, not 1.4. Tracked
-  changes need 1.4, but declaring 1.4 here stops the add-in loading at all
-  on an older host; declaring 1.3 lets it load and lets capabilities.ts
-  probe for what is actually available. A firm on an old build gets the
-  checks and is told plainly that applying fixes needs a newer Word,
-  rather than an add-in that silently is not there.
--->
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <OfficeApp
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -16,32 +6,44 @@
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
 
-  <Id>4EBC9F97-2C6E-55E3-B86F-B56C67AD0F0B</Id>
-  <Version>0.1.0.0</Version>
+  <!-- Production manifest. Served from https://YOUR-DOMAIN.example.com -->
+  <Id>dece6c8d-a000-4167-87d1-1d6b205340a0</Id>
+  <Version>1.0.0.0</Version>
   <ProviderName>Claidor</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Claidor" />
-  <Description DefaultValue="Check a document's defined terms, cross-references and numbering, and apply fixes as tracked changes." />
-  <IconUrl DefaultValue="https://localhost:3100/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://localhost:3100/icon-64.png" />
-  <SupportUrl DefaultValue="https://claidor.com/support" />
+  <DisplayName DefaultValue="Claidor for Word" />
+  <Description DefaultValue="Contract review, playbooks, drafting, and US legal research inside Word. Grounded redlines applied as native tracked changes." />
+  <IconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-80.png" />
+  <SupportUrl DefaultValue="https://YOUR-DOMAIN.example.com/support" />
 
+  <!-- Domains the task pane is allowed to navigate to.
+
+       The sign-in dialog opened by Office.context.ui.displayDialogAsync
+       starts on the identity provider, so that origin must be listed or
+       Office refuses to open it: "The domain of the URL is not included in
+       the AppDomains element". Microsoft Entra is the only sign-in Claidor
+       offers; upstream listed Supabase and Google here instead. -->
   <AppDomains>
-    <AppDomain>https://api.claidor.com</AppDomain>
+    <AppDomain>https://YOUR-DOMAIN.example.com</AppDomain>
+    <AppDomain>https://YOUR-API-DOMAIN.example.com</AppDomain>
+    <AppDomain>https://login.microsoftonline.com</AppDomain>
   </AppDomains>
 
   <Hosts>
     <Host Name="Document" />
   </Hosts>
 
+  <!-- Hard floor: WordApi 1.6 gives change tracking, tracked-change
+       enumeration/accept-reject, comments, and custom XML parts, all GA. -->
   <Requirements>
-    <Sets DefaultMinVersion="1.3">
-      <Set Name="WordApi" MinVersion="1.3" />
+    <Sets DefaultMinVersion="1.6">
+      <Set Name="WordApi" MinVersion="1.6" />
     </Sets>
   </Requirements>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://localhost:3100/index.html" />
+    <SourceLocation DefaultValue="https://YOUR-DOMAIN.example.com/index.html" />
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -58,22 +60,22 @@
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
               <Group id="Claidor.Group">
-                <Label resid="Claidor.GroupLabel" />
+                <Label resid="Claidor.Group.Label" />
                 <Icon>
-                  <bt:Image size="16" resid="Icon.16x16" />
-                  <bt:Image size="32" resid="Icon.32x32" />
-                  <bt:Image size="80" resid="Icon.80x80" />
+                  <bt:Image size="16" resid="Icon.16" />
+                  <bt:Image size="32" resid="Icon.32" />
+                  <bt:Image size="80" resid="Icon.80" />
                 </Icon>
-                <Control xsi:type="Button" id="Claidor.CheckButton">
-                  <Label resid="Claidor.CheckLabel" />
+                <Control xsi:type="Button" id="Claidor.OpenPane">
+                  <Label resid="Claidor.OpenPane.Label" />
                   <Supertip>
-                    <Title resid="Claidor.CheckLabel" />
-                    <Description resid="Claidor.CheckTip" />
+                    <Title resid="Claidor.OpenPane.Label" />
+                    <Description resid="Claidor.OpenPane.Tip" />
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Icon.16x16" />
-                    <bt:Image size="32" resid="Icon.32x32" />
-                    <bt:Image size="80" resid="Icon.80x80" />
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>Claidor.Taskpane</TaskpaneId>
@@ -83,27 +85,49 @@
               </Group>
             </OfficeTab>
           </ExtensionPoint>
+          <!-- Right-click a text selection to open Claidor where the cursor is. -->
+          <ExtensionPoint xsi:type="ContextMenu">
+            <OfficeMenu id="ContextMenuText">
+              <Control xsi:type="Button" id="Claidor.ContextReview">
+                <Label resid="Claidor.Context.Label" />
+                <Supertip>
+                  <Title resid="Claidor.Context.Label" />
+                  <Description resid="Claidor.OpenPane.Tip" />
+                </Supertip>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16" />
+                  <bt:Image size="32" resid="Icon.32" />
+                  <bt:Image size="80" resid="Icon.80" />
+                </Icon>
+                <Action xsi:type="ShowTaskpane">
+                  <TaskpaneId>Claidor.Taskpane</TaskpaneId>
+                  <SourceLocation resid="Taskpane.Url" />
+                </Action>
+              </Control>
+            </OfficeMenu>
+          </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://localhost:3100/icon-16.png" />
-        <bt:Image id="Icon.32x32" DefaultValue="https://localhost:3100/icon-32.png" />
-        <bt:Image id="Icon.80x80" DefaultValue="https://localhost:3100/icon-80.png" />
+        <bt:Image id="Icon.16" DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-16.png" />
+        <bt:Image id="Icon.32" DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-32.png" />
+        <bt:Image id="Icon.80" DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3100/index.html" />
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://claidor.com/support" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://YOUR-DOMAIN.example.com/index.html" />
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://YOUR-DOMAIN.example.com/word" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Claidor.GroupLabel" DefaultValue="Claidor" />
-        <bt:String id="Claidor.CheckLabel" DefaultValue="Check" />
-        <bt:String id="GetStarted.Title" DefaultValue="Claidor is ready." />
+        <bt:String id="GetStarted.Title" DefaultValue="Claidor for Word is ready" />
+        <bt:String id="Claidor.Group.Label" DefaultValue="Claidor" />
+        <bt:String id="Claidor.OpenPane.Label" DefaultValue="Open Claidor" />
+        <bt:String id="Claidor.Context.Label" DefaultValue="Review with Claidor" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="Claidor.CheckTip" DefaultValue="Check defined terms, cross-references and numbering in this document." />
-        <bt:String id="GetStarted.Description" DefaultValue="Open the Claidor pane from the Home tab to check this document." />
+        <bt:String id="GetStarted.Description" DefaultValue="Open the Claidor pane to review this contract, apply grounded redlines, and draft clauses." />
+        <bt:String id="Claidor.OpenPane.Tip" DefaultValue="Review the open contract, apply tracked-change redlines, and run drafting and research." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

@@ -1,0 +1,85 @@
+.authority-view {
+  gap: 14px;
+  padding: 14px;
+}
+
+.authority-progress {
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+
+.authority-summary {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Borderless row, not a card: hairline divider + spacing separate each
+   citation. Matches the change-item de-box. Compound selector so it
+   deterministically overrides .card regardless of stylesheet import order. */
+.card.authority {
+  padding: var(--space-m);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: cardIn 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.authority__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.authority__cite {
+  font-family: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text);
+  /* Let a long citation wrap and shrink instead of pushing the badge off the
+     pane / forcing a horizontal scrollbar at 320px. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.authority__top > .row {
+  flex: 0 0 auto;
+}
+.authority__name {
+  font-weight: 600;
+  font-size: var(--fs-control);
+}
+.authority__count {
+  align-self: center;
+}
+.authority__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.authority__link {
+  border: none;
+  background: none;
+  color: var(--brand);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+/* In-context preview: the cite shown inside its surrounding sentence, so the
+   reviewer sees where it sits without jumping to the document. */
+.authority__context {
+  margin: 6px 0 0;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.authority__context-hit {
+  background: var(--brand-tint);
+  color: var(--brand);
+  border-radius: var(--radius-xs);
+  padding: 0 2px;
+  font-weight: 600;
+}

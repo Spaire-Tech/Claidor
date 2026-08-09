@@ -1,0 +1,249 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: transparent;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.app-header__mark {
+  border-radius: var(--radius-sm);
+  display: block;
+}
+.app-header__wordmark {
+  font-weight: 700;
+  letter-spacing: 0.1px;
+  color: var(--text);
+}
+.org-switcher {
+  max-width: 170px;
+  min-width: 120px;
+}
+
+/* Combined top bar for the logged-in app: logo + tab nav + account controls in
+   one row (replaces the old header row + separate tab row). align-items: stretch
+   lets the tabs fill the bar height so the active-tab underline lands on the bar's
+   bottom border; the logo and right controls re-center themselves. */
+.appbar {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+/* Logo links to the marketing site; the anchor must not add its own box to the
+   flex bar, so it lays out like the image it wraps. */
+.appbar__brand {
+  align-self: center;
+  flex: 0 0 auto;
+  display: inline-flex;
+  margin-right: 2px;
+}
+.appbar__mark {
+  border-radius: var(--radius-sm);
+  display: block;
+}
+.appbar__tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0; /* allow the strip to shrink below content width so it can scroll */
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+.appbar__tabs::-webkit-scrollbar {
+  display: none;
+}
+.appbar__right {
+  align-self: center;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Account control: the avatar + chevron sit in one pill, padded tight to the
+   avatar so it reads as a control rather than a stray photo in the bar. */
+.appbar__account {
+  padding: 3px 6px 3px 3px;
+  gap: 3px;
+  border-radius: 999px;
+}
+.appbar__account[aria-pressed="true"] {
+  background: var(--brand-tint);
+  border-color: var(--brand-border);
+  color: var(--brand);
+}
+.tabnav__tab {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  /* Roomier than the original 9px/11px: at that size the tabs read as thin text
+     links rather than a nav bar, and the hit target was smaller than the 40px
+     Office panes want for touch. */
+  padding: 11px 13px;
+  min-height: 40px;
+  border: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--fs-control);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.tabnav__tab svg {
+  opacity: 0.85;
+  transition: opacity 0.12s ease;
+}
+.tabnav__tab:hover {
+  color: var(--text);
+  background: var(--fill-subtle);
+}
+.tabnav__tab:hover svg {
+  opacity: 1;
+}
+/* Active tab: a branded accent (text + icon + underline) reads more modern and
+   on-brand than the previous flat black. A soft tint behind it gives the strip
+   some weight, so the bar reads as tabs rather than a row of thin links. */
+.tabnav__tab--on {
+  color: var(--brand);
+  background: var(--brand-tint);
+}
+.tabnav__tab--on svg {
+  opacity: 1;
+}
+.tabnav__tab--on::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--brand);
+}
+
+/* Second-level nav (e.g. the Review hub: Redlines / Citations / Sign-off). */
+.subnav {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.app-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* No padding here: results view uses full-bleed sticky header/footer and
+     manages its own padding. Other views add padding via their own class. */
+}
+
+.login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* `safe center` keeps the short account form vertically centered but falls
+     back to top-aligned (never clipped) when the taller BYOK form overflows;
+     overflow-y lets that longer form scroll instead of being cut off. */
+  justify-content: safe center;
+  overflow-y: auto;
+  text-align: center;
+  gap: 14px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+}
+/* Every block in the login column shares one width and centers, so the header,
+   the tab switch, and the form read as a single aligned column rather than a
+   centered header sitting above a left-aligned form. The column grows with the
+   pane (width: 100%) up to a readable max, so widening the task pane widens the
+   content instead of stranding it in a narrow column. */
+.login > .stack,
+.login > .seg,
+.login > .login__form,
+.login > .login__divider,
+.login > .login__register {
+  width: 100%;
+  max-width: 40rem;
+}
+/* On the login screen the tab switch spans the column with two even halves,
+   overriding the compact flush-left toggle used in dense inline rows. */
+.login > .seg {
+  align-self: center;
+}
+.login > .seg .seg__btn {
+  flex: 1 1 0;
+}
+.login__mark {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.login__title {
+  font-size: var(--fs-subtitle);
+}
+.login__sub {
+  /* Reflow to the column width so the description text widens with the pane
+     rather than staying pinned to a narrow measure. */
+  max-width: 100%;
+  color: var(--text-muted);
+}
+.login__register {
+  margin: 0;
+}
+.login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+  text-align: left;
+}
+.login__form input[type="email"],
+.login__form input[type="password"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.login__form input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.login__divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 280px;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
+.login__divider::before,
+.login__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}

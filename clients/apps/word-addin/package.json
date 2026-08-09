@@ -1,26 +1,42 @@
 {
-  "name": "word-addin",
+  "name": "@claidor/word-addin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "description": "Claidor for Microsoft Word - contract review, playbooks, drafting and document checks inside Word.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
-    "dev": "vite --host localhost --port 3100",
-    "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
+    "dev": "vite",
+    "dev:community": "vite --mode community",
+    "build": "tsc -b && vite build",
+    "build:community": "tsc -b && vite build --mode community",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "echo \"no lint configured\""
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "sideload": "office-addin-debugging start manifest.dev.xml desktop",
+    "sideload:stop": "office-addin-debugging stop manifest.dev.xml",
+    "validate:manifest": "office-addin-manifest validate manifest.xml"
   },
   "dependencies": {
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "@supabase/supabase-js": "^2.45.0",
+    "mammoth": "^1.12.0",
+    "office-word-diff": "github:yuch85/office-word-diff",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@types/office-js": "^1.0.512",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^5.1.0",
-    "typescript": "5.9.3",
-    "vite": "^7.1.14",
-    "vitest": "^3.2.4"
+    "@types/office-js": "^1.0.377",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "office-addin-debugging": "^6.0.0",
+    "office-addin-manifest": "^1.13.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.9"
   }
 }

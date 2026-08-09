@@ -1,0 +1,103 @@
+@import "../ui/tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text);
+  /* Mica: the quiet tinted canvas the acrylic chrome floats over. */
+  background: var(--mica);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}
+
+button {
+  font-family: inherit;
+}
+
+a {
+  color: var(--brand);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+/* Section title shared by every feature view: a clear, prominent heading. */
+.view-title {
+  font-size: var(--fs-view-title);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.small {
+  font-size: var(--fs-caption);
+}
+
+.scroll {
+  overflow-y: auto;
+}
+
+/* Respect reduced-motion globally: neutralize spins, pulses, blinks, and
+   entrance transitions for users who ask for less motion. Individual views can
+   still opt into essential motion, but the default is calm. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Shared in-context preview: a finding shown inside its surrounding sentence
+   with the hit highlighted (used by defined-terms, cross-references). */
+.ctx-line {
+  margin: 2px 0 0;
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+  color: var(--text-muted);
+  word-break: break-word;
+}
+.ctx-hit {
+  background: var(--brand-tint);
+  color: var(--brand);
+  border-radius: var(--radius-xs);
+  padding: 0 2px;
+  font-weight: 600;
+}

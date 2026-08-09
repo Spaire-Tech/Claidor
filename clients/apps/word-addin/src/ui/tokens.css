@@ -1,0 +1,147 @@
+/**
+ * Design tokens - the single source of truth for the whole add-in.
+ * Values are the canonical Microsoft Fluent 2 (React v9) tokens: the exact
+ * neutral ramp, elevation, radii, and type Word itself uses, plus Windows 11
+ * Acrylic/Mica materials. Every component reads these variables; do not
+ * hardcode colors, radii, or shadows in component CSS.
+ *
+ * White theme only. Acrylic (glass) is used for chrome (header, tabs, sticky
+ * bars) only, never dense content, so legal text stays crisp and legible.
+ */
+:root {
+  /* ---- Fluent 2 neutrals (light) ---- */
+  --neutral-bg-1: #ffffff; /* primary surface / cards */
+  --neutral-bg-1-hover: #f5f5f5;
+  --neutral-bg-1-pressed: #e0e0e0;
+  --neutral-bg-2: #fafafa; /* task-pane canvas */
+  --neutral-bg-3: #f5f5f5; /* sunken well / subtle fill */
+  --neutral-bg-4: #f0f0f0;
+  --neutral-fg-1: #242424; /* primary text */
+  --neutral-fg-2: #424242; /* secondary text / control text */
+  --neutral-fg-3: #616161; /* tertiary / placeholder / accessible stroke */
+  --neutral-fg-4: #707070; /* hint / disabled */
+  --neutral-stroke-1: #d1d1d1; /* control border */
+  --neutral-stroke-2: #e0e0e0; /* card border / divider */
+  --neutral-stroke-3: #f0f0f0; /* subtle divider */
+  --neutral-stroke-accessible: #616161; /* input baseline */
+
+  /* ---- Accent: Fluent 2 communication blue, so the pane reads as native
+     Office. The Claidor brand lives in the leaf logo, not the UI chrome
+     (this mirrors how real Office add-ins are themed). ---- */
+  --brand-primary: #0f6cbd; /* colorBrandBackground */
+  --brand-hover: #115ea3; /* colorBrandBackgroundHover */
+  --brand-pressed: #0f548c; /* colorBrandBackgroundPressed */
+  --brand-tint: #ebf3fc; /* colorBrandBackground2 - selected fill */
+  --brand-tint-strong: #cfe4fa;
+  --brand-border: #b4d6fa;
+  --brand-fg: #0f6cbd; /* colorBrandForeground1 - links/selected text */
+  --on-brand: #ffffff;
+  --focus-inner: #ffffff;
+  --focus-outer: #000000;
+
+  /* ---- Status (Fluent 2) ---- */
+  --success: #0e700e;
+  --success-tint: #dff6dd;
+  --success-border: #cbe6d1;
+  --warning: #855400;
+  --warning-tint: #fff4ce;
+  --warning-border: #e7d3a6;
+  --danger: #a4262c;
+  --danger-tint: #fde7e9;
+  --danger-border: #e9bdb7;
+
+  /* ---- Semantic aliases (consumed by components) ---- */
+  --canvas: var(--neutral-bg-2);
+  --surface: var(--neutral-bg-1);
+  --surface-muted: var(--neutral-bg-3);
+  --surface-raised: var(--neutral-bg-1);
+  --border: var(--neutral-stroke-2);
+  --border-strong: var(--neutral-stroke-1);
+  --control-border: var(--neutral-stroke-1);
+  --control-baseline: var(--neutral-stroke-accessible);
+  --text: var(--neutral-fg-1);
+  --text-muted: var(--neutral-fg-2);
+  --text-disabled: var(--neutral-fg-4);
+
+  --bg: var(--canvas);
+  --brand: var(--brand-primary);
+  --brand-strong: var(--brand-hover);
+  --accent: var(--brand-primary);
+  --green: var(--success);
+  --green-tint: var(--success-tint);
+  --yellow: var(--warning);
+  --yellow-tint: var(--warning-tint);
+  --red: var(--danger);
+  --red-tint: var(--danger-tint);
+
+  /* ---- Typography (Fluent 2 / Segoe UI Variable) ---- */
+  --font: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI",
+    "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto,
+    "Helvetica Neue", sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  --fs-micro: 11px; /* sub-caption micro labels: badges, timestamps, dense meta */
+  --fs-caption: 12px; /* meta / secondary labels */
+  --fs-small: 12.5px; /* compact controls: toolbar buttons, chips, bar labels */
+  --fs-control: 13px; /* interactive control labels: tabs, segmented controls */
+  --fs-body: 14px; /* comfortable body (was 13; the pane reads modern, not dense) */
+  --fs-body-lg: 15px;
+  --fs-view-title: 18px; /* per-view heading -- a clear, prominent title */
+  --fs-subtitle: 16px;
+  --fs-title: 22px;
+  --fw-regular: 400;
+  --fw-semibold: 600;
+
+  /* ---- Radii (softer, modern) ---- */
+  --radius-xs: 4px; /* tiny: inline code, nested chips, thin bars */
+  --radius-sm: 6px; /* controls: buttons, inputs, chips */
+  --radius-md: 8px;
+  --radius-lg: 12px; /* cards */
+  --radius: var(--radius-lg);
+
+  /* ---- Spacing ramp (Fluent 2) ---- */
+  --space-xs: 4px;
+  --space-s: 8px;
+  --space-m: 12px;
+  --space-l: 16px;
+  --space-xl: 20px;
+  --space-xxl: 24px;
+
+  /* ---- Elevation (Fluent 2 depth: ambient 0-blur + directional key) ---- */
+  --shadow-2: 0 0 2px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.14);
+  --shadow-4: 0 0 2px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.14);
+  --shadow-8: 0 0 2px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.14);
+  --shadow-16: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14);
+  --shadow-28: 0 0 8px rgba(0, 0, 0, 0.12), 0 14px 28px rgba(0, 0, 0, 0.14);
+  --shadow: var(--shadow-2);
+
+  /* ---- Surfaces (flat + clean; Office colors, modern layering) ----
+     The old Windows-11 acrylic/mica glass read as busy and dated. Chrome and
+     cards are now solid, with a quiet light-gray canvas so white cards stand
+     out cleanly -- the calm, spacious look of a modern legal-AI pane. */
+  --acrylic-bg: #ffffff; /* header, tabs, sticky bars */
+  --acrylic-blur: none;
+  --acrylic-stroke: var(--border);
+  --surface-glass: var(--surface); /* cards: solid white */
+  --card-blur: none;
+  --mica: #f3f4f6; /* canvas: quiet flat light-gray */
+
+  /* ---- Action button: black translucent (Office acrylic material) ----
+     Warm near-black carried as an RGB triplet so each state tunes only the
+     alpha, plus a top-highlight sheen that sells the "material" read. The
+     Assistant composer adopts these now; the app-wide .btn--primary remap is a
+     later phase, so these are additive and change nothing until consumed. */
+  --ink: 27, 26, 24;
+  --btn-primary-bg: rgba(var(--ink), 0.9);
+  --btn-primary-bg-hover: rgba(var(--ink), 0.96);
+  --btn-primary-bg-pressed: rgb(14, 13, 12);
+  --btn-primary-fg: #ffffff;
+  --btn-primary-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  /* Destructive action (ConfirmDialog, bulk delete). */
+  --btn-danger-bg: var(--danger);
+  --btn-danger-bg-hover: #8a1f24;
+  --btn-danger-fg: #ffffff;
+
+  /* ---- Subtle tint fills: separate borderless surfaces by tint, not stroke. ---- */
+  --fill-subtle: var(--neutral-bg-3); /* #f5f5f5 */
+  --fill-subtle-hover: var(--neutral-bg-4); /* #f0f0f0 */
+}

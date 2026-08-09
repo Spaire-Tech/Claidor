@@ -1,0 +1,331 @@
+import { useEffect, useState } from "react";
+import { Badge, Button, Field, Spinner, Toggle } from "@/ui/primitives";
+import { Avatar } from "@/ui/Avatar";
+import { ViewHeader } from "@/ui/ViewHeader";
+import { Combobox } from "@/ui/Combobox";
+import { TONE_COLOR, type StatusTone } from "@/ui/status";
+import { clearSession, getUser } from "@/auth/session";
+import { getActiveOrgId } from "@/lib/org";
+import { listMyOrganizations } from "@/api/organizations";
+import { fetchUsageSnapshot, type QuotaSnapshot } from "@/api/usage";
+import { config } from "@/config";
+import { MatterPicker } from "@/features/integration/MatterPicker";
+import { OrgSwitcher } from "@/features/org/OrgSwitcher";
+import {
+  getReviewPrefs,
+  setReviewPrefs,
+  subscribeReviewPrefs,
+  type ReviewPrefs,
+} from "@/lib/prefs";
+import { JURISDICTIONS } from "@/features/review/constants";
+import { isCommunity } from "@/community/edition";
+import { isUsagePingActive, isUsageOptedOut, setUsageOptOut } from "@/lib/usageTelemetry";
+import { UpgradeLink } from "@/ui/UpgradeGate";
+import { AiProvidersCard } from "./AiProvidersCard";
+import { CourtListenerCard } from "./CourtListenerCard";
+import "./settings.css";
+
+// Footer links on the marketing site (YOUR-DOMAIN.example.com, the domain the manifest
+// declares). Support matches the manifest's SupportUrl; confirm privacy/terms paths.
+const SUPPORT_URL = "https://YOUR-DOMAIN.example.com/support";
+const PRIVACY_URL = "https://YOUR-DOMAIN.example.com/privacy";
+const TERMS_URL = "https://YOUR-DOMAIN.example.com/terms";
+
+/**
+ * Account / settings panel. Read-only account context (signed-in user, active
+ * organization, current usage against plan limits) plus editable review
+ * defaults (jurisdiction + contract type) persisted locally via prefs.ts.
+ *
+ * Self-contained: this view resolves its own data and is NOT wired into the app
+ * shell here. Every remote field is null-guarded and degrades to a friendly
+ * "unavailable" state rather than crashing when the backend omits it.
+ */
+
+type UsageState =
+  | { status: "loading" }
+  | { status: "ready"; snapshot: QuotaSnapshot }
+  | { status: "unavailable" };
+
+/**
+ * Compact plan + usage line. The full per-metric breakdown and billing live in
+ * the web app (this is a thin client), so the pane shows the plan, a one-line
+ * message-quota glance, and a deep-link out to manage it. The reactive
+ * QuotaBanner still warns in-flow when a limit is close.
+ */
+function UsageSection({ state }: { state: UsageState }) {
+  const manageLink = (
+    <a
+      className="settings-usage__link small"
+      href={`${config.appBase}/settings/billing`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      Manage your plan
+    </a>
+  );
+
+  if (state.status === "loading") {
+    return (
+      <div className="row muted small">
+        <Spinner /> Loading usage...
+      </div>
+    );
+  }
+  if (state.status === "unavailable") {
+    return (
+      <div className="stack settings-usage" style={{ gap: 6 }}>
+        <p className="small muted" style={{ margin: 0 }}>
+          Usage is unavailable right now.
+        </p>
+        {manageLink}
+      </div>
+    );
+  }
+
+  const { snapshot } = state;
+  const messages = snapshot.messages;
+  return (
+    <div className="stack settings-usage" style={{ gap: 6 }}>
+      <div className="row settings-usage__tier" style={{ justifyContent: "space-between", gap: 8 }}>
+        <div className="row" style={{ gap: 6, alignItems: "center", minWidth: 0 }}>
+          <Badge tone="brand">{snapshot.tierName || snapshot.tier || "Plan"}</Badge>
+          <span className="small muted">
+            {messages ? `${messages.current} / ${messages.limit} messages` : "Unlimited messages"}
+          </span>
+        </div>
+        {manageLink}
+      </div>
+      {messages && messages.limit > 0 && (
+        <UsageMeter current={messages.current} limit={messages.limit} />
+      )}
+    </div>
+  );
+}
+
+/** A thin usage meter, tinted green below 70%, yellow past 70%, red past 90%,
+ *  so "near your limit" is scannable at a glance. */
+function UsageMeter({ current, limit }: { current: number; limit: number }) {
+  const pct = Math.max(0, Math.min(100, Math.round((current / limit) * 100)));
+  const tone: StatusTone = pct >= 90 ? "red" : pct >= 70 ? "yellow" : "green";
+  return (
+    <div
+      className="settings-usage__meter"
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`${current} of ${limit} messages used`}
+    >
+      <span
+        className="settings-usage__meter-fill"
+        style={{ width: `${pct}%`, background: TONE_COLOR[tone] }}
+      />
+    </div>
+  );
+}
+
+export function SettingsView({
+  onReplayWalkthrough,
+}: {
+  /** Closes Settings, resets tour progress, and starts the walkthrough. */
+  onReplayWalkthrough?: () => void;
+} = {}) {
+  const user = getUser();
+  const email = user?.email ?? "";
+  const meta = user?.user_metadata ?? {};
+  const rawName = (meta as Record<string, unknown>).full_name ?? (meta as Record<string, unknown>).name;
+  const displayName = typeof rawName === "string" && rawName.trim() ? rawName.trim() : "";
+
+  const [orgName, setOrgName] = useState<string | null>(null);
+  // Org count decides whether the organization row is a switcher (multi-org) or
+  // static text (single-org), so the active org is not shown twice.
+  const [orgCount, setOrgCount] = useState(0);
+  const [usage, setUsage] = useState<UsageState>({ status: "loading" });
+  const [prefs, setPrefs] = useState<ReviewPrefs>(getReviewPrefs());
+  // Anonymous BYOK usage-ping opt-out (only relevant in the hosted BYOK build).
+  const [usageOptedOut, setUsageOptedOutState] = useState(() => isUsageOptedOut());
+
+  // Keep the form in sync if the prefs store changes elsewhere.
+  useEffect(() => subscribeReviewPrefs(setPrefs), []);
+
+  // Resolve the active organization's display name.
+  useEffect(() => {
+    let alive = true;
+    listMyOrganizations()
+      .then((orgs) => {
+        if (!alive) return;
+        const activeId = getActiveOrgId();
+        const match = activeId ? orgs.find((o) => o.id === activeId) : undefined;
+        setOrgName(match?.name ?? (orgs.length > 0 ? orgs[0]?.name ?? null : null));
+        setOrgCount(orgs.length);
+      })
+      .catch(() => {
+        if (alive) setOrgName(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Load the usage snapshot.
+  useEffect(() => {
+    let alive = true;
+    const controller = new AbortController();
+    fetchUsageSnapshot(controller.signal)
+      .then((snapshot) => {
+        if (!alive) return;
+        setUsage(snapshot ? { status: "ready", snapshot } : { status: "unavailable" });
+      })
+      .catch(() => {
+        if (alive) setUsage({ status: "unavailable" });
+      });
+    return () => {
+      alive = false;
+      controller.abort();
+    };
+  }, []);
+
+  return (
+    <div className="stack settings">
+      <ViewHeader title="Account" />
+
+      <div className="card settings-card">
+        <div className="settings-account__top">
+          <div className="row" style={{ gap: 10, alignItems: "flex-start", minWidth: 0 }}>
+            <Avatar name={displayName || email || "User"} size={36} />
+            <div className="stack settings-account">
+              {displayName && <span className="settings-account__name">{displayName}</span>}
+              <span className="small muted">{email || "Not signed in"}</span>
+              {/* One organization row: a switcher when the user owns more than one
+                  workspace, otherwise static text (so the active org is not shown
+                  twice). Organizations are an account concept, so hide the row
+                  entirely in the community/BYOK edition. */}
+              {!isCommunity() && (
+                <div className="row settings-account__org">
+                  <span className="small muted">Organization</span>
+                  {orgCount > 1 ? (
+                    <OrgSwitcher />
+                  ) : (
+                    <span className="small">{orgName ?? "Personal"}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={clearSession}>
+            Sign out
+          </Button>
+        </div>
+      </div>
+
+      {isCommunity() && <AiProvidersCard />}
+
+      {isCommunity() && <CourtListenerCard />}
+
+      {/* Anonymous usage: shown only when the ping is actually active (the hosted
+          BYOK build). Since BYOK users have no account, an anonymous once-a-day
+          install ping is the only way to count unique users; it is fully
+          disclosed and opt-out here. No documents, keys, or prompts are sent. */}
+      {isUsagePingActive() && (
+        <div className="card settings-card">
+          <h2 className="settings-heading">Privacy</h2>
+          <div className="row" style={{ justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+            <div className="stack" style={{ gap: 2, minWidth: 0 }}>
+              <span className="small">Share anonymous usage</span>
+              <span className="small muted">
+                A once-a-day anonymous ping so we can count how many people use the
+                add-in. No documents, prompts, API keys, or account details, ever.
+              </span>
+            </div>
+            <Toggle
+              checked={!usageOptedOut}
+              onChange={(on) => {
+                setUsageOptOut(!on);
+                setUsageOptedOutState(!on);
+              }}
+              label="Share anonymous usage"
+            />
+          </div>
+        </div>
+      )}
+
+      {!isCommunity() && (
+        <div className="card settings-card">
+          <h2 className="settings-heading">Plan &amp; usage</h2>
+          <UsageSection state={usage} />
+        </div>
+      )}
+
+      <div className="card settings-card">
+        <h2 className="settings-heading">Workspace defaults</h2>
+        <p className="small muted settings-heading__hint">
+          {isCommunity()
+            ? "Set your default jurisdiction once. New reviews and the assistant use it automatically, so you never re-pick it."
+            : "Set your matter and jurisdiction once. New reviews and the assistant use them automatically, so you never re-pick them."}
+        </p>
+        <div className="form-grid">
+          {/* Matters live in the hosted account; in BYOK show a lock, keep the
+              local jurisdiction default. */}
+          {isCommunity() ? (
+            <Field label="Default matter">
+              <UpgradeLink label="Matters (hosted)" />
+            </Field>
+          ) : (
+            <MatterPicker
+              value={prefs.matterId}
+              onChange={(id) => setReviewPrefs({ matterId: id })}
+              label="Default matter"
+              emptyLabel="General matter"
+              showWhenEmpty
+            />
+          )}
+          <Field label="Default jurisdiction">
+            <Combobox
+              value={prefs.jurisdiction}
+              onChange={(v) => setReviewPrefs({ jurisdiction: v })}
+              options={JURISDICTIONS}
+              ariaLabel="Default jurisdiction"
+            />
+          </Field>
+        </div>
+      </div>
+
+      {onReplayWalkthrough && (
+        <div className="card settings-card">
+          <h2 className="settings-heading">Help &amp; guides</h2>
+          <p className="small muted settings-heading__hint">
+            New here, or want a refresher? Replay the walkthrough, or open a guide for any tab from
+            the Guides button in the top bar.
+          </p>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onReplayWalkthrough}
+            style={{ alignSelf: "flex-start" }}
+          >
+            Replay walkthrough
+          </Button>
+        </div>
+      )}
+
+      <div className="settings-footer">
+        <a className="settings-footer__link" href={SUPPORT_URL} target="_blank" rel="noreferrer">
+          Help &amp; support
+        </a>
+        <span className="settings-footer__dot" aria-hidden>
+          ·
+        </span>
+        <a className="settings-footer__link" href={PRIVACY_URL} target="_blank" rel="noreferrer">
+          Privacy
+        </a>
+        <span className="settings-footer__dot" aria-hidden>
+          ·
+        </span>
+        <a className="settings-footer__link" href={TERMS_URL} target="_blank" rel="noreferrer">
+          Terms
+        </a>
+        <span className="settings-footer__ver">v{config.appVersion}</span>
+      </div>
+    </div>
+  );
+}

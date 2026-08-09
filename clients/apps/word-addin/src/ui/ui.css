@@ -1,0 +1,414 @@
+/* Reusable UI kit styles. Kept separate from feature styles. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.btn:hover:not(:disabled) {
+  background: var(--surface-muted);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+/* Primary action: black translucent (Office acrylic material), never blue. */
+.btn--primary {
+  background: var(--btn-primary-bg);
+  border-color: transparent;
+  color: var(--btn-primary-fg);
+  box-shadow: var(--btn-primary-sheen);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--btn-primary-bg-hover);
+}
+.btn--primary:active:not(:disabled) {
+  background: var(--btn-primary-bg-pressed);
+}
+.btn--danger {
+  background: var(--btn-danger-bg);
+  border-color: transparent;
+  color: var(--btn-danger-fg);
+}
+.btn--danger:hover:not(:disabled) {
+  background: var(--btn-danger-bg-hover);
+}
+.btn--sm {
+  padding: 5px 11px;
+  font-size: var(--fs-control);
+}
+.btn--block {
+  width: 100%;
+}
+/* Single call-to-action: a capped width, right-aligned in its row instead of
+   stretching edge-to-edge. Right-aligns in block, flex-column, and flex-row
+   parents (margin-left:auto on a shrink-to-fit flex box). */
+.btn--cta {
+  display: flex;
+  width: fit-content;
+  max-width: 280px;
+  margin-left: auto;
+}
+/* Tertiary/inline action: ink text (blue is reserved for links via .linkaction). */
+.btn--ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--fill-subtle);
+  color: var(--text);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  line-height: 1.6;
+}
+.badge--green {
+  background: var(--green-tint);
+  color: var(--green);
+}
+.badge--yellow {
+  background: var(--yellow-tint);
+  color: var(--yellow);
+}
+.badge--red {
+  background: var(--red-tint);
+  color: var(--red);
+}
+.badge--neutral {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+.badge--brand {
+  background: var(--brand-tint);
+  color: var(--brand);
+}
+
+.banner {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 11px;
+  background: var(--surface-muted);
+  /* Hints and status callouts read as secondary, not body copy. */
+  font-size: var(--fs-small);
+  line-height: 1.45;
+}
+.banner--warn {
+  background: var(--yellow-tint);
+  border-color: var(--warning-border);
+  color: var(--warning);
+}
+.banner--danger {
+  background: var(--red-tint);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+.banner--info {
+  background: var(--brand-tint);
+  border-color: var(--brand-border);
+}
+.banner--success {
+  background: var(--success-tint);
+  border-color: var(--success-border);
+  color: var(--success);
+}
+
+/* Clean, flat content card: solid white, hairline border, a whisper of shadow
+   for depth (replaces the old frosted-glass Mica look). Feature cards set their
+   own padding; generic cards use .card--pad for a consistent 16px. */
+/* Bordered white card with a whisper of elevation. .card--sunken fills with a
+   tint for the rare nested case. */
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+}
+.card--sunken {
+  background: var(--fill-subtle);
+  box-shadow: none;
+}
+.card--pad {
+  padding: var(--space-l);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.field > label,
+.field__labelrow > label {
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+/* Label + an inline action (e.g. "Improve") share one row above the control. */
+.field__labelrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+/* Inline field: the label sits on the SAME row as its control (a compact toggle),
+   to save vertical space. Responsive: the control wraps to the next row when the
+   pane is too narrow, and any caption always takes its own line below. */
+.field--inline {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.field--inline > label {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.field--inline .seg {
+  align-self: center;
+}
+.field--inline > .small {
+  flex-basis: 100%;
+  margin: 0;
+}
+/* Bordered inputs; the border goes brand + a soft ring on focus. */
+.field select,
+.field input,
+.field textarea {
+  padding: 9px 11px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body);
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.field select:hover,
+.field input:hover,
+.field textarea:hover {
+  border-color: var(--neutral-fg-3);
+}
+.field select:focus,
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-tint);
+}
+.field textarea {
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.5;
+}
+
+/* Bare <select> outside a .field (e.g. Client rules, matter/playbook pickers)
+   must not fall back to the raw OS dropdown. This gives every native select the
+   same bordered control look as .field select, so dropdowns are consistent
+   everywhere without each call site remembering to wrap itself in a field. */
+select {
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body);
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+select:hover {
+  border-color: var(--neutral-fg-3);
+}
+select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-tint);
+}
+
+/* Responsive field grid. In a narrow task pane it is a single column; as the
+   user widens the pane it flows short controls (selects, small inputs) into 2+
+   columns automatically. Wide controls (textareas, full-width rows) opt out
+   with .form-grid__full so they always span every column. */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-m);
+  align-items: start;
+}
+.form-grid__full {
+  grid-column: 1 / -1;
+}
+
+/* Keyboard focus ring across every interactive control (not just the kit
+   primitives - links, disclosures, prompt chips, and the info button too). */
+.btn:focus-visible,
+.seg__btn:focus-visible,
+.iconbtn:focus-visible,
+.chip:focus-visible,
+.tabnav__tab:focus-visible,
+.prompt:focus-visible,
+.infotip__btn:focus-visible,
+.action-bar__link:focus-visible,
+.authority__link:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
+
+/* Filled track with a hairline; the selected pill is a flat white fill with ink
+   text (the fill IS the selected signal, so blue stays for links). */
+.seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--fill-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  /* Size to the segments, not the pane: a 2-3 option toggle should stay compact
+     and NOT stretch edge-to-edge as the user widens the task pane. fit-content
+     handles block parents; align-self handles flex-column parents (which would
+     otherwise stretch it); max-width keeps it inside a narrow pane. */
+  width: fit-content;
+  max-width: 100%;
+  align-self: flex-start;
+}
+/* Full-width variant for the rare case that genuinely wants to span (opt-in). */
+.seg--full {
+  width: 100%;
+  align-self: stretch;
+}
+.seg__btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.seg__btn:hover:not(.seg__btn--on) {
+  color: var(--text);
+}
+.seg__btn--on {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  box-shadow: none;
+}
+/* Compact variant for dense inline rows. */
+.seg--sm .seg__btn {
+  padding: 3px 8px;
+  font-size: var(--fs-micro);
+}
+.seg__count {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--brand-tint);
+  color: var(--brand);
+  font-size: var(--fs-micro);
+  line-height: 15px;
+}
+.seg__btn--on .seg__count {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+/* Subtle inline text-link action (e.g. "Add to playbook") that expands to a
+   small control set. */
+.linkaction {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--brand);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+}
+.linkaction:hover {
+  text-decoration: underline;
+}
+.linkaction__select {
+  padding: 4px 8px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  max-width: 60%;
+}
+
+/* Bordered icon button; tint on hover, brand when active. The overflow kebab
+   reuses this class. */
+.iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.iconbtn:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+.iconbtn--green:hover {
+  color: var(--green);
+  border-color: var(--success-border);
+}
+.iconbtn--red:hover {
+  color: var(--red);
+  border-color: var(--danger-border);
+}
+.iconbtn--active {
+  background: var(--brand-tint);
+  border-color: var(--brand);
+  color: var(--brand);
+}

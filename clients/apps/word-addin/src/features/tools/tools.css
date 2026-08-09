@@ -1,0 +1,93 @@
+.tools {
+  gap: 14px;
+  padding: 14px;
+}
+
+/* Embedded selection tools (inside the Assistant). Flat, borderless card: the
+   old glass/shadow/border tokens are now flattened. A white surface holds the
+   tinted wells inside (matching the foundation card idiom), so nested tint
+   surfaces stay separable without any stroke. */
+.selection-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+}
+
+.sel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+.sel--empty {
+  gap: 4px;
+  text-align: left;
+}
+.sel__text {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-left: 3px solid var(--brand);
+  padding-left: 8px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.chip:hover {
+  background: var(--brand-tint);
+  color: var(--brand);
+  border-color: var(--brand);
+}
+.chip--on {
+  background: var(--brand-tint);
+  color: var(--brand);
+  border-color: var(--brand);
+  font-weight: 600;
+}
+
+/* Selection-tool selector: wraps to fit a narrow task pane. */
+.tool-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Compliance requirement checklist: status badge beside each requirement. */
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.checklist__item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.tool-result {
+  padding: 10px 12px;
+  gap: 8px;
+  animation: cardIn 0.24s cubic-bezier(0.4, 0, 0.2, 1) both;
+}

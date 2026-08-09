@@ -1,0 +1,132 @@
+.ctx-menu__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.ctx-menu {
+  position: absolute;
+  bottom: 100%;
+  /* Left-anchored and sized to its content rather than stretched edge-to-edge,
+     so the short source labels don't leave a wide empty gutter before the
+     on/off check. Caps to the composer width on a narrow pane. */
+  left: 8px;
+  right: auto;
+  width: max-content;
+  min-width: 232px;
+  max-width: min(300px, calc(100% - 16px));
+  z-index: 41;
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-16);
+}
+
+.ctx-menu__head {
+  padding: 3px 8px 5px;
+}
+
+/* One compact line per source: type icon, label, on/off check. */
+.ctx-source {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ctx-source:hover {
+  background: var(--surface-muted);
+}
+
+.ctx-source:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+/* Locked source (community/BYOK): a hosted-only source shown muted with a lock,
+   linking to the hosted plan instead of toggling. */
+.ctx-source--locked {
+  color: var(--text-muted);
+  text-decoration: none;
+  opacity: 0.75;
+}
+.ctx-source--locked .ctx-source__check {
+  color: var(--text-muted);
+}
+
+.ctx-source__icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctx-source__icon svg {
+  opacity: 0.7;
+}
+
+.ctx-source--on .ctx-source__icon {
+  color: var(--brand);
+}
+
+.ctx-source--on .ctx-source__icon svg {
+  opacity: 1;
+}
+
+.ctx-source__label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-control);
+  font-weight: 500;
+}
+
+.ctx-source__check {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--on-brand);
+}
+
+.ctx-source--on .ctx-source__check {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.ctx-menu__note {
+  margin: 3px 8px;
+}
+
+/* Attach-files section: a divider, then an inline upload button + short hint
+   (chip + control styles are shared in ui/attachments.css). */
+.ctx-attach {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.ctx-attach__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 2px;
+}

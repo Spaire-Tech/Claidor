@@ -1,0 +1,61 @@
+/* Clause library. The list chrome + search come from ScopedSearchList; these
+   rules only style the clause card, matching the padding/rhythm of template-card
+   (10px 12px) so the surface is consistent with Templates and Saved drafts. */
+
+.clause-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+}
+
+.clause-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.clause-card__title {
+  font-weight: 600;
+  font-size: var(--fs-control);
+}
+
+/* Content preview stays to a couple of lines so the list scans quickly. */
+.clause-card__preview {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Expanded via "Read more": drop the clamp and show the whole clause. */
+.clause-card__preview--full {
+  display: block;
+  -webkit-line-clamp: none;
+  overflow: visible;
+}
+
+/* "Read more" / "Show less" toggle: a quiet inline link under the preview. */
+.clause-card__more {
+  align-self: flex-start;
+  margin: -2px 0 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--brand-fg);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+}
+.clause-card__more:hover {
+  text-decoration: underline;
+}
+
+.clause-card__actions {
+  display: flex;
+  justify-content: flex-end;
+}

@@ -1,0 +1,76 @@
+/* Bordered list rows (cards). */
+.playbook-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.playbook-row:hover {
+  background: var(--surface-muted);
+}
+
+/* The clickable open-the-playbook area (fills the row, leaving room for actions). */
+.playbook-row__main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 6px 10px 8px;
+  border: none;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.playbook-row__main:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+.playbook-row__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.playbook-row__meta {
+  display: block;
+}
+
+/* Unified empty state (zero playbooks) rendered through ScopedSearchList.empty. */
+.playbook-empty {
+  gap: 6px;
+  align-items: center;
+  text-align: center;
+}
+.playbook-empty__title {
+  font-weight: 600;
+}
+.playbook-empty__cta {
+  margin-top: 2px;
+  justify-content: center;
+}
+
+/* Leading brand-tinted badge so each playbook reads as a rich, real object
+   rather than a bare text row. Matches the file-icon system's colored-badge look. */
+.playbook-row__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  margin-left: 6px;
+  border-radius: var(--radius-md);
+  background: var(--brand-tint);
+  color: var(--brand);
+}

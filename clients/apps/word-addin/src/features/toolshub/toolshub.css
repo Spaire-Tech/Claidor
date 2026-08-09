@@ -1,0 +1,29 @@
+/* Consistent content padding for the Tools launcher and every tool it opens
+   (compliance, redact, fill, edit, transplant), so no tool view is edge-to-edge. */
+.toolshub,
+.toolshub-tool {
+  padding: var(--space-l);
+}
+
+.toolshub {
+  gap: var(--space-m);
+}
+
+.toolshub-tool {
+  gap: var(--space-s);
+}
+
+/* Each workflow group (Check / Send): a small caps-y label above its cards, so
+   the tools read as short grouped sets rather than one long list. */
+.toolshub-group {
+  gap: var(--space-s);
+}
+
+.toolshub-group__label {
+  margin: 0;
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

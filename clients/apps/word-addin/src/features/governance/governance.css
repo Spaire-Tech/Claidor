@@ -1,0 +1,63 @@
+.governance-view {
+  gap: 14px;
+  padding: 14px;
+}
+
+/* Sign-off status uses the shared .banner system (info / danger via the Banner
+   component). The signed-off "success" tone is not in shared ui.css, so it lives
+   here as a local modifier on the same .banner base: green tint + a left accent
+   bar, matching the danger banner's inset-shadow accent. */
+.banner--gov-signed {
+  background: var(--success-tint);
+  color: var(--success);
+  box-shadow: inset 3px 0 0 var(--success);
+}
+
+.gov-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.gov-reasons {
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* Governance panel (sign-off or lock; at most one shows at a time). */
+.gov-action {
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+}
+
+.gov-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gov-history li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.gov-history__dot {
+  margin-top: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+  flex: 0 0 auto;
+}
+.gov-history__note {
+  margin-top: 2px;
+  padding: 4px 8px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+}

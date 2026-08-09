@@ -1,0 +1,101 @@
+/* Enhancements layered on the base .redline styles in review.css:
+   the edit-before-apply panel and the collapsible "Why this change" reasoning. */
+
+/* The redline card is the primary interactive unit, so it keeps a lift: a
+   whisper of shadow (no drawn 1px border) sets it off the flat canvas. */
+.card.redline {
+  box-shadow: var(--shadow-2);
+}
+
+.redline__text--ins {
+  white-space: pre-wrap;
+}
+
+/* Change-intent subtitle: a small, muted "what this edit does" line stacked
+   under the bold clause name so the card is scannable without competing with
+   the primary title. */
+.redline__titlewrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.redline__intent {
+  font-size: var(--fs-micro);
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Edit-before-apply */
+.redline__edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.redline__editbox {
+  width: 100%;
+  resize: vertical;
+  min-height: 64px;
+  padding: 8px;
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.5;
+}
+
+.redline__editbox:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -1px;
+}
+
+.redline__edit-actions {
+  align-items: center;
+}
+
+/* Collapsible reasoning */
+.redline__why-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--brand-fg);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.redline__why-chev {
+  display: inline-flex;
+  transition: transform 0.15s ease;
+}
+
+.redline__why-chev--open {
+  transform: rotate(180deg);
+}
+
+/* Agentic "Draft a stronger fix" progress banner. Subtle brand-tinted strip
+   while the plan->draft->validate->repair->critique->gate loop streams. */
+.redline__fixing {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-md);
+  background: var(--brand-tint);
+}
+
+/* Fallback ladder rung shown per redline: the position to fall back to if the
+   primary redline is rejected in negotiation. */
+.redline__fallback {
+  padding: 5px 9px;
+  border-left: 2px solid var(--border-strong);
+  background: var(--fill-subtle);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  line-height: 1.45;
+}

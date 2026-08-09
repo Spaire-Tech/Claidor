@@ -1,0 +1,34 @@
+Vaquill AI for Word
+Copyright 2026 Vaquill AI
+
+This product includes software developed as a Microsoft Word task-pane add-in.
+
+Third-party components:
+
+- office-word-diff (https://github.com/yuch85/office-word-diff)
+  Licensed under the Apache License, Version 2.0.
+  Provides the Office.js word-level tracked-change diff engine.
+
+- diff-match-patch
+  Licensed under the Apache License, Version 2.0.
+  Core diff algorithm; a transitive dependency of office-word-diff.
+
+This add-in is a thin client. It requires the Vaquill AI backend to function;
+it does not perform contract analysis, retrieval, or generation on its own.
+
+--------------------------------------------------------------------------
+
+This is a modified fork.
+
+Claidor Word add-in
+Copyright 2026 Spaire Tech
+
+Forked from Vaquill-AI/ms-word-addin (Apache License 2.0) on 2026-08-09,
+at upstream commit dated 2026-07-28. The upstream copyright notice and
+licence above are retained in full.
+
+Changes made to the original work are recorded in FORK.md, as required by
+section 4(b) of the Apache License. In summary: the community
+(bring-your-own-key) build is the starting point; branding and hosted
+backend identifiers are replaced; and the deterministic document checks
+are served by the Claidor API rather than computed in the task pane.

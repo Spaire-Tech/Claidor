@@ -1,0 +1,178 @@
+import { useState } from "react";
+import { ViewHeader } from "@/ui/ViewHeader";
+import { Badge, Banner, Button, Field } from "@/ui/primitives";
+import { Dropzone } from "@/ui/Dropzone";
+import { CheckIcon } from "@/ui/icons";
+import { extractClause, type ExtractedClause } from "@/api/clause";
+import { reconcileTerms, type Reconciliation } from "@/api/reconcile";
+import { insertClauseTracked } from "@/office/richInsert";
+import { readFullDocumentText } from "@/office/document";
+import { errorMessage } from "@/api/errors";
+import "./transplant.css";
+
+const ACCEPT = ".pdf,.docx,.doc,.txt";
+
+type State =
+  | { status: "idle" }
+  | { status: "extracting" }
+  | { status: "done"; clause: ExtractedClause }
+  | { status: "error"; error: string };
+
+/**
+ * Cross-document clause transplant: describe a clause, attach a source contract,
+ * pull that clause verbatim, and insert it into the open document at the cursor
+ * as a tracked change. Reuses the fill dropzone and the tracked-paragraph insert.
+ */
+export function TransplantView() {
+  const [clause, setClause] = useState("");
+  const [state, setState] = useState<State>({ status: "idle" });
+  const [inserting, setInserting] = useState(false);
+  const [inserted, setInserted] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  // Reconciled version of the clause (defined terms aligned to this document),
+  // null until the user runs reconciliation.
+  const [recon, setRecon] = useState<Reconciliation | null>(null);
+  const [reconciling, setReconciling] = useState(false);
+
+  async function extract(file: File) {
+    if (!clause.trim()) return;
+    setState({ status: "extracting" });
+    setInserted(false);
+    setRecon(null);
+    setNote(null);
+    try {
+      setState({ status: "done", clause: await extractClause(file, clause.trim()) });
+    } catch (e) {
+      setState({
+        status: "error",
+        error: errorMessage(e),
+      });
+    }
+  }
+
+  async function insert(text: string) {
+    setInserting(true);
+    setNote(null);
+    try {
+      await insertClauseTracked(text);
+      setInserted(true);
+    } catch (e) {
+      setNote(errorMessage(e));
+    } finally {
+      setInserting(false);
+    }
+  }
+
+  async function reconcile(clauseText: string) {
+    setReconciling(true);
+    setNote(null);
+    try {
+      const dest = await readFullDocumentText();
+      setRecon(await reconcileTerms(clauseText, dest));
+    } catch (e) {
+      setNote(errorMessage(e));
+    } finally {
+      setReconciling(false);
+    }
+  }
+
+  function reset() {
+    setState({ status: "idle" });
+    setInserted(false);
+    setRecon(null);
+    setNote(null);
+  }
+
+  return (
+    <div className="stack">
+      <ViewHeader
+        title="Clause transplant"
+        info="Pull a clause from another contract and insert it into this document as a tracked change. The clause is copied verbatim from the source; place your cursor where you want it before inserting."
+        subtitle="Pull a clause from another contract into this document."
+      />
+
+      <Field label="Clause to pull">
+        <input
+          value={clause}
+          placeholder="e.g. the confidentiality clause"
+          onChange={(e) => setClause(e.target.value)}
+        />
+      </Field>
+
+      <Dropzone
+        accept={ACCEPT}
+        label="Attach source contract"
+        hint="PDF, Word, or text. Max 10MB."
+        disabled={!clause.trim()}
+        disabledHint="Describe the clause first."
+        busy={state.status === "extracting"}
+        busyLabel="Finding the clause in the source..."
+        onFile={(f) => void extract(f)}
+      />
+
+      {state.status === "error" && <Banner tone="danger">{state.error}</Banner>}
+
+      {state.status === "done" &&
+        (state.clause.found ? (
+          <div className="stack" style={{ gap: 8 }}>
+            <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+              <span className="small" style={{ fontWeight: 600 }}>{state.clause.label}</span>
+              <Button variant="ghost" size="sm" onClick={reset}>
+                New
+              </Button>
+            </div>
+            <div className="transplant-preview">{recon?.reconciledText ?? state.clause.text}</div>
+
+            {recon ? (
+              <div className="stack" style={{ gap: 4 }}>
+                <Badge tone="brand">Terms reconciled to this document</Badge>
+                {recon.changes.length > 0 ? (
+                  <ul className="stack" style={{ margin: 0, paddingLeft: 16, gap: 2 }}>
+                    {recon.changes.map((c, i) => (
+                      <li key={i} className="small">
+                        <strong>{c.from}</strong> {"->"} <strong>{c.to}</strong>
+                        {c.note ? <span className="muted"> - {c.note}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="small muted" style={{ margin: 0 }}>No term changes were needed.</p>
+                )}
+              </div>
+            ) : (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => reconcile(state.clause.text)}
+                loading={reconciling}
+                disabled={reconciling}
+              >
+                Reconcile defined terms to this document
+              </Button>
+            )}
+
+            <Button
+              variant="primary"
+              className="btn--cta"
+              onClick={() => insert(recon?.reconciledText ?? state.clause.text)}
+              disabled={inserted}
+              loading={inserting}
+            >
+              {inserted ? (
+                <>
+                  <CheckIcon size={14} /> Inserted as tracked change
+                </>
+              ) : (
+                "Insert at cursor"
+              )}
+            </Button>
+            {note && <Banner tone="warn">{note}</Banner>}
+          </div>
+        ) : (
+          <Banner tone="info">
+            No matching clause was found in the source. Try describing it differently.
+          </Banner>
+        ))}
+    </div>
+  );
+}

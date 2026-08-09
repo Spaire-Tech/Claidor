@@ -1,122 +1,140 @@
-# Word add-in
+# Claidor for Word
 
-The Check panel, inside Word. It reads the open document, sends the text
-to `POST /v1/redline/check`, and shows the findings in Vesence's four
-buckets — Critical, Warning, To review, Ignored.
+A Microsoft Word task-pane add-in: contract review, playbooks, drafting and
+document checks, applied back into the open document as native tracked
+changes, comments and content controls.
 
-## What is verified, and what is not
+**This is a fork of [`Vaquill-AI/ms-word-addin`](https://github.com/Vaquill-AI/ms-word-addin)**
+(Apache License 2.0), taken on 9 August 2026. `LICENSE` and `NOTICE` carry
+upstream's copyright; `FORK.md` is the statement of changes Apache 2.0 §4(b)
+requires, and it is also the honest account of what is ours and what is not.
+Most of this tree is upstream's.
 
-**This has not been run in Word.** There is no copy of Word in this
-environment, and there is no way to fake one honestly: Office.js only
-exists inside an Office host. So the status is:
+## Why fork
+
+Upstream had already built the thing that takes months and cannot be
+shortened: about 40,000 lines of Office.js integration across 30 feature
+areas — tracked-change application, comments anchored to text, content
+controls, custom XML parts that survive a document being emailed out and
+back, bookmark-based navigation, a document-change watcher, `.docx` export.
+None of that is interesting to rebuild and all of it is slow to get right.
+
+What is ours is the engine underneath the checks. Upstream's defined-term
+check is 188 lines of client-side regex covering three defects; ours is ten
+mechanical checks plus two model-based ones, measured on 30 real SEC filings
+and tuned from 43.6 findings per agreement down to 20.3, with severities,
+certainties and character offsets. Wiring that in is the point of the fork.
+
+## Two builds
+
+| | Hosted | Community (bring-your-own-key) |
+|---|---|---|
+| Backend | The Claidor API | None |
+| AI | Managed | Your own key: OpenAI, Anthropic, Gemini, Groq, Azure OpenAI, local Ollama |
+| Account | Yes | No |
+| Manifest | `manifest.xml` | `manifest.community.xml` (hosted) / `manifest.localhost.xml` (your machine) |
+
+The community build is upstream's, and it is kept working. It is also the
+only build that runs with no sign-in, which makes it the fastest way to get
+the pane in front of a real Word.
+
+## Running it
+
+```bash
+pnpm install                # from clients/, this is a workspace package
+pnpm dev                    # https://localhost:3000
+pnpm dev:community          # the same, with no backend
+pnpm test                   # vitest
+pnpm type-check
+pnpm build                  # or build:community
+```
+
+`VITE_API_BASE` points the pane at a Claidor API and defaults to
+`http://localhost:8000`. `VITE_APP_BASE` is the web app it deep-links to.
+Neither has a production default: see `FORK.md`.
+
+## Sideloading
+
+The manifests ship with `YOUR-DOMAIN.example.com` placeholders. For a local
+run use `manifest.localhost.xml`, which needs no editing.
+
+- **Windows** — share a folder, add it in *File → Options → Trust Center →
+  Trusted Add-in Catalogs*, then *Insert → My Add-ins → Shared Folder*.
+- **Mac** — drop the manifest in
+  `~/Library/Containers/com.microsoft.Word/Data/Documents/wef`.
+
+`pnpm validate:manifest` calls a Microsoft web service, so it fails behind a
+proxy that blocks it. The manifests are checked locally instead: well-formed,
+valid GUIDs, every `resid` declared, every icon present.
+
+## What has not been verified
+
+**None of this has been run in Word.** Office.js only exists inside an Office
+host, and there is no way to fake one honestly. So:
 
 | | |
 |---|---|
-| Pure logic — offsets to Word searches, grouping, labels, which findings offer a fix | **Tested.** 19 unit tests, `pnpm test` |
-| TypeScript across every file | **Checked.** `pnpm typecheck` |
-| Production bundle | **Builds.** `pnpm build` |
-| The manifest | **Well-formed XML.** Not validated against Microsoft's schema, and not loaded by Word |
-| Reading the document, selecting a finding, applying a tracked change | **Not verified.** Every one of these is an Office.js call that has never executed |
-
-The first thing to do with a real Word is sideload this and work through
-`Verifying in Word` below. Until then, treat the Office.js paths as
-written but unproven.
+| TypeScript across every file | **Checked.** `pnpm type-check` |
+| Both production bundles | **Build.** |
+| The manifests | **Well-formed, valid GUIDs, every `resid` declared.** Not validated against Microsoft's schema, not loaded by Word |
+| `src/claidor/locate.ts` — offsets to Word searches | **Tested.** 25 unit tests |
+| Everything under `src/office/` | **Not verified.** Upstream's, and presumably exercised there, but never here |
 
 ## The part most likely to be wrong
 
 Mapping a finding back onto the document.
 
-The server checks a *string* and returns character offsets into it. Word
-has no notion of an offset into the whole document — it searches, and
-hands back every match. So a finding is re-located by searching for its
-literal and taking the *n*th hit, where *n* is the occurrence index the
-server counted.
+The server checks a *string* and returns character offsets into it. Word has
+no notion of an offset into the whole document — it searches, and hands back
+every match. So a finding is re-located by searching for its literal and
+taking the *n*th hit, where *n* is the occurrence index the server counted.
 
-That holds only if both sides are looking at the same string.
-`documentText()` builds it from `body.paragraphs` in order, joined by a
-single `\n`, and the server's offsets index exactly that. Anything that
-trims, normalises or re-encodes it in between breaks every jump in the
-panel, and nothing throws — the reader clicks *Go to*, Word selects a
-different occurrence of the same words, and the check looks like noise.
+That holds only if both sides are looking at the same string. Anything that
+trims, normalises or re-encodes it in between breaks every jump in the panel,
+and nothing throws: the reader clicks *Go to*, Word selects a different
+occurrence of the same words, and the check looks like noise.
 
-`locate.ts` is pure so this can be tested at all, and
-`locate.test.ts` exists mostly for that one bridge.
+`src/claidor/locate.ts` is pure so this can be tested at all, and its tests
+exist mostly for that one bridge. Two known gaps, both reported rather than
+hidden:
 
-Known gaps in it:
-
-- A literal that crosses a paragraph break cannot be searched as written.
-  It is collapsed to single spaces, which usually recovers it because the
-  break came from line wrapping rather than a real paragraph. The plan
-  reports `approximate` when it has done this.
+- A literal crossing a paragraph break cannot be searched as written. It is
+  collapsed to single spaces, which usually recovers it because the break came
+  from line wrapping rather than a real paragraph. The plan says
+  `approximate` when it has done this.
 - Word refuses a search string over 255 characters. Those findings return
-  `null` and the panel says it cannot take you there, which is better than
-  raising inside `Word.run` where the error is far from the cause.
+  `null` and the panel says it cannot take you there.
 
 ## Two rules the code keeps
 
 **Bearer tokens, never cookies.** An add-in runs in an iframe on its own
-origin, so a `SameSite=Lax` session cookie is not sent, and Safari and
-Edge block third-party cookies outright. The token lives in
-`Office.context.roamingSettings`. When Entra SSO replaces the dialog
-sign-in only `token()` changes — see `docs/vesence-clone/decisions.md`.
+origin, so a `SameSite=Lax` session cookie is not sent, and Safari and Edge
+block third-party cookies outright. See `docs/vesence-clone/decisions.md`.
 
-**No edit without change tracking.** `applyFix` sets
-`changeTrackingMode = trackAll`, syncs, reads it back, and refuses to
-write if it did not take. A lawyer accepting fixes one at a time is the
-whole interaction; an untracked edit to a client's agreement would not be
-noticed until somebody compared versions.
+**No edit without change tracking.** An untracked edit to a client's
+agreement would not be noticed until somebody compared versions.
 
 Only a **wrong case** gets a Fix button. Everything else — a term nobody
 defined, a definition nobody uses, two definitions of one term — needs a
-drafting decision, and a button that guesses at one is the worst thing
-this add-in could do.
+drafting decision, and a button that guesses at one is the worst thing this
+add-in could do.
 
 ## Requirement sets
 
-The manifest requires **WordApi 1.3** — ranges, search, paragraphs.
+The manifests require **WordApi 1.6** — change tracking, tracked-change
+enumeration and accept/reject, comments and custom XML parts, all GA. This is
+upstream's floor and it is a hard one: an older Word will not load the add-in
+at all rather than load it degraded.
 
-Tracked changes need **1.4**, which is *not* required in the manifest on
-purpose: requiring it would stop the add-in loading at all on an older
-host. Instead `capabilities.ts` probes at runtime, and a firm on an old
-build gets the checks with a line in the panel saying fixes cannot be
-applied there. Vesence's own answer is a system requirement — "very old
-perpetual 2016 or 2019 builds may not support the add-in" — which is
-reasonable, and is still not a reason to skip the probe.
+## Layout
 
-## Running it
-
-```bash
-pnpm install
-pnpm dev        # http://localhost:3100
-pnpm test       # 19 unit tests
-pnpm typecheck
-pnpm build
 ```
-
-`VITE_API_BASE` points the panel at an API; it defaults to
-`https://api.claidor.com`.
-
-## Verifying in Word
-
-Nothing below has been done. It is the checklist for the first person with
-a real Word, in the order that finds problems earliest.
-
-1. **Serve over HTTPS.** Word on the web refuses an HTTP task pane.
-   `vite --https` with a locally-trusted certificate, or sideload on the
-   desktop, which accepts `http://localhost`.
-2. **Sideload.** Windows: share a folder, add it as a trusted catalog in
-   *File → Options → Trust Center → Trusted Add-in Catalogs*, then
-   *Insert → My Add-ins → Shared Folder*. Mac: drop `manifest.xml` in
-   `~/Library/Containers/com.microsoft.Word/Data/Documents/wef`.
-3. **Check that the pane opens** and Office reaches `onReady` as Word.
-4. **Check the capability probe** reports what this build actually
-   supports, on a machine with an older Word if one is available.
-5. **`documentText()` against a real agreement.** The thing to verify is
-   that the string it builds matches what the server is given, because
-   every offset depends on it.
-6. **Go to.** Pick a finding whose term appears several times and confirm
-   Word selects the occurrence the panel meant, not the first one. This is
-   the test that catches an off-by-one in the occurrence index.
-7. **Fix as tracked change.** Confirm the edit appears as a revision that
-   can be accepted or rejected, and that with tracking forced off by the
-   document, nothing is written at all.
+src/
+  claidor/     ours — the offset-to-Word-search bridge, and its tests
+  api/         upstream — HTTP client, typed endpoints
+  auth/        upstream — PKCE sign-in through the Office dialog
+  community/   upstream — the no-backend build: providers, local router, storage
+  features/    upstream — 30 feature areas, one directory each
+  office/      upstream — every Office.js call in the add-in
+  ui/          upstream — primitives, tokens, icons
+```

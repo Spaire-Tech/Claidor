@@ -1,0 +1,46 @@
+.fill-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.fill-token {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.fill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* .card ships no padding; restore the house list-card value (matches
+     .template-card / .clause-card) so content is not flush to the border. */
+  padding: 10px 12px;
+}
+
+.fill-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fill-card__token {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--text-muted);
+}
+
+.fill-card__value {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.fill-card__quote {
+  margin: 0;
+  border-left: 2px solid var(--border-strong);
+  padding-left: 8px;
+}
