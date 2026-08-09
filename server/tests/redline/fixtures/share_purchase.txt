@@ -1,0 +1,78 @@
+SHARE PURCHASE AGREEMENT
+
+THIS AGREEMENT is dated 9 August 2026 and made BETWEEN:
+
+(1) ACME HOLDINGS INC., a Delaware corporation (the "Seller"); and
+(2) ZENITH PARTNERS LLC, a Washington limited liability company (the "Buyer").
+
+RECITALS
+
+(A) The Seller is the legal and beneficial owner of the Shares.
+(B) The Seller has agreed to sell and the Buyer has agreed to purchase the
+    Shares on the terms set out in this Agreement.
+
+1. DEFINITIONS AND INTERPRETATION
+
+1.1 In this Agreement, the following words have the following meanings:
+
+"Accounts" means the audited financial statements of the Company for the
+period ended 31 December 2025.
+
+"Business Day" means a day other than a Saturday, Sunday or public holiday
+in Seattle, Washington.
+
+"Closing" means the completion of the sale and purchase of the Shares in
+accordance with clause 5.
+
+"Closing Date" means the third Business Day after the Conditions are
+satisfied.
+
+"Company" means Acme Operating Co., a Delaware corporation.
+
+"Conditions" means the conditions set out in Schedule 1.
+
+"Consideration" means US$5,000,000, subject to adjustment under clause 6.
+
+"Disclosure Letter" means the letter of even date from the Seller to the
+Buyer.
+
+"Escrow Amount" means US$500,000.
+
+"Material Adverse Change" means any change that is materially adverse to
+the business of the Company.
+
+"Shares" means the 1,000 ordinary shares of the Company.
+
+"Warranties" means the warranties set out in Schedule 2.
+
+2. SALE AND PURCHASE
+
+2.1 The Seller shall sell and the Buyer shall purchase the Shares free from
+all encumbrances with effect from the closing date.
+
+2.2 The Consideration shall be paid in cash on Closing, less the Escrow
+Amount which shall be retained under the "Escrow Agreement".
+
+3. CONDITIONS
+
+3.1 Closing is conditional on the Conditions being satisfied.
+
+3.2 If the Conditions are not satisfied by the Long Stop Date, either party
+may terminate.
+
+4. WARRANTIES
+
+4.1 The Seller warrants to the Buyer in the terms of the Warranties, subject
+to the matters disclosed in the Disclosure Letter.
+
+4.2 The Seller is not liable for any claim to the extent it arises from a
+Material Adverse Change occurring after the Closing Date.
+
+5. CLOSING
+
+5.1 Closing shall take place on the Closing Date.
+
+5.2 At Closing the Seller shall deliver the Accounts and transfers of the
+Shares.
+
+"Company" means the entity described in Schedule 3.

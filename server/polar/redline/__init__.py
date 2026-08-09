@@ -1,0 +1,33 @@
+"""Mechanical defects in a document, found without asking a model.
+
+A transactional document fails in ways that are *decidable*: a term is
+defined and never used, defined twice, used before it is defined, or
+written in the wrong case. A cross-reference points at a clause that is not
+there. Numbering skips.
+
+None of that needs judgement, and so none of it should be delegated to
+something that can be wrong in an unfalsifiable way. A finding here is
+either true of the text or it is not, and the finding carries the span it
+came from so a reader can check it in one click.
+
+The checks that *do* need judgement — is this indemnity mutual, does this
+arithmetic hold — come later and are labelled differently. Keeping the two
+apart is the whole design: a lawyer who learns that the mechanical findings
+are always right will read the judgement ones properly.
+"""
+
+from .terms import (
+    Certainty,
+    Defect,
+    Definition,
+    Finding,
+    review_terms,
+)
+
+__all__ = [
+    "Certainty",
+    "Defect",
+    "Definition",
+    "Finding",
+    "review_terms",
+]
