@@ -13,14 +13,17 @@ it later; the security questionnaire still asks.
 """
 
 from fastapi import File, HTTPException, UploadFile
+from fastapi.responses import Response
 
 from polar.kit.document_text import UnsupportedDocument, read_document
 from polar.openapi import APITag
 from polar.routing import APIRouter
 
 from . import auth, review_document
+from .fix import apply_fixes
 from .index import definitions_index
 from .judgement import review_judgement
+from .ooxml import NotADocx, Package
 from .schemas import (
     RedlineFinding,
     RedlineRequest,
@@ -165,6 +168,61 @@ async def judge_text(
         warning_count=_count(findings, Severity.warning),
         to_review_count=_count(findings, Severity.to_review),
         characters=len(request.text),
+    )
+
+
+#: What Word calls a .docx.
+DOCX_MEDIA = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+@router.post("/fix/document")
+async def fix_document(
+    auth_subject: auth.RedlineRead,
+    upload: UploadFile = File(..., alias="file"),
+) -> Response:
+    """Check a Word file and return it with the safe fixes as revisions.
+
+    The first route that writes. Only a wrong case is corrected — the term
+    is written one way and defined another, and the correction is the
+    defined form. Everything else needs a drafting decision.
+
+    Every edit is a tracked change. The counts come back in headers so the
+    caller knows what happened without parsing the document:
+    ``X-Redline-Applied`` and ``X-Redline-Needs-Decision``.
+
+    The file is read, edited in memory and returned. Nothing is stored.
+    """
+    payload = await upload.read()
+    if len(payload) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File is too large to check.")
+
+    try:
+        package = Package.open(payload)
+    except NotADocx as error:
+        raise HTTPException(status_code=415, detail=str(error)) from error
+
+    # The checks run against the text the OOXML reader produces, not a
+    # separately extracted copy. Two extractions that differ by one
+    # character put every fix in the wrong place.
+    reading = package.read()
+    if len(reading.text) > MAX_CHARACTERS:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Document is {len(reading.text):,} characters.",
+        )
+
+    report = apply_fixes(package, review_document(reading.text))
+    name = (upload.filename or "document.docx").rsplit(".", 1)[0]
+
+    return Response(
+        content=package.save(),
+        media_type=DOCX_MEDIA,
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}-redlined.docx"',
+            "X-Redline-Applied": str(report.applied),
+            "X-Redline-Needs-Decision": str(report.needs_a_decision),
+            "X-Redline-Refused": str(len(report.refused)),
+        },
     )
 
 
