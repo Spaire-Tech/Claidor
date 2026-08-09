@@ -13,8 +13,10 @@ import {
   BookIcon,
   GaugeIcon,
   HashIcon,
+  ShieldCheckIcon,
 } from "@/ui/icons";
 import { ToolCard, ToolCardList } from "@/ui/ToolCard";
+import { CheckView } from "@/features/check/CheckView";
 import { RedactView } from "@/features/redact/RedactView";
 import { CleanCopyView } from "@/features/cleancopy/CleanCopyView";
 import { DefinedTermsView } from "@/features/terms/DefinedTermsView";
@@ -28,6 +30,7 @@ import "./toolshub.css";
 
 // ToolKey is shared with the nav intent bus (@/app/nav). Kept in sync there.
 type ToolKey =
+  | "check"
   | "cleancopy"
   | "terms"
   | "xref"
@@ -59,6 +62,15 @@ interface ToolDef {
 
 const TOOLS: ToolDef[] = [
   // Check: verify the open document's internal integrity.
+  {
+    key: "check",
+    group: "check",
+    title: "Check",
+    description:
+      "Ten checks over the whole document: defined terms, cross-references, numbering, style.",
+    icon: <ShieldCheckIcon size={18} />,
+    view: <CheckView />,
+  },
   {
     key: "terms",
     group: "check",

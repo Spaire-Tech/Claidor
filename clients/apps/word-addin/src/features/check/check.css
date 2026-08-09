@@ -1,0 +1,130 @@
+/* The Check panel. 320px is the whole canvas, so everything below is a
+   vertical stack: no tables, no side-by-side, nothing that assumes width.
+   Colours come from the theme's tokens rather than literals so the pane
+   stays theme-aware. */
+
+.check-view {
+  gap: 12px;
+}
+
+/* ---- The tally row --------------------------------------------------
+   Four counts, always visible, always all four. A bucket at zero is not
+   hidden: a reader has to be able to see that nothing is critical, which
+   is different from not being told. */
+
+.check-tally {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.check-tally__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-muted);
+}
+
+.check-tally__count {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.check-tally__label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.check-tally__cell--critical {
+  border-color: var(--red);
+  background: var(--red-tint);
+}
+
+.check-tally__cell--warning {
+  border-color: var(--yellow);
+  background: var(--yellow-tint);
+}
+
+/* ---- A finding ------------------------------------------------------ */
+
+.check-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 2px;
+}
+
+.check-card + .check-card {
+  border-top: 1px solid var(--border);
+}
+
+.check-card__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.check-card__defect {
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+/* The two qualification flags. These read as a qualification, not a
+   warning: a lawyer who reads "Probable" as "danger" learns to distrust
+   the whole panel, and the difference between those two readings is the
+   difference between the panel being used and being skimmed. */
+
+.check-card__flag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  background: transparent;
+  cursor: help;
+}
+
+.check-card__flag--probable {
+  border-style: dashed;
+}
+
+.check-card__flag--suggested {
+  border-style: dotted;
+}
+
+.check-card__term {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.check-card__note {
+  margin: 0;
+}
+
+/* The document's own words. Set apart so it is obvious which text is the
+   contract's and which is ours. */
+.check-card__context {
+  margin: 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.check-card__actions {
+  gap: 2px;
+  flex-wrap: wrap;
+}

@@ -43,26 +43,31 @@ providers, with no backend at all.
 
 ---
 
-## The decision this forces
+## The decision, made
 
-**Fork their add-in, or keep building ours?**
+**Forked**, 9 August 2026. The hour of reading happened; the account is in
+`worklog.md` and the licence obligation in
+`clients/apps/word-addin/FORK.md`.
 
-Not answerable from a README, and it will not be answered from one. It
-needs an hour reading their source, against four questions:
+The four questions, answered:
 
-1. **Are their checks deterministic or a model call?** Ours are
-   arithmetic — a defined term is undefined or it is not. If theirs asks a
-   model the same question, the thing we have is not duplicated by the
-   thing they have, and the panel is what we would be adopting.
-2. **How much is theirs coupled to their backend?** The community build
-   suggests the coupling is real but removable.
-3. **Is the code worth living in?** A fork is a marriage.
-4. **What does Apache 2.0 oblige?** Notice, licence, statement of changes.
-   Cheap, and it must be done properly if we ship commercially.
+1. **Deterministic**, not a model call — 188 lines of client-side regex
+   covering three defects. Not a duplicate of ours, a much shallower
+   version of the same idea. Ours replaces it; the panel is what we adopt.
+2. **Coupling is one function.** The community build routes every call
+   through a local shim, so `request` has a branch in it and nothing else
+   is bound to their server. Our routes go through the same function.
+3. **Worth living in**, with one caveat: 40,000 lines, 30 feature areas,
+   **zero tests**. The Office.js layer is careful in the way that only
+   comes from having run into the problems.
+4. **Notice, licence, statement of changes.** Done, and it was the
+   cheapest hour in the project.
 
-**Until that hour is spent, the plan below assumes we keep ours**, because
-that is the position that is true today. If the answer comes back
-favourable, Phase 1 shortens by roughly half.
+Two things reading found that a demo would not have: their cross-reference
+check reads Word's computed `listString`, so it sees numbering on an
+auto-numbered contract that the server cannot see at all; and their
+occurrence search is whole-word where our index counts substrings, which
+diverges silently. Both are in the worklog.
 
 ---
 
@@ -86,17 +91,19 @@ the engine question resolved.
 
 ---
 
-## Phase 1 — Word, the Check surface  *(75%)*
+## Phase 1 — Word, the Check surface  *(85%)*
 
 | Work | Estimate | Blocked on |
 |---|---|---|
-| **Read the Vaquill add-in and decide** | 1 day | — |
+| ~~Read the Vaquill add-in and decide~~ | — | **Done. Forked.** |
+| ~~Wire the Check panel to `/v1/redline/*`~~ | — | **Done.** Four buckets, dismissals stored in the .docx |
 | **Verify in Word** | 1 day | 10 minutes of a real Word |
 | **Microsoft Entra SSO** | 4–6 days | An Entra app registration |
 | **Deploy** | 1 day | A name |
 | Panel polish — empty, error, too-much states | 3 days | Your designs |
+| Pass Word's `listString` numbering to the server | 2 days | — |
 
-**~2 weeks**, or ~1 if the fork lands.
+**~1.5 weeks**, all of it blocked on you rather than on code.
 
 ---
 

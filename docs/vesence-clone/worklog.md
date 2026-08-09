@@ -188,3 +188,79 @@ confusing hour if you do not know where to look.
 Minio must also be started detached properly; backgrounding it with `&`
 inside a tool call gets it reaped when the call ends, and the port then
 looks free while a zombie still answers on it.
+
+---
+
+## 2026-08-09 (later still) — the fork landed, and what reading it changed
+
+Forked `Vaquill-AI/ms-word-addin`. The roadmap said the decision needed an
+hour of reading their source against four questions. It got that, and three
+of the four answers were not what the README implied.
+
+**1. Are their checks deterministic or a model call?** Deterministic —
+`src/lib/defined-terms.ts` is 188 lines of regex, entirely client-side. So
+the two engines are not duplicates, they are the same *kind* of thing at
+very different depths: three defects against ten, no severities, no
+certainties, no offsets. Ours replaces theirs; the panel is what we adopt.
+
+**2. How coupled is it to their backend?** Less than expected. The
+community build routes every call through a local shim, so the coupling is
+one function (`request`) with a branch in it. Our routes go through the same
+function, which is why there is no second HTTP stack in this fork.
+
+**3. Is the code worth living in?** Yes, with a caveat: 40,000 lines, 30
+feature areas, **zero tests**. The Office.js layer is careful in the way
+that only comes from running into the problems — `readDocumentText` uses
+`getReviewedText` rather than `body.text` because a redlined contract reads
+back as deletions and insertions smeared together mid-word, and there is a
+comment saying so. Nobody writes that comment from the documentation.
+
+**4. What does Apache 2.0 oblige?** Notice, licence, statement of changes.
+`FORK.md` is the statement; it took an hour and it is the cheapest hour in
+the project.
+
+### Three things reading found that running would not have
+
+**Their cross-reference check can see something ours cannot.** It reads
+each paragraph's computed `listString`, so it finds section numbers on an
+auto-numbered contract where the number is not in the text at all. The
+server only ever sees text. On an auto-numbered agreement our numbering
+checks back off (the unreadable-ratio guard) and theirs still works. Their
+tool stays for that reason, and passing Word's numbering to the server is
+now a real roadmap item rather than a nicety.
+
+**`build:community` would have shipped a cloud bundle.** It depended on a
+committed `.env.community`, which this repo's root `.gitignore` excludes
+along with every other `.env.*`. The build would not have failed — it would
+have produced a bundle that calls a backend, from a command named
+`build:community`. `vite.config.ts` now sets the variable from the mode.
+Confirmed by reading the minified output both ways: `isBuildCommunity()`
+folds to `return!0` in one and keeps the runtime check in the other.
+
+**Their occurrence search and our occurrence index do not agree.** The
+server counts occurrences with `str.find` — substrings. Their
+`locateOccurrence` counts whole words. Those diverge the moment a literal
+sits inside a longer word, and when they do, nothing throws: Word selects a
+real occurrence of the right words, the wrong one. So `src/claidor/goto.ts`
+is a separate, deliberately dumber locator that searches the way the server
+counted. This is assumption 11 from the table above, and reading their code
+turned it from "unresolved" into "resolved in the wrong direction, fixed".
+
+### Wire contract, verified
+
+The add-in's TypeScript types were checked against the API's generated
+OpenAPI rather than against the Python source:
+
+```
+RedlineFinding -> defect severity certainty term note context start end literal occurrence
+RedlineReview  -> findings critical_count warning_count to_review_count characters
+RedlineTerm    -> term meaning kind start end uses use_count linked
+```
+
+Field for field, and `polar.kit.schemas.Schema` sets no alias generator, so
+the wire really is snake_case. Routes are `/v1/redline/{check,judge,terms}`.
+
+### Still not run in Word
+
+Every Office.js path in this fork — 40,000 lines of it — is written but
+unproven here. That has not changed and cannot change from this container.

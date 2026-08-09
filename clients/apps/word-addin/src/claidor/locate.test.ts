@@ -16,6 +16,7 @@ import {
   MAX_SEARCH_LENGTH,
   bySeverity,
   defectLabel,
+  findingKey,
   fixFor,
   matchCase,
   planSearch,
@@ -135,6 +136,7 @@ describe('grouping for the panel', () => {
       'critical',
       'warning',
       'to_review',
+      'ignored',
     ])
   })
 
@@ -146,8 +148,41 @@ describe('grouping for the panel', () => {
       finding({ severity: 'to_review', start: 4 }),
     ]
     const grouped = bySeverity(findings)
-    expect(grouped.map((b) => b.findings.length)).toEqual([1, 2, 1])
+    expect(grouped.map((b) => b.findings.length)).toEqual([1, 2, 1, 0])
     expect(grouped.flatMap((b) => b.findings)).toHaveLength(findings.length)
+  })
+
+  it('moves an ignored finding to the fourth bucket, not out of the list', () => {
+    const kept = finding({ severity: 'critical', term: 'Closing Date' })
+    const dismissed = finding({ severity: 'critical', term: 'Purchaser' })
+    const grouped = bySeverity(
+      [kept, dismissed],
+      new Set([findingKey(dismissed)]),
+    )
+    expect(grouped[0].findings).toEqual([kept])
+    expect(grouped[3].findings).toEqual([dismissed])
+  })
+})
+
+describe('what identifies a finding across two runs', () => {
+  it('does not depend on where the finding sits in the document', () => {
+    // Editing anything above a finding moves its offsets. If the key moved
+    // with them, everything the reader had dismissed would come back.
+    const before = finding({ start: 100, end: 112 })
+    const after = finding({ start: 4_000, end: 4_012 })
+    expect(findingKey(after)).toBe(findingKey(before))
+  })
+
+  it('separates two occurrences of the same defect on the same words', () => {
+    expect(findingKey(finding({ occurrence: 1 }))).not.toBe(
+      findingKey(finding({ occurrence: 2 })),
+    )
+  })
+
+  it('separates two defects reported on the same term', () => {
+    expect(findingKey(finding({ defect: 'case_mismatch' }))).not.toBe(
+      findingKey(finding({ defect: 'undefined_term' })),
+    )
   })
 })
 
