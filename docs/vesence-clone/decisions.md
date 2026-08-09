@@ -182,18 +182,56 @@ Dramatiq stay.
 
 ---
 
+## How the add-in actually reaches a firm — [verified 2026-08-09]
+
+Worth getting right, because it determines whether anything Microsoft
+controls is on the critical path. It is not. There are three routes and
+only the third involves Microsoft at all:
+
+1. **Sideloading.** The manifest is loaded locally. This is development.
+   No account, no approval, no Microsoft involvement.
+2. **Centralized deployment as a line-of-business app.** The *firm's own*
+   admin uploads our manifest — Microsoft 365 admin center → Settings →
+   Integrated apps → Add-ins → Deploy Add-in — and assigns it to users or
+   groups. **No AppSource listing and no Microsoft approval.** Microsoft's
+   own documentation describes exactly this path for custom and LOB
+   add-ins: ask the developer for a manifest file or URL, then deploy it.
+   Requirements are on the firm's side: an Exchange admin to do it,
+   Microsoft 365 for enterprise, and Exchange Online mailboxes — all of
+   which a Seattle law firm on M365 already has.
+3. **AppSource.** The public marketplace. This is for discovery and
+   self-serve, and it is the only route that needs Partner Center.
+
+**So route 2 is the one that matters for selling to firms**, and it is a
+sales conversation with the firm's IT, not an application to Microsoft.
+
+### On Partner Center specifically — [verified]
+
+It is **not a competitive acceptance**. It is business identity
+verification: typically **3–5 business days**, and a rejection comes with
+a stated reason and a « Fix now » path to resolve it. Rejections are about
+documentation — a business registration document dated within twelve
+months, an individual work email rather than a group alias — not about
+merit. Nobody decides whether we are worthy.
+
+> **Correction.** I previously listed this as "verification takes weeks"
+> alongside SOC 2, which made it read as a bottleneck. It is days, it is
+> appealable, and it gates the public marketplace only. Neither building
+> nor selling to a firm waits on it.
+
 ## What to apply for, starting now
 
-Because these have lead times and nothing else in the build does:
+Only two of these have lead times that matter:
 
 1. **Microsoft Entra ID app registration** — needed for add-in SSO and for
    Graph connectors. Free, immediate, blocks nothing but should exist.
-2. **Anthropic zero-data-retention** on the account.
-3. **Microsoft Partner Center account** — required to publish to AppSource,
-   and verification takes weeks. Sideloading covers development, so this
-   blocks distribution rather than building.
-4. **SOC 2 Type I** — point-in-time, achievable in weeks, and the honest
+2. **Anthropic zero-data-retention** on the account. Ask early; the answer
+   is a sentence on a security page.
+3. **SOC 2 Type I** — point-in-time, achievable in weeks, and the honest
    answer to a firm asking before Type II's observation window has closed.
+   **This is the only genuine calendar risk on the list.**
+4. **Microsoft Partner Center** — worth starting so it exists, but see
+   above: days, not weeks, and it gates nothing we need first.
 
 ## Assumption ledger — additions
 
