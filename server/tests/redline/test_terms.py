@@ -149,24 +149,52 @@ class TestMultipleDefinitions:
 
 class TestUndefinedTerm:
     def test_a_quoted_phrase_with_no_definition_is_reported(self) -> None:
+        # Needs a definitions convention to judge against — see
+        # MIN_CONVENTION. A document that defines nothing explicitly gives
+        # capitalisation no meaning.
         text = (
-            '"Consideration" means $5,000,000, payable subject to the '
-            '"Escrow Agreement". The Consideration is fixed.'
+            '"Consideration" means $5,000,000.\n'
+            '"Closing" means completion.\n'
+            '"Warranties" means the warranties in Schedule 1.\n'
+            "The Consideration is payable at the Closing subject to the "
+            '"Escrow Agreement", and the Warranties survive the '
+            '"Escrow Agreement".'
         )
         assert "Escrow Agreement" in _defects(text, Defect.undefined_term)
 
     def test_a_capitalised_phrase_with_no_definition_is_reported(self) -> None:
+        # Twice, because one sighting is more often a proper noun than a
+        # missing definition — see MIN_SIGHTINGS.
         text = (
-            '"Consideration" means $5,000,000. The Consideration is payable '
-            "by the Long Stop Date."
+            '"Consideration" means $5,000,000.\n'
+            '"Closing" means completion.\n'
+            '"Warranties" means the warranties in Schedule 1.\n'
+            "The Consideration is payable by the Long Stop Date, and the "
+            "Warranties expire on the Long Stop Date."
         )
         assert _defects(text, Defect.undefined_term) == ["Long Stop Date"]
+
+    def test_a_document_with_no_definitions_convention_is_not_judged(self) -> None:
+        # Six of fifteen real agreements had no definitions section at all.
+        # In those, every Title-Case phrase becomes a candidate and the
+        # check is pure noise.
+        text = (
+            "The Executive shall report to the Board and the Compensation "
+            "Committee. The Board and the Compensation Committee may "
+            "terminate for Cause. Cause is determined by the Board."
+        )
+        assert _defects(text, Defect.undefined_term) == []
 
     def test_it_is_marked_probable_not_certain(self) -> None:
         # A contract capitalises Delaware and Tuesday as well as Purchase
         # Price. Saying "probable" is the difference between a finding a
         # lawyer trusts and one they argue with.
-        text = '"Consideration" means $5. Payable by the Long Stop Date.'
+        text = (
+            '"Consideration" means $5.\n"Closing" means completion.\n'
+            '"Warranties" means the warranties.\n'
+            "The Consideration and the Warranties are payable by the Long "
+            "Stop Date, on the Long Stop Date."
+        )
         finding = next(
             f for f in review_terms(text) if f.defect is Defect.undefined_term
         )
@@ -310,7 +338,12 @@ class TestCaseMismatch:
 
 class TestSeverity:
     def test_undefined_terms_are_critical(self) -> None:
-        text = '"Consideration" means $5. Payable by the Long Stop Date.'
+        text = (
+            '"Consideration" means $5.\n"Closing" means completion.\n'
+            '"Warranties" means the warranties.\n'
+            "The Consideration and the Warranties are payable by the Long "
+            "Stop Date, on the Long Stop Date."
+        )
         finding = next(
             f for f in review_terms(text) if f.defect is Defect.undefined_term
         )
@@ -423,13 +456,22 @@ class TestARealDocument:
         assert (Defect.case_mismatch, "Closing Date") in found
         assert (Defect.multiple_definitions, "Company") in found
         assert (Defect.undefined_term, "Escrow Agreement") in found
-        assert (Defect.undefined_term, "Long Stop Date") in found
+
+    def test_a_term_used_only_once_is_deliberately_missed(self, spa: str) -> None:
+        # « Long Stop Date » appears once in clause 3.2 and is defined
+        # nowhere. It is a real defect and it is not reported, because
+        # requiring two sightings halved the false positives on fifteen
+        # real agreements — 14 per document down to 8.8 — while still
+        # reproducing Vesence's published example exactly.
+        #
+        # Recorded as a test so the trade is visible rather than forgotten.
+        assert "Long Stop Date" not in _defects(spa, Defect.undefined_term)
 
     def test_nothing_else_is_reported(self, spa: str) -> None:
-        # The number that matters. « Agreement » is the fifth: it is used
-        # as « this Agreement » throughout and never defined, which is a
-        # real defect in the fixture rather than a false positive.
-        assert len(review_terms(spa)) == 5
+        # The number that matters. « Agreement » is used as « this
+        # Agreement » throughout and never defined, which is a real defect
+        # in the fixture rather than a false positive.
+        assert len(review_terms(spa)) == 4
 
     def test_ordinary_english_is_not_a_miscased_term(self, spa: str) -> None:
         # « a Washington limited liability company » is not a use of the

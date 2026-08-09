@@ -583,7 +583,29 @@ _OPENER = re.compile(
 )
 
 #: A candidate must be seen this many times before it is reported.
-MIN_SIGHTINGS = 1
+#:
+#: Measured, not chosen. On fifteen real agreements, reporting single
+#: sightings gave 14 undefined terms per document; requiring two gave 8.8,
+#: and both still reproduce Vesence's published example exactly. Three
+#: would give 7.2 and lose their example, so two is where the evidence
+#: stops.
+#:
+#: The cost is real: a term used once and never defined is missed. That is
+#: the right direction — a capitalised phrase appearing once is far more
+#: often a person, a place or an institution than a term somebody forgot
+#: to define.
+MIN_SIGHTINGS = 2
+
+#: A document must define at least this many terms in a « "X" means … »
+#: form before any phrase in it is judged as an undefined term.
+#:
+#: Six of fifteen real agreements had none at all — employment agreements
+#: and bank documents that define inline or not at all. In a document with
+#: no definitions convention, capitalisation says nothing about what is a
+#: defined term, and every Title-Case phrase in it becomes noise. The
+#: check needs a convention to measure against before it can measure
+#: anything.
+MIN_CONVENTION = 3
 
 
 def _sentence_starts(text: str) -> set[int]:
@@ -596,6 +618,16 @@ def _sentence_starts(text: str) -> set[int]:
     for match in re.finditer(r"(?:[.!?:;]|\n)\s*(?:\(?[0-9a-z]{1,4}[.)]\s*)*", text):
         starts.add(match.end())
     return starts
+
+
+def has_definitions_convention(definitions: list["Definition"]) -> bool:
+    """Whether the document defines terms explicitly enough to judge it.
+
+    Parenthetical asides do not count. « Acme Inc. (the "Seller") » names a
+    party; it is not evidence that the drafter marks defined terms by
+    capitalising them. Only a real definitions list is.
+    """
+    return sum(1 for d in definitions if d.kind == "means") >= MIN_CONVENTION
 
 
 def find_undefined(text: str, defined: set[str]) -> list[tuple[str, int, int]]:
@@ -860,7 +892,10 @@ def review_terms(text: str) -> list[Finding]:
     # Skipped entirely when the document says it borrows its definitions.
     # See :func:`defers_definitions`.
     reported: set[str] = set()
-    borrowed = defers_definitions(text)
+    # Two reasons not to judge undefined terms at all: the document says it
+    # takes its definitions from elsewhere, or it has no definitions
+    # convention to measure against.
+    borrowed = defers_definitions(text) or not has_definitions_convention(definitions)
     for quoted in quoted_uses:
         if borrowed or quoted.term in by_term or quoted.term in reported:
             continue
