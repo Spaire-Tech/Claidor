@@ -72,6 +72,7 @@ from polar.platform.endpoints import router as platform_router
 from polar.product.endpoints import router as product_router
 from polar.product_review.endpoints import router as product_review_router
 from polar.prompt.endpoints import router as prompt_router
+from polar.redline.endpoints import router as redline_router
 from polar.refund.endpoints import router as refund_router
 from polar.storefront.endpoints import router as storefront_router
 from polar.subscription.endpoints import router as subscription_router
@@ -161,6 +162,9 @@ router.include_router(prompt_router)
 router.include_router(veille_router)
 # /lecteur
 router.include_router(lecteur_router)
+
+# /redline
+router.include_router(redline_router)
 # /dossiers
 router.include_router(dossier_router)
 # /license-keys
