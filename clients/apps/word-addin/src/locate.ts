@@ -18,7 +18,7 @@
  */
 
 export type Severity = 'critical' | 'warning' | 'to_review'
-export type Certainty = 'certain' | 'probable'
+export type Certainty = 'certain' | 'probable' | 'suggested'
 
 export interface Finding {
   defect: string
@@ -123,6 +123,8 @@ export const DEFECT_LABEL: Record<string, string> = {
   broken_reference: 'Broken cross-reference',
   numbering_gap: 'Numbering gap',
   duplicate_number: 'Duplicate number',
+  contradiction: 'Contradiction',
+  miscalculation: 'Miscalculation',
 }
 
 export function defectLabel(defect: string): string {

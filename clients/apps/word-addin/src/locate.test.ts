@@ -117,6 +117,8 @@ describe('which findings offer a fix', () => {
     'broken_reference',
     'numbering_gap',
     'duplicate_number',
+    'contradiction',
+    'miscalculation',
   ])('offers nothing for %s, which needs a drafting decision', (defect) => {
     expect(fixFor(finding({ defect }))).toBeNull()
   })
@@ -157,6 +159,8 @@ describe('labels', () => {
     expect(defectLabel('broken_reference')).toBe('Broken cross-reference')
     expect(defectLabel('numbering_gap')).toBe('Numbering gap')
     expect(defectLabel('duplicate_number')).toBe('Duplicate number')
+    expect(defectLabel('contradiction')).toBe('Contradiction')
+    expect(defectLabel('miscalculation')).toBe('Miscalculation')
   })
 
   it('degrades readably for a defect it has never heard of', () => {

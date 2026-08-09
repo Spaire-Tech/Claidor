@@ -19,6 +19,7 @@ from polar.openapi import APITag
 from polar.routing import APIRouter
 
 from . import auth, review_document
+from .judgement import review_judgement
 from .schemas import RedlineFinding, RedlineRequest, RedlineReview
 from .terms import Finding, Severity
 
@@ -83,6 +84,40 @@ async def check_text(
             ),
         )
     return _review(request.text)
+
+
+@router.post("/judge", response_model=RedlineReview)
+async def judge_text(
+    auth_subject: auth.RedlineRead,
+    request: RedlineRequest,
+) -> RedlineReview:
+    """Contradictions and miscalculations, which need a model.
+
+    A separate route from ``/check`` on purpose. The mechanical checks
+    answer in milliseconds and this one reads the whole document a window
+    at a time, so joining them would make every check as slow as the
+    slowest. The panel runs this after it has already shown what it knows.
+
+    Nothing a model proposes reaches the response until code has checked
+    it: every quote must be in the document, and every sum is recomputed.
+    See :mod:`polar.redline.judgement`.
+    """
+    if len(request.text) > MAX_CHARACTERS:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"Document is {len(request.text):,} characters; the limit is "
+                f"{MAX_CHARACTERS:,}."
+            ),
+        )
+    findings, _ = await review_judgement(request.text)
+    return RedlineReview(
+        findings=[_finding(f) for f in findings],
+        critical_count=_count(findings, Severity.critical),
+        warning_count=_count(findings, Severity.warning),
+        to_review_count=_count(findings, Severity.to_review),
+        characters=len(request.text),
+    )
 
 
 @router.post("/check/document", response_model=RedlineReview)

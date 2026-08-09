@@ -232,6 +232,12 @@ function FindingRow({
       {finding.certainty === 'probable' && (
         <span className="flag">Probable — worth a look rather than certain.</span>
       )}
+      {finding.certainty === 'suggested' && (
+        <span className="flag">
+          Read by a model. The quoted words were checked against the document
+          and any arithmetic recomputed; the reading of them is yours.
+        </span>
+      )}
       <p className="context">…{finding.context}…</p>
       <div className="actions">
         <button onClick={goTo}>Go to</button>

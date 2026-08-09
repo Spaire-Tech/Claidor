@@ -236,3 +236,47 @@ class TestNothingIsStored:
         source = inspect.getsource(endpoints)
         for forbidden in ("AsyncSession", "Repository", "session.add", "flush("):
             assert forbidden not in source
+
+
+@pytest.mark.asyncio
+class TestJudgeRoute:
+    """The judgement route's contract.
+
+    What the model finds is not tested here — it is non-deterministic and
+    costs money. What is tested is that the route is guarded, bounded, and
+    shaped like the other one, so the panel can render both with the same
+    code.
+    """
+
+    async def test_anonymous_is_refused(self, client: AsyncClient) -> None:
+        response = await client.post("/v1/redline/judge", json={"text": EXAMPLE})
+
+        assert response.status_code == 401
+
+    @pytest.mark.auth(AuthSubjectFixture(scopes=set()))
+    async def test_missing_scope_is_refused(self, client: AsyncClient) -> None:
+        response = await client.post("/v1/redline/judge", json={"text": EXAMPLE})
+
+        assert response.status_code == 403
+
+    @pytest.mark.auth
+    async def test_an_oversized_document_is_refused_before_any_model_call(
+        self, client: AsyncClient
+    ) -> None:
+        # The size gate has to come first. Sending four million characters
+        # to a model a window at a time before deciding it is too big would
+        # be an expensive way to return 413.
+        from polar.redline.endpoints import MAX_CHARACTERS
+
+        response = await client.post(
+            "/v1/redline/judge", json={"text": "a" * (MAX_CHARACTERS + 1)}
+        )
+
+        assert response.status_code == 413
+
+    @pytest.mark.auth
+    async def test_empty_text_needs_no_model(self, client: AsyncClient) -> None:
+        response = await client.post("/v1/redline/judge", json={"text": "   "})
+
+        assert response.status_code == 200
+        assert response.json()["findings"] == []

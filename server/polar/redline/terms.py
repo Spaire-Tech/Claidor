@@ -158,6 +158,8 @@ class Defect(StrEnum):
     broken_reference = "broken_reference"
     numbering_gap = "numbering_gap"
     duplicate_number = "duplicate_number"
+    contradiction = "contradiction"
+    miscalculation = "miscalculation"
 
 
 class Severity(StrEnum):
@@ -187,6 +189,11 @@ SEVERITY: dict[Defect, Severity] = {
     Defect.broken_reference: Severity.critical,
     Defect.numbering_gap: Severity.warning,
     Defect.duplicate_number: Severity.warning,
+    # Judgement findings. A miscalculation has had its arithmetic
+    # recomputed in code, which is why it sits above a contradiction: the
+    # sum is a fact even though the relationship was a model's reading.
+    Defect.miscalculation: Severity.critical,
+    Defect.contradiction: Severity.warning,
 }
 
 
@@ -199,6 +206,11 @@ class Certainty(StrEnum):
     #: phrase may be the title of another document rather than a term the
     #: drafter believed was defined.
     probable = "probable"
+    #: A model's reading, with its quotes verified against the document and
+    #: its arithmetic recomputed. The words are certainly there; whether
+    #: they mean what the note says is the reader's call. See
+    #: :mod:`polar.redline.judgement`.
+    suggested = "suggested"
 
 
 @dataclass(frozen=True)
