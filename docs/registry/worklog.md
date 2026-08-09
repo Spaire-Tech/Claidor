@@ -247,3 +247,69 @@ cleanly and resumes the next day.
 1. Token → run `fetch_texts`, verify text against source, then screening.
 2. The gold set, in parallel — still needs a human who can read a US
    commercial judgment.
+
+---
+
+## 2026-08-09 — Step 1c: the token, and text actually flowing
+
+### What happened
+
+Token supplied and stored in `server/.env` (verified git-ignored *before*
+writing it; confirmed absent from the whole git history afterwards).
+
+**Limits read, not assumed.** `/api/rest/v4/api-usage/` reports the real
+allowance on this token: **10/min, 75/hour, 300/day** — Tier 1, membership
+active. Pacing was set from that rather than from the published tier table.
+
+**Proof run: 20 opinions in 153 seconds.** Verified in the database:
+
+- 20/20 stored with text and SHA-256
+- **zero SHA-256 mismatches**
+- 17/20 contain "express negligence" — the other three arrived via the
+  other query phrasings, which is what those phrasings exist for
+- text opens as real court output (*"In the Court of Appeals, Second
+  Appellate District of Texas at Fort Worth…"*)
+
+**Full run: stopped cleanly at the hourly ceiling**, as designed —
+54 more, then `STOPPED: rate allowance exhausted, resumable`.
+
+**State: 74 of 419 opinions have text. 14.2 MB, averaging ~192,000
+characters each.**
+
+### Defects the live run exposed
+
+1. **A 429 aborted the run.** The fetcher backed off four times over ninety
+   seconds and then raised — which kills a run that has merely reached its
+   quota for the hour. It now returns cleanly and marks itself resumable.
+2. **`plain_text` is empty for a meaningful share of opinions.** Text lives
+   in the HTML or Harvard XML columns instead — *Dresser* has no
+   `plain_text` at all. The fallback chain is load-bearing, not defensive.
+3. **`TEXT_COLUMNS` preferred `html_with_citations`**, which is
+   CourtListener's own enrichment of another column with citation links
+   injected. For a registry that quotes wording verbatim, the unmodified
+   source is what should be read; the derived column is now last. Measured
+   on *Dresser*: `xml_harvard` stripped to 25,090 characters,
+   `html_with_citations` to 25,105 — same passage, so nothing was lost by
+   preferring the original.
+4. **A log line said "daily allowance exhausted" when it was the hourly
+   one.** Corrected. A log that names the wrong limit sends the next reader
+   to the wrong place.
+
+### Remaining uncertainty
+
+- **345 opinions still have no text.** At 300/day that is roughly a day and
+  a half of unattended running.
+- Extraction fidelity is checked on one opinion in depth and 20 in the
+  aggregate. It is not yet measured across the corpus — some opinions will
+  be OCR'd scans and worse.
+
+### Next
+
+Resume with:
+
+    uv run python scripts/registry_fetch.py tx-express-negligence
+
+Re-runnable safely and as often as the allowance permits: the queue is
+"candidates with no text", so a second run simply finds less to do.
+
+Then step 2, screening, on whatever has text.

@@ -70,8 +70,10 @@ class FetchReport:
     #: rather than counted: a gap in the corpus is something a person has
     #: to be able to go and look at.
     failures: list[str] = field(default_factory=list)
-    #: True when the run stopped because the daily allowance ran out. The
-    #: work already done is committed; the rest resumes tomorrow.
+    #: True when the run stopped because an allowance ran out — hourly or
+    #: daily; the API does not say which and it does not matter, because the
+    #: response is the same. The work already done is committed and the run
+    #: resumes when the window clears.
     throttled: bool = False
 
     def summary(self) -> str:
@@ -81,7 +83,7 @@ class FetchReport:
         if self.failures:
             parts.append(f"{len(self.failures)} failed")
         if self.throttled:
-            parts.append("STOPPED: daily allowance exhausted, resumable")
+            parts.append("STOPPED: rate allowance exhausted, resumable")
         return " | ".join(parts)
 
 
@@ -165,7 +167,7 @@ async def fetch_texts(
             if payload == "throttled":
                 report.throttled = True
                 log.warning(
-                    "registry.fetch.daily_allowance_exhausted",
+                    "registry.fetch.allowance_exhausted",
                     stored=report.stored,
                     remaining=report.wanted - report.stored,
                 )
