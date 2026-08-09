@@ -410,3 +410,62 @@ class TestWhatReadMeans:
         assert b'w:author="Opposing"' in edited
         assert b"jointly " in edited
         assert "jointly" in read(edited).text
+
+
+class TestARealWordFile:
+    """A document Microsoft Word actually saved.
+
+    ``word_blank.docx`` is a blank document straight out of Word. It has
+    no text at all, which made it look useless — and it found a bug within
+    a minute, because a blank Word document contains exactly the thing my
+    generated fixtures never did.
+
+    Word writes an empty paragraph as ``<w:p wp14:paraId="…" />``:
+    self-closing, with no ``</w:p>`` anywhere. Paragraph counting looked
+    for closing tags, so every blank line vanished and two clauses either
+    side of one were welded into a single line. In a real agreement that
+    would have shifted every offset after the first blank line, and every
+    « Go to » and every tracked change with them.
+
+    It also carries what real Word output looks like and my fixtures do
+    not: a byte-order mark, sixteen namespace declarations, inline
+    namespace declarations on individual elements, a 29 KB styles part,
+    and no numbering part at all.
+    """
+
+    def test_it_round_trips_with_every_part_identical(self, word_blank: bytes) -> None:
+        package = Package.open(word_blank)
+        saved = Package.open(package.save())
+
+        assert saved.names == package.names
+        for name in package.names:
+            assert saved.part(name) == package.part(name), name
+
+    def test_a_blank_document_reads_as_no_text(self, word_blank: bytes) -> None:
+        # Zero runs is the right answer here, not a failure to find them.
+        reading = Package.open(word_blank).read()
+        assert reading.text == ""
+        assert reading.runs == []
+
+    def test_a_byte_order_mark_does_not_break_reading(self, word_blank: bytes) -> None:
+        assert Package.open(word_blank).document.startswith(b"\xef\xbb\xbf")
+
+    def test_a_self_closing_paragraph_is_still_a_paragraph(self) -> None:
+        # The bug the blank file found. A blank line between two clauses
+        # is a self-closing <w:p/>, and losing it joins them.
+        xml = document_xml(
+            paragraph(run("First clause.")),
+            '<w:p wp14:paraId="2C078E63" wp14:textId="5678BA89" />',
+            paragraph(run("Second clause.")),
+        )
+        assert read(xml).text == "First clause.\n\nSecond clause."
+
+    def test_paragraph_properties_are_not_counted_as_paragraphs(self) -> None:
+        # <w:pPr> also begins with "<w:p". Counting it would insert a
+        # phantom break before every formatted paragraph.
+        xml = document_xml(
+            '<w:p><w:pPr><w:jc w:val="both"/></w:pPr>'
+            + run("Only one paragraph here.")
+            + "</w:p>"
+        )
+        assert read(xml).text == "Only one paragraph here."

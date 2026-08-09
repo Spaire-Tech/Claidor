@@ -35,3 +35,17 @@ def vesence_example() -> str:
     opinion of it.
     """
     return (FIXTURES / "vesence_example.txt").read_text(encoding="utf-8")
+
+
+@pytest.fixture
+def word_blank() -> bytes:
+    """A blank document saved by Microsoft Word itself.
+
+    Supplied 2026-08-09. It contains no text, which is exactly why it was
+    useful: a blank Word document is a self-closing `<w:p/>`, and that
+    found a paragraph-counting bug that would have shifted every offset
+    after the first blank line in a real agreement.
+
+    Blank, so there is nothing confidential in it.
+    """
+    return (FIXTURES / "word_blank.docx").read_bytes()

@@ -43,7 +43,13 @@ _RUN = re.compile(
 )
 _TEXT = re.compile(rb"<w:t(?P<attrs>(?:\s[^>]*)?)>(?P<text>.*?)</w:t>", re.DOTALL)
 _PROPS = re.compile(rb"<w:rPr>.*?</w:rPr>|<w:rPr\s*/>", re.DOTALL)
-_PARAGRAPH_END = re.compile(rb"</w:p>")
+#: The start of a paragraph, in both forms Word writes. A blank line is
+#: `<w:p wp14:paraId="…" />` — self-closing, with no `</w:p>` anywhere —
+#: so counting closing tags loses every empty paragraph and silently
+#: welds two clauses together. A real Word file exposed this immediately.
+#:
+#: The lookahead is what keeps `<w:pPr>` out: it also begins with `<w:p`.
+_PARAGRAPH_START = re.compile(rb"<w:p(?=[ />])")
 
 #: XML entities that appear in Word's text. Word writes `&amp;` and
 #: friends; everything else it leaves alone.
@@ -91,7 +97,7 @@ class Run:
 
 def scan_runs(xml: bytes) -> list[Run]:
     """Every run in the document, in order, with byte offsets."""
-    paragraph_ends = [match.start() for match in _PARAGRAPH_END.finditer(xml)]
+    paragraph_starts = [match.start() for match in _PARAGRAPH_START.finditer(xml)]
     runs: list[Run] = []
 
     for match in _RUN.finditer(xml):
@@ -113,8 +119,10 @@ def scan_runs(xml: bytes) -> list[Run]:
         props_match = _PROPS.search(body)
         props = props_match.group(0) if props_match else b""
 
-        # Which paragraph this run is in: how many `</w:p>` precede it.
-        paragraph = sum(1 for end in paragraph_ends if end < match.start())
+        # Which paragraph this run is in: how many paragraphs opened
+        # before it. Counting openings rather than closings is what makes
+        # an empty self-closing paragraph count as the blank line it is.
+        paragraph = sum(1 for start in paragraph_starts if start < match.start())
 
         runs.append(
             Run(
