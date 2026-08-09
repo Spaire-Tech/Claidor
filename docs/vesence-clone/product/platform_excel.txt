@@ -1,0 +1,144 @@
+Vesence in Excel | AI-Powered Spreadsheet Intelligence 
+ Vesence 
+ Platform 
+ Capabilities Security Resources About 
+ Log In Book a Demo 
+ Products 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ The Vesence Platform 
+Vesence works in Word, Outlook, and as a Web app. Intelligence like you have never experienced before in Microsoft Office. 
+ Platform 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ Capabilities 
+Quality 
+Raise the standard of every deliverable. 
+Knowledge 
+Turn document overload into structured insight. 
+Drafting 
+Accelerate drafting, without sacrificing control. 
+Logistics 
+Quotes, reporting, and invoice control on autopilot. Security Resources About 
+ Log In Book a Demo hello@vesence.com 
+Vesence 
+in Excel Book a Demo 
+ Review Check Format Create 
+Understand complex
+spreadsheets instantly. 
+E9 fx 
+=SUM(E2:E8) 
+ A B C D E F 1 Shareholder Security Shares FD % Invested (SEK) Round 2 Erik Lindgren Common 500,000 25.0% 500,000 Pre-seed 3 Anna Bergström Common 500,000 25.0% 500,000 Pre-seed 4 ESOP Pool Options 200,000 10.0% — Reserved 5 Aspen Capital Series A 400,000 20.0% 17,000,000 Series A 6 Birch Ventures Series A 240,000 12.0% 10,200,000 Series A 7 Horizon Invest SAFE 160,000 8.0% 5,000,000 Seed 8 9 Total 2,000,000 100.0% 33,200,000 10 11 Round Summary 12 Post-money valuation 85,000,000 13 Price / share (Series A) 42.50 14 Option pool (unallocated) 200,000 10.0% — 15 16 Solvik AB · Org.nr 559123-4567 · Updated 12 Mar 2026 17 18 19 
+ Cap Table Waterfall Returns 100% 
+ V Workspace 
+ Vesence 
+ Check Format Sheet 
+What can I do for you? 
+E9 fx 
+=SUM(E2:E8) 
+ A B C D E F 1 Shareholder Security Shares FD % Invested (SEK) Round 2 Erik Lindgren Common 500,000 25.0% 500,000 Pre-seed 3 Anna Bergström Common 500,000 25.0% 500,000 Pre-seed 4 ESOP Pool Options 200,000 10.0% — Reserved 5 Aspen Capital Series A 400,000 20.0% 17,000,000 Series A 6 Birch Ventures Series A 240,000 12.0% 10,200,000 Series A 7 Horizon Invest SAFE 160,000 8.0% 5,000,000 Seed 8 9 Total 2,000,000 100.0% 33,200,000 10 11 Round Summary 12 Post-money valuation 85,000,000 13 Price / share (Series A) 42.50 14 Option pool (unallocated) 200,000 10.0% — 15 16 Solvik AB · Org.nr 559123-4567 · Updated 12 Mar 2026 17 18 19 
+ Cap Table Waterfall Returns 100% 
+ V Workspace 
+ Vesence 
+ Check Format Sheet 
+What can I do for you? 
+Connected to the tools your firm already uses 
+In Excel, Vesence reaches beyond the grid. Your local files, PDFs, Outlook, SharePoint, and the underlying agreements are all one prompt away. 
+How Firms Are Using Vesence in Excel 
+ Review Check Format Create 
+Review 
+Understand complex spreadsheets instantly. Explain formulas, trace how figures flow, and break down data across sheets. 
+ V Workspace 
+Explain the formula in F9 and how it flows through to the Returns sheet 
+ Used 3 tools 
+ Read Cap_Table.xlsx (3 sheets) 
+ Analyzed Formula in F9 
+ Traced F9 → Returns!C4 
+ =SUMIF(G2:G8,"Series A",F2:F8) totals the investment for every Series A row — SEK 27,200,000 across Aspen Capital and Birch Ventures. That figure feeds the Series A entry proceeds on the Returns sheet. 
+Check 
+Cross-check data against source documents. Surface mismatches between your spreadsheet and underlying agreements. 
+ V Workspace 
+Project_Atlas_SHA.docx 
+Word 
+Cross-check the cap table against the SHA and flag any mismatches 
+ Used 3 tools 
+ Read Cap_Table.xlsx + Project_Atlas_SHA.docx 
+ Compared Shares, price, and ownership 
+ Flagged 2 mismatches 
+Aspen Capital's Series A holding shows 400,000 shares in the workbook, but Schedule 1 of the SHA lists 420,000. The post-money valuation in B12 also trails the SHA by SEK 2m. 
+Format 
+Apply consistent currency, percentage, and table styling across your spreadsheet in one click. 
+ V Workspace 
+Format this sheet with proper currency, percentage, and table styling 
+ Used 2 tools 
+ Read Cap_Table.xlsx (3 sheets) 
+ Formatted Currency + percentages 
+Applied SEK currency with thousands separators, set ownership to one-decimal percentages, and styled the header row and totals to your firm's house format. 
+Create 
+Generate a structured, firm-formatted spreadsheet from a term sheet or instructions. 
+ V Workspace 
+Term_Sheet.pdf 
+PDF 
+Build a cap table from this term sheet using our standard layout 
+ Used 3 tools 
+ Read Term_Sheet.pdf 
+ Extracted Shareholders + rounds 
+ Created Cap_Table.xlsx 
+Built a cap table with one row per shareholder, live SUM formulas for the totals, and SEK currency formatting — ready for you to review before it lands in the workbook. 
+One workflow. Two surfaces. 
+The same agent and the same review, in the web app or inside Microsoft Excel. 
+Vesence Web 
+Vesence in Excel 
+ “ It elevates our craft without getting in our way. Vesence makes AI feel effortless. ” 
+Johan Lidström 
+M&A Partner, Cederquist Read the Case Study 
+Traceable numbers 
+Reconcile the workbook against term sheets, SPAs, and PDFs. Every figure is backed by a citation you can click to jump to the exact cell or source clause. 
+Traceable numbers 
+Whole-workbook check 
+ The Series A investment totals SEK 27,200,000 — Aspen Capital's SEK 17,000,000 and Birch Ventures' SEK 10,200,000, straight from the cap table. E5:E6 Both figures reconcile with the term sheet 3.2 — click any citation to jump straight to the cell or the clause it came from. 
+ Spreadsheet Fidelity 
+Every Edit Is a Live Formula 
+Vesence writes working formulas and keeps your number formats, styles, and cross-sheet links intact. It never pastes flat values over your model. 
+ F4 
+ fx 
+ 450,000 =D4*E4 
+ Tracked Changes 
+Agents Work, You Review 
+Every edit lands as a tracked change in the grid, with added rows tinted and changed values struck through. Accept or reject them before anything touches your workbook. 
+ Cap_Table_v2.xlsx 7 changes Accept all A B C 1 Shareholder Shares Own. 2 Alpine Capital 850,000 37.0% 3 Vinterfors Capital 300,000 13.0% 4 Total 2,000,000 2,300,000 100% 
+ Workbook Intelligence 
+It Reads the Whole Workbook 
+Vesence follows every reference across sheets to trace where each figure comes from, catching broken and circular formulas that manual review misses. 
+Does the cap table foot? Trace the Total to its sources. 
+ Thought 
+ Read Cap_Table.xlsx — 3 sheets 
+ Analyzed 142 formulas and cross-sheet links 
+ Yes — in Cap_Table.xlsx the Total foots across all 3 sheets, with no broken references. 
+Does the cap table foot? Trace the Total to its sources. 
+ Thought 
+The Power of AI, In Tools You Already Know. 
+Book a demo to hear more about Vesence. 
+ Book a Demo 
+ Vesence 
+AI for High-Stakes Work. Built for Microsoft Office. Made for Professional Services. hello@vesence.com 
+Product Vesence Vesence in Word Vesence in Outlook Vesence in Excel 
+Solutions Quality Knowledge Drafting 
+About Company Customer Cases Resources Security Contact Support Terms Privacy Policy Subprocessors 
+© 2026 Vesence AB. All rights reserved.

@@ -1,0 +1,104 @@
+Knowledge | Vesence 
+ Vesence 
+ Platform 
+ Capabilities Security Resources About 
+ Log In Book a Demo 
+ Products 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ The Vesence Platform 
+Vesence works in Word, Outlook, and as a Web app. Intelligence like you have never experienced before in Microsoft Office. 
+ Platform 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ Capabilities 
+Quality 
+Raise the standard of every deliverable. 
+Knowledge 
+Turn document overload into structured insight. 
+Drafting 
+Accelerate drafting, without sacrificing control. 
+Logistics 
+Quotes, reporting, and invoice control on autopilot. Security Resources About 
+ Log In Book a Demo hello@vesence.com 
+Knowledge 
+Turn document overload into structured insight. Vesence organizes, summarizes, and connects information across your matters so your team always has the full picture. 
+Organize Data & Documents with Vesence 
+ Review Hundreds of Documents Organize Hundreds of Documents Review Individual Documents 
+Review Hundreds of Documents 
+Run bulk AI review on large document sets to surface issues, missing clauses, and key terms in minutes. 
+Analyzed 47 contracts 
+Change of control provisions 
+5 of 47 contracts contain termination rights triggered on change of control. These are flagged as high risk below. 
+ Contract Counterparty Risk CoC Provision Termination Notice Supply Agreement Norrvagn Group AB 
+High Consent required 90 days License Agreement Kretsnät AB 
+Low Silent 30 days Master Services Agmt Granskia Sweden AB 
+High Consent + novation 180 days Distribution Agmt Malmkrona AB 
+Medium Notification only 60 days IP License Ljudfält Technology 
+High Terminable on CoC Immediate Consulting Agmt Molnfors Nordic 
+Low Silent 30 days Lease Agreement Murkrön Fastigheter AB 
+Medium Landlord consent 6 months 
+Organize Hundreds of Documents 
+Move, rename, and restructure files and folders across your workspace. Vesence handles the busywork so your data room stays clean. 
+ Files 
+ SPA_Draft_v4.docx 
+ Cap_Table.xlsx 
+ Terms_Sheet.pdf 
+ Data Room 
+ 1. Corporate Docu… 
+ 2. Financial Stat… 
+ 3. Material Contr… 
+ 4. Employment & B… 
+ 5. IP & Technology 
+ 6. Insurance 
+ 7. Litigation 
+ 8. Real Property 
+ 9. Environmental 
+ Closing_Chec….xlsx 
+Review Individual Documents 
+Review against playbooks, checklists, or custom instructions with precise, inline recommendations in Word. 
+spa playbook 
+Organization 
+ 📑 
+ Buy-Side SPA (Locked Box) Review against buy-side locked box SPA playbook 
+ 📑 
+ Buy-Side SPA (Closing Accounts) Review against buy-side closing accounts playbook 
+ 📄 
+ Sell-Side SPA Review against sell-side SPA playbook 
+ 📝 
+ Shareholders' Agreement Review against SHA playbook 
+ 📋 
+ Due Diligence Report Review against DD report playbook 
+ 📘 
+ Loan Agreement Review against LMA facility playbook 
+ 📂 
+ Merger Agreement Review against merger agreement playbook 
+Learn More 
+ Product 
+Vesence Platform 
+Intelligence like you have never experienced before in Microsoft Office. Explore the Platform 
+The Power of AI, In Tools You Already Know. 
+Book a demo to hear more about Vesence. 
+ Book a Demo 
+ Vesence 
+AI for High-Stakes Work. Built for Microsoft Office. Made for Professional Services. hello@vesence.com 
+Product Vesence Vesence in Word Vesence in Outlook Vesence in Excel 
+Solutions Quality Knowledge Drafting 
+About Company Customer Cases Resources Security Contact Support Terms Privacy Policy Subprocessors 
+© 2026 Vesence AB. All rights reserved.

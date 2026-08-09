@@ -1,0 +1,108 @@
+Drafting | Vesence 
+ Vesence 
+ Platform 
+ Capabilities Security Resources About 
+ Log In Book a Demo 
+ Products 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ The Vesence Platform 
+Vesence works in Word, Outlook, and as a Web app. Intelligence like you have never experienced before in Microsoft Office. 
+ Platform 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ Capabilities 
+Quality 
+Raise the standard of every deliverable. 
+Knowledge 
+Turn document overload into structured insight. 
+Drafting 
+Accelerate drafting, without sacrificing control. 
+Logistics 
+Quotes, reporting, and invoice control on autopilot. Security Resources About 
+ Log In Book a Demo hello@vesence.com 
+Drafting 
+Accelerate drafting, without sacrificing control. Vesence generates first drafts from templates and precedent, aligned with your firm's standards, so you can focus on substance. 
+How Firms Use Vesence for Drafting 
+ Create Dozens of Documents Draft in Multiple Files at Once Fill in Templates Instantly Draft Professional Emails 
+Create Dozens of Documents 
+Draft firm-formatted documents from scratch or from templates. Styles, numbering, and definitions applied automatically. 
+Participants_Q4_2024.xlsx 
+Excel 
+Contract_Note_Template.docx 
+Word 
+Create contract notes for each person in the spreadsheet using the template 
+ Used 12 tools 
+ Created Contract_Note_Anderson.docx 
+ Created Contract_Note_Bergström.docx 
+ Created Contract_Note_Chen.docx 
+ Created Contract_Note_Johansson.docx 
+ Created Contract_Note_Lindqvist.docx 
+ Created Contract_Note_Eriksson.docx 
+ Created Contract_Note_Nilsson.docx 
+Draft in Multiple Files at Once 
+Open, compare, and update multiple Word documents side by side, applying consistent changes across all of them. 
+ 12 MSA_Enterprise_Clients.docx 
+ 9 MSA_SMB_Clients.docx 
+ 14 Terms_and_Conditions.docx 
+ Northgate — Enterprise Clients MSA v6 
+ 8 Data security Data Security and Compliance 
+ 8.1 Security Standards 
+ 8.1.1 The Service Provider shall maintain reasonable security measures to protect Client data security measures consistent with SOC 2 Type II standards to protect Client data, including controls over security, availability, processing integrity, confidentiality, and privacy . 
+ 8.1.2 The Service Provider shall, upon reasonable request and no more than once per year, provide the Client with a copy of its most recent SOC 2 Type II audit report by an independent third-party auditor. 
+ 8.2 Data handling Data Handling and Incident Response 
+ 8.2.1 In the event of a data breach Security Incident , the Service Provider shall notify the Client promptly within 48 hours of becoming aware of such incident . 
+ 8.2.2 The Service Provider shall maintain appropriate documented and regularly tested response procedures and shall cooperate fully with the Client in investigating and remediating any such incident. 
+Fill in Templates Instantly 
+Generate a first draft from your firm's templates, aligned with the matter context and ready for review. 
+ V Workspace 
+Project_Atlas_SPA.docx 
+Word 
+Closing_Agenda_Template.docx 
+Word 
+Generate a closing agenda from the SPA using the firm template 
+ Used 4 tools 
+ Loaded template Closing Agenda (Firm Standard) 
+ Read Project_Atlas_SPA.docx 
+ Drafted Closing agenda with deliverables 
+ Prepared Edits Closing_Agenda_Draft.docx 
+Generated a closing agenda from the SPA using your firm template. All sections have been populated with the correct parties, conditions precedent, and deliverables from the transaction documents. Tracked changes are ready for your review in Word. 
+Draft Professional Emails 
+Draft replies with full thread context, attachments, and firm standards built in. 
+ Workspace 
+ No Tracked Changes ( 0 ) 
+Reply to Jon with a status update on the SPA and ask for the revenue breakdown 
+ Used 3 tools 
+ Read This thread — 7 messages 
+ Read SPA v3.docx + Issues List.xlsx 
+ Applied Firm house style 
+Drafted the reply in your voice: SPA at v3 with warranties aligned, indemnity and survival still open, and a direct ask for the final revenue breakdown so we can confirm the antitrust thresholds. 
+Learn More 
+ Product 
+Vesence Platform 
+Intelligence like you have never experienced before in Microsoft Office. Explore the Platform 
+The Power of AI, In Tools You Already Know. 
+Book a demo to hear more about Vesence. 
+ Book a Demo 
+ Vesence 
+AI for High-Stakes Work. Built for Microsoft Office. Made for Professional Services. hello@vesence.com 
+Product Vesence Vesence in Word Vesence in Outlook Vesence in Excel 
+Solutions Quality Knowledge Drafting 
+About Company Customer Cases Resources Security Contact Support Terms Privacy Policy Subprocessors 
+© 2026 Vesence AB. All rights reserved.

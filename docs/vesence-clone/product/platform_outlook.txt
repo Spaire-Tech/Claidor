@@ -1,0 +1,330 @@
+Vesence in Outlook | AI Agents in Your Inbox 
+ Vesence 
+ Platform 
+ Capabilities Security Resources About 
+ Log In Book a Demo 
+ Products 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ The Vesence Platform 
+Vesence works in Word, Outlook, and as a Web app. Intelligence like you have never experienced before in Microsoft Office. 
+ Platform 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ Capabilities 
+Quality 
+Raise the standard of every deliverable. 
+Knowledge 
+Turn document overload into structured insight. 
+Drafting 
+Accelerate drafting, without sacrificing control. 
+Logistics 
+Quotes, reporting, and invoice control on autopilot. Security Resources About 
+ Log In Book a Demo hello@vesence.com 
+Vesence 
+in Outlook Book a Demo 
+ Draft Track Changes Check 
+Set your tone, get
+first drafts instantly. 
+ S end 
+ T o 
+ jon.doe@democo.example 
+ C c 
+ james.harrison@northgate.example 
+S u bject 
+ Re: DemoCo–TargetCo Acquisition – Status Update 
+ SPA v3.docx 412 KB 
+ Issues List.xlsx 88 KB 
+ Closing Checklist.xlsx 64 KB 
+ Client Memo.docx 127 KB 
+ Workspace 
+ No Tracked Changes ( 0 ) 
+ Vesence 
+ Check Improve 
+Draft with Vesence 
+ S end 
+ T o 
+ jon.doe@democo.example 
+ C c 
+ james.harrison@northgate.example 
+S u bject 
+ Re: DemoCo–TargetCo Acquisition – Status Update 
+ SPA v3.docx 412 KB 
+ Issues List.xlsx 88 KB 
+ Closing Checklist.xlsx 64 KB 
+ Client Memo.docx 127 KB 
+ Workspace 
+ No Tracked Changes ( 0 ) 
+ Vesence 
+ Check Improve 
+Draft with Vesence 
+Connected to the tools your firm already uses 
+In Outlook, Vesence reaches beyond the message. The whole thread, its attachments, your local files, SharePoint, and everyone's calendars are all one prompt away. 
+How Firms Are Using Vesence in Outlook 
+ Create Review Check Format 
+Create 
+Generate a structured first draft from a short prompt, grounded in the thread and its attachments and aligned with your firm's house style. 
+ Workspace 
+ No Tracked Changes ( 0 ) 
+Reply to Jon with a status update on the SPA and ask for the revenue breakdown 
+ Used 3 tools 
+ Read This thread — 7 messages 
+ Read SPA v3.docx + Issues List.xlsx 
+ Applied Firm house style 
+Drafted the reply in your voice: SPA at v3 with warranties aligned, indemnity and survival still open, and a direct ask for the final revenue breakdown so we can confirm the antitrust thresholds. 
+Review 
+Get a structured summary of what's agreed, what's still open, and what you owe across the entire thread, with citations back to the source. 
+ Workspace 
+ No Tracked Changes ( 0 ) 
+Catch me up on this thread — what's agreed, what's open, and what's owed by me? 
+ Used 2 tools 
+ Read This thread — 14 messages since 8 January 
+ Read 3 attachments across the thread 
+Agreed 
+10% indemnity cap and a 5% escrow for 18 months, confirmed by Jon on 22 January. 
+Still open 
+Materiality scrape, survival periods, and the net working capital methodology in SPA v3.docx . 
+Owed by you 
+Signing-resolution templates and a preliminary closing agenda — promised Friday, not yet sent. 
+Check 
+Run a pre-send check that verifies language, recipients, subject, and attachments, flagging contradictions against the thread before you hit send. 
+ Workspace 
+ No Tracked Changes ( 0 ) 
+Check 
+ Email Check 
+ 5 issues 
+Language & Grammar 
+ 1 issue found 
+"materialty", spelling error (should be "materiality") 
+Recipients 
+ 1 issue found 
+Greeting says "John" but recipient is "Jon Doe" 
+Attachments 
+ 1 issue found 
+Body references the "Closing Checklist" but no such file is attached 
+Subject Line 
+ No issues found 
+Consistency 
+ 2 issue s found 
+SPA described as "v5" but Next Steps references "SPA v4" 
+Escrow duration "24 months" contradicts the 18 months agreed earlier in the thread 
+Five issues before this leaves the firm — a misspelling, the wrong first name, a missing attachment, and two version contradictions against the rest of the thread. 
+Format 
+Align every outgoing email with your firm's tone, structure, and formatting standards. Every change lands as a tracked change you approve one by one. 
+ Workspace 
+ Tracked Changes ( 5 ) 
+ Hi John → Dear Jon 
+ materialty → materiality 
+ Just wanted to quickly flag that 
+ Kind regards, 
+ Aptos 11pt across the body 
+Bring this in line with our house style 
+ Used 2 tools 
+ Read Firm style guide — email conventions 
+ Edited 5 tracked changes in the body 
+Salutation and sign-off now follow the guide, the hedging opener is gone, and the body is set in Aptos 11pt. Every edit is a tracked change — accept or reject them individually before you send. 
+One workflow. Two surfaces. 
+The same agent and the same review, in the web app or inside Microsoft Outlook. 
+Vesence Web 
+Vesence in Outlook 
+ “ Vesence makes AI feel effortless. That is exactly what we want it to be. ” 
+Johan Lidström 
+M&A Partner, Cederquist Read the Case Study 
+Schedule without the back and forth 
+Vesence loads your calendar and the attendees' side by side, so the open hours are obvious. Drag out a slot instead of trading emails to find a time that works. 
+Schedule without the back and forth 
+Let Vesence draft the invitation 
+Collaborate better with track changes 
+Give feedback and conduct reviews faster with track changes in email — built for teams where precision matters. 
+ For the sender 
+Mark up emails with track changes 
+Start recording, edit the draft in the email itself, and every edit becomes a tracked change your colleague can see. No separate document, no attachment round trip. 
+ S end 
+ T o 
+ james.harrison@northgate.example 
+S u bject 
+ RE: Draft — status update to DemoCo 
+See my changes below. 
+ From: James Harrison <james.harrison@northgate.example> 
+ Date: Friday, 24 January 2026 at 08:40 
+ To: Sarah Chen <sarah.chen@northgate.example> 
+ Subject: Draft — status update to DemoCo 
+ Hi Dear Jon, 
+As discussed, below is a concise status update on the DemoCo–TargetCo acquisition. 
+Summary 
+Status: SPA at v 5 3 ; core business warranties broadly aligned, indemnity mechanics, materialty materiality scrape, and survival periods still live. 
+Regulatory: Antitrust filing draft ready; we will complete the filing this week we expect to file once the final revenue data is confirmed . 
+Immediate requests 
+Board availability: Please confirm a window for signing resolutions next week. 
+Please let me know if you have the any constraints, questions, or additional data points to share in advance. 
+ Cheers, Kind regards, 
+Sarah 
+ Workspace 
+ Tracked Changes ( 6 ) 
+Mark up James's draft: soften the filing commitment and fix the version and typos 
+ Used 3 tools 
+Softened the antitrust commitment to a data-dependent expectation, corrected the SPA version and the misspelling, and brought the salutation and sign-off in line with the guide. 
+ For the recipient 
+Review feedback where it arrives 
+Every change is listed in the pane with accept and reject on each one. It is the review interface everyone already knows, now in the inbox. 
+RE: Draft — status update to DemoCo 
+ Reply 
+ Reply all 
+ Forward 
+SC 
+ Sarah Chen < sarah.chen@northgate.example > Fri 24/01/2026 09:12 
+To: james.harrison@northgate.example 
+See my changes below. 
+ From: James Harrison <james.harrison@northgate.example> 
+ Date: Friday, 24 January 2026 at 08:40 
+ To: Sarah Chen <sarah.chen@northgate.example> 
+ Subject: Draft — status update to DemoCo 
+ Hi Dear Jon, 
+As discussed, below is a concise status update on the DemoCo–TargetCo acquisition. 
+Summary 
+Status: SPA at v 5 3 ; core business warranties broadly aligned, indemnity mechanics, materialty materiality scrape, and survival periods still live. 
+Regulatory: Antitrust filing draft ready; we will complete the filing this week we expect to file once the final revenue data is confirmed . 
+Immediate requests 
+Board availability: Please confirm a window for signing resolutions next week. 
+Please let me know if you have the any constraints, questions, or additional data points to share in advance. 
+ Cheers, Kind regards, 
+Sarah 
+ Read only 
+ Workspace 
+ Tracked Changes ( 6 ) 
+ Hi → Dear 
+ v5 → v3 
+ materialty → materiality 
+ will complete the filing → expect to file once… 
+ any → the constraints 
+ Cheers, → Kind regards, 
+What did Sarah change, and what should I do before sending? 
+Six changes. Two are corrections you should simply accept — the SPA is at v3, and “materialty” was a typo. 
+One is substantive: the promise to complete the antitrust filing this week is now conditional on the final revenue data. The rest are tone — salutation, sign-off, and one word in the closing request. 
+Manage attachments effortlessly 
+No more naming files by hand, hunting for the right version, or wondering what your metadata is carrying. Vesence handles the attachments for you, with no downloads and no uploads. 
+ Naming 
+Stop wasting time on file naming 
+Vesence reads the thread and the documents, then proposes names that follow your firm's convention, right down to the version and whether the copy is executed. Rename, reorder, or drop any of them before it applies. 
+Proposed attachment changes 
+ Drag to reorder · click a name to edit 
+ ⋮⋮ 
+Document1 (3).docx 
+ 01 DemoCo-TargetCo SPA (executed).docx 
+ ⋮⋮ 
+SCAN_0043.pdf 
+ 02 Disclosure Letter (signed).pdf 
+ ⋮⋮ 
+final FINAL v2 kopia.xlsx 
+ 03 Issues List (v6, closed).xlsx 
+ ⋮⋮ 
+Untitled spreadsheet.xlsx 
+ 04 Closing Checklist (signing).xlsx 
+ ⋮⋮ 
+img_20260122_0004.pdf 
+ 05 Board Resolutions (signed).pdf 
+ ⋮⋮ 
+kopia av captable(1).xlsx 
+ 06 Cap Table (post-closing).xlsx 
+ ⋮⋮ 
+escrow ändrad.docx 
+ 07 Escrow Agreement (agreed form).docx Reject Apply changes 
+ Order 
+Send organized attachments every time 
+The set arrives in the order the email describes it, numbered to match and with superseded versions dropped. When there are too many to read at a glance, Vesence bundles them into a folder. 
+Manage attachments 
+ In the order the email lists them 
+ ⋮⋮ 
+ 01 DemoCo-TargetCo SPA (executed).docx 
+ ⋮⋮ 
+ 02 Disclosure Letter (signed).pdf 
+ ⋮⋮ 
+ 03 Issues List (v6, closed).xlsx 
+ ⋮⋮ 
+ 04 Closing Checklist (signing).xlsx 
+ ⋮⋮ 
+ 05 Board Resolutions (signed).pdf 
+ ⋮⋮ 
+ 06 Cap Table (post-closing).xlsx 
+ ⋮⋮ 
+ Issues List v5 (superseded).xlsx removed 
+ ⋮⋮ 
+ SPA mark-up (internal comments).docx removed Reject Apply changes 
+ Metadata 
+Eliminate metadata risks before sending 
+Tracked changes that reveal your negotiating position, comments about the other side, author names, and edit history are all found and stripped, with a list of exactly what was removed. 
+ Workspace 
+ No Tracked Changes ( 0 ) 
+Clean the attachments before this goes out 
+ Used 3 tools 
+01 DemoCo-TargetCo SPA (executed).docx 
+Word 
+03 Issues List (v6, closed).xlsx 
+Excel 
+The SPA carried 14 unaccepted tracked changes and three internal comments — including one on the indemnity cap. All gone, along with author and revision history on every file. 
+Nothing in the visible text changed. Review the cleaned set and send. 
+ Verification 
+Never send the wrong attachments again 
+Before it leaves, Vesence checks the attachments against what the email actually promises: files referenced but missing, the wrong version, and anything still carrying markup. 
+ Workspace 
+ No Tracked Changes ( 0 ) 
+Check 
+ Email Check 
+ 3 issues 
+Language & Grammar 
+ No issues found 
+Recipients 
+ No issues found 
+Attachments 
+ 3 issue s found 
+The body promises the "board resolutions" — no such file is attached 
+Issues List attached is v5; the thread agreed v6 on 22 January 
+SPA (executed).docx still carries 14 tracked changes and 3 comments 
+Subject Line 
+ No issues found 
+Consistency 
+ No issues found 
+Three things to fix before you send: the board resolutions you promised aren't attached, you're sending v5 of the issues list instead of the agreed v6, and the SPA still has markup in it. 
+ Tracked Changes in Email 
+Track Changes, Now in Outlook 
+Start recording and edit your colleague's draft in the email itself. Every edit becomes a tracked change they can accept or reject, with no separate file and no attachment round trip. 
+ Pre-Send Check 
+Five Checks Before You Hit Send 
+Vesence checks language, recipients, attachments, subject, and internal consistency against what the email actually says, so the wrong version and the missing file never make it out. 
+1 
+1 
+3 
+1 
+1 
+ Attachments 
+ 1 
+ 1 
+ 1 
+ Calendar Awareness 
+Find the Time and Write the Invite 
+Vesence reads your calendar and the attendees' side by side, finds the hour that works, and drafts the invitation with subject, agenda, and Teams link for you to send. 
+The Power of AI, In Tools You Already Know. 
+Book a demo to hear more about Vesence. 
+ Book a Demo 
+ Vesence 
+AI for High-Stakes Work. Built for Microsoft Office. Made for Professional Services. hello@vesence.com 
+Product Vesence Vesence in Word Vesence in Outlook Vesence in Excel 
+Solutions Quality Knowledge Drafting 
+About Company Customer Cases Resources Security Contact Support Terms Privacy Policy Subprocessors 
+© 2026 Vesence AB. All rights reserved.

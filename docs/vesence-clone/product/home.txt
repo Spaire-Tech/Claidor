@@ -1,0 +1,190 @@
+Vesence | AI for High-Stakes Work 
+ Vesence 
+ Platform 
+ Capabilities Security Resources About 
+ Log In Book a Demo 
+ Products 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ The Vesence Platform 
+Vesence works in Word, Outlook, and as a Web app. Intelligence like you have never experienced before in Microsoft Office. 
+ Platform 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ Capabilities 
+Quality 
+Raise the standard of every deliverable. 
+Knowledge 
+Turn document overload into structured insight. 
+Drafting 
+Accelerate drafting, without sacrificing control. 
+Logistics 
+Quotes, reporting, and invoice control on autopilot. Security Resources About 
+ Log In Book a Demo hello@vesence.com 
+ Introducing: AI Redlines That Keeps Microsoft Word Formatting Intact 
+AI for High-Stakes Work 
+ A platform to work intuitively with agents across Microsoft Office. Trusted by law firms, banks, and investors. 
+ Book a Demo Start Free Trial 
+Built for high-stakes work 
+ Case Study 
+Fund Formation 
+Andulf partners with Vesence to use the agent-native platform for fund formation work. 
+ Case Study 
+M&A 
+Kanter partners with Vesence to use the agent-native platform for M&A and corporate work. 
+ Case Study 
+Full-Service Law Firm 
+Cederquist partners with Vesence to use the agent-native platform across a full-service practice. 
+ “ The future of work is agent orchestration guided by judgment, and we're building the platform for the people who lead it. ” 
+Henrik Taro Hansson 
+CEO & Founder, Vesence Our Vision 
+The Platform 
+One Agent. Five products. 
+Vesence works where your team works. The most intuitive way to leverage AI. Explore Vesence Platform 
+ Web Purpose-built AI for Projects. Outlook Purpose-built AI for Inboxes. Word Purpose-built AI for Documents. Excel Purpose-built AI for Spreadsheets. PowerPoint Purpose-built AI for Presentations. 
+ Web App Outlook Word Excel PowerPoint 
+ Vesence in Web 
+Purpose-built AI for Projects. 
+ Create Firm-Formatted Documents Instantly 
+ Edit Multiple Files with Track Changes 
+ Organize and Structure Files and Data Read More about Vesence in Web App 
+ Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+ Set House Style and Draft Professional Emails 
+ Track Changes in Outlook 
+ One-Click Check to Review Hundreds of Errors Read More about Vesence in Outlook 
+ Vesence in Word 
+Purpose-built AI for Documents. 
+ Advanced Drafting and Template Filling 
+ Fix Formatting by Selecting Broken Areas 
+ One-Click Check to Review Hundreds of Errors Read More about Vesence in Word 
+ Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+ Review and Understand Complex Spreadsheets 
+ Cross-Check Data Against Source Documents 
+ Format to Firm Standards in One Click Read More about Vesence in Excel 
+ Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ Run Quality Checks Across Every Slide 
+ Create Firm-Formatted Slides 
+ Refine Copy and Align to Firm Standards Read More about Vesence in PowerPoint 
+Why Vesence 
+ Office Editing 
+World's Best Microsoft Office Editing 
+Other AI breaks Microsoft Office formatting when creating and editing documents. Vesence keeps formatting intact. 
+Turn the signed term sheet into a first-draft SPA 
+ Thought 
+ Read Term_Sheet_Signed.pdf 
+ Drafted 42 clauses in the firm template 
+ Created SPA_Draft_v1.docx 
+Turn the signed term sheet into a first-draft SPA 
+ Thought 
+ Projects 
+Every Matter in One Workspace 
+Files, chats, and drafts live together in a project. Share it with your team and everyone works from the same context. 
+ Review 
+Agents Work, You Review 
+Every edit the agent makes is traceable through tracked changes across Word, Excel, PowerPoint, and Outlook. 
+ SPA_Draft_v4.docx 12 changes 
+ Accept all Reject all 
+ The Purchase Price shall be adjusted by reference to the Working Capital Net Working Capital as of the Closing Date . 
+ “ The impact is real. We have reached a 90% weekly usage across the firm. ” 
+Maja Wettergren 
+Managing Partner, Cederquist, M&A Law Firm Read the Case Study 
+ Workspace 
+Every Task Runs in a Workspace 
+The agent works from your files, your inbox, and your instructions. Everything it produces comes back as tracked changes, so nothing leaves without your approval. 
+ Models 
+Always the Latest Frontier Models 
+Vesence runs the newest models from every major lab and switches to a better one as soon as it ships. Your work always gets the strongest model available. 
+GPT-5.6 Sol 
+GPT-5.6 Terra 
+GPT-5.5 
+Opus 5 
+Opus 4.8 
+Gemini 3.5 Flash 
+GPT-5.6 Sol 
+GPT-5.6 Terra 
+GPT-5.5 
+Opus 5 
+Opus 4.8 
+Gemini 3.5 Flash 
+ Anywhere 
+Works on Desktop and Mobile 
+Start a task at your desk and pick it up on your phone exactly where you left off. The same workspace, wherever you are. 
+Use Cases 
+ Quality Knowledge Drafting 
+Check every email, document,
+and project before your client sees it. Read More about Quality 
+ Chat 
+ Vesence 
+Cap_Table.xlsx 
+Excel 
+Term_Sheet_Signed.pdf 
+PDF 
+SPA_Draft_v4.docx 
+Word 
+What can I do for you? 
+ Personal 
+ Personal 
+ 4 SPA_Draft_v4.docx 
+ Cap_Table.xlsx 
+ Term_Sheet_Si….pdf 
+ Disclosure_S….docx 
+ LOI_Executed.pdf 
+ Board_Minute….docx 6 items 
+ Untitled task 
+ Security 
+ Built on Trust Secure by Design 
+We never train AI on your data 
+Everything runs securely in Azure 
+24/7 monitoring and threat detection Learn More About Security 
+SOC 2 
+SOC 2 Type II Certified 
+SAML & SSO 
+Authentication and single sign-on 
+E2E Encrypted 
+End-to-end encryption for all data 
+Zero Data Retention 
+Complete zero data retention policy 
+ Seed Round 
+Vesence Raises $ 9M 
+Led by Emergence, Y Combinator, and Creandum, with participation from Paul Graham, Anton Osika, and operators from OpenAI. Read the Announcement 
+Latest 
+Stay updated with our latest news, partnerships, and insights 
+ Vesence — Insights V 
+ LegalTechTalk London 2026 
+ June 30, 2026 Insights 
+From Drafter to Director: Our Roundtable at LegalTechTalk 
+ Vesence — Customer Cases V 
+ June 25, 2026 Customer Cases 
+Snellman and Vesence 
+ Vesence — Customer Cases V 
+ Coding Agents In Action at Law Firms 
+ June 18, 2026 Customer Cases 
+Coding Agents in Action at Law Firms 
+The Power of AI, In Tools You Already Know. 
+Book a demo to hear more about Vesence. 
+ Book a Demo 
+ Vesence 
+AI for High-Stakes Work. Built for Microsoft Office. Made for Professional Services. hello@vesence.com 
+Product Vesence Vesence in Word Vesence in Outlook Vesence in Excel 
+Solutions Quality Knowledge Drafting 
+About Company Customer Cases Resources Security Contact Support Terms Privacy Policy Subprocessors 
+© 2026 Vesence AB. All rights reserved.

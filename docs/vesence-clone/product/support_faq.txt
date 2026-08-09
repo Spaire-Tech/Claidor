@@ -1,0 +1,169 @@
+FAQ | Vesence 
+ Vesence 
+ Platform 
+ Capabilities Security Resources About 
+ Log In Book a Demo 
+ Products 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ The Vesence Platform 
+Vesence works in Word, Outlook, and as a Web app. Intelligence like you have never experienced before in Microsoft Office. 
+ Platform 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ Capabilities 
+Quality 
+Raise the standard of every deliverable. 
+Knowledge 
+Turn document overload into structured insight. 
+Drafting 
+Accelerate drafting, without sacrificing control. 
+Logistics 
+Quotes, reporting, and invoice control on autopilot. Security Resources About 
+ Log In Book a Demo hello@vesence.com 
+ Back to Guides 
+Features and capabilities 
+Frequently Asked Questions 
+Search common questions, or browse by topic. 
+ About Vesence Workspace Agent Custom Agents Setup and Access Security and Data Review and safe use Giving instructions Files and source material SharePoint and OneDrive On the web In Word In Excel In PowerPoint In Outlook 
+About Vesence 
+ What is Vesence? 
+Vesence is an AI assistant for legal, commercial, and business document work. It acts like a junior colleague that can read materials, find issues, compare information, draft, edit, summarize, and organize work. Read: What is Vesence? → What can Vesence help me with? 
+It can understand long materials, improve language and structure, check documents before they are used, find gaps and inconsistencies, compare information across files, and prepare drafts, summaries, tables, and checklists. Read: What is Vesence? → What kinds of files does Vesence work best with? 
+Vesence is most useful when relevant context is available — contracts, templates, term sheets, emails, spreadsheets, presentations, PDFs, Teams messages, or SharePoint files. Read: What is Vesence? → What outputs can Vesence produce? 
+Working drafts, redlines, summaries, comparison tables, question lists, checklists, email drafts, and updated presentations or spreadsheets. Read: What is Vesence? → Is Vesence a replacement for professional judgment? 
+No. Vesence prepares work product, but final judgment and approval always remain with you. Read: Review, Approval, and Safe Use → Where should I start if I am new to Vesence? 
+Start with the overview, then read how to give Vesence good instructions, and open the article for the surface — web, Word, Excel, PowerPoint, or Outlook — you are using. Read: What is Vesence? → 
+Workspace 
+ What is the Vesence Workspace? 
+The shared working layer between you and Vesence, where source materials, task context, and Vesence outputs come together. Read: Vesence Workspace → What can live in the Workspace? 
+Uploaded files, documents to review, drafts Vesence creates, edited documents, summaries, tables, trackers, and small tools — plus files from connected SharePoint or OneDrive. Read: Vesence Workspace → Do I need to paste everything into the chat? 
+No. If the relevant material is already available in the Workspace, Vesence can use it without you pasting it into the chat. Read: Vesence Workspace → How does a typical task flow work? 
+You add or connect source material, give an instruction, Vesence works with the files and saves the result back into the Workspace, and you review it and give follow-up instructions. Read: Vesence Workspace → How do the chat, Workspace, and Agent relate? 
+The chat is the conversation, the Workspace is the shared context, and the Agent is what turns the instruction and context into work product. Read: Vesence Agent → Can Vesence organize my files into folders? 
+Yes. Vesence can create folders and organize files and outputs within the Workspace, so a matter or project stays tidy. Read: Vesence Workspace → 
+Agent 
+ What does it mean that Vesence is an “agent”? 
+An agent can move from instruction to action. Vesence can inspect files, prepare outputs, ask follow-up questions, and save work product — not just reply in the chat. Read: Vesence Agent → Can Vesence act on files directly? 
+Yes. It can read files, create and edit supported files, organize folders, process data, compare documents, and save outputs back into the Workspace. Read: Vesence Agent → How does Vesence handle large or complex tasks? 
+It can break the work into focused parts and use sub-agents in parallel, then combine the findings into one coordinated result. Read: Vesence Agent → What are task-specific tools? 
+When a task needs more than a text answer, Vesence can write and run code to build a tool — a calculator, tracker, comparison, or checklist — for the work at hand. Read: Vesence Agent → Do I have to manage sub-agents myself? 
+No. The main Vesence agent coordinates the sub-agents and remains responsible for the final output. Read: Vesence Agent → Is Vesence a coding agent? 
+Yes. Vesence can write and run code to build task-specific tools, automate repetitive steps, and process documents or data when a task needs more than a text answer. Read: Vesence Agent → 
+Custom Agents 
+ What is a custom agent? 
+A tailored version of Vesence for a specific, recurring task or workflow, with its own instructions and configuration. Read: Custom Agents → What is the difference between a private and a public agent? 
+A private agent is for one user; a public organization agent is shared with others so a team can standardize a workflow. Read: Custom Agents → How do I create a good custom agent? 
+Define its scope, expected inputs, outputs, style, limits, and when it should ask you. The system prompt is the most important field. Read: Custom Agents → Where are custom agents created and used? 
+They are created on the web and can then be used on the web and inside supported Word and Excel workflows. Read: Custom Agents → What are Vesence default agents? 
+Built-in agents for common tasks that give you a strong starting point without having to create your own. Read: Custom Agents → Can I connect a custom agent to specific files or folders? 
+Yes. You can connect an agent to specific folders, matters, or source material in OneDrive and SharePoint so it always starts from the right context. Read: Custom Agents → Can I choose where a custom agent is available? 
+Yes. You can choose whether the agent appears on the web, in Word, in Excel, or in all supported places. Read: Custom Agents → 
+Setup and Access 
+ How do I access Vesence? 
+Through the Vesence web app and the Microsoft Office add-ins, depending on what your organization has enabled. Read: Setup and Access → How do I install the add-ins? 
+Add-ins can be deployed by your organization or installed via a manifest file. The exact steps are in Setup and Access. Read: Setup and Access → What Microsoft 365 permissions are needed? 
+Access depends on your Microsoft 365 account and the permissions granted for SharePoint, OneDrive, Outlook, and Teams. Read: Setup and Access → Why can't I see Vesence in Word, Excel, or Outlook? 
+The add-in may not be installed or enabled for your account. Check Setup and Access or ask your administrator. Read: Setup and Access → Where does Vesence run? 
+In the web app and inside the Office surfaces. How the Workspace and data are handled is covered in Setup and Access and Security and Data. Read: Setup and Access → Do I need a separate Vesence password? 
+No. Vesence uses single sign-on with your Microsoft work account (Microsoft Entra ID), the same login you already use for Microsoft 365 — there is no separate Vesence password. Read: Setup and Access → Is Vesence available in all the Office apps? 
+Yes. Vesence works in Word, Excel, PowerPoint, and Outlook, as well as on the web. Depending on how your organization deploys it, the Office apps and Outlook may be installed as separate add-ins, but once deployed Vesence is available wherever you work. Read: Setup and Access → How do admins deploy Vesence to an organization? 
+From the Microsoft 365 Admin Center under Integrated apps, an admin can deploy Vesence from Microsoft AppSource to the whole organization or to specific users or groups. Rollout can take up to 24 hours. Read: Setup and Access → What do I need to run Vesence? 
+A Microsoft 365 work account and a current, supported build of Office on the web, Windows, or Mac. Very old perpetual 2016 or 2019 builds may not support the add-in. Read: Setup and Access → Can Vesence work with Teams? 
+Yes, where available, Vesence can work with Teams chat context and Teams-shared files, subject to your permissions. Read: Setup and Access → 
+Security and Data 
+ Where are my files stored? 
+Workspace files are stored locally in your browser rather than on a Vesence server, unless you connect external sources. Read: Security and Data → Is my data safe? 
+Vesence keeps Workspace files local and uses controlled access to connected systems. See Security and Data for the full picture. Read: Security and Data → Can I manage or clear local storage? 
+Yes. You can review what is stored, allow more space, delete individual items, or reset caches from the storage manager. Read: Security and Data → Does Vesence send my documents to the cloud? 
+Your Workspace files are stored locally in your browser, not in Vesence-owned file storage, unless you connect SharePoint or OneDrive or otherwise choose to share them. To carry out a task, the relevant content is sent securely to the AI model that powers Vesence for processing — that is separate from storage, and the files themselves are not retained by Vesence. Read: Security and Data → What happens to connected SharePoint or OneDrive files? 
+They are accessed through controlled permissions, and changes can be staged for your review before anything is written back. Read: Security and Data → How is access controlled? 
+Access follows your Microsoft 365 permissions and your organization's settings. Read: Security and Data → Does Vesence store my chats? 
+No. Your chats exist in your local Vesence working environment rather than in a separate Vesence-hosted database. Read: Security and Data → Can Vesence browse all the files on my computer? 
+No. The working environment is isolated — Vesence only works with files made available to the task, not your whole file system. Read: Security and Data → What is the virtual computer? 
+Each chat has a controlled local working environment, the virtual computer, that Vesence uses to process files, run scripts, and create outputs. The Workspace is the storage inside it. Read: Security and Data → 
+Review and safe use 
+ Does Vesence send emails or finalize work automatically? 
+No. Email drafts, calendar invites, and staged changes are prepared for your review and are not final until you approve them. Read: Review, Approval, and Safe Use → What should Vesence flag rather than decide? 
+Missing source material, conflicting versions, unsupported assumptions, unconfirmed names, dates, or amounts, and legal or commercial judgment calls. Read: Review, Approval, and Safe Use → What should I check before relying on output? 
+Whether the right source was used, whether names, dates, and amounts are correct, whether assumptions are flagged, and whether the final wording or position is approved. Read: Review, Approval, and Safe Use → Can Vesence create final work product? 
+It creates strong working drafts and structured outputs, but they should be reviewed before being used as final deliverables. Read: Review, Approval, and Safe Use → Who is responsible for the final result? 
+You are. Vesence supports the work, but final judgment and approval remain with the responsible person. Read: Review, Approval, and Safe Use → 
+Giving instructions 
+ How do I give Vesence good instructions? 
+Start with the goal, provide the source material, say what output you want, and note the scope, audience, and how to handle judgment calls. Read: How to Give Vesence Good Instructions → Should I describe the goal or the exact steps? 
+Give the goal, not just a narrow command. Vesence works better when it understands what you are trying to achieve. Read: How to Give Vesence Good Instructions → What makes a good example instruction? 
+One that names the task, the files to use, the output format, and any constraints or preferred positions. Read: How to Give Vesence Good Instructions → How do I control the format of the output? 
+Tell Vesence whether you want a summary, table, redline, issue list, draft, checklist, or email. Read: How to Give Vesence Good Instructions → How do I handle assumptions? 
+Ask Vesence to flag assumptions and missing information instead of deciding silently. Read: How to Give Vesence Good Instructions → 
+Files and source material 
+ What counts as source material? 
+Files, documents, emails, spreadsheets, templates, and other materials you want Vesence to use for a task. Read: Working with Files and Source Material → How do I tell Vesence which version is authoritative? 
+Identify the source of truth when several versions exist so Vesence relies on the correct one. Read: Working with Files and Source Material → Should I use files and instructions together? 
+Yes. The files provide the content and the instruction provides the direction; using both gives the best results. Read: Working with Files and Source Material → Can Vesence compare multiple files? 
+Yes. It can compare and synthesize information across the available files and connected sources. Read: Working with Files and Source Material → What if a file is missing? 
+Vesence should flag missing source material rather than guess. Provide the file for a reliable result. Read: Working with Files and Source Material → Can Vesence work with iManage or NetDocuments? 
+Yes, where your organization has connected one. iManage and NetDocuments appear in the chat's “+” attach menu, so you can pull documents in as source material and save work back, much like SharePoint or OneDrive. They are optional integrations enabled per organization. Read: Working with Files and Source Material → 
+SharePoint and OneDrive 
+ Can Vesence work with SharePoint and OneDrive? 
+Yes, where access is available, so it can work with matter folders, project files, templates, and precedents. Read: Using Vesence with SharePoint and OneDrive → How do I bring cloud files into a task? 
+Connect SharePoint or OneDrive and browse to the files or folders to bring them into the working context. Read: Using Vesence with SharePoint and OneDrive → Are changes written back automatically? 
+No. Changes can be staged for your review before being saved back to the cloud. Read: Using Vesence with SharePoint and OneDrive → What if I don't have SharePoint access? 
+Vesence still works with uploaded files; the cloud features appear only where your permissions allow. Read: Using Vesence with SharePoint and OneDrive → 
+On the web 
+ When should I use Vesence on the web? 
+For matter-level work, multi-file review, generated work product, and broad workflows that do not belong in a single Office add-in. Read: Use Vesence on the Web → What is the All Tracked Changes view? 
+A way to review proposed edits across documents or work product in the Workspace. Read: Use Vesence on the Web → Can I work across many files at once on the web? 
+Yes. The web workspace is built for multi-file, matter-level work. Read: Use Vesence on the Web → Where do generated files appear on the web? 
+In the Workspace, alongside your source material. Read: Use Vesence on the Web → Should I use the web app or an Office add-in? 
+Use the web app for broad, multi-file, matter-level work; use the Office add-ins when the task belongs inside a specific document, workbook, deck, or email. Read: Use Vesence on the Web → Can I use Vesence on my phone? 
+Yes. Because Vesence on the web runs in your browser, you can open the web app in your phone's browser and sign in with the same Microsoft work account. There is no separate app to install. Read: Use Vesence on the Web → Is there a Vesence mobile app to download? 
+No. There is no separate app to install. You use Vesence on a phone by opening the web app in your phone's browser. The Word, Excel, PowerPoint, and Outlook add-ins are desktop-only and do not appear in the mobile Office apps. Read: Use Vesence on the Web → What works well on a phone? 
+A phone is great for chatting with the Agent, reviewing work, and quick tasks on the go. The layout adapts to the smaller screen, so chat and the document preview take turns filling the screen instead of sitting side-by-side. For heavy editing, such as working through a spreadsheet or comparing files side-by-side, the desktop experience works best. Read: Use Vesence on the Web → 
+In Word 
+ What can Vesence do in Word? 
+Help with drafting, reviewing, comments, redlines, templates, schedules, and legal or business documents. Read: Use Vesence in Word → What are Assist, Check, and Setup Check? 
+Word actions for improving wording and explaining clauses, reviewing document mechanics, and setting up reusable checks. Read: Use Vesence in Word → Can Vesence make tracked changes in Word? 
+Yes. Edits can be shown as tracked changes for you to accept or reject. Read: Use Vesence in Word → Does Vesence change my document without approval? 
+No. Proposed edits are presented for review, and you decide what to accept. Read: Use Vesence in Word → 
+In Excel 
+ What can Vesence do in Excel? 
+Understand formulas, check assumptions, improve formatting, and compare spreadsheet figures against source material. Read: Use Vesence in Excel → What do Check, Format Sheet, and Explain do? 
+Find workbook issues, improve sheet presentation, and explain formulas or outputs. Read: Use Vesence in Excel → Can Vesence explain a complex formula? 
+Yes. The Explain action describes what a formula or output is doing. Read: Use Vesence in Excel → Can Vesence check my workbook for errors? 
+Yes. The Check action looks for issues and inconsistencies in the workbook. Read: Use Vesence in Excel → 
+In PowerPoint 
+ What can Vesence do in PowerPoint? 
+Improve slide wording, review layout, check consistency, and turn source material into slide-ready content. Read: Use Vesence in PowerPoint → What does the Assist action do in PowerPoint? 
+It checks decks, improves slide wording, and helps fix layout issues. Read: Use Vesence in PowerPoint → Can Vesence build slides from source material? 
+Yes. It can turn source content into slide-ready text and structure. Read: Use Vesence in PowerPoint → 
+In Outlook 
+ What can Vesence do in Outlook? 
+Check drafts before sending, improve wording, shorten messages, and make email edits visible before approval. Read: Use Vesence in Outlook → What do Check, Improve, and Concise do? 
+Review a draft before sending, polish the wording, and shorten the message. Read: Use Vesence in Outlook → Does Vesence send emails for me? 
+No. Drafts are prepared for your review and are not sent until you send them. Read: Use Vesence in Outlook → Can I see email edits before they are applied? 
+Yes. Start Recording Tracked Changes shows email edits visibly before approval. Read: Use Vesence in Outlook → Can Vesence work with my email and calendar? 
+Where supported, Vesence can work with emails, attachments, drafts, recipients, subject lines, and calendar information. Communications stay under your review or approval. Read: Use Vesence in Outlook → 
+Still have a question? Contact the Vesence team If your question isn't answered here, reach out and we'll help. 
+ Vesence 
+AI for High-Stakes Work. Built for Microsoft Office. Made for Professional Services. hello@vesence.com 
+Product Vesence Vesence in Word Vesence in Outlook Vesence in Excel 
+Solutions Quality Knowledge Drafting 
+About Company Customer Cases Resources Security Contact Support Terms Privacy Policy Subprocessors 
+© 2026 Vesence AB. All rights reserved.

@@ -1,0 +1,208 @@
+Vesence in Word | AI-Powered Drafting Inside Microsoft Word 
+ Vesence 
+ Platform 
+ Capabilities Security Resources About 
+ Log In Book a Demo 
+ Products 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ The Vesence Platform 
+Vesence works in Word, Outlook, and as a Web app. Intelligence like you have never experienced before in Microsoft Office. 
+ Platform 
+Vesence 
+Purpose-built AI for Projects. 
+Vesence in Outlook 
+Purpose-built AI for Inboxes. 
+Vesence in Word 
+Purpose-built AI for Documents. 
+Vesence in Excel 
+Purpose-built AI for Spreadsheets. 
+Vesence in PowerPoint 
+Purpose-built AI for Presentations. 
+ Capabilities 
+Quality 
+Raise the standard of every deliverable. 
+Knowledge 
+Turn document overload into structured insight. 
+Drafting 
+Accelerate drafting, without sacrificing control. 
+Logistics 
+Quotes, reporting, and invoice control on autopilot. Security Resources About 
+ Log In Book a Demo hello@vesence.com 
+Vesence 
+in Word Book a Demo 
+ Draft Review Check 
+Experience drafting
+like never before. 
+ 4 Purchase Price 
+ 4.1 Locked Box 
+ 4.1.1 The consideration payable by the Purchaser for the Sale Shares shall be an amount of EUR 85,000,000 (the “ Purchase Price ”), determined on a locked box basis by reference to the Locked Box Accounts as at the Locked Box Date . 
+ 4.1.2 The Purchase Price shall not be subject to any post-Closing adjustment, save as set out in Clause 4.2 (No Leakage). 
+ 4.2 No Leakage 
+ 4.2.1 The Seller warrants and undertakes to the Purchaser that, since the Accounts Date, no Leakage has occurred and no arrangement has been made that would result in any Leakage. 
+ 4.2.2 In the event of any Leakage, the Seller shall indemnify the Purchaser on a euro-for-euro basis for the amount of such Leakage: 
+ (i) any payment of dividend or other distribution declared, paid or made by any Group Company to the Seller; and 
+ (ii) any waiver by any Group Company of any amount owed to it by the Seller or any of the Seller's Connected Persons. 
+ 4.3 Payment at Closing 
+ 4.3.1 At Closing, the Purchaser shall pay the Purchase Price to the Seller in immediately available funds by wire transfer to the bank account notified by the Seller no later than five (5) Business Days prior to the Closing Date. 
+ 12 
+ Page 12 of 186 102,410 words 
+ 100% 
+ V Workspace 
+ Vesence 
+ Improve Explain 
+What can I do for you? 
+ 4 Purchase Price 
+ 4.1 Locked Box 
+ 4.1.1 The consideration payable by the Purchaser for the Sale Shares shall be an amount of EUR 85,000,000 (the “ Purchase Price ”), determined on a locked box basis by reference to the Locked Box Accounts as at the Locked Box Date . 
+ 4.1.2 The Purchase Price shall not be subject to any post-Closing adjustment, save as set out in Clause 4.2 (No Leakage). 
+ 4.2 No Leakage 
+ 4.2.1 The Seller warrants and undertakes to the Purchaser that, since the Accounts Date, no Leakage has occurred and no arrangement has been made that would result in any Leakage. 
+ 4.2.2 In the event of any Leakage, the Seller shall indemnify the Purchaser on a euro-for-euro basis for the amount of such Leakage: 
+ (i) any payment of dividend or other distribution declared, paid or made by any Group Company to the Seller; and 
+ (ii) any waiver by any Group Company of any amount owed to it by the Seller or any of the Seller's Connected Persons. 
+ 4.3 Payment at Closing 
+ 4.3.1 At Closing, the Purchaser shall pay the Purchase Price to the Seller in immediately available funds by wire transfer to the bank account notified by the Seller no later than five (5) Business Days prior to the Closing Date. 
+ 12 
+ Page 12 of 186 102,410 words 
+ 100% 
+ V Workspace 
+ Vesence 
+ Improve Explain 
+What can I do for you? 
+Connected to the tools your firm already uses 
+In Word, Vesence reaches beyond the page. Your local files, Outlook, SharePoint, templates, and past matters are all one prompt away. 
+How Firms Are Using Vesence in Word 
+ Create Draft Review Check Format 
+Create 
+Generate a first draft from a template, aligned with your firm’s styles and the matter context. 
+ V Workspace 
+Project_Atlas_SPA.docx 
+Word 
+Closing_Agenda_Template.docx 
+Word 
+Generate a closing agenda from the SPA using the firm template 
+ Used 4 tools 
+ Loaded template Closing Agenda (Firm Standard) 
+ Read Project_Atlas_SPA.docx 
+ Drafted Closing agenda with deliverables 
+ Prepared Edits Closing_Agenda_Draft.docx 
+Generated a closing agenda from the SPA using your firm template. All sections have been populated with the correct parties, conditions precedent, and deliverables from the transaction documents. Tracked changes are ready for your review in Word. 
+Draft 
+Apply complex edits inline while keeping terminology consistent and the document coherent end-to-end. 
+ V Workspace 
+Change the pricing mechanism from locked box to closing accounts 
+ Used 3 tools 
+ Read document Project_Orion_SPA.docx (186 pages) 
+ Analyzed Purchase price mechanism (Section 4) 
+ Prepared Edits Project_Orion_SPA_v2.docx 
+Converted the pricing mechanism from locked box to closing accounts. Updated the purchase price section, added completion statement provisions, and revised the adjustment definitions in Schedule 6. All changes are tracked. 
+Review 
+Review against playbooks, checklists, or custom instructions. Get precise, inline recommendations. 
+spa playbook 
+Organization 
+ 📑 
+ Buy-Side SPA (Locked Box) Review against buy-side locked box SPA playbook 
+ 📑 
+ Buy-Side SPA (Closing Accounts) Review against buy-side closing accounts playbook 
+ 📄 
+ Sell-Side SPA Review against sell-side SPA playbook 
+ 📝 
+ Shareholders' Agreement Review against SHA playbook 
+ 📋 
+ Due Diligence Report Review against DD report playbook 
+ 📘 
+ Loan Agreement Review against LMA facility playbook 
+ 📂 
+ Merger Agreement Review against merger agreement playbook 
+Check 
+Run quality checks for cross-references, defined terms, formatting, and logical inconsistencies. 
+ V Workspace 
+3 
+5 
+2 
+ Definitions 
+ 2 
+ 2 
+ 1 
+Critical ( 2 ) 
+Undefined term 
+Completion 
+Undefined term 
+New Shares 
+Warning ( 2 ) 
+Unused definition 
+Bank Account 
+Multiple definitions 
+Claim 
+To review ( 1 ) 
+Unordered definitions 
+Definitions not alphabetically ordered 
+Ignored ( 0 ) 
+Format 
+Fix headings, numbering, and styles to match your firm’s formatting rules. 
+ V Workspace 
+Fix the formatting in this document to match our firm styles 
+ Used 5 tools 
+ Analysed Document structure and styles 
+ Fixed Heading levels (12 corrections) 
+ Fixed Numbering sequences (8 corrections) 
+ Fixed Cross-reference links (5 updates) 
+ Prepared Edits Agreement_Formatted.docx 
+Standardised the document to your firm's style guide. Corrected 25 formatting issues across headings, numbering, and cross-references. All changes applied as tracked changes. 
+One workflow. Two surfaces. 
+The same agent and the same tracked changes, in the web app or inside Microsoft Word. 
+Vesence Web 
+Vesence in Word 
+ “ It elevates our craft without getting in our way. Vesence makes AI feel effortless. ” 
+Johan Lidström 
+M&A Partner, Cederquist Read the Case Study 
+Traceable AI 
+Always know where the AI grabbed its data from. Every statement is backed by citations you can click to jump to the exact source. 
+Traceable AI 
+Tracked changes 
+ The SPA sets out three permitted methods of delivering notices under Clause 11. Notices sent by email are only valid if the other party confirms receipt, which shall not be unreasonably withheld. 11.1(ii) Registered mail is deemed received on the third business day after posting. 11.1(iii) Hand delivery or reputable international courier is effective on the date of receipt, provided it arrives before 5 pm CET on a Business Day. 11.1(i) Note that the notice clause does not include any provision for deemed service by email alone, confirmation of receipt is always required. 
+ Defined Terms 
+Hover Any Term to See Its Definition 
+Vesence reads every definition in the document. Hover a defined term and its meaning, source, and linked terms appear inline, without leaving the page. 
+ 9.1.1   The Seller warrants to the Purchaser that each of the Seller's Warranties is true and accurate on the Closing Date. 
+ 9.1.2   The Purchaser acknowledges that it has not entered into this Agreement in reliance upon any representation or information other than the warranties expressly given. 
+9.2  Disclosures 
+ 9.2.1   All warranties shall be limited by matters fairly disclosed in this Agreement or in the documents provided in the Data Room. 
+ Document Mechanics 
+Edits That Never Break the Document 
+Rename a term, insert a clause, or restructure a section. Vesence keeps every definition, cross-reference, and number in sync, so nothing breaks. 
+ Project_Orion_SPA.docx 
+ Renamed Locked Box → Closing Accounts 
+ Updated 23 cross-references 
+ Resequenced Clauses 4.2–4.9 
+ No broken links or orphaned terms. 
+ Check 
+Hundreds of Checks Before It Goes Out 
+Vesence checks defined terms, cross-references, numbering, language, and validity across the whole document, then ranks every issue it finds by severity. 
+2 
+1 
+5 
+2 
+1 
+ Definitions 
+ 2 
+ 2 
+ 1 
+The Power of AI, In Tools You Already Know. 
+Book a demo to hear more about Vesence. 
+ Book a Demo 
+ Vesence 
+AI for High-Stakes Work. Built for Microsoft Office. Made for Professional Services. hello@vesence.com 
+Product Vesence Vesence in Word Vesence in Outlook Vesence in Excel 
+Solutions Quality Knowledge Drafting 
+About Company Customer Cases Resources Security Contact Support Terms Privacy Policy Subprocessors 
+© 2026 Vesence AB. All rights reserved.
