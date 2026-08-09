@@ -307,9 +307,93 @@ characters each.**
 
 Resume with:
 
-    uv run python scripts/registry_fetch.py tx-express-negligence
+    uv run task registry_fetch tx-express-negligence
+
+(The script is a module, not a path — `uv run python scripts/registry_fetch.py`
+fails with ModuleNotFoundError because `polar` is not importable that way.
+I gave that wrong command once; this is the corrected one.)
 
 Re-runnable safely and as often as the allowance permits: the queue is
 "candidates with no text", so a second run simply finds less to do.
 
 Then step 2, screening, on whatever has text.
+
+---
+
+## 2026-08-09 — Step 2: screening, and a yield nobody predicted
+
+### What was built
+
+- `polar/registry/excerpt.py` — the opening plus the passages where the
+  doctrine is discussed. Opinions average ~192,000 characters; sending all
+  of it to answer one yes/no question is expensive and adds noise.
+- `polar/registry/prompts/screen.md` — the prompt, as a file, **hashed and
+  stored with every verdict**. A model's answer is reproducible only if
+  you know what it was asked.
+- `polar/registry/screen.py` — the screener. Forces a tool call rather
+  than parsing prose, so the schema is a schema and not a hope.
+- `scripts/registry_screen.py`, `uv run task registry_screen`
+
+Separate writings are refused **by rule before a model is asked**: a
+dissent decided nothing, and paying to be told so would be silly.
+
+### The result
+
+**72 screened: 46 on point, 24 not, 2 uncertain — a 64% yield.**
+Plus 2 separate writings refused by rule.
+
+347,100 input / 11,451 output tokens on Haiku — about **4,800 tokens per
+opinion**, against ~50,000 if the whole opinion had been sent. The
+excerpter is doing its job. Extrapolated to all 419: roughly 2M input
+tokens, a few dollars.
+
+### The yield is four times my estimate, and that deserves suspicion
+
+I predicted 10–25% on point, from the research's assumption. It came back
+at 64%. The obvious explanation is a permissive screener agreeing with
+everything, so I sampled the verdicts before believing it.
+
+They held up. The rejections are specific and correct — a waiver of
+subrogation, a Property Code §92.006 question, an indemnity that expressly
+covers claims "regardless" so no express-negligence question arises, an
+OCSLA regulatory dispute. The acceptances quote the court and name the
+holding. The two uncertains are genuinely ambiguous.
+
+Best current explanation: the four search phrasings are doctrine-specific
+enough that they mostly return real cases, where the research's 10–25%
+assumed looser queries. **This is an observation, not a measurement.** The
+gold set is what settles it, and if the screener is generous this is
+exactly what generosity would look like from the inside.
+
+### A gap the run exposed
+
+**Three cases where the documents of one case disagree with each other.**
+We screen per opinion *document*, and a case can hold a combined opinion, a
+lead opinion and separate writings. Cluster 3112584 has three documents
+carrying both `on_point` and `not_on_point`.
+
+Not a bug — they are different documents — but step 3 has to reconcile per
+case rather than per document, or one case will produce contradictory
+entries. Recorded, not solved.
+
+### Also corrected
+
+`uv run python scripts/registry_fetch.py …` — the command I gave in the
+previous entry — **does not work**; `polar` is not importable that way. It
+is `uv run task registry_fetch`. Both scripts are now registered as tasks.
+
+### State
+
+- 419 candidates, **74 with text**, 74 screened
+- 345 still awaiting text; the fetch stops cleanly at the hourly ceiling
+  and resumes
+- 58 registry tests passing
+
+### Next
+
+1. Keep draining the fetch queue (300/day).
+2. **The gold set.** Brief for the reader: `docs/registry/gold-set-brief.md`.
+   This is the critical path and the only clock that cannot be sped up
+   later.
+3. Step 3, extraction — two models, opposed lenses — once there is enough
+   screened material to be worth reading.
