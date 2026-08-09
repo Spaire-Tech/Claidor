@@ -22,10 +22,32 @@ from typing import Any
 
 BASE_URL = "https://www.courtlistener.com"
 
+SEARCH_PATH = "/api/rest/v4/search/"
+
 #: Opinion types that are not the court's decision. Separate writings —
 #: however persuasive — bind nobody.
-NON_HOLDING_TYPES = frozenset({"dissent", "concurrence-opinion", "in-part-opinion"})
-SEARCH_PATH = "/api/rest/v4/search/"
+#:
+#: Compared after :func:`normalise_opinion_type`, because the same document
+#: is typed differently depending on where it is read from: the search API
+#: says ``dissent``, the bulk export says ``040dissent``.
+NON_HOLDING_TYPES = frozenset({"dissent", "concurrence", "in-part"})
+
+
+def normalise_opinion_type(raw: str | None) -> str:
+    """One vocabulary for CourtListener's two.
+
+    Search API: ``combined-opinion``, ``lead-opinion``, ``dissent``,
+    ``concurrence-opinion``, ``in-part-opinion``, ``rehearing``.
+    Bulk export: ``010combined``, ``020lead``, ``040dissent``,
+    ``100trialcourt`` — Django choice keys, sort-ordered by prefix.
+
+    Both reduce to the bare word. Verified against real data from each,
+    rather than inferred from one and hoped for the other.
+    """
+    if not raw:
+        return ""
+    return raw.strip().lower().lstrip("0123456789").removesuffix("-opinion")
+
 
 #: Sent on every request. A crawler that will not say who it is has no
 #: business asking a non-profit for its data.
@@ -55,7 +77,7 @@ class SearchedOpinion:
 
     @property
     def is_dissent(self) -> bool:
-        return (self.opinion_type or "").lower() == "dissent"
+        return normalise_opinion_type(self.opinion_type) == "dissent"
 
     @property
     def states_the_holding(self) -> bool:
@@ -82,7 +104,7 @@ class SearchedOpinion:
         but it also contains text that is not the holding. Whatever reads
         it has to know that.
         """
-        return (self.opinion_type or "").lower() not in NON_HOLDING_TYPES
+        return normalise_opinion_type(self.opinion_type) not in NON_HOLDING_TYPES
 
 
 def search_params(
