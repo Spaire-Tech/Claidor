@@ -17,6 +17,7 @@ are always right will read the judgement ones properly.
 """
 
 from .structure import review_structure
+from .style import review_style
 from .terms import (
     SEVERITY,
     Certainty,
@@ -34,7 +35,7 @@ def review_document(text: str) -> list[Finding]:
     Defined terms and structure are separate modules because they fail in
     separate ways, but a reader sees one list.
     """
-    findings = review_terms(text) + review_structure(text)
+    findings = review_terms(text) + review_structure(text) + review_style(text)
     findings.sort(key=lambda finding: (finding.start, finding.defect))
     return findings
 
@@ -48,5 +49,6 @@ __all__ = [
     "Severity",
     "review_document",
     "review_structure",
+    "review_style",
     "review_terms",
 ]

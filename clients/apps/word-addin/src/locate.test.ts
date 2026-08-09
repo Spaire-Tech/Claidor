@@ -119,6 +119,7 @@ describe('which findings offer a fix', () => {
     'duplicate_number',
     'contradiction',
     'miscalculation',
+    'inconsistent_style',
   ])('offers nothing for %s, which needs a drafting decision', (defect) => {
     expect(fixFor(finding({ defect }))).toBeNull()
   })
@@ -161,6 +162,7 @@ describe('labels', () => {
     expect(defectLabel('duplicate_number')).toBe('Duplicate number')
     expect(defectLabel('contradiction')).toBe('Contradiction')
     expect(defectLabel('miscalculation')).toBe('Miscalculation')
+    expect(defectLabel('inconsistent_style')).toBe('Inconsistent style')
   })
 
   it('degrades readably for a defect it has never heard of', () => {

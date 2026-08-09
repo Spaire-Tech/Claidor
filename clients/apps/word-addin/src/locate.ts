@@ -146,6 +146,7 @@ export const DEFECT_LABEL: Record<string, string> = {
   duplicate_number: 'Duplicate number',
   contradiction: 'Contradiction',
   miscalculation: 'Miscalculation',
+  inconsistent_style: 'Inconsistent style',
 }
 
 export function defectLabel(defect: string): string {

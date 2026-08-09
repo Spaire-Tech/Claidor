@@ -160,6 +160,7 @@ class Defect(StrEnum):
     duplicate_number = "duplicate_number"
     contradiction = "contradiction"
     miscalculation = "miscalculation"
+    inconsistent_style = "inconsistent_style"
 
 
 class Severity(StrEnum):
@@ -194,6 +195,9 @@ SEVERITY: dict[Defect, Severity] = {
     # sum is a fact even though the relationship was a model's reading.
     Defect.miscalculation: Severity.critical,
     Defect.contradiction: Severity.warning,
+    # House style is the firm's call, not ours. An inconsistency is worth
+    # seeing and is never urgent.
+    Defect.inconsistent_style: Severity.to_review,
 }
 
 

@@ -156,3 +156,35 @@ definition.
 | 14 | `changeTrackingMode` refuses rather than silently no-ops when unsupported | **Unresolved** | Step 7 of the checklist |
 | 15 | 4M characters is a sane ceiling | [estimate] | Their example is ~650KB, so 6× headroom |
 | 16 | Matching case on every search is right | [verified by reasoning] | A case-insensitive search would select the correctly-cased occurrence and show the reader nothing wrong |
+
+---
+
+## 2026-08-09 (later) — a note that will save someone an hour
+
+The container's development services stop. When they do, `pytest` reports
+**194 errors** across the redline suite, which reads exactly like a code
+regression and is not one — the session fixtures need Postgres, Redis and
+Minio, and none of them announce their absence usefully. The first error
+in the traceback is a `ConnectionRefusedError` from `urllib3`, eleven
+frames deep.
+
+Docker is not available in this container, so `docker compose up` does not
+work. The services run as ordinary processes:
+
+```bash
+pg_ctlcluster 16 main start                     # Postgres
+redis-server --daemonize yes --port 6379        # Redis
+MINIO_ROOT_USER=claidor MINIO_ROOT_PASSWORD=claidorclaidor \
+  minio server /var/lib/minio --address :9000   # S3
+```
+
+**The Minio credentials are the trap.** The test fixture in
+`tests/fixtures/file.py` authenticates with `settings.MINIO_USER` /
+`MINIO_PWD` — `claidor` / `claidorclaidor` — and *not* with
+`AWS_ACCESS_KEY_ID`. Start Minio with the AWS pair and every test fails
+with `InvalidAccessKeyId` while a direct boto3 call succeeds, which is a
+confusing hour if you do not know where to look.
+
+Minio must also be started detached properly; backgrounding it with `&`
+inside a tool call gets it reaped when the call ends, and the port then
+looks free while a zombie still answers on it.
