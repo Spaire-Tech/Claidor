@@ -120,6 +120,9 @@ export const DEFECT_LABEL: Record<string, string> = {
   multiple_definitions: 'Multiple definitions',
   unordered_definitions: 'Unordered definitions',
   case_mismatch: 'Wrong case',
+  broken_reference: 'Broken cross-reference',
+  numbering_gap: 'Numbering gap',
+  duplicate_number: 'Duplicate number',
 }
 
 export function defectLabel(defect: string): string {

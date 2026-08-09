@@ -155,6 +155,9 @@ class Defect(StrEnum):
     multiple_definitions = "multiple_definitions"
     unordered_definitions = "unordered_definitions"
     case_mismatch = "case_mismatch"
+    broken_reference = "broken_reference"
+    numbering_gap = "numbering_gap"
+    duplicate_number = "duplicate_number"
 
 
 class Severity(StrEnum):
@@ -179,6 +182,11 @@ SEVERITY: dict[Defect, Severity] = {
     Defect.multiple_definitions: Severity.warning,
     Defect.case_mismatch: Severity.warning,
     Defect.unordered_definitions: Severity.to_review,
+    # A reference to a clause that is not there is as serious as a term
+    # with no meaning: the obligation it points at cannot be read.
+    Defect.broken_reference: Severity.critical,
+    Defect.numbering_gap: Severity.warning,
+    Defect.duplicate_number: Severity.warning,
 }
 
 

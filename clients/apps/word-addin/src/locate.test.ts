@@ -114,6 +114,9 @@ describe('which findings offer a fix', () => {
     'unused_definition',
     'multiple_definitions',
     'unordered_definitions',
+    'broken_reference',
+    'numbering_gap',
+    'duplicate_number',
   ])('offers nothing for %s, which needs a drafting decision', (defect) => {
     expect(fixFor(finding({ defect }))).toBeNull()
   })
@@ -151,11 +154,16 @@ describe('labels', () => {
     expect(defectLabel('unused_definition')).toBe('Unused definition')
     expect(defectLabel('multiple_definitions')).toBe('Multiple definitions')
     expect(defectLabel('unordered_definitions')).toBe('Unordered definitions')
+    expect(defectLabel('broken_reference')).toBe('Broken cross-reference')
+    expect(defectLabel('numbering_gap')).toBe('Numbering gap')
+    expect(defectLabel('duplicate_number')).toBe('Duplicate number')
   })
 
   it('degrades readably for a defect it has never heard of', () => {
     // The server can ship a new check before the add-in knows its name.
-    // An unreadable key in the panel is worse than a plain one.
-    expect(defectLabel('numbering_gap')).toBe('numbering gap')
+    // An unreadable key in the panel is worse than a plain one. (This
+    // test used to use numbering_gap as its example, which stopped being
+    // unknown the day that check shipped.)
+    expect(defectLabel('logical_inconsistency')).toBe('logical inconsistency')
   })
 })

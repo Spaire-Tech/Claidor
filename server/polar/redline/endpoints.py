@@ -18,9 +18,9 @@ from polar.kit.document_text import UnsupportedDocument, read_document
 from polar.openapi import APITag
 from polar.routing import APIRouter
 
-from . import auth
+from . import auth, review_document
 from .schemas import RedlineFinding, RedlineRequest, RedlineReview
-from .terms import Finding, Severity, review_terms
+from .terms import Finding, Severity
 
 router = APIRouter(prefix="/redline", tags=["redline", APITag.private])
 
@@ -34,7 +34,7 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 
 def _review(text: str) -> RedlineReview:
-    findings = review_terms(text)
+    findings = review_document(text)
     return RedlineReview(
         findings=[_finding(f) for f in findings],
         critical_count=_count(findings, Severity.critical),

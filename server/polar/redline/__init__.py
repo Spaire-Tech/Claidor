@@ -16,6 +16,7 @@ apart is the whole design: a lawyer who learns that the mechanical findings
 are always right will read the judgement ones properly.
 """
 
+from .structure import review_structure
 from .terms import (
     SEVERITY,
     Certainty,
@@ -26,6 +27,18 @@ from .terms import (
     review_terms,
 )
 
+
+def review_document(text: str) -> list[Finding]:
+    """Every mechanical defect in the document, in document order.
+
+    Defined terms and structure are separate modules because they fail in
+    separate ways, but a reader sees one list.
+    """
+    findings = review_terms(text) + review_structure(text)
+    findings.sort(key=lambda finding: (finding.start, finding.defect))
+    return findings
+
+
 __all__ = [
     "SEVERITY",
     "Certainty",
@@ -33,5 +46,7 @@ __all__ = [
     "Definition",
     "Finding",
     "Severity",
+    "review_document",
+    "review_structure",
     "review_terms",
 ]
