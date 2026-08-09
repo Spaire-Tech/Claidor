@@ -19,8 +19,15 @@ from polar.openapi import APITag
 from polar.routing import APIRouter
 
 from . import auth, review_document
+from .index import definitions_index
 from .judgement import review_judgement
-from .schemas import RedlineFinding, RedlineRequest, RedlineReview
+from .schemas import (
+    RedlineFinding,
+    RedlineRequest,
+    RedlineReview,
+    RedlineTerm,
+    RedlineTerms,
+)
 from .terms import Finding, Severity
 
 router = APIRouter(prefix="/redline", tags=["redline", APITag.private])
@@ -84,6 +91,47 @@ async def check_text(
             ),
         )
     return _review(request.text)
+
+
+@router.post("/terms", response_model=RedlineTerms)
+async def document_terms(
+    auth_subject: auth.RedlineRead,
+    request: RedlineRequest,
+) -> RedlineTerms:
+    """Every defined term in the document, with its meaning and its uses.
+
+    Nothing here is a defect. It is the map a reader wants when they open
+    a long agreement somebody else drafted: what does « Permitted
+    Encumbrance » mean, where does it bite, and what does its definition
+    rest on. No model is involved, so nothing here can be wrong about what
+    the document says.
+    """
+    if len(request.text) > MAX_CHARACTERS:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"Document is {len(request.text):,} characters; the limit is "
+                f"{MAX_CHARACTERS:,}."
+            ),
+        )
+    entries = definitions_index(request.text)
+    return RedlineTerms(
+        terms=[
+            RedlineTerm(
+                term=entry.term,
+                meaning=entry.meaning,
+                kind=entry.kind,
+                start=entry.start,
+                end=entry.end,
+                uses=entry.uses,
+                use_count=entry.use_count,
+                linked=entry.linked,
+            )
+            for entry in entries
+        ],
+        unused_count=sum(1 for entry in entries if entry.use_count == 0),
+        characters=len(request.text),
+    )
 
 
 @router.post("/judge", response_model=RedlineReview)

@@ -27,6 +27,8 @@ import {
   fixFor,
   type Finding,
   type Review,
+  type Term,
+  type Terms,
 } from './locate'
 import * as word from './word'
 
@@ -36,10 +38,17 @@ type Status =
   | { kind: 'done'; review: Review }
   | { kind: 'error'; message: string; signIn: boolean }
 
+type Tab = 'check' | 'terms'
+
 export function Panel() {
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   const [ignored, setIgnored] = useState<Set<string>>(new Set())
   const [signedIn, setSignedIn] = useState(false)
+  const [tab, setTab] = useState<Tab>('check')
+  const [terms, setTerms] = useState<Terms | null>(null)
+  // The judgement pass reads the whole document a window at a time, so it
+  // runs after the panel has already shown what it knows.
+  const [judging, setJudging] = useState(false)
   const capabilities = detect()
   const limit = limitation(capabilities)
 
@@ -49,11 +58,15 @@ export function Panel() {
 
   const run = useCallback(async () => {
     setStatus({ kind: 'checking' })
+    setTerms(null)
     try {
       const text = await word.documentText()
       const review = await api.check(text)
       setStatus({ kind: 'done', review })
       setIgnored(new Set())
+      // Fire and forget: a failure here must not lose the findings the
+      // reader already has.
+      api.terms(text).then(setTerms, () => setTerms(null))
     } catch (error) {
       setStatus({
         kind: 'error',
@@ -63,6 +76,32 @@ export function Panel() {
       })
     }
   }, [])
+
+  const deepen = useCallback(async () => {
+    if (status.kind !== 'done') return
+    setJudging(true)
+    try {
+      const text = await word.documentText()
+      const judged = await api.judge(text)
+      setStatus({
+        kind: 'done',
+        review: {
+          ...status.review,
+          findings: [...status.review.findings, ...judged.findings].sort(
+            (a, b) => a.start - b.start,
+          ),
+          critical_count: status.review.critical_count + judged.critical_count,
+          warning_count: status.review.warning_count + judged.warning_count,
+          to_review_count:
+            status.review.to_review_count + judged.to_review_count,
+        },
+      })
+    } catch {
+      // Leave the mechanical findings alone; they are still true.
+    } finally {
+      setJudging(false)
+    }
+  }, [status])
 
   const authenticate = useCallback(async () => {
     try {
@@ -101,8 +140,31 @@ export function Panel() {
         >
           {status.kind === 'checking' ? 'Checking…' : 'Check document'}
         </button>
+        {status.kind === 'done' && (
+          <button onClick={deepen} disabled={judging}>
+            {judging ? 'Reading…' : 'Read for contradictions'}
+          </button>
+        )}
         <span className="grow" />
       </div>
+
+      {status.kind === 'done' && (
+        <div className="tabs">
+          <button
+            className={tab === 'check' ? 'tab on' : 'tab'}
+            onClick={() => setTab('check')}
+          >
+            Findings ({status.review.findings.length})
+          </button>
+          <button
+            className={tab === 'terms' ? 'tab on' : 'tab'}
+            onClick={() => setTab('terms')}
+            disabled={!terms}
+          >
+            Terms ({terms ? terms.terms.length : '…'})
+          </button>
+        </div>
+      )}
 
       {status.kind === 'error' && (
         <>
@@ -111,13 +173,17 @@ export function Panel() {
         </>
       )}
 
-      {status.kind === 'done' && (
+      {status.kind === 'done' && tab === 'check' && (
         <Results
           review={status.review}
           ignored={ignored}
           onIgnore={(key) => setIgnored(new Set(ignored).add(key))}
           canApply={capabilities.trackedChanges}
         />
+      )}
+
+      {status.kind === 'done' && tab === 'terms' && terms && (
+        <TermList terms={terms} />
       )}
     </div>
   )
@@ -251,4 +317,100 @@ function FindingRow({
       {message && <p className="context">{message}</p>}
     </div>
   )
+}
+
+
+/**
+ * Every defined term, with its meaning and where it bites.
+ *
+ * Nothing here is a defect. It is the map a lawyer wants on opening a long
+ * agreement somebody else drafted, and it is the half of Vesence's
+ * « hover any term » feature that does not need a hover to be useful.
+ */
+function TermList({ terms }: { terms: Terms }) {
+  const [filter, setFilter] = useState('')
+  const needle = filter.trim().toLowerCase()
+  const shown = needle
+    ? terms.terms.filter((t) => t.term.toLowerCase().includes(needle))
+    : terms.terms
+
+  return (
+    <>
+      <input
+        className="filter"
+        placeholder="Filter terms"
+        value={filter}
+        onChange={(event) => setFilter(event.target.value)}
+      />
+      <p className="notice">
+        {terms.terms.length} defined, {terms.unused_count} never used.
+      </p>
+      {shown.map((term) => (
+        <TermRow key={`${term.term}:${term.start}`} term={term} />
+      ))}
+      {shown.length === 0 && <p className="notice">No term matches that.</p>}
+    </>
+  )
+}
+
+function TermRow({ term }: { term: Term }) {
+  const [message, setMessage] = useState<string | null>(null)
+
+  const goTo = async (offset: number, literal: string, occurrence: number) => {
+    const found = await word.reveal({
+      defect: 'definition',
+      severity: 'to_review',
+      certainty: 'certain',
+      term: term.term,
+      note: '',
+      context: '',
+      start: offset,
+      end: offset + literal.length,
+      literal,
+      occurrence,
+    })
+    setMessage(found ? null : 'Could not find this in the document.')
+  }
+
+  return (
+    <div className="finding">
+      <div className="head">
+        <span className="term">{term.term}</span>
+        <span className="defect">
+          {term.use_count === 0 ? 'never used' : `${term.use_count} uses`}
+        </span>
+      </div>
+      <p className="note">{term.meaning}</p>
+      {term.linked.length > 0 && (
+        <p className="context">Rests on: {term.linked.join(', ')}</p>
+      )}
+      <div className="actions">
+        <button
+          onClick={() =>
+            goTo(term.start, term.term, definitionOccurrence(term))
+          }
+        >
+          Definition
+        </button>
+        {term.uses.length > 0 && (
+          <button onClick={() => goTo(term.uses[0]!, term.term, 1)}>
+            First use
+          </button>
+        )}
+      </div>
+      {message && <p className="context">{message}</p>}
+    </div>
+  )
+}
+
+/**
+ * Which occurrence of the term its own definition is.
+ *
+ * The definition is the first place the term appears *unless* the document
+ * uses it earlier — a recital naming the Shares before clause 1 defines
+ * them. Counting the uses that precede it is how the jump lands on the
+ * definition rather than on a recital.
+ */
+function definitionOccurrence(term: Term): number {
+  return term.uses.filter((offset) => offset < term.start).length + 1
 }

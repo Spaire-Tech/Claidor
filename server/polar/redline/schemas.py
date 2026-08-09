@@ -41,3 +41,32 @@ class RedlineRequest(Schema):
     """Document text, as Office.js read it out of Word."""
 
     text: str
+
+
+class RedlineTerm(Schema):
+    """One defined term, as the panel shows it."""
+
+    term: str
+    #: The definition's own words, trimmed for reading.
+    meaning: str
+    #: How it was defined — « means » for a definitions-list entry,
+    #: « aside » for a party named in the preamble.
+    kind: str
+    #: Span of the term inside its own definition, for « go to definition ».
+    start: int
+    end: int
+    #: Offsets of every use outside the definition itself.
+    uses: list[int]
+    use_count: int
+    #: Other defined terms this definition relies on.
+    linked: list[str]
+
+
+class RedlineTerms(Schema):
+    """The document's definitions, in the order it defines them."""
+
+    terms: list[RedlineTerm]
+    #: Defined and never used. The same terms the check reports as an
+    #: unused definition, surfaced here so the list can be read on its own.
+    unused_count: int
+    characters: int

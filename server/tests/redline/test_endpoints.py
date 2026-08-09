@@ -280,3 +280,56 @@ class TestJudgeRoute:
 
         assert response.status_code == 200
         assert response.json()["findings"] == []
+
+
+@pytest.mark.asyncio
+class TestTermsRoute:
+    @pytest.mark.auth
+    async def test_it_returns_the_documents_defined_terms(
+        self, client: AsyncClient
+    ) -> None:
+        response = await client.post("/v1/redline/terms", json={"text": EXAMPLE})
+
+        assert response.status_code == 200
+        body = response.json()
+        assert {"Subscription Price", "Claim", "Bank Account", "Warranties"} <= {
+            t["term"] for t in body["terms"]
+        }
+
+    @pytest.mark.auth
+    async def test_the_unused_count_agrees_with_the_check(
+        self, client: AsyncClient
+    ) -> None:
+        # The panel shows both. A count here that disagrees with the
+        # findings there makes the reader trust neither.
+        terms = await client.post("/v1/redline/terms", json={"text": EXAMPLE})
+        check = await client.post("/v1/redline/check", json={"text": EXAMPLE})
+
+        unused_findings = sum(
+            1 for f in check.json()["findings"] if f["defect"] == "unused_definition"
+        )
+        assert terms.json()["unused_count"] == unused_findings
+
+    @pytest.mark.auth
+    async def test_every_span_lands_on_its_own_term(self, client: AsyncClient) -> None:
+        response = await client.post("/v1/redline/terms", json={"text": EXAMPLE})
+
+        for term in response.json()["terms"]:
+            assert EXAMPLE[term["start"] : term["end"]] == term["term"]
+            for offset in term["uses"]:
+                assert EXAMPLE[offset : offset + len(term["term"])] == term["term"]
+
+    @pytest.mark.auth
+    async def test_a_document_with_no_definitions_gives_an_empty_list(
+        self, client: AsyncClient
+    ) -> None:
+        response = await client.post(
+            "/v1/redline/terms", json={"text": "The parties met on Tuesday."}
+        )
+
+        assert response.json()["terms"] == []
+
+    async def test_anonymous_is_refused(self, client: AsyncClient) -> None:
+        response = await client.post("/v1/redline/terms", json={"text": EXAMPLE})
+
+        assert response.status_code == 401

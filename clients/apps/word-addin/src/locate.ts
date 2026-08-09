@@ -41,6 +41,27 @@ export interface Review {
   characters: number
 }
 
+export interface Term {
+  term: string
+  /** The definition's own words, as the document writes them. */
+  meaning: string
+  /** `means` for a definitions-list entry, `aside` for a party named in
+   *  the preamble. */
+  kind: string
+  start: number
+  end: number
+  uses: number[]
+  use_count: number
+  /** Other defined terms this definition rests on. */
+  linked: string[]
+}
+
+export interface Terms {
+  terms: Term[]
+  unused_count: number
+  characters: number
+}
+
 /** Word's paragraph separator in the text we assemble and submit. */
 export const PARAGRAPH_BREAK = '\n'
 

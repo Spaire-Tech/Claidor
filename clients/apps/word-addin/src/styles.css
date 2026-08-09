@@ -51,3 +51,8 @@ button:disabled { opacity: 0.5; cursor: default; }
 .finding .context { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
 .finding .actions { display: flex; gap: 6px; margin-top: 8px; }
 .finding .flag { font-size: 11px; color: var(--muted); }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tab { border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 6px 10px; color: var(--muted); }
+.tab.on { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.filter { font: inherit; width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; }

@@ -13,7 +13,7 @@
  * the dialog sign-in, only `token()` changes — nothing below it does.
  */
 
-import type { Review } from './locate'
+import type { Review, Terms } from './locate'
 
 const TOKEN_KEY = 'claidor.token'
 
@@ -49,12 +49,11 @@ export async function saveToken(value: string): Promise<void> {
   })
 }
 
-/** Send the document text for checking. */
-export async function check(text: string): Promise<Review> {
+async function post<T>(path: string, text: string): Promise<T> {
   const bearer = token()
   if (!bearer) throw new NotSignedIn('Sign in to check this document.')
 
-  const response = await fetch(`${apiBase()}/v1/redline/check`, {
+  const response = await fetch(`${apiBase()}${path}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -80,7 +79,27 @@ export async function check(text: string): Promise<Review> {
     throw new ServerRefused(response.status, detail)
   }
 
-  return (await response.json()) as Review
+  return (await response.json()) as T
+}
+
+/** The mechanical checks. Answers in milliseconds. */
+export function check(text: string): Promise<Review> {
+  return post<Review>('/v1/redline/check', text)
+}
+
+/**
+ * Contradictions and miscalculations, which need a model.
+ *
+ * A separate call from `check` because it reads the whole document a
+ * window at a time. The panel shows what it already knows first.
+ */
+export function judge(text: string): Promise<Review> {
+  return post<Review>('/v1/redline/judge', text)
+}
+
+/** Every defined term, with its meaning and its uses. */
+export function terms(text: string): Promise<Terms> {
+  return post<Terms>('/v1/redline/terms', text)
 }
 
 /**
