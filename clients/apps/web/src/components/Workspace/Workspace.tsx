@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * The workspace: two panels above a dock.
  *
@@ -20,7 +22,6 @@ import { Chat, type Message } from './Chat'
 import { Dock } from './Dock'
 import { ApiError, TieOutApi } from './api'
 import type { Artifact, Chain, Coverage, Finding, Link } from './api'
-import { API_BASE, DEAL_ID } from './config'
 import { colour, font, pageBackground, panel, size, tabChip } from './design'
 import { Applications } from './screens/Applications'
 import { Checks } from './screens/Checks'
@@ -28,6 +29,16 @@ import { Files } from './screens/Files'
 import { Library, type Row } from './screens/Library'
 import { Trace } from './screens/Trace'
 import type { View } from './views'
+
+/**
+ * Where the server is.
+ *
+ * The dashboard and the API are the same deployment, so the browser talks
+ * to a relative path and the session cookie is first-party. Only the
+ * Office panel needs an absolute origin and a bearer token, and it has its
+ * own client for that.
+ */
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
 const api = new TieOutApi({ baseUrl: API_BASE })
 
@@ -62,7 +73,7 @@ const NOT_CONNECTED: Partial<Record<View, string>> = {
   terminal: 'Not connected.',
 }
 
-export function Workspace() {
+export function Workspace({ dealId }: { dealId: string }) {
   const [view, setView] = useState<View>('chat')
   const [showLeft, setShowLeft] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -77,12 +88,19 @@ export function Workspace() {
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    if (!DEAL_ID) return
     try {
+      // No deal named, so take the first this person is on. One deal is
+      // the normal case today; the moment it is not, Projects picks and
+      // passes an id, and nothing else here changes.
+      const id = dealId || (await api.deals())[0]?.id
+      if (!id) {
+        setError('You are not on any deals yet.')
+        return
+      }
       const [page, found, linked] = await Promise.all([
-        api.deal(DEAL_ID),
-        api.findings(DEAL_ID),
-        api.links(DEAL_ID),
+        api.deal(id),
+        api.findings(id),
+        api.links(id),
       ])
       setDeal(page.name)
       setArtifacts(page.artifacts)
@@ -97,7 +115,7 @@ export function Workspace() {
           : 'Could not reach the server. Is the API running?',
       )
     }
-  }, [])
+  }, [dealId])
 
   useEffect(() => {
     void load()

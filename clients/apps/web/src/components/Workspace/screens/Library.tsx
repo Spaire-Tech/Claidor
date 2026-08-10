@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Figure library — every published figure and the source it came from.
  *

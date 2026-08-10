@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * The launcher. Eight cards, four columns, nothing else on the screen.
  */

@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Chain — a figure traced from the deliverable back to its source.
  *

@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * The chat column, on the right of everything.
  *

@@ -9,7 +9,6 @@ packages:
   # it is real, tested, and may yet earn a place here. Add it back to this
   # list the day it does, with the dependency pointed at a tarball.
   - apps/web
-  - apps/workspace
   - apps/panel
   - packages/*
   - examples/*

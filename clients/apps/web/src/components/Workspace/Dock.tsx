@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * The dock, and the footer line beside it.
  *

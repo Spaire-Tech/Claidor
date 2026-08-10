@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Data room — the files in the deal.
  *

@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * The dock's icons, traced from the design.
  *
