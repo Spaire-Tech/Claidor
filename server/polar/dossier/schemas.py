@@ -135,3 +135,55 @@ class DossierAsk(Schema):
             "instead of asking for the date."
         ),
     )
+
+
+class MatterFinding(Schema):
+    """One defect, in one document of the matter.
+
+    The same shape the Word panel receives, so a finding read in the
+    workspace and the same finding read in Word are the same object rather
+    than two renderings that can disagree.
+    """
+
+    defect: str
+    severity: str
+    certainty: str
+    term: str
+    note: str
+    context: str
+    start: int
+    end: int
+    literal: str
+    occurrence: int
+
+
+class MatterDocumentReview(Schema):
+    document_id: UUID
+    title: str
+    piece_number: int | None
+    characters: int
+    critical_count: int
+    warning_count: int
+    to_review_count: int
+    findings: list[MatterFinding]
+
+
+class MatterReviewRead(Schema):
+    """Every document in the matter, and what the engine found in each."""
+
+    documents: list[MatterDocumentReview]
+    #: Totals across the matter, so a header can say « Critical (3) »
+    #: without summing client-side and disagreeing with the list.
+    critical_count: int
+    warning_count: int
+    to_review_count: int
+    finding_count: int
+    #: How many files were actually read. The difference between this and
+    #: the matter's file count is the next two fields, and printing a clean
+    #: result without them would be the most misleading thing here.
+    checked: int
+    characters: int
+    #: Files holding no machine-readable text — a scan without OCR.
+    unreadable: int
+    #: Files past the size ceiling, skipped rather than truncated.
+    too_large: int

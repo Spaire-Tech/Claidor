@@ -36,7 +36,11 @@ from .schemas import (
     DossierQuestionRead,
     DossierRead,
     DossierUpdate,
+    MatterDocumentReview,
+    MatterFinding,
+    MatterReviewRead,
 )
+from .review import review_matter
 from .service import dossier_service
 
 router = APIRouter(prefix="/dossiers", tags=["dossiers", APITag.private])
@@ -428,3 +432,71 @@ async def ask(
     citations = list(await repository.list_citations([question.id]))
     askers = await repository.list_askers([question.id])
     return _question_schema(question, citations, askers.get(question.id))
+
+
+@router.post("/{dossier_id}/check", response_model=MatterReviewRead)
+async def check_matter(
+    dossier_id: UUID,
+    auth_subject: auth.DossierRead,
+    read_session: AsyncReadSession = Depends(get_db_read_session),
+) -> MatterReviewRead:
+    """Run the checks over every readable document in the matter.
+
+    Vesence's own example of the web app is « run a full consistency check
+    across all transaction documents », and this is the deterministic half
+    of it: the same ten checks the Word panel runs, applied to each file,
+    reported per file with the matter's totals on top.
+
+    A POST rather than a GET because it is work, not a lookup — a bundle of
+    two hundred files is seconds of computation, and a route that shape
+    should not be behind a cache or a prefetch.
+
+    Nothing is stored. The text is already in the matter; the findings are
+    computed and returned, never written back, so a document that changes
+    is never disagreed with by a stale report.
+    """
+    await _get_dossier_or_404(read_session, dossier_id, auth_subject.subject.id)
+
+    repository = DossierRepository.from_session(read_session)
+    readable = list(await repository.list_readable_documents(dossier_id))
+    everything = list(await repository.list_documents(dossier_id))
+
+    review = review_matter(readable, unreadable=len(everything) - len(readable))
+
+    return MatterReviewRead(
+        documents=[
+            MatterDocumentReview(
+                document_id=document.document_id,
+                title=document.title,
+                piece_number=document.piece_number,
+                characters=document.characters,
+                critical_count=document.critical,
+                warning_count=document.warning,
+                to_review_count=document.to_review,
+                findings=[
+                    MatterFinding(
+                        defect=str(finding.defect),
+                        severity=str(finding.severity),
+                        certainty=str(finding.certainty),
+                        term=finding.term,
+                        note=finding.note,
+                        context=finding.context,
+                        start=finding.start,
+                        end=finding.end,
+                        literal=finding.literal,
+                        occurrence=finding.occurrence,
+                    )
+                    for finding in document.findings
+                ],
+            )
+            for document in review.documents
+        ],
+        critical_count=review.critical_count,
+        warning_count=review.warning_count,
+        to_review_count=review.to_review_count,
+        finding_count=review.finding_count,
+        checked=review.checked,
+        characters=review.characters,
+        unreadable=review.unreadable,
+        too_large=review.too_large,
+    )
