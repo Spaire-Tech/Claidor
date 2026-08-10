@@ -198,6 +198,31 @@ def read_deck(path: str) -> Extraction:
     return extraction
 
 
+def _anchor(shape: Any, kind: str, **where: Any) -> dict[str, Any]:
+    """Coordinates a host application can act on.
+
+    `shape_id` is PowerPoint's own identifier for the shape and survives
+    the file being moved, renamed or re-saved — it is what Office.js takes
+    to select something. `shape_name` rides along because a deck built by
+    a template often names its shapes, and a name a human recognises is
+    worth having when an id no longer resolves.
+
+    Everything else varies by shape and is passed through as given: a row
+    and a column for a table, a series and a point for a chart, a
+    paragraph and character offsets for a sentence. Offsets are into the
+    *stripped* paragraph text, which is what the reader matched against.
+    """
+    anchor: dict[str, Any] = {"kind": kind}
+    identifier = getattr(shape, "shape_id", None)
+    if identifier is not None:
+        anchor["shape_id"] = int(identifier)
+    name = getattr(shape, "name", None)
+    if name:
+        anchor["shape_name"] = str(name)
+    anchor.update({key: value for key, value in where.items() if value is not None})
+    return anchor
+
+
 def _read_text(
     extraction: Extraction,
     shape: Any,
@@ -216,7 +241,7 @@ def _read_text(
     caption = _label_above(texts, this)
     is_tile = _is_only_figures(frame.text.strip()) or _is_tile_subtext(frame, caption)
 
-    for paragraph in frame.paragraphs:
+    for index, paragraph in enumerate(frame.paragraphs):
         line = paragraph.text.strip()
         if not line:
             continue
@@ -268,6 +293,13 @@ def _read_text(
                     section=section,
                     range_endpoint=joined_before or joined_after,
                     structured=is_tile,
+                    anchor=_anchor(
+                        shape,
+                        "text",
+                        paragraph=index,
+                        start=item.start,
+                        end=item.end,
+                    ),
                 )
             )
 
@@ -357,6 +389,7 @@ def _read_chart(extraction: Extraction, shape: Any, slide: int, section: str) ->
                         section=section,
                         structured=True,
                         subject=name,
+                        anchor=_anchor(shape, "chart", series=name, point=position),
                     )
                 )
 
@@ -416,6 +449,14 @@ def _read_table(extraction: Extraction, shape: Any, slide: int, section: str) ->
                         section=section,
                         structured=True,
                         subject=row_label,
+                        anchor=_anchor(
+                            shape,
+                            "table",
+                            row=row_index,
+                            column=column_index,
+                            start=item.start,
+                            end=item.end,
+                        ),
                     )
                 )
 

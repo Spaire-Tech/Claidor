@@ -126,6 +126,7 @@ class TieOutService:
                         range_endpoint=figure.range_endpoint,
                         parenthesised=figure.parenthesised,
                         subject=figure.subject,
+                        anchor=figure.anchor,
                     )
                     for figure in ingested.figures
                 ],
@@ -255,6 +256,7 @@ class TieOutService:
                             title=f"{drift.printed} where the model says {drift.expected}",
                             detail=drift.context,
                             location=drift.location,
+                            anchor=drift.anchor,
                             evidence={
                                 "ref": drift.ref,
                                 "name": drift.name,
@@ -334,6 +336,13 @@ class TieOutService:
                         title=f"{defect.rule.replace('-', ' ')} at {defect.ref}",
                         detail=defect.detail,
                         location=defect.ref,
+                        # An audit finding already sits at a cell, which
+                        # is a coordinate Excel selects as it stands.
+                        anchor={
+                            "kind": "cell",
+                            "ref": defect.ref,
+                            "sheet": defect.sheet,
+                        },
                         evidence={
                             "sheet": defect.sheet,
                             "name": defect.name,
@@ -457,6 +466,7 @@ class TieOutService:
                     "state": state,
                     "link_id": link.id if link else None,
                     "reason": reason if state == "unlinked" else None,
+                    "anchor": row.anchor or {},
                 }
             )
         return sorted(pages.items())
@@ -750,6 +760,7 @@ def _figures_of(
             range_endpoint=row.range_endpoint,
             parenthesised=row.parenthesised,
             subject=row.subject,
+            anchor=row.anchor or {},
         )
         engine.append(figure)
         back[id(figure)] = row

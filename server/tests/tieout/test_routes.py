@@ -536,3 +536,146 @@ class TestTheFigureMap:
         unlinked = [one for one in shown if one["state"] == "unlinked"]
         assert unlinked
         assert all(one["reason"] for one in unlinked)
+
+
+@pytest.mark.asyncio
+class TestThePanel:
+    @pytest.mark.auth
+    async def test_a_stamped_document_needs_no_guessing(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The lineage id travels inside the file and is not a guess."""
+        deal = await _loaded(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+        deck = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.deck
+        )
+
+        response = await client.post(
+            "/v1/tieout/identify", json={"lineage_id": str(deck.lineage_id)}
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["matched_by"] == "stamp"
+        assert body["artifact"]["id"] == str(deck.id)
+        assert body["dossier_name"] == "Project Cascade"
+        # Already stamped, so nothing to write back.
+        assert body["stamp_lineage_id"] is None
+
+    @pytest.mark.auth
+    async def test_a_filename_inside_a_chosen_deal_is_a_guess_worth_stamping(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _loaded(session, save_fixture, user)
+
+        response = await client.post(
+            "/v1/tieout/identify",
+            json={"filename": "cascade_deck.pptx", "dossier_id": str(deal.id)},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["matched_by"] == "filename"
+        assert body["stamp_lineage_id"] is not None
+
+    @pytest.mark.auth
+    async def test_a_stamp_from_someone_elses_deal_reveals_nothing(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        """Not « found but forbidden ». Not found, and not a hint either."""
+        stranger = await create_user(save_fixture)
+        deal = await _loaded(session, save_fixture, stranger)
+        repository = TieOutRepository.from_session(session)
+        deck = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.deck
+        )
+
+        response = await client.post(
+            "/v1/tieout/identify", json={"lineage_id": str(deck.lineage_id)}
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["matched_by"] == "none"
+        assert body["artifact"] is None
+        assert body["dossier_id"] is None
+
+    @pytest.mark.auth
+    async def test_an_unknown_document_says_so(
+        self, client: AsyncClient, save_fixture: SaveFixture, user: User
+    ) -> None:
+        response = await client.post(
+            "/v1/tieout/identify", json={"filename": "someone_elses.pptx"}
+        )
+        assert response.status_code == 200
+        assert response.json()["matched_by"] == "none"
+
+    @pytest.mark.auth
+    async def test_the_deal_list_is_scoped_to_this_person(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        mine = await _deal_for(session, save_fixture, user)
+        stranger = await create_user(save_fixture)
+        await _deal_for(session, save_fixture, stranger)
+        await session.flush()
+
+        response = await client.get("/v1/tieout/deals")
+
+        assert response.status_code == 200
+        ids = [one["id"] for one in response.json()]
+        assert str(mine.id) in ids
+        assert len(ids) == 1
+
+    @pytest.mark.auth
+    async def test_a_finding_carries_coordinates_a_host_can_act_on(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """« Click a finding and PowerPoint goes to it » is a lookup.
+
+        Prose in `location` cannot be parsed back into a selection, so the
+        same position rides along in numbers.
+        """
+        deal = await _loaded(session, save_fixture, user)
+        findings = (
+            await client.get(
+                f"/v1/tieout/deals/{deal.id}/findings", params={"kind": "drift"}
+            )
+        ).json()
+
+        for finding in findings:
+            anchor = finding["where"]["anchor"]
+            assert anchor["shape_id"] > 0
+            assert anchor["kind"] in {"text", "table", "chart"}
+
+        audit = (
+            await client.get(
+                f"/v1/tieout/deals/{deal.id}/findings", params={"kind": "audit"}
+            )
+        ).json()
+        # An audit finding sits at a cell, which Excel selects as it stands.
+        assert all(one["where"]["anchor"]["kind"] == "cell" for one in audit)
+        assert all(one["where"]["anchor"]["ref"] for one in audit)

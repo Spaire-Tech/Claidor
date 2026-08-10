@@ -52,6 +52,7 @@ from .schemas import (
     ChainRead,
     CheckRunRead,
     Coverage,
+    DealListItem,
     DealPage,
     FigureMap,
     FigureRead,
@@ -60,6 +61,8 @@ from .schemas import (
     FindingSource,
     FindingUpdate,
     FindingWhere,
+    Identified,
+    Identify,
     LinkAlternative,
     LinkCell,
     LinkDecision,
@@ -168,6 +171,7 @@ def _finding(finding: Finding, filenames: dict[UUID, str]) -> FindingRead:
             else None,
             label=f"slide {finding.page}" if finding.page else finding.location,
             detail=finding.location,
+            anchor=finding.anchor or {},
         ),
         source=FindingSource(
             ref=evidence.get("source") or evidence.get("ref"),
@@ -261,6 +265,107 @@ async def get_deal(
         ),
         last_tieout=_run(await repository.latest_run(dossier_id, CheckKind.tieout)),
         last_audit=_run(await repository.latest_run(dossier_id, CheckKind.audit)),
+    )
+
+
+# --- the panel -----------------------------------------------------------
+
+
+@router.get("/deals", response_model=list[DealListItem])
+async def list_deals(
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[DealListItem]:
+    """The deals this person is on, for the panel's « which deal is this ».
+
+    Asked once per document and then never again, because the answer is
+    written into the document itself.
+    """
+    repository = TieOutRepository.from_session(session)
+    deals = await repository.deals_for(auth_subject.subject.id)
+    items: list[DealListItem] = []
+    for deal in deals:
+        counts = await repository.count_findings(deal.id)
+        items.append(
+            DealListItem(
+                id=deal.id,
+                name=deal.name,
+                client=deal.client_name,
+                artifacts=len(await repository.current_artifacts(deal.id)),
+                open_findings=counts.get("open", 0),
+            )
+        )
+    return items
+
+
+@router.post("/identify", response_model=Identified)
+async def identify(
+    body: Identify,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> Identified:
+    """Work out which artifact the open document is.
+
+    The panel's first call, and the thing every other panel screen waits
+    on. Three ways to answer it, tried in this order:
+
+    1. **The stamp.** The panel writes the lineage id into the document's
+       own settings the first time a person picks a deal for it. It
+       travels inside the file, survives Save As and a rename, and is the
+       only answer that is not a guess.
+    2. **The filename, inside a deal the user has already chosen.** Good
+       enough for « the model » and wrong precisely when two deals hold a
+       file of the same name — which is why it is never used across deals.
+    3. **Nothing.** The honest answer, and the panel asks.
+
+    `matched_by` says which happened, so a screen can offer « is this the
+    right deal? » on a guess and stay quiet on a stamp. A panel that
+    silently attaches the wrong deck to the wrong deal reports drift
+    against a model that has nothing to do with it, which is the most
+    expensive wrong answer this product could give.
+    """
+    repository = TieOutRepository.from_session(session)
+    user_id = auth_subject.subject.id
+
+    artifact: Artifact | None = None
+    matched_by = "none"
+
+    if body.lineage_id is not None:
+        artifact = await repository.latest_of_lineage(body.lineage_id)
+        if artifact is not None:
+            try:
+                await _deal(session, artifact.dossier_id, user_id)
+            except ResourceNotFound:
+                # The stamp is real and this person is not on the deal. It
+                # does not exist for them, and it is not a hint either.
+                artifact = None
+            else:
+                matched_by = "stamp"
+
+    if artifact is None and body.dossier_id and body.filename:
+        await _deal(session, body.dossier_id, user_id)
+        lineage = await repository.find_lineage(body.dossier_id, body.filename)
+        if lineage is not None:
+            artifact = await repository.latest_of_lineage(lineage)
+            matched_by = "filename" if artifact else "none"
+
+    if artifact is None:
+        return Identified(
+            matched_by="none",
+            dossier_id=None,
+            dossier_name=None,
+            artifact=None,
+        )
+
+    deal = await _deal(session, artifact.dossier_id, user_id)
+    uploader = await repository.uploaders([artifact.uploaded_by_id])
+    return Identified(
+        matched_by=matched_by,
+        dossier_id=deal.id,
+        dossier_name=deal.name,
+        artifact=_artifact(artifact, uploader.get(artifact.uploaded_by_id)),
+        # Only worth stamping when it was not already stamped.
+        stamp_lineage_id=artifact.lineage_id if matched_by == "filename" else None,
     )
 
 

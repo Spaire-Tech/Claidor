@@ -30,6 +30,7 @@ decimal is a claim about one decimal, and that is the claim to check.
 import re
 from dataclasses import dataclass, field
 from decimal import Decimal
+from typing import Any
 
 #: Currency, scale, percent, multiple, thousands separators, and negatives
 #: in parentheses — the conventions a banker's deck actually uses.
@@ -118,6 +119,21 @@ class Figure:
     #: something the model does not publish. Prose has no equivalent:
     #: « Applying the peer median of » is full of words no model uses.
     subject: str = ""
+    #: Where this figure physically sits, in coordinates a host application
+    #: can act on: which shape, which table cell, which chart point, which
+    #: paragraph and which characters within it.
+    #:
+    #: :attr:`location` is the same fact in prose — « slide 3, row
+    #: « Adjusted EBITDA » » — and the two are kept apart deliberately. One
+    #: is for a person reading a finding; the other is for a panel inside
+    #: PowerPoint that has to *select the shape* the banker is being told
+    #: about. No amount of parsing that sentence gets there reliably.
+    #:
+    #: A dict rather than fields because what identifies a position differs
+    #: by shape: a table cell is a row and a column, a chart point is a
+    #: series and an index, a sentence is a paragraph and an offset. Only
+    #: `shape_id` is common to all three.
+    anchor: dict[str, Any] = field(default_factory=dict)
 
     def as_printed_precision(self, other: Decimal) -> Decimal:
         """Round a model value to the precision this figure was printed at.

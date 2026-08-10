@@ -230,6 +230,19 @@ class Figure(RecordModel):
     #: A table's row label, when it has one. A whole name for a line item.
     subject: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
+    #: The same position as :attr:`location`, in coordinates a host
+    #: application can act on: `shape_id`, and then whatever identifies a
+    #: position in that kind of shape — row and column, series and point,
+    #: paragraph and character offsets.
+    #:
+    #: Prose is for the reader; this is for the panel. Asking a panel
+    #: inside PowerPoint to parse « slide 3, row « Adjusted EBITDA » » back
+    #: into a selection is the sort of thing that works on the deck it was
+    #: written against and nothing else.
+    anchor: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default="{}"
+    )
+
 
 class ModelCell(RecordModel):
     """One numeric cell of a model, named from the labels beside it.
@@ -503,6 +516,16 @@ class Finding(RecordModel):
     title: Mapped[str] = mapped_column(Text, nullable=False, default="")
     detail: Mapped[str] = mapped_column(Text, nullable=False, default="")
     location: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    #: Where to take the reader, in coordinates the host can act on. The
+    #: shape on the slide for a drift; the cell for an audit finding, which
+    #: Excel can select as it stands.
+    #:
+    #: This is the panel's entire point. « Click a finding and PowerPoint
+    #: goes to it » is either a lookup or a heuristic, and a heuristic that
+    #: lands on the wrong shape is worse than a panel that does not jump.
+    anchor: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default="{}"
+    )
     #: The finding's own evidence — the chain, the source cell, the basis,
     #: the confidence. Rendered by the screen, never queried on.
     evidence: Mapped[dict[str, Any]] = mapped_column(

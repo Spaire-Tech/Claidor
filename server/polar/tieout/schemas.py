@@ -135,6 +135,12 @@ class FindingWhere(Schema):
     label: str
     #: « metric tile, "FY2025A adjusted EBITDA" ».
     detail: str
+    #: The same position for a machine: `shape_id`, and then whatever
+    #: identifies a spot in that kind of shape — `row`/`column` for a
+    #: table, `series`/`point` for a chart, `paragraph`/`start`/`end` for
+    #: a sentence, `ref`/`sheet` for a cell. Empty when the reader could
+    #: not pin it down, and a panel should stay put rather than guess.
+    anchor: dict[str, Any] = Field(default_factory=dict)
 
 
 class FindingSource(Schema):
@@ -293,6 +299,8 @@ class FigureRead(Schema):
     #: Only on `unlinked`, and the point of the screen: what the tool did
     #: not check, said out loud.
     reason: str | None
+    #: Where it sits, for a panel that has to select it.
+    anchor: dict[str, Any] = Field(default_factory=dict)
 
 
 class SlideFigures(Schema):
@@ -304,6 +312,56 @@ class FigureMap(Schema):
     artifact_id: UUID
     filename: str
     slides: list[SlideFigures]
+
+
+# --- the panel -----------------------------------------------------------
+
+
+class Identify(Schema):
+    """What the panel knows about the document it is sitting in.
+
+    The panel opens inside PowerPoint with a deck already on screen and has
+    to answer *« which artifact is this »* before it can show anything. It
+    has three things to go on, in descending order of how much they can be
+    trusted, and it sends whatever it has.
+    """
+
+    #: The lineage the panel stamped into this document's own settings the
+    #: first time somebody chose a deal for it. Definitive when present:
+    #: it travels with the file, survives Save As, and does not care what
+    #: the file is called today.
+    lineage_id: UUID | None = None
+    #: The file's name. What a banker means by « the model », and wrong
+    #: exactly when two deals hold a file with the same name — which is
+    #: why it is only consulted inside one deal.
+    filename: str | None = None
+    #: The deal the user has already picked in the panel, when they have.
+    dossier_id: UUID | None = None
+
+
+class Identified(Schema):
+    """Which deal and which file this document is, or neither."""
+
+    #: `stamp` · `filename` · `none` — how it was worked out, so the panel
+    #: can offer « is this the right deal? » when the answer was a guess
+    #: and stay quiet when it was not.
+    matched_by: str
+    dossier_id: UUID | None
+    dossier_name: str | None
+    artifact: ArtifactRead | None
+    #: Set when the panel should write this into the document's settings,
+    #: so the next open needs no guessing at all.
+    stamp_lineage_id: UUID | None = None
+
+
+class DealListItem(Schema):
+    """For the panel's « which deal does this document belong to ». Once."""
+
+    id: UUID
+    name: str
+    client: str | None
+    artifacts: int
+    open_findings: int
 
 
 # --- the model page ------------------------------------------------------
@@ -348,6 +406,7 @@ __all__ = [
     "CheckRunRead",
     "Coverage",
     "CoverageReason",
+    "DealListItem",
     "DealPage",
     "FigureMap",
     "FigureRead",
@@ -356,6 +415,8 @@ __all__ = [
     "FindingSource",
     "FindingUpdate",
     "FindingWhere",
+    "Identified",
+    "Identify",
     "LinkAlternative",
     "LinkCell",
     "LinkDecision",

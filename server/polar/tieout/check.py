@@ -17,6 +17,7 @@ and neither answer depends on a tolerance anybody had to pick.
 
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
+from typing import Any
 
 from .deck import read_deck
 from .figures import Figure
@@ -43,6 +44,9 @@ class Drift:
     source: str
     basis: str
     location: str
+    #: The same position in coordinates a host application can act on, so
+    #: a panel can select the shape rather than describe it.
+    anchor: dict[str, Any]
     #: The line as printed, so a finding can quote the deck to itself.
     context: str
     #: How confident the link was. A drift found on a link that only just
@@ -117,6 +121,7 @@ def compare(links: list[Link]) -> tuple[list[Drift], list[Link]]:
                 source=item.output.source,
                 basis=item.output.basis,
                 location=figure.location,
+                anchor=figure.anchor,
                 context=figure.context,
                 confidence=item.score,
             )

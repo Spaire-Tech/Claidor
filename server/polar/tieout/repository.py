@@ -26,6 +26,7 @@ from polar.models import (
     CheckKind,
     CheckRun,
     CheckStatus,
+    Dossier,
     DossierMember,
     Figure,
     FigureLink,
@@ -159,6 +160,41 @@ class TieOutRepository(RepositoryBase[Artifact]):
             if seen is None or artifact.version > seen.version:
                 latest[artifact.lineage_id] = artifact
         return list(latest.values())
+
+    async def deals_for(self, user_id: UUID) -> Sequence[Dossier]:
+        """Every deal this person is on, across organizations.
+
+        ``DossierRepository.list_for_user`` scopes to one organization,
+        which is right for the dashboard's sidebar and wrong for the panel:
+        a document is open in PowerPoint and nothing on screen says which
+        organization it belongs to.
+        """
+        statement = (
+            select(Dossier)
+            .join(DossierMember, DossierMember.dossier_id == Dossier.id)
+            .where(
+                Dossier.deleted_at.is_(None),
+                DossierMember.user_id == user_id,
+                DossierMember.deleted_at.is_(None),
+            )
+            .order_by(Dossier.modified_at.desc().nullslast(), Dossier.created_at.desc())
+        )
+        return (await self.session.execute(statement)).scalars().unique().all()
+
+    async def latest_of_lineage(self, lineage_id: UUID) -> Artifact | None:
+        """The current version of a document, from the id that outlives it.
+
+        A lineage id is what the panel stamps into a document, because the
+        artifact id changes on every upload and the thing a banker means by
+        « this deck » does not.
+        """
+        statement = (
+            select(Artifact)
+            .where(Artifact.lineage_id == lineage_id, Artifact.deleted_at.is_(None))
+            .order_by(Artifact.version.desc())
+            .limit(1)
+        )
+        return (await self.session.execute(statement)).scalars().first()
 
     async def uploaders(self, ids: Sequence[UUID]) -> dict[UUID, User]:
         """The people who put these files here, by id.
