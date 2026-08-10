@@ -25,7 +25,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "mammoth": "^1.12.0",
-    "office-word-diff": "github:yuch85/office-word-diff",
+    "office-word-diff": "git+https://github.com/yuch85/office-word-diff.git#81315f2fae23ba8cf9f40c13bdfd17d0e444d137",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
