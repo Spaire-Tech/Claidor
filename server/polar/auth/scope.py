@@ -123,6 +123,13 @@ class Scope(StrEnum):
     redline_read = "redline:read"
     redline_write = "redline:write"
 
+    # The tie-out, for the same reason and one more: the panel that runs
+    # inside PowerPoint and Excel is where a banker sees a finding on the
+    # slide in front of them, and it is an iframe on its own origin exactly
+    # like the Word one.
+    tieout_read = "tieout:read"
+    tieout_write = "tieout:write"
+
     @classmethod
     def __get_pydantic_json_schema__(
         cls, core_schema: cs.CoreSchema, handler: GetJsonSchemaHandler
@@ -210,6 +217,8 @@ SCOPES_SUPPORTED_DISPLAY_NAMES: dict[Scope, str] = {
     # what happens; « redline:read » says nothing.
     Scope.redline_read: "Check documents for defects",
     Scope.redline_write: "Apply fixes to documents",
+    Scope.tieout_read: "See which figures tie back to the model",
+    Scope.tieout_write: "Upload files and confirm what a figure refers to",
 }
 
 

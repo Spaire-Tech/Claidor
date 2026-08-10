@@ -30,9 +30,11 @@ from polar.models import (
     Figure,
     FigureLink,
     Finding,
+    FindingKind,
     FindingState,
     LinkState,
     ModelCell,
+    User,
 )
 
 
@@ -117,6 +119,26 @@ class TieOutRepository(RepositoryBase[Artifact]):
         )
         return (await self.session.execute(statement)).scalar_one_or_none()
 
+    async def previous_version(self, artifact: Artifact) -> Artifact | None:
+        """The version of this document before the one given.
+
+        The model page's whole reason to exist: what moved, and which deck
+        figures went stale because of it.
+        """
+        statement = (
+            select(Artifact)
+            .where(
+                Artifact.lineage_id == artifact.lineage_id,
+                Artifact.dossier_id == artifact.dossier_id,
+                Artifact.version < artifact.version,
+                Artifact.status == ArtifactStatus.ready,
+                Artifact.deleted_at.is_(None),
+            )
+            .order_by(Artifact.version.desc())
+            .limit(1)
+        )
+        return (await self.session.execute(statement)).scalars().first()
+
     async def list_artifacts(self, dossier_id: UUID) -> Sequence[Artifact]:
         """Every artifact in the deal, newest version of each first."""
         statement = (
@@ -137,6 +159,19 @@ class TieOutRepository(RepositoryBase[Artifact]):
             if seen is None or artifact.version > seen.version:
                 latest[artifact.lineage_id] = artifact
         return list(latest.values())
+
+    async def uploaders(self, ids: Sequence[UUID]) -> dict[UUID, User]:
+        """The people who put these files here, by id.
+
+        One query for a page's worth of artifacts rather than one per row,
+        which is the difference between a deal page and a deal page that
+        gets slower every time somebody uploads.
+        """
+        if not ids:
+            return {}
+        statement = select(User).where(User.id.in_(list(set(ids))))
+        rows = (await self.session.execute(statement)).scalars().unique().all()
+        return {row.id: row for row in rows}
 
     # --- what was read out of them --------------------------------------
 
@@ -166,20 +201,71 @@ class TieOutRepository(RepositoryBase[Artifact]):
         )
         return (await self.session.execute(statement)).scalars().all()
 
+    async def get_figure(self, figure_id: UUID) -> Figure | None:
+        statement = select(Figure).where(
+            Figure.id == figure_id, Figure.deleted_at.is_(None)
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    async def get_cell(self, cell_id: UUID) -> ModelCell | None:
+        statement = select(ModelCell).where(
+            ModelCell.id == cell_id, ModelCell.deleted_at.is_(None)
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    async def search_cells(
+        self, artifact_id: UUID, query: str, limit: int = 20
+    ) -> Sequence[ModelCell]:
+        """Named cells matching a few words, for « point it somewhere else ».
+
+        Only named cells: a cell with no label around it is not something a
+        banker can recognise in a list, whatever it holds.
+        """
+        statement = (
+            select(ModelCell)
+            .where(
+                ModelCell.artifact_id == artifact_id,
+                ModelCell.deleted_at.is_(None),
+                ModelCell.name != "",
+                ModelCell.name.ilike(f"%{query}%"),
+            )
+            .order_by(func.length(ModelCell.name), ModelCell.ref)
+            .limit(limit)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
     async def cells_of(self, artifact_id: UUID) -> Sequence[ModelCell]:
         statement = select(ModelCell).where(
             ModelCell.artifact_id == artifact_id, ModelCell.deleted_at.is_(None)
         )
         return (await self.session.execute(statement)).scalars().all()
 
+    async def figures_by_id(self, ids: Sequence[UUID]) -> dict[UUID, Figure]:
+        if not ids:
+            return {}
+        statement = select(Figure).where(Figure.id.in_(list(ids)))
+        rows = (await self.session.execute(statement)).scalars().all()
+        return {row.id: row for row in rows}
+
+    async def cells_by_id(self, ids: Sequence[UUID]) -> dict[UUID, ModelCell]:
+        if not ids:
+            return {}
+        statement = select(ModelCell).where(ModelCell.id.in_(list(ids)))
+        rows = (await self.session.execute(statement)).scalars().all()
+        return {row.id: row for row in rows}
+
     # --- links ----------------------------------------------------------
 
-    async def links_of(self, dossier_id: UUID) -> Sequence[FigureLink]:
+    async def links_of(
+        self, dossier_id: UUID, *, state: LinkState | None = None
+    ) -> Sequence[FigureLink]:
         statement = (
             select(FigureLink)
             .where(FigureLink.dossier_id == dossier_id, FigureLink.deleted_at.is_(None))
             .order_by(FigureLink.confidence.desc())
         )
+        if state is not None:
+            statement = statement.where(FigureLink.state == state)
         return (await self.session.execute(statement)).scalars().all()
 
     async def get_link(self, link_id: UUID) -> FigureLink | None:
@@ -319,8 +405,20 @@ class TieOutRepository(RepositoryBase[Artifact]):
         await self.session.flush()
 
     async def findings_of(
-        self, dossier_id: UUID, *, artifact_id: UUID | None = None
+        self,
+        dossier_id: UUID,
+        *,
+        artifact_id: UUID | None = None,
+        kind: CheckKind | FindingKind | None = None,
+        state: FindingState | None = None,
     ) -> Sequence[Finding]:
+        """Ordered the way they should be read.
+
+        `one_tick` sorts first because it sorts False before True: a
+        difference of exactly one unit at the printed precision is almost
+        always a rounding convention, and putting those at the bottom is
+        what stops the list opening on eight non-problems.
+        """
         statement = (
             select(Finding)
             .where(Finding.dossier_id == dossier_id, Finding.deleted_at.is_(None))
@@ -333,7 +431,29 @@ class TieOutRepository(RepositoryBase[Artifact]):
         )
         if artifact_id is not None:
             statement = statement.where(Finding.artifact_id == artifact_id)
+        if isinstance(kind, FindingKind):
+            statement = statement.where(Finding.kind == kind)
+        if state is not None:
+            statement = statement.where(Finding.state == state)
         return (await self.session.execute(statement)).scalars().all()
+
+    async def count_findings(self, dossier_id: UUID) -> dict[str, int]:
+        """How many findings sit in each state.
+
+        Counted, never summed across severities: an error and a smell are
+        not « two problems », and a screen that adds them teaches a banker
+        to ignore the number.
+        """
+        statement = (
+            select(Finding.state, func.count())
+            .where(Finding.dossier_id == dossier_id, Finding.deleted_at.is_(None))
+            .group_by(Finding.state)
+        )
+        rows = (await self.session.execute(statement)).all()
+        counts = {state.value: 0 for state in FindingState}
+        for state, count in rows:
+            counts[state if isinstance(state, str) else state.value] = int(count)
+        return counts
 
     async def get_finding(self, finding_id: UUID) -> Finding | None:
         statement = select(Finding).where(

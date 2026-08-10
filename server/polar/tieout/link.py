@@ -431,6 +431,39 @@ def link(
     return links, unlinked
 
 
+def rank(
+    figure: Figure, outputs: list[Output], limit: int = 5
+) -> list[tuple[Output, float]]:
+    """The outputs this figure could be, best first.
+
+    :func:`link` throws away everything but the winner, which is right for
+    a check and wrong for a person. The confirmation queue has to show
+    *« or did you mean this one »*, and the two figures the linker refused
+    because « two outputs fit equally well » are exactly the cases where a
+    banker settles it in a second and the engine never can.
+
+    Same scoring, same admissibility. An inadmissible output scores zero
+    and never appears — a percentage is not a multiple whichever way a
+    person is asked about it.
+    """
+    label = tokens(figure.label)
+    if not label:
+        return []
+    vocabulary = Vocabulary(outputs)
+    context = (set(tokens(figure.section)) | set(tokens(figure.context))) - set(label)
+    scored = [
+        (
+            _score(vocabulary, index, set(label), context)
+            if _admissible(figure, output, label)
+            else 0.0,
+            index,
+        )
+        for index, output in enumerate(outputs)
+    ]
+    scored.sort(reverse=True)
+    return [(outputs[index], score) for score, index in scored[:limit] if score > 0]
+
+
 __all__ = [
     "BASIS_GROUPS",
     "BETA",
@@ -445,5 +478,6 @@ __all__ = [
     "Vocabulary",
     "link",
     "normalise",
+    "rank",
     "tokens",
 ]

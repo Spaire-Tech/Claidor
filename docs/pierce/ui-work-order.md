@@ -347,3 +347,64 @@ real files before it is finished.
   true findings and not lorem ipsum. **This will be there before the deal
   page is.**
 - A change to any shape above, announced before it lands, never after.
+
+---
+
+# The routes, live — 10 August
+
+All of it is in the OpenAPI schema. `cd clients && pnpm generate` and
+every shape above arrives typed. Nothing here is a mock.
+
+| Screen | Route |
+|---|---|
+| 1. Deal page | `GET /v1/tieout/deals/{id}` — name, coverage, artifacts, finding counts, last two runs, all in one request |
+| 1. Upload | `POST /v1/tieout/deals/{id}/artifacts` (multipart, field `file`) · `GET /v1/tieout/artifacts/{id}` to poll · `DELETE` to remove |
+| 2. Findings | `GET /v1/tieout/deals/{id}/findings?artifact_id=&kind=&state=` · `PATCH /v1/tieout/findings/{id}` `{state}` |
+| 3. The chain | `GET /v1/tieout/findings/{id}/chain` |
+| 5. Link queue | `GET /v1/tieout/deals/{id}/links?state=` · `GET /v1/tieout/links/{id}` for one with its alternatives · `PATCH /v1/tieout/links/{id}` `{state, cell_id?}` |
+| 5. Point it elsewhere | `GET /v1/tieout/artifacts/{id}/cells?q=` |
+| 6. Figure map | `GET /v1/tieout/artifacts/{id}/figures` |
+| 7. Model page | `GET /v1/tieout/artifacts/{id}/diff` — `null` on a first version, which is not an error |
+| — Run the checks | `POST /v1/tieout/deals/{id}/check` · `GET /v1/tieout/deals/{id}/runs` |
+
+Three things worth knowing before wiring a screen.
+
+**A failed upload returns 200.** `status: "failed"` with an `error` a
+person can act on — *« this .xls is password protected »*, *« this
+workbook has formulas but no calculated values »*. It is a state of the
+deal, not a request that went wrong, and the file stays in the list so the
+screen can say what to do about it. Only a file this cannot read at all
+(a `.txt`) is a 415.
+
+**A check that cannot run returns `status: "failed"` with a sentence**,
+not an HTTP error — *« nothing to reconcile, this deal has no model yet »*.
+Same reasoning.
+
+**404, never 403,** for a deal you are not on. That includes every route
+reachable by an artifact, finding or link id.
+
+## The seeded deal
+
+Project Cascade, with the real model and the real deck. Two files, 313
+cells, 128 figures, and the numbers a screen will show:
+
+```
+reconciled 102 · agreeing 94 · drifting 8 · unlinked 26
+reasons: no output fits the label 21 · two outputs fit equally well 3 ·
+         one end of a printed range 2
+findings: 8 drifts + 1 audit smell
+```
+
+`uv run python -m scripts.seed_cascade_deal` puts it in a local database;
+`--broken` adds a second version of the deck with six planted errors, so
+every state on every screen has something real behind it.
+
+## Changed since this was written
+
+Nothing in the shapes above. Three additions, all optional:
+
+- `ArtifactRead` also carries `lineage_id` — the id that is stable across
+  versions of the same document, so the version history groups by it.
+- `FindingRead` also carries `page`, `title` and `rule`.
+- `DealPage` also carries `last_tieout` and `last_audit`, so the screen
+  can say when this was last true and whether a run failed.

@@ -1,0 +1,367 @@
+"""The shapes the screens receive.
+
+These were written down in ``docs/pierce/ui-work-order.md`` before any of
+them existed, so the founder could build against them as mock data while
+the backend caught up. **They are a contract.** Where this file and that
+document disagree, this file is wrong.
+
+Two conventions run through all of it.
+
+*Never add an error and a smell into one number.* A model that fails one
+mechanical check and has one habit worth a second look is not « two
+problems », and a screen that says so trains a banker to ignore the
+number.
+
+*What was not checked is part of the answer.* Coverage carries the
+unlinked count and the reasons behind it, and the figure map carries every
+figure the tool never reconciled. An engine that hides its own misses is
+an engine nobody can calibrate against.
+"""
+
+from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from pydantic import Field
+
+from polar.kit.schemas import Schema
+from polar.models import (
+    ArtifactKind,
+    ArtifactStatus,
+    CheckKind,
+    CheckStatus,
+    FindingKind,
+    FindingSeverity,
+    FindingState,
+    LinkState,
+)
+
+# --- artifacts -----------------------------------------------------------
+
+
+class Uploader(Schema):
+    id: UUID
+    name: str
+    avatar_url: str | None
+
+
+class ArtifactRead(Schema):
+    id: UUID
+    kind: ArtifactKind
+    filename: str
+    #: Per lineage, not per deal. Two models in one deal each count from one.
+    version: int
+    lineage_id: UUID
+    status: ArtifactStatus
+    #: Present on `failed`, and phrased so a person can act on it: « this
+    #: .xls is password protected », not « extraction failed ».
+    error: str | None
+    #: Whatever this kind of file has. A deck reports slides and figures, a
+    #: model reports sheets, cells, formulas and named cells. Deliberately
+    #: loose: the screen shows what it finds rather than a fixed set.
+    counts: dict[str, Any]
+    uploaded_by: Uploader | None
+    uploaded_at: datetime
+
+
+# --- coverage ------------------------------------------------------------
+
+
+class CoverageReason(Schema):
+    """Why some figures were not reconciled, and how many."""
+
+    reason: str
+    count: int
+
+
+class Coverage(Schema):
+    """The line that keeps the product honest.
+
+    « 102 of 128 figures reconciled · 26 not checked » — and the 26 are
+    clickable through to the reasons. An unmatched figure is never a
+    finding, which is what lets the findings list be trusted, and it is
+    also never hidden.
+    """
+
+    reconciled: int
+    agreeing: int
+    drifting: int
+    unlinked: int
+    #: How many links a person has settled. Every one of these is arithmetic
+    #: from now on rather than a guess, which is the whole mechanism.
+    confirmed: int
+    reasons: list[CoverageReason] = Field(default_factory=list)
+
+
+class FindingCounts(Schema):
+    open: int
+    accepted: int
+    dismissed: int
+    fixed: int
+
+
+class CheckRunRead(Schema):
+    id: UUID
+    kind: CheckKind
+    status: CheckStatus
+    summary: dict[str, Any]
+    error: str | None
+    started_at: datetime | None
+    finished_at: datetime | None
+
+
+class DealPage(Schema):
+    """Everything the deal page needs in one request."""
+
+    id: UUID
+    name: str
+    client: str | None
+    coverage: Coverage
+    artifacts: list[ArtifactRead]
+    findings: FindingCounts
+    #: The last tie-out and the last audit, so the screen can say when this
+    #: was last true and whether a run failed.
+    last_tieout: CheckRunRead | None
+    last_audit: CheckRunRead | None
+
+
+# --- findings ------------------------------------------------------------
+
+
+class FindingWhere(Schema):
+    artifact_id: UUID | None
+    filename: str | None
+    #: « slide 2 ». For an audit finding, the cell reference.
+    label: str
+    #: « metric tile, "FY2025A adjusted EBITDA" ».
+    detail: str
+
+
+class FindingSource(Schema):
+    """The model side of a drift. Absent on an audit finding."""
+
+    ref: str | None
+    name: str | None
+    basis: str | None
+    artifact_id: UUID | None
+
+
+class FindingRead(Schema):
+    id: UUID
+    kind: FindingKind
+    severity: FindingSeverity
+    state: FindingState
+    #: How sure the *link* was, 0–1. A drift on a 0.56 link reads
+    #: differently from one on a 1.00 link, and a confirmed link is 1.00
+    #: because a person said so.
+    confidence: float | None
+    #: True when the deck and the model differ by exactly one unit at the
+    #: printed precision. Almost always a rounding convention. Shown, and
+    #: ranked below everything else.
+    one_tick: bool
+    page: int
+    printed: str
+    expected: str
+    title: str
+    where: FindingWhere
+    source: FindingSource
+    context: str
+    #: For an audit finding, the rule's published source — « ICAEW P14 ».
+    #: A banker asking « says who » gets an answer that is not « the tool ».
+    standard: str | None
+    rule: str | None
+    created_at: datetime
+
+
+class FindingUpdate(Schema):
+    """Accept, dismiss, mark fixed, or put it back.
+
+    A dismissed finding that reappears is the fastest way to lose a user,
+    so dismissal survives a re-run — and it is reversible from here.
+    """
+
+    state: FindingState
+
+
+# --- the chain -----------------------------------------------------------
+
+
+class ChainInput(Schema):
+    ref: str
+    name: str
+    value: str | None
+
+
+class ChainStep(Schema):
+    #: `figure` · `cell` · `input`. A chain ends at a typed input: that is
+    #: the edge of the model and the beginning of the next question.
+    kind: str
+    label: str | None = None
+    ref: str | None = None
+    name: str | None = None
+    printed: str | None = None
+    value: str | None = None
+    formula: str | None = None
+    basis: str | None = None
+    note: str | None = None
+    inputs: list[ChainInput] = Field(default_factory=list)
+
+
+class ChainRead(Schema):
+    """Slide 2 says $49.6mm · the model says 48.9 at Model!D26 · which is
+    reported EBITDA 41.2 plus adjustments 7.7.
+
+    One sentence, read down the steps. Nothing else in this product is hard
+    to copy; this is."""
+
+    finding_id: UUID | None
+    steps: list[ChainStep]
+    #: A rendered one-line version, for the 320px panel where a diagram
+    #: does not fit.
+    summary: str
+
+
+# --- links ---------------------------------------------------------------
+
+
+class LinkFigure(Schema):
+    id: UUID
+    printed: str
+    label: str
+    location: str
+    page: int
+    artifact_id: UUID
+
+
+class LinkCell(Schema):
+    id: UUID
+    ref: str
+    name: str
+    value: str | None
+    basis: str | None
+    artifact_id: UUID
+
+
+class LinkAlternative(Schema):
+    """Another cell this figure could be, with the score it scored."""
+
+    cell_id: UUID | None
+    ref: str
+    name: str
+    value: str | None
+    confidence: float
+
+
+class LinkRead(Schema):
+    id: UUID
+    state: LinkState
+    confidence: float
+    #: `identity` today; later `sum` · `margin` · `growth` · `cagr` ·
+    #: `unit` · `currency`. Shown as words — « sum of Model!D20:D23 » —
+    #: never as a formula.
+    transformation: str
+    figure: LinkFigure | None
+    cell: LinkCell | None
+    alternatives: list[LinkAlternative] = Field(default_factory=list)
+    confirmed_by: Uploader | None
+    confirmed_at: datetime | None
+
+
+class LinkDecision(Schema):
+    """Confirm, reject, or point it somewhere else.
+
+    `cell_id` re-points the link before confirming it, which is the third
+    action on the queue and the one that turns a wrong guess into a right
+    fact instead of throwing it away.
+    """
+
+    state: LinkState
+    cell_id: UUID | None = None
+
+
+# --- the figure map ------------------------------------------------------
+
+
+class FigureRead(Schema):
+    id: UUID
+    printed: str
+    label: str
+    location: str
+    #: `agreeing` · `drifting` · `confirmed` · `unlinked`.
+    state: str
+    link_id: UUID | None
+    #: Only on `unlinked`, and the point of the screen: what the tool did
+    #: not check, said out loud.
+    reason: str | None
+
+
+class SlideFigures(Schema):
+    page: int
+    figures: list[FigureRead]
+
+
+class FigureMap(Schema):
+    artifact_id: UUID
+    filename: str
+    slides: list[SlideFigures]
+
+
+# --- the model page ------------------------------------------------------
+
+
+class CellRead(Schema):
+    id: UUID
+    ref: str
+    sheet: str
+    name: str
+    value: str | None
+    formula: str | None
+
+
+class ChangedCell(Schema):
+    ref: str
+    name: str
+    was: str | None
+    now: str | None
+    #: How many deck figures were linked to this cell and now disagree with
+    #: it. The realistic failure is not one typo — it is a model revision
+    #: the deck never caught up with.
+    stale_figures: int
+
+
+class ModelDiff(Schema):
+    artifact_id: UUID
+    from_version: int
+    to_version: int
+    changed: list[ChangedCell]
+    added: int
+    removed: int
+
+
+__all__ = [
+    "ArtifactRead",
+    "CellRead",
+    "ChainInput",
+    "ChainRead",
+    "ChainStep",
+    "ChangedCell",
+    "CheckRunRead",
+    "Coverage",
+    "CoverageReason",
+    "DealPage",
+    "FigureMap",
+    "FigureRead",
+    "FindingCounts",
+    "FindingRead",
+    "FindingSource",
+    "FindingUpdate",
+    "FindingWhere",
+    "LinkAlternative",
+    "LinkCell",
+    "LinkDecision",
+    "LinkFigure",
+    "LinkRead",
+    "ModelDiff",
+    "SlideFigures",
+    "Uploader",
+]

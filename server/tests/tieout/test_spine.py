@@ -1,0 +1,427 @@
+"""The chain, end to end, through the database.
+
+The engine's own tests read files. These read **rows** — the same two
+Cascade files, ingested once, then never opened again — because that is
+the claim the product makes and it is not the same claim. A checker that
+only works while the file is on disk cannot promise a banker that a
+confirmed figure stays confirmed, cannot drop the document afterwards, and
+cannot re-check a deck at midnight when nobody is holding the upload.
+
+So the numbers below are the numbers ``tests/test_cascade.py`` gets from
+the files. If they ever diverge, something was lost on the way into the
+tables and the engine's own tests will not notice.
+"""
+
+from pathlib import Path
+
+import pytest
+
+from polar.kit.db.postgres import AsyncSession
+from polar.models import (
+    ArtifactKind,
+    ArtifactStatus,
+    CheckStatus,
+    Dossier,
+    DossierMember,
+    DossierRole,
+    FindingKind,
+    FindingState,
+    LinkState,
+    User,
+)
+from polar.tieout.repository import TieOutRepository
+from polar.tieout.service import tieout
+from tests.fixtures.database import SaveFixture
+from tests.fixtures.random_objects import create_organization
+
+CASCADE = Path(__file__).resolve().parents[2] / "scripts" / "cascade"
+CLEAN = CASCADE / "cascade_deck.pptx"
+BROKEN = CASCADE / "cascade_deck_broken.pptx"
+MODEL = CASCADE / "cascade_model.xlsx"
+
+
+async def _deal(
+    session: AsyncSession, save_fixture: SaveFixture, user: User
+) -> Dossier:
+    organization = await create_organization(save_fixture)
+    deal = Dossier(
+        organization_id=organization.id,
+        name="Project Cascade",
+        client_name="Cascade Industrial Holdings",
+        created_by_id=user.id,
+    )
+    session.add(deal)
+    await session.flush()
+    session.add(
+        DossierMember(dossier_id=deal.id, user_id=user.id, role=DossierRole.lead)
+    )
+    await session.flush()
+    return deal
+
+
+async def _load(
+    session: AsyncSession, deal: Dossier, user: User, deck: Path = CLEAN
+) -> None:
+    for path, kind in ((MODEL, ArtifactKind.model), (deck, ArtifactKind.deck)):
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=kind,
+            # The deck always goes in under the same name, so the broken
+            # one is a *new version* of the deck already in the deal —
+            # which is what a banker actually does.
+            filename="cascade_deck.pptx" if kind is ArtifactKind.deck else path.name,
+            payload=path.read_bytes(),
+            user_id=user.id,
+        )
+
+
+@pytest.mark.asyncio
+class TestIngestion:
+    async def test_a_file_becomes_rows(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+
+        repository = TieOutRepository.from_session(session)
+        artifacts = await repository.current_artifacts(deal.id)
+        assert len(artifacts) == 2
+        assert all(one.status is ArtifactStatus.ready for one in artifacts)
+
+        model = next(one for one in artifacts if one.kind is ArtifactKind.model)
+        deck = next(one for one in artifacts if one.kind is ArtifactKind.deck)
+
+        cells = await repository.cells_of(model.id)
+        figures = await repository.figures_of(deck.id)
+        assert len(cells) == model.counts["cells"]
+        assert len(figures) == deck.counts["figures"]
+        # The model publishes an Outputs tab, and it rides on the artifact
+        # because it cannot be rebuilt from the cells: its own columns are
+        # text, and only numeric cells are stored.
+        assert model.outputs
+
+    async def test_an_unreadable_file_is_kept_with_a_reason(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """« this one did not work, and here is what to do about it ».
+
+        Impossible to show if the row is thrown away, which is why a
+        failure is a state and not an exception.
+        """
+        deal = await _deal(session, save_fixture, user)
+        artifact = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="broken.xlsx",
+            payload=b"this is not a workbook",
+            user_id=user.id,
+        )
+        assert artifact.status is ArtifactStatus.failed
+        assert artifact.error
+        # Actionable, not « extraction failed ».
+        assert "Excel" in artifact.error
+
+    async def test_the_same_name_makes_a_version_not_a_second_document(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await _load(session, deal, user, deck=BROKEN)
+
+        repository = TieOutRepository.from_session(session)
+        current = await repository.current_artifacts(deal.id)
+        assert len(current) == 2
+        deck = next(one for one in current if one.kind is ArtifactKind.deck)
+        assert deck.version == 2
+
+        # And a check reads the new version, not the old one.
+        every = await repository.list_artifacts(deal.id)
+        decks = [one for one in every if one.kind is ArtifactKind.deck]
+        assert len(decks) == 2
+        assert len({one.lineage_id for one in decks}) == 1
+
+
+@pytest.mark.asyncio
+class TestChecking:
+    async def test_the_clean_deck_from_rows_alone(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """The number the whole product rests on, reached without a file.
+
+        102 reconciled, 94 agreeing, 8 drifting — identical to what the
+        offline library gets from the same two files. The eight are real
+        and were found in the deck the fixture calls clean.
+        """
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+
+        run = await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+        assert run.status is CheckStatus.done
+        assert run.summary["reconciled"] == 102
+        assert run.summary["agreeing"] == 94
+        assert run.summary["drifting"] == 8
+        # What was *not* checked is part of the answer, and it is counted
+        # with the reasons rather than quietly dropped.
+        assert run.summary["unlinked"] > 0
+        assert run.summary["reasons"]
+
+    async def test_the_broken_deck_adds_findings_and_keeps_the_old_ones(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+
+        await _load(session, deal, user, deck=BROKEN)
+        run = await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+        assert run.summary["drifting"] == 14
+
+        repository = TieOutRepository.from_session(session)
+        findings = await repository.findings_of(deal.id)
+        assert len(findings) == 14
+        assert all(one.kind is FindingKind.drift for one in findings)
+        # Every finding names a figure, a slide and what the model says.
+        assert all(one.printed and one.expected and one.location for one in findings)
+
+    async def test_a_deal_with_no_model_says_so(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """A state of the deal, not an error to raise at anybody."""
+        deal = await _deal(session, save_fixture, user)
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.deck,
+            filename="cascade_deck.pptx",
+            payload=CLEAN.read_bytes(),
+            user_id=user.id,
+        )
+        run = await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+        assert run.status is CheckStatus.failed
+        assert run.error is not None
+        assert "no model" in run.error
+
+    async def test_the_audit_reads_the_stored_cells(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        run = await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
+        assert run.status is CheckStatus.done
+        assert run.summary["cells"] == 313
+        # Errors and smells are counted apart, and never added together.
+        assert "errors" in run.summary
+        assert "smells" in run.summary
+
+
+@pytest.mark.asyncio
+class TestWhatAPersonDecides:
+    async def test_a_dismissal_survives_a_new_version_of_the_deck(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """The fastest way to lose a user is a finding they killed coming back.
+
+        Matched on the document's *lineage*, so re-uploading the deck does
+        not resurrect it — which is the case that would otherwise slip
+        through, since every row is new on every run.
+        """
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+
+        repository = TieOutRepository.from_session(session)
+        findings = await repository.findings_of(deal.id)
+        victim = findings[0]
+        fingerprint = victim.fingerprint
+        await repository.set_finding_state(
+            victim, state=FindingState.dismissed, user_id=user.id
+        )
+
+        await _load(session, deal, user, deck=BROKEN)
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+
+        again = await repository.findings_of(deal.id)
+        same = [one for one in again if one.fingerprint == fingerprint]
+        assert same, "the finding should still be found"
+        assert same[0].state is FindingState.dismissed
+
+    async def test_a_confirmation_is_never_proposed_over(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """Confirming is the moment a guess becomes data.
+
+        From then on the pair is decided: a re-run must not replace it,
+        undo it, or offer it again.
+        """
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+
+        repository = TieOutRepository.from_session(session)
+        link = (await repository.links_of(deal.id))[0]
+        pair = (link.figure_id, link.cell_id)
+        await repository.decide_link(link, state=LinkState.confirmed, user_id=user.id)
+
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+        links = await repository.links_of(deal.id)
+        matching = [one for one in links if (one.figure_id, one.cell_id) == pair]
+        assert len(matching) == 1
+        assert matching[0].state is LinkState.confirmed
+        assert matching[0].confirmed_by_id == user.id
+
+    async def test_a_rejection_is_never_resurrected(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+
+        repository = TieOutRepository.from_session(session)
+        link = (await repository.links_of(deal.id))[0]
+        pair = (link.figure_id, link.cell_id)
+        await repository.decide_link(link, state=LinkState.rejected, user_id=user.id)
+
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+        links = await repository.links_of(deal.id)
+        matching = [one for one in links if (one.figure_id, one.cell_id) == pair]
+        assert len(matching) == 1
+        assert matching[0].state is LinkState.rejected
+
+
+@pytest.mark.asyncio
+class TestWhatTheScreensAsk:
+    async def test_coverage_is_the_run_that_produced_it(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        deal = await _deal(session, save_fixture, user)
+        # Before anything is checked, coverage is honestly zero rather
+        # than absent: nothing has been looked at.
+        empty = await tieout.coverage_of(session, dossier_id=deal.id)
+        assert empty["reconciled"] == 0
+
+        await _load(session, deal, user)
+        run = await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+        coverage = await tieout.coverage_of(session, dossier_id=deal.id)
+        assert coverage["reconciled"] == run.summary["reconciled"]
+        assert coverage["unlinked"] == run.summary["unlinked"]
+
+    async def test_the_figure_map_accounts_for_every_figure(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """Including — especially — the ones nothing was done with."""
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+
+        repository = TieOutRepository.from_session(session)
+        deck = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.deck
+        )
+        slides = await tieout.figure_map(
+            session, dossier_id=deal.id, artifact_id=deck.id
+        )
+        shown = [figure for _, figures in slides for figure in figures]
+        assert len(shown) == deck.counts["figures"]
+
+        unlinked = [one for one in shown if one["state"] == "unlinked"]
+        assert unlinked
+        # An unchecked figure without a reason is a silent miss, which is
+        # the one thing this screen exists to prevent.
+        assert all(one["reason"] for one in unlinked)
+
+    async def test_the_chain_reads_as_one_sentence(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+
+        repository = TieOutRepository.from_session(session)
+        finding = (await repository.findings_of(deal.id))[0]
+        chain = await tieout.chain_of_finding(session, finding=finding)
+
+        assert chain["steps"][0]["kind"] == "figure"
+        assert chain["steps"][0]["printed"] == finding.printed
+        # It reaches the model, not just the slide.
+        assert any(step["kind"] in {"cell", "input"} for step in chain["steps"])
+        assert chain["summary"]
+
+    async def test_alternatives_offer_the_runners_up(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """« Or did you mean this one » — the third action on the queue."""
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+
+        repository = TieOutRepository.from_session(session)
+        link = (await repository.links_of(deal.id))[0]
+        alternatives = await tieout.alternatives_for(
+            session, dossier_id=deal.id, figure_id=link.figure_id
+        )
+        assert alternatives
+        assert all(0 < one["confidence"] <= 1 for one in alternatives)
+
+    async def test_the_diff_says_what_moved_and_what_went_stale(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+
+        repository = TieOutRepository.from_session(session)
+        model = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.model
+        )
+        # A first version has nothing behind it, which is not an error.
+        assert (
+            await tieout.model_diff(session, dossier_id=deal.id, artifact_id=model.id)
+            is None
+        )
+
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename=MODEL.name,
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        second = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.model
+        )
+        diff = await tieout.model_diff(
+            session, dossier_id=deal.id, artifact_id=second.id
+        )
+        assert diff is not None
+        assert diff["from_version"] == 1
+        assert diff["to_version"] == 2
+        # The same file uploaded twice moved nothing.
+        assert diff["changed"] == []
+
+    async def test_findings_are_counted_by_state_not_summed(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+
+        repository = TieOutRepository.from_session(session)
+        counts = await repository.count_findings(deal.id)
+        assert counts["open"] == 8
+        assert counts["dismissed"] == 0
+
+        finding = (await repository.findings_of(deal.id))[0]
+        await repository.set_finding_state(
+            finding, state=FindingState.dismissed, user_id=user.id
+        )
+        counts = await repository.count_findings(deal.id)
+        assert counts["open"] == 7
+        assert counts["dismissed"] == 1

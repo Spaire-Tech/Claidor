@@ -20,13 +20,14 @@ from uuid import UUID
 
 import structlog
 
-from polar.kit.db.postgres import AsyncSession
+from polar.kit.db.postgres import AsyncReadSession, AsyncSession
 from polar.models import (
     Artifact,
     ArtifactKind,
     ArtifactStatus,
     CheckKind,
     CheckRun,
+    CheckStatus,
     FindingKind,
     FindingSeverity,
     LinkState,
@@ -40,6 +41,7 @@ from . import figures as engine_figures
 from .check import compare
 from .ingest import Ingested, Unreadable, read_artifact
 from .link import link as propose_links
+from .link import rank as rank_outputs
 from .model import Output
 from .provenance import chain as render_chain
 from .provenance import outputs_from_workbook
@@ -173,7 +175,7 @@ class TieOutService:
             requested_by_id=user_id,
         )
         if not decks or not models:
-            missing = "a model" if not models else "a deck"
+            missing = "model" if not models else "deck"
             return await repository.finish_run(
                 run,
                 error=f"nothing to reconcile — this deal has no {missing} yet",
@@ -353,8 +355,255 @@ class TieOutService:
 
     # --- reading --------------------------------------------------------
 
+    async def coverage_of(
+        self, session: AsyncSession | AsyncReadSession, *, dossier_id: UUID
+    ) -> dict[str, Any]:
+        """The coverage line, from the last tie-out that finished.
+
+        Read off the stored run rather than recomputed, so the number on
+        the screen is the number the check produced. A deal that has never
+        been checked reports zeroes, which is honest: nothing has been
+        looked at.
+        """
+        repository = TieOutRepository.from_session(session)
+        run = await repository.latest_run(dossier_id, CheckKind.tieout)
+        summary = dict(run.summary) if run and run.status is CheckStatus.done else {}
+        return {
+            "reconciled": int(summary.get("reconciled", 0)),
+            "agreeing": int(summary.get("agreeing", 0)),
+            "drifting": int(summary.get("drifting", 0)),
+            "unlinked": int(summary.get("unlinked", 0)),
+            "confirmed": int(summary.get("confirmed", 0)),
+            "reasons": list(summary.get("reasons", [])),
+        }
+
+    async def figure_map(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+    ) -> list[tuple[int, list[dict[str, Any]]]]:
+        """Every figure in a deck, slide by slide, and what became of it.
+
+        The unlinked ones are the point. They are what the tool did *not*
+        check, and the reason each one gives is the difference between an
+        honest screen and an impressive one.
+
+        The states come from re-running the same two passes the check runs,
+        over the same rows, rather than from reading the stored links. Two
+        reasons, and the second is the one that bit:
+
+        1. The reason a figure was skipped is a property of *that check*
+           against *that model*, so it is not on the figure's row.
+        2. Not every reconciled figure has a link row. A figure the
+           Outputs tab publishes but the workbook has no cell for — a CAGR
+           computed on the tab itself — is checked and agrees, and there is
+           no cell to point a link at. Reading state off the links alone
+           called seven such figures « unlinked », which is the exact lie
+           this screen exists to prevent.
+        """
+        repository = TieOutRepository.from_session(session)
+        rows = await repository.figures_of(artifact_id)
+        engine, back = _figures_of(rows)
+
+        models = [
+            one
+            for one in await repository.current_artifacts(dossier_id)
+            if one.kind is ArtifactKind.model
+        ]
+        reasons: dict[UUID, str] = {}
+        states: dict[UUID, str] = {}
+        if models:
+            model = models[0]
+            cells = await repository.cells_of(model.id)
+            candidates = _candidates(_workbook_of(cells), cells, model.outputs)
+            proposed, unlinked = _both_passes(engine, candidates)
+            _, agreed = compare(proposed)
+            for item in agreed:
+                states[back[id(item.figure)].id] = "agreeing"
+            # A `Drift` carries the slide and the location but not the
+            # figure it came from, so drifting is « proposed and not
+            # agreed » rather than a second lookup.
+            for item in proposed:
+                states.setdefault(back[id(item.figure)].id, "drifting")
+            for item in unlinked:
+                identifier = back[id(item.figure)].id
+                states[identifier] = "unlinked"
+                reasons[identifier] = item.reason
+
+        links = {
+            link.figure_id: link
+            for link in await repository.links_of(dossier_id)
+            if link.state is not LinkState.rejected
+        }
+
+        pages: dict[int, list[dict[str, Any]]] = {}
+        for row in rows:
+            link = links.get(row.id)
+            state = states.get(row.id, "unlinked")
+            # A person's decision outranks a score, in both directions.
+            if link is not None and link.state is LinkState.confirmed:
+                state = "confirmed"
+            reason = reasons.get(row.id)
+            if state == "unlinked" and reason is None:
+                reason = "no model in this deal yet"
+            pages.setdefault(row.page, []).append(
+                {
+                    "id": row.id,
+                    "printed": row.printed,
+                    "label": row.label,
+                    "location": row.location,
+                    "state": state,
+                    "link_id": link.id if link else None,
+                    "reason": reason if state == "unlinked" else None,
+                }
+            )
+        return sorted(pages.items())
+
+    async def alternatives_for(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        figure_id: UUID,
+    ) -> list[dict[str, Any]]:
+        """What else this figure could be, best first.
+
+        « Or did you mean this one » — the third action on the confirmation
+        queue, and the only one that turns a wrong guess into a right fact
+        rather than throwing it away.
+        """
+        repository = TieOutRepository.from_session(session)
+        figure_row = await repository.get_figure(figure_id)
+        if figure_row is None:
+            return []
+        engine, _ = _figures_of([figure_row])
+
+        models = [
+            one
+            for one in await repository.current_artifacts(dossier_id)
+            if one.kind is ArtifactKind.model
+        ]
+        if not models:
+            return []
+        model = models[0]
+        cells = await repository.cells_of(model.id)
+        candidates = _candidates(_workbook_of(cells), cells, model.outputs)
+
+        pool = candidates.published + candidates.workbook
+        ranked = rank_outputs(engine[0], pool, limit=6)
+        seen: set[str] = set()
+        out: list[dict[str, Any]] = []
+        for output, score in ranked:
+            if output.source in seen:
+                continue
+            seen.add(output.source)
+            cell = candidates.cells.get(output.source) or candidates.cells.get(
+                output.ref
+            )
+            out.append(
+                {
+                    "cell_id": cell.id if cell else None,
+                    "ref": output.source or output.ref,
+                    "name": output.name,
+                    "value": _text(output.value),
+                    "confidence": round(score, 3),
+                }
+            )
+        return out
+
+    async def model_diff(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+    ) -> dict[str, Any] | None:
+        """What moved since the version before, and what went stale with it.
+
+        The realistic failure is not one typo. It is a model revision the
+        deck never caught up with, which is why the count that matters on
+        this screen is not « cells changed » but « deck figures now wrong
+        because of it ».
+        """
+        repository = TieOutRepository.from_session(session)
+        current = await repository.get_artifact(artifact_id)
+        if current is None:
+            return None
+        previous = await repository.previous_version(current)
+        if previous is None:
+            return None
+
+        now = {cell.ref: cell for cell in await repository.cells_of(current.id)}
+        was = {cell.ref: cell for cell in await repository.cells_of(previous.id)}
+        links = await repository.links_of(dossier_id)
+        stale: dict[str, int] = {}
+        by_id = {cell.id: cell for cell in was.values()}
+        for link in links:
+            cell = by_id.get(link.cell_id)
+            if cell is not None:
+                stale[cell.ref] = stale.get(cell.ref, 0) + 1
+
+        changed: list[dict[str, Any]] = []
+        for ref, cell in now.items():
+            before = was.get(ref)
+            if before is None or before.value == cell.value:
+                continue
+            changed.append(
+                {
+                    "ref": ref,
+                    "name": cell.name or cell.row_label,
+                    "was": _text(before.value),
+                    "now": _text(cell.value),
+                    "stale_figures": stale.get(ref, 0),
+                }
+            )
+        changed.sort(key=lambda one: -one["stale_figures"])
+        return {
+            "artifact_id": current.id,
+            "from_version": previous.version,
+            "to_version": current.version,
+            "changed": changed,
+            "added": len(set(now) - set(was)),
+            "removed": len(set(was) - set(now)),
+        }
+
+    async def chain_of_finding(
+        self, session: AsyncSession | AsyncReadSession, *, finding: FindingRow
+    ) -> dict[str, Any]:
+        """The whole path behind one finding, as steps a screen can render."""
+        repository = TieOutRepository.from_session(session)
+        evidence = finding.evidence or {}
+        steps: list[dict[str, Any]] = []
+
+        if finding.kind is FindingKind.drift:
+            steps.append(
+                {
+                    "kind": "figure",
+                    "label": finding.location,
+                    "name": finding.detail,
+                    "printed": finding.printed,
+                }
+            )
+
+        model_id = evidence.get("model_artifact_id") or (
+            str(finding.artifact_id) if finding.kind is FindingKind.audit else None
+        )
+        ref = evidence.get("source") or evidence.get("ref") or finding.location
+        if model_id and ref:
+            cells = await repository.cells_of(UUID(str(model_id)))
+            book = _workbook_of(cells)
+            steps.extend(_steps_from(book, str(ref), evidence.get("basis")))
+
+        return {
+            "finding_id": finding.id,
+            "steps": steps,
+            "summary": str(evidence.get("chain") or finding.detail or ""),
+        }
+
     async def chain_for(
-        self, session: AsyncSession, *, artifact_id: UUID, ref: str
+        self, session: AsyncSession | AsyncReadSession, *, artifact_id: UUID, ref: str
     ) -> list[dict[str, Any]]:
         """The steps behind one cell, for the screen that sells the product."""
         repository = TieOutRepository.from_session(session)
@@ -505,6 +754,67 @@ def _figures_of(
         engine.append(figure)
         back[id(figure)] = row
     return engine, back
+
+
+def _steps_from(
+    book: Workbook, ref: str, basis: str | None, depth: int = 3
+) -> list[dict[str, Any]]:
+    """Walk back from a cell to the typed inputs behind it.
+
+    Stops at the first cell with no formula, because that is the edge of
+    the model: a number somebody typed, and the beginning of the next
+    question — *where did that come from*. Later the answer is a page in a
+    PDF, which is why a step carries a `kind` rather than always being a
+    cell.
+    """
+    steps: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    current: str | None = ref
+
+    while current and current not in seen and len(steps) < depth:
+        seen.add(current)
+        cell = book.get(current)
+        if cell is None:
+            steps.append({"kind": "cell", "ref": current, "name": "", "value": None})
+            break
+
+        inputs = []
+        for precedent in cell.precedents[:6]:
+            source = book.get(precedent)
+            if source is None:
+                continue
+            inputs.append(
+                {
+                    "ref": source.ref,
+                    "name": source.name or source.row_label,
+                    "value": _text(source.value),
+                }
+            )
+        steps.append(
+            {
+                "kind": "cell" if cell.formula else "input",
+                "ref": cell.ref,
+                "name": cell.name or cell.row_label,
+                "value": _text(cell.value),
+                "formula": cell.formula,
+                "basis": basis if len(steps) == 0 else None,
+                "note": None if cell.formula else "typed, not calculated",
+                "inputs": inputs,
+            }
+        )
+        if not cell.formula:
+            break
+        # Follow the precedent that is itself calculated; a chain that
+        # walks into a constant has already ended.
+        current = next(
+            (
+                one
+                for one in cell.precedents
+                if (nxt := book.get(one)) is not None and nxt.formula
+            ),
+            None,
+        )
+    return steps
 
 
 def _fingerprint(kind: str, lineage: UUID, where: str, what: str) -> str:
