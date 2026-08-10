@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, Query
 
+from polar.config import settings
 from polar.exceptions import ResourceNotFound
 from polar.file.repository import FileRepository
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession
@@ -29,6 +30,9 @@ from .schemas import (
     AgentStepRead,
     AgentTaskCreate,
     AgentTaskRead,
+    CommitmentRead,
+    ConflictRead,
+    CrossCheckRead,
     DossierAsk,
     DossierCitationRead,
     DossierCreate,
@@ -48,7 +52,8 @@ from .schemas import (
 )
 from .agent import service as agent_service
 from .agent.loop import Stopped
-from .agent.service import AgentNotConfigured
+from .agent.service import AgentNotConfigured, build_client
+from .crosscheck import Commitment, cross_check
 from .review import review_matter
 from .service import dossier_service
 
@@ -631,3 +636,65 @@ async def list_agent_tasks(
     tasks = await repository.list_tasks(dossier_id)
     steps = await repository.list_steps_for(task.id for task in tasks)
     return [_task_schema(task, steps.get(task.id, [])) for task in tasks]
+
+
+@router.post("/{dossier_id}/crosscheck", response_model=CrossCheckRead)
+async def cross_check_matter(
+    dossier_id: UUID,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> CrossCheckRead:
+    """Where the matter's documents disagree with each other.
+
+    « The MSA caps liability at USD 1.8M; the LOI at 2.5M » — the finding a
+    per-document check can never produce, because each document is
+    internally coherent and the transaction is not.
+
+    Slower and more expensive than ``/check``: one model call per document
+    plus one to compare, where ``/check`` is arithmetic. A separate route so
+    the panel can show what it knows immediately and offer this as a
+    deliberate act.
+
+    Three gates stand between a proposal and a conflict here, all of them
+    arithmetic — see :mod:`polar.dossier.crosscheck`. Every conflict that
+    survives can be shown to a reader as two sentences from two documents.
+    """
+    await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+
+    if not settings.ANTHROPIC_API_KEY:
+        raise HTTPException(
+            status_code=503, detail="The cross-document check is not configured."
+        )
+
+    repository = DossierRepository.from_session(session)
+    documents = list(await repository.list_documents(dossier_id))
+    conflicts, report = await cross_check(build_client(), documents)
+
+    return CrossCheckRead(
+        conflicts=[
+            ConflictRead(
+                subject=conflict.subject,
+                note=conflict.note,
+                left=_commitment_schema(conflict.left),
+                right=_commitment_schema(conflict.right),
+            )
+            for conflict in conflicts
+        ],
+        documents_read=report.documents_read,
+        unreadable=report.unreadable,
+        commitments=report.commitments,
+        proposed=report.proposed,
+        kept=report.kept,
+    )
+
+
+def _commitment_schema(commitment: Commitment) -> CommitmentRead:
+    return CommitmentRead(
+        document_id=commitment.document_id,
+        document_title=commitment.document_title,
+        subject=commitment.subject,
+        value=commitment.value,
+        quote=commitment.quote,
+        start=commitment.start,
+        end=commitment.end,
+    )

@@ -239,3 +239,39 @@ class AgentTaskRead(Schema):
 
 class AgentTaskCreate(Schema):
     prompt: str = Field(min_length=3, max_length=8000)
+
+
+class CommitmentRead(Schema):
+    """One side of a conflict: what a document says, and where."""
+
+    document_id: UUID
+    document_title: str
+    subject: str
+    value: str
+    #: The document's own words, verified present before this was built.
+    quote: str
+    start: int
+    end: int
+
+
+class ConflictRead(Schema):
+    subject: str
+    note: str
+    left: CommitmentRead
+    right: CommitmentRead
+
+
+class CrossCheckRead(Schema):
+    """Where the matter's documents disagree with each other."""
+
+    conflicts: list[ConflictRead]
+    #: What was read, and what could not be. A quiet result over a bundle
+    #: half of which was scans is not a quiet bundle.
+    documents_read: int
+    unreadable: int
+    commitments: int
+    #: How many the model proposed and how many survived the gates. Shown
+    #: because a check that discards most of what it is told should say so
+    #: rather than look confident.
+    proposed: int
+    kept: int
