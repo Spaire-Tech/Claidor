@@ -165,6 +165,93 @@ class TestAccess:
 
 
 @pytest.mark.asyncio
+class TestTheDataRoom:
+    """The room pages, folds versions, and says how much it is not showing."""
+
+    @pytest.mark.auth
+    async def test_it_pages_and_says_how_many_there_are(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        for index in range(7):
+            await tieout.ingest(
+                session,
+                dossier_id=deal.id,
+                kind=ArtifactKind.source,
+                filename=f"note {index}.txt",
+                payload=b"not readable, and that is a state of the deal",
+                user_id=user.id,
+            )
+        await session.flush()
+
+        first = await client.get(
+            f"/v1/tieout/deals/{deal.id}/artifacts", params={"limit": 3}
+        )
+        assert first.status_code == 200
+        page = first.json()
+        assert len(page["items"]) == 3
+        # The total rides with the page, so the screen can write « 3 of 7 »
+        # rather than quietly implying it has them all.
+        assert page["total"] == 7
+
+        rest = await client.get(
+            f"/v1/tieout/deals/{deal.id}/artifacts",
+            params={"limit": 100, "offset": 3},
+        )
+        assert len(rest.json()["items"]) == 4
+
+    @pytest.mark.auth
+    async def test_a_re_upload_is_one_row_not_two(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        for _ in range(3):
+            await tieout.ingest(
+                session,
+                dossier_id=deal.id,
+                kind=ArtifactKind.model,
+                filename=MODEL.name,
+                payload=MODEL.read_bytes(),
+                user_id=user.id,
+            )
+        await session.flush()
+
+        page = (
+            await client.get(f"/v1/tieout/deals/{deal.id}/artifacts")
+        ).json()
+        assert page["total"] == 1
+        assert len(page["items"]) == 1
+        # Folded on the server, so the count and the rows agree — a client
+        # that pages and folds can do neither.
+        assert page["items"][0]["version"] == 3
+
+    @pytest.mark.auth
+    async def test_it_searches_on_the_name(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _loaded(session, save_fixture, user)
+        page = (
+            await client.get(
+                f"/v1/tieout/deals/{deal.id}/artifacts", params={"q": "deck"}
+            )
+        ).json()
+        assert page["total"] == 1
+        assert "deck" in page["items"][0]["filename"]
+
+
+@pytest.mark.asyncio
 class TestTheDealPage:
     @pytest.mark.auth
     async def test_it_answers_in_one_request(
@@ -180,8 +267,12 @@ class TestTheDealPage:
         assert response.status_code == 200
         body = response.json()
         assert body["name"] == "Project Cascade"
-        assert len(body["artifacts"]) == 2
-        assert {one["kind"] for one in body["artifacts"]} == {"model", "deck"}
+        # The deal's spine — the documents it is built on — and counts
+        # for the room, rather than the room itself.
+        assert len(body["documents"]) == 2
+        assert {one["kind"] for one in body["documents"]} == {"model", "deck"}
+        assert body["files"] == 2
+        assert body["lineages"] == 2
         assert body["coverage"]["reconciled"] == 102
         assert body["coverage"]["drifting"] == 8
         # The coverage line carries its own misses, with reasons.
@@ -208,7 +299,8 @@ class TestTheDealPage:
 
         assert response.status_code == 200
         body = response.json()
-        assert body["artifacts"] == []
+        assert body["documents"] == []
+        assert body["files"] == 0
         assert body["coverage"]["reconciled"] == 0
         assert body["last_tieout"] is None
 

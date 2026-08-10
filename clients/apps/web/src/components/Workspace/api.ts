@@ -144,12 +144,23 @@ export interface Cell {
   formula: string | null
 }
 
+export interface ArtifactPage {
+  items: Artifact[]
+  total: number
+  limit: number
+  offset: number
+}
+
 export interface DealPage {
   id: string
   name: string
   client: string | null
   coverage: Coverage
-  artifacts: Artifact[]
+  /** The current model, deck and memo. Tens, not thousands. */
+  documents: Artifact[]
+  /** How many artifacts the deal holds, and how many documents that is. */
+  files: number
+  lineages: number
   findings: { open: number; accepted: number; dismissed: number; fixed: number }
   last_tieout: { status: string; summary: Record<string, unknown> } | null
   last_audit: { status: string; summary: Record<string, unknown> } | null
@@ -402,9 +413,27 @@ export class TieOutApi {
     return this.call(`/artifacts/${artifactId}/figures`)
   }
 
-  /** Everything the deal page needs, in one request. */
+  /** The deal's spine: coverage, counts, and the documents it is built on. */
   deal(dealId: string): Promise<DealPage> {
     return this.call(`/deals/${dealId}`)
+  }
+
+  /**
+   * The data room, a page at a time.
+   *
+   * Searched on the server rather than in the browser: a deal holds
+   * thousands of files and the point of paging is not to send them all.
+   */
+  artifacts(
+    dealId: string,
+    options: { q?: string; limit?: number; offset?: number } = {},
+  ): Promise<ArtifactPage> {
+    const query = new URLSearchParams()
+    if (options.q) query.set('q', options.q)
+    if (options.limit !== undefined) query.set('limit', String(options.limit))
+    if (options.offset !== undefined) query.set('offset', String(options.offset))
+    const suffix = query.toString()
+    return this.call(`/deals/${dealId}/artifacts${suffix ? `?${suffix}` : ''}`)
   }
 
   /** Coverage alone, for the panel, where the rest is not wanted. */

@@ -50,6 +50,7 @@ from . import auth
 from .ingest import kind_for
 from .repository import TieOutRepository
 from .schemas import (
+    ArtifactPage,
     ArtifactRead,
     CellRead,
     ChainRead,
@@ -87,6 +88,16 @@ NOT_FOUND = "Deal not found."
 #: years of monthly detail is a few megabytes; much larger than this is a
 #: mistake worth catching before it reaches a parser.
 MAX_UPLOAD_BYTES = 64 * 1024 * 1024
+
+#: How many models, decks and memos the deal page carries. A deal with
+#: more than this many *documents* — not files — is not a deal any more,
+#: and the data room's own route is how you would look at them.
+MAX_DOCUMENTS = 200
+
+#: One page of the data room. Enough that scrolling is rare and small
+#: enough that the payload stays flat as the room fills.
+PAGE = 100
+MAX_PAGE = 500
 
 #: How long the panel's token lasts. Thirty days is long enough that a
 #: banker is not signing in every morning — which is the fastest way to
@@ -258,8 +269,17 @@ async def get_deal(
     deal = await _deal(session, dossier_id, auth_subject.subject.id)
     repository = TieOutRepository.from_session(session)
 
-    artifacts = await repository.list_artifacts(dossier_id)
-    by_id = await repository.uploaders([one.uploaded_by_id for one in artifacts])
+    # The documents the deal is built on — the current model, deck and
+    # memo — rather than the data room. A deal holds tens of these and
+    # thousands of the other, and every screen was paying for the one that
+    # browses files.
+    documents, _ = await repository.page_artifacts(
+        dossier_id,
+        kinds=[ArtifactKind.model, ArtifactKind.deck, ArtifactKind.memo],
+        limit=MAX_DOCUMENTS,
+    )
+    by_id = await repository.uploaders([one.uploaded_by_id for one in documents])
+    files, lineages = await repository.count_artifacts(dossier_id)
 
     counts = await repository.count_findings(dossier_id)
     return DealPage(
@@ -267,7 +287,9 @@ async def get_deal(
         name=deal.name,
         client=deal.client_name,
         coverage=Coverage(**await tieout.coverage_of(session, dossier_id=dossier_id)),
-        artifacts=[_artifact(one, by_id.get(one.uploaded_by_id)) for one in artifacts],
+        documents=[_artifact(one, by_id.get(one.uploaded_by_id)) for one in documents],
+        files=files,
+        lineages=lineages,
         findings=FindingCounts(
             open=counts.get("open", 0),
             accepted=counts.get("accepted", 0),
@@ -481,6 +503,44 @@ async def upload_artifact(
         user_id=user.id,
     )
     return _artifact(artifact, user)
+
+
+@router.get("/deals/{dossier_id}/artifacts", response_model=ArtifactPage)
+async def list_deal_artifacts(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutRead,
+    q: str = Query("", description="Words from the filename."),
+    kind: ArtifactKind | None = Query(None),
+    limit: int = Query(PAGE, ge=1, le=MAX_PAGE),
+    offset: int = Query(0, ge=0),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> ArtifactPage:
+    """The data room, a page at a time.
+
+    One row per document rather than per upload: re-uploading the deck six
+    times is one deck. `version` on a row says how many there have been,
+    and the older ones are reachable from the document's own page.
+
+    `total` comes back with the page, because « showing 100 of 3,003 » is
+    a line this screen has to be able to write. A list that quietly draws
+    the first hundred reads as « that is all of them ».
+    """
+    await _deal(session, dossier_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    rows, total = await repository.page_artifacts(
+        dossier_id,
+        query=q.strip(),
+        kinds=[kind] if kind else None,
+        limit=limit,
+        offset=offset,
+    )
+    by_id = await repository.uploaders([one.uploaded_by_id for one in rows])
+    return ArtifactPage(
+        items=[_artifact(one, by_id.get(one.uploaded_by_id)) for one in rows],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/artifacts/{artifact_id}", response_model=ArtifactRead)
@@ -736,6 +796,10 @@ async def list_links(
     dossier_id: UUID,
     auth_subject: auth.TieOutRead,
     state: LinkState | None = Query(default=None),
+    superseded: bool = Query(
+        False,
+        description="Include links on documents a newer version has replaced.",
+    ),
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> list[LinkRead]:
     """The confirmation queue: what the engine thinks each figure refers to.
@@ -748,10 +812,26 @@ async def list_links(
 
     Alternatives are left off here on purpose: they cost a re-score against
     the model and belong on the one link being looked at.
+
+    **Scoped to the documents in force**, because a figure on a deck a
+    newer version replaced is not a published figure and confirming a link
+    to one is wasted work. The server decides that rather than the client:
+    working out what is superseded needs every artifact in the deal, and
+    handing a screen three thousand rows so it can filter a hundred is the
+    payload problem this route used to have.
     """
     await _deal(session, dossier_id, auth_subject.subject.id)
     repository = TieOutRepository.from_session(session)
     links = await repository.links_of(dossier_id, state=state)
+    if not superseded:
+        in_force = {one.id for one in await repository.current_artifacts(dossier_id)}
+        figures_now = await repository.figures_by_id([one.figure_id for one in links])
+        links = [
+            one
+            for one in links
+            if one.figure_id not in figures_now
+            or figures_now[one.figure_id].artifact_id in in_force
+        ]
     figures = await repository.figures_by_id([one.figure_id for one in links])
     cells = await repository.cells_by_id([one.cell_id for one in links])
     return [_link(one, figures, cells) for one in links]

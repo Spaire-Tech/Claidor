@@ -141,13 +141,102 @@ class TieOutRepository(RepositoryBase[Artifact]):
         return (await self.session.execute(statement)).scalars().first()
 
     async def list_artifacts(self, dossier_id: UUID) -> Sequence[Artifact]:
-        """Every artifact in the deal, newest version of each first."""
+        """Every artifact in the deal, newest first.
+
+        Unbounded on purpose, and only for callers that genuinely need all
+        of them — the check, and `current_artifacts` below. A *screen* asks
+        `page_artifacts`, because a deal with three thousand files dropped
+        into it is a normal deal.
+        """
         statement = (
             select(Artifact)
             .where(Artifact.dossier_id == dossier_id, Artifact.deleted_at.is_(None))
             .order_by(Artifact.created_at.desc())
         )
         return (await self.session.execute(statement)).scalars().all()
+
+    async def page_artifacts(
+        self,
+        dossier_id: UUID,
+        *,
+        query: str = "",
+        kinds: Sequence[ArtifactKind] | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[Sequence[Artifact], int]:
+        """One page of the data room, and how many rows it is a page of.
+
+        The total comes back with the page because « showing 100 of 3,003 »
+        is a line the screen has to be able to write. A page without its
+        total leaves a screen to either guess or keep quiet, and keeping
+        quiet about how much it is not showing is the one thing no list
+        here is allowed to do.
+
+        **The newest version of each document, not every version.** Folded
+        in SQL rather than in the client, which is where it used to happen:
+        a client that pages *and* folds draws a short page whenever a
+        document has several versions in it, and cannot say how many
+        documents there really are.
+        """
+        newest = (
+            select(
+                Artifact.id,
+                func.row_number()
+                .over(
+                    partition_by=Artifact.lineage_id,
+                    order_by=Artifact.version.desc(),
+                )
+                .label("rank"),
+            )
+            .where(Artifact.dossier_id == dossier_id, Artifact.deleted_at.is_(None))
+            .subquery()
+        )
+        where = [
+            Artifact.dossier_id == dossier_id,
+            Artifact.deleted_at.is_(None),
+            Artifact.id.in_(select(newest.c.id).where(newest.c.rank == 1)),
+        ]
+        if query:
+            where.append(Artifact.filename.ilike(f"%{query}%"))
+        if kinds:
+            where.append(Artifact.kind.in_(kinds))
+
+        total = (
+            await self.session.execute(
+                select(func.count()).select_from(Artifact).where(*where)
+            )
+        ).scalar_one()
+        rows = (
+            (
+                await self.session.execute(
+                    select(Artifact)
+                    .where(*where)
+                    .order_by(Artifact.created_at.desc())
+                    .limit(limit)
+                    .offset(offset)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return rows, total
+
+    async def count_artifacts(self, dossier_id: UUID) -> tuple[int, int]:
+        """How many artifacts, and how many documents they are.
+
+        Two numbers because they answer different questions: « 3,003 files
+        uploaded » is storage, « 2,998 documents » is what a person would
+        count, and the gap between them is versions.
+        """
+        rows = (
+            await self.session.execute(
+                select(
+                    func.count(Artifact.id),
+                    func.count(func.distinct(Artifact.lineage_id)),
+                ).where(Artifact.dossier_id == dossier_id, Artifact.deleted_at.is_(None))
+            )
+        ).one()
+        return int(rows[0]), int(rows[1])
 
     async def current_artifacts(self, dossier_id: UUID) -> list[Artifact]:
         """The latest ready version of each lineage — what a check reads."""

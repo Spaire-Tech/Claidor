@@ -39,7 +39,6 @@ import {
   space,
   tabChip,
 } from './design'
-import { current, currentIds } from './lineage'
 import { Applications } from './screens/Applications'
 import { Checks } from './screens/Checks'
 import { Confirm } from './screens/Confirm'
@@ -131,7 +130,7 @@ export function Workspace({ dealId }: { dealId: string }) {
   //: person is on. Upload and re-check both need it and neither can ask
   //: again without racing the list.
   const dealFor = useRef('')
-  const [artifacts, setArtifacts] = useState<Artifact[]>([])
+  const [documents, setDocuments] = useState<Artifact[]>([])
   const [findings, setFindings] = useState<Finding[]>([])
   const [coverage, setCoverage] = useState<Coverage | null>(null)
   const [links, setLinks] = useState<Link[]>([])
@@ -166,7 +165,10 @@ export function Workspace({ dealId }: { dealId: string }) {
       ])
       dealFor.current = id
       setDeal(page.name)
-      setArtifacts(page.artifacts)
+      //: The documents the deal is built on — not the data room, which
+      //: fetches its own pages. Holding every artifact here is what made
+      //: this request 1.07 MB at three thousand files.
+      setDocuments(page.documents)
       setCoverage(page.coverage)
       setFindings(found)
       setLinks(linked)
@@ -186,6 +188,18 @@ export function Workspace({ dealId }: { dealId: string }) {
 
   const go = (next: View) => setView(next)
 
+  //: The data room asks for its own pages. Stable across renders, so the
+  //: screen's effect does not refetch every time something else on the
+  //: workspace changes.
+  const roomPage = useCallback(
+    (options: { q: string; limit: number; offset: number }) =>
+      api.artifacts(dealFor.current, options),
+    [],
+  )
+  //: Bumped when an upload lands — the one thing that changes the room
+  //: from outside it.
+  const [roomVersion, setRoomVersion] = useState(0)
+
   //: The newest upload of each kind. « The model » on a deal with one
   //: model is unambiguous, and on a deal with two the file the person
   //: last put in is the one they mean. Projects will have to let them
@@ -193,8 +207,8 @@ export function Workspace({ dealId }: { dealId: string }) {
   const opened = useMemo(() => {
     const kind = OPENS[view]
     if (!kind) return null
-    return current(artifacts).find((one) => one.kind === kind) ?? null
-  }, [artifacts, view])
+    return documents.find((one) => one.kind === kind) ?? null
+  }, [documents, view])
 
   //: Fetch the open document's detail when the screen asks for it, and
   //: not before. Re-fetched when the artifact changes — a new upload of
@@ -256,14 +270,10 @@ export function Workspace({ dealId }: { dealId: string }) {
   const drifted = new Set(
     findings.filter((one) => one.kind === 'drift').map((one) => one.source.ref),
   )
-  //: Figures on superseded uploads are not published figures. Without this
-  //: the library drew one row per version — the same figure three times,
-  //: at the same value, from the same cell — under a heading that says
-  //: « every published figure ».
-  const inForce = currentIds(artifacts)
-  const rows: Row[] = links
-    .filter((link) => !link.figure || inForce.has(link.figure.artifact_id))
-    .map((link) => ({
+  //: Figures on superseded uploads are not published figures, and the
+  //: server scopes the links to what is in force — it is the only side
+  //: that can, since working that out needs every artifact in the deal.
+  const rows: Row[] = links.map((link) => ({
       id: link.id,
       name: link.cell?.name || link.figure?.label || 'unnamed',
       source: link.cell?.ref ?? '—',
@@ -321,6 +331,7 @@ export function Workspace({ dealId }: { dealId: string }) {
       // A check that cannot run says so on the run itself; the reload
       // below will show it.
     }
+    setRoomVersion((was) => was + 1)
     await load()
   }
 
@@ -422,7 +433,8 @@ export function Workspace({ dealId }: { dealId: string }) {
               </div>
             ) : view === 'files' ? (
               <Files
-                artifacts={artifacts}
+                fetch={roomPage}
+                reloadOn={roomVersion}
                 deal={deal}
                 onOpen={(artifact) => go(SCREEN[artifact.kind])}
                 onUpload={(files) => void upload(files)}
@@ -462,11 +474,7 @@ export function Workspace({ dealId }: { dealId: string }) {
               />
             ) : view === 'confirm' ? (
               <Confirm
-                links={links.filter(
-                  (one) =>
-                    one.state === 'proposed' &&
-                    (!one.figure || inForce.has(one.figure.artifact_id)),
-                )}
+                links={links.filter((one) => one.state === 'proposed')}
                 deal={deal}
                 detail={linkDetail}
                 onSelect={(link) => {

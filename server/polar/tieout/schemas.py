@@ -110,14 +110,43 @@ class CheckRunRead(Schema):
     finished_at: datetime | None
 
 
+class ArtifactPage(Schema):
+    """One page of the data room, and how big the room is.
+
+    `total` rides with the page deliberately. A list that draws a hundred
+    rows and says nothing about the rest reads as « that is all of them »,
+    which is the same lie as hiding a finding.
+    """
+
+    items: list[ArtifactRead]
+    total: int
+    limit: int
+    offset: int
+
+
 class DealPage(Schema):
-    """Everything the deal page needs in one request."""
+    """The deal's spine, in one request.
+
+    **Not the data room.** This used to inline every artifact, which is
+    1.07 MB at three thousand files and grows in a straight line — every
+    screen paying for the one that browses files. The room has its own
+    paged route now; what is here is the handful of documents the deal is
+    *built on*, which is bounded by how many models and decks a deal has
+    rather than by how much material was dropped into it.
+    """
 
     id: UUID
     name: str
     client: str | None
     coverage: Coverage
-    artifacts: list[ArtifactRead]
+    #: The current version of each model, deck and memo — the documents
+    #: every other screen opens. Tens, not thousands.
+    documents: list[ArtifactRead]
+    #: How many artifacts the deal holds altogether, and how many
+    #: documents that is once versions are folded together. The data room's
+    #: own line, without its rows.
+    files: int
+    lineages: int
     findings: FindingCounts
     #: The last tie-out and the last audit, so the screen can say when this
     #: was last true and whether a run failed.
@@ -467,6 +496,7 @@ class ModelGrid(Schema):
 
 
 __all__ = [
+    "ArtifactPage",
     "ArtifactRead",
     "CellRead",
     "ChainInput",
