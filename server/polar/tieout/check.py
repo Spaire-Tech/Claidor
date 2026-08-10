@@ -181,6 +181,17 @@ def tie_out_both(
 
     from_outputs = tie_out_against(figures, published)
     seen = {_where(drift) for drift in from_outputs.drifts}
+    #: Every figure the Outputs pass reconciled, agreeing or drifting,
+    #: keyed on its anchor. Not on `(slide, location, printed)`: a deck can
+    #: print the same figure twice on one slide and `location` is « slide 2
+    #: », so that key merges two figures into one. The anchor is a shape id
+    #: and a character span, and it is the coordinate the panel already
+    #: navigates by.
+    settled = {
+        _anchored(link.figure.anchor, link.figure.printed)
+        for link in from_outputs.agreed
+    }
+    settled |= {_anchored(drift.anchor, drift.printed) for drift in from_outputs.drifts}
     checked = {
         (link.figure.slide, link.figure.location, link.figure.printed)
         for link in from_outputs.agreed
@@ -201,8 +212,25 @@ def tie_out_both(
             if (link.figure.slide, link.figure.location, link.figure.printed)
             not in checked
         ],
-        unlinked=from_workbook.unlinked,
+        #: **Not the workbook pass's list whole.** A figure the Outputs
+        #: pass checked is checked, whatever the workbook pass made of it,
+        #: and returning both put seven Cascade figures in two places at
+        #: once: 94 agreeing + 8 drifting + 33 unlinked against 128
+        #: printed. Every coverage line downstream inherited it, including
+        #: the one the agent reads out loud — « 108 of 135 figures » on a
+        #: deck that prints 128. `service.figure_map` had been working
+        #: around it; the fix belongs here.
+        unlinked=[
+            item
+            for item in from_workbook.unlinked
+            if _anchored(item.figure.anchor, item.figure.printed) not in settled
+        ],
     )
+
+
+def _anchored(anchor: dict[str, Any], printed: str) -> tuple[Any, ...]:
+    """A key that names one figure and no other."""
+    return (tuple(sorted(anchor.items())), printed)
 
 
 def _where(drift: Drift) -> tuple[int, str, str]:

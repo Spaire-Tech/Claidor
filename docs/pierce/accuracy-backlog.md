@@ -69,11 +69,11 @@ decks nobody here made.**
 
 ### Three defects the measurement exposed
 
-**1. `TieOut.unlinked` over-reports.** The merge returns the workbook
-pass's unlinked list whole, so a figure the Outputs pass checked appears
-in both: 94 + 8 + 33 = 135 against 128 figures printed. `service.figure_map`
-already works around it; the check itself still has it, and any denominator
-built on it is wrong.
+**1. ~~`TieOut.unlinked` over-reports.~~** Fixed 10 August. The merge
+returned the workbook pass's unlinked list whole, so a figure the Outputs
+pass had checked appeared in both: 94 + 8 + 33 = 135 against 128 printed.
+`tie_out_both` now drops what the Outputs pass settled, keyed on the
+anchor. 94 + 8 + 26 = 128.
 
 **2. A deck figure's `location` is not a location.** It is « slide 2 » —
 the slide, not the spot — so two figures printing the same text on one

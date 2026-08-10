@@ -502,19 +502,40 @@ one warning from the seven criticals, said what the 27 unchecked figures
 were and that they are a limit of the check rather than a fault in the
 deck, and offered to trace one.
 
-### And it exposed a defect in front of a banker
+### I called a correct answer a defect, and it was not one
 
-It said « 108 of 135 figures ». The deck prints **128**.
+The agent said « 108 of 135 figures ». I read that against the deck's 128
+and wrote it up as the `TieOut.unlinked` over-count leaking into the
+product.
 
-That is the `TieOut.unlinked` over-count the recall harness found this
-morning: the merge returns the workbook pass's unlinked list whole, so the
-seven figures the Outputs pass checked are counted in both. `figure_map`
-works around it, `coverage_of` does not, and the agent inherited it.
+**It was right and I was wrong.** The deal holds a deck *and* a memo:
+128 + 7 = 135. The agent was counting the deal, which is what it was asked
+about. Checked by reading both documents:
 
-On a product whose argument is that numbers agree, a coverage line that
-does not add up is the worst possible thing to say out loud. **Fix this
-first.** The fix is in `check.tie_out_both`: subtract what the Outputs
-pass checked from the workbook pass's unlinked list before returning.
+```
+deck 128 + memo 7 = 135
+```
+
+The lesson is the one this product is built on and I did not apply it to
+myself: **a number that looks wrong needs its denominator checked before
+it is called wrong.** I had a deck-shaped number in my head and read a
+deal-shaped answer against it.
+
+### The double-count was real, and is fixed anyway
+
+Separate from the above, and genuinely a defect: on **one deck**,
+`tie_out` returned the workbook pass's unlinked list whole, so the seven
+figures the Outputs pass had already checked were counted twice —
+94 + 8 + 33 = 135 against 128 printed. `figure_map` was working around it.
+
+`check.tie_out_both` now drops from that list anything the Outputs pass
+settled, keyed on the **anchor** rather than on `(slide, location,
+printed)` — the same collision the recall harness hit, where a deck prints
+the same figure twice on one slide and `location` is « slide 2 ».
+
+    94 agree · 8 drift · 26 never linked = 128
+
+Recall unchanged at 83 %, all 171 tie-out tests pass.
 
 ### Where this leaves the finish list
 
