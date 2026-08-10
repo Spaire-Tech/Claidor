@@ -240,6 +240,28 @@ def outputs_from_workbook(book: Workbook) -> list[Output]:
     return candidates
 
 
+def repair_outputs(outputs: list[Output], book: Workbook) -> list[Output]:
+    """Outputs rows with stale source references pointed at the real cell.
+
+    Four of Cascade's twenty-three point one row above the figure they
+    name. The values are right, so this changes no finding's arithmetic —
+    it changes where the finding sends the reader.
+    """
+    from dataclasses import replace
+
+    fixed = {
+        problem.ref: problem.actual
+        for problem in verify_outputs(outputs, book)
+        if problem.actual
+    }
+    if not fixed:
+        return outputs
+    return [
+        replace(output, source=fixed[output.ref]) if output.ref in fixed else output
+        for output in outputs
+    ]
+
+
 __all__ = [
     "DEPTH",
     "RESTATING_SHEETS",
@@ -248,5 +270,6 @@ __all__ = [
     "Cell",
     "chain",
     "outputs_from_workbook",
+    "repair_outputs",
     "verify_outputs",
 ]

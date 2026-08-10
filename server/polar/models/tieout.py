@@ -26,6 +26,14 @@ reference never caught up. So a link records the *name* it was confirmed
 against and re-finds the cell in each new version. An address is a
 location, not an identity.
 
+**Enum columns round-trip as enums.** They are declared with
+``StrEnumType`` rather than a bare ``String``, so a value read back from
+the database is the enum member and not a look-alike string. Without it
+``artifact.status is ArtifactStatus.ready`` is quietly ``False`` on every
+row loaded from Postgres while ``==`` still works — which is exactly the
+kind of defect that passes every test written against freshly constructed
+objects and fails the first time anything is re-read.
+
 **Cells and figures are retained; the files are not.** The security
 posture the product commits to is « keep the chain, drop the documents »,
 and that has to be true in the schema rather than in a policy page. What
@@ -55,6 +63,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
 from polar.kit.db.models import RecordModel
+from polar.kit.extensions.sqlalchemy import StrEnumType
 
 if TYPE_CHECKING:
     from polar.models import Dossier, File, User
@@ -109,7 +118,9 @@ class Artifact(RecordModel):
     def file(cls) -> Mapped["File | None"]:
         return relationship("File", lazy="raise")
 
-    kind: Mapped[ArtifactKind] = mapped_column(String(16), nullable=False, index=True)
+    kind: Mapped[ArtifactKind] = mapped_column(
+        StrEnumType(ArtifactKind, length=16), nullable=False, index=True
+    )
     filename: Mapped[str] = mapped_column(String(512), nullable=False)
 
     #: Which upload of this document. Versions share a `lineage_id`; the
@@ -118,7 +129,10 @@ class Artifact(RecordModel):
     lineage_id: Mapped[UUID] = mapped_column(Uuid, nullable=False, index=True)
 
     status: Mapped[ArtifactStatus] = mapped_column(
-        String(16), nullable=False, default=ArtifactStatus.uploading, index=True
+        StrEnumType(ArtifactStatus, length=16),
+        nullable=False,
+        default=ArtifactStatus.uploading,
+        index=True,
     )
     #: What went wrong, in words a person can act on: « this .xls is
     #: password protected », « this workbook has no calculated values —
@@ -128,6 +142,20 @@ class Artifact(RecordModel):
     #: Figures, cells, formulas, sheets, slides. Shown on the deal page
     #: without touching the rows.
     counts: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+
+    #: The figures a model *publishes* — its Outputs tab, if it has one —
+    #: with each stale source reference already repaired against the
+    #: workbook. Kept here rather than rebuilt from cells because the tab's
+    #: own columns are text and only numeric cells are stored.
+    #:
+    #: Two passes reconcile a deck, and neither subsumes the other: the
+    #: published pass reaches figures the workbook has no cell for, such
+    #: as a CAGR computed on the tab itself, and the workbook pass reaches
+    #: everything the tab never published. Dropping this one costs seven
+    #: reconciled figures on the Cascade deck and the revenue CAGR drift.
+    outputs: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
 
     uploaded_by_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="restrict"), nullable=False
@@ -294,7 +322,10 @@ class FigureLink(RecordModel):
     )
 
     state: Mapped[LinkState] = mapped_column(
-        String(16), nullable=False, default=LinkState.proposed, index=True
+        StrEnumType(LinkState, length=16),
+        nullable=False,
+        default=LinkState.proposed,
+        index=True,
     )
     #: How well the label accounted for the cell's name, 0–1. A drift on a
     #: 0.56 link reads differently from one on a 1.00 link.
@@ -354,9 +385,14 @@ class CheckRun(RecordModel):
     dossier_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("dossiers.id", ondelete="cascade"), nullable=False, index=True
     )
-    kind: Mapped[CheckKind] = mapped_column(String(16), nullable=False)
+    kind: Mapped[CheckKind] = mapped_column(
+        StrEnumType(CheckKind, length=16), nullable=False
+    )
     status: Mapped[CheckStatus] = mapped_column(
-        String(16), nullable=False, default=CheckStatus.queued, index=True
+        StrEnumType(CheckStatus, length=16),
+        nullable=False,
+        default=CheckStatus.queued,
+        index=True,
     )
 
     #: The artifacts this run read, by id. A tie-out reads two; an audit
@@ -433,10 +469,17 @@ class Finding(RecordModel):
         Uuid, ForeignKey("tieout_artifacts.id", ondelete="cascade"), nullable=True
     )
 
-    kind: Mapped[FindingKind] = mapped_column(String(16), nullable=False, index=True)
-    severity: Mapped[FindingSeverity] = mapped_column(String(8), nullable=False)
+    kind: Mapped[FindingKind] = mapped_column(
+        StrEnumType(FindingKind, length=16), nullable=False, index=True
+    )
+    severity: Mapped[FindingSeverity] = mapped_column(
+        StrEnumType(FindingSeverity, length=8), nullable=False
+    )
     state: Mapped[FindingState] = mapped_column(
-        String(16), nullable=False, default=FindingState.open, index=True
+        StrEnumType(FindingState, length=16),
+        nullable=False,
+        default=FindingState.open,
+        index=True,
     )
 
     #: What survives a re-run: the same defect in the same place keeps its
