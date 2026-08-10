@@ -91,11 +91,11 @@ than polish, and both were left out rather than faked:
   Assembling one here out of whatever numbers happen to be on it would be
   a drawing of a slide that does not exist. Doing it properly is a
   converter, an image in S3 and a job — and then the figures overlay it.
-- **Number formats.** A model cell holds `0.1222587719`; the workbook says
-  it is meant to read `12.2%`. `number_format` is right there in the file
-  and is not read at ingest, so the grid trims to four decimals and keeps
-  the exact value on the element's title. That is the least dishonest
-  thing available and it is not good enough.
+- ~~**Number formats.**~~ Done, 10 August. `number_format` is read at
+  ingest and rendered by `numbers.py`; the grid shows `12.2%` and
+  `($115.9)` where the model does, with the exact value on the title. A
+  subset of Excel's format language, and everything outside it falls back
+  to the plain number rather than guessing.
 
 ### 5 · The Office panel, in the design  ✓ *(10 August)*
 

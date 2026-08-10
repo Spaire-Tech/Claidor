@@ -388,3 +388,74 @@ unformatted files across the vendored app and packages. One
 `prettier --write` fixes it and I have not run it: this is a hard fork of
 Polar, and a 330-file reformat makes every future comparison against
 upstream harder to read. Written down rather than quietly done.
+
+---
+
+## 10 August — two debts paid
+
+Both were written down in this file as « not good enough » and left. This
+is them.
+
+### Number formats
+
+The Sheets grid showed `0.1222587719` where the workbook shows `12.2%`. On
+a product whose whole argument is that a printed figure is a claim at the
+precision it was printed to, a screen showing a precision nobody chose and
+no document carries is the product contradicting itself on its own page.
+
+Excel stores a format code on every cell and it was being thrown away.
+`workbook.py` reads it, `tieout_cells` keeps it, `numbers.py` renders
+through it, and `GridCell` carries `display` beside the exact `value`.
+
+**A subset, deliberately.** Excel's format language has conditions,
+colours, four sections and locale codes. What is implemented is the shape
+every financial model actually writes — prefix, thousands, decimals,
+suffix, negative convention — and everything else returns `null` and the
+screen falls back to the plain number. « Refuses to guess » is half the
+test file: dates, `@`, `General`, a code with no numeric core. A wrong
+number would be worse than an unformatted one.
+
+| | before | after |
+|---|---|---|
+| Revenue | 182.4 | **$182.4** |
+| Revenue % growth | 0.1222587719 | **12.2%** |
+| Cost of goods sold | -115.9 | **($115.9)** |
+
+**A defect the re-seed exposed.** The sheet tabs came back in a different
+order on the second load. I was taking the workbook's tab order from the
+order the *database* happened to return cells in, which it never promised.
+It is a fact about the workbook that nothing recorded, so ingest records
+it now.
+
+### The deal page stops carrying the data room
+
+`GET /deals/{id}` inlined every artifact: **1.07 MB and 1.03 s at three
+thousand files**, growing linearly, with every screen paying for the one
+that browses files.
+
+| | |
+|---|---|
+| `GET /deals/{id}` | 1.07 MB → **2,389 bytes**, 1.03 s → **0.076 s** |
+| `GET /deals/{id}/artifacts` | new; 100 rows, 35.7 KB, `total` included |
+
+The deal page is the deal's *spine* now — the current model, deck and
+memo, bounded by how many a deal has rather than by what was dropped into
+it — plus counts.
+
+**Versions fold on the server.** They used to fold in the browser, which
+worked only because the browser had all of them. A client that pages *and*
+folds draws a short page whenever a document has several versions and
+cannot say how many documents there really are. One window function.
+
+**Links scope themselves to what is in force**, which is why the client
+needed every artifact in the first place: working out what is superseded
+needs all of them, and handing a screen three thousand rows so it can
+filter a hundred is the payload problem restated. `?superseded=true` for a
+caller that wants the history.
+
+**Verified through the interface at 3,003 files.** « showing 100 of 3,003
+— show more » → 200; a search for « document 0042 » finding one row; and
+**three** requests for the whole session rather than one per keystroke.
+The heading says « 3,003 files » or « 12 matching » — never « 12 files »
+under a search box, which reads as a fact about the deal rather than the
+query.
