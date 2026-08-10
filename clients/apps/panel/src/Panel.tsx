@@ -28,8 +28,8 @@
 
 import { useEffect, useState } from 'react'
 
-import { TieOutApi } from './api'
 import type { DealListItem, Finding } from './api'
+import { TieOutApi } from './api'
 import { current } from './auth'
 import { API_BASE, SIGN_IN_URL } from './config'
 import { colour, size, space, surface } from './design'
@@ -54,7 +54,8 @@ const WINDOW = 25
 /** The design's three severities, from the server's two. As on the deal page. */
 function severityOf(finding: Finding): { label: string; ink: string } {
   if (finding.one_tick) return { label: 'rounding', ink: colour.note }
-  if (finding.severity === 'smell') return { label: 'warning', ink: colour.warning }
+  if (finding.severity === 'smell')
+    return { label: 'warning', ink: colour.warning }
   return { label: 'critical', ink: colour.critical }
 }
 
@@ -105,8 +106,8 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
         <Heading title="Pierce" line="Reconciliation, where the document is." />
         {panel.error && <Quiet tone="critical">{panel.error}</Quiet>}
         <Quiet>
-          Sign in once. This add-in then remembers which deal each file
-          belongs to, inside the file itself.
+          Sign in once. This add-in then remembers which deal each file belongs
+          to, inside the file itself.
         </Quiet>
         <div style={{ padding: `0 ${space.gutter}px` }}>
           <Text onClick={() => void panel.signIn()}>Sign in</Text>
@@ -167,7 +168,9 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
     <Shell>
       <Heading
         title={panel.identity?.dossier_name ?? 'This deal'}
-        line={panel.identity?.artifact?.filename ?? panel.document?.filename ?? ''}
+        line={
+          panel.identity?.artifact?.filename ?? panel.document?.filename ?? ''
+        }
         action={
           panel.identity?.matched_by === 'filename' ? (
             // It matched on the name, which is a guess, so it offers to be
@@ -208,7 +211,10 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               title={
                 <>
                   {finding.printed}
-                  <span style={{ color: colour.fainter }}> where the model says </span>
+                  <span style={{ color: colour.fainter }}>
+                    {' '}
+                    where the model says{' '}
+                  </span>
                   {finding.expected}
                 </>
               }
@@ -224,19 +230,29 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                 setProblem(null)
                 setOpen(finding.id)
                 void panel.goTo(finding).then((result) => {
-                  setProblem(result.moved ? null : (result.reason ?? 'could not go there'))
+                  setProblem(
+                    result.moved
+                      ? null
+                      : (result.reason ?? 'could not go there'),
+                  )
                 })
               }}
             >
               {open === finding.id && (
                 <>
-                  <Text tone="quiet" onClick={() => settle(finding, 'dismissed')}>
+                  <Text
+                    tone="quiet"
+                    onClick={() => settle(finding, 'dismissed')}
+                  >
                     Dismiss
                   </Text>
                   {/* Recorded against the finding, not written into the
                       file. Nothing in this product edits a document yet,
                       and the word has to carry that. */}
-                  <Text tone="quiet" onClick={() => settle(finding, 'accepted')}>
+                  <Text
+                    tone="quiet"
+                    onClick={() => settle(finding, 'accepted')}
+                  >
                     Record {finding.expected}
                   </Text>
                 </>

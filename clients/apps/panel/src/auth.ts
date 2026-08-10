@@ -68,40 +68,53 @@ export function signIn(dialogUrl: string): Promise<Session> {
       { height: 60, width: 40, promptBeforeOpen: false },
       (result) => {
         if (result.status !== Office.AsyncResultStatus.Succeeded) {
-          return reject(new Error(result.error?.message ?? 'could not open sign-in'))
+          return reject(
+            new Error(result.error?.message ?? 'could not open sign-in'),
+          )
         }
         const dialog = result.value
 
-        dialog.addEventHandler(Office.EventType.DialogMessageReceived, (event) => {
-          const message = (event as { message?: string }).message
-          dialog.close()
-          try {
-            const payload = JSON.parse(message ?? '{}') as {
-              token?: string
-              expires_in?: number
-              error?: string
+        dialog.addEventHandler(
+          Office.EventType.DialogMessageReceived,
+          (event) => {
+            const message = (event as { message?: string }).message
+            dialog.close()
+            try {
+              const payload = JSON.parse(message ?? '{}') as {
+                token?: string
+                expires_in?: number
+                error?: string
+              }
+              if (payload.error) return reject(new Error(payload.error))
+              if (!payload.token)
+                return reject(new Error('sign-in returned no token'))
+              const session: Session = {
+                token: payload.token,
+                expiresAt: payload.expires_in
+                  ? Date.now() + payload.expires_in * 1000
+                  : null,
+              }
+              keep(session)
+              resolve(session)
+            } catch {
+              reject(new Error('sign-in returned something unreadable'))
             }
-            if (payload.error) return reject(new Error(payload.error))
-            if (!payload.token) return reject(new Error('sign-in returned no token'))
-            const session: Session = {
-              token: payload.token,
-              expiresAt: payload.expires_in
-                ? Date.now() + payload.expires_in * 1000
-                : null,
-            }
-            keep(session)
-            resolve(session)
-          } catch {
-            reject(new Error('sign-in returned something unreadable'))
-          }
-        })
+          },
+        )
 
-        dialog.addEventHandler(Office.EventType.DialogEventReceived, (event) => {
-          // 12006 is « the user closed the dialog ». Everything else is a
-          // failure worth naming.
-          const code = (event as { error?: number }).error
-          reject(new Error(code === 12006 ? 'sign-in was cancelled' : 'sign-in failed'))
-        })
+        dialog.addEventHandler(
+          Office.EventType.DialogEventReceived,
+          (event) => {
+            // 12006 is « the user closed the dialog ». Everything else is a
+            // failure worth naming.
+            const code = (event as { error?: number }).error
+            reject(
+              new Error(
+                code === 12006 ? 'sign-in was cancelled' : 'sign-in failed',
+              ),
+            )
+          },
+        )
       },
     )
   })

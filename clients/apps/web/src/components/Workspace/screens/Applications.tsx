@@ -32,7 +32,9 @@ export function Applications({ onGo }: { onGo: (view: View) => void }) {
               boxShadow: '0 2px 10px rgba(18,24,40,.06)',
             }}
           >
-            <span style={{ display: 'block', fontWeight: 500 }}>{app.name}</span>
+            <span style={{ display: 'block', fontWeight: 500 }}>
+              {app.name}
+            </span>
             <span
               style={{
                 display: 'block',
@@ -47,7 +49,9 @@ export function Applications({ onGo }: { onGo: (view: View) => void }) {
           </button>
         ))}
       </div>
-      <div style={{ fontSize: size.small, color: colour.fainter, marginTop: 26 }} />
+      <div
+        style={{ fontSize: size.small, color: colour.fainter, marginTop: 26 }}
+      />
     </div>
   )
 }

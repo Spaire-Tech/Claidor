@@ -168,7 +168,10 @@ export class TieOutApi {
     filename?: string | null
     dossier_id?: string | null
   }): Promise<Identified> {
-    return this.call('/identify', { method: 'POST', body: JSON.stringify(body) })
+    return this.call('/identify', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
   }
 
   /** The deals this person is on — for « which deal is this document ». */

@@ -11,8 +11,8 @@
  * a jump to the wrong number rather than no jump at all.
  */
 
-import type { Anchor, GoToResult, HostBridge, OpenDocument } from './types'
 import { filenameFromUrl, readStamp, writeStamp } from './settings'
+import type { Anchor, GoToResult, HostBridge, OpenDocument } from './types'
 
 /**
  * `DCF!D42` → sheet and address; a bare `D42` → address only.
@@ -20,7 +20,10 @@ import { filenameFromUrl, readStamp, writeStamp } from './settings'
  * Exported for its own test: getting this wrong sends the reader to the
  * right address on the wrong tab, which looks like a working jump.
  */
-export function splitRef(ref: string): { sheet: string | null; address: string } {
+export function splitRef(ref: string): {
+  sheet: string | null
+  address: string
+} {
   const at = ref.lastIndexOf('!')
   if (at < 0) return { sheet: null, address: ref }
   // Excel quotes sheet names containing spaces — 'Free Cash Flow'!D42 —
@@ -91,7 +94,9 @@ export const excel: HostBridge = {
       moved: false,
       by: 'none',
       reason:
-        error instanceof Error ? error.message : 'Excel refused to go to that cell',
+        error instanceof Error
+          ? error.message
+          : 'Excel refused to go to that cell',
     }))
   },
 }

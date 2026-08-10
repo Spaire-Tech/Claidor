@@ -37,7 +37,14 @@ export function Trace({
   const steps = chain?.steps ?? []
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <div style={{ flex: '0 0 auto', padding: '24px 26px 18px' }}>
         <div
           style={{
@@ -50,12 +57,20 @@ export function Trace({
           {title}
         </div>
         <div style={{ fontSize: 13, color: colour.faint, marginTop: 6 }}>
-          The deliverable shows <span style={{ color: colour.critical }}>{printed}</span>.
-          The model returns <span style={{ color: colour.ink }}>{expected}</span>.
+          The deliverable shows{' '}
+          <span style={{ color: colour.critical }}>{printed}</span>. The model
+          returns <span style={{ color: colour.ink }}>{expected}</span>.
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 26px 26px' }}>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          padding: '0 26px 26px',
+        }}
+      >
         {steps.map((step, index) => (
           <div key={index}>
             <div
@@ -70,7 +85,13 @@ export function Trace({
               }}
             >
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: size.body, color: colour.ink }}>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: size.body,
+                    color: colour.ink,
+                  }}
+                >
                   {step.name || step.label || step.ref}
                 </span>
                 <span
@@ -99,7 +120,13 @@ export function Trace({
               </span>
             </div>
             {step.note && (
-              <div style={{ fontSize: size.small, color: colour.fainter, padding: '0 0 4px' }}>
+              <div
+                style={{
+                  fontSize: size.small,
+                  color: colour.fainter,
+                  padding: '0 0 4px',
+                }}
+              >
                 {step.note}
               </div>
             )}
@@ -120,7 +147,13 @@ export function Trace({
                 borderTop: `1px solid ${colour.bandWarm}`,
               }}
             >
-              <span style={{ flex: '0 0 82px', fontSize: size.small, color: colour.fainter }}>
+              <span
+                style={{
+                  flex: '0 0 82px',
+                  fontSize: size.small,
+                  color: colour.fainter,
+                }}
+              >
                 {row.k}
               </span>
               <span

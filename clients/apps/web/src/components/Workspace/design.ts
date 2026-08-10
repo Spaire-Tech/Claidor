@@ -180,7 +180,12 @@ export const dock = {
   /** The live button carries a fill, not a colour. */
   live: 'rgba(16,20,28,.08)',
   /** The divider before the last two. */
-  divider: { width: 1, height: 24, background: 'rgba(21,23,27,.14)', margin: '0 7px' },
+  divider: {
+    width: 1,
+    height: 24,
+    background: 'rgba(21,23,27,.14)',
+    margin: '0 7px',
+  },
 } as const
 
 /** The composer, in the chat and nowhere else. */

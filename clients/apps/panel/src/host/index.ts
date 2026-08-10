@@ -18,9 +18,9 @@ import { powerpoint } from './powerpoint'
 import type { HostBridge, HostKind } from './types'
 import { word } from './word'
 
-export * from './types'
 export { attachments, firstReadable, pickReadable } from './outlook'
 export { clearStamp, readStamp, writeStamp } from './settings'
+export * from './types'
 
 /**
  * Which document a detached panel should pretend to be looking at.

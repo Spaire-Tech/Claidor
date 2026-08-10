@@ -19,8 +19,8 @@
  * let the reader step on.
  */
 
-import type { Anchor, GoToResult, HostBridge, OpenDocument } from './types'
 import { filenameFromUrl, readStamp, writeStamp } from './settings'
+import type { Anchor, GoToResult, HostBridge, OpenDocument } from './types'
 
 export interface WordAnchor extends Anchor {
   /** The text to find — the figure as printed. */
@@ -70,7 +70,8 @@ export const word: HostBridge = {
     }).catch((error: unknown) => ({
       moved: false,
       by: 'none',
-      reason: error instanceof Error ? error.message : 'Word refused the request',
+      reason:
+        error instanceof Error ? error.message : 'Word refused the request',
     }))
   },
 }

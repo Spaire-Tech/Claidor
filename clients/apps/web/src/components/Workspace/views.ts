@@ -42,17 +42,45 @@ export interface ViewMeta {
  * list them here.
  */
 export const APPLICATIONS: { view: View; name: string; desc: string }[] = [
-  { view: 'checks', name: 'Checks', desc: 'Run and review consistency checks across a deal.' },
-  { view: 'trace', name: 'Chain', desc: 'Trace a figure from deliverable to source.' },
+  {
+    view: 'checks',
+    name: 'Checks',
+    desc: 'Run and review consistency checks across a deal.',
+  },
+  {
+    view: 'trace',
+    name: 'Chain',
+    desc: 'Trace a figure from deliverable to source.',
+  },
   {
     view: 'confirm',
     name: 'Confirm',
     desc: 'Settle what each figure refers to, once.',
   },
-  { view: 'deck', name: 'Pitchbook', desc: 'Reconcile a deck against the model.' },
+  {
+    view: 'deck',
+    name: 'Pitchbook',
+    desc: 'Reconcile a deck against the model.',
+  },
   { view: 'docs', name: 'Docs', desc: 'Drafting and tracked changes in Word.' },
-  { view: 'sheets', name: 'Sheets', desc: 'Model audit and cell-level reconciliation.' },
-  { view: 'mail', name: 'Mail', desc: 'House-style drafting, checked before sending.' },
-  { view: 'sharepoint', name: 'SharePoint', desc: 'Connected sources and sync status.' },
-  { view: 'library', name: 'Library', desc: 'Every published figure and its source.' },
+  {
+    view: 'sheets',
+    name: 'Sheets',
+    desc: 'Model audit and cell-level reconciliation.',
+  },
+  {
+    view: 'mail',
+    name: 'Mail',
+    desc: 'House-style drafting, checked before sending.',
+  },
+  {
+    view: 'sharepoint',
+    name: 'SharePoint',
+    desc: 'Connected sources and sync status.',
+  },
+  {
+    view: 'library',
+    name: 'Library',
+    desc: 'Every published figure and its source.',
+  },
 ]

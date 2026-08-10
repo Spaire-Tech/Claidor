@@ -71,7 +71,6 @@ export const colour = {
   composerRule: '#d7d7d3',
 }
 
-
 // --- end shared ----------------------------------------------------------
 
 /**

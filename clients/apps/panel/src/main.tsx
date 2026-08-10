@@ -15,7 +15,8 @@ import { Panel } from './Panel'
 import { ready } from './host'
 
 const container = document.getElementById('root')
-if (!container) throw new Error('no #root — index.html was not the page that loaded')
+if (!container)
+  throw new Error('no #root — index.html was not the page that loaded')
 
 // `ready()` resolves outside Office too, with a bridge that answers « not
 // in Office » to everything. The panel is a web page and most of it gets

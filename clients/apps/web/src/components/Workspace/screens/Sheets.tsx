@@ -88,8 +88,8 @@ export function Sheets({
     return (
       <div style={{ padding: 26 }}>
         <Nothing>
-          Open a model from the data room to audit it here, or drop one on
-          the data room to add it.
+          Open a model from the data room to audit it here, or drop one on the
+          data room to add it.
         </Nothing>
       </div>
     )
@@ -103,7 +103,14 @@ export function Sheets({
     : 0
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <div style={{ flex: '0 0 auto', padding: '24px 26px 18px' }}>
         <div
           style={{
@@ -152,7 +159,14 @@ export function Sheets({
         </div>
       )}
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 26px 26px' }}>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          padding: '0 26px 26px',
+        }}
+      >
         {here && (
           <div style={{ overflowX: 'auto' }}>
             <div style={{ minWidth: LABEL + here.columns.length * VALUE }}>
@@ -212,7 +226,9 @@ export function Sheets({
                   {row.cells.map((cell, column) => (
                     <span
                       key={column}
-                      title={cell ? `${cell.ref} = ${cell.value ?? '—'}` : undefined}
+                      title={
+                        cell ? `${cell.ref} = ${cell.value ?? '—'}` : undefined
+                      }
                       style={{
                         flex: `0 0 ${VALUE}px`,
                         textAlign: 'right',
@@ -232,7 +248,11 @@ export function Sheets({
               ))}
 
               {more && (
-                <Truncation shown={shown.length} total={rows.length} sentinel={sentinel} />
+                <Truncation
+                  shown={shown.length}
+                  total={rows.length}
+                  sentinel={sentinel}
+                />
               )}
 
               {/* The endpoint caps what it sends, and the sheet says so. */}
@@ -295,7 +315,9 @@ export function Sheets({
                   marginTop: 3,
                 }}
               >
-                {[finding.source.ref, finding.standard].filter(Boolean).join(' · ')}
+                {[finding.source.ref, finding.standard]
+                  .filter(Boolean)
+                  .join(' · ')}
               </span>
             </button>
           ))}

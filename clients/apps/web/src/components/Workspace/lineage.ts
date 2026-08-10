@@ -18,7 +18,8 @@ export function current(artifacts: Artifact[]): Artifact[] {
   const newest = new Map<string, Artifact>()
   for (const artifact of artifacts) {
     const seen = newest.get(artifact.lineage_id)
-    if (!seen || artifact.version > seen.version) newest.set(artifact.lineage_id, artifact)
+    if (!seen || artifact.version > seen.version)
+      newest.set(artifact.lineage_id, artifact)
   }
   return [...newest.values()].sort(
     (a, b) => Date.parse(b.uploaded_at) - Date.parse(a.uploaded_at),

@@ -34,7 +34,7 @@ import {
   SheetsIcon,
   TerminalIcon,
 } from './Icons'
-import { colour, dock as token, size } from './design'
+import { colour, size, dock as token } from './design'
 import type { View } from './views'
 
 type Item = { view: View; title: string; icon: typeof ChatIcon }
@@ -120,18 +120,30 @@ export function Dock({
         }}
       >
         <PanelIcon />
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{deal}</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {deal}
+        </span>
       </div>
 
       <div style={token.bar}>
         {ITEMS.map(({ view: v, title, icon: Icon }) => (
-          <Button key={v} active={view === v} title={title} onClick={() => onGo(v)}>
+          <Button
+            key={v}
+            active={view === v}
+            title={title}
+            onClick={() => onGo(v)}
+          >
             <Icon />
           </Button>
         ))}
         <span style={token.divider} />
         {TRAILING.map(({ view: v, title, icon: Icon }) => (
-          <Button key={v} active={view === v} title={title} onClick={() => onGo(v)}>
+          <Button
+            key={v}
+            active={view === v}
+            title={title}
+            onClick={() => onGo(v)}
+          >
             <Icon />
           </Button>
         ))}

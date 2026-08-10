@@ -110,7 +110,11 @@ export function Text({
         padding: 0,
         font: 'inherit',
         fontSize: size.small,
-        color: disabled ? colour.fainter : tone === 'blue' ? colour.blue : colour.faint,
+        color: disabled
+          ? colour.fainter
+          : tone === 'blue'
+            ? colour.blue
+            : colour.faint,
         cursor: disabled ? 'default' : 'pointer',
       }}
     >

@@ -143,7 +143,13 @@ export const SendIcon = ({ size = 16, stroke = 2 }: Props) => (
 
 /** The mark. Nine cells, three of them full circles. 44px in the design. */
 export const Mark = ({ size = 44 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill="#0b62c4" aria-label="Pierce">
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 100 100"
+    fill="#0b62c4"
+    aria-label="Pierce"
+  >
     <circle cx="26" cy="26" r="13" />
     <ellipse cx="50" cy="26" rx="13" ry="8" transform="rotate(-45 50 26)" />
     <ellipse cx="74" cy="26" rx="13" ry="4" transform="rotate(-45 74 26)" />

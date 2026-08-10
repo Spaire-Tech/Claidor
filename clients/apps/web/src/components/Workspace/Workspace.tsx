@@ -20,7 +20,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Chat, type Message } from './Chat'
 import { Dock } from './Dock'
-import { ApiError, TieOutApi } from './api'
 import type {
   Artifact,
   Chain,
@@ -30,10 +29,17 @@ import type {
   Link,
   ModelGrid,
 } from './api'
-import { colour, font, pageBackground, panel, size, space, tabChip } from './design'
+import { ApiError, TieOutApi } from './api'
+import {
+  colour,
+  font,
+  pageBackground,
+  panel,
+  size,
+  space,
+  tabChip,
+} from './design'
 import { current, currentIds } from './lineage'
-import { useNarrow } from './useNarrow'
-import './workspace.css'
 import { Applications } from './screens/Applications'
 import { Checks } from './screens/Checks'
 import { Confirm } from './screens/Confirm'
@@ -42,7 +48,9 @@ import { Files } from './screens/Files'
 import { Library, type Row } from './screens/Library'
 import { Sheets } from './screens/Sheets'
 import { Trace } from './screens/Trace'
+import { useNarrow } from './useNarrow'
 import type { View } from './views'
+import './workspace.css'
 
 /**
  * Where the server is.
@@ -81,7 +89,8 @@ const NOT_CONNECTED: Partial<Record<View, string>> = {
   calendar: 'Calendar is not connected yet.',
   sharepoint:
     'SharePoint is not connected yet. Connected, it keeps the deal in step with the files as they change.',
-  projects: 'One deal is open. Projects lists them all once there is more than one.',
+  projects:
+    'One deal is open. Projects lists them all once there is more than one.',
   terminal: 'Not connected.',
 }
 
@@ -297,7 +306,9 @@ export function Workspace({ dealId }: { dealId: string }) {
         // other failure is a state of the deal and comes back on the
         // artifact itself, with a sentence, and shows in the list.
         setRejected(
-          problem instanceof ApiError ? problem.message : 'that file could not be read',
+          problem instanceof ApiError
+            ? problem.message
+            : 'that file could not be read',
         )
       } finally {
         setUploading((was) => was.filter((one) => one !== file.name))
@@ -324,7 +335,9 @@ export function Workspace({ dealId }: { dealId: string }) {
    */
   const settle = async (finding: Finding, state: 'accepted' | 'dismissed') => {
     const updated = await api.dismiss(finding.id, state)
-    setFindings((was) => was.map((one) => (one.id === finding.id ? updated : one)))
+    setFindings((was) =>
+      was.map((one) => (one.id === finding.id ? updated : one)),
+    )
   }
 
   /** Confirm, reject, or re-point — then reload, since coverage moved. */
@@ -387,14 +400,24 @@ export function Workspace({ dealId }: { dealId: string }) {
               </div>
               <div style={{ flex: 1 }} />
               <span
-                style={{ color: colour.muted, fontSize: size.meta, paddingRight: 6 }}
+                style={{
+                  color: colour.muted,
+                  fontSize: size.meta,
+                  paddingRight: 6,
+                }}
               >
                 {deal}
               </span>
             </div>
 
             {error ? (
-              <div style={{ padding: 26, color: colour.critical, fontSize: size.meta }}>
+              <div
+                style={{
+                  padding: 26,
+                  color: colour.critical,
+                  fontSize: size.meta,
+                }}
+              >
                 {error}
               </div>
             ) : view === 'files' ? (
@@ -428,7 +451,10 @@ export function Workspace({ dealId }: { dealId: string }) {
                   { k: 'Where', v: traced?.where.detail ?? '—' },
                   {
                     k: 'Status',
-                    v: traced?.kind === 'drift' ? 'Drifted from the model' : 'Checked',
+                    v:
+                      traced?.kind === 'drift'
+                        ? 'Drifted from the model'
+                        : 'Checked',
                   },
                 ]}
                 onSlide={() => go('deck')}
@@ -444,9 +470,14 @@ export function Workspace({ dealId }: { dealId: string }) {
                 deal={deal}
                 detail={linkDetail}
                 onSelect={(link) => {
-                  void api.link(link.id).then(setLinkDetail).catch(() => {})
+                  void api
+                    .link(link.id)
+                    .then(setLinkDetail)
+                    .catch(() => {})
                 }}
-                onDecide={(link, state, cellId) => void decide(link, state, cellId)}
+                onDecide={(link, state, cellId) =>
+                  void decide(link, state, cellId)
+                }
                 onSearch={(artifactId, query) => api.cells(artifactId, query)}
               />
             ) : view === 'library' ? (
@@ -468,7 +499,13 @@ export function Workspace({ dealId }: { dealId: string }) {
             ) : view === 'applications' ? (
               <Applications onGo={go} />
             ) : (
-              <div style={{ padding: 26, color: colour.muted, fontSize: size.meta }}>
+              <div
+                style={{
+                  padding: 26,
+                  color: colour.muted,
+                  fontSize: size.meta,
+                }}
+              >
                 {NOT_CONNECTED[view] ?? 'Not connected yet.'}
               </div>
             )}

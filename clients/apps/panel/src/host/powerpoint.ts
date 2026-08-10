@@ -19,12 +19,14 @@
  * outcome comes back saying how it got there.
  */
 
-import type { Anchor, GoToResult, HostBridge, OpenDocument } from './types'
 import { filenameFromUrl, readStamp, writeStamp } from './settings'
+import type { Anchor, GoToResult, HostBridge, OpenDocument } from './types'
 
 /** Not every desktop build has the newer selection APIs. */
 function supports(set: string): boolean {
-  return Boolean(Office.context?.requirements?.isSetSupported('PowerPointApi', set))
+  return Boolean(
+    Office.context?.requirements?.isSetSupported('PowerPointApi', set),
+  )
 }
 
 async function currentSlide(): Promise<number | null> {
@@ -33,8 +35,10 @@ async function currentSlide(): Promise<number | null> {
       Office.context.document.getSelectedDataAsync(
         Office.CoercionType.SlideRange,
         (result) => {
-          if (result.status !== Office.AsyncResultStatus.Succeeded) return resolve(null)
-          const slides = (result.value as { slides?: { index?: number }[] })?.slides
+          if (result.status !== Office.AsyncResultStatus.Succeeded)
+            return resolve(null)
+          const slides = (result.value as { slides?: { index?: number }[] })
+            ?.slides
           resolve(slides?.[0]?.index ?? null)
         },
       )
@@ -63,7 +67,11 @@ async function select(page: number, anchor: Anchor): Promise<GoToResult> {
 
     const slide = slides.items[page - 1]
     if (!slide) {
-      return { moved: false, by: 'none', reason: `this deck has no slide ${page}` }
+      return {
+        moved: false,
+        by: 'none',
+        reason: `this deck has no slide ${page}`,
+      }
     }
 
     if (supports('1.5')) {
@@ -72,7 +80,8 @@ async function select(page: number, anchor: Anchor): Promise<GoToResult> {
     }
 
     const wanted = anchor.shape_name
-    const fallbackId = anchor.shape_id === undefined ? null : String(anchor.shape_id)
+    const fallbackId =
+      anchor.shape_id === undefined ? null : String(anchor.shape_id)
     if (!wanted && !fallbackId) {
       await context.sync()
       return { moved: true, by: 'slide' }
@@ -104,8 +113,17 @@ async function select(page: number, anchor: Anchor): Promise<GoToResult> {
     // selection can be the number rather than the paragraph around it.
     // « $48.9mm » highlighted is an answer; a whole text box highlighted
     // is a place to start looking.
-    if (anchor.kind === 'text' && anchor.start !== undefined && anchor.end !== undefined) {
-      const exact = await selectSubstring(context, found, anchor.start, anchor.end)
+    if (
+      anchor.kind === 'text' &&
+      anchor.start !== undefined &&
+      anchor.end !== undefined
+    ) {
+      const exact = await selectSubstring(
+        context,
+        found,
+        anchor.start,
+        anchor.end,
+      )
       if (exact) return { moved: true, by: 'text' }
     }
 
@@ -115,7 +133,8 @@ async function select(page: number, anchor: Anchor): Promise<GoToResult> {
   }).catch((error: unknown) => ({
     moved: false,
     by: 'none',
-    reason: error instanceof Error ? error.message : 'PowerPoint refused the request',
+    reason:
+      error instanceof Error ? error.message : 'PowerPoint refused the request',
   }))
 }
 
@@ -163,17 +182,22 @@ async function selectSubstring(
 
 function goToSlideOnly(page: number): Promise<GoToResult> {
   return new Promise((resolve) => {
-    Office.context.document.goToByIdAsync(page, Office.GoToType.Index, (result) => {
-      resolve(
-        result.status === Office.AsyncResultStatus.Succeeded
-          ? { moved: true, by: 'slide' }
-          : {
-              moved: false,
-              by: 'none',
-              reason: 'this version of PowerPoint cannot be moved from a task pane',
-            },
-      )
-    })
+    Office.context.document.goToByIdAsync(
+      page,
+      Office.GoToType.Index,
+      (result) => {
+        resolve(
+          result.status === Office.AsyncResultStatus.Succeeded
+            ? { moved: true, by: 'slide' }
+            : {
+                moved: false,
+                by: 'none',
+                reason:
+                  'this version of PowerPoint cannot be moved from a task pane',
+              },
+        )
+      },
+    )
   })
 }
 

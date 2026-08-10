@@ -116,15 +116,26 @@ export function Document({
 
   const here = map.slides[Math.min(page, map.slides.length - 1)]
   //: One slide of a deck, or the whole of a memo.
-  const figures = paginated ? here.figures : map.slides.flatMap((one) => one.figures)
+  const figures = paginated
+    ? here.figures
+    : map.slides.flatMap((one) => one.figures)
   const drifted = figures
-    .map((figure) => byPrinted.get(`${paginated ? here.page : 0}|${figure.printed}`))
+    .map((figure) =>
+      byPrinted.get(`${paginated ? here.page : 0}|${figure.printed}`),
+    )
     .find((finding) => finding !== undefined && finding.state === 'open')
 
   const counted = figures.filter((one) => one.state === 'drifting').length
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <div style={{ flex: '0 0 auto', padding: '24px 26px 18px' }}>
         <div
           style={{
@@ -184,7 +195,14 @@ export function Document({
         ))}
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 26px 26px' }}>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          padding: '0 26px 26px',
+        }}
+      >
         {figures.map((figure) => {
           const state = STATE[figure.state]
           return (
@@ -200,7 +218,11 @@ export function Document({
             >
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span
-                  style={{ display: 'block', fontSize: size.body, color: colour.ink }}
+                  style={{
+                    display: 'block',
+                    fontSize: size.body,
+                    color: colour.ink,
+                  }}
                 >
                   {figure.label || figure.printed}
                 </span>
@@ -224,12 +246,21 @@ export function Document({
                 </span>
               </span>
               <span
-                style={{ flex: '0 0 auto', fontFamily: font.mono, fontSize: 14 }}
+                style={{
+                  flex: '0 0 auto',
+                  fontFamily: font.mono,
+                  fontSize: 14,
+                }}
               >
                 {figure.printed}
               </span>
               <span
-                style={{ flex: '0 0 74px', textAlign: 'right', fontSize: size.small, color: state.ink }}
+                style={{
+                  flex: '0 0 74px',
+                  textAlign: 'right',
+                  fontSize: size.small,
+                  color: state.ink,
+                }}
               >
                 {state.label}
               </span>
@@ -278,7 +309,10 @@ export function Document({
               >
                 Keep
               </button>
-              <button onClick={() => onTrace(drifted)} style={action(colour.faint)}>
+              <button
+                onClick={() => onTrace(drifted)}
+                style={action(colour.faint)}
+              >
                 Trace
               </button>
             </span>

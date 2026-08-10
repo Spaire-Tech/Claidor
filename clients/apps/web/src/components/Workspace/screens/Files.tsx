@@ -63,9 +63,12 @@ function shortDate(iso: string): string {
  * « upload failed ».
  */
 function status(artifact: Artifact): { text: string; ink: string } {
-  if (artifact.status === 'failed') return { text: 'could not be read', ink: colour.critical }
-  if (artifact.status === 'processing') return { text: 'reading…', ink: colour.faint }
-  if (artifact.status === 'uploading') return { text: 'uploading…', ink: colour.faint }
+  if (artifact.status === 'failed')
+    return { text: 'could not be read', ink: colour.critical }
+  if (artifact.status === 'processing')
+    return { text: 'reading…', ink: colour.faint }
+  if (artifact.status === 'uploading')
+    return { text: 'uploading…', ink: colour.faint }
   return { text: shortDate(artifact.uploaded_at), ink: colour.fainter }
 }
 
@@ -122,7 +125,8 @@ export function Files({
       }}
       onDragLeave={(event) => {
         // Only when it truly left the panel, not on every child crossing.
-        if (!event.currentTarget.contains(event.relatedTarget as Node)) setOver(false)
+        if (!event.currentTarget.contains(event.relatedTarget as Node))
+          setOver(false)
       }}
       onDrop={(event) => {
         event.preventDefault()
@@ -151,7 +155,8 @@ export function Files({
             Data room
           </div>
           <div style={{ fontSize: 13, color: colour.faint, marginTop: 4 }}>
-            {deal} · {documents.length} {documents.length === 1 ? 'file' : 'files'}
+            {deal} · {documents.length}{' '}
+            {documents.length === 1 ? 'file' : 'files'}
           </div>
         </div>
         <button
@@ -180,10 +185,21 @@ export function Files({
         />
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 12px 20px' }}>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          padding: '0 12px 20px',
+        }}
+      >
         {documents.length > 8 && (
           <div style={{ padding: '0 14px 14px' }}>
-            <Search value={query} onChange={setQuery} placeholder="Search files" />
+            <Search
+              value={query}
+              onChange={setQuery}
+              placeholder="Search files"
+            />
           </div>
         )}
 
@@ -216,18 +232,27 @@ export function Files({
             <img
               src={iconFor(name)}
               alt=""
-              style={{ width: 18, height: 18, objectFit: 'contain', flex: '0 0 18px' }}
+              style={{
+                width: 18,
+                height: 18,
+                objectFit: 'contain',
+                flex: '0 0 18px',
+              }}
             />
-            <span style={{ flex: 1, fontSize: 14, color: colour.ink }}>{name}</span>
-            <span style={{ fontSize: size.small, color: colour.faint }}>reading…</span>
+            <span style={{ flex: 1, fontSize: 14, color: colour.ink }}>
+              {name}
+            </span>
+            <span style={{ fontSize: size.small, color: colour.faint }}>
+              reading…
+            </span>
           </div>
         ))}
 
         {documents.length === 0 && uploading.length === 0 && !problem && (
           <div style={{ padding: '0 14px' }}>
             <Nothing>
-              Nothing here yet. Drop a model and a deck anywhere on this
-              panel and the checks can run.
+              Nothing here yet. Drop a model and a deck anywhere on this panel
+              and the checks can run.
             </Nothing>
           </div>
         )}
@@ -288,7 +313,11 @@ export function Files({
                   )}
                 </span>
                 <span
-                  style={{ flex: '0 0 auto', fontSize: size.small, color: state.ink }}
+                  style={{
+                    flex: '0 0 auto',
+                    fontSize: size.small,
+                    color: state.ink,
+                  }}
                 >
                   {state.text}
                 </span>

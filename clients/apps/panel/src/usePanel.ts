@@ -25,9 +25,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { ApiError, TieOutApi } from './api'
 import type { Coverage, Finding, Identified } from './api'
-import { current, signIn as openSignIn, signOut as forget } from './auth'
+import { ApiError, TieOutApi } from './api'
+import { current, signOut as forget, signIn as openSignIn } from './auth'
 import type { GoToResult, HostBridge, OpenDocument } from './host'
 
 export type Stage =
@@ -59,7 +59,11 @@ const EMPTY: PanelState = {
   working: false,
 }
 
-export function usePanel(bridge: HostBridge, api: TieOutApi, signInUrl: string) {
+export function usePanel(
+  bridge: HostBridge,
+  api: TieOutApi,
+  signInUrl: string,
+) {
   const [state, setState] = useState<PanelState>(EMPTY)
 
   /** Load everything for a document we have already identified. */
@@ -70,7 +74,13 @@ export function usePanel(bridge: HostBridge, api: TieOutApi, signInUrl: string) 
         api.findings(identity.dossier_id, identity.artifact?.id),
         api.coverage(identity.dossier_id),
       ])
-      setState((was) => ({ ...was, stage: 'ready', identity, findings, coverage }))
+      setState((was) => ({
+        ...was,
+        stage: 'ready',
+        identity,
+        findings,
+        coverage,
+      }))
     },
     [api],
   )
@@ -115,7 +125,8 @@ export function usePanel(bridge: HostBridge, api: TieOutApi, signInUrl: string) 
         setState((was) => ({
           ...was,
           stage: 'failed',
-          error: error instanceof Error ? error.message : 'something went wrong',
+          error:
+            error instanceof Error ? error.message : 'something went wrong',
         }))
       }
     },
@@ -189,7 +200,9 @@ export function usePanel(bridge: HostBridge, api: TieOutApi, signInUrl: string) 
       const updated = await api.dismiss(finding.id, next)
       setState((was) => ({
         ...was,
-        findings: was.findings.map((one) => (one.id === updated.id ? updated : one)),
+        findings: was.findings.map((one) =>
+          one.id === updated.id ? updated : one,
+        ),
       }))
     },
     [api],
@@ -207,5 +220,15 @@ export function usePanel(bridge: HostBridge, api: TieOutApi, signInUrl: string) 
     }
   }, [api, load, state.identity])
 
-  return { ...state, signIn, signOut, chooseDeal, rechoose, goTo, dismiss, recheck, api }
+  return {
+    ...state,
+    signIn,
+    signOut,
+    chooseDeal,
+    rechoose,
+    goTo,
+    dismiss,
+    recheck,
+    api,
+  }
 }

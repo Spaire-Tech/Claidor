@@ -59,7 +59,9 @@ async function mint(): Promise<PanelToken | null> {
   }
   if (response.status === 401 || response.status === 403) return null
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { detail?: string } | null
+    const body = (await response.json().catch(() => null)) as {
+      detail?: string
+    } | null
     throw new Error(body?.detail ?? 'could not sign in')
   }
   return (await response.json()) as PanelToken
@@ -77,14 +79,16 @@ async function attempt(): Promise<void> {
     // Not signed in. Not an error — most people opening this for the first
     // time land here, and « sign in over there, then come back » is the
     // instruction, not a failure message.
-    status.textContent = 'Sign in to Claidor in your browser, then come back here.'
+    status.textContent =
+      'Sign in to Claidor in your browser, then come back here.'
     status.className = 'quiet'
     dashboard.href = DASHBOARD_URL
     dashboard.target = '_blank'
     dashboard.rel = 'noopener'
     dashboard.hidden = false
   } catch (error) {
-    status.textContent = error instanceof Error ? error.message : 'could not sign in'
+    status.textContent =
+      error instanceof Error ? error.message : 'could not sign in'
     send({ error: status.textContent })
   }
 }

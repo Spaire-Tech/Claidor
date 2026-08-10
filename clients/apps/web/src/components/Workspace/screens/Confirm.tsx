@@ -39,7 +39,11 @@ export function Confirm({
   /** The selected link re-fetched with its alternatives. */
   detail: Link | null
   onSelect: (link: Link) => void
-  onDecide: (link: Link, state: 'confirmed' | 'rejected', cellId?: string) => void
+  onDecide: (
+    link: Link,
+    state: 'confirmed' | 'rejected',
+    cellId?: string,
+  ) => void
   onSearch: (artifactId: string, query: string) => Promise<Cell[]>
 }) {
   const [at, setAt] = useState(0)
@@ -100,7 +104,14 @@ export function Confirm({
   }
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <div style={{ flex: '0 0 auto', padding: '24px 26px 18px' }}>
         <div
           style={{
@@ -118,9 +129,18 @@ export function Confirm({
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 26px 26px' }}>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          padding: '0 26px 26px',
+        }}
+      >
         {links.length === 0 && (
-          <div style={{ fontSize: size.meta, color: colour.muted, paddingTop: 8 }}>
+          <div
+            style={{ fontSize: size.meta, color: colour.muted, paddingTop: 8 }}
+          >
             Nothing waiting. Every figure the engine could name has been
             settled.
           </div>
@@ -155,7 +175,11 @@ export function Confirm({
               >
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span
-                    style={{ display: 'block', fontSize: size.body, color: colour.ink }}
+                    style={{
+                      display: 'block',
+                      fontSize: size.body,
+                      color: colour.ink,
+                    }}
                   >
                     <span style={{ fontFamily: font.mono }}>
                       {link.figure?.printed}
@@ -189,13 +213,24 @@ export function Confirm({
               </button>
 
               {here && (
-                <div style={{ padding: '2px 0 20px', animation: 'pcIn .18s ease both' }}>
+                <div
+                  style={{
+                    padding: '2px 0 20px',
+                    animation: 'pcIn .18s ease both',
+                  }}
+                >
                   {/* The Chain's metadata table, unchanged. */}
                   {(
                     [
-                      ['Figure', `${link.figure?.printed} · ${link.figure?.label || '—'}`],
+                      [
+                        'Figure',
+                        `${link.figure?.printed} · ${link.figure?.label || '—'}`,
+                      ],
                       ['Where', link.figure?.location ?? '—'],
-                      ['Cell', `${link.cell?.ref ?? '—'} · ${link.cell?.name ?? ''}`],
+                      [
+                        'Cell',
+                        `${link.cell?.ref ?? '—'} · ${link.cell?.name ?? ''}`,
+                      ],
                       ['Value', link.cell?.value ?? '—'],
                       ['Basis', link.cell?.basis || '—'],
                       ['Reads as', link.transformation],
@@ -233,71 +268,82 @@ export function Confirm({
                     </div>
                   ))}
 
-                  {detail?.id === link.id && (detail.alternatives?.length ?? 0) > 0 && (
-                    <div style={{ paddingTop: 16 }}>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: colour.faint,
-                          paddingBottom: 2,
-                        }}
-                      >
-                        Or did you mean
-                      </div>
-                      {detail.alternatives?.map((one) => (
-                        <button
-                          key={one.ref}
-                          onClick={() =>
-                            decide('confirmed', one.cell_id ?? undefined)
-                          }
+                  {detail?.id === link.id &&
+                    (detail.alternatives?.length ?? 0) > 0 && (
+                      <div style={{ paddingTop: 16 }}>
+                        <div
                           style={{
-                            display: 'flex',
-                            gap: 16,
-                            alignItems: 'baseline',
-                            width: '100%',
-                            textAlign: 'left',
-                            border: 0,
-                            borderTop: `1px solid ${colour.bandWarm}`,
-                            background: 'transparent',
-                            padding: '10px 0',
-                            font: 'inherit',
-                            cursor: 'pointer',
+                            fontSize: 13,
+                            color: colour.faint,
+                            paddingBottom: 2,
                           }}
                         >
-                          <span style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ display: 'block', fontSize: size.meta }}>
-                              {one.name}
+                          Or did you mean
+                        </div>
+                        {detail.alternatives?.map((one) => (
+                          <button
+                            key={one.ref}
+                            onClick={() =>
+                              decide('confirmed', one.cell_id ?? undefined)
+                            }
+                            style={{
+                              display: 'flex',
+                              gap: 16,
+                              alignItems: 'baseline',
+                              width: '100%',
+                              textAlign: 'left',
+                              border: 0,
+                              borderTop: `1px solid ${colour.bandWarm}`,
+                              background: 'transparent',
+                              padding: '10px 0',
+                              font: 'inherit',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <span style={{ flex: 1, minWidth: 0 }}>
+                              <span
+                                style={{
+                                  display: 'block',
+                                  fontSize: size.meta,
+                                }}
+                              >
+                                {one.name}
+                              </span>
+                              <span
+                                style={{
+                                  display: 'block',
+                                  fontSize: size.small,
+                                  color: colour.faint,
+                                  fontFamily: font.mono,
+                                  marginTop: 2,
+                                }}
+                              >
+                                {one.ref}
+                              </span>
                             </span>
                             <span
                               style={{
-                                display: 'block',
-                                fontSize: size.small,
-                                color: colour.faint,
                                 fontFamily: font.mono,
-                                marginTop: 2,
+                                fontSize: size.meta,
                               }}
                             >
-                              {one.ref}
+                              {one.value}
                             </span>
-                          </span>
-                          <span style={{ fontFamily: font.mono, fontSize: size.meta }}>
-                            {one.value}
-                          </span>
-                          <span
-                            style={{
-                              flex: '0 0 44px',
-                              textAlign: 'right',
-                              fontFamily: font.mono,
-                              fontSize: size.small,
-                              color: colour.fainter,
-                            }}
-                          >
-                            {one.confidence.toFixed(2)}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                            <span
+                              style={{
+                                flex: '0 0 44px',
+                                textAlign: 'right',
+                                fontFamily: font.mono,
+                                fontSize: size.small,
+                                color: colour.fainter,
+                              }}
+                            >
+                              {one.confidence.toFixed(2)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                   <div style={{ paddingTop: 16 }}>
                     <input
@@ -335,7 +381,9 @@ export function Confirm({
                         }}
                       >
                         <span style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: 'block', fontSize: size.meta }}>
+                          <span
+                            style={{ display: 'block', fontSize: size.meta }}
+                          >
                             {cell.name}
                           </span>
                           <span
@@ -350,7 +398,9 @@ export function Confirm({
                             {cell.ref}
                           </span>
                         </span>
-                        <span style={{ fontFamily: font.mono, fontSize: size.meta }}>
+                        <span
+                          style={{ fontFamily: font.mono, fontSize: size.meta }}
+                        >
                           {cell.value}
                         </span>
                       </button>
@@ -365,10 +415,16 @@ export function Confirm({
                       alignItems: 'baseline',
                     }}
                   >
-                    <button onClick={() => decide('confirmed')} style={act(colour.blue)}>
+                    <button
+                      onClick={() => decide('confirmed')}
+                      style={act(colour.blue)}
+                    >
                       Confirm
                     </button>
-                    <button onClick={() => decide('rejected')} style={act(colour.faint)}>
+                    <button
+                      onClick={() => decide('rejected')}
+                      style={act(colour.faint)}
+                    >
                       Reject
                     </button>
                     <span

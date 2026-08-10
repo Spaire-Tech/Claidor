@@ -24,7 +24,14 @@
 import { useMemo, useState } from 'react'
 
 import type { Finding } from '../api'
-import { Filter, Heading, Nothing, Search, Truncation, useWindowed } from '../Dense'
+import {
+  Filter,
+  Heading,
+  Nothing,
+  Search,
+  Truncation,
+  useWindowed,
+} from '../Dense'
 import { colour, size } from '../design'
 
 type Severity = 'all' | 'critical' | 'warning' | 'note'
@@ -39,7 +46,11 @@ type Severity = 'all' | 'critical' | 'warning' | 'note'
  * convention, and putting those in with the real breaks is how a findings
  * list stops being read.
  */
-export function severityOf(finding: Finding): { key: Severity; label: string; ink: string } {
+export function severityOf(finding: Finding): {
+  key: Severity
+  label: string
+  ink: string
+} {
   if (finding.one_tick) return { key: 'note', label: 'Note', ink: colour.note }
   if (finding.severity === 'smell')
     return { key: 'warning', label: 'Warning', ink: colour.warning }
@@ -67,14 +78,16 @@ export function Checks({
 
   const counts = useMemo(() => {
     const tally = { critical: 0, warning: 0, note: 0 }
-    for (const finding of findings) tally[severityOf(finding).key as keyof typeof tally]++
+    for (const finding of findings)
+      tally[severityOf(finding).key as keyof typeof tally]++
     return tally
   }, [findings])
 
   const matching = useMemo(() => {
     const text = query.trim().toLowerCase()
     return findings.filter((finding) => {
-      if (severity !== 'all' && severityOf(finding).key !== severity) return false
+      if (severity !== 'all' && severityOf(finding).key !== severity)
+        return false
       if (!text) return true
       // Searched across everything the row shows, so what a reader can see
       // is what they can search — a filename, a slide, a printed figure.
@@ -96,14 +109,28 @@ export function Checks({
   const filtered = severity !== 'all' || query.trim() !== ''
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         <Heading title="Check" line={`${deal} · ${coverage}`} />
 
         <div style={{ padding: '0 26px 26px' }}>
           {/* Only worth the room once there is something to sift. */}
           {findings.length > 8 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 6 }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                paddingBottom: 6,
+              }}
+            >
               <Search
                 value={query}
                 onChange={setQuery}
@@ -114,7 +141,11 @@ export function Checks({
                 onChange={setSeverity}
                 options={[
                   { value: 'all', label: 'All', count: findings.length },
-                  { value: 'critical', label: 'Critical', count: counts.critical },
+                  {
+                    value: 'critical',
+                    label: 'Critical',
+                    count: counts.critical,
+                  },
                   { value: 'warning', label: 'Warning', count: counts.warning },
                   { value: 'note', label: 'Note', count: counts.note },
                 ]}
@@ -138,7 +169,10 @@ export function Checks({
             const level = severityOf(finding)
             const isOpen = open === finding.id
             return (
-              <div key={finding.id} style={{ borderTop: `1px solid ${colour.bandWarm}` }}>
+              <div
+                key={finding.id}
+                style={{ borderTop: `1px solid ${colour.bandWarm}` }}
+              >
                 <button
                   onClick={() => setOpen(isOpen ? null : finding.id)}
                   style={{
@@ -182,14 +216,23 @@ export function Checks({
                     </span>
                   </span>
                   <span
-                    style={{ flex: '0 0 auto', fontSize: size.small, color: level.ink }}
+                    style={{
+                      flex: '0 0 auto',
+                      fontSize: size.small,
+                      color: level.ink,
+                    }}
                   >
                     {level.label}
                   </span>
                 </button>
 
                 {isOpen && (
-                  <div style={{ padding: '0 0 18px', animation: 'pcIn .18s ease both' }}>
+                  <div
+                    style={{
+                      padding: '0 0 18px',
+                      animation: 'pcIn .18s ease both',
+                    }}
+                  >
                     <div
                       style={{
                         fontSize: size.meta,
@@ -201,13 +244,22 @@ export function Checks({
                       {finding.context}
                     </div>
                     <div style={{ display: 'flex', gap: 18, marginTop: 12 }}>
-                      <button onClick={() => onTrace(finding)} style={link(colour.blue)}>
+                      <button
+                        onClick={() => onTrace(finding)}
+                        style={link(colour.blue)}
+                      >
                         Trace
                       </button>
-                      <button onClick={() => onSlide(finding)} style={link(colour.faint)}>
+                      <button
+                        onClick={() => onSlide(finding)}
+                        style={link(colour.faint)}
+                      >
                         Slide
                       </button>
-                      <button onClick={() => onCell(finding)} style={link(colour.faint)}>
+                      <button
+                        onClick={() => onCell(finding)}
+                        style={link(colour.faint)}
+                      >
                         Cell
                       </button>
                     </div>
@@ -218,7 +270,11 @@ export function Checks({
           })}
 
           {more && (
-            <Truncation shown={shown.length} total={matching.length} sentinel={sentinel} />
+            <Truncation
+              shown={shown.length}
+              total={matching.length}
+              sentinel={sentinel}
+            />
           )}
         </div>
       </div>

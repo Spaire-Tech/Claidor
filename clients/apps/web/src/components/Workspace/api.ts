@@ -260,7 +260,10 @@ export class TieOutApi {
     filename?: string | null
     dossier_id?: string | null
   }): Promise<Identified> {
-    return this.call('/identify', { method: 'POST', body: JSON.stringify(body) })
+    return this.call('/identify', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
   }
 
   /** Findings for one document. What the panel shows, filtered to here. */
@@ -370,7 +373,9 @@ export class TieOutApi {
 
   /** Named cells matching a few words, for « point it somewhere else ». */
   cells(artifactId: string, query: string): Promise<Cell[]> {
-    return this.call(`/artifacts/${artifactId}/cells?q=${encodeURIComponent(query)}`)
+    return this.call(
+      `/artifacts/${artifactId}/cells?q=${encodeURIComponent(query)}`,
+    )
   }
 
   /**

@@ -80,7 +80,8 @@ export const outlook: HostBridge = {
     return {
       moved: false,
       by: 'none',
-      reason: 'the deck is an attachment — open it in PowerPoint to jump to a slide',
+      reason:
+        'the deck is an attachment — open it in PowerPoint to jump to a slide',
     }
   },
 }

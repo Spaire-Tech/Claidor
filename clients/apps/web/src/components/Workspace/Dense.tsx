@@ -121,7 +121,9 @@ export function Heading({
           >
             {title}
           </div>
-          <div style={{ fontSize: 13, color: colour.faint, marginTop: 4 }}>{line}</div>
+          <div style={{ fontSize: 13, color: colour.faint, marginTop: 4 }}>
+            {line}
+          </div>
         </div>
         {children}
       </div>
@@ -147,7 +149,14 @@ export function Filter<T extends string>({
   onChange: (value: T) => void
 }) {
   return (
-    <div style={{ display: 'flex', gap: 16, alignItems: 'baseline', flexWrap: 'wrap' }}>
+    <div
+      style={{
+        display: 'flex',
+        gap: 16,
+        alignItems: 'baseline',
+        flexWrap: 'wrap',
+      }}
+    >
       {options.map((option) => (
         <button
           key={option.value}
@@ -221,8 +230,8 @@ export function Truncation({
   return (
     <div ref={sentinel} style={{ padding: '18px 0 4px' }}>
       <span style={{ fontSize: size.small, color: colour.fainter }}>
-        showing {shown.toLocaleString()} of {total.toLocaleString()} — scroll for
-        more
+        showing {shown.toLocaleString()} of {total.toLocaleString()} — scroll
+        for more
       </span>
     </div>
   )

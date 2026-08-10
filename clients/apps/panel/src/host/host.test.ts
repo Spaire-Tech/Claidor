@@ -30,7 +30,7 @@ describe('a cell reference', () => {
     })
   })
 
-  it("undoubles an apostrophe inside a sheet name", () => {
+  it('undoubles an apostrophe inside a sheet name', () => {
     expect(splitRef("'Bob''s model'!B7")).toEqual({
       sheet: "Bob's model",
       address: 'B7',
@@ -40,7 +40,10 @@ describe('a cell reference', () => {
   it('splits on the last bang, not the first', () => {
     // A sheet may legitimately be named with punctuation; the address
     // never contains one, so the last separator is the real one.
-    expect(splitRef("'Q3!draft'!C9")).toEqual({ sheet: 'Q3!draft', address: 'C9' })
+    expect(splitRef("'Q3!draft'!C9")).toEqual({
+      sheet: 'Q3!draft',
+      address: 'C9',
+    })
   })
 })
 
@@ -62,7 +65,9 @@ describe('which attachment a draft is about', () => {
   })
 
   it('finds nothing in a draft with nothing to check', () => {
-    expect(pickReadable([attachment('photo.jpg'), attachment('notes.txt')])).toBeNull()
+    expect(
+      pickReadable([attachment('photo.jpg'), attachment('notes.txt')]),
+    ).toBeNull()
   })
 
   it('is not fooled by an extension in the middle of a name', () => {

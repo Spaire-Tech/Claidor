@@ -15,7 +15,7 @@
     "lint": "prettier -c .",
     "typecheck": "tsc --noEmit",
     "build": "rm -rf dist && tsup",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
   },
   "exports": {

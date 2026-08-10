@@ -25,10 +25,24 @@
 import { useState } from 'react'
 
 import { ChatIcon, Mark, MicIcon, PlusIcon, SendIcon } from './Icons'
-import { chatPanel, chatWidth, colour, composer, font, sendFill, size, tabChip } from './design'
+import {
+  chatPanel,
+  chatWidth,
+  colour,
+  composer,
+  font,
+  sendFill,
+  size,
+  tabChip,
+} from './design'
 
 export type Message =
-  | { kind: 'file'; name: string; app: string; host: 'ppt' | 'xls' | 'doc' | 'mail' }
+  | {
+      kind: 'file'
+      name: string
+      app: string
+      host: 'ppt' | 'xls' | 'doc' | 'mail'
+    }
   | { kind: 'user'; text: string }
   | { kind: 'tools'; text: string }
   | { kind: 'agent'; text: string }
@@ -75,7 +89,13 @@ function Bubble({ message }: { message: Message }) {
           >
             {message.name}
           </span>
-          <span style={{ display: 'block', fontSize: size.small, color: colour.slate }}>
+          <span
+            style={{
+              display: 'block',
+              fontSize: size.small,
+              color: colour.slate,
+            }}
+          >
             {message.app}
           </span>
         </span>
@@ -102,14 +122,16 @@ function Bubble({ message }: { message: Message }) {
   }
 
   if (message.kind === 'tools') {
-    return <div style={{ color: colour.slate, fontSize: size.meta }}>{message.text}</div>
+    return (
+      <div style={{ color: colour.slate, fontSize: size.meta }}>
+        {message.text}
+      </div>
+    )
   }
 
   if (message.kind === 'working') {
     return (
-      <div
-        style={{ color: colour.slateMid, animation: 'pcDim 1.4s infinite' }}
-      >
+      <div style={{ color: colour.slateMid, animation: 'pcDim 1.4s infinite' }}>
         {message.text}
       </div>
     )
@@ -136,7 +158,9 @@ function Bubble({ message }: { message: Message }) {
     )
   }
 
-  return <div style={{ lineHeight: 1.7, color: colour.darker }}>{message.text}</div>
+  return (
+    <div style={{ lineHeight: 1.7, color: colour.darker }}>{message.text}</div>
+  )
 }
 
 /** The two quiet controls either side of what is typed. */
@@ -151,7 +175,13 @@ const quiet = {
   flex: '0 0 auto',
 } as const
 
-function Composer({ onSend, width }: { onSend: (text: string) => void; width: string | number }) {
+function Composer({
+  onSend,
+  width,
+}: {
+  onSend: (text: string) => void
+  width: string | number
+}) {
   const [text, setText] = useState('')
   const send = () => {
     if (!text.trim()) return
@@ -256,7 +286,10 @@ export function Chat({
           : narrow
             ? chatWidth.beside.narrow
             : chatWidth.beside.wide,
-        minWidth: !alone && narrow ? chatWidth.minWidth.narrow : chatWidth.minWidth.wide,
+        minWidth:
+          !alone && narrow
+            ? chatWidth.minWidth.narrow
+            : chatWidth.minWidth.wide,
         display: 'flex',
         flexDirection: 'column',
         ...chatPanel,
@@ -295,7 +328,13 @@ export function Chat({
           <PlusIcon />
         </button>
         <div style={{ flex: 1 }} />
-        <span style={{ color: colour.slateMid, fontSize: size.meta, paddingRight: 6 }}>
+        <span
+          style={{
+            color: colour.slateMid,
+            fontSize: size.meta,
+            paddingRight: 6,
+          }}
+        >
           {deal}
         </span>
       </div>

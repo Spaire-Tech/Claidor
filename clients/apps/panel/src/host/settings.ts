@@ -23,7 +23,9 @@
 const KEY = 'claidor.lineage_id'
 
 function hasDocumentSettings(): boolean {
-  return typeof Office !== 'undefined' && Boolean(Office.context?.document?.settings)
+  return (
+    typeof Office !== 'undefined' && Boolean(Office.context?.document?.settings)
+  )
 }
 
 export function readStamp(): string | null {

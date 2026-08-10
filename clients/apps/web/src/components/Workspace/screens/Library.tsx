@@ -23,7 +23,14 @@
 import { useMemo, useState } from 'react'
 
 import type { Finding } from '../api'
-import { Filter, Heading, Nothing, Search, Truncation, useWindowed } from '../Dense'
+import {
+  Filter,
+  Heading,
+  Nothing,
+  Search,
+  Truncation,
+  useWindowed,
+} from '../Dense'
 import { colour, font } from '../design'
 
 export type Row = {
@@ -83,89 +90,118 @@ export function Library({
       />
 
       <div style={{ padding: '0 26px 26px' }}>
-      {rows.length > 8 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 6 }}>
-          <Search value={query} onChange={setQuery} placeholder="Search figures" />
-          <Filter<Row['status'] | 'all'>
-            value={status}
-            onChange={setStatus}
-            options={[
-              { value: 'all', label: 'All', count: rows.length },
-              { value: 'DRIFTED', label: 'Drifted', count: counts.DRIFTED ?? 0 },
-              { value: 'MATCHING', label: 'Matching', count: counts.MATCHING ?? 0 },
-              { value: 'CONFIRMED', label: 'Confirmed', count: counts.CONFIRMED ?? 0 },
-            ]}
-          />
-        </div>
-      )}
-
-      {rows.length === 0 && (
-        <Nothing>
-          Nothing published yet. Upload a model and a deck to fill this.
-        </Nothing>
-      )}
-
-      {rows.length > 0 && matching.length === 0 && (
-        <Nothing>Nothing matches that.</Nothing>
-      )}
-
-      {shown.map((row) => (
-        <button
-          key={row.id}
-          onClick={() => onOpen(row)}
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: 16,
-            width: '100%',
-            textAlign: 'left',
-            border: 0,
-            borderTop: `1px solid ${colour.rule}`,
-            background: 'transparent',
-            padding: '13px 8px',
-            font: 'inherit',
-            cursor: 'pointer',
-          }}
-        >
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontWeight: 500 }}>{row.name}</span>
-            <span
-              style={{
-                display: 'block',
-                fontSize: 13,
-                color: colour.faint,
-                marginTop: 2,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {/* The cell reference keeps the mono face — it is a
-                  reference and reads as one. Where it was printed is
-                  prose and does not. */}
-              <span style={{ fontFamily: font.mono }}>{row.source}</span>
-              {row.where && ` · ${row.where}`}
-            </span>
-          </span>
-          <span style={{ fontFamily: font.mono }}>{row.value}</span>
-          <span
+        {rows.length > 8 && (
+          <div
             style={{
-              flex: '0 0 92px',
-              textAlign: 'right',
-              fontSize: 12,
-              letterSpacing: '.06em',
-              textTransform: 'uppercase',
-              color: INK[row.status],
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              paddingBottom: 6,
             }}
           >
-            {row.status}
-          </span>
-        </button>
-      ))}
+            <Search
+              value={query}
+              onChange={setQuery}
+              placeholder="Search figures"
+            />
+            <Filter<Row['status'] | 'all'>
+              value={status}
+              onChange={setStatus}
+              options={[
+                { value: 'all', label: 'All', count: rows.length },
+                {
+                  value: 'DRIFTED',
+                  label: 'Drifted',
+                  count: counts.DRIFTED ?? 0,
+                },
+                {
+                  value: 'MATCHING',
+                  label: 'Matching',
+                  count: counts.MATCHING ?? 0,
+                },
+                {
+                  value: 'CONFIRMED',
+                  label: 'Confirmed',
+                  count: counts.CONFIRMED ?? 0,
+                },
+              ]}
+            />
+          </div>
+        )}
 
-      {more && (
-        <Truncation shown={shown.length} total={matching.length} sentinel={sentinel} />
-      )}
+        {rows.length === 0 && (
+          <Nothing>
+            Nothing published yet. Upload a model and a deck to fill this.
+          </Nothing>
+        )}
+
+        {rows.length > 0 && matching.length === 0 && (
+          <Nothing>Nothing matches that.</Nothing>
+        )}
+
+        {shown.map((row) => (
+          <button
+            key={row.id}
+            onClick={() => onOpen(row)}
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 16,
+              width: '100%',
+              textAlign: 'left',
+              border: 0,
+              borderTop: `1px solid ${colour.rule}`,
+              background: 'transparent',
+              padding: '13px 8px',
+              font: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontWeight: 500 }}>
+                {row.name}
+              </span>
+              <span
+                style={{
+                  display: 'block',
+                  fontSize: 13,
+                  color: colour.faint,
+                  marginTop: 2,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {/* The cell reference keeps the mono face — it is a
+                  reference and reads as one. Where it was printed is
+                  prose and does not. */}
+                <span style={{ fontFamily: font.mono }}>{row.source}</span>
+                {row.where && ` · ${row.where}`}
+              </span>
+            </span>
+            <span style={{ fontFamily: font.mono }}>{row.value}</span>
+            <span
+              style={{
+                flex: '0 0 92px',
+                textAlign: 'right',
+                fontSize: 12,
+                letterSpacing: '.06em',
+                textTransform: 'uppercase',
+                color: INK[row.status],
+              }}
+            >
+              {row.status}
+            </span>
+          </button>
+        ))}
+
+        {more && (
+          <Truncation
+            shown={shown.length}
+            total={matching.length}
+            sentinel={sentinel}
+          />
+        )}
       </div>
     </div>
   )
@@ -174,6 +210,8 @@ export function Library({
 /** Findings tell the library which figures drifted. */
 export function driftedRefs(findings: Finding[]): Set<string> {
   return new Set(
-    findings.filter((one) => one.kind === 'drift').map((one) => one.source.ref ?? ''),
+    findings
+      .filter((one) => one.kind === 'drift')
+      .map((one) => one.source.ref ?? ''),
   )
 }

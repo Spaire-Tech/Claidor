@@ -18,10 +18,7 @@ import { describe, expect, it } from 'vitest'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
-const WEB = join(
-  here,
-  '../../web/src/components/Workspace/design.ts',
-)
+const WEB = join(here, '../../web/src/components/Workspace/design.ts')
 const PANEL = join(here, 'design.ts')
 
 const START = '// --- shared with'
@@ -51,7 +48,13 @@ describe('the design tokens', () => {
     // colours a finding row can be, and losing one silently would make a
     // severity invisible rather than wrong.
     const block = shared(PANEL)
-    for (const shade of ['#b04434', '#b3822f', '#8a8886', '#0b62c4', '#4f7a5c']) {
+    for (const shade of [
+      '#b04434',
+      '#b3822f',
+      '#8a8886',
+      '#0b62c4',
+      '#4f7a5c',
+    ]) {
       expect(block).toContain(shade)
     }
   })
