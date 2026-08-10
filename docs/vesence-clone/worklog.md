@@ -402,3 +402,37 @@ server. Checked by comparing the exact error sets before and after, not the
 counts — three errors either way, the *same* three, one pre-existing
 `FileRead` union with a variant missing `public_url`. Comparing counts
 would have hidden three fixed and three new.
+
+### The comparison that was worse than no comparison — [same day]
+
+I regenerated the typed client, ran the web app's typecheck before and
+after, got three errors both times, concluded the regeneration was safe,
+and committed that claim.
+
+It was not a before-and-after. `@claidor/client` resolves to its built
+`dist/`; `dist/` is gitignored; I had already rebuilt it from the new
+source before stashing only `src/v1.ts`. **Both runs used the new types.**
+Checking out the pre-regeneration `v1.ts` and rebuilding `dist` gives five
+errors, all in files I had just written, and none in `FileRead` — so the
+three were mine, and `next build` would have failed the dashboard's deploy
+for the second time in a day.
+
+The same commit message also said the regeneration made the client "5,000
+lines smaller". It is 3,345 lines *larger*: I compared prettier-formatted
+output against unformatted. Two numbers in one message, both meaningless,
+both stated with confidence.
+
+**Comparing the wrong two things is worse than not comparing**, because it
+produces a number that looks like evidence and stops the checking. The
+artifact under test was the built package, not the source I stashed —
+and I never asked which one the compiler actually reads.
+
+The other half: `pnpm typecheck` was not the check that mattered. `next
+build` runs TypeScript itself and is what Vercel runs; it is the command
+that fails, so it is the command to run. Typecheck alone reported the three
+errors and I explained them away as pre-existing.
+
+The cause, once found, is dull: `DossierDocumentFileRead` was added to the
+API months ago, the web app keeps a hand-written union of file shapes — in
+two files, already drifted from each other — and neither listed it. One
+declaration now, imported.
