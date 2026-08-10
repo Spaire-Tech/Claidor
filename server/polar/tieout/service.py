@@ -585,6 +585,103 @@ class TieOutService:
             "removed": len(set(was) - set(now)),
         }
 
+    async def model_grid(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        rows_per_sheet: int = 240,
+    ) -> dict[str, Any] | None:
+        """The model laid out as it is laid out — sheets, rows, columns.
+
+        Every screen this has had until now asked a person to know already
+        what they were looking for: a search box, or a cell reference
+        carried by a finding. A banker opening a model opens *a sheet* and
+        reads down it, and until that is possible the model is the one
+        document in the deal nobody can actually look at.
+
+        **Only cells with a row label.** A number with no words beside it
+        cannot be named, cannot be linked, and is not what anyone opens a
+        model to read. The same rule the linker uses, for the same reason.
+
+        **`linked` is the column that earns the screen.** Any grid can
+        print a workbook back. What this one adds is which cells a
+        deliverable is standing on, which is the difference between a
+        spreadsheet viewer and a tie-out engine.
+        """
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.get_artifact(artifact_id)
+        if artifact is None:
+            return None
+
+        cells = [
+            cell for cell in await repository.cells_of(artifact_id) if cell.row_label
+        ]
+        by_id = {cell.id: cell for cell in cells}
+        linked_refs = {
+            by_id[link.cell_id].ref
+            for link in await repository.links_of(dossier_id)
+            if link.state is not LinkState.rejected and link.cell_id in by_id
+        }
+
+        #: Sheets in the workbook's own tab order, which is the order the
+        #: person who built it chose. Alphabetical would put Assumptions
+        #: before Model on every model ever written.
+        first_seen: dict[str, int] = {}
+        for index, cell in enumerate(cells):
+            first_seen.setdefault(cell.sheet, index)
+
+        sheets: list[dict[str, Any]] = []
+        for name in sorted(first_seen, key=lambda one: first_seen[one]):
+            here = [cell for cell in cells if cell.sheet == name]
+            #: Columns left to right, keyed by heading rather than index:
+            #: two columns headed FY2024A are one column to a reader, and a
+            #: model doing that is saying they mean the same thing.
+            columns: dict[str, int] = {}
+            for cell in sorted(here, key=lambda one: one.column):
+                columns.setdefault(cell.column_label, cell.column)
+
+            order = list(columns)
+            grouped: dict[str, dict[str, Any]] = {}
+            for cell in sorted(here, key=lambda one: (one.row, one.column)):
+                row = grouped.setdefault(
+                    cell.row_label,
+                    {"label": cell.row_label, "at": cell.row, "cells": {}},
+                )
+                row["cells"].setdefault(
+                    cell.column_label,
+                    {
+                        "ref": cell.ref,
+                        "value": _text(cell.value),
+                        "linked": cell.ref in linked_refs,
+                    },
+                )
+
+            rows = sorted(grouped.values(), key=lambda one: one["at"])
+            sheets.append(
+                {
+                    "name": name,
+                    "columns": order,
+                    "rows": [
+                        {
+                            "label": row["label"],
+                            "cells": [row["cells"].get(heading) for heading in order],
+                        }
+                        for row in rows[:rows_per_sheet]
+                    ],
+                    "rows_total": len(rows),
+                }
+            )
+
+        return {
+            "artifact_id": artifact.id,
+            "filename": artifact.filename,
+            "version": artifact.version,
+            "uploaded_at": artifact.created_at,
+            "sheets": sheets,
+        }
+
     async def chain_of_finding(
         self, session: AsyncSession | AsyncReadSession, *, finding: FindingRow
     ) -> dict[str, Any]:

@@ -72,6 +72,7 @@ from .schemas import (
     LinkFigure,
     LinkRead,
     ModelDiff,
+    ModelGrid,
     PanelToken,
     SlideFigures,
     Uploader,
@@ -561,6 +562,28 @@ async def search_cells(
         )
         for cell in await repository.search_cells(artifact_id, q)
     ]
+
+
+@router.get("/artifacts/{artifact_id}/grid", response_model=ModelGrid)
+async def get_model_grid(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> ModelGrid:
+    """The model as a person reads it: sheets, rows down, periods across.
+
+    Every cell that carries a label, with `linked` marking the ones a
+    deliverable is standing on. Capped per sheet, and each sheet says how
+    many rows it really has — a screen that quietly drew the first two
+    hundred would be claiming the model is smaller than it is.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    grid = await tieout.model_grid(
+        session, dossier_id=artifact.dossier_id, artifact_id=artifact_id
+    )
+    if grid is None:
+        raise ResourceNotFound(NOT_FOUND)
+    return ModelGrid(**grid)
 
 
 @router.get("/artifacts/{artifact_id}/diff", response_model=ModelDiff | None)

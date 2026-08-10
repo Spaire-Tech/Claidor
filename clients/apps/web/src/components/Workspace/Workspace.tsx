@@ -16,21 +16,31 @@
  * one line to replace when the wiring lands.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Chat, type Message } from './Chat'
 import { Dock } from './Dock'
 import { ApiError, TieOutApi } from './api'
-import type { Artifact, Chain, Coverage, Finding, Link } from './api'
+import type {
+  Artifact,
+  Chain,
+  Coverage,
+  FigureMap,
+  Finding,
+  Link,
+  ModelGrid,
+} from './api'
 import { colour, font, pageBackground, panel, size, space, tabChip } from './design'
-import { currentIds } from './lineage'
+import { current, currentIds } from './lineage'
 import { useNarrow } from './useNarrow'
 import './workspace.css'
 import { Applications } from './screens/Applications'
 import { Checks } from './screens/Checks'
 import { Confirm } from './screens/Confirm'
+import { Document } from './screens/Document'
 import { Files } from './screens/Files'
 import { Library, type Row } from './screens/Library'
+import { Sheets } from './screens/Sheets'
 import { Trace } from './screens/Trace'
 import type { View } from './views'
 
@@ -71,11 +81,29 @@ const NOT_CONNECTED: Partial<Record<View, string>> = {
   calendar: 'Calendar is not connected yet.',
   sharepoint:
     'SharePoint is not connected yet. Connected, it keeps the deal in step with the files as they change.',
-  docs: 'Open a memo from the data room to review it here.',
-  sheets: 'Open a model from the data room to audit it here.',
-  deck: 'Open a deck from the data room to reconcile it here.',
   projects: 'One deal is open. Projects lists them all once there is more than one.',
   terminal: 'Not connected.',
+}
+
+/** Which document each of the three document screens is about. */
+const OPENS: Partial<Record<View, Artifact['kind']>> = {
+  deck: 'deck',
+  sheets: 'model',
+  docs: 'memo',
+}
+
+/**
+ * And the way back: which screen opens a file from the data room.
+ *
+ * A `source` is anything else in the room — a PDF, a contract — which
+ * nothing reads yet. It opens the data room's own list rather than a
+ * screen that would have nothing on it.
+ */
+const SCREEN: Record<Artifact['kind'], View> = {
+  deck: 'deck',
+  model: 'sheets',
+  memo: 'docs',
+  source: 'files',
 }
 
 export function Workspace({ dealId }: { dealId: string }) {
@@ -104,6 +132,13 @@ export function Workspace({ dealId }: { dealId: string }) {
   const [linkDetail, setLinkDetail] = useState<Link | null>(null)
   const [uploading, setUploading] = useState<string[]>([])
   const [rejected, setRejected] = useState<string | null>(null)
+  //: The three document screens. Each is one artifact's worth of detail
+  //: and is fetched when the screen is opened rather than with the deal:
+  //: a model's grid is every labelled cell in the workbook, and putting
+  //: that on the deal page would make every screen pay for one.
+  const [grid, setGrid] = useState<ModelGrid | null>(null)
+  const [deckMap, setDeckMap] = useState<FigureMap | null>(null)
+  const [memoMap, setMemoMap] = useState<FigureMap | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -141,6 +176,45 @@ export function Workspace({ dealId }: { dealId: string }) {
   }, [load])
 
   const go = (next: View) => setView(next)
+
+  //: The newest upload of each kind. « The model » on a deal with one
+  //: model is unambiguous, and on a deal with two the file the person
+  //: last put in is the one they mean. Projects will have to let them
+  //: choose; one deal with one of each is today.
+  const opened = useMemo(() => {
+    const kind = OPENS[view]
+    if (!kind) return null
+    return current(artifacts).find((one) => one.kind === kind) ?? null
+  }, [artifacts, view])
+
+  //: Fetch the open document's detail when the screen asks for it, and
+  //: not before. Re-fetched when the artifact changes — a new upload of
+  //: the deck is a different document, not a stale copy of this one.
+  useEffect(() => {
+    if (!opened) return
+    let live = true
+    const kind = opened.kind
+    void (async () => {
+      try {
+        if (kind === 'model') {
+          const answer = await api.grid(opened.id)
+          if (live) setGrid(answer)
+        } else {
+          const answer = await api.figures(opened.id)
+          if (!live) return
+          if (kind === 'deck') setDeckMap(answer)
+          else setMemoMap(answer)
+        }
+      } catch {
+        // The screen's own empty state says what to do about it. A
+        // document that cannot be read is already a row in the data room
+        // carrying the server's sentence.
+      }
+    })()
+    return () => {
+      live = false
+    }
+  }, [opened])
 
   const trace = async (finding: Finding) => {
     setTraced(finding)
@@ -239,6 +313,20 @@ export function Workspace({ dealId }: { dealId: string }) {
     await load()
   }
 
+  /**
+   * Record what a person decided about a drift, and keep the screen in
+   * step.
+   *
+   * It settles the *finding*, not the file. Nothing here writes to a deck
+   * or a memo — the writing layer does not exist — so « recorded » means
+   * the decision is on the record and the document still says what it
+   * said. The button's own words have to carry that, and they do.
+   */
+  const settle = async (finding: Finding, state: 'accepted' | 'dismissed') => {
+    const updated = await api.dismiss(finding.id, state)
+    setFindings((was) => was.map((one) => (one.id === finding.id ? updated : one)))
+  }
+
   /** Confirm, reject, or re-point — then reload, since coverage moved. */
   const decide = async (
     link: Link,
@@ -313,7 +401,7 @@ export function Workspace({ dealId }: { dealId: string }) {
               <Files
                 artifacts={artifacts}
                 deal={deal}
-                onOpen={() => go('deck')}
+                onOpen={(artifact) => go(SCREEN[artifact.kind])}
                 onUpload={(files) => void upload(files)}
                 uploading={uploading}
                 problem={rejected}
@@ -363,6 +451,20 @@ export function Workspace({ dealId }: { dealId: string }) {
               />
             ) : view === 'library' ? (
               <Library rows={rows} onOpen={() => go('checks')} />
+            ) : view === 'sheets' ? (
+              <Sheets
+                grid={grid}
+                audit={findings.filter((one) => one.kind === 'audit')}
+                onCell={trace}
+              />
+            ) : view === 'deck' || view === 'docs' ? (
+              <Document
+                map={view === 'deck' ? deckMap : memoMap}
+                kind={view === 'deck' ? 'deck' : 'memo'}
+                findings={findings}
+                onTrace={trace}
+                onDecide={(finding, state) => void settle(finding, state)}
+              />
             ) : view === 'applications' ? (
               <Applications onGo={go} />
             ) : (

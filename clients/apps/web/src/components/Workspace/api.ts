@@ -164,6 +164,48 @@ export interface Coverage {
   reasons: { reason: string; count: number }[]
 }
 
+/** One figure on a page, and what became of it. */
+export interface Figure {
+  id: string
+  printed: string
+  label: string
+  location: string
+  /** `agreeing` · `drifting` · `confirmed` · `unlinked`. */
+  state: 'agreeing' | 'drifting' | 'confirmed' | 'unlinked'
+  link_id: string | null
+  /** Only on `unlinked`, and the point of the screen. */
+  reason: string | null
+  anchor: Record<string, unknown>
+}
+
+export interface FigureMap {
+  artifact_id: string
+  filename: string
+  /** `page` is a slide in a deck and a paragraph in a memo. */
+  slides: { page: number; figures: Figure[] }[]
+}
+
+export interface GridCell {
+  ref: string
+  value: string | null
+  /** A deliverable is standing on this cell. */
+  linked: boolean
+}
+
+export interface ModelGrid {
+  artifact_id: string
+  filename: string
+  version: number
+  uploaded_at: string
+  sheets: {
+    name: string
+    columns: string[]
+    /** `cells` is one entry per column, `null` where the row has nothing. */
+    rows: { label: string; cells: (GridCell | null)[] }[]
+    rows_total: number
+  }[]
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -329,6 +371,22 @@ export class TieOutApi {
   /** Named cells matching a few words, for « point it somewhere else ». */
   cells(artifactId: string, query: string): Promise<Cell[]> {
     return this.call(`/artifacts/${artifactId}/cells?q=${encodeURIComponent(query)}`)
+  }
+
+  /**
+   * The model laid out as it is laid out, with what is standing on it.
+   *
+   * Everything else here asks a person to know already what they are
+   * looking for — a search word, a cell reference carried by a finding.
+   * This is the one call that lets somebody open a sheet and read down it.
+   */
+  grid(artifactId: string): Promise<ModelGrid> {
+    return this.call(`/artifacts/${artifactId}/grid`)
+  }
+
+  /** Every figure in a document, by page, and what became of each. */
+  figures(artifactId: string): Promise<FigureMap> {
+    return this.call(`/artifacts/${artifactId}/figures`)
   }
 
   /** Everything the deal page needs, in one request. */

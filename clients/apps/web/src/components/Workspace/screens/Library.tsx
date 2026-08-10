@@ -24,7 +24,7 @@ import { useMemo, useState } from 'react'
 
 import type { Finding } from '../api'
 import { Filter, Heading, Nothing, Search, Truncation, useWindowed } from '../Dense'
-import { colour, font, size } from '../design'
+import { colour, font } from '../design'
 
 export type Row = {
   id: string

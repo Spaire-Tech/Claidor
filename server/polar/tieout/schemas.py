@@ -410,6 +410,54 @@ class ModelDiff(Schema):
     removed: int
 
 
+class GridCell(Schema):
+    """One cell of a sheet, at the row and column a banker would name it by."""
+
+    ref: str
+    value: str | None
+    #: True when a published figure points at this cell. This is the reason
+    #: the grid is worth drawing at all: it is the difference between « the
+    #: model says 228.9 » and « a deliverable is standing on this ».
+    linked: bool
+
+
+class GridRow(Schema):
+    label: str
+    #: One entry per column of the sheet, in the sheet's own order, with
+    #: `null` where that row has nothing in that column. Aligned rather
+    #: than sparse, so a client draws a table without doing arithmetic.
+    cells: list[GridCell | None]
+
+
+class SheetGrid(Schema):
+    name: str
+    #: The column headings the workbook itself carries — « FY2024A ». One
+    #: empty string for a sheet laid out as a list rather than a table,
+    #: which is normal for assumptions.
+    columns: list[str]
+    rows: list[GridRow]
+    #: How many named rows the sheet has, against how many are in `rows`.
+    #: A model can run to tens of thousands of cells, so this is capped;
+    #: a screen that quietly drew the first two hundred would be claiming
+    #: the model is smaller than it is.
+    rows_total: int
+
+
+class ModelGrid(Schema):
+    """A model as it is laid out, rather than as a search box.
+
+    Only cells with a row label are here. A number with no words beside it
+    cannot be recognised, cannot be linked, and is not what a person opens
+    a model to read — it is scaffolding.
+    """
+
+    artifact_id: UUID
+    filename: str
+    version: int
+    uploaded_at: datetime
+    sheets: list[SheetGrid]
+
+
 __all__ = [
     "ArtifactRead",
     "CellRead",
@@ -429,6 +477,8 @@ __all__ = [
     "FindingSource",
     "FindingUpdate",
     "FindingWhere",
+    "GridCell",
+    "GridRow",
     "Identified",
     "Identify",
     "LinkAlternative",
@@ -437,7 +487,9 @@ __all__ = [
     "LinkFigure",
     "LinkRead",
     "ModelDiff",
+    "ModelGrid",
     "PanelToken",
+    "SheetGrid",
     "SlideFigures",
     "Uploader",
 ]

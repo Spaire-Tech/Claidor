@@ -76,12 +76,26 @@ Every screen is drawn at seven findings and nine files. Real numbers are
 Taken as a first pass in the founder's vocabulary, for him to correct.
 No new visual language.
 
-### 4 · The screens already drawn, that need no new backend
+### 4 · The screens already drawn  ✓ *(10 August)*
 
-- **Pitchbook** — the figure map is live (`/artifacts/{id}/figures`);
-  every figure on the deck, coloured, with the unlinked ones saying why
-- **Sheets** — the model audit is live; cells, formulas, findings
-- **Docs** — memo reading is live; figures in paragraphs
+- **Pitchbook** — every figure on the selected slide, the unlinked ones
+  saying why, and the slide's drift carrying the decision
+- **Sheets** — the model as a grid: sheets, rows down, periods across,
+  published cells in ink. Wanted one new endpoint, `/artifacts/{id}/grid`
+- **Docs** — the memo's figures in document order, « paragraph 9 » on each
+
+Two things these screens want and do not have. Both are features rather
+than polish, and both were left out rather than faked:
+
+- **A slide, rendered.** The design's deck screen is a picture of a slide.
+  Assembling one here out of whatever numbers happen to be on it would be
+  a drawing of a slide that does not exist. Doing it properly is a
+  converter, an image in S3 and a job — and then the figures overlay it.
+- **Number formats.** A model cell holds `0.1222587719`; the workbook says
+  it is meant to read `12.2%`. `number_format` is right there in the file
+  and is not read at ingest, so the grid trims to four decimals and keeps
+  the exact value on the element's title. That is the least dishonest
+  thing available and it is not good enough.
 
 ### 5 · The Office panel, in the design
 

@@ -50,7 +50,16 @@ export function useWindowed<T>(rows: T[]): {
   // A new list — a filter changed, a check re-ran — starts at the top
   // again. Keeping the old limit would silently render 600 rows of a list
   // the reader has not scrolled.
-  useEffect(() => setLimit(WINDOW), [rows.length])
+  //
+  // Adjusted during the render that notices rather than in an effect
+  // afterwards. An effect would paint 600 rows of the new list first and
+  // then throw them away, which on a list of a thousand findings is a
+  // visible stall for no reason.
+  const [countedAt, setCountedAt] = useState(rows.length)
+  if (rows.length !== countedAt) {
+    setCountedAt(rows.length)
+    setLimit(WINDOW)
+  }
 
   useEffect(() => {
     const node = sentinel.current
