@@ -1,5 +1,16 @@
 packages:
-  - apps/*
+  # Listed one by one rather than `apps/*`, and the reason is a build
+  # failure rather than taste. `apps/word-addin` is the inherited legal
+  # contract-review add-in, and it depends on `office-word-diff` from a
+  # git URL that pnpm resolves to SSH — so every install on a machine
+  # without a GitHub SSH key stops dead, which is every CI machine.
+  #
+  # It is left in the tree rather than deleted: the redline engine behind
+  # it is real, tested, and may yet earn a place here. Add it back to this
+  # list the day it does, with the dependency pointed at a tarball.
+  - apps/web
+  - apps/workspace
+  - apps/panel
   - packages/*
   - examples/*
 
