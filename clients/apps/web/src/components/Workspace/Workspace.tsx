@@ -23,6 +23,7 @@ import { Dock } from './Dock'
 import { ApiError, TieOutApi } from './api'
 import type { Artifact, Chain, Coverage, Finding, Link } from './api'
 import { colour, font, pageBackground, panel, size, space, tabChip } from './design'
+import { currentIds } from './lineage'
 import { useNarrow } from './useNarrow'
 import './workspace.css'
 import { Applications } from './screens/Applications'
@@ -172,18 +173,32 @@ export function Workspace({ dealId }: { dealId: string }) {
   const drifted = new Set(
     findings.filter((one) => one.kind === 'drift').map((one) => one.source.ref),
   )
-  const rows: Row[] = links.map((link) => ({
-    id: link.id,
-    name: link.cell?.name || link.figure?.label || 'unnamed',
-    source: link.cell?.ref ?? '—',
-    value: link.cell?.value ?? link.figure?.printed ?? '',
-    status:
-      link.state === 'confirmed'
-        ? 'CONFIRMED'
-        : drifted.has(link.cell?.ref ?? '')
-          ? 'DRIFTED'
-          : 'MATCHING',
-  }))
+  //: Figures on superseded uploads are not published figures. Without this
+  //: the library drew one row per version — the same figure three times,
+  //: at the same value, from the same cell — under a heading that says
+  //: « every published figure ».
+  const inForce = currentIds(artifacts)
+  const rows: Row[] = links
+    .filter((link) => !link.figure || inForce.has(link.figure.artifact_id))
+    .map((link) => ({
+      id: link.id,
+      name: link.cell?.name || link.figure?.label || 'unnamed',
+      source: link.cell?.ref ?? '—',
+      where: link.figure?.location ?? '',
+      //: **What was printed, not what the cell holds.** The cell holds
+      //: 0.2136304063; the deck published « 21.4% ». On a product whose
+      //: whole argument is that a deck's printed precision is the claim
+      //: being made, showing ten decimal places of a float would be
+      //: contradicting itself on its own screen. The cell's value is the
+      //: fallback for a figure that was reconciled but never printed.
+      value: link.figure?.printed || link.cell?.value || '',
+      status:
+        link.state === 'confirmed'
+          ? 'CONFIRMED'
+          : drifted.has(link.cell?.ref ?? '')
+            ? 'DRIFTED'
+            : 'MATCHING',
+    }))
 
   /**
    * Read a dropped file into the deal, then re-check.
@@ -333,7 +348,11 @@ export function Workspace({ dealId }: { dealId: string }) {
               />
             ) : view === 'confirm' ? (
               <Confirm
-                links={links.filter((one) => one.state === 'proposed')}
+                links={links.filter(
+                  (one) =>
+                    one.state === 'proposed' &&
+                    (!one.figure || inForce.has(one.figure.artifact_id)),
+                )}
                 deal={deal}
                 detail={linkDetail}
                 onSelect={(link) => {

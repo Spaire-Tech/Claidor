@@ -27,6 +27,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { Artifact } from '../api'
 import { Nothing, Search, Truncation, useWindowed } from '../Dense'
 import { colour, size } from '../design'
+import { current } from '../lineage'
 
 const ICON: Record<string, string> = {
   '.pptx': '/icons/powerpoint.webp',
@@ -66,23 +67,6 @@ function status(artifact: Artifact): { text: string; ink: string } {
   if (artifact.status === 'processing') return { text: 'reading…', ink: colour.faint }
   if (artifact.status === 'uploading') return { text: 'uploading…', ink: colour.faint }
   return { text: shortDate(artifact.uploaded_at), ink: colour.fainter }
-}
-
-/**
- * The newest version of each document, newest document first.
- *
- * A lineage is « the deck », across every upload of it. Two different
- * decks in one deal are two lineages and stay two rows.
- */
-function current(artifacts: Artifact[]): Artifact[] {
-  const newest = new Map<string, Artifact>()
-  for (const artifact of artifacts) {
-    const seen = newest.get(artifact.lineage_id)
-    if (!seen || artifact.version > seen.version) newest.set(artifact.lineage_id, artifact)
-  }
-  return [...newest.values()].sort(
-    (a, b) => Date.parse(b.uploaded_at) - Date.parse(a.uploaded_at),
-  )
 }
 
 export function Files({
