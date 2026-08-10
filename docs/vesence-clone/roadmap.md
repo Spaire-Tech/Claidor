@@ -91,19 +91,40 @@ the engine question resolved.
 
 ---
 
-## Phase 1 — Word, the Check surface  *(85%)*
+## Phase 1 — Word, the Check surface  *(built, unverified)*
 
-| Work | Estimate | Blocked on |
-|---|---|---|
-| ~~Read the Vaquill add-in and decide~~ | — | **Done. Forked.** |
-| ~~Wire the Check panel to `/v1/redline/*`~~ | — | **Done.** Four buckets, dismissals stored in the .docx |
-| **Verify in Word** | 1 day | 10 minutes of a real Word |
-| **Microsoft Entra SSO** | 4–6 days | An Entra app registration |
-| **Deploy** | 1 day | A name |
-| Panel polish — empty, error, too-much states | 3 days | Your designs |
-| Pass Word's `listString` numbering to the server | 2 days | — |
+**The percentage was retired on 10 August**, because it had stopped
+measuring anything. Phase 1 is roughly 90% *built* and 0% *verified*, and
+those are not points on one scale. A panel that has never run in Word is
+not 90% of a working panel; it is a complete panel with an unknown number
+of defects, and no amount of further building changes the number.
 
-**~1.5 weeks**, all of it blocked on you rather than on code.
+Verification is deferred. Sideloading is switched off on the tenant
+available to us, which is the normal posture for a company Microsoft
+account. The self-test is built and deployed and waiting at
+`claidor-selftest.vercel.app`; it does not expire.
+
+| Work | State |
+|---|---|
+| Read the Vaquill add-in and decide | **Done.** Forked |
+| Wire the Check panel to `/v1/redline/*` | **Done.** Four buckets, dismissals in the .docx |
+| Build the self-test | **Done.** Deployed, never run |
+| **Let the pane authenticate at all** | **Open, and mine.** The check routes accept only a browser session cookie, which an add-in iframe cannot send |
+| Verify in Word | **Deferred.** Needs a Word without tenant restrictions — a desktop Word or a personal account |
+| Microsoft Entra SSO | **Dropped.** Google stays; revisit when a firm asks |
+| Deploy the panel itself | Behind the API being deployed |
+| Panel polish — empty, error, too-much states | Deferred to after the backend, by decision |
+| Pass Word's `listString` numbering to the server | Open, code only |
+
+**What this changes:** Phase 1 does not close, so it stops being the
+priority. Finish the auth — which makes the panel *complete and ready to
+test the moment a Word exists* — and then go to Phase 2, where everything
+can be verified here.
+
+**What it must not become:** a reason to start Phase 3. Word's writing
+surface is more Office.js on top of Office.js that has never run. Building
+it now would multiply one unverified layer by another, and every defect
+found later would be found in twice as much code.
 
 ---
 
@@ -204,11 +225,11 @@ panel with no product behind it is not a demonstration.
 
 | | When | Why |
 |---|---|---|
-| **10 minutes of a real Word** | Now | Retires the biggest cheap risk |
-| **A Microsoft Entra app registration** | Before Phase 1 ends | Free; it is the only sign-in there is |
-| **A name** | Before deploying | Goes in the manifest and on the sign-in screen |
-| **The panel designs** | Phase 1 | Six screens, four states each |
-| **A lawyer, for one hour** | As soon as the panel runs | Nobody has judged whether 20 findings per agreement is useful or noise |
+| **A lawyer, for one hour** | **Now.** Ahead of everything else | Nobody has judged whether 20 findings per agreement is useful or noise. This needs no Word: hand them a printout of the findings on an agreement they know |
+| **10 minutes of an unrestricted Word** | Whenever convenient | Desktop Word needs no IT approval, and a free personal Microsoft account is its own tenant. Deferred, not abandoned |
+| ~~A Microsoft Entra app registration~~ | — | Dropped. Google stays |
+| ~~A name~~ | — | Claidor |
+| **The panel designs** | After the backend, by decision | Six screens, four states each |
 
 ---
 
@@ -218,12 +239,18 @@ panel with no product behind it is not a demonstration.
 measured; whether they are worth reading is not. One lawyer, one
 afternoon.
 
-**A fork we regret.** Adopting somebody's add-in is a marriage, and the
-hour of reading is what decides it. Doing it on the strength of a README
-would be the same mistake as reasoning about Vesence from press coverage.
+**Word behaves differently from the documentation.** Promoted, because
+deferring it is what promoted it. Four Office.js assumptions are
+unresolved and the test that resolves them is built, deployed and
+unrunnable on the Word available to us. It was the cheapest risk on this
+list while it could be retired in ten minutes; a deferred cheap risk is
+just a risk, and it accrues interest in the shape of every line written on
+top of it. The one thing that must not happen is Phase 3 starting first.
 
-**Word behaves differently from the documentation.** Four Office.js
-assumptions still unresolved. Cheap now, expensive in month three.
+**A fork we regret.** Adopting somebody's add-in is a marriage. The hour
+of reading is spent and the answer was favourable, so this is now a slow
+risk rather than a live one: upstream ships no tests, so anything of
+theirs we come to depend on gets tests of ours or gets replaced.
 
 **Scope by imitation.** Vesence has five surfaces, custom agents,
 sub-agents, a sandbox and six connectors. The phase order above is
