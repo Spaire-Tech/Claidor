@@ -25,6 +25,8 @@ import type {
   Chain,
   Correction,
   Coverage,
+  DealListItem,
+  DealPage,
   FigureMap,
   Finding,
   Link,
@@ -46,8 +48,11 @@ import { Confirm } from './screens/Confirm'
 import { Document } from './screens/Document'
 import { Files } from './screens/Files'
 import { Library, type Row } from './screens/Library'
+import { Projects } from './screens/Projects'
 import { Sheets } from './screens/Sheets'
+import { Terminal } from './screens/Terminal'
 import { Trace } from './screens/Trace'
+import { Waiting } from './screens/Waiting'
 import { useNarrow } from './useNarrow'
 import type { View } from './views'
 import './workspace.css'
@@ -84,16 +89,6 @@ const TAB: Record<View, string> = {
 }
 
 /** The surfaces that need connectors or the writing layer. */
-const NOT_CONNECTED: Partial<Record<View, string>> = {
-  mail: 'Mail is not connected yet. It reads the draft you are writing and the files attached to it.',
-  calendar: 'Calendar is not connected yet.',
-  sharepoint:
-    'SharePoint is not connected yet. Connected, it keeps the deal in step with the files as they change.',
-  projects:
-    'One deal is open. Projects lists them all once there is more than one.',
-  terminal: 'Not connected.',
-}
-
 /** Which document each of the three document screens is about. */
 const OPENS: Partial<Record<View, Artifact['kind']>> = {
   deck: 'deck',
@@ -117,6 +112,11 @@ const SCREEN: Record<Artifact['kind'], View> = {
 
 export function Workspace({ dealId }: { dealId: string }) {
   const [view, setView] = useState<View>('chat')
+  //: Which deal the workspace is showing. It starts as the one the page
+  //: was opened at and Projects can change it, which until Projects
+  //: existed nothing could: every screen here is about one deal, and the
+  //: one it was about was « the first you are on », permanently.
+  const [chosen, setChosen] = useState(dealId)
   const [messages, setMessages] = useState<Message[]>([])
   const narrow = useNarrow()
 
@@ -134,6 +134,9 @@ export function Workspace({ dealId }: { dealId: string }) {
   const [documents, setDocuments] = useState<Artifact[]>([])
   const [findings, setFindings] = useState<Finding[]>([])
   const [coverage, setCoverage] = useState<Coverage | null>(null)
+  //: The last tie-out, for the one distinction coverage cannot make: a
+  //: deal that was checked and is clean against a deal nobody has run.
+  const [lastRun, setLastRun] = useState<DealPage['last_tieout']>(null)
   const [links, setLinks] = useState<Link[]>([])
   //: What this product *did* to the documents, as opposed to what it
   //: found in them. Held beside the findings because a correction
@@ -159,7 +162,7 @@ export function Workspace({ dealId }: { dealId: string }) {
       // No deal named, so take the first this person is on. One deal is
       // the normal case today; the moment it is not, Projects picks and
       // passes an id, and nothing else here changes.
-      const id = dealId || (await api.deals())[0]?.id
+      const id = chosen || (await api.deals())[0]?.id
       if (!id) {
         setError('You are not on any deals yet.')
         return
@@ -177,6 +180,7 @@ export function Workspace({ dealId }: { dealId: string }) {
       //: this request 1.07 MB at three thousand files.
       setDocuments(page.documents)
       setCoverage(page.coverage)
+      setLastRun(page.last_tieout)
       setFindings(found)
       setLinks(linked)
       setCorrections(written)
@@ -188,11 +192,56 @@ export function Workspace({ dealId }: { dealId: string }) {
           : 'Could not reach the server. Is the API running?',
       )
     }
-  }, [dealId])
+  }, [chosen])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  //: Every deal this person is on, for Projects. Loaded with the
+  //: workspace rather than when the screen opens: it is four rows, and
+  //: « which deal is wrong » should be answered by the time somebody has
+  //: finished pressing the button.
+  const [deals, setDeals] = useState<DealListItem[] | null>(null)
+  const [dealsAt, setDealsAt] = useState(0)
+  useEffect(() => {
+    let live = true
+    api
+      .deals()
+      .then((found) => live && setDeals(found))
+      .catch(() => live && setDeals([]))
+    return () => {
+      live = false
+    }
+  }, [dealsAt])
+
+  /**
+   * Open another deal.
+   *
+   * Everything on screen belongs to the deal being left, so everything is
+   * dropped rather than left to be replaced one request at a time — a
+   * findings list from the last deal under the new deal's heading is the
+   * worst kind of wrong, because it looks right.
+   */
+  const openDeal = (id: string) => {
+    if (id === dealFor.current) {
+      go('checks')
+      return
+    }
+    setChosen(id)
+    setDocuments([])
+    setFindings([])
+    setCorrections([])
+    setLinks([])
+    setCoverage(null)
+    setLastRun(null)
+    setGrid(null)
+    setDeckMap(null)
+    setMemoMap(null)
+    setMessages([])
+    setDeal('')
+    go('checks')
+  }
 
   const go = (next: View) => setView(next)
 
@@ -268,9 +317,19 @@ export function Workspace({ dealId }: { dealId: string }) {
   //: findings » while the filter said « All 1217 », because one excluded
   //: the one-tick notes and the other did not. Two numbers for one fact,
   //: on a screen whose entire purpose is that numbers agree.
-  const coverageLine = coverage
-    ? `${coverage.reconciled} figures reconciled · ${coverage.unlinked} not checked`
-    : 'not checked yet'
+  //: **A deal nobody has run is not a deal with nothing wrong with it.**
+  //: Zero reconciled and zero unchecked is what an unrun deal and an empty
+  //: deal both look like from the coverage alone, and « 0 figures
+  //: reconciled » under a heading reads as a result. The run itself is the
+  //: only thing that can tell those apart, so it is what is asked.
+  const checked = Boolean(
+    lastRun && lastRun.status === 'done' && !lastRun.error,
+  )
+  const coverageLine = !checked
+    ? 'the check has not run here'
+    : coverage
+      ? `${coverage.reconciled} figures reconciled · ${coverage.unlinked} not checked`
+      : 'not checked yet'
 
   // Every reconciled figure, with what became of it. Drift is looked up
   // from the findings; a figure a person confirmed outranks both, because
@@ -531,6 +590,7 @@ export function Workspace({ dealId }: { dealId: string }) {
               />
             ) : view === 'checks' ? (
               <Checks
+                checked={checked}
                 findings={findings}
                 deal={deal}
                 coverage={coverageLine}
@@ -597,16 +657,26 @@ export function Workspace({ dealId }: { dealId: string }) {
               />
             ) : view === 'applications' ? (
               <Applications onGo={go} />
-            ) : (
-              <div
-                style={{
-                  padding: 26,
-                  color: colour.muted,
-                  fontSize: size.meta,
+            ) : view === 'projects' ? (
+              <Projects
+                deals={deals}
+                current={dealFor.current}
+                onOpen={openDeal}
+              />
+            ) : view === 'terminal' ? (
+              <Terminal
+                api={api}
+                dealId={dealFor.current}
+                deal={deal}
+                onChanged={() => {
+                  setDealsAt((was) => was + 1)
+                  void load()
                 }}
-              >
-                {NOT_CONNECTED[view] ?? 'Not connected yet.'}
-              </div>
+              />
+            ) : (
+              // Mail, Calendar and SharePoint: drawn, and honestly empty
+              // until there is a source behind them. See `Waiting.tsx`.
+              <Waiting view={view} onGo={go} />
             )}
           </div>
         )}

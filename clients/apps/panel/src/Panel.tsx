@@ -200,7 +200,11 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {/* EMPTY — the *good* outcome, and it must not read as a failure. */}
         {panel.findings.length === 0 && (
-          <Quiet>Checked, and every figure here ties back to the model.</Quiet>
+          <Quiet>
+            {panel.coverage?.checked
+              ? 'Checked, and every figure here ties back to the model.'
+              : 'The check has not run on this deal yet. Re-check reads it against the model.'}
+          </Quiet>
         )}
 
         {shown.map((finding) => {

@@ -394,16 +394,23 @@ async def list_deals(
     auth_subject: auth.TieOutRead,
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> list[DealListItem]:
-    """The deals this person is on, for the panel's « which deal is this ».
+    """Every deal this person is on — the panel's picker, and Projects.
 
-    Asked once per document and then never again, because the answer is
-    written into the document itself.
+    The panel asks once per document and then never again, because the
+    answer is written into the document itself. Projects asks every time it
+    is opened, because « which of my deals has something wrong with it » is
+    the question it exists to answer.
+
+    Each row carries when it was last checked, so that a deal nobody has
+    run can say « not run » instead of showing the same empty findings
+    count as a deal that was checked this morning.
     """
     repository = TieOutRepository.from_session(session)
     deals = await repository.deals_for(auth_subject.subject.id)
     items: list[DealListItem] = []
     for deal in deals:
         counts = await repository.count_findings(deal.id)
+        run = await repository.latest_run(deal.id, CheckKind.tieout)
         items.append(
             DealListItem(
                 id=deal.id,
@@ -411,6 +418,9 @@ async def list_deals(
                 client=deal.client_name,
                 artifacts=len(await repository.current_artifacts(deal.id)),
                 open_findings=counts.get("open", 0),
+                # The run's own finishing time, not the row's: a run that
+                # was started and never finished has not checked anything.
+                checked_at=run.finished_at if run else None,
             )
         )
     return items

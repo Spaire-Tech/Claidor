@@ -740,6 +740,35 @@ class TestThePanel:
         assert len(ids) == 1
 
     @pytest.mark.auth
+    async def test_a_deal_nobody_has_checked_does_not_look_clear(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The distinction Projects is built on.
+
+        « No open findings » on a deal nobody ran reads exactly like « no
+        open findings » on one checked this morning, and a product whose
+        argument is that what was *not* checked stays on screen cannot let
+        those two look the same. `checked_at` is null until a run finishes.
+        """
+        await _deal_for(session, save_fixture, user)
+        await session.flush()
+
+        never = (await client.get("/v1/tieout/deals")).json()[0]
+        assert never["checked_at"] is None
+        assert never["open_findings"] == 0
+
+        checked = await _loaded(session, save_fixture, user)
+        await session.flush()
+
+        rows = {one["id"]: one for one in (await client.get("/v1/tieout/deals")).json()}
+        assert rows[str(checked.id)]["checked_at"] is not None
+        assert rows[str(checked.id)]["open_findings"] > 0
+
+    @pytest.mark.auth
     async def test_a_finding_carries_coordinates_a_host_can_act_on(
         self,
         client: AsyncClient,

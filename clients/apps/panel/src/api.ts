@@ -144,6 +144,11 @@ export interface Coverage {
   reasons: { reason: string; count: number }[]
 }
 
+/** Coverage, and whether a check ever produced it. */
+export interface Checked extends Coverage {
+  checked: boolean
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -245,10 +250,29 @@ export class TieOutApi {
     })
   }
 
-  /** Coverage for the deal — « 34 of 40 figures on this deck checked ». */
-  async coverage(dealId: string): Promise<Coverage> {
-    const deal = await this.call<{ coverage: Coverage }>(`/deals/${dealId}`)
-    return deal.coverage
+  /**
+   * Coverage for the deal, and whether it has ever been checked.
+   *
+   * The second half is not decoration. « Checked, and every figure here
+   * ties back to the model » on a deal nobody has run says a check
+   * happened, and a panel that says that about a deck nobody reconciled is
+   * doing the one thing this product exists not to do. Coverage cannot
+   * tell those apart — zero and zero look the same — so the run is asked
+   * for alongside it.
+   */
+  async coverage(dealId: string): Promise<Checked> {
+    const deal = await this.call<{
+      coverage: Coverage
+      last_tieout: { status: string; error: string | null } | null
+    }>(`/deals/${dealId}`)
+    return {
+      ...deal.coverage,
+      checked: Boolean(
+        deal.last_tieout &&
+        deal.last_tieout.status === 'done' &&
+        !deal.last_tieout.error,
+      ),
+    }
   }
 
   check(dealId: string): Promise<unknown> {

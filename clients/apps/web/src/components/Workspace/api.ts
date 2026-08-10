@@ -134,6 +134,12 @@ export interface DealListItem {
   client: string | null
   artifacts: number
   open_findings: number
+  /**
+   * When the deal was last reconciled. **Null means never**, and that is
+   * a different thing from « no findings » — a list that let those two
+   * share a word would be claiming a check nobody ran.
+   */
+  checked_at: string | null
 }
 
 export interface Link {
@@ -184,6 +190,18 @@ export interface ArtifactPage {
   offset: number
 }
 
+/** One pass of one checker over named versions of named files. */
+export interface CheckRun {
+  id: string
+  kind: 'tieout' | 'audit' | 'crosscheck'
+  status: 'queued' | 'running' | 'done' | 'failed'
+  summary: Record<string, unknown>
+  /** Present when the run could not happen, in words for a person. */
+  error: string | null
+  started_at: string | null
+  finished_at: string | null
+}
+
 export interface DealPage {
   id: string
   name: string
@@ -195,8 +213,16 @@ export interface DealPage {
   files: number
   lineages: number
   findings: { open: number; accepted: number; dismissed: number; fixed: number }
-  last_tieout: { status: string; summary: Record<string, unknown> } | null
-  last_audit: { status: string; summary: Record<string, unknown> } | null
+  /**
+   * The last run of each checker, or null where one has never run.
+   *
+   * Null is the field the whole product's honesty rests on here: a deal
+   * that was checked and is clean and a deal nobody has run have the same
+   * coverage and the same empty findings list, and only this tells them
+   * apart.
+   */
+  last_tieout: CheckRun | null
+  last_audit: CheckRun | null
 }
 
 export interface Coverage {
@@ -550,7 +576,17 @@ export class TieOutApi {
     return this.call('/deals')
   }
 
-  check(dealId: string): Promise<unknown> {
+  /**
+   * Run both checks. Comes back with the runs themselves — their status,
+   * their summary and when they started and finished — which is what the
+   * Terminal reads its output out of.
+   */
+  check(dealId: string): Promise<CheckRun[]> {
     return this.call(`/deals/${dealId}/check`, { method: 'POST' })
+  }
+
+  /** The last tie-out and the last audit: when this was last true. */
+  runs(dealId: string): Promise<CheckRun[]> {
+    return this.call(`/deals/${dealId}/runs`)
   }
 }

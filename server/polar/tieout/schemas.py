@@ -456,13 +456,22 @@ class PanelToken(Schema):
 
 
 class DealListItem(Schema):
-    """For the panel's « which deal does this document belong to ». Once."""
+    """One deal in a list of them — the panel's picker, and Projects.
+
+    `checked_at` is the field that keeps the list honest. « No open
+    findings » on a deal nobody has ever checked reads exactly like « no
+    open findings » on a deal that was checked this morning, and the whole
+    product turns on those two never looking the same. Null means the check
+    has not run, and the screen has to say so in those words.
+    """
 
     id: UUID
     name: str
     client: str | None
     artifacts: int
     open_findings: int
+    #: When this deal was last reconciled. Null: never.
+    checked_at: datetime | None = None
 
 
 # --- the model page ------------------------------------------------------

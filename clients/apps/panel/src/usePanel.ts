@@ -25,7 +25,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import type { Coverage, Finding, Identified } from './api'
+import type { Checked, Finding, Identified } from './api'
 import { ApiError, TieOutApi } from './api'
 import { current, signOut as forget, signIn as openSignIn } from './auth'
 import type { GoToResult, HostBridge, OpenDocument, WriteResult } from './host'
@@ -43,7 +43,7 @@ export interface PanelState {
   document: OpenDocument | null
   identity: Identified | null
   findings: Finding[]
-  coverage: Coverage | null
+  coverage: Checked | null
   error: string | null
   /** True while a check is running, so a button can say so. */
   working: boolean
