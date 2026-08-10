@@ -91,3 +91,40 @@ version marker means « there are this many ».
 *« notes.txt is not a file this can read — models are .xlsx or .xls, decks
 are .pptx »*; dropped the real model and it landed as v6 with the check
 re-run and the row count still 3.
+
+---
+
+## 10 August — the confirmation queue
+
+**Why it matters more than it looks.** The engine proposes that a printed
+figure means a particular cell. A banker confirms. From that moment,
+re-checking that figure is arithmetic that cannot come out differently on
+Tuesday. That is the whole reason an engine which reconciles *some* of a
+deck can back an answer that holds for all of the part it was told about —
+and it had no screen.
+
+**Not in the design.** Composed from two patterns that are: the Check row
+(title, locator beneath, one value at the right edge) and the Chain
+metadata table (`flex 0 0 82px` label against value). Nothing invented;
+every choice went to whichever of those two already answered it.
+
+**Built for speed, because forty in a sitting is the point.** `J`/`K` or
+the arrows move, `Enter` confirms, `R` rejects. The cursor stays at the
+same index so the next link arrives underneath it and a hand never leaves
+the keys. Typing in the search box suspends the shortcuts.
+
+Three ways to settle one: confirm as proposed, reject, or **point it
+somewhere else** — either from the alternatives the linker scored and did
+not pick, or by searching the model's named cells.
+
+**Verified through the interface**, on 107 real links: pressed `Enter`,
+the queue went 107 → 106, and the figure library grew a `CONFIRMED` row.
+
+**Environment note.** The Next dev server, the API, Postgres and Minio all
+died again mid-session. Start them with `setsid … &` and *wait on a
+condition* rather than a fixed sleep:
+
+```
+until curl -s -o /dev/null http://127.0.0.1:8000/healthz \
+   && curl -s -o /dev/null http://127.0.0.1:3000/; do sleep 4; done
+```

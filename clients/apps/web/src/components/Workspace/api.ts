@@ -124,8 +124,24 @@ export interface Link {
     basis: string | null
     artifact_id: string
   } | null
+  alternatives?: {
+    cell_id: string | null
+    ref: string
+    name: string
+    value: string | null
+    confidence: number
+  }[]
   confirmed_by: { id: string; name: string; avatar_url: string | null } | null
   confirmed_at: string | null
+}
+
+export interface Cell {
+  id: string
+  ref: string
+  sheet: string
+  name: string
+  value: string | null
+  formula: string | null
 }
 
 export interface DealPage {
@@ -279,6 +295,40 @@ export class TieOutApi {
    */
   links(dealId: string): Promise<Link[]> {
     return this.call(`/deals/${dealId}/links`)
+  }
+
+  /**
+   * One link, with what else the figure could have been.
+   *
+   * The alternatives cost a re-score against the model, which is why they
+   * are here and not on the list.
+   */
+  link(linkId: string): Promise<Link> {
+    return this.call(`/links/${linkId}`)
+  }
+
+  /**
+   * Confirm, reject, or point it somewhere else.
+   *
+   * Confirming is the moment a guess becomes data: the pair is recorded
+   * as decided and no later run proposes over it, undoes it, or brings a
+   * rejection back. `cellId` re-points first, which turns a wrong guess
+   * into a right fact rather than throwing it away.
+   */
+  decide(
+    linkId: string,
+    state: 'confirmed' | 'rejected',
+    cellId?: string,
+  ): Promise<Link> {
+    return this.call(`/links/${linkId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ state, cell_id: cellId ?? null }),
+    })
+  }
+
+  /** Named cells matching a few words, for « point it somewhere else ». */
+  cells(artifactId: string, query: string): Promise<Cell[]> {
+    return this.call(`/artifacts/${artifactId}/cells?q=${encodeURIComponent(query)}`)
   }
 
   /** Everything the deal page needs, in one request. */

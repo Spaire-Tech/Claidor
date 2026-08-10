@@ -25,6 +25,7 @@ import type { Artifact, Chain, Coverage, Finding, Link } from './api'
 import { colour, font, pageBackground, panel, size, tabChip } from './design'
 import { Applications } from './screens/Applications'
 import { Checks } from './screens/Checks'
+import { Confirm } from './screens/Confirm'
 import { Files } from './screens/Files'
 import { Library, type Row } from './screens/Library'
 import { Trace } from './screens/Trace'
@@ -54,6 +55,7 @@ const TAB: Record<View, string> = {
   sharepoint: 'SharePoint',
   projects: 'Projects',
   checks: 'Check',
+  confirm: 'Confirm',
   trace: 'Chain',
   library: 'Figure library',
   terminal: 'Terminal',
@@ -90,6 +92,7 @@ export function Workspace({ dealId }: { dealId: string }) {
   const [chain, setChain] = useState<Chain | null>(null)
   const [traced, setTraced] = useState<Finding | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [linkDetail, setLinkDetail] = useState<Link | null>(null)
   const [uploading, setUploading] = useState<string[]>([])
   const [rejected, setRejected] = useState<string | null>(null)
 
@@ -211,6 +214,17 @@ export function Workspace({ dealId }: { dealId: string }) {
     await load()
   }
 
+  /** Confirm, reject, or re-point — then reload, since coverage moved. */
+  const decide = async (
+    link: Link,
+    state: 'confirmed' | 'rejected',
+    cellId?: string,
+  ) => {
+    await api.decide(link.id, state, cellId)
+    setLinkDetail(null)
+    await load()
+  }
+
   const send = (text: string) => {
     setMessages((was) => [...was, { kind: 'user', text }])
   }
@@ -305,6 +319,17 @@ export function Workspace({ dealId }: { dealId: string }) {
                 ]}
                 onSlide={() => go('deck')}
                 onCell={() => go('sheets')}
+              />
+            ) : view === 'confirm' ? (
+              <Confirm
+                links={links.filter((one) => one.state === 'proposed')}
+                deal={deal}
+                detail={linkDetail}
+                onSelect={(link) => {
+                  void api.link(link.id).then(setLinkDetail).catch(() => {})
+                }}
+                onDecide={(link, state, cellId) => void decide(link, state, cellId)}
+                onSearch={(artifactId, query) => api.cells(artifactId, query)}
               />
             ) : view === 'library' ? (
               <Library rows={rows} onOpen={() => go('checks')} />
