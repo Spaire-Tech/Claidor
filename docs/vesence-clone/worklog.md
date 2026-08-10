@@ -984,3 +984,108 @@ Not in corpora — in the rules. Every finding now cites the standard it
 comes from, so « says who » has an answer that is not « the tool ». That
 was free, it came straight from Target 4, and it is the difference between
 a checker and an opinion.
+
+---
+
+# 10 August, late — reading `.xls`, and what 73 real models then said
+
+Every corpus of real spreadsheets is legacy binary. EUSES is `.xls`, the
+Enron archive is `.xls`, CUSTODES is `.xls`, and sixty-nine of Damodaran's
+seventy-three models are `.xls`. A model auditor that reads only `.xlsx`
+can be measured against almost nothing.
+
+## The route, after two dead ends
+
+**LibreOffice is installed here and refuses to load them** — every one,
+with `Error: source file could not be loaded`, headless, no display, no
+Java. The files are ordinary BIFF8 and open elsewhere, so that is an
+environment defeating a converter rather than a format problem.
+
+**`xlrd` reads them perfectly and gives only values**, which is what a
+reader for data does and precisely not what an audit needs.
+
+The way through was already inside xlrd. Excel stores a formula as a
+postfix token stream, and `xlrd.formula.decompile_formula` turns one back
+into text — written for defined names, never wired to cells. So:
+`polar/tieout/legacy.py` walks the raw BIFF record stream for `FORMULA`
+records and hands each token stream to a decompiler that has been in the
+package the whole time.
+
+The file format supplied the rest of the work. Sheets are located through
+`BOUNDSHEET` offsets, because scanning for `BOF` finds chart sheets and
+gets the order wrong. Records over 8,224 bytes arrive split across
+`CONTINUE` blocks. And **shared formulas** — Excel stores a formula
+repeated across a range once, with every cell holding a stub — which is
+not an inconvenience but the thing the row-consistency check is about.
+
+**69 of 70 legacy files read. 48,130 cells, 10,403 formulas decompiled.**
+The one failure is `lboval.xls`, which is not BIFF8 at all: it is a raw
+Excel 4.0 stream with no OLE container.
+
+## Two bugs that only real models could show
+
+**A formula is a string, so a column of formulas counts as a column of
+labels.** The label-column detector picked whichever column held the most
+text; on `apv.xls` that was a column of calculations, and every figure on
+the sheet was named after the arithmetic beside it. Cascade never showed
+it because nothing in its column A is calculated. This was wrong in the
+`.xlsx` path too, and had been all day.
+
+**The formula book was missing its text.** openpyxl's non-data workbook
+holds a formula where there is one and the literal contents everywhere
+else, so the row labels are in *both* of its books. The legacy reader
+returned only formulas, so every cell was named the empty string.
+
+## Then 73 real models, four times over
+
+The audit's first pass over them reported a **1.9% error rate**. Four
+refinements, each read by hand from a specific model, took it to **0.36%**
+with **57 of 69 legacy models producing nothing at all**:
+
+1. **A lone constant between two formulas** — not a block of them.
+   `risk.xls` has fifty-nine rows of typed market prices followed by the
+   statistics computed from them; that is a data region, not somebody
+   pasting over a formula. **99 findings to 0**, and the fixture unaffected.
+2. **A series is a series when its columns are periods.** `apv.xls` has a
+   ratings table whose columns are « min coverage », « rating », « cost of
+   debt » — they are supposed to differ. Five rows, five findings, all
+   wrong.
+3. **One deviant, not two.** A typo overwrites one cell. Two or more means
+   the row changes meaning partway across — three sums and then two
+   ratios — and every cell in it is doing what it was meant to.
+4. **A cell pulling straight from an inputs sheet is a hand-off**, already
+   detected as an alias for other reasons.
+
+## The finding that validated the whole thing
+
+`apv.xls` reports sixteen circular references, and they are real:
+
+> `Interest` → `Pre-tax cost of debt` → `Pre-tax interest coverage` →
+> `Interest`
+
+Interest depends on the cost of debt, which is looked up from interest
+coverage, which is computed from interest. The textbook circularity of an
+optimal-capital-structure model. The file ships with iterative calculation
+**off** — and the workbook's own `READ ME FIRST` sheet says:
+
+> *« Open preferences in excel, go into calculation options and put a
+> check in the iteration box. »*
+
+So the loop is real, deliberate, undeclared in the file, and the author
+knew. A banker who opens that model without reading the instructions gets
+a circular-reference warning and no numbers. That is the rule working
+exactly as intended, confirmed by the model's own documentation rather
+than by my reading of it.
+
+## The honest caveat
+
+`inconsistent-row` now fires **zero times across all 73 real models**,
+while still catching the planted defect in the fixture. Two readings are
+available and I cannot distinguish them here: either those models contain
+no inconsistent rows, or I tightened until the rule stopped firing. Every
+tightening was justified by hand-reading a specific legitimate structure,
+and the fixture is the guard against the second reading — but a fixture I
+wrote is weaker evidence than a corpus somebody else labelled.
+
+Which is still CUSTODES, and it is still one allowlisted hostname away.
+The `.xls` half of that obstacle is now gone.

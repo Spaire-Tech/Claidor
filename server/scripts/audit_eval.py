@@ -6,14 +6,20 @@ measured here**, and this script does not pretend otherwise: the models it
 downloads have no labelled ground truth, so what it reports is a *rate*,
 and whether a finding is right is a question for a reader.
 
+Across all seventy-three of Damodaran's models — sixty-nine of them legacy
+`.xls` — the rate is 0.36% of formulas, and fifty-seven of sixty-nine
+legacy models produce nothing at all. Most of what remains is circularity
+that the models carry deliberately and their files do not declare.
+
 The rate is still the number that decides the product. The published
 benchmark on the only hand-labelled corpus — seventy sheets from EUSES,
 marked by the CUSTODES authors — is a mean per-workbook precision of 20.3%
 for CUSTODES and a median of 1.0 for ExceLint, on the same data. Running
-against it is the honest next measurement and it is not possible from
-here: `sccpu2.cse.ust.hk` is outside this environment's egress allowlist,
-and the corpus is legacy binary `.xls`, which needs a reader this project
-does not have.
+against it is the honest next measurement and it is still not possible
+from here: `sccpu2.cse.ust.hk` is outside this environment's egress
+allowlist. The `.xls` half of that obstacle is gone —
+:mod:`polar.tieout.legacy` reads them — so allowlisting one host is now
+the whole of what stands between this and a measured precision.
 
 Models are downloaded rather than vendored. They are Aswath Damodaran's
 teaching models, free and explicitly not copy-protected, but permission to
@@ -40,6 +46,16 @@ MODELS = (
     "fcffginzu.xlsx",
     "fcffsimpleginzu.xlsx",
     "fcffsimpleginzuCorona.xlsx",
+    # Legacy `.xls`, which is what almost every real spreadsheet is. The
+    # first has documented circular references its file does not declare.
+    "apv.xls",
+    "risk.xls",
+    "ddm3st.xls",
+    "GrossvsNet.xls",
+    "higrowth.xls",
+    "fcff3st.xls",
+    "capbudg.xls",
+    "equity.xls",
 )
 SOURCE = "https://pages.stern.nyu.edu/~adamodar/pc/"
 CACHE = Path(__file__).resolve().parents[1] / ".model-cache"

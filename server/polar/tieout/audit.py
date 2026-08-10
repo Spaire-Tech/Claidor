@@ -61,6 +61,23 @@ INNOCENT = frozenset({0, 1, 2, -1, 10, 12, 24, 52, 100, 360, 365, 1000, 1000000}
 #: a model's typed history and its calculated forecast.
 BOUNDARY_ROWS = 3
 
+#: A column header that names a period. A row is one calculation repeated
+#: *over time*, and that is what makes departure from its pattern a
+#: defect. Where the columns name different quantities instead — a ratings
+#: table whose columns are « min coverage », « rating », « cost of debt » —
+#: the cells are supposed to differ, and Damodaran's APV model has five
+#: such rows that looked like five defects.
+PERIOD = re.compile(
+    r"""^\s*(?:
+        (?:FY|CY|LTM|NTM)?\s*(?:19|20)\d{2}\s*[AEPF]?
+      | Q[1-4](?:\s*(?:19|20)\d{2})?
+      | (?:Year|Yr|Period)\s*\d+
+      | \d{1,2}
+      | Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec
+    )\s*$""",
+    re.VERBOSE | re.IGNORECASE,
+)
+
 #: How many side-by-side cells make a series. Four, because the check only
 #: looks at interior cells: three would leave exactly one cell to judge
 #: against one neighbour on either side, which is not a pattern.
@@ -296,10 +313,19 @@ def _rows(book: Workbook, result: Audit) -> None:
             # independently of the pattern check. Getting that wrong meant
             # a value typed over a formula in a *consistent* row — the
             # commonest way a model breaks — was never reported at all.
-            for cell in run[1:-1]:
+            for index, cell in enumerate(run[1:-1], start=1):
                 if cell.formula is not None:
                     continue
                 if boundary is not None and cell.column < boundary:
+                    continue
+                # A *lone* constant between two calculated cells. Somebody
+                # pasting a value over a formula does it to one cell; a
+                # block of adjacent constants is a region of typed data,
+                # and `risk.xls` has fifty-nine rows of market prices
+                # followed by the statistics computed from them. Requiring
+                # a formula on both sides took that model from 99 findings
+                # to none, and cost the fixture nothing.
+                if run[index - 1].formula is None or run[index + 1].formula is None:
                     continue
                 result.findings.append(
                     Finding(
@@ -317,6 +343,18 @@ def _rows(book: Workbook, result: Audit) -> None:
                 )
 
             if not majority or len(shapes) < 2:
+                continue
+            if count < len(calculated) - 1:
+                # More than one cell departs from the pattern. Somebody
+                # overwriting a formula does it to one cell; two or more
+                # means the row changes meaning partway across — three
+                # sums and then two ratios — and every cell in it is doing
+                # what it was meant to.
+                continue
+            if not _over_time(run):
+                # The columns name different quantities, so the cells under
+                # them are supposed to differ. Only a row that repeats one
+                # calculation across periods can break a pattern.
                 continue
 
             for cell in calculated:
@@ -360,6 +398,20 @@ def _rows(book: Workbook, result: Audit) -> None:
                             source="FAST, ICAEW P12",
                         )
                     )
+
+
+def _over_time(run: list[Cell]) -> bool:
+    """True when this run's columns are periods rather than quantities.
+
+    A header that is absent proves nothing either way, so a sheet with no
+    header row is still checked — most models that lay a series out
+    without labelling it still lay it out as a series.
+    """
+    labelled = [cell.column_label for cell in run if cell.column_label]
+    if not labelled:
+        return True
+    periods = sum(1 for label in labelled if PERIOD.match(label))
+    return periods >= len(labelled) - 1
 
 
 def _runs(cells: list[Cell]) -> list[list[Cell]]:

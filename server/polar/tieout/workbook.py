@@ -40,6 +40,8 @@ from openpyxl import load_workbook
 from openpyxl.formula.tokenizer import Tokenizer
 from openpyxl.utils import get_column_letter
 
+from .legacy import read_legacy
+
 #: How many text cells a row must have, outside the label column, before
 #: it is read as the header naming the columns. Two is enough to tell a
 #: period header — « FY2023A FY2024A FY2025A » — from a stray note, and
@@ -154,9 +156,20 @@ class Workbook:
 
 
 def read_workbook(path: str) -> Workbook:
-    """Every numeric cell in the model, named and with its precedents."""
-    formulas = load_workbook(path, data_only=False)
-    values = load_workbook(path, data_only=True)
+    """Every numeric cell in the model, named and with its precedents.
+
+    Reads `.xlsx` through openpyxl and `.xls` through
+    :mod:`polar.tieout.legacy`, which presents the same surface. Which
+    one a model is in decides nothing else: the labels, the precedents
+    and every rule downstream are the same either way, and they have to
+    be, because the corpora with real spreadsheets in them are all the
+    old format and the models a bank sends are all the new one.
+    """
+    if path.lower().endswith((".xls", ".xlt")):
+        formulas, values = read_legacy(path)
+    else:
+        formulas = load_workbook(path, data_only=False)
+        values = load_workbook(path, data_only=True)
 
     book = Workbook(
         sheets=list(formulas.sheetnames),
@@ -189,7 +202,8 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
     labels: dict[int, str] = {}
     for row in range(1, sheet.max_row + 1):
         raw = sheet.cell(row, label_column).value
-        text = str(raw).strip() if isinstance(raw, str) else ""
+        named = _label(raw)
+        text = named.strip() if named else ""
         if not text:
             continue
         indented = isinstance(raw, str) and raw[:1].isspace()
@@ -205,9 +219,9 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
     headers: dict[int, str] = {}
     if header_row is not None:
         for column in range(1, sheet.max_column + 1):
-            raw = sheet.cell(header_row, column).value
-            if isinstance(raw, str) and raw.strip():
-                headers[column] = raw.strip()
+            named = _label(sheet.cell(header_row, column).value)
+            if named:
+                headers[column] = named.strip()
 
     for row in range(1, sheet.max_row + 1):
         for column in range(1, sheet.max_column + 1):
@@ -323,8 +337,7 @@ def _header_row(sheet: Any) -> int | None:
         texts = sum(
             1
             for column in range(2, sheet.max_column + 1)
-            if isinstance(sheet.cell(row, column).value, str)
-            and sheet.cell(row, column).value.strip()
+            if _label(sheet.cell(row, column).value)
         )
         if texts >= HEADER_TEXTS and (best is None or texts > best[1]):
             best = (row, texts)
@@ -340,8 +353,7 @@ def _label_column(sheet: Any) -> int:
         texts = sum(
             1
             for row in range(1, sheet.max_row + 1)
-            if isinstance(sheet.cell(row, column).value, str)
-            and sheet.cell(row, column).value.strip()
+            if _label(sheet.cell(row, column).value)
         )
         if texts > most:
             best, most = column, texts
@@ -350,6 +362,21 @@ def _label_column(sheet: Any) -> int:
 
 def _formula(value: Any) -> str | None:
     return value if isinstance(value, str) and value.startswith("=") else None
+
+
+def _label(value: Any) -> str | None:
+    """A cell's text, when the text is a name and not a calculation.
+
+    A formula is a string, so a column full of formulas counts as a column
+    full of labels unless this says otherwise — and then every figure on
+    the sheet is named after the arithmetic in the column beside it. The
+    Cascade model never showed it because nothing in its column A is
+    calculated; a real model with a formula down the left-hand side shows
+    it immediately.
+    """
+    if not isinstance(value, str) or value.startswith("="):
+        return None
+    return value if value.strip() else None
 
 
 def _decimal(value: Any) -> Decimal | None:
