@@ -128,3 +128,60 @@ condition* rather than a fixed sleep:
 until curl -s -o /dev/null http://127.0.0.1:8000/healthz \
    && curl -s -o /dev/null http://127.0.0.1:3000/; do sleep 4; done
 ```
+
+---
+
+## 10 August — density
+
+**The problem.** The design was drawn at seven findings and nine files. A
+live deal is hundreds and thousands. At that size a list has to answer
+questions the drawing never had to: how do I find one, how do I skip the
+noise, does the heading stay where I can read it.
+
+**Nothing new was invented.** `Dense.tsx` records where each piece came
+from — the filter is the Chain's text buttons, the search is the input the
+confirmation queue introduced, the heading is the design's own heading
+pinned, the truncation line is the count line that already sits under
+every heading.
+
+**The rule underneath it.** A list must never quietly show a subset. If
+1,248 rows exist and 120 are drawn, the screen says so. Silent truncation
+reads as « that is all of them », which is the same lie as hiding a
+finding.
+
+**`scripts/dev_bulk.py`** fills a deal to live size so the screens can
+actually be seen at it — 1,200 findings and 3,000 files, deterministic
+seed, everything marked `dev-bulk` and removable with `--clear`. A density
+pass only ever looked at with the Cascade fixture in front of it is a
+density pass nobody has tested.
+
+### Three things it exposed
+
+**1. Two different finding counts on one screen — fixed.** The heading
+said « 892 findings » while the filter said « All 1217 »: one excluded the
+one-tick notes, the other did not. On a product whose entire purpose is
+that numbers agree, that is the worst possible defect to ship. The heading
+now carries coverage only and the filter row carries the counts, so there
+is exactly one place that totals findings.
+
+**2. A finding with no artifact rendered a stray leading separator** —
+`· slide 1, row « … »`. Fixed by joining the parts that exist.
+
+**3. Load time, and what is *not* known about it.** Honest numbers:
+
+| | |
+|---|---|
+| `GET /deals/{id}` | 1.03 s, **1.07 MB** at 3,003 artifacts |
+| `GET /deals/{id}/findings` | 0.10 s, 696 KB at 1,217 findings |
+| `GET /deals/{id}/links` | 0.03 s |
+| Browser, `networkidle`, **Next dev** | ~15 s warm |
+
+The API is not the problem. The 15 s is a development-server measurement —
+turbopack, HMR websockets, React strict-mode double rendering — and **has
+not been measured against a production build**, so it should not be quoted
+as a product number and no fix has been made on the strength of it.
+
+**What is a real problem and is not yet fixed:** the deal page inlines
+every artifact, so its payload grows linearly and is already 1 MB at three
+thousand files. That wants pagination on the endpoint, not a client-side
+window. Next job.

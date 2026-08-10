@@ -22,9 +22,10 @@
  * many », which is the only place that history is worth a glance.
  */
 
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 
 import type { Artifact } from '../api'
+import { Nothing, Search, Truncation, useWindowed } from '../Dense'
 import { colour, size } from '../design'
 
 const ICON: Record<string, string> = {
@@ -102,8 +103,21 @@ export function Files({
   problem: string | null
 }) {
   const [over, setOver] = useState(false)
+  const [query, setQuery] = useState('')
   const picker = useRef<HTMLInputElement>(null)
-  const documents = current(artifacts)
+  const documents = useMemo(() => current(artifacts), [artifacts])
+
+  // A real data room is thousands of files, so the name is the only way
+  // in. Searched on the filename alone: it is the whole of what a row
+  // shows, and searching what is not shown is how a result becomes
+  // unexplainable.
+  const matching = useMemo(() => {
+    const text = query.trim().toLowerCase()
+    if (!text) return documents
+    return documents.filter((one) => one.filename.toLowerCase().includes(text))
+  }, [documents, query])
+
+  const { shown, sentinel, more } = useWindowed(matching)
 
   return (
     <div
@@ -183,6 +197,12 @@ export function Files({
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 12px 20px' }}>
+        {documents.length > 8 && (
+          <div style={{ padding: '0 14px 14px' }}>
+            <Search value={query} onChange={setQuery} placeholder="Search files" />
+          </div>
+        )}
+
         {problem && (
           <div
             style={{
@@ -220,20 +240,21 @@ export function Files({
         ))}
 
         {documents.length === 0 && uploading.length === 0 && !problem && (
-          <div
-            style={{
-              fontSize: size.meta,
-              color: colour.faint,
-              padding: '4px 14px',
-              lineHeight: 1.7,
-            }}
-          >
-            Nothing here yet. Drop a model and a deck anywhere on this panel
-            and the checks can run.
+          <div style={{ padding: '0 14px' }}>
+            <Nothing>
+              Nothing here yet. Drop a model and a deck anywhere on this
+              panel and the checks can run.
+            </Nothing>
           </div>
         )}
 
-        {documents.map((artifact) => {
+        {documents.length > 0 && matching.length === 0 && (
+          <div style={{ padding: '0 14px' }}>
+            <Nothing>No file here is called that.</Nothing>
+          </div>
+        )}
+
+        {shown.map((artifact) => {
           const state = status(artifact)
           return (
             <div key={artifact.id}>
@@ -307,6 +328,16 @@ export function Files({
             </div>
           )
         })}
+
+        {more && (
+          <div style={{ padding: '0 14px' }}>
+            <Truncation
+              shown={shown.length}
+              total={matching.length}
+              sentinel={sentinel}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

@@ -10,7 +10,10 @@
  * outside the model altogether, and nothing behind it can be recomputed.
  */
 
+import { useMemo, useState } from 'react'
+
 import type { Finding } from '../api'
+import { Filter, Heading, Nothing, Search, Truncation, useWindowed } from '../Dense'
 import { colour, font, size } from '../design'
 
 export type Row = {
@@ -36,29 +39,61 @@ export function Library({
   rows: Row[]
   onOpen: (row: Row) => void
 }) {
-  return (
-    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '22px 26px' }}>
-      <h2
-        style={{
-          margin: '0 0 4px',
-          fontSize: 18,
-          fontWeight: 600,
-          letterSpacing: '-.015em',
-        }}
-      >
-        Figure library
-      </h2>
-      <div style={{ color: colour.muted, marginBottom: 18 }}>
-        Every published figure, with the source it was drawn from.
-      </div>
+  const [status, setStatus] = useState<Row['status'] | 'all'>('all')
+  const [query, setQuery] = useState('')
 
-      {rows.length === 0 && (
-        <div style={{ fontSize: size.meta, color: colour.faint }}>
-          Nothing published yet. Upload a model and a deck to fill this.
+  const counts = useMemo(() => {
+    const tally: Record<string, number> = {}
+    for (const row of rows) tally[row.status] = (tally[row.status] ?? 0) + 1
+    return tally
+  }, [rows])
+
+  const matching = useMemo(() => {
+    const text = query.trim().toLowerCase()
+    return rows.filter((row) => {
+      if (status !== 'all' && row.status !== status) return false
+      if (!text) return true
+      return `${row.name} ${row.source} ${row.value}`.toLowerCase().includes(text)
+    })
+  }, [query, rows, status])
+
+  const { shown, sentinel, more } = useWindowed(matching)
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+      <Heading
+        title="Figure library"
+        line="Every published figure, with the source it was drawn from."
+      />
+
+      <div style={{ padding: '0 26px 26px' }}>
+      {rows.length > 8 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 6 }}>
+          <Search value={query} onChange={setQuery} placeholder="Search figures" />
+          <Filter<Row['status'] | 'all'>
+            value={status}
+            onChange={setStatus}
+            options={[
+              { value: 'all', label: 'All', count: rows.length },
+              { value: 'DRIFTED', label: 'Drifted', count: counts.DRIFTED ?? 0 },
+              { value: 'MATCHING', label: 'Matching', count: counts.MATCHING ?? 0 },
+              { value: 'CONFIRMED', label: 'Confirmed', count: counts.CONFIRMED ?? 0 },
+            ]}
+          />
         </div>
       )}
 
-      {rows.map((row) => (
+      {rows.length === 0 && (
+        <Nothing>
+          Nothing published yet. Upload a model and a deck to fill this.
+        </Nothing>
+      )}
+
+      {rows.length > 0 && matching.length === 0 && (
+        <Nothing>Nothing matches that.</Nothing>
+      )}
+
+      {shown.map((row) => (
         <button
           key={row.id}
           onClick={() => onOpen(row)}
@@ -105,6 +140,11 @@ export function Library({
           </span>
         </button>
       ))}
+
+      {more && (
+        <Truncation shown={shown.length} total={matching.length} sentinel={sentinel} />
+      )}
+      </div>
     </div>
   )
 }

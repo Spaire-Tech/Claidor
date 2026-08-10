@@ -151,9 +151,14 @@ export function Workspace({ dealId }: { dealId: string }) {
    * The coverage line, in the design's own register: a count and what was
    * not reached, in one clause.
    */
+  //: Coverage only. The finding counts live on the filter row beneath,
+  //: with one number per severity — and the two must never both try to
+  //: total the same thing. The first version of this line said « 892
+  //: findings » while the filter said « All 1217 », because one excluded
+  //: the one-tick notes and the other did not. Two numbers for one fact,
+  //: on a screen whose entire purpose is that numbers agree.
   const coverageLine = coverage
-    ? `${coverage.reconciled} figures reconciled · ${coverage.unlinked} not checked · ` +
-      `${findings.filter((one) => !one.one_tick).length} findings`
+    ? `${coverage.reconciled} figures reconciled · ${coverage.unlinked} not checked`
     : 'not checked yet'
 
   // Every reconciled figure, with what became of it. Drift is looked up
