@@ -673,12 +673,12 @@ async def cross_check_matter(
     return CrossCheckRead(
         conflicts=[
             ConflictRead(
-                subject=conflict.subject,
-                note=conflict.note,
-                left=_commitment_schema(conflict.left),
-                right=_commitment_schema(conflict.right),
+                subject=group.subject,
+                note=group.note,
+                positions=[_commitment_schema(p) for p in group.positions],
+                pairs=group.pairs,
             )
-            for conflict in conflicts
+            for group in conflicts
         ],
         documents_read=report.documents_read,
         unreadable=report.unreadable,

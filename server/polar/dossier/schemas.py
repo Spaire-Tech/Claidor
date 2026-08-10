@@ -255,10 +255,18 @@ class CommitmentRead(Schema):
 
 
 class ConflictRead(Schema):
+    """One substantive disagreement, however many documents take part.
+
+    `positions` rather than left/right: three documents taking two
+    positions on governing law is one finding with three sides, not two
+    findings a reader has to notice are the same.
+    """
+
     subject: str
     note: str
-    left: CommitmentRead
-    right: CommitmentRead
+    positions: list[CommitmentRead]
+    #: Verified pairs merged into this. 1 is the ordinary case.
+    pairs: int
 
 
 class CrossCheckRead(Schema):

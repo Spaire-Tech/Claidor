@@ -348,13 +348,14 @@ class TestEndToEnd:
         conflicts, report = await cross_check(client, [msa, loi])
 
         assert len(conflicts) == 1
-        assert conflicts[0].left.document_title == "MSA"
-        assert conflicts[0].right.document_title == "LOI"
+        titles = {p.document_title for p in conflicts[0].positions}
+        assert titles == {"MSA", "LOI"}
         assert report.kept == 1
         # Both quotes are in their own documents, which is what lets the
         # panel show a reader both sentences.
-        assert MSA[conflicts[0].left.start : conflicts[0].left.end] in MSA
-        assert LOI[conflicts[0].right.start : conflicts[0].right.end] in LOI
+        for position in conflicts[0].positions:
+            source = MSA if position.document_title == "MSA" else LOI
+            assert source[position.start : position.end] == position.quote
 
     async def test_documents_that_agree_produce_nothing(self) -> None:
         # The normal case, and the one a check like this must get right:
@@ -426,3 +427,111 @@ class TestEndToEnd:
         conflicts, _ = await cross_check(client, [document(MSA)])
 
         assert conflicts == []
+
+
+class TestGrouping:
+    """One substantive disagreement is one finding.
+
+    Added after the first run against a real model reported the
+    governing-law conflict twice — MSA against Side Letter, and Letter of
+    Intent against Side Letter. Both pairs were real and both quoted
+    correctly. A reader does not want the same disagreement twice, and at
+    scale it is worse than untidy: one loose term across twenty documents
+    is nineteen pairs.
+
+    The risk in the other direction is a merge that is too eager, folding
+    two genuinely different disagreements into one finding. That is what
+    most of these test.
+    """
+
+    def test_pairs_sharing_a_commitment_become_one_finding(self) -> None:
+        from polar.dossier.crosscheck import Conflict, group_conflicts
+
+        shared = commitment(title="Side Letter", subject="Governing law")
+        msa = commitment(title="MSA", subject="Governing law")
+        loi = commitment(title="LOI", subject="Governing law")
+
+        groups = group_conflicts(
+            [
+                Conflict(subject="Governing law", note="MSA vs SL", left=msa, right=shared),
+                Conflict(subject="Governing law", note="LOI vs SL", left=loi, right=shared),
+            ]
+        )
+
+        assert len(groups) == 1
+        assert len(groups[0].positions) == 3
+        assert groups[0].pairs == 2
+
+    def test_two_different_disagreements_stay_apart(self) -> None:
+        # The failure to avoid: a cap conflict and a governing-law conflict
+        # merged because both happen to involve the same document.
+        from polar.dossier.crosscheck import Conflict, group_conflicts
+
+        groups = group_conflicts(
+            [
+                Conflict(
+                    subject="Cap",
+                    note="1.8 vs 2.5",
+                    left=commitment(title="MSA", subject="Cap"),
+                    right=commitment(title="LOI", subject="Cap"),
+                ),
+                Conflict(
+                    subject="Governing law",
+                    note="England vs New York",
+                    left=commitment(title="MSA", subject="Governing law"),
+                    right=commitment(title="SL", subject="Governing law"),
+                ),
+            ]
+        )
+
+        assert len(groups) == 2
+
+    def test_a_lone_conflict_is_a_group_of_one_pair(self) -> None:
+        from polar.dossier.crosscheck import Conflict, group_conflicts
+
+        groups = group_conflicts(
+            [Conflict(subject="Cap", note="x", left=commitment(), right=commitment())]
+        )
+
+        assert len(groups) == 1
+        assert groups[0].pairs == 1
+        assert len(groups[0].positions) == 2
+
+    def test_nothing_groups_to_nothing(self) -> None:
+        from polar.dossier.crosscheck import group_conflicts
+
+        assert group_conflicts([]) == []
+
+    def test_the_fullest_explanation_survives_the_merge(self) -> None:
+        # When several pairs describe one disagreement, the longest note is
+        # the one that names both positions rather than gesturing at them.
+        from polar.dossier.crosscheck import Conflict, group_conflicts
+
+        shared = commitment(title="SL")
+        groups = group_conflicts(
+            [
+                Conflict(subject="Cap", note="differs", left=commitment(title="A"), right=shared),
+                Conflict(
+                    subject="Cap",
+                    note="the MSA caps at 1.8M and the Side Letter at 2.5M",
+                    left=commitment(title="B"),
+                    right=shared,
+                ),
+            ]
+        )
+
+        assert "1.8M" in groups[0].note
+
+    def test_positions_are_ordered_so_a_reader_can_scan_them(self) -> None:
+        from polar.dossier.crosscheck import Conflict, group_conflicts
+
+        shared = commitment(title="Side Letter")
+        groups = group_conflicts(
+            [
+                Conflict(subject="Cap", note="x", left=commitment(title="MSA"), right=shared),
+                Conflict(subject="Cap", note="y", left=commitment(title="LOI"), right=shared),
+            ]
+        )
+
+        titles = [position.document_title for position in groups[0].positions]
+        assert titles == sorted(titles)

@@ -1,0 +1,36 @@
+{
+  "when": "2026-08-10T05-22-28Z",
+  "required_found": [
+    "liability cap",
+    "governing law"
+  ],
+  "missed": [
+    "notice period"
+  ],
+  "hard_found": false,
+  "extras": [
+    {
+      "subject": "Governing law",
+      "note": "The Letter of Intent is governed by the laws of England and Wales, whereas the Side Letter selects the laws of the State of New York for itself and any dispute arising out of it.",
+      "left": {
+        "document": "Letter of Intent",
+        "quote": "This letter is governed by the laws of England and Wales."
+      },
+      "right": {
+        "document": "Side Letter",
+        "quote": "The parties agree that this Side Letter, and any dispute arising out of\nit, shall be governed by the laws of the State of New York."
+      }
+    }
+  ],
+  "report": {
+    "documents_read": 4,
+    "commitments": 26,
+    "proposed": 3,
+    "kept": 3,
+    "unquotable": 0,
+    "invented": 0,
+    "same_document": 0,
+    "input_tokens": 8068,
+    "output_tokens": 2331
+  }
+}

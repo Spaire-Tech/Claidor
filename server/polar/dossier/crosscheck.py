@@ -105,9 +105,96 @@ class Conflict:
 
 
 @dataclass
+class ConflictGroup:
+    """One substantive disagreement, however many documents are in it.
+
+    Added after the first run against a real model, which found the
+    governing-law conflict twice: once between the MSA and the Side Letter,
+    once between the Letter of Intent and the Side Letter. Both pairs are
+    real and both quote correctly — and a reader does not want the same
+    disagreement twice.
+
+    It is worse than untidy at scale. One inconsistent term across twenty
+    documents is nineteen pairs, so a bundle with three loose ends would
+    report sixty findings and read as a disaster. The substantive unit is
+    « governing law is not agreed », and the positions are what a reader
+    scans.
+    """
+
+    subject: str
+    note: str
+    #: Every commitment involved, in document order. Two or more.
+    positions: list[Commitment]
+    #: How many verified pairs were merged into this. 1 is the ordinary case.
+    pairs: int = 1
+
+
+def group_conflicts(conflicts: list[Conflict]) -> list[ConflictGroup]:
+    """Merge pairwise conflicts that share a commitment.
+
+    Union-find over the commitments: two pairs belong together when they
+    have a side in common, which is what « the same disagreement » means
+    when three documents take two positions on one point.
+
+    Pure, so the merging can be tested without a model — and it is the
+    part most likely to be subtly wrong, because a merge that is too eager
+    would fold two genuinely different disagreements into one finding.
+    """
+    if not conflicts:
+        return []
+
+    parent: dict[tuple[Any, ...], tuple[Any, ...]] = {}
+
+    def key(commitment: Commitment) -> tuple[Any, ...]:
+        return (commitment.document_id, commitment.start, commitment.end)
+
+    def find(item: tuple[Any, ...]) -> tuple[Any, ...]:
+        parent.setdefault(item, item)
+        while parent[item] != item:
+            parent[item] = parent[parent[item]]
+            item = parent[item]
+        return item
+
+    def union(left: tuple[Any, ...], right: tuple[Any, ...]) -> None:
+        parent[find(left)] = find(right)
+
+    for conflict in conflicts:
+        union(key(conflict.left), key(conflict.right))
+
+    grouped: dict[tuple[Any, ...], list[Conflict]] = {}
+    for conflict in conflicts:
+        grouped.setdefault(find(key(conflict.left)), []).append(conflict)
+
+    groups: list[ConflictGroup] = []
+    for members in grouped.values():
+        positions: dict[tuple[Any, ...], Commitment] = {}
+        for conflict in members:
+            positions.setdefault(key(conflict.left), conflict.left)
+            positions.setdefault(key(conflict.right), conflict.right)
+
+        groups.append(
+            ConflictGroup(
+                subject=members[0].subject,
+                # The longest note: when several pairs describe the same
+                # disagreement, the fullest description is the useful one.
+                note=max((c.note for c in members), key=len),
+                positions=sorted(
+                    positions.values(), key=lambda c: (c.document_title, c.start)
+                ),
+                pairs=len(members),
+            )
+        )
+
+    return groups
+
+
+@dataclass
 class CrossCheckReport:
     documents_read: int = 0
     unreadable: int = 0
+    #: Verified pairs before merging. The difference between this and the
+    #: number of groups is how much duplication the merge removed.
+    pairs: int = 0
     commitments: int = 0
     proposed: int = 0
     #: Dropped because a quote is not in the document it was credited to.
@@ -130,6 +217,7 @@ class CrossCheckReport:
             f"{self.commitments} commitments | {self.proposed} proposed, "
             f"{self.kept} kept ({self.unquotable} unquotable, "
             f"{self.invented} invented, {self.same_document} same document) | "
+            f"{self.pairs} pairs merged into groups | "
             f"{self.input_tokens:,} in / {self.output_tokens:,} out"
         )
 
@@ -440,8 +528,12 @@ async def cross_check(
     documents: list[DossierDocument],
     *,
     model: str = CROSSCHECK_MODEL,
-) -> tuple[list[Conflict], CrossCheckReport]:
-    """Read each document, then compare what they promised."""
+) -> tuple[list[ConflictGroup], CrossCheckReport]:
+    """Read each document, then compare what they promised.
+
+    Returns groups rather than pairs: one substantive disagreement is one
+    finding however many documents take part in it.
+    """
     report = CrossCheckReport()
     commitments: list[Commitment] = []
 
@@ -450,9 +542,11 @@ async def cross_check(
 
     report.commitments = len(commitments)
     conflicts = await compare(client, commitments, report, model=model)
+    report.pairs = len(conflicts)
+    groups = group_conflicts(conflicts)
 
     log.info("dossier.crosscheck.done", summary=report.summary())
-    return conflicts, report
+    return groups, report
 
 
 __all__ = [
@@ -462,11 +556,13 @@ __all__ = [
     "MAX_DOCUMENTS",
     "Commitment",
     "Conflict",
+    "ConflictGroup",
     "CrossCheckReport",
     "compare",
     "cross_check",
     "describe",
     "extract",
+    "group_conflicts",
     "verify_commitments",
     "verify_conflicts",
 ]

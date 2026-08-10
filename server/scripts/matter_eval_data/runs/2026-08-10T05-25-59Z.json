@@ -1,0 +1,23 @@
+{
+  "when": "2026-08-10T05-25-59Z",
+  "required_found": [
+    "liability cap",
+    "governing law"
+  ],
+  "missed": [
+    "notice period"
+  ],
+  "hard_found": false,
+  "extras": [],
+  "report": {
+    "documents_read": 4,
+    "commitments": 26,
+    "proposed": 3,
+    "kept": 3,
+    "unquotable": 0,
+    "invented": 0,
+    "same_document": 0,
+    "input_tokens": 8062,
+    "output_tokens": 2337
+  }
+}

@@ -1,0 +1,32 @@
+MASTER SERVICES AGREEMENT
+
+THIS AGREEMENT is dated 14 March 2026 and made BETWEEN:
+
+(1) NORRVAGN GROUP AB, a company incorporated in Sweden (the "Supplier"); and
+(2) KRETSNAT HOLDINGS LIMITED, a company incorporated in England (the "Client").
+
+1. DEFINITIONS
+
+"Completion Date" means 30 September 2026.
+"Services" means the services described in Schedule 1.
+"Pilot Period" means the three months following the Completion Date.
+
+2. CHARGES
+
+2.1 The Client shall pay the Supplier a fee of USD 40,000,000 for the Services.
+
+2.2 Invoices shall be settled within forty-five (45) days of receipt.
+
+9. LIMITATION OF LIABILITY
+
+9.1 The aggregate liability of the Supplier under this Agreement shall not
+exceed USD 1,800,000.
+
+10. TERMINATION
+
+10.1 Either party may terminate this Agreement on thirty (30) days' written
+notice to the other.
+
+14. GOVERNING LAW
+
+14.1 This Agreement is governed by the laws of England and Wales.
