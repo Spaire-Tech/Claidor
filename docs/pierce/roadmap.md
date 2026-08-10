@@ -24,8 +24,8 @@ document.
 | Engine — decks, models, memos, audit, chain | Done |
 | Persisted spine — artifacts, figures, cells, links, findings | Done |
 | API — 17 routes, anchors, identity, panel auth | Done |
-| Workspace — 5 of 13 screens live | Part |
-| Office panel — plumbing done, UI placeholder | Part |
+| Workspace — 8 of 13 screens live | Part |
+| Office panel — plumbing and screen both done | Done |
 | Writing — proposals, apply, reverse | **Not started** |
 | PDF sources, connectors, firm standards | Not started |
 | Accuracy | Forever, never blocking |
