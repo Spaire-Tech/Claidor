@@ -264,3 +264,64 @@ the wire really is snake_case. Routes are `/v1/redline/{check,judge,terms}`.
 
 Every Office.js path in this fork — 40,000 lines of it — is written but
 unproven here. That has not changed and cannot change from this container.
+
+---
+
+## 2026-08-10 — the fork broke the dashboard's deploys, and how
+
+Three production builds of the web app failed between the fork landing and
+this being noticed. Nobody saw a broken site — a failed build is not
+promoted, so the last good deployment kept serving — but the dashboard
+could not ship anything for several hours, and the cause had nothing to do
+with the dashboard.
+
+The add-in depends on `office-word-diff`, written the way upstream wrote it:
+
+```json
+"office-word-diff": "github:yuch85/office-word-diff"
+```
+
+pnpm expands that shorthand to `git@github.com:yuch85/office-word-diff.git`
+and records the **SSH** URL in the lockfile. It installed here without a
+murmur, because this container's proxy rewrites git SSH to HTTPS. Vercel's
+build machine does no such rewrite and holds no key for github.com:
+
+```
+Host key verification failed.
+pnpm: Command failed with exit code 128: /usr/bin/git clone git@github.com:yuch85/...
+Error: Command "pnpm install" exited with 1
+```
+
+And because this is one pnpm workspace, the add-in's dependency is the web
+app's install. A Word add-in the Next.js app does not import took the
+Next.js app's deployments down with it.
+
+Now pinned to an explicit HTTPS URL and a commit, verified three ways: an
+anonymous clone from a clean directory, a `--frozen-lockfile` install (what
+Vercel runs), and the lockfile, which no longer holds an SSH ref anywhere.
+The next build went green.
+
+**The lesson is the environment, not the URL.** This container rewrites git
+URLs, so « it installed here » says nothing about whether it installs
+anywhere else. Every dependency that resolves through a rewritten URL is
+untested until something without the rewrite tries it. The same applies to
+the proxy's domain allowlist and to `HTTPS_PROXY` generally: a thing that
+works here has been tested against a kinder network than the one it will
+live on.
+
+It also says something about the shape of a monorepo. One workspace means
+one install, and one install means the least important package in the tree
+can stop the most important one from shipping. That is worth knowing before
+the next dependency is added, not after.
+
+### And a second thing, found while looking
+
+The dashboard's Vercel project has **deployment protection** on: every URL
+302s to `vercel.com/sso-api`. Its Next.js config also sends
+`X-Frame-Options: DENY` and `frame-ancestors 'self'`.
+
+Both are right for a dashboard and both make it impossible to serve an
+Office task pane from that project: Word on the web loads the pane in an
+iframe with no session, so it would be redirected to a login it cannot
+complete, and refused framing even if it got there. The add-in needs its
+own origin. That is a fact about the product, not a temporary inconvenience.
