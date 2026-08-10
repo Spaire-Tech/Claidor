@@ -219,7 +219,15 @@ class TieOutWritingService:
         correction: Correction,
         user_id: UUID,
     ) -> Correction:
-        """Write it into the deal's copy, and make that a new version."""
+        """Write it into the deal's copy, and make that a new version.
+
+        **The finding is not marked fixed, and that is not an oversight.**
+        This re-runs the check, which rebuilds every finding from scratch,
+        and a drift that has been corrected is simply not among them any
+        more — because the deck agrees with the model now. Writing « fixed »
+        onto the old row would be writing onto a row that is about to be
+        deleted, and would record as a decision what is a measurement.
+        """
         return await self._write(
             session,
             correction=correction,
@@ -358,35 +366,6 @@ class TieOutWritingService:
         correction.decided_by_id = user_id
         correction.decided_at = datetime.now(UTC)
         return await repository.save_correction(correction)
-
-    # --- what the screens ask for ---------------------------------------
-
-    async def settle_finding(
-        self,
-        session: AsyncSession,
-        *,
-        finding: Finding,
-        user_id: UUID,
-        accept: bool,
-    ) -> Correction:
-        """Accept or keep, from a finding rather than from a correction.
-
-        What every « Accept $48.9mm » button actually calls: propose if
-        there is no proposal yet, then decide. One round trip, because the
-        proposal is bookkeeping and the banker pressed one button.
-
-        **The finding is not marked fixed, and that is not an oversight.**
-        Applying re-runs the check, which rebuilds every finding from
-        scratch; a drift that has been corrected is simply not among them
-        any more, because the deck now agrees with the model. Writing
-        « fixed » onto the old row would be writing onto a row that is
-        about to be deleted, and would claim as a decision what is
-        actually a measurement.
-        """
-        correction = await self.propose(session, finding=finding, user_id=user_id)
-        if not accept:
-            return await self.reject(session, correction=correction, user_id=user_id)
-        return await self.apply(session, correction=correction, user_id=user_id)
 
 
 writing = TieOutWritingService()
