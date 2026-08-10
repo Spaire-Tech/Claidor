@@ -97,10 +97,15 @@ than polish, and both were left out rather than faked:
   the exact value on the element's title. That is the least dishonest
   thing available and it is not good enough.
 
-### 5 · The Office panel, in the design
+### 5 · The Office panel, in the design  ✓ *(10 August)*
 
-320 px, four hosts, one build. Plumbing done and waiting: host bridge,
-manifests, sign-in, anchors to jump by.
+320 px, four hosts, one build. Composed from the workspace's idioms rather
+than copied, because the design has no drawing of a task pane — see
+`clients/apps/panel/src/ui.tsx`, which names the source of each piece.
+
+What it still needs is the thing behind it rather than the screen: writing.
+Today the two actions record a decision against the finding. « Accept
+$41.9m » only becomes true when phase 6 lands.
 
 ### 6 · Writing  *(the big one — weeks, not days)*
 

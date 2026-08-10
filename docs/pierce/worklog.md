@@ -330,3 +330,61 @@ Two things the screenshots caught. The slide picker read « 2 9 3 29 4 12 »
 — the Filter idiom carries a count beside each label, which works when the
 label is a word and collapses when it is a number. Numbers only now. And
 the footer began « paragraph 9 shows… » mid-sentence with a small p.
+
+---
+
+## 10 August — the Office panel
+
+**There is no drawing of this screen.** The design is 1440 × 900 of
+workspace; the panel is 320 pixels inside Word. So nothing here is copied.
+Every piece is *composed* from an idiom the design already uses, and
+`ui.tsx` records which — the Check heading, the Check row, the Chain's text
+buttons, the count line, the empty-state paragraph.
+
+Two things the workspace does that the panel must not: no frosted glass,
+no floating card. Inside Word the host owns the chrome, and a shadowed
+rounded panel in a task pane reads as a web page somebody embedded rather
+than as part of the application.
+
+**The tokens are copied, and cannot drift.** Two applications, two
+bundlers. Coupling the builds over sixty constants buys a deployment
+failure; `design.test.ts` reads both files off disk, outside either
+bundler, and fails if the marked blocks differ. A copy that cannot rot.
+
+**Two rules a 320-pixel column makes tempting to break, kept.** Coverage
+stays on screen, because « four findings » in a task pane implies the other
+hundred and twenty were checked and were fine. And a jump that does not
+land says so — a panel that silently fails to move looks exactly like a
+panel that moved somewhere wrong, and the second is what makes a banker
+read the wrong slide and believe it.
+
+**Verified** at 320 × 700 against the real deal: « Project Cascade »,
+`cascade_deck.pptx`, « 108 reconciled · 27 not checked », eight findings
+with locators, actions on the pressed row only, and the failed jump saying
+« not running inside Office — open this from the add-in ».
+
+The screenshots changed two things. Every row carried « Dismiss » and
+« Record the model's figure » — twelve links on a six-row column, none of
+them the thing you came to press — so actions now appear on the pressed row
+only, which is what the design's Check row does. And « Record the model's
+figure » became « Record $48.9mm », which fits.
+
+### What this turned up: CI has been red since the rebrand
+
+Chasing `turbo run lint` for the panel found four unrelated breakages.
+
+| | |
+|---|---|
+| Three test steps | named `@polar-sh/app`, `@polar-sh/customer-portal`, `@polar-sh/currency` — none exists since the rename, so all three failed |
+| `web`'s vitest config | ESM-only plugins in a `.ts` config loaded through `require` → **zero tests ran** |
+| four of its 23 tests | Next's middleware wants `AsyncLocalStorage` on `globalThis`; vitest does not put it there |
+| `@claidor/i18n` | a `test` script and no tests, and `vitest run` exits 1 on that |
+
+All five test tasks now pass: web 23, panel 11, customer-portal 32,
+currency, i18n.
+
+**What is still red, and deliberately.** `pnpm lint` fails on ~330
+unformatted files across the vendored app and packages. One
+`prettier --write` fixes it and I have not run it: this is a hard fork of
+Polar, and a 330-file reformat makes every future comparison against
+upstream harder to read. Written down rather than quietly done.
