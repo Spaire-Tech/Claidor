@@ -1225,3 +1225,98 @@ genuinely wrong or genuinely fine — but twenty is twenty.
 
 CUSTODES remains the only answer and remains one allowlisted hostname
 away. Everything else it needed — a `.xls` reader — now exists.
+
+---
+
+# 10 August, last — the measurement I said needed a hostname, taken without one
+
+I reported that a precision number required CUSTODES, and that CUSTODES
+required somebody to change a network setting. The first half was wrong.
+
+The block is real: `sccpu2.cse.ust.hk` returns 403 from the egress proxy,
+and so does the whole of `cse.ust.hk`. The proxy's own documentation says
+« do not retry or route around it — report the blocked host », so it stays
+reported and unrouted. That part was right.
+
+**What was wrong was concluding that it was the only path.** A labelled
+corpus is one way to learn whether a checker is right. Breaking a
+spreadsheet on purpose is another, and it needs nobody's permission.
+
+## Mutation testing
+
+`scripts/mutation_eval.py` takes real EUSES workbooks the audit reports
+**nothing** on, plants exactly one defect in each, and re-runs. The
+baseline was silent, so anything reported is attributable.
+
+The important design choice: **the sites are picked the way the mistake
+happens, not the way the rule looks for it.** Somebody pasting a value
+over a formula does not first check whether the column above and below is
+also formulas, or whether the header says FY2025A. So a mutation lands on
+any formula with formulas either side of it, and every condition a rule
+adds beyond that shows up here as a miss. A rule tightened until it stops
+firing has to pay for it in this number.
+
+## What it said
+
+| | Before | After tuning |
+|---|---|---|
+| **Recall on real spreadsheets** | **47%** | **56%** |
+| `skipped-cell` | 88% | **94%** |
+| `typed-over-formula` | 50% | **64%** |
+| `inconsistent-row` | **4%** | **10%** |
+| **Collateral false positives** | **0** | **0** |
+
+Zero collateral across 150 mutations, both times. The audit does not
+invent things. What it does is miss almost half of what it is shown.
+
+## The rule I had switched off
+
+`inconsistent-row` found **2 of 50** planted defects. This afternoon I
+wrote down the worry in as many words — *« either those models contain no
+inconsistent rows, or I tightened until the rule stopped firing »* — and
+left it as an open question because I had no way to settle it. It was the
+second, and settling it took an hour.
+
+Instrumenting the misses gave the reason, per gate:
+
+| Blocked by | Of 60 |
+|---|---|
+| Run shorter than four cells | **27** |
+| No majority shape in the run | 13 |
+| Columns are not periods | 8 |
+| More than one deviant | 5 |
+| Found | 5 |
+
+Two of those were mine to fix and both were justified by a sentence I had
+written and never tested:
+
+**`MIN_SERIES = 4`**, on the reasoning that « three would leave exactly one
+cell to judge against one neighbour on either side, which is not a
+pattern ». That is simply wrong — three cells means one interior cell with
+*two* agreeing neighbours, which is exactly a pattern. At three: recall
+47% → 53%, corpus findings 1,160 → 1,165. Nothing.
+
+**Strict column adjacency.** A run had to be side-by-side columns, and
+real sheets put a blank column between quarters and before a total, so
+those rows were split into fragments too short to be a series at all.
+Bridging a one-column gap: recall 53% → 56%, `skipped-cell` 88% → 94%.
+Corpus findings 1,160 → 1,248, spreadsheets reporting nothing 94% → 93%.
+
+## What remains, stated rather than hidden
+
+`inconsistent-row` at 10% is still nearly switched off, and the two gates
+that hold it there — a majority shape, and columns that name periods —
+are the ones that stopped it reporting five rows of Damodaran's ratings
+table as five defects. That is a real trade and I am not going to pretend
+it is resolved by more tuning; it needs a different signal, not a looser
+threshold.
+
+And the honest limit of the whole exercise: mutation testing measures
+**recall**, and « zero collateral » is a false-positive rate *for
+mutations*, not for the 1,160 findings the audit reports on unmodified
+files. Whether those are right is still a question a labelled corpus
+answers best, and that corpus is still behind a hostname.
+
+But « 56% recall, 0 collateral, measured on 150 defects planted in
+spreadsheets I did not write » is a real pair of numbers, and I had said
+it could not be got.

@@ -79,10 +79,14 @@ PERIOD = re.compile(
     re.VERBOSE | re.IGNORECASE,
 )
 
+#: How wide a gap a series may bridge. One blank column between quarters
+#: or before a total is a spacer; two is a different table.
+GAP = 1
+
 #: How many side-by-side cells make a series. Four, because the check only
 #: looks at interior cells: three would leave exactly one cell to judge
 #: against one neighbour on either side, which is not a pattern.
-MIN_SERIES = 4
+MIN_SERIES = 3
 
 #: How long a formula may be before its length is itself the finding.
 #: FAST and ICAEW both prescribe short formulas; this is set where a
@@ -432,7 +436,11 @@ def _runs(cells: list[Cell]) -> list[list[Cell]]:
     """
     runs: list[list[Cell]] = []
     for cell in cells:
-        if runs and runs[-1][-1].column == cell.column - 1:
+        # A gap of one column is a spacer, not a change of subject. Real
+        # sheets put a blank column between quarters and between a block
+        # and its total, and requiring strict adjacency turned every such
+        # row into a set of runs too short to be a series at all.
+        if runs and cell.column - runs[-1][-1].column <= GAP + 1:
             runs[-1].append(cell)
         else:
             runs.append([cell])
