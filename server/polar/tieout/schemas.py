@@ -439,6 +439,39 @@ class ModelDiff(Schema):
     removed: int
 
 
+class AskedStep(Schema):
+    """One tool call, as the chat shows it under « Used N tools »."""
+
+    ordinal: int
+    tool: str
+    ok: bool
+    #: One line: « Read 12 of 16 findings ».
+    summary: str
+    milliseconds: int
+
+
+class Asked(Schema):
+    """An answer, and every step it took to get there.
+
+    The trace is not logging. It is most of why an answer reads as looked
+    up rather than composed, and it is the only way a reader can tell the
+    difference — so it comes back with the answer rather than to a log.
+    """
+
+    id: UUID
+    prompt: str
+    answer: str
+    #: `answered` · `step_limit` · `failed`. Anything but the first means
+    #: the answer is partial or absent, and the screen has to say so.
+    stopped: str
+    error: str | None
+    steps: list[AskedStep]
+
+
+class Ask(Schema):
+    prompt: str = Field(min_length=1, max_length=4_000)
+
+
 class GridCell(Schema):
     """One cell of a sheet, at the row and column a banker would name it by."""
 

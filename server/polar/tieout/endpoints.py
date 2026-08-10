@@ -24,6 +24,8 @@ from fastapi import Depends, File, HTTPException, Query, UploadFile
 
 from polar.auth.dependencies import WebUserWrite
 from polar.auth.scope import Scope
+from polar.dossier.agent.service import AgentNotConfigured
+from polar.dossier.agent.service import build_client as agent_client
 from polar.exceptions import ResourceNotFound
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession
 from polar.models import (
@@ -47,11 +49,15 @@ from polar.routing import APIRouter
 from polar.user.repository import UserRepository
 
 from . import auth
+from .agent import service as agent
 from .ingest import kind_for
 from .repository import TieOutRepository
 from .schemas import (
     ArtifactPage,
     ArtifactRead,
+    Ask,
+    Asked,
+    AskedStep,
     CellRead,
     ChainRead,
     CheckRunRead,
@@ -915,3 +921,61 @@ async def decide_link(
 
 
 __all__ = ["router"]
+
+
+# --- the agent -----------------------------------------------------------
+
+
+@router.post("/deals/{dossier_id}/ask", response_model=Asked, status_code=201)
+async def ask(
+    dossier_id: UUID,
+    body: Ask,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> Asked:
+    """Ask a question about this deal, and get the working with the answer.
+
+    `POST` rather than `GET` because it costs money and leaves a record,
+    and `TieOutWrite` for the same reason: reading a deal is one thing and
+    spending on it is another.
+
+    **The trace comes back with the answer.** It is not logging — it is
+    most of why an answer reads as looked up rather than composed, and the
+    only way a reader can tell which it was.
+
+    A run that ran out of steps, or failed, says so in `stopped`. Nothing
+    is invented to fill the gap: an agent that stops after twenty-four
+    tools and answers as though it had finished is claiming a completeness
+    it does not have.
+    """
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    try:
+        client = agent_client()
+    except AgentNotConfigured as problem:
+        raise HTTPException(status_code=503, detail=str(problem)) from problem
+
+    task, outcome = await agent.ask(
+        session,
+        dossier_id=deal.id,
+        user_id=auth_subject.subject.id,
+        prompt=body.prompt,
+        client=client,
+        name=deal.name,
+    )
+    return Asked(
+        id=task.id,
+        prompt=task.prompt,
+        answer=task.answer,
+        stopped=task.stopped,
+        error=task.error,
+        steps=[
+            AskedStep(
+                ordinal=step.ordinal,
+                tool=step.tool,
+                ok=step.ok,
+                summary=step.summary,
+                milliseconds=step.milliseconds,
+            )
+            for step in outcome.steps
+        ],
+    )
