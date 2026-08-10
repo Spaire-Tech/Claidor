@@ -262,3 +262,19 @@ theirs we come to depend on gets tests of ours or gets replaced.
 **Scope by imitation.** Vesence has five surfaces, custom agents,
 sub-agents, a sandbox and six connectors. The phase order above is
 deliberately a sequence of things useful on their own.
+
+---
+
+## Superseded — 10 August 2026
+
+The vertical changed from law to investment banking. See
+`docs/pierce/plan.md`.
+
+This document is kept because most of what it describes was built and is
+being carried over: the Word add-in, the redline engine, the cross-document
+check, the agent, the workspace. About fifty lines of the engine were
+actually about law.
+
+What is retired with it: parity with Vesence as a goal. Pierce is not a
+clone of anything — the reconciliation chain, which is its whole product,
+is not something anyone has shipped well.
