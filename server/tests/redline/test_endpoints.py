@@ -14,6 +14,7 @@ import zipfile
 import pytest
 from httpx import AsyncClient
 
+from polar.auth.scope import Scope
 from tests.fixtures.auth import AuthSubjectFixture
 
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -65,6 +66,79 @@ CLEAN = (
     '"Consideration" means $5,000,000.\n'
     "The buyer shall pay the Consideration on the Closing Date.\n"
 )
+
+
+#: A token holding nothing but the check scopes — no `web:read`, no
+#: `web:write`. This is what the Word add-in will actually carry, and every
+#: test below using it would have failed before `redline:read` existed.
+ADD_IN = AuthSubjectFixture(scopes={Scope.redline_read})
+ADD_IN_WRITE = AuthSubjectFixture(scopes={Scope.redline_read, Scope.redline_write})
+
+
+@pytest.mark.asyncio
+class TestTheAddInCanAuthenticate:
+    """The routes must be reachable by something that is not a browser.
+
+    The first version of ``redline/auth.py`` required only ``web:read`` and
+    ``web:write``. Those are reserved to the dashboard's cookie session: no
+    token can hold them, and none can request them. So every check route
+    was reachable only from a browser — and the add-in, which is the reason
+    the routes exist at all, runs in an iframe where a ``SameSite=Lax``
+    cookie is never sent.
+
+    Nothing caught it. Every other test here authenticates with the default
+    fixture, which grants the web scopes, so the whole suite passed against
+    a server the add-in could not talk to. These are the tests that would
+    have.
+    """
+
+    @pytest.mark.auth(ADD_IN)
+    async def test_check_accepts_a_token_with_only_the_check_scope(
+        self, client: AsyncClient
+    ) -> None:
+        response = await client.post("/v1/redline/check", json={"text": EXAMPLE})
+
+        assert response.status_code == 200
+
+    @pytest.mark.auth(ADD_IN)
+    async def test_terms_accepts_a_token_with_only_the_check_scope(
+        self, client: AsyncClient
+    ) -> None:
+        response = await client.post("/v1/redline/terms", json={"text": EXAMPLE})
+
+        assert response.status_code == 200
+
+    @pytest.mark.auth(ADD_IN)
+    async def test_reading_does_not_let_you_rewrite_a_document(
+        self, client: AsyncClient
+    ) -> None:
+        # Nothing is stored either way, but a caller that can only read
+        # should not be able to ask for a rewritten agreement back.
+        response = await client.post(
+            "/v1/redline/fix/document",
+            files={"file": ("a.docx", _docx(["Anything."]), DOCX_MIME)},
+        )
+
+        assert response.status_code == 403
+
+    @pytest.mark.auth(ADD_IN_WRITE)
+    async def test_the_write_scope_does_let_you(self, client: AsyncClient) -> None:
+        response = await client.post(
+            "/v1/redline/fix/document",
+            files={"file": ("a.docx", _docx(["Anything."]), DOCX_MIME)},
+        )
+
+        assert response.status_code == 200
+
+    @pytest.mark.auth(AuthSubjectFixture(scopes={Scope.user_read}))
+    async def test_an_unrelated_scope_is_still_refused(
+        self, client: AsyncClient
+    ) -> None:
+        # Widening the door must not take it off its hinges: a token issued
+        # for something else entirely still cannot read a document.
+        response = await client.post("/v1/redline/check", json={"text": EXAMPLE})
+
+        assert response.status_code == 403
 
 
 @pytest.mark.asyncio

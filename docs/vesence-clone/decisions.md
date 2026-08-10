@@ -78,6 +78,37 @@ Entra ID SSO — which is what a firm will eventually require, and what
 later without changing a single API surface. Building on cookies now would
 mean rebuilding the whole client layer then.
 
+### It was written down here and then not implemented — [2026-08-10]
+
+The routes the add-in calls were built requiring `web:read` and
+`web:write`. Those two are in `RESERVED_SCOPES`: granted only by
+`auth.service.create_user_session`, which sets a cookie, and holdable by no
+token and requestable by none. So every check route was reachable *only* by
+a browser carrying a session cookie — the one credential this decision says
+the add-in cannot send.
+
+The suite passed throughout, because every test authenticated with the
+default fixture and the default fixture grants the web scopes. A rule
+written in a document and contradicted in code is worth less than no rule,
+because it stops anyone looking.
+
+**Fixed by adding `redline:read` and `redline:write`**, following the
+convention every other module already uses: the dashboard's own scopes
+*plus* a pair a token can carry. Five tests now authenticate the way the
+add-in will, holding the check scopes and nothing else. No migration —
+scopes are stored as varchar, not a Postgres enum.
+
+The general form, worth keeping: **a decision about credentials needs a
+test that uses the credential.** Everything else is a note.
+
+### Entra is deferred, Google stays — [2026-08-10]
+
+The founder's call, and right for now: the existing product signs in with
+Google and that works. Entra returns when a firm asks for it, which is the
+point at which somebody is paying for the answer. Nothing above changes —
+the dialog flow is the same shape either way, and Entra swaps in underneath
+whatever hands the pane its token.
+
 ## Decision 3 — a provider interface now, not later
 
 Their customer-selectable inference is the sharpest thing in the document.

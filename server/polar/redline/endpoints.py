@@ -177,7 +177,7 @@ DOCX_MEDIA = "application/vnd.openxmlformats-officedocument.wordprocessingml.doc
 
 @router.post("/fix/document")
 async def fix_document(
-    auth_subject: auth.RedlineRead,
+    auth_subject: auth.RedlineWrite,
     upload: UploadFile = File(..., alias="file"),
 ) -> Response:
     """Check a Word file and return it with the safe fixes as revisions.
