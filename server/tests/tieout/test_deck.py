@@ -94,3 +94,30 @@ def test_the_sensitivity_grid_never_becomes_a_figure(figures: list) -> None:
     currency, scale, suffix or decimal, before any label is built."""
     printed = {f.printed for f in figures if f.slide == 7}
     assert not printed & {"497", "528", "565", "462", "489", "521", "431", "455", "483"}
+
+
+def test_a_chart_is_read_for_its_series(figures: list) -> None:
+    """A chart's numbers live in an embedded workbook part, not on the
+    slide, and they are not always what the table beside them says."""
+    chart = [f for f in figures if "chart series" in f.location and f.slide == 3]
+    assert {f.printed for f in chart} >= {"182.4", "204.7", "228.9", "37.8", "43.0"}
+    assert any(f.label == "Adjusted EBITDA FY2023A" for f in chart)
+
+
+def test_a_chart_series_keeps_the_precision_it_carries(figures: list) -> None:
+    """43.0 is a claim about one decimal. Normalising it to 43 makes the
+    finding read « 43 should be 40 » about a model that says 39.6."""
+    point = next(
+        f for f in figures if f.slide == 3 and f.label == "Adjusted EBITDA FY2024A"
+    )
+    assert point.printed == "43.0"
+    assert point.decimals == 1
+
+
+def test_a_bridge_chart_is_named_by_its_category(figures: list) -> None:
+    """Slide 4's waterfall has one series, FY2025A, and its categories are
+    the line items — so the label is a period and a line item, the same
+    shape a table cell's is."""
+    bridge = {f.label: f.printed for f in figures if f.slide == 4 and f.subject}
+    assert bridge.get("FY2025A Reported EBITDA") == "41.2"
+    assert bridge.get("FY2025A Adjusted EBITDA") == "48.9"

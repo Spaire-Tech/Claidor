@@ -1089,3 +1089,55 @@ wrote is weaker evidence than a corpus somebody else labelled.
 
 Which is still CUSTODES, and it is still one allowlisted hostname away.
 The `.xls` half of that obstacle is now gone.
+
+---
+
+# 10 August, later still — the chart that disagreed with the table beside it
+
+Assumption 14, written this morning and never tested:
+
+> *Charts restate the table beside them, so skipping them loses nothing.*
+
+It is false, and it is false on the deck it was written against.
+
+Slide 3 of the clean Cascade deck carries a chart and a table of the same
+three years:
+
+| | FY2023A | FY2024A | FY2025A |
+|---|---|---|---|
+| Chart series « Adjusted EBITDA » | **37.8** | **43.0** | 48.9 |
+| Table row « Adjusted EBITDA » | 30.8 | 39.6 | 48.9 |
+| `Model!B26:D26` | 30.8 | 39.6 | 48.9 |
+
+No cell in the 313-cell model holds 37.8 or 43.0. The chart and the table
+contradict each other on one page — the kind of thing a client notices in
+the room — and `linkage_map.csv` records *both* value sets against the
+same source cells, so the test pair's own ground truth disagrees with
+itself there too.
+
+That is the eighth and ninth wrong figure in the deck supplied as the
+zero-findings reference, and neither was injected.
+
+## What it cost to have assumed it
+
+Charts are now read through `python-pptx`'s access to the embedded
+workbook part, where a chart's numbers actually live — the slide itself
+holds only bars. A series is named the way a table cell is: the series
+name and the category, which is a line item and a period. Coverage went
+from 87 reconciled figures to **102**, still with no false positives.
+
+The fix was thirty lines. The assumption sat in the ledger for a day
+marked « [assumption] — true on all four Cascade charts », which was itself
+wrong: I had never looked at a single chart's values, only at the fact
+that charts existed beside tables.
+
+One detail worth keeping: a chart value of 43.0 must not be normalised to
+43. `Decimal("43.0").normalize()` is `4.3E+1`, whose exponent says zero
+decimals, and the finding then reads « 43 should be 40 » about a model
+that says 39.6. The trailing zero is the precision the chart carries.
+
+## The ledger, corrected
+
+| # | Assumption | Was | Now |
+|---|---|---|---|
+| 14 | Charts restate the table beside them, so skipping them loses nothing | [assumption] | **False.** Two of the nine wrong figures in the clean deck are visible only in a chart |

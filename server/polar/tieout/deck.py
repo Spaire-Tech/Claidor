@@ -32,13 +32,24 @@ nothing, so that figure goes unlinked. A miss is a figure nobody checked.
 A false positive is a banker told their correct deck is wrong, and after
 two of those nobody runs the checker again.
 
-Charts are read for their series but not linked: a chart's numbers live in
-embedded workbook parts, they are usually the same figures the table beside
-them prints, and flagging both would report every drift twice.
+**A chart is a fourth shape, and skipping it was a mistake.** The reasoning
+was that a chart restates the table beside it, so reading both would report
+every drift twice. On slide 3 of the Cascade deck the chart's adjusted
+EBITDA series reads 37.8 / 43.0 / 48.9 and the table beside it reads
+30.8 / 39.6 / 48.9 — the model says 30.8 / 39.6 / 48.9, and no cell in it
+holds 37.8 or 43.0 at all. The chart and the table on one slide disagree,
+and the assumption that made them redundant was false on the very deck it
+was written against.
+
+A chart series is named the way a table cell is: the series name and the
+category, which is a line item and a period. `python-pptx` reads them from
+the embedded workbook part, where the numbers actually live — the slide
+itself holds only bars.
 """
 
 import re
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 from pptx import Presentation
@@ -179,6 +190,8 @@ def read_deck(path: str) -> Extraction:
         for shape in slide.shapes:
             if shape.has_table:
                 _read_table(extraction, shape, index, section)
+            elif shape.has_chart:
+                _read_chart(extraction, shape, index, section)
             elif shape.has_text_frame and shape.text_frame.text.strip():
                 _read_text(extraction, shape, index, texts, section)
 
@@ -280,6 +293,72 @@ def _last_clause(text: str) -> str:
 def _first_clause(text: str) -> str:
     """What is left of a fragment before the first clause break in it."""
     return CLAUSE_BREAK.split(text)[0].strip()
+
+
+def _read_chart(extraction: Extraction, shape: Any, slide: int, section: str) -> None:
+    """Every point of every series, named by its series and its category.
+
+    Chart values are data, not printed text, so there is no printed
+    precision to hold them to — the precision is whatever the number
+    carries. They are read as plain numbers and left to the linker's
+    magnitude gate, which means a series of fractions (a margin plotted as
+    0.2) links to nothing. That is a miss and it is the safe direction.
+    """
+    try:
+        plots = list(shape.chart.plots)
+    except Exception:
+        # A chart whose embedded workbook is missing or unreadable. The
+        # deck is no worse off than before charts were read at all.
+        return
+
+    for plot in plots:
+        try:
+            categories = [str(category) for category in plot.categories]
+        except Exception:
+            continue
+        for series in plot.series:
+            name = str(series.name or "").strip()
+            for position, value in enumerate(series.values):
+                if value is None:
+                    continue
+                category = (
+                    categories[position].replace("\n", " ").strip()
+                    if position < len(categories)
+                    else ""
+                )
+                label = " ".join(part for part in (name, category) if part)
+                if not label:
+                    continue
+                # Not `normalize()`: it turns 43.0 into 4.3E+1, whose
+                # exponent says zero decimals, and the finding then reads
+                # « 43 should be 40 » about a model that says 39.6. The
+                # trailing zero is the precision the chart carries.
+                number = Decimal(repr(float(value)))
+                exponent = number.as_tuple().exponent
+                # A NaN or infinity has a symbolic exponent rather than an
+                # integer one. Neither belongs in a deck, and neither
+                # should stop the rest of the chart being read.
+                if not isinstance(exponent, int):
+                    continue
+                places = max(-exponent, 0)
+                extraction.figures.append(
+                    Figure(
+                        printed=f"{number:f}",
+                        value=number,
+                        decimals=places,
+                        kind="plain",
+                        slide=slide,
+                        label=label,
+                        location=(
+                            f"slide {slide}, chart series « {name} »"
+                            + (f", category « {category} »" if category else "")
+                        ),
+                        context=f"{label} = {number:f}",
+                        section=section,
+                        structured=True,
+                        subject=name,
+                    )
+                )
 
 
 def _read_table(extraction: Extraction, shape: Any, slide: int, section: str) -> None:

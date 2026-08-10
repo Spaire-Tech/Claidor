@@ -40,6 +40,14 @@ def published():
 #: is reachable through the Outputs tab, which publishes 23 figures and
 #: none of these.
 PRE_EXISTING = {
+    # Slide 3's chart series against the table on the same slide: the
+    # chart says adjusted EBITDA was 37.8 and 43.0, the table says 30.8
+    # and 39.6, the model says 30.8 and 39.6, and no cell in the model
+    # holds 37.8 or 43.0. Found only once charts were read, which they
+    # were not for most of a day on the assumption that a chart restates
+    # the table beside it.
+    (3, "37.8"),
+    (3, "43.0"),
     (5, "28.8"),
     (5, "35.4"),
     (5, "41.6"),
