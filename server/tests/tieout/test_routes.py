@@ -18,6 +18,7 @@ from pathlib import Path
 import pytest
 from httpx import AsyncClient
 
+from polar.auth.scope import Scope
 from polar.kit.db.postgres import AsyncSession
 from polar.models import (
     ArtifactKind,
@@ -679,3 +680,82 @@ class TestThePanel:
         # An audit finding sits at a cell, which Excel selects as it stands.
         assert all(one["where"]["anchor"]["kind"] == "cell" for one in audit)
         assert all(one["where"]["anchor"]["ref"] for one in audit)
+
+
+@pytest.mark.asyncio
+class TestThePanelToken:
+    async def test_anonymous_gets_nothing(self, client: AsyncClient) -> None:
+        response = await client.post("/v1/tieout/panel/token")
+        assert response.status_code == 401
+
+    @pytest.mark.auth
+    async def test_a_browser_session_mints_a_narrow_token(
+        self, client: AsyncClient, user: User
+    ) -> None:
+        """The panel holds a credential, and only these two scopes.
+
+        Fixed here rather than taken from the request: a caller that could
+        name its own scopes would make this endpoint a way to widen any
+        session into anything.
+        """
+        response = await client.post("/v1/tieout/panel/token")
+
+        assert response.status_code == 201
+        body = response.json()
+        assert body["token"].startswith("claidor_pat_")
+        assert body["scopes"] == ["tieout:read", "tieout:write"]
+        assert body["expires_in"] == 30 * 24 * 3600
+
+    @pytest.mark.auth
+    async def test_the_token_it_mints_is_a_real_resolvable_credential(
+        self, client: AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """Resolve the plaintext the way the authenticator does.
+
+        Not through a request: the `auth` marker replaces the
+        authentication dependency wholesale, so a bearer header in a test
+        is ignored and a route would answer 200 whatever the token said.
+        An « end to end » assertion there would pass with the token
+        deleted, which is worse than no test.
+
+        So the token is looked up by its own hash — the same call the real
+        authenticator makes — and checked for the two scopes and the
+        expiry.
+        """
+        from polar.personal_access_token.service import (
+            personal_access_token as tokens,
+        )
+
+        plaintext = (await client.post("/v1/tieout/panel/token")).json()["token"]
+        found = await tokens.get_by_token(session, plaintext)
+
+        assert found is not None
+        assert found.user_id == user.id
+        assert set(found.scopes) == {Scope.tieout_read, Scope.tieout_write}
+        assert found.expires_at is not None
+
+    @pytest.mark.auth
+    async def test_it_carries_nothing_the_panel_does_not_need(
+        self, client: AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """Two scopes, and no way for a caller to ask for more.
+
+        The scopes are fixed in the endpoint rather than read from the
+        request. A body naming its own would turn this into a way to widen
+        any browser session into anything the account can do.
+        """
+        from polar.personal_access_token.service import (
+            personal_access_token as tokens,
+        )
+
+        plaintext = (
+            await client.post(
+                "/v1/tieout/panel/token",
+                json={"scopes": ["organizations:write"]},
+            )
+        ).json()["token"]
+        found = await tokens.get_by_token(session, plaintext)
+
+        assert found is not None
+        assert Scope.organizations_write not in found.scopes
+        assert set(found.scopes) == {Scope.tieout_read, Scope.tieout_write}

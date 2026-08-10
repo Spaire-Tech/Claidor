@@ -17,10 +17,13 @@ carries a `processing` status and the screen polls it: the shape is
 already right for the day the work moves.
 """
 
+from datetime import timedelta
 from uuid import UUID
 
 from fastapi import Depends, File, HTTPException, Query, UploadFile
 
+from polar.auth.dependencies import WebUserWrite
+from polar.auth.scope import Scope
 from polar.exceptions import ResourceNotFound
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession
 from polar.models import (
@@ -69,6 +72,7 @@ from .schemas import (
     LinkFigure,
     LinkRead,
     ModelDiff,
+    PanelToken,
     SlideFigures,
     Uploader,
 )
@@ -82,6 +86,12 @@ NOT_FOUND = "Deal not found."
 #: years of monthly detail is a few megabytes; much larger than this is a
 #: mistake worth catching before it reaches a parser.
 MAX_UPLOAD_BYTES = 64 * 1024 * 1024
+
+#: How long the panel's token lasts. Thirty days is long enough that a
+#: banker is not signing in every morning — which is the fastest way to
+#: make a panel go unused — and short enough that one left on a shared
+#: machine stops working without anybody having to notice.
+PANEL_TOKEN_LIFE = timedelta(days=30)
 
 
 # --- access --------------------------------------------------------------
@@ -269,6 +279,54 @@ async def get_deal(
 
 
 # --- the panel -----------------------------------------------------------
+
+
+@router.post("/panel/token", response_model=PanelToken, status_code=201)
+async def panel_token(
+    auth_subject: WebUserWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> PanelToken:
+    """Mint the credential the panel holds, from a browser session.
+
+    The panel runs in an iframe on its own origin inside Office, where a
+    `SameSite=Lax` session cookie is never sent and Safari and Edge block
+    third-party cookies outright. So it holds a bearer token, and this is
+    where one comes from: the sign-in dialog is a real top-level window,
+    the cookie works *there*, and the token is what crosses back.
+
+    **A web session only, and that is the whole security property.** A
+    token must never be able to mint a token, or a narrowly-scoped one is
+    one request away from a wide one and revoking the first would not
+    revoke what it had already issued. `WebUserWrite` requires a reserved
+    scope, which no token can hold or request — so reaching this route
+    means « a person, freshly signed in through a browser ».
+
+    Two scopes, fixed, never taken from the request. The panel reads
+    figures and confirms links; it has no business creating organizations,
+    and a caller that could name its own scopes would make this endpoint a
+    way to widen any session into anything.
+    """
+    from polar.personal_access_token.service import (
+        personal_access_token as tokens,
+    )
+
+    scopes = {Scope.tieout_read, Scope.tieout_write}
+    _, token = await tokens.create(
+        session,
+        auth_subject,
+        comment="Claidor panel (Office add-in)",
+        scopes=scopes,
+        # Long enough that a banker is not signing in every morning, short
+        # enough that a token left on a shared machine stops working. The
+        # panel watches the expiry and asks again rather than letting the
+        # first 401 of the day be the notification.
+        expires_in=PANEL_TOKEN_LIFE,
+    )
+    return PanelToken(
+        token=token,
+        expires_in=int(PANEL_TOKEN_LIFE.total_seconds()),
+        scopes=sorted(scope.value for scope in scopes),
+    )
 
 
 @router.get("/deals", response_model=list[DealListItem])

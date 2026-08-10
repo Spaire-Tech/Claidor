@@ -97,6 +97,36 @@ egress policy blocks — both manifests have been checked locally for
 well-formedness and for the element order the schema requires, which is
 the failure that is otherwise invisible.
 
+## Signing in, and where the panel has to be deployed
+
+The panel cannot be signed in directly. It is an iframe on its own origin
+inside Office, so a `SameSite=Lax` session cookie is never sent with its
+requests and Safari and Edge block third-party cookies outright.
+
+So `signin.html` is opened by Office as a **real top-level window**. The
+cookie works there. It calls `POST /v1/tieout/panel/token`, which mints a
+bearer token from the browser session — a web session only, because a
+token that can mint a token makes every narrow scope one request away from
+a wide one — and hands it back through `messageParent`.
+
+Three consequences worth knowing before deploying:
+
+1. **`signin.html` ships with the panel.** `messageParent` is same-origin
+   only and Office enforces it, so this page cannot live on the dashboard.
+2. **Deploy the panel under the dashboard's origin** — `/panel/` on the
+   same domain. Then the cookie is first-party for the token call and
+   there is no CORS to configure at all. A separate origin works, but the
+   API's `CORS_ORIGINS` then has to name it or the cookie is not sent.
+3. **Two scopes, fixed server-side.** `tieout:read` and `tieout:write`,
+   never taken from the request. Thirty days, then the panel asks again
+   rather than letting the first 401 of the day be the notification.
+
+Locally, the panel is on `:3100` and the API on `:8000` — different
+origins, same site, so the cookie *is* sent once `CORS_ORIGINS` includes
+`http://127.0.0.1:3100`. The sign-in page says exactly that when the call
+fails, because `fetch` reports « CORS refused this » and « the server is
+down » as the same bare error.
+
 ## Selecting a shape, and one honest caveat
 
 The server reads a deck with `python-pptx`, which gives each shape an

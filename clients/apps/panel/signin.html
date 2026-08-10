@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in to Claidor</title>
+    <!--
+      The sign-in dialog.
+
+      Not part of the panel bundle and not a React app — it is a page that
+      runs for two seconds and closes. Office opens it as a real top-level
+      window, which is the whole point: the panel's own iframe never
+      receives the session cookie, and this window does.
+
+      It has to be served from the add-in's own origin. `messageParent`
+      only works same-origin, and Office enforces that rather than
+      suggesting it. See README for why the panel is deployed under the
+      dashboard's domain: same origin as the API means the cookie works
+      here without a redirect dance.
+    -->
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        font: 15px/1.5 system-ui, sans-serif;
+        text-align: center;
+      }
+      main { max-width: 22rem; padding: 1.5rem; }
+      a { display: inline-block; margin-top: 0.75rem; }
+      .quiet { color: #666; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p id="status">Signing in…</p>
+      <a id="dashboard" href="#" hidden>Open Claidor and sign in</a>
+    </main>
+    <script type="module" src="/src/signin.ts"></script>
+  </body>
+</html>

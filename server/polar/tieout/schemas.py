@@ -354,6 +354,20 @@ class Identified(Schema):
     stamp_lineage_id: UUID | None = None
 
 
+class PanelToken(Schema):
+    """A credential the panel can hold, minted from a browser session.
+
+    Returned once and stored nowhere recoverable — only an HMAC of it is
+    kept, so a lost token is replaced rather than looked up.
+    """
+
+    token: str
+    #: Seconds. The panel stops using it at this point and signs in again
+    #: rather than discovering the expiry as a 401 mid-click.
+    expires_in: int
+    scopes: list[str]
+
+
 class DealListItem(Schema):
     """For the panel's « which deal does this document belong to ». Once."""
 
@@ -423,6 +437,7 @@ __all__ = [
     "LinkFigure",
     "LinkRead",
     "ModelDiff",
+    "PanelToken",
     "SlideFigures",
     "Uploader",
 ]
