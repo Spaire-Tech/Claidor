@@ -223,6 +223,53 @@ export class TieOutApi {
   }
 
   /**
+   * Put a file into the deal.
+   *
+   * Multipart, and deliberately not JSON: a model is megabytes and
+   * base64 would add a third to that for nothing.
+   *
+   * A file the reader cannot open still comes back 200, with
+   * `status: 'failed'` and a sentence somebody can act on. That is a
+   * state of the deal, not a failed request, and the screen has to be
+   * able to show it. Only a file this cannot read at all — a `.txt` —
+   * is an error.
+   */
+  async upload(dealId: string, file: File): Promise<Artifact> {
+    const body = new FormData()
+    body.append('file', file)
+    const token = this.options.token?.() ?? null
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/deals/${dealId}/artifacts`,
+      {
+        method: 'POST',
+        body,
+        credentials: 'include',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      },
+    )
+    if (!response.ok) {
+      const problem = (await response.json().catch(() => null)) as {
+        detail?: string
+      } | null
+      throw new ApiError(
+        response.status,
+        problem?.detail ?? 'that file could not be uploaded',
+      )
+    }
+    return (await response.json()) as Artifact
+  }
+
+  /** One file's state, for polling while it is read. */
+  artifact(artifactId: string): Promise<Artifact> {
+    return this.call(`/artifacts/${artifactId}`)
+  }
+
+  /** Take a file out of the deal. */
+  async remove(artifactId: string): Promise<void> {
+    await this.call(`/artifacts/${artifactId}`, { method: 'DELETE' })
+  }
+
+  /**
    * Every figure that was reconciled, with the cell behind it.
    *
    * This is what the figure library is: not the findings, which are only

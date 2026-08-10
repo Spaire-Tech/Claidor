@@ -16,7 +16,7 @@
  * one line to replace when the wiring lands.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Chat, type Message } from './Chat'
 import { Dock } from './Dock'
@@ -79,6 +79,10 @@ export function Workspace({ dealId }: { dealId: string }) {
   const [messages, setMessages] = useState<Message[]>([])
 
   const [deal, setDeal] = useState('')
+  //: The id `load` settled on — the one passed in, or the first this
+  //: person is on. Upload and re-check both need it and neither can ask
+  //: again without racing the list.
+  const dealFor = useRef('')
   const [artifacts, setArtifacts] = useState<Artifact[]>([])
   const [findings, setFindings] = useState<Finding[]>([])
   const [coverage, setCoverage] = useState<Coverage | null>(null)
@@ -86,6 +90,8 @@ export function Workspace({ dealId }: { dealId: string }) {
   const [chain, setChain] = useState<Chain | null>(null)
   const [traced, setTraced] = useState<Finding | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState<string[]>([])
+  const [rejected, setRejected] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -102,6 +108,7 @@ export function Workspace({ dealId }: { dealId: string }) {
         api.findings(id),
         api.links(id),
       ])
+      dealFor.current = id
       setDeal(page.name)
       setArtifacts(page.artifacts)
       setCoverage(page.coverage)
@@ -165,6 +172,45 @@ export function Workspace({ dealId }: { dealId: string }) {
           : 'MATCHING',
   }))
 
+  /**
+   * Read a dropped file into the deal, then re-check.
+   *
+   * The check is re-run because a new file changes the answer, and a data
+   * room that quietly holds a model nobody reconciled against is the
+   * failure this product exists to prevent. It is not conditional on the
+   * upload succeeding: a *failed* file changes the answer too, by not
+   * being in it.
+   */
+  const upload = async (files: FileList) => {
+    if (!deal) return
+    setRejected(null)
+    const names = Array.from(files).map((one) => one.name)
+    setUploading((was) => [...was, ...names])
+
+    for (const file of Array.from(files)) {
+      try {
+        await api.upload(dealFor.current, file)
+      } catch (problem) {
+        // 415 is « this is not a file I can read at all » — a .txt. Every
+        // other failure is a state of the deal and comes back on the
+        // artifact itself, with a sentence, and shows in the list.
+        setRejected(
+          problem instanceof ApiError ? problem.message : 'that file could not be read',
+        )
+      } finally {
+        setUploading((was) => was.filter((one) => one !== file.name))
+      }
+    }
+
+    try {
+      await api.check(dealFor.current)
+    } catch {
+      // A check that cannot run says so on the run itself; the reload
+      // below will show it.
+    }
+    await load()
+  }
+
   const send = (text: string) => {
     setMessages((was) => [...was, { kind: 'user', text }])
   }
@@ -224,7 +270,14 @@ export function Workspace({ dealId }: { dealId: string }) {
                 {error}
               </div>
             ) : view === 'files' ? (
-              <Files artifacts={artifacts} deal={deal} onOpen={() => go('deck')} />
+              <Files
+                artifacts={artifacts}
+                deal={deal}
+                onOpen={() => go('deck')}
+                onUpload={(files) => void upload(files)}
+                uploading={uploading}
+                problem={rejected}
+              />
             ) : view === 'checks' ? (
               <Checks
                 findings={findings}
