@@ -64,6 +64,7 @@ PHRASES = {
     "free cash flow": "fcf",
     "year on year": "growth",
     "compound annual growth rate": "cagr",
+    "present value": "pv",
 }
 # « Enterprise value » is deliberately *not* folded into « EV ». They mean
 # the same thing, and mapping them together still costs more than it buys:

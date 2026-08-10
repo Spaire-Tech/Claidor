@@ -742,3 +742,133 @@ The tie-out reads a deck and a model and returns findings. There is no
 endpoint, no persistence, no surface. It also assumes the model publishes
 an Outputs tab; inferring that interface when there isn't one is a
 different problem and a larger one.
+
+---
+
+# 10 August, later — reading the model instead of its table of contents
+
+A survey of open-source components came back. Most of what it recommended
+building was already built this morning, and it beat its own benchmark
+(«  tie ≥90% of slide figures to model cells with <5% false positives »).
+Three facts in it were worth more than the plan: the licences, that
+`python-pptx` exposes a chart's embedded workbook, and — confirmed
+independently — that nothing open source does deck-to-model provenance.
+
+What it did not say, and what changed the build, came from checking the
+model rather than the report.
+
+## The Outputs tab is wrong
+
+Four of Cascade's twenty-three source references point one row above the
+figure they name.
+
+| | Says | Actually at |
+|---|---|---|
+| O5 FY2025A adjusted EBITDA | `Model!D25` | D26 — D25 is blank |
+| O6 adjusted EBITDA margin | `Model!D26` | D27 |
+| O8 FY2026E adjusted EBITDA | `Model!E25` | E26 |
+| O10 FY2030E adjusted EBITDA | `Model!I25` | I26 |
+
+All in the adjustments block, all off by exactly one, which is what a row
+insertion does to references written by hand. The values are right, so
+nothing computes wrongly — a banker following the finding just arrives at
+an empty cell.
+
+That is the product's own thesis one link earlier than expected, and it
+settled the design: **the Outputs tab is a link in the chain, not the end
+of it.** References are now verified against the workbook and repaired
+before a finding is written. A repair needs the value *and* the name —
+four cells in the model hold 48.9, and proposing one on the value alone
+would be the same mistake as a checker that links on values.
+
+## The deck supplied as clean has six wrong figures
+
+This is the part I did not expect.
+
+| Slide | Prints | Model holds | |
+|---|---|---|---|
+| 5 | Unlevered FCF 28.8 / 35.4 / 41.6 | 27.9 / 34.6 / 41.0 | `Model!E37, G37, I37` |
+| 7 | Sum of PV of forecast FCF 133.5 | 129.1 | `DCF!B13` |
+| 7 | PV of terminal value 355.9 | 360.3 | `DCF!B15` |
+| 6 | Peer mean EBITDA margin 18.6% | 18.655% → 18.7% | `Comps!G12` |
+
+Checked before believing: **not one cell in the 313-cell workbook holds
+28.8, 35.4, 41.6, 133.5 or 355.9.** The linkage map points the FCF row at
+`Model!E32, G32, I32`, which is EBIT — 40.7 / 49.1 / 56.7, further away
+still. These numbers came from a model version that is not in the file.
+
+Slide 7 is the interesting one. It splits a *correct* enterprise value of
+489.5 into two components that are individually wrong by +4.4 and −4.4 and
+therefore sum right. That is the same shape as the break the test pair
+injects deliberately on slide 6 and calls « the interesting one », except
+nobody injected it.
+
+The peer mean is one tick and probably a rounding convention; it is
+reported, and reported as one tick, because a banker asking whether the
+deck is right deserves the answer and the distinction rather than one of
+them.
+
+**None of these six is on the Outputs tab.** The linkage map marks them
+`-`. A checker that reads only the published interface is structurally
+incapable of finding them, which is the whole argument for reading the
+workbook.
+
+## What got built
+
+`workbook.py` reads every numeric cell and names it from the labels beside
+it: column A for the row, row 4 for the period. Same shape of name as an
+Outputs row — « FY2025A Adjusted EBITDA » — deliberately, so one matcher
+serves a published interface and a raw workbook without knowing which it
+has. Precedents come from openpyxl's bundled Microsoft formula tokenizer,
+so `=D16+D24` is readable without a calculation engine and without taking
+on GPL (`pycel`) or EUPL (`formulas`).
+
+`provenance.py` verifies and repairs the Outputs tab, offers every named
+cell as a candidate, and renders the chain: *Model!D26 = 48.9, =D16+D24 =
+Reported EBITDA 41.2, Total adjustments 7.7.*
+
+Three rules earned their place while measuring:
+
+- **A row with one number is a label and a value; a row with several is a
+  series.** Only the second inherits its column's header. Without it every
+  figure in a DCF's valuation bridge inherits « FY2026E » from the
+  forecast grid above and claims to be about a year it has nothing to do
+  with.
+- **A cell whose whole formula is one reference is an alias, not a
+  figure.** Cascade has thirty. Left in, « FY2025A adjusted EBITDA » has
+  two homes with one value, which is precisely the ambiguity the matcher
+  refuses to resolve.
+- **In a chain, drop what the reader already knows.** `Model!E37`'s five
+  precedents are all « FY2026E unlevered free cash flow » something;
+  printed in full that is the same eight words six times.
+
+## The numbers
+
+| | Outputs tab | Whole workbook | Merged |
+|---|---|---|---|
+| Candidates | 23 | 273 | both |
+| Figures reconciled (of 100) | 34 | 80 | **87** |
+| Findings on the clean deck | 0 | 6 | **6** |
+| Findings on the broken deck | 5 | 9 | **11** |
+| False positives | 0 | 0 | **0** |
+
+The two passes are complementary and neither subsumes the other. The
+Outputs pass catches the revenue CAGR, which exists nowhere in the model —
+it is computed on the Outputs tab itself. The workbook pass catches the
+six figures the Outputs tab never published. Both run; the Outputs pass
+wins where they overlap, because a name a human chose and a stated basis
+read better in a finding than `Model!D26`.
+
+## A measurement that made the work look worse
+
+The eval initially scored the six pre-existing errors as false positives
+and reported **precision 45%**. It was 100%. The scorer had been taught
+that « wrong » meant « differs from the clean deck », which quietly assumes
+the clean deck is right.
+
+Fifth time in three days, and the second in a row where the error made a
+correct run look wrong. The pattern is now well enough established to name:
+**every ground truth in this project has been somebody's claim about the
+data rather than the data.** The README about the breaks, the Outputs tab
+about the cells, the clean deck about being clean. Each was believable and
+each was wrong, and each time the fix was the same — go and look.

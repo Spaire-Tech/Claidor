@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from polar.tieout.check import tie_out
+from polar.tieout.check import tie_out, tie_out_against
 from polar.tieout.deck import read_deck
 from polar.tieout.model import read_outputs
 
@@ -24,6 +24,31 @@ def clean():
     return tie_out(CLEAN, MODEL)
 
 
+@pytest.fixture(scope="module")
+def published():
+    """The Outputs-tab pass on its own — the narrow, high-confidence one."""
+    return tie_out_against(read_deck(CLEAN).figures, read_outputs(MODEL))
+
+
+#: The six figures the « clean » deck prints that do not agree with the
+#: model, none of them injected and every one verified by hand: no cell in
+#: the 313-cell workbook holds 28.8, 35.4, 41.6, 133.5 or 355.9, and the
+#: peer mean EBITDA margin is 18.655%, which prints as 18.7%.
+#:
+#: They survive as a fixed list rather than a count because their value is
+#: as a regression: each was found by reading the whole workbook and none
+#: is reachable through the Outputs tab, which publishes 23 figures and
+#: none of these.
+PRE_EXISTING = {
+    (5, "28.8"),
+    (5, "35.4"),
+    (5, "41.6"),
+    (6, "18.6%"),
+    (7, "133.5"),
+    (7, "355.9"),
+}
+
+
 def test_the_model_publishes_twenty_three_figures() -> None:
     outputs = read_outputs(MODEL)
     assert len(outputs) == 23
@@ -31,10 +56,32 @@ def test_the_model_publishes_twenty_three_figures() -> None:
     assert outputs[4].basis == "Adjusted - see bridge"
 
 
-def test_the_clean_deck_produces_nothing(clean) -> None:
-    """The gate. Every figure in this deck agrees with the model, so any
-    drift reported is a banker being told their correct deck is wrong."""
-    assert clean.drifts == []
+def test_the_published_figures_of_the_clean_deck_produce_nothing(published) -> None:
+    """The original gate, and it still holds. Every figure the model
+    publishes on its Outputs tab agrees with what the deck prints, so a
+    drift here would be a banker told their correct deck is wrong."""
+    assert published.drifts == []
+
+
+def test_the_clean_deck_is_not_clean(clean) -> None:
+    """Reading the whole workbook rather than its published interface
+    finds six figures the deck prints that the model does not hold — in
+    the deck supplied as the zero-findings reference.
+
+    Not false positives. Nothing in the model holds 28.8, 133.5 or 355.9;
+    slide 7 splits a correct enterprise value into two components that are
+    individually wrong and nearly cancel, which is the same shape as the
+    error the test pair injected deliberately elsewhere.
+    """
+    assert {(drift.slide, drift.printed) for drift in clean.drifts} == PRE_EXISTING
+
+
+def test_a_rounding_difference_is_marked_as_one(clean) -> None:
+    """18.6% against a mean of 18.655% is a convention, not a wrong
+    number. It is still reported, and it is reported differently."""
+    by_printed = {drift.printed: drift for drift in clean.drifts}
+    assert by_printed["18.6%"].one_tick is True
+    assert by_printed["133.5"].one_tick is False
 
 
 def test_the_clean_deck_was_actually_checked(clean) -> None:
@@ -44,16 +91,16 @@ def test_the_clean_deck_was_actually_checked(clean) -> None:
     assert clean.checked >= 34
 
 
-def test_every_output_the_deck_prints_is_reached(clean) -> None:
+def test_every_output_the_deck_prints_is_reached(published) -> None:
     """All twenty-three. An output the linker never reaches is an output
     that can drift with nobody hearing about it."""
-    assert len({item.output.ref for item in clean.agreed}) == 23
+    assert len({item.output.ref for item in published.agreed}) == 23
 
 
-def test_the_adjustments_trap_does_not_fire(clean) -> None:
+def test_the_adjustments_trap_does_not_fire(published) -> None:
     """$41.2mm reported and $48.9mm adjusted both appear, on four slides
     between them, and neither is ever compared against the other's cell."""
-    by_ref = {(item.figure.slide, item.output.ref) for item in clean.agreed}
+    by_ref = {(item.figure.slide, item.output.ref) for item in published.agreed}
     assert {(3, "O4"), (4, "O4")} <= by_ref
     assert {(2, "O5"), (3, "O5"), (6, "O5")} <= by_ref
 
@@ -80,7 +127,9 @@ def test_the_broken_deck_gives_up_every_wrong_figure() -> None:
     }
 
     found = {(d.slide, d.printed) for d in tie_out(BROKEN, MODEL).drifts}
-    assert found == wrong, "every wrong figure, and only wrong figures"
+    assert found == wrong | PRE_EXISTING, (
+        "every injected figure, every pre-existing one, and nothing else"
+    )
 
 
 def test_the_break_that_is_internally_consistent_is_still_caught() -> None:
@@ -95,6 +144,10 @@ def test_the_break_that_is_internally_consistent_is_still_caught() -> None:
 
 def test_a_drift_carries_the_chain_back_to_the_cell() -> None:
     drift = next(d for d in tie_out(BROKEN, MODEL).drifts if d.printed == "$49.6mm")
-    assert (drift.ref, drift.source, drift.expected) == ("O5", "Model!D25", "$48.9mm")
+    # Model!D26, not the Model!D25 the Outputs tab states: the reference is
+    # stale by a row and is repaired against the workbook before the
+    # finding is written, so it sends a reader to the figure rather than
+    # to an empty cell.
+    assert (drift.ref, drift.source, drift.expected) == ("O5", "Model!D26", "$48.9mm")
     assert drift.basis == "Adjusted - see bridge"
     assert drift.slide == 2

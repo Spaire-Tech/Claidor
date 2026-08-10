@@ -17,15 +17,27 @@ that do.
 
 `result.checked` is the number that makes the silence mean something. A
 run that reconciled nothing reports no drifts either.
+
+Two passes run and merge. One reconciles against the figures the model
+*publishes* — an Outputs tab, if it has one — which is narrow, confident,
+and named by a human. The other reconciles against every cell in the
+workbook, named from the row and column labels beside it. The second is
+what makes the product work on a model that was not built for it, and on
+Cascade it is also what found six wrong figures in the deck supplied as
+the clean reference.
 """
 
-from .check import Drift, TieOut, tie_out
+from .check import Drift, TieOut, tie_out, tie_out_against
 from .deck import read_deck
 from .figures import Figure
 from .link import Link, Unlinked, link
 from .model import Output, OutputsMissing, read_outputs
+from .provenance import BadReference, chain, outputs_from_workbook, verify_outputs
+from .workbook import Cell, Workbook, read_workbook
 
 __all__ = [
+    "BadReference",
+    "Cell",
     "Drift",
     "Figure",
     "Link",
@@ -33,8 +45,14 @@ __all__ = [
     "OutputsMissing",
     "TieOut",
     "Unlinked",
+    "Workbook",
+    "chain",
     "link",
+    "outputs_from_workbook",
     "read_deck",
     "read_outputs",
+    "read_workbook",
     "tie_out",
+    "tie_out_against",
+    "verify_outputs",
 ]

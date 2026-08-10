@@ -390,3 +390,92 @@ intent; only the file is evidence about what shipped.
 | 12 | A false positive costs much more than a missed drift | [assumption] — stated, never tested with a user | One banker, one hour |
 | 13 | Label matching generalises past this deck's vocabulary | [estimate] — 23 of 23 outputs reached on one pair | A second deck from a different desk |
 | 14 | Charts restate the table beside them, so skipping them loses nothing | [assumption] — true on all four Cascade charts | A deck with a chart that stands alone |
+
+---
+
+# Reading the workbook: decisions
+
+Recorded 10 August 2026, after an open-source survey and a check of the
+model that made most of the survey moot.
+
+## 10. Read the workbook, not only its published interface
+
+**The decision.** Two passes. One against the figures the model publishes
+(an Outputs tab), one against every numeric cell in it, named from the row
+and column labels beside it. Merged, with the published pass winning where
+both fire.
+
+**Why.** The deck supplied as the clean reference has six figures that
+disagree with the model, and none of them is published on the Outputs tab.
+A checker that reads only the interface cannot find them at any threshold.
+Coverage goes from 34 of 100 printed figures to 87, with no false
+positives on either deck.
+
+**Why the published pass survives.** It catches figures the workbook has
+no cell for — Cascade's revenue CAGR is computed on the Outputs tab
+itself — and its names were chosen by a person and carry a stated basis,
+which reads better in a finding than `Model!D26`.
+
+## 11. The Outputs tab is a link in the chain, not ground truth
+
+**The decision.** Verify every stated source cell against the workbook,
+and repair the reference before writing a finding.
+
+**Why.** Four of Cascade's twenty-three point one row above the figure
+they name. The values are right, so nothing computes wrongly and nothing
+looks wrong — a banker following the finding arrives at an empty cell and
+concludes the tool is broken.
+
+**How a repair is allowed.** Value *and* name. Four cells in the model
+hold 48.9; only one is called adjusted EBITDA. A repair proposed on the
+value alone is the same error as a checker that links on values.
+
+## 12. A cell's name comes from its labels, in the same shape as an output's
+
+**The decision.** Row label from column A, period from the header row,
+joined: « FY2025A Adjusted EBITDA ».
+
+**Why.** So that one matcher serves a published interface and a raw
+workbook without knowing which it has. The whole no-Outputs-tab capability
+is this one choice; everything else about it is unchanged code.
+
+**Two rules that had to come with it:**
+
+- A row carrying one number is a label and a value; a row carrying several
+  is a series. Only the second inherits its column's header, or every
+  figure in a valuation bridge inherits a year from the forecast grid
+  above it.
+- A cell whose whole formula is a single reference is an alias, not a
+  figure. Cascade has thirty. Left in, one figure has several homes, which
+  is exactly the ambiguity the matcher refuses to resolve.
+
+## 13. Precedents from the tokenizer already installed
+
+**The decision.** Parse formulas with `openpyxl.formula.tokenizer`, which
+ships with a dependency the project already has.
+
+**Why.** It is a port of the grammar Microsoft published, so quoted sheet
+names and string literals containing colons are handled properly rather
+than by a regex over the whole formula. And it avoids the licence problem
+in every alternative: `pycel` is GPL-3.0, `formulas` is EUPL-1.1+,
+`hyperformula` is GPL-3.0 with a paid commercial licence. `xlcalculator`
+is MIT and would be the choice if evaluation were ever needed — it is not,
+because Excel stores its last computed values in the file.
+
+## 14. A one-tick difference is reported, and reported as one tick
+
+**The decision.** When the deck and the model differ by exactly one unit
+at the printed precision, the finding carries a flag.
+
+**Why.** 18.6% against a mean of 18.655% is a rounding convention, not a
+wrong number. Suppressing it hides a real difference; ranking it with the
+others buries the ones that matter. Both facts fit in one boolean.
+
+## Assumption ledger — revised
+
+| # | Assumption | Was | Now |
+|---|---|---|---|
+| 11 | Models publish a named outputs interface often enough to matter | [assumption] | **Retired.** The product no longer needs one |
+| 13 | Label matching generalises past this deck's vocabulary | [estimate] | **Strengthened.** The same matcher went from 23 candidates to 273 with no false positives |
+| 15 | Row labels live in column A and periods in a header row | [verified] on one model | Five sheets, three layouts, including two sheets with a grid above a label/value bridge |
+| 16 | A model's cached values are the model's own answer | [verified] | Excel stores them; no calculation engine is needed or wanted |

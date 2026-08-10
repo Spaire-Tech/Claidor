@@ -29,10 +29,62 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from polar.tieout.check import tie_out
+from polar.tieout.check import tie_out, tie_out_against
 from polar.tieout.deck import read_deck
 from polar.tieout.link import link
 from polar.tieout.model import read_outputs
+from polar.tieout.provenance import chain, outputs_from_workbook, verify_outputs
+from polar.tieout.workbook import read_workbook
+
+
+def passes(deck_path: str, model_path: str) -> None:
+    """What each pass sees on its own, before they are merged.
+
+    Printed side by side because the comparison is the headline: the
+    published interface is narrow and quiet, the workbook is wide and
+    finds things the interface has no way to expose.
+    """
+    figures = read_deck(deck_path).figures
+    book = read_workbook(model_path)
+    outputs = read_outputs(model_path)
+    candidates = outputs_from_workbook(book)
+
+    published = tie_out_against(figures, outputs)
+    raw = tie_out_against(figures, candidates)
+
+    print("=" * 78)
+    print("THE TWO PASSES, SEPARATELY")
+    print("=" * 78)
+    print(f"  {len(figures)} figures printed in the deck")
+    print(
+        f"  against the Outputs tab   {len(outputs):>4} candidates, "
+        f"{published.checked:>3} reconciled, {len(published.drifts)} findings"
+    )
+    print(
+        f"  against the workbook      {len(candidates):>4} candidates, "
+        f"{raw.checked:>3} reconciled, {len(raw.drifts)} findings"
+    )
+    print()
+
+
+def references(model_path: str) -> None:
+    """Whether the model's own Outputs tab points where it says it does."""
+    book = read_workbook(model_path)
+    outputs = read_outputs(model_path)
+    problems = verify_outputs(outputs, book)
+
+    print("=" * 78)
+    print("THE MODEL'S OWN REFERENCES")
+    print("=" * 78)
+    print(
+        f"  {len(outputs) - len(problems)} of {len(outputs)} source cells hold the "
+        f"value the Outputs tab states"
+    )
+    for problem in problems:
+        print(f"    {problem.ref:<4} {problem.name:<38} says {problem.claimed}")
+        print(f"         holds {problem.found}; the figure is at {problem.actual}")
+        print(f"         ({problem.how})")
+    print()
 
 
 def injected(clean_path: str, broken_path: str) -> set[tuple[int, str]]:
@@ -73,16 +125,18 @@ def run(deck_path: str, model_path: str, title: str) -> None:
         f"{len(result.unlinked)} not reconciled"
     )
 
+    book = read_workbook(model_path)
     if result.drifts:
-        print("\n  DRIFTS")
-        for drift in result.drifts:
+        print("\n  FINDINGS")
+        for drift in sorted(result.drifts, key=lambda d: (d.one_tick, d.slide)):
+            tick = "  [one tick — a rounding convention]" if drift.one_tick else ""
             print(
                 f"    slide {drift.slide}: {drift.printed} "
-                f"— {drift.ref} {drift.name} ({drift.source}, {drift.basis}) "
-                f"says {drift.expected}   [{drift.confidence:.2f}]"
+                f"— {drift.ref} {drift.name} says {drift.expected}"
+                f"   [{drift.confidence:.2f}]{tick}"
             )
             print(f"      {drift.location}")
-            print(f"      « {drift.context[:110]} »")
+            print(f"      {chain(book, drift.source)}")
 
     print("\n  LINKED AND AGREED")
     for item in sorted(result.agreed, key=lambda a: (a.figure.slide, a.output.ref)):
@@ -117,24 +171,54 @@ def unlinked_report(deck_path: str, model_path: str) -> None:
     print()
 
 
+#: Figures the *clean* deck already got wrong, before anything was
+#: injected. Every one verified by hand against the workbook: no cell in
+#: the model holds 28.8, 35.4, 41.6, 133.5 or 355.9, and the peer mean
+#: EBITDA margin is 18.655%, which prints as 18.7% and not 18.6%.
+#:
+#: Listed here so that a finding which is *correct* is not scored as a
+#: false positive. The alternative — treating the injected list as the
+#: complete set of things wrong with the deck — is the same mistake as
+#: scoring against the README, made twice.
+PRE_EXISTING = {
+    (5, "28.8"),
+    (5, "35.4"),
+    (5, "41.6"),
+    (6, "18.6%"),
+    (7, "133.5"),
+    (7, "355.9"),
+}
+
+
 def score_broken(clean_path: str, deck_path: str, model_path: str) -> None:
     result = tie_out(deck_path, model_path)
     found = {(drift.slide, drift.printed) for drift in result.drifts}
     wanted = injected(clean_path, deck_path)
 
     print("=" * 78)
-    print(f"SCORE — {len(wanted)} figures differ from the clean deck")
+    print(f"SCORE — {len(wanted)} injected, {len(PRE_EXISTING)} already wrong")
     print("=" * 78)
     for slide, printed in sorted(wanted):
         hit = (slide, printed) in found
-        print(f"  {'FOUND ' if hit else 'MISSED'}  slide {slide}: {printed}")
-    extra = found - wanted
-    for slide, printed in sorted(extra):
-        print(f"  EXTRA   slide {slide}: {printed}")
+        print(
+            f"  {'FOUND ' if hit else 'MISSED'}  injected      slide {slide}: {printed}"
+        )
+    for slide, printed in sorted(PRE_EXISTING):
+        hit = (slide, printed) in found
+        print(
+            f"  {'FOUND ' if hit else 'MISSED'}  pre-existing  slide {slide}: {printed}"
+        )
+    spurious = found - wanted - PRE_EXISTING
+    for slide, printed in sorted(spurious):
+        print(f"  FALSE POSITIVE              slide {slide}: {printed}")
 
-    recall = len(found & wanted) / len(wanted)
-    precision = len(found & wanted) / len(found) if found else 0.0
-    print(f"\n  recall {recall:.0%}   precision {precision:.0%}")
+    real = wanted | PRE_EXISTING
+    recall = len(found & real) / len(real)
+    precision = len(found & real) / len(found) if found else 0.0
+    print(
+        f"\n  recall {recall:.0%}   precision {precision:.0%}   "
+        f"({len(spurious)} false positives)"
+    )
     print()
 
 
@@ -188,7 +272,9 @@ if __name__ == "__main__":
         model = str(CASCADE / "cascade_model.xlsx")
         linkage = str(CASCADE / "linkage_map.csv")
 
-    run(clean, model, "CLEAN DECK — every drift below is a false positive")
+    references(model)
+    passes(clean, model)
+    run(clean, model, "CLEAN DECK — supplied as the zero-findings reference")
     unlinked_report(clean, model)
     if linkage:
         coverage(clean, model, linkage)
