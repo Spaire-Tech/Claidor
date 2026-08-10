@@ -459,3 +459,66 @@ caller that wants the history.
 The heading says « 3,003 files » or « 12 matching » — never « 12 files »
 under a search box, which reads as a fact about the deal rather than the
 query.
+
+
+---
+
+## 10 August — the agent, and the chat that answers
+
+**The instruction changed.** Accuracy is parked at 83 %; the job is a
+complete product. The standing note is at the top of `roadmap.md`.
+
+**Checked before building, and it paid.** There was already an agent in
+the tree — written for the legal product, with a trace, a step budget, an
+injected model and 113 passing tests — and nothing in it was
+legal-specific except the four tools it could reach. So the loop moved to
+`polar/agent/` and takes a **toolset**: definitions, runner and prompt in
+one object, because those three have to agree and splitting them is how a
+tool gets added to the schema and never mentioned in the prompt.
+
+The tie-out's six: `list_files`, `coverage`, `list_findings`,
+`read_finding`, `trace_figure`, `find_cell`.
+
+**The rule the whole thing rests on: the arithmetic never passes through
+the language model.** Every figure the agent can say came back from a tool
+in the same turn, off the same run the Check screen shows. It is not asked
+whether `$48.9mm` ties — it is told. The prompt's first section is that
+rule, its second is coverage.
+
+The workspace is loaded once before the loop starts. Not for speed: an
+agent that can issue queries is an agent that can reach outside the deal it
+was asked about.
+
+### Verified, end to end
+
+17.6 s, two tools, on Project Cascade:
+
+    coverage        108 figures reconciled, 27 not checked
+    list_findings   Read 8 of 8 findings
+
+The answer named slide 3's two EBITDA gaps, slide 5's three FCF rows and
+slide 7's two DCF lines with the model's value beside each, separated the
+one warning from the seven criticals, said what the 27 unchecked figures
+were and that they are a limit of the check rather than a fault in the
+deck, and offered to trace one.
+
+### And it exposed a defect in front of a banker
+
+It said « 108 of 135 figures ». The deck prints **128**.
+
+That is the `TieOut.unlinked` over-count the recall harness found this
+morning: the merge returns the workbook pass's unlinked list whole, so the
+seven figures the Outputs pass checked are counted in both. `figure_map`
+works around it, `coverage_of` does not, and the agent inherited it.
+
+On a product whose argument is that numbers agree, a coverage line that
+does not add up is the worst possible thing to say out loud. **Fix this
+first.** The fix is in `check.tie_out_both`: subtract what the Outputs
+pass checked from the workbook pass's unlinked list before returning.
+
+### Where this leaves the finish list
+
+1. ~~The agent~~ — done, and answering.
+2. **Writing** — « Record » becomes « Accept ». `writing-pptx.md` has the
+   design; the Word half is in the fork.
+3. The five dock screens that still say « not connected ».
