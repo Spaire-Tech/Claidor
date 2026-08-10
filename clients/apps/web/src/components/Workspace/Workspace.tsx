@@ -274,24 +274,24 @@ export function Workspace({ dealId }: { dealId: string }) {
   //: server scopes the links to what is in force — it is the only side
   //: that can, since working that out needs every artifact in the deal.
   const rows: Row[] = links.map((link) => ({
-      id: link.id,
-      name: link.cell?.name || link.figure?.label || 'unnamed',
-      source: link.cell?.ref ?? '—',
-      where: link.figure?.location ?? '',
-      //: **What was printed, not what the cell holds.** The cell holds
-      //: 0.2136304063; the deck published « 21.4% ». On a product whose
-      //: whole argument is that a deck's printed precision is the claim
-      //: being made, showing ten decimal places of a float would be
-      //: contradicting itself on its own screen. The cell's value is the
-      //: fallback for a figure that was reconciled but never printed.
-      value: link.figure?.printed || link.cell?.value || '',
-      status:
-        link.state === 'confirmed'
-          ? 'CONFIRMED'
-          : drifted.has(link.cell?.ref ?? '')
-            ? 'DRIFTED'
-            : 'MATCHING',
-    }))
+    id: link.id,
+    name: link.cell?.name || link.figure?.label || 'unnamed',
+    source: link.cell?.ref ?? '—',
+    where: link.figure?.location ?? '',
+    //: **What was printed, not what the cell holds.** The cell holds
+    //: 0.2136304063; the deck published « 21.4% ». On a product whose
+    //: whole argument is that a deck's printed precision is the claim
+    //: being made, showing ten decimal places of a float would be
+    //: contradicting itself on its own screen. The cell's value is the
+    //: fallback for a figure that was reconciled but never printed.
+    value: link.figure?.printed || link.cell?.value || '',
+    status:
+      link.state === 'confirmed'
+        ? 'CONFIRMED'
+        : drifted.has(link.cell?.ref ?? '')
+          ? 'DRIFTED'
+          : 'MATCHING',
+  }))
 
   /**
    * Read a dropped file into the deal, then re-check.
@@ -362,8 +362,69 @@ export function Workspace({ dealId }: { dealId: string }) {
     await load()
   }
 
-  const send = (text: string) => {
-    setMessages((was) => [...was, { kind: 'user', text }])
+  /**
+   * Ask the agent, and show it working.
+   *
+   * The three message kinds the design already draws are exactly the three
+   * an agent produces: what was asked, « Used N tools », and the answer.
+   * Nothing new was needed for this.
+   *
+   * **The trace is shown, not logged.** It is most of why an answer reads
+   * as looked up rather than composed, and the only way a reader can tell
+   * which it was.
+   */
+  const send = async (text: string) => {
+    setMessages((was) => [
+      ...was,
+      { kind: 'user', text },
+      { kind: 'working', text: 'Working' },
+    ])
+    const drop = (was: Message[]) => was.filter((one) => one.kind !== 'working')
+
+    try {
+      const answer = await api.ask(dealFor.current, text)
+      setMessages((was) => [
+        ...drop(was),
+        ...(answer.steps.length
+          ? [
+              {
+                kind: 'tools' as const,
+                text: `Used ${answer.steps.length} ${
+                  answer.steps.length === 1 ? 'tool' : 'tools'
+                } — ${answer.steps.map((one) => one.summary).join(' · ')}`,
+              },
+            ]
+          : []),
+        // A run that stopped early says so above its own answer rather
+        // than letting a partial one read as a finished one.
+        ...(answer.stopped === 'step_limit'
+          ? [
+              {
+                kind: 'tools' as const,
+                text: 'Ran out of tool calls — what follows is partial.',
+              },
+            ]
+          : []),
+        {
+          kind: 'agent' as const,
+          text:
+            answer.answer ||
+            answer.error ||
+            'That did not finish, and there is no answer to show.',
+        },
+      ])
+    } catch (problem) {
+      setMessages((was) => [
+        ...drop(was),
+        {
+          kind: 'agent',
+          text:
+            problem instanceof ApiError
+              ? problem.message
+              : 'Could not reach the server.',
+        },
+      ])
+    }
   }
 
   return (
@@ -524,7 +585,7 @@ export function Workspace({ dealId }: { dealId: string }) {
           messages={messages}
           greeting="Good morning. What are we checking?"
           deal={deal}
-          onSend={send}
+          onSend={(text) => void send(text)}
           onNew={() => setMessages([])}
           alone={!showLeft}
           narrow={narrow}

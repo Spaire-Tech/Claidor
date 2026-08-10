@@ -196,6 +196,25 @@ export interface FigureMap {
   slides: { page: number; figures: Figure[] }[]
 }
 
+/** One tool call, as the chat shows it under « Used N tools ». */
+export interface AskedStep {
+  ordinal: number
+  tool: string
+  ok: boolean
+  summary: string
+  milliseconds: number
+}
+
+export interface Asked {
+  id: string
+  prompt: string
+  answer: string
+  /** `answered` · `step_limit` · `failed`. Anything else means partial. */
+  stopped: 'answered' | 'step_limit' | 'failed'
+  error: string | null
+  steps: AskedStep[]
+}
+
 export interface GridCell {
   ref: string
   /** Exactly as Excel computed it, to every digit it holds. */
@@ -408,6 +427,20 @@ export class TieOutApi {
     return this.call(`/artifacts/${artifactId}/grid`)
   }
 
+  /**
+   * Ask a question about the deal.
+   *
+   * Slow by nature — it is a model call with tool calls inside it — so the
+   * caller shows « Working » rather than a spinner, and the trace that
+   * comes back with the answer is shown rather than logged.
+   */
+  ask(dealId: string, prompt: string): Promise<Asked> {
+    return this.call(`/deals/${dealId}/ask`, {
+      method: 'POST',
+      body: JSON.stringify({ prompt }),
+    })
+  }
+
   /** Every figure in a document, by page, and what became of each. */
   figures(artifactId: string): Promise<FigureMap> {
     return this.call(`/artifacts/${artifactId}/figures`)
@@ -431,7 +464,8 @@ export class TieOutApi {
     const query = new URLSearchParams()
     if (options.q) query.set('q', options.q)
     if (options.limit !== undefined) query.set('limit', String(options.limit))
-    if (options.offset !== undefined) query.set('offset', String(options.offset))
+    if (options.offset !== undefined)
+      query.set('offset', String(options.offset))
     const suffix = query.toString()
     return this.call(`/deals/${dealId}/artifacts${suffix ? `?${suffix}` : ''}`)
   }
