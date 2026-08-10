@@ -352,3 +352,23 @@ precision is X ».
   Exhibit 99.1 investor decks against the 10-K or 10-Q whose figures they
   quote. Those decks are PDFs, so it needs a PDF figure extractor before
   it needs anything else.
+
+---
+
+# Superseded for scope — 10 August 2026
+
+The phase list above described the route to a working product. Two
+documents now carry it forward with measurements attached:
+
+- **`complete-product.md`** — what the whole product is, layer by layer,
+  what exists of each, the order, and what « complete » means stated as
+  tests rather than as a feeling.
+- **`accuracy-backlog.md`** — the engine's measured recall and precision,
+  where the misses come from, and the two ideas that should move them.
+  Parked deliberately, with the numbers written down.
+
+The plan's central design decision survives intact and is now load-bearing
+for a reason it was not written for: the engine finds 56% of what it is
+shown. That rules out promising to catch errors, and it makes « a link is
+confirmed once, then re-checked deterministically » the only honest
+promise — and one that holds at 100%.
