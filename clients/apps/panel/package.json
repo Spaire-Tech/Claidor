@@ -1,0 +1,37 @@
+{
+  "name": "@claidor/panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Claidor inside Word, Excel, PowerPoint and Outlook. One panel, four hosts.",
+  "engines": { "node": ">=20.0.0" },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "validate:manifest": "office-addin-manifest validate manifest.xml",
+    "validate:manifest:outlook": "office-addin-manifest validate manifest.outlook.xml",
+    "sideload:powerpoint": "office-addin-debugging start manifest.xml desktop --app powerpoint",
+    "sideload:excel": "office-addin-debugging start manifest.xml desktop --app excel",
+    "sideload:word": "office-addin-debugging start manifest.xml desktop --app word",
+    "sideload:stop": "office-addin-debugging stop manifest.xml"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/office-js": "^1.0.377",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "office-addin-debugging": "^6.0.0",
+    "office-addin-manifest": "^1.13.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.9"
+  }
+}

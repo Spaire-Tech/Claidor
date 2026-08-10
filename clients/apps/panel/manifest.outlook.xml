@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides"
+  xsi:type="MailApp">
+
+  <!-- Claidor in Outlook.
+
+       Separate from `manifest.xml` because Outlook is a `MailApp`, not a
+       `TaskPaneApp` — a different xsi:type with its own override schema.
+       That is not packaging pedantry: a draft is not a document. There is
+       no `Office.context.document`, so nothing to stamp with a lineage id
+       and nothing to select when a finding is clicked. `src/host/outlook.ts`
+       says both of those out loud rather than failing quietly.
+
+       This is the surface where being wrong becomes permanent. Everywhere
+       else a mistake is caught before anyone outside sees it; a draft with
+       the deck attached is the last moment that is still true. The panel
+       reads the *attachment's* name to work out which deal this is, and
+       says what does not tie out, before Send.
+
+       Replace YOUR-DOMAIN.example.com throughout before sideloading. -->
+
+  <Id>9f42c7d1-58ab-4e63-b0c9-6d3e15a97284</Id>
+  <Version>0.1.0.0</Version>
+  <ProviderName>Claidor</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Claidor" />
+  <Description DefaultValue="Checks the figures in an attached deck against the model before the message goes out." />
+  <IconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-64.png" />
+  <HighResolutionIconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-128.png" />
+  <SupportUrl DefaultValue="https://YOUR-DOMAIN.example.com/support" />
+
+  <AppDomains>
+    <AppDomain>https://YOUR-DOMAIN.example.com</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Mailbox" />
+  </Hosts>
+
+  <Requirements>
+    <Sets>
+      <!-- 1.5 for `displayDialogAsync`, which is how signing in works from
+           an iframe that never receives a cookie. -->
+      <Set Name="Mailbox" MinVersion="1.5" />
+    </Sets>
+  </Requirements>
+
+  <FormSettings>
+    <Form xsi:type="ItemEdit">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://YOUR-DOMAIN.example.com/index.html" />
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <!-- ReadWriteMailbox rather than ReadItem: reading the attachment list on
+       a draft needs it, and a later version writes the sentence into the
+       message body. -->
+  <Permissions>ReadWriteMailbox</Permissions>
+
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <!-- Compose only. A message already sent is past the point of this
+         being useful, and putting the panel on read is noise. -->
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit" />
+  </Rule>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.5">
+        <bt:Set Name="Mailbox" />
+      </bt:Sets>
+    </Requirements>
+
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <FunctionFile resid="Taskpane.Url" />
+          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="Claidor.Group.Outlook">
+                <Label resid="Group.Label" />
+                <Control xsi:type="Button" id="Claidor.Open.Outlook">
+                  <Label resid="Button.Label" />
+                  <Supertip>
+                    <Title resid="Button.Label" />
+                    <Description resid="Button.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Taskpane.Url" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-16.png" />
+        <bt:Image id="Icon.32" DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-32.png" />
+        <bt:Image id="Icon.80" DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://YOUR-DOMAIN.example.com/index.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Group.Label" DefaultValue="Claidor" />
+        <bt:String id="Button.Label" DefaultValue="Check attachment" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="Button.Tooltip" DefaultValue="Check the figures in the attached deck against the model before sending." />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>
