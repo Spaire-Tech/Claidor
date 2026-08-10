@@ -436,3 +436,93 @@ The cause, once found, is dull: `DossierDocumentFileRead` was added to the
 API months ago, the web app keeps a hand-written union of file shapes — in
 two files, already drifted from each other — and neither listed it. One
 declaration now, imported.
+
+---
+
+## 2026-08-10 — Phase 2 opens: the matter as a workspace
+
+The web app's job is not a nicer file list. Vesence's own page for it says
+« files, chats and drafts live together in a project », and the screenshot
+they lead with is a consistency check across twenty-four transaction
+documents. Five pieces landed today, and the ordering was chosen so each
+one is verifiable here rather than pending on a screen.
+
+### What was built
+
+| | |
+|---|---|
+| `POST /dossiers/{id}/check` | The engine over every readable file, per file, with the matter's totals |
+| `GET /dossiers/{id}/documents/{id}/text` | The preview pane's source |
+| `dossier/agent/tools.py` | Four tools: list, read, check, search |
+| `dossier/agent/loop.py` | The agent loop, model injected |
+| `agent_tasks` / `agent_steps` | The task and its trace, persisted |
+
+### The recurring design question, and it was always the same one
+
+Every one of these had exactly one interesting decision, and it was always
+*what to do about what we cannot see*.
+
+The matter check: a scan without OCR has no text and gets no findings.
+« No issues found in 24 files » when six could not be opened is the most
+misleading sentence this product could print, so `unreadable` is computed
+from what the matter holds rather than from what happened to be checkable,
+and it is a required field of the response.
+
+The preview: `text` is `null` when extraction failed, never an empty
+string. Blank and unreadable look identical on screen and mean opposite
+things.
+
+The agent's workspace: built from `list_documents`, not
+`list_readable_documents`. The tempting call is the wrong one — an agent
+that cannot see the scans cannot say six files could not be read, so it
+answers as though the matter were only what it could read.
+
+The loop: running out of steps is reported, and the budget is checked
+*before* the calls rather than after, or a limit of three produces a trace
+showing four.
+
+### Containment is structural
+
+The agent's tools take a `Workspace` — a fixed tuple of documents loaded
+once from the matter the caller is assigned to — not a session and not an
+id they resolve themselves. « Read the other side's file » is not one
+prompt injection away; it is not expressible. A document outside the
+workspace does not exist, which from inside the matter is the true answer.
+
+That is also why 25 of the tool tests need no database at all. Tools over
+data can be tested as data.
+
+### And the lesson from this morning, applied
+
+Fifteen loop tests drive a hand-written fake client. A fake whose shape
+drifts from `anthropic.types.Message` keeps passing while the loop breaks
+on first contact with a real model — the same « test that cannot fail »
+that let the check routes ship unreachable.
+
+So the sixteenth builds genuine SDK objects — `Message`, `TextBlock`,
+`ToolUseBlock`, `Usage` — and runs the loop on those. It is the control for
+the whole file. I had checked the field names by hand first; this is that
+check, kept rather than remembered.
+
+mypy found the same class of thing twice more: the `Client` protocol
+declared `messages` as a settable attribute where the SDK has a read-only
+property, and is narrower than the concrete overloaded signature. The first
+was a real mismatch. The second is a limit of structural typing, so it is a
+cast with its reason written beside it.
+
+### What is deliberately not built
+
+Cross-document contradiction — « the cap in the SPA does not match the
+LOI ». That is a *reading*, and readings go through `redline/judgement.py`,
+where quotes are verified and arithmetic recomputed before anything reaches
+a reader. Reporting one without that machinery would be the most confident
+wrong answer the product could give, so it gets built properly or not at
+all.
+
+### Not verified
+
+The agent has never run against a real model. Every path is tested with a
+scripted one, which proves the loop does what it is told and proves nothing
+about whether Claude uses these four tools well on a real bundle. That
+needs a matter with real documents in it, and it is the next honest thing
+to find out.
