@@ -24,6 +24,7 @@ from .audit import audit
 from .deck import read_deck
 from .figures import Figure
 from .legacy import LegacyUnreadable
+from .memo import NotADocx, read_memo
 from .model import OutputsMissing, read_outputs
 from .provenance import repair_outputs
 from .workbook import Cell, read_workbook
@@ -86,8 +87,10 @@ def read_artifact(payload: bytes, filename: str, kind: ArtifactKind) -> Ingested
             return _read_model(str(path))
         if kind is ArtifactKind.deck:
             return _read_deck(str(path))
+        if kind is ArtifactKind.memo:
+            return _read_memo(str(path), suffix)
         raise Unreadable(
-            f"reading a {kind.value} is not built yet — models and decks are"
+            f"reading a {kind.value} is not built yet — models, decks and memos are"
         )
 
 
@@ -170,6 +173,42 @@ def _read_deck(path: str) -> Ingested:
             "slides": max(pages) if pages else 0,
             "figures": len(extraction.figures),
             "pages_with_figures": len(pages),
+        },
+        figures=list(extraction.figures),
+    )
+
+
+def _read_memo(path: str, suffix: str) -> Ingested:
+    if suffix == ".doc":
+        # A .doc is the pre-2007 binary format, not a zip of XML. There is
+        # no partial answer to give: the reader cannot open it at all.
+        raise Unreadable("this is an old .doc — open it in Word once and save as .docx")
+
+    try:
+        extraction = read_memo(path)
+    except NotADocx as error:
+        raise Unreadable(
+            f"this file is named .docx but is not a Word document inside ({error})"
+        ) from error
+    except Exception as error:
+        raise Unreadable(
+            f"this memo could not be opened ({type(error).__name__}). "
+            "If it opens in Word, saving it again usually fixes it."
+        ) from error
+
+    if not extraction.figures:
+        raise Unreadable(
+            "no figures were found in this memo — if the numbers are in "
+            "images or an embedded object, nothing can be read from them"
+        )
+
+    return Ingested(
+        counts={
+            "figures": len(extraction.figures),
+            "paragraphs_with_figures": len(
+                {figure.location for figure in extraction.figures}
+            ),
+            "named": sum(1 for figure in extraction.figures if figure.label),
         },
         figures=list(extraction.figures),
     )

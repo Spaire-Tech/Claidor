@@ -16,9 +16,11 @@ Run as a module, not as a path: `scripts/platform.py` shadows the standard
 library's `platform` when the script's own directory leads `sys.path`, and
 SQLAlchemy imports it.
 
-`--broken` seeds the broken deck as a second version of the same lineage,
-which is the realistic case: not a new deal, a new upload of the deck that
-is already in one.
+`--broken` seeds the broken deck and the stale memo as second versions of
+the same lineages, which is the realistic case: not a new deal, a new
+upload of documents that are already in one. The memo pair is the more
+honest of the two — nobody re-reads the committee paper when the model
+moves, which is exactly why its figures go stale.
 """
 
 import asyncio
@@ -105,18 +107,24 @@ async def seed(broken: bool) -> None:
         uploads = [
             ("cascade_model.xlsx", ArtifactKind.model),
             ("cascade_deck.pptx", ArtifactKind.deck),
+            # The memo is checked exactly as the deck is, and gives the
+            # panel something real to show when it opens inside Word.
+            ("cascade_memo.docx", ArtifactKind.memo),
         ]
         if broken:
-            # Same filename on purpose: a new *version* of the deck already
-            # in the deal, which is what a banker actually does.
-            uploads = [("cascade_deck.pptx", ArtifactKind.deck)]
+            # Same filenames on purpose: new *versions* of the documents
+            # already in the deal, which is what a banker actually does.
+            uploads = [
+                ("cascade_deck.pptx", ArtifactKind.deck),
+                ("cascade_memo.docx", ArtifactKind.memo),
+            ]
 
         for filename, kind in uploads:
-            source = CASCADE / (
-                "cascade_deck_broken.pptx"
-                if broken and kind is ArtifactKind.deck
-                else filename
-            )
+            stale = {
+                ArtifactKind.deck: "cascade_deck_broken.pptx",
+                ArtifactKind.memo: "cascade_memo_stale.docx",
+            }
+            source = CASCADE / (stale.get(kind, filename) if broken else filename)
             artifact = await tieout.ingest(
                 session,
                 dossier_id=deal.id,

@@ -166,7 +166,13 @@ class TieOutService:
         """
         repository = TieOutRepository.from_session(session)
         current = await repository.current_artifacts(dossier_id)
-        decks = [one for one in current if one.kind is ArtifactKind.deck]
+        # A memo is checked exactly as a deck is: printed figures, named
+        # by the words around them, reconciled against the model. The only
+        # difference is that it has paragraphs where a deck has slides,
+        # and that difference lives in the reader, not here.
+        decks = [
+            one for one in current if one.kind in (ArtifactKind.deck, ArtifactKind.memo)
+        ]
         models = [one for one in current if one.kind is ArtifactKind.model]
 
         run = await repository.start_run(
@@ -176,7 +182,7 @@ class TieOutService:
             requested_by_id=user_id,
         )
         if not decks or not models:
-            missing = "model" if not models else "deck"
+            missing = "model" if not models else "deck or memo"
             return await repository.finish_run(
                 run,
                 error=f"nothing to reconcile — this deal has no {missing} yet",

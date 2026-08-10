@@ -56,6 +56,7 @@ from pptx import Presentation
 from pptx.util import Emu
 
 from .figures import Extraction, Figure, figures_in
+from .prose import name_figures
 
 #: How far above a value a caption can sit and still be its label. A tile
 #: is a caption and a number a few points apart; half an inch is generous
@@ -71,17 +72,6 @@ TILE_DRIFT = Emu(int(0.35 * 914_400))
 #: is the page's own heading, which is context for every figure on it and
 #: a name for none of them.
 HEADER_BAND = Emu(int(1.3 * 914_400))
-
-#: Text between two figures that makes them the ends of one range rather
-#: than two independent claims. « $455mm to $528mm » is a reference range;
-#: there is no single cell it reconciles to, so neither end is linked.
-RANGE_JOIN = re.compile(r"^\s*(?:to|and|-|–|—|through|,)\s*$", re.IGNORECASE)
-
-#: Where one clause ends and the next begins. A figure's name does not
-#: reach across punctuation: in « ... management plan, 9.8% WACC, 2.5%
-#: terminal growth », each figure is named inside its own comma-delimited
-#: piece, and reading across the commas swaps the two names round.
-CLAUSE_BREAK = re.compile(r"[,;:.]|\s—\s|\s--\s")
 
 #: Row labels that name a derivation rather than a line item. In every
 #: financial table ever built, « % margin » means « as a percentage of the
@@ -245,39 +235,12 @@ def _read_text(
         line = paragraph.text.strip()
         if not line:
             continue
-        found = figures_in(line)
-        if not found:
-            continue
-
-        for position, item in enumerate(found):
-            opens = found[position - 1].end if position else 0
-            before = line[opens : item.start]
-            after = (
-                line[item.end : found[position + 1].start]
-                if position + 1 < len(found)
-                else line[item.end :]
-            )
-
-            # The words immediately before this figure name it, back as
-            # far as the nearest clause boundary and no further. « Five-
-            # year management plan, 9.8% WACC, 2.5% terminal growth »
-            # puts the word WACC *after* the figure it names, so the
-            # words before 2.5% are the tail of its neighbour's name; a
-            # label built from them says 2.5% is the WACC, which it is
-            # not, and the WACC is 9.8%, which the deck got right.
-            #
-            # A tile's value has nothing before it and nothing after — its
-            # caption is the whole name — and a tile's subtext « 11.8%
-            # year-on-year » is named by what follows. So fall through to
-            # the words after only when the words before say nothing.
-            head = _last_clause(before)
-            clause = head if _has_words(head) else _first_clause(after)
-            label = f"{caption} {clause}".strip() if caption else clause
-
-            joined_before = position > 0 and RANGE_JOIN.match(before) is not None
-            joined_after = (
-                position + 1 < len(found) and RANGE_JOIN.match(after) is not None
-            )
+        for named in name_figures(line):
+            item = named.item
+            # A tile's caption is a whole name; a sentence's clause is
+            # only ever part of one. Joining them is what makes « 11.8% »
+            # under a « FY2025A revenue » caption reachable at all.
+            label = f"{caption} {named.label}".strip() if caption else named.label
 
             extraction.figures.append(
                 Figure(
@@ -291,7 +254,7 @@ def _read_text(
                     location=f"slide {slide}",
                     context=line,
                     section=section,
-                    range_endpoint=joined_before or joined_after,
+                    range_endpoint=named.range_endpoint,
                     structured=is_tile,
                     anchor=_anchor(
                         shape,
@@ -310,21 +273,6 @@ def _is_tile_subtext(frame: Any, caption: str) -> bool:
         return False
     text = frame.text.strip()
     return "\n" not in text and len(text) <= 40
-
-
-def _has_words(text: str) -> bool:
-    """True when a fragment carries something other than punctuation."""
-    return any(character.isalpha() for character in text)
-
-
-def _last_clause(text: str) -> str:
-    """What is left of a fragment after the last clause break in it."""
-    return CLAUSE_BREAK.split(text)[-1].strip()
-
-
-def _first_clause(text: str) -> str:
-    """What is left of a fragment before the first clause break in it."""
-    return CLAUSE_BREAK.split(text)[0].strip()
 
 
 def _read_chart(extraction: Extraction, shape: Any, slide: int, section: str) -> None:
