@@ -325,3 +325,80 @@ Office task pane from that project: Word on the web loads the pane in an
 iframe with no session, so it would be redirected to a login it cannot
 complete, and refused framing even if it got there. The add-in needs its
 own origin. That is a fact about the product, not a temporary inconvenience.
+
+---
+
+## 2026-08-10 — the login, end to end, and three things found on the way
+
+The panel could not talk to the server. Five pieces were missing and only
+one of them was the one I set out to fix.
+
+**1. The routes refused every credential the add-in can carry.**
+`redline/auth.py` required `web:read`/`web:write`, which are in
+`RESERVED_SCOPES` — granted only by `create_user_session`, which sets a
+cookie. No token can hold them; none can request them. So routes written
+for an add-in were reachable only by a browser. 274 tests passed
+throughout, because every one of them authenticates with the default
+fixture and the default fixture grants the web scopes. Fixed with
+`redline:read` / `redline:write`, following the convention every other
+module already used.
+
+**2. The token store named in `decisions.md` does not exist in Word.**
+`Office.context.roamingSettings` is `[Api set: Mailbox 1.1]` — Outlook's.
+The `api.ts` this fork replaced read it, got `undefined`, and would have
+reported « not signed in » forever without saying why. Word's equivalent,
+`Office.context.document.settings`, is worse: it serialises *into the
+.docx*, so a token there travels with the agreement to the counterparty.
+The answer is `localStorage` on the add-in's own origin, which is where
+upstream put its refresh token for the same reason.
+
+**3. There was no way to create a token at all.** The inherited codebase
+carried `list`, `get` and `delete` for personal access tokens and nothing
+that issued one. The last link in the chain was the first one missing.
+
+### The rule I got wrong, and what it taught
+
+The create service refuses to mint a scope the caller does not hold. That
+sounds right and is wrong: a web session carries the two reserved scopes
+and nothing else, so under that rule nobody could ever mint anything.
+**Session scopes say how you authenticated, not what you are entitled to.**
+
+The rule that expresses the actual intent is *only a browser session may
+mint*, enforced by requiring a reserved scope — which, since no token can
+hold one, means exactly « a human freshly signed in ». A token can never
+mint a token, so a narrow one is never one request from a wide one.
+
+Four tests failed on the first version. It is the only reason it is not
+still there.
+
+### The test that proved nothing
+
+I wrote an end-to-end test: mint a token, send it as a bearer, check the
+route opens. It passed immediately, which should have been the warning.
+
+`polar/app.py` skips `AuthSubjectMiddleware` entirely under
+`settings.is_testing()`, and the `client` fixture replaces the
+auth-subject dependency with a fixed value. An `Authorization` header sent
+to that client is decoration — the request is authenticated whatever it
+says. The test passed without a bearer ever being involved.
+
+That is the same failure as #1 above, in the tool meant to catch it. It now
+calls `get_auth_subject` — the real resolver the middleware uses — with a
+real request carrying a real token, and has a control beside it: a made-up
+token must raise. What remains untested is the one line in `app.py` that
+installs the middleware, which is worth stating rather than papering over.
+
+**The general form: a test that cannot fail is worse than no test**, because
+it stops anyone writing the one that can.
+
+### And the client had drifted
+
+`packages/client/src/v1.ts` described 49,787 lines of API. The API is
+44,780 lines' worth. The difference is routes pruned months ago that the
+generated client still claimed existed.
+
+Regenerated from `app.openapi()` directly rather than from a running
+server. Checked by comparing the exact error sets before and after, not the
+counts — three errors either way, the *same* three, one pre-existing
+`FileRead` union with a variant missing `public_url`. Comparing counts
+would have hidden three fixed and three new.
