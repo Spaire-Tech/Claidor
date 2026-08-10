@@ -503,7 +503,19 @@ export interface paths {
      */
     get: operations['personal_access_token:list_personal_access_tokens']
     put?: never
-    post?: never
+    /**
+     * Create Personal Access Token
+     * @description Create a personal access token.
+     *
+     *     The token is in the response and nowhere else: only an HMAC of it is
+     *     stored, so this is the one and only time it can be read.
+     *
+     *     Deliberately a web-session route. Minting a credential is not something
+     *     a credential should be able to do — otherwise a token with a narrow
+     *     scope is one request away from a token with a wide one, and revoking
+     *     the first would not revoke what it had already issued.
+     */
+    post: operations['personal_access_token:create_personal_access_token']
     delete?: never
     options?: never
     head?: never
@@ -2846,6 +2858,759 @@ export interface paths {
     get: operations['integrations_google:integrations_google_link:integrations.google.link.callback']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/librarian/questions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Questions
+     * @description Your own questions asked outside a matter, most recent first.
+     */
+    get: operations['librarian:list_questions']
+    put?: never
+    post?: never
+    /**
+     * Clear Questions
+     * @description Empty your own Historique for this workspace.
+     */
+    delete: operations['librarian:clear_questions']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/librarian/questions/{question_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Question
+     * @description Remove one question from your Historique.
+     *
+     *     404 rather than 403 when it is not yours: whether a colleague's question
+     *     exists is itself none of your business.
+     */
+    delete: operations['librarian:delete_question']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/librarian/ask': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Ask
+     * @description Stream a grounded, cited answer from the legal corpus (SSE).
+     */
+    post: operations['librarian:ask']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/corpus/acts': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Acts
+     * @description List the loaded acts with their versions.
+     */
+    get: operations['corpus:list_acts']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/corpus/versions/{version_id}/articles': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Version Articles
+     * @description Ordered article list of one version — numbers only, no text.
+     */
+    get: operations['corpus:list_version_articles']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/corpus/articles/{article_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Article
+     * @description Full article detail: text, equivalences and verified jurisprudence.
+     */
+    get: operations['corpus:get_article']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/corpus/decisions/{decision_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Decision
+     * @description Full decision detail with its verified article links.
+     */
+    get: operations['corpus:get_decision']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/corpus/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Search
+     * @description Search the corpus the way practitioners look things up.
+     *
+     *     A citation-shaped query (« article 170 AUPSRVE », « CCJA 090/2018 »)
+     *     lands on the document itself; anything else is full-text with filters.
+     *     How the query was read is returned alongside the results, so a
+     *     surprising result set is explainable rather than mysterious.
+     */
+    get: operations['corpus:search']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/analyses/suggestions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Suggestions
+     * @description Where to start, ranked out of the corpus rather than chosen by hand.
+     */
+    get: operations['analyses:suggestions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/analyses/authority': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Authority
+     * @description Is this held repeatedly, or once — counted on one named article.
+     */
+    get: operations['analyses:authority']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/analyses/history': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * History
+     * @description The versions of a text, and which one governs on a given date.
+     */
+    get: operations['analyses:history']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/analyses/compare': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Compare
+     * @description The two texts side by side, with what moved between them.
+     */
+    get: operations['analyses:compare']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/analyses/citations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Citations
+     * @description An article's life in the courts: who cites it, and with what.
+     */
+    get: operations['analyses:citations']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/prompts': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Prompts
+     * @description The cabinet's saved prompts, most recent first.
+     */
+    get: operations['prompts:list_prompts']
+    put?: never
+    /**
+     * Create Prompt
+     * @description Save a question the cabinet asks often.
+     */
+    post: operations['prompts:create_prompt']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/prompts/{prompt_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Prompt
+     * @description Remove a saved prompt from the cabinet's library.
+     */
+    delete: operations['prompts:delete_prompt']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/veilles': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Veilles
+     * @description What the cabinet is watching.
+     */
+    get: operations['veilles:list_veilles']
+    put?: never
+    /**
+     * Create Veille
+     * @description Watch an article or an act.
+     *
+     *     Created with the corpus as it stands already marked as seen: watching
+     *     art. 170 today must not report the decisions that cited it since 2001.
+     */
+    post: operations['veilles:create_veille']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/veilles/signals': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Signals
+     * @description The recent signal feed, newest first.
+     */
+    get: operations['veilles:list_signals']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/veilles/{veille_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Update Veille
+     * @description Suspend or resume a watch.
+     */
+    patch: operations['veilles:update_veille']
+    trace?: never
+  }
+  '/v1/lecteur/review': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Review Document
+     * @description Check every text and decision a document cites.
+     *
+     *     The file is read and dropped: nothing about an opposing party's filing
+     *     is stored by this route.
+     */
+    post: operations['lecteur:review_document']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/lecteur/review/example': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Review Example
+     * @description The same check, run on an example filing.
+     *
+     *     The document is fictional; the verification is not — it runs against
+     *     the loaded corpus like any other.
+     */
+    post: operations['lecteur:review_example']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/redline/check': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Check Text
+     * @description Check document text for defined-term defects.
+     *
+     *     This is the add-in's route: Word has the document open, Office.js
+     *     reads its text, and the offsets that come back are into exactly the
+     *     string that was sent.
+     *
+     *     **Scopes**: `redline:read` `redline:write`
+     */
+    post: operations['redline:check_text']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/redline/terms': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Document Terms
+     * @description Every defined term in the document, with its meaning and its uses.
+     *
+     *     Nothing here is a defect. It is the map a reader wants when they open
+     *     a long agreement somebody else drafted: what does « Permitted
+     *     Encumbrance » mean, where does it bite, and what does its definition
+     *     rest on. No model is involved, so nothing here can be wrong about what
+     *     the document says.
+     *
+     *     **Scopes**: `redline:read` `redline:write`
+     */
+    post: operations['redline:document_terms']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/redline/judge': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Judge Text
+     * @description Contradictions and miscalculations, which need a model.
+     *
+     *     A separate route from ``/check`` on purpose. The mechanical checks
+     *     answer in milliseconds and this one reads the whole document a window
+     *     at a time, so joining them would make every check as slow as the
+     *     slowest. The panel runs this after it has already shown what it knows.
+     *
+     *     Nothing a model proposes reaches the response until code has checked
+     *     it: every quote must be in the document, and every sum is recomputed.
+     *     See :mod:`polar.redline.judgement`.
+     *
+     *     **Scopes**: `redline:read` `redline:write`
+     */
+    post: operations['redline:judge_text']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/redline/fix/document': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Fix Document
+     * @description Check a Word file and return it with the safe fixes as revisions.
+     *
+     *     The first route that writes. Only a wrong case is corrected — the term
+     *     is written one way and defined another, and the correction is the
+     *     defined form. Everything else needs a drafting decision.
+     *
+     *     Every edit is a tracked change. The counts come back in headers so the
+     *     caller knows what happened without parsing the document:
+     *     ``X-Redline-Applied`` and ``X-Redline-Needs-Decision``.
+     *
+     *     The file is read, edited in memory and returned. Nothing is stored.
+     *
+     *     **Scopes**: `redline:write`
+     */
+    post: operations['redline:fix_document']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/redline/check/document': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Check Document
+     * @description Check an uploaded Word file or PDF.
+     *
+     *     The file is read and dropped; nothing about it is stored.
+     *
+     *     **Scopes**: `redline:read` `redline:write`
+     */
+    post: operations['redline:check_document']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/dossiers': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Dossiers
+     * @description The matters the caller is assigned to.
+     */
+    get: operations['dossiers:list_dossiers']
+    put?: never
+    /**
+     * Create Dossier
+     * @description Open a matter. The creator is assigned to it as lead.
+     */
+    post: operations['dossiers:create_dossier']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/dossiers/{dossier_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Dossier */
+    get: operations['dossiers:get_dossier']
+    put?: never
+    post?: never
+    /**
+     * Delete Dossier
+     * @description Delete a matter — lead only.
+     *
+     *     A soft delete: the dossier disappears from the product (every read
+     *     filters on it), but its journalized record — who asked what, answered
+     *     on what basis — survives in the database. A matter's history is not
+     *     something a click should be able to destroy.
+     */
+    delete: operations['dossiers:delete_dossier']
+    options?: never
+    head?: never
+    /** Update Dossier */
+    patch: operations['dossiers:update_dossier']
+    trace?: never
+  }
+  '/v1/dossiers/{dossier_id}/members': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add Member
+     * @description Assign a colleague to the matter — the only way to grant access.
+     *
+     *     By id, or by the email the colleague signs in with. Email resolution
+     *     requires an existing Claidor account: access is granted to a person the
+     *     system knows, never to an address on faith. (Inviting people who have
+     *     no account yet is an email feature, deliberately deferred until
+     *     sending is set up.)
+     */
+    post: operations['dossiers:add_member']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/dossiers/{dossier_id}/members/{user_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Remove Member */
+    delete: operations['dossiers:remove_member']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/dossiers/{dossier_id}/documents': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add Document
+     * @description Register an uploaded file as a piece of this matter, and read it.
+     *
+     *     Extraction runs here, in the open: the response already says whether
+     *     the piece is readable, so nobody discovers weeks later that a scan
+     *     contributed nothing to the answers.
+     */
+    post: operations['dossiers:add_document']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/dossiers/{dossier_id}/documents/{document_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Remove Document
+     * @description Remove a piece from the matter.
+     *
+     *     Answers that relied on it keep their quotes: the record of what was
+     *     said, and on what basis, does not change because a document was
+     *     withdrawn later.
+     */
+    delete: operations['dossiers:remove_document']
+    options?: never
+    head?: never
+    /** Update Document */
+    patch: operations['dossiers:update_document']
+    trace?: never
+  }
+  '/v1/dossiers/{dossier_id}/questions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Questions
+     * @description The matter's shared record: every question asked, with its answer.
+     */
+    get: operations['dossiers:list_questions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/dossiers/{dossier_id}/ask': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Ask
+     * @description Ask inside the matter: the corpus supplies the law, the file the facts.
+     */
+    post: operations['dossiers:ask']
     delete?: never
     options?: never
     head?: never
@@ -6923,10 +7688,71 @@ export interface components {
       detail: string
     }
     /**
+     * AnalysisSubject
+     * @description What the analysis was run on — echoed so the UI never guesses.
+     */
+    AnalysisSubject: {
+      /** Kind */
+      kind: string
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Label */
+      label: string
+    }
+    /**
+     * AnalysisSuggestions
+     * @description Entry points for the Analyses screen, computed from the corpus.
+     *
+     *     Four lists, one per analysis, each drawn from what the collection
+     *     actually holds: the most-cited provisions, the judgments that turn on
+     *     the most of them. Nothing here is chosen by hand, so the screen cannot
+     *     drift away from the corpus behind it.
+     */
+    AnalysisSuggestions: {
+      /** Authority */
+      authority: components['schemas']['AnalysisTarget'][]
+      /** History */
+      history: components['schemas']['AnalysisTarget'][]
+      /** Compare */
+      compare: components['schemas']['AnalysisTarget'][]
+      /** Citations */
+      citations: components['schemas']['AnalysisTarget'][]
+    }
+    /**
+     * AnalysisTarget
+     * @description One thing worth running an analysis on, as the corpus ranked it.
+     */
+    AnalysisTarget: {
+      /** Kind */
+      kind: string
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Label */
+      label: string
+    }
+    /**
      * AppealDecision
      * @enum {string}
      */
     AppealDecision: 'approved' | 'rejected'
+    /**
+     * ArticleEquivalenceRelation
+     * @enum {string}
+     */
+    ArticleEquivalenceRelation:
+      | 'unchanged'
+      | 'renumbered'
+      | 'amended'
+      | 'split'
+      | 'merged'
+      | 'new'
+      | 'repealed'
     /**
      * AttachedCustomField
      * @description Schema of a custom field attached to a resource.
@@ -7002,6 +7828,46 @@ export interface components {
       user_metadata?: {
         [key: string]: unknown
       }
+    }
+    /**
+     * AuthorityAnalysis
+     * @description « Vérifier l'autorité » — is this held once, or held repeatedly.
+     */
+    AuthorityAnalysis: {
+      subject: components['schemas']['AnalysisSubject']
+      /** Anchor Article Id */
+      anchor_article_id: string | null
+      /** Anchor Label */
+      anchor_label: string | null
+      /** Also Cited */
+      also_cited: string[]
+      /** Level */
+      level: string
+      /** Decision Count */
+      decision_count: number
+      /** Year Span */
+      year_span: number
+      /** Label */
+      label: string
+      /** Rows */
+      rows: components['schemas']['AuthorityRow'][]
+    }
+    /** AuthorityRow */
+    AuthorityRow: {
+      /**
+       * Decision Id
+       * Format: uuid
+       */
+      decision_id: string
+      /** Reference */
+      reference: string
+      /**
+       * Decided On
+       * Format: date
+       */
+      decided_on: string
+      /** Quote */
+      quote: string | null
     }
     /** AuthorizeOrganization */
     AuthorizeOrganization: {
@@ -7100,7 +7966,9 @@ export interface components {
        *       "notification_recipients:read": "Read notification recipients",
        *       "notification_recipients:write": "Create or modify notification recipients",
        *       "organization_access_tokens:read": "Read organization access tokens",
-       *       "organization_access_tokens:write": "Create or modify organization access tokens"
+       *       "organization_access_tokens:write": "Create or modify organization access tokens",
+       *       "redline:read": "Check documents for defects",
+       *       "redline:write": "Apply fixes to documents"
        *     }
        */
       scope_display_names: {
@@ -7189,7 +8057,9 @@ export interface components {
        *       "notification_recipients:read": "Read notification recipients",
        *       "notification_recipients:write": "Create or modify notification recipients",
        *       "organization_access_tokens:read": "Read organization access tokens",
-       *       "organization_access_tokens:write": "Create or modify organization access tokens"
+       *       "organization_access_tokens:write": "Create or modify organization access tokens",
+       *       "redline:read": "Check documents for defects",
+       *       "redline:write": "Apply fixes to documents"
        *     }
        */
       scope_display_names: {
@@ -7285,6 +8155,8 @@ export interface components {
       | 'notification_recipients:write'
       | 'organization_access_tokens:read'
       | 'organization_access_tokens:write'
+      | 'redline:read'
+      | 'redline:write'
     /**
      * BalanceCreditOrderEvent
      * @description An event created by Claidor when an order is paid via customer balance.
@@ -10249,6 +11121,14 @@ export interface components {
       /** Error */
       error?: string | null
     }
+    /** Body_lecteur:review_document */
+    Body_lecteur_review_document: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string
+    }
     /** Body_login_code:authenticate_login_code */
     Body_login_code_authenticate_login_code: {
       /** Code */
@@ -10264,6 +11144,22 @@ export interface components {
     }
     /** Body_organizations:upload_customer_portal_sign_in_image */
     Body_organizations_upload_customer_portal_sign_in_image: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string
+    }
+    /** Body_redline:check_document */
+    Body_redline_check_document: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string
+    }
+    /** Body_redline:fix_document */
+    Body_redline_fix_document: {
       /**
        * File
        * Format: binary
@@ -10387,6 +11283,17 @@ export interface components {
        * @example 4242
        */
       last4: string
+    }
+    /** ChangeRow */
+    ChangeRow: {
+      /** Sign */
+      sign: string
+      /** Kind */
+      kind: string
+      /** Alinea */
+      alinea: number
+      /** Text */
+      text: string
     }
     /**
      * Checkout
@@ -12737,6 +13644,50 @@ export interface components {
        */
       allow_trial?: false | null
     }
+    /**
+     * CitationNature
+     * @description What a citation rests on — never mixed, always shown.
+     *
+     *     A date read off an exhibit and a rule read off an article are different
+     *     kinds of claim: one can be wrong because the file is wrong, the other
+     *     because the law was misread. The product labels them apart so a reader
+     *     always knows which is which.
+     * @enum {string}
+     */
+    CitationNature: 'fact' | 'law'
+    /** CitationRow */
+    CitationRow: {
+      /**
+       * Decision Id
+       * Format: uuid
+       */
+      decision_id: string
+      /** Reference */
+      reference: string
+      /**
+       * Decided On
+       * Format: date
+       */
+      decided_on: string
+    }
+    /**
+     * CitationSourceKind
+     * @enum {string}
+     */
+    CitationSourceKind: 'document' | 'article' | 'decision'
+    /**
+     * CitationsAnalysis
+     * @description « Cartographier les citations » — an article's life in the courts.
+     */
+    CitationsAnalysis: {
+      subject: components['schemas']['AnalysisSubject']
+      /** Decision Count */
+      decision_count: number
+      /** Cited With */
+      cited_with: components['schemas']['CoCitedArticle'][]
+      /** Rows */
+      rows: components['schemas']['CitationRow'][]
+    }
     /** ClientInvoiceCreate */
     ClientInvoiceCreate: {
       /**
@@ -13060,6 +14011,18 @@ export interface components {
      * @enum {string}
      */
     ClientInvoiceStatus: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible'
+    /** CoCitedArticle */
+    CoCitedArticle: {
+      /**
+       * Article Id
+       * Format: uuid
+       */
+      article_id: string
+      /** Label */
+      label: string
+      /** Count */
+      count: number
+    }
     /** CommunityPostNewOnCourseNotification */
     CommunityPostNewOnCourseNotification: {
       /**
@@ -13155,6 +14118,337 @@ export interface components {
       replier_name: string | null
       /** Post Url */
       readonly post_url: string
+    }
+    /**
+     * CompareAnalysis
+     * @description « Comparer les versions » — the two texts, word for word.
+     */
+    CompareAnalysis: {
+      subject: components['schemas']['AnalysisSubject']
+      left: components['schemas']['ComparePane']
+      right: components['schemas']['ComparePane']
+      /** Changes */
+      changes: components['schemas']['ChangeRow'][]
+      /** Identical */
+      identical: boolean
+    }
+    /** ComparePane */
+    ComparePane: {
+      /** Title */
+      title: string
+      /** Version Label */
+      version_label: string
+      /** Alineas */
+      alineas: string[]
+      /** Highlighted */
+      highlighted: number[]
+    }
+    /**
+     * CorpusAct
+     * @description A uniform act with its loaded versions.
+     */
+    CorpusAct: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /** Short Code */
+      short_code: string
+      /** Title */
+      title: string
+      /** Versions */
+      versions: components['schemas']['CorpusActVersion'][]
+    }
+    /**
+     * CorpusActVersion
+     * @description One temporal expression of an act, as shown on the act page.
+     */
+    CorpusActVersion: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /**
+       * Label
+       * @description Human label practitioners use: '1998', '2023'.
+       */
+      label: string
+      /** Adopted On */
+      adopted_on: string | null
+      /** In Force From */
+      in_force_from: string | null
+      /** Gazette Reference */
+      gazette_reference: string | null
+      /** Transitional Rule */
+      transitional_rule: string | null
+      /**
+       * Article Count
+       * @description Number of loaded articles.
+       */
+      article_count: number
+    }
+    /**
+     * CorpusArticleDetail
+     * @description Full article detail for the reading room hub page.
+     */
+    CorpusArticleDetail: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /** Number */
+      number: string
+      /** Heading */
+      heading: string | null
+      /** Text */
+      text: string
+      /**
+       * Alineas
+       * @description Structured alinéa breakdown, falling back to text lines.
+       */
+      alineas: string[]
+      /** Version Label */
+      version_label: string
+      /** Act Short Code */
+      act_short_code: string
+      provenance: components['schemas']['CorpusProvenance'] | null
+      /** Equivalences */
+      equivalences: components['schemas']['CorpusArticleEquivalence'][]
+      /** Decisions */
+      decisions: components['schemas']['CorpusLinkedDecision'][]
+    }
+    /**
+     * CorpusArticleEquivalence
+     * @description Counterpart of an article in the other version of the act.
+     */
+    CorpusArticleEquivalence: {
+      /**
+       * Article Id
+       * Format: uuid4
+       */
+      article_id: string
+      /** Number */
+      number: string
+      /** Version Label */
+      version_label: string
+      relation: components['schemas']['ArticleEquivalenceRelation']
+      /** Note */
+      note: string | null
+    }
+    /**
+     * CorpusArticleListItem
+     * @description Sidebar-weight article entry: numbers only, no text.
+     */
+    CorpusArticleListItem: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /** Number */
+      number: string
+      /** Sort Key */
+      sort_key: number
+      /** Heading */
+      heading: string | null
+    }
+    /**
+     * CorpusDecisionArticle
+     * @description An article cited by a decision (verified link).
+     */
+    CorpusDecisionArticle: {
+      /**
+       * Article Id
+       * Format: uuid4
+       */
+      article_id: string
+      /** Number */
+      number: string
+      /** Version Label */
+      version_label: string
+    }
+    /**
+     * CorpusDecisionDetail
+     * @description Full decision detail for the reading room decision page.
+     */
+    CorpusDecisionDetail: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /** Number */
+      number: string
+      /**
+       * Decided On
+       * Format: date
+       */
+      decided_on: string
+      /** Chamber */
+      chamber: string | null
+      /** Urn Lex */
+      urn_lex: string | null
+      /** Ohadata Code */
+      ohadata_code: string | null
+      /** Source Url */
+      source_url: string | null
+      /** Summary */
+      summary: string | null
+      /** Full Text */
+      full_text: string | null
+      /** Articles */
+      articles: components['schemas']['CorpusDecisionArticle'][]
+      /** Argued */
+      argued?: string | null
+      /** Held */
+      held?: string | null
+      /**
+       * Similar
+       * @default []
+       */
+      similar: components['schemas']['CorpusSimilarDecision'][]
+    }
+    /**
+     * CorpusLinkedDecision
+     * @description A decision with a verified link to the article.
+     */
+    CorpusLinkedDecision: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /** Number */
+      number: string
+      /**
+       * Decided On
+       * Format: date
+       */
+      decided_on: string
+      /** Summary */
+      summary: string | null
+      /** Treatment */
+      treatment: string | null
+    }
+    /**
+     * CorpusProvenance
+     * @description Where the article text came from and how it was verified.
+     */
+    CorpusProvenance: {
+      /** Source */
+      source: string | null
+      /** Kind */
+      kind: string | null
+      /** Authority Crosscheck */
+      authority_crosscheck: string | null
+    }
+    /** CorpusSearchArticleResult */
+    CorpusSearchArticleResult: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /** Number */
+      number: string
+      /** Act Short Code */
+      act_short_code: string
+      /** Act Title */
+      act_title: string
+      /** Version Label */
+      version_label: string
+      /** In Force From */
+      in_force_from: string | null
+      /** Excerpt */
+      excerpt: string
+      /**
+       * Exact
+       * @description An exact citation landing, not a text match.
+       * @default false
+       */
+      exact: boolean
+    }
+    /** CorpusSearchDecisionResult */
+    CorpusSearchDecisionResult: {
+      /**
+       * Id
+       * Format: uuid4
+       */
+      id: string
+      /** Number */
+      number: string
+      /**
+       * Decided On
+       * Format: date
+       */
+      decided_on: string
+      /** Chamber */
+      chamber: string | null
+      /** Keyword Header */
+      keyword_header: string | null
+      /** Excerpt */
+      excerpt: string
+      /**
+       * Exact
+       * @default false
+       */
+      exact: boolean
+    }
+    /**
+     * CorpusSearchInterpretation
+     * @description How Claidor read the query — shown back, so it is never a mystery.
+     *
+     *     A lawyer who types « article 170 AUPSRVE » and gets a topic list should
+     *     see at once that the query was read as a topic, not as a citation.
+     */
+    CorpusSearchInterpretation: {
+      /**
+       * Kind
+       * @description article | decision | text
+       */
+      kind: string
+      /** Number */
+      number?: string | null
+      /** Act Code */
+      act_code?: string | null
+      /** Year */
+      year?: number | null
+    }
+    /** CorpusSearchResults */
+    CorpusSearchResults: {
+      interpretation: components['schemas']['CorpusSearchInterpretation']
+      /** Articles */
+      articles: components['schemas']['CorpusSearchArticleResult'][]
+      /** Decisions */
+      decisions: components['schemas']['CorpusSearchDecisionResult'][]
+      /**
+       * Chambers
+       * @description Distinct chambers, for the filter UI.
+       */
+      chambers?: string[]
+    }
+    /**
+     * CorpusSimilarDecision
+     * @description Another decision turning on the same provisions.
+     */
+    CorpusSimilarDecision: {
+      /**
+       * Decision Id
+       * Format: uuid4
+       */
+      decision_id: string
+      /** Number */
+      number: string
+      /**
+       * Decided On
+       * Format: date
+       */
+      decided_on: string
+      /** Shared Articles */
+      shared_articles: number
     }
     /** CostMetadata */
     'CostMetadata-Input': {
@@ -18783,6 +20077,325 @@ export interface components {
       | 'lost'
       | 'won'
     /**
+     * DocumentCategory
+     * @enum {string}
+     */
+    DocumentCategory:
+      | 'pleading'
+      | 'exhibit'
+      | 'contract'
+      | 'statement'
+      | 'correspondence'
+      | 'decision'
+      | 'other'
+    /** DossierAsk */
+    DossierAsk: {
+      /** Question */
+      question: string
+      /**
+       * Answer Both Versions
+       * @description When the question is version-dependent and no date can be established from the file, answer under both acts side by side instead of asking for the date.
+       * @default false
+       */
+      answer_both_versions: boolean
+    }
+    /** DossierCitationRead */
+    DossierCitationRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      nature: components['schemas']['CitationNature']
+      source_kind: components['schemas']['CitationSourceKind']
+      /** Source Id */
+      source_id: string | null
+      /** Title */
+      title: string
+      /** Quote */
+      quote: string
+    }
+    /** DossierCreate */
+    DossierCreate: {
+      /** Name */
+      name: string
+      /** Reference */
+      reference?: string | null
+      /** Client Name */
+      client_name?: string | null
+    }
+    /**
+     * DossierDocumentCreate
+     * @description Registers an already-uploaded file as a piece of this matter.
+     */
+    DossierDocumentCreate: {
+      /**
+       * File Id
+       * Format: uuid
+       */
+      file_id: string
+      /** Title */
+      title: string
+      /** @default other */
+      category: components['schemas']['DocumentCategory']
+      /** Piece Number */
+      piece_number?: number | null
+    }
+    /**
+     * DossierDocumentFileCreate
+     * @description Schema to create a pièce uploaded into a dossier.
+     *
+     *     Any document type is accepted — extraction decides afterwards, in the
+     *     open, whether the piece is readable. A scanned exhibit belongs in the
+     *     file even when the machine cannot read it.
+     */
+    DossierDocumentFileCreate: {
+      /** Organization Id */
+      organization_id?: string | null
+      /** Name */
+      name: string
+      /** Mime Type */
+      mime_type: string
+      /**
+       * Size
+       * @description Size of the file. A maximum of 100 MB is allowed for this type of file.
+       */
+      size: number
+      /** Checksum Sha256 Base64 */
+      checksum_sha256_base64?: string | null
+      upload: components['schemas']['S3FileCreateMultipart']
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      service: 'dossier_document'
+      /** Version */
+      version?: string | null
+    }
+    /**
+     * DossierDocumentFileRead
+     * @description A pièce uploaded into a dossier.
+     *
+     *     Deliberately NOT a public file: pieces are reachable only through the
+     *     dossier's own membership-gated endpoints, never by URL.
+     */
+    DossierDocumentFileRead: {
+      /**
+       * Id
+       * Format: uuid4
+       * @description The ID of the object.
+       */
+      id: string
+      /**
+       * Organization Id
+       * Format: uuid4
+       */
+      organization_id: string
+      /** Name */
+      name: string
+      /** Path */
+      path: string
+      /** Mime Type */
+      mime_type: string
+      /** Size */
+      size: number
+      /** Storage Version */
+      storage_version: string | null
+      /** Checksum Etag */
+      checksum_etag: string | null
+      /** Checksum Sha256 Base64 */
+      checksum_sha256_base64: string | null
+      /** Checksum Sha256 Hex */
+      checksum_sha256_hex: string | null
+      /** Last Modified At */
+      last_modified_at: string | null
+      /** Version */
+      version: string | null
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      service: 'dossier_document'
+      /** Is Uploaded */
+      is_uploaded: boolean
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Size Readable */
+      readonly size_readable: string
+    }
+    /** DossierDocumentRead */
+    DossierDocumentRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Title */
+      title: string
+      category: components['schemas']['DocumentCategory']
+      /** Piece Number */
+      piece_number: number | null
+      extraction_status: components['schemas']['ExtractionStatus']
+      /** File Name */
+      file_name: string
+      /** Mime Type */
+      mime_type: string
+      /** Size */
+      size: number
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Readable */
+      readable: boolean
+    }
+    /** DossierDocumentUpdate */
+    DossierDocumentUpdate: {
+      /** Title */
+      title?: string | null
+      category?: components['schemas']['DocumentCategory'] | null
+      /** Piece Number */
+      piece_number?: number | null
+    }
+    /** DossierListItem */
+    DossierListItem: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Name */
+      name: string
+      /** Reference */
+      reference: string | null
+      /** Client Name */
+      client_name: string | null
+      status: components['schemas']['DossierStatus']
+      /** Document Count */
+      document_count: number
+      /** Member Count */
+      member_count: number
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Modified At */
+      modified_at: string | null
+    }
+    /**
+     * DossierMemberAdd
+     * @description Assign by id, or by the email a colleague signs in with.
+     */
+    DossierMemberAdd: {
+      /** User Id */
+      user_id?: string | null
+      /** Email */
+      email?: string | null
+      /** @default member */
+      role: components['schemas']['DossierRole']
+    }
+    /** DossierMemberRead */
+    DossierMemberRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * User Id
+       * Format: uuid
+       */
+      user_id: string
+      /** Email */
+      email: string
+      role: components['schemas']['DossierRole']
+    }
+    /** DossierQuestionRead */
+    DossierQuestionRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Question */
+      question: string
+      /** Answer */
+      answer: string | null
+      status: components['schemas']['QuestionStatus']
+      /** Versions Used */
+      versions_used: string[] | null
+      /** Authority Label */
+      authority_label: string | null
+      /** Authority Count */
+      authority_count: number | null
+      /** Asked By */
+      asked_by: string | null
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Answered At */
+      answered_at: string | null
+      /** Facts */
+      facts: components['schemas']['DossierCitationRead'][]
+      /** Law */
+      law: components['schemas']['DossierCitationRead'][]
+    }
+    /** DossierRead */
+    DossierRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Name */
+      name: string
+      /** Reference */
+      reference: string | null
+      /** Client Name */
+      client_name: string | null
+      status: components['schemas']['DossierStatus']
+      /** Notes */
+      notes: string | null
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Members */
+      members: components['schemas']['DossierMemberRead'][]
+      /** Documents */
+      documents: components['schemas']['DossierDocumentRead'][]
+    }
+    /**
+     * DossierRole
+     * @enum {string}
+     */
+    DossierRole: 'lead' | 'member'
+    /**
+     * DossierStatus
+     * @enum {string}
+     */
+    DossierStatus: 'open' | 'closed' | 'archived'
+    /** DossierUpdate */
+    DossierUpdate: {
+      /** Name */
+      name?: string | null
+      /** Reference */
+      reference?: string | null
+      /** Client Name */
+      client_name?: string | null
+      status?: components['schemas']['DossierStatus'] | null
+      /** Notes */
+      notes?: string | null
+    }
+    /**
      * DownloadableFileCreate
      * @description Schema to create a file to be associated with the downloadables benefit.
      */
@@ -19377,12 +20990,18 @@ export interface components {
       /** Detail */
       detail: string
     }
+    /**
+     * ExtractionStatus
+     * @enum {string}
+     */
+    ExtractionStatus: 'pending' | 'extracted' | 'unextractable' | 'failed'
     FileCreate:
       | components['schemas']['DownloadableFileCreate']
       | components['schemas']['ProductMediaFileCreate']
       | components['schemas']['OrganizationAvatarFileCreate']
       | components['schemas']['StorefrontHeaderFileCreate']
       | components['schemas']['StorefrontLinkFileCreate']
+      | components['schemas']['DossierDocumentFileCreate']
     /** FileDownload */
     FileDownload: {
       /**
@@ -19440,6 +21059,7 @@ export interface components {
       | 'organization_avatar'
       | 'storefront_header'
       | 'storefront_link'
+      | 'dossier_document'
     /** FileUpload */
     FileUpload: {
       /**
@@ -19932,6 +21552,23 @@ export interface components {
       detail?: components['schemas']['ValidationError'][]
     }
     /**
+     * HistoryAnalysis
+     * @description « Retracer l'historique » — which version governs, and what moved.
+     */
+    HistoryAnalysis: {
+      subject: components['schemas']['AnalysisSubject']
+      /** Act Short Code */
+      act_short_code: string
+      /** Versions */
+      versions: components['schemas']['VersionRow'][]
+      /** Governing Label */
+      governing_label: string | null
+      /** Changes */
+      changes: components['schemas']['ChangeRow'][]
+      /** Changes Unavailable */
+      changes_unavailable: boolean
+    }
+    /**
      * IdentityVerificationStatus
      * @enum {string}
      */
@@ -20014,6 +21651,43 @@ export interface components {
        * @description The total number of LLM tokens used for the event.
        */
       total_tokens: number
+    }
+    /**
+     * LecteurFinding
+     * @description One reference in the document, and what the corpus says about it.
+     */
+    LecteurFinding: {
+      /** Kind */
+      kind: string
+      /** Cite */
+      cite: string
+      /** Status */
+      status: string
+      /** Note */
+      note: string
+      /** Article Id */
+      article_id: string | null
+      /** Decision Id */
+      decision_id: string | null
+      /** Context */
+      context: string
+    }
+    /** LecteurReview */
+    LecteurReview: {
+      /** Document Name */
+      document_name: string
+      /** Page Count */
+      page_count: number | null
+      /** Meta */
+      meta: string
+      /** Findings */
+      findings: components['schemas']['LecteurFinding'][]
+      /** Verified Count */
+      verified_count: number
+      /** Unverified Count */
+      unverified_count: number
+      /** Weak Count */
+      weak_count: number
     }
     /**
      * LegacyOrganizationStatus
@@ -20230,6 +21904,74 @@ export interface components {
        * @constant
        */
       readonly legacy: true
+    }
+    /** LibrarianAsk */
+    LibrarianAsk: {
+      /** Question */
+      question: string
+      /**
+       * Answer Both Versions
+       * @description When the question is version-dependent and undated, answer under both acts side by side instead of asking for the date.
+       * @default false
+       */
+      answer_both_versions: boolean
+      /**
+       * Organization Id
+       * @description Workspace the question belongs to. When given, the question and its answer are kept in Historique.
+       */
+      organization_id?: string | null
+      /**
+       * Sources
+       * @description Source kinds to ground the answer in: 'au' (actes uniformes) and/or 'cj' (jurisprudence). Omitted means both. A kind left out is not retrieved at all.
+       */
+      sources?: string[] | null
+      /**
+       * Deep
+       * @description Widen retrieval: more of the decision collection enters the request. It reaches further into what we hold, not into sources we do not have.
+       * @default false
+       */
+      deep: boolean
+      /**
+       * Concise
+       * @description Answer in three sentences at most, keeping every citation.
+       * @default false
+       */
+      concise: boolean
+    }
+    /**
+     * LibrarianQuestionRead
+     * @description One line of Historique.
+     */
+    LibrarianQuestionRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Question */
+      question: string
+      /** Answer */
+      answer: string | null
+      status: components['schemas']['QuestionStatus']
+      /** Versions Used */
+      versions_used: string[] | null
+      /** Sources */
+      sources:
+        | {
+            [key: string]: unknown
+          }[]
+        | null
+      /** Authority Label */
+      authority_label: string | null
+      /** Authority Count */
+      authority_count: number | null
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Answered At */
+      answered_at: string | null
     }
     /** LicenseKeyActivate */
     LicenseKeyActivate: {
@@ -20742,6 +22484,7 @@ export interface components {
         | components['schemas']['OrganizationAvatarFileRead']
         | components['schemas']['StorefrontHeaderFileRead']
         | components['schemas']['StorefrontLinkFileRead']
+        | components['schemas']['DossierDocumentFileRead']
       )[]
       pagination: components['schemas']['Pagination']
     }
@@ -22068,7 +23811,7 @@ export interface components {
       response_types: 'code'[]
       /**
        * Scope
-       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write
+       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write redline:read redline:write
        */
       scope: string
       /** Client Name */
@@ -22133,7 +23876,7 @@ export interface components {
       response_types: 'code'[]
       /**
        * Scope
-       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write
+       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write redline:read redline:write
        */
       scope: string
       /** Client Name */
@@ -22179,7 +23922,7 @@ export interface components {
       response_types: 'code'[]
       /**
        * Scope
-       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write
+       * @default openid profile email user:read user:write organizations:read organizations:write custom_fields:read custom_fields:write discounts:read discounts:write checkout_links:read checkout_links:write checkouts:read checkouts:write transactions:read transactions:write payouts:read payouts:write products:read products:write benefits:read benefits:write events:read events:write meters:read meters:write files:read files:write subscriptions:read subscriptions:write customers:read customers:write members:read members:write wallets:read wallets:write disputes:read customer_meters:read customer_sessions:write member_sessions:write customer_seats:read customer_seats:write orders:read orders:write client_invoices:read client_invoices:write refunds:read refunds:write payments:read email_subscribers:read email_subscribers:write email_broadcasts:read email_broadcasts:write forms:read forms:write metrics:read webhooks:read webhooks:write license_keys:read license_keys:write customer_portal:read customer_portal:write notifications:read notifications:write notification_recipients:read notification_recipients:write organization_access_tokens:read organization_access_tokens:write redline:read redline:write
        */
       scope: string
       /** Client Name */
@@ -24345,6 +26088,42 @@ export interface components {
       last_used_at: string | null
     }
     /**
+     * PersonalAccessTokenCreate
+     * @description What the caller asks for.
+     *
+     *     ``comment`` is required and is not decoration. A list of tokens all
+     *     called « Untitled » is a list nobody can safely revoke from, and the
+     *     moment somebody has to guess which one Word is using, none of them get
+     *     revoked at all.
+     */
+    PersonalAccessTokenCreate: {
+      /**
+       * Comment
+       * @description What this token is for. Shown in the token list.
+       * @example Word add-in on my laptop
+       */
+      comment: string
+      /**
+       * Scopes
+       * @description What the token may do. Reserved scopes (web:read, web:write) are refused, and so is any scope the caller does not hold.
+       * @example [
+       *       "redline:read"
+       *     ]
+       */
+      scopes: components['schemas']['Scope'][]
+      /**
+       * Expires In Days
+       * @description Lifetime in days. Defaults to 365; two years is the ceiling.
+       */
+      expires_in_days?: number | null
+    }
+    /** PersonalAccessTokenCreateResponse */
+    PersonalAccessTokenCreateResponse: {
+      personal_access_token: components['schemas']['PersonalAccessToken']
+      /** Token */
+      token: string
+    }
+    /**
      * PlatformBillingDetails
      * @description The billing identity used on the org's Claidor invoices — read off
      *     the org's platform Customer row. Powers the dashboard "Billing address"
@@ -25865,6 +27644,11 @@ export interface components {
       property: string
     }
     /**
+     * QuestionStatus
+     * @enum {string}
+     */
+    QuestionStatus: 'answered' | 'clarification_requested' | 'failed'
+    /**
      * QuotaKey
      * @enum {string}
      */
@@ -25898,6 +27682,90 @@ export interface components {
       is_unlimited: boolean
       /** Is Exceeded */
       is_exceeded: boolean
+    }
+    /**
+     * RedlineFinding
+     * @description One defect, and everything the add-in needs to show and locate it.
+     */
+    RedlineFinding: {
+      /** Defect */
+      defect: string
+      /** Severity */
+      severity: string
+      /** Certainty */
+      certainty: string
+      /** Term */
+      term: string
+      /** Note */
+      note: string
+      /** Context */
+      context: string
+      /** Start */
+      start: number
+      /** End */
+      end: number
+      /** Literal */
+      literal: string
+      /** Occurrence */
+      occurrence: number
+    }
+    /**
+     * RedlineRequest
+     * @description Document text, as Office.js read it out of Word.
+     */
+    RedlineRequest: {
+      /** Text */
+      text: string
+    }
+    /**
+     * RedlineReview
+     * @description The Check panel's contents for one document.
+     */
+    RedlineReview: {
+      /** Findings */
+      findings: components['schemas']['RedlineFinding'][]
+      /** Critical Count */
+      critical_count: number
+      /** Warning Count */
+      warning_count: number
+      /** To Review Count */
+      to_review_count: number
+      /** Characters */
+      characters: number
+    }
+    /**
+     * RedlineTerm
+     * @description One defined term, as the panel shows it.
+     */
+    RedlineTerm: {
+      /** Term */
+      term: string
+      /** Meaning */
+      meaning: string
+      /** Kind */
+      kind: string
+      /** Start */
+      start: number
+      /** End */
+      end: number
+      /** Uses */
+      uses: number[]
+      /** Use Count */
+      use_count: number
+      /** Linked */
+      linked: string[]
+    }
+    /**
+     * RedlineTerms
+     * @description The document's definitions, in the order it defines them.
+     */
+    RedlineTerms: {
+      /** Terms */
+      terms: components['schemas']['RedlineTerm'][]
+      /** Unused Count */
+      unused_count: number
+      /** Characters */
+      characters: number
     }
     /** Refund */
     Refund: {
@@ -26191,6 +28059,30 @@ export interface components {
         [key: string]: string
       }
     }
+    /** SavedPromptCreate */
+    SavedPromptCreate: {
+      /** Title */
+      title: string
+      /** Text */
+      text: string
+    }
+    /** SavedPromptRead */
+    SavedPromptRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Title */
+      title: string
+      /** Text */
+      text: string
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+    }
     /**
      * Scope
      * @enum {string}
@@ -26267,6 +28159,8 @@ export interface components {
       | 'notification_recipients:write'
       | 'organization_access_tokens:read'
       | 'organization_access_tokens:write'
+      | 'redline:read'
+      | 'redline:write'
     /** SearchResultCustomer */
     SearchResultCustomer: {
       /**
@@ -29239,6 +31133,97 @@ export interface components {
       /** Error Type */
       type: string
     }
+    /** VeilleCreate */
+    VeilleCreate: {
+      target: components['schemas']['WatchTarget']
+      /**
+       * Target Id
+       * Format: uuid
+       */
+      target_id: string
+      /**
+       * Label
+       * @description Defaults to the article's own label.
+       */
+      label?: string | null
+    }
+    /** VeilleRead */
+    VeilleRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      target: components['schemas']['WatchTarget']
+      /**
+       * Target Id
+       * Format: uuid
+       */
+      target_id: string
+      /** Label */
+      label: string
+      /** Active */
+      active: boolean
+      /** Signal Count */
+      signal_count: number
+      /** Last Signal At */
+      last_signal_at: string | null
+    }
+    /** VeilleSignalRead */
+    VeilleSignalRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * Veille Id
+       * Format: uuid
+       */
+      veille_id: string
+      /** Text */
+      text: string
+      /** Source Kind */
+      source_kind: string
+      /** Source Id */
+      source_id: string | null
+      /** Happened On */
+      happened_on: string | null
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+    }
+    /** VeilleUpdate */
+    VeilleUpdate: {
+      /** Active */
+      active: boolean
+    }
+    /** VersionRow */
+    VersionRow: {
+      /**
+       * Version Id
+       * Format: uuid
+       */
+      version_id: string
+      /** Label */
+      label: string
+      /** In Force From */
+      in_force_from: string | null
+      /** In Force To */
+      in_force_to: string | null
+      /** Governs */
+      governs: boolean
+      /** Article Number */
+      article_number: string | null
+      /** Article Id */
+      article_id: string | null
+      /** Relation */
+      relation: string | null
+      /** Note */
+      note: string | null
+    }
     /**
      * Wallet
      * @description A wallet represents a customer's balance in your organization.
@@ -29310,6 +31295,17 @@ export interface components {
      * @enum {string}
      */
     WalletType: 'usage' | 'billing'
+    /**
+     * WatchTarget
+     * @description What is being watched. Only things the corpus can actually observe.
+     *
+     *     A watch on a topic would need someone to decide what counts as
+     *     relevant; a watch on an article is answerable from the citation graph,
+     *     and a watch on an act is answerable from its versions. Both are facts,
+     *     so both can be reported without judgement.
+     * @enum {string}
+     */
+    WatchTarget: 'article' | 'act'
     /**
      * WebhookBenefitCreatedPayload
      * @description Sent when a new benefit is created.
@@ -31262,6 +33258,39 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ListResource_PersonalAccessToken_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'personal_access_token:create_personal_access_token': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PersonalAccessTokenCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PersonalAccessTokenCreateResponse']
         }
       }
       /** @description Validation Error */
@@ -35367,6 +37396,7 @@ export interface operations {
             | components['schemas']['OrganizationAvatarFileRead']
             | components['schemas']['StorefrontHeaderFileRead']
             | components['schemas']['StorefrontLinkFileRead']
+            | components['schemas']['DossierDocumentFileRead']
         }
       }
       /** @description You don't have the permission to update this file. */
@@ -35473,6 +37503,7 @@ export interface operations {
             | components['schemas']['OrganizationAvatarFileRead']
             | components['schemas']['StorefrontHeaderFileRead']
             | components['schemas']['StorefrontLinkFileRead']
+            | components['schemas']['DossierDocumentFileRead']
         }
       }
       /** @description You don't have the permission to update this file. */
@@ -36873,6 +38904,1274 @@ export interface operations {
         }
         content: {
           'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'librarian:list_questions': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LibrarianQuestionRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'librarian:clear_questions': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'librarian:delete_question': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path: {
+        question_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'librarian:ask': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LibrarianAsk']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'corpus:list_acts': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CorpusAct'][]
+        }
+      }
+    }
+  }
+  'corpus:list_version_articles': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        version_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CorpusArticleListItem'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'corpus:get_article': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        article_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CorpusArticleDetail']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'corpus:get_decision': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        decision_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CorpusDecisionDetail']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'corpus:search': {
+    parameters: {
+      query?: {
+        /** @description Query as a lawyer types it. */
+        q?: string
+        /** @description Registry short code, e.g. AUPSRVE. */
+        act?: string | null
+        /** @description Version label, e.g. 1998. */
+        version?: string | null
+        decided_from?: string | null
+        decided_to?: string | null
+        chamber?: string | null
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CorpusSearchResults']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'analyses:suggestions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AnalysisSuggestions']
+        }
+      }
+    }
+  }
+  'analyses:authority': {
+    parameters: {
+      query?: {
+        article_id?: string | null
+        decision_id?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AuthorityAnalysis']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'analyses:history': {
+    parameters: {
+      query: {
+        article_id: string
+        /** @description Date of the facts. */
+        on?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HistoryAnalysis']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'analyses:compare': {
+    parameters: {
+      query: {
+        article_id: string
+        with_article_id?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CompareAnalysis']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'analyses:citations': {
+    parameters: {
+      query: {
+        article_id: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CitationsAnalysis']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'prompts:list_prompts': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SavedPromptRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'prompts:create_prompt': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SavedPromptCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SavedPromptRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'prompts:delete_prompt': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path: {
+        prompt_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'veilles:list_veilles': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['VeilleRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'veilles:create_veille': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VeilleCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['VeilleRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'veilles:list_signals': {
+    parameters: {
+      query: {
+        organization_id: string
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['VeilleSignalRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'veilles:update_veille': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path: {
+        veille_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VeilleUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['VeilleRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'lecteur:review_document': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_lecteur_review_document']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LecteurReview']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'lecteur:review_example': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LecteurReview']
+        }
+      }
+    }
+  }
+  'redline:check_text': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RedlineRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RedlineReview']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'redline:document_terms': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RedlineRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RedlineTerms']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'redline:judge_text': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RedlineRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RedlineReview']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'redline:fix_document': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_redline_fix_document']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'redline:check_document': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_redline_check_document']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RedlineReview']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:list_dossiers': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DossierListItem'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:create_dossier': {
+    parameters: {
+      query: {
+        organization_id: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DossierCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DossierRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:get_dossier': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DossierRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:delete_dossier': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:update_dossier': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DossierUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DossierRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:add_member': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DossierMemberAdd']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DossierMemberRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:remove_member': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+        user_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:add_document': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DossierDocumentCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DossierDocumentRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:remove_document': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+        document_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:update_document': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+        document_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DossierDocumentUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DossierDocumentRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:list_questions': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DossierQuestionRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  'dossiers:ask': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        dossier_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DossierAsk']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DossierQuestionRead']
         }
       }
       /** @description Validation Error */
@@ -47738,6 +51037,9 @@ export const aggregationFunctionValues: ReadonlyArray<
 export const appealDecisionValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['AppealDecision']
 > = ['approved', 'rejected']
+export const articleEquivalenceRelationValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['ArticleEquivalenceRelation']
+> = ['unchanged', 'renumbered', 'amended', 'split', 'merged', 'new', 'repealed']
 export const authorizeResponseOrganizationSub_typeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['AuthorizeResponseOrganization']['sub_type']
 > = ['organization']
@@ -47816,6 +51118,8 @@ export const availableScopeValues: ReadonlyArray<
   'notification_recipients:write',
   'organization_access_tokens:read',
   'organization_access_tokens:write',
+  'redline:read',
+  'redline:write',
 ]
 export const balanceCreditOrderEventNameValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['BalanceCreditOrderEvent']['name']
@@ -47943,6 +51247,12 @@ export const checkoutSortPropertyValues: ReadonlyArray<
 export const checkoutStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['CheckoutStatus']
 > = ['open', 'expired', 'confirmed', 'succeeded', 'failed']
+export const citationNatureValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CitationNature']
+> = ['fact', 'law']
+export const citationSourceKindValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CitationSourceKind']
+> = ['document', 'article', 'decision']
 export const clientInvoiceSortPropertyValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ClientInvoiceSortProperty']
 > = [
@@ -48702,6 +52012,29 @@ export const disputeStatusValues: ReadonlyArray<
   'lost',
   'won',
 ]
+export const documentCategoryValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['DocumentCategory']
+> = [
+  'pleading',
+  'exhibit',
+  'contract',
+  'statement',
+  'correspondence',
+  'decision',
+  'other',
+]
+export const dossierDocumentFileCreateServiceValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['DossierDocumentFileCreate']['service']
+> = ['dossier_document']
+export const dossierDocumentFileReadServiceValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['DossierDocumentFileRead']['service']
+> = ['dossier_document']
+export const dossierRoleValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['DossierRole']
+> = ['lead', 'member']
+export const dossierStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['DossierStatus']
+> = ['open', 'closed', 'archived']
 export const downloadableFileCreateServiceValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['DownloadableFileCreate']['service']
 > = ['downloadable']
@@ -48756,6 +52089,9 @@ export const eventTypesSortPropertyValues: ReadonlyArray<
   'last_seen',
   '-last_seen',
 ]
+export const extractionStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['ExtractionStatus']
+> = ['pending', 'extracted', 'unextractable', 'failed']
 export const fileServiceTypesValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FileServiceTypes']
 > = [
@@ -48764,6 +52100,7 @@ export const fileServiceTypesValues: ReadonlyArray<
   'organization_avatar',
   'storefront_header',
   'storefront_link',
+  'dossier_document',
 ]
 export const filterConjunctionValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FilterConjunction']
@@ -49279,6 +52616,9 @@ export const productVisibilityValues: ReadonlyArray<
 export const propertyAggregationFuncValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['PropertyAggregation']['func']
 > = ['avg', 'max', 'min', 'sum']
+export const questionStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['QuestionStatus']
+> = ['answered', 'clarification_requested', 'failed']
 export const quotaKeyValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['QuotaKey']
 > = ['storage_gb']
@@ -49373,6 +52713,8 @@ export const scopeValues: ReadonlyArray<
   'notification_recipients:write',
   'organization_access_tokens:read',
   'organization_access_tokens:write',
+  'redline:read',
+  'redline:write',
 ]
 export const searchResultCustomerTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['SearchResultCustomer']['type']
@@ -49734,6 +53076,9 @@ export const walletSortPropertyValues: ReadonlyArray<
 export const walletTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['WalletType']
 > = ['usage', 'billing']
+export const watchTargetValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['WatchTarget']
+> = ['article', 'act']
 export const webhookEventTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['WebhookEventType']
 > = [
