@@ -59,6 +59,7 @@ def upgrade() -> None:
         sa.Column("location", sa.Text(), nullable=False),
         sa.Column("before", sa.String(length=64), nullable=False),
         sa.Column("after", sa.String(length=64), nullable=False),
+        sa.Column("source", sa.Text(), nullable=False, server_default=""),
         sa.Column("state", sa.String(length=16), nullable=False),
         sa.Column("where", sa.String(length=16), nullable=False),
         sa.Column("error", sa.Text(), nullable=True),

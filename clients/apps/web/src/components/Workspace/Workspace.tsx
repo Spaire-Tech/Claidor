@@ -23,6 +23,7 @@ import { Dock } from './Dock'
 import type {
   Artifact,
   Chain,
+  Correction,
   Coverage,
   FigureMap,
   Finding,
@@ -134,6 +135,11 @@ export function Workspace({ dealId }: { dealId: string }) {
   const [findings, setFindings] = useState<Finding[]>([])
   const [coverage, setCoverage] = useState<Coverage | null>(null)
   const [links, setLinks] = useState<Link[]>([])
+  //: What this product *did* to the documents, as opposed to what it
+  //: found in them. Held beside the findings because a correction
+  //: outlives the finding it came from — once it is applied the deck
+  //: agrees and the drift is gone.
+  const [corrections, setCorrections] = useState<Correction[]>([])
   const [chain, setChain] = useState<Chain | null>(null)
   const [traced, setTraced] = useState<Finding | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -158,10 +164,11 @@ export function Workspace({ dealId }: { dealId: string }) {
         setError('You are not on any deals yet.')
         return
       }
-      const [page, found, linked] = await Promise.all([
+      const [page, found, linked, written] = await Promise.all([
         api.deal(id),
         api.findings(id),
         api.links(id),
+        api.corrections(id),
       ])
       dealFor.current = id
       setDeal(page.name)
@@ -172,6 +179,7 @@ export function Workspace({ dealId }: { dealId: string }) {
       setCoverage(page.coverage)
       setFindings(found)
       setLinks(linked)
+      setCorrections(written)
       setError(null)
     } catch (problem) {
       setError(
@@ -336,19 +344,38 @@ export function Workspace({ dealId }: { dealId: string }) {
   }
 
   /**
-   * Record what a person decided about a drift, and keep the screen in
-   * step.
+   * Accept a correction, keep the document as it is, or undo.
    *
-   * It settles the *finding*, not the file. Nothing here writes to a deck
-   * or a memo — the writing layer does not exist — so « recorded » means
-   * the decision is on the record and the document still says what it
-   * said. The button's own words have to carry that, and they do.
+   * **This one writes.** Accepting fetches the deal's copy, puts the
+   * model's figure into it, and stores the result as a new version of the
+   * same document; the check then re-runs, so the drift is gone because
+   * the deck agrees rather than because anything marked it settled. That
+   * is why the whole deal is reloaded afterwards and not one row patched:
+   * the document, the coverage and every finding on it have moved.
+   *
+   * A write that could not be made comes back as a correction in the
+   * `failed` state carrying the reason, not as an error — the screen keeps
+   * showing it, because a banker who pressed Accept has to be able to find
+   * out whether the deck changed.
    */
-  const settle = async (finding: Finding, state: 'accepted' | 'dismissed') => {
-    const updated = await api.dismiss(finding.id, state)
-    setFindings((was) =>
-      was.map((one) => (one.id === finding.id ? updated : one)),
-    )
+  const settle = async (
+    finding: Finding | null,
+    correction: Correction | null,
+    decision: 'accept' | 'reject' | 'reverse' | 'propose',
+  ) => {
+    try {
+      const proposal =
+        correction ?? (finding ? await api.propose(finding.id) : null)
+      if (!proposal) return
+      await api.decideCorrection(proposal.id, decision)
+      await load()
+    } catch (problem) {
+      setError(
+        problem instanceof ApiError
+          ? problem.message
+          : 'That change could not be made.',
+      )
+    }
   }
 
   /** Confirm, reject, or re-point — then reload, since coverage moved. */
@@ -562,8 +589,11 @@ export function Workspace({ dealId }: { dealId: string }) {
                 map={view === 'deck' ? deckMap : memoMap}
                 kind={view === 'deck' ? 'deck' : 'memo'}
                 findings={findings}
+                corrections={corrections}
                 onTrace={trace}
-                onDecide={(finding, state) => void settle(finding, state)}
+                onDecide={(finding, correction, decision) =>
+                  void settle(finding, correction, decision)
+                }
               />
             ) : view === 'applications' ? (
               <Applications onGo={go} />

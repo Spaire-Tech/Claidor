@@ -328,6 +328,67 @@ class TestAccepting:
         assert still_there["state"] == "open"
 
     @pytest.mark.auth
+    async def test_undoing_a_keep_puts_the_proposal_back(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The design's Undo, on the branch where nothing was written.
+
+        And it is refused on the branch where something was — that file
+        has changed, and tearing up the note would say it had not.
+        """
+        deal = await _loaded(session, save_fixture, user)
+        finding = (await _drifts(client, deal))[0]
+        proposal = (
+            await client.post(f"/v1/tieout/findings/{finding['id']}/correction")
+        ).json()
+        await client.post(
+            f"/v1/tieout/corrections/{proposal['id']}", json={"action": "reject"}
+        )
+
+        back = await client.post(
+            f"/v1/tieout/corrections/{proposal['id']}", json={"action": "propose"}
+        )
+        assert back.json()["state"] == "proposed"
+
+        await client.post(
+            f"/v1/tieout/corrections/{proposal['id']}", json={"action": "accept"}
+        )
+        refused = await client.post(
+            f"/v1/tieout/corrections/{proposal['id']}", json={"action": "propose"}
+        )
+        assert refused.status_code == 422
+
+    @pytest.mark.auth
+    async def test_a_correction_says_which_cell_it_will_tie_to(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """« Slide 3 now reads $48.9mm and ties to Model!D26 » is the
+        design's own sentence, and the cell has to survive the run that
+        deletes the finding it came from."""
+        deal = await _loaded(session, save_fixture, user)
+        finding = (await _drifts(client, deal))[0]
+        proposal = (
+            await client.post(f"/v1/tieout/findings/{finding['id']}/correction")
+        ).json()
+        assert proposal["source"] == finding["source"]["ref"]
+
+        await client.post(
+            f"/v1/tieout/corrections/{proposal['id']}", json={"action": "accept"}
+        )
+        corrections = (
+            await client.get(f"/v1/tieout/deals/{deal.id}/corrections")
+        ).json()
+        assert corrections[0]["source"] == proposal["source"]
+
+    @pytest.mark.auth
     async def test_the_panel_records_a_write_it_made_in_the_document(
         self,
         client: AsyncClient,

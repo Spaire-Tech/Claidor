@@ -103,6 +103,11 @@ class TieOutWritingService:
                 location=finding.location,
                 before=finding.printed,
                 after=replacement_for(finding.printed, finding.expected),
+                source=str(
+                    (finding.evidence or {}).get("source")
+                    or (finding.evidence or {}).get("ref")
+                    or ""
+                ),
                 state=CorrectionState.proposed,
                 proposed_by_id=user_id,
             )
@@ -158,6 +163,24 @@ class TieOutWritingService:
         """
         return await self._decide(
             session, correction, user_id, CorrectionState.rejected
+        )
+
+    async def reopen(
+        self, session: AsyncSession, *, correction: Correction, user_id: UUID
+    ) -> Correction:
+        """Undo a « Keep », or try again after a write that was refused.
+
+        Refused on a correction that was applied to the deal's copy: that
+        file has changed, and putting the proposal back on the table would
+        say it had not. `reverse` is the word for that, and it writes.
+        """
+        if correction.state in (CorrectionState.applied, CorrectionState.reversed):
+            raise NotCorrectable(
+                "This one has already been written. Undo puts the old figure "
+                "back into the document rather than tearing up the note."
+            )
+        return await self._decide(
+            session, correction, user_id, CorrectionState.proposed
         )
 
     async def record_in_document(

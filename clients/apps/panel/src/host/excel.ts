@@ -99,4 +99,17 @@ export const excel: HostBridge = {
           : 'Excel refused to go to that cell',
     }))
   },
+
+  // A model is not written into by this product, deliberately. A cell is
+  // either a formula — in which case the number is an output and the deck
+  // is what needs correcting — or an input, in which case whoever owns the
+  // model owns the number.
+  async write() {
+    return {
+      written: false,
+      by: 'none',
+      reason:
+        'a model is not corrected from here — a figure is corrected where it is published',
+    }
+  },
 }

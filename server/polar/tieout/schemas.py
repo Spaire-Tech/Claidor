@@ -203,6 +203,10 @@ class CorrectionRead(Schema):
     where: CorrectionWhere
     before: str
     after: str
+    #: The cell the figure ties to once this is applied — `Model!D26`. It
+    #: is on the correction rather than looked up, because the finding it
+    #: came from is deleted by the run that proves the correction worked.
+    source: str
     page: int
     location: str
     artifact_id: UUID
@@ -229,7 +233,7 @@ class CorrectionDecision(Schema):
     here.
     """
 
-    action: Literal["accept", "reject", "reverse", "applied"]
+    action: Literal["accept", "reject", "reverse", "applied", "propose"]
 
 
 class FindingRead(Schema):

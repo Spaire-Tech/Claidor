@@ -25,6 +25,36 @@ export interface Anchored {
   sheet?: string
 }
 
+/**
+ * A change to a document: proposed, decided, and reversible.
+ *
+ * Both sides travel on it — `before` is what the document says and
+ * `after` is what it would say — which is what makes « Undo » a write
+ * rather than a revision format the .pptx specification does not have.
+ */
+export interface Correction {
+  id: string
+  /** The finding's durable identity, which survives a re-check. */
+  fingerprint: string
+  state: 'proposed' | 'applied' | 'rejected' | 'reversed' | 'failed'
+  /** `file` — the deal's copy, one version further on — or `document`,
+   *  meaning somebody accepted it in the copy open in Office. */
+  where: 'file' | 'document'
+  before: string
+  after: string
+  /** The cell the figure ties to once this is applied — `Model!D26`. */
+  source: string
+  page: number
+  location: string
+  artifact_id: string
+  wrote_artifact_id: string | null
+  /** Why a write was refused, in the server's own words. */
+  error: string | null
+  decided_by: { id: string; name: string; avatar_url: string | null } | null
+  decided_at: string | null
+  created_at: string
+}
+
 export interface Finding {
   id: string
   kind: 'drift' | 'audit' | 'contradiction' | 'stale'
@@ -53,6 +83,9 @@ export interface Finding {
   standard: string | null
   rule: string | null
   created_at: string
+  /** The change proposed for this finding, once anybody has looked at
+   *  it. Null means nothing has been proposed — never « nothing can be ». */
+  correction: Correction | null
 }
 
 export interface ChainStep {
@@ -308,6 +341,43 @@ export class TieOutApi {
   findings(dealId: string, artifactId?: string): Promise<Finding[]> {
     const query = artifactId ? `?artifact_id=${artifactId}` : ''
     return this.call(`/deals/${dealId}/findings${query}`)
+  }
+
+  /** Every change proposed on this deal, and what became of it. */
+  corrections(dealId: string): Promise<Correction[]> {
+    return this.call(`/deals/${dealId}/corrections`)
+  }
+
+  /**
+   * « The deck should read $48.9mm » — written down, not applied.
+   *
+   * Idempotent, so a screen can ask on open. A finding nothing can be
+   * written for comes back 422 with the sentence saying why.
+   */
+  propose(findingId: string): Promise<Correction> {
+    return this.call(`/findings/${findingId}/correction`, { method: 'POST' })
+  }
+
+  /**
+   * Accept it, keep the document as it is, or undo it.
+   *
+   * A write that fails comes back 200 with `state: 'failed'` and the
+   * reason on it. That is not an error — the request was fine and the
+   * document had moved — and the screen has to keep showing it.
+   */
+  decideCorrection(
+    correctionId: string,
+    action: 'accept' | 'reject' | 'reverse' | 'applied' | 'propose',
+  ): Promise<Correction> {
+    return this.call(`/corrections/${correctionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    })
+  }
+
+  /** A link to the file itself — the corrected deck, in particular. */
+  download(artifactId: string): Promise<{ url: string; filename: string }> {
+    return this.call(`/artifacts/${artifactId}/download`)
   }
 
   chain(findingId: string): Promise<Chain> {

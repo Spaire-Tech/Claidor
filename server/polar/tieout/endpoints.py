@@ -191,6 +191,7 @@ def _correction(correction: Correction, decider: User | None = None) -> Correcti
         where=correction.where,
         before=correction.before,
         after=correction.after,
+        source=correction.source,
         page=correction.page,
         location=correction.location,
         artifact_id=correction.artifact_id,
@@ -1045,6 +1046,10 @@ async def decide_correction(
             )
         elif decision.action == "reverse":
             settled = await writing.reverse(
+                session, correction=correction, user_id=user.id
+            )
+        elif decision.action == "propose":
+            settled = await writing.reopen(
                 session, correction=correction, user_id=user.id
             )
         else:

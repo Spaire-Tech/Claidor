@@ -651,6 +651,10 @@ class Correction(RecordModel):
     #: the database is the revision store.
     before: Mapped[str] = mapped_column(String(64), nullable=False)
     after: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: The cell the figure will tie to once this is applied — `Model!D26`.
+    #: Carried here rather than looked up later because the finding it came
+    #: from is deleted by the very run that proves the correction worked.
+    source: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
     state: Mapped[CorrectionState] = mapped_column(
         StrEnumType(CorrectionState, length=16),

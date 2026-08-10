@@ -30,6 +30,31 @@ export interface Anchored {
   sheet?: string
 }
 
+/**
+ * A change to a document: proposed, decided, and reversible.
+ *
+ * Both sides travel on it, which is what lets « Undo » be a write rather
+ * than a revision format `.pptx` does not have.
+ */
+export interface Correction {
+  id: string
+  fingerprint: string
+  state: 'proposed' | 'applied' | 'rejected' | 'reversed' | 'failed'
+  /** `file` — the deal's copy — or `document`, the one open in Office. */
+  where: 'file' | 'document'
+  before: string
+  after: string
+  source: string
+  page: number
+  location: string
+  artifact_id: string
+  wrote_artifact_id: string | null
+  error: string | null
+  decided_by: { id: string; name: string; avatar_url: string | null } | null
+  decided_at: string | null
+  created_at: string
+}
+
 export interface Finding {
   id: string
   kind: 'drift' | 'audit' | 'contradiction' | 'stale'
@@ -58,6 +83,8 @@ export interface Finding {
   standard: string | null
   rule: string | null
   created_at: string
+  /** The change proposed for this finding, once anybody has looked at it. */
+  correction: Correction | null
 }
 
 export interface ChainStep {
@@ -187,6 +214,28 @@ export class TieOutApi {
 
   chain(findingId: string): Promise<Chain> {
     return this.call(`/findings/${findingId}/chain`)
+  }
+
+  /** « The deck should read $48.9mm » — written down, not applied. */
+  propose(findingId: string): Promise<Correction> {
+    return this.call(`/findings/${findingId}/correction`, { method: 'POST' })
+  }
+
+  /**
+   * Tell the server what became of a proposal.
+   *
+   * `applied` is the one the panel uses after it has written the change
+   * into the document itself: the bytes stay on the banker's machine and
+   * the deal records that the decision was taken and where.
+   */
+  decideCorrection(
+    correctionId: string,
+    action: 'accept' | 'reject' | 'reverse' | 'applied' | 'propose',
+  ): Promise<Correction> {
+    return this.call(`/corrections/${correctionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    })
   }
 
   dismiss(findingId: string, state: Finding['state']): Promise<Finding> {
