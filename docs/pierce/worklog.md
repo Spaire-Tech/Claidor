@@ -185,3 +185,87 @@ as a product number and no fix has been made on the strength of it.
 every artifact, so its payload grows linearly and is already 1 MB at three
 thousand files. That wants pagination on the endpoint, not a client-side
 window. Next job.
+
+---
+
+## 10 August — the design's own size
+
+**The founder was right and I had not looked.** The design carries its
+screen size and its breakpoint in its own markup, and I had taken neither:
+
+```
+data-props="{"$preview":{"width":1440,"height":900}}"
+const n = window.innerWidth < 1240;
+```
+
+**1440 × 900** is the canvas every screen was drawn at. **1240** is a
+second layout, not a squeezed one — below it the chat's basis drops from
+430 to 340, split screens turn from rows into columns, ribbons wrap, and
+whole pieces of furniture are simply not drawn. None of that existed here.
+
+**The design is now in the repository**, at `docs/pierce/design/` —
+markup, stylesheet, and a README of every number. « The design says » is
+now something anyone can check rather than something I remember. That is
+the part worth keeping: the rest of this entry is a consequence of not
+having had it.
+
+### What was wrong
+
+| | had | design |
+|---|---|---|
+| chat column | `0 0 28%`, min 360 | `0 1 430px` / `0 1 340px`, min 330 / 280 |
+| dock bar | radius 18, pad 6/8, blur 18 | radius 22, pad 7/10, blur 30 |
+| dock button, live | white fill and a shadow | `rgba(16,20,28,.08)`, flat |
+| dock row | padding | a fixed 86px band |
+| composer | pad 8/16, `.10` rule, soft shadow | pad 9/9/9/16, `#d7d7d3`, `0 6px 22px .13` |
+| send | flat blue | the one gradient in the design |
+| prompt | an input at 14.5 | a textarea at 15, Shift+Enter for a line |
+| greeting | 26px / 21px, mark 34 | 25px `#15171b`, mark 44 |
+| files icon | a path I drew | the design's path |
+| chat icon | stroke 1.7 everywhere | 1.5 in the dock, 1.7 in the chip |
+
+**The stylesheet had never shipped.** Half the workspace sets
+`animation: pcIn …` or `pcDim …`; the keyframes were defined nowhere. Every
+one of those was a string the browser discarded in silence — no error, no
+animation, screens subtly dead. It is now `workspace.css`, scoped to
+`.pc-workspace`, with the scrollbar and ribbon rules beside it.
+
+**A control that was mine, not the design's,** is gone: the button that
+hid the left panel. Chat *is* the way back to one column. A second control
+that does the same thing is a second thing to learn.
+
+### How it was checked
+
+Both pages in the same 1440 × 900 viewport, the same probes run against
+each, every value compared:
+
+| | |
+|---|---|
+| opening screen | 59 facts, **59 equal** |
+| panel open, 1440 | 68 facts, **67 equal** |
+| panel open, 1200 (narrow) | 68 facts, **67 equal** |
+
+The odd one out is the design's canned demo conversation, which moves its
+composer to the bottom because that chat is not empty. Narrow was confirmed
+by reading the chat's own box at 1200: `0 1 340px`, `min-width: 280px`,
+340px drawn.
+
+`scratchpad/measure.mjs` does it, driven by `scripts.dev_session` for the
+cookie. The black circle at the bottom-left of any screenshot is
+`<nextjs-portal>` — the dev-tools indicator, not in a production build.
+
+### Two defects the screenshots exposed
+
+Both invisible until a real deal was on screen, and neither about size.
+
+**The library printed floats.** « FY2025A Adjusted EBITDA margin % ·
+0.2136304063 », where the deck published « 21.4% ». It was showing the
+cell's value, and a cell holds a float. On a product whose whole argument
+is that a deck's printed precision *is* the claim, that is the screen
+contradicting the thesis. It now shows what was printed.
+
+**Four rows read identically.** « FY2025A Reported EBITDA · Model!D16 ·
+41.2 », three times. Not duplicates — the table on slide 3, the chart
+series on slide 4, the callout on slide 4 — and no way to tell which to
+open. The row now carries where it was printed, using the Check row's own
+second line.
