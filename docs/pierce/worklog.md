@@ -269,3 +269,64 @@ contradicting the thesis. It now shows what was printed.
 series on slide 4, the callout on slide 4 — and no way to tell which to
 open. The row now carries where it was printed, using the Check row's own
 second line.
+
+---
+
+## 10 August — Pitchbook, Sheets and Docs
+
+Three of the eleven dock buttons said « not connected yet », on a product
+whose entire subject is the three documents behind them.
+
+**Sheets needed an endpoint.** `GET /artifacts/{id}/grid` — the model as
+it is laid out rather than as a search box. Until this, the model was the
+one document in a deal nobody could actually *look* at: every path into it
+asked you to already know what you were looking for.
+
+Rules it inherits rather than invents: only cells with a row label (the
+linker's own rule — a number with no words beside it cannot be named);
+sheets in tab order, not alphabetical; columns keyed by heading, so two
+columns headed FY2024A are one column. `linked` is the column that earns
+the screen — any grid can print a workbook back.
+
+**Pitchbook and Docs are one component.** A deck and a memo are the same
+object here: a document that publishes figures. The reader already
+distinguishes them — a deck figure carries its slide, a memo figure
+carries page zero *on purpose* — so the deck paginates with a slide picker
+and the memo is one list with « paragraph 9 » on each row.
+
+The first version of the memo screen read « Paragraph 0 » and « 1
+paragraphs with figures on them », because it took page zero literally. I
+nearly went and changed the reader; the comment there stopped me — « a
+made-up number would send the panel to a slide that does not exist ». The
+data was right and the screen was wrong.
+
+### What was left out rather than faked
+
+**A slide, rendered.** The design's deck screen is a picture of a slide.
+Building one here out of whatever numbers are on it would be a drawing of
+a slide that does not exist.
+
+**Writing.** « Accept $41.9m » in the design edits the deck. The button
+here says « Record $48.9mm », because recording the decision against the
+finding is what it does. A button claiming to have fixed a deck it never
+touched is the one lie this product cannot afford.
+
+**Number formats.** The grid shows `0.1222587719` where the workbook says
+`12.2%`. `number_format` is in the file and is not read at ingest. The
+screen trims to four decimals and keeps the exact value on the element's
+title — least dishonest, not good enough, and now on the roadmap.
+
+### Verified
+
+Through the interface at 1440 × 900, on the real Cascade files.
+
+| | |
+|---|---|
+| model | 5 sheets, 8 periods, 39 published cells on Model |
+| deck | slides 2–8; slide 2 has 9 figures, 2 drifted, 2 unchecked with reasons |
+| memo | 7 figures across paragraphs 6, 7 and 9; 2 drifted |
+
+Two things the screenshots caught. The slide picker read « 2 9 3 29 4 12 »
+— the Filter idiom carries a count beside each label, which works when the
+label is a word and collapses when it is a number. Numbers only now. And
+the footer began « paragraph 9 shows… » mid-sentence with a small p.
