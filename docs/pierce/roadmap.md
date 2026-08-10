@@ -28,7 +28,7 @@ document.
 | Office panel — plumbing and screen both done | Done |
 | Writing — proposals, apply, reverse | **Not started** |
 | PDF sources, connectors, firm standards | Not started |
-| Accuracy | Forever, never blocking |
+| Accuracy — deck 83 %, model 56 %, both by mutation | Measured |
 
 ---
 
@@ -148,9 +148,18 @@ id beats a filename guess.
 
 ### 9 · Accuracy — forever, never blocking
 
-`accuracy-backlog.md` holds the list. The one that matters most: **the
-deck tie-out has no recall measurement at all.** The model audit has one
-(56 %, by mutation); the deck side has never been measured.
+`accuracy-backlog.md` holds the list and now holds a number for the deck
+side too: **83 % overall, 100 % on the figures it links, 0 collateral**,
+by mutation on the clean Cascade deck (`scripts/deck_recall.py`).
+
+Every miss was a figure that was never linked. Not one was linked and then
+missed. So the work is **coverage, not comparison** — the comparison is
+exact by construction and cannot be wrong. Two thirds of the gap is « no
+output fits the label ».
+
+And the number is one deck, written here. The next real step is **decks
+nobody here made**, which is what made the model audit's 56 % worth
+quoting.
 
 ---
 

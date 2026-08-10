@@ -13,7 +13,10 @@ measured cause and a named next step.
 | Model audit — noise on untouched files | 0.62% of formulas; 93% of 1,577 spreadsheets report nothing | Full EUSES financial + modeling categories |
 | Model audit — precision on untouched files | **NOT MEASURED** | Needs adjudication or a labelled corpus |
 | Deck tie-out — precision | 0 false positives on two decks | The Cascade pair only |
-| Deck tie-out — recall | **NOT MEASURED** | 5 injected errors on one deck is not a measurement |
+| Deck tie-out — recall, overall | **83%** | 99 figures broken one at a time on the clean Cascade deck |
+| Deck tie-out — recall, on figures it linked | **100%** | Same run: 82 of 82 |
+| Deck tie-out — coverage | **80%** | 102 of 128 printed figures linked to the model |
+| Deck tie-out — collateral false positives | **0** | Same run |
 | Legacy `.xls` reading | 99.2% of 1,590 files | 202,499 formulas decompiled |
 
 By rule, on planted defects:
@@ -23,6 +26,69 @@ By rule, on planted defects:
 | `skipped-cell` | 94% |
 | `typed-over-formula` | 64% |
 | `inconsistent-row` | **10%** |
+
+## What the deck tie-out's number actually says
+
+Measured 10 August by `scripts/deck_recall.py`. One figure at a time on
+the clean Cascade deck, the printed text rewritten and re-parsed by the
+reader's own parser, then put through `check.tie_out_both` — the
+production path, not a replica of it.
+
+| | found | missed | recall |
+|---|---|---|---|
+| one tick — last digit off by one | 33 | 8 | 80% |
+| stale — a 4–15% move | 31 | 6 | 84% |
+| transposed — two digits swapped | 18 | 3 | 86% |
+| **on figures it had linked** | **82** | **0** | **100%** |
+| **over every figure broken** | **82** | **17** | **83%** |
+
+**Every single miss is a figure the checker never linked.** Not one is a
+figure it linked and then failed to catch drifting. That is the whole
+finding, and it says the work is not in the comparison — the comparison is
+exact and cannot be wrong — but in **coverage**.
+
+Coverage on this deck is **80%**: 102 of 128 printed figures reach a cell.
+The 26 that do not:
+
+| | |
+|---|---|
+| 23 | no output fits the label |
+| 8 | two outputs fit equally well |
+| 2 | one end of a printed range |
+
+(That is 33 against 26 because the merge returns the workbook pass's
+unlinked list whole — see the defect below.)
+
+**Read this number carefully.** 83% is recall over the 99 mutations
+attempted, and those are not a uniform sample: 21 sites had no usable
+mutation — mostly `transposed` on figures like `9.9` where no two adjacent
+digits differ. And it is one deck. Nine slides of a fixture whose author
+also wrote the checker is far weaker evidence than the model audit's 150
+defects in spreadsheets somebody else built. **The next real step is
+decks nobody here made.**
+
+### Three defects the measurement exposed
+
+**1. `TieOut.unlinked` over-reports.** The merge returns the workbook
+pass's unlinked list whole, so a figure the Outputs pass checked appears
+in both: 94 + 8 + 33 = 135 against 128 figures printed. `service.figure_map`
+already works around it; the check itself still has it, and any denominator
+built on it is wrong.
+
+**2. A deck figure's `location` is not a location.** It is « slide 2 » —
+the slide, not the spot — so two figures printing the same text on one
+slide are indistinguishable by it. Cascade has exactly one such pair
+(`$48.9mm` on slide 2, once in a tile and once in a sentence) and it was
+enough to make the first run of this harness report a detection failure on
+the deck's headline figure that the checker had in fact caught. The anchor
+is the real coordinate.
+
+**3. Two bugs in the harness itself, both found by reading its output.**
+A percentage is held as a fraction and printed as a percentage, so the
+first version mutated `11.8%` into `0.1%` — a figure that links to nothing
+and was counted as a miss the checker never had a chance at. And the
+collision above. Both are recorded because a measurement is only worth
+what its harness is worth, and the first two runs of this one were wrong.
 
 ## Why `inconsistent-row` misses what it misses
 

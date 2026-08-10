@@ -162,6 +162,19 @@ def tie_out(deck_path: str, model_path: str) -> TieOut:
         # exists. Nothing to merge; the workbook carries it alone.
         pass
 
+    return tie_out_both(figures, book, published)
+
+
+def tie_out_both(
+    figures: list[Figure], book: Workbook, published: list[Output]
+) -> TieOut:
+    """The two passes and their merge, on figures already read.
+
+    Split out of `tie_out` so the recall harness can put its own figures
+    through **this** code rather than through a replica of it. A measured
+    number is worth what the thing it measured is worth, and a harness
+    that re-implements the merge measures the harness.
+    """
     from_workbook = tie_out_against(figures, outputs_from_workbook(book))
     if not published:
         return from_workbook
@@ -223,4 +236,4 @@ def tie_out_against(figures: list[Figure], outputs: list[Output]) -> TieOut:
     return TieOut(drifts=drifts, agreed=agreed, unlinked=unlinked)
 
 
-__all__ = ["Drift", "TieOut", "compare", "tie_out", "tie_out_against"]
+__all__ = ["Drift", "TieOut", "compare", "tie_out", "tie_out_against", "tie_out_both"]
