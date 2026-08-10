@@ -26,8 +26,10 @@ What « complete » means, in order:
    figure in the answer came back from a tool in the same turn.
 2. ~~**Writing.**~~ Done, 10 August. « Record $48.9mm » is « Accept
    $48.9mm », the correction goes into the file, and Undo takes it out.
-3. **The five dock screens that say « not connected »**: Mail, Calendar,
-   SharePoint, Projects, Terminal. Next.
+3. ~~**The five dock screens that say « not connected ».**~~ Done, 10
+   August. Projects and Terminal had real data behind them and are built
+   on it; Mail, Calendar and SharePoint need a source that does not exist
+   yet and say so, by name, with somewhere to go meanwhile.
 
 ---
 
@@ -37,16 +39,17 @@ What « complete » means, in order:
 changes in the file — in the deal's copy through the workspace, in their
 own copy through the panel — and Undo changes it back.
 
-What is left is not a half of the product any more. It is the five dock
-screens that say « not connected », and then the sources the chain stops
-short of.
+**Every screen in the dock now does something**, and the three that cannot
+yet say precisely what they are waiting for. What is left is the sources
+the chain stops short of: a PDF at one end, a connected file store at the
+other.
 
 | | State |
 |---|---|
 | Engine — decks, models, memos, audit, chain | Done |
 | Persisted spine — artifacts, figures, cells, links, findings | Done |
 | API — 21 routes, anchors, identity, panel auth | Done |
-| Workspace — 8 of 13 screens live | Part |
+| Workspace — 11 of 13 screens on real data, 3 waiting on a source | Done |
 | Office panel — plumbing and screen both done | Done |
 | Writing — proposals, apply, reverse | Done |
 | PDF sources, connectors, firm standards | Not started |
@@ -178,6 +181,12 @@ this is a different engine from the spreadsheet one.
 SharePoint, OneDrive, Outlook, Teams as sources. House rules as
 configuration. Both also solve document identity properly — a drive item
 id beats a filename guess.
+
+**Three screens are already waiting on this one, and they name it.** Mail,
+Calendar and SharePoint are drawn and deliberately empty — see
+`screens/Waiting.tsx`, which says on each what it will do and what it is
+waiting for. When a connector lands, the screen behind it is a rendering
+job rather than a design question.
 
 ### 9 · Accuracy — forever, never blocking
 

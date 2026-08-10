@@ -730,3 +730,106 @@ Everything had to be rebuilt, and two of these cost real time.
   the default sends uploads at real AWS, and
   `clients/apps/web/.env.local` needs `NEXT_PUBLIC_API_URL` or the browser
   bounces to `/login` with a perfectly good session.
+
+---
+
+## 10 August — the five screens that said « not connected »
+
+**Two of them had real data behind them all along.** Three do not, and say
+so.
+
+### Projects, and the screen that unbroke the workspace
+
+Until now the workspace opened « the first deal you are on » and there was
+no way to reach a second — a limitation nothing on screen admitted to.
+Projects is the design's own deal list, and choosing one switches the whole
+workspace to it.
+
+Switching **drops everything on screen** rather than replacing it a request
+at a time. A findings list from the last deal under the new deal's heading
+is the worst kind of wrong, because it looks right.
+
+### One field, and the defect it exposed two screens away
+
+The design's status column reads « Seven findings » · « Clear » · « Not
+run ». The first two we had; the third we could not say, because nothing
+recorded whether a check had ever finished — so `DealListItem` now carries
+`checked_at`, and null means never.
+
+Writing that made the real defect obvious. **Check said « Checked, and
+every figure ties back to the model » on a deal nobody had ever run**, and
+the panel said the same. Silence reading as a result is the one lie this
+product exists not to tell, and it had been sitting in the empty state
+since the screen was built. Nothing had ever shown it because until
+Projects there was no way to *reach* a deal in that state.
+
+Both now ask the run rather than the count. The coverage line does too:
+« the check has not run here », not « 0 figures reconciled ».
+
+### Terminal is the check reporting itself
+
+The design draws a log — a command, the files it resolved, what it
+reconciled, warnings in amber, criticals in red, a `done` line with a
+duration. That is not decoration around a shell; it is exactly what a
+`CheckRun` produces, and every line comes off one.
+
+    pierce check
+    resolved 12 files · 3 documents
+    reconciled 108 figures
+    27 not checked · reasons below
+      22  no output fits the label
+       3  two outputs fit equally well
+       2  one end of a printed range
+    done  tieout · done · 0.2s
+    audited 313 cells in 1 model
+    crit  10.2% where the model says 9.8% · cascade_memo.docx paragraph 9
+
+**Seven commands, and every one is a call that already existed** —
+`check`, `coverage`, `findings`, `files`, `corrections`, `clear`, `help`.
+Nothing here can do anything the screens cannot, which is what stops a
+command line becoming a second product with its own rules. Coverage stays
+on screen here as everywhere: a log that reported only what it found would
+read as though it had checked everything.
+
+The prompt is real — up and down walk the history — because a prompt drawn
+and not wired is furniture pretending to be a control.
+
+### Mail, Calendar and SharePoint: drawn, and honestly empty
+
+All three need a source that does not exist yet: a mailbox or a site,
+which is phase 8. So each says what it will do, what it is waiting on by
+name, and where to go meanwhile.
+
+A mailbox with three invented messages in it, in a product whose whole
+argument is that the numbers on your screen are real, is worse than a blank
+panel — it teaches the reader that what they are looking at might be a
+mock-up, and there is no way to un-teach that on the screen where it
+matters.
+
+### Verified
+
+Through the interface at 1440 × 900, on three real deals, two of which
+hold nothing at all.
+
+| | |
+|---|---|
+| Projects | « Three live deals · 16 open findings · two not run » |
+| A deal nobody ran | « The check has not run on this deal », not « clear » |
+| Switching | Calder's empty Check, then back to Cascade's 16 findings |
+| Terminal | a real `check`: 12 files, 108 reconciled, 27 not checked with reasons, `done tieout · 0.2s`, then fourteen `crit` lines |
+| SharePoint | « No site connected », and what connecting would give |
+
+Two things the screenshots caught. The prompt was wearing the dashboard's
+blue focus ring — right on every form in the product and wrong on a
+terminal, which the design draws as a gutter and a caret. And **the
+duplicate « Terminal » button that cost twenty minutes was Next's own
+dev-tools overlay**, not the dock: `getByRole('button', { name })` finds
+it, `button[title="Terminal"]` does not. Worth remembering the next time a
+click in a test appears to do nothing.
+
+### What is left out, and why
+
+Nothing in the design's Mail, Calendar or SharePoint is built, deliberately.
+The design's SharePoint screen is a real document library with sync status
+on every row; building it against the data room would be claiming files
+came from somewhere they did not.
