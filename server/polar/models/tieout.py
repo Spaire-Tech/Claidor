@@ -1,0 +1,492 @@
+"""The chain, persisted: a figure, the cell behind it, and who vouched.
+
+The engine in :mod:`polar.tieout` reads two files and returns findings. It
+remembers nothing, which is fine for a library and useless for a product:
+the whole claim is that **a figure a banker has confirmed cannot go stale
+without them being told**, and there is no way to keep that promise
+without writing down what was confirmed.
+
+Everything here exists to make one sentence true. Two fields carry it.
+
+**`FigureLink.basis`.** FY2025A reported EBITDA is $41.2mm and FY2025A
+adjusted EBITDA is $48.9mm. Both are correct, both are printed in the same
+deck, and comparing one against the other's cell is the most confident way
+to be wrong. The basis travels with the link.
+
+**`FigureLink.confirmed_by_id`.** The engine finds 56% of what it is shown
+and invents nothing. That is enough to *propose* and never enough to
+*assert*. A confirmed link is no longer a guess — re-checking it is
+arithmetic, right every time — which is how a probabilistic engine backs a
+deterministic promise.
+
+**Identity is by label, never by address.** `Model!D26` is where a figure
+lives today. The Cascade model's own Outputs tab says its adjusted EBITDA
+is at `Model!D25`, and it is not — somebody inserted a row and the
+reference never caught up. So a link records the *name* it was confirmed
+against and re-finds the cell in each new version. An address is a
+location, not an identity.
+
+**Cells and figures are retained; the files are not.** The security
+posture the product commits to is « keep the chain, drop the documents »,
+and that has to be true in the schema rather than in a policy page. What
+is stored below is figures, cells, formulas, labels and links — enough to
+re-check forever, and not the deck.
+"""
+
+from datetime import datetime
+from decimal import Decimal
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any
+from uuid import UUID
+
+from sqlalchemy import (
+    TIMESTAMP,
+    Boolean,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
+
+from polar.kit.db.models import RecordModel
+
+if TYPE_CHECKING:
+    from polar.models import Dossier, File, User
+
+
+class ArtifactKind(StrEnum):
+    """What a file is *for*, which decides what is read out of it."""
+
+    #: A workbook. Cells, labels, formulas, precedents.
+    model = "model"
+    #: A deck. Printed figures and the words that name them.
+    deck = "deck"
+    #: A memo, a CIM, an IC paper. Prose with figures in it.
+    memo = "memo"
+    #: Audited accounts, a term sheet — the beginning of the chain.
+    source = "source"
+
+
+class ArtifactStatus(StrEnum):
+    uploading = "uploading"
+    processing = "processing"
+    ready = "ready"
+    failed = "failed"
+
+
+class Artifact(RecordModel):
+    """One file in a deal, at one version.
+
+    A new upload of the same document is a new row, not an edit. The chain
+    is versioned or it is a snapshot, and « what moved since Tuesday » is
+    the question the product exists to answer.
+    """
+
+    __tablename__ = "tieout_artifacts"
+    __table_args__ = (Index("ix_tieout_artifacts_dossier_kind", "dossier_id", "kind"),)
+
+    dossier_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("dossiers.id", ondelete="cascade"), nullable=False, index=True
+    )
+
+    @declared_attr
+    def dossier(cls) -> Mapped["Dossier"]:
+        return relationship("Dossier", lazy="raise")
+
+    #: The stored file. Nullable because the retention policy allows the
+    #: document to be dropped while the chain it produced is kept.
+    file_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("files.id", ondelete="set null"), nullable=True, default=None
+    )
+
+    @declared_attr
+    def file(cls) -> Mapped["File | None"]:
+        return relationship("File", lazy="raise")
+
+    kind: Mapped[ArtifactKind] = mapped_column(String(16), nullable=False, index=True)
+    filename: Mapped[str] = mapped_column(String(512), nullable=False)
+
+    #: Which upload of this document. Versions share a `lineage_id`; the
+    #: first upload starts a lineage and every later one joins it.
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    lineage_id: Mapped[UUID] = mapped_column(Uuid, nullable=False, index=True)
+
+    status: Mapped[ArtifactStatus] = mapped_column(
+        String(16), nullable=False, default=ArtifactStatus.uploading, index=True
+    )
+    #: What went wrong, in words a person can act on: « this .xls is
+    #: password protected », « this workbook has no calculated values —
+    #: open it in Excel once and save ».
+    error: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
+
+    #: Figures, cells, formulas, sheets, slides. Shown on the deal page
+    #: without touching the rows.
+    counts: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+
+    uploaded_by_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="restrict"), nullable=False
+    )
+
+    @declared_attr
+    def uploaded_by(cls) -> Mapped["User"]:
+        return relationship("User", lazy="raise")
+
+    figures: Mapped[list["Figure"]] = relationship(
+        "Figure", back_populates="artifact", lazy="raise", cascade="all, delete-orphan"
+    )
+    cells: Mapped[list["ModelCell"]] = relationship(
+        "ModelCell",
+        back_populates="artifact",
+        lazy="raise",
+        cascade="all, delete-orphan",
+    )
+
+
+class Figure(RecordModel):
+    """A number printed in a deliverable, and the words that name it.
+
+    Everything the engine needs to compare, and everything a screen needs
+    to take a reader to it. `label` is what the deck calls *this* figure
+    and no other — a sentence holding three figures gives each its own
+    clause, because a label covering two of them reconciles one against
+    the other's cell.
+    """
+
+    __tablename__ = "tieout_figures"
+    __table_args__ = (Index("ix_tieout_figures_artifact_page", "artifact_id", "page"),)
+
+    artifact_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("tieout_artifacts.id", ondelete="cascade"),
+        nullable=False,
+        index=True,
+    )
+    artifact: Mapped["Artifact"] = relationship(
+        "Artifact", back_populates="figures", lazy="raise"
+    )
+
+    #: As it appears: « $48.9mm », « 9.9x », « (96.4) ».
+    printed: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: What the printing denotes, in the model's units — millions for
+    #: currency, a fraction for a percentage.
+    value: Mapped[Decimal] = mapped_column(Numeric(28, 10), nullable=False)
+    #: How many decimals the deck chose. The precision of the claim, and
+    #: the precision every comparison is made at.
+    decimals: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    #: `currency` · `percent` · `multiple` · `plain`.
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+
+    #: Slide number, page number. One axis serves both.
+    page: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    #: What the deck calls it. The whole basis of linking.
+    label: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    #: Where it sits, for taking a reader to it.
+    location: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    #: The line as printed, so a finding can quote the deck to itself.
+    context: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    #: The page's own heading. Background, never a name.
+    section: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    #: One end of a printed range — « $455mm to $528mm ». Claims two cells
+    #: at once, so it reconciles to neither.
+    range_endpoint: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    #: Printed in parentheses, which in a bridge means « subtracted here »
+    #: and not « the cell is negative ».
+    parenthesised: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    #: A table's row label, when it has one. A whole name for a line item.
+    subject: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+
+class ModelCell(RecordModel):
+    """One numeric cell of a model, named from the labels beside it.
+
+    `Model!D26` means nothing; « FY2025A Adjusted EBITDA » means something,
+    and the workbook already says so in column A and row 4. The name is
+    built to the same shape a deck figure's label has, deliberately, so one
+    matcher serves both.
+    """
+
+    __tablename__ = "tieout_cells"
+    __table_args__ = (
+        UniqueConstraint("artifact_id", "ref", name="uq_tieout_cells_artifact_ref"),
+        Index("ix_tieout_cells_artifact_sheet", "artifact_id", "sheet"),
+    )
+
+    artifact_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("tieout_artifacts.id", ondelete="cascade"),
+        nullable=False,
+        index=True,
+    )
+    artifact: Mapped["Artifact"] = relationship(
+        "Artifact", back_populates="cells", lazy="raise"
+    )
+
+    #: « Model!D26 ».
+    ref: Mapped[str] = mapped_column(String(128), nullable=False)
+    sheet: Mapped[str] = mapped_column(String(128), nullable=False)
+    row: Mapped[int] = mapped_column(Integer, nullable=False)
+    column: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    #: As Excel last computed it. Null when the workbook has never been
+    #: calculated, which happens with generated files and is readable
+    #: anyway because the audit needs only the formulas.
+    value: Mapped[Decimal | None] = mapped_column(
+        Numeric(28, 10), nullable=True, default=None
+    )
+    formula: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
+
+    row_label: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    column_label: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    #: « FY2025A Adjusted EBITDA ». Stored rather than derived so that a
+    #: link can be re-found by name in a later version.
+    name: Mapped[str] = mapped_column(Text, nullable=False, default="", index=True)
+
+    #: The cells this one is computed from, so the chain renders without
+    #: re-parsing the workbook.
+    precedents: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    #: Set when the whole formula is one reference — a pointer, not a
+    #: figure. Excluded from linking so one figure does not have two homes.
+    alias_of: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, default=None
+    )
+
+
+class LinkState(StrEnum):
+    #: The engine's guess. Useful, and not yet a fact.
+    proposed = "proposed"
+    #: A banker vouched. From here re-checking is arithmetic.
+    confirmed = "confirmed"
+    #: A banker said no. Never proposed again for this pair.
+    rejected = "rejected"
+    #: The cell it pointed at is gone from a later version.
+    broken = "broken"
+
+
+class FigureLink(RecordModel):
+    """« Slide 2's adjusted EBITDA is Model!D26 », and who says so.
+
+    The object the whole product rests on. Once `state` is `confirmed`,
+    checking this figure never involves a model again: fetch the cell,
+    apply the transformation, compare at the figure's printed precision.
+    """
+
+    __tablename__ = "tieout_links"
+    __table_args__ = (
+        UniqueConstraint("figure_id", "cell_id", name="uq_tieout_links_figure_cell"),
+        Index("ix_tieout_links_dossier_state", "dossier_id", "state"),
+    )
+
+    dossier_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("dossiers.id", ondelete="cascade"), nullable=False, index=True
+    )
+    figure_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("tieout_figures.id", ondelete="cascade"), nullable=False
+    )
+    cell_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("tieout_cells.id", ondelete="cascade"), nullable=False
+    )
+
+    state: Mapped[LinkState] = mapped_column(
+        String(16), nullable=False, default=LinkState.proposed, index=True
+    )
+    #: How well the label accounted for the cell's name, 0–1. A drift on a
+    #: 0.56 link reads differently from one on a 1.00 link.
+    confidence: Mapped[float] = mapped_column(Numeric(4, 3), nullable=False, default=0)
+
+    #: `identity` today; later `sum` · `margin` · `growth` · `cagr` ·
+    #: `unit` · `currency`. A named deterministic function, so re-checking
+    #: a confirmed link stays arithmetic.
+    transformation: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="identity"
+    )
+    #: Reported · adjusted · pro forma · run-rate, and the period. Carried
+    #: on the link because the same two numbers on different bases are not
+    #: in disagreement.
+    basis: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    #: **Identity, as opposed to address.** What the cell was called when
+    #: this link was confirmed, so a later version can be re-found by name
+    #: after somebody inserts a row above it.
+    cell_name: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    figure_label: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    confirmed_by_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="set null"), nullable=True, default=None
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+
+
+class CheckKind(StrEnum):
+    #: The deck disagrees with the model.
+    tieout = "tieout"
+    #: The model disagrees with itself.
+    audit = "audit"
+    #: Two documents in the deal disagree.
+    crosscheck = "crosscheck"
+
+
+class CheckStatus(StrEnum):
+    queued = "queued"
+    running = "running"
+    done = "done"
+    failed = "failed"
+
+
+class CheckRun(RecordModel):
+    """One pass of one checker over named versions of named files.
+
+    Recorded so that a finding can say *what it was checked against*, and
+    so that « this deck was last checked against version 2 of the model »
+    is answerable without guessing.
+    """
+
+    __tablename__ = "tieout_check_runs"
+
+    dossier_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("dossiers.id", ondelete="cascade"), nullable=False, index=True
+    )
+    kind: Mapped[CheckKind] = mapped_column(String(16), nullable=False)
+    status: Mapped[CheckStatus] = mapped_column(
+        String(16), nullable=False, default=CheckStatus.queued, index=True
+    )
+
+    #: The artifacts this run read, by id. A tie-out reads two; an audit
+    #: reads one.
+    artifact_ids: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    #: Reconciled, agreeing, drifting, unlinked, and the reasons — the
+    #: coverage line, computed once at the end of the run.
+    summary: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
+
+    started_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    requested_by_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="set null"), nullable=True, default=None
+    )
+
+
+class FindingKind(StrEnum):
+    #: A printed figure does not agree with the cell behind it.
+    drift = "drift"
+    #: A mechanical defect in a model — a broken reference, a total that
+    #: skips a row, a value typed over a formula.
+    audit = "audit"
+    #: Two documents in the deal say different things.
+    contradiction = "contradiction"
+    #: The model moved and this figure has not caught up.
+    stale = "stale"
+    #: The model's own index of figures points somewhere it should not.
+    reference = "reference"
+
+
+class FindingSeverity(StrEnum):
+    #: Wrong however the document is used.
+    error = "error"
+    #: A departure from standard that is often deliberate. **Never added
+    #: into one number with errors.**
+    smell = "smell"
+
+
+class FindingState(StrEnum):
+    open = "open"
+    accepted = "accepted"
+    #: Deliberately set aside. A dismissed finding that comes back is the
+    #: fastest way to lose a user, so dismissal is recorded per finding
+    #: *identity* and survives a re-run.
+    dismissed = "dismissed"
+    fixed = "fixed"
+
+
+class Finding(RecordModel):
+    """One thing worth telling a banker, and what happened to it."""
+
+    __tablename__ = "tieout_findings"
+    __table_args__ = (
+        Index("ix_tieout_findings_dossier_state", "dossier_id", "state"),
+        Index("ix_tieout_findings_fingerprint", "dossier_id", "fingerprint"),
+    )
+
+    dossier_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("dossiers.id", ondelete="cascade"), nullable=False, index=True
+    )
+    check_run_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("tieout_check_runs.id", ondelete="set null"),
+        nullable=True,
+        default=None,
+    )
+    #: Where the problem is *printed*. The model, for an audit finding.
+    artifact_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("tieout_artifacts.id", ondelete="cascade"), nullable=True
+    )
+
+    kind: Mapped[FindingKind] = mapped_column(String(16), nullable=False, index=True)
+    severity: Mapped[FindingSeverity] = mapped_column(String(8), nullable=False)
+    state: Mapped[FindingState] = mapped_column(
+        String(16), nullable=False, default=FindingState.open, index=True
+    )
+
+    #: What survives a re-run: the same defect in the same place keeps its
+    #: identity so that a dismissal sticks and a fix can be noticed.
+    fingerprint: Mapped[str] = mapped_column(String(128), nullable=False)
+
+    #: The rule, for an audit finding: `skipped-cell`, `circular`.
+    rule: Mapped[str] = mapped_column(String(48), nullable=False, default="")
+    #: The published standard it comes from, so « says who » has an answer
+    #: that is not « the tool ».
+    standard: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+
+    page: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    printed: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    expected: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    #: True when the two differ by exactly one unit at the printed
+    #: precision — 18.6% against 18.655%. Almost always a rounding
+    #: convention, always still reported, ranked below the rest.
+    one_tick: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    title: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    detail: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    location: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    #: The finding's own evidence — the chain, the source cell, the basis,
+    #: the confidence. Rendered by the screen, never queried on.
+    evidence: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict
+    )
+
+    dismissed_by_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="set null"), nullable=True, default=None
+    )
+    dismissed_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+
+
+__all__ = [
+    "Artifact",
+    "ArtifactKind",
+    "ArtifactStatus",
+    "CheckKind",
+    "CheckRun",
+    "CheckStatus",
+    "Figure",
+    "FigureLink",
+    "Finding",
+    "FindingKind",
+    "FindingSeverity",
+    "FindingState",
+    "LinkState",
+    "ModelCell",
+]

@@ -2,6 +2,7 @@ from polar.kit.db.models import Model, TimestampedModel
 
 from .account import Account
 from .account_credit import AccountCredit
+from .agent_task import AgentStep, AgentTask
 from .benefit import Benefit
 from .benefit_grant import BenefitGrant
 from .billing_entry import BillingEntry
@@ -98,7 +99,6 @@ from .payment import Payment
 from .payment_method import PaymentMethod
 from .payout import Payout
 from .personal_access_token import PersonalAccessToken
-from .agent_task import AgentStep, AgentTask
 from .playbook import (
     Playbook,
     PlaybookRule,
@@ -135,6 +135,22 @@ from .saved_prompt import SavedPrompt
 from .subscription import Subscription
 from .subscription_meter import SubscriptionMeter
 from .subscription_product_price import SubscriptionProductPrice
+from .tieout import (
+    Artifact,
+    ArtifactKind,
+    ArtifactStatus,
+    CheckKind,
+    CheckRun,
+    CheckStatus,
+    Figure,
+    FigureLink,
+    Finding,
+    FindingKind,
+    FindingSeverity,
+    FindingState,
+    LinkState,
+    ModelCell,
+)
 from .transaction import Transaction
 from .trial_redemption import TrialRedemption
 from .user import OAuthAccount, User
@@ -151,11 +167,19 @@ from .webhook_event import WebhookEvent
 __all__ = [
     "Account",
     "AccountCredit",
+    "AgentStep",
+    "AgentTask",
     "ArticleEquivalenceRelation",
+    "Artifact",
+    "ArtifactKind",
+    "ArtifactStatus",
     "Benefit",
     "BenefitGrant",
     "BillingEntry",
     "Campaign",
+    "CheckKind",
+    "CheckRun",
+    "CheckStatus",
     "Checkout",
     "CheckoutLink",
     "CheckoutLinkProduct",
@@ -213,7 +237,13 @@ __all__ = [
     "EventType",
     "ExternalEvent",
     "ExtractionStatus",
+    "Figure",
+    "FigureLink",
     "File",
+    "Finding",
+    "FindingKind",
+    "FindingSeverity",
+    "FindingState",
     "Form",
     "FormCustomField",
     "FormStatus",
@@ -230,6 +260,7 @@ __all__ = [
     "LibrarianQuestion",
     "LicenseKey",
     "LicenseKeyActivation",
+    "LinkState",
     "LoginCode",
     "Member",
     "MemberRole",
@@ -237,6 +268,7 @@ __all__ = [
     "Meter",
     "MeterEvent",
     "Model",
+    "ModelCell",
     "Notification",
     "NotificationRecipient",
     "OAuth2AuthorizationCode",
@@ -255,8 +287,6 @@ __all__ = [
     "PaymentMethod",
     "Payout",
     "PersonalAccessToken",
-    "AgentStep",
-    "AgentTask",
     "Playbook",
     "PlaybookRule",
     "Pledge",
