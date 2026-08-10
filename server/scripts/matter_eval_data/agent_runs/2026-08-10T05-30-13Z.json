@@ -1,0 +1,80 @@
+{
+  "when": "2026-08-10T05-30-13Z",
+  "results": [
+    {
+      "name": "the cap",
+      "prompt": "What is the cap on the Supplier's liability in this matter, and do the documents agree about it?",
+      "tools": [
+        "list_documents",
+        "read_document",
+        "read_document",
+        "read_document",
+        "read_document",
+        "search_documents",
+        "check_document",
+        "check_document",
+        "check_document"
+      ],
+      "stopped": "answered",
+      "checks": {
+        "completed": true,
+        "tools_used": true,
+        "opened_with_list": true,
+        "quotes_are_real": true,
+        "mentions": true
+      },
+      "invented_quotes": [],
+      "answer": "**The operative cap is USD 1,800,000**, in the Master Services Agreement (dated 14 March 2026), clause 9.1:\n\n> \"9.1 The aggregate liability of the Supplier under this Agreement shall not exceed USD 1,800,000.\"\n\n**The documents do not agree.** The Letter of Intent (dated 2 February 2026), paragraph 3, sets a different figure:\n\n> \"3. The aggregate liability of the Supplier shall be capped at USD 2,500,000.\"\n\nA USD 700,000 gap. The Letter of Intent predates the MSA by six weeks and describes itself as recording \"the terms on which the parties intend to proceed\", so on its face the later executed MSA governs \u2014 but the LOI I read contains no clause stating it is non\u2011binding or superseded, and the MSA I read contains no entire\u2011agreement clause. Worth confirming that is deliberate.\n\nOther points from the same review:\n\n- The **Side Letter** (20 March 2026) does not touch liability at all. It varies termination notice and, at paragraph 2, applies New York law to itself, against England and Wales in both the MSA (clause 14.1) and the LOI (paragraph 5).\n- The Side Letter's reference to \"clause 10.1 of the Agreement\" was flagged as a broken reference \u2014 the check runs within a single document, and clause 10.1 does exist in the MSA, so this is likely benign.\n- The MSA was flagged for using \"Agreement\" as a capitalised defined term without defining it, and for defining \"Pilot Period\" without ever using it in that document (the Side Letter uses the term).\n- The **Board Minutes** (10 March 2026) record the USD 40,000,000 fee and authority to execute, but say nothing about a liability cap.\n\n**Caveat:** one of the five documents, the **Disclosure Letter (scanned)**, could not be read. If it carves out or adjusts the cap, I have not seen it. My answer covers the four readable documents only, each of which I read in full.",
+      "input_tokens": 18691,
+      "output_tokens": 1477
+    },
+    {
+      "name": "defined terms",
+      "prompt": "Are the defined terms in the Master Services Agreement used consistently? Use the document checker rather than judging by eye.",
+      "tools": [
+        "list_documents",
+        "check_document",
+        "read_document"
+      ],
+      "stopped": "answered",
+      "checks": {
+        "completed": true,
+        "tools_used": true,
+        "opened_with_list": true,
+        "used_the_checker": true,
+        "quotes_are_real": true,
+        "mentions": true
+      },
+      "invented_quotes": [],
+      "answer": "**Mostly, but the checker flags three defects in the Master Services Agreement** \u2014 one critical, one warning, one to review.\n\n**1. \"Agreement\" \u2014 undefined (critical, probable).** The checker's note: *\"'Agreement' is capitalised as a defined term throughout but no definition appears in this document.\"* The document does open \"THIS AGREEMENT is dated 14 March 2026\", but there is no parenthetical defining it, while clauses 9.1, 10.1 and 14.1 all rely on it \u2014 e.g. *\"The aggregate liability of the Supplier under this Agreement shall not exceed USD 1,800,000.\"*\n\n**2. \"Pilot Period\" \u2014 defined but never used (warning, certain).** Defined in clause 1 as *\"the three months following the Completion Date\"*, but it appears nowhere else. The checker's note: *\"Either the clause it served was removed, or a use of it is miscased.\"*\n\n**3. \"Pilot Period\" \u2014 definitions out of alphabetical order (to review, certain).** The clause 1 order is \"Completion Date\", \"Services\", \"Pilot Period\"; the checker names \"Pilot Period\" as *\"the first out of place.\"*\n\nThe two terms that are used \u2014 \"Completion Date\" and \"Services\" \u2014 drew no findings, and neither did the party definitions \"Supplier\" and \"Client\".\n\n**Scope caveat:** I ran the checker on the Master Services Agreement only, as asked. The matter holds five documents; one, the **Disclosure Letter (scanned)**, is unreadable, so if it defines or uses any of these terms I cannot see it.",
+      "input_tokens": 6788,
+      "output_tokens": 975
+    },
+    {
+      "name": "the scan",
+      "prompt": "Is there an indemnity anywhere in this matter?",
+      "tools": [
+        "list_documents",
+        "search_documents",
+        "read_document",
+        "read_document",
+        "read_document",
+        "read_document",
+        "search_documents"
+      ],
+      "stopped": "answered",
+      "checks": {
+        "completed": true,
+        "tools_used": true,
+        "opened_with_list": true,
+        "quotes_are_real": true,
+        "mentions": true,
+        "admits_the_scan": true
+      },
+      "invented_quotes": [],
+      "answer": "**No \u2014 there is no indemnity in any of the four documents I could read.**\n\nI read all four readable documents in full (each is under 1,000 characters, `remaining: 0` on each), and searched across the matter for \"indemnif\" and \"hold harmless\" \u2014 no hits in either search.\n\nThe closest thing to a risk-allocation provision is a liability cap, not an indemnity:\n\n- **Master Services Agreement**, clause 9.1: *\"The aggregate liability of the Supplier under this Agreement shall not exceed USD 1,800,000.\"*\n- **Letter of Intent**, paragraph 3: *\"The aggregate liability of the Supplier shall be capped at USD 2,500,000.\"* (Worth flagging in passing: the LOI figure and the executed MSA figure differ.)\n\nThe **Side Letter** deals only with termination notice during the Pilot Period, governing law and a monthly service report; the **Board Minutes** record the fee and authority to execute. Neither contains an indemnity.\n\n**What I could not check:** one of the five documents, the **Disclosure Letter (scanned)**, is unreadable (0 characters extracted), and it was excluded from both searches. A disclosure letter is exactly the kind of document that qualifies or supports an indemnity, so I cannot tell you there is no indemnity *in this matter* \u2014 only that there is none in the four files I could read. That scan needs to be reviewed by eye or re-OCR'd before you rely on this.",
+      "input_tokens": 7610,
+      "output_tokens": 1097
+    }
+  ]
+}

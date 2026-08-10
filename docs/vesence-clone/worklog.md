@@ -526,3 +526,99 @@ scripted one, which proves the loop does what it is told and proves nothing
 about whether Claude uses these four tools well on a real bundle. That
 needs a matter with real documents in it, and it is the next honest thing
 to find out.
+
+---
+
+## 2026-08-10 — the model-dependent half, finally measured
+
+Everything under `tests/` runs the agent and the cross-document check
+against a scripted model. That proves the plumbing and says nothing about
+whether Claude *uses* four tools sensibly on a real bundle, which is the
+only question that matters for the product. There is an API key in this
+environment, so there was no reason left not to find out.
+
+Two evals, both kept out of pytest for the same reason `librarian_eval.py`
+is: whether the checks are useful and whether the code is correct are
+different numbers and are never reported together.
+
+### The bundle
+
+Four documents I wrote, so the ground truth is known rather than judged: an
+MSA, a letter of intent, a side letter, board minutes. Three conflicts
+planted. **Four distractors planted** — a completion date stated
+identically in two documents, a fee stated identically in two more, a
+figure appearing once, and two figures about different things that a check
+pattern-matching on « two numbers » would pair.
+
+### Cross-document check
+
+Both required conflicts found. None of the four distractors reported.
+Nothing invented. 26 commitments from four documents, three conflicts
+proposed, three through the gates.
+
+The notice period was not reported and that is correct rather than a miss:
+the side letter says « notwithstanding clause 10.1, and for the Pilot
+Period only », which the prompt explicitly describes as a narrowing. It is
+scored as a judgement call — either answer defensible, reported, never
+failed — because grading a judgement call as a failure teaches the wrong
+thing.
+
+**What the run found that the tests could not:** it reported the
+governing-law disagreement *twice*, once per document pair. Both pairs
+real, both quoting correctly. At scale that is not untidiness — one loose
+term across twenty documents is nineteen pairs, so three loose ends would
+report sixty findings and read as a disaster. Conflicts are now grouped by
+union-find over shared commitments. Re-run: three pairs into two findings,
+extras 1 → 0.
+
+### The agent
+
+Three prompts, all clean. The traces are the interesting part:
+
+```
+Used 7 tools
+  Listed 5 documents (1 not machine-readable)
+  Read Master Services Agreement
+  Read Letter of Intent
+  Read Side Letter
+  Read Board Minutes
+  Searched 4 documents for « liability » — 3 hits
+  Checked Master Services Agreement — 3 findings
+```
+
+It opened with `list_documents` every time. It used `check_document`
+rather than judging defined terms by eye when told to. It quoted correctly.
+And unprompted, on « is there an indemnity anywhere in this matter », it
+wrote:
+
+> One document could not be read: the *Disclosure Letter (scanned)*
+> returned no text. A disclosure letter is exactly where a carve-out or
+> qualification to the cap might sit, so I cannot tell you the cap is
+> unqualified across this matter — only across the four files I could read.
+
+That is the property the whole design is arranged around, produced without
+being asked for in that prompt. It came from `list_documents` reporting
+unreadable files rather than hiding them — the decision that looked
+pedantic when I made it this morning.
+
+### And the measurement was wrong first
+
+The first agent run reported **thirteen invented quotes across three
+answers**. There were none.
+
+The extractor matched `"..."`, and a straight quote mark serves for
+quotation, for nested quotation and for plain emphasis — so it paired the
+*closing* mark of one span with the *opening* mark of the next and produced
+fragments that were in no document because they were never quotations. It
+also counted the checker's own notes as invention, when an answer quoting a
+tool is quoting something real.
+
+Fixed to markdown blockquotes and backticks, which have unambiguous
+delimiters, with tool output in the corpus. 3/3 clean.
+
+**Third time today** that a measurement produced a number which looked like
+evidence and was not — after the client-regeneration diff and the bearer
+test that authenticated nothing. The pattern is the same each time: the
+thing being measured was not the thing I thought I was measuring, and the
+result was plausible enough not to question. What catches it is not care;
+it is reading the raw output before believing the summary.
