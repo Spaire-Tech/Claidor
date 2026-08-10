@@ -65,6 +65,11 @@ export default defineConfig(({ mode }) => {
           taskpane: resolve(__dirname, "index.html"),
           auth: resolve(__dirname, "auth.html"),
           dictation: resolve(__dirname, "dictation.html"),
+          // The self-test is its own entry point so that nothing stands
+          // between a real Word and the results: no sign-in, no routing,
+          // no API. It ships in the production build deliberately — the
+          // machine it has to run on is somebody else's.
+          selftest: resolve(__dirname, "selftest.html"),
           // preview.html is a local UI harness served by `pnpm dev`; it is
           // intentionally excluded from the production build.
         },

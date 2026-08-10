@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
+    "selftest:package": "pnpm build && cp deploy/vercel.json dist/vercel.json && node deploy/selftest-manifest.mjs",
     "sideload": "office-addin-debugging start manifest.dev.xml desktop",
     "sideload:stop": "office-addin-debugging stop manifest.dev.xml",
     "validate:manifest": "office-addin-manifest validate manifest.xml"

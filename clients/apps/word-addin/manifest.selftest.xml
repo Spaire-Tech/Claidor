@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+
+  <!-- The SELF-TEST manifest. Not the product.
+
+       It exists to answer, on somebody's real Word, the four questions no
+       amount of reading settles: does the pane load at all, does reading
+       the document give back the string the server indexes, does selecting
+       the nth occurrence select the nth occurrence, and does Word honour a
+       request to turn change tracking on.
+
+       Two things are deliberately different from the real manifests:
+
+       1. The requirement floor is WordApi 1.1, not 1.6. The product needs
+          1.6 and says so. If this host is below that, a 1.6 manifest would
+          simply refuse to load and we would learn nothing. At 1.1 it loads
+          anywhere and the first thing it reports is which sets it actually
+          has, which is the answer we wanted.
+
+       2. It opens selftest.html, which mounts nothing but the test: no
+          sign-in, no API, no routing. Every failure it can report is a
+          failure of the thing under test.
+
+       This file is a template. `node deploy/selftest-manifest.mjs <origin>`
+       writes the filled-in copy into dist/, beside the build it points at,
+       so the manifest and the bundle it names cannot drift apart. Sideload
+       that one, never this one. -->
+  <Id>827e5511-1a6c-479a-90f3-61df4cf22599</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Claidor</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Claidor self-test" />
+  <Description DefaultValue="Runs Claidor's Word integration against the open document and reports what happened. Writes only to a scratch paragraph, which it removes when it finishes." />
+  <IconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-80.png" />
+  <SupportUrl DefaultValue="https://YOUR-DOMAIN.example.com/selftest.html" />
+
+  <AppDomains>
+    <AppDomain>https://YOUR-DOMAIN.example.com</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Document" />
+  </Hosts>
+
+  <!-- 1.1 on purpose. See the note above. -->
+  <Requirements>
+    <Sets DefaultMinVersion="1.1">
+      <Set Name="WordApi" MinVersion="1.1" />
+    </Sets>
+  </Requirements>
+
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://YOUR-DOMAIN.example.com/selftest.html" />
+  </DefaultSettings>
+
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="Claidor.SelfTest.Group">
+                <Label resid="Group.Label" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16" />
+                  <bt:Image size="32" resid="Icon.32" />
+                  <bt:Image size="80" resid="Icon.80" />
+                </Icon>
+                <Control xsi:type="Button" id="Claidor.SelfTest.Open">
+                  <Label resid="Open.Label" />
+                  <Supertip>
+                    <Title resid="Open.Label" />
+                    <Description resid="Open.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>Claidor.SelfTest.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-16.png" />
+        <bt:Image id="Icon.32" DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-32.png" />
+        <bt:Image id="Icon.80" DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://YOUR-DOMAIN.example.com/selftest.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Group.Label" DefaultValue="Claidor" />
+        <bt:String id="Open.Label" DefaultValue="Self-test" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="Open.Tip" DefaultValue="Check that Claidor can read this document, select text in it, and record a tracked change." />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>
