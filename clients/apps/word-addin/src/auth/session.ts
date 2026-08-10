@@ -2,6 +2,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { getSupabase } from "./supabase";
 import { isCommunity, setByokMode } from "@/community/edition";
 import { clearAllProviderKeys, isConfigured } from "@/ai/keys";
+import { claidorToken } from "@/claidor/session";
 
 /**
  * In-memory session store. Holds the Supabase access + refresh tokens for the
@@ -154,8 +155,18 @@ function isExpiringSoon(s: Session): boolean {
 /**
  * Return a valid access token, refreshing first if it is close to expiry.
  * Returns null when there is no session or refresh failed (caller re-auths).
+ *
+ * A Claidor token wins when there is one. This is the single seam between
+ * the pane and whatever issues its credential, which is why the whole
+ * change is three lines: upstream's `request` asks this function and asks
+ * nothing else. When the OAuth2 dialog flow replaces the pasted token, and
+ * when Entra eventually replaces that, only what fills `claidorToken()`
+ * changes. Nothing downstream of here has ever known where the bearer came
+ * from, and that is the property worth keeping.
  */
 export async function getAccessToken(): Promise<string | null> {
+  const claidor = claidorToken();
+  if (claidor) return claidor;
   if (isCommunity()) return isConfigured() ? "community" : null;
   if (!session) return null;
   if (isExpiringSoon(session)) {

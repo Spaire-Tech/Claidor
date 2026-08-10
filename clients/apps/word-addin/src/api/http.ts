@@ -90,8 +90,23 @@ async function buildHeaders(token: string, extra?: Record<string, string>): Prom
   };
 }
 
+/**
+ * Claidor's own routes live under `/v1/`; upstream's are under `/api/v1/`.
+ *
+ * The community build answers upstream's routes from a local shim and has
+ * no server at all — but the check engine *is* a server, and a pane holding
+ * a Claidor token should reach it whichever build it is. Routing by path
+ * rather than by edition is what lets the community build, which needs no
+ * sign-in and so is the easiest thing to sideload, still run real checks.
+ */
+const CLAIDOR_PREFIX = "/v1/";
+
+function isClaidorRoute(path: string): boolean {
+  return path.startsWith(CLAIDOR_PREFIX);
+}
+
 export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-  if (isCommunity()) {
+  if (isCommunity() && !isClaidorRoute(path)) {
     // Lazy import so the community shim (and its DOCX parser) never weighs the
     // cloud bundle.
     const { communityRequest } = await import("@/community/localRouter");
@@ -151,7 +166,7 @@ export async function requestForm<T>(
   form: FormData,
   opts: { signal?: AbortSignal; timeoutMs?: number } = {},
 ): Promise<T> {
-  if (isCommunity()) {
+  if (isCommunity() && !isClaidorRoute(path)) {
     const { communityRequestForm } = await import("@/community/localForm");
     return communityRequestForm<T>(path, form);
   }
@@ -223,7 +238,7 @@ export async function requestBinary(
   path: string,
   opts: RequestOptions = {},
 ): Promise<{ base64: string; filename: string }> {
-  if (isCommunity()) {
+  if (isCommunity() && !isClaidorRoute(path)) {
     throw new ApiError("unknown", 0, "This feature needs the self-hosted backend (a later phase).", "EDITION");
   }
   const token = await getAccessToken();

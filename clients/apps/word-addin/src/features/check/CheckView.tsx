@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "@/api/errors";
-import { isCommunity } from "@/community/edition";
+import { hasClaidorToken } from "@/claidor/session";
 import { readDocumentText } from "@/office/document";
 import { insertCommentAnchored } from "@/office/comments";
 import { useAppNav } from "@/app/nav";
 import { Banner, Button, Spinner } from "@/ui/primitives";
 import { StatusGroup } from "@/ui/StatusGroup";
-import { UpgradeGate } from "@/ui/UpgradeGate";
 import { ViewHeader } from "@/ui/ViewHeader";
 import { LocateIcon, WandIcon } from "@/ui/icons";
 import type { StatusTone } from "@/ui/status";
@@ -24,6 +23,7 @@ import {
   type Severity,
 } from "@/claidor/locate";
 import { check, judge } from "@/claidor/redline";
+import { TokenGate } from "./TokenGate";
 import "./check.css";
 
 /**
@@ -72,9 +72,17 @@ export function CheckView() {
   const [note, setNote] = useState<string | null>(null);
   const judgeAbort = useRef<AbortController | null>(null);
 
-  // The community build has no Claidor backend, and the engine IS the
-  // backend. Say so instead of failing on click.
-  const community = isCommunity();
+  // The engine is a server, so this needs a Claidor token — and that is the
+  // only thing it needs, in either build.
+  //
+  // Gating on the *edition* was the first attempt and it was wrong twice
+  // over. The community build needs no sign-in, which makes it the easiest
+  // thing to sideload, so a pane holding a token should run real checks
+  // there. And the hosted build's own credential is upstream's Supabase
+  // token, which the Claidor API has never accepted and never will — so
+  // letting the check run there produces a 401 dressed as a server error
+  // rather than the one screen that fixes it.
+  const signedOut = !hasClaidorToken();
 
   const run = useCallback(async () => {
     setNote(null);
@@ -89,7 +97,7 @@ export function CheckView() {
   }, []);
 
   useEffect(() => {
-    if (community) return;
+    if (signedOut) return;
     void run();
     // Dismissals live in the document, so they are read once per open, not
     // per check: re-running the engine must not resurrect them.
@@ -99,7 +107,7 @@ export function CheckView() {
         // A document with no dismissals is the normal case, and a part we
         // cannot read means findings show rather than hide. Both are fine.
       });
-  }, [community, run]);
+  }, [signedOut, run]);
 
   useEffect(() => () => judgeAbort.current?.abort(), []);
 
@@ -201,21 +209,16 @@ export function CheckView() {
       title="Check"
       info="Ten mechanical checks over the open document: defined terms, cross-references, numbering and house style. Every one of them is arithmetic on the text rather than a reading, so a finding is either right or a bug. Contradictions and miscalculations need a model and are a separate, slower pass."
       subtitle="Defined terms, cross-references, numbering, style."
-      onRescan={community ? undefined : () => void run()}
+      onRescan={signedOut ? undefined : () => void run()}
       rescanning={state.status === "checking"}
     />
   );
 
-  if (community) {
+  if (signedOut) {
     return (
       <div className="stack check-view">
         {header}
-        <UpgradeGate title="Check runs on the Claidor engine">
-          These checks are computed server-side, not in the pane: ten of them,
-          measured on real filings. There is no engine in the
-          bring-your-own-key build to run them against. Defined terms and
-          Cross-references, in Tools, work here and always will.
-        </UpgradeGate>
+        <TokenGate onSaved={() => void run()} />
       </div>
     );
   }
