@@ -38,6 +38,7 @@ from polar.models import Finding as FindingRow
 from polar.models import ModelCell as CellRow
 
 from . import figures as engine_figures
+from . import storage
 from .check import compare
 from .ingest import Ingested, Unreadable, read_artifact
 from .link import link as propose_links
@@ -72,6 +73,12 @@ class TieOutService:
         A failed artifact is kept rather than discarded: the deal page has
         to be able to show *« this one did not work, and here is what to do
         about it »*, which is impossible if the row is gone.
+
+        **The bytes are kept too, and a file that fails to read keeps them
+        as well.** Every check runs off the rows and never opens a document
+        again; writing a correction is the one thing that cannot, because a
+        correction is a new version of a real file. Storing is best-effort
+        by design — see :mod:`polar.tieout.storage`.
         """
         repository = TieOutRepository.from_session(session)
         artifact = await repository.create_artifact(
@@ -81,6 +88,7 @@ class TieOutService:
             uploaded_by_id=user_id,
             file_id=file_id,
         )
+        artifact.storage_path = storage.keep(artifact, payload)
 
         try:
             ingested = read_artifact(payload, filename, kind)

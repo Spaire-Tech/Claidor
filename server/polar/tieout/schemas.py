@@ -19,7 +19,7 @@ an engine nobody can calibrate against.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import Field
@@ -30,6 +30,8 @@ from polar.models import (
     ArtifactStatus,
     CheckKind,
     CheckStatus,
+    CorrectionState,
+    CorrectionWhere,
     FindingKind,
     FindingSeverity,
     FindingState,
@@ -181,6 +183,55 @@ class FindingSource(Schema):
     artifact_id: UUID | None
 
 
+class CorrectionRead(Schema):
+    """A change to a document: proposed, decided, and reversible.
+
+    Both sides travel on it. `before` is what the document says today and
+    `after` is what it would say, which is what makes « Undo » a write
+    rather than a revision format the `.pptx` specification does not have.
+    """
+
+    id: UUID
+    #: The finding's durable identity, so a screen can put a correction
+    #: against the row it belongs to after a re-run has rebuilt every
+    #: finding with a new id.
+    fingerprint: str
+    state: CorrectionState
+    #: `file` — the deal's own copy, now one version further on — or
+    #: `document`, meaning somebody accepted it in the copy open in Office
+    #: and this deal has not seen those bytes.
+    where: CorrectionWhere
+    before: str
+    after: str
+    page: int
+    location: str
+    artifact_id: UUID
+    #: The version applying produced, when there is one.
+    wrote_artifact_id: UUID | None
+    #: Why a write was refused, in the writer's own words. Kept on the
+    #: record: a banker who pressed Accept has to be able to find out
+    #: whether the deck changed.
+    error: str | None
+    decided_by: Uploader | None
+    decided_at: datetime | None
+    created_at: datetime
+
+
+class CorrectionDecision(Schema):
+    """What to do with a proposal.
+
+    `accept` writes it into the deal's copy and makes that a new version.
+    `reject` leaves the document alone — and does **not** dismiss the
+    finding, because « the deck is right » and « stop telling me » are
+    different sentences. `reverse` writes the old figure back. `applied`
+    is the panel reporting that it wrote the change into the document open
+    in front of somebody, which is the one case where the bytes never come
+    here.
+    """
+
+    action: Literal["accept", "reject", "reverse", "applied"]
+
+
 class FindingRead(Schema):
     id: UUID
     kind: FindingKind
@@ -206,6 +257,9 @@ class FindingRead(Schema):
     standard: str | None
     rule: str | None
     created_at: datetime
+    #: The change proposed for this finding, once anybody has looked at
+    #: it. Null means nothing has been proposed — never « nothing can be ».
+    correction: CorrectionRead | None = None
 
 
 class FindingUpdate(Schema):

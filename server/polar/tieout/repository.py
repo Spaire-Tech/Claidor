@@ -26,6 +26,8 @@ from polar.models import (
     CheckKind,
     CheckRun,
     CheckStatus,
+    Correction,
+    CorrectionState,
     Dossier,
     DossierMember,
     Figure,
@@ -233,7 +235,9 @@ class TieOutRepository(RepositoryBase[Artifact]):
                 select(
                     func.count(Artifact.id),
                     func.count(func.distinct(Artifact.lineage_id)),
-                ).where(Artifact.dossier_id == dossier_id, Artifact.deleted_at.is_(None))
+                ).where(
+                    Artifact.dossier_id == dossier_id, Artifact.deleted_at.is_(None)
+                )
             )
         ).one()
         return int(rows[0]), int(rows[1])
@@ -599,6 +603,57 @@ class TieOutRepository(RepositoryBase[Artifact]):
         self.session.add(finding)
         await self.session.flush()
         return finding
+
+    # --- corrections ----------------------------------------------------
+
+    async def corrections_of(
+        self, dossier_id: UUID, *, state: CorrectionState | None = None
+    ) -> Sequence[Correction]:
+        """Every correction on the deal, newest decision last.
+
+        Ordered by where it sits rather than by when it was proposed: a
+        reader going through a deck wants slide 2 before slide 7, and the
+        order a check happened to emit them in means nothing to anybody.
+        """
+        statement = (
+            select(Correction)
+            .where(
+                Correction.dossier_id == dossier_id,
+                Correction.deleted_at.is_(None),
+            )
+            .order_by(Correction.page, Correction.created_at)
+        )
+        if state is not None:
+            statement = statement.where(Correction.state == state)
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def correction_for(
+        self, dossier_id: UUID, fingerprint: str
+    ) -> Correction | None:
+        """The correction on one finding, by the identity that survives a run."""
+        statement = select(Correction).where(
+            Correction.dossier_id == dossier_id,
+            Correction.fingerprint == fingerprint,
+            Correction.deleted_at.is_(None),
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    async def corrections_by_fingerprint(
+        self, dossier_id: UUID
+    ) -> dict[str, Correction]:
+        """Every correction, keyed the way a finding is found again."""
+        return {one.fingerprint: one for one in await self.corrections_of(dossier_id)}
+
+    async def save_correction(self, correction: Correction) -> Correction:
+        self.session.add(correction)
+        await self.session.flush()
+        return correction
+
+    async def get_correction(self, correction_id: UUID) -> Correction | None:
+        statement = select(Correction).where(
+            Correction.id == correction_id, Correction.deleted_at.is_(None)
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
 
 
 __all__ = ["TieOutRepository"]

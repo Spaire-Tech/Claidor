@@ -86,9 +86,7 @@ class AgentStep(RecordModel):
     """
 
     __tablename__ = "agent_steps"
-    __table_args__ = (
-        Index("ix_agent_steps_task_id_ordinal", "task_id", "ordinal"),
-    )
+    __table_args__ = (Index("ix_agent_steps_task_id_ordinal", "task_id", "ordinal"),)
 
     task_id: Mapped[UUID] = mapped_column(
         Uuid,

@@ -114,6 +114,21 @@ class Artifact(RecordModel):
         Uuid, ForeignKey("files.id", ondelete="set null"), nullable=True, default=None
     )
 
+    #: Where the bytes are, when they were kept. **Reading never needs
+    #: this** — every check runs off the rows below — and writing cannot
+    #: happen without it: a correction is a new version of a real file, and
+    #: there is no way to produce one from figures and cells.
+    #:
+    #: Null is a normal state, not a defect. It means the upload predates
+    #: retention, or the object store was unreachable when the file
+    #: arrived, or the document has since been dropped under the « keep the
+    #: chain, drop the documents » policy. Every one of those reads the
+    #: same way to a banker — the check still works and the correction has
+    #: to be re-uploaded — so they are one field and one sentence.
+    storage_path: Mapped[str | None] = mapped_column(
+        String(1024), nullable=True, default=None
+    )
+
     @declared_attr
     def file(cls) -> Mapped["File | None"]:
         return relationship("File", lazy="raise")
@@ -548,6 +563,122 @@ class Finding(RecordModel):
     )
 
 
+class CorrectionState(StrEnum):
+    #: Written down and not in the file. Everything starts here.
+    proposed = "proposed"
+    #: A banker accepted it and it is in the document.
+    applied = "applied"
+    #: A banker said the deck is right. The finding stands.
+    rejected = "rejected"
+    #: Applied, and then taken back out. The document reads as it did.
+    reversed = "reversed"
+    #: The write was attempted and refused. `error` says why, in words a
+    #: person can act on — « somebody has edited slide 3 since ».
+    failed = "failed"
+
+
+class CorrectionWhere(StrEnum):
+    #: The deal's own copy. Applying produces a new version of the file,
+    #: which anybody on the deal can download.
+    file = "file"
+    #: The copy open in Office in front of a banker, written by the panel.
+    #: The deal's copy is untouched until they upload what they saved.
+    document = "document"
+
+
+class Correction(RecordModel):
+    """« Slide 3 should read $48.9mm », and what became of it.
+
+    **A change is proposed, never applied.** Nothing in this product writes
+    to a document without a person pressing a button first, and this row is
+    where that person's decision lives. It carries both sides — what the
+    document says and what it should say — so the change is reversible
+    without a revision format the `.pptx` specification does not have. See
+    `docs/pierce/writing-pptx.md`.
+
+    **Keyed on the finding's fingerprint, not on its id.** Every check run
+    deletes its findings and writes them again, with identity carried by
+    the fingerprint; a correction hung on `finding_id` would be gone the
+    first time anybody pressed Re-check. This is the same key a dismissal
+    survives on, for the same reason.
+    """
+
+    __tablename__ = "tieout_corrections"
+    __table_args__ = (
+        UniqueConstraint(
+            "dossier_id", "fingerprint", name="uq_tieout_corrections_fingerprint"
+        ),
+        Index("ix_tieout_corrections_dossier_state", "dossier_id", "state"),
+    )
+
+    dossier_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("dossiers.id", ondelete="cascade"), nullable=False, index=True
+    )
+    #: The finding's durable identity. See the class docstring.
+    fingerprint: Mapped[str] = mapped_column(String(128), nullable=False)
+
+    #: The version the correction was proposed against, and the lineage it
+    #: belongs to. The lineage is what survives applying, because applying
+    #: makes a new version of the same document.
+    artifact_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("tieout_artifacts.id", ondelete="cascade"),
+        nullable=False,
+        index=True,
+    )
+    lineage_id: Mapped[UUID] = mapped_column(Uuid, nullable=False, index=True)
+    #: The version applying produced. Null until then, and null forever on
+    #: a correction the panel wrote into the document in front of a banker
+    #: — that file is on their machine and this deal has never seen it.
+    wrote_artifact_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("tieout_artifacts.id", ondelete="set null"),
+        nullable=True,
+        default=None,
+    )
+
+    #: Where the figure sits, in the coordinates the reader recorded — the
+    #: same anchor the panel navigates by, and the only thing that makes a
+    #: write land on the right characters rather than on the first match.
+    anchor: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default="{}"
+    )
+    page: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    #: Prose, for a screen: « slide 3, row « Adjusted EBITDA » ».
+    location: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    #: What the document says, and what it should say. Both sides, because
+    #: the database is the revision store.
+    before: Mapped[str] = mapped_column(String(64), nullable=False)
+    after: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    state: Mapped[CorrectionState] = mapped_column(
+        StrEnumType(CorrectionState, length=16),
+        nullable=False,
+        default=CorrectionState.proposed,
+        index=True,
+    )
+    where: Mapped[CorrectionWhere] = mapped_column(
+        StrEnumType(CorrectionWhere, length=16),
+        nullable=False,
+        default=CorrectionWhere.file,
+    )
+    #: Why a write was refused, in the writer's own words.
+    error: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
+
+    proposed_by_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="set null"), nullable=True, default=None
+    )
+    #: Who last accepted, rejected or reversed it. « Nothing leaves the
+    #: firm without a banker accepting it » is a sentence about this column.
+    decided_by_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="set null"), nullable=True, default=None
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+
+
 __all__ = [
     "Artifact",
     "ArtifactKind",
@@ -555,6 +686,9 @@ __all__ = [
     "CheckKind",
     "CheckRun",
     "CheckStatus",
+    "Correction",
+    "CorrectionState",
+    "CorrectionWhere",
     "Figure",
     "FigureLink",
     "Finding",
