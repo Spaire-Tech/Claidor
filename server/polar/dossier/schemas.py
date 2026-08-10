@@ -187,3 +187,22 @@ class MatterReviewRead(Schema):
     unreadable: int
     #: Files past the size ceiling, skipped rather than truncated.
     too_large: int
+
+
+class DossierDocumentText(Schema):
+    """A document's own words, for reading it in the workspace.
+
+    Separate from :class:`DossierDocumentRead` because it is large: a file
+    list of forty documents that each carried its full text would be
+    megabytes to render a sidebar. The preview asks for one document at a
+    time, which is also how a person reads.
+    """
+
+    id: UUID
+    title: str
+    piece_number: int | None
+    #: Absent when extraction did not succeed. The status says why, and the
+    #: reader is told rather than shown an empty document that looks blank.
+    text: str | None
+    extraction_status: ExtractionStatus
+    characters: int

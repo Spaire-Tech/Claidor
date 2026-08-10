@@ -222,3 +222,103 @@ class TestCheckMatterRoute:
             "literal",
             "occurrence",
         }
+
+
+@pytest.mark.asyncio
+class TestDocumentTextRoute:
+    """The preview pane's source, and why it must be the stored string.
+
+    Findings carry character offsets into exactly the text that was
+    checked. A preview showing a re-extraction, a trimmed copy or a
+    rendering would put every highlight somewhere else without anything
+    failing — the reader would look at correct-looking text with the
+    wrong sentence marked, and conclude the checks are noise.
+    """
+
+    @pytest.mark.auth
+    async def test_it_returns_the_text_the_check_ran_on(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        dossier = await _matter_with(session, save_fixture, user, readable=[DEFECTIVE])
+        checked = (await client.post(f"/v1/dossiers/{dossier.id}/check")).json()
+        document = checked["documents"][0]
+
+        response = await client.get(
+            f"/v1/dossiers/{dossier.id}/documents/{document['document_id']}/text"
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["text"] == DEFECTIVE
+        # The same length the check reported, or the offsets index a
+        # different string than the one on screen.
+        assert body["characters"] == document["characters"]
+
+    @pytest.mark.auth
+    async def test_a_findings_offsets_land_on_its_own_words(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        # The property the whole route exists for, checked end to end.
+        dossier = await _matter_with(session, save_fixture, user, readable=[DEFECTIVE])
+        checked = (await client.post(f"/v1/dossiers/{dossier.id}/check")).json()
+        document = checked["documents"][0]
+        finding = document["findings"][0]
+
+        text = (
+            await client.get(
+                f"/v1/dossiers/{dossier.id}/documents/{document['document_id']}/text"
+            )
+        ).json()["text"]
+
+        assert text[finding["start"] : finding["end"]] == finding["literal"]
+
+    @pytest.mark.auth
+    async def test_an_unreadable_document_says_so_rather_than_looking_blank(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        # Blank and unreadable look identical on screen and mean opposite
+        # things, so the difference has to be in the response.
+        dossier = await _matter_with(session, save_fixture, user, readable=[], scans=1)
+        listed = (await client.get(f"/v1/dossiers/{dossier.id}")).json()
+        document_id = listed["documents"][0]["id"]
+
+        body = (
+            await client.get(
+                f"/v1/dossiers/{dossier.id}/documents/{document_id}/text"
+            )
+        ).json()
+
+        assert body["text"] is None
+        assert body["extraction_status"] == "unextractable"
+        assert body["characters"] == 0
+
+    @pytest.mark.auth
+    async def test_someone_not_on_the_matter_cannot_read_a_document(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        dossier = await _matter_with(
+            session, save_fixture, stranger, readable=[DEFECTIVE]
+        )
+
+        response = await client.get(
+            f"/v1/dossiers/{dossier.id}/documents/"
+            "00000000-0000-0000-0000-000000000000/text"
+        )
+
+        assert response.status_code == 404

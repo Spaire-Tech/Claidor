@@ -29,6 +29,7 @@ from .schemas import (
     DossierCreate,
     DossierDocumentCreate,
     DossierDocumentRead,
+    DossierDocumentText,
     DossierDocumentUpdate,
     DossierListItem,
     DossierMemberAdd,
@@ -499,4 +500,45 @@ async def check_matter(
         characters=review.characters,
         unreadable=review.unreadable,
         too_large=review.too_large,
+    )
+
+
+@router.get(
+    "/{dossier_id}/documents/{document_id}/text",
+    response_model=DossierDocumentText,
+)
+async def read_document_text(
+    dossier_id: UUID,
+    document_id: UUID,
+    auth_subject: auth.DossierRead,
+    read_session: AsyncReadSession = Depends(get_db_read_session),
+) -> DossierDocumentText:
+    """One document's text, for the preview pane.
+
+    The findings from ``/check`` carry character offsets into exactly this
+    string, so a preview that showed anything else — a re-extraction, a
+    trimmed copy, a rendering — would put every highlight in the wrong
+    place without anything failing. It returns what was stored, unchanged.
+
+    A document whose extraction did not succeed returns ``text: null`` and
+    its status, rather than an empty string. Blank and unreadable look the
+    same on screen and mean opposite things.
+    """
+    await _get_dossier_or_404(read_session, dossier_id, auth_subject.subject.id)
+
+    repository = DossierRepository.from_session(read_session)
+    document = await repository.get_document(document_id, dossier_id)
+    if document is None:
+        raise ResourceNotFound(NOT_FOUND)
+
+    readable = document.extraction_status == ExtractionStatus.extracted
+    text = document.extracted_text if readable else None
+
+    return DossierDocumentText(
+        id=document.id,
+        title=document.title,
+        piece_number=document.piece_number,
+        text=text,
+        extraction_status=document.extraction_status,
+        characters=len(text or ""),
     )
