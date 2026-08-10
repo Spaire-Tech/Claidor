@@ -19,41 +19,34 @@
  * inside itself when there are more than fit, with the label column
  * pinned: a row of numbers with the name scrolled off is unreadable.
  *
- * A real model's values are `0.1222587719`. See `show()` — the honest
- * answer needs the workbook's number format, which is not read yet.
+ * A real model's values are `0.1222587719` where the model shows `12.2%`.
+ * The workbook carries a format code on every cell and the server reads
+ * it, so a row shows what the model draws and the exact value stays on the
+ * element's title. See `polar/tieout/numbers.py`.
  */
 
 import { useMemo, useState } from 'react'
 
-import type { Finding, ModelGrid } from '../api'
+import type { GridCell, Finding, ModelGrid } from '../api'
 import { Nothing, Truncation, useWindowed } from '../Dense'
 import { colour, font, size } from '../design'
 
-/** The width of a value column. Wide enough for « 1,234.5678 ». */
+/** The width of a value column. Wide enough for « (1,234.5) ». */
 const VALUE = 92
 /** The label column, pinned while the values scroll. */
 const LABEL = 260
 
 /**
- * A cell's value, at a precision a person can read.
+ * What a cell reads as.
  *
- * **This is a compromise and should not survive.** The workbook says how
- * every cell is meant to be displayed — `0.0%`, `#,##0.0`, `$#,##0` — and
- * that format is not read at ingest, so `0.1222587719` is all this has to
- * work with. Trimming to four decimals is the least dishonest thing
- * available: it never invents precision, and the exact value stays on the
- * element's title so nothing is hidden.
- *
- * The real fix is to read `number_format` when the workbook is read, which
- * is also what would let this screen show « 12.2% » where the model shows
- * a percentage. It is on the roadmap and it is not here yet.
+ * `display` when the workbook said how to draw it, and the plain value
+ * when it did not — a model written without formats, or a code the server
+ * refuses to guess at, and both are real. An unformatted number is honest;
+ * a guessed one would be the thing this whole product exists to catch.
  */
-function show(value: string | null): string {
-  if (value === null) return ''
-  const number = Number(value)
-  if (!Number.isFinite(number)) return value
-  const trimmed = Math.round(number * 10000) / 10000
-  return trimmed.toLocaleString(undefined, { maximumFractionDigits: 4 })
+function show(cell: GridCell | null): string {
+  if (!cell) return ''
+  return cell.display ?? cell.value ?? ''
 }
 
 export function Sheets({
@@ -241,7 +234,7 @@ export function Sheets({
                         color: cell?.linked ? colour.ink : colour.faint,
                       }}
                     >
-                      {show(cell?.value ?? null)}
+                      {show(cell)}
                     </span>
                   ))}
                 </div>

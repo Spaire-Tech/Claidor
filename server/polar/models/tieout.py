@@ -285,6 +285,14 @@ class ModelCell(RecordModel):
 
     row_label: Mapped[str] = mapped_column(Text, nullable=False, default="")
     column_label: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    #: The workbook's own format code — `0.0%`, `#,##0.0`, `"$"#,##0`.
+    #: Presentation, not data: the value stays exactly as Excel computed it
+    #: and this says how the model draws it. Without it a screen shows
+    #: `0.1222587719` where the model shows `12.2%`, which on a product
+    #: about printed precision is the screen contradicting the argument.
+    number_format: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, default=None
+    )
     #: « FY2025A Adjusted EBITDA ». Stored rather than derived so that a
     #: link can be re-found by name in a later version.
     name: Mapped[str] = mapped_column(Text, nullable=False, default="", index=True)

@@ -140,6 +140,12 @@ def _read_model(path: str) -> Ingested:
         outputs=published,
         counts={
             "sheets": len(book.sheets),
+            # The workbook's own tab order, which nothing else records and
+            # which cannot be recovered from the cells: a screen that lists
+            # sheets in whatever order the database returned them puts
+            # Assumptions before Model on one load and after it on the
+            # next.
+            "sheet_order": list(book.sheets),
             "cells": len(book.cells),
             "formulas": sum(1 for cell in book.cells.values() if cell.formula),
             "named": sum(1 for cell in book.cells.values() if cell.row_label),

@@ -43,6 +43,7 @@ from .ingest import Ingested, Unreadable, read_artifact
 from .link import link as propose_links
 from .link import rank as rank_outputs
 from .model import Output
+from .numbers import show
 from .provenance import chain as render_chain
 from .provenance import outputs_from_workbook
 from .repository import TieOutRepository
@@ -145,6 +146,7 @@ class TieOutService:
                         formula=cell.formula,
                         row_label=cell.row_label,
                         column_label=cell.column_label,
+                        number_format=cell.number_format,
                         name=cell.name,
                         precedents=list(cell.precedents),
                         alias_of=cell.alias_of,
@@ -625,15 +627,23 @@ class TieOutService:
             if link.state is not LinkState.rejected and link.cell_id in by_id
         }
 
-        #: Sheets in the workbook's own tab order, which is the order the
-        #: person who built it chose. Alphabetical would put Assumptions
-        #: before Model on every model ever written.
-        first_seen: dict[str, int] = {}
-        for index, cell in enumerate(cells):
-            first_seen.setdefault(cell.sheet, index)
+        #: Sheets in the workbook's own tab order — the order the person
+        #: who built the model chose. Recorded at ingest because it cannot
+        #: be recovered afterwards: the cells carry a sheet name and
+        #: nothing about where that tab sat, so ordering by anything they
+        #: hold gives alphabetical (Assumptions before Model, on every
+        #: model ever written) or whatever the database happened to
+        #: return, which is not stable between two loads of the same page.
+        tabs: list[str] = list(artifact.counts.get("sheet_order") or [])
+        present = {cell.sheet for cell in cells}
+        # A model ingested before the tab order was recorded, and any sheet
+        # that appeared since: appended in name order, so the answer is at
+        # least the same every time.
+        order = [name for name in tabs if name in present]
+        order += sorted(present - set(order))
 
         sheets: list[dict[str, Any]] = []
-        for name in sorted(first_seen, key=lambda one: first_seen[one]):
+        for name in order:
             here = [cell for cell in cells if cell.sheet == name]
             #: Columns left to right, keyed by heading rather than index:
             #: two columns headed FY2024A are one column to a reader, and a
@@ -654,6 +664,7 @@ class TieOutService:
                     {
                         "ref": cell.ref,
                         "value": _text(cell.value),
+                        "display": show(cell.value, cell.number_format),
                         "linked": cell.ref in linked_refs,
                     },
                 )

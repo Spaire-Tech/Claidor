@@ -102,6 +102,12 @@ class Cell:
     row_label: str
     #: Row 4: « FY2025A ». Empty on sheets laid out as label/value pairs.
     column_label: str
+    #: The workbook's own format code — `0.0%`, `#,##0.0`, `"$"#,##0`.
+    #: Presentation rather than data, and the only thing that can tell a
+    #: screen that `0.1222587719` is meant to read `12.2%`. Read here
+    #: rather than reconstructed later, because it is in the file and a
+    #: guess from the value never can be. See `numbers.show`.
+    number_format: str | None = None
     #: The cells this one is computed from, in the order they appear.
     precedents: tuple[str, ...] = ()
     #: Set when the whole formula is a single reference — `=Model!D26`,
@@ -270,6 +276,11 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
                 formula=formula,
                 row_label=labels.get(row, ""),
                 column_label=headers.get(column, "") if series else "",
+                # Off the *formula* book: the value book is loaded with
+                # `data_only`, and a legacy `.xls` read through xlrd has no
+                # format on its cells at all, which is why this is asked for
+                # rather than assumed to be there.
+                number_format=getattr(sheet.cell(row, column), "number_format", None),
                 precedents=references,
                 alias_of=_alias(formula, references),
             )

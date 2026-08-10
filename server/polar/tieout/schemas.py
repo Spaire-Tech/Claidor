@@ -414,7 +414,15 @@ class GridCell(Schema):
     """One cell of a sheet, at the row and column a banker would name it by."""
 
     ref: str
+    #: Exactly as Excel computed it, to every digit it holds. The number,
+    #: never rounded, so nothing downstream has to trust a rendering.
     value: str | None
+    #: The same number as the *model itself draws it* — « 12.2% », « $1,235 »,
+    #: « 9.9x » — from the format code the workbook carries on that cell.
+    #: `null` when the workbook says nothing this understands, and a screen
+    #: that gets `null` shows `value`: an unformatted number is honest and a
+    #: guessed one is not.
+    display: str | None
     #: True when a published figure points at this cell. This is the reason
     #: the grid is worth drawing at all: it is the difference between « the
     #: model says 228.9 » and « a deliverable is standing on this ».

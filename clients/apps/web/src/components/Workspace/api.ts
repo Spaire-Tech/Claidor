@@ -187,7 +187,15 @@ export interface FigureMap {
 
 export interface GridCell {
   ref: string
+  /** Exactly as Excel computed it, to every digit it holds. */
   value: string | null
+  /**
+   * The same number as the model itself draws it — « 12.2% », « $1,235 »,
+   * « 9.9x » — from the workbook's own format code. `null` when the
+   * workbook says nothing the server understands, and then the screen
+   * shows `value`: an unformatted number is honest, a guessed one is not.
+   */
+  display: string | null
   /** A deliverable is standing on this cell. */
   linked: boolean
 }
