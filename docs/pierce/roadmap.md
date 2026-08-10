@@ -11,6 +11,26 @@ what was intended.
 
 ---
 
+## Standing instruction, 10 August
+
+**Finish the product first. Improve the AI second.** The accuracy numbers
+are good enough to build on and are not to be chased further until the
+product is complete — 83 % on the deck, 56 % on the model, zero false
+alarms on both. `accuracy-backlog.md` holds everything known about how to
+raise them, written down so it can be picked up cold. Do not wander back
+into it.
+
+What « complete » means, in order:
+
+1. **The agent.** The composer on the front screen accepts a question and
+   nothing answers. It is the first thing anyone sees and it is dead.
+2. **Writing.** « Record $48.9mm » becomes « Accept » — the correction
+   goes into the file, reversibly.
+3. The five dock screens that say « not connected »: Mail, Calendar,
+   SharePoint, Projects, Terminal.
+
+---
+
 ## The line the product is standing on
 
 **Reading is nearly finished. Writing has not started.**
