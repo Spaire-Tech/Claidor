@@ -1141,3 +1141,87 @@ that says 39.6. The trailing zero is the precision the chart carries.
 | # | Assumption | Was | Now |
 |---|---|---|---|
 | 14 | Charts restate the table beside them, so skipping them loses nothing | [assumption] | **False.** Two of the nine wrong figures in the clean deck are visible only in a chart |
+
+---
+
+# 10 August, end of day — the audit meets 1,590 spreadsheets nobody built for it
+
+EUSES was reachable the whole time. I had recorded it as blocked without
+checking, which was wrong and cost nothing only because the check took
+thirty seconds once I made it.
+
+The `financial` and `modeling` categories — 1,590 real workbooks harvested
+from the open web, the corpus the whole spreadsheet-error literature is
+built on, CC-BY-4.0 on Zenodo.
+
+## The result
+
+| | |
+|---|---|
+| Read | **1,577 of 1,590 (99.2%)** |
+| Cells / formulas | 694,719 / 202,499 |
+| Time | 41 seconds |
+| Errors | **1,160 = 0.573% of formulas** |
+| **Spreadsheets with nothing at all** | **1,481 of 1,577 (94%)** |
+
+| Rule | Findings |
+|---|---|
+| `skipped-cell` | 500 |
+| `error-value` | 472 |
+| `circular` | 105 |
+| `typed-over-formula` | 59 |
+| `inconsistent-row` | 24 |
+
+The loudest files are genuinely broken: `hg_science_activities.xls` has
+133 cells showing `#REF!`, `price.xls` has 66 where a deleted external
+workbook used to be. Those are not noise, they are what a spreadsheet
+looks like after somebody deletes the sheet it depended on.
+
+## What the corpus taught, that models could not
+
+**A model was hanging the run.** Twenty minutes on 1,590 files that a
+40-file sample said would take 48 seconds. Not size — the largest files
+read in under a second. `precedents_of` expands a range cell by cell, and
+somebody who selects whole columns writes `SUM(A1:A20000)`, which is
+twenty thousand strings per formula. Capped at 200, which is more than any
+chain display or cycle check reads. **41 seconds for the whole corpus.**
+
+**`typed-over-formula` was firing 1,264 times, and 95% of it was wrong.**
+The rule required a lone constant *across* its row, and
+`CollarsAnalysisv3-1.XLS` has three columns of typed parameters running
+*down* the sheet — each of them lone in its own row and obviously data
+when you look at the column. A value pasted over a formula is surrounded
+by formulas on all four sides, so the rule now checks both directions.
+**1,264 → 59**, and the fixture unaffected.
+
+**My metric said one file was 400% wrong.** Findings per *formula*, when
+`error-value` fires on cells that hold a broken reference whether or not
+they calculate. A file with six formulas and twenty-four dead cells came
+out at 400%. Now per cell.
+
+## Two proposed fixes that would have destroyed real findings
+
+Reading the sample by hand before changing anything caught both.
+
+`ribimv001.xls` reports six `skipped-cell` findings on a row labelled
+**Total**: `=SUM(D18:D27)` where D28, D29 and D30 carry the same shape of
+formula as D26 and D27 — the block continues three rows past the total.
+I was about to suppress skipped-cell wherever the omitted rows held
+formulas, on the theory that a formula above a total is a subtotal being
+correctly excluded. That would have thrown away the exact error every
+published catalogue of spreadsheet disasters opens with.
+
+And `UT_Modeling_Tools.xls!C115` computes `=+C152*...` where the rest of
+its row computes `=+D104*...`, `=+E104*...` — one cell in a series
+pointing at row 152 instead of row 104. A textbook inconsistent formula,
+found in a file nobody labelled.
+
+## What is still not measured
+
+Precision. EUSES has no ground truth, so « 94% of spreadsheets produce
+nothing » is a rate and not an accuracy. The hand-reading above is a
+sample of maybe twenty findings, and every one I checked was either
+genuinely wrong or genuinely fine — but twenty is twenty.
+
+CUSTODES remains the only answer and remains one allowlisted hostname
+away. Everything else it needed — a `.xls` reader — now exists.

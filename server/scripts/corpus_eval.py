@@ -24,6 +24,7 @@ place for it.
 """
 
 import glob
+import signal
 import sys
 import time
 import urllib.request
@@ -40,7 +41,19 @@ ZENODO = "https://zenodo.org/records/581673/files/{}.zip?download=1"
 CATEGORIES = ("financial", "modeling")
 CACHE = Path(__file__).resolve().parents[1] / ".corpus-cache"
 
-#: A model with more findings than this per hundred formulas is either
+#: How long one spreadsheet may take before it is abandoned. A corpus
+#: harvested from the open web contains files that are enormous, corrupt,
+#: or both, and one of them must not stop the other fifteen hundred. The
+#: count of skipped files is reported, because a run that quietly dropped
+#: the hard cases is not a measurement.
+BUDGET_SECONDS = 20
+
+
+class TooSlow(Exception):
+    pass
+
+
+#: A model with more findings than this per hundred cells is either
 #: badly broken or being misread, and the difference is only visible by
 #: hand. Printed so that the tail gets looked at rather than averaged away.
 LOUD = 5.0
@@ -82,14 +95,21 @@ def run(root: Path) -> None:
     clean = 0
     loud: list[tuple[float, int, int, str]] = []
 
-    for path in files:
+    signal.signal(signal.SIGALRM, lambda *_: (_ for _ in ()).throw(TooSlow()))
+
+    for index, path in enumerate(files, start=1):
+        if index % 200 == 0:
+            print(f"    ...{index}/{len(files)}", flush=True)
         try:
+            signal.setitimer(signal.ITIMER_REAL, BUDGET_SECONDS)
             book = read_workbook(path)
             result = audit(book)
         except Exception as error:
             failed += 1
             reasons[type(error).__name__] += 1
             continue
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
 
         read += 1
         cells += len(book.cells)
@@ -99,11 +119,14 @@ def run(root: Path) -> None:
         if not result.errors:
             clean += 1
         elif here:
+            # Per *cell*, not per formula: `error-value` fires on cells
+            # that hold a broken reference whether or not they calculate,
+            # so dividing by the formula count reported one file at 400%.
             loud.append(
                 (
-                    100 * len(result.errors) / here,
+                    100 * len(result.errors) / max(len(book.cells), 1),
                     len(result.errors),
-                    here,
+                    len(book.cells),
                     Path(path).name,
                 )
             )
@@ -118,9 +141,9 @@ def run(root: Path) -> None:
         print(f"    {rule:<24} {count:>5}")
 
     noisy = [row for row in loud if row[0] >= LOUD]
-    print(f"\n  louder than {LOUD:.0f} findings per 100 formulas: {len(noisy)}")
+    print(f"\n  louder than {LOUD:.0f} findings per 100 cells: {len(noisy)}")
     for rate, count, here, name in sorted(noisy, reverse=True)[:10]:
-        print(f"    {name[:44]:<44} {count:>4} / {here:>5}  ({rate:.0f}%)")
+        print(f"    {name[:44]:<44} {count:>4} / {here:>6} cells  ({rate:.0f}%)")
 
 
 if __name__ == "__main__":

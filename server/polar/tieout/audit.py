@@ -40,6 +40,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 
 from openpyxl.formula.tokenizer import Tokenizer
+from openpyxl.utils import get_column_letter
 
 from .workbook import REFERENCE, Cell, Workbook
 
@@ -327,6 +328,13 @@ def _rows(book: Workbook, result: Audit) -> None:
                 # to none, and cost the fixture nothing.
                 if run[index - 1].formula is None or run[index + 1].formula is None:
                     continue
+                # And lone down the column too. A value pasted over a
+                # formula is surrounded by formulas on all four sides; a
+                # constant with another constant directly above or below
+                # it belongs to a column of typed parameters, which is
+                # what `CollarsAnalysisv3-1.XLS` has three of.
+                if _stacked(book, cell):
+                    continue
                 result.findings.append(
                     Finding(
                         rule="typed-over-formula",
@@ -429,6 +437,15 @@ def _runs(cells: list[Cell]) -> list[list[Cell]]:
         else:
             runs.append([cell])
     return runs
+
+
+def _stacked(book: Workbook, cell: Cell) -> bool:
+    """True when a constant has a constant directly above or below it."""
+    for row in (cell.row - 1, cell.row + 1):
+        neighbour = book.get(f"{cell.sheet}!{get_column_letter(cell.column)}{row}")
+        if neighbour is not None and neighbour.formula is None:
+            return True
+    return False
 
 
 def _boundaries(rows: dict[tuple[str, int], list[Cell]]) -> dict[str, int]:

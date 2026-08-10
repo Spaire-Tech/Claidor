@@ -157,3 +157,7 @@ server/.tinyb
 # Real models downloaded by scripts/audit_eval.py for calibration. Free to
 # use, not ours to redistribute.
 server/.model-cache/
+
+# EUSES, downloaded by scripts/corpus_eval.py. CC-BY-4.0, and 50MB of
+# somebody else%s files is not what a source repository is for.
+server/.corpus-cache/

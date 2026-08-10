@@ -61,6 +61,13 @@ DERIVED_ROW = re.compile(
     re.IGNORECASE,
 )
 
+#: How many cells a range in a formula is expanded to. `SUM(A1:A20)` is
+#: worth knowing cell by cell; `SUM(A1:IV65536)` is sixteen million
+#: strings and says nothing the first two hundred do not. The cap bounds
+#: the work on a workbook built by somebody who selected whole columns,
+#: which is most workbooks in the wild and none of the models seen so far.
+MAX_RANGE = 200
+
 #: A cell or range inside a formula, with an optional sheet. Quoted sheet
 #: names — 'Cash Flow'!B4 — are the reason this is not a two-line split.
 REFERENCE = re.compile(
@@ -296,11 +303,14 @@ def precedents_of(formula: str, sheet: str) -> tuple[str, ...]:
         if not last_row:
             refs = [f"{where}!{match.group('column')}{first_row}"]
         else:
-            refs = [
-                f"{where}!{get_column_letter(column)}{row}"
-                for row in range(first_row, last_row + 1)
-                for column in range(first_column, last_column + 1)
-            ]
+            refs = []
+            for row in range(first_row, last_row + 1):
+                for column in range(first_column, last_column + 1):
+                    if len(refs) >= MAX_RANGE:
+                        break
+                    refs.append(f"{where}!{get_column_letter(column)}{row}")
+                if len(refs) >= MAX_RANGE:
+                    break
         for ref in refs:
             if ref not in seen:
                 seen.add(ref)
