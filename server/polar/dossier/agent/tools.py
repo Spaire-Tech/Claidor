@@ -22,10 +22,12 @@ serialised at the edge; what the trace stores is the same object; what a
 test asserts on is the object too. One representation, three readers.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
+from polar.agent import ToolResult, Toolset
 from polar.models.dossier import DossierDocument
 from polar.redline import review_document
 from polar.redline.terms import Severity
@@ -54,17 +56,6 @@ class Workspace:
             if str(document.id) == str(document_id):
                 return document
         return None
-
-
-@dataclass
-class ToolResult:
-    """What a tool did, in a form the model, the trace and a test all read."""
-
-    ok: bool
-    #: One line for the trace: « Read Project_Atlas_SPA.docx ».
-    summary: str
-    #: The payload the model receives.
-    data: dict[str, Any] = field(default_factory=dict)
 
 
 def _refuse(summary: str) -> ToolResult:
@@ -369,3 +360,12 @@ __all__ = [
     "run_tool",
     "search_documents",
 ]
+
+
+#: This product's whole vocabulary, in one object the loop can be handed.
+TOOLSET = Toolset(
+    name="dossier",
+    definitions=DEFINITIONS,
+    run=run_tool,
+    prompt_path=Path(__file__).parent / "prompt.md",
+)

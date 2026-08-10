@@ -23,13 +23,13 @@ from uuid import UUID
 import anthropic
 import structlog
 
+from polar.agent import AGENT_MODEL, MAX_STEPS, Client, Outcome, run
 from polar.config import settings
 from polar.models import AgentStep, AgentTask
 from polar.postgres import AsyncSession
 
 from ..repository import DossierRepository
-from .loop import AGENT_MODEL, Client, MAX_STEPS, Outcome, run
-from .tools import Workspace
+from .tools import TOOLSET, Workspace
 
 log = structlog.get_logger()
 
@@ -131,6 +131,7 @@ async def run_task(
     workspace = await load_workspace(session, dossier_id)
     outcome = await run(
         client or build_client(),
+        TOOLSET,
         workspace,
         prompt,
         model=model,

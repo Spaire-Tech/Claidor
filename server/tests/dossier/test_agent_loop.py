@@ -15,8 +15,8 @@ from uuid import uuid4
 
 import pytest
 
-from polar.dossier.agent.loop import Stopped, run
-from polar.dossier.agent.tools import Workspace
+from polar.agent import Stopped, run
+from polar.dossier.agent.tools import TOOLSET, Workspace
 from polar.models.dossier import DossierDocument
 
 
@@ -107,7 +107,7 @@ class TestTheHappyPath:
     async def test_an_answer_with_no_tools_is_still_an_answer(self) -> None:
         client = FakeClient(says("Nothing in this matter bears on that."))
 
-        outcome = await run(client, workspace(), "Anything?")
+        outcome = await run(client, TOOLSET, workspace(), "Anything?")
 
         assert outcome.complete
         assert outcome.steps == []
@@ -120,7 +120,7 @@ class TestTheHappyPath:
             says("No indemnity."),
         )
 
-        outcome = await run(client, workspace(document("nothing here")), "Indemnity?")
+        outcome = await run(client, TOOLSET, workspace(document("nothing here")), "Indemnity?")
 
         assert [step.tool for step in outcome.steps] == [
             "list_documents",
@@ -134,21 +134,21 @@ class TestTheHappyPath:
             calls_many("list_documents", "list_documents"), says("Done.")
         )
 
-        outcome = await run(client, workspace(document("x")), "Go")
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Go")
 
         assert len(outcome.steps) == 2
 
     async def test_the_trace_reads_as_vesence_shows_it(self) -> None:
         client = FakeClient(calls("list_documents"), says("Done."))
 
-        outcome = await run(client, workspace(document("x")), "Go")
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Go")
 
         assert outcome.trace().startswith("Used 1 tool")
 
     async def test_tokens_are_added_up_across_turns(self) -> None:
         client = FakeClient(calls("list_documents"), says("Done."))
 
-        outcome = await run(client, workspace(document("x")), "Go")
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Go")
 
         assert outcome.input_tokens == 20
         assert outcome.output_tokens == 10
@@ -164,7 +164,7 @@ class TestWhenItCannotFinish:
         client = FakeClient(*[calls("list_documents") for _ in range(10)])
 
         outcome = await run(
-            client, workspace(document("x")), "Check everything", max_steps=3
+            client, TOOLSET, workspace(document("x")), "Check everything", max_steps=3
         )
 
         assert outcome.stopped == Stopped.step_limit
@@ -181,7 +181,7 @@ class TestWhenItCannotFinish:
             says("never reached"),
         )
 
-        outcome = await run(client, workspace(document("x")), "Go", max_steps=3)
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Go", max_steps=3)
 
         assert len(outcome.steps) == 2
         assert outcome.stopped == Stopped.step_limit
@@ -189,7 +189,7 @@ class TestWhenItCannotFinish:
     async def test_a_model_error_invents_no_answer(self) -> None:
         client = FakeClient(RuntimeError("the provider is down"))
 
-        outcome = await run(client, workspace(), "Anything?")
+        outcome = await run(client, TOOLSET, workspace(), "Anything?")
 
         assert outcome.stopped == Stopped.failed
         assert outcome.answer == ""
@@ -200,7 +200,7 @@ class TestWhenItCannotFinish:
         # What was done is still true, and the reader should see it.
         client = FakeClient(calls("list_documents"), RuntimeError("timeout"))
 
-        outcome = await run(client, workspace(document("x")), "Go")
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Go")
 
         assert outcome.stopped == Stopped.failed
         assert len(outcome.steps) == 1
@@ -213,7 +213,7 @@ class TestWhenTheModelMisbehaves:
         # went straight to the answer.
         client = FakeClient(calls("delete_everything"), says("Sorry, I tried that."))
 
-        outcome = await run(client, workspace(), "Go")
+        outcome = await run(client, TOOLSET, workspace(), "Go")
 
         assert outcome.complete
         assert len(outcome.steps) == 1
@@ -225,7 +225,7 @@ class TestWhenTheModelMisbehaves:
             calls("read_document", {"document_id": str(uuid4())}), says("Cannot.")
         )
 
-        outcome = await run(client, workspace(document("x")), "Read it")
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Read it")
 
         assert outcome.steps[0].ok is False
         assert "(refused)" in outcome.trace()
@@ -233,7 +233,7 @@ class TestWhenTheModelMisbehaves:
     async def test_bad_arguments_do_not_end_the_run(self) -> None:
         client = FakeClient(calls("read_document", {"nonsense": 1}), says("Recovered."))
 
-        outcome = await run(client, workspace(document("x")), "Go")
+        outcome = await run(client, TOOLSET, workspace(document("x")), "Go")
 
         assert outcome.complete
         assert outcome.steps[0].ok is False
@@ -245,21 +245,21 @@ class TestWhatTheModelIsGiven:
         from polar.dossier.agent.tools import TOOLS
 
         client = FakeClient(says("Done."))
-        await run(client, workspace(), "Go")
+        await run(client, TOOLSET, workspace(), "Go")
 
         offered = {tool["name"] for tool in client.messages.calls[0]["tools"]}
         assert offered == set(TOOLS)
 
     async def test_the_system_prompt_is_sent(self) -> None:
         client = FakeClient(says("Done."))
-        await run(client, workspace(), "Go")
+        await run(client, TOOLSET, workspace(), "Go")
 
         system = client.messages.calls[0]["system"]
         assert "list_documents" in system
 
     async def test_tool_results_are_fed_back(self) -> None:
         client = FakeClient(calls("list_documents"), says("Done."))
-        await run(client, workspace(document("x")), "Go")
+        await run(client, TOOLSET, workspace(document("x")), "Go")
 
         # Turn two carries the assistant's tool_use and the tool's result.
         second = client.messages.calls[1]["messages"]
@@ -321,7 +321,7 @@ class TestTheFakeIsNotLying:
             def __init__(self) -> None:
                 self.messages = RealShapedMessages()
 
-        outcome = await run(RealShapedClient(), workspace(document("x")), "Go")
+        outcome = await run(RealShapedClient(), TOOLSET, workspace(document("x")), "Go")
 
         assert outcome.complete
         assert [step.tool for step in outcome.steps] == ["list_documents"]

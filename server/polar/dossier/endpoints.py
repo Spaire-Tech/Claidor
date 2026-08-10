@@ -51,7 +51,7 @@ from .schemas import (
     MatterReviewRead,
 )
 from .agent import service as agent_service
-from .agent.loop import Stopped
+from polar.agent import Stopped
 from .agent.service import AgentNotConfigured, build_client
 from .crosscheck import Commitment, cross_check
 from .review import review_matter

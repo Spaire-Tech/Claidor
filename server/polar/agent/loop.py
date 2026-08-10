@@ -27,16 +27,13 @@ when a model misbehaves.
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Protocol
 
 import structlog
 
-from .tools import DEFINITIONS, Workspace, run_tool
+from .toolset import Toolset
 
 log = structlog.get_logger()
-
-PROMPT_PATH = Path(__file__).parent / "prompt.md"
 
 AGENT_MODEL = "claude-opus-5"
 
@@ -122,10 +119,6 @@ class Outcome:
         return "\n".join(lines)
 
 
-def system_prompt() -> str:
-    return PROMPT_PATH.read_text(encoding="utf-8")
-
-
 def _text_of(message: Message) -> str:
     return "\n".join(
         block.text for block in message.content if getattr(block, "type", "") == "text"
@@ -140,13 +133,21 @@ def _tool_uses(message: Message) -> list[Any]:
 
 async def run(
     client: Client,
-    workspace: Workspace,
+    toolset: Toolset,
+    workspace: Any,
     prompt: str,
     *,
     model: str = AGENT_MODEL,
     max_steps: int = MAX_STEPS,
 ) -> Outcome:
-    """Work the prompt against the matter, and report what was done."""
+    """Work the prompt with one toolset, and report what was done.
+
+    The toolset carries the tools, their definitions and the system prompt
+    that explains them, so this loop is the same loop whether it is
+    reconciling a deck or reading a contract. What differs between the two
+    products is *what the agent can do*, and that belongs in a toolset
+    rather than in a second copy of the control flow.
+    """
     outcome = Outcome(answer="")
     messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
     ordinal = 0
@@ -156,16 +157,16 @@ async def run(
             response = await client.messages.create(
                 model=model,
                 max_tokens=MAX_TOKENS,
-                system=system_prompt(),
-                tools=DEFINITIONS,
+                system=toolset.prompt(),
+                tools=toolset.definitions,
                 messages=messages,
             )
-        except Exception as error:  # noqa: BLE001 — every SDK error is the same to us
+        except Exception as error:
             # No answer is invented. A run that could not finish reports
             # that it could not finish.
             outcome.stopped = Stopped.failed
             outcome.error = str(error)
-            log.warning("dossier.agent.failed", error=str(error))
+            log.warning("agent.failed", toolset=toolset.name, error=str(error))
             return outcome
 
         outcome.input_tokens += getattr(response.usage, "input_tokens", 0)
@@ -184,7 +185,8 @@ async def run(
             outcome.answer = _text_of(response)
             outcome.stopped = Stopped.step_limit
             log.info(
-                "dossier.agent.step_limit",
+                "agent.step_limit",
+                toolset=toolset.name,
                 steps=len(outcome.steps),
                 max_steps=max_steps,
             )
@@ -197,7 +199,7 @@ async def run(
             ordinal += 1
             started = time.monotonic()
             arguments = dict(use.input) if isinstance(use.input, dict) else {}
-            result = run_tool(workspace, use.name, arguments)
+            result = toolset.run(workspace, use.name, arguments)
             elapsed = int((time.monotonic() - started) * 1000)
 
             outcome.steps.append(
@@ -235,6 +237,6 @@ __all__ = [
     "Outcome",
     "Step",
     "Stopped",
+    "Toolset",
     "run",
-    "system_prompt",
 ]

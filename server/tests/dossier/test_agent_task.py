@@ -12,8 +12,8 @@ from uuid import uuid4
 
 import pytest
 
+from polar.agent import Stopped
 from polar.dossier.agent import service as agent_service
-from polar.dossier.agent.loop import Stopped
 from polar.dossier.repository import DossierRepository
 from polar.kit.db.postgres import AsyncSession
 from polar.models import DocumentCategory, ExtractionStatus, User
