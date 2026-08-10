@@ -27,6 +27,7 @@ Cascade it is also what found six wrong figures in the deck supplied as
 the clean reference.
 """
 
+from .audit import Audit, Finding, audit
 from .check import Drift, TieOut, tie_out, tie_out_against
 from .deck import read_deck
 from .figures import Figure
@@ -36,16 +37,19 @@ from .provenance import BadReference, chain, outputs_from_workbook, verify_outpu
 from .workbook import Cell, Workbook, read_workbook
 
 __all__ = [
+    "Audit",
     "BadReference",
     "Cell",
     "Drift",
     "Figure",
+    "Finding",
     "Link",
     "Output",
     "OutputsMissing",
     "TieOut",
     "Unlinked",
     "Workbook",
+    "audit",
     "chain",
     "link",
     "outputs_from_workbook",

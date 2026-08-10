@@ -80,8 +80,12 @@ class Cell:
     ref: str
     row: int
     column: int
-    #: The cached value, as Excel last computed it.
-    value: Decimal
+    #: The cached value, as Excel last computed it — or None when there
+    #: is none. A workbook written by a generator and never opened in
+    #: Excel has formulas and no values at all, which makes it invisible
+    #: to anything that keys on values and perfectly readable to the
+    #: audit, which only needs the formulas.
+    value: Decimal | None
     #: The formula, when there is one. `None` for a hardcoded input — which
     #: is itself worth knowing, and is most of the model audit.
     formula: str | None
@@ -118,10 +122,28 @@ class Cell:
         return self.formula is None
 
 
+#: Excel's own error values. `#REF!` and `#NAME?` are always defects —
+#: a deleted row, a typo'd function. `#N/A` and `#DIV/0!` are frequently
+#: deliberate in a template with empty inputs, which is why the audit
+#: grades them differently rather than counting them together.
+ERROR_VALUES = frozenset(
+    {"#REF!", "#NAME?", "#VALUE!", "#NULL!", "#NUM!", "#N/A", "#DIV/0!"}
+)
+
+
 @dataclass
 class Workbook:
     cells: dict[str, Cell] = field(default_factory=dict)
     sheets: list[str] = field(default_factory=list)
+    #: Cells whose cached value is one of Excel's error values.
+    errors: dict[str, str] = field(default_factory=dict)
+    #: Sheets Excel is hiding. Concealment is a repeated cause in every
+    #: published catalogue of spreadsheet disasters, so it is recorded
+    #: even though hiding a working sheet is often perfectly innocent.
+    hidden_sheets: tuple[str, ...] = ()
+    #: True when the workbook has iterative calculation switched on, which
+    #: is a model saying its circular references are deliberate.
+    iterative: bool = False
 
     def get(self, ref: str) -> Cell | None:
         return self.cells.get(ref)
@@ -136,9 +158,24 @@ def read_workbook(path: str) -> Workbook:
     formulas = load_workbook(path, data_only=False)
     values = load_workbook(path, data_only=True)
 
-    book = Workbook(sheets=list(formulas.sheetnames))
+    book = Workbook(
+        sheets=list(formulas.sheetnames),
+        hidden_sheets=tuple(
+            name
+            for name in formulas.sheetnames
+            if getattr(formulas[name], "sheet_state", "visible") != "visible"
+        ),
+        iterative=bool(getattr(formulas.calculation, "iterate", False)),
+    )
     for name in formulas.sheetnames:
-        _read_sheet(book, name, formulas[name], values[name])
+        sheet = formulas[name]
+        # A chart sheet is a sheet in the file format and a picture to
+        # everybody else: no cells, no grid, no `max_row`. Real models
+        # have them and the Cascade test pair does not, which is the sort
+        # of thing only a real model tells you.
+        if not hasattr(sheet, "max_row"):
+            continue
+        _read_sheet(book, name, sheet, values[name])
     return book
 
 
@@ -173,13 +210,22 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
                 headers[column] = raw.strip()
 
     for row in range(1, sheet.max_row + 1):
+        for column in range(1, sheet.max_column + 1):
+            shown = cached.cell(row, column).value
+            if isinstance(shown, str) and shown.strip() in ERROR_VALUES:
+                book.errors[f"{name}!{get_column_letter(column)}{row}"] = shown.strip()
+
+    for row in range(1, sheet.max_row + 1):
         if row == header_row:
             continue
         numeric = [
             column
             for column in range(1, sheet.max_column + 1)
             if column != label_column
-            and _decimal(cached.cell(row, column).value) is not None
+            and (
+                _decimal(cached.cell(row, column).value) is not None
+                or _formula(sheet.cell(row, column).value) is not None
+            )
         ]
         # A row carrying one number is a label and a value — « Enterprise
         # value | 489.5 » in a valuation bridge. A row carrying several is
@@ -191,14 +237,7 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
 
         for column in numeric:
             number = _decimal(cached.cell(row, column).value)
-            if number is None:  # pragma: no cover - numeric was built from this
-                continue
-            raw_formula = sheet.cell(row, column).value
-            formula = (
-                raw_formula
-                if isinstance(raw_formula, str) and raw_formula.startswith("=")
-                else None
-            )
+            formula = _formula(sheet.cell(row, column).value)
             references = precedents_of(formula, name) if formula else ()
             ref = f"{name}!{get_column_letter(column)}{row}"
             book.cells[ref] = Cell(
@@ -307,6 +346,10 @@ def _label_column(sheet: Any) -> int:
         if texts > most:
             best, most = column, texts
     return best
+
+
+def _formula(value: Any) -> str | None:
+    return value if isinstance(value, str) and value.startswith("=") else None
 
 
 def _decimal(value: Any) -> Decimal | None:

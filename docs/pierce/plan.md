@@ -296,3 +296,59 @@ assumption — a false positive is much worse, and every gate is set that
 way. On Cascade that cost nothing, because all 23 output rows were reached
 anyway. On a deck whose model names things differently it will cost
 recall, and how much is tolerable is a banker's judgement, not mine.
+
+---
+
+# Phase 1 — the model audit, built and measured, 10 August 2026
+
+`server/polar/tieout/audit.py`. Checks a model against itself: no deck, no
+linking, no judgement about what a figure is called. The check a banker
+runs first, because it finds errors in their own work.
+
+Nine rules, each drawn from at least two of the FAST Standard, the ICAEW
+*Twenty Principles*, SMART and Operis, and each finding cites its source.
+
+| Rule | Grade | What it catches |
+|---|---|---|
+| `inconsistent-row` | error | One cell in a series unlike the rest |
+| `typed-over-formula` | error | A constant typed over a calculation |
+| `skipped-cell` | error | A total that leaves out the row above it |
+| `circular` | error | A loop, when iteration is not switched on |
+| `external-link` | error | A reference into a workbook that is not here |
+| `error-value` | error / smell | `#REF!` and `#NAME?` / `#N/A` and `#DIV/0!` |
+| `hardcode-in-formula` | smell | An assumption buried where nobody will change it |
+| `inconsistent-anchoring` | smell | Right answer today, wrong the moment it is copied |
+| `volatile`, `long-formula` | smell | `OFFSET`, `INDIRECT`; formulas nobody can read |
+
+**Measured: 9 of 9 planted defects, 0 false positives**, against a fixture
+whose defects are at known addresses and whose eight *innocent* structures
+were each a false positive on a real model first.
+
+On four real Damodaran valuation models — 2,000 to 9,200 cells each — 0 to
+3 errors per model, under half a per cent of formulas. **Precision there is
+not measured.** They carry no labelled ground truth, and the code says so
+rather than quoting a number it cannot support.
+
+## What would change the picture
+
+The only hand-labelled corpus is CUSTODES: seventy sheets from EUSES,
+marked by its authors, and the place the published baselines live —
+CUSTODES at 20.3% mean per-workbook precision, ExceLint at a median of 1.0
+on the same data. It is outside this environment's egress allowlist and
+is legacy binary `.xls` besides, which nothing here can read.
+
+Two things unblock it, and they are the highest-value hour available:
+**allowlist `sccpu2.cse.ust.hk`**, and **a legacy `.xls` reader** — which
+also unlocks the other sixty-nine Damodaran models, all of EUSES, and the
+Enron corpus. That is the difference between « the rate is low » and « the
+precision is X ».
+
+## Still not built
+
+- **Cross-foot and three-statement articulation.** Does the balance sheet
+  balance, do the flows tie. Needs the statement structure recognised, not
+  just the grid.
+- **Deliverable-to-source.** The corpus for it exists and is free: 8-K
+  Exhibit 99.1 investor decks against the 10-K or 10-Q whose figures they
+  quote. Those decks are PDFs, so it needs a PDF figure extractor before
+  it needs anything else.

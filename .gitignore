@@ -153,3 +153,7 @@ server/.tinyb
 
 # Wrangler
 .wrangler/
+
+# Real models downloaded by scripts/audit_eval.py for calibration. Free to
+# use, not ours to redistribute.
+server/.model-cache/

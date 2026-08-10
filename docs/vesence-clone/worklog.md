@@ -872,3 +872,115 @@ correct run look wrong. The pattern is now well enough established to name:
 data rather than the data.** The README about the breaks, the Outputs tab
 about the cells, the clean deck about being clean. Each was believable and
 each was wrong, and each time the fix was the same — go and look.
+
+---
+
+# 10 August, evening — the model audit, and a corpus that was reachable
+
+A corpus survey arrived. Its most useful section was not a corpus: **Target
+4**, two dozen mechanically checkable rules distilled from the FAST
+Standard, the ICAEW *Twenty Principles*, SMART and Operis. That is a
+specification for Phase 1, and `workbook.py` — written this afternoon —
+already reads everything the rules need.
+
+## What was reachable and what was not
+
+| | |
+|---|---|
+| Damodaran's models | **Yes.** Four in native `.xlsx`, downloaded and used |
+| EDGAR, Zenodo | Reachable, not yet used |
+| **CUSTODES** — the only hand-labelled error corpus | **Blocked.** `sccpu2.cse.ust.hk` is outside this environment's egress allowlist |
+| The legacy `.xls` majority of every corpus | **Blocked.** LibreOffice refuses to load them and openpyxl cannot read them at all |
+
+CUSTODES is the measurement that matters, because it is the only one with
+labelled ground truth and the only place the published baselines live —
+CUSTODES itself at 20.3% mean per-workbook precision, ExceLint at a median
+of 1.0 on the same data. Not reachable from here, and the corpus is
+legacy binary besides.
+
+So the same move that worked for the deck: **build the ground truth.**
+`scripts/cascade/build_audit_fixture.py` writes a model with nine defects
+at known addresses and eight structures that look like defects and are
+not. Recall is now a test, not a claim.
+
+## The result
+
+**9 of 9 planted defects found, 0 false positives.** And on real models:
+
+| | cells | formulas | errors | smells |
+|---|---|---|---|---|
+| cascade_model | 313 | 228 | **0** | 1 |
+| capstru | 2,113 | 927 | **0** | 59 |
+| fcffginzu | 6,763 | ~890 | 1 | 164 |
+| fcffsimpleginzu | 9,167 | ~1,230 | 3 | 145 |
+| fcffsimpleginzuCorona | 6,722 | ~1,060 | 2 | 87 |
+
+**Precision on the real models is not measured and the code says so.**
+They have no labelled ground truth. What is measured is that the rate is
+low — under half a per cent of formulas — and that a well-built model
+(Cascade) produces zero errors, which is the property an audit has to have
+before anything else about it matters.
+
+## The eight exemptions, each of them a false positive first
+
+The first run reported **18, 15, 30 and 14 errors** on the four real
+models. Reading them by hand, one was a genuine defect and the rest were
+legitimate structure. This is exactly the failure the literature
+describes, and it is why a detector can post 61% recall and 20% precision.
+
+What fixed it, in order of how much noise each removed:
+
+1. **A row must be a series before it can break a pattern.** An inputs
+   sheet has a row where B is a lookup and C is a cross-sheet reference,
+   and they are supposed to differ. Only a *contiguous run* of cells is a
+   series. This alone took 77 errors to 8.
+2. **The ends of a series may differ.** The first forecast period reaches
+   back to the last actual; the terminal year stops compounding. Only
+   interior cells are judged.
+3. **A cell pulling straight from an inputs sheet is a hand-off, not a
+   broken formula** — and the alias detection written this afternoon for a
+   completely different reason already identified them.
+4. **A typed history is not a hardcode.** The boundary between the typed
+   past and the calculated future is found per sheet, by agreement across
+   rows.
+5. **Circularity is deliberate unless the model says otherwise.** All four
+   Damodaran models switch on iterative calculation; Cascade does not.
+   That flag is in the file format, so it is read rather than guessed.
+6. `#N/A` and `#DIV/0!` are routine in a template with empty inputs;
+   `#REF!` and `#NAME?` never are.
+7. A number that could not be an assumption — a sign flip, `/100`, `*12` —
+   is not a buried assumption.
+8. **Anchoring differences are graded separately.** `Assumptions!B3` where
+   the series says `$B$3` computes the right answer today and breaks the
+   moment it is copied. A defect that has not happened yet.
+
+## Two bugs the fixture caught that four real models did not
+
+**A constant typed over a formula was never reported in a consistent row.**
+The pattern check returned early when all the formulas agreed, and the
+constant check sat behind it — so the commonest way a model breaks was
+invisible in exactly the case where it is easiest to spot. Four real
+models never showed this because it needs a defect to be present, and
+this is what a fixture with planted defects is *for*.
+
+**Anchoring cannot be compared by making everything relative.** `$B$3` on
+an assumptions sheet is the same cell from every column, so its relative
+offset differs from each one, and relativising made two identical
+references look unlike. Nor by resolving everything to absolute addresses,
+because the references that are supposed to move do move. The test that
+works: every reference must match its twin on *one* of the two — same
+offset, or same address.
+
+**And a limitation neither had shown.** A workbook written by a generator
+and never opened in Excel has formulas and no cached values, and the
+reader kept only cells that had a value — so the entire fixture was
+invisible until `Cell.value` became optional. Real models all carried
+cached values; nothing before this had ever read a model that had not been
+calculated.
+
+## Where the corpus report actually paid
+
+Not in corpora — in the rules. Every finding now cites the standard it
+comes from, so « says who » has an answer that is not « the tool ». That
+was free, it came straight from Target 4, and it is the difference between
+a checker and an opinion.

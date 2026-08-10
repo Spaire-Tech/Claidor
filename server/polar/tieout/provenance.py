@@ -76,7 +76,11 @@ def verify_outputs(outputs: list[Output], book: Workbook) -> list[BadReference]:
             # first of them reports a correct row as broken.
             continue
         cell = book.get(claimed)
-        if cell is not None and abs(cell.value - output.value) <= TOLERANCE:
+        if (
+            cell is not None
+            and cell.value is not None
+            and abs(cell.value - output.value) <= TOLERANCE
+        ):
             continue
 
         actual, how = _relocate(output, book)
@@ -110,6 +114,7 @@ def _relocate(output: Output, book: Workbook) -> tuple[str | None, str]:
         for cell in book.cells.values()
         if cell.sheet.lower() not in RESTATING_SHEETS
         and cell.alias_of is None
+        and cell.value is not None
         and abs(cell.value - output.value) <= TOLERANCE
     ]
     if not by_value:
@@ -147,7 +152,7 @@ def chain(book: Workbook, ref: str, depth: int = DEPTH) -> str:
     if cell is None:
         return ref
 
-    line = f"{ref} = {_short(cell.value)}"
+    line = f"{ref} = {_short(cell.value)}" if cell.value is not None else ref
     if cell.formula is None:
         return f"{line} (input)"
 
@@ -160,7 +165,8 @@ def chain(book: Workbook, ref: str, depth: int = DEPTH) -> str:
         source = book.get(precedent)
         if source is None:
             continue
-        parts.append(f"{_relative(cell, source) or precedent} {_short(source.value)}")
+        shown = "" if source.value is None else f" {_short(source.value)}"
+        parts.append(f"{_relative(cell, source) or precedent}{shown}")
     if len(cell.precedents) > 4:
         parts.append(f"and {len(cell.precedents) - 4} more")
     return f"{line} = {', '.join(parts)}" if parts else line
@@ -215,7 +221,7 @@ def outputs_from_workbook(book: Workbook) -> list[Output]:
             continue
         if cell.alias_of is not None:
             continue
-        if not cell.row_label:
+        if not cell.row_label or cell.value is None:
             continue
         candidates.append(
             Output(
