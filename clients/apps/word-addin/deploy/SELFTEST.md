@@ -37,6 +37,22 @@ removal is not itself a revision. The reader's own text is only ever read.
 
 If cleanup fails it says so and names the paragraph to delete by hand.
 
+## Where it is now
+
+Live at **https://claidor-selftest.vercel.app/selftest.html**, with the
+manifest beside it at `/manifest.selftest.xml`.
+
+Its own Vercel project, deliberately. The dashboard's project has
+deployment protection on — every URL 302s to a Vercel SSO login — and its
+Next.js config sends `X-Frame-Options: DENY`. Both are right for a
+dashboard and both are fatal for a task pane, which Word loads in an iframe
+with no session. The add-in needs its own origin, permanently, not just for
+this test.
+
+Verified from outside: `200` on the page, the manifest and every asset;
+`frame-ancestors` allowing the Office web hosts; and no `X-Frame-Options`
+header at all.
+
 ## Packaging it
 
 ```bash
