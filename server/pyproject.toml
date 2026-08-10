@@ -59,6 +59,11 @@ dependencies = [
   "clickhouse-connect>=0.8.0",
   "tzdata>=2025.3",
   "pypdf>=6.14.2",
+  # Runtime, not tooling: polar.tieout reads a banker's deck and model
+  # directly. Both are imported at module level, so a dev-only listing
+  # would break the first endpoint that reaches for a tie-out.
+  "python-pptx>=1.0.2",
+  "openpyxl>=3.1.5",
 ]
 
 [dependency-groups]

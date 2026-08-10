@@ -235,3 +235,64 @@ unchanged, and now partly sidestepped: Phase 0 does not touch Office.
 invoicing is a large product. The phase order above is deliberately a
 sequence of things useful on their own, and Phase 0 and Phase 1 are both
 useful with no Office integration at all.
+
+---
+
+# Phase 0 — built and measured, 10 August 2026
+
+`server/polar/tieout/` reconciles a PowerPoint deck against the model
+behind it. Measured against Project Cascade: **zero findings on the clean
+deck, every injected error on the broken one, nothing invented.**
+
+| | Clean | Broken |
+|---|---|---|
+| Figures read | 100 | 100 |
+| Reconciled | 34 | 34 |
+| Findings | **0** | **6** |
+| Output rows reached | 23 / 23 | — |
+| Recall / precision | — | 100% / 100% |
+
+Five modules, each one decision:
+
+| | What it decides |
+|---|---|
+| `figures.py` | What counts as a figure, and at what precision its claim is made |
+| `deck.py` | Which words name which number — tiles, table cells, clauses |
+| `model.py` | The Outputs tab, one row per published figure, with its basis |
+| `link.py` | Whether a figure and an output row are the same thing at all |
+| `check.py` | Whether the linked pair agrees, at the precision the deck chose |
+
+## The design decision the rest hangs on
+
+**Never link on a value.** Slide 6's peer table prints `10.4x` for Kestrel
+Valve Group and `9.9x` for the median; slide 2 prints $41.2mm reported and
+$48.9mm adjusted. Any checker that matches numbers reconciles the first of
+each pair against the second's cell and reports a drift on a deck that is
+correct. Linking on words means those figures are never candidates for one
+another.
+
+The consequence is that **an unmatched figure is never a finding.** 66 of
+the 100 figures on the clean deck are reconciled against nothing — peer
+multiples, a sensitivity grid, timetable weeks — and the checker says
+nothing about any of them. Silence is the correct output for a number the
+model does not publish.
+
+## What this does not yet do
+
+- **No surface.** No endpoint, no persistence, no panel. It is a library.
+- **Assumes an Outputs tab.** Cascade has one because it was built well.
+  Most models in the wild do not, and inferring the interface rather than
+  reading it is a larger problem than everything above.
+- **Charts are read and not linked.** Their numbers live in embedded
+  workbook parts and usually restate the table beside them; linking both
+  would report every drift twice.
+- **One deck, one model.** Nothing yet reconciles two decks against each
+  other, or a deck against last week's version of itself.
+
+## The open question, still open
+
+*Which is worse: a missed drift or a false one?* Phase 0 answered it by
+assumption — a false positive is much worse, and every gate is set that
+way. On Cascade that cost nothing, because all 23 output rows were reached
+anyway. On a deck whose model names things differently it will cost
+recall, and how much is tolerable is a banker's judgement, not mine.

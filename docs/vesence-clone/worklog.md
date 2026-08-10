@@ -622,3 +622,123 @@ test that authenticated nothing. The pattern is the same each time: the
 thing being measured was not the thing I thought I was measuring, and the
 result was plausible enough not to question. What catches it is not care;
 it is reading the raw output before believing the summary.
+
+---
+
+# 10 August — the tie-out, against Project Cascade
+
+First code in the new vertical. `polar/tieout/` reconciles a pitchbook
+against the model behind it, measured on a real test pair: a nine-slide
+sell-side deck, the five-tab model it came from, a linkage map naming
+every figure's source cell, and a second copy of the deck with errors
+injected.
+
+The instruction that shaped everything: **build against the clean deck
+first and get to zero false positives before touching the broken one.**
+
+## Where it landed
+
+| | Clean deck | Broken deck |
+|---|---|---|
+| Figures read | 100 | 100 |
+| Reconciled against a model cell | 34 | 34 |
+| **Drifts reported** | **0** | **6** |
+| Output rows reached | 23 of 23 | — |
+| Recall / precision on the injected errors | — | **100% / 100%** |
+
+Zero on the clean deck was the gate, and the second row is what makes the
+zero mean anything: a checker that reconciled nothing would also report
+nothing. 34 of 100 is the honest number — the other 66 are peer multiples,
+a sensitivity grid, timetable weeks and bridge components, none of which
+the model publishes.
+
+## The trap, and why it never fired
+
+FY2025A reported EBITDA is $41.2mm; adjusted is $48.9mm. Both are correct,
+both are in the deck, and a value-matching checker flags one against the
+other. It never came up, because **nothing is ever linked on a value**.
+The link is made on words and the value is only consulted afterwards, so
+the reported figure and the adjusted figure are never candidates for each
+other in the first place.
+
+## Six false positives, and what each one taught
+
+Every one of these was a correct figure the checker called wrong.
+
+**1. One sentence, three figures, one label.** « FY2025A reported EBITDA
+of $41.2mm adjusts to $48.9mm » gave both figures the same name, so
+$41.2mm reconciled against the adjusted cell. Fixed by cutting each line
+at its figures: a figure is named by the clause between it and the figure
+before it. The cost is that « adjusts to $48.9mm » now names nothing and
+goes unchecked — which is the right trade, and the reason it is right is
+in the module docstring.
+
+**2. A slide title read as a caption.** « Adjusted EBITDA bridge » sits a
+few points above the subtitle on slide 4, close enough to look like a
+metric tile's caption. Header-band shapes are now context, never labels:
+they can support a decision and cannot carry one.
+
+**3. `% margin` twice on one slide.** Once under gross profit, once under
+adjusted EBITDA — the same three characters naming two different figures.
+Derived rows now inherit the line item above them.
+
+**4. `Median EV / revenue` reconciled against the median EV / EBITDA.**
+Table labels are complete names, generated from two header cells, so every
+content word in one has to be a word the output uses. This single rule
+also retired a separate guard I had written for peer names: « Meridian
+Flow Systems Enterprise value » fails it for the same reason.
+
+**5. `(96.4)` against a model holding +96.4.** Parentheses in a bridge mean
+« subtracted here », not « the cell is negative ». Parenthesised figures
+compare on magnitude; figures the deck printed with a sign still compare
+signed.
+
+**6. « 9.8% WACC, 2.5% terminal growth ».** The name follows its figure
+here, so the words before 2.5% are the tail of the WACC's name — the
+checker reported that the WACC should be 9.8% when the deck already said
+so. Labels now stop at the nearest clause boundary. Fixing it recovered
+both figures: 9.8% found its own name in the words *after* it.
+
+## The threshold turned out not to be the mechanism
+
+Swept from 0.00 to 0.54 against the clean deck, the match threshold changes
+nothing: the same 34 figures link and no false positive appears at any
+setting. Everything that would have been wrong is refused earlier, by a
+gate — a contradicted period, a contradicted basis, a percentage against a
+figure that is not a fraction, a multiple against a name that is not a
+ratio, a table label using a word the output does not, an endpoint of a
+printed range, a figure nothing names.
+
+That is a much better result than a tuned number, because a gate can be
+explained to a banker who asks why their figure was skipped. It also means
+the threshold is **untested** by this pair, and the code now says so rather
+than presenting 0.50 as if it had been measured.
+
+The margin gate does bite — 35 links at 0.00, 34 from 0.08, 32 at 0.20 —
+but what it trades is recall against caution, not precision against noise.
+
+## The measurement was wrong first. Again.
+
+The first score against the broken deck read **100% recall, 80%
+precision**, with slide 8's 10.4x reported as a false positive.
+
+It was not one. The README beside the files says four breaks and that
+« slide 8 still prints 9.9x in the methodology text ». The deck that
+shipped has five changed figures: the 9.9x → 10.4x replacement hit every
+occurrence, slide 8 included. I had encoded the prose as ground truth, so a
+correct finding was scored as a mistake — and the run that had made no
+mistakes at all reported 80%.
+
+The eval now derives ground truth by diffing the two decks. **Fourth time
+in two days** that a measurement produced a number which looked like
+evidence and was not, and the first where the error made the work look
+*worse* than it was rather than better. The correction is the same either
+way: read the raw material before believing the summary — and a README is
+raw material about intent, not about what shipped.
+
+## What is not built
+
+The tie-out reads a deck and a model and returns findings. There is no
+endpoint, no persistence, no surface. It also assumes the model publishes
+an Outputs tab; inferring that interface when there isn't one is a
+different problem and a larger one.

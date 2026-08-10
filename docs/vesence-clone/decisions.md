@@ -273,3 +273,120 @@ Only two of these have lead times that matter:
 | 8 | Bedrock in US regions serves the models we need at acceptable latency | [assumption] — unmeasured | Wiring the provider interface |
 | 9 | Payments pruning removes 5 of 13 vendors | [verified] from config.py grep | The pruning commit |
 | 10 | `trackAll` + range edits suffice for substitution-class fixes | [verified] WordApi 1.4; unverified at document scale | Phase 1, week 5 |
+
+---
+
+# Tie-out: the decisions behind `polar/tieout/`
+
+Recorded 10 August 2026, as the code was written rather than after.
+
+## 1. Link on words, never on values
+
+**The decision.** A printed figure is matched to a model output row by the
+words that name it. The value is consulted only afterwards, to say whether
+the matched pair agrees.
+
+**Why.** Slide 6 of the Cascade deck prints `10.4x` in the Kestrel Valve
+Group row and `9.9x` in the median row. They are different figures that
+happen to be the same shape of number. A value matcher reconciles the
+first against `Comps!F13` and reports half a turn of drift on a deck that
+is correct.
+
+**What it costs.** A figure the deck does not name goes unchecked. 66 of
+the 100 figures on the clean Cascade deck are reconciled against nothing.
+
+## 2. An unmatched figure is never a finding
+
+**The decision.** Uncertainty produces silence, never a weaker finding.
+
+**Why.** The failure modes are not symmetric. A missed drift leaves the
+deck exactly as it was before the checker ran. A false positive is a
+banker told their correct figure is wrong, and the second one closes the
+product. Every threshold in `link.py` is set from that asymmetry.
+
+## 3. Compare at the precision the deck printed
+
+**The decision.** A deck printing `9.9x` is making a claim about one
+decimal place, and that is the claim checked.
+
+**Why.** The model holds 9.90401938065649. Comparing as printed fails on
+every figure in every deck; rounding both to two decimals lets `10.4x`
+pass as close enough. Neither is a check. There is no tolerance parameter
+anywhere in this engine, and there should not be one — the deck chose the
+precision when it chose how to print.
+
+## 4. The Outputs tab is the interface, not the workbook
+
+**The decision.** Reconcile against the two dozen figures the model
+publishes, not against its 228 formulas.
+
+**Why.** A deck figure that matches some cell somewhere in a large model
+has matched nothing; there is always a cell holding 48.9. What makes a
+figure right is agreeing with *the cell it came from*.
+
+**What it costs.** A model with no Outputs tab cannot be reconciled at
+all. That is the common case in the wild, and inferring the interface is a
+separate and larger problem — deliberately not solved here.
+
+## 5. Gates, not scores
+
+**The decision.** Refusals are structural — a contradicted period, a
+contradicted basis, a percentage against a figure that is not a fraction,
+a multiple against a name that is not a ratio, a table label using a word
+the output does not, a range endpoint, an unnamed figure. The similarity
+score is a backstop behind them.
+
+**Why.** Discovered rather than designed: sweeping the match threshold
+from 0.00 to 0.54 against the clean deck changes nothing, because the
+gates have already refused everything that would have been wrong.
+
+**Why it is worth keeping that way.** A gate can be explained to the
+person whose figure was skipped. A threshold can only be apologised for.
+
+## 6. Where the label comes from, by shape
+
+| Shape | The name | Why not something simpler |
+|---|---|---|
+| Metric tile | The caption above, plus the tile's own subtext | The value line is only a number; the caption alone cannot tell « 21.4% margin » from the EBITDA above it |
+| Table cell | Row label × column header | The row label alone repeats — `% margin` appears twice on slide 3 |
+| Derived row | The line item above it, prepended | `% margin` means « of the row above » in every financial table ever built |
+| Sentence | The clause between this figure and the one before | A whole-sentence label makes « reported EBITDA of $41.2mm adjusts to $48.9mm » name both figures the same thing |
+| Slide heading | Context only — supports a link, never carries one | « Adjusted EBITDA bridge » above a reported figure would make it claim to be the adjusted one |
+
+## 7. Parentheses are presentation, not sign
+
+**The decision.** A figure printed as `(96.4)` compares on magnitude. A
+figure printed with a minus sign compares signed.
+
+**Why.** Every bridge in every deck prints deductions in parentheses while
+the model holds the input as positive. Cascade's `Assumptions!B24` is
++96.4 and slide 7 prints `(96.4)`; both are correct.
+
+## 8. Vendor the test pair
+
+**The decision.** `server/scripts/cascade/` holds both decks, the model and
+the linkage map — about 1MB of binary in the repository.
+
+**Why.** Every deck-reading test asserts something a synthetic fixture
+would have got right and PowerPoint did not. Without the real files the
+tests measure a mock.
+
+## 9. Ground truth comes from the files, not the README
+
+**The decision.** The eval derives the injected breaks by diffing the two
+decks.
+
+**Why.** The README says four breaks and that slide 8 still prints 9.9x.
+The deck that shipped has five changed figures including slide 8's. Scored
+against the prose, a correct finding counted as a false positive and a run
+that made no mistakes reported 80% precision. A README is evidence about
+intent; only the file is evidence about what shipped.
+
+## Assumption ledger — additions
+
+| # | Assumption | Basis | How it gets falsified |
+|---|---|---|---|
+| 11 | Banks' models publish a named outputs interface often enough to matter | [assumption] — Cascade has one because it was built well | Ten real models from one bank |
+| 12 | A false positive costs much more than a missed drift | [assumption] — stated, never tested with a user | One banker, one hour |
+| 13 | Label matching generalises past this deck's vocabulary | [estimate] — 23 of 23 outputs reached on one pair | A second deck from a different desk |
+| 14 | Charts restate the table beside them, so skipping them loses nothing | [assumption] — true on all four Cascade charts | A deck with a chart that stands alone |

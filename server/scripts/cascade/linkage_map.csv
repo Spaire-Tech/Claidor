@@ -1,0 +1,42 @@
+slide,element,figure_as_printed,output_ref,source_cell,basis
+2,Metric tile 1,$228.9mm,O1,Model!D6,Reported
+2,Metric tile 1 subtext,11.8%,O2,Model!D7,Reported
+2,Metric tile 2,$48.9mm,O5,Model!D25,Adjusted - pro forma run-rate
+2,Metric tile 2 subtext,21.4%,O6,Model!D26,Adjusted
+2,Metric tile 3,9.3%,O11,"Model!D6, Model!I6",Computed CAGR
+2,Metric tile 4,38.2%,O3,Model!D11,Reported
+2,Process bullet 1,$48.9mm / $7.7mm,"O5, O12","Model!D25, Model!D24",Adjusted
+3,Chart - revenue series,182.4 / 204.7 / 228.9,O1,Model!B6:D6,Reported
+3,Chart - adj EBITDA series,37.8 / 43.0 / 48.9,O5,Model!B25:D25,Adjusted
+3,Table - revenue row,182.4 / 204.7 / 228.9,-,Model!B6:D6,Reported
+3,Table - gross profit row,66.5 / 76.3 / 87.4,-,Model!B10:D10,Reported
+3,Table - reported EBITDA row,29.2 / 34.5 / 41.2,O4,Model!B16:D16,Reported
+3,Table - total adjustments row,1.6 / 5.1 / 7.7,O12,Model!B24:D24,Adjustment total
+3,Table - adjusted EBITDA row,30.8 / 39.6 / 48.9,O5,Model!B25:D25,Adjusted
+4,Title,$41.2mm to $48.9mm,"O4, O5","Model!D16, Model!D25",Reported to adjusted
+4,Bridge - reported,41.2,O4,Model!D16,Reported
+4,Bridge - legal settlement,0.0,-,Model!D20,"One-time, FY2024 only"
+4,Bridge - ERP,2.8,-,Model!D21,One-time
+4,Bridge - owner comp,1.7,-,Model!D22,Normalisation
+4,Bridge - Verity run-rate,3.2,-,Model!D23,"Run-rate, annualised"
+4,Bridge - adjusted,48.9,O5,Model!D25,Adjusted
+5,Chart - revenue series,255.9 to 356.8,"O7, O9",Model!E6:I6,Management plan
+5,Table - revenue row,255.9 / 308.8 / 356.8,"O7, O9","Model!E6, G6, I6",Management plan
+5,Table - adj EBITDA row,51.2 / 61.8 / 71.4,"O8, O10","Model!E25, G25, I25",Management plan
+5,Table - unlevered FCF row,28.8 / 35.4 / 41.6,-,"Model!E32, G32, I32",Management plan
+6,Table - peer EVs,"1,213 / 1,591 / 547 / 937 / 385 / 683",-,Comps!B5:B10,Market data
+6,Table - EV/EBITDA column,10.2x to 8.2x,-,Comps!F5:F10,Market data
+6,Table - median row,9.9x,O19,Comps!F13,Trading comps
+6,Table - mean row,9.7x,O20,Comps!F12,Trading comps
+6,Callout - implied EV,$484mm,O21,Comps!B20,Trading comps
+7,Title - WACC,9.8%,O17,Assumptions!B19,Input
+7,Title - terminal growth,2.5%,O18,Assumptions!B20,Input
+7,Table - enterprise value,489.5,O13,DCF!B16,DCF
+7,Table - equity value,414.8,O14,DCF!B19,DCF
+7,Table - value per share,$9.69,O15,DCF!B21,DCF
+7,Table - total debt,(96.4),O22,Assumptions!B24,Balance sheet
+7,Table - cash,21.7,O23,Assumptions!B25,Balance sheet
+7,Callout - implied multiple,10.0x,O16,DCF!B23,DCF
+8,Methodology - peer median,9.9x,O19,Comps!F13,Trading comps
+8,Methodology - adj EBITDA,$48.9mm,O5,Model!D25,Adjusted
+8,Methodology - WACC / g,9.8% / 2.5%,"O17, O18","Assumptions!B19, B20",Input

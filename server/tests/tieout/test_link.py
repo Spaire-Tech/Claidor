@@ -1,0 +1,218 @@
+"""The gates. Each of these is a false positive that happened once."""
+
+from decimal import Decimal
+
+from polar.tieout.figures import Figure
+from polar.tieout.link import link, normalise, tokens
+from polar.tieout.model import Output
+
+OUTPUTS = [
+    Output("O1", "FY2025A revenue", Decimal("228.9"), "Model!D6", "Reported"),
+    Output("O3", "FY2025A gross margin", Decimal("0.381826"), "Model!D11", "Reported"),
+    Output("O4", "FY2025A reported EBITDA", Decimal("41.2"), "Model!D16", "Reported"),
+    Output(
+        "O5",
+        "FY2025A adjusted EBITDA",
+        Decimal("48.9"),
+        "Model!D25",
+        "Adjusted - see bridge",
+    ),
+    Output(
+        "O6",
+        "FY2025A adjusted EBITDA margin",
+        Decimal("0.21363"),
+        "Model!D26",
+        "Adjusted",
+    ),
+    Output("O15", "DCF implied value per share", Decimal("9.6905"), "DCF!B21", "DCF"),
+    Output(
+        "O16",
+        "DCF implied EV / FY2025A adj. EBITDA",
+        Decimal("10.00926"),
+        "DCF!B23",
+        "DCF",
+    ),
+    Output(
+        "O19",
+        "Peer median EV / EBITDA",
+        Decimal("9.90402"),
+        "Comps!F13",
+        "Trading comps",
+    ),
+    Output(
+        "O20", "Peer mean EV / EBITDA", Decimal("9.73266"), "Comps!F12", "Trading comps"
+    ),
+    Output(
+        "O21",
+        "Comps-implied enterprise value",
+        Decimal("484.3065"),
+        "Comps!B20",
+        "Trading comps",
+    ),
+]
+
+
+def figure(label: str, **kwargs: object) -> Figure:
+    defaults = dict(
+        printed="9.9x",
+        value=Decimal("9.9"),
+        decimals=1,
+        kind="multiple",
+        slide=6,
+        label=label,
+        location="slide 6",
+        context=label,
+        section="Trading comparables",
+    )
+    defaults.update(kwargs)
+    return Figure(**defaults)  # type: ignore[arg-type]
+
+
+def linked_ref(one: Figure) -> str | None:
+    links, _ = link([one], OUTPUTS)
+    return links[0].output.ref if links else None
+
+
+def refusal(one: Figure) -> str:
+    links, unlinked = link([one], OUTPUTS)
+    assert not links, f"expected a refusal, got {links[0].output.ref}"
+    return unlinked[0].reason
+
+
+def test_a_peers_own_multiple_is_not_the_peer_median() -> None:
+    """The number that the whole module exists for. `10.4x` in the Kestrel
+    row and `9.9x` in the median row are the same shape of thing and one
+    of them reconciles to Comps!F13."""
+    assert linked_ref(figure("Median EV / EBITDA", subject="Median")) == "O19"
+    assert (
+        linked_ref(
+            figure(
+                "Kestrel Valve Group EV / EBITDA",
+                subject="Kestrel Valve Group",
+                value=Decimal("10.4"),
+                printed="10.4x",
+            )
+        )
+        is None
+    )
+
+
+def test_a_table_label_using_a_word_the_output_does_not_is_a_different_figure() -> None:
+    """« Median EV / revenue » is 1.9x and « Median EV / EBITDA » is 9.9x.
+    They share every word but one, and the one is the whole meaning."""
+    assert linked_ref(figure("Median EV / revenue", subject="Median")) is None
+
+
+def test_a_contradicted_period_is_refused() -> None:
+    revenue = dict(kind="plain", printed="182.4", value=Decimal("182.4"), decimals=1)
+    assert linked_ref(figure("Revenue FY2025A", subject="Revenue", **revenue)) == "O1"
+    assert linked_ref(figure("Revenue FY2023A", subject="Revenue", **revenue)) is None
+
+
+def test_a_contradicted_basis_is_refused() -> None:
+    """$41.2mm reported and $48.9mm adjusted are both correct. This is the
+    trap the Cascade README warns about, and it is a gate, not a score."""
+    reported = dict(
+        kind="currency", printed="$41.2mm", value=Decimal("41.2"), decimals=1, slide=4
+    )
+    assert linked_ref(figure("FY2025A reported EBITDA of", **reported)) == "O4"
+
+
+def test_a_percentage_cannot_be_a_figure_that_is_not_a_fraction() -> None:
+    """Gross profit of 87.4 against a gross margin of 0.3818: same words,
+    different quantity."""
+    assert (
+        linked_ref(
+            figure(
+                "Gross profit FY2025A",
+                subject="Gross profit",
+                kind="plain",
+                printed="87.4",
+                value=Decimal("87.4"),
+                slide=3,
+            )
+        )
+        is None
+    )
+
+
+def test_a_multiple_needs_a_name_that_is_a_ratio() -> None:
+    """« DCF implied value per share » and « DCF implied EV / EBITDA »
+    share their whole opening. 10.0x is one of them; $9.69 is the other,
+    and no amount of word overlap tells them apart."""
+    assert (
+        linked_ref(
+            figure(
+                "The DCF implies",
+                printed="10.0x",
+                value=Decimal("10.0"),
+                slide=7,
+                section="Discounted cash flow analysis",
+            )
+        )
+        == "O16"
+    )
+
+
+def test_a_range_endpoint_reconciles_to_nothing() -> None:
+    one = figure(
+        "Enterprise value reference range of",
+        printed="$455mm",
+        value=Decimal("455"),
+        decimals=0,
+        kind="currency",
+        slide=8,
+        range_endpoint=True,
+    )
+    assert refusal(one) == "one end of a printed range"
+
+
+def test_a_figure_nothing_names_is_left_alone() -> None:
+    assert "nothing names it" == refusal(figure("of"))
+
+
+def test_two_outputs_that_fit_equally_well_settle_nothing() -> None:
+    """Slide 3 has two rows labelled « % margin » — one under gross profit
+    and one under adjusted EBITDA. Read on its own the label is the same
+    for both, and picking either is a coin toss that flags a correct deck
+    half the time. The deck reader resolves this by carrying the row above
+    down; if it ever stops, this is the gate that keeps the checker quiet.
+    """
+    assert "equally well" in refusal(
+        figure(
+            "% margin FY2025A",
+            subject="% margin",
+            kind="percent",
+            printed="21.4%",
+            value=Decimal("0.214"),
+            slide=3,
+            section="Historical financial performance",
+        )
+    )
+
+
+def test_fiscal_years_are_the_same_word_however_the_deck_writes_them() -> None:
+    assert normalise("FY25A") == "fy2025a"
+    assert normalise("fy2025a") == "fy2025a"
+    assert tokens("Revenue CAGR FY25A-FY30E") == [
+        "revenue",
+        "cagr",
+        "fy2025a",
+        "fy2030e",
+    ]
+
+
+def test_a_slide_heading_can_support_a_link_but_never_carry_one() -> None:
+    """« implies an enterprise value of $484mm » on the comps page is the
+    comps-implied EV; the same words on the DCF page are not. The heading
+    decides, and on its own it names nothing."""
+    callout = dict(
+        printed="$484mm",
+        value=Decimal("484"),
+        decimals=0,
+        kind="currency",
+        label="implies an enterprise value of",
+        context="Applying the peer median of 9.9x to Cascade's FY2025A adjusted "
+        "EBITDA of $48.9mm implies an enterprise value of $484mm.",
+    )
+    assert linked_ref(figure(section="Trading comparables peers", **callout)) == "O21"
