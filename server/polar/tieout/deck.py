@@ -42,9 +42,15 @@ and the assumption that made them redundant was false on the very deck it
 was written against.
 
 A chart series is named the way a table cell is: the series name and the
-category, which is a line item and a period. `python-pptx` reads them from
-the embedded workbook part, where the numbers actually live — the slide
-itself holds only bars.
+category, which is a line item and a period. `python-pptx` reads both from
+the **cache in the chart part** — `c:val` → `c:numRef` → `c:numCache` —
+and not from the embedded workbook, which is a separate part it exposes
+elsewhere and does not consult here.
+
+Reading the cache is the right thing: it is what PowerPoint draws, so it
+is the claim the slide makes. It matters on the way *out*, where a value
+has to be written to both the cache and the embedded workbook or the file
+disagrees with itself. See `docs/pierce/writing-pptx.md`.
 """
 
 import re

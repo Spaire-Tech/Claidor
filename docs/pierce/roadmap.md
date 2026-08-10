@@ -107,13 +107,30 @@ What it still needs is the thing behind it rather than the screen: writing.
 Today the two actions record a decision against the finding. « Accept
 $41.9m » only becomes true when phase 6 lands.
 
-### 6 · Writing  *(the big one — weeks, not days)*
+### 6 · Writing  *(re-cut 10 August — smaller than it looked)*
+
+Two corrections, both from the founder, both material.
+
+**Word is largely already ours.** `clients/apps/word-addin` — the fork —
+carries 4,031 lines of Office.js under `src/office/`, including a
+`redline.ts` that applies grounded edits as native Word tracked changes
+through `office-word-diff` (Apache-2.0). It fell out of the pnpm workspace
+over an SSH-resolving git dependency and out of sight with it. Bring it
+back and adapt, rather than build.
+
+**PowerPoint does not need an invented format.** The .pptx spec has no
+revision model — true — but nobody has one: PowerPoint's own Compare
+diffs two files and stores nothing. We already hold both sides of every
+change (`Finding.printed` and `Finding.expected`), so accept writes the
+new value, reject leaves the old, reverse writes it back, and the file
+stays a normal file. `docs/pierce/writing-pptx.md` has the whole of it.
 
 - The proposal layer: a change is proposed, never applied
-- `.pptx` splice — PowerPoint has never had tracked changes, so the
-  reversible-edit story has to be invented
-- Word tracked changes — the redline engine already writes `w:ins`/`w:del`
-- Apply on accept, undo, and « nothing leaves the firm without a banker
+- `.pptx` write — the two real problems are **split runs** (a figure is
+  often not one run) and **charts in two places** (the cache *and* the
+  embedded workbook). Both have published solutions
+- Word — adapt `src/office/redline.ts` from the fork
+- Apply on accept, reverse, and « nothing leaves the firm without a banker
   accepting it »
 
 ### 7 · PDF sources  *(the chain's last hop)*
