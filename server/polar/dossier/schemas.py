@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import Field
@@ -206,3 +207,35 @@ class DossierDocumentText(Schema):
     text: str | None
     extraction_status: ExtractionStatus
     characters: int
+
+
+class AgentStepRead(Schema):
+    """One line of the « Used 12 tools » trace."""
+
+    ordinal: int
+    tool: str
+    arguments: dict[str, Any]
+    ok: bool
+    summary: str
+    milliseconds: int
+
+
+class AgentTaskRead(Schema):
+    id: UUID
+    prompt: str
+    #: Empty when the run failed before saying anything. Never invented.
+    answer: str
+    #: ``answered``, ``step_limit`` or ``failed``.
+    stopped: str
+    #: True only for ``answered``. A caller showing an answer without
+    #: checking this would present a partial run as a finished one.
+    complete: bool
+    error: str | None
+    input_tokens: int
+    output_tokens: int
+    steps: list[AgentStepRead]
+    created_at: datetime
+
+
+class AgentTaskCreate(Schema):
+    prompt: str = Field(min_length=3, max_length=8000)

@@ -7,6 +7,8 @@ from polar.file.repository import FileRepository
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession
 from polar.librarian.service import librarian
 from polar.models import (
+    AgentStep,
+    AgentTask,
     CitationNature,
     Dossier,
     DossierCitation,
@@ -24,6 +26,9 @@ from polar.user.repository import UserRepository
 from . import auth
 from .repository import DossierRepository
 from .schemas import (
+    AgentStepRead,
+    AgentTaskCreate,
+    AgentTaskRead,
     DossierAsk,
     DossierCitationRead,
     DossierCreate,
@@ -41,6 +46,9 @@ from .schemas import (
     MatterFinding,
     MatterReviewRead,
 )
+from .agent import service as agent_service
+from .agent.loop import Stopped
+from .agent.service import AgentNotConfigured
 from .review import review_matter
 from .service import dossier_service
 
@@ -542,3 +550,84 @@ async def read_document_text(
         extraction_status=document.extraction_status,
         characters=len(text or ""),
     )
+
+
+def _task_schema(task: AgentTask, steps: list[AgentStep]) -> AgentTaskRead:
+    return AgentTaskRead(
+        id=task.id,
+        prompt=task.prompt,
+        answer=task.answer,
+        stopped=task.stopped,
+        complete=task.stopped == Stopped.answered,
+        error=task.error,
+        input_tokens=task.input_tokens,
+        output_tokens=task.output_tokens,
+        steps=[
+            AgentStepRead(
+                ordinal=step.ordinal,
+                tool=step.tool,
+                arguments=step.arguments,
+                ok=step.ok,
+                summary=step.summary,
+                milliseconds=step.milliseconds,
+            )
+            for step in steps
+        ],
+        created_at=task.created_at,
+    )
+
+
+@router.post("/{dossier_id}/tasks", response_model=AgentTaskRead, status_code=201)
+async def run_agent_task(
+    dossier_id: UUID,
+    body: AgentTaskCreate,
+    auth_subject: auth.DossierWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> AgentTaskRead:
+    """Ask the agent to do something with this matter's documents.
+
+    It can list them, read them in windows, search across them and run the
+    deterministic checks — and nothing else. It cannot reach a document
+    outside the matter, and it cannot write.
+
+    The trace comes back with the answer, because that is how a reader
+    tells an answer that was looked up from one that was composed. So does
+    ``complete``: a run that hit the step limit or died on a provider error
+    is returned rather than hidden, and a caller that shows the answer
+    without checking that field would present a partial run as a finished
+    one.
+    """
+    await _get_dossier_or_404(session, dossier_id, auth_subject.subject.id)
+
+    try:
+        task, outcome = await agent_service.run_task(
+            session,
+            dossier_id=dossier_id,
+            user_id=auth_subject.subject.id,
+            prompt=body.prompt,
+        )
+    except AgentNotConfigured as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+    repository = DossierRepository.from_session(session)
+    return _task_schema(task, await repository.list_task_steps(task.id))
+
+
+@router.get("/{dossier_id}/tasks", response_model=list[AgentTaskRead])
+async def list_agent_tasks(
+    dossier_id: UUID,
+    auth_subject: auth.DossierRead,
+    read_session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[AgentTaskRead]:
+    """Everything the agent has been asked to do in this matter.
+
+    Failed and truncated runs included. A matter where three of yesterday's
+    twenty tasks silently never happened is worse than one showing three
+    failures.
+    """
+    await _get_dossier_or_404(read_session, dossier_id, auth_subject.subject.id)
+
+    repository = DossierRepository.from_session(read_session)
+    tasks = await repository.list_tasks(dossier_id)
+    steps = await repository.list_steps_for(task.id for task in tasks)
+    return [_task_schema(task, steps.get(task.id, [])) for task in tasks]

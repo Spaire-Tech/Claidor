@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -7,6 +7,8 @@ from sqlalchemy.orm import contains_eager, joinedload
 
 from polar.kit.repository import RepositoryBase
 from polar.models import (
+    AgentStep,
+    AgentTask,
     CitationNature,
     CitationSourceKind,
     DocumentCategory,
@@ -405,3 +407,47 @@ class DossierRepository(RepositoryBase[Dossier]):
         )
         rows = (await self.session.execute(statement)).all()
         return {qid: email for qid, email in rows}
+
+    # ---- Agent tasks --------------------------------------------------
+
+    async def list_tasks(self, dossier_id: UUID) -> Sequence[AgentTask]:
+        """Newest first: a task list is read from the top."""
+        statement = (
+            select(AgentTask)
+            .where(
+                AgentTask.dossier_id == dossier_id,
+                AgentTask.deleted_at.is_(None),
+            )
+            .order_by(AgentTask.created_at.desc())
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def list_task_steps(self, task_id: UUID) -> list[AgentStep]:
+        statement = (
+            select(AgentStep)
+            .where(AgentStep.task_id == task_id, AgentStep.deleted_at.is_(None))
+            .order_by(AgentStep.ordinal)
+        )
+        return list((await self.session.execute(statement)).scalars().all())
+
+    async def list_steps_for(
+        self, task_ids: Iterable[UUID]
+    ) -> dict[UUID, list[AgentStep]]:
+        """Every task's steps in one query.
+
+        A task list of forty runs would otherwise be forty-one round trips,
+        and the trace is not optional decoration — it is shown with every
+        task, so it is fetched with them.
+        """
+        ids = list(task_ids)
+        if not ids:
+            return {}
+        statement = (
+            select(AgentStep)
+            .where(AgentStep.task_id.in_(ids), AgentStep.deleted_at.is_(None))
+            .order_by(AgentStep.task_id, AgentStep.ordinal)
+        )
+        grouped: dict[UUID, list[AgentStep]] = {}
+        for step in (await self.session.execute(statement)).scalars().all():
+            grouped.setdefault(step.task_id, []).append(step)
+        return grouped

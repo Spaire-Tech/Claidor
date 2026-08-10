@@ -98,6 +98,7 @@ from .payment import Payment
 from .payment_method import PaymentMethod
 from .payout import Payout
 from .personal_access_token import PersonalAccessToken
+from .agent_task import AgentStep, AgentTask
 from .playbook import (
     Playbook,
     PlaybookRule,
@@ -254,6 +255,8 @@ __all__ = [
     "PaymentMethod",
     "Payout",
     "PersonalAccessToken",
+    "AgentStep",
+    "AgentTask",
     "Playbook",
     "PlaybookRule",
     "Pledge",

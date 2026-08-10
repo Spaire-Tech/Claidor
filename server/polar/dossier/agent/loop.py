@@ -62,9 +62,16 @@ class Messages(Protocol):
 
 
 class Client(Protocol):
-    """Only the sliver of the SDK this loop uses."""
+    """Only the sliver of the SDK this loop uses.
 
-    messages: Messages
+    `messages` is a read-only property rather than an attribute, because
+    that is what `anthropic.AsyncAnthropic` actually exposes — declared as
+    a plain attribute the protocol looks satisfied to a reader and is
+    rejected by the type checker, which is the useful way round.
+    """
+
+    @property
+    def messages(self) -> Messages: ...
 
 
 @dataclass
