@@ -4,7 +4,20 @@ import { createSHA256 } from 'hash-wasm'
 
 const CHUNK_SIZE = 10000000 // 10MB
 
+/**
+ * Every shape the file routes can hand back.
+ *
+ * Hand-maintained against the API, so it drifts silently: a variant added
+ * server-side is one this union does not know about, and nothing says so
+ * until the generated client catches up and the assignment stops
+ * compiling. That is exactly how `DossierDocumentFileRead` came to be
+ * missing — added months ago, invisible until the client was regenerated.
+ *
+ * Declared once, here, and imported everywhere else. It used to be copied
+ * into `hooks/queries/files.ts` too, which is a second place to forget.
+ */
 export type FileRead =
+  | schemas['DossierDocumentFileRead']
   | schemas['DownloadableFileRead']
   | schemas['ProductMediaFileRead']
   | schemas['OrganizationAvatarFileRead']

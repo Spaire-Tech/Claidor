@@ -1,15 +1,13 @@
+import type { FileRead } from '@/components/FileUpload/Upload'
 import { getQueryClient } from '@/utils/api/query'
 import { api } from '@/utils/client'
 import { schemas, unwrap } from '@claidor/client'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { defaultRetry } from './retry'
 
-type FileRead =
-  | schemas['DownloadableFileRead']
-  | schemas['ProductMediaFileRead']
-  | schemas['OrganizationAvatarFileRead']
-  | schemas['StorefrontHeaderFileRead']
-  | schemas['StorefrontLinkFileRead']
+// FileRead is imported rather than re-declared. The copy that used to live
+// here fell a variant behind the one in Upload.ts, which is the whole
+// argument against keeping two.
 
 export const useFiles = (
   organizationId: string,
