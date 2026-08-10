@@ -23,6 +23,26 @@ export { attachments, firstReadable, pickReadable } from './outlook'
 export { clearStamp, readStamp, writeStamp } from './settings'
 
 /**
+ * Which document a detached panel should pretend to be looking at.
+ *
+ * Development only, and it completes what `detached` is for. Without a
+ * filename the server can only answer « none », so a browser could reach
+ * the sign-in and choose-a-deal screens and never the one the panel is
+ * actually *for*. `?filename=cascade_deck.pptx` gets there.
+ *
+ * It is not a way in: identify still runs against the caller's own token
+ * and their own deals, and a name that matches nothing answers « none »
+ * exactly as before. It is stripped from production builds regardless.
+ */
+function pretendFilename(): string | null {
+  // `import.meta.env.DEV` is Vite's own constant, replaced at build time —
+  // not an environment variable, so it has no business in turbo.json.
+  // eslint-disable-next-line turbo/no-undeclared-env-vars
+  if (!import.meta.env.DEV) return null
+  return new URLSearchParams(window.location.search).get('filename')
+}
+
+/**
  * A stand-in for running outside Office at all.
  *
  * The panel is a web page and `pnpm dev` opens it in a browser, which is
@@ -32,7 +52,12 @@ export { clearStamp, readStamp, writeStamp } from './settings'
 const detached: HostBridge = {
   host: 'unknown',
   async read() {
-    return { host: 'unknown', filename: null, lineageId: null, currentPage: null }
+    return {
+      host: 'unknown',
+      filename: pretendFilename(),
+      lineageId: null,
+      currentPage: null,
+    }
   },
   async stamp() {
     return false

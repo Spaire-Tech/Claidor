@@ -1,20 +1,29 @@
 /**
- * The panel's shell — a placeholder, and deliberately an ugly one.
+ * The panel, inside Word, Excel, PowerPoint and Outlook.
  *
- * **This file is the founder's to replace.** Everything under it is
- * plumbing: `usePanel` holds the state machine, `host/` hides the four
- * applications behind one interface, `api.ts` talks to the server. None of
- * that has an opinion about how any of this looks, and this file has no
- * opinion worth keeping.
+ * 320 pixels, one column, six stages. Everything it *does* is in
+ * `usePanel`; this file is only what it looks like, and every piece of
+ * that is composed from an idiom the workspace design already uses — see
+ * `ui.tsx`, which records where each came from.
  *
- * It exists so the plumbing can be run and seen working before there is a
- * design — sideload it into PowerPoint, click a finding, watch the slide
- * move. Every stage the real panel needs is here with the data already
- * wired to it, so replacing it is a matter of styling what is passed in
- * rather than working out what to ask for.
+ * **What the panel is for.** Not to be a second dashboard in a narrow
+ * column. It is for the two things a banker cannot do from a browser: see
+ * what is wrong with *the document already open in front of them*, and be
+ * taken to it. So the whole screen is one list of that document's
+ * findings, and pressing a row moves the cursor to the figure.
  *
- * The four states every screen needs are marked below. The fourth is the
- * one everybody forgets: 1,248 findings in a 320-pixel column.
+ * **Two rules this screen keeps that a small screen makes tempting to
+ * break.**
+ *
+ * Coverage stays on screen. « Four findings » in a task pane implies the
+ * other hundred and twenty figures were checked and were fine, and the
+ * engine cannot make that claim. The line under the heading says what was
+ * reconciled *and* what was not, in the same words the deal page uses.
+ *
+ * A jump that does not land says so. A panel that silently fails to move
+ * looks exactly like a panel that moved somewhere wrong, and the second is
+ * the more expensive mistake — the banker looks at the wrong slide and
+ * believes it.
  */
 
 import { useEffect, useState } from 'react'
@@ -23,7 +32,9 @@ import { TieOutApi } from './api'
 import type { DealListItem, Finding } from './api'
 import { current } from './auth'
 import { API_BASE, SIGN_IN_URL } from './config'
+import { colour, size, space, surface } from './design'
 import type { HostBridge } from './host'
+import { Bar, Heading, Quiet, Row, Text, Truncation } from './ui'
 import { usePanel } from './usePanel'
 
 const api = new TieOutApi({
@@ -31,102 +42,252 @@ const api = new TieOutApi({
   token: () => current()?.token ?? null,
 })
 
+/**
+ * How many findings are drawn before « show more ».
+ *
+ * Smaller than the workspace's 120 on purpose. This column shows about six
+ * rows at a time, so a hundred and twenty is four hundred pixels of scroll
+ * nobody asked for; twenty-five is a few flicks and then a decision.
+ */
+const WINDOW = 25
+
+/** The design's three severities, from the server's two. As on the deal page. */
+function severityOf(finding: Finding): { label: string; ink: string } {
+  if (finding.one_tick) return { label: 'rounding', ink: colour.note }
+  if (finding.severity === 'smell') return { label: 'warning', ink: colour.warning }
+  return { label: 'critical', ink: colour.critical }
+}
+
+const Shell = ({ children }: { children: React.ReactNode }) => (
+  <div
+    style={{
+      ...surface,
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      fontSize: size.body,
+      lineHeight: 1.5,
+      overflow: 'hidden',
+    }}
+  >
+    {children}
+  </div>
+)
+
 export function Panel({ bridge }: { bridge: HostBridge }) {
   const panel = usePanel(bridge, api, SIGN_IN_URL)
-  const [moved, setMoved] = useState<string | null>(null)
+  const [limit, setLimit] = useState(WINDOW)
+  const [problem, setProblem] = useState<string | null>(null)
+  //: Which row is carrying its actions. The design's Check row opens to
+  //: show them, and it opens for the same reason this one does: two text
+  //: actions under every row of six is twelve links on a 320-pixel column,
+  //: and none of them is the thing you came here to press.
+  const [open, setOpen] = useState<string | null>(null)
 
-  // LOADING — extraction and identification both take a moment.
-  if (panel.stage === 'loading') return <p>Working out where this is…</p>
+  // A new document, or a re-check, starts at the top of its own list.
+  const [countedAt, setCountedAt] = useState(panel.findings.length)
+  if (panel.findings.length !== countedAt) {
+    setCountedAt(panel.findings.length)
+    setLimit(WINDOW)
+  }
+
+  if (panel.stage === 'loading') {
+    return (
+      <Shell>
+        <Quiet>Working out which document this is…</Quiet>
+      </Shell>
+    )
+  }
 
   if (panel.stage === 'signed-out') {
     return (
-      <div>
-        {panel.error && <p role="alert">{panel.error}</p>}
-        <button onClick={() => void panel.signIn()}>Sign in</button>
-      </div>
+      <Shell>
+        <Heading title="Pierce" line="Reconciliation, where the document is." />
+        {panel.error && <Quiet tone="critical">{panel.error}</Quiet>}
+        <Quiet>
+          Sign in once. This add-in then remembers which deal each file
+          belongs to, inside the file itself.
+        </Quiet>
+        <div style={{ padding: `0 ${space.gutter}px` }}>
+          <Text onClick={() => void panel.signIn()}>Sign in</Text>
+        </div>
+      </Shell>
     )
   }
 
-  // ERROR — the server's own sentence, which is written to be shown.
-  if (panel.stage === 'failed') return <p role="alert">{panel.error}</p>
+  if (panel.stage === 'failed') {
+    return (
+      <Shell>
+        <Heading title="Pierce" />
+        {/* The server's own sentence. Every message it sends is written to
+            be shown to a person as it stands. */}
+        <Quiet tone="critical">{panel.error}</Quiet>
+        <div style={{ padding: `0 ${space.gutter}px` }}>
+          <Text onClick={() => void panel.signIn()}>Sign in again</Text>
+        </div>
+      </Shell>
+    )
+  }
+
+  if (panel.stage === 'unsupported') {
+    return (
+      <Shell>
+        <Heading title="Pierce" />
+        <Quiet>
+          There is no document open here. Open a deck, a model or a memo and
+          this reads it.
+        </Quiet>
+      </Shell>
+    )
+  }
 
   if (panel.stage === 'choose-deal') {
     return (
-      <div>
-        <p>Which deal does this document belong to?</p>
-        {/* Asked once per document: the answer is written into the file. */}
+      <Shell>
+        <Heading
+          title={panel.document?.filename ?? 'This document'}
+          line="Which deal does this belong to?"
+        />
+        {/* Asked once per document, not once per session: the answer is
+            written into the file, so the next person to open it — on
+            another machine, under another name — goes straight to the
+            findings. */}
         <DealList onChoose={(id) => void panel.chooseDeal(id)} />
-      </div>
+      </Shell>
     )
   }
 
+  const shown = panel.findings.slice(0, limit)
+  const settle = (finding: Finding, state: 'accepted' | 'dismissed') => {
+    setOpen(null)
+    void panel.dismiss(finding, state)
+  }
+
   return (
-    <div>
-      <header>
-        <strong>{panel.identity?.dossier_name}</strong>
-        <div>{panel.identity?.artifact?.filename}</div>
-        {panel.coverage && (
-          // The honesty mechanism, in the panel as on the deal page: what
-          // was checked, and — the part that matters — what was not.
-          <p>
-            {panel.coverage.reconciled} reconciled · {panel.coverage.unlinked} not
-            checked
-          </p>
+    <Shell>
+      <Heading
+        title={panel.identity?.dossier_name ?? 'This deal'}
+        line={panel.identity?.artifact?.filename ?? panel.document?.filename ?? ''}
+        action={
+          panel.identity?.matched_by === 'filename' ? (
+            // It matched on the name, which is a guess, so it offers to be
+            // corrected. A stamp is definitive and says nothing.
+            <Text tone="quiet" onClick={panel.rechoose} title="Not this deal?">
+              not this?
+            </Text>
+          ) : undefined
+        }
+      />
+
+      {panel.coverage && (
+        <div
+          style={{
+            flex: '0 0 auto',
+            padding: `9px ${space.gutter}px`,
+            fontSize: size.small,
+            color: colour.faint,
+            borderBottom: `1px solid ${colour.rule}`,
+          }}
+        >
+          {panel.coverage.reconciled} reconciled · {panel.coverage.unlinked} not
+          checked
+        </div>
+      )}
+
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+        {/* EMPTY — the *good* outcome, and it must not read as a failure. */}
+        {panel.findings.length === 0 && (
+          <Quiet>Checked, and every figure here ties back to the model.</Quiet>
         )}
-        <button onClick={() => void panel.recheck()} disabled={panel.working}>
+
+        {shown.map((finding) => {
+          const level = severityOf(finding)
+          return (
+            <Row
+              key={finding.id}
+              title={
+                <>
+                  {finding.printed}
+                  <span style={{ color: colour.fainter }}> where the model says </span>
+                  {finding.expected}
+                </>
+              }
+              where={finding.where.detail}
+              mark={level.label}
+              markInk={level.ink}
+              onClick={() => {
+                // Pressing a row does the thing the panel is for — move
+                // the document to the figure — and opens its actions on
+                // the way past. Both, because a banker who has just been
+                // taken to the wrong slide is exactly the person who wants
+                // « Dismiss » to hand.
+                setProblem(null)
+                setOpen(finding.id)
+                void panel.goTo(finding).then((result) => {
+                  setProblem(result.moved ? null : (result.reason ?? 'could not go there'))
+                })
+              }}
+            >
+              {open === finding.id && (
+                <>
+                  <Text tone="quiet" onClick={() => settle(finding, 'dismissed')}>
+                    Dismiss
+                  </Text>
+                  {/* Recorded against the finding, not written into the
+                      file. Nothing in this product edits a document yet,
+                      and the word has to carry that. */}
+                  <Text tone="quiet" onClick={() => settle(finding, 'accepted')}>
+                    Record {finding.expected}
+                  </Text>
+                </>
+              )}
+            </Row>
+          )
+        })}
+
+        <Truncation
+          shown={shown.length}
+          total={panel.findings.length}
+          onMore={() => setLimit((was) => was + WINDOW)}
+        />
+      </div>
+
+      {/* A jump that did not land, said out loud. */}
+      {problem && (
+        <div
+          style={{
+            flex: '0 0 auto',
+            padding: `8px ${space.gutter}px`,
+            fontSize: size.tiny,
+            color: colour.critical,
+            borderTop: `1px solid ${colour.rule}`,
+          }}
+          role="alert"
+        >
+          {problem}
+        </div>
+      )}
+
+      <Bar>
+        <Text onClick={() => void panel.recheck()} disabled={panel.working}>
           {panel.working ? 'Checking…' : 'Re-check'}
-        </button>
-      </header>
-
-      {/* EMPTY — the *good* outcome, and it must not read as a failure. */}
-      {panel.findings.length === 0 && <p>Checked, and everything ties out.</p>}
-
-      {/* TOO MUCH — a real deck reaches hundreds. Whatever replaces this
-          has to stay usable at the top of that range. */}
-      <ul>
-        {panel.findings.map((finding) => (
-          <Row
-            key={finding.id}
-            finding={finding}
-            onGoTo={async () => {
-              const result = await panel.goTo(finding)
-              // Never a silent failure: a panel that does not move looks
-              // exactly like a panel that moved somewhere wrong.
-              setMoved(result.moved ? null : (result.reason ?? 'could not go there'))
-            }}
-            onDismiss={() => void panel.dismiss(finding, 'dismissed')}
-          />
-        ))}
-      </ul>
-
-      {moved && <p role="alert">{moved}</p>}
-    </div>
+        </Text>
+        <div style={{ flex: 1 }} />
+        <Text tone="quiet" onClick={panel.signOut}>
+          Sign out
+        </Text>
+      </Bar>
+    </Shell>
   )
 }
 
-function Row({
-  finding,
-  onGoTo,
-  onDismiss,
-}: {
-  finding: Finding
-  onGoTo: () => void
-  onDismiss: () => void
-}) {
-  return (
-    <li>
-      <button onClick={onGoTo}>
-        {finding.printed} → {finding.expected}
-      </button>
-      <div>{finding.where.detail}</div>
-      {/* Shown, and ranked last by the server. Almost always a rounding
-          convention, and still a difference worth seeing. */}
-      {finding.one_tick && <em>rounding</em>}
-      <button onClick={onDismiss}>Dismiss</button>
-    </li>
-  )
-}
-
+/**
+ * The deals this person is on.
+ *
+ * Each carries its file count and its open findings, because « Project
+ * Cascade » and « Project Cascade (old) » are told apart by what is in
+ * them and by nothing else.
+ */
 function DealList({ onChoose }: { onChoose: (id: string) => void }) {
   const [deals, setDeals] = useState<DealListItem[] | null>(null)
 
@@ -141,17 +302,23 @@ function DealList({ onChoose }: { onChoose: (id: string) => void }) {
     }
   }, [])
 
-  if (deals === null) return <p>Loading…</p>
-  if (deals.length === 0) return <p>You are not on any deals yet.</p>
+  if (deals === null) return <Quiet>Loading…</Quiet>
+  if (deals.length === 0) return <Quiet>You are not on any deals yet.</Quiet>
+
   return (
-    <ul>
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
       {deals.map((deal) => (
-        <li key={deal.id}>
-          <button onClick={() => onChoose(deal.id)}>
-            {deal.name} — {deal.artifacts} files, {deal.open_findings} open
-          </button>
-        </li>
+        <Row
+          key={deal.id}
+          title={deal.name}
+          where={`${deal.artifacts} ${deal.artifacts === 1 ? 'file' : 'files'} · ${
+            deal.open_findings
+          } open`}
+          mark=""
+          markInk={colour.faint}
+          onClick={() => onChoose(deal.id)}
+        />
       ))}
-    </ul>
+    </div>
   )
 }

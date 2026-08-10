@@ -158,6 +158,25 @@ export function usePanel(bridge: HostBridge, api: TieOutApi, signInUrl: string) 
     [resolve],
   )
 
+  /**
+   * « That is not the right deal. » Ask again.
+   *
+   * Offered only when the match was made on the *filename*, which is a
+   * guess: two deals can each hold a « Model_v12.xlsx ». A stamped
+   * document is definitive and never offers this — being asked to confirm
+   * something that cannot be wrong is how people learn to click through
+   * the question that can.
+   */
+  const rechoose = useCallback(() => {
+    setState((was) => ({
+      ...was,
+      stage: 'choose-deal',
+      findings: [],
+      coverage: null,
+      error: null,
+    }))
+  }, [])
+
   /** Take the reader to what a finding is about, in whichever host. */
   const goTo = useCallback(
     (finding: Finding): Promise<GoToResult> =>
@@ -188,5 +207,5 @@ export function usePanel(bridge: HostBridge, api: TieOutApi, signInUrl: string) 
     }
   }, [api, load, state.identity])
 
-  return { ...state, signIn, signOut, chooseDeal, goTo, dismiss, recheck, api }
+  return { ...state, signIn, signOut, chooseDeal, rechoose, goTo, dismiss, recheck, api }
 }

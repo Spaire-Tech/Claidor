@@ -21,7 +21,7 @@
  * column beside a draft is what a person wanted anyway.
  */
 
-import type { Anchor, GoToResult, HostBridge, OpenDocument } from './types'
+import type { GoToResult, HostBridge, OpenDocument } from './types'
 
 /** The attachments on the draft, for resolving which deal this is about. */
 export interface DraftAttachment {
@@ -73,7 +73,10 @@ export const outlook: HostBridge = {
     return false
   },
 
-  async goTo(_anchor: Anchor): Promise<GoToResult> {
+  // Takes no anchor, because there is nowhere in a mail item to go. The
+  // signature is the bridge's; this host answers the same way whatever it
+  // is handed.
+  async goTo(): Promise<GoToResult> {
     return {
       moved: false,
       by: 'none',

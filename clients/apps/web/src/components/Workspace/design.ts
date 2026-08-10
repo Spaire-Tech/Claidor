@@ -34,6 +34,15 @@ export const canvas = { width: 1440, height: 900 }
  */
 export const NARROW = 1240
 
+// --- shared with the Office panel: keep byte-identical --------------------
+//
+// The panel is a separate application with a separate bundler, and these
+// values have to be the same in both or the two halves of the product drift
+// apart a shade at a time. Rather than couple two build systems over sixty
+// lines of constants, the block is copied into
+// `clients/apps/panel/src/design.ts` and `design.test.ts` there fails the
+// build if the two ever differ. Edit one, edit the other.
+
 export const font = {
   ui: "'Hanken Grotesk', system-ui, sans-serif",
   /** Office surfaces read as Office. */
@@ -84,6 +93,8 @@ export const colour = {
   /** The composer's own border — the one hairline that is not the ramp. */
   composerRule: '#d7d7d3',
 }
+
+// --- end shared ----------------------------------------------------------
 
 /** The page behind the panels. */
 export const pageBackground =

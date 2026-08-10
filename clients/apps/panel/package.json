@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Claidor inside Word, Excel, PowerPoint and Outlook. One panel, four hosts.",
-  "engines": { "node": ">=20.0.0" },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -24,10 +26,12 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@claidor/eslint-config": "workspace:*",
     "@types/office-js": "^1.0.377",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^9.39.2",
     "office-addin-debugging": "^6.0.0",
     "office-addin-manifest": "^1.13.0",
     "typescript": "^5.5.4",
