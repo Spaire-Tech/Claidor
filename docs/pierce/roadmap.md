@@ -22,31 +22,33 @@ into it.
 
 What « complete » means, in order:
 
-1. **The agent.** The composer on the front screen accepts a question and
-   nothing answers. It is the first thing anyone sees and it is dead.
-2. **Writing.** « Record $48.9mm » becomes « Accept » — the correction
-   goes into the file, reversibly.
-3. The five dock screens that say « not connected »: Mail, Calendar,
-   SharePoint, Projects, Terminal.
+1. ~~**The agent.**~~ Done, 10 August. The composer answers, and every
+   figure in the answer came back from a tool in the same turn.
+2. ~~**Writing.**~~ Done, 10 August. « Record $48.9mm » is « Accept
+   $48.9mm », the correction goes into the file, and Undo takes it out.
+3. **The five dock screens that say « not connected »**: Mail, Calendar,
+   SharePoint, Projects, Terminal. Next.
 
 ---
 
 ## The line the product is standing on
 
-**Reading is nearly finished. Writing has not started.**
+**It reads, and now it writes.** As of 10 August a figure a banker accepts
+changes in the file — in the deal's copy through the workspace, in their
+own copy through the panel — and Undo changes it back.
 
-Everything built so far *finds* things. Nothing *fixes* anything. That is
-the honest halfway mark, and it is the single most useful sentence in this
-document.
+What is left is not a half of the product any more. It is the five dock
+screens that say « not connected », and then the sources the chain stops
+short of.
 
 | | State |
 |---|---|
 | Engine — decks, models, memos, audit, chain | Done |
 | Persisted spine — artifacts, figures, cells, links, findings | Done |
-| API — 17 routes, anchors, identity, panel auth | Done |
+| API — 21 routes, anchors, identity, panel auth | Done |
 | Workspace — 8 of 13 screens live | Part |
 | Office panel — plumbing and screen both done | Done |
-| Writing — proposals, apply, reverse | **Not started** |
+| Writing — proposals, apply, reverse | Done |
 | PDF sources, connectors, firm standards | Not started |
 | Accuracy — deck 83 %, model 56 %, both by mutation | Measured |
 
@@ -127,7 +129,7 @@ What it still needs is the thing behind it rather than the screen: writing.
 Today the two actions record a decision against the finding. « Accept
 $41.9m » only becomes true when phase 6 lands.
 
-### 6 · Writing  *(re-cut 10 August — smaller than it looked)*
+### 6 · Writing  ✓ *(10 August)*
 
 Two corrections, both from the founder, both material.
 
@@ -145,13 +147,24 @@ change (`Finding.printed` and `Finding.expected`), so accept writes the
 new value, reject leaves the old, reverse writes it back, and the file
 stays a normal file. `docs/pierce/writing-pptx.md` has the whole of it.
 
-- The proposal layer: a change is proposed, never applied
-- `.pptx` write — the two real problems are **split runs** (a figure is
-  often not one run) and **charts in two places** (the cache *and* the
-  embedded workbook). Both have published solutions
-- Word — adapt `src/office/redline.ts` from the fork
-- Apply on accept, reverse, and « nothing leaves the firm without a banker
-  accepting it »
+- ~~The proposal layer~~ — `Correction`, keyed on the finding's
+  fingerprint so it survives the run that deletes the finding, and holding
+  both sides so reversal needs no revision format
+- ~~`.pptx` write~~ — split runs and charts in two places, both as the
+  document said. A third turned up that the document did not predict: **a
+  shape id is not unique**, and slide 3 of the Cascade deck proves it
+- ~~Word~~ — a tracked change, adapted from the fork's `redline.ts` in the
+  panel and from `redline.ooxml` on the server
+- ~~Apply on accept, reverse~~ — applying makes a new version, never an
+  overwrite, so undo is an ordinary write in the other direction
+
+**It needed the file kept.** Reading never wanted the document after
+ingest; writing cannot happen without it. Storing is best-effort and a
+document that was not kept says so, in a sentence with a next step in it.
+
+What was left out rather than faked is in the worklog: tables and charts
+from inside PowerPoint, which a task pane cannot reach; writing to a model
+at all; and « Accept all ».
 
 ### 7 · PDF sources  *(the chain's last hop)*
 

@@ -543,3 +543,190 @@ Recall unchanged at 83 %, all 171 tie-out tests pass.
 2. **Writing** — « Record » becomes « Accept ». `writing-pptx.md` has the
    design; the Word half is in the fork.
 3. The five dock screens that still say « not connected ».
+
+---
+
+## 10 August — writing
+
+**The halfway mark is gone.** Everything built until today *found* things.
+This writes: « Record $48.9mm » is « Accept $48.9mm », the figure in the
+file changes, and Undo changes it back.
+
+### The two hard problems, and what they actually cost
+
+`writing-pptx.md` named them a week ago and both were where it said.
+
+**A figure is often not one run.** `$42.6mm` is stored as `$42.` and `6mm`
+whenever a spell-check boundary or a three-versions-ago edit split it, and
+`python-pptx` flattens runs on the way out — so every figure has looked
+like one piece of text for the whole life of this project and the problem
+could only appear on the first write. The anchors already stored were the
+right coordinate: a paragraph and character offsets, run-agnostic. The
+writer rebuilds the paragraph text from its runs, keeps a map back into
+them, and splices; a split figure is replaced in the *first* covering run,
+which keeps that run's formatting. The test splits a real run in the
+Cascade deck on purpose, because no file we have has ever done it for us.
+
+**A chart number lives in two places** — the cache in the chart XML, which
+is what PowerPoint draws, and the embedded workbook, which is what opens
+under « Edit data ». Both are written or neither is, and the workbook goes
+first because it is the half that can refuse. It is spliced rather than
+loaded and re-saved: an embedded workbook is three columns PowerPoint
+generated and nobody has ever opened, and the least this can do to one is
+replace the digits between `<v>` and its closing tag.
+
+**A memo is a tracked change instead**, through
+`polar.redline.ooxml.replace_tracked` — the same splicer `tieout.memo`
+already *reads* a memo with, so an offset means the same thing on both
+sides and there is no second definition of what the document says.
+
+### The rule underneath all of it
+
+**Refuse rather than approximate.** Every path checks the characters it is
+about to replace against the ones the reader recorded. Search-and-replace
+would land on the second `$48.9mm` on a slide as readily as the first, and
+a deck corrected in the wrong place is sent out by somebody with no reason
+to look at it again. Half the writer is refusals, each with a sentence and
+a next step.
+
+### A defect the fixture exposed: a shape id is not unique
+
+Slide 3 of the Cascade deck carries a chart and a table that **both call
+themselves shape 4.** PowerPoint asks for unique ids; the tools that
+generate decks do not always oblige. « The first shape with id 4 » would
+have written a table correction into a chart and raised nothing at all.
+
+Both fields are now used together, most specific first — the shape that
+answers to name *and* id, then the name, then the id — and an id matching
+two shapes is refused. The panel had already reasoned its way to name-first
+for the jump; the writer needed it to be a rule.
+
+### The proposal layer
+
+A finding becomes a `Correction` the moment anybody looks at it, carrying
+**both sides of the change**. That is the whole of the reversibility
+argument: `.pptx` has no revision model, and it does not need one when the
+database holds what the document said and what it should say.
+
+**Keyed on the finding's fingerprint, not its id.** Every check run deletes
+its findings and writes them again — the same reason a dismissal is keyed
+that way — so a correction hung on `finding_id` would vanish the first time
+anybody pressed Re-check. It has to outlive its finding by construction:
+once applied, the deck agrees, the drift is gone, and the correction is the
+only thing left that says the slide used to read $49.6mm.
+
+Applying makes a **new version** and never overwrites, so reversal is
+ordinary: the old figure is written back, producing a third version. The
+check re-runs, and the drift disappears because the deck agrees rather than
+because anything marked it settled.
+
+**Two places a correction can land**, and they are not the same thing. The
+workspace corrects *the deal's copy*. The panel corrects *the document open
+in Office*, because the banker's own file is the one that gets sent — the
+server never sees those bytes and records only that the decision was taken
+and where. Undo from the workspace on one of those refuses and says to do
+it in the panel.
+
+**A write that fails comes back 200 with `state: failed`** and the writer's
+sentence on it. It is not a bad request: the request was fine and the
+document had moved. Somebody who pressed Accept has to be able to find out
+afterwards whether the deck changed, and an HTTP error leaves nothing on
+screen to find out from.
+
+### This needed the file kept, and the model's own docstring was wrong
+
+Reading never wanted the document after ingest — that is what lets a
+confirmed link be re-checked forever. Writing cannot happen without it.
+So the bytes are stored (`Artifact.storage_path`), best-effort: an ingest
+that failed because S3 was slow would trade the thing that works for the
+thing that might, and a file that was not kept says so when somebody tries
+to write into it. `models/tieout.py` said « the files are not [retained] »
+as a security claim; it now says what is true, which is that the chain
+outlives the documents and dropping one costs the ability to correct that
+version and nothing else.
+
+### The screens
+
+The design draws all of this and had been standing on a button that only
+recorded a decision. The workspace footer is now the design's own three
+states — the proposal, « Slide 3 now reads 30.8 and ties to Model!B26 »,
+and « the figure stands at $42.6m » — with Undo meaning the write on one
+branch and the note on the other, and refusing to be the wrong one.
+
+The struck-through old figure with the underlined new one beside it is the
+design's **Docs** idiom borrowed whole: a deck row and a memo paragraph ask
+the same question and the design answered it once.
+
+**A screenshot caught what nothing else would have.** Accepting on slide 3
+threw the reader back to slide 2 — the corrected deck is a new artifact id
+and the screen reset its page on one. A new version of « the deck » is the
+same document to whoever is reading it, so the reset is keyed on the
+filename now, which is what a lineage is.
+
+### The panel
+
+Three steps, and the order is the safety: **propose on the server, write
+into the document, then record it as done.** A panel that recorded first
+would leave a deal claiming a correction that is in nobody's file.
+
+PowerPoint's add-in interface reaches a shape's text and nothing else, so a
+table cell and a chart point come back saying so and pointing at the
+workspace — which corrects the deal's copy through `python-pptx` and can do
+both halves of a chart. That refusal is the honest one: a chart written on
+one side only draws one number and reports another.
+
+Word gets a native tracked change, adapted from the fork's own
+`redline.ts`: mode loaded and saved, span re-verified after the flip,
+replacement, mode restored in a `finally`. Office.js cannot set a
+revision's author, so an in-pane change is attributed to the signed-in
+user and a server-side one to « Claidor ». Both are true.
+
+### Verified
+
+Through the interface at 1440 × 900, on the real Cascade files, not by
+curl.
+
+| | |
+|---|---|
+| Deck, slide 3 | Accept 30.8 on the chart series → the row reads `37.8 30.8` and « ties », the footer says it ties to `Model!B26` |
+| Undo | 37.8 back on the slide, the drift back in the check |
+| Coverage | 8 drifting → 7 after one correction |
+| Versions | the deck goes v2 → v3 → v4; nothing is overwritten |
+| Memo, paragraph 6 | Accept $228.9mm → `$235.3mm $228.9mm`, and the file carries `<w:del>$235.3mm</w:del><w:ins>$228.9mm</w:ins>` authored « Claidor » |
+
+Backend: 208 tie-out tests, of which 14 are the writers against the real
+`.pptx` and `.docx` and 13 are the proposal layer through HTTP. Panel: 16.
+
+### What was left out rather than faked
+
+- **Tables and charts from the panel.** PowerPoint cannot do it from a task
+  pane; the workspace can, and the panel says which.
+- **The model is not written to at all.** A cell is either a formula, in
+  which case the number is an output and the deck is what needs correcting,
+  or an input, in which case whoever owns the model owns the number. A
+  deliberate absence, not a gap.
+- **« Accept all »**, which the design draws on its Docs screen. One
+  correction is one decision; a button that writes six of them is a button
+  nobody can undo one of.
+
+### Environment, for the next time this container is new
+
+Everything had to be rebuilt, and two of these cost real time.
+
+- **Python.** `.python-version` says 3.14 and the only 3.14 `uv 0.8.17` can
+  fetch here is `rc2`, whose `typing._eval_type` has no `prefer_fwd_module`
+  — which pydantic 2.12+ passes unconditionally. Every import of
+  `polar.config` dies. Patched in `.venv` only, with a `try/except
+  TypeError`; nothing committed. A container with 3.14.0 final needs none
+  of it.
+- **Minio is not in the repository.** The worklog's own instructions point
+  at `.minio/configure.sh`, which is gitignored and was not here. `mc` can
+  do it directly: `mc alias set`, `mc mb` the three buckets, `mc admin user
+  add claidor-development`, attach `readwrite`.
+- Postgres by hand (`pg_ctlcluster 16 main start`), a `claidor` role, and
+  `redis-server --daemonize yes` — without Redis `/healthz` is 503 and
+  every screen looks broken.
+- `server/.env` needs `CLAIDOR_S3_ENDPOINT_URL=http://127.0.0.1:9000` or
+  the default sends uploads at real AWS, and
+  `clients/apps/web/.env.local` needs `NEXT_PUBLIC_API_URL` or the browser
+  bounces to `/login` with a perfectly good session.

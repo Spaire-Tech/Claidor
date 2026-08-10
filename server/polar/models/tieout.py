@@ -34,11 +34,17 @@ row loaded from Postgres while ``==`` still works — which is exactly the
 kind of defect that passes every test written against freshly constructed
 objects and fails the first time anything is re-read.
 
-**Cells and figures are retained; the files are not.** The security
-posture the product commits to is « keep the chain, drop the documents »,
-and that has to be true in the schema rather than in a policy page. What
-is stored below is figures, cells, formulas, labels and links — enough to
-re-check forever, and not the deck.
+**The chain outlives the documents.** What is stored below is figures,
+cells, formulas, labels and links — enough to re-check forever without
+opening a file again, which is the property that lets « keep the chain,
+drop the documents » be true in the schema rather than in a policy page.
+
+Writing is the one thing that needs the file back, because a correction is
+a new version of a real `.pptx` and there is nothing here to build one out
+of. So a document *is* kept while it is in the deal, at
+`Artifact.storage_path`, and dropping it costs the ability to correct that
+version and nothing else: every check still runs, every chain still
+renders, and the screen that offers to write says to upload it again.
 """
 
 from datetime import datetime
