@@ -22,7 +22,9 @@ import { Chat, type Message } from './Chat'
 import { Dock } from './Dock'
 import { ApiError, TieOutApi } from './api'
 import type { Artifact, Chain, Coverage, Finding, Link } from './api'
-import { colour, font, pageBackground, panel, size, tabChip } from './design'
+import { colour, font, pageBackground, panel, size, space, tabChip } from './design'
+import { useNarrow } from './useNarrow'
+import './workspace.css'
 import { Applications } from './screens/Applications'
 import { Checks } from './screens/Checks'
 import { Confirm } from './screens/Confirm'
@@ -77,8 +79,14 @@ const NOT_CONNECTED: Partial<Record<View, string>> = {
 
 export function Workspace({ dealId }: { dealId: string }) {
   const [view, setView] = useState<View>('chat')
-  const [showLeft, setShowLeft] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
+  const narrow = useNarrow()
+
+  //: The left panel is not a thing that can be toggled — it is the view.
+  //: Chat is one column; everything else is two. The design has no control
+  //: for hiding the panel and does not need one, since the dock's first
+  //: button is the way back.
+  const showLeft = view !== 'chat'
 
   const [deal, setDeal] = useState('')
   //: The id `load` settled on — the one passed in, or the first this
@@ -131,10 +139,7 @@ export function Workspace({ dealId }: { dealId: string }) {
     void load()
   }, [load])
 
-  const go = (next: View) => {
-    setView(next)
-    setShowLeft(next !== 'chat')
-  }
+  const go = (next: View) => setView(next)
 
   const trace = async (finding: Finding) => {
     setTraced(finding)
@@ -236,13 +241,14 @@ export function Workspace({ dealId }: { dealId: string }) {
 
   return (
     <div
+      className="pc-workspace"
       style={{
         height: '100vh',
         width: '100%',
-        padding: '18px 18px 0',
+        padding: `${space.page}px ${space.page}px 0`,
         display: 'flex',
         flexDirection: 'column',
-        gap: 14,
+        gap: space.gap,
         fontFamily: font.ui,
         color: colour.ink,
         fontSize: size.body,
@@ -251,7 +257,7 @@ export function Workspace({ dealId }: { dealId: string }) {
         background: pageBackground,
       }}
     >
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 14 }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: space.gap }}>
         {showLeft && (
           <div
             style={{
@@ -354,17 +360,12 @@ export function Workspace({ dealId }: { dealId: string }) {
           deal={deal}
           onSend={send}
           onNew={() => setMessages([])}
-          wide={!showLeft}
+          alone={!showLeft}
+          narrow={narrow}
         />
       </div>
 
-      <Dock
-        view={view}
-        onGo={go}
-        showLeft={showLeft}
-        onToggleLeft={() => setShowLeft((was) => !was)}
-        deal={deal}
-      />
+      <Dock view={view} onGo={go} deal={deal} />
     </div>
   )
 }

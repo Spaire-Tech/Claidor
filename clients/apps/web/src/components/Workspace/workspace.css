@@ -1,0 +1,85 @@
+/**
+ * The design's own stylesheet, verbatim.
+ *
+ * Copied from `docs/pierce/design/stylesheet.css`. Everything else in the
+ * workspace is inline style, because the design is inline style; these are
+ * the four things that cannot be — keyframes, a scrollbar, a wrapping
+ * ribbon, and the reset the design assumes.
+ *
+ * This file is not optional decoration. `pcIn` and `pcDim` are referenced
+ * by name from half a dozen components; without it, `animation: pcIn .18s
+ * ease both` is a string the browser discards in silence. Nothing errors,
+ * nothing animates, and the screens are subtly dead.
+ *
+ * Scoped to `.pc-workspace` where scoping is possible, because this app has
+ * other pages and they are not this design. The keyframes cannot be scoped
+ * — keyframe names are global — and are prefixed instead.
+ */
+
+.pc-workspace,
+.pc-workspace * {
+  box-sizing: border-box;
+}
+
+.pc-workspace a {
+  color: #242424;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pc-workspace a:hover {
+  color: #605e5c;
+}
+
+/* A floating thumb rather than a channel: the 3px transparent border is
+   clipped to the content box, so the track never draws. */
+.pc-workspace ::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.pc-workspace ::-webkit-scrollbar-thumb {
+  background: rgba(21, 23, 27, 0.16);
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* A ribbon scrolls sideways with no visible bar; below the breakpoint it
+   wraps instead, which is what `.ribbon-wrap` is for. */
+.pc-workspace .ribbon::-webkit-scrollbar {
+  height: 0;
+  display: none;
+}
+
+.pc-workspace .ribbon {
+  scrollbar-width: none;
+}
+
+.pc-workspace .ribbon-wrap {
+  flex-wrap: wrap;
+  overflow: visible !important;
+  white-space: normal !important;
+  row-gap: 4px;
+}
+
+@keyframes pcIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pcDim {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}

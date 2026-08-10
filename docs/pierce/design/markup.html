@@ -1,0 +1,1140 @@
+
+<div style="height:100vh; width:100%; padding:18px 18px 0; display:flex; flex-direction:column; gap:14px; font-family:'Hanken Grotesk',system-ui,sans-serif; color:#242424; font-size:14.5px; line-height:1.5; overflow:hidden; background:radial-gradient(120% 100% at 20% -10%, #ffffff 0%, #f4f5f7 42%, #e9ebef 72%, #e2e4e9 100%)">
+
+  <div style="flex:1; min-height:0; display:flex; gap:14px">
+
+    <sc-if value="{{ showLeft }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1 1 0; min-width:0; display:flex; flex-direction:column; background:rgba(255,255,255,.92); backdrop-filter:blur(20px) saturate(1.4); -webkit-backdrop-filter:blur(20px) saturate(1.4); border:1px solid rgba(255,255,255,.9); border-radius:20px; box-shadow:0 14px 40px rgba(16,20,28,.10), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.9); overflow:hidden; font-family:'Segoe UI','Hanken Grotesk',system-ui,sans-serif">
+      <div style="flex:0 0 auto; display:flex; align-items:center; gap:4px; padding:9px 10px; border-bottom:1px solid #f0eeec">
+        <div style="display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(18,24,40,.08); border-radius:11px; padding:8px 14px; font-weight:500">
+          <sc-if value="{{ tabPpt }}" hint-placeholder-val="{{ false }}"><img src="ce2e29ea-30ac-4bf4-8ee3-aacf75c2ec29" alt="" style="width:16px; height:16px; object-fit:contain"></sc-if>
+          <sc-if value="{{ tabXls }}" hint-placeholder-val="{{ false }}"><img src="e5bf9fc8-3c9c-46d5-ad27-aca1e738eade" alt="" style="width:16px; height:16px; object-fit:contain"></sc-if>
+          <sc-if value="{{ tabDoc }}" hint-placeholder-val="{{ false }}"><img src="68c38a48-2e1e-456f-a258-78f6fe51e98e" alt="" style="width:16px; height:16px; object-fit:contain"></sc-if>
+          <sc-if value="{{ tabMail }}" hint-placeholder-val="{{ false }}"><img src="f731c69d-0e91-4b0e-a037-e7e3a6be9ebb" alt="" style="width:16px; height:16px; object-fit:contain"></sc-if>
+          <span>{{ tabLabel }}</span>
+        </div>
+        <div style="flex:1"></div>
+        <span style="color:#605e5c; font-size:13.5px; padding-right:6px">{{ tabMeta }}</span>
+      </div>
+
+      <!-- FILES -->
+      <sc-if value="{{ vFiles }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column">
+          <div style="flex:0 0 auto; padding:24px 26px 18px">
+            <div style="font-size:19px; font-weight:500; color:#242424; letter-spacing:-.015em">Data room</div>
+            <div style="font-size:13px; color:#8a8886; margin-top:4px">Project Northgate · 24 files</div>
+          </div>
+          <div style="flex:1; min-height:0; overflow:auto; padding:0 12px 20px">
+            <sc-for list="{{ files }}" as="f" hint-placeholder-count="8">
+              <button sc-camel-on-click="{{ f.go }}" style="display:flex; align-items:center; gap:14px; width:100%; border:0; background:transparent; border-radius:8px; padding:12px 14px; font:inherit; cursor:pointer; text-align:left" style-hover="background:#f7f6f5">
+                <sc-if value="{{ f.isPpt }}" hint-placeholder-val="{{ false }}"><img src="ce2e29ea-30ac-4bf4-8ee3-aacf75c2ec29" alt="" style="width:18px; height:18px; object-fit:contain; flex:0 0 18px"></sc-if>
+                <sc-if value="{{ f.isXls }}" hint-placeholder-val="{{ false }}"><img src="e5bf9fc8-3c9c-46d5-ad27-aca1e738eade" alt="" style="width:18px; height:18px; object-fit:contain; flex:0 0 18px"></sc-if>
+                <sc-if value="{{ f.isDoc }}" hint-placeholder-val="{{ false }}"><img src="68c38a48-2e1e-456f-a258-78f6fe51e98e" alt="" style="width:18px; height:18px; object-fit:contain; flex:0 0 18px"></sc-if>
+                <sc-if value="{{ f.isMail }}" hint-placeholder-val="{{ false }}"><img src="f731c69d-0e91-4b0e-a037-e7e3a6be9ebb" alt="" style="width:18px; height:18px; object-fit:contain; flex:0 0 18px"></sc-if>
+                <span style="flex:1 1 auto; min-width:60px; font-size:14px; color:#242424; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ f.name }}</span>
+                <span style="flex:0 0 auto; font-size:12.5px; color:#a19f9d">{{ f.date }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- MAIL -->
+      <sc-if value="{{ vMail }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column; background:#fff; font-family:'Segoe UI','Hanken Grotesk',system-ui,sans-serif">
+          <div style="flex:0 0 auto; display:flex; align-items:center; gap:2px; padding:6px 12px; border-bottom:1px solid #f0eeec; font-size:13px; color:#605e5c; overflow:hidden">
+            <span style="display:flex; align-items:center; gap:7px; padding:6px 10px; border-radius:4px; cursor:pointer; white-space:nowrap" style-hover="background:#f3f2f1">
+              <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="#605e5c" stroke-width="1.4"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              New mail
+            </span>
+            <span style="width:1px; height:20px; background:#edebe9; margin:0 6px"></span>
+            <span style="display:flex; align-items:center; gap:7px; padding:6px 10px; border-radius:4px; cursor:pointer; white-space:nowrap" style-hover="background:#f3f2f1">
+              <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="#605e5c" stroke-width="1.4"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"></path></svg>
+              Delete
+            </span>
+            <span style="display:flex; align-items:center; gap:7px; padding:6px 10px; border-radius:4px; cursor:pointer; white-space:nowrap" style-hover="background:#f3f2f1">
+              <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="#605e5c" stroke-width="1.4"><rect x="3.5" y="5.5" width="17" height="4"></rect><path d="M5 9.5h14V19a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"></path></svg>
+              Archive
+            </span>
+            <span style="display:flex; align-items:center; gap:7px; padding:6px 10px; border-radius:4px; cursor:pointer; white-space:nowrap" style-hover="background:#f3f2f1">
+              <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="9,7 4,12 9,17"></polyline><path d="M4 12h9a6 6 0 0 1 6 6v1"></path></svg>
+              Reply
+            </span>
+            <div style="flex:1"></div>
+          </div>
+          <div style="flex:1; min-height:0; display:flex; overflow:hidden">
+            <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:0 1 172px; min-width:118px; border-right:1px solid #edebe9; padding:10px 6px; overflow:auto; background:#faf9f8">
+                <div style="font-size:12px; color:#8a8886; padding:6px 12px 8px">Favourites</div>
+                <sc-for list="{{ folders }}" as="fo" hint-placeholder-count="5">
+                  <div style="display:flex; align-items:center; gap:10px; padding:7px 12px; border-radius:4px; cursor:pointer; background: {{ fo.bg }}; font-size:13px; color:#242424; font-weight: {{ fo.fw }}" style-hover="background:#f3f2f1">
+                    <span style="width:16px; display:flex; color:#8a8886">{{ fo.icon }}</span>
+                    <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ fo.name }}</span>
+                    <span style="color:#8a8886; font-size:12px">{{ fo.count }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="flex:0 1 236px; min-width:164px; border-right:1px solid #f0eeec; overflow:hidden; display:flex; flex-direction:column; background:#fff">
+              <div style="flex:0 0 auto; display:flex; align-items:center; gap:18px; padding:8px 16px 0; border-bottom:1px solid #f0eeec; font-size:13px">
+                <span style="padding:8px 0 10px; border-bottom:2px solid #242424; color:#242424">Focused</span>
+                <span style="padding:8px 0 10px; color:#8a8886">Other</span>
+                <div style="flex:1"></div>
+                <span style="color:#8a8886; padding-bottom:10px">Filter</span>
+              </div>
+              <div style="flex:1; min-height:0; overflow:auto">
+                <sc-for list="{{ mails }}" as="m" hint-placeholder-count="5">
+                  <div>
+                    <sc-if value="{{ m.groupLabel }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:16px 16px 6px; font-size:12px; color:#8a8886">{{ m.groupLabel }}</div>
+                    </sc-if>
+                    <button sc-camel-on-click="{{ m.go }}" style="display:flex; gap:10px; width:100%; text-align:left; border:0; padding:12px 16px; font:inherit; cursor:pointer; background: {{ m.bg }}; box-shadow: {{ m.rail }}" style-hover="background:#f3f2f1">
+                      <span style="flex:0 0 30px; width:30px; height:30px; margin-top:1px; border-radius:50%; background: {{ m.avatarBg }}; color: {{ m.avatarInk }}; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:600">
+                        {{ m.initials }}
+                      </span>
+                      <span style="flex:1; min-width:0">
+                        <span style="display:flex; align-items:baseline; gap:8px">
+                          <span style="flex:1; min-width:0; font-size:13.5px; font-weight: {{ m.fw }}; color: {{ m.fromInk }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ m.from }}</span>
+                          <span style="font-size:12px; color:#8a8886; white-space:nowrap">{{ m.time }}</span>
+                        </span>
+                        <span style="display:block; font-size:13px; margin-top:2px; color:#242424; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ m.subject }}</span>
+                        <span style="display:block; font-size:12.5px; color:#8a8886; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ m.preview }}</span>
+                      </span>
+                    </button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1 1 0; min-width:0; overflow:auto; padding:18px 22px 24px; background:#fff">
+              <div style="font-size:17px; font-weight:600; color:#242424; text-wrap:pretty; line-height:1.35">{{ mail.subject }}</div>
+              <div style="display:flex; align-items:flex-start; gap:11px; margin:14px 0 0">
+                <span style="flex:0 0 34px; width:34px; height:34px; border-radius:50%; background: {{ mail.avatarBg }}; color: {{ mail.avatarInk }}; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600">
+                  {{ mail.initials }}
+                </span>
+                <span style="flex:1; min-width:0">
+                  <span style="display:flex; align-items:baseline; gap:8px">
+                    <span style="flex:0 1 auto; min-width:0; font-size:13.5px; font-weight:600; color:#242424; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ mail.from }}</span>
+                    <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+                      <span style="flex:0 1 auto; min-width:0; font-size:12.5px; color:#8a8886; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ mail.email }}</span>
+                    </sc-if>
+                    <span style="flex:1"></span>
+                    <span style="flex:0 0 auto; font-size:12px; color:#8a8886; white-space:nowrap">{{ mail.time }}</span>
+                  </span>
+                  <span style="display:block; font-size:12.5px; color:#8a8886; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ mail.meta }}</span>
+                </span>
+                <span style="display:flex; gap:2px; color:#8a8886">
+                  <span style="padding:5px; border-radius:4px; cursor:pointer; display:flex" style-hover="background:#f3f2f1">
+                    <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="9,7 4,12 9,17"></polyline><path d="M4 12h9a6 6 0 0 1 6 6v1"></path></svg>
+                  </span>
+                  <span style="padding:5px; border-radius:4px; cursor:pointer; display:flex" style-hover="background:#f3f2f1">
+                    <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="8,7 3,12 8,17"></polyline><polyline points="14,7 9,12 14,17"></polyline><path d="M9 12h6a5 5 0 0 1 5 5v1"></path></svg>
+                  </span>
+                  <span style="padding:5px; border-radius:4px; cursor:pointer; display:flex" style-hover="background:#f3f2f1">
+                    <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="15,7 20,12 15,17"></polyline><path d="M20 12h-9a6 6 0 0 0-6 6v1"></path></svg>
+                  </span>
+                </span>
+              </div>
+              <div style="line-height:1.7; color:#242424; font-size:14px; max-width:66ch; padding:20px 0 0">{{ mail.body }}</div>
+              <div style="margin-top:22px; border:1px solid #f0eeec; border-radius:6px; background:#fcfcfb; padding:16px 18px">
+                <div style="display:flex; align-items:center; gap:9px; margin-bottom:9px">
+                  <img src="f731c69d-0e91-4b0e-a037-e7e3a6be9ebb" alt="" style="width:16px; height:16px; object-fit:contain">
+                  <span style="font-size:13px; color:#605e5c">Draft reply — tracked change</span>
+                </div>
+                <div style="line-height:1.7; font-size:14px; max-width:66ch">
+                <span>Thank you for the note. The FY24 Adjusted EBITDA figure is </span>
+                <span style="text-decoration: {{ mailDelDecor }}; color: {{ mailDelInk }}">$42.6m</span>
+                <span style="text-decoration: {{ mailInsDecor }}; color: {{ mailInsInk }}">$41.9m</span>
+                <span>, normalised for non-recurring items and consistent with the audited accounts.</span>
+              </div>
+              <sc-if value="{{ mailPending }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; gap:8px; margin-top:14px">
+                  <button sc-camel-on-click="{{ acceptMail }}" style="border:0; background:linear-gradient(180deg,#1d7de6 0%,#0b62c4 55%,#0a51a5 100%); box-shadow:0 1px 2px rgba(0,60,140,.28), 0 0 0 .5px rgba(0,80,180,.35) inset, 0 1px 0 rgba(255,255,255,.45) inset; color:#fff; border-radius:4px; padding:7px 16px; font:inherit; font-size:13px; cursor:pointer" style-hover="background:linear-gradient(180deg,#2f8bef 0%,#146fd2 55%,#0d5cb4 100%)">Accept and send</button>
+                  <button sc-camel-on-click="{{ rejectMail }}" style="border:1px solid #c8c6c4; background:#fff; border-radius:4px; padding:7px 16px; font:inherit; font-size:13px; cursor:pointer; color:#242424" style-hover="background:#f3f2f1">Reject</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ mailDone }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:14px; color:#605e5c; font-size:13px">{{ mailDoneText }}</div>
+              </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- CALENDAR -->
+      <sc-if value="{{ vCalendar }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column">
+          <div style="flex:0 0 auto; padding:24px 26px 18px">
+            <div style="font-size:19px; font-weight:500; color:#242424; letter-spacing:-.015em">This week</div>
+            <div style="font-size:13px; color:#8a8886; margin-top:4px">16–20 March</div>
+          </div>
+          <div style="flex:1; min-height:0; overflow:auto; padding:0 26px 26px">
+            <sc-for list="{{ agenda }}" as="d" hint-placeholder-count="3">
+              <div style="padding-bottom:22px">
+                <div style="font-size:13px; color:#8a8886; padding-bottom:6px">{{ d.label }}</div>
+                <sc-for list="{{ d.items }}" as="e" hint-placeholder-count="3">
+                  <div style="display:flex; gap:18px; padding:11px 0; border-top:1px solid #f2f1ef">
+                    <span style="flex:0 0 52px; font-size:13px; color:#a19f9d">{{ e.time }}</span>
+                    <span style="flex:1; min-width:0">
+                      <span style="display:block; font-size:14px; color:#242424">{{ e.title }}</span>
+                      <span style="display:block; font-size:12.5px; color:#8a8886; margin-top:3px">{{ e.sub }}</span>
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- DOCS -->
+      <sc-if value="{{ vDocs }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column">
+          <div style="flex:0 0 auto; display:flex; align-items:center; gap:14px; padding:20px 26px 14px">
+            <span style="flex:1; min-width:0">
+              <span style="display:block; font-size:19px; font-weight:500; color:#242424; letter-spacing:-.015em">Section 4 — Financial review</span>
+              <span style="display:block; font-size:13px; color:#8a8886; margin-top:4px">CIM_Northgate_v6.docx · {{ docCount }}</span>
+            </span>
+            <button sc-camel-on-click="{{ acceptAllDoc }}" style="flex:0 0 auto; border:0; background:transparent; font:inherit; font-size:13px; color:#0b62c4; cursor:pointer; padding:4px">Accept all</button>
+          </div>
+          <div style="flex:1; min-height:0; overflow:auto; padding:0 26px 30px">
+            <sc-for list="{{ docParas }}" as="p" hint-placeholder-count="3">
+              <div style="padding:14px 0; border-top:1px solid #f2f1ef; font-size:14.5px; line-height:1.8; color:#242424; max-width:62ch">
+                <span>{{ p.before }}</span>
+                <span style="text-decoration: {{ p.delDecor }}; color: {{ p.delInk }}">{{ p.del }}</span>
+                <span style="color: {{ p.insInk }}; text-decoration: {{ p.insDecor }}">{{ p.ins }}</span>
+                <span>{{ p.after }}</span>
+                <sc-if value="{{ p.pending }}" hint-placeholder-val="{{ true }}">
+                  <span style="display:flex; gap:16px; margin-top:8px">
+                    <button sc-camel-on-click="{{ p.accept }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:12.5px; color:#0b62c4; cursor:pointer">Accept</button>
+                    <button sc-camel-on-click="{{ p.reject }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:12.5px; color:#8a8886; cursor:pointer">Reject</button>
+                  </span>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- SHEETS -->
+      <sc-if value="{{ vSheets }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column">
+          <div style="flex:0 0 auto; padding:24px 26px 18px">
+            <div style="font-size:19px; font-weight:500; color:#242424; letter-spacing:-.015em">Ops</div>
+            <div style="font-size:13px; color:#8a8886; margin-top:4px">Model_Northgate_v12.xlsx · revised 14 March</div>
+          </div>
+          <div style="flex:1; min-height:0; overflow:auto; padding:0 26px 26px">
+            <div style="display:flex; gap:16px; align-items:baseline; padding-bottom:8px">
+              <span style="flex:1"></span>
+              <span style="flex:0 0 70px; text-align:right; font-size:11.5px; color:#a19f9d">FY24</span>
+              <span style="flex:0 0 62px; text-align:right; font-size:11.5px; color:#a19f9d">FY23</span>
+            </div>
+            <sc-for list="{{ grid }}" as="row" hint-placeholder-count="8">
+              <div style="display:flex; gap:16px; align-items:baseline; padding:10px 0; border-top:1px solid #f2f1ef; background: {{ row.bg }}">
+                <span style="flex:1; min-width:0; font-size:13.5px; color: {{ row.ink }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ row.label }}</span>
+                <span style="flex:0 0 70px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#242424">{{ row.fy24 }}</span>
+                <span style="flex:0 0 62px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#a19f9d">{{ row.fy23 }}</span>
+              </div>
+            </sc-for>
+            <div style="padding-top:24px">
+              <div style="font-size:13px; color:#8a8886; padding-bottom:4px">Audit</div>
+              <sc-for list="{{ modelIssues }}" as="m" hint-placeholder-count="5">
+                <button sc-camel-on-click="{{ m.go }}" style="display:block; width:100%; text-align:left; border:0; background:transparent; padding:11px 0; border-top:1px solid #f2f1ef; font:inherit; cursor:pointer">
+                  <span style="display:block; font-size:13.5px; color: {{ m.ink }}">{{ m.text }}</span>
+                  <span style="display:block; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#a19f9d; margin-top:3px">{{ m.cell }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- DECK -->
+      <sc-if value="{{ vDeck }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column">
+          <div style="flex:0 0 auto; padding:24px 26px 18px">
+            <div style="font-size:19px; font-weight:500; color:#242424; letter-spacing:-.015em">Slide 14</div>
+            <div style="font-size:13px; color:#8a8886; margin-top:4px">Pitchbook_Northgate_vFinal.pptx · 38 slides</div>
+          </div>
+          <div style="flex:1; min-height:0; padding:0 26px; display:flex; justify-content:center; align-items:center; overflow:hidden">
+            <div style="height:100%; width:auto; max-width:100%; max-height:100%; aspect-ratio:16/9; container-type:size">
+              <div style="width:100%; height:100%; background:#fff; box-shadow:0 2px 14px rgba(18,24,40,.12); border:1px solid #f0eeec; padding:8cqh 6cqw; display:flex; flex-direction:column">
+                <div style="font-size:5cqh; font-weight:600; letter-spacing:-.02em; line-height:1.2">Historical financial performance</div>
+                <div style="font-size:3.2cqh; color:#a19f9d; margin-top:1cqh; line-height:1.2">FY22–FY24, normalised</div>
+                <div style="flex:1; min-height:0; display:flex; gap:5cqw; align-items:stretch; padding:6cqh 0 3cqh">
+                  <sc-for list="{{ bars }}" as="b" hint-placeholder-count="3">
+                    <div style="flex:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:2cqh">
+                      <span style="font-family:'IBM Plex Mono',monospace; font-size:3.6cqh; line-height:1.3; color: {{ b.ink }}">{{ b.value }}</span>
+                      <span style="width:100%; flex:0 0 auto; background:#242424; height: {{ b.h }}"></span>
+                      <span style="font-size:3.2cqh; line-height:1.2; color:#605e5c">{{ b.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="flex:0 0 auto; padding:18px 26px 22px">
+            <sc-if value="{{ deckPending }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; align-items:baseline; gap:16px; flex-wrap:wrap">
+                <span style="flex:1; min-width:220px; font-size:13.5px; color:#242424; line-height:1.6">FY24 shows $42.6m. The model returns $41.9m since 14 March.</span>
+                <span style="display:flex; gap:18px">
+                  <button sc-camel-on-click="{{ acceptDeck }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:13px; color:#0b62c4; cursor:pointer">Accept $41.9m</button>
+                  <button sc-camel-on-click="{{ rejectDeck }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:13px; color:#8a8886; cursor:pointer">Keep</button>
+                </span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ deckDone }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:baseline; gap:16px">
+                <span style="flex:1; font-size:13.5px; color:#8a8886">{{ deckDoneBody }}</span>
+                <button sc-camel-on-click="{{ resetDeck }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:13px; color:#0b62c4; cursor:pointer">Undo</button>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- SHAREPOINT -->
+      <sc-if value="{{ vSharepoint }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex">
+          <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:0 1 176px; min-width:120px; border-right:1px solid #f0eeec; background:#faf9f8; padding:16px 8px; overflow:auto">
+              <div style="display:flex; align-items:center; gap:10px; padding:0 8px 14px">
+                <span style="width:30px; height:30px; border-radius:3px; background:#0b62c4; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700">RD</span>
+                <span style="min-width:0">
+                  <span style="display:block; font-size:13px; font-weight:600; color:#242424; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Rothmoor Deals</span>
+                  <span style="display:block; font-size:11px; color:#8a8886">Private group</span>
+                </span>
+              </div>
+              <sc-for list="{{ spNav }}" as="n" hint-placeholder-count="5">
+                <div style="display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:3px; font-size:13px; color:#242424; cursor:pointer; background: {{ n.bg }}; box-shadow: {{ n.rail }}; font-weight: {{ n.fw }}" style-hover="background:#f0eeec">{{ n.name }}</div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <div style="flex:1 1 0; min-width:0; display:flex; flex-direction:column">
+            <sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:14px 20px 0">
+                <span style="flex:0 0 28px; width:28px; height:28px; border-radius:3px; background:#0b62c4; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700">RD</span>
+                <span style="min-width:0">
+                  <span style="display:block; font-size:13.5px; font-weight:600; color:#242424; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Rothmoor Deals</span>
+                  <span style="display:block; font-size:11.5px; color:#8a8886">Private group site</span>
+                </span>
+              </div>
+            </sc-if>
+            <div style="flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:14px 20px 10px">
+              <span style="font-size:16px; font-weight:600; color:#242424">Documents</span>
+              <span style="color:#c8c6c4">›</span>
+              <span style="font-size:13px; color:#605e5c; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Project Northgate</span>
+            </div>
+            <div class="ribbon" style="flex:0 0 auto; display:flex; align-items:center; gap:2px; padding:0 14px 8px; font-size:13px; color:#605e5c; overflow-x:auto; white-space:nowrap">
+              <span style="display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:3px; cursor:pointer; color:#0b62c4; font-weight:600" style-hover="background:#f0eeec">+ New</span>
+              <span style="padding:6px 10px; border-radius:3px; cursor:pointer" style-hover="background:#f0eeec">Upload</span>
+              <span style="padding:6px 10px; border-radius:3px; cursor:pointer" style-hover="background:#f0eeec">Sync</span>
+              <span style="padding:6px 10px; border-radius:3px; cursor:pointer" style-hover="background:#f0eeec">Share</span>
+              <span style="padding:6px 10px; border-radius:3px; cursor:pointer" style-hover="background:#f0eeec">Automate</span>
+            </div>
+            <div style="flex:0 0 auto; display:flex; gap:14px; padding:8px 20px; border-top:1px solid #f0eeec; border-bottom:1px solid #f0eeec; font-size:11.5px; color:#8a8886">
+              <span style="flex:1 1 auto; min-width:120px">Name ⌄</span>
+              <span style="flex:0 0 88px">Modified</span>
+              <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}"><span style="flex:0 0 106px">Modified by</span></sc-if>
+              <span style="flex:0 0 72px; text-align:right">Sync</span>
+            </div>
+            <div style="flex:1; min-height:0; overflow:auto">
+              <sc-for list="{{ sources }}" as="c" hint-placeholder-count="6">
+                <div style="display:flex; gap:14px; align-items:center; padding:10px 20px; border-bottom:1px solid #f5f4f2; font-size:13px" style-hover="background:#f5f4f2">
+                  <span style="flex:1 1 auto; min-width:120px; display:flex; align-items:center; gap:10px">
+                    <sc-if value="{{ c.isFolder }}" hint-placeholder-val="{{ true }}">
+                      <svg width="17" height="17" sc-camel-view-box="0 0 24 24" fill="#e8b23a" stroke="none" style="flex:0 0 17px"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h7a1.5 1.5 0 0 1 1.5 1.5V17a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 17z"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ c.isXls }}" hint-placeholder-val="{{ false }}"><img src="e5bf9fc8-3c9c-46d5-ad27-aca1e738eade" alt="" style="width:17px; height:17px; object-fit:contain; flex:0 0 17px"></sc-if>
+                    <sc-if value="{{ c.isPpt }}" hint-placeholder-val="{{ false }}"><img src="ce2e29ea-30ac-4bf4-8ee3-aacf75c2ec29" alt="" style="width:17px; height:17px; object-fit:contain; flex:0 0 17px"></sc-if>
+                    <sc-if value="{{ c.isDoc }}" hint-placeholder-val="{{ false }}"><img src="68c38a48-2e1e-456f-a258-78f6fe51e98e" alt="" style="width:17px; height:17px; object-fit:contain; flex:0 0 17px"></sc-if>
+                    <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#242424">{{ c.name }}</span>
+                  </span>
+                  <span style="flex:0 0 88px; color:#605e5c">{{ c.modified }}</span>
+                  <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}"><span style="flex:0 0 106px; color:#605e5c; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ c.by }}</span></sc-if>
+                  <span style="flex:0 0 72px; text-align:right; font-size:12px; color: {{ c.statusInk }}">{{ c.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- PROJECTS -->
+      <sc-if value="{{ vProjects }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column">
+          <div style="flex:0 0 auto; padding:24px 26px 18px">
+            <div style="font-size:19px; font-weight:500; color:#242424; letter-spacing:-.015em">Projects</div>
+            <div style="font-size:13px; color:#8a8886; margin-top:4px">Four live deals · nine open findings</div>
+          </div>
+          <div style="flex:1; min-height:0; overflow:auto; padding:0 26px 26px">
+            <sc-for list="{{ dealRows }}" as="d" hint-placeholder-count="4">
+              <button sc-camel-on-click="{{ d.go }}" style="display:flex; align-items:baseline; gap:16px; width:100%; text-align:left; border:0; background:transparent; padding:15px 0; border-top:1px solid #f2f1ef; font:inherit; cursor:pointer">
+                <span style="flex:1; min-width:0">
+                  <span style="display:block; font-size:15px; color:#242424; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ d.name }}</span>
+                  <span style="display:block; font-size:12.5px; color:#8a8886; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ d.lead }}</span>
+                </span>
+                <span style="flex:0 0 auto; font-size:13px; color: {{ d.statusInk }}">{{ d.status }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- CHECKS -->
+      <sc-if value="{{ vChecks }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column">
+          <div style="flex:0 0 auto; padding:24px 26px 18px">
+            <div style="font-size:19px; font-weight:500; color:#242424; letter-spacing:-.015em">Check</div>
+            <div style="font-size:13px; color:#8a8886; margin-top:4px">Project Northgate · seven findings, three critical</div>
+          </div>
+          <div style="flex:1; min-height:0; overflow:auto; padding:0 26px 26px">
+            <sc-for list="{{ findings }}" as="f" hint-placeholder-count="6">
+              <div style="border-top:1px solid #f2f1ef">
+                <button sc-camel-on-click="{{ f.toggle }}" style="display:flex; gap:16px; align-items:baseline; width:100%; border:0; background:transparent; padding:15px 0; font:inherit; text-align:left; cursor:pointer">
+                  <span style="flex:1; min-width:0">
+                    <span style="display:block; font-size:14.5px; color:#242424; line-height:1.45">{{ f.title }}</span>
+                    <span style="display:block; font-size:12.5px; color:#8a8886; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ f.where }}</span>
+                  </span>
+                  <span style="flex:0 0 auto; font-size:12.5px; color: {{ f.sevInk }}">{{ f.sev }}</span>
+                </button>
+                <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:0 0 18px; animation:pcIn .18s ease both">
+                    <div style="font-size:13.5px; color:#605e5c; line-height:1.7; max-width:62ch">{{ f.detail }}</div>
+                    <div style="display:flex; gap:18px; margin-top:12px">
+                      <button sc-camel-on-click="{{ f.trace }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:13px; color:#0b62c4; cursor:pointer">Trace</button>
+                      <button sc-camel-on-click="{{ f.deck }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:13px; color:#8a8886; cursor:pointer">Slide</button>
+                      <button sc-camel-on-click="{{ f.model }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:13px; color:#8a8886; cursor:pointer">Cell</button>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- LIBRARY -->
+      <sc-if value="{{ vLibrary }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; overflow:auto; padding:22px 26px">
+          <h2 style="margin:0 0 4px; font-size:18px; font-weight:600; letter-spacing:-.015em">Figure library</h2>
+          <div style="color:#605e5c; margin-bottom:18px">Every published figure, with the source it was drawn from.</div>
+          <sc-for list="{{ library }}" as="l" hint-placeholder-count="6">
+            <button sc-camel-on-click="{{ l.go }}" style="display:flex; align-items:baseline; gap:16px; width:100%; text-align:left; border:0; border-top:1px solid #f0eeec; background:transparent; padding:13px 8px; font:inherit; cursor:pointer" style-hover="background:#f5f4f2">
+              <span style="flex:1; min-width:0">
+                <span style="display:block; font-weight:500">{{ l.name }}</span>
+                <span style="display:block; font-size:13px; color:#8a8886; margin-top:2px; font-family:'IBM Plex Mono',monospace">{{ l.source }}</span>
+              </span>
+              <span style="font-family:'IBM Plex Mono',monospace">{{ l.value }}</span>
+              <span style="flex:0 0 92px; text-align:right; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color: {{ l.ink }}">{{ l.status }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- TRACE -->
+      <sc-if value="{{ vTrace }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column">
+          <div style="flex:0 0 auto; padding:24px 26px 18px">
+            <div style="font-size:19px; font-weight:500; color:#242424; letter-spacing:-.015em">Adjusted EBITDA, FY24</div>
+            <div style="font-size:13px; color:#8a8886; margin-top:6px">Slide 14 shows <span style="color:#b04434">$42.6m</span>. The model returns <span style="color:#242424">$41.9m</span>.</div>
+          </div>
+          <div style="flex:1; min-height:0; overflow:auto; padding:0 26px 26px">
+            <sc-for list="{{ chain }}" as="c" hint-placeholder-count="4">
+              <div>
+                <button sc-camel-on-click="{{ c.select }}" style="display:flex; gap:16px; align-items:baseline; width:100%; text-align:left; border:0; background:transparent; padding:15px 0; border-top:1px solid #f2f1ef; font:inherit; cursor:pointer">
+                  <span style="flex:1; min-width:0">
+                    <span style="display:block; font-size:14.5px; color:#242424">{{ c.title }}</span>
+                    <span style="display:block; font-size:12.5px; color:#8a8886; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ c.locator }}</span>
+                  </span>
+                  <span style="flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:14px; color:#242424">{{ c.value }}</span>
+                </button>
+                <sc-if value="{{ c.hasTransform }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:12.5px; color:#a19f9d; padding:0 0 4px 0">{{ c.transform }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <div style="padding-top:26px">
+              <div style="font-size:13px; color:#8a8886; padding-bottom:2px">{{ link.title }}</div>
+              <sc-for list="{{ link.rows }}" as="r" hint-placeholder-count="6">
+                <div style="display:flex; gap:16px; padding:10px 0; border-top:1px solid #f2f1ef">
+                  <span style="flex:0 0 82px; font-size:12.5px; color:#a19f9d">{{ r.k }}</span>
+                  <span style="flex:1; min-width:0; font-size:13.5px; color:#242424; line-height:1.5">{{ r.v }}</span>
+                </div>
+              </sc-for>
+              <div style="display:flex; gap:18px; margin-top:14px">
+                <button sc-camel-on-click="{{ goDeck }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:13px; color:#0b62c4; cursor:pointer">Open the slide</button>
+                <button sc-camel-on-click="{{ goSheets }}" style="border:0; background:transparent; padding:0; font:inherit; font-size:13px; color:#8a8886; cursor:pointer">Open the cell</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- TERMINAL -->
+      <sc-if value="{{ vTerminal }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; overflow:auto; padding:20px 24px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; line-height:1.9; color:#424242">
+          <sc-for list="{{ log }}" as="l" hint-placeholder-count="8">
+            <div style="display:flex; gap:14px">
+              <span style="flex:0 0 62px; color:#a19f9d">{{ l.t }}</span>
+              <span style="flex:1; min-width:0; color: {{ l.ink }}; overflow-wrap:anywhere">{{ l.text }}</span>
+            </div>
+          </sc-for>
+          <div style="display:flex; gap:14px; margin-top:6px">
+            <span style="flex:0 0 62px; color:#a19f9d">›</span>
+            <span style="color:#242424; animation:pcDim 1.3s infinite">_</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- APPLICATIONS -->
+      <sc-if value="{{ vApplications }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; overflow:auto; padding:26px">
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:12px">
+            <sc-for list="{{ apps }}" as="a" hint-placeholder-count="8">
+              <button sc-camel-on-click="{{ a.go }}" style="text-align:left; border:1px solid rgba(255,255,255,.6); background:rgba(255,255,255,.55); border-radius:16px; padding:16px; font:inherit; cursor:pointer; box-shadow:0 2px 10px rgba(18,24,40,.06)" style-hover="background:#f5f4f2">
+                <span style="display:block; font-weight:500">{{ a.name }}</span>
+                <span style="display:block; font-size:13px; color:#605e5c; margin-top:4px; line-height:1.5">{{ a.desc }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <div style="flex: {{ chatFlex }}; min-width: {{ chatMin }}; display:flex; flex-direction:column; background:rgba(255,255,255,.74); backdrop-filter:blur(20px) saturate(1.5); -webkit-backdrop-filter:blur(20px) saturate(1.5); border:1px solid rgba(255,255,255,.9); border-radius:20px; box-shadow:0 14px 40px rgba(16,20,28,.10), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.9); overflow:hidden">
+      <div style="flex:0 0 auto; display:flex; align-items:center; gap:4px; padding:9px 10px 9px 14px; border-bottom:1px solid rgba(21,23,27,.07)">
+        <div style="display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(18,24,40,.08); border-radius:11px; padding:8px 14px; font-weight:500">
+          <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="#0b62c4" stroke-width="1.7"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 4z"></path></svg>
+          Chat
+        </div>
+        <button sc-camel-on-click="{{ newChat }}" title="New chat" style="border:0; background:transparent; cursor:pointer; padding:7px; border-radius:9px; display:flex; color:#0b62c4" style-hover="background:rgba(255,255,255,.8)">
+          <svg width="17" height="17" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <div style="flex:1"></div>
+        <span style="color:#7c828c; font-size:13.5px; padding-right:6px">Project Northgate</span>
+      </div>
+
+      <div style="flex:1 1 0; min-height:0; overflow:auto; padding:14px 18px 12px; display:flex; justify-content:center">
+      <div style="width:100%; max-width: {{ chatWidth }}; display:flex; flex-direction:column; gap:14px">
+
+        <sc-for list="{{ messages }}" as="m" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; gap:8px; animation:pcIn .22s ease both">
+            <sc-if value="{{ m.isFile }}" hint-placeholder-val="{{ false }}">
+              <div style="align-self:flex-end; display:flex; align-items:center; gap:11px; border:1px solid rgba(255,255,255,.7); background:rgba(255,255,255,.7); border-radius:13px; padding:9px 13px; max-width:88%">
+                <sc-if value="{{ m.isPpt }}" hint-placeholder-val="{{ false }}"><img src="ce2e29ea-30ac-4bf4-8ee3-aacf75c2ec29" alt="" style="width:22px; height:22px; object-fit:contain"></sc-if>
+                <sc-if value="{{ m.isXls }}" hint-placeholder-val="{{ false }}"><img src="e5bf9fc8-3c9c-46d5-ad27-aca1e738eade" alt="" style="width:22px; height:22px; object-fit:contain"></sc-if>
+                <sc-if value="{{ m.isDoc }}" hint-placeholder-val="{{ false }}"><img src="68c38a48-2e1e-456f-a258-78f6fe51e98e" alt="" style="width:22px; height:22px; object-fit:contain"></sc-if>
+                <sc-if value="{{ m.isMailFile }}" hint-placeholder-val="{{ false }}"><img src="f731c69d-0e91-4b0e-a037-e7e3a6be9ebb" alt="" style="width:22px; height:22px; object-fit:contain"></sc-if>
+                <span style="min-width:0">
+                  <span style="display:block; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ m.name }}</span>
+                  <span style="display:block; font-size:12.5px; color:#8b909a">{{ m.app }}</span>
+                </span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
+              <div style="align-self:flex-end; background:rgba(255,255,255,.78); border:1px solid rgba(255,255,255,.7); border-radius:15px; padding:11px 15px; max-width:90%; line-height:1.6">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isTools }}" hint-placeholder-val="{{ false }}">
+              <div style="color:#8b909a; font-size:13.5px">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isAgent }}" hint-placeholder-val="{{ false }}">
+              <div style="line-height:1.7; color:#22252b">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isWorking }}" hint-placeholder-val="{{ false }}">
+              <div style="color:#7c828c; animation:pcDim 1.4s infinite">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isAction }}" hint-placeholder-val="{{ false }}">
+              <button sc-camel-on-click="{{ m.act }}" style="align-self:flex-start; border:1px solid rgba(21,23,27,.14); background:rgba(255,255,255,.7); border-radius:10px; padding:8px 14px; font:inherit; font-size:13.5px; font-weight:500; cursor:pointer" style-hover="background:#fff">{{ m.text }}</button>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      </div>
+
+      <sc-if value="{{ chatEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:0 0 auto; padding:0 14px 20px; display:flex; flex-direction:column; align-items:center; gap:18px">
+          <svg width="44" height="44" sc-camel-view-box="0 0 100 100" fill="#0b62c4" aria-label="Pierce">
+            <circle cx="26" cy="26" r="13"></circle>
+            <ellipse cx="50" cy="26" rx="13" ry="8" transform="rotate(-45 50 26)"></ellipse>
+            <ellipse cx="74" cy="26" rx="13" ry="4" transform="rotate(-45 74 26)"></ellipse>
+            <ellipse cx="26" cy="50" rx="13" ry="8" transform="rotate(-45 26 50)"></ellipse>
+            <ellipse cx="50" cy="50" rx="9.5" ry="4" transform="rotate(-45 50 50)"></ellipse>
+            <ellipse cx="74" cy="50" rx="13" ry="8" transform="rotate(-45 74 50)"></ellipse>
+            <ellipse cx="26" cy="74" rx="13" ry="4" transform="rotate(-45 26 74)"></ellipse>
+            <ellipse cx="50" cy="74" rx="13" ry="8" transform="rotate(-45 50 74)"></ellipse>
+            <circle cx="74" cy="74" r="13"></circle>
+          </svg>
+          <span style="font-size:25px; color:#15171b; letter-spacing:-.015em; text-align:center">Good morning, Anders. What are we checking?</span>
+        </div>
+      </sc-if>
+      <div style="flex:0 0 auto; padding:10px 14px 16px; display:flex; justify-content:center">
+        <div style="width:100%; max-width: {{ chatWidth }}; display:flex; align-items:center; gap:10px; border:1px solid #d7d7d3; background:#ffffff; border-radius:999px; padding:9px 9px 9px 16px; box-shadow:0 6px 22px rgba(16,20,28,.13)">
+          <button style="border:0; background:transparent; color:#5b6068; cursor:pointer; padding:4px; border-radius:999px; display:flex; flex:0 0 auto" style-hover="background:rgba(16,20,28,.06); color:#15171b">
+            <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <textarea value="{{ prompt }}" sc-camel-on-change="{{ setPrompt }}" sc-camel-on-key-down="{{ onKey }}" placeholder="Ask anything" rows="1" style="flex:1; min-width:0; border:0; outline:none; resize:none; font:inherit; font-size:15px; line-height:1.5; color:#15171b; background:transparent; padding:6px 0"></textarea>
+          <button style="border:0; background:transparent; color:#5b6068; cursor:pointer; padding:4px; border-radius:999px; display:flex; flex:0 0 auto" style-hover="background:rgba(16,20,28,.06); color:#15171b">
+            <svg width="19" height="19" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><line x1="12" y1="18" x2="12" y2="21"></line></svg>
+          </button>
+          <button sc-camel-on-click="{{ send }}" style="width:34px; height:34px; border-radius:50%; border:0; background:linear-gradient(180deg,#1d7de6 0%,#0b62c4 55%,#0a51a5 100%); box-shadow:0 1px 2px rgba(0,60,140,.28), 0 0 0 .5px rgba(0,80,180,.35) inset, 0 1px 0 rgba(255,255,255,.45) inset; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto" style-hover="background:linear-gradient(180deg,#2f8bef 0%,#146fd2 55%,#0d5cb4 100%)">
+            <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5,12 12,5 19,12"></polyline></svg>
+          </button>
+        </div>
+      </div>
+      <sc-if value="{{ chatEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1 1 0"></div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="flex:0 0 86px; display:flex; align-items:center; justify-content:center; position:relative">
+    <div style="position:absolute; left:4px; max-width:calc(50% - 170px); overflow:hidden; white-space:nowrap; display:flex; align-items:center; gap:10px; color:#5b6068; font-size:13.5px">
+      <svg width="19" height="19" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><line x1="9.5" y1="5" x2="9.5" y2="19"></line></svg>
+      <span style="overflow:hidden; text-overflow:ellipsis">Project Northgate</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:4px; padding:7px 10px; background:rgba(255,255,255,.72); backdrop-filter:blur(30px) saturate(1.6); -webkit-backdrop-filter:blur(30px) saturate(1.6); border:1px solid rgba(255,255,255,.95); border-radius:22px; box-shadow:0 10px 28px rgba(16,20,28,.12), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.9)">
+      <button sc-camel-on-click="{{ goChat }}" title="Chat" style="border:0; background: {{ dock.chat }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.chat }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 4z"></path></svg>
+      </button>
+      <button sc-camel-on-click="{{ goFiles }}" title="Files" style="border:0; background: {{ dock.files }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.files }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>
+      </button>
+      <button sc-camel-on-click="{{ goMail }}" title="Mail" style="border:0; background: {{ dock.mail }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.mail }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5.5" width="18" height="13" rx="2"></rect><polyline points="3.5,7 12,13 20.5,7"></polyline></svg>
+      </button>
+      <button sc-camel-on-click="{{ goCalendar }}" title="Calendar" style="border:0; background: {{ dock.calendar }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.calendar }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="5" width="17" height="15" rx="2.5"></rect><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"></line><line x1="8" y1="3" x2="8" y2="6"></line><line x1="16" y1="3" x2="16" y2="6"></line></svg>
+      </button>
+      <button sc-camel-on-click="{{ goDocs }}" title="Docs" style="border:0; background: {{ dock.docs }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.docs }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><polyline points="14,3 14,7 18,7"></polyline><line x1="8.5" y1="12" x2="15" y2="12"></line><line x1="8.5" y1="16" x2="15" y2="16"></line></svg>
+      </button>
+      <button sc-camel-on-click="{{ goSheets }}" title="Sheets" style="border:0; background: {{ dock.sheets }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.sheets }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"></line><line x1="3.5" y1="14.5" x2="20.5" y2="14.5"></line><line x1="9.5" y1="9.5" x2="9.5" y2="19.5"></line></svg>
+      </button>
+      <button sc-camel-on-click="{{ goSharepoint }}" title="SharePoint" style="border:0; background: {{ dock.sharepoint }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.sharepoint }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 18a3.5 3.5 0 0 1-.4-7A5 5 0 0 1 16 10.2a3.9 3.9 0 0 1 .5 7.8z"></path></svg>
+      </button>
+      <button sc-camel-on-click="{{ goProjects }}" title="Projects" style="border:0; background: {{ dock.projects }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.projects }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="6" width="17" height="13" rx="2"></rect><path d="M9 6V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V6"></path><line x1="3.5" y1="12" x2="20.5" y2="12"></line></svg>
+      </button>
+      <button sc-camel-on-click="{{ goTerminal }}" title="Terminal" style="border:0; background: {{ dock.terminal }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.terminal }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="5,8 9,12 5,16"></polyline><line x1="12" y1="16" x2="19" y2="16"></line></svg>
+      </button>
+      <span style="width:1px; height:24px; background:rgba(21,23,27,.14); margin:0 7px"></span>
+      <button sc-camel-on-click="{{ goApplications }}" title="Applications" style="border:0; background: {{ dock.applications }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.applications }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"></rect><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"></rect><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"></rect><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"></rect></svg>
+      </button>
+      <button sc-camel-on-click="{{ goLibrary }}" title="Library" style="border:0; background: {{ dock.library }}; border-radius:12px; padding:8px; cursor:pointer; color: {{ dockInk.library }}; display:flex" style-hover="background:rgba(255,255,255,.6)">
+        <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="5" y1="4.5" x2="5" y2="19.5"></line><line x1="9" y1="4.5" x2="9" y2="19.5"></line><line x1="13" y1="4.5" x2="13" y2="19.5"></line><line x1="17.5" y1="5" x2="20" y2="19.2"></line></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = {
+    view: 'chat', prompt: '', extra: [],
+    openFinding: null, chainIdx: 0, deck: 'pending', modelIssue: 0,
+    doc: { a: 'pending', b: 'pending', c: 'pending' }, mail: 'pending',
+    mailIdx: 0, roomIdx: 0, narrow: false, checkFilter: '', teamsText: '', replyTo: null, roomExtra: {}
+  };
+
+  go = (v) => () => this.setState({ view: v, prompt: '', extra: [] });
+
+  threadRef = React.createRef();
+  pinThread() {
+    const el = this.threadRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }
+  componentDidUpdate() { this.pinThread(); }
+
+  sendTeams = () => {
+    const t = (this.state.teamsText || '').trim();
+    if (!t) return;
+    const k = this.state.roomIdx;
+    const list = (this.state.roomExtra[k] || []).concat([{ who: 'You', me: true, text: t, quote: this.state.replyTo }]);
+    this.setState({ roomExtra: { ...this.state.roomExtra, [k]: list }, teamsText: '', replyTo: null });
+  };
+
+  onResize = () => {
+    const n = window.innerWidth < 1240;
+    if (n !== this.state.narrow) this.setState({ narrow: n });
+  };
+  componentDidMount() { this.onResize(); window.addEventListener('resize', this.onResize); this.pinThread(); }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); }
+
+  send = () => {
+    const t = this.state.prompt.trim();
+    if (!t) return;
+    this.setState({ prompt: '', extra: [{ isUser: true, text: t }, { isWorking: true, text: 'Working' }] });
+    setTimeout(() => this.setState({
+      extra: [
+        { isUser: true, text: t },
+        { isTools: true, text: 'Used 9 tools' },
+        { isAgent: true, text: 'Rebuilt the chain across 24 files. Adjusted EBITDA on slide 14 is the only figure that no longer ties to model v12.' },
+        { isAction: true, text: 'Trace the figure', act: this.go('trace') }
+      ]
+    }), 1500);
+  };
+
+  renderVals() {
+    const s = this.state;
+    const ICON = { ppt: 'icons/ppt.webp', xls: 'icons/excel.webp', doc: 'icons/word.webp', mail: 'icons/outlook.webp' };
+    const RED = '#b04434', AMBER = '#b3822f', GREEN = '#4f7a5c', GREY = '#b6bac2';
+    const on = (v) => s.view === v ? 'rgba(16,20,28,.08)' : 'transparent';
+    const ink = (v) => s.view === v ? '#0b62c4' : '#22252b';
+    const tint = (n) => {
+      const p = [['#e4e9f2', '#3f4d66'], ['#eae4ef', '#57436a'], ['#e2eae4', '#3c5a48'], ['#f0e6e2', '#6b4638'], ['#e6ecef', '#3b5563']];
+      let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 997;
+      return p[h % p.length];
+    };
+    const mark = (o) => ({ ...o, isPpt: o.icon === ICON.ppt, isXls: o.icon === ICON.xls, isDoc: o.icon === ICON.doc, isMail: o.icon === ICON.mail, isMailFile: o.icon === ICON.mail });
+
+    const tabs = {
+      chat: ['New task', ''], files: ['Data room', ''], mail: ['Inbox', '3 unread'],
+      calendar: ['Calendar', ''], docs: ['CIM_Northgate_v6.docx', ''], sheets: ['Model_Northgate_v12.xlsx', ''],
+      sharepoint: ['SharePoint', 'Documents'], projects: ['Projects', ''],
+      terminal: ['Terminal', ''], applications: ['Applications', ''],
+      library: ['Library', ''], checks: ['Checks', ''],
+      trace: ['Chain', ''], deck: ['Pitchbook_Northgate_vFinal.pptx', '']
+    };
+
+    const chatSets = {
+      chat: [],
+      files: [
+        { isFile: true, icon: ICON.xls, name: 'Management_accounts_Jan.xlsx', app: 'Excel' },
+        { isUser: true, text: 'Rename and restructure the data room to our internal folder standards.' },
+        { isWorking: true, text: 'Working' }
+      ],
+      mail: [
+        { isFile: true, icon: ICON.mail, name: 'RE_ Northgate — FY24 figures.msg', app: 'Outlook' },
+        { isUser: true, text: 'Draft a reply in house style and check the figure before it goes out.' },
+        { isTools: true, text: 'Used 4 tools' },
+        { isAgent: true, text: 'The $42.6m in the thread is the v11 figure. The draft carries $41.9m as a tracked change.' }
+      ],
+      messages: [{ isUser: true, text: 'Summarise what the team agreed on the normalisation basis.' }, { isAgent: true, text: 'Transaction costs move to exceptional items; FY24 is presented normalised on a 12-month basis to 31 December.' }],
+      calendar: [{ isUser: true, text: 'What has to be right before Thursday?' }, { isAgent: true, text: 'The pitchbook and the CIM both go out Thursday morning. Three critical findings sit between them and the model.' }],
+      docs: [
+        { isFile: true, icon: ICON.doc, name: 'CIM_Northgate_v6.docx', app: 'Word' },
+        { isUser: true, text: 'Update section 4 to agree with model v12 and state the basis.' },
+        { isTools: true, text: 'Used 7 tools' },
+        { isAgent: true, text: 'Three tracked changes in section 4. Each carries the basis on which the figure is presented.' }
+      ],
+      sheets: [
+        { isFile: true, icon: ICON.xls, name: 'Model_Northgate_v12.xlsx', app: 'Excel' },
+        { isUser: true, text: 'Audit the model before it goes to the buyer list.' },
+        { isTools: true, text: 'Used 11 tools' },
+        { isAgent: true, text: 'Five issues. One hardcode in a formula row, one stale external reference, one balance check that no longer balances.' }
+      ],
+      sharepoint: [{ isUser: true, text: 'Is the data room current?' }, { isAgent: true, text: 'iManage and the data room synced this morning. OneDrive last resolved on 2 March — one external reference in the model still points there.' }],
+      projects: [{ isUser: true, text: 'Which deals are clean?' }, { isAgent: true, text: 'Meridian is clear. Calder has two warnings. Northgate has seven findings, three of them critical.' }],
+      terminal: [{ isUser: true, text: 'Run the check again on the deck only.' }, { isAgent: true, text: 'Scoped to the pitchbook: 318 figures, one drifted.' }],
+      applications: [],
+      library: [{ isUser: true, text: 'Show me every figure that has drifted since the last version.' }, { isAgent: true, text: 'Two: Adjusted EBITDA FY24 and the FY24 enterprise value. Both trace to the 14 March model revision.' }],
+      checks: [
+        { isUser: true, text: 'Run a full check across every transaction document.' },
+        { isTools: true, text: 'Used 24 tools' },
+        { isAgent: true, text: 'Seven differences raised across 24 files. Three block delivery — all three sit between the pitchbook and model v12.' },
+        { isAction: true, text: 'Trace the first one', act: this.go('trace') }
+      ],
+      trace: [
+        { isUser: true, text: 'Where did the $42.6m Adjusted EBITDA on slide 14 come from?' },
+        { isTools: true, text: 'Used 6 tools' },
+        { isAgent: true, text: 'From Ops!B23 of model v11 on 6 March — operating profit from the FY24 audited accounts, normalised for one-offs with transaction costs added back. v12 returns $41.9m in the same cell.' }
+      ],
+      deck: [
+        { isFile: true, icon: ICON.ppt, name: 'Pitchbook_Northgate_vFinal.pptx', app: 'PowerPoint' },
+        { isUser: true, text: 'Reconcile every figure on this deck against the model.' },
+        { isTools: true, text: 'Used 14 tools' },
+        { isAgent: true, text: '318 figures reconciled. One drifted: Adjusted EBITDA on slide 14, proposed as a tracked change below the slide.' }
+      ]
+    };
+    const messages = (s.extra.length ? s.extra : chatSets[s.view]).map(m => m.isFile ? mark(m) : m);
+
+    const projectRail = ['Project Northgate', 'Project Calder', 'Project Meridian'].map((n, i) => ({
+      name: n, go: this.go('files'), bg: i === 0 ? 'rgba(255,255,255,.72)' : 'transparent', fw: i === 0 ? 500 : 400
+    }));
+
+    const files = [
+      { name: 'Pitchbook_Northgate_vFinal.pptx', icon: ICON.ppt, date: '14 Mar', size: '18.4 MB', go: this.go('deck') },
+      { name: 'Model_Northgate_v12.xlsx', icon: ICON.xls, date: '14 Mar', size: '4.1 MB', go: this.go('sheets') },
+      { name: 'CIM_Northgate_v6.docx', icon: ICON.doc, date: '13 Mar', size: '2.7 MB', go: this.go('docs') },
+      { name: 'Northgate_FY24_Audited.pdf', icon: ICON.doc, date: '28 Feb', size: '6.9 MB', go: this.go('trace') },
+      { name: 'Teaser_Northgate.pdf', icon: ICON.doc, date: '11 Mar', size: '340 KB', go: this.go('checks') },
+      { name: 'Buyer_outreach_wave1.msg', icon: ICON.mail, date: '12 Mar', size: '88 KB', go: this.go('mail') },
+      { name: 'Management_accounts_Jan.xlsx', icon: ICON.xls, date: '9 Mar', size: '1.2 MB', go: this.go('sheets') },
+      { name: 'Normalisation_schedule_v3.xlsx', icon: ICON.xls, date: '12 Mar', size: '760 KB', go: this.go('trace') },
+      { name: 'Engagement_letter_signed.pdf', icon: ICON.doc, date: '2 Feb', size: '410 KB', go: this.go('docs') }
+    ].map(f => mark(f));
+
+    const mailData = [
+      { from: 'Helena Vos', time: '08:22', subject: 'RE: Northgate — FY24 figures', preview: 'Could you confirm the Adjusted EBITDA basis…', meta: 'To: Anders Halvorsen; Rasmus Duval', body: 'Anders — before we take this to committee, could you confirm the FY24 Adjusted EBITDA figure and the basis on which it is presented? Our team has $42.6m from the pitchbook and $41.9m from the model extract.' },
+      { from: 'James Mercer', time: '07:51', subject: 'Model v12 uploaded', preview: 'Transaction costs reallocated to exceptionals…', meta: 'To: Northgate deal team', body: 'v12 is in the data room. Transaction costs now sit in the exceptional items schedule; the normalisation schedule was revised accordingly on 12 March.' },
+      { from: 'Rasmus Duval', time: 'Tue 16:04', subject: 'Buyer list — wave 1 responses', preview: 'Eleven NDAs returned, three declined…', meta: 'To: Anders Halvorsen', body: 'Eleven NDAs returned, three declined, the rest outstanding. Teaser went out on the 11th.' },
+      { from: 'Compliance', time: 'Mon 09:12', subject: 'Information barrier — Project Calder', preview: 'Access confirmed for the staffed team…', meta: 'To: All staff', body: 'Access to Project Calder is restricted to the staffed team. The barrier is enforced at the data layer.' },
+      { from: 'Northgate Industries plc', time: 'Mon 08:40', subject: 'Management presentation — dates', preview: 'Proposed 26 and 27 March…', meta: 'To: Northgate deal team', body: 'Proposed 26 and 27 March for the management sessions. Please confirm the deck will be final by the 24th.' }
+    ];
+    const avatarBgs = ['#e8e6e3', '#e6e8ea', '#e7eae6', '#eae7e6', '#e6e7ea'];
+    const initialsOf = (n) => n.replace(/—.*/, '').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const unread = [true, true, true, false, false];
+    const groups = ['Today', '', '', 'Earlier', ''];
+    const mails = mailData.map((m, i) => ({
+      ...m, go: () => this.setState({ mailIdx: i }),
+      groupLabel: groups[i],
+      bg: s.mailIdx === i ? '#f5f4f2' : '#fff',
+      rail: s.mailIdx === i ? 'inset 2px 0 0 #605e5c' : 'none',
+      initials: initialsOf(m.from), avatarBg: tint(m.from)[0], avatarInk: tint(m.from)[1],
+      fw: unread[i] ? 600 : 400,
+      fromInk: '#242424', timeInk: '#8a8886'
+    }));
+    const emails = ['helena.vos@kestrelcapital.com', 'j.mercer@rothmoor.com', 'r.duval@rothmoor.com', 'compliance@rothmoor.com', 'ir@northgateindustries.com'];
+    const stamps = ['Wed 18/03/2026 08:22', 'Wed 18/03/2026 07:51', 'Tue 17/03/2026 16:04', 'Mon 16/03/2026 09:12', 'Mon 16/03/2026 08:40'];
+    const mail = {
+      ...mailData[s.mailIdx], initials: initialsOf(mailData[s.mailIdx].from),
+      avatarBg: tint(mailData[s.mailIdx].from)[0], avatarInk: tint(mailData[s.mailIdx].from)[1],
+      email: '<' + emails[s.mailIdx] + '>', stamp: stamps[s.mailIdx]
+    };
+    const folderDefs = [
+      ['Inbox', '3', 'M3.5 12h4l1.5 3h6l1.5-3h4M5 5.5h14l2 6.5v5.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V12z'],
+      ['Drafts', '2', 'M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z'],
+      ['Sent', '', 'M21 4 3 11l7 3 3 7z'],
+      ['Archive', '', 'M3.5 6.5h17v3h-17zM5 9.5h14V19a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z'],
+      ['Deleted', '', 'M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13']
+    ];
+    const folders = folderDefs.map((f, i) => ({
+      name: f[0], count: f[1], bg: i === 0 ? '#f0eeec' : 'transparent', fw: i === 0 ? 500 : 400,
+      icon: React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }, React.createElement('path', { d: f[2] }))
+    }));
+
+    const roomData = [
+      { name: 'Northgate — deal team', last: 'Mercer: v12 is up', msgs: [
+        { who: 'J. Mercer', text: 'v12 is up. Transaction costs moved to exceptionals.', me: false },
+        { who: 'You', text: 'Does the pitchbook still carry the old figure?', me: true },
+        { who: 'Pierce', text: 'Yes — slide 14 shows $42.6m against $41.9m in Ops!B23.', me: false },
+        { who: 'R. Duval', text: 'I will hold the buyer send until that is accepted.', me: false }
+      ] },
+      { name: 'Calder — diligence', last: 'Two warnings outstanding', msgs: [
+        { who: 'Pierce', text: 'Two warnings outstanding on the Calder model.', me: false },
+        { who: 'You', text: 'Both formatting?', me: true },
+        { who: 'Pierce', text: 'One formatting, one stale external reference.', me: false }
+      ] },
+      { name: 'Compliance', last: 'Barrier confirmed', msgs: [
+        { who: 'Compliance', text: 'Barrier confirmed for Calder. Access at the data layer.', me: false }
+      ] }
+    ];
+    const roomTimes = ['08:06', 'Tue', 'Mon'];
+    const roomMembers = ['5 members', '3 members', '2 members'];
+    const rooms = roomData.map((r, i) => ({
+      name: r.name, last: r.last, time: roomTimes[i], go: () => this.setState({ roomIdx: i }),
+      initials: r.name.split(/[\s—]+/).slice(0, 2).map(w => w[0]).join('').toUpperCase(),
+      bg: s.roomIdx === i ? '#f5f4f2' : 'transparent',
+      rail: s.roomIdx === i ? 'inset 2px 0 0 #605e5c' : 'none',
+      avatarBg: tint(r.name)[0], avatarInk: tint(r.name)[1]
+    }));
+    const room = { name: roomData[s.roomIdx].name, members: roomMembers[s.roomIdx] };
+    const msgTimes = ['08:02', '08:04', '08:05', '08:06', '08:08', '08:09'];
+    const allMsgs = roomData[s.roomIdx].msgs.concat(s.roomExtra[s.roomIdx] || []);
+    const roomMsgs = allMsgs.map((m, i) => ({
+      who: m.who, text: m.text, time: msgTimes[i] || '08:06',
+      initials: m.who === 'You' ? 'AH' : m.who.split(/[\s.]+/).slice(0, 2).map(w => w[0]).join('').toUpperCase(),
+      quote: m.quote ? m.quote.who + ': ' + m.quote.text : '',
+      ink: m.me ? '#ffffff' : '#242424',
+      reply: () => this.setState({ replyTo: { who: m.who, text: m.text } }),
+      bg: m.me
+        ? 'linear-gradient(180deg, rgba(45,138,231,.92) 0%, rgba(11,98,196,.92) 55%, rgba(10,81,165,.94) 100%)'
+        : 'linear-gradient(180deg, rgba(255,255,255,.86) 0%, rgba(240,240,238,.72) 100%)',
+      border: m.me ? 'rgba(255,255,255,.34)' : 'rgba(255,255,255,.9)',
+      shadow: m.me
+        ? '0 2px 8px rgba(10,70,150,.24), inset 0 1px 0 rgba(255,255,255,.4)'
+        : '0 2px 8px rgba(16,20,28,.09), inset 0 1px 0 rgba(255,255,255,.9)',
+      radius: m.me ? '18px 18px 5px 18px' : '18px 18px 18px 5px',
+      just: m.me ? 'flex-end' : 'flex-start',
+      showAvatar: !m.me,
+      avatarBg: tint(m.who)[0], avatarInk: tint(m.who)[1]
+    }));
+    const weekDays = [['Mon', '16'], ['Tue', '17'], ['Wed', '18'], ['Thu', '19'], ['Fri', '20']].map((d, i) => ({
+      dow: d[0], num: d[1], bg: i === 2 ? '#242424' : 'transparent', ink: i === 2 ? '#fff' : '#242424'
+    }));
+    const evs = {
+      '09:00': { 2: ['Deal team stand-up', 'Northgate · 15 min', '#605e5c'] },
+      '10:00': { 4: ['Calder kick-off', 'Buy-side · industrial', '#8a8886'] },
+      '11:00': { 2: ['Model walkthrough', 'Kestrel Capital · v12', '#605e5c'] },
+      '08:00': { 3: ['Deliverables out', 'Pitchbook and CIM', '#b04434'] },
+      '14:00': { 3: ['IC paper drafting', 'From the term sheet', '#8a8886'] },
+      '16:00': { 2: ['Pitchbook review', '3 critical findings', '#b04434'] }
+    };
+    const weekRows = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'].map(h => ({
+      hour: h,
+      cells: [0,1,2,3,4].map(d => {
+        const e = (evs[h] || {})[d];
+        return e ? { title: e[0], sub: e[1], accent: e[2], bg: '#f5f4f2' } : { title: '', sub: '', accent: 'transparent', bg: 'transparent' };
+      })
+    }));
+
+    const agenda = [
+      { label: 'Today, Wednesday 18 March', items: [
+        { time: '09:00', title: 'Deal team stand-up', sub: 'Northgate' },
+        { time: '11:30', title: 'Model walkthrough', sub: 'Kestrel Capital · v12' },
+        { time: '16:00', title: 'Pitchbook review', sub: 'Three critical findings outstanding' }
+      ] },
+      { label: 'Thursday 19 March', items: [
+        { time: '08:00', title: 'Deliverables out', sub: 'Pitchbook and CIM to the buyer list' },
+        { time: '14:00', title: 'IC paper drafting', sub: 'From the signed term sheet' }
+      ] },
+      { label: 'Friday 20 March', items: [
+        { time: '10:00', title: 'Calder kick-off', sub: 'Buy-side · industrial services' }
+      ] }
+    ];
+    const spNav = ['Home', 'Documents', 'Pages', 'Site contents', 'Recycle bin'].map((n, i) => ({
+      name: n, bg: i === 1 ? '#f0eeec' : 'transparent', fw: i === 1 ? 600 : 400,
+      rail: i === 1 ? 'inset 3px 0 0 #0b62c4' : 'none'
+    }));
+    const kind = (k) => ({ isFolder: k === 'folder', isXls: k === 'xls', isPpt: k === 'ppt', isDoc: k === 'doc' });
+    const sources = [
+      { name: 'Deliverables', k: 'folder', modified: 'Today 08:14', by: 'Pierce', status: 'Synced', statusInk: '#0b62c4' },
+      { name: 'Data room — wave 1', k: 'folder', modified: 'Today 07:52', by: 'Rasmus Duval', status: 'Synced', statusInk: '#0b62c4' },
+      { name: 'Pitchbook_Northgate_vFinal.pptx', k: 'ppt', modified: 'Today 08:02', by: 'Anders Halvorsen', status: 'Synced', statusInk: '#0b62c4' },
+      { name: 'Model_Northgate_v12.xlsx', k: 'xls', modified: 'Today 07:51', by: 'James Mercer', status: 'Synced', statusInk: '#0b62c4' },
+      { name: 'CIM_Northgate_v6.docx', k: 'doc', modified: '13 March', by: 'Rasmus Duval', status: 'Synced', statusInk: '#0b62c4' },
+      { name: 'Working files — J. Mercer', k: 'folder', modified: '2 March', by: 'James Mercer', status: 'Stale', statusInk: '#b3822f' },
+      { name: 'Normalisation_schedule_v3.xlsx', k: 'xls', modified: '12 March', by: 'James Mercer', status: 'Synced', statusInk: '#0b62c4' }
+    ].map(c => ({ ...c, ...kind(c.k) }));
+
+    const dealRows = [
+      { name: 'Project Northgate', lead: 'Sell-side · Northgate Industries plc', status: 'Seven findings', statusInk: RED },
+      { name: 'Project Calder', lead: 'Buy-side · industrial services', status: 'Two findings', statusInk: '#8a8886' },
+      { name: 'Project Meridian', lead: 'Refinancing · management presentation', status: 'Clear', statusInk: '#8a8886' },
+      { name: 'Project Ellwood', lead: 'Pitch · no live deliverables', status: 'Not run', statusInk: '#a19f9d' }
+    ].map(d => ({ ...d, go: this.go('checks') }));
+    const dealStats = [
+      { n: '4', label: 'Live deals', ink: '#242424' },
+      { n: '9', label: 'Open findings', ink: '#242424' },
+      { n: '3', label: 'Critical', ink: RED },
+      { n: '47', label: 'Files tracked', ink: '#242424' }
+    ];
+
+    const findingData = [
+      { sev: 'Critical', sevInk: RED, title: 'Adjusted EBITDA on slide 14 no longer matches the model', where: 'Pitchbook_Northgate_vFinal.pptx · slide 14', detail: 'The slide shows $42.6m. The model returns $41.9m in Ops!B23 since the 14 March revision, which reallocated the transaction costs. Update to $41.9m, or record the basis if the earlier figure is intended.' },
+      { sev: 'Critical', sevInk: RED, title: 'EV/EBITDA on slide 22 uses a superseded enterprise value', where: 'Pitchbook_Northgate_vFinal.pptx · slide 22', detail: '9.4× is calculated on the v11 enterprise value. On v12 the same multiple is 9.6×.' },
+      { sev: 'Critical', sevInk: RED, title: 'Teaser and CIM carry FY24 revenue differently', where: 'Teaser_Northgate.pdf · p.2 / CIM_Northgate_v6.docx · §4.1', detail: 'The teaser shows $196.4m reported; the CIM shows $193.8m normalised. Neither states its basis.' },
+      { sev: 'Warning', sevInk: AMBER, title: 'Hardcoded value sitting in a formula row', where: 'Model_Northgate_v12.xlsx · Ops!D41', detail: 'D41 contains 4,180 as a constant while D38:D40 and D42 follow the row pattern.' },
+      { sev: 'Warning', sevInk: AMBER, title: 'Company name inconsistent across the document set', where: '6 occurrences · 3 files', detail: "'Northgate Industries' and 'Northgate Industries plc' both appear. The signed engagement letter uses the latter." },
+      { sev: 'Warning', sevInk: AMBER, title: 'Footnote 3 on slide 17 points nowhere', where: 'Pitchbook_Northgate_vFinal.pptx · slide 17', detail: 'The marker is present; no corresponding source line is set.' },
+      { sev: 'Note', sevInk: '#8b909a', title: 'House template not applied to slides 30–34', where: 'Pitchbook_Northgate_vFinal.pptx · slides 30–34', detail: 'Appendix slides use the previous brand book. One click applies the current template.' }
+    ];
+    const cfDefs = [['All', '', 7, '#c8c6c4'], ['Critical', 'Critical', 3, RED], ['Warning', 'Warning', 3, AMBER], ['Note', 'Note', 1, '#8a8886']];
+    const checkFilters = cfDefs.map(c => ({
+      label: c[0], n: c[2], dot: c[3],
+      go: () => this.setState({ checkFilter: c[1] }),
+      bg: s.checkFilter === c[1] ? '#f0eeec' : '#fff',
+      border: s.checkFilter === c[1] ? '#c8c6c4' : '#e6e4e2',
+      ink: s.checkFilter === c[1] ? '#242424' : '#605e5c'
+    }));
+    const findings = findingData.map(f => ({
+      ...f, open: s.openFinding === f.title,
+      toggle: () => this.setState({ openFinding: s.openFinding === f.title ? null : f.title }),
+      trace: this.go('trace'), deck: this.go('deck'), model: this.go('sheets')
+    }));
+
+    const library = [
+      { name: 'Adjusted EBITDA FY24', source: 'Ops!B23 · model v12', value: '$41.9m', status: 'Drifted', ink: RED },
+      { name: 'Revenue FY24', source: 'Ops!B12 · model v12', value: '$193.8m', status: 'Matching', ink: GREEN },
+      { name: 'Enterprise value', source: 'Val!D8 · model v12', value: '$402.2m', status: 'Drifted', ink: RED },
+      { name: 'Net debt', source: 'Cap!C22 · model v12', value: '$58.4m', status: 'Matching', ink: GREEN },
+      { name: 'EBITDA margin FY24', source: 'derived · Ops!B23 / Ops!B12', value: '21.6%', status: 'Matching', ink: GREEN },
+      { name: 'Reported EBITDA FY24', source: 'Audited accounts · p.42', value: '$44.0m', status: 'Anchor', ink: '#8b909a' }
+    ].map(l => ({ ...l, go: this.go('trace') }));
+
+    const chainData = [
+      { title: 'Pitchbook, slide 14', value: '$42.6m', locator: 'Pitchbook_Northgate_vFinal.pptx · slide 14', note: 'Adjusted EBITDA FY24, as presented to the buyer list.', icon: ICON.ppt, dot: RED, transform: '+ $0.7m transaction costs added back', hasTransform: true,
+        rows: [['Figure', 'Adjusted EBITDA FY24 — $42.6m'], ['Source', 'Model_Northgate_v11.xlsx · Ops!B23'], ['Transform', 'Operating profit + D&A + transaction costs'], ['Version', 'Model v11, 6 March'], ['Basis', 'Normalised · FY24, 12m to 31 Dec'], ['Status', 'Drifted — model has since moved to v12']] },
+      { title: 'Model, Ops!B23', value: '$41.9m', locator: 'Model_Northgate_v12.xlsx · =SUM(B18:B22)-B24', note: 'Revised 14 March. Transaction costs reallocated to the exceptional items schedule.', icon: ICON.xls, dot: AMBER, transform: 'less $2.1m normalisation adjustments', hasTransform: true,
+        rows: [['Figure', 'Adjusted EBITDA FY24 — $41.9m'], ['Source', 'Ops!B18:B22 less Ops!B24'], ['Transform', 'Segment EBITDA less central costs'], ['Version', 'v12 · 14 March · J. Mercer'], ['Basis', 'Normalised · FY24'], ['Status', 'Matching against the accounts']] },
+      { title: 'Normalisation schedule', value: '$44.0m', locator: 'Model_Northgate_v12.xlsx · Adj!C11:C19', note: 'One-off items removed: site closure, legal settlement, ERP write-off.', icon: ICON.xls, dot: GREEN, transform: 'reported → normalised', hasTransform: true,
+        rows: [['Figure', 'Reported EBITDA FY24 — $44.0m'], ['Source', 'Audited accounts FY24 · p.42'], ['Transform', 'Three one-off items removed, $2.1m'], ['Version', 'Schedule v3, 12 March'], ['Basis', 'Reported → normalised'], ['Status', 'Matching']] },
+      { title: 'Audited accounts FY24', value: '$44.0m', locator: 'Northgate_FY24_Audited.pdf · p.42', note: 'Signed accounts, 28 February. The bottom of the chain.', icon: ICON.doc, dot: GREEN, transform: '', hasTransform: false,
+        rows: [['Figure', 'Operating profit before exceptionals — $44.0m'], ['Source', 'Audited financial statements FY24'], ['Transform', 'None — primary source'], ['Version', 'Signed 28 February'], ['Basis', 'Reported · IFRS'], ['Status', 'Anchor']] }
+    ];
+    const statuses = [['Drifted', '#b04434'], ['Matching', '#4f7a5c'], ['Matching', '#4f7a5c'], ['Anchor', '#8a8886']];
+    const chain = chainData.map((c, i) => mark({
+      ...c, select: () => this.setState({ chainIdx: i }),
+      idx: '0' + (i + 1),
+      status: statuses[i][0], statusInk: statuses[i][1],
+      rail: s.chainIdx === i ? 'inset 2px 0 0 #0b62c4' : 'none',
+      bg: s.chainIdx === i ? '#f5f4f2' : '#ffffff'
+    }));
+    const a = chainData[s.chainIdx];
+    const link = { title: a.title, locator: a.locator, rows: a.rows.map(r => ({ k: r[0], v: r[1] })) };
+
+    const shown = s.deck === 'accepted' ? '$41.9m' : '$42.6m';
+    const bars = [
+      { label: 'FY22', value: '$36.2m', h: '44%', ink: '#15171b', hl: 'transparent' },
+      { label: 'FY23', value: '$39.5m', h: '60%', ink: '#15171b', hl: 'transparent' },
+      { label: 'FY24', value: shown, h: '76%', ink: s.deck === 'pending' ? '#8a3325' : '#15171b', hl: s.deck === 'pending' ? '#f7ebe8' : 'transparent' }
+    ];
+
+    const gridRows = [
+      ['18', 'Industrial segment EBITDA', '18,420', '17,960', '16,880'],
+      ['19', 'Services segment EBITDA', '14,110', '13,240', '12,050'],
+      ['20', 'Distribution segment EBITDA', '9,860', '9,410', '8,720'],
+      ['21', 'Other operating income', '1,240', '1,180', '990'],
+      ['22', 'Central costs', '(1,730)', '(1,690)', '(1,540)'],
+      ['23', 'Adjusted EBITDA', '41,900', '39,500', '36,200'],
+      ['24', 'Transaction costs', '(2,100)', '(340)', '—'],
+      ['41', 'Working capital — receivables', '4,180', '4,020', '3,760']
+    ];
+    const gridSimple = gridRows.map(r => {
+      const hot = (s.modelIssue === 0 && r[0] === '23') || (s.modelIssue === 1 && r[0] === '41');
+      return { label: r[1], fy24: r[2], fy23: r[3], bg: hot ? '#faf8f4' : 'transparent', ink: r[0] === '23' ? '#242424' : '#605e5c' };
+    });
+    const gridFull = gridRows.map(r => {
+      const hot = (s.modelIssue === 0 && r[0] === '23') || (s.modelIssue === 1 && r[0] === '41');
+      const fw = r[0] === '23' ? 500 : 400;
+      return {
+        n: r[0],
+        cells: [
+          { v: r[1], flex: 3, align: 'left', bg: hot ? 'rgba(179,130,47,.12)' : 'transparent', ink: '#3c4149', fw },
+          { v: r[2], flex: 1, align: 'right', bg: hot ? 'rgba(179,130,47,.12)' : 'transparent', ink: '#15171b', fw },
+          { v: r[3], flex: 1, align: 'right', bg: 'transparent', ink: '#8b909a', fw: 400 },
+          { v: r[4], flex: 1, align: 'right', bg: 'transparent', ink: '#8b909a', fw: 400 }
+        ]
+      };
+    });
+    const modelIssueDefs = [
+      { cell: 'Ops!B23', dot: AMBER, text: 'Feeds slide 14, which still carries the v11 figure.' },
+      { cell: 'Ops!D41', dot: RED, text: 'Hardcoded 4,180 in a formula row.' },
+      { cell: 'Adj!F7', dot: AMBER, text: 'External reference last resolved 2 March.' },
+      { cell: 'Cap!C14', dot: RED, text: 'Balance check out by $0.4m.' },
+      { cell: 'Ops!H30', dot: GREY, text: 'Formula skips H29.' }
+    ];
+    const modelIssues = modelIssueDefs.map((m, i) => ({ ...m, go: () => this.setState({ modelIssue: i }), ink: s.modelIssue === i ? '#242424' : '#605e5c' }));
+
+    const mk = (key, num, before, del, ins, after) => {
+      const st = s.doc[key];
+      return {
+        num, before,
+        del: st === 'accepted' ? '' : del,
+        delDecor: st === 'pending' ? 'line-through' : 'none',
+        delInk: st === 'pending' ? '#9aa0a8' : '#15171b',
+        ins: st === 'rejected' ? '' : ins,
+        insDecor: st === 'pending' ? 'underline' : 'none',
+        insInk: st === 'pending' ? '#2f5d3f' : '#15171b',
+        after, pending: st === 'pending',
+        accept: () => this.setState({ doc: { ...s.doc, [key]: 'accepted' } }),
+        reject: () => this.setState({ doc: { ...s.doc, [key]: 'rejected' } })
+      };
+    };
+    const docParas = [
+      mk('a', '4.1.1', 'Adjusted EBITDA for the year ended 31 December 2024 was ', '$42.6m', '$41.9m', ', a margin of 21.6% on revenue of $193.8m.'),
+      mk('b', '4.1.2', 'The figures in this section are ', 'adjusted', 'normalised for non-recurring items and stated', ' on a basis consistent with the audited financial statements for the same period.'),
+      mk('c', '4.2.1', 'Transaction costs of $2.1m have been ', 'excluded from operating profit', 'reallocated to exceptional items in the 14 March revision of the model', ' and are presented separately in Schedule 4.')
+    ];
+    const pending = Object.values(s.doc).filter(v => v === 'pending').length;
+
+    const log = [
+      { t: '08:14:02', text: 'pierce check --project northgate --scope all', ink: '#15171b' },
+      { t: '08:14:03', text: 'resolved 24 files · sharepoint, data room, imanage', ink: '#5b6068' },
+      { t: '08:14:06', text: 'chain rebuilt · audited accounts → model v12 → deliverables', ink: '#5b6068' },
+      { t: '08:14:09', text: 'reconciled 318 figures', ink: '#5b6068' },
+      { t: '08:14:11', text: 'warn  ops!d41 hardcoded value in formula row', ink: '#b3822f' },
+      { t: '08:14:11', text: 'warn  adj!f7 external reference stale since 2 mar', ink: '#b3822f' },
+      { t: '08:14:12', text: 'crit  slide 14 adjusted ebitda 42.6 != ops!b23 41.9', ink: '#b04434' },
+      { t: '08:14:12', text: 'crit  slide 22 ev/ebitda on superseded enterprise value', ink: '#b04434' },
+      { t: '08:14:12', text: 'crit  teaser p.2 revenue basis undeclared vs cim §4.1', ink: '#b04434' },
+      { t: '08:14:13', text: 'done  7 findings · 3 critical · 11.2s', ink: '#15171b' }
+    ];
+
+    const apps = [
+      { name: 'Checks', desc: 'Run and review consistency checks across a deal.', go: this.go('checks') },
+      { name: 'Chain', desc: 'Trace a figure from deliverable to source.', go: this.go('trace') },
+      { name: 'Pitchbook', desc: 'Reconcile a deck against the model.', go: this.go('deck') },
+      { name: 'Docs', desc: 'Drafting and tracked changes in Word.', go: this.go('docs') },
+      { name: 'Sheets', desc: 'Model audit and cell-level reconciliation.', go: this.go('sheets') },
+      { name: 'Mail', desc: 'House-style drafting, checked before sending.', go: this.go('mail') },
+      { name: 'SharePoint', desc: 'Connected sources and sync status.', go: this.go('sharepoint') },
+      { name: 'Library', desc: 'Every published figure and its source.', go: this.go('library') }
+    ];
+
+    const taskNames = { chat: 'Untitled task', files: 'File restructure', mail: 'Reply — Kestrel', messages: 'Deal team', calendar: 'This week', docs: 'CIM section 4', sheets: 'Model audit', sharepoint: 'Source sync', projects: 'Live deals', terminal: 'Northgate check', applications: 'Applications', library: 'Figure library', checks: 'Northgate check', trace: 'EBITDA trace', deck: 'Pitchbook reconciliation' };
+    const leftOn = s.view !== 'chat';
+
+    return {
+      vFiles: s.view === 'files', vMail: s.view === 'mail',
+      vCalendar: s.view === 'calendar', vDocs: s.view === 'docs', vSheets: s.view === 'sheets',
+      vSharepoint: s.view === 'sharepoint', vProjects: s.view === 'projects', vTerminal: s.view === 'terminal',
+      vApplications: s.view === 'applications', vLibrary: s.view === 'library', vChecks: s.view === 'checks',
+      vTrace: s.view === 'trace', vDeck: s.view === 'deck',
+      tabLabel: taskNames[s.view], tabMeta: '',
+      tabPpt: s.view === 'deck', tabXls: s.view === 'sheets', tabDoc: s.view === 'docs', tabMail: s.view === 'mail',
+      narrow: s.narrow, showLeft: leftOn, chatFlex: leftOn ? (s.narrow ? '0 1 340px' : '0 1 430px') : '1 1 auto',
+      chatMin: leftOn && s.narrow ? '280px' : '330px',
+      chatWidth: leftOn ? '100%' : '720px',
+      dockActive: 'rgba(16,20,28,.07)',
+      splitDir: s.narrow ? 'column' : 'row',
+      splitOvr: s.narrow ? 'auto' : 'hidden',
+      mainFlex: s.narrow ? '0 0 auto' : '1 1 0',
+      colOvr: s.narrow ? 'visible' : 'auto',
+      sideFlex: s.narrow ? '0 0 auto' : '0 1 300px',
+      sideMin: s.narrow ? '0' : '190px',
+      sideBorderL: s.narrow ? 'none' : '1px solid rgba(21,23,27,.07)',
+      sideBorderT: s.narrow ? '1px solid rgba(21,23,27,.07)' : 'none',
+      listFlex: s.narrow ? '0 0 auto' : '0 1 280px',
+      wide: !s.narrow,
+      taskName: taskNames[s.view],
+      dock: {
+        chat: on('chat'), files: on('files'), mail: on('mail'), calendar: on('calendar'),
+        docs: on('docs'), sheets: on('sheets'), sharepoint: on('sharepoint'), projects: on('projects'),
+        terminal: on('terminal'), applications: on('applications'), library: on('library')
+      },
+      dockInk: {
+        chat: ink('chat'), files: ink('files'), mail: ink('mail'), calendar: ink('calendar'),
+        docs: ink('docs'), sheets: ink('sheets'), sharepoint: ink('sharepoint'), projects: ink('projects'),
+        terminal: ink('terminal'), applications: ink('applications'), library: ink('library')
+      },
+      goChat: this.go('chat'), goFiles: this.go('files'), goMail: this.go('mail'),
+      goCalendar: this.go('calendar'), goDocs: this.go('docs'), goSheets: this.go('sheets'),
+      goSharepoint: this.go('sharepoint'), goProjects: this.go('projects'), goTerminal: this.go('terminal'),
+      goApplications: this.go('applications'), goLibrary: this.go('library'), goDeck: this.go('deck'),
+      chatEmpty: messages.length === 0, messages,
+      prompt: s.prompt, setPrompt: (e) => this.setState({ prompt: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(); } },
+      send: this.send,
+      teamsText: s.teamsText,
+      setTeamsText: (e) => this.setState({ teamsText: e.target.value }),
+      teamsKey: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendTeams(); } },
+      sendTeams: this.sendTeams,
+      replying: !!s.replyTo,
+      replyWho: s.replyTo ? s.replyTo.who : '',
+      replyText: s.replyTo ? s.replyTo.text : '',
+      clearReply: () => this.setState({ replyTo: null }),
+      newChat: () => this.setState({ view: 'chat', prompt: '', extra: [] }),
+      threadRef: this.threadRef,
+      spNav, dealStats, checkFilters, projectRail, files, mails, mail, folders, rooms, room, roomMsgs, weekDays, weekRows, sources, dealRows, findings, library,
+      chain, link, bars, grid: gridSimple, agenda, modelIssues, docParas, log, apps,
+      docCount: pending + ' pending',
+      acceptAllDoc: () => this.setState({ doc: { a: 'accepted', b: 'accepted', c: 'accepted' } }),
+      mailPending: s.mail === 'pending', mailDone: s.mail !== 'pending',
+      mailDelDecor: s.mail === 'pending' ? 'line-through' : 'none',
+      mailDelInk: s.mail === 'accepted' ? 'transparent' : '#9aa0a8',
+      mailInsDecor: s.mail === 'pending' ? 'underline' : 'none',
+      mailInsInk: s.mail === 'rejected' ? 'transparent' : (s.mail === 'pending' ? '#2f5d3f' : '#15171b'),
+      mailDoneText: s.mail === 'accepted' ? 'Sent 08:31 with the corrected figure.' : 'Draft kept at $42.6m. The basis has not been recorded.',
+      acceptMail: () => this.setState({ mail: 'accepted' }),
+      rejectMail: () => this.setState({ mail: 'rejected' }),
+      deckPending: s.deck === 'pending', deckDone: s.deck !== 'pending',
+      deckDoneBody: s.deck === 'accepted' ? 'Slide 14 now reads $41.9m and ties to Ops!B23 in v12.' : 'The figure stands at $42.6m. Record the basis, or it is raised again on the next check.',
+      acceptDeck: () => this.setState({ deck: 'accepted' }),
+      rejectDeck: () => this.setState({ deck: 'rejected' }),
+      resetDeck: () => this.setState({ deck: 'pending' })
+    };
+  }
+}
+
+</script>
+
+
+</body></html>
