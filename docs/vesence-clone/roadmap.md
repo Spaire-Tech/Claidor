@@ -208,16 +208,23 @@ least understood part and the least reliable number.
 
 ## Totals
 
-| | Before | Revised |
+| | Before | Now |
 |---|---|---|
-| Phase 1 complete | 4 weeks | **2 weeks** (1 if the fork lands) |
-| **Something that demonstrates the product** | 5–7 weeks | **6–8 weeks** |
-| Word fully complete | ~4 months | **~2.5 months** |
+| Phase 1 built | 4 weeks | **Done** |
+| Phase 1 *verified* | — | **Unknown.** Waiting on a Word without tenant restrictions |
+| **Something that demonstrates the product** | 5–7 weeks | **5–7 weeks** |
+| Word fully complete | ~4 months | **~2.5 months**, plus whatever verification finds |
 | All five surfaces, parity | 8–11 months | **7–9 months** |
 
-The demo number moved *later* by a week despite everything getting
-shorter, and that is deliberate: the web workspace is now inside it. A
-panel with no product behind it is not a demonstration.
+Two of these numbers are honest and one is not. « Built » is a fact.
+« Verified » has no number because it depends on somebody else's Word, and
+writing an estimate against it would be inventing one.
+
+The demo figure no longer includes Phase 1, because Phase 1 is built. It is
+now just Phase 2 plus the auth: matters, files, chat and a document
+preview, with the checks already behind them. A panel with no product
+behind it was never a demonstration, which is why the web workspace sits
+inside this number rather than after it.
 
 ---
 
