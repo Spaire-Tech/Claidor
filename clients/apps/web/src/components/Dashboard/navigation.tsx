@@ -183,16 +183,6 @@ const generalRoutesList = (org?: schemas['Organization']): Route[] => [
     if: true,
   },
   {
-    id: 'dossiers',
-    title: 'Dossiers',
-    icon: <FolderOutlined fontSize="inherit" />,
-    link: `/dashboard/${org?.slug}/dossiers`,
-    checkIsActive: (currentRoute: string): boolean => {
-      return currentRoute.startsWith(`/dashboard/${org?.slug}/dossiers`)
-    },
-    if: true,
-  },
-  {
     id: 'librarian',
     title: 'Bibliothécaire',
     icon: <LocalLibraryOutlined fontSize="inherit" />,
