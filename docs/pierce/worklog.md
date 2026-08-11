@@ -833,3 +833,126 @@ Nothing in the design's Mail, Calendar or SharePoint is built, deliberately.
 The design's SharePoint screen is a real document library with sync status
 on every row; building it against the data room would be claiming files
 came from somewhere they did not.
+
+---
+
+## 10 August — PDF sources, and the end of the chain
+
+**The chain used to stop at « somebody typed this ».** `Model!D6 = 228.9`
+is the edge of everything the product could check, and every figure
+computed from it inherits whatever it is. This is the hop past it.
+
+### Reading a document nobody on the deal wrote
+
+A PDF is ink, not structure. A workbook has cells and a deck has shapes;
+audited accounts have a text layer, page numbers, and nothing else worth
+relying on. So `source.py` is the *memo* reader's shape — figures found in
+prose, each named by the words in front of it — with one thing a memo
+does not have and cannot fake: **a real page number**. « Audited accounts
+FY24 · p.42 » is checkable by a person. « The accounts, somewhere » is
+not, which makes it exactly the sort of claim this product exists to
+distrust.
+
+Two refusals worth having. A PDF with no text layer is a scan, and an
+empty extraction that quietly becomes an empty document is how a set of
+accounts ends up « containing no figures »; it says so and says to OCR it.
+And a `.pptx` uploaded as a source is named as the mistake it is.
+
+**Wrapped lines are put back together, narrowly.** A line break in a PDF
+is where the type ran out of room, not where the sentence ended, and read
+line by line « Selling, general and administrative expenses for the year /
+ended 31 December 2025 were (32.9) » names its figure « ended 31 December
+2025 were ». The join needs the previous line to end without terminal
+punctuation *and* this one to start in lower case, so headings and table
+rows are never swept into their neighbours. Never across pages: a page
+break is a hard break whatever the prose does.
+
+### The matcher is the tie-out's, pointed the other way
+
+A figure printed in the accounts is the printed thing; a typed input is
+the candidate it might be the origin of. That is not a convenience — the
+gates that make the tie-out refuse rather than guess are exactly what a
+hundred pages of somebody else's prose needs, and a second matcher would
+have had to earn all of them again on the loosest data in the product.
+
+**Inputs only.** A computed cell agreeing with the accounts is arithmetic
+working, not provenance: the accounts are not the source of a calculation,
+they are the source of what it was calculated from. Cascade has 85 typed
+inputs against 313 named cells, and the narrower set is the safer one.
+
+**One translation, and where it lives is the point.** Accounts say « the
+year ended 31 December 2025 »; a model says FY2025A; the linker reads a
+bare `2025` as nothing at all, so all three revenue notes fit all three
+revenue cells and every one is refused as ambiguous — the right answer to
+the wrong question. Teaching the shared tokeniser about calendar years
+would change what every deck and every memo links to, on an engine whose
+recall is a *measured* number. So it is in the source reader, where
+accounts are actuals by definition and `A` is not a guess.
+
+### A disagreement here is a contradiction, not a drift
+
+`CheckKind.crosscheck` has existed unused since the spine landed, and this
+is what it was for. « The signed accounts restated cost of sales and the
+model still carries the draft figure » is a different sentence from « the
+deck disagrees with the model » and has a different fix. The finding sits
+on the **source**, because page 2 of the accounts is where a reader has to
+go to settle it.
+
+### Two things that had to be fixed to make it work
+
+**`replace_proposals` was deal-wide.** Two checkers now propose links into
+one table, and the second to run would have deleted the first's — a defect
+that would have looked like a flaky linker for a week. It is scoped to the
+documents the run actually read.
+
+**`chain_for` had no callers.** Built for « trace any cell » and never
+routed. It is where grounding shows most often, because a chain from a
+deck drift rarely bottoms out at a typed input within the three steps a
+*readable* chain has: the DCF drifts on Cascade are four or five hops from
+an input. So it has a route now, and the screen that answers « where did
+this number come from » can be asked about a cell rather than only about a
+problem.
+
+### The fixture
+
+`build_source_fixture.py` writes the accounts **out of the model**, the
+same rule the memo fixture follows: a fixture with hand-copied numbers
+disagrees with its own model the first time either is touched, and then
+the test measures the transcription. Two files, because the interesting
+case is not a typo — `cascade_accounts_restated.pdf` has two figures the
+auditors restated in the signed set, which is what actually happens and is
+the mistake nothing else in this product would find.
+
+The prose is the register real accounts use, deliberately. A fixture that
+writes the model's own vocabulary back at it proves nothing about reading
+a document somebody else wrote.
+
+### Verified
+
+Through the interface, on the real files.
+
+| | |
+|---|---|
+| Upload | `cascade_accounts_restated.pdf` → `source`, 8 figures, 2 pages |
+| Crosscheck | 8 grounded · 6 agreeing · **2 contradicting** · 0 unlinked |
+| The finding | « cascade_accounts_restated.pdf says $94.1m where the model has $96.4m », on page 2 |
+| The chain | `Assumptions!B24 · 96.4 · typed, not calculated` → **`cascade_accounts_restated.pdf · page 2 · $94.1m · proposed — nobody has confirmed this yet`** |
+
+230 tie-out tests, 21 of them this.
+
+Two things the screenshot caught, both about words. The Chain header read
+« The deliverable shows $94.1m » about a set of audited accounts, which
+gets the whole sentence the wrong way round — a contradiction is a
+document *nobody on the deal wrote* disagreeing with the model. And the
+fiscal-year rewrite the matcher needs was leaking into the sentence shown
+to a reader: « Total debt outstanding at 31 December FY2025A ». The screen
+whose job is to say where a number came from is the wrong place to show a
+year this product invented, so the step shows the sentence as printed.
+
+### The environment, finally scripted
+
+`scripts/dev_services.sh` starts Postgres, Redis and Minio and creates the
+buckets and the app user. This container reclaims background processes
+between sessions and the first symptom is always a test suite failing with
+« connection refused » somewhere unrelated. It cost twenty minutes twice
+before it was worth writing down.

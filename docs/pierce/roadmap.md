@@ -40,9 +40,14 @@ changes in the file — in the deal's copy through the workspace, in their
 own copy through the panel — and Undo changes it back.
 
 **Every screen in the dock now does something**, and the three that cannot
-yet say precisely what they are waiting for. What is left is the sources
-the chain stops short of: a PDF at one end, a connected file store at the
-other.
+yet say precisely what they are waiting for.
+
+**The chain no longer stops inside the building.** A typed input ends at
+the page of the audited accounts it was read out of, which is the last
+thing the design drew that this could not do.
+
+What is left is connectors — the file stores the documents actually live
+in — and accuracy, which is forever.
 
 | | State |
 |---|---|
@@ -52,7 +57,8 @@ other.
 | Workspace — 11 of 13 screens on real data, 3 waiting on a source | Done |
 | Office panel — plumbing and screen both done | Done |
 | Writing — proposals, apply, reverse | Done |
-| PDF sources, connectors, firm standards | Not started |
+| PDF sources — the chain's last hop | Done |
+| Connectors, firm standards | Not started |
 | Accuracy — deck 83 %, model 56 %, both by mutation | Measured |
 
 ---
@@ -169,12 +175,29 @@ What was left out rather than faked is in the worklog: tables and charts
 from inside PowerPoint, which a task pane cannot reach; writing to a model
 at all; and « Accept all ».
 
-### 7 · PDF sources  *(the chain's last hop)*
+### 7 · PDF sources  ✓ *(10 August)*
 
-The design already draws it: *Audited accounts FY24 · p.42*. Today the
-chain stops at a typed input, which is the edge of the model and the
-beginning of the real question. A PDF is ink rather than structure, so
-this is a different engine from the spreadsheet one.
+The design already drew it: *Audited accounts FY24 · p.42*, and the chain
+ends there now. A PDF is ink rather than structure, so the reader is the
+memo's shape rather than the workbook's — figures in prose, named by the
+words in front of them — with a real page number, which is the thing that
+makes a grounded figure checkable by a person.
+
+- ~~Read a source document~~ — `source.py`, and a scan is refused with the
+  OCR instruction rather than read as an empty document
+- ~~Ground the model in it~~ — the tie-out's own matcher pointed the other
+  way, against **typed inputs only**: a computed cell agreeing with the
+  accounts is arithmetic working, not provenance
+- ~~Say when they disagree~~ — a `contradiction`, which is a different
+  sentence from a drift and has a different fix. `CheckKind.crosscheck`
+  had existed unused since the spine landed and this is what it was for
+- ~~The chain's last step~~ — the document, the page, the sentence, and
+  whether anybody has confirmed it
+
+What it does not do: table rows. A statement's columns are headings the
+prose reader cannot see, so a figure in one is named by its row alone and
+usually goes unlinked — the safe direction, and a real gap. Notes carry
+the period in words and link cleanly.
 
 ### 8 · Connectors and firm standards
 
