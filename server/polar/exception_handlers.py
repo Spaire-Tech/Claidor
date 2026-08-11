@@ -8,10 +8,10 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from polar.config import settings
 from polar.exceptions import (
+    ClaidorRequestValidationError,
     PolarError,
     PolarRedirectionError,
     ResourceNotModified,
-    ClaidorRequestValidationError,
 )
 
 log = structlog.get_logger()

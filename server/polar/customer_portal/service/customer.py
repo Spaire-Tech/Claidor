@@ -6,7 +6,7 @@ import stripe as stripe_lib
 
 from polar.auth.models import AuthSubject, Customer, Member
 from polar.customer.repository import CustomerRepository
-from polar.exceptions import PolarError, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, PolarError
 from polar.integrations.stripe.service import stripe as stripe_service
 from polar.integrations.stripe.utils import get_expandable_id
 from polar.kit.pagination import PaginationParams

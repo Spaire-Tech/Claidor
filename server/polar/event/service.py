@@ -26,7 +26,7 @@ from sqlalchemy.orm import contains_eager
 from polar.auth.models import AuthSubject, is_organization, is_user
 from polar.customer_meter.repository import CustomerMeterRepository
 from polar.event_type.repository import EventTypeRepository
-from polar.exceptions import PolarError, ClaidorRequestValidationError, ValidationError
+from polar.exceptions import ClaidorRequestValidationError, PolarError, ValidationError
 from polar.integrations.tinybird.service import ingest_events
 from polar.kit.metadata import MetadataQuery, apply_metadata_clause
 from polar.kit.pagination import PaginationParams, paginate

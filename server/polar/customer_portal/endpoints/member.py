@@ -5,9 +5,9 @@ from fastapi import Depends
 
 from polar.auth.models import is_member
 from polar.exceptions import (
+    ClaidorRequestValidationError,
     NotPermitted,
     ResourceNotFound,
-    ClaidorRequestValidationError,
 )
 from polar.member.service import member_service
 from polar.models.customer import CustomerType

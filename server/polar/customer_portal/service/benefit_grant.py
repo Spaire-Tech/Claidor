@@ -8,7 +8,7 @@ from sqlalchemy.orm import contains_eager, joinedload
 
 from polar.auth.models import AuthSubject, Customer, Member, is_customer, is_member
 from polar.customer.repository import CustomerRepository
-from polar.exceptions import NotPermitted, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, NotPermitted
 from polar.kit.db.postgres import AsyncSession
 from polar.kit.pagination import PaginationParams, paginate
 from polar.kit.services import ResourceServiceReader

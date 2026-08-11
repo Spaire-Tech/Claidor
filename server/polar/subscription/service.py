@@ -43,9 +43,9 @@ from polar.event.system import (
 )
 from polar.exceptions import (
     BadRequest,
+    ClaidorRequestValidationError,
     PolarError,
     ResourceUnavailable,
-    ClaidorRequestValidationError,
     ValidationError,
 )
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession

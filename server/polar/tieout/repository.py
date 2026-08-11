@@ -111,9 +111,7 @@ class TieOutRepository(RepositoryBase[Artifact]):
         filename, which is a guess and has always been one, and keeps it.
         """
         lineage_id = (
-            lineage_of
-            or await self.find_lineage(dossier_id, filename)
-            or uuid4()
+            lineage_of or await self.find_lineage(dossier_id, filename) or uuid4()
         )
         version = await self.next_version(dossier_id, lineage_id)
         artifact = Artifact(

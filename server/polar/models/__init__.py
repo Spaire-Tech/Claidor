@@ -12,6 +12,12 @@ from .checkout_link import CheckoutLink
 from .checkout_link_product import CheckoutLinkProduct
 from .checkout_product import CheckoutProduct
 from .client_invoice import ClientInvoice, ClientInvoiceLineItem, ClientInvoiceStatus
+from .connector import (
+    ConnectedFolder,
+    Connection,
+    ConnectionProvider,
+    ConnectionStatus,
+)
 from .court_decision import (
     CourtDecision,
     DecisionArticleLink,
@@ -135,12 +141,6 @@ from .saved_prompt import SavedPrompt
 from .subscription import Subscription
 from .subscription_meter import SubscriptionMeter
 from .subscription_product_price import SubscriptionProductPrice
-from .connector import (
-    ConnectedFolder,
-    Connection,
-    ConnectionProvider,
-    ConnectionStatus,
-)
 from .tieout import (
     Artifact,
     ArtifactKind,
