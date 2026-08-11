@@ -84,6 +84,11 @@ class ArtifactKind(StrEnum):
     deck = "deck"
     #: A memo, a CIM, an IC paper. Prose with figures in it.
     memo = "memo"
+    #: An email. Prose with figures in it, read exactly as a memo is, and
+    #: a deliverable exactly as a deck is — with the difference that a
+    #: deck can be pulled back out of a data room and a sent message
+    #: cannot be pulled back out of anything.
+    message = "message"
     #: Audited accounts, a term sheet — the beginning of the chain.
     source = "source"
 

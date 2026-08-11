@@ -43,6 +43,7 @@ from .check import compare
 from .ingest import Ingested, Unreadable, read_artifact
 from .link import link as propose_links
 from .link import rank as rank_outputs
+from .message import read_message
 from .model import Output
 from .numbers import show
 from .provenance import chain as render_chain
@@ -119,6 +120,65 @@ class TieOutService:
         await session.flush()
         return artifact
 
+    async def ingest_message(
+        self,
+        session: AsyncSession,
+        *,
+        dossier_id: UUID,
+        subject: str,
+        body: str,
+        html: bool,
+        user_id: UUID,
+        external_id: str,
+        external_version: str,
+        lineage_of: UUID | None = None,
+    ) -> Artifact:
+        """Read an email into rows, so it can be checked like anything else.
+
+        Sibling to :meth:`ingest` rather than a branch inside it, because a
+        message is not a file: there are no bytes, no suffix and nothing to
+        keep. What comes out is identical — figures, named, located — and
+        from there the tie-out cannot tell it from a memo, which is the
+        point.
+
+        **Nothing is stored.** :meth:`ingest` keeps the document because a
+        correction has to write a new version of a real file; a message is
+        corrected in Outlook and never here, so there is nothing a stored
+        copy of somebody's mail would make possible. What is kept is what
+        is kept for every document: the figures, and the sentence each one
+        was found in.
+        """
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.create_artifact(
+            dossier_id=dossier_id,
+            kind=ArtifactKind.message,
+            # The subject *is* the name of this document, and it is the
+            # name a person would use for it.
+            filename=subject.strip() or "(no subject)",
+            uploaded_by_id=user_id,
+            external_id=external_id,
+            external_version=external_version,
+            lineage_of=lineage_of,
+        )
+
+        extraction = read_message(subject, body, html=html)
+        ingested = Ingested(
+            figures=extraction.figures,
+            counts={
+                "figures": len(extraction.figures),
+                "paragraphs_with_figures": len(
+                    {one.location for one in extraction.figures}
+                ),
+            },
+        )
+        await self._persist(session, artifact, ingested)
+        artifact.status = ArtifactStatus.ready
+        artifact.counts = ingested.counts
+        artifact.error = None
+        session.add(artifact)
+        await session.flush()
+        return artifact
+
     async def _persist(
         self, session: AsyncSession, artifact: Artifact, ingested: Ingested
     ) -> None:
@@ -185,9 +245,12 @@ class TieOutService:
         # A memo is checked exactly as a deck is: printed figures, named
         # by the words around them, reconciled against the model. The only
         # difference is that it has paragraphs where a deck has slides,
-        # and that difference lives in the reader, not here.
+        # and that difference lives in the reader, not here. A message is
+        # the same sentence again — it asserts figures, so it is checked.
         decks = [
-            one for one in current if one.kind in (ArtifactKind.deck, ArtifactKind.memo)
+            one
+            for one in current
+            if one.kind in (ArtifactKind.deck, ArtifactKind.memo, ArtifactKind.message)
         ]
         models = [one for one in current if one.kind is ArtifactKind.model]
 

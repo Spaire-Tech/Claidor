@@ -1,8 +1,8 @@
 """Microsoft Graph, as much of it as a deal room needs.
 
-Four calls: who is this, what sites and drives can they see, what is in a
-folder, and give me that file. Everything else Graph does is somebody
-else's problem.
+Six calls: who is this, what sites and drives can they see, what is in a
+folder, give me that file, what is in this mail folder, and give me that
+message. Everything else Graph does is somebody else's problem.
 
 **Delegated, never application-level.** The token is one person's and
 everything read through it is read as them, so this connector can reach
@@ -57,18 +57,35 @@ def _login() -> str:
 #: is what lists the *sites* to choose from; without it a person has to
 #: know a drive id. `offline_access` is the refresh token, without which
 #: the connection dies an hour after it is made. `User.Read` is the name
-#: to show on screen.
+#: to show on screen. `Mail.Read` is the drafts and the sent items, which
+#: is where a figure goes out of the building.
 #:
-#: Read scopes only. This connector never writes to a customer's file
-#: store: a correction goes into the deal's own copy, and pushing a
-#: rewritten deck back into a shared library is a decision nobody has
-#: asked for and a mistake nobody could undo.
+#: Read scopes only, and `Mail.Read` rather than `Mail.ReadWrite` on
+#: purpose. This connector never writes to a customer's file store and
+#: never touches their mailbox: a correction goes into the deal's own
+#: copy, or into the draft through the add-in on the writer's own press.
+#: Pushing a rewritten deck into a shared library, or editing somebody's
+#: outgoing email from a server, are decisions nobody has asked for and
+#: mistakes nobody could undo.
 SCOPES = (
     "offline_access",
     "User.Read",
     "Files.Read.All",
     "Sites.Read.All",
+    "Mail.Read",
 )
+
+#: The mail folders this product shows, in the design's order, mapped to
+#: the well-known names Graph addresses them by. Well-known names rather
+#: than ids because they are stable across mailboxes and localisations —
+#: `Drafts` is `drafts` in a French tenant too.
+FOLDERS: dict[str, str] = {
+    "inbox": "inbox",
+    "drafts": "drafts",
+    "sent": "sentitems",
+    "archive": "archive",
+    "deleted": "deleteditems",
+}
 
 #: Graph asks for a retry after this many seconds when it throttles. Cap
 #: it: a sync that sleeps for four minutes inside a request is a timeout
@@ -122,6 +139,36 @@ class Item:
     #: Where it sits, for a person. Never used to find it again.
     path: str
     drive_id: str
+
+
+@dataclass(frozen=True)
+class Message:
+    """One email, as much of it as a check needs.
+
+    `body` is empty in a listing and present when one message is fetched.
+    Graph will return every body in a collection if asked, and a folder of
+    two hundred messages with their HTML in it is megabytes of markup to
+    render a list of subjects — so the list carries the preview Graph
+    already computes, and the body arrives when somebody opens one.
+    """
+
+    id: str
+    #: Changes when the message does. A draft being edited is the whole
+    #: reason this is here: it is what says « this is not the version we
+    #: checked ».
+    change_key: str
+    subject: str
+    from_name: str
+    from_email: str
+    to: tuple[str, ...]
+    received_at: str
+    preview: str
+    is_draft: bool
+    is_read: bool
+    has_attachments: bool
+    body: str = ""
+    #: `html` or `text`. The reader needs to know which it is holding.
+    body_type: str = "html"
 
 
 @dataclass(frozen=True)
@@ -283,6 +330,33 @@ class Graph:
     async def item(self, drive_id: str, item_id: str) -> Item:
         return _item(await self._get(f"/drives/{drive_id}/items/{item_id}"), drive_id)
 
+    # --- mail -----------------------------------------------------------
+
+    async def messages(self, folder: str, top: int = 40) -> list[Message]:
+        """A folder's messages, newest first, without their bodies."""
+        where = FOLDERS.get(folder)
+        if where is None:
+            raise GraphError(
+                f"There is no « {folder} » folder. Try one of: {', '.join(FOLDERS)}."
+            )
+        fields = (
+            "id,changeKey,subject,from,toRecipients,receivedDateTime,"
+            "bodyPreview,isDraft,isRead,hasAttachments"
+        )
+        found = await self._all(
+            f"/me/mailFolders/{where}/messages"
+            f"?$select={fields}&$top={top}&$orderby=receivedDateTime desc",
+            # One page. « The last forty » is the list a person reads, and
+            # paging a mailbox to its end would fetch years of mail to
+            # render a pane that shows fifteen rows.
+            pages=1,
+        )
+        return [_message(one) for one in found]
+
+    async def message(self, message_id: str) -> Message:
+        """One message, with its body."""
+        return _message(await self._get(f"/me/messages/{message_id}"))
+
     async def download(self, drive_id: str, item_id: str) -> bytes:
         """The file itself.
 
@@ -318,19 +392,23 @@ class Graph:
             return dict(response.json())
         raise GraphError("Microsoft is not answering. Try again in a moment.")
 
-    async def _all(self, path: str) -> list[dict[str, Any]]:
-        """Every page of a collection.
+    async def _all(self, path: str, pages: int | None = None) -> list[dict[str, Any]]:
+        """Every page of a collection, or the first `pages` of one.
 
         Graph pages at 200 and hands back a link; a deal room with three
         hundred files in it is ordinary, and a client that read the first
-        page and stopped would quietly check two thirds of a room.
+        page and stopped would quietly check two thirds of a room. Mail is
+        the one place where stopping is right, and it says so where it
+        asks.
         """
         items: list[dict[str, Any]] = []
         url: str | None = path
-        while url:
+        read = 0
+        while url and (pages is None or read < pages):
             page = await self._get(url)
             items.extend(page.get("value") or [])
             url = page.get("@odata.nextLink")
+            read += 1
         return items
 
 
@@ -395,6 +473,34 @@ def _reason(response: httpx.Response) -> str:
     return f"Microsoft answered {response.status_code}: {detail}"
 
 
+def _message(payload: dict[str, Any]) -> Message:
+    sender = ((payload.get("from") or {}).get("emailAddress")) or {}
+    body = payload.get("body") or {}
+    return Message(
+        id=str(payload["id"]),
+        change_key=str(payload.get("changeKey") or ""),
+        subject=str(payload.get("subject") or "(no subject)"),
+        # A draft to a new recipient has no name yet, only an address.
+        # Falling back the other way — an address where a name exists —
+        # would put a machine identifier in a column people read.
+        from_name=str(sender.get("name") or sender.get("address") or ""),
+        from_email=str(sender.get("address") or ""),
+        to=tuple(
+            str(((one or {}).get("emailAddress") or {}).get("address") or "")
+            for one in (payload.get("toRecipients") or [])
+        ),
+        # A draft has never been received. Graph fills `receivedDateTime`
+        # with its creation time anyway, which is the date a person means.
+        received_at=str(payload.get("receivedDateTime") or ""),
+        preview=str(payload.get("bodyPreview") or ""),
+        is_draft=bool(payload.get("isDraft")),
+        is_read=bool(payload.get("isRead", True)),
+        has_attachments=bool(payload.get("hasAttachments")),
+        body=str(body.get("content") or ""),
+        body_type=str(body.get("contentType") or "html").lower(),
+    )
+
+
 def _item(payload: dict[str, Any], drive_id: str) -> Item:
     reference = payload.get("parentReference") or {}
     modified = payload.get("lastModifiedBy") or {}
@@ -415,11 +521,13 @@ def _item(payload: dict[str, Any], drive_id: str) -> Item:
 
 
 __all__ = [
+    "FOLDERS",
     "SCOPES",
     "Drive",
     "Graph",
     "GraphError",
     "Item",
+    "Message",
     "NotConfigured",
     "Token",
     "authorize_url",

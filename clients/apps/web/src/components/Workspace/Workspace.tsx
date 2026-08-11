@@ -51,6 +51,7 @@ import { Confirm } from './screens/Confirm'
 import { Document } from './screens/Document'
 import { Files } from './screens/Files'
 import { Library, type Row } from './screens/Library'
+import { Mail } from './screens/Mail'
 import { Projects } from './screens/Projects'
 import { SharePoint } from './screens/SharePoint'
 import { Sheets } from './screens/Sheets'
@@ -319,7 +320,12 @@ export function Workspace({ dealId }: { dealId: string }) {
   //: is opened, and again whenever something on that screen changed what
   //: the answer would be.
   useEffect(() => {
-    if (view !== 'sharepoint' || !organization || !dealFor.current) return
+    if (
+      (view !== 'sharepoint' && view !== 'mail') ||
+      !organization ||
+      !dealFor.current
+    )
+      return
     let live = true
     void (async () => {
       const [connector, where, mine] = await Promise.all([
@@ -726,6 +732,17 @@ export function Workspace({ dealId }: { dealId: string }) {
                   void load()
                 }}
               />
+            ) : view === 'mail' && store?.connection ? (
+              //: The same rule as SharePoint: only once there is a
+              //: mailbox behind it. Before that the honest screen is the
+              //: one that says what is missing.
+              <Mail
+                api={api}
+                state={store}
+                dealId={dealFor.current}
+                findings={findings}
+                onChecked={() => void load()}
+              />
             ) : view === 'sharepoint' && store?.connection ? (
               //: Only once there is a connection behind it. Before that
               //: the honest screen is the one that says what is missing —
@@ -743,13 +760,14 @@ export function Workspace({ dealId }: { dealId: string }) {
                 }}
               />
             ) : (
-              // Mail and Calendar, and SharePoint before anybody has
+              // Calendar, and Mail and SharePoint before anybody has
               // connected one: drawn, and honestly empty. See `Waiting.tsx`.
               <Waiting
                 view={view}
                 onGo={go}
                 action={
-                  view === 'sharepoint' && store?.authorize_url
+                  (view === 'sharepoint' || view === 'mail') &&
+                  store?.authorize_url
                     ? { label: 'Connect Microsoft', href: store.authorize_url }
                     : null
                 }

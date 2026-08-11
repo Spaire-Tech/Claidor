@@ -239,6 +239,30 @@ export interface DriveItem {
   content_tag: string
 }
 
+/** One email, as the mail screen draws it. */
+export interface MailMessage {
+  id: string
+  subject: string
+  from_name: string
+  from_email: string
+  to: string[]
+  received_at: string
+  preview: string
+  is_draft: boolean
+  is_read: boolean
+  has_attachments: boolean
+  /** Empty in a listing; present when one message is opened. */
+  body: string
+  /**
+   * The artifact this was read into, when it has been checked. **Null
+   * means nobody has checked it** — a different sentence from « checked
+   * and clean », and the screen says which.
+   */
+  artifact_id: string | null
+  /** Whether what was checked is what is on screen. */
+  current: boolean
+}
+
 /** Where a deal's files are, and what the last sync made of it. */
 export interface ConnectedFolder {
   id: string
@@ -733,6 +757,26 @@ export class TieOutApi {
   /** Read what has changed, and re-check the deal. */
   syncFolder(dealId: string): Promise<ConnectedFolder> {
     return this.at(`/v1/connector/deals/${dealId}/sync`, { method: 'POST' })
+  }
+
+  // --- mail -------------------------------------------------------------
+
+  mail(dealId: string, folder: string): Promise<MailMessage[]> {
+    return this.at(`/v1/connector/deals/${dealId}/mail?folder=${folder}`)
+  }
+
+  message(dealId: string, messageId: string): Promise<MailMessage> {
+    return this.at(
+      `/v1/connector/deals/${dealId}/mail/${encodeURIComponent(messageId)}`,
+    )
+  }
+
+  /** Read this message into the deal and reconcile it. On a press. */
+  checkMessage(dealId: string, messageId: string): Promise<MailMessage> {
+    return this.at(
+      `/v1/connector/deals/${dealId}/mail/${encodeURIComponent(messageId)}/check`,
+      { method: 'POST' },
+    )
   }
 
   disconnect(connectionId: string): Promise<void> {

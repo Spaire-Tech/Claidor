@@ -142,6 +142,18 @@ class TieOutWritingService:
             raise NotCorrectable(
                 "The document this figure was printed in is no longer in the deal."
             )
+        if artifact.kind is ArtifactKind.message:
+            # And it never will be. Reading mail is a read scope; editing
+            # somebody's draft from a server is not, and a product that
+            # rewrites outgoing email is one nobody would connect twice.
+            # The add-in does it, in their own compose window, on their
+            # own press — which is the same split as a deck: the server
+            # writes the deal's copy, the panel writes theirs.
+            raise NotCorrectable(
+                "A message is corrected in Outlook, not here. Open the "
+                "draft with the Pierce add-in and the corrected sentence "
+                "goes in as you press it."
+            )
         if artifact.kind not in (ArtifactKind.deck, ArtifactKind.memo):
             raise NotCorrectable(
                 f"A {artifact.kind.value} is not written into by this — a "

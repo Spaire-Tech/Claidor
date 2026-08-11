@@ -1,14 +1,14 @@
 'use client'
 
 /**
- * Mail and Calendar — drawn, and honestly empty. SharePoint until connected.
+ * Calendar — drawn, and honestly empty. Mail and SharePoint until connected.
  *
  * The design draws all three in full: a mailbox with a draft carrying a
  * tracked change, a week's agenda, a document library with sync status
- * against every file. The library is built now and lives in
- * `SharePoint.tsx`; it falls back here when nobody has connected an
- * account, because a library screen with no library behind it is furniture.
- * Mail and Calendar still need work that does not exist.
+ * against every file. Two of them are built now — `Mail.tsx` and
+ * `SharePoint.tsx` — and both fall back here when nobody has connected an
+ * account, because a mailbox screen with no mailbox behind it is
+ * furniture. Calendar still needs work that does not exist.
  *
  * **So they say so, and they show nothing.** A mailbox with three invented
  * messages in it, on a product whose entire argument is that the numbers on
@@ -45,9 +45,9 @@ export const WAITING: Partial<Record<View, Waiting>> = {
   mail: {
     title: 'Mail',
     line: 'No mailbox connected',
-    what: 'Reads the draft you are writing, checks the figures in it against the model, and proposes the correction as a tracked change before it is sent.',
+    what: 'Reads the draft you are writing, checks the figures in it against the model, and shows the correction as a tracked change before it is sent.',
     needs:
-      'An Outlook mailbox, through Microsoft Graph. Until then nothing here can see a message, and inventing one would be the same lie as inventing a number.',
+      'A Microsoft account with a mailbox on it. Connecting one sends you to Microsoft and back; if there is no button here, this server has no Microsoft application configured and only an administrator can add one.',
     instead: {
       text: 'The add-in already runs inside Outlook and reads the deck attached to a draft.',
       view: 'files',

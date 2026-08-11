@@ -2,9 +2,10 @@
 
 Nobody developing this product has a SharePoint tenant, an application
 registration and a deal room to hand, and the connector cannot be looked at
-without all three. So this speaks the four URLs the connector uses — token,
-`/me`, drives and children, content — over the shapes Graph publishes, and
-serves `scripts/cascade/` as a document library.
+without all three. So this speaks the URLs the connector uses — token,
+`/me`, drives and children, content, mail folders and messages — over the
+shapes Graph publishes, and serves `scripts/cascade/` as a document
+library with a small mailbox beside it.
 
     uv run python -m scripts.graph_stub          # http://127.0.0.1:8900
 
@@ -90,6 +91,55 @@ def _item(path: Path) -> dict[str, Any]:
     }
 
 
+#: A mailbox, written against the Cascade model on purpose.
+#:
+#: The draft is the whole point of the mail screen: 235.3 where the model
+#: says 228.9, in the sentence shape a memo actually uses, so pressing
+#: « Check this message » produces a real drift against a real cell. The
+#: inbox message is the other half of the case — somebody asking about a
+#: figure, which is what makes the draft get written.
+MAILBOX: dict[str, list[dict[str, Any]]] = {
+    "drafts": [
+        {
+            "id": "msg-draft-1",
+            "changeKey": "k1",
+            "subject": "Project Cascade — FY2025A summary",
+            "from": ("R. Duval", "r.duval@rothmoor.example"),
+            "to": ("helena.vos@kestrelcapital.example",),
+            "at": "2026-08-11T08:22:00Z",
+            "draft": True,
+            "read": True,
+            "body": (
+                "<p>Helena,</p>"
+                "<p>Ahead of Thursday: the business generated $235.3mm of "
+                "revenue in FY2025A, and the capital structure carries total "
+                "debt of $96.4m.</p>"
+                "<p>The full model is in the deal room.</p>"
+                "<p>Kind regards</p>"
+                "<p>Rasmus Duval | Rothmoor | 20 Finsbury Circus</p>"
+            ),
+        }
+    ],
+    "inbox": [
+        {
+            "id": "msg-in-1",
+            "changeKey": "k1",
+            "subject": "Re: Project Cascade — revenue",
+            "from": ("Helena Vos", "helena.vos@kestrelcapital.example"),
+            "to": ("r.duval@rothmoor.example",),
+            "at": "2026-08-11T07:51:00Z",
+            "draft": False,
+            "read": False,
+            "body": (
+                "<p>Rasmus,</p>"
+                "<p>Can you confirm the FY2025A revenue figure before "
+                "Thursday? Our note has it at $228.9mm.</p>"
+            ),
+        }
+    ],
+}
+
+
 # --- sign-in -------------------------------------------------------------
 
 
@@ -130,6 +180,45 @@ async def my_drive() -> Response:
         content='{"error":{"message":"itemNotFound"}}',
         media_type="application/json",
     )
+
+
+@app.get("/v1.0/me/mailFolders/{folder}/messages")
+async def mail(folder: str) -> dict[str, Any]:
+    return {"value": [_mail(one) for one in MAILBOX.get(folder, [])]}
+
+
+@app.get("/v1.0/me/messages/{message_id}")
+async def one_message(message_id: str) -> Response:
+    for held in MAILBOX.values():
+        for one in held:
+            if one["id"] == message_id:
+                return _json(_mail(one, body=True))
+    return _json({"error": {"message": "The message was not found."}}, 404)
+
+
+def _mail(one: dict[str, Any], body: bool = False) -> dict[str, Any]:
+    name, address = one["from"]
+    payload: dict[str, Any] = {
+        "id": one["id"],
+        "changeKey": one["changeKey"],
+        "subject": one["subject"],
+        "from": {"emailAddress": {"name": name, "address": address}},
+        "toRecipients": [{"emailAddress": {"address": to}} for to in one.get("to", ())],
+        "receivedDateTime": one["at"],
+        "bodyPreview": _preview(one["body"]),
+        "isDraft": one["draft"],
+        "isRead": one["read"],
+        "hasAttachments": False,
+    }
+    if body:
+        payload["body"] = {"contentType": "html", "content": one["body"]}
+    return payload
+
+
+def _preview(body: str) -> str:
+    import re
+
+    return re.sub(r"<[^>]+>", " ", body).replace("  ", " ").strip()[:100]
 
 
 @app.get("/v1.0/me/followedSites")

@@ -88,6 +88,33 @@ class FolderRead(Schema):
     error: str | None
 
 
+class MessageRead(Schema):
+    """One email, as the mail screen draws it.
+
+    `body` is empty in a listing. A folder of forty messages with their
+    HTML in it is megabytes of Word markup to render a list of subjects.
+    """
+
+    id: str
+    subject: str
+    from_name: str
+    from_email: str
+    to: list[str]
+    received_at: str
+    preview: str
+    is_draft: bool
+    is_read: bool
+    has_attachments: bool
+    body: str = ""
+    #: The artifact this message was read into, when it has been checked.
+    #: Null means nobody has checked it — which is a different sentence
+    #: from « checked and clean », and the screen says so.
+    artifact_id: UUID | None = None
+    #: Whether what was checked is what is on screen. A draft edited since
+    #: the check is a draft nobody has checked.
+    current: bool = False
+
+
 class PointAt(Schema):
     drive_id: str
     item_id: str
@@ -99,5 +126,6 @@ __all__ = [
     "DriveRead",
     "FolderRead",
     "ItemRead",
+    "MessageRead",
     "PointAt",
 ]

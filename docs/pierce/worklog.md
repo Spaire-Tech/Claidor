@@ -1044,3 +1044,91 @@ What the screenshots caught: the status column said « Changed » where the
 design's word is « Stale »; the folder rows had a text arrow where the
 design has an amber folder; and the breadcrumb at the library root read
 « Documents Rothmoor Deals », which is two names and no relationship.
+
+---
+
+## 11 August — the draft, before it goes
+
+Phase 8's other half. A message in Outlook is read, reconciled against the
+deal's model, and the correction shown as a tracked change — the design's
+own card, made real.
+
+### Why mail rather than Teams
+
+Of everything this product checks, an email is the one where being late is
+final. A deck can be pulled back out of a data room; a model can be
+replaced; a memo can be reissued. A sent message cannot be pulled back out
+of anything. So the draft is worth more than the sent item, and the sent
+item is worth more than the rest of the mailbox.
+
+### A message is a memo
+
+`ArtifactKind.message`, and after that the tie-out cannot tell the two
+apart — `run_tieout` already treated a memo exactly as a deck, and a
+message went in beside them on one line. The reader is
+`tieout/memo.read_memo_text` unchanged. What is genuinely new is small and
+it is all about **what is not the message**:
+
+**The quoted thread.** A reply carries the conversation under it. Those
+figures were typed by somebody else, possibly weeks ago, possibly already
+corrected — and a drift reported against them is a false positive whose
+only available fix is « edit a message you did not send ».
+
+**The signature.** « 20 Finsbury Circus » is a plausible-looking 20 to
+anything reading digits.
+
+**Word's inline stylesheet.** Outlook writes CSS into the body and CSS is
+all numbers. `0.75in` and `11pt` are not figures, and a reader that took
+them would report drift against a margin.
+
+Each of those is a false positive, which is the one failure this product
+cannot afford, so the test file is mostly about them.
+
+### The subject is a claim
+
+« Northgate — FY24 Adjusted EBITDA of $41.9m » is the line people read
+without opening anything. It is read as the first paragraph.
+
+### « Accept and send » cannot exist, and that is a decision
+
+The design's card ends in two buttons: **Accept and send**, and Reject.
+The scope list is `Mail.Read`, not `Mail.ReadWrite`, and that is a
+decision rather than an omission — a server that edits somebody's outgoing
+email is a product nobody connects twice.
+
+So the split is the same one decks already have: **the server shows it,
+and the add-in writes it.** A correction to a deck goes into the deal's
+copy on the server and into the banker's own copy through the panel; a
+correction to a draft goes in through the panel only, in their own compose
+window, on their own press. What sits where the design's button is: the
+corrected sentence, to take, and a line naming where the change can
+actually be made. `writing.py` refuses a message with that sentence rather
+than a generic one — « cannot » is not the useful half.
+
+### Verified
+
+Through the interface, at 1440×900, against the stub's mailbox and the
+real Cascade model.
+
+| | |
+|---|---|
+| Not connected | the Mail screen falls back to « Connect Microsoft », same as SharePoint |
+| A draft, unchecked | « Nothing here has been read » — not « clean » |
+| Checked | *the business generated ~~$235.3mm~~ $228.9mm of revenue in FY2025A* · FY2025A revenue · `Model!D6` |
+| An inbox message quoting the right figure | « Checked — every figure in this message ties to the model » |
+| Total debt of $96.4m, in the same draft | correctly silent: it ties to `Assumptions!B24` |
+
+267 tests, 14 of them this.
+
+What the screenshots caught: the struck figure and the inserted one ran
+together as `$235.3mm$228.9mm`, and « Copy the corrected sentence » was a
+button label long enough to wrap onto two lines in the design's own
+padding.
+
+### The stub grew a mailbox
+
+`scripts/graph_stub.py` now serves `/me/mailFolders/{folder}/messages` and
+`/me/messages/{id}` beside the document library. The draft in it is
+written against the Cascade model on purpose — 235.3 where the model says
+228.9, in the sentence shape a memo actually uses — so the screen has a
+real drift against a real cell to draw rather than a hand-written one.
