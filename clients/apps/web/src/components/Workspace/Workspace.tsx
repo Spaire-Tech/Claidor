@@ -9,11 +9,12 @@
  * first thing anyone sees is a question rather than a dashboard.
  *
  * Every screen the backend can feed reads live: the data room lists real
- * artifacts, Check lists real findings, Chain walks a real chain. The
- * screens that need work that does not exist yet — Mail, Calendar,
- * SharePoint, the Word and Excel surfaces — are not faked here. They say
- * plainly that they are not connected, which is the honest state and takes
- * one line to replace when the wiring lands.
+ * artifacts, Check lists real findings, Chain walks a real chain, and
+ * SharePoint browses a real document library once somebody has connected
+ * one. The screens that need work that does not exist yet — Mail, Calendar,
+ * the Word and Excel surfaces — are not faked here. They say plainly that
+ * they are not connected, which is the honest state and takes one line to
+ * replace when the wiring lands.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -23,6 +24,8 @@ import { Dock } from './Dock'
 import type {
   Artifact,
   Chain,
+  ConnectedFolder,
+  ConnectorState,
   Correction,
   Coverage,
   DealListItem,
@@ -49,6 +52,7 @@ import { Document } from './screens/Document'
 import { Files } from './screens/Files'
 import { Library, type Row } from './screens/Library'
 import { Projects } from './screens/Projects'
+import { SharePoint } from './screens/SharePoint'
 import { Sheets } from './screens/Sheets'
 import { Terminal } from './screens/Terminal'
 import { Trace } from './screens/Trace'
@@ -156,6 +160,18 @@ export function Workspace({ dealId }: { dealId: string }) {
   const [grid, setGrid] = useState<ModelGrid | null>(null)
   const [deckMap, setDeckMap] = useState<FigureMap | null>(null)
   const [memoMap, setMemoMap] = useState<FigureMap | null>(null)
+  //: Whose deal it is. A connection belongs to an organization and a
+  //: person, not to a deal, so the connector asks about this.
+  const [organization, setOrganization] = useState('')
+  //: The file store. Fetched when the SharePoint screen is opened rather
+  //: than with the deal: it is three requests to Microsoft's servers and
+  //: every other screen would be paying for a room nobody looked at.
+  const [store, setStore] = useState<ConnectorState | null>(null)
+  const [folder, setFolder] = useState<ConnectedFolder | null>(null)
+  //: What the deal already holds of the room, keyed by the store's own id.
+  //: The library's status column, and nothing else needs it.
+  const [held, setHeld] = useState<Map<string, string>>(new Map())
+  const [storeAt, setStoreAt] = useState(0)
 
   const load = useCallback(async () => {
     try {
@@ -175,6 +191,7 @@ export function Workspace({ dealId }: { dealId: string }) {
       ])
       dealFor.current = id
       setDeal(page.name)
+      setOrganization(page.organization_id)
       //: The documents the deal is built on — not the data room, which
       //: fetches its own pages. Holding every artifact here is what made
       //: this request 1.07 MB at three thousand files.
@@ -238,6 +255,8 @@ export function Workspace({ dealId }: { dealId: string }) {
     setGrid(null)
     setDeckMap(null)
     setMemoMap(null)
+    setFolder(null)
+    setHeld(new Map())
     setMessages([])
     setDeal('')
     go('checks')
@@ -295,6 +314,28 @@ export function Workspace({ dealId }: { dealId: string }) {
       live = false
     }
   }, [opened])
+
+  //: The same, for the file store: asked for when the screen that shows it
+  //: is opened, and again whenever something on that screen changed what
+  //: the answer would be.
+  useEffect(() => {
+    if (view !== 'sharepoint' || !organization || !dealFor.current) return
+    let live = true
+    void (async () => {
+      const [connector, where, mine] = await Promise.all([
+        api.connectorState(organization).catch(() => null),
+        api.connectedFolder(dealFor.current).catch(() => null),
+        api.held(dealFor.current).catch(() => ({})),
+      ])
+      if (!live) return
+      setStore(connector)
+      setFolder(where)
+      setHeld(new Map(Object.entries(mine)))
+    })()
+    return () => {
+      live = false
+    }
+  }, [view, organization, chosen, storeAt])
 
   const trace = async (finding: Finding) => {
     setTraced(finding)
@@ -685,10 +726,34 @@ export function Workspace({ dealId }: { dealId: string }) {
                   void load()
                 }}
               />
+            ) : view === 'sharepoint' && store?.connection ? (
+              //: Only once there is a connection behind it. Before that
+              //: the honest screen is the one that says what is missing —
+              //: a library with no library in it is furniture.
+              <SharePoint
+                api={api}
+                state={store}
+                dealId={dealFor.current}
+                organizationId={organization}
+                folder={folder}
+                externals={held}
+                onChanged={() => {
+                  setStoreAt((was) => was + 1)
+                  void load()
+                }}
+              />
             ) : (
-              // Mail, Calendar and SharePoint: drawn, and honestly empty
-              // until there is a source behind them. See `Waiting.tsx`.
-              <Waiting view={view} onGo={go} />
+              // Mail and Calendar, and SharePoint before anybody has
+              // connected one: drawn, and honestly empty. See `Waiting.tsx`.
+              <Waiting
+                view={view}
+                onGo={go}
+                action={
+                  view === 'sharepoint' && store?.authorize_url
+                    ? { label: 'Connect Microsoft', href: store.authorize_url }
+                    : null
+                }
+              />
             )}
           </div>
         )}

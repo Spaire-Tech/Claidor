@@ -289,6 +289,14 @@ class Settings(BaseSettings):
     MICROSOFT_CLIENT_ID: str = ""
     MICROSOFT_CLIENT_SECRET: str = ""
     MICROSOFT_TENANT: str = "common"
+    # Where Graph and the sign-in service are. Worth being settings rather
+    # than constants for two reasons that are the same reason: a sovereign
+    # cloud is a different hostname speaking the identical API (Graph for
+    # US Government is `graph.microsoft.us`), and so is the stub in
+    # `scripts/graph_stub.py`, which is how this connector gets exercised
+    # end to end on a machine with no Microsoft tenant behind it.
+    MICROSOFT_GRAPH_BASE: str = "https://graph.microsoft.com/v1.0"
+    MICROSOFT_LOGIN_BASE: str = "https://login.microsoftonline.com"
 
     # Apple
     APPLE_CLIENT_ID: str = ""

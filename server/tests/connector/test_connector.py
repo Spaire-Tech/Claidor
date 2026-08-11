@@ -721,6 +721,62 @@ class TestTheRoutes:
         assert body["connection"]["account_name"] == "R. Duval"
         assert body["last_synced_at"] is not None
 
+    @pytest.mark.auth
+    async def test_what_the_deal_holds_is_the_tag_it_was_read_at(
+        self,
+        client: Any,
+        save_fixture: SaveFixture,
+        session: AsyncSession,
+        user: User,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The library screen's status column, and the only thing it needs.
+
+        « Synced » and « Changed » are one comparison: the tag this deal
+        was read at against the tag the room is at now. A screen that could
+        not make it would be down to saying « we have a file called that »,
+        which is the filename guess the drive item id exists to replace.
+        """
+        graph = FakeGraph()
+        deal, folder = await _connected(session, save_fixture, user, graph, monkeypatch)
+        graph.items = [a_file("cascade_model.xlsx", MODEL, id="item-model")]
+        await connector.sync(
+            session, folder=folder, user_id=user.id, client=graph.client()
+        )
+        await session.flush()
+
+        held = (await client.get(f"/v1/connector/deals/{deal.id}/held")).json()
+        assert held == {"item-model": "c1"}
+
+        # Somebody saves over it. The deal still holds the old bytes until
+        # a sync runs, and the tag is how the screen can say so.
+        graph.items = [a_file("cascade_model.xlsx", MODEL, id="item-model", ctag="c2")]
+        assert (await client.get(f"/v1/connector/deals/{deal.id}/held")).json() == {
+            "item-model": "c1"
+        }
+
+        await connector.sync(
+            session, folder=folder, user_id=user.id, client=graph.client()
+        )
+        await session.flush()
+
+        # And after it, the newest version's tag — not both versions'.
+        assert (await client.get(f"/v1/connector/deals/{deal.id}/held")).json() == {
+            "item-model": "c2"
+        }
+
+    @pytest.mark.auth
+    async def test_what_a_deal_you_are_not_on_holds_is_not_yours_to_ask(
+        self, client: Any, save_fixture: SaveFixture, session: AsyncSession
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        deal, _ = await _deal(session, save_fixture, stranger)
+        await session.flush()
+
+        assert (
+            await client.get(f"/v1/connector/deals/{deal.id}/held")
+        ).status_code == 404
+
 
 @pytest.mark.asyncio
 async def test_disconnecting_keeps_the_folder_and_forgets_the_token(

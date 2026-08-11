@@ -956,3 +956,91 @@ buckets and the app user. This container reclaims background processes
 between sessions and the first symptom is always a test suite failing with
 « connection refused » somewhere unrelated. It cost twenty minutes twice
 before it was worth writing down.
+
+---
+
+## 11 August — the room the files actually live in
+
+Phase 8, the half that is SharePoint and OneDrive. A deal can now be
+pointed at a folder in a document library and read from it: nobody uploads
+anything, and the deal checks itself.
+
+### Read-only, and delegated
+
+The scopes are `offline_access`, `User.Read`, `Files.Read.All`,
+`Sites.Read.All`. Two decisions in that list.
+
+**Delegated, not application-level.** The token is one person's, so this
+connector reaches exactly what they can already open and nothing else. The
+alternative needs an administrator's consent before anybody can try the
+product at all, and it makes a bug in `graph.py` able to read a firm's
+entire SharePoint. The cost is that a connection belongs to a person and
+stops working when they leave — a state the screen carries rather than a
+problem to solve.
+
+**No write scope, ever.** A correction goes into the deal's own copy.
+Pushing a rewritten deck back into a shared library is a decision nobody
+asked for and a mistake nobody could undo.
+
+### The content tag is the whole design
+
+`cTag` changes when the content does; `eTag` also changes on a rename. So
+the sync compares tags: a forty-megabyte model whose name somebody fixed
+is not read again, and a model somebody saved over on Tuesday becomes
+version 2 of the same lineage rather than a second model in the deal. That
+is the identity problem the roadmap said a filename guess could not solve,
+and it is one string.
+
+### The screen earns itself on one column
+
+`screens/SharePoint.tsx` is the design's document library — rail,
+breadcrumb, ribbon, header row, sync status at the right edge — and the
+status column is the reason it is worth drawing. **Synced** is the design's
+blue, **Stale** its amber, and the comparison behind them is the deal's
+content tag against the room's. A row that says Stale is the one a banker
+should look at.
+
+Two substitutions, both named in the file. The ribbon drops New, Upload,
+Share and Automate: they are SharePoint's own, and furniture that does
+nothing is the worst thing to put on a screen about whether files are
+real. The rail drops SharePoint's site navigation for the list of document
+libraries this account can reach, which is the only thing here that is
+navigable and true.
+
+### How it was looked at without a tenant
+
+`scripts/graph_stub.py`. There is no Microsoft tenant on this machine and
+there is no application registration, so the connector could not be seen
+at all — and a screen nobody has seen is a screen with a bug in it. The
+stub speaks the four URLs the connector uses, over the shapes Graph's
+documentation publishes, serving `scripts/cascade/` as a library.
+
+Graph's base URL became a setting to make that possible, which is worth
+having anyway: a sovereign cloud is the identical API at
+`graph.microsoft.us`.
+
+**This proves the wiring, not the integration.** Everything above Graph —
+the token store, the sync, the status column, the re-check — is exercised
+for real. Whether Microsoft behaves as documented is unproven and will
+stay unproven until somebody connects an account.
+
+### Verified
+
+Through the interface, at 1440×900, against the stub and the real Cascade
+files. Project Meridian was an empty deal at the start of this.
+
+| | |
+|---|---|
+| Not configured | « Connect Microsoft » absent, and the sentence says an administrator has to add the application |
+| Configured, not connected | the button, on the same screen |
+| Connected | R. Duval · Rothmoor Deals · Documents |
+| Pointed and synced | four files read, and the deal checked without anybody pressing check |
+| The deal, after | 108 reconciled · 100 agreeing · **8 drifting** · 27 unlinked |
+| `touch cascade_model.xlsx` | that row alone turns **Stale** |
+
+253 tests, 23 of them the connector.
+
+What the screenshots caught: the status column said « Changed » where the
+design's word is « Stale »; the folder rows had a text arrow where the
+design has an amber folder; and the breadcrumb at the library root read
+« Documents Rothmoor Deals », which is two names and no relationship.

@@ -190,6 +190,74 @@ export interface ArtifactPage {
   offset: number
 }
 
+/**
+ * A connected file store, and whose access it is.
+ *
+ * The account is on it deliberately: a deal syncing through somebody's
+ * credentials is a fact the team should be able to see, both because it
+ * stops working when they leave and because « why can this product read
+ * our deal room » should never be a question without an answer on screen.
+ */
+export interface ConnectorConnection {
+  id: string
+  provider: 'microsoft'
+  status: 'active' | 'expired' | 'revoked'
+  account_name: string
+  account_email: string
+  error: string | null
+  connected_at: string
+}
+
+/** Three states, and they are three different sentences. */
+export interface ConnectorState {
+  /** Whether this server has a Microsoft application at all. */
+  configured: boolean
+  connection: ConnectorConnection | null
+  authorize_url: string | null
+}
+
+export interface Drive {
+  id: string
+  name: string
+  owner: string
+}
+
+export interface DriveItem {
+  id: string
+  name: string
+  folder: boolean
+  size: number
+  modified_at: string
+  modified_by: string
+  drive_id: string
+  /** Whether this product could read it if a sync took it. */
+  readable: boolean
+  /**
+   * The store's content tag. Only ever compared, never shown: the deal
+   * holds this item at the same tag or at a different one.
+   */
+  content_tag: string
+}
+
+/** Where a deal's files are, and what the last sync made of it. */
+export interface ConnectedFolder {
+  id: string
+  drive_id: string
+  item_id: string
+  name: string
+  path: string
+  site_name: string
+  connection: ConnectorConnection | null
+  last_synced_at: string | null
+  last_result: {
+    read?: number
+    unchanged?: number
+    failed?: number
+    skipped?: { reason: string; count: number }[]
+  }
+  error: string | null
+}
+
 /** One pass of one checker over named versions of named files. */
 export interface CheckRun {
   id: string
@@ -206,6 +274,12 @@ export interface DealPage {
   id: string
   name: string
   client: string | null
+  /**
+   * Whose deal it is. A connection is made once per organization and per
+   * person, not per deal, so the connector screens ask about this rather
+   * than about the deal they happen to be open on.
+   */
+  organization_id: string
   coverage: Coverage
   /** The current model, deck and memo. Tens, not thousands. */
   documents: Artifact[]
@@ -322,9 +396,22 @@ export interface ApiOptions {
 export class TieOutApi {
   constructor(private readonly options: ApiOptions) {}
 
-  private async call<T>(path: string, init: RequestInit = {}): Promise<T> {
+  /** A path under `/v1/tieout`, which is nearly everything here. */
+  private call<T>(path: string, init: RequestInit = {}): Promise<T> {
+    return this.at(`/v1/tieout${path}`, init)
+  }
+
+  /**
+   * Any path on the API.
+   *
+   * The connector is not part of the tie-out — it is where a deal's
+   * documents come from — so it lives under its own prefix and this is
+   * how it is reached without a second client and a second idea of what
+   * an error means.
+   */
+  private async at<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = this.options.token?.() ?? null
-    const response = await fetch(`${this.options.baseUrl}/v1/tieout${path}`, {
+    const response = await fetch(`${this.options.baseUrl}${path}`, {
       ...init,
       // The cookie carries the session in the browser; the panel sends a
       // token instead. Sending both is harmless and keeps one client.
@@ -588,5 +675,69 @@ export class TieOutApi {
   /** The last tie-out and the last audit: when this was last true. */
   runs(dealId: string): Promise<CheckRun[]> {
     return this.call(`/deals/${dealId}/runs`)
+  }
+
+  // --- the connected file store ---------------------------------------
+  //
+  // A different prefix from everything above: the connector is not part of
+  // the tie-out, it is where a deal's documents come from. `call` is
+  // hard-wired to /v1/tieout, so these build their own path.
+
+  connectorState(organizationId: string): Promise<ConnectorState> {
+    return this.at(`/v1/connector/state?organization_id=${organizationId}`)
+  }
+
+  drives(organizationId: string): Promise<Drive[]> {
+    return this.at(`/v1/connector/drives?organization_id=${organizationId}`)
+  }
+
+  driveItems(
+    organizationId: string,
+    driveId: string,
+    itemId?: string,
+  ): Promise<DriveItem[]> {
+    const where = itemId ? `&item_id=${encodeURIComponent(itemId)}` : ''
+    return this.at(
+      `/v1/connector/drives/${encodeURIComponent(driveId)}/items` +
+        `?organization_id=${organizationId}${where}`,
+    )
+  }
+
+  connectedFolder(dealId: string): Promise<ConnectedFolder | null> {
+    return this.at(`/v1/connector/deals/${dealId}/folder`)
+  }
+
+  /**
+   * What this deal already holds from the store, keyed by the store's own
+   * id and valued by the content tag it was read at. The whole basis of
+   * the library screen's status column.
+   */
+  held(dealId: string): Promise<Record<string, string>> {
+    return this.at(`/v1/connector/deals/${dealId}/held`)
+  }
+
+  pointAt(
+    dealId: string,
+    body: { drive_id: string; item_id: string },
+  ): Promise<ConnectedFolder> {
+    return this.at(`/v1/connector/deals/${dealId}/folder`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    })
+  }
+
+  stopWatching(dealId: string): Promise<void> {
+    return this.at(`/v1/connector/deals/${dealId}/folder`, { method: 'DELETE' })
+  }
+
+  /** Read what has changed, and re-check the deal. */
+  syncFolder(dealId: string): Promise<ConnectedFolder> {
+    return this.at(`/v1/connector/deals/${dealId}/sync`, { method: 'POST' })
+  }
+
+  disconnect(connectionId: string): Promise<void> {
+    return this.at(`/v1/connector/connections/${connectionId}`, {
+      method: 'DELETE',
+    })
   }
 }

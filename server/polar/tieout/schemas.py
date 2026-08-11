@@ -140,6 +140,11 @@ class DealPage(Schema):
     id: UUID
     name: str
     client: str | None
+    #: Whose deal it is. On screen only for the connector: a connection is
+    #: made once per organization and per person, not per deal, so the
+    #: SharePoint screen has to ask about the organization rather than the
+    #: deal it happens to be open on.
+    organization_id: UUID
     coverage: Coverage
     #: The current version of each model, deck and memo — the documents
     #: every other screen opens. Tens, not thousands.

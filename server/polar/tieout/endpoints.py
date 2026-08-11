@@ -324,6 +324,7 @@ async def get_deal(
         id=deal.id,
         name=deal.name,
         client=deal.client_name,
+        organization_id=deal.organization_id,
         coverage=Coverage(**await tieout.coverage_of(session, dossier_id=dossier_id)),
         documents=[_artifact(one, by_id.get(one.uploaded_by_id)) for one in documents],
         files=files,

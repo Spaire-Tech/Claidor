@@ -24,6 +24,8 @@ own documented shapes; that is honest about what a test can prove and it
 is not the same as working. The first connection against a real tenant
 will find something, and the shape of this module — one client, one place
 each URL is built — is chosen so that whatever it finds is cheap to fix.
+`scripts/graph_stub.py` is the other half of that: the same shapes served
+over HTTP, so the screens above this can be looked at rather than assumed.
 """
 
 from dataclasses import dataclass
@@ -37,8 +39,16 @@ from polar.config import settings
 
 log = structlog.get_logger()
 
-GRAPH = "https://graph.microsoft.com/v1.0"
-LOGIN = "https://login.microsoftonline.com"
+
+def _graph() -> str:
+    """Graph's base URL. See `MICROSOFT_GRAPH_BASE` — a sovereign cloud
+    and the development stub are both « the same API, elsewhere »."""
+    return settings.MICROSOFT_GRAPH_BASE.rstrip("/")
+
+
+def _login() -> str:
+    return settings.MICROSOFT_LOGIN_BASE.rstrip("/")
+
 
 #: What the connector asks for, and why each one is needed.
 #:
@@ -142,7 +152,7 @@ def authorize_url(state: str, redirect_uri: str) -> str:
             "prompt": "select_account",
         }
     )
-    return f"{LOGIN}/{settings.MICROSOFT_TENANT}/oauth2/v2.0/authorize?{query}"
+    return f"{_login()}/{settings.MICROSOFT_TENANT}/oauth2/v2.0/authorize?{query}"
 
 
 class Graph:
@@ -187,7 +197,7 @@ class Graph:
         form: dict[str, str], client: httpx.AsyncClient | None
     ) -> Token:
         _require_configured()
-        url = f"{LOGIN}/{settings.MICROSOFT_TENANT}/oauth2/v2.0/token"
+        url = f"{_login()}/{settings.MICROSOFT_TENANT}/oauth2/v2.0/token"
         body = {
             **form,
             "client_id": settings.MICROSOFT_CLIENT_ID,
@@ -282,7 +292,7 @@ class Graph:
         """
         async with _session(self._client) as session:
             response = await session.get(
-                f"{GRAPH}/drives/{drive_id}/items/{item_id}/content",
+                f"{_graph()}/drives/{drive_id}/items/{item_id}/content",
                 headers={"Authorization": f"Bearer {self._token}"},
                 follow_redirects=True,
             )
@@ -293,7 +303,7 @@ class Graph:
     # --- the plumbing ---------------------------------------------------
 
     async def _get(self, path: str) -> dict[str, Any]:
-        url = path if path.startswith("http") else f"{GRAPH}{path}"
+        url = path if path.startswith("http") else f"{_graph()}{path}"
         for attempt in range(ATTEMPTS):
             async with _session(self._client) as session:
                 response = await session.get(

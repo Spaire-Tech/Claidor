@@ -64,6 +64,10 @@ class ItemRead(Schema):
     #: yes, a `.zip` no. Shown so the folder picker is honest about what a
     #: sync would actually take.
     readable: bool
+    #: The store's content tag. On screen this is only ever compared, never
+    #: shown: the deal holds this item at some tag or another, and « the
+    #: same » and « a different one » are the two answers that matter.
+    content_tag: str
 
 
 class FolderRead(Schema):

@@ -201,15 +201,30 @@ the period in words and link cleanly.
 
 ### 8 · Connectors and firm standards
 
-SharePoint, OneDrive, Outlook, Teams as sources. House rules as
-configuration. Both also solve document identity properly — a drive item
-id beats a filename guess.
+SharePoint and OneDrive as sources, through Microsoft Graph. Delegated
+access only — this connector reads exactly what the person who connected
+it can already open, and **never writes to a customer's file store**.
 
-**Three screens are already waiting on this one, and they name it.** Mail,
-Calendar and SharePoint are drawn and deliberately empty — see
-`screens/Waiting.tsx`, which says on each what it will do and what it is
-waiting for. When a connector lands, the screen behind it is a rendering
-job rather than a design question.
+- ~~Connect an account~~ — `connector/`, OAuth with a signed state that
+  carries the organization and the person, because the browser coming
+  back from Microsoft may not carry the cookie at all
+- ~~Point a deal at a folder~~ — by drive item id, not by path
+- ~~Sync it~~ — content tag in, content tag out: a file that has not
+  changed is not downloaded again, a rename is not a second document, and
+  everything skipped is counted with a reason
+- ~~The screen~~ — `screens/SharePoint.tsx`, the design's document
+  library with a **real** sync column: Synced, Stale, Not read, against
+  what this deal actually holds
+- ~~Exercise it without a tenant~~ — `scripts/graph_stub.py` serves the
+  Cascade files as a document library over Graph's own shapes, which is
+  how everything above got looked at
+
+**Nothing here has run against a real tenant**, and that is the honest
+state: the shapes come from the published API and the wiring above them is
+real. The first connection will find something.
+
+Still waiting: Outlook and Teams — Mail and Calendar are still
+`screens/Waiting.tsx`, and house rules as configuration has not started.
 
 ### 9 · Accuracy — forever, never blocking
 

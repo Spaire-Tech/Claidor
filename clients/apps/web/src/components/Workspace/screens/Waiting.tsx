@@ -1,12 +1,14 @@
 'use client'
 
 /**
- * Mail, Calendar and SharePoint — drawn, and honestly empty.
+ * Mail and Calendar — drawn, and honestly empty. SharePoint until connected.
  *
  * The design draws all three in full: a mailbox with a draft carrying a
  * tracked change, a week's agenda, a document library with sync status
- * against every file. Every one of them needs a source this product is not
- * connected to — Graph, or a SharePoint site — and that is phase 8.
+ * against every file. The library is built now and lives in
+ * `SharePoint.tsx`; it falls back here when nobody has connected an
+ * account, because a library screen with no library behind it is furniture.
+ * Mail and Calendar still need work that does not exist.
  *
  * **So they say so, and they show nothing.** A mailbox with three invented
  * messages in it, on a product whose entire argument is that the numbers on
@@ -69,7 +71,7 @@ export const WAITING: Partial<Record<View, Waiting>> = {
     line: 'No site connected',
     what: 'Watches the deal room where the files actually live, so a model somebody replaces on Tuesday is re-checked without anybody uploading it again.',
     needs:
-      'A SharePoint or OneDrive site. It also settles document identity properly — a drive item id rather than a filename guess, which is the thing the panel currently has to guess at.',
+      'A Microsoft account that can already open the site. Connecting one sends you to Microsoft and back; if there is no button here, this server has no Microsoft application configured and only an administrator can add one.',
     instead: {
       text: 'Files dropped into the data room are read, versioned and checked exactly as a connected one would be.',
       view: 'files',
@@ -81,9 +83,18 @@ export const WAITING: Partial<Record<View, Waiting>> = {
 export function Waiting({
   view,
   onGo,
+  action,
 }: {
   view: View
   onGo: (view: View) => void
+  /**
+   * The one thing that would end the waiting, when there is one. Today
+   * that is « connect Microsoft » on a server that has an application
+   * configured: the screen is empty because nobody has connected, which
+   * is a different sentence from « this cannot be connected here » and
+   * deserves a button rather than a paragraph.
+   */
+  action?: { label: string; href: string } | null
 }) {
   const waiting = WAITING[view]
   if (!waiting) {
@@ -150,6 +161,23 @@ export function Waiting({
         >
           {waiting.needs}
         </p>
+        {action && (
+          <a
+            href={action.href}
+            style={{
+              display: 'inline-block',
+              marginTop: 18,
+              padding: '8px 14px',
+              borderRadius: 3,
+              background: colour.blue,
+              color: '#fff',
+              fontSize: 13,
+              textDecoration: 'none',
+            }}
+          >
+            {action.label}
+          </a>
+        )}
         <div
           style={{
             marginTop: 22,

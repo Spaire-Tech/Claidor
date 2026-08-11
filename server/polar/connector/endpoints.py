@@ -273,6 +273,7 @@ async def list_items(
             modified_by=one.modified_by,
             drive_id=one.drive_id,
             readable=not one.folder and kind_for(one.name) is not None,
+            content_tag=one.ctag,
         )
         for one in items
     ]
@@ -296,6 +297,31 @@ async def get_folder(
     if folder is None:
         return None
     return _folder(folder, await repository.get(folder.connection_id))
+
+
+@router.get("/deals/{dossier_id}/held", response_model=dict[str, str])
+async def held(
+    dossier_id: UUID,
+    auth_subject: WebUserRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> dict[str, str]:
+    """What this deal already holds from the store, keyed by the store's id.
+
+    The value is the content tag it was read at, which is what turns a
+    library listing into a status column: the same tag is « synced », a
+    different one is « changed », and an id that is not here at all has
+    never been read. The deal's *documents* are not enough to answer that —
+    a deal room is tens of files and only three of them are the model, the
+    deck and the memo.
+    """
+    await _deal(session, dossier_id, auth_subject.subject.id)
+    repository = ConnectorRepository.from_session(session)
+    return {
+        external_id: artifact.external_version or ""
+        for external_id, artifact in (
+            await repository.artifacts_by_external_id(dossier_id)
+        ).items()
+    }
 
 
 @router.put("/deals/{dossier_id}/folder", response_model=FolderRead)
