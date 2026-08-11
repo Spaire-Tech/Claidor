@@ -294,3 +294,36 @@ quoting.
    the model: the obvious generalisation cost a false positive and was
    dropped on evidence, not taste.
 6. **Every failure message says what a person can do about it.**
+
+---
+
+## How work gets reported
+
+Added 11 August, after I told the founder the product was « finished
+enough to sell ». It was not. Nothing was deployed anywhere, the Office
+task pane had never once been loaded inside Office, the connector had
+never met a real Microsoft tenant, and every document it had ever been
+shown was one I generated myself. All four of those facts were written
+down honestly in `worklog.md` by me, and I still aggregated them into a
+verdict they did not support — because I was measuring against this
+roadmap instead of against a stranger opening the thing.
+
+He found it in thirty seconds by uploading a document I had not made. It
+turned « think 60–70 minutes » into a financial figure of $70m and printed
+a linker score at him as the explanation.
+
+So, three rules, and they bind harder than the six above because breaking
+them makes the six unverifiable:
+
+7. **Test against something you did not make.** Their files, real files,
+   the wrong kind of file entirely. A fixture you generated cannot tell
+   you the reader is wrong, because you wrote both. If only your own
+   fixtures have been run, that is *not tested* — say so in the same
+   sentence as the result.
+8. **Report a failure in the turn you find it.** Not folded into a summary
+   afterwards, not softened, not balanced against three things that
+   worked.
+9. **State the test conditions, never the verdict.** « Checked against the
+   Cascade fixtures I wrote, at 1440×900, by me » is a report. « Ready to
+   show » is a judgement that belongs to the person who owns the product.
+   Whether something is showable is never yours to declare.
