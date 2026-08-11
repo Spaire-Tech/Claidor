@@ -98,8 +98,23 @@ class TieOutRepository(RepositoryBase[Artifact]):
         filename: str,
         uploaded_by_id: UUID,
         file_id: UUID | None = None,
+        external_id: str | None = None,
+        external_version: str | None = None,
+        lineage_of: UUID | None = None,
     ) -> Artifact:
-        lineage_id = await self.find_lineage(dossier_id, filename) or uuid4()
+        """One version of one document, in the lineage it belongs to.
+
+        **Which document this is, in the best terms available.** A caller
+        that knows the store's own identity — a sync, which has a drive
+        item id — passes the lineage it found by that id, and a rename is
+        a rename rather than a second document. A hand upload has only the
+        filename, which is a guess and has always been one, and keeps it.
+        """
+        lineage_id = (
+            lineage_of
+            or await self.find_lineage(dossier_id, filename)
+            or uuid4()
+        )
         version = await self.next_version(dossier_id, lineage_id)
         artifact = Artifact(
             dossier_id=dossier_id,
@@ -107,6 +122,8 @@ class TieOutRepository(RepositoryBase[Artifact]):
             filename=filename,
             uploaded_by_id=uploaded_by_id,
             file_id=file_id,
+            external_id=external_id,
+            external_version=external_version,
             lineage_id=lineage_id,
             version=version,
             status=ArtifactStatus.processing,

@@ -135,6 +135,12 @@ from .saved_prompt import SavedPrompt
 from .subscription import Subscription
 from .subscription_meter import SubscriptionMeter
 from .subscription_product_price import SubscriptionProductPrice
+from .connector import (
+    ConnectedFolder,
+    Connection,
+    ConnectionProvider,
+    ConnectionStatus,
+)
 from .tieout import (
     Artifact,
     ArtifactKind,
@@ -192,6 +198,10 @@ __all__ = [
     "ClientInvoice",
     "ClientInvoiceLineItem",
     "ClientInvoiceStatus",
+    "ConnectedFolder",
+    "Connection",
+    "ConnectionProvider",
+    "ConnectionStatus",
     "Correction",
     "CorrectionState",
     "CorrectionWhere",

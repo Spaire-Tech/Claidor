@@ -67,6 +67,9 @@ class TieOutService:
         payload: bytes,
         user_id: UUID,
         file_id: UUID | None = None,
+        external_id: str | None = None,
+        external_version: str | None = None,
+        lineage_of: UUID | None = None,
     ) -> Artifact:
         """Read a file into rows, or record why it could not be read.
 
@@ -87,6 +90,9 @@ class TieOutService:
             filename=filename,
             uploaded_by_id=user_id,
             file_id=file_id,
+            external_id=external_id,
+            external_version=external_version,
+            lineage_of=lineage_of,
         )
         artifact.storage_path = storage.keep(artifact, payload)
 

@@ -135,6 +135,25 @@ class Artifact(RecordModel):
         String(1024), nullable=True, default=None
     )
 
+    #: The file store's own id for this document — a Graph drive item id.
+    #: **Identity, at last, rather than a filename guess.** Versions of one
+    #: document share a lineage, and until now the only way to know two
+    #: uploads were the same document was that they had the same name: a
+    #: rename started a second lineage and two `Model.xlsx` in different
+    #: folders were one. A drive item survives both.
+    #:
+    #: Null for a hand-uploaded file, which has no better answer and keeps
+    #: the filename rule.
+    external_id: Mapped[str | None] = mapped_column(
+        String(512), nullable=True, default=None, index=True
+    )
+    #: What the store said this version was — Graph's `cTag`, which changes
+    #: when the *content* does and not when somebody renames it. How the
+    #: sync knows a file it has already read has actually moved on.
+    external_version: Mapped[str | None] = mapped_column(
+        String(512), nullable=True, default=None
+    )
+
     @declared_attr
     def file(cls) -> Mapped["File | None"]:
         return relationship("File", lazy="raise")

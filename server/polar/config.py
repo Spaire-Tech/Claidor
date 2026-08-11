@@ -278,6 +278,18 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
 
+    # Microsoft — SharePoint and OneDrive as sources for a deal, through
+    # Graph. Empty means the connector is not configured on this server,
+    # which every screen and route says in those words rather than
+    # offering a button that cannot work.
+    #
+    # `common` lets any work or school account connect; a single-tenant
+    # deployment sets its own tenant id and nobody else's users can even
+    # begin the flow.
+    MICROSOFT_CLIENT_ID: str = ""
+    MICROSOFT_CLIENT_SECRET: str = ""
+    MICROSOFT_TENANT: str = "common"
+
     # Apple
     APPLE_CLIENT_ID: str = ""
     APPLE_TEAM_ID: str = ""

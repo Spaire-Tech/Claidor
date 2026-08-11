@@ -76,6 +76,7 @@ from polar.redline.endpoints import router as redline_router
 from polar.refund.endpoints import router as refund_router
 from polar.storefront.endpoints import router as storefront_router
 from polar.subscription.endpoints import router as subscription_router
+from polar.connector.endpoints import router as connector_router
 from polar.tieout.endpoints import router as tieout_router
 from polar.transaction.endpoints import router as transaction_router
 from polar.user.endpoints import router as user_router
@@ -168,6 +169,9 @@ router.include_router(lecteur_router)
 router.include_router(redline_router)
 # /tieout
 router.include_router(tieout_router)
+
+# /connector
+router.include_router(connector_router)
 # /dossiers
 router.include_router(dossier_router)
 # /license-keys
