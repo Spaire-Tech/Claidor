@@ -46,26 +46,31 @@ yet say precisely what they are waiting for.
 the page of the audited accounts it was read out of, which is the last
 thing the design drew that this could not do.
 
-What is left is connectors — the file stores the documents actually live
-in — and accuracy, which is forever.
+**A deal can read the room its files live in.** As of 11 August a deal is
+pointed at a SharePoint folder and syncs from it, and nothing about that
+has been proven against a real Microsoft tenant.
+
+What is left is the rest of the connectors — Outlook and Teams, and house
+rules as configuration — and accuracy, which is forever.
 
 | | State |
 |---|---|
 | Engine — decks, models, memos, audit, chain | Done |
 | Persisted spine — artifacts, figures, cells, links, findings | Done |
-| API — 21 routes, anchors, identity, panel auth | Done |
-| Workspace — 11 of 13 screens on real data, 3 waiting on a source | Done |
+| API — 37 routes, anchors, identity, panel auth | Done |
+| Workspace — 12 of 13 screens on real data, 2 waiting on a source | Done |
 | Office panel — plumbing and screen both done | Done |
 | Writing — proposals, apply, reverse | Done |
 | PDF sources — the chain's last hop | Done |
-| Connectors, firm standards | Not started |
+| SharePoint and OneDrive | Done, against a stub |
+| Outlook, Teams, firm standards | Not started |
 | Accuracy — deck 83 %, model 56 %, both by mutation | Measured |
 
 ---
 
 ## Phases, in the order I am doing them
 
-### 1 · Upload  *(the product cannot be used without it)*
+### 1 · Upload  ✓ *(10 August)*
 
 There is no way to put a file in through the interface. The endpoint has
 existed since the spine landed; the data room can only list. Every demo
@@ -77,7 +82,7 @@ can try it at all.
 - A failed file **stays in the list** with the server's sentence on it
 - Re-upload of the same name makes a version, and the screen says so
 
-### 2 · The confirmation queue  *(the mechanism the promise rests on)*
+### 2 · The confirmation queue  ✓ *(10 August)*
 
 The engine proposes a link; a banker confirms it; from then on re-checking
 that figure is arithmetic that cannot come out differently. That is why a
@@ -92,7 +97,7 @@ The API is complete: `/deals/{id}/links`, `/links/{id}` with alternatives,
 - « Point it somewhere else » — search the model's cells
 - Confirmed state visible in the figure library
 
-### 3 · Density  *(the state the design has never met)*
+### 3 · Density  ✓ *(10 August)*
 
 Every screen is drawn at seven findings and nine files. Real numbers are
 128 figures per deck, hundreds of findings, thousands of data-room files.
@@ -199,7 +204,7 @@ prose reader cannot see, so a figure in one is named by its row alone and
 usually goes unlinked — the safe direction, and a real gap. Notes carry
 the period in words and link cleanly.
 
-### 8 · Connectors and firm standards
+### 8 · Connectors and firm standards  ◐ *(11 August — SharePoint only)*
 
 SharePoint and OneDrive as sources, through Microsoft Graph. Delegated
 access only — this connector reads exactly what the person who connected
