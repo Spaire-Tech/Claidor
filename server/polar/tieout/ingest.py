@@ -27,6 +27,7 @@ from .legacy import LegacyUnreadable
 from .memo import NotADocx, read_memo
 from .model import OutputsMissing, read_outputs
 from .provenance import repair_outputs
+from .source import NotAPdf, read_source
 from .workbook import Cell, read_workbook
 
 #: What each kind of artifact is expected to arrive as. A `.pptx` uploaded
@@ -89,9 +90,37 @@ def read_artifact(payload: bytes, filename: str, kind: ArtifactKind) -> Ingested
             return _read_deck(str(path))
         if kind is ArtifactKind.memo:
             return _read_memo(str(path), suffix)
+        if kind is ArtifactKind.source:
+            return _read_source(str(path))
+        raise Unreadable(f"reading a {kind.value} is not something this can do")
+
+
+def _read_source(path: str) -> Ingested:
+    """Audited accounts, a term sheet — where a typed input came from.
+
+    The only reader here that opens a document nobody on the deal wrote,
+    which is why it counts its pages: « p.42 » is what makes a grounded
+    figure checkable by a person, and a page number is the one thing a PDF
+    gives away for free.
+    """
+    try:
+        extraction = read_source(path)
+    except NotAPdf as error:
+        raise Unreadable(str(error)) from error
+    except Exception as error:
         raise Unreadable(
-            f"reading a {kind.value} is not built yet — models, decks and memos are"
-        )
+            f"this PDF could not be read ({type(error).__name__}). If it "
+            "opens in a reader, printing it to a new PDF usually fixes it"
+        ) from error
+
+    pages = {figure.slide for figure in extraction.figures}
+    return Ingested(
+        figures=extraction.figures,
+        counts={
+            "figures": len(extraction.figures),
+            "pages_with_figures": len(pages),
+        },
+    )
 
 
 def _read_model(path: str) -> Ingested:

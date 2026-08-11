@@ -87,9 +87,7 @@ class TestProposing:
         deal = await _loaded(session, save_fixture, user)
         finding = (await _drifts(client, deal))[0]
 
-        response = await client.post(
-            f"/v1/tieout/findings/{finding['id']}/correction"
-        )
+        response = await client.post(f"/v1/tieout/findings/{finding['id']}/correction")
 
         assert response.status_code == 201
         correction = response.json()
@@ -140,9 +138,7 @@ class TestProposing:
                 f"/v1/tieout/deals/{deal.id}/findings", params={"kind": "audit"}
             )
         ).json()
-        response = await client.post(
-            f"/v1/tieout/findings/{audit[0]['id']}/correction"
-        )
+        response = await client.post(f"/v1/tieout/findings/{audit[0]['id']}/correction")
 
         assert response.status_code == 422
         assert "model" in response.json()["detail"]

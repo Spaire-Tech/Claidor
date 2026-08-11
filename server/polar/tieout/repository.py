@@ -419,21 +419,72 @@ class TieOutRepository(RepositoryBase[Artifact]):
         return link
 
     async def replace_proposals(
-        self, dossier_id: UUID, links: Sequence[FigureLink]
+        self,
+        dossier_id: UUID,
+        links: Sequence[FigureLink],
+        *,
+        figures_on: Sequence[UUID] | None = None,
     ) -> None:
         """Swap the proposals, leaving anything a person decided alone.
 
         A re-run must never undo a confirmation or resurrect a rejection —
         those are the only facts in the table.
+
+        **Scoped to the documents the run actually read.** Two checkers
+        propose links now: the tie-out, between a deliverable's figures and
+        the model's cells, and the crosscheck, between a source document's
+        figures and the model's typed inputs. They share this table because
+        they are the same claim — *this printed number is that cell* — and
+        a banker confirms both the same way. Without `figures_on` the
+        second to run would delete the first's work, which is the sort of
+        defect that looks like a flaky linker for a week.
         """
-        await self.session.execute(
-            delete(FigureLink).where(
-                FigureLink.dossier_id == dossier_id,
-                FigureLink.state == LinkState.proposed,
+        where = [
+            FigureLink.dossier_id == dossier_id,
+            FigureLink.state == LinkState.proposed,
+        ]
+        if figures_on is not None:
+            where.append(
+                FigureLink.figure_id.in_(
+                    select(Figure.id).where(Figure.artifact_id.in_(figures_on))
+                )
             )
-        )
+        await self.session.execute(delete(FigureLink).where(*where))
         self.session.add_all(links)
         await self.session.flush()
+
+    async def grounding_for(
+        self, dossier_id: UUID, cell_id: UUID
+    ) -> tuple[FigureLink, Figure, Artifact] | None:
+        """The source document a typed input was matched to, if any.
+
+        One link, and the best one: a confirmed link outranks a proposal,
+        because from the moment somebody vouches for it the chain's last
+        hop is a fact rather than a guess. A rejected link is not an
+        answer at all — somebody looked at exactly this and said no.
+        """
+        statement = (
+            select(FigureLink, Figure, Artifact)
+            .join(Figure, Figure.id == FigureLink.figure_id)
+            .join(Artifact, Artifact.id == Figure.artifact_id)
+            .where(
+                FigureLink.dossier_id == dossier_id,
+                FigureLink.cell_id == cell_id,
+                FigureLink.deleted_at.is_(None),
+                FigureLink.state.in_([LinkState.confirmed, LinkState.proposed]),
+                Artifact.kind == ArtifactKind.source,
+                Artifact.deleted_at.is_(None),
+            )
+            # `confirmed` sorts before `proposed` alphabetically, which is
+            # luck rather than design, so it is ordered explicitly.
+            .order_by(
+                (FigureLink.state == LinkState.confirmed).desc(),
+                FigureLink.confidence.desc(),
+            )
+            .limit(1)
+        )
+        row = (await self.session.execute(statement)).first()
+        return (row[0], row[1], row[2]) if row is not None else None
 
     async def decided_pairs(self, dossier_id: UUID) -> set[tuple[UUID, UUID]]:
         """Figure/cell pairs a person has already ruled on."""

@@ -274,6 +274,16 @@ function report(run: CheckRun, say: (text: string, ink?: string) => void) {
         }
       }
     }
+  } else if (run.kind === 'crosscheck') {
+    // The chain's last hop, reported the same way as the others: what it
+    // reached, and what it did not.
+    say(
+      `grounded ${count(summary, 'grounded')} inputs in ${count(summary, 'sources')} source ${
+        count(summary, 'sources') === 1 ? 'document' : 'documents'
+      }`,
+    )
+    const against = count(summary, 'contradicting')
+    if (against) say(`${against} contradict the model`, colour.critical)
   } else {
     say(
       `audited ${count(summary, 'cells')} cells in ${count(summary, 'models')} model`,

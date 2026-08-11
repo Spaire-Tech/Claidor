@@ -224,9 +224,7 @@ class TestTheDataRoom:
             )
         await session.flush()
 
-        page = (
-            await client.get(f"/v1/tieout/deals/{deal.id}/artifacts")
-        ).json()
+        page = (await client.get(f"/v1/tieout/deals/{deal.id}/artifacts")).json()
         assert page["total"] == 1
         assert len(page["items"]) == 1
         # Folded on the server, so the count and the rows agree — a client

@@ -604,6 +604,16 @@ export function Workspace({ dealId }: { dealId: string }) {
                 title={traced?.source.name ?? traced?.title ?? 'Chain'}
                 printed={traced?.printed ?? ''}
                 expected={traced?.expected ?? ''}
+                //: Who says which. A drift is a deliverable disagreeing
+                //: with the model; a contradiction is a document nobody
+                //: on the deal wrote disagreeing with it, and calling the
+                //: audited accounts « the deliverable » gets the whole
+                //: sentence the wrong way round.
+                says={
+                  traced?.kind === 'contradiction'
+                    ? (traced.where.filename ?? 'The source document')
+                    : 'The deliverable'
+                }
                 rows={[
                   { k: 'Figure', v: `${traced?.title ?? ''}` },
                   { k: 'Source', v: traced?.source.ref ?? '—' },
@@ -614,7 +624,9 @@ export function Workspace({ dealId }: { dealId: string }) {
                     v:
                       traced?.kind === 'drift'
                         ? 'Drifted from the model'
-                        : 'Checked',
+                        : traced?.kind === 'contradiction'
+                          ? 'Anchor — the document the model is grounded in'
+                          : 'Checked',
                   },
                 ]}
                 onSlide={() => go('deck')}

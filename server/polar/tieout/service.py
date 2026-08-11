@@ -46,7 +46,7 @@ from .link import rank as rank_outputs
 from .model import Output
 from .numbers import show
 from .provenance import chain as render_chain
-from .provenance import outputs_from_workbook
+from .provenance import inputs_from_workbook, outputs_from_workbook
 from .repository import TieOutRepository
 from .workbook import Cell as EngineCell
 from .workbook import Workbook
@@ -288,7 +288,9 @@ class TieOutService:
                     )
 
         await repository.replace_findings(dossier_id, CheckKind.tieout, findings)
-        await repository.replace_proposals(dossier_id, links)
+        await repository.replace_proposals(
+            dossier_id, links, figures_on=[one.id for one in decks]
+        )
 
         summary = {
             **totals,
@@ -375,6 +377,166 @@ class TieOutService:
                 "smells": smells,
                 "models": len(models),
                 "cells": sum(int(one.counts.get("cells", 0)) for one in models),
+            },
+        )
+
+    async def run_crosscheck(
+        self, session: AsyncSession, *, dossier_id: UUID, user_id: UUID | None
+    ) -> CheckRun:
+        """Ground the model's typed inputs in the documents behind them.
+
+        **The chain's last hop, and the only check that leaves the deal's
+        own arithmetic.** Everything else here asks whether two things the
+        team produced agree with each other. This asks the question that
+        was underneath all of them: the model says revenue was 228.9 —
+        *says who?*
+
+        The matcher is the one that links a deck to a model, used in the
+        other direction: a figure printed in the accounts is the printed
+        thing, and a typed input is the candidate it might be the origin
+        of. That is not a convenience. The gates that make the tie-out
+        refuse rather than guess — the label must name it, the period must
+        not contradict, the margin over the runner-up must be clear — are
+        exactly the gates a hundred pages of somebody else's prose needs,
+        and a second matcher written for this would have to earn them
+        again.
+
+        A disagreement here is a `contradiction`: two documents in the deal
+        say different things. It is deliberately not a `drift`, which is a
+        deliverable disagreeing with the model and is a mistake somebody
+        made this week. « The signed accounts restated cost of sales and
+        the model still carries the draft figure » is a different sentence
+        and a different fix.
+        """
+        repository = TieOutRepository.from_session(session)
+        current = await repository.current_artifacts(dossier_id)
+        sources = [one for one in current if one.kind is ArtifactKind.source]
+        models = [one for one in current if one.kind is ArtifactKind.model]
+
+        run = await repository.start_run(
+            dossier_id=dossier_id,
+            kind=CheckKind.crosscheck,
+            artifact_ids=[one.id for one in sources + models],
+            requested_by_id=user_id,
+        )
+        if not sources or not models:
+            missing = "model" if not models else "source document"
+            return await repository.finish_run(
+                run,
+                error=(
+                    f"nothing to ground — this deal has no {missing} yet. "
+                    "A source is the audited accounts, a term sheet, "
+                    "anything a typed input came out of"
+                ),
+            )
+
+        findings: list[FindingRow] = []
+        links: list[LinkRow] = []
+        totals = {"grounded": 0, "agreeing": 0, "contradicting": 0, "unlinked": 0}
+        reasons: dict[str, int] = {}
+        decided = await repository.decided_pairs(dossier_id)
+
+        for model in models:
+            cells = await repository.cells_of(model.id)
+            book = _workbook_of(cells)
+            by_ref = {cell.ref: cell for cell in cells}
+            inputs = inputs_from_workbook(book)
+
+            for source in sources:
+                rows = await repository.figures_of(source.id)
+                engine, back = _figures_of(rows)
+                proposed, unlinked = propose_links(engine, inputs)
+                contradictions, agreed = compare(proposed)
+
+                totals["grounded"] += len(proposed)
+                totals["agreeing"] += len(agreed)
+                totals["contradicting"] += len(contradictions)
+                totals["unlinked"] += len(unlinked)
+                for item in unlinked:
+                    reasons[_reason(item.reason)] = (
+                        reasons.get(_reason(item.reason), 0) + 1
+                    )
+
+                for item in proposed:
+                    figure_row = back[id(item.figure)]
+                    cell_row = by_ref.get(item.output.ref)
+                    if cell_row is None or (figure_row.id, cell_row.id) in decided:
+                        continue
+                    links.append(
+                        LinkRow(
+                            dossier_id=dossier_id,
+                            figure_id=figure_row.id,
+                            cell_id=cell_row.id,
+                            state=LinkState.proposed,
+                            confidence=round(item.score, 3),
+                            transformation="identity",
+                            basis=item.output.basis,
+                            cell_name=item.output.name,
+                            figure_label=item.figure.label,
+                        )
+                    )
+
+                for gap in contradictions:
+                    findings.append(
+                        FindingRow(
+                            dossier_id=dossier_id,
+                            check_run_id=run.id,
+                            #: The finding is *on the source*, because that
+                            #: is where a reader has to go to settle it —
+                            #: page 2 of the accounts, not a cell that is
+                            #: only doing what it was told.
+                            artifact_id=source.id,
+                            kind=FindingKind.contradiction,
+                            severity=FindingSeverity.error,
+                            fingerprint=_fingerprint(
+                                "contradiction",
+                                source.lineage_id,
+                                gap.location,
+                                gap.printed,
+                            ),
+                            page=gap.slide,
+                            printed=gap.printed,
+                            expected=gap.expected,
+                            one_tick=gap.one_tick,
+                            title=(
+                                f"{source.filename} says {gap.printed} "
+                                f"where the model has {gap.expected}"
+                            ),
+                            detail=gap.context,
+                            location=gap.location,
+                            anchor=gap.anchor,
+                            evidence={
+                                "ref": gap.ref,
+                                "name": gap.name,
+                                "source": gap.source,
+                                "basis": gap.basis,
+                                "confidence": round(gap.confidence, 3),
+                                "model_artifact_id": str(model.id),
+                                "chain": render_chain(book, gap.source),
+                                #: Which way round the disagreement is.
+                                #: The model is the thing that would be
+                                #: corrected, and it is not on the screen
+                                #: this finding points at.
+                                "grounded_in": source.filename,
+                            },
+                        )
+                    )
+
+        await repository.replace_proposals(
+            dossier_id, links, figures_on=[one.id for one in sources]
+        )
+        await repository.replace_findings(dossier_id, CheckKind.crosscheck, findings)
+        return await repository.finish_run(
+            run,
+            summary={
+                **totals,
+                "sources": len(sources),
+                "reasons": [
+                    {"reason": reason, "count": count}
+                    for reason, count in sorted(
+                        reasons.items(), key=lambda pair: -pair[1]
+                    )
+                ],
             },
         )
 
@@ -727,6 +889,14 @@ class TieOutService:
             cells = await repository.cells_of(UUID(str(model_id)))
             book = _workbook_of(cells)
             steps.extend(_steps_from(book, str(ref), evidence.get("basis")))
+            steps.extend(
+                await self._grounding(
+                    session,
+                    dossier_id=finding.dossier_id,
+                    cells=cells,
+                    ends_at=steps[-1] if steps else None,
+                )
+            )
 
         return {
             "finding_id": finding.id,
@@ -734,10 +904,82 @@ class TieOutService:
             "summary": str(evidence.get("chain") or finding.detail or ""),
         }
 
-    async def chain_for(
-        self, session: AsyncSession | AsyncReadSession, *, artifact_id: UUID, ref: str
+    async def _grounding(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        cells: Sequence[CellRow],
+        ends_at: dict[str, Any] | None,
     ) -> list[dict[str, Any]]:
-        """The steps behind one cell, for the screen that sells the product."""
+        """« Audited accounts FY24 · p.42 », when there is one.
+
+        **The step the design draws at the end of every chain, and the
+        first one that leaves this deal's own arithmetic.** A chain that
+        stops at a typed input has answered « where in the model » and not
+        « says who »; this answers the second, or says nothing at all.
+
+        Nothing is inferred. There is a step here only when a source
+        document was read, the linker matched it to *this* cell, and — if
+        anybody has ruled on that link — they did not reject it. A guess
+        at provenance is the worst thing this product could invent: it is
+        the one claim a banker would repeat to a client without checking.
+        """
+        if ends_at is None or ends_at.get("kind") != "input":
+            return []
+        ref = str(ends_at.get("ref") or "")
+        cell = next((one for one in cells if one.ref == ref), None)
+        if cell is None:
+            return []
+
+        repository = TieOutRepository.from_session(session)
+        grounded = await repository.grounding_for(dossier_id, cell.id)
+        if grounded is None:
+            return []
+        link, figure, artifact = grounded
+
+        return [
+            {
+                "kind": "source",
+                "ref": figure.location,
+                #: The sentence **as printed**, not the label the matcher
+                #: used. Those differ by one deliberate rewrite — accounts
+                #: say « 31 December 2025 » and the linker needs
+                #: « FY2025A » — and showing a reader a year this product
+                #: invented, on the one screen whose job is to say where a
+                #: number came from, would be the wrong place to be clever.
+                "name": figure.context or figure.label,
+                "printed": figure.printed,
+                "value": f"{figure.value.normalize():f}",
+                # « Audited accounts FY24 · p.42 » — the document and the
+                # page, which is the whole of what a person needs to check
+                # it themselves.
+                "label": f"{artifact.filename} · {figure.location}",
+                "basis": link.basis or None,
+                "note": (
+                    "confirmed"
+                    if link.state is LinkState.confirmed
+                    else "proposed — nobody has confirmed this yet"
+                ),
+                "inputs": [],
+            }
+        ]
+
+    async def chain_for(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        artifact_id: UUID,
+        ref: str,
+        dossier_id: UUID | None = None,
+    ) -> list[dict[str, Any]]:
+        """The steps behind one cell, for the screen that sells the product.
+
+        Given the deal, a typed input carries the document it came out of —
+        which is the whole question this screen is asked: *where did this
+        number come from.* Without it the honest answer stops one hop
+        short, at « somebody typed this ».
+        """
         repository = TieOutRepository.from_session(session)
         cells = await repository.cells_of(artifact_id)
         book = _workbook_of(cells)
@@ -767,6 +1009,23 @@ class TieOutService:
                     "formula": source.formula,
                     "note": None if source.formula else "typed, not calculated",
                 }
+            )
+
+        if dossier_id is not None:
+            steps.extend(
+                await self._grounding(
+                    session,
+                    dossier_id=dossier_id,
+                    cells=cells,
+                    #: The cell asked about, when it is itself typed. A
+                    #: precedent that is grounded belongs on the chain of
+                    #: *that* cell, one press further on, and putting it
+                    #: here would say this figure came off a page it did
+                    #: not come off.
+                    ends_at={"kind": "input", "ref": cell.ref}
+                    if cell.formula is None
+                    else None,
+                )
             )
         return steps
 

@@ -240,6 +240,40 @@ def outputs_from_workbook(book: Workbook) -> list[Output]:
     return candidates
 
 
+def inputs_from_workbook(book: Workbook) -> list[Output]:
+    """Every number somebody **typed**, offered as something a source said.
+
+    The other end of the chain. :func:`outputs_from_workbook` offers every
+    named cell as something a deck could be claiming; this offers the ones
+    with no formula behind them as something an audited set of accounts
+    could be the origin of.
+
+    **Inputs only, and the restriction is the whole point.** A computed
+    cell agreeing with the accounts is arithmetic working, not provenance:
+    the accounts are not the source of a calculation, they are the source
+    of what it was calculated from. Grounding a formula cell would also
+    put the loosest match in this product — prose in a document nobody on
+    the deal wrote — against its largest set of candidates, which is how a
+    grounding engine starts inventing origins. Cascade has 85 typed inputs
+    against 313 named cells, and the narrower set is the safer one.
+    """
+    return [
+        Output(
+            ref=cell.ref,
+            name=cell.name,
+            value=cell.value,
+            source=cell.ref,
+            basis=cell.sheet,
+        )
+        for cell in book.cells.values()
+        if cell.formula is None
+        and cell.value is not None
+        and cell.row_label
+        and cell.alias_of is None
+        and cell.sheet.lower() not in RESTATING_SHEETS
+    ]
+
+
 def repair_outputs(outputs: list[Output], book: Workbook) -> list[Output]:
     """Outputs rows with stale source references pointed at the real cell.
 
@@ -269,6 +303,7 @@ __all__ = [
     "BadReference",
     "Cell",
     "chain",
+    "inputs_from_workbook",
     "outputs_from_workbook",
     "repair_outputs",
     "verify_outputs",

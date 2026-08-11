@@ -61,6 +61,7 @@ from .schemas import (
     AskedStep,
     CellRead,
     ChainRead,
+    ChainStep,
     CheckRunRead,
     CorrectionDecision,
     CorrectionRead,
@@ -536,8 +537,9 @@ async def upload_artifact(
         raise HTTPException(
             status_code=415,
             detail=(
-                f"{filename} is not a file this can read — "
-                "models are .xlsx or .xls, decks are .pptx"
+                f"{filename} is not a file this can read — models are "
+                ".xlsx or .xls, decks are .pptx, memos are .docx, and a "
+                "source document is a .pdf"
             ),
         )
 
@@ -720,21 +722,29 @@ async def run_checks(
     auth_subject: auth.TieOutWrite,
     session: AsyncSession = Depends(get_db_session),
 ) -> list[CheckRunRead]:
-    """Reconcile the deck against the model, and check the model against itself.
+    """Every check this deal can answer, in one press.
 
-    Both, because they answer different questions and a banker asking « is
-    this deck right » means both. Reads rows only: no file is opened, which
-    is what makes a confirmed link re-checkable forever.
+    Three now, because they answer three different questions and a banker
+    asking « is this deck right » means all of them: does the deck agree
+    with the model, does the model agree with itself, and does the model
+    agree with the documents its inputs came out of. Reads rows only: no
+    file is opened, which is what makes a confirmed link re-checkable
+    forever.
 
-    A run that could not happen — no model in the deal yet — comes back
-    `failed` with a sentence rather than an HTTP error. It is a state of
-    the deal, not a bad request.
+    A run that could not happen — no model in the deal yet, no source
+    document to ground anything in — comes back `failed` with a sentence
+    rather than an HTTP error. It is a state of the deal, not a bad
+    request, and « this deal has no source document » is a fact worth
+    putting on screen rather than an error worth hiding.
     """
     await _deal(session, dossier_id, auth_subject.subject.id)
     user_id = auth_subject.subject.id
-    tie = await tieout.run_tieout(session, dossier_id=dossier_id, user_id=user_id)
-    audit = await tieout.run_audit(session, dossier_id=dossier_id, user_id=user_id)
-    return [one for one in (_run(tie), _run(audit)) if one is not None]
+    runs = [
+        await tieout.run_tieout(session, dossier_id=dossier_id, user_id=user_id),
+        await tieout.run_audit(session, dossier_id=dossier_id, user_id=user_id),
+        await tieout.run_crosscheck(session, dossier_id=dossier_id, user_id=user_id),
+    ]
+    return [one for one in (_run(run) for run in runs) if one is not None]
 
 
 @router.get("/deals/{dossier_id}/runs", response_model=list[CheckRunRead])
@@ -743,12 +753,13 @@ async def list_runs(
     auth_subject: auth.TieOutRead,
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> list[CheckRunRead]:
-    """The last tie-out and the last audit — when this was last true."""
+    """The last run of each checker — when each of these was last true."""
     await _deal(session, dossier_id, auth_subject.subject.id)
     repository = TieOutRepository.from_session(session)
     runs = [
         await repository.latest_run(dossier_id, CheckKind.tieout),
         await repository.latest_run(dossier_id, CheckKind.audit),
+        await repository.latest_run(dossier_id, CheckKind.crosscheck),
     ]
     return [one for one in (_run(run) for run in runs) if one is not None]
 
@@ -814,6 +825,35 @@ async def update_finding(
     }
     corrections = await repository.corrections_by_fingerprint(finding.dossier_id)
     return _finding(finding, filenames, corrections)
+
+
+@router.get("/artifacts/{artifact_id}/chain", response_model=list[ChainStep])
+async def get_cell_chain(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    ref: str = Query(description="A cell in this model — « Model!D26 »."),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[ChainStep]:
+    """Where one cell's number comes from, without a finding to ask through.
+
+    « Trace this figure » on a cell nobody has reported anything about.
+    The chain a finding carries starts from a problem; this starts from a
+    question, which is the more common one — a banker reads a number in a
+    model and wants to know what is behind it before it reaches a deck.
+
+    A typed input ends with the document it was read out of, when a source
+    document in this deal has been matched to it.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    steps = await tieout.chain_for(
+        session,
+        artifact_id=artifact.id,
+        ref=ref,
+        dossier_id=artifact.dossier_id,
+    )
+    if not steps:
+        raise ResourceNotFound(f"{ref} is not a cell in this model.")
+    return [ChainStep(**one) for one in steps]
 
 
 @router.get("/findings/{finding_id}/chain", response_model=ChainRead)
