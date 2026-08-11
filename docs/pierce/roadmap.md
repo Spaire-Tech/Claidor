@@ -251,7 +251,12 @@ room, and a sent message cannot be pulled back out of anything.
 
 **Nothing here has run against a real tenant**, and that is the honest
 state: the shapes come from the published API and the wiring above them is
-real. The first connection will find something.
+real. The first connection will find something — and
+`scripts/connector_doctor.py` is what makes it say what, rather than a 502
+on a screen and an afternoon. Register the application, connect once
+through the SharePoint screen, run the doctor: it makes every call the
+connector makes, in dependency order, and each failure carries the
+permission or the setting that would fix it.
 
 Still waiting: Teams, and house rules as configuration. Calendar is still
 `screens/Waiting.tsx`.
