@@ -58,6 +58,7 @@ export function severityOf(finding: Finding): {
 }
 
 export function Checks({
+  checked,
   findings,
   deal,
   coverage,
@@ -65,6 +66,16 @@ export function Checks({
   onSlide,
   onCell,
 }: {
+  /**
+   * Whether the check has ever finished on this deal.
+   *
+   * The empty state turns on this and nothing else. « Checked, and every
+   * figure ties back to the model » on a deal nobody has run is the exact
+   * lie this product cannot afford — silence reading as a result — and
+   * before Projects existed there was no way to reach such a deal, so
+   * nothing ever showed it.
+   */
+  checked: boolean
   findings: Finding[]
   deal: string
   coverage: string
@@ -154,7 +165,11 @@ export function Checks({
           )}
 
           {findings.length === 0 && (
-            <Nothing>Checked, and every figure ties back to the model.</Nothing>
+            <Nothing>
+              {checked
+                ? 'Checked, and every figure ties back to the model.'
+                : 'The check has not run on this deal. Put a model and a deck in the data room, and run it.'}
+            </Nothing>
           )}
 
           {findings.length > 0 && matching.length === 0 && (

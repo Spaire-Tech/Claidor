@@ -25,10 +25,10 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import type { Coverage, Finding, Identified } from './api'
+import type { Checked, Finding, Identified } from './api'
 import { ApiError, TieOutApi } from './api'
 import { current, signOut as forget, signIn as openSignIn } from './auth'
-import type { GoToResult, HostBridge, OpenDocument } from './host'
+import type { GoToResult, HostBridge, OpenDocument, WriteResult } from './host'
 
 export type Stage =
   | 'loading'
@@ -43,7 +43,7 @@ export interface PanelState {
   document: OpenDocument | null
   identity: Identified | null
   findings: Finding[]
-  coverage: Coverage | null
+  coverage: Checked | null
   error: string | null
   /** True while a check is running, so a button can say so. */
   working: boolean
@@ -208,6 +208,49 @@ export function usePanel(
     [api],
   )
 
+  /**
+   * Accept a correction, into the document open right here.
+   *
+   * Three steps, and the order is the whole of the safety: the change is
+   * **proposed on the server first**, then written into the document, then
+   * — only if the write landed — recorded as done. A panel that recorded
+   * first and wrote second would leave a deal claiming a correction that
+   * is not in anybody's file, which is worse than not offering the button.
+   *
+   * The banker's own copy is the one that gets sent, so this is where the
+   * correction belongs when the panel is what is being used. The deal's
+   * copy stays as it was and says so; uploading the saved file brings the
+   * two back together, and that is an ordinary new version.
+   */
+  const accept = useCallback(
+    async (finding: Finding): Promise<WriteResult> => {
+      try {
+        const correction = finding.correction ?? (await api.propose(finding.id))
+        const written = await bridge.write(
+          finding.where.anchor,
+          correction.before,
+          correction.after,
+          finding.page,
+        )
+        if (!written.written) return written
+
+        await api.decideCorrection(correction.id, 'applied')
+        if (state.identity) await load(state.identity)
+        return written
+      } catch (error) {
+        return {
+          written: false,
+          by: 'none',
+          reason:
+            error instanceof ApiError
+              ? error.message
+              : 'that change could not be recorded',
+        }
+      }
+    },
+    [api, bridge, load, state.identity],
+  )
+
   /** Re-run both checks against the current files, then reload. */
   const recheck = useCallback(async () => {
     if (!state.identity?.dossier_id) return
@@ -227,6 +270,7 @@ export function usePanel(
     chooseDeal,
     rechoose,
     goTo,
+    accept,
     dismiss,
     recheck,
     api,

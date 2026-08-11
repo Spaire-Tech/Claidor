@@ -84,4 +84,13 @@ export const outlook: HostBridge = {
         'the deck is an attachment — open it in PowerPoint to jump to a slide',
     }
   },
+
+  async write() {
+    return {
+      written: false,
+      by: 'none',
+      reason:
+        'the deck is an attachment — open it in PowerPoint to correct a figure',
+    }
+  },
 }

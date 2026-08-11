@@ -120,20 +120,23 @@ export function Files({
   // keystroke nobody reads the answer to.
   useEffect(() => {
     let live = true
-    const timer = setTimeout(() => {
-      if (!live) return
-      // Set here rather than in the effect body: during the debounce
-      // nothing is loading yet, and a spinner that appears on the first
-      // keystroke and stays for every one after is worse than none.
-      setLoading(true)
-      void fetchPage({ q: query.trim(), limit: PAGE, offset: 0 })
-        .then((page) => {
-          if (!live) return
-          setShown(page.items)
-          setTotal(page.total)
-        })
-        .finally(() => live && setLoading(false))
-    }, query ? SETTLE : 0)
+    const timer = setTimeout(
+      () => {
+        if (!live) return
+        // Set here rather than in the effect body: during the debounce
+        // nothing is loading yet, and a spinner that appears on the first
+        // keystroke and stays for every one after is worse than none.
+        setLoading(true)
+        void fetchPage({ q: query.trim(), limit: PAGE, offset: 0 })
+          .then((page) => {
+            if (!live) return
+            setShown(page.items)
+            setTotal(page.total)
+          })
+          .finally(() => live && setLoading(false))
+      },
+      query ? SETTLE : 0,
+    )
     return () => {
       live = false
       clearTimeout(timer)
@@ -203,11 +206,7 @@ export function Files({
                 Cascade · 3 files » under a search box reads as a fact
                 about the deal rather than about the query. */}
             {deal} · {total.toLocaleString()}{' '}
-            {query.trim()
-              ? 'matching'
-              : total === 1
-                ? 'file'
-                : 'files'}
+            {query.trim() ? 'matching' : total === 1 ? 'file' : 'files'}
           </div>
         </div>
         <button
@@ -299,14 +298,18 @@ export function Files({
           </div>
         ))}
 
-        {total === 0 && !query && !loading && uploading.length === 0 && !problem && (
-          <div style={{ padding: '0 14px' }}>
-            <Nothing>
-              Nothing here yet. Drop a model and a deck anywhere on this panel
-              and the checks can run.
-            </Nothing>
-          </div>
-        )}
+        {total === 0 &&
+          !query &&
+          !loading &&
+          uploading.length === 0 &&
+          !problem && (
+            <div style={{ padding: '0 14px' }}>
+              <Nothing>
+                Nothing here yet. Drop a model and a deck anywhere on this panel
+                and the checks can run.
+              </Nothing>
+            </div>
+          )}
 
         {shown.length === 0 && query !== '' && !loading && (
           <div style={{ padding: '0 14px' }}>
@@ -401,7 +404,8 @@ export function Files({
         {shown.length < total && (
           <div style={{ padding: '14px 14px 4px' }}>
             <span style={{ fontSize: size.small, color: colour.fainter }}>
-              showing {shown.length.toLocaleString()} of {total.toLocaleString()}
+              showing {shown.length.toLocaleString()} of{' '}
+              {total.toLocaleString()}
               {' — '}
             </span>
             <button

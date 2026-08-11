@@ -20,7 +20,13 @@
  */
 
 import { filenameFromUrl, readStamp, writeStamp } from './settings'
-import type { Anchor, GoToResult, HostBridge, OpenDocument } from './types'
+import type {
+  Anchor,
+  GoToResult,
+  HostBridge,
+  OpenDocument,
+  WriteResult,
+} from './types'
 
 /** Not every desktop build has the newer selection APIs. */
 function supports(set: string): boolean {
@@ -180,6 +186,131 @@ async function selectSubstring(
   }
 }
 
+/**
+ * Where the figure sits in a shape's text, or why it cannot be found.
+ *
+ * Pure, and separated out for that reason: this is the decision the whole
+ * write turns on, and it is the one part of it a test runner can reach
+ * without PowerPoint. The offsets were measured against the paragraph with
+ * its leading whitespace stripped and the frame's text keeps that
+ * whitespace, so the two have to be reconciled before anything is written.
+ */
+export function figureSpan(
+  text: string,
+  anchor: Anchor,
+  before: string,
+): { start: number; length: number } | { reason: string } {
+  if (anchor.start === undefined || anchor.end === undefined) {
+    return {
+      reason: 'this finding does not say where in the text the figure sits',
+    }
+  }
+  const lead = text.length - text.trimStart().length
+  const start = lead + anchor.start
+  const length = anchor.end - anchor.start
+  const holds = text.substring(start, start + length)
+  if (holds !== before) {
+    return {
+      reason: `this shape now reads « ${holds || 'nothing'} » where « ${before} » was checked — re-check before accepting`,
+    }
+  }
+  return { start, length }
+}
+
+/**
+ * Write a corrected figure into the slide in front of the banker.
+ *
+ * **Only into text, and the refusals are the honest part.** PowerPoint's
+ * add-in interface reaches a shape's text and nothing else: a table cell
+ * and a chart point are not editable from a task pane at all, and the
+ * chart is the case where it matters most, because a chart number lives
+ * in the cache *and* in an embedded workbook and writing one without the
+ * other leaves a file that disagrees with itself. Those come back saying
+ * so, and pointing at the workspace, which corrects the deal's copy
+ * through `python-pptx` and can do both halves.
+ *
+ * What is written is checked first, character for character, against what
+ * the reader recorded. A correction that lands on the wrong figure is the
+ * one failure this product cannot recover from — nobody re-reads a slide
+ * they have just been told is fixed.
+ */
+async function writeInto(
+  page: number,
+  anchor: Anchor,
+  before: string,
+  after: string,
+): Promise<WriteResult> {
+  if (anchor.kind !== 'text') {
+    const what = anchor.kind === 'chart' ? 'a chart' : 'a table'
+    return {
+      written: false,
+      by: 'none',
+      reason: `${what} cannot be edited from a task pane — accept this in the workspace and the deal's copy is corrected`,
+    }
+  }
+  if (!supports('1.4')) {
+    return {
+      written: false,
+      by: 'none',
+      reason: 'this version of PowerPoint cannot edit a slide from a task pane',
+    }
+  }
+
+  return PowerPoint.run(async (context) => {
+    const slides = context.presentation.slides
+    slides.load('items/id')
+    await context.sync()
+
+    const slide = slides.items[page - 1]
+    if (!slide) {
+      return {
+        written: false,
+        by: 'none',
+        reason: `this deck has no slide ${page}`,
+      }
+    }
+
+    const shapes = slide.shapes
+    shapes.load('items/id,items/name')
+    await context.sync()
+
+    // Name first, id second — the same order `goTo` uses, and for the
+    // same reason. It matters more here: the Cascade deck has two shapes
+    // on one slide answering to the same id.
+    const found =
+      shapes.items.find(
+        (shape) => anchor.shape_name && shape.name === anchor.shape_name,
+      ) ??
+      shapes.items.find(
+        (shape) =>
+          anchor.shape_id !== undefined && shape.id === String(anchor.shape_id),
+      )
+    if (!found) {
+      return {
+        written: false,
+        by: 'none',
+        reason: 'that shape is no longer on this slide',
+      }
+    }
+
+    const range = found.textFrame.textRange
+    range.load('text')
+    await context.sync()
+
+    const span = figureSpan(range.text ?? '', anchor, before)
+    if ('reason' in span) return { written: false, by: 'none', ...span }
+
+    range.getSubstring(span.start, span.length).text = after
+    await context.sync()
+    return { written: true, by: 'text' }
+  }).catch((error: unknown) => ({
+    written: false,
+    by: 'none',
+    reason:
+      error instanceof Error ? error.message : 'PowerPoint refused the change',
+  }))
+}
+
 function goToSlideOnly(page: number): Promise<GoToResult> {
   return new Promise((resolve) => {
     Office.context.document.goToByIdAsync(
@@ -220,5 +351,21 @@ export const powerpoint: HostBridge = {
       return { moved: false, by: 'none', reason: 'this finding names no slide' }
     }
     return select(page, anchor)
+  },
+
+  async write(
+    anchor: Anchor,
+    before: string,
+    after: string,
+    page?: number,
+  ): Promise<WriteResult> {
+    if (!page) {
+      return {
+        written: false,
+        by: 'none',
+        reason: 'this finding names no slide',
+      }
+    }
+    return writeInto(page, anchor, before, after)
   },
 }

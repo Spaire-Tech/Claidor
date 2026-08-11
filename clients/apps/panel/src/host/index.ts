@@ -69,6 +69,13 @@ const detached: HostBridge = {
       reason: 'not running inside Office — open this from the add-in',
     }
   },
+  async write() {
+    return {
+      written: false,
+      by: 'none',
+      reason: 'not running inside Office — open this from the add-in',
+    }
+  },
 }
 
 function detect(): HostKind {

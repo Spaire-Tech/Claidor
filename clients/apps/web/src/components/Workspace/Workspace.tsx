@@ -9,11 +9,12 @@
  * first thing anyone sees is a question rather than a dashboard.
  *
  * Every screen the backend can feed reads live: the data room lists real
- * artifacts, Check lists real findings, Chain walks a real chain. The
- * screens that need work that does not exist yet — Mail, Calendar,
- * SharePoint, the Word and Excel surfaces — are not faked here. They say
- * plainly that they are not connected, which is the honest state and takes
- * one line to replace when the wiring lands.
+ * artifacts, Check lists real findings, Chain walks a real chain, and
+ * SharePoint browses a real document library once somebody has connected
+ * one. The screens that need work that does not exist yet — Mail, Calendar,
+ * the Word and Excel surfaces — are not faked here. They say plainly that
+ * they are not connected, which is the honest state and takes one line to
+ * replace when the wiring lands.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -23,7 +24,12 @@ import { Dock } from './Dock'
 import type {
   Artifact,
   Chain,
+  ConnectedFolder,
+  ConnectorState,
+  Correction,
   Coverage,
+  DealListItem,
+  DealPage,
   FigureMap,
   Finding,
   Link,
@@ -45,8 +51,12 @@ import { Confirm } from './screens/Confirm'
 import { Document } from './screens/Document'
 import { Files } from './screens/Files'
 import { Library, type Row } from './screens/Library'
+import { Projects } from './screens/Projects'
+import { SharePoint } from './screens/SharePoint'
 import { Sheets } from './screens/Sheets'
+import { Terminal } from './screens/Terminal'
 import { Trace } from './screens/Trace'
+import { Waiting } from './screens/Waiting'
 import { useNarrow } from './useNarrow'
 import type { View } from './views'
 import './workspace.css'
@@ -83,16 +93,6 @@ const TAB: Record<View, string> = {
 }
 
 /** The surfaces that need connectors or the writing layer. */
-const NOT_CONNECTED: Partial<Record<View, string>> = {
-  mail: 'Mail is not connected yet. It reads the draft you are writing and the files attached to it.',
-  calendar: 'Calendar is not connected yet.',
-  sharepoint:
-    'SharePoint is not connected yet. Connected, it keeps the deal in step with the files as they change.',
-  projects:
-    'One deal is open. Projects lists them all once there is more than one.',
-  terminal: 'Not connected.',
-}
-
 /** Which document each of the three document screens is about. */
 const OPENS: Partial<Record<View, Artifact['kind']>> = {
   deck: 'deck',
@@ -116,6 +116,11 @@ const SCREEN: Record<Artifact['kind'], View> = {
 
 export function Workspace({ dealId }: { dealId: string }) {
   const [view, setView] = useState<View>('chat')
+  //: Which deal the workspace is showing. It starts as the one the page
+  //: was opened at and Projects can change it, which until Projects
+  //: existed nothing could: every screen here is about one deal, and the
+  //: one it was about was « the first you are on », permanently.
+  const [chosen, setChosen] = useState(dealId)
   const [messages, setMessages] = useState<Message[]>([])
   const narrow = useNarrow()
 
@@ -133,7 +138,15 @@ export function Workspace({ dealId }: { dealId: string }) {
   const [documents, setDocuments] = useState<Artifact[]>([])
   const [findings, setFindings] = useState<Finding[]>([])
   const [coverage, setCoverage] = useState<Coverage | null>(null)
+  //: The last tie-out, for the one distinction coverage cannot make: a
+  //: deal that was checked and is clean against a deal nobody has run.
+  const [lastRun, setLastRun] = useState<DealPage['last_tieout']>(null)
   const [links, setLinks] = useState<Link[]>([])
+  //: What this product *did* to the documents, as opposed to what it
+  //: found in them. Held beside the findings because a correction
+  //: outlives the finding it came from — once it is applied the deck
+  //: agrees and the drift is gone.
+  const [corrections, setCorrections] = useState<Correction[]>([])
   const [chain, setChain] = useState<Chain | null>(null)
   const [traced, setTraced] = useState<Finding | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -147,31 +160,47 @@ export function Workspace({ dealId }: { dealId: string }) {
   const [grid, setGrid] = useState<ModelGrid | null>(null)
   const [deckMap, setDeckMap] = useState<FigureMap | null>(null)
   const [memoMap, setMemoMap] = useState<FigureMap | null>(null)
+  //: Whose deal it is. A connection belongs to an organization and a
+  //: person, not to a deal, so the connector asks about this.
+  const [organization, setOrganization] = useState('')
+  //: The file store. Fetched when the SharePoint screen is opened rather
+  //: than with the deal: it is three requests to Microsoft's servers and
+  //: every other screen would be paying for a room nobody looked at.
+  const [store, setStore] = useState<ConnectorState | null>(null)
+  const [folder, setFolder] = useState<ConnectedFolder | null>(null)
+  //: What the deal already holds of the room, keyed by the store's own id.
+  //: The library's status column, and nothing else needs it.
+  const [held, setHeld] = useState<Map<string, string>>(new Map())
+  const [storeAt, setStoreAt] = useState(0)
 
   const load = useCallback(async () => {
     try {
       // No deal named, so take the first this person is on. One deal is
       // the normal case today; the moment it is not, Projects picks and
       // passes an id, and nothing else here changes.
-      const id = dealId || (await api.deals())[0]?.id
+      const id = chosen || (await api.deals())[0]?.id
       if (!id) {
         setError('You are not on any deals yet.')
         return
       }
-      const [page, found, linked] = await Promise.all([
+      const [page, found, linked, written] = await Promise.all([
         api.deal(id),
         api.findings(id),
         api.links(id),
+        api.corrections(id),
       ])
       dealFor.current = id
       setDeal(page.name)
+      setOrganization(page.organization_id)
       //: The documents the deal is built on — not the data room, which
       //: fetches its own pages. Holding every artifact here is what made
       //: this request 1.07 MB at three thousand files.
       setDocuments(page.documents)
       setCoverage(page.coverage)
+      setLastRun(page.last_tieout)
       setFindings(found)
       setLinks(linked)
+      setCorrections(written)
       setError(null)
     } catch (problem) {
       setError(
@@ -180,11 +209,58 @@ export function Workspace({ dealId }: { dealId: string }) {
           : 'Could not reach the server. Is the API running?',
       )
     }
-  }, [dealId])
+  }, [chosen])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  //: Every deal this person is on, for Projects. Loaded with the
+  //: workspace rather than when the screen opens: it is four rows, and
+  //: « which deal is wrong » should be answered by the time somebody has
+  //: finished pressing the button.
+  const [deals, setDeals] = useState<DealListItem[] | null>(null)
+  const [dealsAt, setDealsAt] = useState(0)
+  useEffect(() => {
+    let live = true
+    api
+      .deals()
+      .then((found) => live && setDeals(found))
+      .catch(() => live && setDeals([]))
+    return () => {
+      live = false
+    }
+  }, [dealsAt])
+
+  /**
+   * Open another deal.
+   *
+   * Everything on screen belongs to the deal being left, so everything is
+   * dropped rather than left to be replaced one request at a time — a
+   * findings list from the last deal under the new deal's heading is the
+   * worst kind of wrong, because it looks right.
+   */
+  const openDeal = (id: string) => {
+    if (id === dealFor.current) {
+      go('checks')
+      return
+    }
+    setChosen(id)
+    setDocuments([])
+    setFindings([])
+    setCorrections([])
+    setLinks([])
+    setCoverage(null)
+    setLastRun(null)
+    setGrid(null)
+    setDeckMap(null)
+    setMemoMap(null)
+    setFolder(null)
+    setHeld(new Map())
+    setMessages([])
+    setDeal('')
+    go('checks')
+  }
 
   const go = (next: View) => setView(next)
 
@@ -239,6 +315,28 @@ export function Workspace({ dealId }: { dealId: string }) {
     }
   }, [opened])
 
+  //: The same, for the file store: asked for when the screen that shows it
+  //: is opened, and again whenever something on that screen changed what
+  //: the answer would be.
+  useEffect(() => {
+    if (view !== 'sharepoint' || !organization || !dealFor.current) return
+    let live = true
+    void (async () => {
+      const [connector, where, mine] = await Promise.all([
+        api.connectorState(organization).catch(() => null),
+        api.connectedFolder(dealFor.current).catch(() => null),
+        api.held(dealFor.current).catch(() => ({})),
+      ])
+      if (!live) return
+      setStore(connector)
+      setFolder(where)
+      setHeld(new Map(Object.entries(mine)))
+    })()
+    return () => {
+      live = false
+    }
+  }, [view, organization, chosen, storeAt])
+
   const trace = async (finding: Finding) => {
     setTraced(finding)
     setChain(null)
@@ -260,9 +358,19 @@ export function Workspace({ dealId }: { dealId: string }) {
   //: findings » while the filter said « All 1217 », because one excluded
   //: the one-tick notes and the other did not. Two numbers for one fact,
   //: on a screen whose entire purpose is that numbers agree.
-  const coverageLine = coverage
-    ? `${coverage.reconciled} figures reconciled · ${coverage.unlinked} not checked`
-    : 'not checked yet'
+  //: **A deal nobody has run is not a deal with nothing wrong with it.**
+  //: Zero reconciled and zero unchecked is what an unrun deal and an empty
+  //: deal both look like from the coverage alone, and « 0 figures
+  //: reconciled » under a heading reads as a result. The run itself is the
+  //: only thing that can tell those apart, so it is what is asked.
+  const checked = Boolean(
+    lastRun && lastRun.status === 'done' && !lastRun.error,
+  )
+  const coverageLine = !checked
+    ? 'the check has not run here'
+    : coverage
+      ? `${coverage.reconciled} figures reconciled · ${coverage.unlinked} not checked`
+      : 'not checked yet'
 
   // Every reconciled figure, with what became of it. Drift is looked up
   // from the findings; a figure a person confirmed outranks both, because
@@ -336,19 +444,38 @@ export function Workspace({ dealId }: { dealId: string }) {
   }
 
   /**
-   * Record what a person decided about a drift, and keep the screen in
-   * step.
+   * Accept a correction, keep the document as it is, or undo.
    *
-   * It settles the *finding*, not the file. Nothing here writes to a deck
-   * or a memo — the writing layer does not exist — so « recorded » means
-   * the decision is on the record and the document still says what it
-   * said. The button's own words have to carry that, and they do.
+   * **This one writes.** Accepting fetches the deal's copy, puts the
+   * model's figure into it, and stores the result as a new version of the
+   * same document; the check then re-runs, so the drift is gone because
+   * the deck agrees rather than because anything marked it settled. That
+   * is why the whole deal is reloaded afterwards and not one row patched:
+   * the document, the coverage and every finding on it have moved.
+   *
+   * A write that could not be made comes back as a correction in the
+   * `failed` state carrying the reason, not as an error — the screen keeps
+   * showing it, because a banker who pressed Accept has to be able to find
+   * out whether the deck changed.
    */
-  const settle = async (finding: Finding, state: 'accepted' | 'dismissed') => {
-    const updated = await api.dismiss(finding.id, state)
-    setFindings((was) =>
-      was.map((one) => (one.id === finding.id ? updated : one)),
-    )
+  const settle = async (
+    finding: Finding | null,
+    correction: Correction | null,
+    decision: 'accept' | 'reject' | 'reverse' | 'propose',
+  ) => {
+    try {
+      const proposal =
+        correction ?? (finding ? await api.propose(finding.id) : null)
+      if (!proposal) return
+      await api.decideCorrection(proposal.id, decision)
+      await load()
+    } catch (problem) {
+      setError(
+        problem instanceof ApiError
+          ? problem.message
+          : 'That change could not be made.',
+      )
+    }
   }
 
   /** Confirm, reject, or re-point — then reload, since coverage moved. */
@@ -504,6 +631,7 @@ export function Workspace({ dealId }: { dealId: string }) {
               />
             ) : view === 'checks' ? (
               <Checks
+                checked={checked}
                 findings={findings}
                 deal={deal}
                 coverage={coverageLine}
@@ -517,6 +645,16 @@ export function Workspace({ dealId }: { dealId: string }) {
                 title={traced?.source.name ?? traced?.title ?? 'Chain'}
                 printed={traced?.printed ?? ''}
                 expected={traced?.expected ?? ''}
+                //: Who says which. A drift is a deliverable disagreeing
+                //: with the model; a contradiction is a document nobody
+                //: on the deal wrote disagreeing with it, and calling the
+                //: audited accounts « the deliverable » gets the whole
+                //: sentence the wrong way round.
+                says={
+                  traced?.kind === 'contradiction'
+                    ? (traced.where.filename ?? 'The source document')
+                    : 'The deliverable'
+                }
                 rows={[
                   { k: 'Figure', v: `${traced?.title ?? ''}` },
                   { k: 'Source', v: traced?.source.ref ?? '—' },
@@ -527,7 +665,9 @@ export function Workspace({ dealId }: { dealId: string }) {
                     v:
                       traced?.kind === 'drift'
                         ? 'Drifted from the model'
-                        : 'Checked',
+                        : traced?.kind === 'contradiction'
+                          ? 'Anchor — the document the model is grounded in'
+                          : 'Checked',
                   },
                 ]}
                 onSlide={() => go('deck')}
@@ -562,21 +702,58 @@ export function Workspace({ dealId }: { dealId: string }) {
                 map={view === 'deck' ? deckMap : memoMap}
                 kind={view === 'deck' ? 'deck' : 'memo'}
                 findings={findings}
+                corrections={corrections}
                 onTrace={trace}
-                onDecide={(finding, state) => void settle(finding, state)}
+                onDecide={(finding, correction, decision) =>
+                  void settle(finding, correction, decision)
+                }
               />
             ) : view === 'applications' ? (
               <Applications onGo={go} />
-            ) : (
-              <div
-                style={{
-                  padding: 26,
-                  color: colour.muted,
-                  fontSize: size.meta,
+            ) : view === 'projects' ? (
+              <Projects
+                deals={deals}
+                current={dealFor.current}
+                onOpen={openDeal}
+              />
+            ) : view === 'terminal' ? (
+              <Terminal
+                api={api}
+                dealId={dealFor.current}
+                deal={deal}
+                onChanged={() => {
+                  setDealsAt((was) => was + 1)
+                  void load()
                 }}
-              >
-                {NOT_CONNECTED[view] ?? 'Not connected yet.'}
-              </div>
+              />
+            ) : view === 'sharepoint' && store?.connection ? (
+              //: Only once there is a connection behind it. Before that
+              //: the honest screen is the one that says what is missing —
+              //: a library with no library in it is furniture.
+              <SharePoint
+                api={api}
+                state={store}
+                dealId={dealFor.current}
+                organizationId={organization}
+                folder={folder}
+                externals={held}
+                onChanged={() => {
+                  setStoreAt((was) => was + 1)
+                  void load()
+                }}
+              />
+            ) : (
+              // Mail and Calendar, and SharePoint before anybody has
+              // connected one: drawn, and honestly empty. See `Waiting.tsx`.
+              <Waiting
+                view={view}
+                onGo={go}
+                action={
+                  view === 'sharepoint' && store?.authorize_url
+                    ? { label: 'Connect Microsoft', href: store.authorize_url }
+                    : null
+                }
+              />
             )}
           </div>
         )}

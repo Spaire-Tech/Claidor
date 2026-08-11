@@ -543,3 +543,504 @@ Recall unchanged at 83 %, all 171 tie-out tests pass.
 2. **Writing** — « Record » becomes « Accept ». `writing-pptx.md` has the
    design; the Word half is in the fork.
 3. The five dock screens that still say « not connected ».
+
+---
+
+## 10 August — writing
+
+**The halfway mark is gone.** Everything built until today *found* things.
+This writes: « Record $48.9mm » is « Accept $48.9mm », the figure in the
+file changes, and Undo changes it back.
+
+### The two hard problems, and what they actually cost
+
+`writing-pptx.md` named them a week ago and both were where it said.
+
+**A figure is often not one run.** `$42.6mm` is stored as `$42.` and `6mm`
+whenever a spell-check boundary or a three-versions-ago edit split it, and
+`python-pptx` flattens runs on the way out — so every figure has looked
+like one piece of text for the whole life of this project and the problem
+could only appear on the first write. The anchors already stored were the
+right coordinate: a paragraph and character offsets, run-agnostic. The
+writer rebuilds the paragraph text from its runs, keeps a map back into
+them, and splices; a split figure is replaced in the *first* covering run,
+which keeps that run's formatting. The test splits a real run in the
+Cascade deck on purpose, because no file we have has ever done it for us.
+
+**A chart number lives in two places** — the cache in the chart XML, which
+is what PowerPoint draws, and the embedded workbook, which is what opens
+under « Edit data ». Both are written or neither is, and the workbook goes
+first because it is the half that can refuse. It is spliced rather than
+loaded and re-saved: an embedded workbook is three columns PowerPoint
+generated and nobody has ever opened, and the least this can do to one is
+replace the digits between `<v>` and its closing tag.
+
+**A memo is a tracked change instead**, through
+`polar.redline.ooxml.replace_tracked` — the same splicer `tieout.memo`
+already *reads* a memo with, so an offset means the same thing on both
+sides and there is no second definition of what the document says.
+
+### The rule underneath all of it
+
+**Refuse rather than approximate.** Every path checks the characters it is
+about to replace against the ones the reader recorded. Search-and-replace
+would land on the second `$48.9mm` on a slide as readily as the first, and
+a deck corrected in the wrong place is sent out by somebody with no reason
+to look at it again. Half the writer is refusals, each with a sentence and
+a next step.
+
+### A defect the fixture exposed: a shape id is not unique
+
+Slide 3 of the Cascade deck carries a chart and a table that **both call
+themselves shape 4.** PowerPoint asks for unique ids; the tools that
+generate decks do not always oblige. « The first shape with id 4 » would
+have written a table correction into a chart and raised nothing at all.
+
+Both fields are now used together, most specific first — the shape that
+answers to name *and* id, then the name, then the id — and an id matching
+two shapes is refused. The panel had already reasoned its way to name-first
+for the jump; the writer needed it to be a rule.
+
+### The proposal layer
+
+A finding becomes a `Correction` the moment anybody looks at it, carrying
+**both sides of the change**. That is the whole of the reversibility
+argument: `.pptx` has no revision model, and it does not need one when the
+database holds what the document said and what it should say.
+
+**Keyed on the finding's fingerprint, not its id.** Every check run deletes
+its findings and writes them again — the same reason a dismissal is keyed
+that way — so a correction hung on `finding_id` would vanish the first time
+anybody pressed Re-check. It has to outlive its finding by construction:
+once applied, the deck agrees, the drift is gone, and the correction is the
+only thing left that says the slide used to read $49.6mm.
+
+Applying makes a **new version** and never overwrites, so reversal is
+ordinary: the old figure is written back, producing a third version. The
+check re-runs, and the drift disappears because the deck agrees rather than
+because anything marked it settled.
+
+**Two places a correction can land**, and they are not the same thing. The
+workspace corrects *the deal's copy*. The panel corrects *the document open
+in Office*, because the banker's own file is the one that gets sent — the
+server never sees those bytes and records only that the decision was taken
+and where. Undo from the workspace on one of those refuses and says to do
+it in the panel.
+
+**A write that fails comes back 200 with `state: failed`** and the writer's
+sentence on it. It is not a bad request: the request was fine and the
+document had moved. Somebody who pressed Accept has to be able to find out
+afterwards whether the deck changed, and an HTTP error leaves nothing on
+screen to find out from.
+
+### This needed the file kept, and the model's own docstring was wrong
+
+Reading never wanted the document after ingest — that is what lets a
+confirmed link be re-checked forever. Writing cannot happen without it.
+So the bytes are stored (`Artifact.storage_path`), best-effort: an ingest
+that failed because S3 was slow would trade the thing that works for the
+thing that might, and a file that was not kept says so when somebody tries
+to write into it. `models/tieout.py` said « the files are not [retained] »
+as a security claim; it now says what is true, which is that the chain
+outlives the documents and dropping one costs the ability to correct that
+version and nothing else.
+
+### The screens
+
+The design draws all of this and had been standing on a button that only
+recorded a decision. The workspace footer is now the design's own three
+states — the proposal, « Slide 3 now reads 30.8 and ties to Model!B26 »,
+and « the figure stands at $42.6m » — with Undo meaning the write on one
+branch and the note on the other, and refusing to be the wrong one.
+
+The struck-through old figure with the underlined new one beside it is the
+design's **Docs** idiom borrowed whole: a deck row and a memo paragraph ask
+the same question and the design answered it once.
+
+**A screenshot caught what nothing else would have.** Accepting on slide 3
+threw the reader back to slide 2 — the corrected deck is a new artifact id
+and the screen reset its page on one. A new version of « the deck » is the
+same document to whoever is reading it, so the reset is keyed on the
+filename now, which is what a lineage is.
+
+### The panel
+
+Three steps, and the order is the safety: **propose on the server, write
+into the document, then record it as done.** A panel that recorded first
+would leave a deal claiming a correction that is in nobody's file.
+
+PowerPoint's add-in interface reaches a shape's text and nothing else, so a
+table cell and a chart point come back saying so and pointing at the
+workspace — which corrects the deal's copy through `python-pptx` and can do
+both halves of a chart. That refusal is the honest one: a chart written on
+one side only draws one number and reports another.
+
+Word gets a native tracked change, adapted from the fork's own
+`redline.ts`: mode loaded and saved, span re-verified after the flip,
+replacement, mode restored in a `finally`. Office.js cannot set a
+revision's author, so an in-pane change is attributed to the signed-in
+user and a server-side one to « Claidor ». Both are true.
+
+### Verified
+
+Through the interface at 1440 × 900, on the real Cascade files, not by
+curl.
+
+| | |
+|---|---|
+| Deck, slide 3 | Accept 30.8 on the chart series → the row reads `37.8 30.8` and « ties », the footer says it ties to `Model!B26` |
+| Undo | 37.8 back on the slide, the drift back in the check |
+| Coverage | 8 drifting → 7 after one correction |
+| Versions | the deck goes v2 → v3 → v4; nothing is overwritten |
+| Memo, paragraph 6 | Accept $228.9mm → `$235.3mm $228.9mm`, and the file carries `<w:del>$235.3mm</w:del><w:ins>$228.9mm</w:ins>` authored « Claidor » |
+
+Backend: 208 tie-out tests, of which 14 are the writers against the real
+`.pptx` and `.docx` and 13 are the proposal layer through HTTP. Panel: 16.
+
+### What was left out rather than faked
+
+- **Tables and charts from the panel.** PowerPoint cannot do it from a task
+  pane; the workspace can, and the panel says which.
+- **The model is not written to at all.** A cell is either a formula, in
+  which case the number is an output and the deck is what needs correcting,
+  or an input, in which case whoever owns the model owns the number. A
+  deliberate absence, not a gap.
+- **« Accept all »**, which the design draws on its Docs screen. One
+  correction is one decision; a button that writes six of them is a button
+  nobody can undo one of.
+
+### Environment, for the next time this container is new
+
+Everything had to be rebuilt, and two of these cost real time.
+
+- **Python.** `.python-version` says 3.14 and the only 3.14 `uv 0.8.17` can
+  fetch here is `rc2`, whose `typing._eval_type` has no `prefer_fwd_module`
+  — which pydantic 2.12+ passes unconditionally. Every import of
+  `polar.config` dies. Patched in `.venv` only, with a `try/except
+  TypeError`; nothing committed. A container with 3.14.0 final needs none
+  of it.
+- **Minio is not in the repository.** The worklog's own instructions point
+  at `.minio/configure.sh`, which is gitignored and was not here. `mc` can
+  do it directly: `mc alias set`, `mc mb` the three buckets, `mc admin user
+  add claidor-development`, attach `readwrite`.
+- Postgres by hand (`pg_ctlcluster 16 main start`), a `claidor` role, and
+  `redis-server --daemonize yes` — without Redis `/healthz` is 503 and
+  every screen looks broken.
+- `server/.env` needs `CLAIDOR_S3_ENDPOINT_URL=http://127.0.0.1:9000` or
+  the default sends uploads at real AWS, and
+  `clients/apps/web/.env.local` needs `NEXT_PUBLIC_API_URL` or the browser
+  bounces to `/login` with a perfectly good session.
+
+---
+
+## 10 August — the five screens that said « not connected »
+
+**Two of them had real data behind them all along.** Three do not, and say
+so.
+
+### Projects, and the screen that unbroke the workspace
+
+Until now the workspace opened « the first deal you are on » and there was
+no way to reach a second — a limitation nothing on screen admitted to.
+Projects is the design's own deal list, and choosing one switches the whole
+workspace to it.
+
+Switching **drops everything on screen** rather than replacing it a request
+at a time. A findings list from the last deal under the new deal's heading
+is the worst kind of wrong, because it looks right.
+
+### One field, and the defect it exposed two screens away
+
+The design's status column reads « Seven findings » · « Clear » · « Not
+run ». The first two we had; the third we could not say, because nothing
+recorded whether a check had ever finished — so `DealListItem` now carries
+`checked_at`, and null means never.
+
+Writing that made the real defect obvious. **Check said « Checked, and
+every figure ties back to the model » on a deal nobody had ever run**, and
+the panel said the same. Silence reading as a result is the one lie this
+product exists not to tell, and it had been sitting in the empty state
+since the screen was built. Nothing had ever shown it because until
+Projects there was no way to *reach* a deal in that state.
+
+Both now ask the run rather than the count. The coverage line does too:
+« the check has not run here », not « 0 figures reconciled ».
+
+### Terminal is the check reporting itself
+
+The design draws a log — a command, the files it resolved, what it
+reconciled, warnings in amber, criticals in red, a `done` line with a
+duration. That is not decoration around a shell; it is exactly what a
+`CheckRun` produces, and every line comes off one.
+
+    pierce check
+    resolved 12 files · 3 documents
+    reconciled 108 figures
+    27 not checked · reasons below
+      22  no output fits the label
+       3  two outputs fit equally well
+       2  one end of a printed range
+    done  tieout · done · 0.2s
+    audited 313 cells in 1 model
+    crit  10.2% where the model says 9.8% · cascade_memo.docx paragraph 9
+
+**Seven commands, and every one is a call that already existed** —
+`check`, `coverage`, `findings`, `files`, `corrections`, `clear`, `help`.
+Nothing here can do anything the screens cannot, which is what stops a
+command line becoming a second product with its own rules. Coverage stays
+on screen here as everywhere: a log that reported only what it found would
+read as though it had checked everything.
+
+The prompt is real — up and down walk the history — because a prompt drawn
+and not wired is furniture pretending to be a control.
+
+### Mail, Calendar and SharePoint: drawn, and honestly empty
+
+All three need a source that does not exist yet: a mailbox or a site,
+which is phase 8. So each says what it will do, what it is waiting on by
+name, and where to go meanwhile.
+
+A mailbox with three invented messages in it, in a product whose whole
+argument is that the numbers on your screen are real, is worse than a blank
+panel — it teaches the reader that what they are looking at might be a
+mock-up, and there is no way to un-teach that on the screen where it
+matters.
+
+### Verified
+
+Through the interface at 1440 × 900, on three real deals, two of which
+hold nothing at all.
+
+| | |
+|---|---|
+| Projects | « Three live deals · 16 open findings · two not run » |
+| A deal nobody ran | « The check has not run on this deal », not « clear » |
+| Switching | Calder's empty Check, then back to Cascade's 16 findings |
+| Terminal | a real `check`: 12 files, 108 reconciled, 27 not checked with reasons, `done tieout · 0.2s`, then fourteen `crit` lines |
+| SharePoint | « No site connected », and what connecting would give |
+
+Two things the screenshots caught. The prompt was wearing the dashboard's
+blue focus ring — right on every form in the product and wrong on a
+terminal, which the design draws as a gutter and a caret. And **the
+duplicate « Terminal » button that cost twenty minutes was Next's own
+dev-tools overlay**, not the dock: `getByRole('button', { name })` finds
+it, `button[title="Terminal"]` does not. Worth remembering the next time a
+click in a test appears to do nothing.
+
+### What is left out, and why
+
+Nothing in the design's Mail, Calendar or SharePoint is built, deliberately.
+The design's SharePoint screen is a real document library with sync status
+on every row; building it against the data room would be claiming files
+came from somewhere they did not.
+
+---
+
+## 10 August — PDF sources, and the end of the chain
+
+**The chain used to stop at « somebody typed this ».** `Model!D6 = 228.9`
+is the edge of everything the product could check, and every figure
+computed from it inherits whatever it is. This is the hop past it.
+
+### Reading a document nobody on the deal wrote
+
+A PDF is ink, not structure. A workbook has cells and a deck has shapes;
+audited accounts have a text layer, page numbers, and nothing else worth
+relying on. So `source.py` is the *memo* reader's shape — figures found in
+prose, each named by the words in front of it — with one thing a memo
+does not have and cannot fake: **a real page number**. « Audited accounts
+FY24 · p.42 » is checkable by a person. « The accounts, somewhere » is
+not, which makes it exactly the sort of claim this product exists to
+distrust.
+
+Two refusals worth having. A PDF with no text layer is a scan, and an
+empty extraction that quietly becomes an empty document is how a set of
+accounts ends up « containing no figures »; it says so and says to OCR it.
+And a `.pptx` uploaded as a source is named as the mistake it is.
+
+**Wrapped lines are put back together, narrowly.** A line break in a PDF
+is where the type ran out of room, not where the sentence ended, and read
+line by line « Selling, general and administrative expenses for the year /
+ended 31 December 2025 were (32.9) » names its figure « ended 31 December
+2025 were ». The join needs the previous line to end without terminal
+punctuation *and* this one to start in lower case, so headings and table
+rows are never swept into their neighbours. Never across pages: a page
+break is a hard break whatever the prose does.
+
+### The matcher is the tie-out's, pointed the other way
+
+A figure printed in the accounts is the printed thing; a typed input is
+the candidate it might be the origin of. That is not a convenience — the
+gates that make the tie-out refuse rather than guess are exactly what a
+hundred pages of somebody else's prose needs, and a second matcher would
+have had to earn all of them again on the loosest data in the product.
+
+**Inputs only.** A computed cell agreeing with the accounts is arithmetic
+working, not provenance: the accounts are not the source of a calculation,
+they are the source of what it was calculated from. Cascade has 85 typed
+inputs against 313 named cells, and the narrower set is the safer one.
+
+**One translation, and where it lives is the point.** Accounts say « the
+year ended 31 December 2025 »; a model says FY2025A; the linker reads a
+bare `2025` as nothing at all, so all three revenue notes fit all three
+revenue cells and every one is refused as ambiguous — the right answer to
+the wrong question. Teaching the shared tokeniser about calendar years
+would change what every deck and every memo links to, on an engine whose
+recall is a *measured* number. So it is in the source reader, where
+accounts are actuals by definition and `A` is not a guess.
+
+### A disagreement here is a contradiction, not a drift
+
+`CheckKind.crosscheck` has existed unused since the spine landed, and this
+is what it was for. « The signed accounts restated cost of sales and the
+model still carries the draft figure » is a different sentence from « the
+deck disagrees with the model » and has a different fix. The finding sits
+on the **source**, because page 2 of the accounts is where a reader has to
+go to settle it.
+
+### Two things that had to be fixed to make it work
+
+**`replace_proposals` was deal-wide.** Two checkers now propose links into
+one table, and the second to run would have deleted the first's — a defect
+that would have looked like a flaky linker for a week. It is scoped to the
+documents the run actually read.
+
+**`chain_for` had no callers.** Built for « trace any cell » and never
+routed. It is where grounding shows most often, because a chain from a
+deck drift rarely bottoms out at a typed input within the three steps a
+*readable* chain has: the DCF drifts on Cascade are four or five hops from
+an input. So it has a route now, and the screen that answers « where did
+this number come from » can be asked about a cell rather than only about a
+problem.
+
+### The fixture
+
+`build_source_fixture.py` writes the accounts **out of the model**, the
+same rule the memo fixture follows: a fixture with hand-copied numbers
+disagrees with its own model the first time either is touched, and then
+the test measures the transcription. Two files, because the interesting
+case is not a typo — `cascade_accounts_restated.pdf` has two figures the
+auditors restated in the signed set, which is what actually happens and is
+the mistake nothing else in this product would find.
+
+The prose is the register real accounts use, deliberately. A fixture that
+writes the model's own vocabulary back at it proves nothing about reading
+a document somebody else wrote.
+
+### Verified
+
+Through the interface, on the real files.
+
+| | |
+|---|---|
+| Upload | `cascade_accounts_restated.pdf` → `source`, 8 figures, 2 pages |
+| Crosscheck | 8 grounded · 6 agreeing · **2 contradicting** · 0 unlinked |
+| The finding | « cascade_accounts_restated.pdf says $94.1m where the model has $96.4m », on page 2 |
+| The chain | `Assumptions!B24 · 96.4 · typed, not calculated` → **`cascade_accounts_restated.pdf · page 2 · $94.1m · proposed — nobody has confirmed this yet`** |
+
+230 tie-out tests, 21 of them this.
+
+Two things the screenshot caught, both about words. The Chain header read
+« The deliverable shows $94.1m » about a set of audited accounts, which
+gets the whole sentence the wrong way round — a contradiction is a
+document *nobody on the deal wrote* disagreeing with the model. And the
+fiscal-year rewrite the matcher needs was leaking into the sentence shown
+to a reader: « Total debt outstanding at 31 December FY2025A ». The screen
+whose job is to say where a number came from is the wrong place to show a
+year this product invented, so the step shows the sentence as printed.
+
+### The environment, finally scripted
+
+`scripts/dev_services.sh` starts Postgres, Redis and Minio and creates the
+buckets and the app user. This container reclaims background processes
+between sessions and the first symptom is always a test suite failing with
+« connection refused » somewhere unrelated. It cost twenty minutes twice
+before it was worth writing down.
+
+---
+
+## 11 August — the room the files actually live in
+
+Phase 8, the half that is SharePoint and OneDrive. A deal can now be
+pointed at a folder in a document library and read from it: nobody uploads
+anything, and the deal checks itself.
+
+### Read-only, and delegated
+
+The scopes are `offline_access`, `User.Read`, `Files.Read.All`,
+`Sites.Read.All`. Two decisions in that list.
+
+**Delegated, not application-level.** The token is one person's, so this
+connector reaches exactly what they can already open and nothing else. The
+alternative needs an administrator's consent before anybody can try the
+product at all, and it makes a bug in `graph.py` able to read a firm's
+entire SharePoint. The cost is that a connection belongs to a person and
+stops working when they leave — a state the screen carries rather than a
+problem to solve.
+
+**No write scope, ever.** A correction goes into the deal's own copy.
+Pushing a rewritten deck back into a shared library is a decision nobody
+asked for and a mistake nobody could undo.
+
+### The content tag is the whole design
+
+`cTag` changes when the content does; `eTag` also changes on a rename. So
+the sync compares tags: a forty-megabyte model whose name somebody fixed
+is not read again, and a model somebody saved over on Tuesday becomes
+version 2 of the same lineage rather than a second model in the deal. That
+is the identity problem the roadmap said a filename guess could not solve,
+and it is one string.
+
+### The screen earns itself on one column
+
+`screens/SharePoint.tsx` is the design's document library — rail,
+breadcrumb, ribbon, header row, sync status at the right edge — and the
+status column is the reason it is worth drawing. **Synced** is the design's
+blue, **Stale** its amber, and the comparison behind them is the deal's
+content tag against the room's. A row that says Stale is the one a banker
+should look at.
+
+Two substitutions, both named in the file. The ribbon drops New, Upload,
+Share and Automate: they are SharePoint's own, and furniture that does
+nothing is the worst thing to put on a screen about whether files are
+real. The rail drops SharePoint's site navigation for the list of document
+libraries this account can reach, which is the only thing here that is
+navigable and true.
+
+### How it was looked at without a tenant
+
+`scripts/graph_stub.py`. There is no Microsoft tenant on this machine and
+there is no application registration, so the connector could not be seen
+at all — and a screen nobody has seen is a screen with a bug in it. The
+stub speaks the four URLs the connector uses, over the shapes Graph's
+documentation publishes, serving `scripts/cascade/` as a library.
+
+Graph's base URL became a setting to make that possible, which is worth
+having anyway: a sovereign cloud is the identical API at
+`graph.microsoft.us`.
+
+**This proves the wiring, not the integration.** Everything above Graph —
+the token store, the sync, the status column, the re-check — is exercised
+for real. Whether Microsoft behaves as documented is unproven and will
+stay unproven until somebody connects an account.
+
+### Verified
+
+Through the interface, at 1440×900, against the stub and the real Cascade
+files. Project Meridian was an empty deal at the start of this.
+
+| | |
+|---|---|
+| Not configured | « Connect Microsoft » absent, and the sentence says an administrator has to add the application |
+| Configured, not connected | the button, on the same screen |
+| Connected | R. Duval · Rothmoor Deals · Documents |
+| Pointed and synced | four files read, and the deal checked without anybody pressing check |
+| The deal, after | 108 reconciled · 100 agreeing · **8 drifting** · 27 unlinked |
+| `touch cascade_model.xlsx` | that row alone turns **Stale** |
+
+253 tests, 23 of them the connector.
+
+What the screenshots caught: the status column said « Changed » where the
+design's word is « Stale »; the folder rows had a text arrow where the
+design has an amber folder; and the breadcrumb at the library root read
+« Documents Rothmoor Deals », which is two names and no relationship.

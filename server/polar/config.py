@@ -278,6 +278,26 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
 
+    # Microsoft — SharePoint and OneDrive as sources for a deal, through
+    # Graph. Empty means the connector is not configured on this server,
+    # which every screen and route says in those words rather than
+    # offering a button that cannot work.
+    #
+    # `common` lets any work or school account connect; a single-tenant
+    # deployment sets its own tenant id and nobody else's users can even
+    # begin the flow.
+    MICROSOFT_CLIENT_ID: str = ""
+    MICROSOFT_CLIENT_SECRET: str = ""
+    MICROSOFT_TENANT: str = "common"
+    # Where Graph and the sign-in service are. Worth being settings rather
+    # than constants for two reasons that are the same reason: a sovereign
+    # cloud is a different hostname speaking the identical API (Graph for
+    # US Government is `graph.microsoft.us`), and so is the stub in
+    # `scripts/graph_stub.py`, which is how this connector gets exercised
+    # end to end on a machine with no Microsoft tenant behind it.
+    MICROSOFT_GRAPH_BASE: str = "https://graph.microsoft.com/v1.0"
+    MICROSOFT_LOGIN_BASE: str = "https://login.microsoftonline.com"
+
     # Apple
     APPLE_CLIENT_ID: str = ""
     APPLE_TEAM_ID: str = ""

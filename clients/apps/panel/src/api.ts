@@ -30,6 +30,31 @@ export interface Anchored {
   sheet?: string
 }
 
+/**
+ * A change to a document: proposed, decided, and reversible.
+ *
+ * Both sides travel on it, which is what lets « Undo » be a write rather
+ * than a revision format `.pptx` does not have.
+ */
+export interface Correction {
+  id: string
+  fingerprint: string
+  state: 'proposed' | 'applied' | 'rejected' | 'reversed' | 'failed'
+  /** `file` — the deal's copy — or `document`, the one open in Office. */
+  where: 'file' | 'document'
+  before: string
+  after: string
+  source: string
+  page: number
+  location: string
+  artifact_id: string
+  wrote_artifact_id: string | null
+  error: string | null
+  decided_by: { id: string; name: string; avatar_url: string | null } | null
+  decided_at: string | null
+  created_at: string
+}
+
 export interface Finding {
   id: string
   kind: 'drift' | 'audit' | 'contradiction' | 'stale'
@@ -58,6 +83,8 @@ export interface Finding {
   standard: string | null
   rule: string | null
   created_at: string
+  /** The change proposed for this finding, once anybody has looked at it. */
+  correction: Correction | null
 }
 
 export interface ChainStep {
@@ -115,6 +142,11 @@ export interface Coverage {
   unlinked: number
   confirmed: number
   reasons: { reason: string; count: number }[]
+}
+
+/** Coverage, and whether a check ever produced it. */
+export interface Checked extends Coverage {
+  checked: boolean
 }
 
 export class ApiError extends Error {
@@ -189,6 +221,28 @@ export class TieOutApi {
     return this.call(`/findings/${findingId}/chain`)
   }
 
+  /** « The deck should read $48.9mm » — written down, not applied. */
+  propose(findingId: string): Promise<Correction> {
+    return this.call(`/findings/${findingId}/correction`, { method: 'POST' })
+  }
+
+  /**
+   * Tell the server what became of a proposal.
+   *
+   * `applied` is the one the panel uses after it has written the change
+   * into the document itself: the bytes stay on the banker's machine and
+   * the deal records that the decision was taken and where.
+   */
+  decideCorrection(
+    correctionId: string,
+    action: 'accept' | 'reject' | 'reverse' | 'applied' | 'propose',
+  ): Promise<Correction> {
+    return this.call(`/corrections/${correctionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    })
+  }
+
   dismiss(findingId: string, state: Finding['state']): Promise<Finding> {
     return this.call(`/findings/${findingId}`, {
       method: 'PATCH',
@@ -196,10 +250,29 @@ export class TieOutApi {
     })
   }
 
-  /** Coverage for the deal — « 34 of 40 figures on this deck checked ». */
-  async coverage(dealId: string): Promise<Coverage> {
-    const deal = await this.call<{ coverage: Coverage }>(`/deals/${dealId}`)
-    return deal.coverage
+  /**
+   * Coverage for the deal, and whether it has ever been checked.
+   *
+   * The second half is not decoration. « Checked, and every figure here
+   * ties back to the model » on a deal nobody has run says a check
+   * happened, and a panel that says that about a deck nobody reconciled is
+   * doing the one thing this product exists not to do. Coverage cannot
+   * tell those apart — zero and zero look the same — so the run is asked
+   * for alongside it.
+   */
+  async coverage(dealId: string): Promise<Checked> {
+    const deal = await this.call<{
+      coverage: Coverage
+      last_tieout: { status: string; error: string | null } | null
+    }>(`/deals/${dealId}`)
+    return {
+      ...deal.coverage,
+      checked: Boolean(
+        deal.last_tieout &&
+        deal.last_tieout.status === 'done' &&
+        !deal.last_tieout.error,
+      ),
+    }
   }
 
   check(dealId: string): Promise<unknown> {

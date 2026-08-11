@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest'
 
 import { splitRef } from './excel'
 import { pickReadable } from './outlook'
+import { figureSpan } from './powerpoint'
 
 describe('a cell reference', () => {
   it('separates the sheet from the address', () => {
@@ -44,6 +45,48 @@ describe('a cell reference', () => {
       sheet: 'Q3!draft',
       address: 'C9',
     })
+  })
+})
+
+describe('where a figure sits before it is written over', () => {
+  const anchor = { kind: 'text', paragraph: 0, start: 19, end: 26 }
+
+  it('finds the figure the reader recorded', () => {
+    const text = 'Adjusted EBITDA of $48.9mm reflects $7.7mm of add-backs'
+    expect(figureSpan(text, anchor, '$48.9mm')).toEqual({
+      start: 19,
+      length: 7,
+    })
+  })
+
+  it('allows for the whitespace the reader stripped', () => {
+    // The offsets were measured against the trimmed paragraph and the
+    // frame's own text keeps its leading space. Two characters out is a
+    // correction written into the middle of the number before it.
+    const text = '  Adjusted EBITDA of $48.9mm reflects $7.7mm of add-backs'
+    expect(figureSpan(text, anchor, '$48.9mm')).toEqual({
+      start: 21,
+      length: 7,
+    })
+  })
+
+  it('refuses when somebody has edited the shape since', () => {
+    const text = 'Adjusted EBITDA of $50.1mm reflects $7.7mm of add-backs'
+    const found = figureSpan(text, anchor, '$48.9mm')
+    expect(found).toHaveProperty('reason')
+    // The sentence says what is there now and what to do about it.
+    expect((found as { reason: string }).reason).toContain('$50.1mm')
+    expect((found as { reason: string }).reason).toContain('re-check')
+  })
+
+  it('refuses on a shape that has been emptied', () => {
+    expect(figureSpan('', anchor, '$48.9mm')).toHaveProperty('reason')
+  })
+
+  it('refuses a finding that names no offsets', () => {
+    expect(figureSpan('$48.9mm', { kind: 'text' }, '$48.9mm')).toHaveProperty(
+      'reason',
+    )
   })
 })
 

@@ -200,7 +200,11 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {/* EMPTY — the *good* outcome, and it must not read as a failure. */}
         {panel.findings.length === 0 && (
-          <Quiet>Checked, and every figure here ties back to the model.</Quiet>
+          <Quiet>
+            {panel.coverage?.checked
+              ? 'Checked, and every figure here ties back to the model.'
+              : 'The check has not run on this deal yet. Re-check reads it against the model.'}
+          </Quiet>
         )}
 
         {shown.map((finding) => {
@@ -246,16 +250,34 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                   >
                     Dismiss
                   </Text>
-                  {/* Recorded against the finding, not written into the
-                      file. Nothing in this product edits a document yet,
-                      and the word has to carry that. */}
+                  {/* This writes. The figure in the document open in front
+                      of the banker becomes the model's, and the deal
+                      records that it happened here rather than to its own
+                      copy — because the copy on this machine is the one
+                      that gets sent. */}
                   <Text
                     tone="quiet"
-                    onClick={() => settle(finding, 'accepted')}
+                    onClick={() => {
+                      setOpen(null)
+                      setProblem(null)
+                      void panel.accept(finding).then((result) => {
+                        setProblem(
+                          result.written ? null : (result.reason ?? null),
+                        )
+                      })
+                    }}
                   >
-                    Record {finding.expected}
+                    Accept {finding.expected}
                   </Text>
                 </>
+              )}
+              {/* What became of it, once something has. The row stays put
+                  rather than disappearing: a figure that changed under
+                  somebody's hands is worth seeing change. */}
+              {finding.correction?.state === 'applied' && (
+                <span style={{ color: colour.matching }}>
+                  now {finding.correction.after} in this document
+                </span>
               )}
             </Row>
           )

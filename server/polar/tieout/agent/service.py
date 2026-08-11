@@ -76,7 +76,9 @@ async def load_workspace(
                 {
                     "ref": cell.ref,
                     "name": cell.name,
-                    "value": None if cell.value is None else f"{cell.value.normalize():f}",
+                    "value": None
+                    if cell.value is None
+                    else f"{cell.value.normalize():f}",
                     "formula": cell.formula,
                 }
             )

@@ -19,12 +19,18 @@
  * a converter, an image, a job — and that is a real feature with a real
  * cost, not something to fake in the meantime. It is on the roadmap.
  *
- * It does not accept a change *into* the file either. « Accept $41.9m » in
- * the design edits the deck; nothing here writes to a document yet. What
- * these two buttons do is record the decision against the finding, and the
- * words say exactly that — « Record the model's figure », not « Accept ».
- * A button that claims to have fixed a deck it never touched is the one
- * lie this product cannot afford.
+ * **« Accept $41.9m » now means it.** The footer is the design's own, in
+ * its three states: the proposal with both figures in the sentence, the
+ * accepted state saying what the slide reads now and what it ties to, and
+ * the kept state saying the figure stands. Pressing Accept writes the
+ * model's figure into the deck and makes that a new version of the file;
+ * Undo writes the old figure back. Until this landed the button said
+ * « Record », because recording the decision was all it did.
+ *
+ * The del/ins pair on a drifted row is the design's Docs idiom borrowed
+ * whole — struck-through old figure, underlined new one, both in the
+ * design's own inks — because a memo screen and a deck screen are asking
+ * the same question and the design already answered it once.
  *
  * What is here is real: every figure the reader found, the value as it was
  * printed, whether it ties, and — for the ones that were not checked — the
@@ -41,7 +47,7 @@
 
 import { useMemo, useState } from 'react'
 
-import type { Figure, FigureMap, Finding } from '../api'
+import type { Correction, Figure, FigureMap, Finding } from '../api'
 import { Nothing } from '../Dense'
 import { colour, font, size } from '../design'
 
@@ -52,10 +58,14 @@ const STATE: Record<Figure['state'], { label: string; ink: string }> = {
   unlinked: { label: 'not checked', ink: colour.fainter },
 }
 
+/** What a correction may be asked to do next. Mirrors the server's word. */
+export type Decision = 'accept' | 'reject' | 'reverse' | 'propose'
+
 export function Document({
   map,
   kind,
   findings,
+  corrections,
   onTrace,
   onDecide,
 }: {
@@ -63,16 +73,35 @@ export function Document({
   kind: 'deck' | 'memo'
   /** The deal's findings, so a drifted figure can carry what the model says. */
   findings: Finding[]
+  /**
+   * Every change proposed on this deal. Passed alongside the findings
+   * rather than read off them because a correction *outlives* its finding:
+   * once it is applied the deck agrees and the drift is gone, and this is
+   * the only thing left that says the slide used to read $49.6mm.
+   */
+  corrections: Correction[]
   onTrace: (finding: Finding) => void
-  onDecide: (finding: Finding, state: 'accepted' | 'dismissed') => void
+  onDecide: (
+    finding: Finding | null,
+    correction: Correction | null,
+    decision: Decision,
+  ) => void
 }) {
   const [page, setPage] = useState(0)
   // A different document starts at its first page. Adjusted during the
   // render that notices rather than in an effect afterwards, which would
   // draw one frame of the new deck at the old deck's slide index.
-  const [shownFor, setShownFor] = useState(map?.artifact_id)
-  if (map?.artifact_id !== shownFor) {
-    setShownFor(map?.artifact_id)
+  //
+  // **Keyed on the filename, not the artifact id.** Accepting a correction
+  // makes a new version of the same deck, which is a new artifact id — so
+  // an id here threw the reader back to slide 2 the instant they accepted
+  // something on slide 7, and the sentence saying what the slide reads now
+  // was never seen. A new version of « the deck » is the same document to
+  // whoever is reading it, and versions of one document share a filename
+  // by construction: that is what a lineage is.
+  const [shownFor, setShownFor] = useState(map?.filename)
+  if (map?.filename !== shownFor) {
+    setShownFor(map?.filename)
     setPage(0)
   }
 
@@ -91,6 +120,19 @@ export function Document({
     }
     return found
   }, [findings])
+
+  // Corrections reach a figure from both ends, because a correction is
+  // about a figure that is *changing*: while it is only proposed the
+  // document still prints `before`, and once it is applied the document
+  // prints `after` and there is no finding left to reach it through.
+  const corrected = useMemo(() => {
+    const found = new Map<string, Correction>()
+    for (const one of corrections) {
+      found.set(`${one.page}|${one.before}`, one)
+      found.set(`${one.page}|${one.after}`, one)
+    }
+    return found
+  }, [corrections])
 
   if (!map) {
     return (
@@ -119,11 +161,19 @@ export function Document({
   const figures = paginated
     ? here.figures
     : map.slides.flatMap((one) => one.figures)
+  const shownPage = paginated ? here.page : 0
   const drifted = figures
-    .map((figure) =>
-      byPrinted.get(`${paginated ? here.page : 0}|${figure.printed}`),
-    )
+    .map((figure) => byPrinted.get(`${shownPage}|${figure.printed}`))
     .find((finding) => finding !== undefined && finding.state === 'open')
+  //: What the footer talks about: the open drift on this page, or — once
+  //: one has been settled — the correction that settled it. The second is
+  //: what keeps « Undo » on screen after the finding it came from is gone.
+  const settled = figures
+    .map((figure) => corrected.get(`${shownPage}|${figure.printed}`))
+    .find((one) => one !== undefined && one.state !== 'proposed')
+  const footing = drifted
+    ? (corrected.get(`${shownPage}|${drifted.printed}`) ?? null)
+    : (settled ?? null)
 
   const counted = figures.filter((one) => one.state === 'drifting').length
 
@@ -245,15 +295,10 @@ export function Document({
                     : figure.location}
                 </span>
               </span>
-              <span
-                style={{
-                  flex: '0 0 auto',
-                  fontFamily: font.mono,
-                  fontSize: 14,
-                }}
-              >
-                {figure.printed}
-              </span>
+              <Printed
+                figure={figure}
+                correction={corrected.get(`${shownPage}|${figure.printed}`)}
+              />
               <span
                 style={{
                   flex: '0 0 74px',
@@ -269,9 +314,8 @@ export function Document({
         })}
       </div>
 
-      {/* The design's footer, on a real finding. It says « record »
-          because that is what it does: nothing here writes to the file. */}
-      {drifted && (
+      {/* The design's footer, in the design's three states. */}
+      {(drifted || footing) && (
         <div style={{ flex: '0 0 auto', padding: '18px 26px 22px' }}>
           <div
             style={{
@@ -286,41 +330,154 @@ export function Document({
                 flex: 1,
                 minWidth: 220,
                 fontSize: size.meta,
-                color: colour.ink,
+                color: drifted ? colour.ink : colour.faint,
                 lineHeight: 1.6,
               }}
             >
               {/* Where it is comes off the finding, which knows whether it
                   is a slide or a paragraph. Nothing here has to — it only
                   has to start the sentence with a capital. */}
-              {sentence(drifted.where.detail || 'this document')} shows{' '}
-              {drifted.printed}. The model returns {drifted.expected}.
+              {drifted
+                ? `${sentence(drifted.where.detail || 'this document')} shows ${drifted.printed}. The model returns ${drifted.expected}.`
+                : outcome(footing!)}
             </span>
             <span style={{ display: 'flex', gap: 18 }}>
-              <button
-                onClick={() => onDecide(drifted, 'accepted')}
-                style={action(colour.blue)}
-              >
-                Record {drifted.expected}
-              </button>
-              <button
-                onClick={() => onDecide(drifted, 'dismissed')}
-                style={action(colour.faint)}
-              >
-                Keep
-              </button>
-              <button
-                onClick={() => onTrace(drifted)}
-                style={action(colour.faint)}
-              >
-                Trace
-              </button>
+              {drifted && (
+                <>
+                  <button
+                    onClick={() => onDecide(drifted, footing, 'accept')}
+                    style={action(colour.blue)}
+                  >
+                    Accept {drifted.expected}
+                  </button>
+                  <button
+                    onClick={() => onDecide(drifted, footing, 'reject')}
+                    style={action(colour.faint)}
+                  >
+                    Keep
+                  </button>
+                  <button
+                    onClick={() => onTrace(drifted)}
+                    style={action(colour.faint)}
+                  >
+                    Trace
+                  </button>
+                </>
+              )}
+              {/* Undo, and what it means depends on what happened. On an
+                  applied correction it writes the old figure back into the
+                  file; on a kept or failed one there is nothing in the file
+                  to undo, so it puts the proposal back on the table. */}
+              {!drifted && footing && footing.where === 'file' && (
+                <button
+                  onClick={() =>
+                    onDecide(
+                      null,
+                      footing,
+                      footing.state === 'applied' ? 'reverse' : 'propose',
+                    )
+                  }
+                  style={action(colour.blue)}
+                >
+                  Undo
+                </button>
+              )}
             </span>
           </div>
         </div>
       )}
     </div>
   )
+}
+
+/**
+ * The printed figure, and the change waiting on it.
+ *
+ * The design's Docs idiom: while a change is pending the old figure is
+ * struck through in the quiet ink and the new one is underlined in the
+ * agreeing green; once it is settled both are plain. Borrowed here because
+ * a deck row and a memo paragraph are asking the same question, and the
+ * design answered it once already.
+ */
+function Printed({
+  figure,
+  correction,
+}: {
+  figure: Figure
+  correction: Correction | undefined
+}) {
+  const pending = correction?.state === 'proposed'
+  const settled = correction?.state === 'applied'
+  return (
+    <span
+      style={{
+        flex: '0 0 auto',
+        fontFamily: font.mono,
+        fontSize: 14,
+        display: 'flex',
+        gap: 6,
+      }}
+    >
+      {settled && correction ? (
+        // Applied: the document prints the new figure, and the old one is
+        // shown behind it so the row still says what changed.
+        <>
+          <span
+            style={{ color: colour.slateFaint, textDecoration: 'line-through' }}
+          >
+            {correction.before}
+          </span>
+          <span style={{ color: colour.dark }}>{figure.printed}</span>
+        </>
+      ) : (
+        <>
+          <span
+            style={{
+              color: pending ? colour.slateFaint : 'inherit',
+              textDecoration: pending ? 'line-through' : 'none',
+            }}
+          >
+            {figure.printed}
+          </span>
+          {pending && correction && (
+            <span
+              style={{
+                color: colour.matchingDeep,
+                textDecoration: 'underline',
+              }}
+            >
+              {correction.after}
+            </span>
+          )}
+        </>
+      )}
+    </span>
+  )
+}
+
+/**
+ * What became of a correction, in one sentence.
+ *
+ * The design's own words for the two branches it drew — « Slide 14 now
+ * reads $41.9m and ties to Ops!B23 » and « The figure stands at $42.6m » —
+ * plus the two states a real writer has and a drawing does not: a change
+ * made in somebody's own copy, and a write that was refused.
+ */
+function outcome(correction: Correction): string {
+  const where = sentence(correction.location || 'this document')
+  if (correction.state === 'applied') {
+    const ties = correction.source ? ` and ties to ${correction.source}` : ''
+    return correction.where === 'document'
+      ? `${where} was corrected to ${correction.after} in the copy open in Office. This deal still holds the version that reads ${correction.before}.`
+      : `${where} now reads ${correction.after}${ties}.`
+  }
+  if (correction.state === 'reversed') {
+    return `${where} stands at ${correction.before} again.`
+  }
+  if (correction.state === 'failed') {
+    return correction.error ?? 'That change could not be written.'
+  }
+  return `The figure stands at ${correction.before}. Record the basis, or it is raised again on the next check.`
 }
 
 /** « paragraph 9 » is a locator; « Paragraph 9 shows… » is a sentence. */

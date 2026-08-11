@@ -33,6 +33,7 @@ from polar.models import (
     ArtifactKind,
     CheckKind,
     CheckRun,
+    Correction,
     Dossier,
     Figure,
     FigureLink,
@@ -60,7 +61,10 @@ from .schemas import (
     AskedStep,
     CellRead,
     ChainRead,
+    ChainStep,
     CheckRunRead,
+    CorrectionDecision,
+    CorrectionRead,
     Coverage,
     DealListItem,
     DealPage,
@@ -85,6 +89,8 @@ from .schemas import (
     Uploader,
 )
 from .service import tieout
+from .storage import FileNotKept, download_url
+from .writing import NotCorrectable, writing
 
 router = APIRouter(prefix="/tieout", tags=["tieout", APITag.private])
 
@@ -178,10 +184,36 @@ def _run(run: CheckRun | None) -> CheckRunRead | None:
     )
 
 
-def _finding(finding: Finding, filenames: dict[UUID, str]) -> FindingRead:
+def _correction(correction: Correction, decider: User | None = None) -> CorrectionRead:
+    return CorrectionRead(
+        id=correction.id,
+        fingerprint=correction.fingerprint,
+        state=correction.state,
+        where=correction.where,
+        before=correction.before,
+        after=correction.after,
+        source=correction.source,
+        page=correction.page,
+        location=correction.location,
+        artifact_id=correction.artifact_id,
+        wrote_artifact_id=correction.wrote_artifact_id,
+        error=correction.error,
+        decided_by=_uploader(decider),
+        decided_at=correction.decided_at,
+        created_at=correction.created_at,
+    )
+
+
+def _finding(
+    finding: Finding,
+    filenames: dict[UUID, str],
+    corrections: dict[str, Correction] | None = None,
+) -> FindingRead:
     evidence = finding.evidence or {}
     model_id = evidence.get("model_artifact_id")
+    correction = (corrections or {}).get(finding.fingerprint)
     return FindingRead(
+        correction=_correction(correction) if correction else None,
         id=finding.id,
         kind=finding.kind,
         severity=finding.severity,
@@ -292,6 +324,7 @@ async def get_deal(
         id=deal.id,
         name=deal.name,
         client=deal.client_name,
+        organization_id=deal.organization_id,
         coverage=Coverage(**await tieout.coverage_of(session, dossier_id=dossier_id)),
         documents=[_artifact(one, by_id.get(one.uploaded_by_id)) for one in documents],
         files=files,
@@ -363,16 +396,23 @@ async def list_deals(
     auth_subject: auth.TieOutRead,
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> list[DealListItem]:
-    """The deals this person is on, for the panel's « which deal is this ».
+    """Every deal this person is on — the panel's picker, and Projects.
 
-    Asked once per document and then never again, because the answer is
-    written into the document itself.
+    The panel asks once per document and then never again, because the
+    answer is written into the document itself. Projects asks every time it
+    is opened, because « which of my deals has something wrong with it » is
+    the question it exists to answer.
+
+    Each row carries when it was last checked, so that a deal nobody has
+    run can say « not run » instead of showing the same empty findings
+    count as a deal that was checked this morning.
     """
     repository = TieOutRepository.from_session(session)
     deals = await repository.deals_for(auth_subject.subject.id)
     items: list[DealListItem] = []
     for deal in deals:
         counts = await repository.count_findings(deal.id)
+        run = await repository.latest_run(deal.id, CheckKind.tieout)
         items.append(
             DealListItem(
                 id=deal.id,
@@ -380,6 +420,9 @@ async def list_deals(
                 client=deal.client_name,
                 artifacts=len(await repository.current_artifacts(deal.id)),
                 open_findings=counts.get("open", 0),
+                # The run's own finishing time, not the row's: a run that
+                # was started and never finished has not checked anything.
+                checked_at=run.finished_at if run else None,
             )
         )
     return items
@@ -495,8 +538,9 @@ async def upload_artifact(
         raise HTTPException(
             status_code=415,
             detail=(
-                f"{filename} is not a file this can read — "
-                "models are .xlsx or .xls, decks are .pptx"
+                f"{filename} is not a file this can read — models are "
+                ".xlsx or .xls, decks are .pptx, memos are .docx, and a "
+                "source document is a .pdf"
             ),
         )
 
@@ -679,21 +723,29 @@ async def run_checks(
     auth_subject: auth.TieOutWrite,
     session: AsyncSession = Depends(get_db_session),
 ) -> list[CheckRunRead]:
-    """Reconcile the deck against the model, and check the model against itself.
+    """Every check this deal can answer, in one press.
 
-    Both, because they answer different questions and a banker asking « is
-    this deck right » means both. Reads rows only: no file is opened, which
-    is what makes a confirmed link re-checkable forever.
+    Three now, because they answer three different questions and a banker
+    asking « is this deck right » means all of them: does the deck agree
+    with the model, does the model agree with itself, and does the model
+    agree with the documents its inputs came out of. Reads rows only: no
+    file is opened, which is what makes a confirmed link re-checkable
+    forever.
 
-    A run that could not happen — no model in the deal yet — comes back
-    `failed` with a sentence rather than an HTTP error. It is a state of
-    the deal, not a bad request.
+    A run that could not happen — no model in the deal yet, no source
+    document to ground anything in — comes back `failed` with a sentence
+    rather than an HTTP error. It is a state of the deal, not a bad
+    request, and « this deal has no source document » is a fact worth
+    putting on screen rather than an error worth hiding.
     """
     await _deal(session, dossier_id, auth_subject.subject.id)
     user_id = auth_subject.subject.id
-    tie = await tieout.run_tieout(session, dossier_id=dossier_id, user_id=user_id)
-    audit = await tieout.run_audit(session, dossier_id=dossier_id, user_id=user_id)
-    return [one for one in (_run(tie), _run(audit)) if one is not None]
+    runs = [
+        await tieout.run_tieout(session, dossier_id=dossier_id, user_id=user_id),
+        await tieout.run_audit(session, dossier_id=dossier_id, user_id=user_id),
+        await tieout.run_crosscheck(session, dossier_id=dossier_id, user_id=user_id),
+    ]
+    return [one for one in (_run(run) for run in runs) if one is not None]
 
 
 @router.get("/deals/{dossier_id}/runs", response_model=list[CheckRunRead])
@@ -702,12 +754,13 @@ async def list_runs(
     auth_subject: auth.TieOutRead,
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> list[CheckRunRead]:
-    """The last tie-out and the last audit — when this was last true."""
+    """The last run of each checker — when each of these was last true."""
     await _deal(session, dossier_id, auth_subject.subject.id)
     repository = TieOutRepository.from_session(session)
     runs = [
         await repository.latest_run(dossier_id, CheckKind.tieout),
         await repository.latest_run(dossier_id, CheckKind.audit),
+        await repository.latest_run(dossier_id, CheckKind.crosscheck),
     ]
     return [one for one in (_run(run) for run in runs) if one is not None]
 
@@ -741,7 +794,8 @@ async def list_findings(
     filenames = {
         one.id: one.filename for one in await repository.list_artifacts(dossier_id)
     }
-    return [_finding(one, filenames) for one in findings]
+    corrections = await repository.corrections_by_fingerprint(dossier_id)
+    return [_finding(one, filenames, corrections) for one in findings]
 
 
 @router.patch("/findings/{finding_id}", response_model=FindingRead)
@@ -770,7 +824,37 @@ async def update_finding(
         one.id: one.filename
         for one in await repository.list_artifacts(finding.dossier_id)
     }
-    return _finding(finding, filenames)
+    corrections = await repository.corrections_by_fingerprint(finding.dossier_id)
+    return _finding(finding, filenames, corrections)
+
+
+@router.get("/artifacts/{artifact_id}/chain", response_model=list[ChainStep])
+async def get_cell_chain(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    ref: str = Query(description="A cell in this model — « Model!D26 »."),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[ChainStep]:
+    """Where one cell's number comes from, without a finding to ask through.
+
+    « Trace this figure » on a cell nobody has reported anything about.
+    The chain a finding carries starts from a problem; this starts from a
+    question, which is the more common one — a banker reads a number in a
+    model and wants to know what is behind it before it reaches a deck.
+
+    A typed input ends with the document it was read out of, when a source
+    document in this deal has been matched to it.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    steps = await tieout.chain_for(
+        session,
+        artifact_id=artifact.id,
+        ref=ref,
+        dossier_id=artifact.dossier_id,
+    )
+    if not steps:
+        raise ResourceNotFound(f"{ref} is not a cell in this model.")
+    return [ChainStep(**one) for one in steps]
 
 
 @router.get("/findings/{finding_id}/chain", response_model=ChainRead)
@@ -918,6 +1002,132 @@ async def decide_link(
     figures = await repository.figures_by_id([link.figure_id])
     cells = await repository.cells_by_id([link.cell_id])
     return _link(link, figures, cells, user if link.confirmed_by_id else None)
+
+
+# --- corrections ---------------------------------------------------------
+
+
+@router.get("/deals/{dossier_id}/corrections", response_model=list[CorrectionRead])
+async def list_corrections(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[CorrectionRead]:
+    """Every change proposed on this deal, and what became of it.
+
+    The record of what this product *did* to the documents, as opposed to
+    what it found in them. A correction outlives the finding it came from:
+    once it has been applied the drift is gone, so the finding is gone, and
+    this is the only thing left that says the deck used to read $49.6mm.
+    """
+    await _deal(session, dossier_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    rows = await repository.corrections_of(dossier_id)
+    deciders = await repository.uploaders(
+        [one.decided_by_id for one in rows if one.decided_by_id]
+    )
+    return [
+        _correction(one, deciders.get(one.decided_by_id) if one.decided_by_id else None)
+        for one in rows
+    ]
+
+
+@router.post(
+    "/findings/{finding_id}/correction",
+    response_model=CorrectionRead,
+    status_code=201,
+)
+async def propose_correction(
+    finding_id: UUID,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> CorrectionRead:
+    """« The deck should read $48.9mm » — written down, not applied.
+
+    Idempotent: asking twice gives the proposal that already exists. A
+    finding nothing can be written for — an audit defect in a model, whose
+    fix is a decision about a formula — comes back 422 with the sentence
+    saying why, because « this cannot be corrected » is an answer a screen
+    should show rather than a state it should have to infer.
+    """
+    repository = TieOutRepository.from_session(session)
+    finding = await repository.get_finding(finding_id)
+    if finding is None:
+        raise ResourceNotFound("Finding not found.")
+    await _deal(session, finding.dossier_id, auth_subject.subject.id)
+
+    try:
+        correction = await writing.propose(
+            session, finding=finding, user_id=auth_subject.subject.id
+        )
+    except NotCorrectable as problem:
+        raise HTTPException(status_code=422, detail=str(problem)) from problem
+    return _correction(correction, auth_subject.subject)
+
+
+@router.post("/corrections/{correction_id}", response_model=CorrectionRead)
+async def decide_correction(
+    correction_id: UUID,
+    decision: CorrectionDecision,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> CorrectionRead:
+    """Accept it, keep the deck as it is, undo it, or report it was written.
+
+    **A write that fails comes back 200 with `state: failed`.** It is not a
+    bad request — the request was fine and the document had moved — and a
+    banker who pressed Accept has to be able to see afterwards whether the
+    deck changed. An HTTP error leaves nothing on the record to look at.
+    """
+    repository = TieOutRepository.from_session(session)
+    correction = await repository.get_correction(correction_id)
+    if correction is None:
+        raise ResourceNotFound("Correction not found.")
+    user = auth_subject.subject
+    await _deal(session, correction.dossier_id, user.id)
+
+    try:
+        if decision.action == "accept":
+            settled = await writing.apply(
+                session, correction=correction, user_id=user.id
+            )
+        elif decision.action == "reject":
+            settled = await writing.reject(
+                session, correction=correction, user_id=user.id
+            )
+        elif decision.action == "reverse":
+            settled = await writing.reverse(
+                session, correction=correction, user_id=user.id
+            )
+        elif decision.action == "propose":
+            settled = await writing.reopen(
+                session, correction=correction, user_id=user.id
+            )
+        else:
+            settled = await writing.record_in_document(
+                session, correction=correction, user_id=user.id
+            )
+    except NotCorrectable as problem:
+        raise HTTPException(status_code=422, detail=str(problem)) from problem
+    return _correction(settled, user)
+
+
+@router.get("/artifacts/{artifact_id}/download", response_model=None)
+async def download_artifact(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> dict[str, str]:
+    """A link to the file itself — the corrected deck, in particular.
+
+    A correction that cannot leave the building is not a correction. This
+    is how the deck a banker sends out gets the accepted figure in it.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        return {"url": download_url(artifact), "filename": artifact.filename}
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
 
 
 __all__ = ["router"]

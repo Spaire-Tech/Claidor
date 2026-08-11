@@ -22,39 +22,55 @@ into it.
 
 What « complete » means, in order:
 
-1. **The agent.** The composer on the front screen accepts a question and
-   nothing answers. It is the first thing anyone sees and it is dead.
-2. **Writing.** « Record $48.9mm » becomes « Accept » — the correction
-   goes into the file, reversibly.
-3. The five dock screens that say « not connected »: Mail, Calendar,
-   SharePoint, Projects, Terminal.
+1. ~~**The agent.**~~ Done, 10 August. The composer answers, and every
+   figure in the answer came back from a tool in the same turn.
+2. ~~**Writing.**~~ Done, 10 August. « Record $48.9mm » is « Accept
+   $48.9mm », the correction goes into the file, and Undo takes it out.
+3. ~~**The five dock screens that say « not connected ».**~~ Done, 10
+   August. Projects and Terminal had real data behind them and are built
+   on it; Mail, Calendar and SharePoint need a source that does not exist
+   yet and say so, by name, with somewhere to go meanwhile.
 
 ---
 
 ## The line the product is standing on
 
-**Reading is nearly finished. Writing has not started.**
+**It reads, and now it writes.** As of 10 August a figure a banker accepts
+changes in the file — in the deal's copy through the workspace, in their
+own copy through the panel — and Undo changes it back.
 
-Everything built so far *finds* things. Nothing *fixes* anything. That is
-the honest halfway mark, and it is the single most useful sentence in this
-document.
+**Every screen in the dock now does something**, and the three that cannot
+yet say precisely what they are waiting for.
+
+**The chain no longer stops inside the building.** A typed input ends at
+the page of the audited accounts it was read out of, which is the last
+thing the design drew that this could not do.
+
+**A deal can read the room its files live in.** As of 11 August a deal is
+pointed at a SharePoint folder and syncs from it, and nothing about that
+has been proven against a real Microsoft tenant.
+
+What is left is the rest of the connectors — Outlook and Teams, and house
+rules as configuration — and accuracy, which is forever.
 
 | | State |
 |---|---|
 | Engine — decks, models, memos, audit, chain | Done |
 | Persisted spine — artifacts, figures, cells, links, findings | Done |
-| API — 17 routes, anchors, identity, panel auth | Done |
-| Workspace — 8 of 13 screens live | Part |
+| API — 37 routes, anchors, identity, panel auth | Done |
+| Workspace — 12 of 13 screens on real data, 2 waiting on a source | Done |
 | Office panel — plumbing and screen both done | Done |
-| Writing — proposals, apply, reverse | **Not started** |
-| PDF sources, connectors, firm standards | Not started |
+| Writing — proposals, apply, reverse | Done |
+| PDF sources — the chain's last hop | Done |
+| SharePoint and OneDrive | Done, against a stub |
+| Outlook, Teams, firm standards | Not started |
 | Accuracy — deck 83 %, model 56 %, both by mutation | Measured |
 
 ---
 
 ## Phases, in the order I am doing them
 
-### 1 · Upload  *(the product cannot be used without it)*
+### 1 · Upload  ✓ *(10 August)*
 
 There is no way to put a file in through the interface. The endpoint has
 existed since the spine landed; the data room can only list. Every demo
@@ -66,7 +82,7 @@ can try it at all.
 - A failed file **stays in the list** with the server's sentence on it
 - Re-upload of the same name makes a version, and the screen says so
 
-### 2 · The confirmation queue  *(the mechanism the promise rests on)*
+### 2 · The confirmation queue  ✓ *(10 August)*
 
 The engine proposes a link; a banker confirms it; from then on re-checking
 that figure is arithmetic that cannot come out differently. That is why a
@@ -81,7 +97,7 @@ The API is complete: `/deals/{id}/links`, `/links/{id}` with alternatives,
 - « Point it somewhere else » — search the model's cells
 - Confirmed state visible in the figure library
 
-### 3 · Density  *(the state the design has never met)*
+### 3 · Density  ✓ *(10 August)*
 
 Every screen is drawn at seven findings and nine files. Real numbers are
 128 figures per deck, hundreds of findings, thousands of data-room files.
@@ -127,7 +143,7 @@ What it still needs is the thing behind it rather than the screen: writing.
 Today the two actions record a decision against the finding. « Accept
 $41.9m » only becomes true when phase 6 lands.
 
-### 6 · Writing  *(re-cut 10 August — smaller than it looked)*
+### 6 · Writing  ✓ *(10 August)*
 
 Two corrections, both from the founder, both material.
 
@@ -145,26 +161,75 @@ change (`Finding.printed` and `Finding.expected`), so accept writes the
 new value, reject leaves the old, reverse writes it back, and the file
 stays a normal file. `docs/pierce/writing-pptx.md` has the whole of it.
 
-- The proposal layer: a change is proposed, never applied
-- `.pptx` write — the two real problems are **split runs** (a figure is
-  often not one run) and **charts in two places** (the cache *and* the
-  embedded workbook). Both have published solutions
-- Word — adapt `src/office/redline.ts` from the fork
-- Apply on accept, reverse, and « nothing leaves the firm without a banker
-  accepting it »
+- ~~The proposal layer~~ — `Correction`, keyed on the finding's
+  fingerprint so it survives the run that deletes the finding, and holding
+  both sides so reversal needs no revision format
+- ~~`.pptx` write~~ — split runs and charts in two places, both as the
+  document said. A third turned up that the document did not predict: **a
+  shape id is not unique**, and slide 3 of the Cascade deck proves it
+- ~~Word~~ — a tracked change, adapted from the fork's `redline.ts` in the
+  panel and from `redline.ooxml` on the server
+- ~~Apply on accept, reverse~~ — applying makes a new version, never an
+  overwrite, so undo is an ordinary write in the other direction
 
-### 7 · PDF sources  *(the chain's last hop)*
+**It needed the file kept.** Reading never wanted the document after
+ingest; writing cannot happen without it. Storing is best-effort and a
+document that was not kept says so, in a sentence with a next step in it.
 
-The design already draws it: *Audited accounts FY24 · p.42*. Today the
-chain stops at a typed input, which is the edge of the model and the
-beginning of the real question. A PDF is ink rather than structure, so
-this is a different engine from the spreadsheet one.
+What was left out rather than faked is in the worklog: tables and charts
+from inside PowerPoint, which a task pane cannot reach; writing to a model
+at all; and « Accept all ».
 
-### 8 · Connectors and firm standards
+### 7 · PDF sources  ✓ *(10 August)*
 
-SharePoint, OneDrive, Outlook, Teams as sources. House rules as
-configuration. Both also solve document identity properly — a drive item
-id beats a filename guess.
+The design already drew it: *Audited accounts FY24 · p.42*, and the chain
+ends there now. A PDF is ink rather than structure, so the reader is the
+memo's shape rather than the workbook's — figures in prose, named by the
+words in front of them — with a real page number, which is the thing that
+makes a grounded figure checkable by a person.
+
+- ~~Read a source document~~ — `source.py`, and a scan is refused with the
+  OCR instruction rather than read as an empty document
+- ~~Ground the model in it~~ — the tie-out's own matcher pointed the other
+  way, against **typed inputs only**: a computed cell agreeing with the
+  accounts is arithmetic working, not provenance
+- ~~Say when they disagree~~ — a `contradiction`, which is a different
+  sentence from a drift and has a different fix. `CheckKind.crosscheck`
+  had existed unused since the spine landed and this is what it was for
+- ~~The chain's last step~~ — the document, the page, the sentence, and
+  whether anybody has confirmed it
+
+What it does not do: table rows. A statement's columns are headings the
+prose reader cannot see, so a figure in one is named by its row alone and
+usually goes unlinked — the safe direction, and a real gap. Notes carry
+the period in words and link cleanly.
+
+### 8 · Connectors and firm standards  ◐ *(11 August — SharePoint only)*
+
+SharePoint and OneDrive as sources, through Microsoft Graph. Delegated
+access only — this connector reads exactly what the person who connected
+it can already open, and **never writes to a customer's file store**.
+
+- ~~Connect an account~~ — `connector/`, OAuth with a signed state that
+  carries the organization and the person, because the browser coming
+  back from Microsoft may not carry the cookie at all
+- ~~Point a deal at a folder~~ — by drive item id, not by path
+- ~~Sync it~~ — content tag in, content tag out: a file that has not
+  changed is not downloaded again, a rename is not a second document, and
+  everything skipped is counted with a reason
+- ~~The screen~~ — `screens/SharePoint.tsx`, the design's document
+  library with a **real** sync column: Synced, Stale, Not read, against
+  what this deal actually holds
+- ~~Exercise it without a tenant~~ — `scripts/graph_stub.py` serves the
+  Cascade files as a document library over Graph's own shapes, which is
+  how everything above got looked at
+
+**Nothing here has run against a real tenant**, and that is the honest
+state: the shapes come from the published API and the wiring above them is
+real. The first connection will find something.
+
+Still waiting: Outlook and Teams — Mail and Calendar are still
+`screens/Waiting.tsx`, and house rules as configuration has not started.
 
 ### 9 · Accuracy — forever, never blocking
 

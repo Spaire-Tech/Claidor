@@ -27,7 +27,7 @@
 
 import { useMemo, useState } from 'react'
 
-import type { GridCell, Finding, ModelGrid } from '../api'
+import type { Finding, GridCell, ModelGrid } from '../api'
 import { Nothing, Truncation, useWindowed } from '../Dense'
 import { colour, font, size } from '../design'
 

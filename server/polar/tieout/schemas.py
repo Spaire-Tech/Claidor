@@ -19,7 +19,7 @@ an engine nobody can calibrate against.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import Field
@@ -30,6 +30,8 @@ from polar.models import (
     ArtifactStatus,
     CheckKind,
     CheckStatus,
+    CorrectionState,
+    CorrectionWhere,
     FindingKind,
     FindingSeverity,
     FindingState,
@@ -138,6 +140,11 @@ class DealPage(Schema):
     id: UUID
     name: str
     client: str | None
+    #: Whose deal it is. On screen only for the connector: a connection is
+    #: made once per organization and per person, not per deal, so the
+    #: SharePoint screen has to ask about the organization rather than the
+    #: deal it happens to be open on.
+    organization_id: UUID
     coverage: Coverage
     #: The current version of each model, deck and memo — the documents
     #: every other screen opens. Tens, not thousands.
@@ -181,6 +188,59 @@ class FindingSource(Schema):
     artifact_id: UUID | None
 
 
+class CorrectionRead(Schema):
+    """A change to a document: proposed, decided, and reversible.
+
+    Both sides travel on it. `before` is what the document says today and
+    `after` is what it would say, which is what makes « Undo » a write
+    rather than a revision format the `.pptx` specification does not have.
+    """
+
+    id: UUID
+    #: The finding's durable identity, so a screen can put a correction
+    #: against the row it belongs to after a re-run has rebuilt every
+    #: finding with a new id.
+    fingerprint: str
+    state: CorrectionState
+    #: `file` — the deal's own copy, now one version further on — or
+    #: `document`, meaning somebody accepted it in the copy open in Office
+    #: and this deal has not seen those bytes.
+    where: CorrectionWhere
+    before: str
+    after: str
+    #: The cell the figure ties to once this is applied — `Model!D26`. It
+    #: is on the correction rather than looked up, because the finding it
+    #: came from is deleted by the run that proves the correction worked.
+    source: str
+    page: int
+    location: str
+    artifact_id: UUID
+    #: The version applying produced, when there is one.
+    wrote_artifact_id: UUID | None
+    #: Why a write was refused, in the writer's own words. Kept on the
+    #: record: a banker who pressed Accept has to be able to find out
+    #: whether the deck changed.
+    error: str | None
+    decided_by: Uploader | None
+    decided_at: datetime | None
+    created_at: datetime
+
+
+class CorrectionDecision(Schema):
+    """What to do with a proposal.
+
+    `accept` writes it into the deal's copy and makes that a new version.
+    `reject` leaves the document alone — and does **not** dismiss the
+    finding, because « the deck is right » and « stop telling me » are
+    different sentences. `reverse` writes the old figure back. `applied`
+    is the panel reporting that it wrote the change into the document open
+    in front of somebody, which is the one case where the bytes never come
+    here.
+    """
+
+    action: Literal["accept", "reject", "reverse", "applied", "propose"]
+
+
 class FindingRead(Schema):
     id: UUID
     kind: FindingKind
@@ -206,6 +266,9 @@ class FindingRead(Schema):
     standard: str | None
     rule: str | None
     created_at: datetime
+    #: The change proposed for this finding, once anybody has looked at
+    #: it. Null means nothing has been proposed — never « nothing can be ».
+    correction: CorrectionRead | None = None
 
 
 class FindingUpdate(Schema):
@@ -398,13 +461,22 @@ class PanelToken(Schema):
 
 
 class DealListItem(Schema):
-    """For the panel's « which deal does this document belong to ». Once."""
+    """One deal in a list of them — the panel's picker, and Projects.
+
+    `checked_at` is the field that keeps the list honest. « No open
+    findings » on a deal nobody has ever checked reads exactly like « no
+    open findings » on a deal that was checked this morning, and the whole
+    product turns on those two never looking the same. Null means the check
+    has not run, and the screen has to say so in those words.
+    """
 
     id: UUID
     name: str
     client: str | None
     artifacts: int
     open_findings: int
+    #: When this deal was last reconciled. Null: never.
+    checked_at: datetime | None = None
 
 
 # --- the model page ------------------------------------------------------

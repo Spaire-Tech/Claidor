@@ -26,6 +26,8 @@ from polar.models import (
     CheckKind,
     CheckRun,
     CheckStatus,
+    Correction,
+    CorrectionState,
     Dossier,
     DossierMember,
     Figure,
@@ -96,8 +98,23 @@ class TieOutRepository(RepositoryBase[Artifact]):
         filename: str,
         uploaded_by_id: UUID,
         file_id: UUID | None = None,
+        external_id: str | None = None,
+        external_version: str | None = None,
+        lineage_of: UUID | None = None,
     ) -> Artifact:
-        lineage_id = await self.find_lineage(dossier_id, filename) or uuid4()
+        """One version of one document, in the lineage it belongs to.
+
+        **Which document this is, in the best terms available.** A caller
+        that knows the store's own identity — a sync, which has a drive
+        item id — passes the lineage it found by that id, and a rename is
+        a rename rather than a second document. A hand upload has only the
+        filename, which is a guess and has always been one, and keeps it.
+        """
+        lineage_id = (
+            lineage_of
+            or await self.find_lineage(dossier_id, filename)
+            or uuid4()
+        )
         version = await self.next_version(dossier_id, lineage_id)
         artifact = Artifact(
             dossier_id=dossier_id,
@@ -105,6 +122,8 @@ class TieOutRepository(RepositoryBase[Artifact]):
             filename=filename,
             uploaded_by_id=uploaded_by_id,
             file_id=file_id,
+            external_id=external_id,
+            external_version=external_version,
             lineage_id=lineage_id,
             version=version,
             status=ArtifactStatus.processing,
@@ -233,7 +252,9 @@ class TieOutRepository(RepositoryBase[Artifact]):
                 select(
                     func.count(Artifact.id),
                     func.count(func.distinct(Artifact.lineage_id)),
-                ).where(Artifact.dossier_id == dossier_id, Artifact.deleted_at.is_(None))
+                ).where(
+                    Artifact.dossier_id == dossier_id, Artifact.deleted_at.is_(None)
+                )
             )
         ).one()
         return int(rows[0]), int(rows[1])
@@ -415,21 +436,72 @@ class TieOutRepository(RepositoryBase[Artifact]):
         return link
 
     async def replace_proposals(
-        self, dossier_id: UUID, links: Sequence[FigureLink]
+        self,
+        dossier_id: UUID,
+        links: Sequence[FigureLink],
+        *,
+        figures_on: Sequence[UUID] | None = None,
     ) -> None:
         """Swap the proposals, leaving anything a person decided alone.
 
         A re-run must never undo a confirmation or resurrect a rejection —
         those are the only facts in the table.
+
+        **Scoped to the documents the run actually read.** Two checkers
+        propose links now: the tie-out, between a deliverable's figures and
+        the model's cells, and the crosscheck, between a source document's
+        figures and the model's typed inputs. They share this table because
+        they are the same claim — *this printed number is that cell* — and
+        a banker confirms both the same way. Without `figures_on` the
+        second to run would delete the first's work, which is the sort of
+        defect that looks like a flaky linker for a week.
         """
-        await self.session.execute(
-            delete(FigureLink).where(
-                FigureLink.dossier_id == dossier_id,
-                FigureLink.state == LinkState.proposed,
+        where = [
+            FigureLink.dossier_id == dossier_id,
+            FigureLink.state == LinkState.proposed,
+        ]
+        if figures_on is not None:
+            where.append(
+                FigureLink.figure_id.in_(
+                    select(Figure.id).where(Figure.artifact_id.in_(figures_on))
+                )
             )
-        )
+        await self.session.execute(delete(FigureLink).where(*where))
         self.session.add_all(links)
         await self.session.flush()
+
+    async def grounding_for(
+        self, dossier_id: UUID, cell_id: UUID
+    ) -> tuple[FigureLink, Figure, Artifact] | None:
+        """The source document a typed input was matched to, if any.
+
+        One link, and the best one: a confirmed link outranks a proposal,
+        because from the moment somebody vouches for it the chain's last
+        hop is a fact rather than a guess. A rejected link is not an
+        answer at all — somebody looked at exactly this and said no.
+        """
+        statement = (
+            select(FigureLink, Figure, Artifact)
+            .join(Figure, Figure.id == FigureLink.figure_id)
+            .join(Artifact, Artifact.id == Figure.artifact_id)
+            .where(
+                FigureLink.dossier_id == dossier_id,
+                FigureLink.cell_id == cell_id,
+                FigureLink.deleted_at.is_(None),
+                FigureLink.state.in_([LinkState.confirmed, LinkState.proposed]),
+                Artifact.kind == ArtifactKind.source,
+                Artifact.deleted_at.is_(None),
+            )
+            # `confirmed` sorts before `proposed` alphabetically, which is
+            # luck rather than design, so it is ordered explicitly.
+            .order_by(
+                (FigureLink.state == LinkState.confirmed).desc(),
+                FigureLink.confidence.desc(),
+            )
+            .limit(1)
+        )
+        row = (await self.session.execute(statement)).first()
+        return (row[0], row[1], row[2]) if row is not None else None
 
     async def decided_pairs(self, dossier_id: UUID) -> set[tuple[UUID, UUID]]:
         """Figure/cell pairs a person has already ruled on."""
@@ -599,6 +671,57 @@ class TieOutRepository(RepositoryBase[Artifact]):
         self.session.add(finding)
         await self.session.flush()
         return finding
+
+    # --- corrections ----------------------------------------------------
+
+    async def corrections_of(
+        self, dossier_id: UUID, *, state: CorrectionState | None = None
+    ) -> Sequence[Correction]:
+        """Every correction on the deal, newest decision last.
+
+        Ordered by where it sits rather than by when it was proposed: a
+        reader going through a deck wants slide 2 before slide 7, and the
+        order a check happened to emit them in means nothing to anybody.
+        """
+        statement = (
+            select(Correction)
+            .where(
+                Correction.dossier_id == dossier_id,
+                Correction.deleted_at.is_(None),
+            )
+            .order_by(Correction.page, Correction.created_at)
+        )
+        if state is not None:
+            statement = statement.where(Correction.state == state)
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def correction_for(
+        self, dossier_id: UUID, fingerprint: str
+    ) -> Correction | None:
+        """The correction on one finding, by the identity that survives a run."""
+        statement = select(Correction).where(
+            Correction.dossier_id == dossier_id,
+            Correction.fingerprint == fingerprint,
+            Correction.deleted_at.is_(None),
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    async def corrections_by_fingerprint(
+        self, dossier_id: UUID
+    ) -> dict[str, Correction]:
+        """Every correction, keyed the way a finding is found again."""
+        return {one.fingerprint: one for one in await self.corrections_of(dossier_id)}
+
+    async def save_correction(self, correction: Correction) -> Correction:
+        self.session.add(correction)
+        await self.session.flush()
+        return correction
+
+    async def get_correction(self, correction_id: UUID) -> Correction | None:
+        statement = select(Correction).where(
+            Correction.id == correction_id, Correction.deleted_at.is_(None)
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
 
 
 __all__ = ["TieOutRepository"]

@@ -31,7 +31,7 @@ and a column. Those mostly go unlinked, which is the safe direction and a
 real gap.
 
 *No reliable headings.* What is used instead is a conservative rule (see
-:func:`_is_heading`), and being wrong about it is cheap: a section only
+:func:`is_heading`), and being wrong about it is cheap: a section only
 ever *supports* a link in the scorer and can never carry one on its own.
 """
 
@@ -77,7 +77,7 @@ def read_memo_text(text: str) -> Extraction:
 
         named = name_figures(line)
         if not named:
-            if _is_heading(line):
+            if is_heading(line):
                 section = line
             continue
 
@@ -117,7 +117,7 @@ def read_memo_text(text: str) -> Extraction:
     return extraction
 
 
-def _is_heading(line: str) -> bool:
+def is_heading(line: str) -> bool:
     """A conservative guess at « this names the section below it ».
 
     Short, no terminal punctuation, and either in capitals or numbered —
@@ -139,4 +139,10 @@ def _is_heading(line: str) -> bool:
     return bool(line[0].isdigit() and line[1:2] in {" ", ".", ")"})
 
 
-__all__ = ["HEADING_LENGTH", "NotADocx", "read_memo", "read_memo_text"]
+__all__ = [
+    "HEADING_LENGTH",
+    "NotADocx",
+    "is_heading",
+    "read_memo",
+    "read_memo_text",
+]

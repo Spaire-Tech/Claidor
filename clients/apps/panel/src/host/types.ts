@@ -73,6 +73,22 @@ export interface GoToResult {
   reason?: string
 }
 
+/**
+ * What happened when the panel asked to write a correction in.
+ *
+ * The same shape as :type:`GoToResult` and for the same reason: « it did
+ * not work » is not actionable, and a panel that silently fails to change
+ * a figure looks exactly like one that changed it. Here the stakes are
+ * higher — a banker who believes the slide was corrected sends the deck.
+ */
+export interface WriteResult {
+  written: boolean
+  /** How — `text` · `tracked`. */
+  by: string
+  /** Present when it did not, phrased for a person. */
+  reason?: string
+}
+
 export interface HostBridge {
   readonly host: HostKind
 
@@ -84,6 +100,26 @@ export interface HostBridge {
    * guessing. Returns false where the host has no document to write to.
    */
   stamp(lineageId: string): Promise<boolean>
+
+  /**
+   * Put `after` where `before` is, in the document open right here.
+   *
+   * **The banker's own copy is the one that gets sent**, so this is where
+   * a correction has to land when the panel is the thing being used. The
+   * deal's copy is corrected by the workspace instead, and the server
+   * records which of the two happened.
+   *
+   * Refuses unless the characters about to be replaced are the characters
+   * the reader recorded — the same rule the server's writer keeps, and the
+   * only thing standing between a correction and a deck that has had the
+   * wrong number changed in it.
+   */
+  write(
+    anchor: Anchor,
+    before: string,
+    after: string,
+    page?: number,
+  ): Promise<WriteResult>
 
   /**
    * Select what a finding is about.
