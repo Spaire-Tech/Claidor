@@ -272,7 +272,7 @@ class TestTheDealPage:
         assert {one["kind"] for one in body["documents"]} == {"model", "deck"}
         assert body["files"] == 2
         assert body["lineages"] == 2
-        assert body["coverage"]["reconciled"] == 102
+        assert body["coverage"]["reconciled"] == 103
         assert body["coverage"]["drifting"] == 8
         # The coverage line carries its own misses, with reasons.
         assert body["coverage"]["unlinked"] > 0

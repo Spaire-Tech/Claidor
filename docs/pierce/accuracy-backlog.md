@@ -498,3 +498,124 @@ translate — and a statistical release does not. Whether that is the whole
 explanation is not yet established, and the honest state of the grounding
 leg is: **one class of false positive found and removed on real data, and
 still no demonstrated true positive outside a fixture we wrote.**
+
+## Grounding, finished: three true positives on a model nobody here wrote
+
+The section above ended with « one class of false positive found and
+removed on real data, and still no demonstrated true positive outside a
+fixture we wrote ». That is no longer where it stands.
+
+**The pair that made it possible.** Ofgem publishes the RIIO-ET1 price
+control financial model *and* the direction document that states the values
+fed into it — a real financial model built by working analysts, and a real
+source document, published by the same regulator on the same day. The
+statistical pairs used before were a narrative report against a data dump;
+this is the shape a deal actually has.
+
+```
+uv run python -m scripts.grounding_pairs scripts/corpus_pairs/ofgem-et1-aip-2015
+```
+
+| | Before | After |
+|---|---|---|
+| Typed input cells the model offers | **0** of 26,392 | 7,265 of 25,852 |
+| Figures linked | 0 | 3 |
+| **Agreeing** | 0 | **3** |
+| **Contradicting** | 0 | **0** |
+
+All three confirmed by hand against page 7 of the direction:
+
+```
+15.7  'Legacy price control allowed revenue adjustment 7A …SOLAR'
+      → NGET SO!AH16  = 15.739015040384885
+ 2.9  'Legacy price control RAV additions adjustment 7A …SOLRAV'
+      → NGET SO!AH17  = 2.9301486584244367
+12.6  'Uncertain costs - enhanced security 7D …SOIAEEPS'
+      → NGET SO!AH10  'FY2014 Uncertain costs - enhanced security' = 12.6
+```
+
+### Four defects, each of which produced silence or a lie
+
+Every one was invisible until a real model met a real document, and every
+one now has a test.
+
+**1 · A label may sit past column D.** The label-column search stopped at
+D. Ofgem's model indents through B, C and D for section headings and puts
+its parameter names in **column E**, so all 26,392 cells came back with no
+name at all — which empties the tie-out and the grounding both, since each
+needs a named cell to have anything to match. Widened to H, and the column
+is now chosen by how many *different* things it says rather than how much:
+`£m 09/10 prices` appears on 247 rows of one sheet against 251 parameter
+names beside it, indistinguishable by volume and 10 distinct values against
+143.
+
+**2 · A label that is a formula still names its row.** The model builds one
+sheet per licensed business from its input sheet, so the name beside every
+row of `NGET TO` is `=Input!E31` rather than words, and `_label` refuses a
+formula. The reason it refuses one is about the formula *text* — a column
+of arithmetic must not name the figures beside it — and not about what the
+formula produces. The formula text is still refused; the cached words are
+used. A numeric formula still produces no label, because numbers are not
+strings.
+
+**3 · `TO` is a preposition and also a licensed business.** The transmission
+owner is on `NGET TO` and the system operator on `NGET SO`. `to` is a
+stopword, so `NGET TO` tokenised to `['nget']` — a strict subset of `NGET
+SO`, unable to win any match against it. Every transmission-owner figure in
+the document went to a system-operator cell: **seven false contradictions**.
+A run of capitals is now read as a name rather than a word, unless the whole
+line is set in capitals and is therefore shouting.
+
+**4 · A period header written as a date is not a header.** Ofgem writes
+`2017-03-31` where a banker writes `FY2017A`. A date is not a string, so
+the header row came back empty and all eight year columns of a row carried
+the same name — and a figure naming the row matched whichever column
+happened to hold a typed value. Two more false contradictions, both now
+honest declines. Read as `FY` plus the calendar year, which is a convention
+and is documented as one.
+
+### And one thing the model knew that the matcher was not told
+
+The model holds `Legacy price control adjustments to allowed revenue` on
+the transmission owner's sheet *and* on the system operator's, word for
+word. The direction document prints the same row and tells them apart by
+the licence term beside it — `LAR` against `SOLAR` — and **the model has
+that term too, three columns along**. Those descriptors now go into the
+matcher's `basis`, weighted below the name so they can settle a tie and
+never carry a match on their own: `£m 09/10 prices` is on hundreds of rows
+and says nothing about which one.
+
+### A miss the Cascade deck had been carrying
+
+Adding row descriptors put a sheet called *FY2025 balance sheet* into a
+cell's basis and broke a grounding test — which turned out to be a latent
+bug rather than a regression. `FY2025` was treated as a different period
+from `FY2025A`. An unmarked year asserts a year and not a basis; refusing
+to match it rejects the right cell for saying less rather than for saying
+something else. Actuals and estimates are still held apart, which is what
+the gate is for.
+
+Fixing it raised the Cascade deck's reconciled count from **102 to 103**:
+slide 4's « ERP implementation of FY2025 programme cost » is `Model!D21`,
+*FY2025A EBITDA adjustments ERP implementation costs*, and both say 2.8.
+One figure, verified by hand, and a real miss rather than a new guess.
+
+### What still declines, and why that is the right answer
+
+- **The other two directions** — SHE Transmission and SP Transmission — are
+  narrative documents that name a figure by its licence code alone: « ARC
+  revision », « ACO revision ». The code is in the model, in the basis, and
+  the basis is deliberately not allowed to carry a match by itself. Nothing
+  links, and nothing is wrong.
+- **The gov.uk statistical pairs** link nothing. A narrative release against
+  a data dump repeats the same row label across dozens of sheets and
+  columns, and the prose names no period, so the matcher ties and declines.
+  Verified on one: the true cell for « 13,686 FTE are Support to clinical
+  staff » is sheet `3`, `C24`, `13686.22` — scored 0.82 and refused because
+  two other cells scored 0.82 as well.
+- **A row of eight years** gives its label to the first figure only; the
+  rest are rejected as unnamed. Reading those needs real table reading,
+  which stays deferred — see the pdfplumber note above.
+
+**Formula coverage was re-measured after all of this and is unchanged**:
+59,705 formulas across three real models, 0 silent partial losses.

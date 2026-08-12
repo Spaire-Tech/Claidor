@@ -134,6 +134,19 @@ class Cell:
     #: formulas in the 2015 Ofgem transmission model were in that state
     #: before names were read.
     unresolved: tuple[tuple[str, str], ...] = ()
+    #: The other short words printed on this row, left of the data: a
+    #: units column, a licence-condition reference, a mnemonic. Kept apart
+    #: from `row_label` on purpose — they say what kind of thing the row is
+    #: rather than what it is called, so they belong with the sheet name in
+    #: the matcher's `basis` and are weighted below the name there.
+    #:
+    #: **They can be the only thing that tells two rows apart.** Ofgem's
+    #: model holds `Legacy price control adjustments to allowed revenue` on
+    #: the transmission owner's sheet and on the system operator's, with
+    #: the same words; the direction document prints the same row and
+    #: distinguishes them by the licence term beside it, `LAR` against
+    #: `SOLAR`. The model has that term too, three columns along.
+    row_tags: tuple[str, ...] = ()
     #: Set when the whole formula is a single reference — `=Model!D26`,
     #: `=F13`. Such a cell restates a figure rather than being one, and
     #: Cascade has six of them: the comps bridge pulls adjusted EBITDA from
@@ -302,20 +315,22 @@ def _names_of(formulas: Any) -> Names:
 def _read_sheet(
     book: Workbook, name: str, sheet: Any, cached: Any, names: Names | None = None
 ) -> None:
-    header_row = _header_row(sheet)
-    label_column = _label_column(sheet)
+    header_row = _header_row(sheet, cached)
+    label_column = _label_column(sheet, cached)
 
     #: The last row label that named a line item rather than a derivation
     #: of one, so « % growth » reads as « growth of that ».
     subject = ""
     labels: dict[int, str] = {}
     for row in range(1, sheet.max_row + 1):
-        raw = sheet.cell(row, label_column).value
-        named = _label(raw)
+        named = _shown(sheet, cached, row, label_column)
         text = named.strip() if named else ""
         if not text:
             continue
-        indented = isinstance(raw, str) and raw[:1].isspace()
+        # Indentation is how a model marks a derived row, and it is a
+        # property of the words shown rather than of the formula that
+        # produced them.
+        indented = named is not None and named[:1].isspace()
         derived = DERIVED_ROW.match(text) is not None or (indented and subject)
         if derived and subject and subject.lower() not in text.lower():
             labels[row] = f"{subject} {text}"
@@ -325,10 +340,29 @@ def _read_sheet(
             subject = text
             labels[row] = text
 
+    #: The short descriptors printed beside the name, per row. Long text is
+    #: left out: columns C and D of a regulator's model carry whole
+    #: paragraphs beginning « Note: », and a paragraph is commentary rather
+    #: than a descriptor of the row.
+    tags: dict[int, tuple[str, ...]] = {}
+    for row in range(1, sheet.max_row + 1):
+        if row == header_row:
+            continue
+        found = []
+        for column in range(1, min(sheet.max_column, LABEL_COLUMNS) + 1):
+            if column == label_column:
+                continue
+            beside = _shown(sheet, cached, row, column)
+            beside = beside.strip() if beside else ""
+            if beside and len(beside) <= TAG_LENGTH:
+                found.append(beside)
+        if found:
+            tags[row] = tuple(found)
+
     headers: dict[int, str] = {}
     if header_row is not None:
         for column in range(1, sheet.max_column + 1):
-            named = _label(sheet.cell(header_row, column).value)
+            named = _shown(sheet, cached, header_row, column)
             if named:
                 headers[column] = named.strip()
 
@@ -372,6 +406,7 @@ def _read_sheet(
                 value=number,
                 formula=formula,
                 row_label=labels.get(row, ""),
+                row_tags=tags.get(row, ()),
                 column_label=headers.get(column, "") if series else "",
                 # Off the *formula* book: the value book is loaded with
                 # `data_only`, and a legacy `.xls` read through xlrd has no
@@ -614,33 +649,115 @@ def _column_index(letters: str) -> int:
     return index
 
 
-def _header_row(sheet: Any) -> int | None:
+def _shown(sheet: Any, cached: Any, row: int, column: int) -> str | None:
+    """The words a cell shows, whether they were typed or computed.
+
+    **A label can be a formula, and refusing every formula loses a whole
+    entity.** Ofgem's price control model keeps one sheet per licensed
+    business and builds each from the input sheet, so the name beside every
+    row of `NGET TO` is `=Input!E31` rather than words. :func:`_label`
+    declines a formula for a good reason — a column of arithmetic would
+    otherwise name every figure beside it after the arithmetic — but the
+    reason is about the *formula text*, not about what the formula
+    produces. Measured on that model: 3,694 typed inputs found, and not one
+    of them on the transmission-owner sheet, so every figure the direction
+    document states for the transmission owner matched a cell belonging to
+    the system operator instead. Seven false contradictions.
+
+    So the formula text is still refused, and the **cached value** is used
+    when the formula produced words. A formula that produced a number
+    produces no label, which is the case `_label` was protecting against
+    and is unaffected: numbers are not strings.
+    """
+    text = _label(sheet.cell(row, column).value)
+    if text is not None:
+        return text
+    value = cached.cell(row, column).value
+    if isinstance(value, str):
+        return value
+    return _period_label(value)
+
+
+def _period_label(value: Any) -> str | None:
+    """A date cell read as the period it heads.
+
+    **A model's column headers are very often real dates.** Ofgem's writes
+    `2017-03-31` where a banker's writes `FY2017A`, and a date is not a
+    string, so the header row came back empty and every one of the eight
+    year columns on a row carried the same name. A figure naming the row
+    and not the year then matched whichever column happened to hold a typed
+    value — reported as the document contradicting the model, twice, on the
+    first real pair.
+
+    `FY` plus the calendar year, because that is the spelling the matcher
+    already understands. **It is a convention and it can be wrong**: a
+    31 March 2017 year end reads `FY2017` here, which is the British
+    convention and not the American one, and a company whose year ends in
+    January would call the same date `FY2016`. No basis letter is added —
+    a date says when, not whether the number is an actual or an estimate,
+    and `_same_period` treats an unmarked year as compatible with either.
+    """
+    year = getattr(value, "year", None)
+    if not isinstance(year, int) or not 1900 <= year <= 2200:
+        return None
+    return f"FY{year}"
+
+
+def _header_row(sheet: Any, cached: Any) -> int | None:
     """The row whose text names the columns. Usually the period header."""
     best: tuple[int, int] | None = None
     for row in range(1, min(sheet.max_row, HEADER_SEARCH) + 1):
         texts = sum(
             1
             for column in range(2, sheet.max_column + 1)
-            if _label(sheet.cell(row, column).value)
+            if _shown(sheet, cached, row, column)
         )
         if texts >= HEADER_TEXTS and (best is None or texts > best[1]):
             best = (row, texts)
     return best[0] if best else None
 
 
-def _label_column(sheet: Any) -> int:
-    """The column holding the row names. Column A in every real model, but
-    found rather than assumed, because a model with a spacer column at the
-    left would otherwise name every one of its rows the empty string."""
+#: How far right the row names may sit. Four was enough for every model
+#: this had seen and not for the one it had not: Ofgem's price control
+#: financial model indents through columns B, C and D for section and
+#: sub-section headings and puts the parameter names in **column E**. With
+#: the search stopping at D, all 26,392 cells in that workbook came back
+#: with no name at all — which silently empties the tie-out and the
+#: grounding both, since each needs a named cell to have anything to
+#: match. Eight covers that layout with room, and is still far to the left
+#: of any data column.
+LABEL_COLUMNS = 8
+
+#: Longer than this and a cell beside the name is commentary, not a
+#: descriptor. Ofgem's model puts whole `Note: …` paragraphs in the two
+#: columns left of its parameter names.
+TAG_LENGTH = 40
+
+
+def _label_column(sheet: Any, cached: Any) -> int:
+    """The column holding the row names.
+
+    **Chosen by how many *different* things a column says, not how much it
+    says.** The obvious rule — the column with the most text in it — picks
+    the units column on a regulator's model: `£m 09/10 prices` appears on
+    247 rows of one sheet against 251 parameter names beside it, so the
+    two are indistinguishable by volume. They are not remotely
+    indistinguishable by variety: 10 distinct values against 143. A column
+    of row names is nearly all distinct by definition, because that is what
+    naming a row is for.
+
+    Ties go left, which keeps column A for the ordinary model that has its
+    labels there and a `Notes` column somewhere off to the right.
+    """
     best, most = 1, -1
-    for column in range(1, min(sheet.max_column, 4) + 1):
-        texts = sum(
-            1
-            for row in range(1, sheet.max_row + 1)
-            if _label(sheet.cell(row, column).value)
-        )
-        if texts > most:
-            best, most = column, texts
+    for column in range(1, min(sheet.max_column, LABEL_COLUMNS) + 1):
+        seen: set[str] = set()
+        for row in range(1, sheet.max_row + 1):
+            text = _shown(sheet, cached, row, column)
+            if text and text.strip():
+                seen.add(text.strip())
+        if len(seen) > most:
+            best, most = column, len(seen)
     return best
 
 

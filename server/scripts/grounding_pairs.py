@@ -31,6 +31,7 @@ prose against a cell named by its row and column.
 """
 
 import sys
+import time
 from pathlib import Path
 
 from polar.tieout.check import compare
@@ -57,8 +58,13 @@ def _measure(folder: Path, *, show: int) -> bool:
         return False
 
     document, workbook = pdfs[0], books[0]
-    print(f"\n=== {folder.name}")
-    print(f"    {document.name}\n    {workbook.name}")
+    print(f"\n=== {folder.name}", flush=True)
+    print(
+        f"    {document.name}\n    {workbook.name} "
+        f"({workbook.stat().st_size / 1_000_000:.1f} MB)",
+        flush=True,
+    )
+    started = time.monotonic()
 
     try:
         extraction = read_source(str(document))
@@ -72,18 +78,20 @@ def _measure(folder: Path, *, show: int) -> bool:
         return False
 
     inputs = inputs_from_workbook(book)
-    links, unlinked = link(extraction.figures, inputs)
-    contradictions, agreed = compare(links)
-
     print(
         f"    {len(extraction.figures):,} named figures "
         f"({extraction.rejected:,} rejected as unnamed) · "
-        f"{len(inputs):,} typed input cells of {len(book.cells):,}"
+        f"{len(inputs):,} typed input cells of {len(book.cells):,} "
+        f"· read in {time.monotonic() - started:.0f}s",
+        flush=True,
     )
     if not extraction.figures or not inputs:
         return False
+
+    links, unlinked = link(extraction.figures, inputs)
+    contradictions, agreed = compare(links)
     print(
-        f"    linked {len(links):,} ({100 * len(links) / len(extraction.figures):.0f}%)"
+        f"    ({time.monotonic() - started:.0f}s) linked {len(links):,} ({100 * len(links) / len(extraction.figures):.0f}%)"
         f" · agreed {len(agreed):,} · contradicted {len(contradictions):,}"
     )
 

@@ -1173,3 +1173,42 @@ template, a named civil servant's home directory reached from a chart, and
 **What is not done.** There is no screen. The check is a function and a
 command line, deliberately — the Word and web designs are yours and I am
 not inventing one to sit in front of this.
+
+---
+
+## 12 August, later — grounding, finished against a real pair
+
+The chain's third leg — a figure in a source document matched to the typed
+input cell it is the origin of — had only ever run against a fixture
+written here. It now runs against Ofgem's price control financial model and
+the direction document that states the values fed into it: **three links,
+three correct, none wrong**, all three checked by hand against page 7.
+
+Getting there meant finding four defects, each of which produced silence or
+a lie rather than an error, and none of which any fixture could have shown:
+
+1. The label-column search stopped at column D; that model names in E, so
+   **all 26,392 of its cells came back unnamed**.
+2. That model builds one sheet per licensed business with `=Input!E31` in
+   the label column, and a formula is not a label — so a whole licence
+   entity had no names.
+3. `TO` is a stopword. `NGET TO` tokenised to `['nget']`, a strict subset
+   of `NGET SO`, so every transmission-owner figure matched a
+   system-operator cell. Seven false contradictions.
+4. Period headers written as dates were not read, so eight year columns
+   shared one name. Two more false contradictions.
+
+Along the way, the Cascade deck turned out to have been carrying a miss:
+`FY2025` was treated as a different period from `FY2025A`. Reconciled went
+from 102 to 103, verified by hand, and the actual-versus-estimate
+distinction the gate exists for is untouched.
+
+Also fixed earlier in the day, on the first real pair the leg ever saw: a
+lookup column counting `1, 2, 3 …` was being offered as a source figure, so
+« 13,686 FTE » matched a cell holding the number ten.
+
+**297 tests.** Formula coverage re-measured and unchanged — 59,705
+formulas, 0 silent losses. Numbers, the declines that are correct declines,
+and what is still deferred are in `accuracy-backlog.md`.
+
+**Still not started: the trace viewer.** Waiting on your design, as agreed.

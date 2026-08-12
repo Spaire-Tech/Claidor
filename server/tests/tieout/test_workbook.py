@@ -232,3 +232,134 @@ def test_without_a_name_map_a_name_is_reported_not_swallowed() -> None:
     assert read.unresolved == (
         ("Tax_Rate", "a defined name, and this workbook's names were not read"),
     )
+
+
+# --- Reading a model laid out the way a regulator lays one out ----------
+#
+# Every case below was found by running the reader against Ofgem's price
+# control financial model and its published direction document — real
+# files, neither written here. Each one silently produced *nothing* rather
+# than something wrong, which is why none of them showed up in a test until
+# somebody measured a pair.
+
+
+def _sheet(rows: list[list[object]], formulas: dict[str, str] | None = None):
+    """A worksheet pair — formulas and cached values — from a grid."""
+    from openpyxl import Workbook as Book
+
+    values = Book()
+    written = Book()
+    for index, row in enumerate(rows, start=1):
+        for column, cell in enumerate(row, start=1):
+            values.active.cell(index, column).value = cell
+            written.active.cell(index, column).value = cell
+    for ref, formula in (formulas or {}).items():
+        written.active[ref] = formula
+    return written.active, values.active
+
+
+def test_a_label_may_sit_past_column_d() -> None:
+    """Ofgem's model indents through B, C and D and names in **E**.
+
+    With the search stopping at D, all 26,392 cells in that workbook came
+    back unnamed, which empties the tie-out and the grounding both.
+    """
+    from polar.tieout.workbook import _label_column
+
+    written, values = _sheet(
+        [
+            ["Depn", None, None, None, None, None],
+            [None, "NGET TO", None, None, None, None],
+            [None, None, None, None, "Slow money", "£m 09/10 prices"],
+            [None, None, None, None, "Net adjustments", "£m 09/10 prices"],
+            [None, None, None, None, "Pre-RIIO net RAV additions", "£m 09/10 prices"],
+        ]
+    )
+    assert _label_column(written, values) == 5
+
+
+def test_the_label_column_is_the_one_with_the_most_different_things_to_say() -> None:
+    """The units column has as much text in it and says one thing.
+
+    On one sheet of the real model `£m 09/10 prices` appears on 247 rows
+    against 251 parameter names beside it — indistinguishable by volume,
+    and 10 distinct values against 143.
+    """
+    from polar.tieout.workbook import _label_column
+
+    written, values = _sheet(
+        [["Allowed revenue", "£m", None], ["Actual opex", "£m", None]] * 6
+    )
+    assert _label_column(written, values) == 1
+
+
+def test_a_label_that_is_a_formula_still_names_its_row() -> None:
+    """A model that mirrors its input sheet writes `=Input!E31` where the
+    name goes. The formula text is refused; the words it produced are not.
+    """
+    from polar.tieout.workbook import _shown
+
+    written, values = _sheet(
+        [["Legacy price control adjustments", 95.5]],
+        formulas={"A1": "=Input!A31"},
+    )
+    assert _shown(written, values, 1, 1) == "Legacy price control adjustments"
+
+
+def test_a_numeric_formula_is_still_not_a_label() -> None:
+    """The reason `_label` refuses formulas in the first place: a column of
+    arithmetic must not name every figure beside it."""
+    from polar.tieout.workbook import _shown
+
+    written, values = _sheet([[42, 7]], formulas={"A1": "=B1*6"})
+    assert _shown(written, values, 1, 1) is None
+
+
+def test_a_date_header_names_the_period_it_heads() -> None:
+    """Ofgem writes `2017-03-31` where a banker writes `FY2017A`.
+
+    Unread, every one of eight year columns on a row carried the same name,
+    and a figure naming the row matched whichever column happened to hold a
+    typed value.
+    """
+    import datetime
+
+    from polar.tieout.workbook import _period_label
+
+    assert _period_label(datetime.datetime(2017, 3, 31)) == "FY2017"
+    assert _period_label(datetime.date(2015, 12, 31)) == "FY2015"
+    assert _period_label("not a date") is None
+    assert _period_label(42) is None
+
+
+def test_the_words_beside_a_name_are_kept_apart_from_it() -> None:
+    """A licence term three columns along can be the only thing telling two
+    identically-named rows apart — `LAR` against `SOLAR`."""
+    import openpyxl
+
+    from polar.tieout.workbook import read_workbook
+
+    book = openpyxl.Workbook()
+    sheet = book.active
+    sheet.title = "NGET TO"
+    sheet["A1"], sheet["B1"], sheet["C1"] = "Period", "Term", "Units"
+    sheet["A2"], sheet["B2"], sheet["C2"] = "Legacy adjustment", "LAR", "£m"
+    sheet["D2"] = 95.5
+    sheet["A3"], sheet["B3"], sheet["C3"] = "Actual opex", "SOACO", "£m"
+    sheet["D3"] = 15.7
+    sheet["A4"], sheet["B4"], sheet["C4"] = "Actual capex", "SOANC", "£m"
+    sheet["D4"] = 32.2
+
+    import io
+
+    payload = io.BytesIO()
+    book.save(payload)
+    path = "/tmp/claude-0/_tags.xlsx"
+    with open(path, "wb") as handle:
+        handle.write(payload.getvalue())
+
+    read = read_workbook(path)
+    cell = read.get("NGET TO!D2")
+    assert cell is not None
+    assert cell.row_label == "Legacy adjustment"
+    assert "LAR" in cell.row_tags

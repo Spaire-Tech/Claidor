@@ -283,7 +283,7 @@ def inputs_from_workbook(book: Workbook) -> list[Output]:
             name=cell.name,
             value=cell.value,
             source=cell.ref,
-            basis=cell.sheet,
+            basis=basis_of(cell),
         )
         for cell in book.cells.values()
         if cell.formula is None
@@ -293,6 +293,23 @@ def inputs_from_workbook(book: Workbook) -> list[Output]:
         and cell.sheet.lower() not in RESTATING_SHEETS
         and (cell.sheet, cell.column) not in counting
     ]
+
+
+def basis_of(cell: Cell) -> str:
+    """What kind of thing a cell is, for the matcher to weigh below its name.
+
+    The sheet, and the short descriptors printed beside the row. A sheet
+    name is the nearest thing a raw workbook has to a stated basis — a
+    figure on the Comps tab is a trading comparable and one on the DCF tab
+    is not — and the descriptors are the rest of that sentence: the units,
+    the licence condition, the mnemonic.
+
+    **Below the name, deliberately.** These words identify a row when its
+    name cannot, and they must never be able to carry a match on their own:
+    `£m 09/10 prices` appears on hundreds of rows of a regulator's model
+    and says nothing about which one.
+    """
+    return " ".join((cell.sheet, *cell.row_tags))
 
 
 #: How many cells in a row must count before the column is an index rather
@@ -329,21 +346,22 @@ def _counting_columns(book: Workbook) -> set[tuple[str, int]]:
     counting: set[tuple[str, int]] = set()
     for where, cells in columns.items():
         ordered = sorted(cells)
-        run_as_row = run_from_one = 0
+        run_as_row = from_one = 0
         previous: tuple[int, int] | None = None
         for row, number in ordered:
-            if number == row:
-                run_as_row += 1
+            run_as_row = run_as_row + 1 if number == row else 0
+            # A run only counts once it has seen a one. Without that
+            # condition any column ascending by one qualifies — which is
+            # every column of consecutive years, and suppressing those
+            # would take a model's period headers out of the grounding set.
+            if number == 1:
+                from_one = 1
+            elif from_one and previous is not None and number == previous[1] + 1:
+                from_one += 1
             else:
-                run_as_row = 0
-            if previous is not None and number == previous[1] + 1:
-                run_from_one += 1
-            elif number == 1:
-                run_from_one = 1
-            else:
-                run_from_one = 0
+                from_one = 0
             previous = (row, number)
-            if max(run_as_row, run_from_one) >= COUNTING_RUN:
+            if max(run_as_row, from_one) >= COUNTING_RUN:
                 counting.add(where)
                 break
     return counting

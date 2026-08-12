@@ -150,17 +150,25 @@ class TestChecking:
     ) -> None:
         """The number the whole product rests on, reached without a file.
 
-        102 reconciled, 94 agreeing, 8 drifting — identical to what the
+        103 reconciled, 95 agreeing, 8 drifting — identical to what the
         offline library gets from the same two files. The eight are real
         and were found in the deck the fixture calls clean.
+
+        Was 102 and 94 until an unmarked year stopped being treated as a
+        different period from a marked one. Slide 4's « ERP implementation
+        of FY2025 programme cost » is `Model!D21`, *FY2025A EBITDA
+        adjustments ERP implementation costs*, and both say 2.8; the match
+        was refused for saying `FY2025` rather than `FY2025A`. One figure,
+        and it was a real miss rather than a new guess — see
+        `link._same_period`.
         """
         deal = await _deal(session, save_fixture, user)
         await _load(session, deal, user)
 
         run = await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
         assert run.status is CheckStatus.done
-        assert run.summary["reconciled"] == 102
-        assert run.summary["agreeing"] == 94
+        assert run.summary["reconciled"] == 103
+        assert run.summary["agreeing"] == 95
         assert run.summary["drifting"] == 8
         # What was *not* checked is part of the answer, and it is counted
         # with the reasons rather than quietly dropped.
@@ -425,3 +433,77 @@ class TestWhatTheScreensAsk:
         counts = await repository.count_findings(deal.id)
         assert counts["open"] == 7
         assert counts["dismissed"] == 1
+
+
+class TestGroundingCandidates:
+    def test_a_column_that_counts_its_own_rows_is_not_a_source_figure(self) -> None:
+        """Found on the first real pair the grounding leg ever saw.
+
+        An NHS lookup sheet counts `1, 2, 3 …` down column A and names the
+        staff group in column B, so `A10` is *called* « Support to clinical
+        staff » and *holds* the number ten. « 13,686 FTE are Support to
+        clinical staff » matched it, and the difference was then reported as
+        the document contradicting the model.
+        """
+        import io
+
+        import openpyxl
+
+        from polar.tieout.provenance import _counting_columns, inputs_from_workbook
+        from polar.tieout.workbook import read_workbook
+
+        book = openpyxl.Workbook()
+        sheet = book.active
+        sheet.title = "Controls"
+        groups = [
+            "Total",
+            "All HCHS doctors",
+            "Consultants",
+            "Doctors in training",
+            "Support to clinical staff",
+            "NHS infrastructure support",
+        ]
+        for index, name in enumerate(groups, start=1):
+            sheet.cell(index, 1).value = index
+            sheet.cell(index, 2).value = name
+            sheet.cell(index, 3).value = 1000 * index
+
+        payload = io.BytesIO()
+        book.save(payload)
+        path = "/tmp/claude-0/_counting.xlsx"
+        with open(path, "wb") as handle:
+            handle.write(payload.getvalue())
+
+        read = read_workbook(path)
+        assert ("Controls", 1) in _counting_columns(read)
+        refs = {one.ref for one in inputs_from_workbook(read)}
+        assert not any(ref.startswith("Controls!A") for ref in refs)
+        # The data column beside it is untouched.
+        assert any(ref.startswith("Controls!C") for ref in refs)
+
+    def test_a_column_of_years_is_not_an_index(self) -> None:
+        """Years ascend by one too. Suppressing them would take a model's
+        period headers out of the grounding set, so both tests a counting
+        column has to pass are about position: the value is the row it sits
+        on, or the values start at one."""
+        import io
+
+        import openpyxl
+
+        from polar.tieout.provenance import _counting_columns
+        from polar.tieout.workbook import read_workbook
+
+        book = openpyxl.Workbook()
+        sheet = book.active
+        sheet.title = "Model"
+        for index, year in enumerate([2021, 2022, 2023, 2024, 2025, 2026], start=1):
+            sheet.cell(index, 1).value = f"Row {index}"
+            sheet.cell(index, 2).value = year
+
+        payload = io.BytesIO()
+        book.save(payload)
+        path = "/tmp/claude-0/_years.xlsx"
+        with open(path, "wb") as handle:
+            handle.write(payload.getvalue())
+
+        assert _counting_columns(read_workbook(path)) == set()

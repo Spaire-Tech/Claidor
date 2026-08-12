@@ -217,14 +217,55 @@ def normalise(token: str) -> str:
     return SYNONYMS.get(token, token)
 
 
+#: A run of capitals is a name, not a word: `TO`, `SO`, `RAV`, `CDE`.
+CAPITALS = re.compile(r"\b[A-Z]{2,}\b")
+
+#: Above this many words, capitals are a shout rather than a name — a
+#: heading such as `NOTES TO THE FINANCIAL STATEMENTS` is set in capitals
+#: throughout, and protecting every word of it would put `the` and `to`
+#: back into the vocabulary for the whole document.
+SHOUTING = 4
+
+
+def acronyms(text: str) -> set[str]:
+    """The words in `text` that are written as capitals rather than prose.
+
+    **This exists because an entire licence entity was invisible.** Ofgem's
+    price control model keeps the transmission owner on a sheet called
+    `NGET TO` and the system operator on `NGET SO`, and the direction
+    document that feeds it heads one table *National Grid Electricity
+    Transmission TO* and the next one *…SO*. `to` is an English stopword.
+    So `NGET TO` tokenised to `['nget']` while `NGET SO` kept `['nget',
+    'so']` — making the TO sheet a strict subset of the SO sheet, unable
+    to win any match against it, and sending every transmission-owner
+    figure in the document to a system-operator cell. Seven false
+    contradictions on the first real model this was measured against.
+
+    Stopwords are a device for prose. `TO` here is not the preposition; it
+    is the name of a licensed business. Capitals are how the document says
+    so, and reading past the case throws that away.
+    """
+    if not any(one.isalpha() for one in text):
+        return set()
+    if len(text.split()) > SHOUTING and text == text.upper():
+        return set()
+    return {one.lower() for one in CAPITALS.findall(text)}
+
+
 def tokens(text: str) -> list[str]:
     """Content words, normalised, in order and with duplicates dropped."""
+    named = acronyms(text)
     flattened = re.sub(r"[^a-z0-9]+", " ", text.lower())
     for phrase, word in PHRASES.items():
         flattened = flattened.replace(phrase, word)
     raw = re.findall(r"[a-z][a-z0-9]*", flattened)
     seen: dict[str, None] = {}
     for word in raw:
+        # An acronym keeps its own spelling: it is not a plural to strip
+        # and not a stopword to drop. `COGS` is not `cog`.
+        if word in named:
+            seen.setdefault(word, None)
+            continue
         word = normalise(word)
         if word in STOPWORDS or len(word) < 2:
             continue
@@ -238,6 +279,36 @@ def _period(words: list[str]) -> set[str]:
         for word in words
         if FISCAL_YEAR.match(word) is not None or word in PERIOD_WORDS
     }
+
+
+def _same_period(label: set[str], output: set[str]) -> bool:
+    """Whether two sets of period words can be talking about one period.
+
+    **A year with no marker is still that year.** `FY2025A` is the actual,
+    `FY2025E` the estimate, and those two are genuinely different figures —
+    telling them apart is most of what this gate is for. But `FY2025`, bare,
+    asserts nothing about which basis it is on, and refusing to match it
+    against `FY2025A` rejects the right cell for saying less rather than
+    for saying something else.
+
+    Found on the Cascade accounts the moment a sheet called *FY2025 balance
+    sheet* started contributing to a cell's basis: `Total debt outstanding
+    at 31 December FY2025A` stopped reaching `Assumptions!B24`, whose sheet
+    said `FY2025` and whose value was the right one.
+    """
+    if label & output:
+        return True
+    for one in label:
+        for other in output:
+            first, second = FISCAL_YEAR.match(one), FISCAL_YEAR.match(other)
+            if first is None or second is None:
+                continue
+            if first.group(1) != second.group(1):
+                continue
+            # Same year. Compatible unless both name a basis and disagree.
+            if not first.group(2) or not second.group(2):
+                return True
+    return False
 
 
 def _basis(words: list[str]) -> set[int]:
@@ -355,7 +426,7 @@ def _admissible(figure: Figure, output: Output, label: list[str]) -> bool:
 
     label_period = _period(label)
     output_period = _period(name) | _period(basis)
-    if label_period and output_period and not (label_period & output_period):
+    if label_period and output_period and not _same_period(label_period, output_period):
         return False
 
     label_basis = _basis(label)
