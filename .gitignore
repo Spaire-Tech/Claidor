@@ -161,3 +161,7 @@ server/.model-cache/
 # EUSES, downloaded by scripts/corpus_eval.py. CC-BY-4.0, and 50MB of
 # somebody else%s files is not what a source repository is for.
 server/.corpus-cache/
+
+# Real regulator models, fetched by scripts/model_corpus.py. Public
+# documents, but megabytes of binary and re-fetchable from a URL.
+server/scripts/corpus_models/
