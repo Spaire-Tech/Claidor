@@ -6,7 +6,7 @@ import pytest
 
 from polar.tieout.model import read_outputs
 from polar.tieout.provenance import chain, outputs_from_workbook, verify_outputs
-from polar.tieout.workbook import precedents_of, read_workbook
+from polar.tieout.workbook import precedents_of, read_workbook, references_of
 
 CASCADE = Path(__file__).resolve().parents[2] / "scripts" / "cascade"
 MODEL = str(CASCADE / "cascade_model.xlsx")
@@ -119,4 +119,116 @@ def test_the_workbook_offers_far_more_than_the_interface_does(book) -> None:
     assert not any(
         candidate.ref.startswith("Outputs!")
         for candidate in outputs_from_workbook(book)
+    )
+
+
+# --- what a formula reads that is not a plain cell reference -------------
+#
+# Every case below was found by running the parser over financial models
+# published by economic regulators — `scripts/model_corpus.py` fetches
+# them, `scripts/formula_coverage.py` measures. Before this, 2,602 of
+# 59,705 formulas in those files lost a precedent and said nothing: the
+# chain came back short by exactly the input that decided the answer, and
+# looked complete. On the 2015 Ofgem transmission model that was 11.7% of
+# every formula in the file.
+
+
+@pytest.fixture
+def names():
+    from polar.tieout.workbook import Names
+
+    return Names(
+        book={
+            "Tax_Rate": "Assumptions!$B$4",
+            "Revenue": "Model!$D$6:$F$6",
+            "Deleted": "#REF!",
+            "Switch": "=OFFSET(Model!$A$1,1,1)",
+        },
+        sheet={("DCF", "Tax_Rate"): "DCF!$Z$9"},
+        extent={"Model": (20, 8), "Inflation": (352, 14)},
+    )
+
+
+def test_a_defined_name_is_a_precedent(names) -> None:
+    """`=B4*Tax_Rate` used to return `('Model!B4',)` — a chain missing an
+    input, presented as the whole answer."""
+    read = references_of("=B4*Tax_Rate", "Model", names)
+    assert read.refs == ("Model!B4", "Assumptions!B4")
+    assert read.unresolved == ()
+
+
+def test_sheet_scope_beats_workbook_scope(names) -> None:
+    """The same name means different cells on different sheets, and Excel
+    resolves the sheet's own first. One lookup table would answer
+    confidently and wrongly, which is worse than the silence it replaced —
+    the 2026 Ofgem distribution model carries 594 sheet-scoped names."""
+    assert references_of("=Tax_Rate", "Model", names).refs == ("Assumptions!B4",)
+    assert references_of("=Tax_Rate", "DCF", names).refs == ("DCF!Z9",)
+
+
+def test_a_name_pointing_at_a_deleted_row_is_a_finding(names) -> None:
+    """Nine of these sit in a published Ofgem model. Not a parse failure —
+    a defect in the workbook, and a person wants to be told."""
+    read = references_of("=Deleted+1", "Model", names)
+    assert read.refs == ()
+    assert read.unresolved == (("Deleted", "a defined name pointing at #REF!"),)
+
+
+def test_a_name_that_is_a_formula_says_so(names) -> None:
+    read = references_of("=Switch", "Model", names)
+    assert read.refs == ()
+    assert "formula rather than a cell" in read.unresolved[0][1]
+
+
+def test_a_whole_column_expands_against_the_sheet_it_names(names) -> None:
+    """`AVERAGEIFS('Monthly Inflation'!$M:$M, ...)` appears 570 times in
+    one real model. Expanded against the used extent, not the format's
+    1,048,576 rows."""
+    read = references_of("=SUM(Model!A:A)", "Other", names)
+    assert read.refs == tuple(f"Model!A{row}" for row in range(1, 21))
+
+
+def test_the_range_cap_says_when_it_bit(names) -> None:
+    """A cap that truncates silently is the same failure this file is
+    about, moved from « dropped » to « quietly shortened »."""
+    read = references_of("=SUM(Inflation!M:M)", "Other", names)
+    assert len(read.refs) == 200
+    assert read.unresolved == (
+        ("Inflation!M:M", "352 cells, of which the first 200 were followed"),
+    )
+
+
+def test_a_range_may_carry_its_sheet_on_both_ends(names) -> None:
+    """`InputSummary!AR61:'InputSummary'!AR67` is legal and appears in the
+    Ofgem distribution model. Read as a name, it produced the sentence
+    « a name this workbook does not define » — which is not merely
+    unresolved, it is false about the workbook."""
+    read = references_of("=SUM(Model!A1:'Model'!A3)", "Other", names)
+    assert read.refs == ("Model!A1", "Model!A2", "Model!A3")
+    assert read.unresolved == ()
+
+
+def test_another_workbook_is_named_rather_than_guessed_at(names) -> None:
+    """Both spellings. The quoted form used to produce a reference to a
+    sheet that does not exist in this workbook, and nothing downstream was
+    told — a dangling precedent is worse than a missing one."""
+    for formula in ("=[1]Sheet1!A1", "='[1]Cash Flow'!B4"):
+        read = references_of(formula, "Model", names)
+        assert read.refs == (), formula
+        assert "another workbook" in read.unresolved[0][1], formula
+
+
+def test_a_table_reference_is_named_rather_than_dropped(names) -> None:
+    read = references_of("=SUM(Tbl[Amount])", "Model", names)
+    assert read.refs == ()
+    assert "table reference" in read.unresolved[0][1]
+
+
+def test_without_a_name_map_a_name_is_reported_not_swallowed() -> None:
+    """A legacy `.xls` has no defined names to give. The honest answer is
+    a sentence saying so, not an empty tuple."""
+    read = references_of("=B4*Tax_Rate", "Model")
+    assert read.refs == ("Model!B4",)
+    assert read.unresolved == (
+        ("Tax_Rate", "a defined name, and this workbook's names were not read"),
     )

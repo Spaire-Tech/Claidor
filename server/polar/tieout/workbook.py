@@ -68,13 +68,29 @@ DERIVED_ROW = re.compile(
 #: which is most workbooks in the wild and none of the models seen so far.
 MAX_RANGE = 200
 
+#: A whole column — `$M:$M`, `A:C`. Real models are full of them: the
+#: 2026 Ofgem distribution model averages over `'Monthly Inflation'!$M:$M`
+#: 570 times. Expanded against the sheet's used extent rather than to the
+#: format's 1,048,576 rows.
+WHOLE_COLUMN = re.compile(r"^\$?(?P<first>[A-Z]{1,3}):\$?(?P<last>[A-Z]{1,3})$")
+WHOLE_ROW = re.compile(r"^\$?(?P<first>\d+):\$?(?P<last>\d+)$")
+
+#: A defined name, as it appears where a reference could. Excel's rules:
+#: starts with a letter, underscore or backslash, no spaces, not a cell
+#: address.
+DEFINED_NAME = re.compile(r"^[A-Za-z_\\][A-Za-z0-9_.\\]*$")
+
 #: A cell or range inside a formula, with an optional sheet. Quoted sheet
 #: names — 'Cash Flow'!B4 — are the reason this is not a two-line split.
 REFERENCE = re.compile(
     r"""
     (?:(?P<sheet>'[^']+'|[A-Za-z0-9_.]+)!)?
     \$?(?P<column>[A-Z]{1,3})\$?(?P<row>\d+)
-    (?::\$?(?P<column2>[A-Z]{1,3})\$?(?P<row2>\d+))?
+    (?:
+      :
+      (?:(?P<sheet2>'[^']+'|[A-Za-z0-9_.]+)!)?
+      \$?(?P<column2>[A-Z]{1,3})\$?(?P<row2>\d+)
+    )?
     """,
     re.VERBOSE,
 )
@@ -110,6 +126,14 @@ class Cell:
     number_format: str | None = None
     #: The cells this one is computed from, in the order they appear.
     precedents: tuple[str, ...] = ()
+    #: What this cell reads that could not be resolved to a cell, each with
+    #: a sentence saying why — an external workbook, a defined name left
+    #: pointing at `#REF!`, a table reference. Kept because a chain missing
+    #: an input while looking complete is the one failure this product
+    #: cannot afford, and because on a real model it is not rare: 11.7% of
+    #: formulas in the 2015 Ofgem transmission model were in that state
+    #: before names were read.
+    unresolved: tuple[tuple[str, str], ...] = ()
     #: Set when the whole formula is a single reference — `=Model!D26`,
     #: `=F13`. Such a cell restates a figure rather than being one, and
     #: Cascade has six of them: the comps bridge pulls adjusted EBITDA from
@@ -144,6 +168,51 @@ class Cell:
 ERROR_VALUES = frozenset(
     {"#REF!", "#NAME?", "#VALUE!", "#NULL!", "#NUM!", "#N/A", "#DIV/0!"}
 )
+
+
+@dataclass(frozen=True)
+class Names:
+    """The workbook's defined names and the extent of each sheet.
+
+    **Scope is not decoration.** Excel lets the same name mean different
+    cells on different sheets, and sheet scope beats workbook scope. The
+    2026 Ofgem distribution model carries 594 sheet-scoped names beside
+    791 workbook-scoped ones, so a single name-to-reference map would not
+    merely miss things — it would resolve a name to the wrong cell and
+    report the answer with confidence. That is worse than the silent drop
+    it replaced, which is why the two maps are kept apart.
+    """
+
+    #: name → what it points at, for names visible everywhere.
+    book: dict[str, str] = field(default_factory=dict)
+    #: (sheet, name) → what it points at. Wins over `book`.
+    sheet: dict[tuple[str, str], str] = field(default_factory=dict)
+    #: sheet → (last row, last column) actually used. What a whole-column
+    #: reference is expanded against.
+    extent: dict[str, tuple[int, int]] = field(default_factory=dict)
+
+    def lookup(self, name: str, sheet: str) -> str | None:
+        return self.sheet.get((sheet, name)) or self.book.get(name)
+
+
+@dataclass(frozen=True)
+class Precedents:
+    """What a formula reads, and what could not be read.
+
+    Both halves, always. A formula that loses one of its precedents
+    produces a chain short by exactly the input that decided the answer
+    and looks complete — measured at 11.7% of formulas on a real Ofgem
+    transmission model, where the dropped name was the switch selecting
+    which company the whole model was calculating for. Rule 3: what was
+    not checked is part of the answer.
+    """
+
+    refs: tuple[str, ...] = ()
+    #: (what it said, why it could not be resolved). Phrased for a reader.
+    unresolved: tuple[tuple[str, str], ...] = ()
+
+    def __bool__(self) -> bool:
+        return bool(self.refs or self.unresolved)
 
 
 @dataclass
@@ -193,6 +262,7 @@ def read_workbook(path: str) -> Workbook:
         ),
         iterative=bool(getattr(formulas.calculation, "iterate", False)),
     )
+    names = _names_of(formulas)
     for name in formulas.sheetnames:
         sheet = formulas[name]
         # A chart sheet is a sheet in the file format and a picture to
@@ -201,11 +271,37 @@ def read_workbook(path: str) -> Workbook:
         # of thing only a real model tells you.
         if not hasattr(sheet, "max_row"):
             continue
-        _read_sheet(book, name, sheet, values[name])
+        _read_sheet(book, name, sheet, values[name], names)
     return book
 
 
-def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
+def _names_of(formulas: Any) -> Names:
+    """Defined names and sheet extents, in one pass.
+
+    Read from the *formula* workbook. A legacy `.xls` read through
+    :mod:`polar.tieout.legacy` has no defined names to give, and asks for
+    nothing: the maps come back empty and every name falls through to
+    `unresolved` with a sentence saying so, which is the honest state
+    rather than a silent one.
+    """
+    names = Names()
+    for name, one in (getattr(formulas, "defined_names", {}) or {}).items():
+        names.book[str(name)] = str(getattr(one, "value", one))
+    for title in formulas.sheetnames:
+        sheet = formulas[title]
+        for name, one in (getattr(sheet, "defined_names", {}) or {}).items():
+            names.sheet[(title, str(name))] = str(getattr(one, "value", one))
+        if hasattr(sheet, "max_row"):
+            names.extent[title] = (
+                int(sheet.max_row or 0),
+                int(getattr(sheet, "max_column", 0) or 0),
+            )
+    return names
+
+
+def _read_sheet(
+    book: Workbook, name: str, sheet: Any, cached: Any, names: Names | None = None
+) -> None:
     header_row = _header_row(sheet)
     label_column = _label_column(sheet)
 
@@ -265,7 +361,8 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
         for column in numeric:
             number = _decimal(cached.cell(row, column).value)
             formula = _formula(sheet.cell(row, column).value)
-            references = precedents_of(formula, name) if formula else ()
+            read = references_of(formula, name, names) if formula else Precedents()
+            references = read.refs
             ref = f"{name}!{get_column_letter(column)}{row}"
             book.cells[ref] = Cell(
                 sheet=name,
@@ -282,51 +379,217 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
                 # rather than assumed to be there.
                 number_format=getattr(sheet.cell(row, column), "number_format", None),
                 precedents=references,
+                unresolved=read.unresolved,
                 alias_of=_alias(formula, references),
             )
 
 
-def precedents_of(formula: str, sheet: str) -> tuple[str, ...]:
-    """The cells a formula reads, expanded from ranges, in order.
+def precedents_of(
+    formula: str, sheet: str, names: Names | None = None
+) -> tuple[str, ...]:
+    """The cells a formula reads, expanded from ranges, in order."""
+    return references_of(formula, sheet, names).refs
+
+
+def references_of(formula: str, sheet: str, names: Names | None = None) -> Precedents:
+    """Everything a formula reads, and everything it reads that we cannot.
 
     Parsed through openpyxl's bundled tokenizer, which is a port of the
     grammar Microsoft published, so `SUM(D20:D23)` and `'Cash Flow'!B4`
     and a string literal containing a colon are all told apart properly
     rather than by a regex over the whole formula.
+
+    Without `names` this resolves plain references only, which is what it
+    did before there was anything else. With them it resolves defined
+    names in scope and expands whole-column and whole-row references
+    against the sheet's real extent.
     """
     found: list[str] = []
     seen: set[str] = set()
-    for token in Tokenizer(formula).items:
-        if token.type != "OPERAND" or token.subtype != "RANGE":
-            continue
-        match = REFERENCE.fullmatch(token.value.strip())
-        if match is None:
-            # A named range, or a whole-column reference. Both are real and
-            # neither is resolvable without more of the workbook than this
-            # function is given; the caller sees a shorter chain, not a
-            # wrong one.
-            continue
-        where = (match.group("sheet") or sheet).strip("'")
-        first_row, last_row = int(match.group("row")), int(match.group("row2") or 0)
-        first_column = _column_index(match.group("column"))
-        last_column = _column_index(match.group("column2") or "")
+    missing: list[tuple[str, str]] = []
+    said: set[str] = set()
 
-        if not last_row:
-            refs = [f"{where}!{match.group('column')}{first_row}"]
-        else:
-            refs = []
-            for row in range(first_row, last_row + 1):
-                for column in range(first_column, last_column + 1):
-                    if len(refs) >= MAX_RANGE:
-                        break
-                    refs.append(f"{where}!{get_column_letter(column)}{row}")
-                if len(refs) >= MAX_RANGE:
-                    break
+    def keep(refs: list[str]) -> None:
         for ref in refs:
             if ref not in seen:
                 seen.add(ref)
                 found.append(ref)
-    return tuple(found)
+
+    def give_up(text: str, why: str) -> None:
+        if text not in said:
+            said.add(text)
+            missing.append((text, why))
+
+    for token in Tokenizer(formula).items:
+        if token.type != "OPERAND" or token.subtype != "RANGE":
+            continue
+        text = token.value.strip()
+        refs = _expand(text, sheet, names, give_up)
+        if refs:
+            keep(refs)
+
+    return Precedents(refs=tuple(found), unresolved=tuple(missing))
+
+
+def _expand(
+    text: str, sheet: str, names: Names | None, give_up: Any, depth: int = 0
+) -> list[str]:
+    """One operand, as the cells it stands for."""
+    where, rest = _split_sheet(text)
+
+    # A reference into another workbook. The path is in the file and the
+    # cells are not, so this can never resolve here — but saying so is the
+    # point: an external link is the one precedent most likely to be stale,
+    # because nobody re-opens the workbook it points at.
+    if where.strip("'").startswith("[") or rest.startswith("["):
+        if "]" in rest and not rest.startswith("["):
+            give_up(text, "a table reference, which this does not read yet")
+        else:
+            give_up(text, "in another workbook, which is not in this deal")
+        return []
+
+    if "[" in rest:
+        give_up(text, "a table reference, which this does not read yet")
+        return []
+
+    match = REFERENCE.fullmatch(text)
+    if match is not None:
+        return _capped(
+            text,
+            _cells(
+                (match.group("sheet") or sheet).strip("'"),
+                match.group("column"),
+                int(match.group("row")),
+                match.group("column2"),
+                int(match.group("row2") or 0),
+            ),
+            give_up,
+        )
+
+    here = where.strip("'") or sheet
+
+    column = WHOLE_COLUMN.match(rest)
+    if column:
+        rows = names.extent.get(here, (0, 0))[0] if names else 0
+        if not rows:
+            give_up(text, "a whole column, and that sheet is not in this workbook")
+            return []
+        return _capped(
+            text,
+            _cells(here, column.group("first"), 1, column.group("last"), rows),
+            give_up,
+        )
+
+    row = WHOLE_ROW.match(rest)
+    if row:
+        columns = names.extent.get(here, (0, 0))[1] if names else 0
+        if not columns:
+            give_up(text, "a whole row, and that sheet is not in this workbook")
+            return []
+        return _capped(
+            text,
+            _cells(
+                here,
+                "A",
+                int(row.group("first")),
+                get_column_letter(max(columns, 1)),
+                int(row.group("last")),
+            ),
+            give_up,
+        )
+
+    if DEFINED_NAME.fullmatch(rest) and names is not None:
+        points_at = names.lookup(rest, sheet)
+        if points_at is None:
+            give_up(text, "a name this workbook does not define")
+            return []
+        if points_at.startswith("#"):
+            # A defined name left pointing at a deleted row. Nine of them
+            # sit in a published Ofgem model. Not a parse failure — a
+            # defect in the workbook, and worth saying so.
+            give_up(text, f"a defined name pointing at {points_at}")
+            return []
+        if depth >= 2:
+            give_up(text, "a name defined in terms of other names")
+            return []
+        # A name can point at anything, including another name or a
+        # formula. Following it once more covers the real cases and the
+        # depth cap stops a name defined in terms of itself.
+        #
+        # The recursion reports nothing of its own. What a person needs to
+        # be told is « Switch could not be followed », not
+        # « OFFSET(Model!$A$1,1,1) is a reference this does not understand » —
+        # the second is this module talking about itself.
+        resolved = _expand(points_at.lstrip("="), sheet, names, _quiet, depth + 1)
+        if not resolved:
+            give_up(text, "a name that is a formula rather than a cell")
+        return resolved
+
+    if DEFINED_NAME.fullmatch(rest):
+        give_up(text, "a defined name, and this workbook's names were not read")
+        return []
+
+    give_up(text, "a reference this does not understand")
+    return []
+
+
+def _quiet(text: str, why: str) -> None:
+    """Swallow a reason raised inside a name's own definition."""
+
+
+def _capped(text: str, answer: tuple[list[str], int], give_up: Any) -> list[str]:
+    """Say so when the cap bit."""
+    refs, span = answer
+    if span > len(refs):
+        give_up(
+            text,
+            f"{span:,} cells, of which the first {len(refs):,} were followed",
+        )
+    return refs
+
+
+def _split_sheet(token: str) -> tuple[str, str]:
+    """« 'Live Results (SO)'!C15 » → the sheet and the rest.
+
+    A quoted sheet name may contain brackets, spaces, even exclamation
+    marks. Splitting naively is how `'Live Results (SO)'!$C$15` gets
+    called a table reference, which is a mistake this module's own
+    measurement script made first.
+    """
+    if token.startswith("'"):
+        end = token.find("'", 1)
+        while end != -1 and token[end : end + 2] == "''":
+            end = token.find("'", end + 2)
+        if end != -1 and token[end + 1 : end + 2] == "!":
+            return token[: end + 1], token[end + 2 :]
+    if "!" in token:
+        where, _, rest = token.rpartition("!")
+        return where, rest
+    return "", token
+
+
+def _cells(
+    where: str, column: str, row: int, column2: str | None, row2: int
+) -> tuple[list[str], int]:
+    """The cells a reference stands for, and how many there were in all.
+
+    The second number is not decoration. `MAX_RANGE` exists so that
+    `SUM(A1:IV65536)` does not become sixteen million strings, and a cap
+    that truncates without saying so is the same silent loss this module
+    was just fixed for — moved from « dropped » to « quietly shortened ».
+    """
+    if not row2:
+        return [f"{where}!{column}{row}"], 1
+    first_column = _column_index(column)
+    last_column = _column_index(column2 or "")
+    span = (row2 - row + 1) * max(last_column - first_column + 1, 0)
+    refs: list[str] = []
+    for one in range(row, row2 + 1):
+        for two in range(first_column, last_column + 1):
+            if len(refs) >= MAX_RANGE:
+                return refs, span
+            refs.append(f"{where}!{get_column_letter(two)}{one}")
+    return refs, span
 
 
 def _alias(formula: str | None, references: tuple[str, ...]) -> str | None:
@@ -416,7 +679,10 @@ __all__ = [
     "DERIVED_ROW",
     "HEADER_TEXTS",
     "Cell",
+    "Names",
+    "Precedents",
     "Workbook",
     "precedents_of",
     "read_workbook",
+    "references_of",
 ]

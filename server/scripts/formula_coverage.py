@@ -33,7 +33,7 @@ from typing import Any
 from openpyxl import load_workbook
 from openpyxl.formula import Tokenizer
 
-from polar.tieout.workbook import REFERENCE
+from polar.tieout.workbook import REFERENCE, references_of
 
 HERE = Path(__file__).parent / "corpus_models"
 
@@ -97,12 +97,22 @@ def names_of(book: Any) -> tuple[dict[str, str], dict[tuple[str, str], str]]:
     return book_scope, sheet_scope
 
 
+def names_for(book: Any) -> Any:
+    """The engine's own name/extent map, built the way the reader builds it."""
+    from polar.tieout.workbook import _names_of
+
+    return _names_of(book)
+
+
 def measure(path: Path) -> dict[str, Any]:
     book = load_workbook(path, data_only=False, read_only=False)
     sheets = set(book.sheetnames)
     book_names, sheet_names = names_of(book)
 
     formulas = clean = partial = lost = dangling = 0
+    after_clean = after_partial = after_lost = 0
+    after_causes: Counter[str] = Counter()
+    resolver = names_for(book)
     causes: Counter[str] = Counter()
     dropped: Counter[str] = Counter()
     examples: dict[str, str] = {}
@@ -114,6 +124,16 @@ def measure(path: Path) -> dict[str, Any]:
                 if not isinstance(value, str) or not value.startswith("="):
                     continue
                 formulas += 1
+                read = references_of(value, sheet.title, resolver)
+                if read.unresolved and read.refs:
+                    after_partial += 1
+                elif read.unresolved:
+                    after_lost += 1
+                else:
+                    after_clean += 1
+                for text, why in read.unresolved:
+                    after_causes[why] += 1
+
                 hit = miss = 0
                 loose = False
                 for token in Tokenizer(value).items:
@@ -171,6 +191,10 @@ def measure(path: Path) -> dict[str, Any]:
         "recoverable": recoverable,
         "broken": broken,
         "worst": dropped.most_common(5),
+        "after_clean": after_clean,
+        "after_partial": after_partial,
+        "after_lost": after_lost,
+        "after_causes": after_causes,
     }
 
 
@@ -232,10 +256,32 @@ def main() -> int:
     formulas = sum(one["formulas"] for one in every)
     partial = sum(one["partial"] for one in every)
     lost = sum(one["lost"] for one in every)
+    print(f"\n{'-' * 60}")
+    print("with names, scopes and whole-column extents resolved")
+    for one in every:
+        total = one["formulas"]
+        print(f"\n  {one['file']}")
+        print(
+            f"    fully resolved        {one['after_clean']:>8,}  "
+            f"{one['after_clean'] / total:6.1%}"
+        )
+        print(
+            f"    PARTIAL, now NAMED    {one['after_partial']:>8,}  "
+            f"{one['after_partial'] / total:6.1%}   <- and every one carries a reason"
+        )
+        print(
+            f"    nothing resolved      {one['after_lost']:>8,}  "
+            f"{one['after_lost'] / total:6.1%}"
+        )
+        for why, count in one["after_causes"].most_common(6):
+            print(f"        {count:>7,}  {why}")
+
     print(f"\n{'=' * 60}")
     print(f"{len(every)} workbooks · {formulas:,} formulas")
-    print(f"  partial, silent loss   {partial:,}  ({partial / formulas:.1%})")
-    print(f"  total failure          {lost:,}  ({lost / formulas:.1%})")
+    after_p = sum(one["after_partial"] for one in every)
+    print(f"  BEFORE  partial, silent  {partial:,}  ({partial / formulas:.1%})")
+    print(f"  AFTER   partial, named   {after_p:,}  ({after_p / formulas:.1%})")
+    print(f"  total failure            {lost:,}  ({lost / formulas:.1%})")
     return 0
 
 
