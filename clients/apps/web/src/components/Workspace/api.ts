@@ -151,6 +151,17 @@ export interface DealListItem {
    * share a word would be claiming a check nobody ran.
    */
   checked_at: string | null
+  /**
+   * A current document arrived after that check, so its results are out
+   * of date. The row leads with this over any count, because the count
+   * is one of the things that is now stale.
+   */
+  stale: boolean
+  /** What changed after the check — an artifact kind — and when. The
+   *  server sends the fact; the sentence is built here, where the
+   *  reader's clock lives. */
+  stale_kind: string | null
+  stale_at: string | null
 }
 
 export interface Link {

@@ -486,6 +486,16 @@ class DealListItem(Schema):
     open_findings: int
     #: When this deal was last reconciled. Null: never.
     checked_at: datetime | None = None
+    #: A current document arrived after that check, so its results are out
+    #: of date — including the findings count on this very row. The screen
+    #: leads with this over any number, because the numbers are what went
+    #: stale.
+    stale: bool = False
+    #: What arrived — an :class:`ArtifactKind` value — and when. The
+    #: sentence (« The model changed at 11:40 today ») is the client's to
+    #: build, because only the reader's browser knows their clock.
+    stale_kind: str | None = None
+    stale_at: datetime | None = None
 
 
 # --- the model page ------------------------------------------------------

@@ -1,225 +1,72 @@
 'use client'
 
 /**
- * The workspace: two panels above a dock.
+ * The workspace shell — the founder's design, 12 August, wired.
  *
- * The left panel is whatever is being looked at. The right is the chat,
- * always there. When the left is hidden the chat takes the whole width and
- * centres itself — that is the state the app opens in, and the reason the
- * first thing anyone sees is a question rather than a dashboard.
+ * Source of truth: `docs/pierce/design/markup.html`. Every style value
+ * here appears verbatim in that file; where a real data state has no
+ * drawn equivalent, the component says which pattern it borrowed. The
+ * design is one floating card over a radial ground, a glassy pill dock at
+ * the bottom centre, and side panels that join the row as they open.
  *
- * Every screen the backend can feed reads live: the data room lists real
- * artifacts, Check lists real findings, Chain walks a real chain, and
- * SharePoint browses a real document library once somebody has connected
- * one. The screens that need work that does not exist yet — Mail, Calendar,
- * the Word and Excel surfaces — are not faked here. They say plainly that
- * they are not connected, which is the honest state and takes one line to
- * replace when the wiring lands.
+ * This file is the frame, the header, the dock and the account popover.
+ * The screens live beside it and receive real data — nothing in the
+ * shell invents a number.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-import { Chat, type Message } from './Chat'
-import { Dock } from './Dock'
-import type {
-  Artifact,
-  Chain,
-  ConnectedFolder,
-  ConnectorState,
-  Correction,
-  Coverage,
-  DealListItem,
-  DealPage,
-  FigureMap,
-  Finding,
-  Link,
-  ModelGrid,
-} from './api'
-import { ApiError, TieOutApi } from './api'
-import {
-  colour,
-  font,
-  pageBackground,
-  panel,
-  size,
-  space,
-  tabChip,
-} from './design'
-import { Applications } from './screens/Applications'
-import { Checks } from './screens/Checks'
-import { Confirm } from './screens/Confirm'
-import { Document } from './screens/Document'
-import { Files } from './screens/Files'
-import { Library, type Row } from './screens/Library'
-import { Mail } from './screens/Mail'
-import { Projects } from './screens/Projects'
-import { SharePoint } from './screens/SharePoint'
-import { Sheets } from './screens/Sheets'
-import { Terminal } from './screens/Terminal'
-import { Trace } from './screens/Trace'
-import { Waiting } from './screens/Waiting'
-import { useNarrow } from './useNarrow'
-import type { View } from './views'
+import { useEffect, useMemo, useState } from 'react'
+import { DealListItem, TieOutApi } from './api'
+import { blueButton, card, font, ground, ink } from './design'
+import { Deals } from './screens/Deals'
 import './workspace.css'
 
 /**
- * Where the server is.
- *
- * The dashboard and the API are the same deployment, so the browser talks
- * to a relative path and the session cookie is first-party. Only the
- * Office panel needs an absolute origin and a bearer token, and it has its
- * own client for that.
+ * Where the server is. The dashboard and the API are the same deployment,
+ * so the browser talks to a relative path and the session cookie is
+ * first-party. Only the Office panel needs an absolute origin and a
+ * bearer token, and it has its own client for that.
  */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
-const api = new TieOutApi({ baseUrl: API_BASE })
+type View = 'deals' | 'check' | 'settings'
 
-/** What the tab chip says, per view. */
-const TAB: Record<View, string> = {
-  chat: 'Chat',
-  files: 'File restructure',
-  mail: 'Mail',
-  calendar: 'Calendar',
-  docs: 'Document review',
-  sheets: 'Model audit',
-  deck: 'Pitchbook reconciliation',
-  sharepoint: 'SharePoint',
-  projects: 'Projects',
-  checks: 'Check',
-  confirm: 'Confirm',
-  trace: 'Chain',
-  library: 'Figure library',
-  terminal: 'Terminal',
-  applications: 'Applications',
+const LABELS: Record<View, string> = {
+  deals: 'Deals',
+  check: 'Check a file',
+  settings: 'Settings',
 }
 
-/** The surfaces that need connectors or the writing layer. */
-/** Which document each of the three document screens is about. */
-const OPENS: Partial<Record<View, Artifact['kind']>> = {
-  deck: 'deck',
-  sheets: 'model',
-  docs: 'memo',
+export interface WorkspaceProps {
+  /** The signed-in person, for the dock avatar and the popover. */
+  userName: string
+  userEmail: string
+  /** The organization the route resolved, for the connector. */
+  organizationId: string
 }
 
-/**
- * And the way back: which screen opens a file from the data room.
- *
- * A `source` is anything else in the room — a PDF, a contract — which
- * nothing reads yet. It opens the data room's own list rather than a
- * screen that would have nothing on it.
- */
-const SCREEN: Record<Artifact['kind'], View> = {
-  deck: 'deck',
-  model: 'sheets',
-  memo: 'docs',
-  source: 'files',
-}
+/** « EW » from « Elena Whitmore » — the design shows two letters. */
+const initialsOf = (name: string): string =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0]!.toUpperCase())
+    .slice(0, 2)
+    .join('')
 
-export function Workspace({ dealId }: { dealId: string }) {
-  const [view, setView] = useState<View>('chat')
-  //: Which deal the workspace is showing. It starts as the one the page
-  //: was opened at and Projects can change it, which until Projects
-  //: existed nothing could: every screen here is about one deal, and the
-  //: one it was about was « the first you are on », permanently.
-  const [chosen, setChosen] = useState(dealId)
-  const [messages, setMessages] = useState<Message[]>([])
-  const narrow = useNarrow()
+export const Workspace = ({
+  userName,
+  userEmail,
+  organizationId,
+}: WorkspaceProps) => {
+  const api = useMemo(() => new TieOutApi({ baseUrl: API_BASE }), [])
 
-  //: The left panel is not a thing that can be toggled — it is the view.
-  //: Chat is one column; everything else is two. The design has no control
-  //: for hiding the panel and does not need one, since the dock's first
-  //: button is the way back.
-  const showLeft = view !== 'chat'
+  const [view, setView] = useState<View>('deals')
+  const [deal, setDeal] = useState<DealListItem | null>(null)
+  const [acctOpen, setAcctOpen] = useState(false)
 
-  const [deal, setDeal] = useState('')
-  //: The id `load` settled on — the one passed in, or the first this
-  //: person is on. Upload and re-check both need it and neither can ask
-  //: again without racing the list.
-  const dealFor = useRef('')
-  const [documents, setDocuments] = useState<Artifact[]>([])
-  const [findings, setFindings] = useState<Finding[]>([])
-  const [coverage, setCoverage] = useState<Coverage | null>(null)
-  //: The last tie-out, for the one distinction coverage cannot make: a
-  //: deal that was checked and is clean against a deal nobody has run.
-  const [lastRun, setLastRun] = useState<DealPage['last_tieout']>(null)
-  const [links, setLinks] = useState<Link[]>([])
-  //: What this product *did* to the documents, as opposed to what it
-  //: found in them. Held beside the findings because a correction
-  //: outlives the finding it came from — once it is applied the deck
-  //: agrees and the drift is gone.
-  const [corrections, setCorrections] = useState<Correction[]>([])
-  const [chain, setChain] = useState<Chain | null>(null)
-  const [traced, setTraced] = useState<Finding | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [linkDetail, setLinkDetail] = useState<Link | null>(null)
-  const [uploading, setUploading] = useState<string[]>([])
-  const [rejected, setRejected] = useState<string | null>(null)
-  //: The three document screens. Each is one artifact's worth of detail
-  //: and is fetched when the screen is opened rather than with the deal:
-  //: a model's grid is every labelled cell in the workbook, and putting
-  //: that on the deal page would make every screen pay for one.
-  const [grid, setGrid] = useState<ModelGrid | null>(null)
-  const [deckMap, setDeckMap] = useState<FigureMap | null>(null)
-  const [memoMap, setMemoMap] = useState<FigureMap | null>(null)
-  //: Whose deal it is. A connection belongs to an organization and a
-  //: person, not to a deal, so the connector asks about this.
-  const [organization, setOrganization] = useState('')
-  //: The file store. Fetched when the SharePoint screen is opened rather
-  //: than with the deal: it is three requests to Microsoft's servers and
-  //: every other screen would be paying for a room nobody looked at.
-  const [store, setStore] = useState<ConnectorState | null>(null)
-  const [folder, setFolder] = useState<ConnectedFolder | null>(null)
-  //: What the deal already holds of the room, keyed by the store's own id.
-  //: The library's status column, and nothing else needs it.
-  const [held, setHeld] = useState<Map<string, string>>(new Map())
-  const [storeAt, setStoreAt] = useState(0)
-
-  const load = useCallback(async () => {
-    try {
-      // No deal named, so take the first this person is on. One deal is
-      // the normal case today; the moment it is not, Projects picks and
-      // passes an id, and nothing else here changes.
-      const id = chosen || (await api.deals())[0]?.id
-      if (!id) {
-        setError('You are not on any deals yet.')
-        return
-      }
-      const [page, found, linked, written] = await Promise.all([
-        api.deal(id),
-        api.findings(id),
-        api.links(id),
-        api.corrections(id),
-      ])
-      dealFor.current = id
-      setDeal(page.name)
-      setOrganization(page.organization_id)
-      //: The documents the deal is built on — not the data room, which
-      //: fetches its own pages. Holding every artifact here is what made
-      //: this request 1.07 MB at three thousand files.
-      setDocuments(page.documents)
-      setCoverage(page.coverage)
-      setLastRun(page.last_tieout)
-      setFindings(found)
-      setLinks(linked)
-      setCorrections(written)
-      setError(null)
-    } catch (problem) {
-      setError(
-        problem instanceof ApiError
-          ? problem.message
-          : 'Could not reach the server. Is the API running?',
-      )
-    }
-  }, [chosen])
-
-  useEffect(() => {
-    void load()
-  }, [load])
-
-  //: Every deal this person is on, for Projects. Loaded with the
-  //: workspace rather than when the screen opens: it is four rows, and
-  //: « which deal is wrong » should be answered by the time somebody has
-  //: finished pressing the button.
+  //: Every deal this person is on. Null while loading — the screens tell
+  //: « still asking » apart from « asked, and there are none », because
+  //: the second one is the Connect Microsoft screen and the first is not.
   const [deals, setDeals] = useState<DealListItem[] | null>(null)
   const [dealsAt, setDealsAt] = useState(0)
   useEffect(() => {
@@ -231,334 +78,28 @@ export function Workspace({ dealId }: { dealId: string }) {
     return () => {
       live = false
     }
-  }, [dealsAt])
+  }, [api, dealsAt])
 
-  /**
-   * Open another deal.
-   *
-   * Everything on screen belongs to the deal being left, so everything is
-   * dropped rather than left to be replaced one request at a time — a
-   * findings list from the last deal under the new deal's heading is the
-   * worst kind of wrong, because it looks right.
-   */
-  const openDeal = (id: string) => {
-    if (id === dealFor.current) {
-      go('checks')
-      return
-    }
-    setChosen(id)
-    setDocuments([])
-    setFindings([])
-    setCorrections([])
-    setLinks([])
-    setCoverage(null)
-    setLastRun(null)
-    setGrid(null)
-    setDeckMap(null)
-    setMemoMap(null)
-    setFolder(null)
-    setHeld(new Map())
-    setMessages([])
-    setDeal('')
-    go('checks')
+  const go = (next: View) => () => {
+    setView(next)
+    setDeal(null)
+    setAcctOpen(false)
   }
 
-  const go = (next: View) => setView(next)
-
-  //: The data room asks for its own pages. Stable across renders, so the
-  //: screen's effect does not refetch every time something else on the
-  //: workspace changes.
-  const roomPage = useCallback(
-    (options: { q: string; limit: number; offset: number }) =>
-      api.artifacts(dealFor.current, options),
-    [],
-  )
-  //: Bumped when an upload lands — the one thing that changes the room
-  //: from outside it.
-  const [roomVersion, setRoomVersion] = useState(0)
-
-  //: The newest upload of each kind. « The model » on a deal with one
-  //: model is unambiguous, and on a deal with two the file the person
-  //: last put in is the one they mean. Projects will have to let them
-  //: choose; one deal with one of each is today.
-  const opened = useMemo(() => {
-    const kind = OPENS[view]
-    if (!kind) return null
-    return documents.find((one) => one.kind === kind) ?? null
-  }, [documents, view])
-
-  //: Fetch the open document's detail when the screen asks for it, and
-  //: not before. Re-fetched when the artifact changes — a new upload of
-  //: the deck is a different document, not a stale copy of this one.
-  useEffect(() => {
-    if (!opened) return
-    let live = true
-    const kind = opened.kind
-    void (async () => {
-      try {
-        if (kind === 'model') {
-          const answer = await api.grid(opened.id)
-          if (live) setGrid(answer)
-        } else {
-          const answer = await api.figures(opened.id)
-          if (!live) return
-          if (kind === 'deck') setDeckMap(answer)
-          else setMemoMap(answer)
-        }
-      } catch {
-        // The screen's own empty state says what to do about it. A
-        // document that cannot be read is already a row in the data room
-        // carrying the server's sentence.
-      }
-    })()
-    return () => {
-      live = false
-    }
-  }, [opened])
-
-  //: The same, for the file store: asked for when the screen that shows it
-  //: is opened, and again whenever something on that screen changed what
-  //: the answer would be.
-  useEffect(() => {
-    if (
-      (view !== 'sharepoint' && view !== 'mail') ||
-      !organization ||
-      !dealFor.current
-    )
-      return
-    let live = true
-    void (async () => {
-      const [connector, where, mine] = await Promise.all([
-        api.connectorState(organization).catch(() => null),
-        api.connectedFolder(dealFor.current).catch(() => null),
-        api.held(dealFor.current).catch(() => ({})),
-      ])
-      if (!live) return
-      setStore(connector)
-      setFolder(where)
-      setHeld(new Map(Object.entries(mine)))
-    })()
-    return () => {
-      live = false
-    }
-  }, [view, organization, chosen, storeAt])
-
-  const trace = async (finding: Finding) => {
-    setTraced(finding)
-    setChain(null)
-    go('trace')
-    try {
-      setChain(await api.chain(finding.id))
-    } catch {
-      setChain(null)
-    }
-  }
-
-  /**
-   * The coverage line, in the design's own register: a count and what was
-   * not reached, in one clause.
-   */
-  //: Coverage only. The finding counts live on the filter row beneath,
-  //: with one number per severity — and the two must never both try to
-  //: total the same thing. The first version of this line said « 892
-  //: findings » while the filter said « All 1217 », because one excluded
-  //: the one-tick notes and the other did not. Two numbers for one fact,
-  //: on a screen whose entire purpose is that numbers agree.
-  //: **A deal nobody has run is not a deal with nothing wrong with it.**
-  //: Zero reconciled and zero unchecked is what an unrun deal and an empty
-  //: deal both look like from the coverage alone, and « 0 figures
-  //: reconciled » under a heading reads as a result. The run itself is the
-  //: only thing that can tell those apart, so it is what is asked.
-  const checked = Boolean(
-    lastRun && lastRun.status === 'done' && !lastRun.error,
-  )
-  const coverageLine = !checked
-    ? 'the check has not run here'
-    : coverage
-      ? `${coverage.reconciled} figures reconciled · ${coverage.unlinked} not checked`
-      : 'not checked yet'
-
-  // Every reconciled figure, with what became of it. Drift is looked up
-  // from the findings; a figure a person confirmed outranks both, because
-  // from then on the check is arithmetic rather than a guess.
-  const drifted = new Set(
-    findings.filter((one) => one.kind === 'drift').map((one) => one.source.ref),
-  )
-  //: Figures on superseded uploads are not published figures, and the
-  //: server scopes the links to what is in force — it is the only side
-  //: that can, since working that out needs every artifact in the deal.
-  const rows: Row[] = links.map((link) => ({
-    id: link.id,
-    name: link.cell?.name || link.figure?.label || 'unnamed',
-    source: link.cell?.ref ?? '—',
-    where: link.figure?.location ?? '',
-    //: **What was printed, not what the cell holds.** The cell holds
-    //: 0.2136304063; the deck published « 21.4% ». On a product whose
-    //: whole argument is that a deck's printed precision is the claim
-    //: being made, showing ten decimal places of a float would be
-    //: contradicting itself on its own screen. The cell's value is the
-    //: fallback for a figure that was reconciled but never printed.
-    value: link.figure?.printed || link.cell?.value || '',
-    status:
-      link.state === 'confirmed'
-        ? 'CONFIRMED'
-        : drifted.has(link.cell?.ref ?? '')
-          ? 'DRIFTED'
-          : 'MATCHING',
-  }))
-
-  /**
-   * Read a dropped file into the deal, then re-check.
-   *
-   * The check is re-run because a new file changes the answer, and a data
-   * room that quietly holds a model nobody reconciled against is the
-   * failure this product exists to prevent. It is not conditional on the
-   * upload succeeding: a *failed* file changes the answer too, by not
-   * being in it.
-   */
-  const upload = async (files: FileList) => {
-    if (!deal) return
-    setRejected(null)
-    const names = Array.from(files).map((one) => one.name)
-    setUploading((was) => [...was, ...names])
-
-    for (const file of Array.from(files)) {
-      try {
-        await api.upload(dealFor.current, file)
-      } catch (problem) {
-        // 415 is « this is not a file I can read at all » — a .txt. Every
-        // other failure is a state of the deal and comes back on the
-        // artifact itself, with a sentence, and shows in the list.
-        setRejected(
-          problem instanceof ApiError
-            ? problem.message
-            : 'that file could not be read',
-        )
-      } finally {
-        setUploading((was) => was.filter((one) => one !== file.name))
-      }
-    }
-
-    try {
-      await api.check(dealFor.current)
-    } catch {
-      // A check that cannot run says so on the run itself; the reload
-      // below will show it.
-    }
-    setRoomVersion((was) => was + 1)
-    await load()
-  }
-
-  /**
-   * Accept a correction, keep the document as it is, or undo.
-   *
-   * **This one writes.** Accepting fetches the deal's copy, puts the
-   * model's figure into it, and stores the result as a new version of the
-   * same document; the check then re-runs, so the drift is gone because
-   * the deck agrees rather than because anything marked it settled. That
-   * is why the whole deal is reloaded afterwards and not one row patched:
-   * the document, the coverage and every finding on it have moved.
-   *
-   * A write that could not be made comes back as a correction in the
-   * `failed` state carrying the reason, not as an error — the screen keeps
-   * showing it, because a banker who pressed Accept has to be able to find
-   * out whether the deck changed.
-   */
-  const settle = async (
-    finding: Finding | null,
-    correction: Correction | null,
-    decision: 'accept' | 'reject' | 'reverse' | 'propose',
-  ) => {
-    try {
-      const proposal =
-        correction ?? (finding ? await api.propose(finding.id) : null)
-      if (!proposal) return
-      await api.decideCorrection(proposal.id, decision)
-      await load()
-    } catch (problem) {
-      setError(
-        problem instanceof ApiError
-          ? problem.message
-          : 'That change could not be made.',
-      )
-    }
-  }
-
-  /** Confirm, reject, or re-point — then reload, since coverage moved. */
-  const decide = async (
-    link: Link,
-    state: 'confirmed' | 'rejected',
-    cellId?: string,
-  ) => {
-    await api.decide(link.id, state, cellId)
-    setLinkDetail(null)
-    await load()
-  }
-
-  /**
-   * Ask the agent, and show it working.
-   *
-   * The three message kinds the design already draws are exactly the three
-   * an agent produces: what was asked, « Used N tools », and the answer.
-   * Nothing new was needed for this.
-   *
-   * **The trace is shown, not logged.** It is most of why an answer reads
-   * as looked up rather than composed, and the only way a reader can tell
-   * which it was.
-   */
-  const send = async (text: string) => {
-    setMessages((was) => [
-      ...was,
-      { kind: 'user', text },
-      { kind: 'working', text: 'Working' },
-    ])
-    const drop = (was: Message[]) => was.filter((one) => one.kind !== 'working')
-
-    try {
-      const answer = await api.ask(dealFor.current, text)
-      setMessages((was) => [
-        ...drop(was),
-        ...(answer.steps.length
-          ? [
-              {
-                kind: 'tools' as const,
-                text: `Used ${answer.steps.length} ${
-                  answer.steps.length === 1 ? 'tool' : 'tools'
-                } — ${answer.steps.map((one) => one.summary).join(' · ')}`,
-              },
-            ]
-          : []),
-        // A run that stopped early says so above its own answer rather
-        // than letting a partial one read as a finished one.
-        ...(answer.stopped === 'step_limit'
-          ? [
-              {
-                kind: 'tools' as const,
-                text: 'Ran out of tool calls — what follows is partial.',
-              },
-            ]
-          : []),
-        {
-          kind: 'agent' as const,
-          text:
-            answer.answer ||
-            answer.error ||
-            'That did not finish, and there is no answer to show.',
-        },
-      ])
-    } catch (problem) {
-      setMessages((was) => [
-        ...drop(was),
-        {
-          kind: 'agent',
-          text:
-            problem instanceof ApiError
-              ? problem.message
-              : 'Could not reach the server.',
-        },
-      ])
-    }
-  }
+  const hasDeal = view === 'deals' && deal !== null
+  const dock = (k: View) => ({
+    border: 0,
+    background: view === k ? '#ffffff' : 'transparent',
+    borderRadius: 22,
+    padding: '11px 26px',
+    font: 'inherit',
+    fontSize: 14.5,
+    fontWeight: view === k ? 600 : 400,
+    letterSpacing: '-.01em',
+    color: view === k ? ink.accent : ink.dock,
+    cursor: 'pointer',
+    boxShadow: view === k ? '0 2px 8px rgba(16,20,28,.14)' : 'none',
+  })
 
   return (
     <div
@@ -566,228 +107,348 @@ export function Workspace({ dealId }: { dealId: string }) {
       style={{
         height: '100vh',
         width: '100%',
-        padding: `${space.page}px ${space.page}px 0`,
+        padding: '18px 18px 0',
         display: 'flex',
         flexDirection: 'column',
-        gap: space.gap,
+        gap: 14,
         fontFamily: font.ui,
-        color: colour.ink,
-        fontSize: size.body,
+        color: ink.base,
+        fontSize: 14.5,
         lineHeight: 1.5,
         overflow: 'hidden',
-        background: pageBackground,
+        background: ground,
       }}
     >
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: space.gap }}>
-        {showLeft && (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 14 }}>
+        {/* The main card. */}
+        <div
+          style={{
+            flex: '1 1 0',
+            minWidth: 540,
+            display: 'flex',
+            flexDirection: 'column',
+            order: 1,
+            overflow: 'hidden',
+            ...card,
+          }}
+        >
+          {/* Header row. */}
           <div
             style={{
-              flex: '1 1 0',
-              minWidth: 0,
+              flex: '0 0 auto',
               display: 'flex',
-              flexDirection: 'column',
-              ...panel,
-              fontFamily: font.office,
+              alignItems: 'center',
+              gap: 10,
+              padding: '9px 10px',
+              borderBottom: '1px solid #f0eeec',
             }}
           >
-            <div
-              style={{
-                flex: '0 0 auto',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '9px 10px',
-                borderBottom: `1px solid ${colour.rule}`,
-              }}
-            >
-              <div style={tabChip}>
-                <span>{TAB[view]}</span>
-              </div>
-              <div style={{ flex: 1 }} />
-              <span
-                style={{
-                  color: colour.muted,
-                  fontSize: size.meta,
-                  paddingRight: 6,
-                }}
-              >
-                {deal}
-              </span>
-            </div>
-
-            {error ? (
+            {!hasDeal && (
               <div
                 style={{
-                  padding: 26,
-                  color: colour.critical,
-                  fontSize: size.meta,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 9,
+                  background: 'rgba(255,255,255,.75)',
+                  border: '1px solid rgba(255,255,255,.7)',
+                  boxShadow: '0 1px 2px rgba(18,24,40,.08)',
+                  borderRadius: 11,
+                  padding: '8px 14px',
+                  fontWeight: 500,
                 }}
               >
-                {error}
+                <span>{LABELS[view]}</span>
               </div>
-            ) : view === 'files' ? (
-              <Files
-                fetch={roomPage}
-                reloadOn={roomVersion}
-                deal={deal}
-                onOpen={(artifact) => go(SCREEN[artifact.kind])}
-                onUpload={(files) => void upload(files)}
-                uploading={uploading}
-                problem={rejected}
-              />
-            ) : view === 'checks' ? (
-              <Checks
-                checked={checked}
-                findings={findings}
-                deal={deal}
-                coverage={coverageLine}
-                onTrace={trace}
-                onSlide={() => go('deck')}
-                onCell={() => go('sheets')}
-              />
-            ) : view === 'trace' ? (
-              <Trace
-                chain={chain}
-                title={traced?.source.name ?? traced?.title ?? 'Chain'}
-                printed={traced?.printed ?? ''}
-                expected={traced?.expected ?? ''}
-                //: Who says which. A drift is a deliverable disagreeing
-                //: with the model; a contradiction is a document nobody
-                //: on the deal wrote disagreeing with it, and calling the
-                //: audited accounts « the deliverable » gets the whole
-                //: sentence the wrong way round.
-                says={
-                  traced?.kind === 'contradiction'
-                    ? (traced.where.filename ?? 'The source document')
-                    : 'The deliverable'
-                }
-                rows={[
-                  { k: 'Figure', v: `${traced?.title ?? ''}` },
-                  { k: 'Source', v: traced?.source.ref ?? '—' },
-                  { k: 'Basis', v: traced?.source.basis || '—' },
-                  { k: 'Where', v: traced?.where.detail ?? '—' },
-                  {
-                    k: 'Status',
-                    v:
-                      traced?.kind === 'drift'
-                        ? 'Drifted from the model'
-                        : traced?.kind === 'contradiction'
-                          ? 'Anchor — the document the model is grounded in'
-                          : 'Checked',
-                  },
-                ]}
-                onSlide={() => go('deck')}
-                onCell={() => go('sheets')}
-              />
-            ) : view === 'confirm' ? (
-              <Confirm
-                links={links.filter((one) => one.state === 'proposed')}
-                deal={deal}
-                detail={linkDetail}
-                onSelect={(link) => {
-                  void api
-                    .link(link.id)
-                    .then(setLinkDetail)
-                    .catch(() => {})
-                }}
-                onDecide={(link, state, cellId) =>
-                  void decide(link, state, cellId)
-                }
-                onSearch={(artifactId, query) => api.cells(artifactId, query)}
-              />
-            ) : view === 'library' ? (
-              <Library rows={rows} onOpen={() => go('checks')} />
-            ) : view === 'sheets' ? (
-              <Sheets
-                grid={grid}
-                audit={findings.filter((one) => one.kind === 'audit')}
-                onCell={trace}
-              />
-            ) : view === 'deck' || view === 'docs' ? (
-              <Document
-                map={view === 'deck' ? deckMap : memoMap}
-                kind={view === 'deck' ? 'deck' : 'memo'}
-                findings={findings}
-                corrections={corrections}
-                onTrace={trace}
-                onDecide={(finding, correction, decision) =>
-                  void settle(finding, correction, decision)
-                }
-              />
-            ) : view === 'applications' ? (
-              <Applications onGo={go} />
-            ) : view === 'projects' ? (
-              <Projects
-                deals={deals}
-                current={dealFor.current}
-                onOpen={openDeal}
-              />
-            ) : view === 'terminal' ? (
-              <Terminal
-                api={api}
-                dealId={dealFor.current}
-                deal={deal}
-                onChanged={() => {
-                  setDealsAt((was) => was + 1)
-                  void load()
-                }}
-              />
-            ) : view === 'mail' && store?.connection ? (
-              //: The same rule as SharePoint: only once there is a
-              //: mailbox behind it. Before that the honest screen is the
-              //: one that says what is missing.
-              <Mail
-                api={api}
-                state={store}
-                dealId={dealFor.current}
-                findings={findings}
-                onChecked={() => void load()}
-              />
-            ) : view === 'sharepoint' && store?.connection ? (
-              //: Only once there is a connection behind it. Before that
-              //: the honest screen is the one that says what is missing —
-              //: a library with no library in it is furniture.
-              <SharePoint
-                api={api}
-                state={store}
-                dealId={dealFor.current}
-                organizationId={organization}
-                folder={folder}
-                externals={held}
-                onChanged={() => {
-                  setStoreAt((was) => was + 1)
-                  void load()
-                }}
-              />
-            ) : (
-              // Calendar, and Mail and SharePoint before anybody has
-              // connected one: drawn, and honestly empty. See `Waiting.tsx`.
-              <Waiting
-                view={view}
-                onGo={go}
-                action={
-                  (view === 'sharepoint' || view === 'mail') &&
-                  store?.authorize_url
-                    ? { label: 'Connect Microsoft', href: store.authorize_url }
-                    : null
-                }
-              />
+            )}
+            {hasDeal && (
+              <>
+                <button
+                  onClick={() => setDeal(null)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    background: 'rgba(255,255,255,.75)',
+                    border: '1px solid rgba(255,255,255,.7)',
+                    boxShadow: '0 1px 2px rgba(18,24,40,.08)',
+                    borderRadius: 11,
+                    padding: '8px 14px 8px 11px',
+                    font: 'inherit',
+                    fontWeight: 500,
+                    color: ink.accent,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <svg
+                    width="9"
+                    height="15"
+                    viewBox="0 0 9 15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="7.5,1.5 1.5,7.5 7.5,13.5" />
+                  </svg>
+                  <span>Deals</span>
+                </button>
+                <span style={{ fontWeight: 500 }}>{deal!.name}</span>
+              </>
+            )}
+            <div style={{ flex: 1 }} />
+            {hasDeal && (
+              <button style={{ ...blueButton, marginRight: 4 }}>
+                Check now
+              </button>
+            )}
+            {view === 'deals' && deal === null && (deals?.length ?? 0) > 0 && (
+              <button style={{ ...blueButton, marginRight: 4 }}>
+                New deal
+              </button>
             )}
           </div>
-        )}
 
-        <Chat
-          messages={messages}
-          greeting="Good morning. What are we checking?"
-          deal={deal}
-          onSend={(text) => void send(text)}
-          onNew={() => setMessages([])}
-          alone={!showLeft}
-          narrow={narrow}
-        />
+          {/* Content. */}
+          {view === 'deals' ? (
+            <Deals
+              api={api}
+              organizationId={organizationId}
+              deals={deals}
+              deal={deal}
+              onOpen={setDeal}
+              onChanged={() => setDealsAt((was) => was + 1)}
+            />
+          ) : (
+            //: The design's own face for a view that is not there — the
+            //: `vOther` placeholder, borrowed until this screen's round.
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#a19f9d',
+                fontSize: 13.5,
+              }}
+            >
+              {LABELS[view]}
+            </div>
+          )}
+        </div>
       </div>
 
-      <Dock view={view} onGo={go} deal={deal} />
+      {/* The dock. */}
+      <div
+        style={{
+          flex: '0 0 auto',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '10px 0 14px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 12px',
+            background: 'rgba(255,255,255,.55)',
+            backdropFilter: 'blur(34px) saturate(1.8)',
+            WebkitBackdropFilter: 'blur(34px) saturate(1.8)',
+            border: '1px solid rgba(255,255,255,.9)',
+            borderRadius: 30,
+            boxShadow:
+              '0 12px 34px rgba(16,20,28,.14), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.95)',
+          }}
+        >
+          <button onClick={go('deals')} style={dock('deals')}>
+            Deals
+          </button>
+          <button onClick={go('check')} style={dock('check')}>
+            Check a file
+          </button>
+          <button onClick={go('settings')} style={dock('settings')}>
+            Settings
+          </button>
+          <span
+            style={{
+              width: 1,
+              height: 22,
+              background: 'rgba(21,23,27,.12)',
+              margin: '0 8px',
+            }}
+          />
+          <div style={{ position: 'relative', display: 'flex' }}>
+            <button
+              onClick={() => setAcctOpen((was) => !was)}
+              title={userName}
+              style={{
+                border: 0,
+                background: 'transparent',
+                borderRadius: 22,
+                padding: '7px 9px',
+                cursor: 'pointer',
+                display: 'flex',
+              }}
+            >
+              <span
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(150deg,#d8e6ff,#b9cdf5)',
+                  boxShadow: 'inset 0 0 0 .5px rgba(0,0,0,.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: '#2c4a80',
+                }}
+              >
+                {initialsOf(userName)}
+              </span>
+            </button>
+            {acctOpen && (
+              <>
+                <div
+                  onClick={() => setAcctOpen(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 29 }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 'calc(100% + 12px)',
+                    left: -4,
+                    zIndex: 30,
+                    width: 272,
+                    background: 'rgba(255,255,255,.88)',
+                    backdropFilter: 'blur(30px) saturate(1.8)',
+                    WebkitBackdropFilter: 'blur(30px) saturate(1.8)',
+                    borderRadius: 15,
+                    boxShadow:
+                      '0 18px 44px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.08)',
+                    overflow: 'hidden',
+                    animation: 'pcIn .14s ease both',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '15px 16px 14px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        flex: '0 0 38px',
+                        width: 38,
+                        height: 38,
+                        borderRadius: '50%',
+                        background: 'linear-gradient(150deg,#d8e6ff,#b9cdf5)',
+                        boxShadow: 'inset 0 0 0 .5px rgba(0,0,0,.06)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        color: '#2c4a80',
+                      }}
+                    >
+                      {initialsOf(userName)}
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 15.5,
+                          fontWeight: 600,
+                          letterSpacing: '-.015em',
+                        }}
+                      >
+                        {userName}
+                      </span>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 13,
+                          color: ink.secondary,
+                          marginTop: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {userEmail}
+                      </span>
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      borderTop: '.5px solid rgba(0,0,0,.09)',
+                      padding: 6,
+                    }}
+                  >
+                    {(
+                      [
+                        //: In the design this item closes the popover and
+                        //: goes nowhere — there is no notifications screen
+                        //: drawn. Kept exactly as drawn; flagged in the
+                        //: build notes rather than silently dropped.
+                        {
+                          label: 'Notifications',
+                          fg: ink.primary,
+                          go: () => setAcctOpen(false),
+                        },
+                        {
+                          label: 'Settings',
+                          fg: ink.primary,
+                          go: () => {
+                            setAcctOpen(false)
+                            setView('settings')
+                            setDeal(null)
+                          },
+                        },
+                        {
+                          label: 'Sign out',
+                          fg: ink.danger,
+                          go: () => {
+                            window.location.href = '/logout'
+                          },
+                        },
+                      ] as const
+                    ).map((item) => (
+                      <button
+                        key={item.label}
+                        onClick={item.go}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          border: 0,
+                          background: 'transparent',
+                          borderRadius: 9,
+                          padding: '9px 11px',
+                          font: 'inherit',
+                          fontSize: 14.5,
+                          color: item.fg,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

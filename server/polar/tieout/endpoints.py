@@ -413,16 +413,37 @@ async def list_deals(
     for deal in deals:
         counts = await repository.count_findings(deal.id)
         run = await repository.latest_run(deal.id, CheckKind.tieout)
+        current = await repository.current_artifacts(deal.id)
+
+        # **Stale is a fact about timestamps, not a judgement.** A current
+        # document that arrived after the run finished was never read by
+        # it, so everything the run said — including this row's findings
+        # count — describes a deal that no longer exists. The latest such
+        # arrival names the row's sentence.
+        stale_kind: str | None = None
+        stale_at = None
+        if run is not None and run.finished_at is not None:
+            for artifact in current:
+                arrived = artifact.created_at
+                if arrived > run.finished_at and (
+                    stale_at is None or arrived > stale_at
+                ):
+                    stale_kind = artifact.kind.value
+                    stale_at = arrived
+
         items.append(
             DealListItem(
                 id=deal.id,
                 name=deal.name,
                 client=deal.client_name,
-                artifacts=len(await repository.current_artifacts(deal.id)),
+                artifacts=len(current),
                 open_findings=counts.get("open", 0),
                 # The run's own finishing time, not the row's: a run that
                 # was started and never finished has not checked anything.
                 checked_at=run.finished_at if run else None,
+                stale=stale_at is not None,
+                stale_kind=stale_kind,
+                stale_at=stale_at,
             )
         )
     return items

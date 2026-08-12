@@ -1212,3 +1212,47 @@ formulas, 0 silent losses. Numbers, the declines that are correct declines,
 and what is still deferred are in `accuracy-backlog.md`.
 
 **Still not started: the trace viewer.** Waiting on your design, as agreed.
+
+---
+
+## 12 August, night — the workspace begins, from the full design
+
+The founder finished the complete workspace design — every screen, one
+file — and the build order is now theirs: analyse the whole thing, then
+one round at a time.
+
+**The design is checked in** at `docs/pierce/design/` — markup, the
+component logic, the stylesheet, and a README that records the canvas
+(1440×900), the one prop (`notConnected`), and the standing rule on
+writing boxes: `border:0; outline:none`, focus is a soft glow or nothing.
+Never a square outline. The fonts (Switzer 400/500/600, IBM Plex Mono)
+and the file icons were extracted from the design file itself and
+self-hosted — no external font host.
+
+**Round one, built and looked at:** the shell (floating card over the
+radial ground, glassy pill dock at bottom centre, account popover), the
+Deals list (Needs attention / Clean groups, the design's own rows), and
+the first-run empty state (Connect Microsoft → waiting → connected,
+driven by the real connector state). The old workspace screens — the
+previous design — are deleted.
+
+**Wired, not mocked.** The list renders `GET /v1/tieout/deals`, which now
+also serves `stale` / `stale_kind` / `stale_at`: a current artifact that
+arrived after the last run finished, computed from timestamps the
+endpoint already loaded. The sentence (« The model changed at 11:40
+today ») is built in the browser, where the reader's clock lives.
+
+**Two states the design's demo data never draws, composed from its
+nearest patterns and said so in the code:** a never-checked deal joins
+the attention group as « Not checked yet » (it cannot sit under Clean —
+the API docstring forbids those two sharing a word), and the loading
+face is the bare well for the one paint it exists.
+
+**Verified** with Playwright at 1440×900 against the seeded deals:
+list, deal-open header, placeholder tabs, account popover. Switzer
+confirmed loaded via `document.fonts`. 52 server tests pass on the
+endpoint change; web typecheck clean.
+
+**Flagged to the founder:** the popover's « Notifications » item goes
+nowhere in the design (its own handler just closes the popover) — built
+as drawn, needs a destination or dropping.
