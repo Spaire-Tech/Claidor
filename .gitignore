@@ -166,3 +166,4 @@ server/.corpus-cache/
 # documents, but megabytes of binary and re-fetchable from a URL.
 server/scripts/corpus_models/
 server/scripts/corpus_documents/
+server/scripts/corpus_pairs/

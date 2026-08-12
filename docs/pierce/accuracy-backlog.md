@@ -429,3 +429,72 @@ the plants get more awkward, not a score.
 carries `docProps/core.xml`, so there is nothing silent to plant into. It
 fires on 79 of 83 real files in the survey, which is stronger evidence
 than a plant would be.
+
+## Grounding meets a pair nobody here wrote
+
+The chain has three legs. The deck against the model has been measured on
+real decks; the formula graph on real models; the figure reader on a real
+annual report. **Grounding** — a figure in a source document matched to the
+typed input cell it is the origin of — had only ever run against the
+Cascade fixture, where the accounts and the model were both written here,
+by the same hand, on the same afternoon. That is not evidence of anything.
+
+**A real pair is a government department publishing a report and the
+spreadsheet behind it on the same page, on the same day.** A PDF stating
+figures and a workbook whose typed cells are where those figures came from,
+by people who have never heard of us. `scripts/grounding_pairs.py` measures
+it; the pairs come from gov.uk the same way the document corpus does.
+
+### The first pair found two links and both were false
+
+NHS workforce statistics, September 2015 — a 113-figure overview report
+against the workbook published beside it.
+
+```
+0.74 (next 0.57)   13,686  p8  'FTE are Support to clinical staff'
+                   → Controls!A10 'Support to clinical staff' = 10
+0.56 (next 0.45)   11,237  p8  'FTE are Infrastructure support staff'
+                   → Controls!A11 'NHS infrastructure support' = 11
+```
+
+`Controls` is a lookup list. Column A counts `1, 2, 3 … 15`; column B holds
+the staff group's name. So `A10` is *named* « Support to clinical staff »
+and *holds* the number ten. The label matched; the cell was never a
+quantity. And because the values differ, each was then reported as the
+document **contradicting** the model — the confidently-wrong finding this
+whole product exists to avoid, produced on the first real file it saw.
+
+**Fixed structurally, not by a threshold.** A column that counts its own
+rows is an index, and an index is not something a set of accounts can be
+the origin of. Two shapes, both about position rather than magnitude: the
+value equals the row it sits on, or the values count up from one. A column
+of years fails both — 2015 is not row 3 and does not start at 1 — which
+was checked, because suppressing a model's period headers would take real
+inputs out of the grounding set. On this workbook it removed exactly one
+column, `Controls!A`, and 15 of 167 candidate inputs. Nothing else.
+
+### The true match exists, and the linker declines it
+
+The report's `13,686` really is in the workbook: sheet `3`, cell `C24`,
+`13686.22044000018`, row label *Support to clinical staff*. The linker
+scores it **0.82** — and refuses:
+
+```
+two outputs fit equally well (4!I24 0.82, 4!H24 0.82)
+```
+
+The same staff category appears on many sheets and in many columns, one
+per period, and the report's prose — « FTE are Support to clinical staff »
+— names no period at all. So the label genuinely does not identify a cell,
+and declining is the designed behaviour working rather than failing. Using
+the value to break the tie would fix this case and destroy the product:
+picking the cell that already matches is how a checker stops finding
+discrepancies.
+
+**What this leaves.** No false positives on this pair after the fix, and no
+true positives either. Real accounts name their period — « for the year
+ended 31 December 2025 », which is what `as_fiscal_year` exists to
+translate — and a statistical release does not. Whether that is the whole
+explanation is not yet established, and the honest state of the grounding
+leg is: **one class of false positive found and removed on real data, and
+still no demonstrated true positive outside a fixture we wrote.**
