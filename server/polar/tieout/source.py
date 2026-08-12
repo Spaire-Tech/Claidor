@@ -88,6 +88,15 @@ def read_source_bytes(payload: bytes) -> Extraction:
     return read_pages(pages)
 
 
+#: A label has to carry at least one real word. Three letters, because
+#: « A » and « of » name nothing and a footnote marker is one character.
+WORD = re.compile(r"[A-Za-z]{3,}")
+
+
+def _named(label: str) -> bool:
+    return bool(WORD.search(label))
+
+
 def _text_of(page: object) -> str:
     try:
         return getattr(page, "extract_text")() or ""
@@ -121,10 +130,24 @@ def _sentences(text: str) -> list[str]:
     checkable at all.
     """
     joined: list[str] = []
+    seen: set[str] = set()
     for raw in text.split("\n"):
-        line = raw.strip()
+        # A non-breaking space is a space to a reader and a different
+        # character to everything else. A real annual report carries both
+        # spellings of the same sentence — a visible layer and an
+        # accessibility one — and read as written they become two figures
+        # where the document made one claim.
+        line = raw.replace("\xa0", " ").strip()
+        line = re.sub(r"\s+", " ", line)
         if not line:
             continue
+        # The same full line twice on one page is an extraction artefact,
+        # not a document saying something twice. Within a page only: a
+        # heading repeated on every page of a note is a real repetition
+        # and the page number is what tells those apart.
+        if line in seen:
+            continue
+        seen.add(line)
         if (
             joined
             and not joined[-1].endswith((".", ":", ";", "!", "?"))
@@ -183,6 +206,28 @@ def read_pages(pages: list[str]) -> Extraction:
 
             for item in named:
                 found = item.item
+                # **A figure with no words in front of it is not a figure
+                # this reader can reason about.**
+                #
+                # `name_figures` cuts a line at its figures and names each
+                # by the clause before it. Where one figure follows
+                # another with nothing between — a statement row, a chart
+                # strip, a two-column page that PDF extraction interleaves
+                # — that clause is empty, or a footnote marker, or the
+                # number from the next column. Measured on a real 461-page
+                # annual report: 63% of everything found.
+                #
+                # Such a figure can never link, because there is nothing
+                # to match on. Emitting it inflates the count, pollutes
+                # the coverage line, and gives the matcher a value with no
+                # name to try against — so it is counted and dropped.
+                #
+                # Counted, not hidden: `rejected` is what this field was
+                # always for, and it reported zero on 8,387 figures, which
+                # should itself have been the warning.
+                if not _named(item.label):
+                    extraction.rejected += 1
+                    continue
                 seen[found.printed] = seen.get(found.printed, 0) + 1
                 extraction.figures.append(
                     Figure(
