@@ -191,3 +191,59 @@ hour, by breaking spreadsheets on purpose.
 **A checker with no recall measurement is a checker that is silently
 allowed to be quiet.** Every rule added from here starts with the mutation
 that proves it fires.
+
+---
+
+## Measured and rejected: reading a PDF with geometry
+
+11 August. A research pass recommended `pdfplumber` (MIT) for the source
+reader, on the argument that character coordinates would fix the debris
+labels — a figure named by the number in the next column rather than by
+words. That argument is right about the *cause* and wrong about the fix,
+and this is the measurement, so nobody reads the recommendation again and
+repeats it.
+
+**What was built.** Words with boxes, grouped into lines by baseline,
+each line cut wherever the gap between two words exceeded the word's own
+height. Prose word-gaps on a real annual report measure 2.1–2.4pt and
+table column-gaps 17–52pt, so the separation is clean and the threshold is
+not a guess. (The page's median gap is *not* usable as the denominator: a
+page that is mostly table has a median gap of 33pt and the measure eats
+itself.)
+
+**What it did, on five pages of Shell plc's 2025 annual report:**
+
+| | flat text | with geometry |
+|---|---|---|
+| figures | 85 | 14 |
+| poorly labelled | 29 | 2 |
+
+Which looks like a win until you read the 78 it dropped. **Forty-nine of
+them were correctly labelled:**
+
+```
+27,361  'Future cash inflows'
+ 6,529  'Future production costs'
+ 1,731  'Standardised measure of discounted future net cash flows'
+```
+
+On a statement, the row label sits in column 1 and the first figure in
+column 2 — separated by exactly the gap the split fires on. So splitting
+severs the label from the figure it names.
+
+**Flattening already produces the right outcome, by accident.** The row
+label and its first number land in one line, so the first figure is named;
+the remaining columns have only a number in front of them and the
+`_named` rule rejects them. One named figure per row, the rest declined —
+which is what the geometry was supposed to achieve.
+
+**And it cost 212 seconds against 20.7.** Ten times slower on one file.
+
+**What geometry does win.** Multi-column *prose*, where flattening merges
+two columns: it newly found seven figures such as `11%` named « increased
+by ». Seven against forty-nine.
+
+**When to revisit.** Not with a splitter. The only version of this that
+works is real table reading — first cell names the row, header row names
+the column — and that is the project already deferred. If it is ever
+built, `pdfplumber` is still the right tool and this note is the design.
