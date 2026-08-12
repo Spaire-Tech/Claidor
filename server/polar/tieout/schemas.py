@@ -303,6 +303,15 @@ class ChainStep(Schema):
     basis: str | None = None
     note: str | None = None
     inputs: list[ChainInput] = Field(default_factory=list)
+    #: What this cell reads that could not be followed, each already
+    #: phrased as a sentence — « in another workbook, which is not in this
+    #: deal », « a defined name pointing at #REF! ».
+    #:
+    #: The reason this is on the wire at all: a chain that quietly omits an
+    #: input looks exactly like a chain that had none, and this product's
+    #: whole claim is the chain. Rule 3 — what was not checked is part of
+    #: the answer.
+    unresolved: list[str] = Field(default_factory=list)
 
 
 class ChainRead(Schema):

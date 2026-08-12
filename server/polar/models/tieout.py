@@ -345,6 +345,19 @@ class ModelCell(RecordModel):
     #: The cells this one is computed from, so the chain renders without
     #: re-parsing the workbook.
     precedents: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    #: What this cell reads that could *not* be resolved to a cell, each
+    #: with a sentence saying why: a reference into another workbook, a
+    #: defined name left pointing at `#REF!`, a range longer than the
+    #: chain will follow.
+    #:
+    #: Stored beside the precedents rather than dropped, because the two
+    #: together are the honest answer and one alone is not. A chain short
+    #: by an input, presented as complete, was the state of 4.4% of
+    #: formulas across two real Ofgem models — and of the one input that
+    #: decided the answer in 3,542 of them.
+    unresolved: Mapped[list[list[str]]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
     #: Set when the whole formula is one reference — a pointer, not a
     #: figure. Excluded from linking so one figure does not have two homes.
     alias_of: Mapped[str | None] = mapped_column(

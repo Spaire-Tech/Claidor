@@ -223,6 +223,7 @@ class TieOutService:
                         number_format=cell.number_format,
                         name=cell.name,
                         precedents=list(cell.precedents),
+                        unresolved=[list(one) for one in cell.unresolved],
                         alias_of=cell.alias_of,
                     )
                     for cell in ingested.cells
@@ -1121,6 +1122,11 @@ def _workbook_of(cells: Sequence[CellRow]) -> Workbook:
             row_label=row.row_label,
             column_label=row.column_label,
             precedents=tuple(row.precedents or ()),
+            unresolved=tuple(
+                (str(one[0]), str(one[1]))
+                for one in (row.unresolved or [])
+                if len(one) == 2
+            ),
             alias_of=row.alias_of,
         )
     book.sheets = list(dict.fromkeys(row.sheet for row in cells))
@@ -1261,6 +1267,11 @@ def _steps_from(
                 "basis": basis if len(steps) == 0 else None,
                 "note": None if cell.formula else "typed, not calculated",
                 "inputs": inputs,
+                # Carried to the screen rather than counted. « Four inputs
+                # and one we could not follow » is a different sentence
+                # from « four inputs », and a banker deciding whether to
+                # trust a number needs the second half of it.
+                "unresolved": [why for _, why in cell.unresolved],
             }
         )
         if not cell.formula:

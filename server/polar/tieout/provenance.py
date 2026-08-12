@@ -169,6 +169,12 @@ def chain(book: Workbook, ref: str, depth: int = DEPTH) -> str:
         parts.append(f"{_relative(cell, source) or precedent}{shown}")
     if len(cell.precedents) > 4:
         parts.append(f"and {len(cell.precedents) - 4} more")
+    # An input that could not be followed belongs in the sentence, not
+    # under it. A chain reading « = EBIT 41.2, taxes 9.8 » when a third
+    # input existed and was dropped is the product asserting something it
+    # does not know.
+    for _, why in cell.unresolved[:2]:
+        parts.append(f"and one {why}")
     return f"{line} = {', '.join(parts)}" if parts else line
 
 

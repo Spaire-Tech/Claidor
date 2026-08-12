@@ -16,6 +16,7 @@ have.
 from pathlib import Path
 
 import pytest
+import sqlalchemy as sa
 from httpx import AsyncClient
 
 from polar.auth.scope import Scope
@@ -470,6 +471,55 @@ class TestFindingsAndTheChain:
         assert steps[0]["kind"] == "figure"
         assert any(step["kind"] in {"cell", "input"} for step in steps)
         assert response.json()["summary"]
+        # Present on every step, empty on a clean one. The field existing
+        # is what stops the screen having to assume; see the next test for
+        # why an absent field and an empty one are different claims.
+        assert all("unresolved" in step for step in steps)
+
+    @pytest.mark.auth
+    async def test_an_input_the_chain_could_not_follow_reaches_the_screen(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The other half of the answer, all the way through.
+
+        A cell reading something the parser cannot resolve to a cell — a
+        reference into another workbook, a name pointing at `#REF!` — used
+        to produce a chain short by that input and identical to a chain
+        that never had one. Across two real Ofgem models that was 4.4% of
+        formulas, and on one of them the dropped input was the switch
+        deciding what the whole model computed.
+
+        This walks it end to end: engine, database, route, wire.
+        """
+        from polar.models import ModelCell
+
+        deal = await _loaded(session, save_fixture, user)
+        findings = (await client.get(f"/v1/tieout/deals/{deal.id}/findings")).json()
+        chain = (
+            await client.get(f"/v1/tieout/findings/{findings[0]['id']}/chain")
+        ).json()
+        ref = next(
+            step["ref"] for step in chain["steps"] if step["kind"] in {"cell", "input"}
+        )
+
+        cell = (
+            await session.execute(
+                sa.select(ModelCell).where(ModelCell.ref == ref).limit(1)
+            )
+        ).scalar_one()
+        cell.unresolved = [["[1]Group.xlsx!B4", "in another workbook"]]
+        session.add(cell)
+        await session.flush()
+
+        again = (
+            await client.get(f"/v1/tieout/findings/{findings[0]['id']}/chain")
+        ).json()
+        step = next(one for one in again["steps"] if one["ref"] == ref)
+        assert step["unresolved"] == ["in another workbook"]
 
 
 @pytest.mark.asyncio

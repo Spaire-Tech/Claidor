@@ -99,6 +99,17 @@ export interface ChainStep {
   basis?: string | null
   note?: string | null
   inputs: { ref: string; name: string; value: string | null }[]
+  /**
+   * What this step reads that could not be followed, each already a
+   * sentence — "in another workbook, which is not in this deal", "a
+   * defined name pointing at #REF!".
+   *
+   * **Not yet rendered anywhere.** The engine and the wire carry it; no
+   * screen shows it. Measured across two real Ofgem models, 4.4% of
+   * formulas had a chain short by an input and no way to say so, so a
+   * chain drawn without this is a chain that may be quietly incomplete.
+   */
+  unresolved: string[]
 }
 
 export interface Chain {
