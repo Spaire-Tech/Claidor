@@ -366,3 +366,66 @@ library.
 The sample is also not stable — gov.uk publishes and withdraws constantly,
 so a run next month returns an overlapping but different set. The survey
 prints its own file count for that reason.
+
+## The metadata checker's recall, and the bug it exposed
+
+The section above ended with « there is no recall figure and there cannot
+be one from this corpus ». That was true of *that* corpus and not of the
+question, and leaving a check in the state « I don't know what it misses »
+was the wrong place to stop.
+
+**So the misses are manufactured.** `scripts/metadata_recall.py` plants one
+known leak into a real file that was silent about that rule before, checks
+the file again, and records whether the rule fired. The same method as the
+model audit's 150 planted defects: ground truth by construction, inside
+somebody else's real work rather than a fixture built to be found.
+
+**The first run returned 100% on 204 plants, which was not a result.**
+Every plant was the shape I had in mind while writing the rule, so all it
+measured was my imagination. The plants were then rewritten as the *other*
+legitimate spellings of the same leak — the attribute Office also accepts,
+the element nested where a real document nests it, the newer part that
+replaced the old one — and one of them failed.
+
+### `cell-comment`: 0 of 12
+
+Excel has two kinds of comment. The original *note* lives in
+`xl/comments1.xml` in the spreadsheet namespace. The **threaded comment**,
+which is what the « New Comment » button has produced since 2018, lives in
+`xl/threadedComments/` in a Microsoft namespace of its own, with the names
+held separately in `xl/persons/person.xml`. The rule knew only the first.
+
+**What that cost in practice was smaller than 0-of-12 suggests, and the
+difference is worth stating.** Excel usually writes a legacy fallback note
+beside each threaded comment. The one corpus file that has threaded
+comments — an FSA data collection spreadsheet with 21 of them — has those
+fallbacks, so the *text* was being read all along. What was missing was
+the name on each one, and the names are real: Craig Jones, Ese Hughes. The
+plant is the case where no fallback was written, and there the loss is
+total.
+
+Fixed, with both kinds read and the fallback deduplicated against the
+threaded comment so nothing is reported twice.
+
+### Where it stands after the fix
+
+| | |
+|---|---|
+| Plants | 264, across 23 variants of 17 rules |
+| Found | **264 (100%)** |
+| Collateral findings | **0** |
+| Rules with a plant written by a real Office writer | 4 of 23 variants, marked `library` |
+| Rules with a hand-written plant | 19 of 23, marked `hand` |
+
+**What 100% here does and does not mean.** It means every rule fires on
+the leak it is for, in each spelling tested, inside a real file, without
+making a second rule fire. It does not mean the checker finds every leak a
+real person leaves — the threaded comment was invisible until somebody
+thought to plant one, and the next gap will be invisible the same way
+until the next variant is written. The number is a floor that moves up as
+the plants get more awkward, not a score.
+
+`document-properties` has no plant: every file in the corpus already
+carries `docProps/core.xml`, so there is nothing silent to plant into. It
+fires on 79 of 83 real files in the survey, which is stronger evidence
+than a plant would be.

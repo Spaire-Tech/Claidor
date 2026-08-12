@@ -308,6 +308,75 @@ class TestExcel:
         assert not _of(report, "local-path")
 
 
+    def test_a_threaded_comment_is_the_kind_people_actually_make(self) -> None:
+        """Excel's « New Comment » has produced these since 2018.
+
+        Different part, different namespace, names held separately in
+        `xl/persons/person.xml`. A rule that knows only the old note reads
+        nothing here — measured at 0 of 12 planted before this was fixed.
+        """
+        book = self._book()
+        payload = self._bytes(book)
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(payload)) as source:
+            with zipfile.ZipFile(buffer, "w") as target:
+                for item in source.infolist():
+                    target.writestr(item, source.read(item.filename))
+                target.writestr(
+                    "xl/persons/person.xml",
+                    '<?xml version="1.0"?><personList xmlns="http://schemas.'
+                    'microsoft.com/office/spreadsheetml/2018/threadedcomments">'
+                    '<person displayName="Jo Reviewer" id="{JO}"/></personList>',
+                )
+                target.writestr(
+                    "xl/threadedComments/threadedComment1.xml",
+                    '<?xml version="1.0"?><ThreadedComments xmlns="http://'
+                    "schemas.microsoft.com/office/spreadsheetml/2018/"
+                    'threadedcomments"><threadedComment ref="D12" '
+                    'personId="{JO}" id="{1}"><text>are we sure about this '
+                    "number?</text></threadedComment></ThreadedComments>",
+                )
+        report = read_metadata_bytes(buffer.getvalue())
+
+        found = _of(report, "cell-comment")
+        assert len(found) == 1
+        assert found[0].where.endswith("cell D12")
+        assert "Jo Reviewer" in found[0].detail
+        assert found[0].evidence == "are we sure about this number?"
+
+    def test_a_fallback_note_is_not_the_same_comment_twice(self) -> None:
+        """Excel writes a legacy note beside each threaded comment.
+
+        Read as two, every comment in a modern workbook is reported twice
+        — once with a name and once without.
+        """
+        payload = self._bytes(self._book())
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(payload)) as source:
+            with zipfile.ZipFile(buffer, "w") as target:
+                for item in source.infolist():
+                    target.writestr(item, source.read(item.filename))
+                target.writestr(
+                    "xl/threadedComments/threadedComment1.xml",
+                    '<?xml version="1.0"?><ThreadedComments xmlns="http://'
+                    "schemas.microsoft.com/office/spreadsheetml/2018/"
+                    'threadedcomments"><threadedComment ref="D12" '
+                    'personId="{JO}" id="{1}"><text>are we sure?</text>'
+                    "</threadedComment></ThreadedComments>",
+                )
+                target.writestr(
+                    "xl/comments1.xml",
+                    '<?xml version="1.0"?><comments xmlns="http://schemas.'
+                    'openxmlformats.org/spreadsheetml/2006/main"><authors>'
+                    "<author>Jo Reviewer</author></authors><commentList>"
+                    '<comment ref="D12" authorId="0"><text><t>Jo Reviewer:'
+                    "</t><t>are we sure?</t></text></comment></commentList>"
+                    "</comments>",
+                )
+        report = read_metadata_bytes(buffer.getvalue())
+        assert len(_of(report, "cell-comment")) == 1
+
+
 class TestPowerPoint:
     def _deck(self) -> Presentation:
         deck = Presentation()

@@ -1043,36 +1043,99 @@ def _external_workbooks(package: Package, report: Report) -> None:
 
 
 def _cell_comments(package: Package, report: Report) -> None:
-    """Notes attached to cells, and the names on them."""
+    """Notes attached to cells, and the names on them.
+
+    **Excel has two kinds and they are not the same XML.** The original —
+    Excel calls it a *note* now — lives in `xl/comments1.xml` in the
+    spreadsheet namespace. The threaded comment, which is what the « New
+    Comment » button has produced since 2018, lives in
+    `xl/threadedComments/` in a Microsoft namespace of its own, with the
+    names held separately in `xl/persons/person.xml`.
+
+    Reading only the first found a threaded comment **0 times out of 12**
+    planted — see `scripts/metadata_recall.py`, which exists because a rule
+    that fires on the shape its author imagined proves nothing.
+
+    **What that cost in practice was smaller than the number suggests, and
+    saying so matters.** Excel usually writes a legacy note beside each
+    threaded comment so older versions show something, and the one file in
+    the corpus with threaded comments has those fallbacks — so the *text*
+    of its 21 comments was being read all along. What was missing was the
+    name on each one, which is half the point of reporting a comment. The
+    plant is the case where no fallback was written, and there the loss is
+    total.
+
+    Reporting both would say everything twice, so a cell with a threaded
+    comment does not also report its fallback note.
+    """
     where: dict[str, str] = {}
     for name, _, part in _sheets_of(package):
         if not part:
             continue
         for target, _mode in package.rels_for(part).values():
             resolved = _resolve(part, target)
-            if "comments" in resolved:
+            if "comments" in resolved.lower():
                 where[resolved] = name
 
-    entries: list[tuple[str, str, str]] = []
-    pattern = re.compile(r"xl/(?:threadedComments/)?\w*[Cc]omments\d*\.xml$")
-    for part in sorted(package.matching(pattern)):
+    people: dict[str, str] = {}
+    for part in package.matching(re.compile(r"xl/persons/person\w*\.xml$")):
         root = package.xml(part)
         if root is None:
             continue
-        sheet = where.get(part, "")
-        place = f"sheet « {sheet} »" if sheet else part
+        for one in root:
+            person = one.get("id", "")
+            if person:
+                people[person] = one.get("displayName", "")
+
+    entries: list[tuple[str, str, str]] = []
+    threaded: set[str] = set()
+
+    for part in sorted(package.matching(re.compile(r"xl/threadedComments/.*\.xml$"))):
+        root = package.xml(part)
+        if root is None:
+            continue
+        place = _sheet_place(where.get(part, ""), part)
+        for node in root:
+            if not str(node.tag).endswith("}threadedComment"):
+                continue
+            text = " ".join(
+                one.text or "" for one in node if str(one.tag).endswith("}text")
+            )
+            if not text.strip():
+                continue
+            ref = node.get("ref", "")
+            threaded.add(ref)
+            who = people.get(node.get("personId", ""), "")
+            entries.append(
+                (
+                    f"{place}, cell {ref}".rstrip(", "),
+                    "a comment on a cell" + (f", by « {who} »" if who else ""),
+                    _quote(text),
+                )
+            )
+
+    for part in sorted(package.matching(re.compile(r"xl/\w*[Cc]omments\d*\.xml$"))):
+        root = package.xml(part)
+        if root is None:
+            continue
+        place = _sheet_place(where.get(part, ""), part)
         for node in root.iter(f"{{{NS['s']}}}comment"):
             text = _text_of(node, f"{{{NS['s']}}}t")
-            if not text.strip():
+            ref = node.get("ref", "")
+            if not text.strip() or ref in threaded:
                 continue
             entries.append(
                 (
-                    f"{place}, cell {node.get('ref', '')}".rstrip(", "),
+                    f"{place}, cell {ref}".rstrip(", "),
                     "a note attached to a cell",
                     _quote(text),
                 )
             )
     _add(report, "cell-comment", "leak", entries)
+
+
+def _sheet_place(sheet: str, part: str) -> str:
+    return f"sheet « {sheet} »" if sheet else part
 
 
 # --------------------------------------------------------------------------
