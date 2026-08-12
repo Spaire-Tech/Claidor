@@ -275,7 +275,7 @@ def test_a_label_may_sit_past_column_d() -> None:
             [None, None, None, None, "Pre-RIIO net RAV additions", "£m 09/10 prices"],
         ]
     )
-    assert _label_column(written, values) == 5
+    assert _label_column(written, values, written.max_row, written.max_column) == 5
 
 
 def test_the_label_column_is_the_one_with_the_most_different_things_to_say() -> None:
@@ -290,7 +290,7 @@ def test_the_label_column_is_the_one_with_the_most_different_things_to_say() -> 
     written, values = _sheet(
         [["Allowed revenue", "£m", None], ["Actual opex", "£m", None]] * 6
     )
-    assert _label_column(written, values) == 1
+    assert _label_column(written, values, written.max_row, written.max_column) == 1
 
 
 def test_a_label_that_is_a_formula_still_names_its_row() -> None:

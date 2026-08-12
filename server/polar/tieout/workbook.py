@@ -315,14 +315,23 @@ def _names_of(formulas: Any) -> Names:
 def _read_sheet(
     book: Workbook, name: str, sheet: Any, cached: Any, names: Names | None = None
 ) -> None:
-    header_row = _header_row(sheet, cached)
-    label_column = _label_column(sheet, cached)
+    # **`max_row` and `max_column` are not attributes, they are scans.**
+    # `openpyxl` computes each one by walking every cell it has read, so a
+    # `range(1, sheet.max_column + 1)` written inside a row loop is a full
+    # sweep of the sheet per row. On a 22,004-row schools funding
+    # allocation that turned a ten-second read into **nine minutes** — 126
+    # million comparisons, all to re-answer the same question. Asked once,
+    # here, and passed down.
+    last_row = int(sheet.max_row or 0)
+    last_column = int(sheet.max_column or 0)
+    header_row = _header_row(sheet, cached, last_column)
+    label_column = _label_column(sheet, cached, last_row, last_column)
 
     #: The last row label that named a line item rather than a derivation
     #: of one, so « % growth » reads as « growth of that ».
     subject = ""
     labels: dict[int, str] = {}
-    for row in range(1, sheet.max_row + 1):
+    for row in range(1, last_row + 1):
         named = _shown(sheet, cached, row, label_column)
         text = named.strip() if named else ""
         if not text:
@@ -344,12 +353,16 @@ def _read_sheet(
     #: left out: columns C and D of a regulator's model carry whole
     #: paragraphs beginning « Note: », and a paragraph is commentary rather
     #: than a descriptor of the row.
+    #:
+    #: Only for rows that have a name. A descriptor describes something,
+    #: and a row with nothing to describe has none — which on a 22,004-row
+    #: allocations table is most of the sheet.
     tags: dict[int, tuple[str, ...]] = {}
-    for row in range(1, sheet.max_row + 1):
+    for row in labels:
         if row == header_row:
             continue
         found = []
-        for column in range(1, min(sheet.max_column, LABEL_COLUMNS) + 1):
+        for column in range(1, min(last_column, LABEL_COLUMNS) + 1):
             if column == label_column:
                 continue
             beside = _shown(sheet, cached, row, column)
@@ -361,27 +374,41 @@ def _read_sheet(
 
     headers: dict[int, str] = {}
     if header_row is not None:
-        for column in range(1, sheet.max_column + 1):
+        for column in range(1, last_column + 1):
             named = _shown(sheet, cached, header_row, column)
             if named:
                 headers[column] = named.strip()
 
-    for row in range(1, sheet.max_row + 1):
-        for column in range(1, sheet.max_column + 1):
-            shown = cached.cell(row, column).value
+    # **Read row by row, not cell by cell.** `sheet.cell(r, c)` creates the
+    # cell when the file does not contain one, so walking a grid by
+    # coordinate materialises every empty square of it — twice over, since
+    # the formulas and the values are two workbooks. A published schools
+    # funding allocation with 22,004 rows and fourteen columns took tens of
+    # minutes that way, on 2 MB of file. `iter_rows` reads what is there.
+    for values, written in zip(
+        cached.iter_rows(min_row=1, max_row=last_row),
+        sheet.iter_rows(min_row=1, max_row=last_row),
+        strict=False,
+    ):
+        row = values[0].row if values else 0
+        for one in values:
+            shown = one.value
             if isinstance(shown, str) and shown.strip() in ERROR_VALUES:
-                book.errors[f"{name}!{get_column_letter(column)}{row}"] = shown.strip()
+                book.errors[f"{name}!{one.coordinate}"] = shown.strip()
 
-    for row in range(1, sheet.max_row + 1):
-        if row == header_row:
+        if row == header_row or not row:
             continue
+
+        cells = {one.column: one for one in values}
+        formulas = {one.column: one for one in written}
         numeric = [
             column
-            for column in range(1, sheet.max_column + 1)
+            for column in sorted(set(cells) | set(formulas))
             if column != label_column
             and (
-                _decimal(cached.cell(row, column).value) is not None
-                or _formula(sheet.cell(row, column).value) is not None
+                _decimal(cells[column].value if column in cells else None) is not None
+                or _formula(formulas[column].value if column in formulas else None)
+                is not None
             )
         ]
         # A row carrying one number is a label and a value — « Enterprise
@@ -393,8 +420,9 @@ def _read_sheet(
         series = len(numeric) > 1
 
         for column in numeric:
-            number = _decimal(cached.cell(row, column).value)
-            formula = _formula(sheet.cell(row, column).value)
+            written_cell = formulas.get(column)
+            number = _decimal(cells[column].value if column in cells else None)
+            formula = _formula(written_cell.value if written_cell else None)
             read = references_of(formula, name, names) if formula else Precedents()
             references = read.refs
             ref = f"{name}!{get_column_letter(column)}{row}"
@@ -412,7 +440,7 @@ def _read_sheet(
                 # `data_only`, and a legacy `.xls` read through xlrd has no
                 # format on its cells at all, which is why this is asked for
                 # rather than assumed to be there.
-                number_format=getattr(sheet.cell(row, column), "number_format", None),
+                number_format=getattr(written_cell, "number_format", None),
                 precedents=references,
                 unresolved=read.unresolved,
                 alias_of=_alias(formula, references),
@@ -703,13 +731,13 @@ def _period_label(value: Any) -> str | None:
     return f"FY{year}"
 
 
-def _header_row(sheet: Any, cached: Any) -> int | None:
+def _header_row(sheet: Any, cached: Any, last_column: int) -> int | None:
     """The row whose text names the columns. Usually the period header."""
     best: tuple[int, int] | None = None
-    for row in range(1, min(sheet.max_row, HEADER_SEARCH) + 1):
+    for row in range(1, min(int(sheet.max_row or 0), HEADER_SEARCH) + 1):
         texts = sum(
             1
-            for column in range(2, sheet.max_column + 1)
+            for column in range(2, last_column + 1)
             if _shown(sheet, cached, row, column)
         )
         if texts >= HEADER_TEXTS and (best is None or texts > best[1]):
@@ -733,8 +761,19 @@ LABEL_COLUMNS = 8
 #: columns left of its parameter names.
 TAG_LENGTH = 40
 
+#: How many rows are read to decide *which* column holds the names.
+#:
+#: **Which column names the rows is a fact about a sheet's layout, and a
+#: sheet does not change its layout half way down.** Reading all of a
+#: 22,004-row allocations table to choose between eight columns is 352,000
+#: cell reads that cannot change the answer the first few hundred gave —
+#: and every one of them makes `openpyxl` materialise a cell object that
+#: was not in the file. Found by a published schools funding workbook that
+#: took tens of minutes to read.
+LABEL_SCAN = 1000
 
-def _label_column(sheet: Any, cached: Any) -> int:
+
+def _label_column(sheet: Any, cached: Any, last_row: int, last_column: int) -> int:
     """The column holding the row names.
 
     **Chosen by how many *different* things a column says, not how much it
@@ -750,9 +789,10 @@ def _label_column(sheet: Any, cached: Any) -> int:
     labels there and a `Notes` column somewhere off to the right.
     """
     best, most = 1, -1
-    for column in range(1, min(sheet.max_column, LABEL_COLUMNS) + 1):
+    depth = min(last_row, LABEL_SCAN)
+    for column in range(1, min(last_column, LABEL_COLUMNS) + 1):
         seen: set[str] = set()
-        for row in range(1, sheet.max_row + 1):
+        for row in range(1, depth + 1):
             text = _shown(sheet, cached, row, column)
             if text and text.strip():
                 seen.add(text.strip())

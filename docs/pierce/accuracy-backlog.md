@@ -619,3 +619,40 @@ One figure, verified by hand, and a real miss rather than a new guess.
 
 **Formula coverage was re-measured after all of this and is unchanged**:
 59,705 formulas across three real models, 0 silent partial losses.
+
+### Nine minutes to read a two-megabyte spreadsheet
+
+Found by the same sweep, on a published schools funding allocation:
+22,004 rows, 135,348 cells, **555 seconds**. Against Ofgem's model at
+25,852 cells in 16 seconds that is 6.5× the cost per cell, so something was
+superlinear rather than merely large.
+
+It was not `openpyxl`: iterating all 308,056 cells of the offending sheet
+takes **0.5 seconds**. It was this module.
+
+`max_row` and `max_column` are not attributes. `openpyxl` computes each one
+by walking every cell it has read, so `range(1, sheet.max_column + 1)`
+written *inside* a row loop is a full sweep of the sheet per row. The tags
+loop added earlier the same day did exactly that: 3,000 labelled rows ×
+90,000 cells = **126 million comparisons**, all re-answering one question.
+
+Asked once per sheet and passed down:
+
+| | Before | After |
+|---|---|---|
+| Schools allocation, 135,348 cells | 555s | **10.1s** |
+| Ofgem ET1, 25,852 cells | 15.9s | **12.3s** |
+
+Same cell counts, same grounding result — 3 links, 3 agreeing, 0
+contradicting. Two smaller costs went with it: the label-column search now
+reads the first 1,000 rows rather than all of them (which column names the
+rows is a fact about a sheet's layout, and a sheet does not change layout
+half way down), and row descriptors are collected only for rows that have a
+name.
+
+**Two process notes, because they cost more than the bug did.** Timings
+taken earlier in the session were inflated by runaway processes from
+previous runs that had not been killed — including the « 40 minutes » that
+started this. And a test run that came back with 248 errors was two `pytest`
+sessions started concurrently, fighting over the template database, not a
+regression.
