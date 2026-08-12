@@ -343,6 +343,28 @@ export interface DealPage {
    */
   last_tieout: CheckRun | null
   last_audit: CheckRun | null
+  /** A current document arrived after that check — same fact and fields
+   *  as the deals list, plus what the banner's second line counts. */
+  stale: boolean
+  stale_kind: string | null
+  stale_at: string | null
+  stale_documents: number
+  stale_figures: number
+  /** What the team decided, newest first. Derived server-side from the
+   *  findings and corrections it describes — never authored. */
+  decisions: Decision[]
+}
+
+/** One judgement somebody made about a number. */
+export interface Decision {
+  id: string
+  who: { id: string; name: string; avatar_url: string | null } | null
+  at: string
+  action: 'accepted' | 'kept' | 'reversed' | 'dismissed'
+  /** The server's factual sentence. */
+  text: string
+  /** The person's reason, verbatim. Beats `text` on screen when present. */
+  note: string
 }
 
 export interface Coverage {
@@ -543,10 +565,14 @@ export class TieOutApi {
     return this.call(`/findings/${findingId}/chain`)
   }
 
-  dismiss(findingId: string, state: Finding['state']): Promise<Finding> {
+  dismiss(
+    findingId: string,
+    state: Finding['state'],
+    note = '',
+  ): Promise<Finding> {
     return this.call(`/findings/${findingId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ state }),
+      body: JSON.stringify({ state, note }),
     })
   }
 

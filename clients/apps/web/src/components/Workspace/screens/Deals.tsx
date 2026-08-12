@@ -29,6 +29,7 @@ import {
   sharepointLogo,
   well,
 } from './../design'
+import { DealPage } from './DealPage'
 
 /** « Checked 2 hours ago » — the design's own time phrasing. */
 export const checkedLine = (at: string | null): string => {
@@ -109,6 +110,9 @@ export interface DealsProps {
   deal: DealListItem | null
   onOpen: (deal: DealListItem) => void
   onChanged: () => void
+  /** The shell's « Check now », forwarded to the open deal. */
+  checkNonce: number
+  onChecking: (running: boolean) => void
 }
 
 export const Deals = ({
@@ -117,6 +121,8 @@ export const Deals = ({
   deals,
   deal,
   onOpen,
+  checkNonce,
+  onChecking,
 }: DealsProps) => {
   //: The connector, for the empty state's three faces. Asked only once
   //: the list has answered and come back empty — the list screen never
@@ -156,49 +162,13 @@ export const Deals = ({
   }, [api, organizationId, waiting])
 
   if (deal !== null) {
-    //: Round two — the deal page. Until then, the deal header row only:
-    //: real name, real client, nothing invented below it.
     return (
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          background: well,
-        }}
-      >
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflow: 'auto',
-            padding: '26px 34px 34px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 12,
-              padding: '0 4px 16px',
-            }}
-          >
-            <span
-              style={{
-                fontSize: 26,
-                fontWeight: 600,
-                letterSpacing: '-.025em',
-              }}
-            >
-              {deal.name}
-            </span>
-            <span style={{ fontSize: 15, color: ink.secondary }}>
-              {deal.client ?? ''}
-            </span>
-          </div>
-        </div>
-      </div>
+      <DealPage
+        api={api}
+        dealId={deal.id}
+        checkNonce={checkNonce}
+        onChecking={onChecking}
+      />
     )
   }
 

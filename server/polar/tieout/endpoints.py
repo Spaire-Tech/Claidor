@@ -26,7 +26,7 @@ from polar.auth.dependencies import WebUserWrite
 from polar.auth.scope import Scope
 from polar.dossier.agent.service import AgentNotConfigured
 from polar.dossier.agent.service import build_client as agent_client
-from polar.exceptions import ResourceNotFound
+from polar.exceptions import ClaidorRequestValidationError, ResourceNotFound
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession
 from polar.models import (
     Artifact,
@@ -34,6 +34,7 @@ from polar.models import (
     CheckKind,
     CheckRun,
     Correction,
+    CorrectionState,
     Dossier,
     Figure,
     FigureLink,
@@ -68,6 +69,7 @@ from .schemas import (
     Coverage,
     DealListItem,
     DealPage,
+    DecisionRead,
     FigureMap,
     FigureRead,
     FindingCounts,
@@ -184,6 +186,86 @@ def _run(run: CheckRun | None) -> CheckRunRead | None:
     )
 
 
+async def _decisions(
+    repository: TieOutRepository, dossier_id: UUID
+) -> list[DecisionRead]:
+    """What the team decided — derived, never authored.
+
+    Assembled from corrections that were decided and findings that were
+    dismissed, so the log can never disagree with the records it
+    describes. Only judgements about numbers belong here: connecting a
+    folder or uploading a file is plumbing, and one plumbing entry is how
+    a decision log turns into an activity feed and drowns.
+
+    The sentence is the server's, factual and short; the person's own
+    note is carried beside it and beats it on screen when present.
+    """
+    corrections = [
+        one
+        for one in await repository.corrections_of(dossier_id)
+        if one.decided_at is not None
+        and one.state
+        in (
+            CorrectionState.applied,
+            CorrectionState.rejected,
+            CorrectionState.reversed,
+        )
+    ]
+    dismissed = [
+        one
+        for one in await repository.findings_of(
+            dossier_id, state=FindingState.dismissed
+        )
+        if one.dismissed_at is not None
+    ]
+    people = await repository.uploaders(
+        [one.decided_by_id for one in corrections if one.decided_by_id]
+        + [one.dismissed_by_id for one in dismissed if one.dismissed_by_id]
+    )
+
+    entries: list[DecisionRead] = []
+    for one in corrections:
+        where = one.location or f"page {one.page}"
+        if one.state is CorrectionState.applied:
+            action = "accepted"
+            text = f"Accepted {one.after} over {one.before} — {where}."
+        elif one.state is CorrectionState.rejected:
+            action = "kept"
+            text = f"Kept the document's {one.before} — {where}."
+        else:
+            action = "reversed"
+            text = f"Took back {one.after} — {where}. The document reads as it did."
+        entries.append(
+            DecisionRead(
+                id=one.id,
+                who=_uploader(
+                    people.get(one.decided_by_id) if one.decided_by_id else None
+                ),
+                at=one.decided_at,  # type: ignore[arg-type]
+                action=action,
+                text=text,
+            )
+        )
+    for finding in dismissed:
+        entries.append(
+            DecisionRead(
+                id=finding.id,
+                who=_uploader(
+                    people.get(finding.dismissed_by_id)
+                    if finding.dismissed_by_id
+                    else None
+                ),
+                at=finding.dismissed_at,  # type: ignore[arg-type]
+                action="dismissed",
+                text=f"Dismissed « {finding.title} » — {finding.location}.",
+                note=finding.note,
+            )
+        )
+
+    entries.sort(key=lambda one: one.at, reverse=True)
+    return entries
+
+
 def _correction(correction: Correction, decider: User | None = None) -> CorrectionRead:
     return CorrectionRead(
         id=correction.id,
@@ -243,6 +325,7 @@ def _finding(
         standard=finding.standard or None,
         rule=finding.rule or None,
         created_at=finding.created_at,
+        note=finding.note,
     )
 
 
@@ -313,14 +396,54 @@ async def get_deal(
     # browses files.
     documents, _ = await repository.page_artifacts(
         dossier_id,
-        kinds=[ArtifactKind.model, ArtifactKind.deck, ArtifactKind.memo],
+        kinds=[
+            ArtifactKind.model,
+            ArtifactKind.deck,
+            ArtifactKind.memo,
+            ArtifactKind.message,
+            ArtifactKind.source,
+        ],
         limit=MAX_DOCUMENTS,
     )
     by_id = await repository.uploaders([one.uploaded_by_id for one in documents])
     files, lineages = await repository.count_artifacts(dossier_id)
 
     counts = await repository.count_findings(dossier_id)
+
+    # **Stale is the same fact the deals list serves**: a current document
+    # that arrived after the last tie-out finished. The banner's second
+    # line counts what that run actually read — its own artifacts, their
+    # own figure counts — so the sentence is a sum, not an estimate.
+    run = await repository.latest_run(dossier_id, CheckKind.tieout)
+    stale_kind: str | None = None
+    stale_at = None
+    stale_documents = 0
+    stale_figures = 0
+    if run is not None and run.finished_at is not None:
+        for artifact in documents:
+            if artifact.created_at > run.finished_at and (
+                stale_at is None or artifact.created_at > stale_at
+            ):
+                stale_kind = artifact.kind.value
+                stale_at = artifact.created_at
+        if stale_at is not None:
+            # JSONB holds the ids as strings; compare in one spelling.
+            read_ids = {str(one) for one in (run.artifact_ids or [])}
+            for artifact in documents:
+                if (
+                    str(artifact.id) in read_ids
+                    and artifact.kind is not ArtifactKind.model
+                ):
+                    stale_documents += 1
+                    stale_figures += int((artifact.counts or {}).get("figures", 0))
+
     return DealPage(
+        stale=stale_at is not None,
+        stale_kind=stale_kind,
+        stale_at=stale_at,
+        stale_documents=stale_documents,
+        stale_figures=stale_figures,
+        decisions=await _decisions(repository, dossier_id),
         id=deal.id,
         name=deal.name,
         client=deal.client_name,
@@ -838,8 +961,30 @@ async def update_finding(
         raise ResourceNotFound("Finding not found.")
     await _deal(session, finding.dossier_id, auth_subject.subject.id)
 
+    # **A dismissal needs a reason, and only a dismissal.** Dismissing
+    # says the check is wrong about this one — the decision somebody
+    # questions three weeks later with the author on holiday. No other
+    # state asks, because a box everyone must type past collects « ok ».
+    if update.state is FindingState.dismissed and not update.note.strip():
+        raise ClaidorRequestValidationError(
+            [
+                {
+                    "loc": ("body", "note"),
+                    "msg": (
+                        "Dismissing says the check is wrong about this one — "
+                        "say why, so the decision survives you moving on."
+                    ),
+                    "type": "value_error",
+                    "input": update.note,
+                }
+            ]
+        )
+
     await repository.set_finding_state(
-        finding, state=update.state, user_id=auth_subject.subject.id
+        finding,
+        state=update.state,
+        user_id=auth_subject.subject.id,
+        note=update.note.strip(),
     )
     filenames = {
         one.id: one.filename

@@ -1256,3 +1256,41 @@ endpoint change; web typecheck clean.
 **Flagged to the founder:** the popover's « Notifications » item goes
 nowhere in the design (its own handler just closes the popover) — built
 as drawn, needs a destination or dropping.
+
+---
+
+## 13 August, small hours — the deal page, wired
+
+Round two. Inside a deal: « Where the numbers come from » (models and
+sources, with Current / Changed states), « Documents » (decks, memos,
+messages, each carrying its own state — N differences, Clean, Not read,
+Not checked), the stale banner with real counts, and « What the team
+decided ».
+
+**The decision log is derived, never authored.** The server assembles it
+from corrections that were decided and findings that were dismissed, so
+it can never disagree with the records it describes. Plumbing —
+connecting a folder, uploading a file — is excluded by construction.
+
+**A dismissal now requires a reason.** New column `tieout_findings.note`
+(migration `c4d8e2f16a53`), the user's own words, required when
+dismissing and only then — a box everyone must type past collects
+« ok ». The server refuses a bare dismissal with a sentence; reopening
+clears the note, because yesterday's judgement must not attach to
+tomorrow's state. The person's words beat the server's sentence on
+screen when present.
+
+**Verified end to end against Cascade:** bare dismissal → 422; dismissal
+with a note → stored, echoed, rendered at the top of the log next to two
+real corrections from sessions past. Per-document counts (7 differences
+on the deck, Clean on the memo) are the live findings, grouped in the
+browser. « Check now » runs a real check and reloads. Screenshots at
+1440×900.
+
+**Borrowed patterns, named in code:** `source` kind (a PDF) wears the
+document icon — the design's assets have no PDF face; « Not read » /
+« Not checked » row states composed from the design's colour vocabulary;
+« uploaded » where the design says « edited », because the upload is
+what this data records — « edited » arrives with the connector metadata.
+
+35 route tests pass, including the new dismissal contract.

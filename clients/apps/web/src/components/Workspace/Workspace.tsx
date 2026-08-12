@@ -67,6 +67,9 @@ export const Workspace = ({
   //: Every deal this person is on. Null while loading — the screens tell
   //: « still asking » apart from « asked, and there are none », because
   //: the second one is the Connect Microsoft screen and the first is not.
+  const [checkNonce, setCheckNonce] = useState(0)
+  const [checking, setChecking] = useState(false)
+
   const [deals, setDeals] = useState<DealListItem[] | null>(null)
   const [dealsAt, setDealsAt] = useState(0)
   useEffect(() => {
@@ -198,8 +201,16 @@ export const Workspace = ({
             )}
             <div style={{ flex: 1 }} />
             {hasDeal && (
-              <button style={{ ...blueButton, marginRight: 4 }}>
-                Check now
+              <button
+                onClick={() => !checking && setCheckNonce((was) => was + 1)}
+                style={{
+                  ...blueButton,
+                  marginRight: 4,
+                  opacity: checking ? 0.55 : 1,
+                  cursor: checking ? 'default' : 'pointer',
+                }}
+              >
+                {checking ? 'Checking' : 'Check now'}
               </button>
             )}
             {view === 'deals' && deal === null && (deals?.length ?? 0) > 0 && (
@@ -218,6 +229,12 @@ export const Workspace = ({
               deal={deal}
               onOpen={setDeal}
               onChanged={() => setDealsAt((was) => was + 1)}
+              checkNonce={checkNonce}
+              onChecking={(running) => {
+                setChecking(running)
+                //: A finished check changes the list's counts too.
+                if (!running) setDealsAt((was) => was + 1)
+              }}
             />
           ) : (
             //: The design's own face for a view that is not there — the

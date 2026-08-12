@@ -442,16 +442,28 @@ class TestFindingsAndTheChain:
         findings = (await client.get(f"/v1/tieout/deals/{deal.id}/findings")).json()
         target = findings[0]["id"]
 
-        dismissed = await client.patch(
+        # A dismissal without a reason is refused: dismissing says the
+        # check is wrong about this one, which is exactly the decision
+        # somebody questions three weeks later.
+        bare = await client.patch(
             f"/v1/tieout/findings/{target}", json={"state": "dismissed"}
+        )
+        assert bare.status_code == 422
+
+        dismissed = await client.patch(
+            f"/v1/tieout/findings/{target}",
+            json={"state": "dismissed", "note": "different basis, agreed"},
         )
         assert dismissed.status_code == 200
         assert dismissed.json()["state"] == "dismissed"
+        assert dismissed.json()["note"] == "different basis, agreed"
 
         back = await client.patch(
             f"/v1/tieout/findings/{target}", json={"state": "open"}
         )
         assert back.json()["state"] == "open"
+        # The note goes with the dismissal it explained.
+        assert back.json()["note"] == ""
 
     @pytest.mark.auth
     async def test_the_chain_reaches_the_model(

@@ -159,6 +159,43 @@ class DealPage(Schema):
     #: was last true and whether a run failed.
     last_tieout: CheckRunRead | None
     last_audit: CheckRunRead | None
+    #: A current document arrived after the last tie-out finished, so its
+    #: results — including the counts above — describe a deal that no
+    #: longer exists. Same fact and same fields as the deals list.
+    stale: bool = False
+    stale_kind: str | None = None
+    stale_at: datetime | None = None
+    #: What the stale banner's second line counts: the deliverables the
+    #: last run actually read, and the figures it read in them — real
+    #: sums from the run's own artifacts, not an estimate.
+    stale_documents: int = 0
+    stale_figures: int = 0
+    #: What the team decided, newest first. **Derived, never authored** —
+    #: assembled from findings that were ruled on and corrections that
+    #: were decided, so it can never disagree with them.
+    decisions: list["DecisionRead"] = []
+
+
+class DecisionRead(Schema):
+    """One judgement somebody made about a number.
+
+    Only judgements. Plumbing — connecting a folder, uploading a file —
+    is not a decision, and one such entry is how a decision log turns
+    into an activity feed and drowns.
+    """
+
+    id: UUID
+    who: Uploader | None
+    at: datetime
+    #: `accepted` · `kept` · `reversed` · `dismissed` — the correction
+    #: states plus dismissal, in the words the screen uses.
+    action: str
+    #: The server's own factual sentence — « Accepted the model's $48.2mm
+    #: over $48.9mm — slide 4, FY2025A adjusted EBITDA. »
+    text: str
+    #: The person's reason, verbatim, when they gave one. Shown in place
+    #: of `text` when present — their words beat ours.
+    note: str = ""
 
 
 # --- findings ------------------------------------------------------------
@@ -266,6 +303,10 @@ class FindingRead(Schema):
     standard: str | None
     rule: str | None
     created_at: datetime
+    #: The reason a person gave when they ruled on it, in their own words.
+    #: Empty until somebody writes one; the only field on a finding that
+    #: is the user's rather than Pierce's.
+    note: str = ""
     #: The change proposed for this finding, once anybody has looked at
     #: it. Null means nothing has been proposed — never « nothing can be ».
     correction: CorrectionRead | None = None
@@ -279,6 +320,11 @@ class FindingUpdate(Schema):
     """
 
     state: FindingState
+    #: The reason, required when dismissing and only then. Dismissal says
+    #: the check is wrong about this one — the decision somebody questions
+    #: three weeks later — and « ok » typed to get past a box is worse
+    #: than nothing, so no other state asks.
+    note: str = ""
 
 
 # --- the chain -----------------------------------------------------------

@@ -604,6 +604,13 @@ class Finding(RecordModel):
     dismissed_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )
+    #: The reason, in the person's own words — « pre-IFRS 16 EBITDA,
+    #: agreed with the client ». Required when dismissing and only then:
+    #: a dismissal says the check is wrong about this one, which is the
+    #: decision somebody questions three weeks later. Pierce stores its
+    #: own words about every finding; this is the one field that is the
+    #: user's.
+    note: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
 
 class CorrectionState(StrEnum):

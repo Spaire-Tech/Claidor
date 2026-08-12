@@ -657,15 +657,20 @@ class TieOutRepository(RepositoryBase[Artifact]):
         return (await self.session.execute(statement)).scalar_one_or_none()
 
     async def set_finding_state(
-        self, finding: Finding, *, state: FindingState, user_id: UUID
+        self, finding: Finding, *, state: FindingState, user_id: UUID, note: str = ""
     ) -> Finding:
         finding.state = state
         if state is FindingState.dismissed:
             finding.dismissed_by_id = user_id
             finding.dismissed_at = datetime.now(UTC)
+            finding.note = note
         else:
             finding.dismissed_by_id = None
             finding.dismissed_at = None
+            # The note goes with the dismissal it explained. Reopening a
+            # finding and keeping the old reason would attach yesterday's
+            # judgement to tomorrow's state.
+            finding.note = ""
         self.session.add(finding)
         await self.session.flush()
         return finding
