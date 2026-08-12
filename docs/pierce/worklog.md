@@ -1132,3 +1132,44 @@ padding.
 written against the Cascade model on purpose — 235.3 where the model says
 228.9, in the sentence shape a memo actually uses — so the screen has a
 real drift against a real cell to draw rather than a hand-written one.
+
+---
+
+## 12 August — the metadata checker
+
+Third item on the queue, and the one with a property the others do not
+have: it needs no deal, no model, no corpus and no login, so a stranger
+can judge it cold on a file we have never seen.
+
+`polar/tieout/metadata.py` — bytes of an Office file in, a list of
+findings out. Sixteen rules over the OOXML package itself, read part by
+part rather than through `openpyxl` or `python-pptx`, because both of
+those normalise away exactly the things being looked for.
+
+**Two grades, never added.** A `leak` is content in the file that the
+recipient can read and the sender did not put on the page — speaker notes,
+a hidden slide, an off-canvas shape, a very hidden sheet, a folder path,
+the values cached from another workbook, a whole worksheet behind a chart.
+A `trace` is who and when and how it was filed.
+
+**No new dependency.** `lxml` was already installed as a transitive
+dependency of `python-pptx`; it is now declared, because a direct import
+on a transitive dependency breaks the day the thing carrying it changes
+its mind. `olefile` was already declared, and is used for one sentence:
+telling a legacy `.doc` apart from an encrypted `.docx`, which look
+identical from outside and need opposite advice.
+
+**Measured against 85 public gov.uk attachments** — `scripts/document_corpus.py`
+fetches them, `scripts/metadata_survey.py` measures, `scripts/metadata_check.py`
+reports on one file. Numbers, the four defects the run exposed in my own
+rules, and the two rules that have no confirmation in the wild are all in
+`accuracy-backlog.md`.
+
+The headline: **60% of real files come back with no leaks at all**, and
+the ones that do include a bid folder tree inside a published procurement
+template, a named civil servant's home directory reached from a chart, and
+33 very hidden tabs in a published financial model.
+
+**What is not done.** There is no screen. The check is a function and a
+command line, deliberately — the Word and web designs are yours and I am
+not inventing one to sit in front of this.

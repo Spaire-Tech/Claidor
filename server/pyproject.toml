@@ -66,6 +66,11 @@ dependencies = [
   "openpyxl>=3.1.5",
   "xlrd>=2.0.2",
   "olefile>=0.47",
+  # Already present, as python-pptx depends on it. Declared because
+  # polar.tieout.metadata imports it directly to read an OOXML package
+  # part by part, and a direct import on a transitive dependency breaks
+  # the day the dependency that carried it changes its mind.
+  "lxml>=5.0",
 ]
 
 [dependency-groups]

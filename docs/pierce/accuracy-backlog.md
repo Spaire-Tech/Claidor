@@ -247,3 +247,122 @@ by ». Seven against forty-nine.
 works is real table reading — first cell names the row, header row names
 the column — and that is the project already deferred. If it is ever
 built, `pdfplumber` is still the right tool and this note is the design.
+
+## The metadata checker, measured on files nobody here made
+
+Built 12 August. A pure function from the bytes of an Office file to a
+list of things in it that are not on its screen: `polar/tieout/metadata.py`.
+No deal, no model, no corpus, no login.
+
+**The corpus is 85 public gov.uk attachments** — 34 Excel, 29 PowerPoint,
+20 Word — fetched by `scripts/document_corpus.py` and chosen for nothing
+at all. Departments publish decks built in PowerPoint and in Google
+Slides, spreadsheets built by analysts and by consultants, letters saved
+with track changes still on. It is not investment banking. It is real work
+by people under deadline, and every leak in it is one somebody shipped.
+
+```
+uv run python -m scripts.document_corpus     # fetch
+uv run python -m scripts.metadata_survey     # measure
+uv run python -m scripts.metadata_check FILE # one file, read cold
+```
+
+| | |
+|---|---|
+| Files read | 83 of 85 |
+| Refused, correctly | 2 — password protected, both named `.xlsx` |
+| **Files with no leaks at all** | **50 of 83 (60%)** |
+| Files with nothing at all, not even a trace | 2 |
+
+| Rule | Grade | Files | Found |
+|---|---|---|---|
+| `document-properties` | trace | 79 | 391 |
+| `cell-comment` | leak | 8 | 228 |
+| `custom-property` | trace | 55 | 200 |
+| `custom-xml` | trace | 54 | 180 |
+| `speaker-notes` | leak | 9 | 55 |
+| `cropped-image` | leak | 12 | 35 |
+| `very-hidden-sheet` | leak | 1 | 33 |
+| `hidden-sheet` | trace | 7 | 29 |
+| `external-workbook` | leak | 5 | 17 |
+| `embedded-file` | leak | 6 | 12 |
+| `external-cached-values` | leak | 4 | 9 |
+| `macros` | leak | 6 | 6 |
+| `local-path` | leak | 2 | 2 |
+| `hidden-slide` | leak | 1 | 2 |
+| `tracked-changes` | leak | 1 | 1 |
+| `comment` | leak | 1 | 1 |
+| `off-canvas-shape` | leak | **0** | **0** |
+| `hidden-text` | leak | **0** | **0** |
+
+**60% of files come back with no leaks.** That is the number to watch, and
+it matters more than any of the others: a checker that finds something in
+every file has found nothing in any of them.
+
+### What it actually found
+
+Real things, in files a government department published:
+
+- `\\ad.culture.gov.uk\dfs\Bids\BDUK\Devon & Somerset\4. D&S (blended
+  contingency)\…` — a bid folder tree, inside a published procurement
+  template, carried by an external workbook link. This is the incident the
+  rule exists for, found on the first corpus it was ever run against.
+- `\\Ofqual.internal\DFS\UserData\Beth.Black\Documents\BB projects\…` — a
+  named person's home directory, reached from a chart in a published deck.
+- **33 very hidden sheets in one published financial model**, including
+  ones called `Dashboard`, `Key Outputs >>>` and `Scenario Manager`.
+  Confirmed independently by loading the same workbook with `openpyxl`.
+- 74 values cached from another workbook inside a workforce statistics
+  spreadsheet — the other file's numbers, travelling.
+- Two hidden slides in a survey deck, with their text.
+
+### Two rules with no confirmation in the wild, said plainly
+
+`off-canvas-shape` and `hidden-text` fire on constructed files in the unit
+tests and on **nothing** in 83 real ones. For `hidden-text` that is
+unremarkable — Word's hidden-text formatting is rare.
+
+`off-canvas-shape` is the interesting one, because it *did* fire three
+times before being tightened, and all three were wrong in the way that
+matters: empty text boxes left beside the slide by a Google Slides export.
+Off the canvas, correctly identified, holding nothing. The rule now
+requires the shape to carry something, and the honest state of it is: the
+geometry is verified, the judgement is not, and a deck with a real parked
+chart on it has not yet been seen.
+
+### Four defects in my own rules, all found by reading the output
+
+1. **`cropped to 100% of itself`** — a negative `a:srcRect` side scales a
+   picture *out* of its frame rather than hiding any of it, and Office
+   writes one whenever a picture is nudged inside a placeholder. Read as
+   « any side set means cropped », the report contained a sentence about
+   nothing. Fixed by clamping and requiring a real hidden fraction: 70
+   findings became 35.
+2. **The same cropped logo, six times.** A crop in a slide layout appears
+   in every layout that inherits it. Folded by image and crop.
+3. **The same path said twice** — once by `local-path`, once by
+   `external-workbook`. Two findings, one fact. 15 became 2.
+4. **One sensitivity label written as eight properties.**
+   `MSIP_Label_<guid>_Name`, `_SiteId`, `_SetDate` and five more are one
+   action by one person. 309 custom properties became 200.
+
+And one that was not a defect in a rule but in a grading: `custom-property`
+and `custom-xml` were `leak`. 55 of 83 files carry custom properties —
+`ContentTypeId` 48 times — and grading those as leaks buried the speaker
+notes and the hidden slides underneath them. Both are traces now. **The
+cost is stated rather than hidden:** a matter number naming another client
+is now graded the same as a `ContentTypeId`, and the only thing separating
+them is reading them. Every one is still reported.
+
+### What this number is not
+
+There is no recall figure and there cannot be one from this corpus. Nobody
+has labelled these files, so « how many speaker notes did it miss » has no
+answer short of opening 29 decks by hand. What *was* checked is the other
+direction: every finding above was confirmed by unzipping the file and
+reading the part, and the very-hidden sheets were confirmed by a second
+library.
+
+The sample is also not stable — gov.uk publishes and withdraws constantly,
+so a run next month returns an overlapping but different set. The survey
+prints its own file count for that reason.

@@ -165,3 +165,4 @@ server/.corpus-cache/
 # Real regulator models, fetched by scripts/model_corpus.py. Public
 # documents, but megabytes of binary and re-fetchable from a URL.
 server/scripts/corpus_models/
+server/scripts/corpus_documents/
