@@ -7,15 +7,15 @@ lives in `src/host/`.
 
 ## What is here, and what is not
 
-| | |
-|---|---|
-| `manifest.xml` | Word · Excel · PowerPoint. One file, three hosts |
-| `manifest.outlook.xml` | Outlook. Separate because it must be — see below |
-| `src/host/` | The four applications behind one interface |
-| `src/api.ts` | The tie-out API, typed |
-| `src/auth.ts` | Bearer tokens via the sign-in dialog |
-| `src/usePanel.ts` | The state machine — sign in, identify, load, jump |
-| `src/Panel.tsx` | **A placeholder. Replace this.** |
+|                        |                                                   |
+| ---------------------- | ------------------------------------------------- |
+| `manifest.xml`         | Word · Excel · PowerPoint. One file, three hosts  |
+| `manifest.outlook.xml` | Outlook. Separate because it must be — see below  |
+| `src/host/`            | The four applications behind one interface        |
+| `src/api.ts`           | The tie-out API, typed                            |
+| `src/auth.ts`          | Bearer tokens via the sign-in dialog              |
+| `src/usePanel.ts`      | The state machine — sign in, identify, load, jump |
+| `src/Panel.tsx`        | **A placeholder. Replace this.**                  |
 
 `Panel.tsx` is ugly on purpose. It renders every stage the real panel needs
 with the data already wired to it, so the plumbing can be sideloaded and
@@ -29,7 +29,7 @@ running in, `src/host/` has failed.
 
 Every screen needs all four, and the fourth is the one everyone forgets.
 
-- **Empty** — no findings. This is the *good* outcome and must not look
+- **Empty** — no findings. This is the _good_ outcome and must not look
   like a failure. « Checked, and everything ties out. »
 - **Loading** — identification and extraction both take a moment.
 - **Error** — the server's messages are written to be shown as they stand.
@@ -44,7 +44,7 @@ out which artifact that is happens in three steps, in descending order of
 how much each can be trusted:
 
 1. **The stamp.** A lineage id in the document's own settings, written the
-   first time somebody chose a deal for it. It lives *inside the file*, so
+   first time somebody chose a deal for it. It lives _inside the file_, so
    it survives Save As, a rename, and being emailed onward. Not a guess.
 2. **The filename, inside a deal already chosen.** Marked as a guess, and
    never consulted across deals — two deals holding a `model.xlsx` is the
@@ -82,20 +82,20 @@ sideloading into PowerPoint.
 ### Sideloading
 
 Office loads a task pane from a **live HTTPS origin** — never a file path,
-and on desktop never plain HTTP. So:
+and on desktop never plain HTTP. The dashboard's build takes care of the
+deployment half: every `pnpm build` in `apps/web` embeds the panel at
+`/panel/` on the dashboard's own origin and — when that origin is https —
+stamps and serves both manifests at `/panel/manifest.xml` and
+`/panel/manifest.outlook.xml` (`scripts/stamp-manifests.mjs`; the
+checked-in manifests keep their placeholder on purpose). The icons ride
+along in `public/assets/`, drawn from the design's own mark.
 
-1. `pnpm build` and deploy `dist/`.
-2. Replace `YOUR-DOMAIN.example.com` throughout both manifests.
-3. Add `assets/icon-16.png`, `-32`, `-64`, `-80`, `-128` at that origin.
-   Not committed here: they are design, and design is not this half of the
-   build.
-4. `pnpm sideload:powerpoint` (or `:excel`, `:word`).
+**[SIDELOAD.md](SIDELOAD.md) is the runbook** — per-host steps for the
+web, Mac, Windows and Outlook, the tunnel recipe for pointing real Office
+at a local server, and what to look at when it fails.
 
-`pnpm validate:manifest` runs Microsoft's online validator. It needs
-outbound access to their service, which this development environment's
-egress policy blocks — both manifests have been checked locally for
-well-formedness and for the element order the schema requires, which is
-the failure that is otherwise invisible.
+`pnpm validate:manifest` runs Microsoft's online validator; both stamped
+manifests validate clean against it.
 
 ## Signing in, and where the panel has to be deployed
 
@@ -122,7 +122,7 @@ Three consequences worth knowing before deploying:
    rather than letting the first 401 of the day be the notification.
 
 Locally, the panel is on `:3100` and the API on `:8000` — different
-origins, same site, so the cookie *is* sent once `CORS_ORIGINS` includes
+origins, same site, so the cookie _is_ sent once `CORS_ORIGINS` includes
 `http://127.0.0.1:3100`. The sign-in page says exactly that when the call
 fails, because `fetch` reports « CORS refused this » and « the server is
 down » as the same bare error.
@@ -147,9 +147,9 @@ Nothing is hard-required in the manifest, deliberately. A high floor makes
 the add-in refuse to load on builds where most of it would work. Instead
 each capability is checked at run time and degraded:
 
-| Wanted | Set | Without it |
-|---|---|---|
-| Select an exact figure inside a sentence | PowerPointApi 1.4 | Select the shape |
-| Select a shape, select a slide | PowerPointApi 1.5 | `goToByIdAsync` moves the view |
-| Read slides and shapes | PowerPointApi 1.3 | Slide only |
-| Sign-in dialog | Mailbox 1.5 (Outlook) | Required there, and stated |
+| Wanted                                   | Set                   | Without it                     |
+| ---------------------------------------- | --------------------- | ------------------------------ |
+| Select an exact figure inside a sentence | PowerPointApi 1.4     | Select the shape               |
+| Select a shape, select a slide           | PowerPointApi 1.5     | `goToByIdAsync` moves the view |
+| Read slides and shapes                   | PowerPointApi 1.3     | Slide only                     |
+| Sign-in dialog                           | Mailbox 1.5 (Outlook) | Required there, and stated     |

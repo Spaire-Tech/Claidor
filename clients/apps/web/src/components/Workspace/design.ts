@@ -8,6 +8,15 @@
  * component says which pattern it borrowed, not this file.
  */
 
+// --- shared with the Office panel: keep byte-identical --------------------
+//
+// The panel is a separate application with a separate bundler, and these
+// values have to be the same in both or the two halves of the product
+// drift apart a shade at a time. Rather than couple two build systems
+// over a block of constants, it is copied into
+// `clients/apps/panel/src/design.ts` and `design.test.ts` there fails the
+// build if the two ever differ. Edit one, edit the other.
+
 /** The face. Loaded by `workspace.css` from the design's own binaries. */
 export const font = {
   ui: "'Switzer', -apple-system, system-ui, sans-serif",
@@ -38,6 +47,8 @@ export const ink = {
   /** Destructive — "Sign out". */
   danger: '#ff3b30',
 } as const
+
+// --- end shared ----------------------------------------------------------
 
 /** The frame's ground — drawn once, behind everything. */
 export const ground =

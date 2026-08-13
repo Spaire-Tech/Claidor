@@ -13,4 +13,12 @@
 
 import { config } from '@claidor/eslint-config/react-internal'
 
-export default [...config, { ignores: ['dist/**', 'node_modules/**'] }]
+export default [
+  ...config,
+  { ignores: ['dist/**', 'node_modules/**'] },
+  {
+    // Build scripts run under Node, where `process` is a real global.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { process: 'readonly' } },
+  },
+]

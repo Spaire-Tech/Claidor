@@ -17,6 +17,10 @@ import { defineConfig } from 'vite'
  */
 export default defineConfig({
   plugins: [react()],
+  // `/` when the panel has its own origin; `/panel/` when it rides the
+  // dashboard's. The embed script sets this — see web/scripts.
+  // eslint-disable-next-line turbo/no-undeclared-env-vars
+  base: process.env.PANEL_BASE ?? '/',
   server: { port: 3100 },
   build: {
     outDir: 'dist',

@@ -1590,3 +1590,78 @@ input and textarea in every focus state. Inline styles still win, so
 the sanctioned soft glow (`inputGlow`) is untouched — verified focused
 on the chat box (clean), the dismissal note (soft glow), and the
 invite email (soft glow).
+
+## 13 August 2026 — the panel reaches for real Office
+
+The panel existed as a state machine and four host bridges pointed at a
+placeholder domain, loading fonts it did not have. This round gives it
+everything it needs to be sideloaded into real Office — everything,
+that is, except an Office, which this machine does not have. That
+boundary is stated plainly below rather than papered over.
+
+**The design's face, restored.** The panel's copy of the workspace
+tokens had rotted: the 12 August redesign rewrote `design.ts` on the
+web side and dropped the shared-block markers, so the byte-compare
+test that guards the copy was failing. The shared block (font + ink)
+is back in both files, byte-identical; every panel component was moved
+off the old palette onto the new tokens; the shade guard in
+`design.test.ts` now names the new five colours, with a comment
+marking the redesign as the deliberate event it exists to tell apart
+from an accident. New `panel.css` self-hosts Switzer and IBM Plex Mono
+— the same five woff2 binaries the workspace loads, copied into the
+panel's own `public/fonts/`, because an Office webview must not depend
+on a font CDN. The writing-box rule is in it too: inputs get no
+outline and no box-shadow, focus is the soft glow or nothing.
+
+**Riding the dashboard's origin.** Office loads a task pane from a
+live HTTPS origin, and the panel had none. Now every `pnpm build` of
+the web app runs `scripts/embed-panel.mjs` first: it builds the panel
+with `base=/panel/` and the API/dashboard origins taken from the same
+`NEXT_PUBLIC_*` variables the dashboard itself uses, then copies the
+result into `public/panel/` (generated, git-ignored). One deploy, one
+origin, one TLS certificate; `signin.html` stays same-origin with the
+panel, which `messageParent` requires, and first-party with the API,
+which the session cookie requires.
+
+**Manifests as deployment artifacts.** The checked-in manifests keep
+their placeholder domain on purpose; `scripts/stamp-manifests.mjs`
+writes stamped copies into `dist/` — AppDomain gets the bare origin
+(Office matches domains, not paths), resources get origin + `/panel`,
+and SupportUrl gets the product site rather than a `/panel/support`
+that would 404 inside an error dialog. The embed script stamps
+automatically when the deploy's origin is https, so the site serves
+its own sideloadable manifests at `/panel/manifest.xml` and
+`/panel/manifest.outlook.xml`. Version bumped to 1.0.0.0 — Microsoft's
+validator refuses anything lower — and **both stamped manifests
+validate clean against Microsoft's acceptance service**. Two URL bugs
+found on the way: LearnMoreUrl stamped to `/panel/panel`, and the
+Outlook manifest wanted `icon-64`/`icon-128` which did not exist. All
+five icon sizes now ship, drawn from the Pierce mark.
+
+**Watched against the real API.** With `http://127.0.0.1:3100` added
+to the API's CORS origins (dev-only, in `.env` beside the Graph stub
+lines), the browser loop runs end to end on real data: a minted panel
+token, `?filename=cascade_deck.pptx`, the choose-a-deal screen —
+first-open behaviour, by design, since a filename is never matched
+across deals — then the identified panel: Project Cascade, 109
+reconciled · 26 not checked, the drift rows with the model's values
+and « now 39.6 in this document » on the resolved one. On reopen the
+detached bridge asks again, which is correct: it has no document to
+stamp. Inside real PowerPoint the stamp persists in the file.
+
+**The runbook.** `SIDELOAD.md` — what is proven and what is not,
+Office-on-the-web upload (the gentlest first test), Mac `wef` folder,
+Windows shared-folder catalog and the `office-addin-debugging`
+scripts, Outlook's separate dialog, the tunnel recipe for pointing
+real Office at a local server, and a short what-to-look-at-when-it-
+fails. The README's sideloading section was three claims stale
+(manual placeholder editing, icons not committed, validator
+unreachable) and now matches reality.
+
+**Flagged honestly:** no real Office application has loaded the add-in
+yet — the container has no Office, so the ribbon button, the stamp
+surviving Save As, and jumping to a shape are built and unit-tested
+but not yet watched running inside PowerPoint. The first sideload from
+the runbook is that test. `Panel.tsx` remains the deliberate
+placeholder; the panel's own design is the founder's, still to come.
+16/16 panel tests pass, typecheck and lint clean.

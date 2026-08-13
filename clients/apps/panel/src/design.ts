@@ -5,71 +5,52 @@
  * between its « shared with the Office panel » markers, and byte-identical
  * to it.** `design.test.ts` reads both files off disk and fails if they
  * ever differ, so this is a copy that cannot rot rather than a copy that
- * will.
+ * will. (The shared block's own comments describe the web side; here the
+ * face is loaded by `panel.css` from the same self-hosted binaries.)
  *
  * Why a copy at all: the panel is a separate application with a separate
- * bundler, and coupling two build systems over sixty lines of constants
- * buys a build failure the first time somebody deploys. The values are the
- * cheap part; being sure they are the same is the whole requirement, and a
- * test does that without touching either build.
+ * bundler, and coupling two build systems over a block of constants buys
+ * a build failure the first time somebody deploys. The values are the
+ * cheap part; being sure they are the same is the whole requirement, and
+ * a test does that without touching either build.
  *
  * Everything *below* the shared block is the panel's own, because 320
  * pixels inside Word is not a floating panel on a gradient and the design
  * has no drawing of it. Each piece names the idiom it is composed from.
  */
 
-// --- shared with the web workspace: keep byte-identical ------------------
+// --- shared with the Office panel: keep byte-identical --------------------
 
+/** The face. Loaded by `workspace.css` from the design's own binaries. */
 export const font = {
-  ui: "'Hanken Grotesk', system-ui, sans-serif",
-  /** Office surfaces read as Office. */
-  office: "'Segoe UI', 'Hanken Grotesk', system-ui, sans-serif",
-  /** Figures, cell references, formulas. Never prose. */
+  ui: "'Switzer', -apple-system, system-ui, sans-serif",
   mono: "'IBM Plex Mono', ui-monospace, monospace",
-  display: "'Cormorant Garamond', Georgia, serif",
-}
+} as const
 
-export const colour = {
-  /** Body text. */
-  ink: '#242424',
-  /** Secondary text — captions, metadata, the right-hand meta on a tab. */
-  muted: '#605e5c',
-  /** Tertiary — placeholder, disabled, the quietest labels. */
-  faint: '#8a8886',
-  fainter: '#a19f9d',
-  /** Hairlines. */
-  rule: '#f0eeec',
-  ruleStrong: '#edebe9',
-  ruleHeavy: '#c8c6c4',
-  /** Surfaces. */
-  paper: '#ffffff',
-  wash: '#faf9f8',
-  washer: '#f5f4f2',
-  band: '#f3f2f1',
-  bandWarm: '#f2f1ef',
-  /** The one accent. */
-  blue: '#0b62c4',
-  blueLift: '#1d7de6',
-  bluePress: '#0d5cb4',
-  blueDeep: '#146fd2',
-  blueBright: '#2f8bef',
-  /** Severity. Three levels, the design's own vocabulary. */
-  critical: '#b04434',
-  warning: '#b3822f',
-  note: '#8a8886',
-  /** Agreement. */
-  matching: '#4f7a5c',
-  matchingDeep: '#2f5d3f',
-  /** Dark chips and the deck canvas. */
-  dark: '#15171b',
-  darker: '#22252b',
-  slate: '#8b909a',
-  slateDeep: '#5b6068',
-  slateFaint: '#9aa0a8',
-  slateMid: '#7c828c',
-  /** The composer's own border — the one hairline that is not the ramp. */
-  composerRule: '#d7d7d3',
-}
+export const ink = {
+  /** Body text on the frame — the design's base color. */
+  base: '#242424',
+  /** Primary text inside cards. */
+  primary: '#1d1d1f',
+  /** Secondary — row subtitles, meta. */
+  secondary: '#86868b',
+  /** Muted — "Checked 2 hours ago" on the right of a row. */
+  faint: '#aeaeb2',
+  /** The dock's inactive tab, chat secondary text. */
+  dock: '#5b6068',
+  /** Accent: links, primary buttons, "to review" states, active tab. */
+  accent: '#0060d0',
+  /** Primary button pressed/hover. */
+  accentDown: '#0055ba',
+  /** Stale text. */
+  stale: '#c8790a',
+  /** Stale dot and the model grid's highlight. */
+  staleDot: '#ff9f0a',
+  /** Clean state text and dot. */
+  clean: '#34c759',
+  /** Destructive — "Sign out". */
+  danger: '#ff3b30',
+} as const
 
 // --- end shared ----------------------------------------------------------
 
@@ -79,25 +60,29 @@ export const colour = {
  * The workspace's surface is frosted glass sitting above a gradient, and
  * none of that is right here: inside Word the host owns the chrome, the
  * background is Office's own, and a shadowed rounded card in a 320-pixel
- * task pane reads as a web page someone embedded. So the surface is
- * Office's white with the design's own hairline against the document, and
- * the type is `font.office` — Segoe UI first — which is the design's own
- * rule for its Office surfaces.
+ * task pane reads as a web page someone embedded. So the surface is plain
+ * white with the design's hairline against the document, in the design's
+ * own face.
  */
 export const surface = {
-  background: colour.paper,
-  fontFamily: font.office,
-  color: colour.ink,
+  background: '#ffffff',
+  fontFamily: font.ui,
+  color: ink.base,
+} as const
+
+/** The workspace's hairline and well, by value — the panel's own rules. */
+export const shade = {
+  rule: '#eceaec',
+  wash: '#f5f5f7',
 } as const
 
 /**
  * Type at 320 pixels.
  *
  * Scaled down from the design's own ramp rather than invented: the
- * workspace's 19px heading is a heading on a 900-pixel column and shouting
- * on a 320-pixel one, so the panel takes the sizes the design already uses
- * for its *narrow* furniture — the mail list, the folder rail — where it
- * had the same problem.
+ * workspace's headings belong to a 900-pixel column and would shout on a
+ * 320-pixel one, so the panel takes the sizes the design already uses
+ * for its *narrow* furniture — row subtitles, locators, meta.
  */
 export const size = {
   /** The design's own narrow-column body. */
@@ -105,9 +90,9 @@ export const size = {
   meta: 13,
   small: 12.5,
   tiny: 12,
-  /** The deal name. The mail list's own subject size. */
+  /** The deal name. The design's row-title size. */
   title: 15,
 }
 
-/** Room to breathe, at panel scale. The design's 26px gutter, halved. */
+/** Room to breathe, at panel scale. The design's gutter, halved. */
 export const space = { gutter: 13, row: 11 }

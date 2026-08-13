@@ -32,7 +32,7 @@ import type { DealListItem, Finding } from './api'
 import { TieOutApi } from './api'
 import { current } from './auth'
 import { API_BASE, SIGN_IN_URL } from './config'
-import { colour, size, space, surface } from './design'
+import { ink, shade, size, space, surface } from './design'
 import type { HostBridge } from './host'
 import { Bar, Heading, Quiet, Row, Text, Truncation } from './ui'
 import { usePanel } from './usePanel'
@@ -53,10 +53,10 @@ const WINDOW = 25
 
 /** The design's three severities, from the server's two. As on the deal page. */
 function severityOf(finding: Finding): { label: string; ink: string } {
-  if (finding.one_tick) return { label: 'rounding', ink: colour.note }
+  if (finding.one_tick) return { label: 'rounding', ink: ink.secondary }
   if (finding.severity === 'smell')
-    return { label: 'warning', ink: colour.warning }
-  return { label: 'critical', ink: colour.critical }
+    return { label: 'warning', ink: ink.staleDot }
+  return { label: 'critical', ink: ink.danger }
 }
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
@@ -188,8 +188,8 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
             flex: '0 0 auto',
             padding: `9px ${space.gutter}px`,
             fontSize: size.small,
-            color: colour.faint,
-            borderBottom: `1px solid ${colour.rule}`,
+            color: ink.secondary,
+            borderBottom: `1px solid ${shade.rule}`,
           }}
         >
           {panel.coverage.reconciled} reconciled · {panel.coverage.unlinked} not
@@ -215,7 +215,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               title={
                 <>
                   {finding.printed}
-                  <span style={{ color: colour.fainter }}>
+                  <span style={{ color: ink.faint }}>
                     {' '}
                     where the model says{' '}
                   </span>
@@ -275,7 +275,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                   rather than disappearing: a figure that changed under
                   somebody's hands is worth seeing change. */}
               {finding.correction?.state === 'applied' && (
-                <span style={{ color: colour.matching }}>
+                <span style={{ color: ink.clean }}>
                   now {finding.correction.after} in this document
                 </span>
               )}
@@ -297,8 +297,8 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
             flex: '0 0 auto',
             padding: `8px ${space.gutter}px`,
             fontSize: size.tiny,
-            color: colour.critical,
-            borderTop: `1px solid ${colour.rule}`,
+            color: ink.danger,
+            borderTop: `1px solid ${shade.rule}`,
           }}
           role="alert"
         >
@@ -353,7 +353,7 @@ function DealList({ onChoose }: { onChoose: (id: string) => void }) {
             deal.open_findings
           } open`}
           mark=""
-          markInk={colour.faint}
+          markInk={ink.secondary}
           onClick={() => onChoose(deal.id)}
         />
       ))}

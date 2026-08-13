@@ -1,0 +1,59 @@
+/**
+ * The design's face, self-hosted — the same binaries the workspace loads,
+ * copied into `public/fonts/`. The panel runs inside Office's webview
+ * with no reach to font CDNs, and the product's face must not depend on
+ * one anyway. Vite rewrites these absolute URLs under the build's `base`,
+ * so they hold whether the panel is served at `/` or under `/panel/`.
+ */
+
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/switzer-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/switzer-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/switzer-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/plexmono-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/plexmono-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* The design's writing-box rule holds here too: no border, no outline,
+   no ring — focus is a soft glow set inline, or nothing. */
+input,
+textarea {
+  outline: none;
+  box-shadow: none;
+}
