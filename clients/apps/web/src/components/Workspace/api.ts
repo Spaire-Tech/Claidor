@@ -445,6 +445,36 @@ export interface ModelGrid {
   }[]
 }
 
+/** One thing in the file that is not on its screen. */
+export interface HiddenFinding {
+  rule: string
+  /** `leak` — content a recipient can read that the sender did not put
+   *  on the page. `trace` — who, when, how it was filed. Never added. */
+  severity: 'leak' | 'trace'
+  where: string
+  detail: string
+  evidence: string
+}
+
+/** The metadata checker on the wire — computed from the stored bytes. */
+export interface HiddenReport {
+  kind: string
+  parts: number
+  findings: HiddenFinding[]
+  /** The checker's refusal sentence for a file it does not read — a PDF,
+   *  a legacy .doc. An answer about the file, not an error. */
+  refused: string | null
+}
+
+/** One upload of a document, newest first. */
+export interface Version {
+  id: string
+  version: number
+  uploaded_by: { id: string; name: string; avatar_url: string | null } | null
+  uploaded_at: string
+  counts: Record<string, unknown>
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -697,6 +727,15 @@ export class TieOutApi {
   }
 
   /** Every figure in a document, by page, and what became of each. */
+  versions(artifactId: string): Promise<Version[]> {
+    return this.call(`/artifacts/${artifactId}/versions`)
+  }
+
+  /** What travels with this file that is not on its screen. */
+  metadata(artifactId: string): Promise<HiddenReport> {
+    return this.call(`/artifacts/${artifactId}/metadata`)
+  }
+
   figures(artifactId: string): Promise<FigureMap> {
     return this.call(`/artifacts/${artifactId}/figures`)
   }

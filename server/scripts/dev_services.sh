@@ -30,14 +30,25 @@ fi
 
 # The buckets and the app user the tests and the API expect. `.minio/` in
 # docker-compose is not in the repository, so this does the same by hand.
-if command -v mc >/dev/null; then
-  mc alias set local http://127.0.0.1:9000 "$ROOT_USER" "$ROOT_PASSWORD" >/dev/null
+#
+# `mc` is fetched like the server binary when absent. Without it the app
+# user is never created after Minio's data dir is reclaimed, and the API
+# then stores nothing while logging keep_failed — every upload succeeds
+# on screen and holds no bytes, which is the quiet kind of broken.
+MC=${MC_BIN:-/tmp/mc}
+command -v mc >/dev/null && MC=$(command -v mc)
+if [ ! -x "$MC" ]; then
+  curl -sSL -o "$MC" https://dl.min.io/client/mc/release/linux-amd64/mc \
+    && chmod +x "$MC"
+fi
+if [ -x "$MC" ]; then
+  "$MC" alias set local http://127.0.0.1:9000 "$ROOT_USER" "$ROOT_PASSWORD" >/dev/null
   for bucket in claidor-s3 claidor-s3-public testing-claidor-s3; do
-    mc mb --ignore-existing "local/$bucket" >/dev/null
+    "$MC" mb --ignore-existing "local/$bucket" >/dev/null
   done
-  mc admin user add local "$ACCESS_KEY" "$SECRET_KEY" >/dev/null 2>&1
-  mc admin policy attach local readwrite --user "$ACCESS_KEY" >/dev/null 2>&1
-  mc anonymous set download local/claidor-s3-public >/dev/null 2>&1
+  "$MC" admin user add local "$ACCESS_KEY" "$SECRET_KEY" >/dev/null 2>&1
+  "$MC" admin policy attach local readwrite --user "$ACCESS_KEY" >/dev/null 2>&1
+  "$MC" anonymous set download local/claidor-s3-public >/dev/null 2>&1
 fi
 
 pg_isready && redis-cli ping && curl -s -o /dev/null -w "minio %{http_code}\n" \

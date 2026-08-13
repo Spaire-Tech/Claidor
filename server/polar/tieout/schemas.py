@@ -650,6 +650,49 @@ class SheetGrid(Schema):
     rows_total: int
 
 
+class HiddenFinding(Schema):
+    """One thing in the file that is not on its screen."""
+
+    rule: str
+    #: `leak` — content a recipient can read that the sender did not put
+    #: on the page. `trace` — who, when, how it was filed. Never added.
+    severity: str
+    where: str
+    detail: str
+    evidence: str = ""
+
+
+class HiddenReport(Schema):
+    """What travels with this file — the metadata checker, on the wire.
+
+    Computed on request from the stored bytes rather than persisted: the
+    answer is a second's work, it is always about the current version,
+    and a stored copy would be one more thing that can silently disagree
+    with the file it describes.
+    """
+
+    kind: str
+    parts: int
+    findings: list[HiddenFinding]
+    #: The refusal sentence, when the file is not one the checker reads —
+    #: a PDF, a legacy .doc, a password-protected workbook. A valid
+    #: answer about the file, not an error: the screen shows it in place
+    #: of the list.
+    refused: str | None = None
+
+
+class VersionRead(Schema):
+    """One upload of a document, oldest last."""
+
+    id: UUID
+    version: int
+    uploaded_by: Uploader | None
+    uploaded_at: datetime
+    #: Figures, cells, slides — whatever this kind of file has, so the
+    #: row can say what each version brought without a diff engine.
+    counts: dict[str, Any]
+
+
 class ModelGrid(Schema):
     """A model as it is laid out, rather than as a search box.
 

@@ -1294,3 +1294,51 @@ document icon — the design's assets have no PDF face; « Not read » /
 what this data records — « edited » arrives with the connector metadata.
 
 35 route tests pass, including the new dismissal contract.
+
+---
+
+## 13 August — the document panel, and the metadata checker gets its door
+
+Round three. Clicking a document opens the design's side panel: facts,
+version history, « Hidden inside it », and the findings on that document
+with their evidence.
+
+**The metadata checker is finally reachable.** New endpoint
+`GET /artifacts/{id}/metadata` — the checker run on the stored bytes, on
+request, never persisted: it is a second's work, it is always about the
+current version, and a stored copy is one more thing that can silently
+disagree with the file. A file it does not read — a PDF, a legacy .doc —
+comes back with the checker's own refusal sentence in a `refused` field:
+an answer about the file, not an error. On the Cascade deck the panel
+shows the speaker notes with their text quoted and the four charts that
+carry their worksheets, live.
+
+**Versions** — `GET /artifacts/{id}/versions`, the lineage's uploads
+with who and when. The design's change-summary column needs a per-pair
+diff engine; until then the row says who brought the version, which is
+what is true today.
+
+**Evidence, by the finding's shape.** A cell finding shows four rows of
+the real model around its cell from the grid endpoint, target
+highlighted; a prose finding shows its sentence with the figure marked;
+a slide finding wears the design's sketch carrying the real figure. The
+« Rebase » button runs the real correction flow (propose, then apply);
+« Not a problem » opens the design's writing box for the required
+reason, because the server refuses a bare dismissal.
+
+**The staleness loop proved itself by accident.** Repeated test uploads
+made Cascade genuinely stale, and the banner appeared unprompted with
+true counts — « The deck changed at 00:10 today. Seven figures across
+one document were read before that. » After a recheck the findings moved
+to the new version and the banner cleared. Nothing about that path was
+staged.
+
+**Environment repairs, for the next time the container is reclaimed:**
+`server/.env` was lost with the container, which silently pointed S3 at
+real AWS — every upload « succeeded » and stored nothing. A minimal
+`.env` (S3 → local Minio) fixes it; `scripts/dev_services.sh` now
+fetches `mc` like it fetches the server binary, because without it the
+app user is never recreated and the same silent failure returns.
+
+Verified at 1440×900 against Cascade throughout. Screenshots in the
+thread; typecheck and lint clean; 34 route tests pass.

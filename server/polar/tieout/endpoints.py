@@ -77,6 +77,8 @@ from .schemas import (
     FindingSource,
     FindingUpdate,
     FindingWhere,
+    HiddenFinding,
+    HiddenReport,
     Identified,
     Identify,
     LinkAlternative,
@@ -89,9 +91,10 @@ from .schemas import (
     PanelToken,
     SlideFigures,
     Uploader,
+    VersionRead,
 )
 from .service import tieout
-from .storage import FileNotKept, download_url
+from .storage import FileNotKept, download_url, fetch
 from .writing import NotCorrectable, writing
 
 router = APIRouter(prefix="/tieout", tags=["tieout", APITag.private])
@@ -749,6 +752,94 @@ async def get_artifact(
         artifact.uploaded_by_id
     )
     return _artifact(artifact, uploader)
+
+
+@router.get("/artifacts/{artifact_id}/versions", response_model=list[VersionRead])
+async def list_versions(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[VersionRead]:
+    """Every upload of this document, newest first.
+
+    Versions share the artifact's lineage: `v3` is the same document as
+    `v1`, uploaded again. Each row carries its own counts, so a screen
+    can say what a version brought without a diff engine behind it.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    versions = [
+        one
+        for one in await repository.list_artifacts(artifact.dossier_id)
+        if one.lineage_id == artifact.lineage_id
+    ]
+    versions.sort(key=lambda one: one.version, reverse=True)
+    people = await repository.uploaders([one.uploaded_by_id for one in versions])
+    return [
+        VersionRead(
+            id=one.id,
+            version=one.version,
+            uploaded_by=_uploader(people.get(one.uploaded_by_id)),
+            uploaded_at=one.created_at,
+            counts=one.counts or {},
+        )
+        for one in versions
+    ]
+
+
+@router.get("/artifacts/{artifact_id}/metadata", response_model=HiddenReport)
+async def get_metadata(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> HiddenReport:
+    """What travels with this file that is not on its screen.
+
+    The metadata checker — speaker notes, hidden slides, very hidden
+    sheets, cropped images, external folder paths — run on the stored
+    bytes, on request. Computed rather than persisted: it is a second's
+    work, it is always about the current version, and a stored copy is
+    one more thing that can silently disagree with the file.
+
+    A file the checker does not read — a PDF, a legacy .doc, a password-
+    protected workbook — comes back with `refused` holding the checker's
+    own sentence. That is an answer about the file, not an error.
+    """
+    from .metadata import NotAnOfficeFile, read_metadata_bytes
+
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        payload = fetch(artifact)
+    except FileNotKept as problem:
+        # The storage sentence talks about correcting; this route is
+        # about reading. Same fact, this route's own words.
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"{artifact.filename} is not stored here any more, so what "
+                "travels with it cannot be read. Upload it again."
+            ),
+        ) from problem
+
+    try:
+        report = read_metadata_bytes(payload)
+    except NotAnOfficeFile as problem:
+        return HiddenReport(kind="", parts=0, findings=[], refused=str(problem))
+
+    return HiddenReport(
+        kind=report.kind,
+        parts=report.parts,
+        findings=[
+            HiddenFinding(
+                rule=one.rule,
+                severity=one.severity,
+                where=one.where,
+                detail=one.detail,
+                evidence=one.evidence,
+            )
+            for one in report.findings
+        ],
+    )
 
 
 @router.delete("/artifacts/{artifact_id}", status_code=204)

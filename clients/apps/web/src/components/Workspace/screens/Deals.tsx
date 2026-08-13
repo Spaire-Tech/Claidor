@@ -53,7 +53,7 @@ export const checkedLine = (at: string | null): string => {
   if (then.toDateString() === yesterday.toDateString())
     return `Checked yesterday, ${time}`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `Checked ${days} days ago`
+  if (days < 7) return `Checked ${days} ${days === 1 ? 'day' : 'days'} ago`
   return `Checked ${then.toLocaleDateString([], { day: 'numeric', month: 'long' })}`
 }
 
@@ -113,6 +113,8 @@ export interface DealsProps {
   /** The shell's « Check now », forwarded to the open deal. */
   checkNonce: number
   onChecking: (running: boolean) => void
+  openDocId: string | null
+  onOpenDoc: (doc: import('./../api').Artifact) => void
 }
 
 export const Deals = ({
@@ -123,6 +125,8 @@ export const Deals = ({
   onOpen,
   checkNonce,
   onChecking,
+  openDocId,
+  onOpenDoc,
 }: DealsProps) => {
   //: The connector, for the empty state's three faces. Asked only once
   //: the list has answered and come back empty — the list screen never
@@ -168,6 +172,8 @@ export const Deals = ({
         dealId={deal.id}
         checkNonce={checkNonce}
         onChecking={onChecking}
+        openDocId={openDocId}
+        onOpenDoc={onOpenDoc}
       />
     )
   }

@@ -60,7 +60,7 @@ export const ago = (at: string): string => {
   if (then.toDateString() === yesterday.toDateString())
     return `yesterday, ${time}`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days} days ago`
+  if (days < 7) return `${days} ${days === 1 ? 'day' : 'days'} ago`
   return then.toLocaleDateString([], { day: 'numeric', month: 'long' })
 }
 
@@ -153,6 +153,8 @@ export interface DealPageProps {
   /** Bumped by the shell's « Check now »; a change re-runs and reloads. */
   checkNonce: number
   onChecking: (running: boolean) => void
+  openDocId: string | null
+  onOpenDoc: (doc: Artifact) => void
 }
 
 export const DealPage = ({
@@ -160,6 +162,8 @@ export const DealPage = ({
   dealId,
   checkNonce,
   onChecking,
+  openDocId,
+  onOpenDoc,
 }: DealPageProps) => {
   const [page, setPage] = useState<DealPageData | null>(null)
   const [findings, setFindings] = useState<Finding[] | null>(null)
@@ -410,6 +414,7 @@ export const DealPage = ({
                 return (
                   <button
                     key={one.id}
+                    onClick={() => onOpenDoc(one)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -418,7 +423,8 @@ export const DealPage = ({
                       textAlign: 'left',
                       border: 0,
                       borderTop: index === 0 ? 0 : hairline,
-                      background: 'transparent',
+                      background:
+                        openDocId === one.id ? '#eef1f6' : 'transparent',
                       font: 'inherit',
                       cursor: 'pointer',
                       padding: '14px 16px 14px 20px',

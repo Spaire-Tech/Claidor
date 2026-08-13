@@ -15,9 +15,10 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { DealListItem, TieOutApi } from './api'
+import { Artifact, DealListItem, TieOutApi } from './api'
 import { blueButton, card, font, ground, ink } from './design'
 import { Deals } from './screens/Deals'
+import { DocPanel } from './screens/DocPanel'
 import './workspace.css'
 
 /**
@@ -62,6 +63,7 @@ export const Workspace = ({
 
   const [view, setView] = useState<View>('deals')
   const [deal, setDeal] = useState<DealListItem | null>(null)
+  const [doc, setDoc] = useState<Artifact | null>(null)
   const [acctOpen, setAcctOpen] = useState(false)
 
   //: Every deal this person is on. Null while loading — the screens tell
@@ -86,6 +88,7 @@ export const Workspace = ({
   const go = (next: View) => () => {
     setView(next)
     setDeal(null)
+    setDoc(null)
     setAcctOpen(false)
   }
 
@@ -166,7 +169,10 @@ export const Workspace = ({
             {hasDeal && (
               <>
                 <button
-                  onClick={() => setDeal(null)}
+                  onClick={() => {
+                    setDeal(null)
+                    setDoc(null)
+                  }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -235,6 +241,8 @@ export const Workspace = ({
                 //: A finished check changes the list's counts too.
                 if (!running) setDealsAt((was) => was + 1)
               }}
+              openDocId={doc?.id ?? null}
+              onOpenDoc={setDoc}
             />
           ) : (
             //: The design's own face for a view that is not there — the
@@ -253,6 +261,16 @@ export const Workspace = ({
             </div>
           )}
         </div>
+
+        {hasDeal && doc !== null && (
+          <DocPanel
+            api={api}
+            dealId={deal!.id}
+            doc={doc}
+            onClose={() => setDoc(null)}
+            onChanged={() => setDealsAt((was) => was + 1)}
+          />
+        )}
       </div>
 
       {/* The dock. */}
