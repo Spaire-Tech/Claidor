@@ -168,6 +168,11 @@ server/scripts/corpus_models/
 server/scripts/corpus_documents/
 server/scripts/corpus_pairs/
 
+# Regulator corpus for the measurement rounds (Ofwat PR24, Ofgem RIIO-3).
+# Public documents under OGL, but tens of megabytes and re-fetchable —
+# docs/pierce/corpus-sources.md records where each file came from.
+server/scripts/corpus_regulator/
+
 # Redis persistence snapshot, written by the dev Redis into the working
 # tree. Runtime state, recreated on every save — never source.
 server/dump.rdb
