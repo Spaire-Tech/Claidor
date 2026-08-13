@@ -23,6 +23,7 @@ decide whether the deck is wrong or the model moved, and it costs nothing
 extra now that the formulas are parsed.
 """
 
+import re
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -43,6 +44,18 @@ DEPTH = 2
 #: an Outputs tab. The Outputs tab restates figures from elsewhere, so
 #: leaving it in means every figure has two homes.
 RESTATING_SHEETS = frozenset({"outputs", "output", "summary"})
+
+#: Sheets that are workbook machinery, not statements: dropdown lists,
+#: data-validation enums, Power Query caches. Their cells carry values a
+#: document could never be quoting — the measured case is Ofgem's
+#: GD-BPFM, where « F7 - Data Validation » holds the integers of an
+#: inflation-lag dropdown in rows the label reader named after
+#: licensee acronyms, and the twelve links the first regulator-scale
+#: crosscheck proposed all landed there or on the PowerQuery cache
+#: (`scripts/corpus_regulator/annex_bpfm2.log`). Matched by substring
+#: because real names decorate the convention (« F7 - Data Validation »,
+#: « DROPDOWN LISTS »).
+MACHINERY = re.compile(r"data\s*.?validation|dropdown|power\s*.?query|lookup", re.I)
 
 
 @dataclass(frozen=True)
@@ -224,6 +237,8 @@ def outputs_from_workbook(book: Workbook) -> list[Output]:
     candidates: list[Output] = []
     for cell in book.cells.values():
         if cell.sheet.lower() in RESTATING_SHEETS:
+            continue
+        if MACHINERY.search(cell.sheet):
             continue
         if cell.alias_of is not None:
             continue

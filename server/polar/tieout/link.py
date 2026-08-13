@@ -479,7 +479,51 @@ def link(
                 Unlinked(figure, f"no output fits the label (best {best:.2f})")
             )
             continue
+        if _uncorroborated(label_set | context, outputs[best_index]) and not _agrees(
+            figure, outputs[best_index]
+        ):
+            # A single shared word may corroborate; it may never
+            # contradict. The first regulator-scale crosscheck proposed
+            # twelve links and every one was a licensee acronym
+            # (« NGET ») matched against a dropdown integer in a row
+            # named with the same acronym — score 0.54, runner-up 0.00,
+            # £13,359.4m reported as disagreeing with 8. Cascade's own
+            # « WACC of 9.8% » against the output named `WACC` is the
+            # same thinness *agreeing*, and refusing it would cost real
+            # coverage — so the line is drawn at the claim: a drift
+            # asserted on one word is noise by construction, and the
+            # price is that a thin match against a wrong cell that
+            # happens to agree slips through silently. That trade is
+            # taken with eyes open: the expensive answer this product
+            # can give is the false disagreement.
+            unlinked.append(
+                Unlinked(figure, "a single shared word cannot carry a disagreement")
+            )
+            continue
         if best - runner_up < MARGIN:
+            tied = [
+                index
+                for score, index in scored
+                if score > 0 and best - score < MARGIN
+            ]
+            if _one_answer(outputs, tied):
+                # The « ambiguity » is one flat parameter repeated across
+                # the model's year columns — « FY2027 Risk-free rate »
+                # 0.023, « FY2028 Risk-free rate » 0.023. A document
+                # quoting the parameter without a year is not ambiguous
+                # about which quantity it means, and every refusal in the
+                # first regulator-scale run of this linker was exactly
+                # this shape. Same value, same name once the period words
+                # are removed: one answer, kept.
+                links.append(
+                    Link(
+                        figure=figure,
+                        output=outputs[best_index],
+                        score=best,
+                        runner_up=runner_up,
+                    )
+                )
+                continue
             unlinked.append(
                 Unlinked(
                     figure,
@@ -500,6 +544,58 @@ def link(
         )
 
     return links, unlinked
+
+
+def _timeless(output: Output) -> list[str]:
+    """An output's name and basis, with the period words removed."""
+    return [
+        word
+        for word in tokens(output.name) + tokens(output.basis)
+        if FISCAL_YEAR.match(word) is None and word not in PERIOD_WORDS
+    ]
+
+
+def _uncorroborated(said: set[str], output: Output) -> bool:
+    """True when the match rests on one shared content word and nothing
+    else.
+
+    What counts is what the two sides *share*, not how many words each
+    brings — the candidate always brings its sheet name as a basis, and
+    « Validation » padding the candidate side is not corroboration. A
+    shared period is: « Revenue FY2025A » against « FY2025A revenue » is
+    anchored by the year even though revenue is the only content word in
+    common. « NGET » against « NGET » shares one word and no period, and
+    that is the twelve-false-links shape exactly.
+    """
+    theirs = set(tokens(output.name)) | set(tokens(output.basis))
+    shared = said & theirs
+    content = {
+        word
+        for word in shared
+        if FISCAL_YEAR.match(word) is None and word not in PERIOD_WORDS
+    }
+    return len(content) < 2 and len(shared) == len(content)
+
+
+def _agrees(figure: Figure, output: Output) -> bool:
+    """`compare`'s own arithmetic: equal at the precision the figure
+    printed, with the bridge-parenthesis rule applied."""
+    printed = figure.printed_value_at_precision()
+    expected = figure.as_printed_precision(output.value)
+    if figure.parenthesised:
+        printed, expected = abs(printed), abs(expected)
+    return printed == expected
+
+
+def _one_answer(outputs: list[Output], tied: list[int]) -> bool:
+    """True when every tied candidate is the same figure in a different
+    period column — same value, same name once the period words go."""
+    first = outputs[tied[0]]
+    words = _timeless(first)
+    return all(
+        outputs[index].value == first.value and _timeless(outputs[index]) == words
+        for index in tied[1:]
+    )
 
 
 def rank(

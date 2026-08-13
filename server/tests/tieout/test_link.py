@@ -271,3 +271,124 @@ class TestAnUnmarkedYear:
 
         assert not _same_period({"fy2025a"}, {"fy2025e"})
         assert not _same_period({"fy2025"}, {"fy2026a"})
+
+
+def test_one_word_on_both_sides_is_no_match_at_all() -> None:
+    """The first regulator-scale crosscheck proposed twelve links; every
+    one was a licensee acronym (« NGET ») matched against a dropdown
+    integer in a row named with the same acronym — £13,359.4m compared
+    against 8. One word each way carries no corroboration."""
+    from polar.tieout.link import link as run
+
+    lists = [Output("V1", "NGET", Decimal("8"), "Validation!AA9", "Validation")]
+    fig = figure(
+        "NGET",
+        kind="currency",
+        printed="£13359.4m",
+        value=Decimal("13359.4"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], lists)
+    assert not links
+    assert "single shared word" in unlinked[0].reason
+
+
+def test_one_shared_word_may_corroborate_but_never_contradict() -> None:
+    """Cascade's « WACC of 9.8% » against the output named `WACC` is one
+    shared word *agreeing* — refusing it costs real coverage. The line
+    is drawn at the claim: thin matches keep their agreements and lose
+    their drifts."""
+    from polar.tieout.link import link as run
+
+    wacc = [Output("W1", "WACC", Decimal("0.098"), "Input!B4", "Input")]
+    agreeing = figure(
+        "WACC of",
+        kind="percent",
+        printed="9.8%",
+        value=Decimal("0.098"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, _ = run([agreeing], wacc)
+    assert links
+    assert links[0].output.ref == "W1"
+
+
+def test_a_flat_parameter_across_years_is_one_answer() -> None:
+    """« FY2027 Risk-free rate » 0.023 and « FY2028 Risk-free rate »
+    0.023 are the same figure in two period columns. A document quoting
+    the parameter without a year is not ambiguous about which quantity
+    it means — every refusal in the first regulator-scale run was this
+    shape."""
+    from polar.tieout.link import link as run
+
+    years = [
+        Output("Y1", "FY2027 Risk-free rate", Decimal("0.023"), "In!AU869", "In"),
+        Output("Y2", "FY2028 Risk-free rate", Decimal("0.023"), "In!AV869", "In"),
+        Output("Y3", "FY2029 Risk-free rate", Decimal("0.023"), "In!AW869", "In"),
+    ]
+    fig = figure(
+        "Risk-free rate forecast",
+        kind="percent",
+        printed="2.30%",
+        value=Decimal("0.023"),
+        subject=None,
+    )
+    links, unlinked = run([fig], years)
+    assert links, unlinked
+    assert links[0].output.name.endswith("Risk-free rate")
+
+
+def test_two_genuinely_different_candidates_still_refuse() -> None:
+    """The collapse is for period twins only: two quantities with
+    different values or different names stay ambiguous."""
+    from polar.tieout.link import link as run
+
+    rivals = [
+        Output("R1", "FY2027 Risk-free rate", Decimal("0.023"), "In!AU869", "In"),
+        Output("R2", "FY2027 Risk-free rate floor", Decimal("0.021"), "In!AU870", "In"),
+    ]
+    fig = figure(
+        "Risk-free rate",
+        kind="percent",
+        printed="2.30%",
+        value=Decimal("0.023"),
+        subject=None,
+    )
+    links, unlinked = run([fig], rivals)
+    if links:
+        assert links[0].output.ref == "R1"
+    else:
+        assert "equally well" in unlinked[0].reason
+
+
+def test_machinery_sheets_are_not_candidates() -> None:
+    """A data-validation dropdown or a Power Query cache is workbook
+    machinery — its cells hold values no document could be quoting.
+    Measured on Ofgem's GD-BPFM (« F7 - Data Validation », PowerQuery)."""
+    from polar.tieout.provenance import outputs_from_workbook
+    from polar.tieout.workbook import Cell, Workbook
+
+    book = Workbook()
+    for sheet, ref in (
+        ("F7 - Data Validation", "F7 - Data Validation!AA9"),
+        ("PowerQuery", "PowerQuery!K1281"),
+        ("DROPDOWN LISTS", "DROPDOWN LISTS!B2"),
+        ("Model", "Model!D6"),
+    ):
+        book.cells[ref] = Cell(
+            sheet=sheet,
+            ref=ref,
+            row=9,
+            column=27,
+            value=Decimal("8"),
+            formula=None,
+            row_label="NGET",
+            column_label="",
+        )
+    book.sheets = ["F7 - Data Validation", "PowerQuery", "DROPDOWN LISTS", "Model"]
+    offered = {one.ref for one in outputs_from_workbook(book)}
+    assert offered == {"Model!D6"}
