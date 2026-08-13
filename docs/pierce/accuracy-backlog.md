@@ -1035,3 +1035,50 @@ Also parked, same area: the linker's ~18-minute run against 137k
 candidates (candidate pre-filtering by shared vocabulary), and the
 data-shaped-workbook noise (354k audit findings on a daily-rates
 file).
+
+### Linker round 1: coverage asymmetry + blocking, measured
+
+Implementing the first stage of the founder's researched plan
+(asymmetric document-label coverage; structural tokens out of the
+denominator; blocking), each change re-graded on the identical pair.
+
+**What round 1 won, verified:**
+
+- **The 20-minute linker run is 108 seconds** (11×). Blocking scores
+  each figure only against candidates sharing a word — provably
+  outcome-identical, since a candidate sharing nothing can only score
+  zero. 137,852 candidates, same answers, a twelfth of the bill.
+- **Cascade gains seven links, every one hand-verified and agreeing**
+  (113 reconciled, was 106; drift set unchanged): the 0.0 legal
+  settlement, five chart-point margins stored as fractions, and
+  Arbor's 1.43x multiple. All were blocked by the fraction gate, which
+  now lets a plain figure that *is* a fraction claim fraction-sized
+  cells — the original protection (87.4 profit vs 0.38 margin) stands.
+- **An unmatched period no longer dilutes a cell's name** (« Equity
+  beta » vs « FY2027 Equity Beta » was 0.45; the year is gate
+  material). A *matched* period still corroborates — cutting it
+  demoted a legitimate tie into a no-fit, caught by the suite.
+- **The acronym-pair false-drift class is dead**: « SGN-SC » against
+  « (SGN_Sc) » shares two words and told £459.3m it disagreed with a
+  £6.2m cyber line. A claim resting entirely on ≤3-character tokens
+  has named no quantity, and now cannot contradict.
+- **The tie collapse is outcome-equivalence now**: tied candidates
+  sharing one value are one answer whatever their spelling
+  (« Notional gearing » vs « Model Version Notional gearing », both
+  0.6) — not because value picks a winner, but because every choice
+  yields the identical verdict.
+
+**The identical Annex pair after round 1, graded: still FAIL —
+differently, and more legibly.** 4 proposals: 2 agreements (both
+plausible, thin), 2 false drifts of a **newly-named class** — a ±4%
+sensitivity band linked to the 40% equity share (« plus or minus the
+baseline return on equity »), and an 8% *threshold* linked to a
+penalty *amount* of zero (« thresholds are »). Prose qualifiers that
+mark a derivative of the quantity, not the quantity — round 2's
+gazetteer work, now with two pinned examples. R = 0 of 5: every
+target dies in a **cleanly-named mixed-value tie** whose breaker is
+documented — gearing's band contains FY2021's 0.65 (RIIO-2) alongside
+ten 0.6s; RFR/TMR/CoE/beta tie their parameter rows against their own
+history rows. One cause, one fix owed: the document-date-anchored
+period prior plus flat-vs-dated row shape — round 2, exactly as the
+research sequenced it.

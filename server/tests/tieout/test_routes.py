@@ -278,9 +278,10 @@ class TestTheDealPage:
         assert {one["kind"] for one in body["documents"]} == {"model", "deck"}
         assert body["files"] == 2
         assert body["lineages"] == 2
-        # 106 with the cross-sheet parameter collapse (`link._timeless`):
-        # three more agreeing links, the drift set unchanged.
-        assert body["coverage"]["reconciled"] == 106
+        # 106 with the cross-sheet parameter collapse (`link._timeless`);
+        # 113 with the fraction gate letting a plain fraction figure claim
+        # fraction-sized cells — gained links all agree, drifts unchanged.
+        assert body["coverage"]["reconciled"] == 113
         assert body["coverage"]["drifting"] == 8
         # The coverage line carries its own misses, with reasons.
         assert body["coverage"]["unlinked"] > 0

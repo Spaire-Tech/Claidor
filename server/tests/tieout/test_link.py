@@ -416,3 +416,27 @@ def test_a_parameter_echoed_across_sheets_is_also_one_answer() -> None:
     )
     links, unlinked = run([fig], echoed)
     assert links, unlinked
+
+
+def test_a_cells_own_year_does_not_dilute_its_name() -> None:
+    """« Equity beta » against « FY2027 Equity Beta » scored 0.45 — under
+    the line — because the cell said which year it was, which a document
+    label quoting the timeless parameter never repeats. An unmatched
+    period is gate material, not evidence against."""
+    from polar.tieout.link import link as run
+
+    beta = [
+        Output("B1", "FY2027 Equity Beta", Decimal("0.83"), "In!AU870", "InputSummary"),
+    ]
+    fig = figure(
+        "Equity beta",
+        kind="plain",
+        printed="0.83",
+        value=Decimal("0.83"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], beta)
+    assert links, unlinked
+    assert links[0].output.ref == "B1"

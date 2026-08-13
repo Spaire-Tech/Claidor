@@ -334,9 +334,19 @@ class Vocabulary:
         self.bases = [tokens(output.basis) for output in outputs]
 
         document_frequency: dict[str, int] = {}
-        for name, basis in zip(self.names, self.bases, strict=True):
+        #: word -> indices of the outputs using it. The block a figure
+        #: scores against is the union of its own words' postings — a
+        #: candidate sharing *no* word can only ever score zero (covered
+        #: stays empty, so recall is zero), so skipping it changes no
+        #: outcome, only the bill: 1,234 figures against 137,852 cells
+        #: was twenty minutes of scoring zeros.
+        self.postings: dict[str, list[int]] = {}
+        for index, (name, basis) in enumerate(
+            zip(self.names, self.bases, strict=True)
+        ):
             for word in set(name) | set(basis):
                 document_frequency[word] = document_frequency.get(word, 0) + 1
+                self.postings.setdefault(word, []).append(index)
 
         total = max(len(outputs), 1)
         self.weight = {
@@ -352,6 +362,13 @@ class Vocabulary:
     def weight_of(self, word: str) -> float:
         return self.weight.get(word, self.unknown)
 
+    def block(self, said: set[str]) -> list[int]:
+        """The candidates worth scoring for a figure that said these words."""
+        found: set[int] = set()
+        for word in said:
+            found.update(self.postings.get(word, ()))
+        return sorted(found)
+
 
 def _score(
     vocabulary: Vocabulary,
@@ -366,6 +383,22 @@ def _score(
     total = 0.0
     for words, share in ((name, 1.0), (basis, BASIS_WEIGHT)):
         for word in words:
+            # An *unmatched* period must not dilute the words that carry
+            # meaning: « Equity beta » against « FY2027 Equity Beta »
+            # scored 0.45 — under the 0.50 line — purely because the cell
+            # said which year it was, which the document label was never
+            # going to repeat, and `_same_period` has already refused any
+            # real contradiction. A *matched* period stays: « % margin
+            # FY2025A » agreeing with the cell's own year is genuine
+            # corroboration, and cutting it demoted a tie the margin gate
+            # was rightly refusing into a no-fit. Asymmetric coverage,
+            # asymmetrically applied.
+            if (
+                (FISCAL_YEAR.match(word) is not None or word in PERIOD_WORDS)
+                and word not in label
+                and word not in context
+            ):
+                continue
             weight = vocabulary.weight_of(word) * share
             total += weight
             if word in label:
@@ -415,7 +448,15 @@ def _admissible(figure: Figure, output: Output, label: list[str]) -> bool:
     if figure.kind == "percent":
         if abs(output.value) > FRACTION_CEILING:
             return False
-    elif abs(output.value) <= FRACTION_CEILING:
+    elif abs(output.value) <= FRACTION_CEILING and (
+        figure.value is None or abs(figure.value) > FRACTION_CEILING
+    ):
+        # A plain figure above the ceiling cannot be claiming a fraction —
+        # this is what stops « gross profit 87.4 » reconciling against a
+        # gross margin of 0.3818. But a plain figure that *is* a fraction
+        # (an equity beta of 0.83, printed bare) is exactly the size of
+        # the cells it means, and refusing every fraction-sized cell left
+        # it unlinkable however perfect the name.
         return False
 
     if figure.kind == "multiple" and RATIO_NAME.search(output.name) is None:
@@ -460,17 +501,23 @@ def link(
         label_set = set(label)
         context -= label_set
 
+        block = vocabulary.block(label_set | context)
         scored = [
             (
                 _score(vocabulary, index, label_set, context)
-                if _admissible(figure, output, label)
+                if _admissible(figure, outputs[index], label)
                 else 0.0,
                 index,
             )
-            for index, output in enumerate(outputs)
+            for index in block
         ]
         scored.sort(reverse=True)
 
+        if not scored:
+            unlinked.append(
+                Unlinked(figure, "no output fits the label (best 0.00)")
+            )
+            continue
         best, best_index = scored[0]
         runner_up = scored[1][0] if len(scored) > 1 else 0.0
 
@@ -584,7 +631,14 @@ def _uncorroborated(said: set[str], output: Output) -> bool:
         for word in shared
         if FISCAL_YEAR.match(word) is None and word not in PERIOD_WORDS
     }
-    return len(content) < 2 and len(shared) == len(content)
+    if len(content) < 2 and len(shared) == len(content):
+        return True
+    # Short acronym tokens name *who*, never *what*: « SGN-SC » against
+    # « ...re-opener (SGN_Sc) » shares two words — sgn, sc — and told a
+    # £459.3m figure it disagreed with a £6.2m cyber re-opener line. A
+    # claim resting entirely on entity-shaped tokens has named no
+    # quantity at all.
+    return all(len(word) <= 3 for word in content)
 
 
 def _agrees(figure: Figure, output: Output) -> bool:
@@ -598,14 +652,23 @@ def _agrees(figure: Figure, output: Output) -> bool:
 
 
 def _one_answer(outputs: list[Output], tied: list[int]) -> bool:
-    """True when every tied candidate is the same figure in a different
-    period column — same value, same name once the period words go."""
+    """True when picking any tied candidate tells the document the same
+    thing.
+
+    First written as « same value, same period-stripped name » — the
+    parameter across its year columns. The GD-BPFM broke that spelling:
+    « Notional gearing » on MainInputs and « Model Version Notional
+    gearing » on Scenarios tie within the margin, both 0.6, and the
+    name test refused what was one answer. Value equality alone is the
+    honest test — not because value picks a winner, but because when
+    every tied candidate holds the same value, agree-or-drift comes out
+    identical whichever is chosen. The choice can be cosmetically wrong
+    about *which cell* is named; it cannot change what the checker
+    says. Two genuinely different quantities that tie still differ in
+    value and still refuse.
+    """
     first = outputs[tied[0]]
-    words = _timeless(first)
-    return all(
-        outputs[index].value == first.value and _timeless(outputs[index]) == words
-        for index in tied[1:]
-    )
+    return all(outputs[index].value == first.value for index in tied[1:])
 
 
 def rank(

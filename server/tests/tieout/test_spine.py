@@ -168,14 +168,20 @@ class TestChecking:
         `Model!E7`, which the DCF sheet restates at the same value, and
         the memo gains its twin figures the same way. Every gained link
         agrees; the drift set is unchanged.
+
+        And 106/98 until the fraction gate learned that a plain figure
+        which *is* a fraction may claim fraction-sized cells: the 0.0
+        legal settlement, the chart's 0.2 margin points, and Arbor's
+        1.43x multiple under the 1.5 ceiling — each hand-verified. Every
+        gained link agrees; the drift set is unchanged again.
         """
         deal = await _deal(session, save_fixture, user)
         await _load(session, deal, user)
 
         run = await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
         assert run.status is CheckStatus.done
-        assert run.summary["reconciled"] == 106
-        assert run.summary["agreeing"] == 98
+        assert run.summary["reconciled"] == 113
+        assert run.summary["agreeing"] == 105
         assert run.summary["drifting"] == 8
         # What was *not* checked is part of the answer, and it is counted
         # with the reasons rather than quietly dropped.
