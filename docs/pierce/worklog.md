@@ -1665,3 +1665,53 @@ but not yet watched running inside PowerPoint. The first sideload from
 the runbook is that test. `Panel.tsx` remains the deliberate
 placeholder; the panel's own design is the founder's, still to come.
 16/16 panel tests pass, typecheck and lint clean.
+
+## 13 August 2026 — the regulator corpus round: the engine meets files nobody here made
+
+The founder's sourcing research (filed as `corpus-sources.md`) named
+where real, messy, legally-usable financial models live. This round
+fetched them and ran the engine against them — the first measurement
+of the audit and the crosscheck against files with no fingerprints of
+ours, and the best day the engine has had.
+
+**The find.** Ofwat's queries document reports four cells hard-keyed
+into an anonymised company's financial model. Checking that cell
+across all sixteen companies de-anonymised it — Northumbrian and
+Yorkshire, exactly the two the document counts — and gave the audit
+the one thing money cannot buy: a defect in third-party files that a
+regulator independently confirmed, in a document we did not write, on
+files we did not make.
+
+**The exam, failed then passed.** The audit scored 0 of 8 on those
+cells; two rule fixes later (the stacked-constant veto now measures
+the stack; a new column pass catches blocks too wide for any row to
+keep its formula majority) it scores 8 of 8, the clean twin stays at
+zero — and it found a second Yorkshire block the regulator's public
+record does not mention. Then the overfit check the founder demanded:
+the audit swept all sixteen companies in full and surfaced **57 more
+paste-overs in eight companies the queries document never names** —
+sampled by hand, every one real, with typed values that differ
+materially from the plumbing they replaced (Portsmouth's WACC 6.08%
+typed over a 5.56% feed; Southern's opex 52.7 over 153.3).
+
+**The speed.** A real company model never finished ingesting in 25
+minutes; the workbook reader now streams and does it in about forty
+seconds, identical outputs on every regression file. The audit's noise
+collapsed with it: one fill-copied formula is one finding, and the
+worst file went from 8,017 findings to 182.
+
+**The crosscheck, honestly.** Pre-registered pass criteria were
+committed before the fair test's number arrived
+(`ofgem-crosscheck-protocol.md`). Ofwat's code-labelled models yield
+zero links and the zero is correct behaviour — value-only matching was
+measured and would drown in coincidence; the named class gets a
+mapping layer (Ofwat publishes the mapping themselves). Cadent against
+the sector model: zero links, graded specificity success — its numbers
+verifiably are not in that file, and the linker declined 432 chances
+to guess. The Finance Annex pair produced 12 proposals from 1,234
+figures, all claimed as drifts; their hand adjudication closes the
+round. The linker's 20-minute run against 146k candidates is now a
+named scaling debt.
+
+Everything measured is in the accuracy backlog with the sweep log and
+scripts (`regulator_eval.py`) to reproduce it.

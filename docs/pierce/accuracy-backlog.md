@@ -742,3 +742,165 @@ consistent and exactly what a solo check must stay silent about.
 
 Rules pinned in `tests/tieout/test_solo.py`, one test per rule, plus the
 Cascade regression: both decks, the same two findings, nothing more.
+
+## The regulator corpus: the day the audit met a defect it did not plant
+
+13 August 2026. The corpus in `scripts/corpus_regulator/` (sources in
+[corpus-sources.md](corpus-sources.md)): 17 Ofwat PR24 final-
+determination files fetched through the UK Government Web Archive
+(Ofwat's own site blocks this environment), 6 Ofgem RIIO-3 files
+fetched directly, and the documents that quote them — including
+Ofwat's **PR24 FD inbound queries** document, which quotes exact cell
+references and is written by neither this team nor the companies.
+
+### The ground truth nobody here made
+
+The queries document (p8) reports that in "XXX's" FM02 financial model
+the cells `InpS!N1885-1888` are **hard-keyed where every other year is
+a formula**, that the amount is material (£2.7m of revenue), and that
+only two companies — both anonymised — carry it. Checking that one
+cell across all sixteen companies' models de-anonymised it:
+**Northumbrian and Yorkshire**, exactly two, matching the document.
+
+Ofwat's answer calls the overwrite deliberate. It is still precisely
+what a reviewer must be shown: values pasted over a template's
+plumbing, flagged orange, undocumented in the model itself.
+
+### The audit against it, before and after
+
+Before: **0 of 8** (both companies, four cells each). Two causes,
+each a rule protecting against a measured false-positive class:
+
+1. The `typed-over-formula` veto on *stacked* constants vetoed on any
+   vertical neighbour. A four-cell pasted block vetoes itself. Fixed
+   by measuring the stack: a run of ≤8 typed cells is a paste, longer
+   is a parameter column (`TYPED_BLOCK`, both ends measured — the
+   4-cell confirmed paste, the 59-cell CollarsAnalysis column).
+2. Yorkshire's paste is **wider than the regulator recorded** — five
+   year-columns × four rows, twice over. No row keeps a formula
+   majority, so the row pass is structurally blind. A new column pass
+   (`_typed_islands`) flags a short island of constants interrupting a
+   *repeating* column formula. Two guards, both measured: the column's
+   formula must repeat (an input column with one `SUM` under it
+   repeats nothing), and every island row must hold a formula **left**
+   of the typed cell (typed history is constants-first; a paste sits
+   after the calculations begin). The sheet-wide history boundary is
+   deliberately not consulted — on Yorkshire's own `InpS` it votes for
+   column 19 and would hide the paste at column N.
+
+After: **8 of 8**, with Anglian (whose same cells are formulas — the
+clean twin) at zero, and — the sentence worth keeping — **Ofwat's
+queries document describes one Yorkshire block; the audit found two.**
+The people whose full-time job is reading these models, with the
+companies' own explanations in front of them, documented half of it.
+
+### The overfit check: all sixteen companies, every cell
+
+A rule fitted to two examples deserves suspicion, so the audit ran
+over all sixteen FM02s in full (`sweep16.log`). Result: **101
+`typed-over-formula` findings** — the 44 confirmed
+(Northumbrian 4, Yorkshire 40), **57 more in eight companies the
+queries document never mentions**, and six companies clean:
+
+| Company | Findings | Hand-checked |
+|---|---|---|
+| Yorkshire | 40 | confirmed by Ofwat + template comparison |
+| Portsmouth | 30 | 3 of 3 sampled real **and material**: WACC typed 6.08% where the feed delivers 5.56%; income 18.5 vs 0; RPI rate 3.10% vs 2.59% |
+| Southern | 8 | 1 of 1 sampled: opex typed 52.7 where the feed delivers **153.3** |
+| South-West | 5 | structural match (same template rows) |
+| Northumbrian | 4 | confirmed by Ofwat |
+| Thames | 4 | same labelled row (« Base revenue 2024-25 ») as Affinity |
+| United Utilities, Severn Trent | 3 each | not yet read |
+| Affinity, South Staffs | 2 each | Affinity structurally matches Thames |
+| Anglian, Hafren, SES, South East, Welsh, Wessex | 0 | Anglian verified formulas at the confirmed cells |
+
+Every sampled finding is a value typed over the template's
+`=IF(F_Inputs!…)` feed with a **different value than the feed
+delivers**. Whether each is a deliberate adjustment (as Ofwat said of
+the two it knew about) or an error is the regulator's question; that a
+reviewer must see them is not. This is the second independent win:
+paste-overs in the public record that the public record does not
+mention.
+
+**Directionality.** The « formula to the left » guard assumes time
+runs left to right. On Ofgem's GD-BPFM — a different modelling house —
+the rule fired 45 times, and the shape matches the confirmed class
+(`MainInputs` rows 140-142: a 3-row × 8-year block typed over
+`=AP$11*$I$14*InputSummary!…`). No sixteen-way template exists for
+Ofgem, so these are recorded as **plausible, unconfirmed**. A
+right-to-left model would defeat the guard; none has been seen.
+
+### Reading real models: the half-hour that became forty seconds
+
+`read_workbook` loaded every file twice through openpyxl's ordinary
+mode — an object per cell of the rectangle, nine million of them on a
+company FM02. Profiled 150 seconds in: seven sheets of sixty-four
+done. Streamed (`read_only`, one pass per load, dictionaries of only
+the cells that exist): **FM02 in 39-68s** (was: never finished in 25
+minutes), GD-BPFM 645k cells in 151s, the 1.27M-cell Cost of Debt
+model in 302s. Regression: byte-identical cells/formulas/defects on
+every previously-read file.
+
+### Audit noise: one decision, one finding
+
+CA05 reported 8,017 defects; 7,752 were **one** 625-character formula,
+fill-copied, reported per cell (verified: one distinct shape).
+Findings from fill rules now collapse by sheet + formula shape —
+CA05 falls to **182**, the summary-tables file from 1,794 to 66.
+Hardcode findings keep their buried numbers in the key, so distinct
+assumptions stay distinct — which is why GD-BPFM still reports 6,068
+hardcodes (distinct literals) and the CoD data-workbook 354k defects:
+**data-shaped workbooks still overwhelm the audit**, owed below.
+
+### The crosscheck against foreign pairs, per the pre-registered protocol
+
+Criteria committed before the result in
+[ofgem-crosscheck-protocol.md](ofgem-crosscheck-protocol.md).
+
+- **Ofwat queries ↔ CA20** (the £55.448m ↔ `Allowance!C17` pair,
+  hand-verified): **0 links from 534 figures.** Cause read in the
+  code, not guessed: the linker matches names, never bare values, and
+  Ofwat labels cells in codes (`CWW3_007TOT_PR24 NES`). The value-
+  coincidence bound was measured — 174 of 534 figures share a value
+  with *some* CA20 cell, almost all « £5m »/« 10% » coincidences — so
+  the refusal to match on value is what keeps the checker honest.
+  Named class: **code-labelled models**, whose own solution artifact
+  exists — Ofwat publishes a 1,066-row mapping tool
+  (`mapping_tool_v4.xlsx`) translating table codes to model lines. A
+  mapping layer under house rules is the design; not built this round.
+- **Cadent ↔ GD-BPFM: 0 links from 432 figures — graded specificity
+  success.** Every Cadent headline value was searched for in the BPFM:
+  the value-matches that exist sit under unrelated labels (« NTS Exit
+  Flat Capacity Costs », not the FWACV allowance). The document's
+  numbers live in the PCD annex models, not this file. 432 chances to
+  guess wrong; none taken.
+- **Finance Annex ↔ GD-BPFM**, the fair pair: **12 proposals from
+  1,234 figures** (volume passes the protocol: 12, not 900), **all 12
+  claimed as drifts, 0 agreements**. Denominator work: of the twelve
+  pre-registered targets, **five are verified present under their own
+  labels** (risk-free rate, TMR, equity beta 0.83, notional gearing
+  60%, CoE 6.12%), one ambiguous, six verifiably absent (ET-sector or
+  PCFM values — absence is not a miss). Drift adjudication: see below.
+- **Specificity vs the daily-rates workbook: unmeasured** — the
+  linker timed out at 20 minutes against 351k candidates.
+
+**The linker does not scale**: 1,234 × 146,274 took 20 minutes.
+Banker models offer ~250 candidates and it is instant; regulator
+models offer 146k. Owed: candidate pre-filtering by shared vocabulary
+before scoring.
+
+### Owed from this round
+
+- **The Annex drift adjudication** — the 12 claimed drifts, each
+  hand-checked (in progress as this is written; a false drift is the
+  expensive failure and the grade is decided by the committed
+  protocol, not by this paragraph).
+- Data-shaped workbooks (daily-rate series) need either detection
+  (« this is not a model ») or restraint; 354k findings is not an
+  answer a person can use.
+- Linker candidate pre-filtering (above).
+- The mapping-layer design for code-labelled models.
+- United Utilities and Severn Trent sweep findings not yet read.
+- The errata-tracker recall test (260 published corrections — pair
+  the pre-erratum documents with corrected models) remains the best
+  future recall corpus and is untouched.
