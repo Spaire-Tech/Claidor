@@ -43,6 +43,7 @@ from polar.models import (
     FindingState,
     LinkState,
     ModelCell,
+    OneOffCheck,
     User,
 )
 from polar.openapi import APITag
@@ -52,9 +53,10 @@ from polar.user.repository import UserRepository
 
 from . import auth
 from .agent import service as agent
-from .ingest import kind_for
+from .ingest import Unreadable, kind_for
 from .repository import TieOutRepository
 from .schemas import (
+    AgainstModel,
     ArtifactPage,
     ArtifactRead,
     Ask,
@@ -88,8 +90,13 @@ from .schemas import (
     LinkRead,
     ModelDiff,
     ModelGrid,
+    OneOffDefect,
+    OneOffDrift,
+    OneOffResult,
     PanelToken,
+    RecentCheck,
     SlideFigures,
+    SoloFindingRead,
     Uploader,
     VersionRead,
 )
@@ -998,6 +1005,140 @@ async def list_runs(
         await repository.latest_run(dossier_id, CheckKind.crosscheck),
     ]
     return [one for one in (_run(run) for run in runs) if one is not None]
+
+
+# --- one-off checks ------------------------------------------------------
+
+
+def _one_off(row: OneOffCheck) -> OneOffResult:
+    stored = row.result or {}
+    return OneOffResult(
+        id=row.id,
+        filename=row.filename,
+        kind=row.kind.value,
+        checked_at=row.created_at,
+        against=row.against,
+        dossier_id=row.dossier_id,
+        models=[AgainstModel(**one) for one in stored.get("models", [])],
+        counts=row.counts or {},
+        disagreements=[
+            SoloFindingRead(**one) for one in stored.get("disagreements", [])
+        ],
+        drifts=[OneOffDrift(**one) for one in stored.get("drifts", [])],
+        defects=[OneOffDefect(**one) for one in stored.get("defects", [])],
+    )
+
+
+@router.post("/check-file", response_model=OneOffResult, status_code=201)
+async def check_file(
+    auth_subject: auth.TieOutWrite,
+    upload: UploadFile = File(..., alias="file"),
+    dossier_id: UUID | None = Query(
+        default=None,
+        description="A deal to check the file against. Left out, the file "
+        "is checked on its own.",
+    ),
+    session: AsyncSession = Depends(get_db_session),
+) -> OneOffResult:
+    """Check a loose file, without putting it in any deal.
+
+    The Check-a-file screen. The file is read, checked and dropped in one
+    request — nothing lands in a data room — and the answer is kept as a
+    row of « Recent one-off checks ».
+
+    A deck or a memo is checked against itself; with a deal picked it is
+    also reconciled against that deal's current models. A model is
+    audited — a workbook checked by itself *is* the model audit — and a
+    deal picked alongside one is deliberately ignored: model-against-deal
+    is the grounding, which needs the deal's source documents and is not
+    a one-off, so the result honestly says « on its own ».
+
+    A file that cannot be read is a 422 with the reason in words a person
+    can act on, exactly as an upload would have reported it. Nothing is
+    stored for it: there is no answer to keep.
+    """
+    user = auth_subject.subject
+    deal = await _deal(session, dossier_id, user.id) if dossier_id is not None else None
+
+    payload = await upload.read()
+    if len(payload) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="That file is too large to read.")
+
+    filename = upload.filename or "upload"
+    kind = kind_for(filename)
+    if kind is ArtifactKind.source:
+        raise HTTPException(
+            status_code=415,
+            detail=(
+                "a PDF is a source — it is what other files are checked "
+                "against. A one-off check reads a deck, a model or a memo."
+            ),
+        )
+    if kind is None:
+        raise HTTPException(
+            status_code=415,
+            detail=(
+                f"{filename} is not a file this can check — a deck is "
+                ".pptx, a model is .xlsx or .xls, a memo is .docx"
+            ),
+        )
+
+    try:
+        row = await tieout.check_file(
+            session,
+            user_id=user.id,
+            kind=kind,
+            filename=filename,
+            payload=payload,
+            dossier=deal,
+        )
+    except Unreadable as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return _one_off(row)
+
+
+@router.get("/check-file/recents", response_model=list[RecentCheck])
+async def recent_checks(
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[RecentCheck]:
+    """The caller's own recent one-off checks, newest first.
+
+    Personal, not the team's: a loose file checked before it is anybody's
+    deal is not yet anybody else's business.
+    """
+    repository = TieOutRepository.from_session(session)
+    rows = await repository.recent_checks(auth_subject.subject.id)
+    return [
+        RecentCheck(
+            id=one.id,
+            filename=one.filename,
+            kind=one.kind.value,
+            against=one.against,
+            checked_at=one.created_at,
+            counts=one.counts or {},
+        )
+        for one in rows
+    ]
+
+
+@router.get("/check-file/{check_id}", response_model=OneOffResult)
+async def get_one_off_check(
+    check_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> OneOffResult:
+    """A stored one-off check, replayed exactly as it was answered.
+
+    Nothing re-runs: the file is gone, and a silent re-check against a
+    deal that has since moved would show a different answer under an old
+    date. Only the owner can open it — anyone else gets 404, not 403.
+    """
+    repository = TieOutRepository.from_session(session)
+    row = await repository.get_one_off(check_id, auth_subject.subject.id)
+    if row is None:
+        raise ResourceNotFound("Check not found.")
+    return _one_off(row)
 
 
 # --- findings ------------------------------------------------------------

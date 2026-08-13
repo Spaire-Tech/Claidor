@@ -37,6 +37,7 @@ from polar.models import (
     FindingState,
     LinkState,
     ModelCell,
+    OneOffCheck,
     User,
 )
 
@@ -723,6 +724,41 @@ class TieOutRepository(RepositoryBase[Artifact]):
     async def get_correction(self, correction_id: UUID) -> Correction | None:
         statement = select(Correction).where(
             Correction.id == correction_id, Correction.deleted_at.is_(None)
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    # --- one-off checks -------------------------------------------------
+
+    async def save_one_off(self, check: OneOffCheck) -> OneOffCheck:
+        self.session.add(check)
+        await self.session.flush()
+        return check
+
+    async def recent_checks(
+        self, user_id: UUID, *, limit: int = 20
+    ) -> Sequence[OneOffCheck]:
+        """One person's recent one-off checks, newest first.
+
+        Scoped to the person, not the organization: a loose file checked
+        before it is anybody's deal is not yet the team's business.
+        """
+        statement = (
+            select(OneOffCheck)
+            .where(
+                OneOffCheck.user_id == user_id,
+                OneOffCheck.deleted_at.is_(None),
+            )
+            .order_by(OneOffCheck.created_at.desc())
+            .limit(limit)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def get_one_off(self, check_id: UUID, user_id: UUID) -> OneOffCheck | None:
+        """One stored check — only ever its owner's."""
+        statement = select(OneOffCheck).where(
+            OneOffCheck.id == check_id,
+            OneOffCheck.user_id == user_id,
+            OneOffCheck.deleted_at.is_(None),
         )
         return (await self.session.execute(statement)).scalar_one_or_none()
 

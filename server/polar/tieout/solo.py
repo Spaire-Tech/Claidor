@@ -88,6 +88,13 @@ class Statement:
     printed: str
     location: str
     page: int
+    #: The slide's title, or the heading over the block — what the screen
+    #: prints under the value so a reader knows which page they are being
+    #: sent to before they go.
+    section: str = ""
+    #: The sentence around the figure, when there is one, so the evidence
+    #: card can quote the file rather than paraphrase it.
+    context: str = ""
 
 
 @dataclass(frozen=True)
@@ -112,6 +119,38 @@ class Disagreement:
 
 def disagreements(extraction: Extraction) -> list[Disagreement]:
     """Every name in the file that carries more than one figure."""
+    found: list[Disagreement] = []
+    for group in _named_groups(extraction):
+        pair = _first_conflict(group)
+        if pair is None:
+            continue
+        first, later = pair
+        found.append(
+            Disagreement(
+                label=first.label,
+                first=_statement(first),
+                other=_statement(later),
+                statements=len(group),
+            )
+        )
+    found.sort(key=lambda one: (one.first.page, one.label))
+    return found
+
+
+def repeated(extraction: Extraction) -> int:
+    """How many names the file states more than once.
+
+    The count behind « 14 stated more than once » on the check screen —
+    the names actually compared, after every gate. Counting raw label
+    collisions instead would include the headings and fragments the
+    gates exist to exclude, and the tally would claim comparisons that
+    never ran.
+    """
+    return len(_named_groups(extraction))
+
+
+def _named_groups(extraction: Extraction) -> list[list[Figure]]:
+    """The figures grouped by name — only the groups worth comparing."""
     groups: dict[tuple[str, ...], list[Figure]] = {}
     for figure in extraction.figures:
         # One end of a printed range is half a claim, not a figure.
@@ -130,7 +169,7 @@ def disagreements(extraction: Extraction) -> list[Disagreement]:
             continue
         groups.setdefault(key, []).append(figure)
 
-    found: list[Disagreement] = []
+    named: list[list[Figure]] = []
     for group in groups.values():
         if len(group) < 2 or len(group) > MOST_STATEMENTS:
             continue
@@ -140,28 +179,18 @@ def disagreements(extraction: Extraction) -> list[Disagreement]:
         kinds = {figure.kind for figure in group}
         if len(kinds) > 1:
             continue
-        pair = _first_conflict(group)
-        if pair is None:
-            continue
-        first, later = pair
-        found.append(
-            Disagreement(
-                label=first.label,
-                first=Statement(
-                    printed=first.printed,
-                    location=first.location,
-                    page=first.slide,
-                ),
-                other=Statement(
-                    printed=later.printed,
-                    location=later.location,
-                    page=later.slide,
-                ),
-                statements=len(group),
-            )
-        )
-    found.sort(key=lambda one: (one.first.page, one.label))
-    return found
+        named.append(group)
+    return named
+
+
+def _statement(figure: Figure) -> Statement:
+    return Statement(
+        printed=figure.printed,
+        location=figure.location,
+        page=figure.slide,
+        section=figure.section,
+        context=figure.context,
+    )
 
 
 def _first_conflict(group: list[Figure]) -> tuple[Figure, Figure] | None:
@@ -249,4 +278,10 @@ def _same_value(first: Decimal | None, second: Decimal | None) -> bool:
     return first.quantize(quantum) == second.quantize(quantum)
 
 
-__all__ = ["MOST_STATEMENTS", "Disagreement", "Statement", "disagreements"]
+__all__ = [
+    "MOST_STATEMENTS",
+    "Disagreement",
+    "Statement",
+    "disagreements",
+    "repeated",
+]

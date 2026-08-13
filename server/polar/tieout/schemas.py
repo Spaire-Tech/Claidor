@@ -708,7 +708,133 @@ class ModelGrid(Schema):
     sheets: list[SheetGrid]
 
 
+# --- one-off checks ------------------------------------------------------
+
+
+class SoloStatement(Schema):
+    """One place a file states a figure, for the check-a-file card."""
+
+    printed: str
+    location: str
+    page: int
+    #: The slide's title or the heading over the block — what the card
+    #: prints under the value so a reader knows where they are being sent.
+    section: str = ""
+    #: The sentence around the figure, when there is one, so the evidence
+    #: card can quote the file rather than paraphrase it.
+    context: str = ""
+
+
+class SoloFindingRead(Schema):
+    """One name carrying two figures in the same file.
+
+    Which one is *right* is not knowable from the file alone, and the
+    shape deliberately does not guess — `first` and `other` are the two
+    statements in reading order, and the finding is that the file says
+    both.
+    """
+
+    label: str
+    #: How many times the file states this name in total, counting the
+    #: agreeing ones.
+    statements: int
+    first: SoloStatement
+    other: SoloStatement
+
+
+class OneOffDrift(Schema):
+    """A printed figure that disagrees with the picked deal's model.
+
+    The model is a real artifact in that deal, so `model_artifact_id`
+    reaches the same grid endpoint the document panel uses for its
+    four-rows-around-the-cell evidence.
+    """
+
+    printed: str
+    expected: str
+    label: str
+    page: int
+    location: str
+    context: str
+    ref: str
+    name: str
+    basis: str
+    confidence: float
+    one_tick: bool
+    model_artifact_id: UUID | None = None
+
+
+class OneOffDefect(Schema):
+    """One mechanical defect from a model's own audit."""
+
+    rule: str
+    #: `error` or `smell` — never added into one number.
+    severity: str
+    ref: str
+    sheet: str
+    name: str
+    detail: str
+    #: The standard the rule comes from, so a banker asking « says who »
+    #: has an answer.
+    standard: str = ""
+
+
+class AgainstModel(Schema):
+    """One model the file was compared with — the « Compared with » card."""
+
+    artifact_id: UUID
+    filename: str
+    version: int
+    read_at: datetime
+
+
+class OneOffResult(Schema):
+    """One loose file, checked, with everything the screen draws.
+
+    Three finding lists rather than one union: a solo disagreement, a
+    drift against a model and an audit defect are different facts with
+    different evidence, and a screen that receives them separately can
+    never mistake one for another. Lists the check did not run are empty,
+    not null — an empty list is « ran and found nothing ».
+    """
+
+    id: UUID
+    filename: str
+    kind: str
+    checked_at: datetime
+    #: The deal it was checked against, as named at check time. Empty for
+    #: a check on the file's own. The name is a snapshot: deleting the
+    #: deal later must not rewrite what this check was.
+    against: str = ""
+    dossier_id: UUID | None = None
+    #: The models the file was compared with, for the « Compared with »
+    #: card. Empty for a solo check.
+    models: list[AgainstModel] = []
+    #: What was read and compared — slides, figures, repeated names,
+    #: differences. The tally row.
+    counts: dict[str, Any]
+    disagreements: list[SoloFindingRead] = []
+    drifts: list[OneOffDrift] = []
+    defects: list[OneOffDefect] = []
+
+
+class RecentCheck(Schema):
+    """One line of « Recent one-off checks »."""
+
+    id: UUID
+    filename: str
+    kind: str
+    #: The deal's name at check time, or empty — the sub-line is
+    #: « Checked against {against} » or « Checked on its own ».
+    against: str
+    checked_at: datetime
+    #: Enough for the row without the findings: the stored result comes
+    #: back whole when the row is opened.
+    counts: dict[str, Any]
+
+
 __all__ = [
+    "AgainstModel",
     "ArtifactPage",
     "ArtifactRead",
     "CellRead",
@@ -739,8 +865,14 @@ __all__ = [
     "LinkRead",
     "ModelDiff",
     "ModelGrid",
+    "OneOffDefect",
+    "OneOffDrift",
+    "OneOffResult",
     "PanelToken",
+    "RecentCheck",
     "SheetGrid",
     "SlideFigures",
+    "SoloFindingRead",
+    "SoloStatement",
     "Uploader",
 ]
