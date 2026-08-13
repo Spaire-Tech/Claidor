@@ -999,3 +999,39 @@ The Cascade evidence moved the same day, same code: the cross-sheet
 collapse gained three agreeing links (each hand-checked, drift set
 unchanged; pinned counts updated 103 → 106 with reasons at the pins),
 and the accounts pair still links 7 of 8, all agreeing.
+
+### ⏸ PARKED: the linker's three open problems (come back here)
+
+Parked 13 August 2026 after the regulator re-test, deliberately —
+each needs a design idea, not a knob. Everything required to resume is
+in place: the corpus (`server/scripts/corpus_regulator/`, re-fetchable
+per `corpus-sources.md`), the harness
+(`server/scripts/regulator_eval.py crosscheck`), the pre-registered
+grade sheet (`ofgem-crosscheck-protocol.md`, unchanged), and the run
+logs (`retest_final.log` is the state of play: 6 proposals, 5 true,
+1 false drift, 1 of 5 targets linked).
+
+1. **Forecast/history homonymy.** One name, two quantities: the
+   current-period parameter and its own history (« Risk-free rate » =
+   0.023 flat in rows 869, and −1.7%…+2.7% in row 1137). Tie at
+   0.688 vs 0.687; refusing is correct today because breaking the tie
+   by which value agrees would let the answer choose the evidence.
+   Candidate ideas to explore: the document's own qualifier words
+   (« forecast », « allowance ») as tie-breakers when the model's
+   labels lack them; the model's own structure (a flat row spanning
+   the control period vs a dated history row); a period-window prior
+   from the document's date. Three of the four recall misses are this.
+2. **The equity-beta near miss.** Scores 0.45 against THRESHOLD 0.50.
+   Do not move the threshold for one case — if this recurs on other
+   corpora, measure the score distribution of true pairs first.
+3. **The entity sibling.** « …notional gearing of 60% for GD&GT and
+   55% for ET »: both figures carry the same label; the 55% ties to
+   the GD model and reports a false drift. The entity words live in
+   surrounding prose. This is the mapping/entity layer's case (see the
+   code-labelled-models note and Ofwat's own mapping tool, fetched as
+   `mapping_tool_v4.xlsx`).
+
+Also parked, same area: the linker's ~18-minute run against 137k
+candidates (candidate pre-filtering by shared vocabulary), and the
+data-shaped-workbook noise (354k audit findings on a daily-rates
+file).
