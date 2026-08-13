@@ -1451,3 +1451,93 @@ class TestTheChat:
             json={"prompt": "What is in it?"},
         )
         assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestSinceYouLooked:
+    """« Since you looked » — the watch's voice, derived from a visit row.
+
+    The background watch re-syncs and re-checks without anybody looking,
+    which clears *stale* silently; these two counts are what keep that
+    from being invisible. Derived from timestamps against the person's
+    last visit, never stored — so the test's assertions are about what
+    the records imply, not about notification rows.
+    """
+
+    @pytest.mark.auth
+    async def test_opening_the_deal_is_the_seen_event(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        await session.flush()
+
+        # Never looked: no visit, and zeros — not « everything is new ».
+        row = (await client.get("/v1/tieout/deals")).json()[0]
+        assert row["visited_at"] is None
+        assert row["arrived_since_visit"] == 0
+        assert row["findings_since_visit"] == 0
+
+        marked = await client.post(f"/v1/tieout/deals/{deal.id}/visit")
+        assert marked.status_code == 204
+
+        row = (await client.get("/v1/tieout/deals")).json()[0]
+        assert row["visited_at"] is not None
+
+    @pytest.mark.auth
+    async def test_what_arrived_after_the_visit_is_counted(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        await session.flush()
+        assert (
+            await client.post(f"/v1/tieout/deals/{deal.id}/visit")
+        ).status_code == 204
+
+        # The watch's work arrives after the visit: files and findings.
+        broken = CASCADE / "cascade_deck_broken.pptx"
+        for path, kind in ((MODEL, ArtifactKind.model), (broken, ArtifactKind.deck)):
+            await tieout.ingest(
+                session,
+                dossier_id=deal.id,
+                kind=kind,
+                filename=path.name,
+                payload=path.read_bytes(),
+                user_id=user.id,
+            )
+        await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
+        await session.flush()
+
+        row = (await client.get("/v1/tieout/deals")).json()[0]
+        assert row["arrived_since_visit"] == 2
+        assert row["findings_since_visit"] > 0
+
+        # Looking again clears it — for this person, and nobody else.
+        assert (
+            await client.post(f"/v1/tieout/deals/{deal.id}/visit")
+        ).status_code == 204
+        row = (await client.get("/v1/tieout/deals")).json()[0]
+        assert row["arrived_since_visit"] == 0
+        assert row["findings_since_visit"] == 0
+
+    @pytest.mark.auth
+    async def test_a_strangers_deal_cannot_be_visited(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        theirs = await _deal_for(session, save_fixture, stranger)
+        await session.flush()
+
+        refused = await client.post(f"/v1/tieout/deals/{theirs.id}/visit")
+        assert refused.status_code == 404

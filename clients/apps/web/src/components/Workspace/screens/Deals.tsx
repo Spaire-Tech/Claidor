@@ -57,6 +57,20 @@ export const checkedLine = (at: string | null): string => {
   return `Checked ${then.toLocaleDateString([], { day: 'numeric', month: 'long' })}`
 }
 
+/** « 2 files · 3 new findings since you looked » — the watch's voice.
+ * Composed from the stale note's idiom: a sentence in the subtitle slot,
+ * carried in a state colour. Accent, not amber — arrivals the background
+ * watch has already re-checked are news, not danger. */
+export const sinceNote = (files: number, findings: number): string => {
+  const parts = [
+    files > 0 ? `${files} ${files === 1 ? 'file' : 'files'}` : null,
+    findings > 0
+      ? `${findings} new ${findings === 1 ? 'finding' : 'findings'}`
+      : null,
+  ].filter(Boolean)
+  return `${parts.join(' · ')} since you looked`
+}
+
 /** « The model changed at 11:40 today. » — the stale row's own sentence. */
 export const staleNote = (kind: string | null, at: string | null): string => {
   const what =
@@ -213,14 +227,21 @@ export const Deals = ({
   const row = (d: DealListItem, first: boolean, group: 'open' | 'clean') => {
     const stale = !!d.stale
     const never = d.checked_at === null
+    //: Stale outranks it — stale means the numbers on this very row are
+    //: wrong, which is graver than them being new.
+    const since =
+      !stale && (d.arrived_since_visit > 0 || d.findings_since_visit > 0)
+        ? sinceNote(d.arrived_since_visit, d.findings_since_visit)
+        : null
     const sub = stale
       ? staleNote(d.stale_kind, d.stale_at)
-      : [
+      : (since ??
+        [
           d.client,
           `${d.artifacts} ${d.artifacts === 1 ? 'document' : 'documents'}`,
         ]
           .filter(Boolean)
-          .join(' · ')
+          .join(' · '))
     const state = stale
       ? 'Stale'
       : never
@@ -270,7 +291,7 @@ export const Deals = ({
             style={{
               display: 'block',
               fontSize: 13.5,
-              color: ink.secondary,
+              color: since ? ink.accent : ink.secondary,
               marginTop: 2,
             }}
           >

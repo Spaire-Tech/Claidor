@@ -532,6 +532,13 @@ class DealListItem(Schema):
     open_findings: int
     #: When this deal was last reconciled. Null: never.
     checked_at: datetime | None = None
+    #: When this person last opened the deal. Null: never. The two counts
+    #: beneath derive from it — what arrived and what was found since,
+    #: cleared by opening the deal. Zero for a first-time reader on
+    #: purpose: the row's own counts already tell them everything.
+    visited_at: datetime | None = None
+    arrived_since_visit: int = 0
+    findings_since_visit: int = 0
     #: A current document arrived after that check, so its results are out
     #: of date — including the findings count on this very row. The screen
     #: leads with this over any number, because the numbers are what went

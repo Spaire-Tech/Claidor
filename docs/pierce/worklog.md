@@ -1764,3 +1764,41 @@ Also: the `.env` base section and the minio provisioning scripts are
 reconstruction casualties of container restarts twice now — both are
 documented in this entry as the first two things to check when the
 dev stack dies.
+
+## 13 August 2026 — watching: the deal room re-reads itself, and says so
+
+Two halves, both shaped by things the codebase had already decided.
+
+**The loop.** `connector/tasks.py`: a cron actor every quarter hour
+enqueues one sync job per healthy connected folder — per folder, so a
+throttled tenant cannot hold up the other nine, and a dead connection
+fails alone into the `error` column the Connections screen already
+shows. Each sync runs as the connection's owner, because the token is
+delegated and the watch must read exactly what that person can open.
+The sync itself needed nothing: content-tag change detection, versions
+never overwrites, and the unconditional re-check were already its
+behaviour — the loop is pure scheduling.
+
+**The « tell me ».** The decision log's own docstring forbids plumbing
+entries — « one plumbing entry is how a decision log turns into an
+activity feed and drowns » — so notifications are *derived*, the same
+reasoning pointed the other way. One small table, `tieout_deal_visits`
+(a row per person per deal, moved forward when the deal page opens via
+its own POST, since the page GET is read-replica territory), and the
+deals list computes « 3 files · 9 new findings since you looked » from
+artifact and finding timestamps against it. Composed from the stale
+note's idiom — a sentence in the subtitle slot, in a state colour —
+accent rather than amber, because arrivals the watch has already
+re-checked are news, not danger. Stale outranks it: stale means the
+row's own numbers are wrong, which is graver than them being new. A
+person who has never opened the deal gets zeros, not « everything is
+new ». Verified in the browser end to end: the note shows, opening the
+deal clears it, the stranger cannot mark a visit (404).
+
+Five new tests (three route, two task); 372 tieout+connector pass.
+**Flagged honestly:** the loop is real but has never fired against a
+real tenant (the watch's first quarter-hour tick happens wherever the
+worker runs, after the founder's Microsoft hour); and there is no
+email or push — « tell me » is the deals list telling you, which is
+the only channel the design draws. The cadence is fixed at 15 minutes;
+making it a house rule is a founder decision when wanted.

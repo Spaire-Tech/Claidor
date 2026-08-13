@@ -733,6 +733,33 @@ class Correction(RecordModel):
     )
 
 
+class DealVisit(RecordModel):
+    """When this person last looked at this deal.
+
+    One row per person per deal, moved forward every time the deal page
+    loads. It exists so « what changed since you looked » can be
+    *derived* — artifacts and findings newer than this timestamp —
+    rather than stored as notification rows that can disagree with the
+    records they describe. The same reasoning as the decision log,
+    pointed the other way.
+    """
+
+    __tablename__ = "tieout_deal_visits"
+    __table_args__ = (
+        UniqueConstraint("dossier_id", "user_id", name="uq_tieout_deal_visit"),
+    )
+
+    dossier_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("dossiers.id", ondelete="cascade"), nullable=False
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False
+    )
+    visited_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False
+    )
+
+
 class HouseRules(RecordModel):
     """How this firm wants Pierce to behave, one row per organization.
 
@@ -842,6 +869,7 @@ __all__ = [
     "Correction",
     "CorrectionState",
     "CorrectionWhere",
+    "DealVisit",
     "Figure",
     "FigureLink",
     "Finding",
