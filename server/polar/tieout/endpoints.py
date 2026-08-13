@@ -549,6 +549,7 @@ async def list_deals(
     """
     repository = TieOutRepository.from_session(session)
     deals = await repository.deals_for(auth_subject.subject.id)
+    visits = await repository.visits_for(auth_subject.subject.id)
     items: list[DealListItem] = []
     for deal in deals:
         counts = await repository.count_findings(deal.id)
@@ -571,6 +572,27 @@ async def list_deals(
                     stale_kind = artifact.kind.value
                     stale_at = arrived
 
+        # « Since you looked » — derived from this person's last visit
+        # against the records, never stored as its own claim. The watch
+        # re-syncs and re-checks in the background, which clears *stale*
+        # without anyone looking; these two numbers are what keep that
+        # from being silent. A person who has never opened the deal gets
+        # zeros, not « everything is new »: the row's own counts already
+        # tell a first-time reader everything.
+        visited_at = visits.get(deal.id)
+        arrived_since = 0
+        findings_since = 0
+        if visited_at is not None:
+            arrived_since = sum(
+                1 for artifact in current if artifact.created_at > visited_at
+            )
+            open_findings = await repository.findings_of(
+                deal.id, state=FindingState.open
+            )
+            findings_since = sum(
+                1 for finding in open_findings if finding.created_at > visited_at
+            )
+
         items.append(
             DealListItem(
                 id=deal.id,
@@ -584,9 +606,30 @@ async def list_deals(
                 stale=stale_at is not None,
                 stale_kind=stale_kind,
                 stale_at=stale_at,
+                visited_at=visited_at,
+                arrived_since_visit=arrived_since,
+                findings_since_visit=findings_since,
             )
         )
     return items
+
+
+@router.post("/deals/{dossier_id}/visit", status_code=204)
+async def visit_deal(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    """This person looked at this deal — the workspace fires it on open.
+
+    Its own POST rather than a side effect of the page GET, because a
+    read that writes breaks read replicas and surprises caches. What it
+    buys: « since you looked » on the deals list resets the moment the
+    deal is actually opened, and only for the person who opened it.
+    """
+    await _deal(session, dossier_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    await repository.mark_visited(dossier_id, auth_subject.subject.id)
 
 
 @router.post("/identify", response_model=Identified)

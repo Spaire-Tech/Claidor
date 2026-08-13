@@ -151,6 +151,9 @@ export interface DealListItem {
    * share a word would be claiming a check nobody ran.
    */
   checked_at: string | null
+  visited_at: string | null
+  arrived_since_visit: number
+  findings_since_visit: number
   /**
    * A current document arrived after that check, so its results are out
    * of date. The row leads with this over any count, because the count
@@ -932,6 +935,11 @@ export class TieOutApi {
   /** The deals this person is on. */
   deals(): Promise<DealListItem[]> {
     return this.call('/deals')
+  }
+
+  /** This person opened this deal — clears « since you looked ». */
+  visit(dealId: string): Promise<void> {
+    return this.call(`/deals/${dealId}/visit`, { method: 'POST' })
   }
 
   /**

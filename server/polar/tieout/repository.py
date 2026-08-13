@@ -28,6 +28,7 @@ from polar.models import (
     CheckStatus,
     Correction,
     CorrectionState,
+    DealVisit,
     Dossier,
     DossierMember,
     Figure,
@@ -259,6 +260,30 @@ class TieOutRepository(RepositoryBase[Artifact]):
             )
         ).one()
         return int(rows[0]), int(rows[1])
+
+    async def mark_visited(self, dossier_id: UUID, user_id: UUID) -> None:
+        """This person looked at this deal just now."""
+        now = datetime.now(UTC)
+        found = await self.session.execute(
+            select(DealVisit).where(
+                DealVisit.dossier_id == dossier_id, DealVisit.user_id == user_id
+            )
+        )
+        visit = found.scalars().first()
+        if visit is None:
+            self.session.add(
+                DealVisit(dossier_id=dossier_id, user_id=user_id, visited_at=now)
+            )
+        else:
+            visit.visited_at = now
+        await self.session.flush()
+
+    async def visits_for(self, user_id: UUID) -> dict[UUID, "datetime"]:
+        """When this person last looked at each deal, keyed by deal."""
+        found = await self.session.execute(
+            select(DealVisit).where(DealVisit.user_id == user_id)
+        )
+        return {one.dossier_id: one.visited_at for one in found.scalars().all()}
 
     async def current_artifacts(self, dossier_id: UUID) -> list[Artifact]:
         """The latest ready version of each lineage — what a check reads."""

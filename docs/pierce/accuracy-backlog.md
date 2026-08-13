@@ -742,3 +742,531 @@ consistent and exactly what a solo check must stay silent about.
 
 Rules pinned in `tests/tieout/test_solo.py`, one test per rule, plus the
 Cascade regression: both decks, the same two findings, nothing more.
+
+## The regulator corpus: the day the audit met a defect it did not plant
+
+13 August 2026. The corpus in `scripts/corpus_regulator/` (sources in
+[corpus-sources.md](corpus-sources.md)): 17 Ofwat PR24 final-
+determination files fetched through the UK Government Web Archive
+(Ofwat's own site blocks this environment), 6 Ofgem RIIO-3 files
+fetched directly, and the documents that quote them — including
+Ofwat's **PR24 FD inbound queries** document, which quotes exact cell
+references and is written by neither this team nor the companies.
+
+### The ground truth nobody here made
+
+The queries document (p8) reports that in "XXX's" FM02 financial model
+the cells `InpS!N1885-1888` are **hard-keyed where every other year is
+a formula**, that the amount is material (£2.7m of revenue), and that
+only two companies — both anonymised — carry it. Checking that one
+cell across all sixteen companies' models de-anonymised it:
+**Northumbrian and Yorkshire**, exactly two, matching the document.
+
+Ofwat's answer calls the overwrite deliberate. It is still precisely
+what a reviewer must be shown: values pasted over a template's
+plumbing, flagged orange, undocumented in the model itself.
+
+### The audit against it, before and after
+
+Before: **0 of 8** (both companies, four cells each). Two causes,
+each a rule protecting against a measured false-positive class:
+
+1. The `typed-over-formula` veto on *stacked* constants vetoed on any
+   vertical neighbour. A four-cell pasted block vetoes itself. Fixed
+   by measuring the stack: a run of ≤8 typed cells is a paste, longer
+   is a parameter column (`TYPED_BLOCK`, both ends measured — the
+   4-cell confirmed paste, the 59-cell CollarsAnalysis column).
+2. Yorkshire's paste is **wider than the regulator recorded** — five
+   year-columns × four rows, twice over. No row keeps a formula
+   majority, so the row pass is structurally blind. A new column pass
+   (`_typed_islands`) flags a short island of constants interrupting a
+   *repeating* column formula. Two guards, both measured: the column's
+   formula must repeat (an input column with one `SUM` under it
+   repeats nothing), and every island row must hold a formula **left**
+   of the typed cell (typed history is constants-first; a paste sits
+   after the calculations begin). The sheet-wide history boundary is
+   deliberately not consulted — on Yorkshire's own `InpS` it votes for
+   column 19 and would hide the paste at column N.
+
+After: **8 of 8**, with Anglian (whose same cells are formulas — the
+clean twin) at zero, and — the sentence worth keeping — **Ofwat's
+queries document describes one Yorkshire block; the audit found two.**
+The people whose full-time job is reading these models, with the
+companies' own explanations in front of them, documented half of it.
+
+### The overfit check: all sixteen companies, every cell
+
+A rule fitted to two examples deserves suspicion, so the audit ran
+over all sixteen FM02s in full (`sweep16.log`). Result: **101
+`typed-over-formula` findings** — the 44 confirmed
+(Northumbrian 4, Yorkshire 40), **57 more in eight companies the
+queries document never mentions**, and six companies clean:
+
+| Company | Findings | Hand-checked |
+|---|---|---|
+| Yorkshire | 40 | confirmed by Ofwat + template comparison |
+| Portsmouth | 30 | 3 of 3 sampled real **and material**: WACC typed 6.08% where the feed delivers 5.56%; income 18.5 vs 0; RPI rate 3.10% vs 2.59% |
+| Southern | 8 | 1 of 1 sampled: opex typed 52.7 where the feed delivers **153.3** |
+| South-West | 5 | structural match (same template rows) |
+| Northumbrian | 4 | confirmed by Ofwat |
+| Thames | 4 | same labelled row (« Base revenue 2024-25 ») as Affinity |
+| United Utilities, Severn Trent | 3 each | not yet read |
+| Affinity, South Staffs | 2 each | Affinity structurally matches Thames |
+| Anglian, Hafren, SES, South East, Welsh, Wessex | 0 | Anglian verified formulas at the confirmed cells |
+
+Every sampled finding is a value typed over the template's
+`=IF(F_Inputs!…)` feed with a **different value than the feed
+delivers**. Whether each is a deliberate adjustment (as Ofwat said of
+the two it knew about) or an error is the regulator's question; that a
+reviewer must see them is not. This is the second independent win:
+paste-overs in the public record that the public record does not
+mention.
+
+**Directionality.** The « formula to the left » guard assumes time
+runs left to right. On Ofgem's GD-BPFM — a different modelling house —
+the rule fired 45 times, and the shape matches the confirmed class
+(`MainInputs` rows 140-142: a 3-row × 8-year block typed over
+`=AP$11*$I$14*InputSummary!…`). No sixteen-way template exists for
+Ofgem, so these are recorded as **plausible, unconfirmed**. A
+right-to-left model would defeat the guard; none has been seen.
+
+### Reading real models: the half-hour that became forty seconds
+
+`read_workbook` loaded every file twice through openpyxl's ordinary
+mode — an object per cell of the rectangle, nine million of them on a
+company FM02. Profiled 150 seconds in: seven sheets of sixty-four
+done. Streamed (`read_only`, one pass per load, dictionaries of only
+the cells that exist): **FM02 in 39-68s** (was: never finished in 25
+minutes), GD-BPFM 645k cells in 151s, the 1.27M-cell Cost of Debt
+model in 302s. Regression: byte-identical cells/formulas/defects on
+every previously-read file.
+
+### Audit noise: one decision, one finding
+
+CA05 reported 8,017 defects; 7,752 were **one** 625-character formula,
+fill-copied, reported per cell (verified: one distinct shape).
+Findings from fill rules now collapse by sheet + formula shape —
+CA05 falls to **182**, the summary-tables file from 1,794 to 66.
+Hardcode findings keep their buried numbers in the key, so distinct
+assumptions stay distinct — which is why GD-BPFM still reports 6,068
+hardcodes (distinct literals) and the CoD data-workbook 354k defects:
+**data-shaped workbooks still overwhelm the audit**, owed below.
+
+### The crosscheck against foreign pairs, per the pre-registered protocol
+
+Criteria committed before the result in
+[ofgem-crosscheck-protocol.md](ofgem-crosscheck-protocol.md).
+
+- **Ofwat queries ↔ CA20** (the £55.448m ↔ `Allowance!C17` pair,
+  hand-verified): **0 links from 534 figures.** Cause read in the
+  code, not guessed: the linker matches names, never bare values, and
+  Ofwat labels cells in codes (`CWW3_007TOT_PR24 NES`). The value-
+  coincidence bound was measured — 174 of 534 figures share a value
+  with *some* CA20 cell, almost all « £5m »/« 10% » coincidences — so
+  the refusal to match on value is what keeps the checker honest.
+  Named class: **code-labelled models**, whose own solution artifact
+  exists — Ofwat publishes a 1,066-row mapping tool
+  (`mapping_tool_v4.xlsx`) translating table codes to model lines. A
+  mapping layer under house rules is the design; not built this round.
+- **Cadent ↔ GD-BPFM: 0 links from 432 figures — graded specificity
+  success.** Every Cadent headline value was searched for in the BPFM:
+  the value-matches that exist sit under unrelated labels (« NTS Exit
+  Flat Capacity Costs », not the FWACV allowance). The document's
+  numbers live in the PCD annex models, not this file. 432 chances to
+  guess wrong; none taken.
+- **Finance Annex ↔ GD-BPFM**, the fair pair: **12 proposals from
+  1,234 figures** (volume passes the protocol: 12, not 900), **all 12
+  claimed as drifts, 0 agreements**. Denominator work: of the twelve
+  pre-registered targets, **five are verified present under their own
+  labels** (risk-free rate, TMR, equity beta 0.83, notional gearing
+  60%, CoE 6.12%), one ambiguous, six verifiably absent (ET-sector or
+  PCFM values — absence is not a miss). Drift adjudication: see below.
+- **Specificity vs the daily-rates workbook: unmeasured** — the
+  linker timed out at 20 minutes against 351k candidates.
+
+**The linker does not scale**: 1,234 × 146,274 took 20 minutes.
+Banker models offer ~250 candidates and it is instant; regulator
+models offer 146k. Owed: candidate pre-filtering by shared vocabulary
+before scoring.
+
+### The Annex drift adjudication: FAIL, per the protocol
+
+All twelve proposals hand-checked, and all twelve are **false
+drifts** — the expensive failure, and the pre-registered criteria say
+what that means without room to argue: **the fair crosscheck test
+fails.** R = 0 of the five verified-present targets linked. P = 0 of
+12. D = 12 false. Only V (12 proposals, not 900) passed.
+
+What the twelve actually are, verified in the raw file: every one
+links a document figure whose extracted label is a bare licensee
+acronym (« NGET », « SHET », « SPTL » — from the Annex's
+electricity-transmission tables) to cells on the BPFM's
+**« F7 - Data Validation » sheet — the integers 6, 7 and 8 in an
+inflation-lag dropdown list** that happen to sit in rows the label
+reader named with the same acronyms. Score 0.54 with runner-up 0.00:
+one shared token, nothing else in 146k candidates matched at all, and
+one lone token cleared the 0.50 threshold. The checker then compared
+« £13,359.4m » against « 8 » and called it a disagreement.
+
+Causes, named:
+
+1. **A lone-acronym label can clear the threshold when both sides are
+   the same lone token.** The solo check already learned this lesson —
+   its names require two content words, measured (« Average » matched
+   two different quantities every time it was read by hand). The
+   linker never inherited the rule. It should, and the fix is testable
+   against this exact log.
+2. **Machinery sheets are candidate material.** A data-validation
+   sheet's dropdown integers are not statements a document can
+   disagree with. Candidate harvesting needs to refuse
+   validation/lookup furniture — by sheet-name convention at minimum,
+   better by shape (a column of consecutive small integers under an
+   enum header names nothing).
+3. **The five present targets went unlinked for reasons not yet
+   known.** « Risk-free rate » sits in the model under exactly that
+   label (`InputSummary!AU869`) and the document prints 2.30% beside
+   the words « Risk-free rate forecast » — this should have linked and
+   did not. A focused debug is owed before any claim about regulator-
+   scale recall; do not guess the cause in a document.
+
+What still stands, unchanged by this grade: the banker-vocabulary
+pair links correctly (Cascade accounts ↔ model: 7 of 8, all
+agreeing, measured the same day with the same code), and both honest
+zeros (code-labelled Ofwat, wrong-pairing Cadent) graded as designed.
+The fail is specific: at regulator scale, with acronym-labelled
+tables and machinery sheets in the candidate pool, the linker
+produces confident nonsense — twelve pieces of it, now pinned in
+`annex_bpfm2.log` as the regression corpus for the fixes.
+
+### Owed from this round
+
+- **The linker's two fixes from the failed Annex test** — the
+  two-content-word rule the solo check already carries, and refusing
+  machinery sheets as candidates — then the re-test against the same
+  pair, graded by the same protocol, plus the debug of the five
+  unlinked present targets.
+- Data-shaped workbooks (daily-rate series) need either detection
+  (« this is not a model ») or restraint; 354k findings is not an
+  answer a person can use.
+- Linker candidate pre-filtering (above).
+- The mapping-layer design for code-labelled models.
+- United Utilities and Severn Trent sweep findings not yet read.
+- The errata-tracker recall test (260 published corrections — pair
+  the pre-erratum documents with corrected models) remains the best
+  future recall corpus and is untouched.
+
+### The re-test, same pair, same protocol — final grade
+
+Three fixes and two refinements later, each cause named by an
+adjudicated finding, the identical Finance Annex ↔ GD-BPFM run
+(`retest_final.log`):
+
+| | first run | final run | criterion |
+|---|---|---|---|
+| Proposals (V) | 12 | **6** | pass (readable) |
+| True links (P) | 0 of 12 | **5 of 6 — 83%** | pass (≥70%) |
+| False drifts (D) | 12 | **1** | not pass (needs 0) |
+| Present targets linked (R) | 0 of 5 | **1 of 5** | fail (<50%) |
+
+**The grade stays FAIL, on recall — written without flinching,
+because the causes are now individually known:**
+
+1. **Forecast/history homonymy (3 of 4 misses).** The model holds the
+   RIIO-3 risk-free rate (0.023, flat, rows 869) *and* its historical
+   series (−1.71%…+2.72%, row 1137) under the identical name
+   « Risk-free rate », scoring 0.688 against 0.687. The collapse
+   rightly refuses — they are not twins, and breaking the tie by which
+   value agrees would let the answer choose the evidence. TMR and CoE
+   miss the same way. An honest fix needs an idea (the document says
+   « forecast »; the model's names do not), not a threshold.
+2. **A near-threshold miss (1 of 4).** « Equity beta » scores 0.45
+   against `InputSummary` « FY2027 Equity Beta » — under the 0.50
+   line. Not touched: moving a threshold to pass one test is the
+   overfit this round exists to refuse.
+3. **The one false drift is the entity sibling**: the sentence states
+   60% for GD&GT and 55% for ET; both figures carry the label
+   « Notional gearing of », and the 55% ties to the GD model's 60%.
+   The entity words live in prose the label reader does not carry.
+   This is the mapping/entity layer's case, already specced.
+
+**What the re-test proved:** precision transformed (0% → 83%), volume
+sane, both specificity zeros held — and Cadent *gained* its one true
+link (its notional gearing, agreeing). Machinery exclusion dropped the
+candidate pool 146,274 → 137,852. The linker's ~18-minute run at that
+scale remains the named scaling debt.
+
+The Cascade evidence moved the same day, same code: the cross-sheet
+collapse gained three agreeing links (each hand-checked, drift set
+unchanged; pinned counts updated 103 → 106 with reasons at the pins),
+and the accounts pair still links 7 of 8, all agreeing.
+
+### ⏸ PARKED: the linker's three open problems (come back here)
+
+Parked 13 August 2026 after the regulator re-test, deliberately —
+each needs a design idea, not a knob. Everything required to resume is
+in place: the corpus (`server/scripts/corpus_regulator/`, re-fetchable
+per `corpus-sources.md`), the harness
+(`server/scripts/regulator_eval.py crosscheck`), the pre-registered
+grade sheet (`ofgem-crosscheck-protocol.md`, unchanged), and the run
+logs (`retest_final.log` is the state of play: 6 proposals, 5 true,
+1 false drift, 1 of 5 targets linked).
+
+1. **Forecast/history homonymy.** One name, two quantities: the
+   current-period parameter and its own history (« Risk-free rate » =
+   0.023 flat in rows 869, and −1.7%…+2.7% in row 1137). Tie at
+   0.688 vs 0.687; refusing is correct today because breaking the tie
+   by which value agrees would let the answer choose the evidence.
+   Candidate ideas to explore: the document's own qualifier words
+   (« forecast », « allowance ») as tie-breakers when the model's
+   labels lack them; the model's own structure (a flat row spanning
+   the control period vs a dated history row); a period-window prior
+   from the document's date. Three of the four recall misses are this.
+2. **The equity-beta near miss.** Scores 0.45 against THRESHOLD 0.50.
+   Do not move the threshold for one case — if this recurs on other
+   corpora, measure the score distribution of true pairs first.
+3. **The entity sibling.** « …notional gearing of 60% for GD&GT and
+   55% for ET »: both figures carry the same label; the 55% ties to
+   the GD model and reports a false drift. The entity words live in
+   surrounding prose. This is the mapping/entity layer's case (see the
+   code-labelled-models note and Ofwat's own mapping tool, fetched as
+   `mapping_tool_v4.xlsx`).
+
+Also parked, same area: the linker's ~18-minute run against 137k
+candidates (candidate pre-filtering by shared vocabulary), and the
+data-shaped-workbook noise (354k audit findings on a daily-rates
+file).
+
+### Linker round 1: coverage asymmetry + blocking, measured
+
+Implementing the first stage of the founder's researched plan
+(asymmetric document-label coverage; structural tokens out of the
+denominator; blocking), each change re-graded on the identical pair.
+
+**What round 1 won, verified:**
+
+- **The 20-minute linker run is 108 seconds** (11×). Blocking scores
+  each figure only against candidates sharing a word — provably
+  outcome-identical, since a candidate sharing nothing can only score
+  zero. 137,852 candidates, same answers, a twelfth of the bill.
+- **Cascade gains seven links, every one hand-verified and agreeing**
+  (113 reconciled, was 106; drift set unchanged): the 0.0 legal
+  settlement, five chart-point margins stored as fractions, and
+  Arbor's 1.43x multiple. All were blocked by the fraction gate, which
+  now lets a plain figure that *is* a fraction claim fraction-sized
+  cells — the original protection (87.4 profit vs 0.38 margin) stands.
+- **An unmatched period no longer dilutes a cell's name** (« Equity
+  beta » vs « FY2027 Equity Beta » was 0.45; the year is gate
+  material). A *matched* period still corroborates — cutting it
+  demoted a legitimate tie into a no-fit, caught by the suite.
+- **The acronym-pair false-drift class is dead**: « SGN-SC » against
+  « (SGN_Sc) » shares two words and told £459.3m it disagreed with a
+  £6.2m cyber line. A claim resting entirely on ≤3-character tokens
+  has named no quantity, and now cannot contradict.
+- **The tie collapse is outcome-equivalence now**: tied candidates
+  sharing one value are one answer whatever their spelling
+  (« Notional gearing » vs « Model Version Notional gearing », both
+  0.6) — not because value picks a winner, but because every choice
+  yields the identical verdict.
+
+**The identical Annex pair after round 1, graded: still FAIL —
+differently, and more legibly.** 4 proposals: 2 agreements (both
+plausible, thin), 2 false drifts of a **newly-named class** — a ±4%
+sensitivity band linked to the 40% equity share (« plus or minus the
+baseline return on equity »), and an 8% *threshold* linked to a
+penalty *amount* of zero (« thresholds are »). Prose qualifiers that
+mark a derivative of the quantity, not the quantity — round 2's
+gazetteer work, now with two pinned examples. R = 0 of 5: every
+target dies in a **cleanly-named mixed-value tie** whose breaker is
+documented — gearing's band contains FY2021's 0.65 (RIIO-2) alongside
+ten 0.6s; RFR/TMR/CoE/beta tie their parameter rows against their own
+history rows. One cause, one fix owed: the document-date-anchored
+period prior plus flat-vs-dated row shape — round 2, exactly as the
+research sequenced it.
+
+### Linker round 2: era prior + qualifier gazetteer, measured
+
+The round the recall problem was built for. Three pieces, in order of
+what the document actually says: a **derivative suppressor** (prose
+naming a threshold, a sensitivity, a « plus or minus » band may
+corroborate a cell and may never contradict it — both round-1 false
+drifts were this shape, and both are dead); a **qualifier gazetteer**
+(« outturn » and « actual » say history, « forecast » and
+« allowance » say the regime — the regulator's own vocabulary, used
+as features that still have to survive the one-answer test); and the
+**era prior** itself: a source PDF now carries the year it speaks from
+(`_document_year`: metadata creation date, else « Month YYYY » on the
+first two pages), and a mixed-value tie steps the other era's columns
+back before refusing.
+
+**The boundary was the round's real finding.** First cut said a
+column is past when its year is *strictly below* the document's, and
+every recall target still refused — diagnosed to one row each time:
+the history rows end at FY2026, the document speaks from inside
+FY2026 (published December 2025), and FY2026's cell holds history's
+blend (RFR 0.0214 against the regime's flat 0.023). Forward means
+strictly *after* the document's own year; with that boundary the kept
+set is single-valued and the one-answer collapse does the rest. Risk
+taken knowingly and written at the definition: a document quoting the
+current year's own number in forward-tone prose could now step that
+year back and land on the regime's cell. The off-by-one's other
+direction merely refuses, which is the cheap error here. Honesty
+note: the year is 2026 because the PDF's metadata stamps it so; a
+correct calendar reading (December *2025*) would put the boundary a
+year lower and the targets would still refuse — safely. Month-aware
+fiscal-year conversion is future work, named here.
+
+**The identical Annex ↔ GD-BPFM pair, graded by the unchanged
+protocol (`ofgem-crosscheck-protocol.md`, untouched since before the
+first result):**
+
+- **V = 18** proposals (≤ ~150) — PASS.
+- **P = 13 of 18 = 72%** (all eighteen hand-adjudicated, no
+  sampling) — PASS, barely.
+- **R = 5 of 5 verified-present targets = 100%** — PASS. RFR 2.30% →
+  `Cadent!AY869` 0.023; TMR 6.9% → `AY871` 0.069; equity beta 0.83 →
+  `AY870` 0.83; notional gearing 60% → `MainInputs!AY381` 0.6; cost
+  of equity 6.12% → `MainInputs!AY365` 0.06118. Every one agreeing,
+  every cell hand-checked as genuinely the quantity.
+- **D: five drifts claimed, all five false — FAIL.** The round fails
+  here and only here.
+
+Denominator removals, each with the search that failed (protocol
+rule): asset beta 0.375 and debt beta 0.075 — zero candidates whose
+name contains either, across all 137,852 (the BPFM takes CoE as an
+input; the CAPM decomposition lives elsewhere); 20-year ILG 2.21% —
+zero names containing « ilg » or « gilt », and the only 0.0221 cell
+is a depreciation ratio; CoD 4.56% and WACC 5.18% — the model's CoD
+and WACC rows exist and none holds those values (nominal CoD ramps
+0.041→0.052, vanilla WACC is CPIH-real ~0.042; the document quotes
+semi-nominal allowances the workbook never states as cells); equity
+beta 0.74 and gearing 55% — ET parameters, and this is the gas
+distribution model (sheets are Cadent…WWU; no ET anywhere).
+
+**The five false drifts, by cause — the whole remaining failure:**
+
+1. **Entity sibling, three of five** — 55% (ET gearing, twice) and
+   5.70% (ET's cost of equity at 55% gearing) reconciled against the
+   GD cells and reported as disagreeing. The document names ET in
+   prose the label does not carry. This is round 3's mandate,
+   already sequenced: an entity gazetteer built from the model's own
+   sheet names, nearest-entity attachment, and a scope gate.
+2. **Fragment labels, two of five — new, named here.** Clause
+   segmentation hands a figure a dangling parenthetical as its whole
+   label: « gearing) and » carries 5.18% (the WACC), « gearing) »
+   carries 60% (the qualifier inside « at 60% gearing »), and both
+   land on `Cost of equity at 60% gearing` because the row's *name
+   contains the qualifier*. « 60% vs 6% » is exactly the
+   embarrassing-shape drift the protocol fails on. The fix is in the
+   reader, not the linker: a label that is an unbalanced fragment
+   with no head of its own should not carry a link. Two pinned
+   examples for that round.
+
+Round 1 to round 2 on the same pair: 4 proposals → 18; agreeing 2 →
+13; recall 0 of 5 → 5 of 5; false drifts 2 → 5 (three of them the
+entity class that was always coming). Cascade unmoved throughout:
+7/8 all agreeing on the accounts pair, 113/105/8 pinned in the suite,
+356 tests green. Recall is solved on this pair; every remaining wrong
+answer now has a name and a queue position.
+
+### Linker round 3: entity scoping, measured
+
+The gazetteer was never going to be a curated list. A model says who
+it is about the way it says everything else — its sheets and rows are
+named that way — so the entity set is the model's own vocabulary, and
+« foreign » means an acronym it has never used. A gas model knows
+NGN, WWU, Cadent, Scotland; it has never said ET, and that asymmetry
+is the entire signal.
+
+Two readings, in order of how directly the document said it: an
+acronym in the figure's own label (« notional gearing for ET and »),
+or, with a clean label, the *nearest* mention in the sentence by
+character distance — capitals-runs plus proper nouns matching the
+model's sheet names, so « 58% for Cadent and 55% for ET » resolves
+each figure to its own entity and one mention of ET cannot silence a
+whole paragraph. Corroborate-only, like every gate in the module:
+the same p8 sentence carries ET in *both* figures' labels, and the
+60% is the gas number, correctly agreeing — full suppression would
+have killed a true link. Cost taken knowingly and written at the
+definition: a quantity acronym the model spells out in words reads
+as foreign, and the drift such a figure can no longer carry is the
+price of never hand-building an entity list.
+
+**The identical pair, graded by the unchanged protocol:**
+
+- **V = 15** — PASS. **P = 13 of 15 = 87%** (all adjudicated) —
+  PASS. **R = 5 of 5 = 100%**, same five cells as round 2, all
+  agreeing — PASS.
+- **D: two drifts claimed, both false — still the failing grade.**
+  The protocol's investigate band (1–2 false drifts with
+  identifiable causes) is arguable, but one of the two is « document
+  says 60%, model says 6% », which is the embarrassing shape the
+  fail clause names, and the grade sheet does not bend after the
+  number arrives: **FAIL**, on that clause alone.
+
+Both survivors come from one line — « Our proposed cost of equity
+(55%/60% gearing) 5.70% / 6.12% » — whose figures carry the dangling
+fragment « gearing) » as their whole label and no entity anywhere.
+Entity scoping cannot reach them and honestly did not. They are the
+fragment-label class, pinned in round 2, queued as the reader fix
+(task #15): a label that is an unbalanced fragment with no head of
+its own should not carry a link.
+
+The bonus the diagnosis predicted: the p8 5.18% fragment drift died
+*this* round anyway — its nearest sentence-mention is ET, so the
+entity gate caught what the fragment fix will catch more honestly.
+
+Same pair, three rounds: proposals 4 → 18 → 15; agreeing 2 → 13 →
+13; false drifts 2 → 5 → 2; recall 0/5 → 5/5 → 5/5; precision — →
+72% → 87%. Cascade untouched throughout (7/8 agreeing, 113/105/8
+pinned); 361 tieout tests green. One named failure class left on
+this pair, one owner, already queued.
+
+### Linker round 4: torn labels, measured — and the first PASS
+
+The last failure class on the pair, and the smallest fix of the four
+rounds. « gearing) » carrying 5.70% is the torn edge of « (55%/60%
+gearing) » — words that qualify the *neighbouring* figure's name,
+handed to this one by clause segmentation. The gate is parenthesis
+balance and nothing else: a « ) » the label never opened, or a « ( »
+it never closes. Balance is the whole test deliberately — « Notional
+gearing (C) » is a whole name that happens to hold a bracket, and
+prose labels that merely stop mid-thought (« Revenue for the year
+ended … was ») are the normal shape of a label read off a sentence;
+treating those as fragments would silence nearly every drift a prose
+source can raise. Corroborate-only, as every gate here is.
+
+**Deliberately not fixed in the reader**, and the reason is worth
+keeping: repairing the label by inheriting the sentence's head would
+hand 5.70% « Our proposed cost of equity » — which links it to the
+60%-gearing row and reports the same false drift under a
+better-looking label, because the line states two parameterisations
+of one quantity. The torn label is not a reading error to correct;
+it is the document failing to name which variant it means, and the
+honest response is refusal.
+
+**The identical pair, graded by the protocol untouched since before
+the first result: PASS — the first, on the fourth round.**
+
+- **V = 13** proposals — PASS.
+- **P = 13 of 13** — every proposal the identical hand-verified
+  agreeing set from round 3 — PASS.
+- **R = 5 of 5** verified-present targets — PASS.
+- **D: zero drifts claimed, therefore zero false — PASS.**
+
+Same pair, four rounds: proposals 4 → 18 → 15 → 13; false drifts
+2 → 5 → 2 → 0; recall 0/5 → 5/5 → 5/5 → 5/5; precision — → 72% →
+87% → 100%. Cascade untouched throughout; 364 tieout tests green.
+
+**Said before the celebration does any drifting of its own: this is
+a pass on the development pair.** All four rounds were diagnosed and
+fixed against this document and this model, with the grade sheet
+pre-registered but the fixes iterated. The sweep run the same hour:
+`RIIO3-Cadent.pdf` — held out of every round — against the same
+GD-BPFM: 432 figures, 5 proposals, 5 agreeing, **zero drifts, zero
+false drifts on input the gates had never seen** (one solid gearing
+link; four thin agreeing zeros of the corroborate-only class,
+« SIU » against « SIU Costs »). What the sweep does not measure is
+held-out *recall* — no ground truth has been hand-built for that
+document. That is the next measurement debt, named: a ground-truth
+set for a pair no round has touched (the WACC-rates workbook, the
+CoD model, or an Ofwat document pair), graded by this same protocol.

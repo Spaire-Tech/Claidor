@@ -21,16 +21,45 @@
  * embedded rather than as part of the application.
  */
 
+import { useState } from 'react'
+
 import { font, ink, shade, size, space } from './design'
+
+/** The Pierce mark — the workspace chat's, at whatever size asked. */
+export function Mark({ side = 16 }: { side?: number }) {
+  return (
+    <svg
+      width={side}
+      height={side}
+      viewBox="0 0 100 100"
+      fill="#0b62c4"
+      aria-label="Pierce"
+      style={{ flex: '0 0 auto', display: 'block' }}
+    >
+      <circle cx="26" cy="26" r="13" />
+      <ellipse cx="50" cy="26" rx="13" ry="8" transform="rotate(-45 50 26)" />
+      <ellipse cx="74" cy="26" rx="13" ry="4" transform="rotate(-45 74 26)" />
+      <ellipse cx="26" cy="50" rx="13" ry="8" transform="rotate(-45 26 50)" />
+      <ellipse cx="50" cy="50" rx="9.5" ry="4" transform="rotate(-45 50 50)" />
+      <ellipse cx="74" cy="50" rx="13" ry="8" transform="rotate(-45 74 50)" />
+      <ellipse cx="26" cy="74" rx="13" ry="4" transform="rotate(-45 26 74)" />
+      <ellipse cx="50" cy="74" rx="13" ry="8" transform="rotate(-45 50 74)" />
+      <circle cx="74" cy="74" r="13" />
+    </svg>
+  )
+}
 
 export function Heading({
   title,
   line,
   action,
+  mark,
 }: {
   title: string
   line?: string
   action?: React.ReactNode
+  /** The small Pierce mark before the title — the workspace header's. */
+  mark?: boolean
 }) {
   return (
     <div
@@ -46,6 +75,9 @@ export function Heading({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 7,
             fontSize: size.title,
             fontWeight: 600,
             color: ink.base,
@@ -55,7 +87,10 @@ export function Heading({
             whiteSpace: 'nowrap',
           }}
         >
-          {title}
+          {mark && <Mark side={15} />}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {title}
+          </span>
         </div>
         {line && (
           <div
@@ -74,6 +109,91 @@ export function Heading({
       </div>
       {action}
     </div>
+  )
+}
+
+/**
+ * The blue filled button, at panel scale.
+ *
+ * Borrowed from the workspace header's « New deal » — the design's rule
+ * is one filled control per screen, the thing you came to press. On the
+ * sign-in screen that is « Sign in », and nowhere else on the panel does
+ * this appear.
+ */
+export function Primary({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode
+  onClick: () => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        border: 0,
+        background: disabled ? ink.faint : ink.accent,
+        color: '#fff',
+        borderRadius: 11,
+        padding: '9px 16px',
+        font: 'inherit',
+        fontSize: size.meta,
+        fontWeight: 500,
+        cursor: disabled ? 'default' : 'pointer',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+/** The grey secondary button — the workspace card's « Recheck » exactly. */
+export function Grey({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode
+  onClick: () => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        border: 0,
+        background: '#f0f0f2',
+        borderRadius: 9,
+        padding: '6px 13px',
+        font: 'inherit',
+        fontSize: size.small,
+        fontWeight: 500,
+        color: disabled ? ink.faint : ink.primary,
+        cursor: disabled ? 'default' : 'pointer',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+/** The severity dot the deal page puts before a state word. */
+export function Dot({ tone }: { tone: string }) {
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        background: tone,
+        flex: '0 0 auto',
+      }}
+    />
   )
 }
 
@@ -143,6 +263,7 @@ export function Row({
   where,
   mark,
   markInk,
+  dot,
   onClick,
   children,
 }: {
@@ -150,21 +271,27 @@ export function Row({
   where: string
   mark: string
   markInk: string
+  /** The severity dot before the word — the deal page's idiom. */
+  dot?: boolean
   onClick: () => void
   /** Actions, shown under the row. */
   children?: React.ReactNode
 }) {
+  // The workspace's rows lift on hover — the wash, not a shadow.
+  const [over, setOver] = useState(false)
   return (
     <div style={{ borderTop: `1px solid ${shade.rule}` }}>
       <button
         onClick={onClick}
+        onMouseEnter={() => setOver(true)}
+        onMouseLeave={() => setOver(false)}
         style={{
           display: 'flex',
           gap: 10,
           alignItems: 'baseline',
           width: '100%',
           border: 0,
-          background: 'transparent',
+          background: over ? shade.wash : 'transparent',
           padding: `${space.row}px ${space.gutter}px 6px`,
           font: 'inherit',
           textAlign: 'left',
@@ -196,7 +323,17 @@ export function Row({
             {where}
           </span>
         </span>
-        <span style={{ flex: '0 0 auto', fontSize: size.tiny, color: markInk }}>
+        <span
+          style={{
+            flex: '0 0 auto',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            fontSize: size.tiny,
+            color: markInk,
+          }}
+        >
+          {dot && mark && <Dot tone={markInk} />}
           {mark}
         </span>
       </button>

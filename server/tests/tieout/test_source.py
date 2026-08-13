@@ -526,3 +526,52 @@ class TestTheSameSentenceTwice:
             "Adjusted\xa0earnings\xa0were\xa0$18.1\xa0billion"
         )
         assert len(read_pages([page]).figures) == 1
+
+
+class TestTheDocumentsOwnYear:
+    """`_document_year`: the year a document speaks from, for the era
+    tiebreak. Machine metadata first, a « Month YYYY » on the opening
+    pages second, and honest silence when neither speaks."""
+
+    def test_the_pdfs_creation_date_wins(self) -> None:
+        from datetime import datetime
+
+        from polar.tieout.source import _document_year
+
+        class Reader:
+            class metadata:
+                creation_date = datetime(2025, 12, 3)
+
+        assert _document_year(Reader(), ["December 2019 something"]) == 2025
+
+    def test_a_dated_cover_page_speaks_when_metadata_does_not(self) -> None:
+        from polar.tieout.source import _document_year
+
+        class Reader:
+            metadata = None
+
+        pages = ["RIIO-3 Final Determinations\nDecember 2025", "contents"]
+        assert _document_year(Reader(), pages) == 2025
+
+    def test_a_bare_year_on_the_cover_is_not_a_date(self) -> None:
+        """« 2025 » alone is as often a figure or a filename fragment; only
+        « Month YYYY » is read as the document dating itself."""
+        from polar.tieout.source import _document_year
+
+        class Reader:
+            metadata = None
+
+        assert _document_year(Reader(), ["Revenue 2025 report", "page two"]) is None
+
+    def test_an_implausible_metadata_year_is_ignored(self) -> None:
+        """A scanner writing 1970 into creation_date must not tell the
+        era tiebreak the document is fifty years old."""
+        from datetime import datetime
+
+        from polar.tieout.source import _document_year
+
+        class Reader:
+            class metadata:
+                creation_date = datetime(1970, 1, 1)
+
+        assert _document_year(Reader(), ["Published March 2024"]) == 2024

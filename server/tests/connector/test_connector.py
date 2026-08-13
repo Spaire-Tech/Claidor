@@ -1146,3 +1146,115 @@ async def test_disconnecting_keeps_the_folder_and_forgets_the_token(
     assert connection.access_token == ""
     assert connection.refresh_token is None
     assert await repository.folder_of(deal.id) is not None
+
+
+@pytest.mark.asyncio
+class TestTheWatch:
+    """The cron half of watching: every healthy folder, one sync job."""
+
+    async def test_every_healthy_folder_is_enqueued(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        mocker: Any,
+    ) -> None:
+        from polar.connector import tasks
+
+        organization = await create_organization(save_fixture)
+        owner = await create_user(save_fixture)
+        healthy = Connection(
+            organization_id=organization.id,
+            user_id=owner.id,
+            provider=ConnectionProvider.microsoft,
+            access_token="live",
+        )
+        dead = Connection(
+            organization_id=organization.id,
+            user_id=owner.id,
+            provider=ConnectionProvider.microsoft,
+            access_token="dead",
+            status=ConnectionStatus.revoked,
+        )
+        session.add_all([healthy, dead])
+        await session.flush()
+
+        deal = Dossier(
+            organization_id=organization.id,
+            name="Watched",
+            created_by_id=owner.id,
+        )
+        other = Dossier(
+            organization_id=organization.id,
+            name="Orphaned",
+            created_by_id=owner.id,
+        )
+        session.add_all([deal, other])
+        await session.flush()
+
+        watched = ConnectedFolder(
+            dossier_id=deal.id,
+            connection_id=healthy.id,
+            drive_id="drive",
+            item_id="folder",
+        )
+        orphaned = ConnectedFolder(
+            dossier_id=other.id,
+            connection_id=dead.id,
+            drive_id="drive",
+            item_id="folder-2",
+        )
+        session.add_all([watched, orphaned])
+        await session.commit()
+
+        enqueued: list[Any] = []
+        mocker.patch(
+            "polar.connector.tasks.enqueue_job",
+            side_effect=lambda name, *args: enqueued.append((name, args)),
+        )
+        await tasks.watch()
+
+        # The healthy folder and only it: a revoked connection's folder
+        # fails alone in its own error column, not here.
+        assert enqueued == [("connector.sync_folder", (watched.id,))]
+
+    async def test_a_refused_sync_is_not_an_exception(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        mocker: Any,
+    ) -> None:
+        """`sync` writes the reason to the folder's own error column; the
+        task must not retry a failure that will fail identically until a
+        person reconnects."""
+        from polar.connector import tasks
+
+        organization = await create_organization(save_fixture)
+        owner = await create_user(save_fixture)
+        connection = Connection(
+            organization_id=organization.id,
+            user_id=owner.id,
+            provider=ConnectionProvider.microsoft,
+            access_token="live",
+        )
+        session.add(connection)
+        await session.flush()
+        deal = Dossier(
+            organization_id=organization.id, name="Watched", created_by_id=owner.id
+        )
+        session.add(deal)
+        await session.flush()
+        folder = ConnectedFolder(
+            dossier_id=deal.id,
+            connection_id=connection.id,
+            drive_id="drive",
+            item_id="folder",
+        )
+        session.add(folder)
+        await session.commit()
+
+        mocker.patch(
+            "polar.connector.tasks.connector.sync",
+            side_effect=ConnectorError("Microsoft refused that as this account."),
+        )
+        # Must simply return — an exception here would be a retry loop.
+        await tasks.sync_folder(folder.id)

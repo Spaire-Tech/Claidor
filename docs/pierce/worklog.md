@@ -1665,3 +1665,252 @@ but not yet watched running inside PowerPoint. The first sideload from
 the runbook is that test. `Panel.tsx` remains the deliberate
 placeholder; the panel's own design is the founder's, still to come.
 16/16 panel tests pass, typecheck and lint clean.
+
+## 13 August 2026 — the regulator corpus round: the engine meets files nobody here made
+
+The founder's sourcing research (filed as `corpus-sources.md`) named
+where real, messy, legally-usable financial models live. This round
+fetched them and ran the engine against them — the first measurement
+of the audit and the crosscheck against files with no fingerprints of
+ours, and the best day the engine has had.
+
+**The find.** Ofwat's queries document reports four cells hard-keyed
+into an anonymised company's financial model. Checking that cell
+across all sixteen companies de-anonymised it — Northumbrian and
+Yorkshire, exactly the two the document counts — and gave the audit
+the one thing money cannot buy: a defect in third-party files that a
+regulator independently confirmed, in a document we did not write, on
+files we did not make.
+
+**The exam, failed then passed.** The audit scored 0 of 8 on those
+cells; two rule fixes later (the stacked-constant veto now measures
+the stack; a new column pass catches blocks too wide for any row to
+keep its formula majority) it scores 8 of 8, the clean twin stays at
+zero — and it found a second Yorkshire block the regulator's public
+record does not mention. Then the overfit check the founder demanded:
+the audit swept all sixteen companies in full and surfaced **57 more
+paste-overs in eight companies the queries document never names** —
+sampled by hand, every one real, with typed values that differ
+materially from the plumbing they replaced (Portsmouth's WACC 6.08%
+typed over a 5.56% feed; Southern's opex 52.7 over 153.3).
+
+**The speed.** A real company model never finished ingesting in 25
+minutes; the workbook reader now streams and does it in about forty
+seconds, identical outputs on every regression file. The audit's noise
+collapsed with it: one fill-copied formula is one finding, and the
+worst file went from 8,017 findings to 182.
+
+**The crosscheck, honestly.** Pre-registered pass criteria were
+committed before the fair test's number arrived
+(`ofgem-crosscheck-protocol.md`). Ofwat's code-labelled models yield
+zero links and the zero is correct behaviour — value-only matching was
+measured and would drown in coincidence; the named class gets a
+mapping layer (Ofwat publishes the mapping themselves). Cadent against
+the sector model: zero links, graded specificity success — its numbers
+verifiably are not in that file, and the linker declined 432 chances
+to guess. The Finance Annex pair produced 12 proposals from 1,234
+figures, all claimed as drifts — and all twelve, hand-checked, are
+false: lone licensee acronyms matched against dropdown integers on a
+data-validation sheet. Per the pre-registered protocol the fair test
+**fails**, with three causes named in the backlog (a lone-token label
+can clear the threshold; machinery sheets are candidate material; the
+five genuinely-present targets went unlinked for reasons owed a
+debug). The twelve false links are pinned as the regression corpus
+for the fixes. The banker-vocabulary pair measured the same day with
+the same code links 7 of 8, all agreeing. The linker's 20-minute run against 146k candidates is now a
+named scaling debt.
+
+Everything measured is in the accuracy backlog with the sweep log and
+scripts (`regulator_eval.py`) to reproduce it.
+
+## 13 August 2026 — the Microsoft round: the hour scripted, the panel dressed
+
+The founder's directive: Microsoft first, best-effort design on the
+panel, theirs to redesign later.
+
+**The tenant, made a paint-by-numbers hour.** `microsoft-hour.md` walks
+the Azure registration step by step with the exact values the code
+expects — multitenant account type, the five delegated scopes with the
+one admin-consent click `Sites.Read.All` forces, the localhost-not-
+127.0.0.1 trap Entra sets for dev redirects, the secret's
+value-not-Secret-ID trap, the expiry calendar note. And the connector
+doctor gained `--preflight`: it proves the registration **before any
+browser sign-in** by asking Entra's token endpoint with a deliberately
+bogus code — Entra checks the client credentials first, and its error
+codes distinguish wrong-app-id (AADSTS700016), wrong-or-expired secret
+(AADSTS7000215), and « credentials fine, only the code refused »
+(invalid_grant), which is the pass state. The stub grew the OpenID
+route so the dev loop preflights all-green; against the real tenant
+every branch is reachable. What remains genuinely unprovable from this
+container is unchanged and stated: the first real connection runs
+through `connector_doctor`, one line per Graph call, so whatever it
+finds is one sentence to hand over.
+
+**The panel, dressed in the design.** Best effort, every borrow named
+in `ui.tsx`: the sign-in screen is the workspace welcome at panel
+scale (the Pierce mark, one quiet line, the screen's single filled
+control — the header's blue button); findings print their figures in
+the design's mono as the chain cards do, with the deal page's severity
+dot before the state word; Re-check is the workspace card's grey
+button, the same word; rows lift on hover with the wash; the deal
+chooser carries a faint chevron; the clean state gets the clean dot.
+Verified in the browser against the real API — the container restart
+had taken the database with it, so the stack (docker, migrations,
+seed user, session, Cascade deal) was rebuilt first and the
+screenshots show live data: 112 reconciled · 23 not checked, the
+Cascade drifts in mono. 16/16 panel tests, typecheck and lint clean.
+
+Also: the `.env` base section and the minio provisioning scripts are
+reconstruction casualties of container restarts twice now — both are
+documented in this entry as the first two things to check when the
+dev stack dies.
+
+## 13 August 2026 — watching: the deal room re-reads itself, and says so
+
+Two halves, both shaped by things the codebase had already decided.
+
+**The loop.** `connector/tasks.py`: a cron actor every quarter hour
+enqueues one sync job per healthy connected folder — per folder, so a
+throttled tenant cannot hold up the other nine, and a dead connection
+fails alone into the `error` column the Connections screen already
+shows. Each sync runs as the connection's owner, because the token is
+delegated and the watch must read exactly what that person can open.
+The sync itself needed nothing: content-tag change detection, versions
+never overwrites, and the unconditional re-check were already its
+behaviour — the loop is pure scheduling.
+
+**The « tell me ».** The decision log's own docstring forbids plumbing
+entries — « one plumbing entry is how a decision log turns into an
+activity feed and drowns » — so notifications are *derived*, the same
+reasoning pointed the other way. One small table, `tieout_deal_visits`
+(a row per person per deal, moved forward when the deal page opens via
+its own POST, since the page GET is read-replica territory), and the
+deals list computes « 3 files · 9 new findings since you looked » from
+artifact and finding timestamps against it. Composed from the stale
+note's idiom — a sentence in the subtitle slot, in a state colour —
+accent rather than amber, because arrivals the watch has already
+re-checked are news, not danger. Stale outranks it: stale means the
+row's own numbers are wrong, which is graver than them being new. A
+person who has never opened the deal gets zeros, not « everything is
+new ». Verified in the browser end to end: the note shows, opening the
+deal clears it, the stranger cannot mark a visit (404).
+
+Five new tests (three route, two task); 372 tieout+connector pass.
+**Flagged honestly:** the loop is real but has never fired against a
+real tenant (the watch's first quarter-hour tick happens wherever the
+worker runs, after the founder's Microsoft hour); and there is no
+email or push — « tell me » is the deals list telling you, which is
+the only channel the design draws. The cadence is fixed at 15 minutes;
+making it a house rule is a founder decision when wanted.
+
+## 13 August 2026 — linker round 2: the document knows what year it is
+
+The second round of the recall plan, and the one aimed at the shape
+that defeated every target on the Ofgem pair: a parameter and its own
+history under one name.
+
+**What was built.** A source PDF now records the year it speaks from
+(`Extraction.year`, read from the PDF's creation date or a « Month
+YYYY » on the opening pages, carried through ingest counts and into
+the crosscheck). On a mixed-value tie the linker asks which era the
+document means — « outturn » says history, « forecast » and
+« allowance » say the regime, and a bare parameter with a known
+document year means the document's own era — then steps the other
+era's columns back and lets the existing one-answer collapse decide.
+Never a value in sight; the narrowed set must still agree with
+itself. Alongside it, the derivative suppressor: prose that names a
+band or a threshold (« plus or minus », « thresholds are ») may
+corroborate a cell and may never contradict one. Both round-1 false
+drifts were that shape; both are dead.
+
+**The boundary was the discovery.** With « past » meaning strictly
+below the document's year, every target still refused — one diagnosis
+later, the reason was FY2026: the document speaks from *inside* it,
+and its column holds history's blend, not the regime's number.
+Forward means strictly after the document's own year. One character
+(`<` to `<=`), argued at the definition with its risk stated, and
+the entire headline family linked: RFR, TMR, equity beta, cost of
+equity, gearing — five of five verified-present targets, all
+agreeing, all hand-checked.
+
+**Graded by the untouched protocol: still FAIL, now purely on
+drifts.** Volume 18, precision 72%, recall 100% — and five false
+drifts, which the protocol rightly refuses to forgive. Three are the
+entity sibling (ET's 55% against GD's 60%), which is round 3's
+already-sequenced mandate. Two are a new named class: clause
+segmentation handing a figure a dangling fragment (« gearing) and »)
+whose one word sits inside another row's name. The autopsy, the
+denominator removals with their named searches, and both queues are
+in the accuracy backlog.
+
+Also fixed en route: the month-name regex in `_document_year` had
+literal backspace bytes where `\b` was meant (a heredoc artifact) —
+caught by its own new test failing on « December 2025 ». Cascade
+unmoved: 7/8 agreeing, 113/105/8 pinned, 356 tieout tests green.
+
+## 13 August 2026 — decision noted: Check-a-file stays, for now
+
+The advisor's question — is Check-a-file worth its page — got mapped
+against the code before answering. It is three separable things: the
+deck/memo self-check (`solo.py`, measured on 29 real decks — the only
+genuinely banking-only half); the workbook path, which already routes
+to the model audit (« a workbook checked by itself *is* the model
+audit »); and the hidden-inside checks, which were never part of
+Check-a-file at all — they are a per-document report inside the deal
+page. Decision, founder's call: keep everything as it stands until
+the buyer question (documents-leaving-the-firm vs model-audit) is
+actually decided; the engines cost nothing dormant and the Office
+panel does not depend on the page. One fold queued regardless of
+buyer (task #16): very-hidden sheets, external links and embedded
+workbooks should surface as *audit findings* on a model, not only in
+the hidden-inside panel.
+
+## 13 August 2026 — linker round 3: the model knows who it is about
+
+Entity scoping, the round the 55%-versus-60% false drifts were
+waiting for. No curated gazetteer: the entity set is the model's own
+vocabulary (its sheets are named Cadent, NGN, WWU — and it has never
+said ET), a figure is attached to the acronym in its own label or to
+the nearest mention in its sentence, and a figure about somebody the
+model has never heard of may corroborate but never contradict. The
+nearest-mention rule earned its keep in the tests before it met the
+corpus: proper nouns count as mentions only when they match a sheet
+name, because « Notional » capitalised at a sentence start is a
+quantity word, and an early version of the rule let a distant ET
+outvote an adjacent Cadent.
+
+On the identical Ofgem pair: all three entity drifts dead, the
+fragment-labelled 5.18% dead as a bonus (its nearest mention is ET),
+all thirteen agreeing links held — including the 60% that shares the
+ET-bearing label, which is why the gate is corroborate-only. Volume
+15, precision 87%, recall still five of five. Grade against the
+untouched protocol: **still FAIL, by one clause** — the two
+surviving drifts are the fragment-label pair from a single line, and
+« document says 60%, model says 6% » is the embarrassing shape the
+fail criterion names. The grade sheet does not bend after the number
+arrives. The fix is the reader's (task #15), and it is the only
+failure class left on this pair. Cascade untouched; 361 tests green.
+
+## 13 August 2026 — linker round 4: torn labels, and the first PASS
+
+The smallest fix of the four rounds closed the last named failure on
+the Ofgem pair. A label like « gearing) » is the torn edge of a
+parenthetical — the qualifier of a *neighbouring* figure's name, not
+this one's — and the gate is parenthesis balance and nothing else,
+corroborate-only as always. The design note that matters: repairing
+the label in the reader instead would have made things worse, because
+handing 5.70% the sentence's head links it to the 60%-gearing row and
+reports the same false drift under a prettier label. The torn label
+is the document failing to say which variant it means; refusal is the
+honest answer.
+
+The identical pair, on the protocol untouched since before the first
+result: **13 proposals, 13 agreeing, zero drifts — V, P, R and D all
+pass. The first PASS, on the fourth round.** And the caveat written
+in the same breath: this is the development pair. A held-out sweep
+the same hour — Cadent's own RIIO-3 document, never used in any
+round, against the same model — produced five proposals, five
+agreeing, zero false drifts on input the gates had never seen.
+Held-out *recall* remains unmeasured (no ground truth exists for
+that document yet); building one for an untouched pair is the next
+measurement debt, named in the backlog. Cascade unmoved; 364 tests.

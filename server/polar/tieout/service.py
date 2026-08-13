@@ -550,7 +550,11 @@ class TieOutService:
             for source in sources:
                 rows = await repository.figures_of(source.id)
                 engine, back = _figures_of(rows)
-                proposed, unlinked = propose_links(engine, inputs)
+                proposed, unlinked = propose_links(
+                    engine,
+                    inputs,
+                    year=(source.counts or {}).get("document_year"),
+                )
                 contradictions, agreed = compare(proposed)
 
                 totals["grounded"] += len(proposed)

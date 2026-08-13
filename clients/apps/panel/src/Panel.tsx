@@ -32,9 +32,20 @@ import type { DealListItem, Finding } from './api'
 import { TieOutApi } from './api'
 import { current } from './auth'
 import { API_BASE, SIGN_IN_URL } from './config'
-import { ink, shade, size, space, surface } from './design'
+import { font, ink, shade, size, space, surface } from './design'
 import type { HostBridge } from './host'
-import { Bar, Heading, Quiet, Row, Text, Truncation } from './ui'
+import {
+  Bar,
+  Dot,
+  Grey,
+  Heading,
+  Mark,
+  Primary,
+  Quiet,
+  Row,
+  Text,
+  Truncation,
+} from './ui'
 import { usePanel } from './usePanel'
 
 const api = new TieOutApi({
@@ -101,16 +112,57 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
   }
 
   if (panel.stage === 'signed-out') {
+    // The workspace's own welcome, at panel scale: the mark, the name,
+    // one quiet line, and the screen's single filled control.
     return (
       <Shell>
-        <Heading title="Pierce" line="Reconciliation, where the document is." />
-        {panel.error && <Quiet tone="critical">{panel.error}</Quiet>}
-        <Quiet>
-          Sign in once. This add-in then remembers which deal each file belongs
-          to, inside the file itself.
-        </Quiet>
-        <div style={{ padding: `0 ${space.gutter}px` }}>
-          <Text onClick={() => void panel.signIn()}>Sign in</Text>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 14,
+            padding: `0 ${space.gutter * 2}px`,
+            textAlign: 'center',
+          }}
+        >
+          <Mark side={40} />
+          <div
+            style={{
+              fontSize: size.title,
+              fontWeight: 600,
+              color: ink.base,
+              letterSpacing: '-.01em',
+            }}
+          >
+            Pierce
+          </div>
+          <div
+            style={{
+              fontSize: size.meta,
+              color: ink.secondary,
+              lineHeight: 1.6,
+              maxWidth: 240,
+            }}
+          >
+            Sign in once. This add-in then remembers which deal each file
+            belongs to, inside the file itself.
+          </div>
+          {panel.error && (
+            <div
+              style={{
+                fontSize: size.small,
+                color: ink.danger,
+                lineHeight: 1.5,
+                maxWidth: 250,
+              }}
+            >
+              {panel.error}
+            </div>
+          )}
+          <Primary onClick={() => void panel.signIn()}>Sign in</Primary>
         </div>
       </Shell>
     )
@@ -167,6 +219,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
   return (
     <Shell>
       <Heading
+        mark
         title={panel.identity?.dossier_name ?? 'This deal'}
         line={
           panel.identity?.artifact?.filename ?? panel.document?.filename ?? ''
@@ -198,13 +251,27 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
       )}
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-        {/* EMPTY — the *good* outcome, and it must not read as a failure. */}
+        {/* EMPTY — the *good* outcome, and it must not read as a failure.
+            The clean dot is the deal page's own. */}
         {panel.findings.length === 0 && (
-          <Quiet>
-            {panel.coverage?.checked
-              ? 'Checked, and every figure here ties back to the model.'
-              : 'The check has not run on this deal yet. Re-check reads it against the model.'}
-          </Quiet>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 8,
+              padding: `14px ${space.gutter}px`,
+              fontSize: size.meta,
+              lineHeight: 1.6,
+              color: panel.coverage?.checked ? ink.clean : ink.secondary,
+            }}
+          >
+            {panel.coverage?.checked && <Dot tone={ink.clean} />}
+            <span>
+              {panel.coverage?.checked
+                ? 'Checked, and every figure here ties back to the model.'
+                : 'The check has not run on this deal yet. Re-check reads it against the model.'}
+            </span>
+          </div>
         )}
 
         {shown.map((finding) => {
@@ -212,14 +279,21 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
           return (
             <Row
               key={finding.id}
+              dot
               title={
+                // Figures in the design's mono, as the chain cards print
+                // them; the connective stays in the UI face.
                 <>
-                  {finding.printed}
+                  <span style={{ fontFamily: font.mono, fontSize: size.meta }}>
+                    {finding.printed}
+                  </span>
                   <span style={{ color: ink.faint }}>
                     {' '}
                     where the model says{' '}
                   </span>
-                  {finding.expected}
+                  <span style={{ fontFamily: font.mono, fontSize: size.meta }}>
+                    {finding.expected}
+                  </span>
                 </>
               }
               where={finding.where.detail}
@@ -307,9 +381,10 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
       )}
 
       <Bar>
-        <Text onClick={() => void panel.recheck()} disabled={panel.working}>
+        {/* The workspace card's grey « Recheck », the same word. */}
+        <Grey onClick={() => void panel.recheck()} disabled={panel.working}>
           {panel.working ? 'Checking…' : 'Re-check'}
-        </Text>
+        </Grey>
         <div style={{ flex: 1 }} />
         <Text tone="quiet" onClick={panel.signOut}>
           Sign out
@@ -352,8 +427,8 @@ function DealList({ onChoose }: { onChoose: (id: string) => void }) {
           where={`${deal.artifacts} ${deal.artifacts === 1 ? 'file' : 'files'} · ${
             deal.open_findings
           } open`}
-          mark=""
-          markInk={ink.secondary}
+          mark="›"
+          markInk={ink.faint}
           onClick={() => onChoose(deal.id)}
         />
       ))}

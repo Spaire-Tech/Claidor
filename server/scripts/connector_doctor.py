@@ -43,12 +43,128 @@ def line(state: str, what: str, detail: str = "") -> None:
     print(f"[{state}] {what}" + (f"\n         {detail}" if detail else ""))
 
 
+async def preflight() -> int:
+    """Prove the Azure registration before any browser is involved.
+
+    Run with `--preflight`, needs no database and no prior connection.
+    Three checks, and the third is the clever one: a token request with
+    a deliberately bogus code makes Entra check the client id and
+    secret *first*, and its error codes tell them apart —
+
+    - `AADSTS700016` / `unauthorized_client` — the application id does
+      not exist in this tenant. Wrong id, or wrong tenant.
+    - `AADSTS7000215` / `invalid_client` — the id is right and the
+      secret is wrong (or expired: secrets have end dates).
+    - `invalid_grant` / `AADSTS70000` — **the credentials passed** and
+      only the bogus code was refused. That is the pass state: the app
+      registration works, and the browser half will too.
+    """
+    import httpx
+
+    failures = 0
+    print("\nPreflight — the Azure registration, no browser needed\n")
+    if not configured():
+        line(
+            BAD,
+            "No Microsoft application on this server.",
+            "Set CLAIDOR_MICROSOFT_CLIENT_ID and CLAIDOR_MICROSOFT_CLIENT_SECRET "
+            "in server/.env. Note the CLAIDOR_ prefix.",
+        )
+        return 1
+    line(OK, f"Application {settings.MICROSOFT_CLIENT_ID}")
+
+    login = settings.MICROSOFT_LOGIN_BASE.rstrip("/")
+    tenant = settings.MICROSOFT_TENANT
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        # 1. The tenant answers. Its OpenID document is public and
+        #    confirms the CLAIDOR_MICROSOFT_TENANT value resolves.
+        try:
+            answer = await client.get(
+                f"{login}/{tenant}/v2.0/.well-known/openid-configuration"
+            )
+        except httpx.HTTPError as error:
+            line(BAD, f"{login} is unreachable from this server.", str(error)[:120])
+            return 1
+        if answer.status_code >= 400:
+            failures += 1
+            line(
+                BAD,
+                f"Tenant « {tenant} » does not resolve at {login}.",
+                "CLAIDOR_MICROSOFT_TENANT is the directory (tenant) id from the "
+                "app's overview page, or 'organizations'.",
+            )
+        else:
+            line(OK, f"Tenant « {tenant} » resolves")
+
+        # 2. The credentials, told apart by Entra's own error codes.
+        response = await client.post(
+            f"{login}/{tenant}/oauth2/v2.0/token",
+            data={
+                "grant_type": "authorization_code",
+                "code": "preflight-bogus-code",
+                "redirect_uri": f"{settings.BASE_URL}/v1/connector/microsoft/callback",
+                "client_id": settings.MICROSOFT_CLIENT_ID,
+                "client_secret": settings.MICROSOFT_CLIENT_SECRET,
+            },
+        )
+        try:
+            payload = response.json()
+        except Exception:
+            payload = {}
+        refused = str(payload.get("error", ""))
+        description = str(payload.get("error_description", ""))
+
+        if response.status_code < 400:
+            # Only the development stub accepts a bogus code.
+            line(OK, "The token endpoint accepted the request (a stub, then).")
+        elif refused == "invalid_grant" or "AADSTS70000" in description:
+            line(OK, "Client id and secret accepted — only the bogus code refused.")
+        elif "AADSTS700016" in description or refused == "unauthorized_client":
+            failures += 1
+            line(
+                BAD,
+                "Entra does not know this application id in this tenant.",
+                "Check CLAIDOR_MICROSOFT_CLIENT_ID against the app's overview "
+                "page, and that CLAIDOR_MICROSOFT_TENANT is the same directory "
+                "the app was registered in.",
+            )
+        elif "AADSTS7000215" in description or refused == "invalid_client":
+            failures += 1
+            line(
+                BAD,
+                "The client secret is wrong or has expired.",
+                "Secrets have end dates. Azure shows the secret's *value* only "
+                "once, at creation — make a new one under Certificates & "
+                "secrets and put its Value (not its Secret ID) in "
+                "CLAIDOR_MICROSOFT_CLIENT_SECRET.",
+            )
+        else:
+            failures += 1
+            line(
+                BAD,
+                f"Entra answered {response.status_code}: {refused}",
+                description[:200],
+            )
+
+    redirect = f"{settings.BASE_URL}/v1/connector/microsoft/callback"
+    line(OK, "Redirect URI — register exactly this, under Web:")
+    print(f"         {redirect}")
+    print()
+    if failures == 0:
+        print("Preflight passed. The browser half (Connect Microsoft) will work.")
+    else:
+        print(f"{failures} problem(s) — fix and re-run.")
+    return 1 if failures else 0
+
+
 async def main() -> int:
     #: Counted from the first line, not from the Graph section. A script
     #: that reported « everything answered » under a failure it had just
     #: printed would be the one thing this product is not allowed to be.
     failures = 0
     email = None
+    if "--preflight" in sys.argv:
+        return await preflight()
     if "--email" in sys.argv:
         email = sys.argv[sys.argv.index("--email") + 1]
 

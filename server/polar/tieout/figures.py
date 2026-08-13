@@ -177,6 +177,11 @@ class Figure:
 @dataclass
 class Extraction:
     figures: list[Figure] = field(default_factory=list)
+    #: The year the document speaks from, when it says. A source document
+    #: quoting « the risk-free rate » without a year means the rate of its
+    #: own era — the era tiebreak in the linker needs to know which that
+    #: is, and only the document can say.
+    year: int | None = None
     #: Numbers seen and rejected as not-figures, for tuning. A count that
     #: climbs unexpectedly means the rejection rules have drifted.
     rejected: int = 0

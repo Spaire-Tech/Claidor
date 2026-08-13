@@ -334,9 +334,17 @@ class Vocabulary:
         self.bases = [tokens(output.basis) for output in outputs]
 
         document_frequency: dict[str, int] = {}
-        for name, basis in zip(self.names, self.bases, strict=True):
+        #: word -> indices of the outputs using it. The block a figure
+        #: scores against is the union of its own words' postings — a
+        #: candidate sharing *no* word can only ever score zero (covered
+        #: stays empty, so recall is zero), so skipping it changes no
+        #: outcome, only the bill: 1,234 figures against 137,852 cells
+        #: was twenty minutes of scoring zeros.
+        self.postings: dict[str, list[int]] = {}
+        for index, (name, basis) in enumerate(zip(self.names, self.bases, strict=True)):
             for word in set(name) | set(basis):
                 document_frequency[word] = document_frequency.get(word, 0) + 1
+                self.postings.setdefault(word, []).append(index)
 
         total = max(len(outputs), 1)
         self.weight = {
@@ -348,9 +356,22 @@ class Vocabulary:
         #: that an unknown word in a label counts against every candidate.
         self.unknown = math.log(total / 0.5) + 1.0
         self.known = frozenset(document_frequency)
+        #: The words of the bases alone — sheet names, which is where a
+        #: model says who it is about: « Cadent », « Scotland », « NGN ».
+        #: The entity gate reads prose proper nouns against this set, not
+        #: against the whole vocabulary, because « Notional » capitalised
+        #: at a sentence start is a quantity word, never a place.
+        self.places = frozenset(word for basis in self.bases for word in basis)
 
     def weight_of(self, word: str) -> float:
         return self.weight.get(word, self.unknown)
+
+    def block(self, said: set[str]) -> list[int]:
+        """The candidates worth scoring for a figure that said these words."""
+        found: set[int] = set()
+        for word in said:
+            found.update(self.postings.get(word, ()))
+        return sorted(found)
 
 
 def _score(
@@ -366,6 +387,22 @@ def _score(
     total = 0.0
     for words, share in ((name, 1.0), (basis, BASIS_WEIGHT)):
         for word in words:
+            # An *unmatched* period must not dilute the words that carry
+            # meaning: « Equity beta » against « FY2027 Equity Beta »
+            # scored 0.45 — under the 0.50 line — purely because the cell
+            # said which year it was, which the document label was never
+            # going to repeat, and `_same_period` has already refused any
+            # real contradiction. A *matched* period stays: « % margin
+            # FY2025A » agreeing with the cell's own year is genuine
+            # corroboration, and cutting it demoted a tie the margin gate
+            # was rightly refusing into a no-fit. Asymmetric coverage,
+            # asymmetrically applied.
+            if (
+                (FISCAL_YEAR.match(word) is not None or word in PERIOD_WORDS)
+                and word not in label
+                and word not in context
+            ):
+                continue
             weight = vocabulary.weight_of(word) * share
             total += weight
             if word in label:
@@ -415,7 +452,15 @@ def _admissible(figure: Figure, output: Output, label: list[str]) -> bool:
     if figure.kind == "percent":
         if abs(output.value) > FRACTION_CEILING:
             return False
-    elif abs(output.value) <= FRACTION_CEILING:
+    elif abs(output.value) <= FRACTION_CEILING and (
+        figure.value is None or abs(figure.value) > FRACTION_CEILING
+    ):
+        # A plain figure above the ceiling cannot be claiming a fraction —
+        # this is what stops « gross profit 87.4 » reconciling against a
+        # gross margin of 0.3818. But a plain figure that *is* a fraction
+        # (an equity beta of 0.83, printed bare) is exactly the size of
+        # the cells it means, and refusing every fraction-sized cell left
+        # it unlinkable however perfect the name.
         return False
 
     if figure.kind == "multiple" and RATIO_NAME.search(output.name) is None:
@@ -441,9 +486,15 @@ def _admissible(figure: Figure, output: Output, label: list[str]) -> bool:
 
 
 def link(
-    figures: list[Figure], outputs: list[Output]
+    figures: list[Figure], outputs: list[Output], year: int | None = None
 ) -> tuple[list[Link], list[Unlinked]]:
-    """Match each figure to the output row it claims to be, or to nothing."""
+    """Match each figure to the output row it claims to be, or to nothing.
+
+    `year` is the year the *document* speaks from, when it says (a
+    price-control decision published December 2025 speaks from 2025).
+    It powers exactly one thing: the era tiebreak on mixed-value ties,
+    below. Without it that tiebreak simply does not run.
+    """
     vocabulary = Vocabulary(outputs)
     links: list[Link] = []
     unlinked: list[Unlinked] = []
@@ -460,17 +511,21 @@ def link(
         label_set = set(label)
         context -= label_set
 
+        block = vocabulary.block(label_set | context)
         scored = [
             (
                 _score(vocabulary, index, label_set, context)
-                if _admissible(figure, output, label)
+                if _admissible(figure, outputs[index], label)
                 else 0.0,
                 index,
             )
-            for index, output in enumerate(outputs)
+            for index in block
         ]
         scored.sort(reverse=True)
 
+        if not scored:
+            unlinked.append(Unlinked(figure, "no output fits the label (best 0.00)"))
+            continue
         best, best_index = scored[0]
         runner_up = scored[1][0] if len(scored) > 1 else 0.0
 
@@ -479,7 +534,109 @@ def link(
                 Unlinked(figure, f"no output fits the label (best {best:.2f})")
             )
             continue
+        if _derivative(figure) and not _agrees(figure, outputs[best_index]):
+            # « plus or minus the baseline return on equity », « penalty
+            # thresholds are 8% » — prose naming a *derivative* of a
+            # quantity: a sensitivity band, a threshold, a cap. The words
+            # match the quantity's cell and the number never will, and
+            # both false drifts the round-1 re-test produced were this
+            # shape. A derivative may corroborate; it may not contradict.
+            unlinked.append(
+                Unlinked(
+                    figure,
+                    "states a threshold or sensitivity, not the quantity",
+                )
+            )
+            continue
+        if _fragment(figure.label) and not _agrees(figure, outputs[best_index]):
+            # « gearing) » carrying 5.70%: the label is the torn edge
+            # of « (55%/60% gearing) » — words that qualify the
+            # *neighbouring* figure's name, handed to this one by
+            # clause segmentation. Both drifts surviving round 3 were
+            # this shape, one of them « document says 60%, model says
+            # 6% ». Deliberately not repaired in the reader: giving
+            # 5.70% the sentence's head — « Our proposed cost of
+            # equity » — would link it to the 60%-gearing row and
+            # report the same false drift under a better-looking
+            # label, because the line states two parameterisations of
+            # one quantity. A torn label may corroborate (the same
+            # line's 6.12% is the 60%-gearing figure, correctly
+            # agreeing); it may not carry a disagreement.
+            unlinked.append(
+                Unlinked(
+                    figure,
+                    "its label is the torn edge of a parenthesis, not a name",
+                )
+            )
+            continue
+        stranger = _foreign(figure, vocabulary)
+        if stranger is not None and not _agrees(figure, outputs[best_index]):
+            # « 55% notional gearing for ET and 60% for the gas
+            # sectors »: the 55% is Electricity Transmission's number,
+            # the model on the other side is the gas one, and the
+            # words that say so — the entity acronym — are exactly the
+            # words the model has never used. Three of the five false
+            # drifts on the round-2 re-test were this shape. The
+            # gazetteer is the model's own vocabulary, not a curated
+            # list: a model knows who it is about because its sheets
+            # and rows are named that way. Corroborate-only, because
+            # the same sentence's 60% carries the same ET-bearing
+            # label and is the gas figure, correctly agreeing.
+            unlinked.append(
+                Unlinked(
+                    figure,
+                    f"speaks of {stranger.upper()}, which this model does not know",
+                )
+            )
+            continue
+        if _uncorroborated(label_set | context, outputs[best_index]) and not _agrees(
+            figure, outputs[best_index]
+        ):
+            # A single shared word may corroborate; it may never
+            # contradict. The first regulator-scale crosscheck proposed
+            # twelve links and every one was a licensee acronym
+            # (« NGET ») matched against a dropdown integer in a row
+            # named with the same acronym — score 0.54, runner-up 0.00,
+            # £13,359.4m reported as disagreeing with 8. Cascade's own
+            # « WACC of 9.8% » against the output named `WACC` is the
+            # same thinness *agreeing*, and refusing it would cost real
+            # coverage — so the line is drawn at the claim: a drift
+            # asserted on one word is noise by construction, and the
+            # price is that a thin match against a wrong cell that
+            # happens to agree slips through silently. That trade is
+            # taken with eyes open: the expensive answer this product
+            # can give is the false disagreement.
+            unlinked.append(
+                Unlinked(figure, "a single shared word cannot carry a disagreement")
+            )
+            continue
         if best - runner_up < MARGIN:
+            tied = [
+                index for score, index in scored if score > 0 and best - score < MARGIN
+            ]
+            era = _era_pick(outputs, tied, label, label_set | context, year)
+            if era is not None:
+                tied = era
+                best_index = tied[0]
+                best = next(score for score, i in scored if i == best_index)
+            if _one_answer(outputs, tied):
+                # The « ambiguity » is one flat parameter repeated across
+                # the model's year columns — « FY2027 Risk-free rate »
+                # 0.023, « FY2028 Risk-free rate » 0.023. A document
+                # quoting the parameter without a year is not ambiguous
+                # about which quantity it means, and every refusal in the
+                # first regulator-scale run of this linker was exactly
+                # this shape. Same value, same name once the period words
+                # are removed: one answer, kept.
+                links.append(
+                    Link(
+                        figure=figure,
+                        output=outputs[best_index],
+                        score=best,
+                        runner_up=runner_up,
+                    )
+                )
+                continue
             unlinked.append(
                 Unlinked(
                     figure,
@@ -500,6 +657,268 @@ def link(
         )
 
     return links, unlinked
+
+
+def _timeless(output: Output) -> list[str]:
+    """An output's name with the period words removed.
+
+    The basis — the sheet — is deliberately left out. A model parameter
+    is echoed per licensee sheet as well as per year column (GD-BPFM
+    holds « Risk-free rate » 0.023 on InputSummary *and* on every
+    network's own sheet), and with the sheet in the comparison the
+    re-test still refused four of five present targets as ambiguous.
+    Same name, same value, different sheet is one answer for the same
+    reason two year columns are: whichever copy is chosen, what the
+    document is told about its figure is identical.
+    """
+    return [
+        word
+        for word in tokens(output.name)
+        if FISCAL_YEAR.match(word) is None and word not in PERIOD_WORDS
+    ]
+
+
+#: Prose that marks a derivative of a quantity rather than the quantity:
+#: bands, limits, and stress ranges. Both round-1 false drifts on the
+#: regulator pair were one of these.
+DERIVATIVE_WORDS = frozenset(
+    {"threshold", "sensitivity", "cap", "collar", "floor", "tolerance", "deadband"}
+)
+DERIVATIVE_PHRASES = ("plus or minus", "+/-", "±")
+
+
+def _derivative(figure: Figure) -> bool:
+    """True when the figure's own words say it is a band or a limit."""
+    words = set(tokens(figure.label)) | set(tokens(figure.context))
+    if words & DERIVATIVE_WORDS:
+        return True
+    raw = f"{figure.label} {figure.context}".lower()
+    return any(phrase in raw for phrase in DERIVATIVE_PHRASES)
+
+
+#: A proper noun in prose: one capital, then lowercase. Read only
+#: against the model's sheet-name words — « Cadent » is a mention
+#: because a sheet says so; « Notional » capitalised at a sentence
+#: start matches nothing and stays a quantity word.
+TITLED = re.compile(r"\b[A-Z][a-z]+\b")
+
+
+def _foreign(figure: Figure, vocabulary: "Vocabulary") -> str | None:
+    """The entity this figure speaks of when it is not this model's —
+    the acronym itself, or None.
+
+    Two readings, in order of how directly the document said it:
+
+    - **The label carries the acronym.** « notional gearing for ET
+      and » names who the figure is about in the figure's own name.
+      Any capitals-run in the label that the model's entire vocabulary
+      has never used is somebody the model is not about.
+    - **The sentence attaches it.** « ET: Notional gearing of 55% for
+      the » carries a clean label and says ET only in the sentence —
+      so the figure is attached to its *nearest* mention by character
+      distance, the way a reader resolves « 58% for Cadent and 55%
+      for ET » without thinking about it. Mentions are capitals-runs
+      plus proper nouns the model's sheets are named for, and only
+      the nearest one decides: a foreign acronym elsewhere in the
+      sentence must not mute a figure whose own nearest entity the
+      model knows, or one mention of ET would silence every drift in
+      the paragraph.
+
+    Known-ness is membership in the model's own token vocabulary —
+    names and sheet bases — not a curated gazetteer. A gas model knows
+    « NGN », « WWU », « Cadent » because its sheets are named that
+    way, and has never said « ET »; that asymmetry is the whole
+    signal. It also means a quantity acronym the model spells out in
+    full (« SG&A » against a row named in words) reads as foreign —
+    such a figure can still corroborate, and the drift it can no
+    longer carry is the price, paid knowingly, of never inventing an
+    entity list by hand.
+    """
+    strange = {
+        one for one in acronyms(figure.label) if normalise(one) not in vocabulary.known
+    }
+    if strange:
+        return sorted(strange)[0]
+    context = figure.context or ""
+    at = context.find(figure.printed)
+    if at < 0:
+        return None
+    mentions = [
+        (abs(match.start() - at), match.group(0).lower())
+        for match in CAPITALS.finditer(context)
+    ] + [
+        (abs(match.start() - at), match.group(0).lower())
+        for match in TITLED.finditer(context)
+        if normalise(match.group(0).lower()) in vocabulary.places
+    ]
+    if not mentions:
+        return None
+    _, nearest = min(mentions)
+    return nearest if normalise(nearest) not in vocabulary.known else None
+
+
+def _fragment(label: str) -> bool:
+    """True when the label is the torn edge of a parenthetical.
+
+    A « ) » that closes nothing the label opened, or a « ( » it never
+    closes, means the label's words are part of a bracketed qualifier
+    whose other half went to a neighbouring figure — « gearing) » is
+    the tail of « (55%/60% gearing) », and its one word names the
+    *qualifier* of another figure's quantity, not this figure's.
+
+    Balance is the whole test, deliberately: « Notional gearing (C) »
+    and « Risk-free rate forecast (Oct) » are whole names that happen
+    to hold brackets, and prose labels that merely stop mid-thought
+    (« Revenue for the year ended … was ») are the normal shape of a
+    label read off a sentence — treating those as fragments would
+    silence nearly every drift a prose source can raise.
+    """
+    depth = 0
+    for character in label:
+        if character == "(":
+            depth += 1
+        elif character == ")":
+            if depth == 0:
+                return True
+            depth -= 1
+    return depth > 0
+
+
+def _uncorroborated(said: set[str], output: Output) -> bool:
+    """True when the match rests on one shared content word and nothing
+    else.
+
+    What counts is what the two sides *share*, not how many words each
+    brings — the candidate always brings its sheet name as a basis, and
+    « Validation » padding the candidate side is not corroboration. A
+    shared period is: « Revenue FY2025A » against « FY2025A revenue » is
+    anchored by the year even though revenue is the only content word in
+    common. « NGET » against « NGET » shares one word and no period, and
+    that is the twelve-false-links shape exactly.
+    """
+    theirs = set(tokens(output.name)) | set(tokens(output.basis))
+    shared = said & theirs
+    content = {
+        word
+        for word in shared
+        if FISCAL_YEAR.match(word) is None and word not in PERIOD_WORDS
+    }
+    if len(content) < 2 and len(shared) == len(content):
+        return True
+    # Short acronym tokens name *who*, never *what*: « SGN-SC » against
+    # « ...re-opener (SGN_Sc) » shares two words — sgn, sc — and told a
+    # £459.3m figure it disagreed with a £6.2m cyber re-opener line. A
+    # claim resting entirely on entity-shaped tokens has named no
+    # quantity at all.
+    return all(len(word) <= 3 for word in content)
+
+
+#: Words a document uses to say it means the current regime's number
+#: rather than history's — and the reverse. Ofgem's own vocabulary
+#: (« allowance », « outturn »); the Bank of England's forecast
+#: methodology draws the same line in the same words.
+FORWARD_WORDS = frozenset(
+    {"forecast", "projected", "allowance", "allowed", "estimate", "assumption"}
+)
+BACKWARD_WORDS = frozenset(
+    {"actual", "outturn", "historical", "historic", "realized", "realised"}
+)
+
+
+def _era_pick(
+    outputs: list[Output],
+    tied: list[int],
+    label: list[str],
+    said: set[str],
+    year: int | None,
+) -> list[int] | None:
+    """The tied candidates from the era the document means, or None.
+
+    The mixed-value tie that defeated every recall target on the fair
+    pair: a parameter and its own history under one name. « Notional
+    gearing » ties ten 0.6 cells (FY2022-31) against FY2021's 0.65 —
+    RIIO-2's value — and a December 2025 decision quoting the parameter
+    bare means the regime it is deciding, not the one before.
+
+    Three rules, in order of how much the document actually said:
+
+    - A label that carries its own period gets no help — the period
+      gates have it.
+    - A qualifier word picks a side: « outturn » means history,
+      « allowance » means the regime. The words are the regulator's
+      own, and they are features, not oracles — the pick still has to
+      survive `_one_answer` before anything links.
+    - Bare, with a known document year: the document speaks from its
+      own era, so candidates whose column-year is at or behind it step
+      back. **At**, not just behind: the Finance Annex speaks from
+      inside FY2026, and FY2026 is the year being lived — its cells
+      hold history's blend (RFR 0.0214 against the regime's flat
+      0.023), and keeping it in the set left every recall target
+      refusing as « two values ». Forward means strictly after the
+      document's own year. The risk taken knowingly: a document
+      quoting the *current* year's number in forward-tone prose would
+      step that year back and could land on the regime's cell — a
+      wrong link the `_one_answer` value test only catches when the
+      eras genuinely differ. The other direction of the same
+      off-by-one merely refuses, which is the cheap error here.
+
+    Never a value in sight, and the narrowed set must still agree with
+    itself — this chooses which *era* to consider, not which cell wins.
+    """
+    if _period(label):
+        return None
+    tone = None
+    if said & BACKWARD_WORDS:
+        tone = "past"
+    elif said & FORWARD_WORDS or year is not None:
+        tone = "present"
+    if tone is None or year is None:
+        return None
+
+    def era_of(index: int) -> str:
+        years = [
+            int(match.group(1)) + (2000 if len(match.group(1)) == 2 else 0)
+            for word in tokens(outputs[index].name)
+            if (match := FISCAL_YEAR.match(word)) is not None
+        ]
+        if not years:
+            return "either"
+        return "past" if max(years) <= year else "present"
+
+    kept = [index for index in tied if era_of(index) in (tone, "either")]
+    if kept and len(kept) < len(tied):
+        return kept
+    return None
+
+
+def _agrees(figure: Figure, output: Output) -> bool:
+    """`compare`'s own arithmetic: equal at the precision the figure
+    printed, with the bridge-parenthesis rule applied."""
+    printed = figure.printed_value_at_precision()
+    expected = figure.as_printed_precision(output.value)
+    if figure.parenthesised:
+        printed, expected = abs(printed), abs(expected)
+    return printed == expected
+
+
+def _one_answer(outputs: list[Output], tied: list[int]) -> bool:
+    """True when picking any tied candidate tells the document the same
+    thing.
+
+    First written as « same value, same period-stripped name » — the
+    parameter across its year columns. The GD-BPFM broke that spelling:
+    « Notional gearing » on MainInputs and « Model Version Notional
+    gearing » on Scenarios tie within the margin, both 0.6, and the
+    name test refused what was one answer. Value equality alone is the
+    honest test — not because value picks a winner, but because when
+    every tied candidate holds the same value, agree-or-drift comes out
+    identical whichever is chosen. The choice can be cosmetically wrong
+    about *which cell* is named; it cannot change what the checker
+    says. Two genuinely different quantities that tie still differ in
+    value and still refuse.
+    """
+    first = outputs[tied[0]]
+    return all(outputs[index].value == first.value for index in tied[1:])
 
 
 def rank(

@@ -265,7 +265,13 @@ export const Workspace = ({
               organizationId={organizationId}
               deals={deals}
               deal={deal}
-              onOpen={setDeal}
+              onOpen={(one) => {
+                setDeal(one)
+                // Opening is the seen-event: « since you looked » clears
+                // for this person, and only for them. Fire-and-forget —
+                // a failed mark must never block the page.
+                void api.visit(one.id).catch(() => undefined)
+              }}
               onChanged={() => setDealsAt((was) => was + 1)}
               checkNonce={checkNonce}
               onChecking={(running) => {
