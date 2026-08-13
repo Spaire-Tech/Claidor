@@ -94,6 +94,38 @@ export const Workspace = ({
     }
   }, [api, dealsAt])
 
+  //: Where the Microsoft window lands. The connector's callback sends
+  //: the browser to /dashboard?connector=…&reason=… — and when this
+  //: render *is* that popup, its whole job is to hand the verdict to
+  //: the window that opened it and leave. Without this, the popup
+  //: turned into a second full workspace saying « Nothing connected
+  //: yet » while Microsoft's own explanation sat unread in its
+  //: address bar — which is exactly how the first real connection
+  //: attempt failed silently.
+  const [connectorProblem, setConnectorProblem] = useState<string | null>(null)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const status = params.get('connector')
+    if (status === null) return
+    const reason = params.get('reason')
+    if (window.opener !== null) {
+      ;(window.opener as Window).postMessage(
+        { kind: 'pierce-connector', status, reason },
+        window.location.origin,
+      )
+      window.close()
+      return
+    }
+    //: No opener — the popup was blocked and the flow ran in this tab.
+    //: Clean the address bar and carry the verdict to the Connections
+    //: screen, which is where the person started.
+    window.history.replaceState(null, '', window.location.pathname)
+    if (status === 'failed') {
+      setConnectorProblem(reason || 'Microsoft refused without saying why.')
+      setView('settings')
+    }
+  }, [])
+
   const go = (next: View) => () => {
     setView(next)
     setDeal(null)
@@ -286,7 +318,12 @@ export const Workspace = ({
           ) : view === 'check' ? (
             <CheckFile api={api} deals={deals} onChat={setCheckChat} />
           ) : (
-            <Settings api={api} organizationId={organizationId} deals={deals} />
+            <Settings
+              api={api}
+              organizationId={organizationId}
+              deals={deals}
+              problem={connectorProblem}
+            />
           )}
         </div>
 
