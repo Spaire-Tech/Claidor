@@ -954,3 +954,48 @@ produces confident nonsense — twelve pieces of it, now pinned in
 - The errata-tracker recall test (260 published corrections — pair
   the pre-erratum documents with corrected models) remains the best
   future recall corpus and is untouched.
+
+### The re-test, same pair, same protocol — final grade
+
+Three fixes and two refinements later, each cause named by an
+adjudicated finding, the identical Finance Annex ↔ GD-BPFM run
+(`retest_final.log`):
+
+| | first run | final run | criterion |
+|---|---|---|---|
+| Proposals (V) | 12 | **6** | pass (readable) |
+| True links (P) | 0 of 12 | **5 of 6 — 83%** | pass (≥70%) |
+| False drifts (D) | 12 | **1** | not pass (needs 0) |
+| Present targets linked (R) | 0 of 5 | **1 of 5** | fail (<50%) |
+
+**The grade stays FAIL, on recall — written without flinching,
+because the causes are now individually known:**
+
+1. **Forecast/history homonymy (3 of 4 misses).** The model holds the
+   RIIO-3 risk-free rate (0.023, flat, rows 869) *and* its historical
+   series (−1.71%…+2.72%, row 1137) under the identical name
+   « Risk-free rate », scoring 0.688 against 0.687. The collapse
+   rightly refuses — they are not twins, and breaking the tie by which
+   value agrees would let the answer choose the evidence. TMR and CoE
+   miss the same way. An honest fix needs an idea (the document says
+   « forecast »; the model's names do not), not a threshold.
+2. **A near-threshold miss (1 of 4).** « Equity beta » scores 0.45
+   against `InputSummary` « FY2027 Equity Beta » — under the 0.50
+   line. Not touched: moving a threshold to pass one test is the
+   overfit this round exists to refuse.
+3. **The one false drift is the entity sibling**: the sentence states
+   60% for GD&GT and 55% for ET; both figures carry the label
+   « Notional gearing of », and the 55% ties to the GD model's 60%.
+   The entity words live in prose the label reader does not carry.
+   This is the mapping/entity layer's case, already specced.
+
+**What the re-test proved:** precision transformed (0% → 83%), volume
+sane, both specificity zeros held — and Cadent *gained* its one true
+link (its notional gearing, agreeing). Machinery exclusion dropped the
+candidate pool 146,274 → 137,852. The linker's ~18-minute run at that
+scale remains the named scaling debt.
+
+The Cascade evidence moved the same day, same code: the cross-sheet
+collapse gained three agreeing links (each hand-checked, drift set
+unchanged; pinned counts updated 103 → 106 with reasons at the pins),
+and the accounts pair still links 7 of 8, all agreeing.
