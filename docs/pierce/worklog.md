@@ -1914,3 +1914,23 @@ agreeing, zero false drifts on input the gates had never seen.
 Held-out *recall* remains unmeasured (no ground truth exists for
 that document yet); building one for an untouched pair is the next
 measurement debt, named in the backlog. Cascade unmoved; 364 tests.
+
+## 13 August 2026 — the first real connection attempt, and what it taught
+
+The founder clicked Connect Microsoft on the deployed site. The popup
+asked which account, then turned into a second full workspace saying
+« Nothing connected yet », while the first one waited on Microsoft and
+eventually gave up — no explanation anywhere. The explanation existed
+the whole time: the connector's callback carries Microsoft's own
+sentence back as `?connector=failed&reason=…`, and no screen ever read
+it. Two fixes, both in the shell: the popup now hands its verdict to
+the window that opened it (postMessage, same-origin) and closes
+itself; and both Connect surfaces — Settings and the deals empty
+state — listen, end the waiting face the moment the verdict lands,
+and print the refusal verbatim. Verbatim deliberately: an AADSTS
+sentence names its own fix, and paraphrasing it hides the code a
+search needs. The popup-blocked path keeps working too: landing in
+the same tab cleans the address bar and carries the verdict to the
+Connections screen. The root cause of the founder's failed attempt is
+still unknown — it is sitting in that popup's address bar, and the
+next attempt will print it on the screen instead.

@@ -78,21 +78,53 @@ export const Settings = ({
   api,
   organizationId,
   deals,
+  problem = null,
 }: {
   api: TieOutApi
   organizationId: string
   /** The shell's deals list — the invite sheet's tickboxes. */
   deals: DealListItem[] | null
+  /** A connector failure the shell caught landing (popup-blocked path). */
+  problem?: string | null
 }) => {
   const [tab, setTab] = useState<Tab>('conn')
   const [connector, setConnector] = useState<ConnectorState | null>(null)
   const [waiting, setWaiting] = useState(false)
+  //: Microsoft's own sentence when a connection attempt dies —
+  //: « AADSTS65001: the administrator has not consented… ». The first
+  //: real attempt failed with the reason sitting unread in the popup's
+  //: address bar; whatever the cause, the person sees it here now.
+  const [said, setSaid] = useState<string | null>(problem)
   const [rules, setRules] = useState<HouseRules | null>(null)
   const [team, setTeam] = useState<Team | null>(null)
   const [auditOpen, setAuditOpen] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [connAt, setConnAt] = useState(0)
   const [teamAt, setTeamAt] = useState(0)
+
+  //: The Microsoft popup reports back and closes itself (the shell's
+  //: landing effect posts this message). Success refreshes the state;
+  //: failure stops the waiting face and says why.
+  useEffect(() => {
+    const hear = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+      const data = event.data as {
+        kind?: string
+        status?: string
+        reason?: string | null
+      }
+      if (data?.kind !== 'pierce-connector') return
+      setWaiting(false)
+      if (data.status === 'connected') {
+        setSaid(null)
+        setConnAt((was) => was + 1)
+      } else {
+        setSaid(data.reason || 'Microsoft refused without saying why.')
+      }
+    }
+    window.addEventListener('message', hear)
+    return () => window.removeEventListener('message', hear)
+  }, [])
 
   useEffect(() => {
     let live = true
@@ -339,12 +371,31 @@ export const Settings = ({
                       >
                         {waiting
                           ? 'Waiting for Microsoft…'
-                          : 'Nothing connected yet'}
+                          : said
+                            ? 'Microsoft said no'
+                            : 'Nothing connected yet'}
                       </span>
+                      {said && !waiting && (
+                        //: The refusal verbatim — an AADSTS sentence names
+                        //: its own fix, and paraphrasing it hides the code
+                        //: a search needs.
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: 13,
+                            lineHeight: 1.45,
+                            color: ink.danger,
+                            marginTop: 3,
+                          }}
+                        >
+                          {said}
+                        </span>
+                      )}
                     </span>
                     {connector?.authorize_url && !waiting && (
                       <button
                         onClick={() => {
+                          setSaid(null)
                           window.open(
                             connector.authorize_url!,
                             '_blank',

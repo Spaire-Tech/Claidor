@@ -182,6 +182,36 @@ export const Deals = ({
     }
   }, [api, organizationId, waiting])
 
+  //: The Microsoft popup reports back and closes itself (the shell's
+  //: landing effect posts this). Failure ends the waiting face and the
+  //: refusal is shown in Microsoft's own words — the polling above can
+  //: only ever see success, so without this a failed consent left the
+  //: screen waiting on nothing.
+  const [said, setSaid] = useState<string | null>(null)
+  useEffect(() => {
+    const hear = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+      const data = event.data as {
+        kind?: string
+        status?: string
+        reason?: string | null
+      }
+      if (data?.kind !== 'pierce-connector') return
+      setWaiting(false)
+      if (data.status === 'connected') {
+        setSaid(null)
+        api
+          .connectorState(organizationId)
+          .then(setConnector)
+          .catch(() => undefined)
+      } else {
+        setSaid(data.reason || 'Microsoft refused without saying why.')
+      }
+    }
+    window.addEventListener('message', hear)
+    return () => window.removeEventListener('message', hear)
+  }, [api, organizationId])
+
   if (deal !== null) {
     return (
       <DealPage
@@ -206,8 +236,10 @@ export const Deals = ({
       <EmptyState
         connector={connector}
         waiting={waiting}
+        problem={said}
         onConnect={() => {
           if (!connector?.authorize_url) return
+          setSaid(null)
           window.open(connector.authorize_url, '_blank', 'width=600,height=760')
           setWaiting(true)
         }}
@@ -399,12 +431,15 @@ export const Deals = ({
 const EmptyState = ({
   connector,
   waiting,
+  problem,
   onConnect,
   onCancel,
   onNewDeal,
 }: {
   connector: ConnectorState | null
   waiting: boolean
+  /** Microsoft's refusal, verbatim, when the last attempt died. */
+  problem: string | null
   onConnect: () => void
   onCancel: () => void
   onNewDeal: () => void
@@ -470,6 +505,22 @@ const EmptyState = ({
             >
               Pierce reads your models and decks from SharePoint.
             </span>
+            {problem && (
+              //: The refusal verbatim — an AADSTS sentence names its own
+              //: fix, and paraphrasing it hides the code a search needs.
+              <span
+                style={{
+                  fontSize: 13,
+                  color: ink.danger,
+                  lineHeight: 1.5,
+                  marginTop: 12,
+                  maxWidth: '48ch',
+                  textWrap: 'pretty',
+                }}
+              >
+                {problem}
+              </span>
+            )}
             <button
               onClick={onConnect}
               style={{
