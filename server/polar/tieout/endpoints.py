@@ -1680,11 +1680,18 @@ async def ask(
     except AgentNotConfigured as problem:
         raise HTTPException(status_code=503, detail=str(problem)) from problem
 
+    finding: Finding | None = None
+    if body.finding_id is not None:
+        repository = TieOutRepository.from_session(session)
+        finding = await repository.get_finding(body.finding_id)
+        if finding is None or finding.dossier_id != deal.id:
+            raise ResourceNotFound("Finding not found.")
+
     task, outcome = await agent.ask(
         session,
         dossier_id=deal.id,
         user_id=auth_subject.subject.id,
-        prompt=body.prompt,
+        prompt=_conversation(body, finding),
         client=client,
         name=deal.name,
     )
@@ -1694,6 +1701,106 @@ async def ask(
         answer=task.answer,
         stopped=task.stopped,
         error=task.error,
+        steps=[
+            AskedStep(
+                ordinal=step.ordinal,
+                tool=step.tool,
+                ok=step.ok,
+                summary=step.summary,
+                milliseconds=step.milliseconds,
+            )
+            for step in outcome.steps
+        ],
+    )
+
+
+#: How much of a conversation is replayed to the agent. The last few
+#: exchanges are context; a whole afternoon of chat is a second corpus,
+#: and the tools — not the transcript — are where answers come from.
+MOST_TURNS = 6
+
+
+def _conversation(body: Ask, finding: Finding | None) -> str:
+    """One prompt for the loop, carrying the chat's context.
+
+    The loop takes a single prompt, so the finding the chat was opened
+    from and the last few exchanges are folded in, labelled — the
+    banker's own words and the agent's earlier answers, never anything
+    invented between them. The tools still bound every figure in the
+    reply.
+    """
+    parts: list[str] = []
+    if finding is not None:
+        about = (
+            f"This conversation is about one finding: « {finding.title} » — "
+            f"{finding.location}."
+        )
+        if finding.printed and finding.expected:
+            about += (
+                f" The document prints {finding.printed}; the model says "
+                f"{finding.expected}."
+            )
+        parts.append(about)
+    for turn in body.history[-MOST_TURNS:]:
+        speaker = "The banker said" if turn.who == "you" else "You answered"
+        parts.append(f"{speaker}: {turn.text}")
+    if parts:
+        parts.append(f"The banker now asks: {body.prompt}")
+        return "\n\n".join(parts)
+    return body.prompt
+
+
+@router.post(
+    "/check-file/{check_id}/ask", response_model=Asked, status_code=201
+)
+async def ask_about_check(
+    check_id: UUID,
+    body: Ask,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> Asked:
+    """Ask about one stored one-off check — and only about it.
+
+    The agent here holds the check's stored answer and two tools over
+    it, nothing else: no deal, no model history, no decisions. A deal
+    question gets the boundary sentence, which is a correct answer and
+    not a failure — the deal's own page is where those are answered.
+
+    Nothing is persisted: recorded agent tasks are a deal's record, and
+    a one-off check has no deal. The trace still comes back with the
+    answer, which is where it matters.
+    """
+    from uuid import uuid4
+
+    from polar.agent import run as run_agent
+
+    from .agent.file_tools import FILE_TOOLSET, FileRoom
+
+    repository = TieOutRepository.from_session(session)
+    row = await repository.get_one_off(check_id, auth_subject.subject.id)
+    if row is None:
+        raise ResourceNotFound("Check not found.")
+    try:
+        client = agent_client()
+    except AgentNotConfigured as problem:
+        raise HTTPException(status_code=503, detail=str(problem)) from problem
+
+    room = FileRoom(
+        filename=row.filename,
+        kind=row.kind.value,
+        against=row.against,
+        counts=row.counts or {},
+        result=row.result or {},
+    )
+    outcome = await run_agent(
+        client, FILE_TOOLSET, room, _conversation(body, None)
+    )
+    return Asked(
+        id=uuid4(),
+        prompt=body.prompt,
+        answer=outcome.answer,
+        stopped=outcome.stopped,
+        error=outcome.error,
         steps=[
             AskedStep(
                 ordinal=step.ordinal,

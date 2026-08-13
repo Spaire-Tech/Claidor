@@ -41,6 +41,7 @@ import {
   SoloStatement,
   TieOutApi,
 } from '../api'
+import { ChatContext } from '../Chat'
 import {
   fileIcon,
   font,
@@ -115,11 +116,15 @@ const ACCEPT = '.pptx,.pptm,.docx,.doc,.xlsx,.xlsm,.xls,.xlt'
 export const CheckFile = ({
   api,
   deals,
+  onChat,
 }: {
   api: TieOutApi
   /** The deals this person is on — the against picker's list. Null while
    *  the shell is still asking. */
   deals: DealListItem[] | null
+  /** What the chat should be about right now — the finished check, the
+   *  open finding, or nothing. */
+  onChat?: (ctx: ChatContext | null) => void
 }) => {
   const [phase, setPhase] = useState<Phase>('idle')
   const [against, setAgainst] = useState<DealListItem | null>(null)
@@ -270,6 +275,31 @@ export const CheckFile = ({
       ),
     ]
   }, [result])
+
+  //: The design opens the chat beside a finished check, and on a finding
+  //: as its card opens. The shell owns the panel; this reports what the
+  //: conversation is about.
+  useEffect(() => {
+    if (onChat === undefined) return
+    if (phase !== 'done' || result === null) {
+      onChat(null)
+      return
+    }
+    const card = cards.find((one) => one.key === openCard)
+    if (card === undefined) {
+      onChat({ scope: 'file', checkId: result.id })
+      return
+    }
+    const head = headOf(card, result.kind)
+    onChat({
+      scope: 'file-finding',
+      checkId: result.id,
+      title: head.title,
+      says: head.says,
+      explain: explainOf(card, result.kind),
+      chain: chainOf(card),
+    })
+  }, [onChat, phase, result, cards, openCard])
 
   //: The design's `cFirst`: nothing checked and nothing to check against
   //: yet. The design keys this on the workspace's notConnected prop; the
@@ -1546,6 +1576,26 @@ const headOf = (
     where: `${defect.sheet} · ${defect.ref} · ${defect.severity}`,
     dot: ink.accent,
   }
+}
+
+/** The two places a finding stands, as the chat's chain card rows. */
+const chainOf = (card: Card): { what: string; value: string }[] => {
+  if (card.shape === 'solo')
+    return [
+      { what: cap(card.solo.first.location), value: card.solo.first.printed },
+      { what: cap(card.solo.other.location), value: card.solo.other.printed },
+    ]
+  if (card.shape === 'drift')
+    return [
+      { what: cap(card.drift.location), value: card.drift.printed },
+      {
+        what: card.drift.name
+          ? `${card.drift.ref} — ${card.drift.name}`
+          : card.drift.ref,
+        value: card.drift.expected,
+      },
+    ]
+  return [{ what: `${card.defect.sheet} · ${card.defect.ref}`, value: '' }]
 }
 
 const explainOf = (card: Card, kind: string): string => {

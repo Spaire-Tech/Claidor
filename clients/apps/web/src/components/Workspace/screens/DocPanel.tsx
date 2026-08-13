@@ -69,6 +69,10 @@ export interface DocPanelProps {
   onClose: () => void
   /** A ruling changed a finding — the page behind should reload. */
   onChanged: () => void
+  /** A finding opened or closed — the shell opens the chat on it. */
+  onChat?: (
+    ctx: { findingId: string; title: string; says: string } | null,
+  ) => void
 }
 
 export const DocPanel = ({
@@ -77,6 +81,7 @@ export const DocPanel = ({
   doc,
   onClose,
   onChanged,
+  onChat,
 }: DocPanelProps) => {
   const [findings, setFindings] = useState<Finding[]>([])
   const [versions, setVersions] = useState<Version[] | null>(null)
@@ -515,9 +520,21 @@ export const DocPanel = ({
                   finding={finding}
                   grid={grid}
                   open={open === finding.id}
-                  onToggle={() =>
-                    setOpen(open === finding.id ? null : finding.id)
-                  }
+                  onToggle={() => {
+                    const closing = open === finding.id
+                    setOpen(closing ? null : finding.id)
+                    //: The design opens the chat on the finding as the
+                    //: card opens, and clears it as the card closes.
+                    onChat?.(
+                      closing
+                        ? null
+                        : {
+                            findingId: finding.id,
+                            title: finding.title,
+                            says: saysOf(finding),
+                          },
+                    )
+                  }}
                   onChanged={onChanged}
                 />
               ))}
@@ -528,6 +545,12 @@ export const DocPanel = ({
     </div>
   )
 }
+
+/** The card's second line, shared with the chat's opening sentence. */
+const saysOf = (finding: Finding): string =>
+  finding.printed && finding.expected
+    ? `The document says ${finding.printed} · the model says ${finding.expected}`
+    : finding.context || finding.where.detail
 
 const FindingCard = ({
   api,
@@ -549,10 +572,7 @@ const FindingCard = ({
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
 
-  const says =
-    finding.printed && finding.expected
-      ? `The document says ${finding.printed} · the model says ${finding.expected}`
-      : finding.context || finding.where.detail
+  const says = saysOf(finding)
   const where = [finding.where.label, finding.source.ref]
     .filter(Boolean)
     .join(' · ')

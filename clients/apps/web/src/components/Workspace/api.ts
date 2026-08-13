@@ -397,6 +397,12 @@ export interface FigureMap {
   slides: { page: number; figures: Figure[] }[]
 }
 
+/** One earlier exchange, replayed so a follow-up reads as one. */
+export interface AskTurn {
+  who: 'you' | 'pierce'
+  text: string
+}
+
 /** One tool call, as the chat shows it under « Used N tools ». */
 export interface AskedStep {
   ordinal: number
@@ -844,11 +850,39 @@ export class TieOutApi {
    * Slow by nature — it is a model call with tool calls inside it — so the
    * caller shows « Working » rather than a spinner, and the trace that
    * comes back with the answer is shown rather than logged.
+   *
+   * `finding_id` scopes the conversation to one finding; `history`
+   * replays the last few exchanges so follow-ups read as follow-ups.
    */
-  ask(dealId: string, prompt: string): Promise<Asked> {
+  ask(
+    dealId: string,
+    prompt: string,
+    options: { history?: AskTurn[]; findingId?: string | null } = {},
+  ): Promise<Asked> {
     return this.call(`/deals/${dealId}/ask`, {
       method: 'POST',
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({
+        prompt,
+        history: options.history ?? [],
+        finding_id: options.findingId ?? null,
+      }),
+    })
+  }
+
+  /**
+   * Ask about one stored one-off check — and only about it.
+   *
+   * The agent behind this holds the check's stored answer and two tools
+   * over it, nothing else; a deal question gets the boundary sentence.
+   */
+  askFile(
+    checkId: string,
+    prompt: string,
+    options: { history?: AskTurn[] } = {},
+  ): Promise<Asked> {
+    return this.call(`/check-file/${checkId}/ask`, {
+      method: 'POST',
+      body: JSON.stringify({ prompt, history: options.history ?? [] }),
     })
   }
 

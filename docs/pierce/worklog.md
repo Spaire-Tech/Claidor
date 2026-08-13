@@ -1525,3 +1525,54 @@ in place. Six new route tests; 48 pass.
 - The People role column shows only « You » — job titles are not a
   thing the system knows, so the design's « Vice President » column
   waits for a real field.
+
+## 13 August 2026 — the chat, and the workspace design is built
+
+The last drawn piece: one glassy panel, three scopes, and the scope
+decides what the agent can reach.
+
+**Per-finding.** Opening a finding opens the chat on it: « Reading the
+chain » is a real wait on the real chain endpoint, the sentence beside
+the chain is the server's own summary, and the chain card walks the
+actual path — slide 3's chart, `Model!C26` and its formula, the cells
+feeding it — with the values in mono. Steps the chain could not follow
+are printed under the card rather than dropped, which closes a gap the
+API had been carrying unrendered (4.4% of formulas on real models have
+one). Follow-ups carry the finding and the transcript to the deal
+agent.
+
+**Per-deal.** The deal page's chat goes to the existing agent — six
+read-only tools over the loaded deal, arithmetic never through the
+language model. The ask route now takes the finding and the last few
+exchanges (`history`), folded into the prompt labelled, so follow-ups
+read as follow-ups; a finding from another deal is 404.
+
+**Per-file.** A finished one-off check gets its own, deliberately
+smaller agent: `POST /check-file/{id}/ask`, two tools
+(`file_summary`, `list_findings`) over the stored answer, and a prompt
+whose boundary is the feature — a deal question gets « I only have this
+one file », which is a correct answer, not a failure. Owner-only, 404
+for anyone else. Nothing persisted: recorded tasks are a deal's
+record, and a one-off has no deal.
+
+**Honesty over theatre, throughout:** waiting states are real waits;
+a failed or step-limited run says so; an unconfigured agent shows the
+server's own sentence — the screenshot in the thread shows « No
+ANTHROPIC_API_KEY configured. » in place of an answer, which is this
+environment's truth. The suggestion rows are questions the tools can
+genuinely answer, not the design's demo lines, which name people and
+cells a real deal may not have.
+
+Four new route tests with a scripted model (the finding and transcript
+reach the prompt; the file chat holds only its two tools and its
+boundary prompt; strangers get 404s). 328 tieout tests pass.
+
+**Flagged for the founder:** the input pill's + and microphone buttons
+are drawn without behaviour in the design and are kept exactly so;
+live agent answers in dev await an `ANTHROPIC_API_KEY` in
+`server/.env` — every deterministic part of the chat (chains, scopes,
+boundaries, errors) is verified without one.
+
+**With this, every view of the 12 August workspace design is built and
+wired**: Deals, the deal page, the document panel, Check a file, New
+deal, Settings, and the chat.

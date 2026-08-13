@@ -605,8 +605,26 @@ class Asked(Schema):
     steps: list[AskedStep]
 
 
+class AskTurn(Schema):
+    """One earlier exchange in the conversation, replayed to the agent.
+
+    The loop takes a single prompt, so the transcript is folded into it,
+    labelled — the person's own words and the agent's earlier answers,
+    never anything invented between them.
+    """
+
+    who: Literal["you", "pierce"]
+    text: str = Field(max_length=2_000)
+
+
 class Ask(Schema):
     prompt: str = Field(min_length=1, max_length=4_000)
+    #: The conversation so far, oldest first. Only the last few turns are
+    #: replayed — a chat is context, not a second corpus.
+    history: list[AskTurn] = Field(default_factory=list, max_length=12)
+    #: When the chat was opened from one finding, its id — the question
+    #: is answered about that finding first.
+    finding_id: UUID | None = None
 
 
 class GridCell(Schema):
