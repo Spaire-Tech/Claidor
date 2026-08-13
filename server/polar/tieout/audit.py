@@ -166,8 +166,62 @@ def audit(book: Workbook) -> Audit:
     _circularity(book, result)
     _skipped_cells(book, result)
 
+    result.findings = _collapsed(book, result.findings)
     result.findings.sort(key=lambda f: (f.severity != "error", f.sheet, f.rule, f.ref))
     return result
+
+
+#: Rules where a fill-copied formula fires once per cell it was filled
+#: into. On a real base-cost model from the 2024 water price review, one
+#: 625-character formula filled across a grid produced 7,752 of the
+#: file's 8,017 findings — one authoring decision reported 7,752 times,
+#: which buries the 265 findings that are about anything else.
+FILLED_RULES = frozenset({"long-formula", "volatile", "hardcode-in-formula"})
+
+
+def _collapsed(book: Workbook, findings: list[Finding]) -> list[Finding]:
+    """One finding per authoring decision, not per cell it was filled to.
+
+    Findings from :data:`FILLED_RULES` whose cells share a sheet and a
+    formula shape (references made relative, numbers erased) are one
+    formula somebody wrote once and dragged. For the hardcode rule the
+    buried numbers themselves stay in the key — via the detail, which
+    prints them — so a row of *different* hardcoded assumptions is still
+    reported cell by cell: those are distinct decisions.
+    """
+    keep: list[Finding] = []
+    groups: dict[tuple[str, ...], list[Finding]] = {}
+    for finding in findings:
+        if finding.rule not in FILLED_RULES:
+            keep.append(finding)
+            continue
+        cell = book.cells.get(finding.ref)
+        shape = _shape(cell) if cell is not None else finding.ref
+        key: tuple[str, ...] = (finding.sheet, finding.rule, shape)
+        if finding.rule == "hardcode-in-formula":
+            key = (*key, finding.detail)
+        groups.setdefault(key, []).append(finding)
+
+    for group in groups.values():
+        first = group[0]
+        if len(group) == 1:
+            keep.append(first)
+            continue
+        keep.append(
+            Finding(
+                rule=first.rule,
+                severity=first.severity,
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=(
+                    f"{first.detail} — one formula filled across "
+                    f"{len(group)} cells ({first.ref} to {group[-1].ref})"
+                ),
+                source=first.source,
+            )
+        )
+    return keep
 
 
 def _error_values(book: Workbook, result: Audit) -> None:
@@ -465,13 +519,41 @@ def _runs(cells: list[Cell]) -> list[list[Cell]]:
     return runs
 
 
+#: How tall a stack of typed cells can be and still read as one
+#: paste-over rather than a column of parameters. Both ends measured on
+#: real files: Ofwat's own queries document confirms a four-cell block
+#: hard-keyed into the FM02 financial model (InpS!N1885-1888 — every row
+#: a formula series, one year typed), and `CollarsAnalysisv3-1.XLS`
+#: carries typed parameter columns fifty-nine cells tall that are data,
+#: not damage. The line sits between four and fifty-nine with room on
+#: the paste side, because a hand pastes a handful and a column runs the
+#: length of its table.
+TYPED_BLOCK = 8
+
+
 def _stacked(book: Workbook, cell: Cell) -> bool:
-    """True when a constant has a constant directly above or below it."""
-    for row in (cell.row - 1, cell.row + 1):
-        neighbour = book.get(f"{cell.sheet}!{get_column_letter(cell.column)}{row}")
-        if neighbour is not None and neighbour.formula is None:
-            return True
-    return False
+    """True when a constant belongs to a column of typed values.
+
+    A first version vetoed on *any* constant directly above or below —
+    which also vetoed a block of values pasted over four adjacent rows
+    of formulas, the exact defect Ofwat's queries document confirms in
+    two published FM02 models, so the audit scored 0 of 4 on the one
+    ground truth it had. Now the whole contiguous vertical run of
+    constants is measured: a short stack is a paste, a long one is a
+    parameter column.
+    """
+    tall = 1
+    for step in (-1, 1):
+        row = cell.row + step
+        while tall <= TYPED_BLOCK:
+            neighbour = book.get(
+                f"{cell.sheet}!{get_column_letter(cell.column)}{row}"
+            )
+            if neighbour is None or neighbour.formula is not None:
+                break
+            tall += 1
+            row += step
+    return tall > TYPED_BLOCK
 
 
 def _boundaries(rows: dict[tuple[str, int], list[Cell]]) -> dict[str, int]:

@@ -250,6 +250,82 @@ class Workbook:
         return [cell for cell in self.cells.values() if cell.name.lower() == wanted]
 
 
+@dataclass
+class _Grid:
+    """One sheet's cells, in plain dictionaries.
+
+    **openpyxl's ordinary mode is what made a real model take half an
+    hour.** `load_workbook` without `read_only` builds a Python object
+    for every cell in every sheet's rectangle — on a company financial
+    model from the 2024 water price review that is nine million objects,
+    twice over, since the formulas and the values are two loads of the
+    file. Profiled at 150 seconds in, the reader had finished seven of
+    the sixty-four sheets, and most of the time was openpyxl
+    materialising empty cells so this module could ask them questions
+    they answer with `None`.
+
+    So each sheet is now **streamed once per load** (`read_only=True`)
+    into dictionaries holding only the cells that carry something, and
+    every later pass — labels, headers, tags, the numeric sweep — asks
+    the dictionaries. The extent comes from the cells actually present
+    rather than from the file's declared dimension, which real files
+    misstate.
+    """
+
+    #: Cached values, from the `data_only` load.
+    values: dict[tuple[int, int], Any] = field(default_factory=dict)
+    #: What is written in the cell: a formula string or the typed value.
+    written: dict[tuple[int, int], Any] = field(default_factory=dict)
+    #: Number formats, for the cells that have written content.
+    formats: dict[tuple[int, int], str | None] = field(default_factory=dict)
+    #: Columns present per row, across both loads, for the numeric sweep.
+    by_row: dict[int, set[int]] = field(default_factory=dict)
+    last_row: int = 0
+    last_column: int = 0
+
+    def _saw(self, row: int, column: int) -> None:
+        self.by_row.setdefault(row, set()).add(column)
+        if row > self.last_row:
+            self.last_row = row
+        if column > self.last_column:
+            self.last_column = column
+
+
+def _grid_of(written_sheet: Any, values_sheet: Any) -> _Grid:
+    """One sheet from both loads, streamed into a :class:`_Grid`."""
+    grid = _Grid()
+    cells = getattr(written_sheet, "cells", None)
+    if isinstance(cells, dict):
+        # A legacy `.xls` sheet already is a dictionary of cells.
+        for (row, column), value in cells.items():
+            if value is None:
+                continue
+            grid.written[(row, column)] = value
+            grid._saw(row, column)
+        for (row, column), value in getattr(values_sheet, "cells", {}).items():
+            if value is None:
+                continue
+            grid.values[(row, column)] = value
+            grid._saw(row, column)
+        return grid
+
+    for row in written_sheet.iter_rows():
+        for cell in row:
+            if cell.value is None:
+                continue
+            at = (cell.row, cell.column)
+            grid.written[at] = cell.value
+            grid.formats[at] = getattr(cell, "number_format", None)
+            grid._saw(*at)
+    for row in values_sheet.iter_rows():
+        for cell in row:
+            if cell.value is None:
+                continue
+            grid.values[(cell.row, cell.column)] = cell.value
+            grid._saw(cell.row, cell.column)
+    return grid
+
+
 def read_workbook(path: str) -> Workbook:
     """Every numeric cell in the model, named and with its precedents.
 
@@ -262,33 +338,46 @@ def read_workbook(path: str) -> Workbook:
     """
     if path.lower().endswith((".xls", ".xlt")):
         formulas, values = read_legacy(path)
+        close = None
     else:
-        formulas = load_workbook(path, data_only=False)
-        values = load_workbook(path, data_only=True)
+        formulas = load_workbook(path, data_only=False, read_only=True)
+        values = load_workbook(path, data_only=True, read_only=True)
+        close = (formulas, values)
 
-    book = Workbook(
-        sheets=list(formulas.sheetnames),
-        hidden_sheets=tuple(
-            name
-            for name in formulas.sheetnames
-            if getattr(formulas[name], "sheet_state", "visible") != "visible"
-        ),
-        iterative=bool(getattr(formulas.calculation, "iterate", False)),
-    )
-    names = _names_of(formulas)
-    for name in formulas.sheetnames:
-        sheet = formulas[name]
-        # A chart sheet is a sheet in the file format and a picture to
-        # everybody else: no cells, no grid, no `max_row`. Real models
-        # have them and the Cascade test pair does not, which is the sort
-        # of thing only a real model tells you.
-        if not hasattr(sheet, "max_row"):
-            continue
-        _read_sheet(book, name, sheet, values[name], names)
-    return book
+    try:
+        book = Workbook(
+            sheets=list(formulas.sheetnames),
+            hidden_sheets=tuple(
+                name
+                for name in formulas.sheetnames
+                if getattr(formulas[name], "sheet_state", "visible") != "visible"
+            ),
+            iterative=bool(getattr(formulas.calculation, "iterate", False)),
+        )
+        grids: dict[str, _Grid] = {}
+        for name in formulas.sheetnames:
+            sheet = formulas[name]
+            # A chart sheet is a sheet in the file format and a picture to
+            # everybody else: no cells, no grid, no `max_row`. Real models
+            # have them and the Cascade test pair does not, which is the
+            # sort of thing only a real model tells you.
+            if not hasattr(sheet, "max_row"):
+                continue
+            grids[name] = _grid_of(sheet, values[name])
+        names = _names_of(formulas, grids)
+        for name, grid in grids.items():
+            _read_sheet(book, name, grid, names)
+        return book
+    finally:
+        # A read-only load keeps the archive open behind the streaming
+        # readers, and an unclosed one holds the temporary upload's file
+        # handle for as long as the objects live.
+        if close is not None:
+            for one in close:
+                one.close()
 
 
-def _names_of(formulas: Any) -> Names:
+def _names_of(formulas: Any, grids: dict[str, "_Grid"]) -> Names:
     """Defined names and sheet extents, in one pass.
 
     Read from the *formula* workbook. A legacy `.xls` read through
@@ -296,6 +385,10 @@ def _names_of(formulas: Any) -> Names:
     nothing: the maps come back empty and every name falls through to
     `unresolved` with a sentence saying so, which is the honest state
     rather than a silent one.
+
+    Extents come from the grids — the cells actually present — because a
+    file's declared dimension is a claim, and whole-column expansion
+    against an overstated one is exactly the waste the cap exists for.
     """
     names = Names()
     for name, one in (getattr(formulas, "defined_names", {}) or {}).items():
@@ -304,35 +397,26 @@ def _names_of(formulas: Any) -> Names:
         sheet = formulas[title]
         for name, one in (getattr(sheet, "defined_names", {}) or {}).items():
             names.sheet[(title, str(name))] = str(getattr(one, "value", one))
-        if hasattr(sheet, "max_row"):
-            names.extent[title] = (
-                int(sheet.max_row or 0),
-                int(getattr(sheet, "max_column", 0) or 0),
-            )
+        grid = grids.get(title)
+        if grid is not None:
+            names.extent[title] = (grid.last_row, grid.last_column)
     return names
 
 
 def _read_sheet(
-    book: Workbook, name: str, sheet: Any, cached: Any, names: Names | None = None
+    book: Workbook, name: str, grid: _Grid, names: Names | None = None
 ) -> None:
-    # **`max_row` and `max_column` are not attributes, they are scans.**
-    # `openpyxl` computes each one by walking every cell it has read, so a
-    # `range(1, sheet.max_column + 1)` written inside a row loop is a full
-    # sweep of the sheet per row. On a 22,004-row schools funding
-    # allocation that turned a ten-second read into **nine minutes** — 126
-    # million comparisons, all to re-answer the same question. Asked once,
-    # here, and passed down.
-    last_row = int(sheet.max_row or 0)
-    last_column = int(sheet.max_column or 0)
-    header_row = _header_row(sheet, cached, last_column)
-    label_column = _label_column(sheet, cached, last_row, last_column)
+    last_row = grid.last_row
+    last_column = grid.last_column
+    header_row = _header_row(grid, last_column)
+    label_column = _label_column(grid, last_row, last_column)
 
     #: The last row label that named a line item rather than a derivation
     #: of one, so « % growth » reads as « growth of that ».
     subject = ""
     labels: dict[int, str] = {}
     for row in range(1, last_row + 1):
-        named = _shown(sheet, cached, row, label_column)
+        named = _shown(grid, row, label_column)
         text = named.strip() if named else ""
         if not text:
             continue
@@ -365,7 +449,7 @@ def _read_sheet(
         for column in range(1, min(last_column, LABEL_COLUMNS) + 1):
             if column == label_column:
                 continue
-            beside = _shown(sheet, cached, row, column)
+            beside = _shown(grid, row, column)
             beside = beside.strip() if beside else ""
             if beside and len(beside) <= TAG_LENGTH:
                 found.append(beside)
@@ -375,40 +459,26 @@ def _read_sheet(
     headers: dict[int, str] = {}
     if header_row is not None:
         for column in range(1, last_column + 1):
-            named = _shown(sheet, cached, header_row, column)
+            named = _shown(grid, header_row, column)
             if named:
                 headers[column] = named.strip()
 
-    # **Read row by row, not cell by cell.** `sheet.cell(r, c)` creates the
-    # cell when the file does not contain one, so walking a grid by
-    # coordinate materialises every empty square of it — twice over, since
-    # the formulas and the values are two workbooks. A published schools
-    # funding allocation with 22,004 rows and fourteen columns took tens of
-    # minutes that way, on 2 MB of file. `iter_rows` reads what is there.
-    for values, written in zip(
-        cached.iter_rows(min_row=1, max_row=last_row),
-        sheet.iter_rows(min_row=1, max_row=last_row),
-        strict=False,
-    ):
-        row = values[0].row if values else 0
-        for one in values:
-            shown = one.value
-            if isinstance(shown, str) and shown.strip() in ERROR_VALUES:
-                book.errors[f"{name}!{one.coordinate}"] = shown.strip()
+    for (row, column), shown in grid.values.items():
+        if isinstance(shown, str) and shown.strip() in ERROR_VALUES:
+            at = f"{name}!{get_column_letter(column)}{row}"
+            book.errors[at] = shown.strip()
 
-        if row == header_row or not row:
+    for row in sorted(grid.by_row):
+        if row == header_row:
             continue
-
-        cells = {one.column: one for one in values}
-        formulas = {one.column: one for one in written}
+        columns = grid.by_row[row]
         numeric = [
             column
-            for column in sorted(set(cells) | set(formulas))
+            for column in sorted(columns)
             if column != label_column
             and (
-                _decimal(cells[column].value if column in cells else None) is not None
-                or _formula(formulas[column].value if column in formulas else None)
-                is not None
+                _decimal(grid.values.get((row, column))) is not None
+                or _formula(grid.written.get((row, column))) is not None
             )
         ]
         # A row carrying one number is a label and a value — « Enterprise
@@ -420,9 +490,8 @@ def _read_sheet(
         series = len(numeric) > 1
 
         for column in numeric:
-            written_cell = formulas.get(column)
-            number = _decimal(cells[column].value if column in cells else None)
-            formula = _formula(written_cell.value if written_cell else None)
+            number = _decimal(grid.values.get((row, column)))
+            formula = _formula(grid.written.get((row, column)))
             read = references_of(formula, name, names) if formula else Precedents()
             references = read.refs
             ref = f"{name}!{get_column_letter(column)}{row}"
@@ -436,11 +505,10 @@ def _read_sheet(
                 row_label=labels.get(row, ""),
                 row_tags=tags.get(row, ()),
                 column_label=headers.get(column, "") if series else "",
-                # Off the *formula* book: the value book is loaded with
-                # `data_only`, and a legacy `.xls` read through xlrd has no
-                # format on its cells at all, which is why this is asked for
-                # rather than assumed to be there.
-                number_format=getattr(written_cell, "number_format", None),
+                # Off the *formula* load: the value load is `data_only`,
+                # and a legacy `.xls` read through xlrd has no format on
+                # its cells at all, which is why this may be absent.
+                number_format=grid.formats.get((row, column)),
                 precedents=references,
                 unresolved=read.unresolved,
                 alias_of=_alias(formula, references),
@@ -677,7 +745,7 @@ def _column_index(letters: str) -> int:
     return index
 
 
-def _shown(sheet: Any, cached: Any, row: int, column: int) -> str | None:
+def _shown(grid: _Grid, row: int, column: int) -> str | None:
     """The words a cell shows, whether they were typed or computed.
 
     **A label can be a formula, and refusing every formula loses a whole
@@ -697,10 +765,10 @@ def _shown(sheet: Any, cached: Any, row: int, column: int) -> str | None:
     produces no label, which is the case `_label` was protecting against
     and is unaffected: numbers are not strings.
     """
-    text = _label(sheet.cell(row, column).value)
+    text = _label(grid.written.get((row, column)))
     if text is not None:
         return text
-    value = cached.cell(row, column).value
+    value = grid.values.get((row, column))
     if isinstance(value, str):
         return value
     return _period_label(value)
@@ -731,14 +799,12 @@ def _period_label(value: Any) -> str | None:
     return f"FY{year}"
 
 
-def _header_row(sheet: Any, cached: Any, last_column: int) -> int | None:
+def _header_row(grid: _Grid, last_column: int) -> int | None:
     """The row whose text names the columns. Usually the period header."""
     best: tuple[int, int] | None = None
-    for row in range(1, min(int(sheet.max_row or 0), HEADER_SEARCH) + 1):
+    for row in range(1, min(grid.last_row, HEADER_SEARCH) + 1):
         texts = sum(
-            1
-            for column in range(2, last_column + 1)
-            if _shown(sheet, cached, row, column)
+            1 for column in range(2, last_column + 1) if _shown(grid, row, column)
         )
         if texts >= HEADER_TEXTS and (best is None or texts > best[1]):
             best = (row, texts)
@@ -773,7 +839,7 @@ TAG_LENGTH = 40
 LABEL_SCAN = 1000
 
 
-def _label_column(sheet: Any, cached: Any, last_row: int, last_column: int) -> int:
+def _label_column(grid: _Grid, last_row: int, last_column: int) -> int:
     """The column holding the row names.
 
     **Chosen by how many *different* things a column says, not how much it
@@ -793,7 +859,7 @@ def _label_column(sheet: Any, cached: Any, last_row: int, last_column: int) -> i
     for column in range(1, min(last_column, LABEL_COLUMNS) + 1):
         seen: set[str] = set()
         for row in range(1, depth + 1):
-            text = _shown(sheet, cached, row, column)
+            text = _shown(grid, row, column)
             if text and text.strip():
                 seen.add(text.strip())
         if len(seen) > most:

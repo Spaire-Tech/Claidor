@@ -81,3 +81,73 @@ def test_every_finding_cites_the_standard_it_comes_from() -> None:
     """« Says who » has to have an answer that is not « the tool »."""
     result = audit(read_workbook(str(CASCADE / "audit_fixture.xlsx")))
     assert all(finding.source for finding in result.findings)
+
+
+def _tmp_book(build) -> "Audit":  # noqa: F821
+    """An audit over a workbook built in memory and read off disk."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+
+    book = Book()
+    build(book.active)
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        return audit(read_workbook(str(path)))
+
+
+def test_a_pasted_block_is_still_typed_over_formula() -> None:
+    """Ofwat's queries document confirms four cells hard-keyed into the
+    FM02 financial model — a vertical block, every row otherwise a
+    formula series. The old veto on any stacked constant scored 0 of 4
+    on the one ground truth the audit had."""
+
+    def build(sheet) -> None:
+        for row in range(2, 8):
+            for column in range(2, 9):
+                at = sheet.cell(row=row, column=column)
+                if column == 5 and row in (2, 3, 4, 5):
+                    at.value = 0.89
+                else:
+                    at.value = f"=B{row}+1"
+
+    result = _tmp_book(build)
+    typed = {f.ref for f in result.findings if f.rule == "typed-over-formula"}
+    assert {"Sheet!E2", "Sheet!E3", "Sheet!E4", "Sheet!E5"} <= typed
+
+
+def test_a_parameter_column_is_not_typed_over_formula() -> None:
+    """`CollarsAnalysisv3-1.XLS` carries typed parameter columns dozens
+    of cells tall. A column is data, not damage."""
+
+    def build(sheet) -> None:
+        for row in range(2, 14):
+            for column in range(2, 9):
+                at = sheet.cell(row=row, column=column)
+                if column == 5:
+                    at.value = 0.89
+                else:
+                    at.value = f"=B{row}+1"
+
+    result = _tmp_book(build)
+    assert not any(f.rule == "typed-over-formula" for f in result.findings)
+
+
+def test_a_filled_formula_is_one_finding_not_thousands() -> None:
+    """One 625-character formula filled across a grid produced 7,752 of
+    a real base-cost model's 8,017 findings. A fill is one decision."""
+    long = "=" + "+".join(["INDIRECT(\"A1\")"] * 20)
+
+    def build(sheet) -> None:
+        sheet.cell(row=2, column=1).value = "Interest cover"
+        for column in range(2, 12):
+            sheet.cell(row=2, column=column).value = long
+
+    result = _tmp_book(build)
+    lengthy = [f for f in result.findings if f.rule == "long-formula"]
+    assert len(lengthy) == 1
+    assert "filled across 10 cells" in lengthy[0].detail
+    noisy = [f for f in result.findings if f.rule == "volatile"]
+    assert len(noisy) == 1
