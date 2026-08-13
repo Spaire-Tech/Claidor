@@ -780,3 +780,87 @@ def test_a_quantity_acronym_the_model_uses_is_not_an_entity() -> None:
     )
     links, unlinked = run([fig], cells, year=2026)
     assert links, unlinked
+
+
+COE_ROWS = [
+    Output(
+        "C1",
+        "FY2027 Cost of equity at 60% gearing",
+        Decimal("0.06118"),
+        "MainInputs",
+        "MainInputs",
+    ),
+    Output(
+        "C2",
+        "FY2028 Cost of equity at 60% gearing",
+        Decimal("0.06118"),
+        "MainInputs",
+        "MainInputs",
+    ),
+]
+
+TORN_LINE = "Our proposed cost of equity (55%/60% gearing) 5.70% / 6.12%"
+
+
+def _torn(printed: str, value: str) -> Figure:
+    return figure(
+        "gearing)",
+        kind="percent",
+        printed=printed,
+        value=Decimal(value),
+        context=TORN_LINE,
+        section="",
+        subject=None,
+    )
+
+
+def test_a_torn_label_cannot_carry_a_disagreement() -> None:
+    """« gearing) » carrying 5.70% is the torn edge of « (55%/60%
+    gearing) » — a qualifier of the neighbouring figure's name, not
+    this figure's. Reporting it against the 60%-gearing row's 6.12%
+    was one of the two drifts surviving round 3; « document says 60%,
+    model says 6% » was the other, same line, same shape."""
+    from polar.tieout.link import link as run
+
+    links, unlinked = run([_torn("5.70%", "0.057")], COE_ROWS)
+    assert not links
+    assert "torn edge" in unlinked[0].reason
+
+    links, unlinked = run([_torn("60%", "0.6")], COE_ROWS)
+    assert not links
+
+
+def test_a_torn_label_that_agrees_still_corroborates() -> None:
+    """The same line's 6.12% is the 60%-gearing cost of equity,
+    correctly agreeing — and the reason the label is not repaired in
+    the reader instead: handing 5.70% the sentence's head would link
+    it to this same row and report the same false drift under a
+    better-looking label."""
+    from polar.tieout.link import link as run
+
+    links, unlinked = run([_torn("6.12%", "0.0612")], COE_ROWS)
+    assert links, unlinked
+    assert links[0].output.value == Decimal("0.06118")
+
+
+def test_balanced_brackets_are_a_whole_name() -> None:
+    """« Notional gearing (C) » holds a bracket and is a whole name —
+    balance is the test, and a balanced label still carries its
+    drift."""
+    from polar.tieout.link import link as run
+
+    cells = [
+        Output("B1", "FY2031 Notional gearing", Decimal("0.6"), "MainInputs", "In"),
+    ]
+    fig = figure(
+        "Notional gearing (C)",
+        kind="percent",
+        printed="58%",
+        value=Decimal("0.58"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], cells)
+    assert links, unlinked
+    assert links[0].figure.printed == "58%"

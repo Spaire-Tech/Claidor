@@ -1220,3 +1220,53 @@ Same pair, three rounds: proposals 4 → 18 → 15; agreeing 2 → 13 →
 72% → 87%. Cascade untouched throughout (7/8 agreeing, 113/105/8
 pinned); 361 tieout tests green. One named failure class left on
 this pair, one owner, already queued.
+
+### Linker round 4: torn labels, measured — and the first PASS
+
+The last failure class on the pair, and the smallest fix of the four
+rounds. « gearing) » carrying 5.70% is the torn edge of « (55%/60%
+gearing) » — words that qualify the *neighbouring* figure's name,
+handed to this one by clause segmentation. The gate is parenthesis
+balance and nothing else: a « ) » the label never opened, or a « ( »
+it never closes. Balance is the whole test deliberately — « Notional
+gearing (C) » is a whole name that happens to hold a bracket, and
+prose labels that merely stop mid-thought (« Revenue for the year
+ended … was ») are the normal shape of a label read off a sentence;
+treating those as fragments would silence nearly every drift a prose
+source can raise. Corroborate-only, as every gate here is.
+
+**Deliberately not fixed in the reader**, and the reason is worth
+keeping: repairing the label by inheriting the sentence's head would
+hand 5.70% « Our proposed cost of equity » — which links it to the
+60%-gearing row and reports the same false drift under a
+better-looking label, because the line states two parameterisations
+of one quantity. The torn label is not a reading error to correct;
+it is the document failing to name which variant it means, and the
+honest response is refusal.
+
+**The identical pair, graded by the protocol untouched since before
+the first result: PASS — the first, on the fourth round.**
+
+- **V = 13** proposals — PASS.
+- **P = 13 of 13** — every proposal the identical hand-verified
+  agreeing set from round 3 — PASS.
+- **R = 5 of 5** verified-present targets — PASS.
+- **D: zero drifts claimed, therefore zero false — PASS.**
+
+Same pair, four rounds: proposals 4 → 18 → 15 → 13; false drifts
+2 → 5 → 2 → 0; recall 0/5 → 5/5 → 5/5 → 5/5; precision — → 72% →
+87% → 100%. Cascade untouched throughout; 364 tieout tests green.
+
+**Said before the celebration does any drifting of its own: this is
+a pass on the development pair.** All four rounds were diagnosed and
+fixed against this document and this model, with the grade sheet
+pre-registered but the fixes iterated. The sweep run the same hour:
+`RIIO3-Cadent.pdf` — held out of every round — against the same
+GD-BPFM: 432 figures, 5 proposals, 5 agreeing, **zero drifts, zero
+false drifts on input the gates had never seen** (one solid gearing
+link; four thin agreeing zeros of the corroborate-only class,
+« SIU » against « SIU Costs »). What the sweep does not measure is
+held-out *recall* — no ground truth has been hand-built for that
+document. That is the next measurement debt, named: a ground-truth
+set for a pair no round has touched (the WACC-rates workbook, the
+CoD model, or an Ofwat document pair), graded by this same protocol.

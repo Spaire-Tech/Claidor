@@ -548,6 +548,27 @@ def link(
                 )
             )
             continue
+        if _fragment(figure.label) and not _agrees(figure, outputs[best_index]):
+            # « gearing) » carrying 5.70%: the label is the torn edge
+            # of « (55%/60% gearing) » — words that qualify the
+            # *neighbouring* figure's name, handed to this one by
+            # clause segmentation. Both drifts surviving round 3 were
+            # this shape, one of them « document says 60%, model says
+            # 6% ». Deliberately not repaired in the reader: giving
+            # 5.70% the sentence's head — « Our proposed cost of
+            # equity » — would link it to the 60%-gearing row and
+            # report the same false drift under a better-looking
+            # label, because the line states two parameterisations of
+            # one quantity. A torn label may corroborate (the same
+            # line's 6.12% is the 60%-gearing figure, correctly
+            # agreeing); it may not carry a disagreement.
+            unlinked.append(
+                Unlinked(
+                    figure,
+                    "its label is the torn edge of a parenthesis, not a name",
+                )
+            )
+            continue
         stranger = _foreign(figure, vocabulary)
         if stranger is not None and not _agrees(figure, outputs[best_index]):
             # « 55% notional gearing for ET and 60% for the gas
@@ -734,6 +755,33 @@ def _foreign(figure: Figure, vocabulary: "Vocabulary") -> str | None:
         return None
     _, nearest = min(mentions)
     return nearest if normalise(nearest) not in vocabulary.known else None
+
+
+def _fragment(label: str) -> bool:
+    """True when the label is the torn edge of a parenthetical.
+
+    A « ) » that closes nothing the label opened, or a « ( » it never
+    closes, means the label's words are part of a bracketed qualifier
+    whose other half went to a neighbouring figure — « gearing) » is
+    the tail of « (55%/60% gearing) », and its one word names the
+    *qualifier* of another figure's quantity, not this figure's.
+
+    Balance is the whole test, deliberately: « Notional gearing (C) »
+    and « Risk-free rate forecast (Oct) » are whole names that happen
+    to hold brackets, and prose labels that merely stop mid-thought
+    (« Revenue for the year ended … was ») are the normal shape of a
+    label read off a sentence — treating those as fragments would
+    silence nearly every drift a prose source can raise.
+    """
+    depth = 0
+    for character in label:
+        if character == "(":
+            depth += 1
+        elif character == ")":
+            if depth == 0:
+                return True
+            depth -= 1
+    return depth > 0
 
 
 def _uncorroborated(said: set[str], output: Output) -> bool:

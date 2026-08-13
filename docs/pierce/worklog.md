@@ -1890,3 +1890,27 @@ surviving drifts are the fragment-label pair from a single line, and
 fail criterion names. The grade sheet does not bend after the number
 arrives. The fix is the reader's (task #15), and it is the only
 failure class left on this pair. Cascade untouched; 361 tests green.
+
+## 13 August 2026 — linker round 4: torn labels, and the first PASS
+
+The smallest fix of the four rounds closed the last named failure on
+the Ofgem pair. A label like « gearing) » is the torn edge of a
+parenthetical — the qualifier of a *neighbouring* figure's name, not
+this one's — and the gate is parenthesis balance and nothing else,
+corroborate-only as always. The design note that matters: repairing
+the label in the reader instead would have made things worse, because
+handing 5.70% the sentence's head links it to the 60%-gearing row and
+reports the same false drift under a prettier label. The torn label
+is the document failing to say which variant it means; refusal is the
+honest answer.
+
+The identical pair, on the protocol untouched since before the first
+result: **13 proposals, 13 agreeing, zero drifts — V, P, R and D all
+pass. The first PASS, on the fourth round.** And the caveat written
+in the same breath: this is the development pair. A held-out sweep
+the same hour — Cadent's own RIIO-3 document, never used in any
+round, against the same model — produced five proposals, five
+agreeing, zero false drifts on input the gates had never seen.
+Held-out *recall* remains unmeasured (no ground truth exists for
+that document yet); building one for an untouched pair is the next
+measurement debt, named in the backlog. Cascade unmoved; 364 tests.
