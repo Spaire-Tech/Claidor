@@ -151,3 +151,38 @@ def test_a_filled_formula_is_one_finding_not_thousands() -> None:
     assert "filled across 10 cells" in lengthy[0].detail
     noisy = [f for f in result.findings if f.rule == "volatile"]
     assert len(noisy) == 1
+
+
+def test_a_block_pasted_over_several_columns_is_caught_down_the_columns() -> None:
+    """Yorkshire's FM02 (per Ofwat's queries document): five year-columns
+    typed across four adjacent rows, so no row keeps a formula majority
+    and the row pass is blind. The columns still show the paste."""
+
+    def build(sheet) -> None:
+        for row in range(2, 10):
+            for column in range(2, 11):
+                at = sheet.cell(row=row, column=column)
+                if column >= 6 and row in (3, 4, 5, 6):
+                    at.value = 0.52
+                else:
+                    at.value = f"=B{row}+{column}"
+
+    result = _tmp_book(build)
+    typed = {f.ref for f in result.findings if f.rule == "typed-over-formula"}
+    assert "Sheet!F3" in typed
+    assert "Sheet!J6" in typed
+    assert len([ref for ref in typed if ref.startswith("Sheet!")]) >= 20
+
+
+def test_an_input_column_with_a_total_under_it_is_data_not_damage() -> None:
+    """A column of typed inputs with one SUM below repeats nothing —
+    the island rule requires the column's own formula to repeat."""
+
+    def build(sheet) -> None:
+        for row in range(2, 7):
+            sheet.cell(row=row, column=2).value = f"=C{row}*2"
+            sheet.cell(row=row, column=3).value = row * 1.1
+        sheet.cell(row=7, column=3).value = "=SUM(C2:C6)"
+
+    result = _tmp_book(build)
+    assert not any(f.rule == "typed-over-formula" for f in result.findings)

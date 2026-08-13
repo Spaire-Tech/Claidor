@@ -163,6 +163,7 @@ def audit(book: Workbook) -> Audit:
     _long_formulas(book, result)
     _literals(book, result)
     _rows(book, result)
+    _typed_islands(book, result)
     _circularity(book, result)
     _skipped_cells(book, result)
 
@@ -554,6 +555,115 @@ def _stacked(book: Workbook, cell: Cell) -> bool:
             tall += 1
             row += step
     return tall > TYPED_BLOCK
+
+
+def _typed_islands(book: Workbook, result: Audit) -> None:
+    """Values pasted over a *block* of formulas, seen down the columns.
+
+    The row pass catches one cell typed into a formula row. Yorkshire's
+    FM02 — one of the two models Ofwat's queries document confirms
+    hard-keyed — defeats it: five year-columns typed across four
+    adjacent rows, so no row keeps a formula majority. The columns still
+    show it plainly: each is a repeating calculation interrupted by a
+    short island of constants, with the same formula resuming below.
+
+    Two things keep this from flagging what is data on purpose. An
+    input column with a total under it: the island only counts when the
+    column's own formulas *repeat* (the same shape at least twice) and
+    the cell at the island's edge carries that repeating shape — a
+    `SUM` under typed inputs appears once, and repeats nothing. And a
+    model's typed history: every island row must hold a formula to the
+    *left* of the typed cell, because a paste over a forecast sits
+    after the row's calculations begin, and history is the reverse —
+    constants first, formulas after. (The sheet-wide history boundary
+    is deliberately not used here: on Yorkshire's own InpS sheet it
+    votes for column 19, which would skip the confirmed paste in
+    column N.)
+    """
+    columns: dict[tuple[str, int], list[Cell]] = {}
+    leftmost: dict[tuple[str, int], int] = {}
+    for cell in book.cells.values():
+        columns.setdefault((cell.sheet, cell.column), []).append(cell)
+        if cell.formula:
+            at = (cell.sheet, cell.row)
+            if cell.column < leftmost.get(at, 1 << 20):
+                leftmost[at] = cell.column
+
+    already = {f.ref for f in result.findings if f.rule == "typed-over-formula"}
+
+    for (sheet, column), cells in columns.items():
+        cells.sort(key=lambda c: c.row)
+
+        run: list[Cell] = []
+        for cell in cells:
+            # Strictly adjacent rows: a blank row is a section break, and
+            # stitching across one would let two unrelated blocks lend
+            # each other formulas.
+            if run and cell.row - run[-1].row == 1:
+                run.append(cell)
+                continue
+            _island_findings(sheet, run, leftmost, already, result)
+            run = [cell]
+        _island_findings(sheet, run, leftmost, already, result)
+
+
+def _island_findings(
+    sheet: str,
+    run: list[Cell],
+    leftmost: dict[tuple[str, int], int],
+    already: set[str],
+    result: Audit,
+) -> None:
+    """The typed islands of one vertical run, reported."""
+    if len(run) < MIN_SERIES:
+        return
+    calculated = [cell for cell in run if cell.formula]
+    shapes = Counter(_shape(cell) for cell in calculated)
+    if not shapes:
+        return
+    usual, count = shapes.most_common(1)[0]
+    if count < 2:
+        return
+
+    index = 0
+    while index < len(run):
+        if run[index].formula is not None:
+            index += 1
+            continue
+        end = index
+        while end < len(run) and run[end].formula is None:
+            end += 1
+        island = run[index:end]
+        # Maximal by construction, so any neighbour inside the run is a
+        # formula; it must carry the column's repeating shape.
+        edges = [run[at] for at in (index - 1, end) if 0 <= at < len(run)]
+        if (
+            len(island) <= TYPED_BLOCK
+            and len(island) < len(run)
+            and any(_shape(edge) == usual for edge in edges)
+            and all(
+                leftmost.get((sheet, cell.row), 1 << 20) < cell.column
+                for cell in island
+            )
+        ):
+            for cell in island:
+                if cell.ref in already:
+                    continue
+                result.findings.append(
+                    Finding(
+                        rule="typed-over-formula",
+                        severity="error",
+                        ref=cell.ref,
+                        sheet=sheet,
+                        name=cell.name,
+                        detail=(
+                            f"{cell.value} typed into a column that is "
+                            f"otherwise calculated: {_example(calculated, usual)}"
+                        ),
+                        source="ICAEW P14, FAST",
+                    )
+                )
+        index = end
 
 
 def _boundaries(rows: dict[tuple[str, int], list[Cell]]) -> dict[str, int]:
