@@ -141,7 +141,9 @@ def crosscheck(pdf: str, model: str) -> None:
         print(
             f"  p{fig.slide!r:>4} {fig.printed!r:>14} {state:24}"
             f" -> {item.output.ref} {str(item.output.name)[:44]!r}"
-            f" conf={item.confidence:.2f}  label={str(fig.label)[:60]!r}",
+            f" = {item.output.value}"
+            f" score={item.score:.2f}/{item.runner_up:.2f}"
+            f"  label={str(fig.label)[:60]!r}",
             flush=True,
         )
 
