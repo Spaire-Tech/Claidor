@@ -14,8 +14,10 @@ would leave a banker with nothing to do.
 """
 
 from typing import Any
+from urllib.parse import quote
 from uuid import UUID
 
+import structlog
 from fastapi import Depends, HTTPException, Query
 
 from polar.auth.dependencies import WebUserRead, WebUserWrite
@@ -41,6 +43,8 @@ from .schemas import (
 )
 from .service import ConnectorError, connector
 from .state import sign, unsign
+
+log = structlog.get_logger()
 
 router = APIRouter(prefix="/connector", tags=["connector", APITag.private])
 
@@ -186,12 +190,20 @@ async def callback(
         ) from problem
 
     landing = f"{settings.FRONTEND_BASE_URL}/dashboard"
+
+    def failed(reason: str) -> Any:
+        # The reason travels twice, deliberately. The redirect carries it
+        # to the screen; the log keeps it on the server — the first real
+        # connection attempt lost its explanation to a frontend redirect
+        # that dropped the query string, and a failure a screen can lose
+        # must also live where a screen cannot lose it.
+        log.warning("connector.connect_failed", reason=reason[:300])
+        return RedirectResponse(f"{landing}?connector=failed&reason={quote(reason)}")
+
     if error_description or not code:
         # Microsoft's own sentence — « the user cancelled », « admin
         # consent required » — carried back rather than swallowed.
-        return RedirectResponse(
-            f"{landing}?connector=failed&reason={error_description or 'no code'}"
-        )
+        return failed(error_description or "no code")
 
     try:
         await connector.complete(
@@ -202,7 +214,7 @@ async def callback(
             redirect_uri=redirect_uri(),
         )
     except GraphError as problem:
-        return RedirectResponse(f"{landing}?connector=failed&reason={problem}")
+        return failed(str(problem))
     return RedirectResponse(f"{landing}?connector=connected")
 
 
