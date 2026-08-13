@@ -73,6 +73,7 @@ def _folder(folder: ConnectedFolder, connection: Connection | None) -> FolderRea
         name=folder.name,
         path=folder.path,
         site_name=folder.site_name,
+        model_item_id=folder.model_item_id,
         connection=_connection(connection) if connection else None,
         last_synced_at=folder.last_synced_at,
         last_result=folder.last_result or {},
@@ -446,6 +447,7 @@ async def point_at(
             connection=connection,
             drive_id=body.drive_id,
             item_id=body.item_id,
+            model_item_id=body.model_item_id,
         )
     except ConnectorError as problem:
         raise HTTPException(status_code=422, detail=str(problem)) from problem

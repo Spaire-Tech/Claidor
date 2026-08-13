@@ -175,6 +175,18 @@ class ConnectedFolder(RecordModel):
     #: The site or drive it belongs to, for the same reason.
     site_name: Mapped[str] = mapped_column(String(512), nullable=False, default="")
 
+    #: Which workbook is *the* model, when the folder holds more than one
+    #: — chosen when the deal is made, by the person who knows. A deal
+    #: room usually carries the operating model beside its working copies,
+    #: sensitivities and comps, and reconciling the deck against all four
+    #: reports the working copy's every difference as a finding. Null
+    #: means nobody chose, and every workbook is read — the behaviour a
+    #: one-workbook folder always has. The store's item id, so a rename
+    #: does not un-choose it.
+    model_item_id: Mapped[str | None] = mapped_column(
+        String(512), nullable=True, default=None
+    )
+
     last_synced_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )

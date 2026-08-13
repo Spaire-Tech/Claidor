@@ -30,6 +30,7 @@ import structlog
 
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession
 from polar.models import (
+    ArtifactKind,
     ConnectedFolder,
     Connection,
     ConnectionProvider,
@@ -160,6 +161,7 @@ class ConnectorService:
         connection: Connection,
         drive_id: str,
         item_id: str,
+        model_item_id: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> ConnectedFolder:
         """« This deal's files are in that folder. »"""
@@ -183,6 +185,7 @@ class ConnectorService:
         pointed.item_id = item_id
         pointed.name = folder.name
         pointed.path = folder.path
+        pointed.model_item_id = model_item_id
         pointed.error = None
         return await repository.save_folder(pointed)
 
@@ -251,6 +254,21 @@ class ConnectorService:
 
             kind = kind_for(item.name)
             if kind is None:
+                continue
+            # The deal chose its model when it was made. The other
+            # workbooks — working copies, sensitivities, comps — are
+            # deliberately not read: reconciling the deck against a
+            # working copy reports its every difference as a finding.
+            # Counted, not silent, like everything else skipped.
+            if (
+                folder.model_item_id is not None
+                and kind is ArtifactKind.model
+                and item.id != folder.model_item_id
+            ):
+                skipped["a second spreadsheet — the deal chose its model"] = (
+                    skipped.get("a second spreadsheet — the deal chose its model", 0)
+                    + 1
+                )
                 continue
             try:
                 payload = await graph.download(item.drive_id, item.id)
