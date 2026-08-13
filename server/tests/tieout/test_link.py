@@ -216,3 +216,58 @@ def test_a_slide_heading_can_support_a_link_but_never_carry_one() -> None:
         "EBITDA of $48.9mm implies an enterprise value of $484mm.",
     )
     assert linked_ref(figure(section="Trading comparables peers", **callout)) == "O21"
+
+
+# --- What a real model and a real document taught the matcher -----------
+
+
+class TestCapitalsAreNames:
+    def test_an_acronym_survives_the_stopword_list(self) -> None:
+        """`TO` is a preposition and also a licensed business.
+
+        Ofgem's model keeps the transmission owner on `NGET TO` and the
+        system operator on `NGET SO`. With `to` dropped as a stopword the
+        first tokenised to `['nget']` — a strict subset of the second,
+        unable to win any match against it — so every transmission-owner
+        figure in the direction document matched a system-operator cell.
+        Seven false contradictions.
+        """
+        from polar.tieout.link import tokens
+
+        assert tokens("NGET TO") == ["nget", "to"]
+        assert tokens("NGET SO") == ["nget", "so"]
+        assert tokens("National Grid Electricity Transmission TO")[-1] == "to"
+
+    def test_a_line_set_entirely_in_capitals_is_shouting_not_naming(self) -> None:
+        """Otherwise a heading puts `the` and `to` back in the vocabulary."""
+        from polar.tieout.link import tokens
+
+        assert tokens("NOTES TO THE FINANCIAL STATEMENTS") == [
+            "note",
+            "financial",
+            "statement",
+        ]
+
+    def test_an_acronym_is_not_a_plural(self) -> None:
+        from polar.tieout.link import tokens
+
+        assert tokens("Cost of goods sold COGS") == ["cost", "good", "sold", "cogs"]
+
+
+class TestAnUnmarkedYear:
+    def test_it_is_compatible_with_a_marked_one(self) -> None:
+        """`FY2025` asserts a year and not a basis, so refusing to match it
+        against `FY2025A` rejects the right cell for saying less."""
+        from polar.tieout.link import _same_period
+
+        assert _same_period({"fy2025"}, {"fy2025a"})
+        assert _same_period({"fy2025a"}, {"fy2025"})
+        assert _same_period({"fy2025a"}, {"fy2025a"})
+
+    def test_two_different_bases_are_still_different(self) -> None:
+        """The distinction the gate exists for: an actual is not an
+        estimate, however much else the two names share."""
+        from polar.tieout.link import _same_period
+
+        assert not _same_period({"fy2025a"}, {"fy2025e"})
+        assert not _same_period({"fy2025"}, {"fy2026a"})

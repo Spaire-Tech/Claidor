@@ -68,13 +68,29 @@ DERIVED_ROW = re.compile(
 #: which is most workbooks in the wild and none of the models seen so far.
 MAX_RANGE = 200
 
+#: A whole column — `$M:$M`, `A:C`. Real models are full of them: the
+#: 2026 Ofgem distribution model averages over `'Monthly Inflation'!$M:$M`
+#: 570 times. Expanded against the sheet's used extent rather than to the
+#: format's 1,048,576 rows.
+WHOLE_COLUMN = re.compile(r"^\$?(?P<first>[A-Z]{1,3}):\$?(?P<last>[A-Z]{1,3})$")
+WHOLE_ROW = re.compile(r"^\$?(?P<first>\d+):\$?(?P<last>\d+)$")
+
+#: A defined name, as it appears where a reference could. Excel's rules:
+#: starts with a letter, underscore or backslash, no spaces, not a cell
+#: address.
+DEFINED_NAME = re.compile(r"^[A-Za-z_\\][A-Za-z0-9_.\\]*$")
+
 #: A cell or range inside a formula, with an optional sheet. Quoted sheet
 #: names — 'Cash Flow'!B4 — are the reason this is not a two-line split.
 REFERENCE = re.compile(
     r"""
     (?:(?P<sheet>'[^']+'|[A-Za-z0-9_.]+)!)?
     \$?(?P<column>[A-Z]{1,3})\$?(?P<row>\d+)
-    (?::\$?(?P<column2>[A-Z]{1,3})\$?(?P<row2>\d+))?
+    (?:
+      :
+      (?:(?P<sheet2>'[^']+'|[A-Za-z0-9_.]+)!)?
+      \$?(?P<column2>[A-Z]{1,3})\$?(?P<row2>\d+)
+    )?
     """,
     re.VERBOSE,
 )
@@ -110,6 +126,27 @@ class Cell:
     number_format: str | None = None
     #: The cells this one is computed from, in the order they appear.
     precedents: tuple[str, ...] = ()
+    #: What this cell reads that could not be resolved to a cell, each with
+    #: a sentence saying why — an external workbook, a defined name left
+    #: pointing at `#REF!`, a table reference. Kept because a chain missing
+    #: an input while looking complete is the one failure this product
+    #: cannot afford, and because on a real model it is not rare: 11.7% of
+    #: formulas in the 2015 Ofgem transmission model were in that state
+    #: before names were read.
+    unresolved: tuple[tuple[str, str], ...] = ()
+    #: The other short words printed on this row, left of the data: a
+    #: units column, a licence-condition reference, a mnemonic. Kept apart
+    #: from `row_label` on purpose — they say what kind of thing the row is
+    #: rather than what it is called, so they belong with the sheet name in
+    #: the matcher's `basis` and are weighted below the name there.
+    #:
+    #: **They can be the only thing that tells two rows apart.** Ofgem's
+    #: model holds `Legacy price control adjustments to allowed revenue` on
+    #: the transmission owner's sheet and on the system operator's, with
+    #: the same words; the direction document prints the same row and
+    #: distinguishes them by the licence term beside it, `LAR` against
+    #: `SOLAR`. The model has that term too, three columns along.
+    row_tags: tuple[str, ...] = ()
     #: Set when the whole formula is a single reference — `=Model!D26`,
     #: `=F13`. Such a cell restates a figure rather than being one, and
     #: Cascade has six of them: the comps bridge pulls adjusted EBITDA from
@@ -144,6 +181,51 @@ class Cell:
 ERROR_VALUES = frozenset(
     {"#REF!", "#NAME?", "#VALUE!", "#NULL!", "#NUM!", "#N/A", "#DIV/0!"}
 )
+
+
+@dataclass(frozen=True)
+class Names:
+    """The workbook's defined names and the extent of each sheet.
+
+    **Scope is not decoration.** Excel lets the same name mean different
+    cells on different sheets, and sheet scope beats workbook scope. The
+    2026 Ofgem distribution model carries 594 sheet-scoped names beside
+    791 workbook-scoped ones, so a single name-to-reference map would not
+    merely miss things — it would resolve a name to the wrong cell and
+    report the answer with confidence. That is worse than the silent drop
+    it replaced, which is why the two maps are kept apart.
+    """
+
+    #: name → what it points at, for names visible everywhere.
+    book: dict[str, str] = field(default_factory=dict)
+    #: (sheet, name) → what it points at. Wins over `book`.
+    sheet: dict[tuple[str, str], str] = field(default_factory=dict)
+    #: sheet → (last row, last column) actually used. What a whole-column
+    #: reference is expanded against.
+    extent: dict[str, tuple[int, int]] = field(default_factory=dict)
+
+    def lookup(self, name: str, sheet: str) -> str | None:
+        return self.sheet.get((sheet, name)) or self.book.get(name)
+
+
+@dataclass(frozen=True)
+class Precedents:
+    """What a formula reads, and what could not be read.
+
+    Both halves, always. A formula that loses one of its precedents
+    produces a chain short by exactly the input that decided the answer
+    and looks complete — measured at 11.7% of formulas on a real Ofgem
+    transmission model, where the dropped name was the switch selecting
+    which company the whole model was calculating for. Rule 3: what was
+    not checked is part of the answer.
+    """
+
+    refs: tuple[str, ...] = ()
+    #: (what it said, why it could not be resolved). Phrased for a reader.
+    unresolved: tuple[tuple[str, str], ...] = ()
+
+    def __bool__(self) -> bool:
+        return bool(self.refs or self.unresolved)
 
 
 @dataclass
@@ -193,6 +275,7 @@ def read_workbook(path: str) -> Workbook:
         ),
         iterative=bool(getattr(formulas.calculation, "iterate", False)),
     )
+    names = _names_of(formulas)
     for name in formulas.sheetnames:
         sheet = formulas[name]
         # A chart sheet is a sheet in the file format and a picture to
@@ -201,25 +284,62 @@ def read_workbook(path: str) -> Workbook:
         # of thing only a real model tells you.
         if not hasattr(sheet, "max_row"):
             continue
-        _read_sheet(book, name, sheet, values[name])
+        _read_sheet(book, name, sheet, values[name], names)
     return book
 
 
-def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
-    header_row = _header_row(sheet)
-    label_column = _label_column(sheet)
+def _names_of(formulas: Any) -> Names:
+    """Defined names and sheet extents, in one pass.
+
+    Read from the *formula* workbook. A legacy `.xls` read through
+    :mod:`polar.tieout.legacy` has no defined names to give, and asks for
+    nothing: the maps come back empty and every name falls through to
+    `unresolved` with a sentence saying so, which is the honest state
+    rather than a silent one.
+    """
+    names = Names()
+    for name, one in (getattr(formulas, "defined_names", {}) or {}).items():
+        names.book[str(name)] = str(getattr(one, "value", one))
+    for title in formulas.sheetnames:
+        sheet = formulas[title]
+        for name, one in (getattr(sheet, "defined_names", {}) or {}).items():
+            names.sheet[(title, str(name))] = str(getattr(one, "value", one))
+        if hasattr(sheet, "max_row"):
+            names.extent[title] = (
+                int(sheet.max_row or 0),
+                int(getattr(sheet, "max_column", 0) or 0),
+            )
+    return names
+
+
+def _read_sheet(
+    book: Workbook, name: str, sheet: Any, cached: Any, names: Names | None = None
+) -> None:
+    # **`max_row` and `max_column` are not attributes, they are scans.**
+    # `openpyxl` computes each one by walking every cell it has read, so a
+    # `range(1, sheet.max_column + 1)` written inside a row loop is a full
+    # sweep of the sheet per row. On a 22,004-row schools funding
+    # allocation that turned a ten-second read into **nine minutes** — 126
+    # million comparisons, all to re-answer the same question. Asked once,
+    # here, and passed down.
+    last_row = int(sheet.max_row or 0)
+    last_column = int(sheet.max_column or 0)
+    header_row = _header_row(sheet, cached, last_column)
+    label_column = _label_column(sheet, cached, last_row, last_column)
 
     #: The last row label that named a line item rather than a derivation
     #: of one, so « % growth » reads as « growth of that ».
     subject = ""
     labels: dict[int, str] = {}
-    for row in range(1, sheet.max_row + 1):
-        raw = sheet.cell(row, label_column).value
-        named = _label(raw)
+    for row in range(1, last_row + 1):
+        named = _shown(sheet, cached, row, label_column)
         text = named.strip() if named else ""
         if not text:
             continue
-        indented = isinstance(raw, str) and raw[:1].isspace()
+        # Indentation is how a model marks a derived row, and it is a
+        # property of the words shown rather than of the formula that
+        # produced them.
+        indented = named is not None and named[:1].isspace()
         derived = DERIVED_ROW.match(text) is not None or (indented and subject)
         if derived and subject and subject.lower() not in text.lower():
             labels[row] = f"{subject} {text}"
@@ -229,29 +349,66 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
             subject = text
             labels[row] = text
 
+    #: The short descriptors printed beside the name, per row. Long text is
+    #: left out: columns C and D of a regulator's model carry whole
+    #: paragraphs beginning « Note: », and a paragraph is commentary rather
+    #: than a descriptor of the row.
+    #:
+    #: Only for rows that have a name. A descriptor describes something,
+    #: and a row with nothing to describe has none — which on a 22,004-row
+    #: allocations table is most of the sheet.
+    tags: dict[int, tuple[str, ...]] = {}
+    for row in labels:
+        if row == header_row:
+            continue
+        found = []
+        for column in range(1, min(last_column, LABEL_COLUMNS) + 1):
+            if column == label_column:
+                continue
+            beside = _shown(sheet, cached, row, column)
+            beside = beside.strip() if beside else ""
+            if beside and len(beside) <= TAG_LENGTH:
+                found.append(beside)
+        if found:
+            tags[row] = tuple(found)
+
     headers: dict[int, str] = {}
     if header_row is not None:
-        for column in range(1, sheet.max_column + 1):
-            named = _label(sheet.cell(header_row, column).value)
+        for column in range(1, last_column + 1):
+            named = _shown(sheet, cached, header_row, column)
             if named:
                 headers[column] = named.strip()
 
-    for row in range(1, sheet.max_row + 1):
-        for column in range(1, sheet.max_column + 1):
-            shown = cached.cell(row, column).value
+    # **Read row by row, not cell by cell.** `sheet.cell(r, c)` creates the
+    # cell when the file does not contain one, so walking a grid by
+    # coordinate materialises every empty square of it — twice over, since
+    # the formulas and the values are two workbooks. A published schools
+    # funding allocation with 22,004 rows and fourteen columns took tens of
+    # minutes that way, on 2 MB of file. `iter_rows` reads what is there.
+    for values, written in zip(
+        cached.iter_rows(min_row=1, max_row=last_row),
+        sheet.iter_rows(min_row=1, max_row=last_row),
+        strict=False,
+    ):
+        row = values[0].row if values else 0
+        for one in values:
+            shown = one.value
             if isinstance(shown, str) and shown.strip() in ERROR_VALUES:
-                book.errors[f"{name}!{get_column_letter(column)}{row}"] = shown.strip()
+                book.errors[f"{name}!{one.coordinate}"] = shown.strip()
 
-    for row in range(1, sheet.max_row + 1):
-        if row == header_row:
+        if row == header_row or not row:
             continue
+
+        cells = {one.column: one for one in values}
+        formulas = {one.column: one for one in written}
         numeric = [
             column
-            for column in range(1, sheet.max_column + 1)
+            for column in sorted(set(cells) | set(formulas))
             if column != label_column
             and (
-                _decimal(cached.cell(row, column).value) is not None
-                or _formula(sheet.cell(row, column).value) is not None
+                _decimal(cells[column].value if column in cells else None) is not None
+                or _formula(formulas[column].value if column in formulas else None)
+                is not None
             )
         ]
         # A row carrying one number is a label and a value — « Enterprise
@@ -263,9 +420,11 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
         series = len(numeric) > 1
 
         for column in numeric:
-            number = _decimal(cached.cell(row, column).value)
-            formula = _formula(sheet.cell(row, column).value)
-            references = precedents_of(formula, name) if formula else ()
+            written_cell = formulas.get(column)
+            number = _decimal(cells[column].value if column in cells else None)
+            formula = _formula(written_cell.value if written_cell else None)
+            read = references_of(formula, name, names) if formula else Precedents()
+            references = read.refs
             ref = f"{name}!{get_column_letter(column)}{row}"
             book.cells[ref] = Cell(
                 sheet=name,
@@ -275,58 +434,225 @@ def _read_sheet(book: Workbook, name: str, sheet: Any, cached: Any) -> None:
                 value=number,
                 formula=formula,
                 row_label=labels.get(row, ""),
+                row_tags=tags.get(row, ()),
                 column_label=headers.get(column, "") if series else "",
                 # Off the *formula* book: the value book is loaded with
                 # `data_only`, and a legacy `.xls` read through xlrd has no
                 # format on its cells at all, which is why this is asked for
                 # rather than assumed to be there.
-                number_format=getattr(sheet.cell(row, column), "number_format", None),
+                number_format=getattr(written_cell, "number_format", None),
                 precedents=references,
+                unresolved=read.unresolved,
                 alias_of=_alias(formula, references),
             )
 
 
-def precedents_of(formula: str, sheet: str) -> tuple[str, ...]:
-    """The cells a formula reads, expanded from ranges, in order.
+def precedents_of(
+    formula: str, sheet: str, names: Names | None = None
+) -> tuple[str, ...]:
+    """The cells a formula reads, expanded from ranges, in order."""
+    return references_of(formula, sheet, names).refs
+
+
+def references_of(formula: str, sheet: str, names: Names | None = None) -> Precedents:
+    """Everything a formula reads, and everything it reads that we cannot.
 
     Parsed through openpyxl's bundled tokenizer, which is a port of the
     grammar Microsoft published, so `SUM(D20:D23)` and `'Cash Flow'!B4`
     and a string literal containing a colon are all told apart properly
     rather than by a regex over the whole formula.
+
+    Without `names` this resolves plain references only, which is what it
+    did before there was anything else. With them it resolves defined
+    names in scope and expands whole-column and whole-row references
+    against the sheet's real extent.
     """
     found: list[str] = []
     seen: set[str] = set()
-    for token in Tokenizer(formula).items:
-        if token.type != "OPERAND" or token.subtype != "RANGE":
-            continue
-        match = REFERENCE.fullmatch(token.value.strip())
-        if match is None:
-            # A named range, or a whole-column reference. Both are real and
-            # neither is resolvable without more of the workbook than this
-            # function is given; the caller sees a shorter chain, not a
-            # wrong one.
-            continue
-        where = (match.group("sheet") or sheet).strip("'")
-        first_row, last_row = int(match.group("row")), int(match.group("row2") or 0)
-        first_column = _column_index(match.group("column"))
-        last_column = _column_index(match.group("column2") or "")
+    missing: list[tuple[str, str]] = []
+    said: set[str] = set()
 
-        if not last_row:
-            refs = [f"{where}!{match.group('column')}{first_row}"]
-        else:
-            refs = []
-            for row in range(first_row, last_row + 1):
-                for column in range(first_column, last_column + 1):
-                    if len(refs) >= MAX_RANGE:
-                        break
-                    refs.append(f"{where}!{get_column_letter(column)}{row}")
-                if len(refs) >= MAX_RANGE:
-                    break
+    def keep(refs: list[str]) -> None:
         for ref in refs:
             if ref not in seen:
                 seen.add(ref)
                 found.append(ref)
-    return tuple(found)
+
+    def give_up(text: str, why: str) -> None:
+        if text not in said:
+            said.add(text)
+            missing.append((text, why))
+
+    for token in Tokenizer(formula).items:
+        if token.type != "OPERAND" or token.subtype != "RANGE":
+            continue
+        text = token.value.strip()
+        refs = _expand(text, sheet, names, give_up)
+        if refs:
+            keep(refs)
+
+    return Precedents(refs=tuple(found), unresolved=tuple(missing))
+
+
+def _expand(
+    text: str, sheet: str, names: Names | None, give_up: Any, depth: int = 0
+) -> list[str]:
+    """One operand, as the cells it stands for."""
+    where, rest = _split_sheet(text)
+
+    # A reference into another workbook. The path is in the file and the
+    # cells are not, so this can never resolve here — but saying so is the
+    # point: an external link is the one precedent most likely to be stale,
+    # because nobody re-opens the workbook it points at.
+    if where.strip("'").startswith("[") or rest.startswith("["):
+        if "]" in rest and not rest.startswith("["):
+            give_up(text, "a table reference, which this does not read yet")
+        else:
+            give_up(text, "in another workbook, which is not in this deal")
+        return []
+
+    if "[" in rest:
+        give_up(text, "a table reference, which this does not read yet")
+        return []
+
+    match = REFERENCE.fullmatch(text)
+    if match is not None:
+        return _capped(
+            text,
+            _cells(
+                (match.group("sheet") or sheet).strip("'"),
+                match.group("column"),
+                int(match.group("row")),
+                match.group("column2"),
+                int(match.group("row2") or 0),
+            ),
+            give_up,
+        )
+
+    here = where.strip("'") or sheet
+
+    column = WHOLE_COLUMN.match(rest)
+    if column:
+        rows = names.extent.get(here, (0, 0))[0] if names else 0
+        if not rows:
+            give_up(text, "a whole column, and that sheet is not in this workbook")
+            return []
+        return _capped(
+            text,
+            _cells(here, column.group("first"), 1, column.group("last"), rows),
+            give_up,
+        )
+
+    row = WHOLE_ROW.match(rest)
+    if row:
+        columns = names.extent.get(here, (0, 0))[1] if names else 0
+        if not columns:
+            give_up(text, "a whole row, and that sheet is not in this workbook")
+            return []
+        return _capped(
+            text,
+            _cells(
+                here,
+                "A",
+                int(row.group("first")),
+                get_column_letter(max(columns, 1)),
+                int(row.group("last")),
+            ),
+            give_up,
+        )
+
+    if DEFINED_NAME.fullmatch(rest) and names is not None:
+        points_at = names.lookup(rest, sheet)
+        if points_at is None:
+            give_up(text, "a name this workbook does not define")
+            return []
+        if points_at.startswith("#"):
+            # A defined name left pointing at a deleted row. Nine of them
+            # sit in a published Ofgem model. Not a parse failure — a
+            # defect in the workbook, and worth saying so.
+            give_up(text, f"a defined name pointing at {points_at}")
+            return []
+        if depth >= 2:
+            give_up(text, "a name defined in terms of other names")
+            return []
+        # A name can point at anything, including another name or a
+        # formula. Following it once more covers the real cases and the
+        # depth cap stops a name defined in terms of itself.
+        #
+        # The recursion reports nothing of its own. What a person needs to
+        # be told is « Switch could not be followed », not
+        # « OFFSET(Model!$A$1,1,1) is a reference this does not understand » —
+        # the second is this module talking about itself.
+        resolved = _expand(points_at.lstrip("="), sheet, names, _quiet, depth + 1)
+        if not resolved:
+            give_up(text, "a name that is a formula rather than a cell")
+        return resolved
+
+    if DEFINED_NAME.fullmatch(rest):
+        give_up(text, "a defined name, and this workbook's names were not read")
+        return []
+
+    give_up(text, "a reference this does not understand")
+    return []
+
+
+def _quiet(text: str, why: str) -> None:
+    """Swallow a reason raised inside a name's own definition."""
+
+
+def _capped(text: str, answer: tuple[list[str], int], give_up: Any) -> list[str]:
+    """Say so when the cap bit."""
+    refs, span = answer
+    if span > len(refs):
+        give_up(
+            text,
+            f"{span:,} cells, of which the first {len(refs):,} were followed",
+        )
+    return refs
+
+
+def _split_sheet(token: str) -> tuple[str, str]:
+    """« 'Live Results (SO)'!C15 » → the sheet and the rest.
+
+    A quoted sheet name may contain brackets, spaces, even exclamation
+    marks. Splitting naively is how `'Live Results (SO)'!$C$15` gets
+    called a table reference, which is a mistake this module's own
+    measurement script made first.
+    """
+    if token.startswith("'"):
+        end = token.find("'", 1)
+        while end != -1 and token[end : end + 2] == "''":
+            end = token.find("'", end + 2)
+        if end != -1 and token[end + 1 : end + 2] == "!":
+            return token[: end + 1], token[end + 2 :]
+    if "!" in token:
+        where, _, rest = token.rpartition("!")
+        return where, rest
+    return "", token
+
+
+def _cells(
+    where: str, column: str, row: int, column2: str | None, row2: int
+) -> tuple[list[str], int]:
+    """The cells a reference stands for, and how many there were in all.
+
+    The second number is not decoration. `MAX_RANGE` exists so that
+    `SUM(A1:IV65536)` does not become sixteen million strings, and a cap
+    that truncates without saying so is the same silent loss this module
+    was just fixed for — moved from « dropped » to « quietly shortened ».
+    """
+    if not row2:
+        return [f"{where}!{column}{row}"], 1
+    first_column = _column_index(column)
+    last_column = _column_index(column2 or "")
+    span = (row2 - row + 1) * max(last_column - first_column + 1, 0)
+    refs: list[str] = []
+    for one in range(row, row2 + 1):
+        for two in range(first_column, last_column + 1):
+            if len(refs) >= MAX_RANGE:
+                return refs, span
+            refs.append(f"{where}!{get_column_letter(two)}{one}")
+    return refs, span
 
 
 def _alias(formula: str | None, references: tuple[str, ...]) -> str | None:
@@ -351,33 +677,127 @@ def _column_index(letters: str) -> int:
     return index
 
 
-def _header_row(sheet: Any) -> int | None:
+def _shown(sheet: Any, cached: Any, row: int, column: int) -> str | None:
+    """The words a cell shows, whether they were typed or computed.
+
+    **A label can be a formula, and refusing every formula loses a whole
+    entity.** Ofgem's price control model keeps one sheet per licensed
+    business and builds each from the input sheet, so the name beside every
+    row of `NGET TO` is `=Input!E31` rather than words. :func:`_label`
+    declines a formula for a good reason — a column of arithmetic would
+    otherwise name every figure beside it after the arithmetic — but the
+    reason is about the *formula text*, not about what the formula
+    produces. Measured on that model: 3,694 typed inputs found, and not one
+    of them on the transmission-owner sheet, so every figure the direction
+    document states for the transmission owner matched a cell belonging to
+    the system operator instead. Seven false contradictions.
+
+    So the formula text is still refused, and the **cached value** is used
+    when the formula produced words. A formula that produced a number
+    produces no label, which is the case `_label` was protecting against
+    and is unaffected: numbers are not strings.
+    """
+    text = _label(sheet.cell(row, column).value)
+    if text is not None:
+        return text
+    value = cached.cell(row, column).value
+    if isinstance(value, str):
+        return value
+    return _period_label(value)
+
+
+def _period_label(value: Any) -> str | None:
+    """A date cell read as the period it heads.
+
+    **A model's column headers are very often real dates.** Ofgem's writes
+    `2017-03-31` where a banker's writes `FY2017A`, and a date is not a
+    string, so the header row came back empty and every one of the eight
+    year columns on a row carried the same name. A figure naming the row
+    and not the year then matched whichever column happened to hold a typed
+    value — reported as the document contradicting the model, twice, on the
+    first real pair.
+
+    `FY` plus the calendar year, because that is the spelling the matcher
+    already understands. **It is a convention and it can be wrong**: a
+    31 March 2017 year end reads `FY2017` here, which is the British
+    convention and not the American one, and a company whose year ends in
+    January would call the same date `FY2016`. No basis letter is added —
+    a date says when, not whether the number is an actual or an estimate,
+    and `_same_period` treats an unmarked year as compatible with either.
+    """
+    year = getattr(value, "year", None)
+    if not isinstance(year, int) or not 1900 <= year <= 2200:
+        return None
+    return f"FY{year}"
+
+
+def _header_row(sheet: Any, cached: Any, last_column: int) -> int | None:
     """The row whose text names the columns. Usually the period header."""
     best: tuple[int, int] | None = None
-    for row in range(1, min(sheet.max_row, HEADER_SEARCH) + 1):
+    for row in range(1, min(int(sheet.max_row or 0), HEADER_SEARCH) + 1):
         texts = sum(
             1
-            for column in range(2, sheet.max_column + 1)
-            if _label(sheet.cell(row, column).value)
+            for column in range(2, last_column + 1)
+            if _shown(sheet, cached, row, column)
         )
         if texts >= HEADER_TEXTS and (best is None or texts > best[1]):
             best = (row, texts)
     return best[0] if best else None
 
 
-def _label_column(sheet: Any) -> int:
-    """The column holding the row names. Column A in every real model, but
-    found rather than assumed, because a model with a spacer column at the
-    left would otherwise name every one of its rows the empty string."""
+#: How far right the row names may sit. Four was enough for every model
+#: this had seen and not for the one it had not: Ofgem's price control
+#: financial model indents through columns B, C and D for section and
+#: sub-section headings and puts the parameter names in **column E**. With
+#: the search stopping at D, all 26,392 cells in that workbook came back
+#: with no name at all — which silently empties the tie-out and the
+#: grounding both, since each needs a named cell to have anything to
+#: match. Eight covers that layout with room, and is still far to the left
+#: of any data column.
+LABEL_COLUMNS = 8
+
+#: Longer than this and a cell beside the name is commentary, not a
+#: descriptor. Ofgem's model puts whole `Note: …` paragraphs in the two
+#: columns left of its parameter names.
+TAG_LENGTH = 40
+
+#: How many rows are read to decide *which* column holds the names.
+#:
+#: **Which column names the rows is a fact about a sheet's layout, and a
+#: sheet does not change its layout half way down.** Reading all of a
+#: 22,004-row allocations table to choose between eight columns is 352,000
+#: cell reads that cannot change the answer the first few hundred gave —
+#: and every one of them makes `openpyxl` materialise a cell object that
+#: was not in the file. Found by a published schools funding workbook that
+#: took tens of minutes to read.
+LABEL_SCAN = 1000
+
+
+def _label_column(sheet: Any, cached: Any, last_row: int, last_column: int) -> int:
+    """The column holding the row names.
+
+    **Chosen by how many *different* things a column says, not how much it
+    says.** The obvious rule — the column with the most text in it — picks
+    the units column on a regulator's model: `£m 09/10 prices` appears on
+    247 rows of one sheet against 251 parameter names beside it, so the
+    two are indistinguishable by volume. They are not remotely
+    indistinguishable by variety: 10 distinct values against 143. A column
+    of row names is nearly all distinct by definition, because that is what
+    naming a row is for.
+
+    Ties go left, which keeps column A for the ordinary model that has its
+    labels there and a `Notes` column somewhere off to the right.
+    """
     best, most = 1, -1
-    for column in range(1, min(sheet.max_column, 4) + 1):
-        texts = sum(
-            1
-            for row in range(1, sheet.max_row + 1)
-            if _label(sheet.cell(row, column).value)
-        )
-        if texts > most:
-            best, most = column, texts
+    depth = min(last_row, LABEL_SCAN)
+    for column in range(1, min(last_column, LABEL_COLUMNS) + 1):
+        seen: set[str] = set()
+        for row in range(1, depth + 1):
+            text = _shown(sheet, cached, row, column)
+            if text and text.strip():
+                seen.add(text.strip())
+        if len(seen) > most:
+            best, most = column, len(seen)
     return best
 
 
@@ -416,7 +836,10 @@ __all__ = [
     "DERIVED_ROW",
     "HEADER_TEXTS",
     "Cell",
+    "Names",
+    "Precedents",
     "Workbook",
     "precedents_of",
     "read_workbook",
+    "references_of",
 ]

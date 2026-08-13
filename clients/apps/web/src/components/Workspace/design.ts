@@ -1,225 +1,124 @@
 /**
- * The design, as values.
+ * The design's values, named.
  *
- * Every number and colour here was read out of `Pierce_Workspace.html` —
- * the founder's design, checked in at `docs/pierce/design/markup.html` —
- * rather than chosen. Nothing in this file is a preference, and nothing
- * should be adjusted to taste: if a screen needs a shade that is not here,
- * the design does not have that shade and the screen is wrong. Where this
- * file and the markup disagree, the markup is right.
- *
- * The neutral ramp is Microsoft's Fluent ramp. That is what makes the
- * panel look like it belongs inside Word and PowerPoint rather than like a
- * web page someone embedded, and it is worth protecting.
+ * Source of truth: `docs/pierce/design/markup.html` (12 August workspace).
+ * Every constant here is a value that appears verbatim in that file; if a
+ * value here disagrees with the file, the file is right. Nothing here is
+ * invented — where a screen needs something the design does not draw, the
+ * component says which pattern it borrowed, not this file.
  */
 
-/**
- * The size the design was drawn at.
- *
- * Carried in the design's own props — `{"$preview":{"width":1440,
- * "height":900}}` — and therefore not a guess. The workspace fills whatever
- * viewport it is given, so this is neither a maximum nor a minimum; it is
- * the size the proportions were chosen against, and the size to put a
- * browser at before saying a screen looks right.
- */
-export const canvas = { width: 1440, height: 900 }
-
-/**
- * Below this width the design is a different layout, not a squeezed one.
- *
- * `window.innerWidth < 1240` in the design, measured on the window rather
- * than on any container, on mount and on every resize. It moves the chat
- * column's basis, turns split screens from rows into columns, lets ribbons
- * wrap, and *removes* secondary furniture outright. See `useNarrow`.
- */
-export const NARROW = 1240
-
-// --- shared with the Office panel: keep byte-identical --------------------
-//
-// The panel is a separate application with a separate bundler, and these
-// values have to be the same in both or the two halves of the product drift
-// apart a shade at a time. Rather than couple two build systems over sixty
-// lines of constants, the block is copied into
-// `clients/apps/panel/src/design.ts` and `design.test.ts` there fails the
-// build if the two ever differ. Edit one, edit the other.
-
+/** The face. Loaded by `workspace.css` from the design's own binaries. */
 export const font = {
-  ui: "'Hanken Grotesk', system-ui, sans-serif",
-  /** Office surfaces read as Office. */
-  office: "'Segoe UI', 'Hanken Grotesk', system-ui, sans-serif",
-  /** Figures, cell references, formulas. Never prose. */
+  ui: "'Switzer', -apple-system, system-ui, sans-serif",
   mono: "'IBM Plex Mono', ui-monospace, monospace",
-  display: "'Cormorant Garamond', Georgia, serif",
-}
+} as const
 
-export const colour = {
-  /** Body text. */
-  ink: '#242424',
-  /** Secondary text — captions, metadata, the right-hand meta on a tab. */
-  muted: '#605e5c',
-  /** Tertiary — placeholder, disabled, the quietest labels. */
-  faint: '#8a8886',
-  fainter: '#a19f9d',
-  /** Hairlines. */
-  rule: '#f0eeec',
-  ruleStrong: '#edebe9',
-  ruleHeavy: '#c8c6c4',
-  /** Surfaces. */
-  paper: '#ffffff',
-  wash: '#faf9f8',
-  washer: '#f5f4f2',
-  band: '#f3f2f1',
-  bandWarm: '#f2f1ef',
-  /** The one accent. */
-  blue: '#0b62c4',
-  blueLift: '#1d7de6',
-  bluePress: '#0d5cb4',
-  blueDeep: '#146fd2',
-  blueBright: '#2f8bef',
-  /** Severity. Three levels, the design's own vocabulary. */
-  critical: '#b04434',
-  warning: '#b3822f',
-  note: '#8a8886',
-  /** Agreement. */
-  matching: '#4f7a5c',
-  matchingDeep: '#2f5d3f',
-  /** Dark chips and the deck canvas. */
-  dark: '#15171b',
-  darker: '#22252b',
-  slate: '#8b909a',
-  slateDeep: '#5b6068',
-  slateFaint: '#9aa0a8',
-  slateMid: '#7c828c',
-  /** The composer's own border — the one hairline that is not the ramp. */
-  composerRule: '#d7d7d3',
-}
+export const ink = {
+  /** Body text on the frame — the design's base color. */
+  base: '#242424',
+  /** Primary text inside cards. */
+  primary: '#1d1d1f',
+  /** Secondary — row subtitles, meta. */
+  secondary: '#86868b',
+  /** Muted — "Checked 2 hours ago" on the right of a row. */
+  faint: '#aeaeb2',
+  /** The dock's inactive tab, chat secondary text. */
+  dock: '#5b6068',
+  /** Accent: links, primary buttons, "to review" states, active tab. */
+  accent: '#0060d0',
+  /** Primary button pressed/hover. */
+  accentDown: '#0055ba',
+  /** Stale text. */
+  stale: '#c8790a',
+  /** Stale dot and the model grid's highlight. */
+  staleDot: '#ff9f0a',
+  /** Clean state text and dot. */
+  clean: '#34c759',
+  /** Destructive — "Sign out". */
+  danger: '#ff3b30',
+} as const
 
-// --- end shared ----------------------------------------------------------
-
-/** The page behind the panels. */
-export const pageBackground =
+/** The frame's ground — drawn once, behind everything. */
+export const ground =
   'radial-gradient(120% 100% at 20% -10%, #ffffff 0%, #f4f5f7 42%, #e9ebef 72%, #e2e4e9 100%)'
 
-/**
- * A floating panel — the left surface and the chat column.
- *
- * The frosted glass is the design's signature and the reason the panels
- * read as sitting *above* the page rather than cut into it.
- */
-export const panel = {
+/** The floating main card. */
+export const card = {
   background: 'rgba(255,255,255,.92)',
   backdropFilter: 'blur(20px) saturate(1.4)',
-  WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
   border: '1px solid rgba(255,255,255,.9)',
   borderRadius: 20,
   boxShadow:
     '0 14px 40px rgba(16,20,28,.10), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.9)',
-  overflow: 'hidden',
 } as const
 
-/** The pill that names the open document, top-left of a panel. */
-export const tabChip = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 9,
-  background: 'rgba(255,255,255,.75)',
-  border: '1px solid rgba(255,255,255,.7)',
-  boxShadow: '0 1px 2px rgba(18,24,40,.08)',
-  borderRadius: 11,
-  padding: '8px 14px',
+/** Content wells inside the card sit on this. */
+export const well = '#f5f5f7'
+
+/** The white list card that rows live in. */
+export const listCard = {
+  background: '#fff',
+  borderRadius: 14,
+  boxShadow: '0 1px 2px rgba(0,0,0,.05), 0 0 0 .5px rgba(0,0,0,.06)',
+} as const
+
+/** Hairline between rows — always via border-top, never on the first. */
+export const hairline = '.5px solid #eceaec'
+
+/** Section heading over a list card. */
+export const sectionHead = {
+  fontSize: 12,
+  fontWeight: 600,
+  letterSpacing: '.05em',
+  textTransform: 'uppercase',
+  color: '#86868b',
+} as const
+
+/** The grey secondary button — "Recheck", "Cancel" on cards. */
+export const greyButton = {
+  border: 0,
+  background: '#f0f0f2',
+  borderRadius: 9,
+  padding: '8px 15px',
+  font: 'inherit',
+  fontSize: 13.5,
   fontWeight: 500,
+  color: '#1d1d1f',
+  cursor: 'pointer',
 } as const
 
-/** The chat column. More transparent than the left panel, and a touch more saturated. */
-export const chatPanel = {
-  background: 'rgba(255,255,255,.74)',
-  backdropFilter: 'blur(20px) saturate(1.5)',
-  WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
-  border: '1px solid rgba(255,255,255,.9)',
-  borderRadius: 20,
-  boxShadow:
-    '0 14px 40px rgba(16,20,28,.10), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.9)',
-  overflow: 'hidden',
+/** The blue primary button in the header — "New deal", "Check now". */
+export const blueButton = {
+  border: 0,
+  background: '#0060d0',
+  color: '#fff',
+  borderRadius: 11,
+  padding: '9px 16px',
+  font: 'inherit',
+  fontSize: 13.5,
+  fontWeight: 500,
+  cursor: 'pointer',
 } as const
 
 /**
- * How wide the chat is.
- *
- * A fixed basis, not a fraction: the chat is a margin beside the document
- * and stays the width of a margin as the window grows. With nothing beside
- * it, it takes the room and centres a 720px column inside itself, which is
- * why the empty state reads as a page rather than a stretched sidebar.
+ * Writing boxes. The standing rule, from the design and from the founder
+ * in words: `border:0; outline:none`, background `#f0f0f2` or
+ * transparent, focus — where it exists at all — is the soft glow below.
+ * Never a border, never an outline, never an underline.
  */
-export const chatWidth = {
-  /** `flex`, with the left panel open. */
-  beside: { wide: '0 1 430px', narrow: '0 1 340px' },
-  /** `flex`, alone. */
-  alone: '1 1 auto',
-  minWidth: { wide: 330, narrow: 280 },
-  /** `max-width` of the thread and the composer within the column. */
-  column: { beside: '100%', alone: 720 },
+export const inputGlow = '0 0 0 3.5px rgba(0,96,208,.25)'
+
+/** File icons, extracted from the design file and self-hosted. */
+export const fileIcon = {
+  ppt: '/workspace/powerpoint.webp',
+  doc: '/workspace/word.webp',
+  xls: '/workspace/excel.webp',
+  mail: '/workspace/outlook.webp',
 } as const
 
-/** The dock's floating bar. Blurred harder than the panels, and rounder. */
-export const dock = {
-  /** The row it sits in — a fixed band, so the panels above never shift. */
-  row: 86,
-  bar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 4,
-    padding: '7px 10px',
-    background: 'rgba(255,255,255,.72)',
-    backdropFilter: 'blur(30px) saturate(1.6)',
-    WebkitBackdropFilter: 'blur(30px) saturate(1.6)',
-    border: '1px solid rgba(255,255,255,.95)',
-    borderRadius: 22,
-    boxShadow:
-      '0 10px 28px rgba(16,20,28,.12), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.9)',
-  },
-  /** The live button carries a fill, not a colour. */
-  live: 'rgba(16,20,28,.08)',
-  /** The divider before the last two. */
-  divider: {
-    width: 1,
-    height: 24,
-    background: 'rgba(21,23,27,.14)',
-    margin: '0 7px',
-  },
-} as const
+export const microsoftLogo = '/workspace/microsoft.webp'
+export const sharepointLogo = '/workspace/sharepoint.webp'
 
-/** The composer, in the chat and nowhere else. */
-export const composer = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  border: '1px solid #d7d7d3',
-  background: '#ffffff',
-  borderRadius: 999,
-  padding: '9px 9px 9px 16px',
-  boxShadow: '0 6px 22px rgba(16,20,28,.13)',
-} as const
-
-/** The send button's fill. The one gradient in the design. */
-export const sendFill = {
-  rest: 'linear-gradient(180deg,#1d7de6 0%,#0b62c4 55%,#0a51a5 100%)',
-  shadow:
-    '0 1px 2px rgba(0,60,140,.28), 0 0 0 .5px rgba(0,80,180,.35) inset, 0 1px 0 rgba(255,255,255,.45) inset',
-} as const
-
-export const size = {
-  body: 14.5,
-  meta: 13.5,
-  small: 12.5,
-  tiny: 11.5,
-  title: 19,
-  headline: 22,
-  /** The greeting, and only the greeting. */
-  greeting: 25,
-  /** What is typed. Larger than what is read. */
-  prompt: 15,
-}
-
-export const radius = { panel: 20, chip: 11, control: 10, dock: 22, pill: 999 }
-
-export const space = { page: 18, gap: 14, panelPad: 22, row: 14 }
+/** The canvas every screen was drawn at, and the size to verify at. */
+export const canvas = { width: 1440, height: 900 } as const

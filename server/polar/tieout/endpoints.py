@@ -26,7 +26,7 @@ from polar.auth.dependencies import WebUserWrite
 from polar.auth.scope import Scope
 from polar.dossier.agent.service import AgentNotConfigured
 from polar.dossier.agent.service import build_client as agent_client
-from polar.exceptions import ResourceNotFound
+from polar.exceptions import ClaidorRequestValidationError, ResourceNotFound
 from polar.kit.db.postgres import AsyncReadSession, AsyncSession
 from polar.models import (
     Artifact,
@@ -34,6 +34,7 @@ from polar.models import (
     CheckKind,
     CheckRun,
     Correction,
+    CorrectionState,
     Dossier,
     Figure,
     FigureLink,
@@ -42,6 +43,7 @@ from polar.models import (
     FindingState,
     LinkState,
     ModelCell,
+    OneOffCheck,
     User,
 )
 from polar.openapi import APITag
@@ -51,9 +53,10 @@ from polar.user.repository import UserRepository
 
 from . import auth
 from .agent import service as agent
-from .ingest import kind_for
+from .ingest import Unreadable, kind_for
 from .repository import TieOutRepository
 from .schemas import (
+    AgainstModel,
     ArtifactPage,
     ArtifactRead,
     Ask,
@@ -68,6 +71,7 @@ from .schemas import (
     Coverage,
     DealListItem,
     DealPage,
+    DecisionRead,
     FigureMap,
     FigureRead,
     FindingCounts,
@@ -75,6 +79,8 @@ from .schemas import (
     FindingSource,
     FindingUpdate,
     FindingWhere,
+    HiddenFinding,
+    HiddenReport,
     Identified,
     Identify,
     LinkAlternative,
@@ -84,12 +90,18 @@ from .schemas import (
     LinkRead,
     ModelDiff,
     ModelGrid,
+    OneOffDefect,
+    OneOffDrift,
+    OneOffResult,
     PanelToken,
+    RecentCheck,
     SlideFigures,
+    SoloFindingRead,
     Uploader,
+    VersionRead,
 )
 from .service import tieout
-from .storage import FileNotKept, download_url
+from .storage import FileNotKept, download_url, fetch
 from .writing import NotCorrectable, writing
 
 router = APIRouter(prefix="/tieout", tags=["tieout", APITag.private])
@@ -184,6 +196,86 @@ def _run(run: CheckRun | None) -> CheckRunRead | None:
     )
 
 
+async def _decisions(
+    repository: TieOutRepository, dossier_id: UUID
+) -> list[DecisionRead]:
+    """What the team decided — derived, never authored.
+
+    Assembled from corrections that were decided and findings that were
+    dismissed, so the log can never disagree with the records it
+    describes. Only judgements about numbers belong here: connecting a
+    folder or uploading a file is plumbing, and one plumbing entry is how
+    a decision log turns into an activity feed and drowns.
+
+    The sentence is the server's, factual and short; the person's own
+    note is carried beside it and beats it on screen when present.
+    """
+    corrections = [
+        one
+        for one in await repository.corrections_of(dossier_id)
+        if one.decided_at is not None
+        and one.state
+        in (
+            CorrectionState.applied,
+            CorrectionState.rejected,
+            CorrectionState.reversed,
+        )
+    ]
+    dismissed = [
+        one
+        for one in await repository.findings_of(
+            dossier_id, state=FindingState.dismissed
+        )
+        if one.dismissed_at is not None
+    ]
+    people = await repository.uploaders(
+        [one.decided_by_id for one in corrections if one.decided_by_id]
+        + [one.dismissed_by_id for one in dismissed if one.dismissed_by_id]
+    )
+
+    entries: list[DecisionRead] = []
+    for one in corrections:
+        where = one.location or f"page {one.page}"
+        if one.state is CorrectionState.applied:
+            action = "accepted"
+            text = f"Accepted {one.after} over {one.before} — {where}."
+        elif one.state is CorrectionState.rejected:
+            action = "kept"
+            text = f"Kept the document's {one.before} — {where}."
+        else:
+            action = "reversed"
+            text = f"Took back {one.after} — {where}. The document reads as it did."
+        entries.append(
+            DecisionRead(
+                id=one.id,
+                who=_uploader(
+                    people.get(one.decided_by_id) if one.decided_by_id else None
+                ),
+                at=one.decided_at,  # type: ignore[arg-type]
+                action=action,
+                text=text,
+            )
+        )
+    for finding in dismissed:
+        entries.append(
+            DecisionRead(
+                id=finding.id,
+                who=_uploader(
+                    people.get(finding.dismissed_by_id)
+                    if finding.dismissed_by_id
+                    else None
+                ),
+                at=finding.dismissed_at,  # type: ignore[arg-type]
+                action="dismissed",
+                text=f"Dismissed « {finding.title} » — {finding.location}.",
+                note=finding.note,
+            )
+        )
+
+    entries.sort(key=lambda one: one.at, reverse=True)
+    return entries
+
+
 def _correction(correction: Correction, decider: User | None = None) -> CorrectionRead:
     return CorrectionRead(
         id=correction.id,
@@ -243,6 +335,7 @@ def _finding(
         standard=finding.standard or None,
         rule=finding.rule or None,
         created_at=finding.created_at,
+        note=finding.note,
     )
 
 
@@ -313,14 +406,54 @@ async def get_deal(
     # browses files.
     documents, _ = await repository.page_artifacts(
         dossier_id,
-        kinds=[ArtifactKind.model, ArtifactKind.deck, ArtifactKind.memo],
+        kinds=[
+            ArtifactKind.model,
+            ArtifactKind.deck,
+            ArtifactKind.memo,
+            ArtifactKind.message,
+            ArtifactKind.source,
+        ],
         limit=MAX_DOCUMENTS,
     )
     by_id = await repository.uploaders([one.uploaded_by_id for one in documents])
     files, lineages = await repository.count_artifacts(dossier_id)
 
     counts = await repository.count_findings(dossier_id)
+
+    # **Stale is the same fact the deals list serves**: a current document
+    # that arrived after the last tie-out finished. The banner's second
+    # line counts what that run actually read — its own artifacts, their
+    # own figure counts — so the sentence is a sum, not an estimate.
+    run = await repository.latest_run(dossier_id, CheckKind.tieout)
+    stale_kind: str | None = None
+    stale_at = None
+    stale_documents = 0
+    stale_figures = 0
+    if run is not None and run.finished_at is not None:
+        for artifact in documents:
+            if artifact.created_at > run.finished_at and (
+                stale_at is None or artifact.created_at > stale_at
+            ):
+                stale_kind = artifact.kind.value
+                stale_at = artifact.created_at
+        if stale_at is not None:
+            # JSONB holds the ids as strings; compare in one spelling.
+            read_ids = {str(one) for one in (run.artifact_ids or [])}
+            for artifact in documents:
+                if (
+                    str(artifact.id) in read_ids
+                    and artifact.kind is not ArtifactKind.model
+                ):
+                    stale_documents += 1
+                    stale_figures += int((artifact.counts or {}).get("figures", 0))
+
     return DealPage(
+        stale=stale_at is not None,
+        stale_kind=stale_kind,
+        stale_at=stale_at,
+        stale_documents=stale_documents,
+        stale_figures=stale_figures,
+        decisions=await _decisions(repository, dossier_id),
         id=deal.id,
         name=deal.name,
         client=deal.client_name,
@@ -413,16 +546,37 @@ async def list_deals(
     for deal in deals:
         counts = await repository.count_findings(deal.id)
         run = await repository.latest_run(deal.id, CheckKind.tieout)
+        current = await repository.current_artifacts(deal.id)
+
+        # **Stale is a fact about timestamps, not a judgement.** A current
+        # document that arrived after the run finished was never read by
+        # it, so everything the run said — including this row's findings
+        # count — describes a deal that no longer exists. The latest such
+        # arrival names the row's sentence.
+        stale_kind: str | None = None
+        stale_at = None
+        if run is not None and run.finished_at is not None:
+            for artifact in current:
+                arrived = artifact.created_at
+                if arrived > run.finished_at and (
+                    stale_at is None or arrived > stale_at
+                ):
+                    stale_kind = artifact.kind.value
+                    stale_at = arrived
+
         items.append(
             DealListItem(
                 id=deal.id,
                 name=deal.name,
                 client=deal.client_name,
-                artifacts=len(await repository.current_artifacts(deal.id)),
+                artifacts=len(current),
                 open_findings=counts.get("open", 0),
                 # The run's own finishing time, not the row's: a run that
                 # was started and never finished has not checked anything.
                 checked_at=run.finished_at if run else None,
+                stale=stale_at is not None,
+                stale_kind=stale_kind,
+                stale_at=stale_at,
             )
         )
     return items
@@ -607,6 +761,94 @@ async def get_artifact(
     return _artifact(artifact, uploader)
 
 
+@router.get("/artifacts/{artifact_id}/versions", response_model=list[VersionRead])
+async def list_versions(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[VersionRead]:
+    """Every upload of this document, newest first.
+
+    Versions share the artifact's lineage: `v3` is the same document as
+    `v1`, uploaded again. Each row carries its own counts, so a screen
+    can say what a version brought without a diff engine behind it.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    versions = [
+        one
+        for one in await repository.list_artifacts(artifact.dossier_id)
+        if one.lineage_id == artifact.lineage_id
+    ]
+    versions.sort(key=lambda one: one.version, reverse=True)
+    people = await repository.uploaders([one.uploaded_by_id for one in versions])
+    return [
+        VersionRead(
+            id=one.id,
+            version=one.version,
+            uploaded_by=_uploader(people.get(one.uploaded_by_id)),
+            uploaded_at=one.created_at,
+            counts=one.counts or {},
+        )
+        for one in versions
+    ]
+
+
+@router.get("/artifacts/{artifact_id}/metadata", response_model=HiddenReport)
+async def get_metadata(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> HiddenReport:
+    """What travels with this file that is not on its screen.
+
+    The metadata checker — speaker notes, hidden slides, very hidden
+    sheets, cropped images, external folder paths — run on the stored
+    bytes, on request. Computed rather than persisted: it is a second's
+    work, it is always about the current version, and a stored copy is
+    one more thing that can silently disagree with the file.
+
+    A file the checker does not read — a PDF, a legacy .doc, a password-
+    protected workbook — comes back with `refused` holding the checker's
+    own sentence. That is an answer about the file, not an error.
+    """
+    from .metadata import NotAnOfficeFile, read_metadata_bytes
+
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        payload = fetch(artifact)
+    except FileNotKept as problem:
+        # The storage sentence talks about correcting; this route is
+        # about reading. Same fact, this route's own words.
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"{artifact.filename} is not stored here any more, so what "
+                "travels with it cannot be read. Upload it again."
+            ),
+        ) from problem
+
+    try:
+        report = read_metadata_bytes(payload)
+    except NotAnOfficeFile as problem:
+        return HiddenReport(kind="", parts=0, findings=[], refused=str(problem))
+
+    return HiddenReport(
+        kind=report.kind,
+        parts=report.parts,
+        findings=[
+            HiddenFinding(
+                rule=one.rule,
+                severity=one.severity,
+                where=one.where,
+                detail=one.detail,
+                evidence=one.evidence,
+            )
+            for one in report.findings
+        ],
+    )
+
+
 @router.delete("/artifacts/{artifact_id}", status_code=204)
 async def delete_artifact(
     artifact_id: UUID,
@@ -765,6 +1007,140 @@ async def list_runs(
     return [one for one in (_run(run) for run in runs) if one is not None]
 
 
+# --- one-off checks ------------------------------------------------------
+
+
+def _one_off(row: OneOffCheck) -> OneOffResult:
+    stored = row.result or {}
+    return OneOffResult(
+        id=row.id,
+        filename=row.filename,
+        kind=row.kind.value,
+        checked_at=row.created_at,
+        against=row.against,
+        dossier_id=row.dossier_id,
+        models=[AgainstModel(**one) for one in stored.get("models", [])],
+        counts=row.counts or {},
+        disagreements=[
+            SoloFindingRead(**one) for one in stored.get("disagreements", [])
+        ],
+        drifts=[OneOffDrift(**one) for one in stored.get("drifts", [])],
+        defects=[OneOffDefect(**one) for one in stored.get("defects", [])],
+    )
+
+
+@router.post("/check-file", response_model=OneOffResult, status_code=201)
+async def check_file(
+    auth_subject: auth.TieOutWrite,
+    upload: UploadFile = File(..., alias="file"),
+    dossier_id: UUID | None = Query(
+        default=None,
+        description="A deal to check the file against. Left out, the file "
+        "is checked on its own.",
+    ),
+    session: AsyncSession = Depends(get_db_session),
+) -> OneOffResult:
+    """Check a loose file, without putting it in any deal.
+
+    The Check-a-file screen. The file is read, checked and dropped in one
+    request — nothing lands in a data room — and the answer is kept as a
+    row of « Recent one-off checks ».
+
+    A deck or a memo is checked against itself; with a deal picked it is
+    also reconciled against that deal's current models. A model is
+    audited — a workbook checked by itself *is* the model audit — and a
+    deal picked alongside one is deliberately ignored: model-against-deal
+    is the grounding, which needs the deal's source documents and is not
+    a one-off, so the result honestly says « on its own ».
+
+    A file that cannot be read is a 422 with the reason in words a person
+    can act on, exactly as an upload would have reported it. Nothing is
+    stored for it: there is no answer to keep.
+    """
+    user = auth_subject.subject
+    deal = await _deal(session, dossier_id, user.id) if dossier_id is not None else None
+
+    payload = await upload.read()
+    if len(payload) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="That file is too large to read.")
+
+    filename = upload.filename or "upload"
+    kind = kind_for(filename)
+    if kind is ArtifactKind.source:
+        raise HTTPException(
+            status_code=415,
+            detail=(
+                "a PDF is a source — it is what other files are checked "
+                "against. A one-off check reads a deck, a model or a memo."
+            ),
+        )
+    if kind is None:
+        raise HTTPException(
+            status_code=415,
+            detail=(
+                f"{filename} is not a file this can check — a deck is "
+                ".pptx, a model is .xlsx or .xls, a memo is .docx"
+            ),
+        )
+
+    try:
+        row = await tieout.check_file(
+            session,
+            user_id=user.id,
+            kind=kind,
+            filename=filename,
+            payload=payload,
+            dossier=deal,
+        )
+    except Unreadable as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return _one_off(row)
+
+
+@router.get("/check-file/recents", response_model=list[RecentCheck])
+async def recent_checks(
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[RecentCheck]:
+    """The caller's own recent one-off checks, newest first.
+
+    Personal, not the team's: a loose file checked before it is anybody's
+    deal is not yet anybody else's business.
+    """
+    repository = TieOutRepository.from_session(session)
+    rows = await repository.recent_checks(auth_subject.subject.id)
+    return [
+        RecentCheck(
+            id=one.id,
+            filename=one.filename,
+            kind=one.kind.value,
+            against=one.against,
+            checked_at=one.created_at,
+            counts=one.counts or {},
+        )
+        for one in rows
+    ]
+
+
+@router.get("/check-file/{check_id}", response_model=OneOffResult)
+async def get_one_off_check(
+    check_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> OneOffResult:
+    """A stored one-off check, replayed exactly as it was answered.
+
+    Nothing re-runs: the file is gone, and a silent re-check against a
+    deal that has since moved would show a different answer under an old
+    date. Only the owner can open it — anyone else gets 404, not 403.
+    """
+    repository = TieOutRepository.from_session(session)
+    row = await repository.get_one_off(check_id, auth_subject.subject.id)
+    if row is None:
+        raise ResourceNotFound("Check not found.")
+    return _one_off(row)
+
+
 # --- findings ------------------------------------------------------------
 
 
@@ -817,8 +1193,30 @@ async def update_finding(
         raise ResourceNotFound("Finding not found.")
     await _deal(session, finding.dossier_id, auth_subject.subject.id)
 
+    # **A dismissal needs a reason, and only a dismissal.** Dismissing
+    # says the check is wrong about this one — the decision somebody
+    # questions three weeks later with the author on holiday. No other
+    # state asks, because a box everyone must type past collects « ok ».
+    if update.state is FindingState.dismissed and not update.note.strip():
+        raise ClaidorRequestValidationError(
+            [
+                {
+                    "loc": ("body", "note"),
+                    "msg": (
+                        "Dismissing says the check is wrong about this one — "
+                        "say why, so the decision survives you moving on."
+                    ),
+                    "type": "value_error",
+                    "input": update.note,
+                }
+            ]
+        )
+
     await repository.set_finding_state(
-        finding, state=update.state, user_id=auth_subject.subject.id
+        finding,
+        state=update.state,
+        user_id=auth_subject.subject.id,
+        note=update.note.strip(),
     )
     filenames = {
         one.id: one.filename

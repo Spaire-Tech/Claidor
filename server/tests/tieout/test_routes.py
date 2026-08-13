@@ -16,6 +16,7 @@ have.
 from pathlib import Path
 
 import pytest
+import sqlalchemy as sa
 from httpx import AsyncClient
 
 from polar.auth.scope import Scope
@@ -271,7 +272,7 @@ class TestTheDealPage:
         assert {one["kind"] for one in body["documents"]} == {"model", "deck"}
         assert body["files"] == 2
         assert body["lineages"] == 2
-        assert body["coverage"]["reconciled"] == 102
+        assert body["coverage"]["reconciled"] == 103
         assert body["coverage"]["drifting"] == 8
         # The coverage line carries its own misses, with reasons.
         assert body["coverage"]["unlinked"] > 0
@@ -441,16 +442,28 @@ class TestFindingsAndTheChain:
         findings = (await client.get(f"/v1/tieout/deals/{deal.id}/findings")).json()
         target = findings[0]["id"]
 
-        dismissed = await client.patch(
+        # A dismissal without a reason is refused: dismissing says the
+        # check is wrong about this one, which is exactly the decision
+        # somebody questions three weeks later.
+        bare = await client.patch(
             f"/v1/tieout/findings/{target}", json={"state": "dismissed"}
+        )
+        assert bare.status_code == 422
+
+        dismissed = await client.patch(
+            f"/v1/tieout/findings/{target}",
+            json={"state": "dismissed", "note": "different basis, agreed"},
         )
         assert dismissed.status_code == 200
         assert dismissed.json()["state"] == "dismissed"
+        assert dismissed.json()["note"] == "different basis, agreed"
 
         back = await client.patch(
             f"/v1/tieout/findings/{target}", json={"state": "open"}
         )
         assert back.json()["state"] == "open"
+        # The note goes with the dismissal it explained.
+        assert back.json()["note"] == ""
 
     @pytest.mark.auth
     async def test_the_chain_reaches_the_model(
@@ -470,6 +483,55 @@ class TestFindingsAndTheChain:
         assert steps[0]["kind"] == "figure"
         assert any(step["kind"] in {"cell", "input"} for step in steps)
         assert response.json()["summary"]
+        # Present on every step, empty on a clean one. The field existing
+        # is what stops the screen having to assume; see the next test for
+        # why an absent field and an empty one are different claims.
+        assert all("unresolved" in step for step in steps)
+
+    @pytest.mark.auth
+    async def test_an_input_the_chain_could_not_follow_reaches_the_screen(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The other half of the answer, all the way through.
+
+        A cell reading something the parser cannot resolve to a cell — a
+        reference into another workbook, a name pointing at `#REF!` — used
+        to produce a chain short by that input and identical to a chain
+        that never had one. Across two real Ofgem models that was 4.4% of
+        formulas, and on one of them the dropped input was the switch
+        deciding what the whole model computed.
+
+        This walks it end to end: engine, database, route, wire.
+        """
+        from polar.models import ModelCell
+
+        deal = await _loaded(session, save_fixture, user)
+        findings = (await client.get(f"/v1/tieout/deals/{deal.id}/findings")).json()
+        chain = (
+            await client.get(f"/v1/tieout/findings/{findings[0]['id']}/chain")
+        ).json()
+        ref = next(
+            step["ref"] for step in chain["steps"] if step["kind"] in {"cell", "input"}
+        )
+
+        cell = (
+            await session.execute(
+                sa.select(ModelCell).where(ModelCell.ref == ref).limit(1)
+            )
+        ).scalar_one()
+        cell.unresolved = [["[1]Group.xlsx!B4", "in another workbook"]]
+        session.add(cell)
+        await session.flush()
+
+        again = (
+            await client.get(f"/v1/tieout/findings/{findings[0]['id']}/chain")
+        ).json()
+        step = next(one for one in again["steps"] if one["ref"] == ref)
+        assert step["unresolved"] == ["in another workbook"]
 
 
 @pytest.mark.asyncio
@@ -878,3 +940,204 @@ class TestThePanelToken:
         assert found is not None
         assert Scope.organizations_write not in found.scopes
         assert set(found.scopes) == {Scope.tieout_read, Scope.tieout_write}
+
+
+@pytest.mark.asyncio
+class TestCheckAFile:
+    """The one-off check: a loose file, no deal required.
+
+    The engine's own rules are pinned in ``test_solo.py``; what is proved
+    here is the route — that the file is checked and dropped, that the
+    answer is kept as a recent and replays whole, and that a recent is
+    its owner's alone.
+    """
+
+    async def test_anonymous_is_refused(self, client: AsyncClient) -> None:
+        response = await client.post(
+            "/v1/tieout/check-file",
+            files={"file": ("deck.pptx", CLEAN.read_bytes(), DECK_MEDIA)},
+        )
+        assert response.status_code == 401
+
+    @pytest.mark.auth
+    async def test_a_deck_alone_is_checked_against_itself(
+        self, client: AsyncClient, user: User
+    ) -> None:
+        response = await client.post(
+            "/v1/tieout/check-file",
+            files={"file": ("cascade_deck.pptx", CLEAN.read_bytes(), DECK_MEDIA)},
+        )
+
+        assert response.status_code == 201
+        body = response.json()
+        assert body["kind"] == "deck"
+        assert body["against"] == ""
+        assert body["dossier_id"] is None
+        assert body["counts"]["figures"] > 0
+        assert body["counts"]["repeated"] >= 2
+        # The slide-3 chart against its table — the drift the clean deck
+        # genuinely carries, and nothing else (see test_solo.py).
+        assert body["counts"]["differences"] == 2
+        assert [one["label"] for one in body["disagreements"]] == [
+            "Adjusted EBITDA FY2023A",
+            "Adjusted EBITDA FY2024A",
+        ]
+        first = body["disagreements"][0]
+        assert first["first"]["printed"] == "37.8"
+        assert first["other"]["printed"] == "30.8"
+        assert first["first"]["page"] == 3
+        assert body["drifts"] == []
+        assert body["defects"] == []
+
+    @pytest.mark.auth
+    async def test_against_a_deal_it_also_meets_the_model(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _loaded(session, save_fixture, user)
+
+        response = await client.post(
+            f"/v1/tieout/check-file?dossier_id={deal.id}",
+            files={"file": ("cascade_deck.pptx", CLEAN.read_bytes(), DECK_MEDIA)},
+        )
+
+        assert response.status_code == 201
+        body = response.json()
+        assert body["against"] == "Project Cascade"
+        assert body["dossier_id"] == str(deal.id)
+        assert [one["filename"] for one in body["models"]] == ["cascade_model.xlsx"]
+        assert body["counts"]["reconciled"] > 0
+        # The clean deck carries real drifts against the model — the
+        # pre-existing set test_cascade.py documents — so this is not
+        # allowed to come back empty.
+        assert body["drifts"]
+        one = body["drifts"][0]
+        assert one["printed"] and one["expected"]
+        assert one["model_artifact_id"] == body["models"][0]["artifact_id"]
+        # And the file still disagrees with itself, deal or no deal.
+        assert len(body["disagreements"]) == 2
+
+    @pytest.mark.auth
+    async def test_a_deal_you_are_not_on_cannot_be_picked(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        deal = await _deal_for(session, save_fixture, stranger)
+
+        response = await client.post(
+            f"/v1/tieout/check-file?dossier_id={deal.id}",
+            files={"file": ("cascade_deck.pptx", CLEAN.read_bytes(), DECK_MEDIA)},
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_a_model_routes_to_the_audit_and_a_deal_is_ignored(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """A workbook checked by itself is the model audit.
+
+        Model-against-deal would be the grounding, which needs the deal's
+        source documents and is not a one-off — so the deal is ignored
+        and the stored answer says « on its own », because that is what
+        ran.
+        """
+        deal = await _deal_for(session, save_fixture, user)
+
+        response = await client.post(
+            f"/v1/tieout/check-file?dossier_id={deal.id}",
+            files={
+                "file": (
+                    "cascade_model.xlsx",
+                    MODEL.read_bytes(),
+                    "application/vnd.openxmlformats-officedocument"
+                    ".spreadsheetml.sheet",
+                )
+            },
+        )
+
+        assert response.status_code == 201
+        body = response.json()
+        assert body["kind"] == "model"
+        assert body["against"] == ""
+        assert body["dossier_id"] is None
+        assert body["counts"]["cells"] > 0
+        assert body["disagreements"] == []
+        assert body["drifts"] == []
+        # Errors and smells are never added into one number; the lists
+        # and counts carry them apart.
+        assert len(body["defects"]) == (
+            body["counts"]["errors"] + body["counts"]["smells"]
+        )
+
+    @pytest.mark.auth
+    async def test_a_pdf_is_refused_as_a_source(self, client: AsyncClient) -> None:
+        response = await client.post(
+            "/v1/tieout/check-file",
+            files={"file": ("accounts.pdf", b"%PDF-1.4", "application/pdf")},
+        )
+        assert response.status_code == 415
+        assert "a source" in response.json()["detail"]
+
+    @pytest.mark.auth
+    async def test_an_unreadable_file_is_a_sentence_and_no_recent(
+        self, client: AsyncClient
+    ) -> None:
+        response = await client.post(
+            "/v1/tieout/check-file",
+            files={"file": ("deck.pptx", b"not a deck", DECK_MEDIA)},
+        )
+        assert response.status_code == 422
+        assert "PowerPoint" in response.json()["detail"]
+
+        recents = await client.get("/v1/tieout/check-file/recents")
+        assert recents.json() == []
+
+    @pytest.mark.auth
+    async def test_a_recent_replays_whole_and_is_private(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        checked = (
+            await client.post(
+                "/v1/tieout/check-file",
+                files={"file": ("cascade_deck.pptx", CLEAN.read_bytes(), DECK_MEDIA)},
+            )
+        ).json()
+
+        recents = (await client.get("/v1/tieout/check-file/recents")).json()
+        assert [one["id"] for one in recents] == [checked["id"]]
+        assert recents[0]["filename"] == "cascade_deck.pptx"
+        assert recents[0]["against"] == ""
+
+        replayed = (
+            await client.get(f"/v1/tieout/check-file/{checked['id']}")
+        ).json()
+        assert replayed == checked
+
+        # Another person's recent does not exist, rather than being
+        # forbidden — same posture as a deal.
+        other = await create_user(save_fixture)
+        theirs = await tieout.check_file(
+            session,
+            user_id=other.id,
+            kind=ArtifactKind.deck,
+            filename="cascade_deck.pptx",
+            payload=CLEAN.read_bytes(),
+        )
+        await session.flush()
+        response = await client.get(f"/v1/tieout/check-file/{theirs.id}")
+        assert response.status_code == 404

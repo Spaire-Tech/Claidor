@@ -449,7 +449,7 @@ async def extract(
                 }
             ],
         )
-    except Exception as error:  # noqa: BLE001
+    except Exception as error:
         report.failures.append(f"{document.title}: {error}")
         log.warning(
             "dossier.crosscheck.extract_failed",
@@ -501,7 +501,7 @@ async def compare(
                 }
             ],
         )
-    except Exception as error:  # noqa: BLE001
+    except Exception as error:
         report.failures.append(f"comparison: {error}")
         log.warning("dossier.crosscheck.compare_failed", error=str(error))
         return []

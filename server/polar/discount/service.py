@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 
 from polar.auth.models import AuthSubject, is_organization, is_user
 from polar.discount.repository import DiscountRepository
-from polar.exceptions import PolarError, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, PolarError
 from polar.kit.db.locking import is_lock_not_available_error
 from polar.kit.pagination import PaginationParams, paginate
 from polar.kit.services import ResourceServiceReader

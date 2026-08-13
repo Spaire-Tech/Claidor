@@ -13,7 +13,7 @@ from polar.dispute.repository import DisputeRepository
 from polar.enums import PaymentProcessor
 from polar.event.service import event as event_service
 from polar.event.system import OrderRefundedMetadata, SystemEvent, build_system_event
-from polar.exceptions import PolarError, ResourceNotFound, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, PolarError, ResourceNotFound
 from polar.integrations.stripe.service import stripe as stripe_service
 from polar.integrations.stripe.utils import get_expandable_id
 from polar.kit.db.postgres import AsyncSession

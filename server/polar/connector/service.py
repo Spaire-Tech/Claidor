@@ -305,6 +305,62 @@ class ConnectorService:
             )
         return result
 
+    # --- mail -----------------------------------------------------------
+
+    async def check_message(
+        self,
+        session: AsyncSession,
+        *,
+        dossier_id: UUID,
+        connection: Connection,
+        message_id: str,
+        user_id: UUID,
+        client: httpx.AsyncClient | None = None,
+    ) -> Any:
+        """Read one message into the deal and reconcile it.
+
+        **One message, on a press, and never the mailbox.** A product that
+        quietly read every mail somebody received would be a surveillance
+        tool that also checks numbers, and the only thing stopping it from
+        becoming one is that this takes an id. What gets checked is what
+        somebody opened.
+
+        Re-checking the same message is a *version* of it, exactly as
+        re-uploading a deck is, keyed on Graph's `changeKey`: a draft
+        being edited between two checks is a new draft, and « the figure
+        we flagged is not in there any more » has to be answerable.
+        """
+        from polar.tieout.service import tieout
+
+        graph = await self.client_for(session, connection=connection, client=client)
+        try:
+            message = await graph.message(message_id)
+        except GraphError as problem:
+            raise ConnectorError(str(problem)) from problem
+
+        repository = ConnectorRepository.from_session(session)
+        known = (await repository.artifacts_by_external_id(dossier_id)).get(message.id)
+        if known is not None and known.external_version == message.change_key:
+            # Unchanged since it was last read. Re-running the check is
+            # still right — the *model* may have moved under it, which is
+            # the ordinary case — but re-reading the message is not.
+            return await tieout.run_tieout(
+                session, dossier_id=dossier_id, user_id=user_id
+            )
+
+        await tieout.ingest_message(
+            session,
+            dossier_id=dossier_id,
+            subject=message.subject,
+            body=message.body,
+            html=message.body_type == "html",
+            user_id=user_id,
+            external_id=message.id,
+            external_version=message.change_key,
+            lineage_of=known.lineage_id if known is not None else None,
+        )
+        return await tieout.run_tieout(session, dossier_id=dossier_id, user_id=user_id)
+
     # --- reading --------------------------------------------------------
 
     async def connection_for(

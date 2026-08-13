@@ -1,4 +1,7 @@
 import { Workspace } from '@/components/Workspace/Workspace'
+import { getServerSideAPI } from '@/utils/client/serverside'
+import { getOrganizationBySlugOrNotFound } from '@/utils/organization'
+import { getAuthenticatedUser } from '@/utils/user'
 import { Metadata } from 'next'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -6,30 +9,49 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * The workspace, and the only thing at the root of a deal.
+ * The workspace, and the only thing at the root of an organization.
  *
  * It fills the viewport and carries its own chrome — the dock is the
- * navigation and the two panels are the page — so there is nothing around
- * it here. The layout above provides the organization context and stops at
- * that.
- *
- * `?deal=<id>` names a deal; without one the workspace takes the first the
- * caller is on, which is the normal case while a firm is running one.
+ * navigation and the floating cards are the page — so there is nothing
+ * around it here. The organization and the signed-in person are resolved
+ * server-side and passed down: the connector needs the first, the dock's
+ * avatar and popover need the second.
  */
 export default async function Page(props: {
-  searchParams: Promise<{ deal?: string }>
+  params: Promise<{ organization: string }>
 }) {
-  const { deal } = await props.searchParams
+  const params = await props.params
+  const api = await getServerSideAPI()
+  const organization = await getOrganizationBySlugOrNotFound(
+    api,
+    params.organization,
+  )
+  const user = await getAuthenticatedUser()
+
+  //: The account carries no display name — only an email. « e.whitmore »
+  //: reads as « E. Whitmore »: a derivation from real data, never an
+  //: invention. The popover shows the email underneath either way.
+  const name = (user?.email ?? '')
+    .split('@')[0]!
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) =>
+      part.length === 1
+        ? `${part.toUpperCase()}.`
+        : part[0]!.toUpperCase() + part.slice(1),
+    )
+    .join(' ')
 
   return (
     <>
-      {/* The three faces the design uses, loaded by name because every
-          surface sets them inline from `design.ts`. */}
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Cormorant+Garamond:wght@300;400;500&display=swap"
+      {/* Both faces — Switzer and IBM Plex Mono — are self-hosted from
+          the design's own binaries, loaded by workspace.css. No external
+          font host. */}
+      <Workspace
+        userName={name || 'Signed in'}
+        userEmail={user?.email ?? ''}
+        organizationId={organization.id}
       />
-      <Workspace dealId={deal ?? ''} />
     </>
   )
 }

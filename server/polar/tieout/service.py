@@ -28,9 +28,11 @@ from polar.models import (
     CheckKind,
     CheckRun,
     CheckStatus,
+    Dossier,
     FindingKind,
     FindingSeverity,
     LinkState,
+    OneOffCheck,
 )
 from polar.models import Figure as FigureRow
 from polar.models import FigureLink as LinkRow
@@ -43,11 +45,13 @@ from .check import compare
 from .ingest import Ingested, Unreadable, read_artifact
 from .link import link as propose_links
 from .link import rank as rank_outputs
+from .message import read_message
 from .model import Output
 from .numbers import show
 from .provenance import chain as render_chain
 from .provenance import inputs_from_workbook, outputs_from_workbook
 from .repository import TieOutRepository
+from .solo import Statement, disagreements, repeated
 from .workbook import Cell as EngineCell
 from .workbook import Workbook
 
@@ -119,6 +123,65 @@ class TieOutService:
         await session.flush()
         return artifact
 
+    async def ingest_message(
+        self,
+        session: AsyncSession,
+        *,
+        dossier_id: UUID,
+        subject: str,
+        body: str,
+        html: bool,
+        user_id: UUID,
+        external_id: str,
+        external_version: str,
+        lineage_of: UUID | None = None,
+    ) -> Artifact:
+        """Read an email into rows, so it can be checked like anything else.
+
+        Sibling to :meth:`ingest` rather than a branch inside it, because a
+        message is not a file: there are no bytes, no suffix and nothing to
+        keep. What comes out is identical — figures, named, located — and
+        from there the tie-out cannot tell it from a memo, which is the
+        point.
+
+        **Nothing is stored.** :meth:`ingest` keeps the document because a
+        correction has to write a new version of a real file; a message is
+        corrected in Outlook and never here, so there is nothing a stored
+        copy of somebody's mail would make possible. What is kept is what
+        is kept for every document: the figures, and the sentence each one
+        was found in.
+        """
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.create_artifact(
+            dossier_id=dossier_id,
+            kind=ArtifactKind.message,
+            # The subject *is* the name of this document, and it is the
+            # name a person would use for it.
+            filename=subject.strip() or "(no subject)",
+            uploaded_by_id=user_id,
+            external_id=external_id,
+            external_version=external_version,
+            lineage_of=lineage_of,
+        )
+
+        extraction = read_message(subject, body, html=html)
+        ingested = Ingested(
+            figures=extraction.figures,
+            counts={
+                "figures": len(extraction.figures),
+                "paragraphs_with_figures": len(
+                    {one.location for one in extraction.figures}
+                ),
+            },
+        )
+        await self._persist(session, artifact, ingested)
+        artifact.status = ArtifactStatus.ready
+        artifact.counts = ingested.counts
+        artifact.error = None
+        session.add(artifact)
+        await session.flush()
+        return artifact
+
     async def _persist(
         self, session: AsyncSession, artifact: Artifact, ingested: Ingested
     ) -> None:
@@ -163,6 +226,7 @@ class TieOutService:
                         number_format=cell.number_format,
                         name=cell.name,
                         precedents=list(cell.precedents),
+                        unresolved=[list(one) for one in cell.unresolved],
                         alias_of=cell.alias_of,
                     )
                     for cell in ingested.cells
@@ -185,9 +249,12 @@ class TieOutService:
         # A memo is checked exactly as a deck is: printed figures, named
         # by the words around them, reconciled against the model. The only
         # difference is that it has paragraphs where a deck has slides,
-        # and that difference lives in the reader, not here.
+        # and that difference lives in the reader, not here. A message is
+        # the same sentence again — it asserts figures, so it is checked.
         decks = [
-            one for one in current if one.kind in (ArtifactKind.deck, ArtifactKind.memo)
+            one
+            for one in current
+            if one.kind in (ArtifactKind.deck, ArtifactKind.memo, ArtifactKind.message)
         ]
         models = [one for one in current if one.kind is ArtifactKind.model]
 
@@ -458,9 +525,9 @@ class TieOutService:
                 totals["agreeing"] += len(agreed)
                 totals["contradicting"] += len(contradictions)
                 totals["unlinked"] += len(unlinked)
-                for item in unlinked:
-                    reasons[_reason(item.reason)] = (
-                        reasons.get(_reason(item.reason), 0) + 1
+                for miss in unlinked:
+                    reasons[_reason(miss.reason)] = (
+                        reasons.get(_reason(miss.reason), 0) + 1
                     )
 
                 for item in proposed:
@@ -544,6 +611,143 @@ class TieOutService:
                     )
                 ],
             },
+        )
+
+    async def check_file(
+        self,
+        session: AsyncSession,
+        *,
+        user_id: UUID,
+        kind: ArtifactKind,
+        filename: str,
+        payload: bytes,
+        dossier: Dossier | None = None,
+    ) -> OneOffCheck:
+        """Check a loose file, keep the answer, drop the file.
+
+        The one check that runs outside any deal's data room. What runs
+        depends on what the file is:
+
+        - **A deck or a memo alone** is checked against itself — the solo
+          check, one name carrying two figures.
+        - **A deck or a memo against a deal** additionally reconciles its
+          figures with every current model in that deal, through the same
+          two-pass linker and comparison as the deal's own tie-out. The
+          solo findings still ride along: the file disagreeing with
+          itself is worth saying whatever it was checked against.
+        - **A model** is audited — a workbook checked by itself *is* the
+          model audit, which has its own rules and cites its standards.
+          A deal picked alongside a model is deliberately not a check:
+          model-against-deal is the grounding, which needs the deal's
+          source documents and is not a one-off — the stored row says
+          « on its own », because that is what ran.
+
+        Nothing is uploaded anywhere: the bytes are read in a temporary
+        file and discarded, and the row keeps the counts and findings
+        exactly as the screen received them, so a recent reopens to the
+        same answer. `Unreadable` propagates to the caller with its
+        reason in words.
+        """
+        ingested = read_artifact(payload, filename, kind)
+        counts: dict[str, Any] = dict(ingested.counts)
+        # A sheet listing is layout for the model page, not a tally.
+        counts.pop("sheet_order", None)
+        result: dict[str, Any] = {
+            "disagreements": [],
+            "drifts": [],
+            "defects": [],
+            "models": [],
+        }
+        checked_against = ""
+
+        if kind is ArtifactKind.model:
+            result["defects"] = [
+                {
+                    "rule": defect.rule,
+                    "severity": defect.severity,
+                    "ref": defect.ref,
+                    "sheet": defect.sheet,
+                    "name": defect.name,
+                    "detail": defect.detail,
+                    "standard": defect.source,
+                }
+                for defect in ingested.defects
+            ]
+        else:
+            extraction = engine_figures.Extraction(figures=list(ingested.figures))
+            found = disagreements(extraction)
+            counts["repeated"] = repeated(extraction)
+            result["disagreements"] = [
+                {
+                    "label": one.label,
+                    "statements": one.statements,
+                    "first": _statement_json(one.first),
+                    "other": _statement_json(one.other),
+                }
+                for one in found
+            ]
+
+            if dossier is not None:
+                repository = TieOutRepository.from_session(session)
+                models = [
+                    one
+                    for one in await repository.current_artifacts(dossier.id)
+                    if one.kind is ArtifactKind.model
+                ]
+                totals = {"reconciled": 0, "agreeing": 0, "unlinked": 0}
+                for model in models:
+                    cells = await repository.cells_of(model.id)
+                    book = _workbook_of(cells)
+                    candidates = _candidates(book, cells, model.outputs)
+                    proposed, unlinked = _both_passes(
+                        list(ingested.figures), candidates
+                    )
+                    drifts, agreed = compare(proposed)
+                    totals["reconciled"] += len(proposed)
+                    totals["agreeing"] += len(agreed)
+                    totals["unlinked"] += len(unlinked)
+                    result["models"].append(
+                        {
+                            "artifact_id": str(model.id),
+                            "filename": model.filename,
+                            "version": model.version,
+                            "read_at": model.created_at.isoformat(),
+                        }
+                    )
+                    for drift in drifts:
+                        result["drifts"].append(
+                            {
+                                "printed": drift.printed,
+                                "expected": drift.expected,
+                                "label": drift.name,
+                                "page": drift.slide,
+                                "location": drift.location,
+                                "context": drift.context,
+                                "ref": drift.ref,
+                                "name": drift.name,
+                                "basis": drift.basis,
+                                "confidence": round(drift.confidence, 3),
+                                "one_tick": drift.one_tick,
+                                "model_artifact_id": str(model.id),
+                            }
+                        )
+                counts.update(totals)
+                counts["drifting"] = len(result["drifts"])
+                checked_against = dossier.name
+
+        counts["differences"] = len(result["disagreements"]) + len(result["drifts"])
+
+        repository = TieOutRepository.from_session(session)
+        return await repository.save_one_off(
+            OneOffCheck(
+                user_id=user_id,
+                dossier_id=dossier.id if dossier and checked_against else None,
+                against=checked_against,
+                filename=filename,
+                kind=kind,
+                counts=counts,
+                result=result,
+            )
         )
 
     # --- reading --------------------------------------------------------
@@ -1058,6 +1262,11 @@ def _workbook_of(cells: Sequence[CellRow]) -> Workbook:
             row_label=row.row_label,
             column_label=row.column_label,
             precedents=tuple(row.precedents or ()),
+            unresolved=tuple(
+                (str(one[0]), str(one[1]))
+                for one in (row.unresolved or [])
+                if len(one) == 2
+            ),
             alias_of=row.alias_of,
         )
     book.sheets = list(dict.fromkeys(row.sheet for row in cells))
@@ -1086,6 +1295,16 @@ class _Candidates:
         #: with no Outputs tab, which is most of them.
         self.workbook = workbook
         self.cells = cells
+
+
+def _statement_json(statement: Statement) -> dict[str, Any]:
+    return {
+        "printed": statement.printed,
+        "location": statement.location,
+        "page": statement.page,
+        "section": statement.section,
+        "context": statement.context,
+    }
 
 
 def _candidates(
@@ -1198,6 +1417,11 @@ def _steps_from(
                 "basis": basis if len(steps) == 0 else None,
                 "note": None if cell.formula else "typed, not calculated",
                 "inputs": inputs,
+                # Carried to the screen rather than counted. « Four inputs
+                # and one we could not follow » is a different sentence
+                # from « four inputs », and a banker deciding whether to
+                # trust a number needs the second half of it.
+                "unresolved": [why for _, why in cell.unresolved],
             }
         )
         if not cell.formula:

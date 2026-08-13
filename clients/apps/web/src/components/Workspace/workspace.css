@@ -1,20 +1,62 @@
 /**
- * The design's own stylesheet, verbatim.
+ * The design's own stylesheet, verbatim, plus the fonts it assumes.
  *
- * Copied from `docs/pierce/design/stylesheet.css`. Everything else in the
- * workspace is inline style, because the design is inline style; these are
- * the four things that cannot be — keyframes, a scrollbar, a wrapping
- * ribbon, and the reset the design assumes.
+ * Copied from `docs/pierce/design/stylesheet.css` (12 August workspace).
+ * Everything else in the workspace is inline style, because the design is
+ * inline style; these are the things that cannot be — keyframes, the
+ * scrollbar, the reset, and @font-face.
  *
- * This file is not optional decoration. `pcIn` and `pcDim` are referenced
- * by name from half a dozen components; without it, `animation: pcIn .18s
- * ease both` is a string the browser discards in silence. Nothing errors,
- * nothing animates, and the screens are subtly dead.
+ * The keyframes are referenced by name from the components; without this
+ * file `animation: pcIn .14s ease both` is a string the browser discards
+ * in silence. Nothing errors, nothing animates, and the screens are
+ * subtly dead.
  *
- * Scoped to `.pc-workspace` where scoping is possible, because this app has
- * other pages and they are not this design. The keyframes cannot be scoped
- * — keyframe names are global — and are prefixed instead.
+ * Scoped to `.pc-workspace` where scoping is possible, because this app
+ * has other pages and they are not this design. Keyframe names are global
+ * and are prefixed instead.
  */
+
+/* Switzer — the design's face, extracted from the design file itself and
+   self-hosted. 400/500/600, exactly the weights the markup uses. */
+@font-face {
+  font-family: 'Switzer';
+  src: url('/workspace/switzer-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url('/workspace/switzer-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url('/workspace/switzer-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+  font-style: normal;
+}
+
+/* IBM Plex Mono — the model grid's face. Self-hosted from the design's
+   own binaries (latin subset), because an external font host is a
+   dependency the product does not need and this container cannot reach. */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/workspace/plexmono-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/workspace/plexmono-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
 
 .pc-workspace,
 .pc-workspace * {
@@ -45,22 +87,12 @@
   background-clip: content-box;
 }
 
-/* A ribbon scrolls sideways with no visible bar; below the breakpoint it
-   wraps instead, which is what `.ribbon-wrap` is for. */
-.pc-workspace .ribbon::-webkit-scrollbar {
-  height: 0;
-  display: none;
-}
-
-.pc-workspace .ribbon {
-  scrollbar-width: none;
-}
-
-.pc-workspace .ribbon-wrap {
-  flex-wrap: wrap;
-  overflow: visible !important;
-  white-space: normal !important;
-  row-gap: 4px;
+/* The design's writing boxes carry no border, no outline, no underline —
+   focus, where it exists at all, is a soft glow set inline. This kills
+   the user-agent focus ring so nothing square ever appears. */
+.pc-workspace input,
+.pc-workspace textarea {
+  outline: none;
 }
 
 @keyframes pcIn {
@@ -74,6 +106,12 @@
   }
 }
 
+@keyframes pcSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes pcDim {
   0%,
   100% {
@@ -81,5 +119,18 @@
   }
   50% {
     opacity: 0.9;
+  }
+}
+
+@keyframes pcDot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-3px);
+    opacity: 1;
   }
 }

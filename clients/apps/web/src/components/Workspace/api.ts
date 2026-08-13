@@ -99,6 +99,17 @@ export interface ChainStep {
   basis?: string | null
   note?: string | null
   inputs: { ref: string; name: string; value: string | null }[]
+  /**
+   * What this step reads that could not be followed, each already a
+   * sentence — "in another workbook, which is not in this deal", "a
+   * defined name pointing at #REF!".
+   *
+   * **Not yet rendered anywhere.** The engine and the wire carry it; no
+   * screen shows it. Measured across two real Ofgem models, 4.4% of
+   * formulas had a chain short by an input and no way to say so, so a
+   * chain drawn without this is a chain that may be quietly incomplete.
+   */
+  unresolved: string[]
 }
 
 export interface Chain {
@@ -140,6 +151,17 @@ export interface DealListItem {
    * share a word would be claiming a check nobody ran.
    */
   checked_at: string | null
+  /**
+   * A current document arrived after that check, so its results are out
+   * of date. The row leads with this over any count, because the count
+   * is one of the things that is now stale.
+   */
+  stale: boolean
+  /** What changed after the check — an artifact kind — and when. The
+   *  server sends the fact; the sentence is built here, where the
+   *  reader's clock lives. */
+  stale_kind: string | null
+  stale_at: string | null
 }
 
 export interface Link {
@@ -239,6 +261,30 @@ export interface DriveItem {
   content_tag: string
 }
 
+/** One email, as the mail screen draws it. */
+export interface MailMessage {
+  id: string
+  subject: string
+  from_name: string
+  from_email: string
+  to: string[]
+  received_at: string
+  preview: string
+  is_draft: boolean
+  is_read: boolean
+  has_attachments: boolean
+  /** Empty in a listing; present when one message is opened. */
+  body: string
+  /**
+   * The artifact this was read into, when it has been checked. **Null
+   * means nobody has checked it** — a different sentence from « checked
+   * and clean », and the screen says which.
+   */
+  artifact_id: string | null
+  /** Whether what was checked is what is on screen. */
+  current: boolean
+}
+
 /** Where a deal's files are, and what the last sync made of it. */
 export interface ConnectedFolder {
   id: string
@@ -297,6 +343,28 @@ export interface DealPage {
    */
   last_tieout: CheckRun | null
   last_audit: CheckRun | null
+  /** A current document arrived after that check — same fact and fields
+   *  as the deals list, plus what the banner's second line counts. */
+  stale: boolean
+  stale_kind: string | null
+  stale_at: string | null
+  stale_documents: number
+  stale_figures: number
+  /** What the team decided, newest first. Derived server-side from the
+   *  findings and corrections it describes — never authored. */
+  decisions: Decision[]
+}
+
+/** One judgement somebody made about a number. */
+export interface Decision {
+  id: string
+  who: { id: string; name: string; avatar_url: string | null } | null
+  at: string
+  action: 'accepted' | 'kept' | 'reversed' | 'dismissed'
+  /** The server's factual sentence. */
+  text: string
+  /** The person's reason, verbatim. Beats `text` on screen when present. */
+  note: string
 }
 
 export interface Coverage {
@@ -375,6 +443,36 @@ export interface ModelGrid {
     rows: { label: string; cells: (GridCell | null)[] }[]
     rows_total: number
   }[]
+}
+
+/** One thing in the file that is not on its screen. */
+export interface HiddenFinding {
+  rule: string
+  /** `leak` — content a recipient can read that the sender did not put
+   *  on the page. `trace` — who, when, how it was filed. Never added. */
+  severity: 'leak' | 'trace'
+  where: string
+  detail: string
+  evidence: string
+}
+
+/** The metadata checker on the wire — computed from the stored bytes. */
+export interface HiddenReport {
+  kind: string
+  parts: number
+  findings: HiddenFinding[]
+  /** The checker's refusal sentence for a file it does not read — a PDF,
+   *  a legacy .doc. An answer about the file, not an error. */
+  refused: string | null
+}
+
+/** One upload of a document, newest first. */
+export interface Version {
+  id: string
+  version: number
+  uploaded_by: { id: string; name: string; avatar_url: string | null } | null
+  uploaded_at: string
+  counts: Record<string, unknown>
 }
 
 export class ApiError extends Error {
@@ -497,10 +595,14 @@ export class TieOutApi {
     return this.call(`/findings/${findingId}/chain`)
   }
 
-  dismiss(findingId: string, state: Finding['state']): Promise<Finding> {
+  dismiss(
+    findingId: string,
+    state: Finding['state'],
+    note = '',
+  ): Promise<Finding> {
     return this.call(`/findings/${findingId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ state }),
+      body: JSON.stringify({ state, note }),
     })
   }
 
@@ -625,6 +727,15 @@ export class TieOutApi {
   }
 
   /** Every figure in a document, by page, and what became of each. */
+  versions(artifactId: string): Promise<Version[]> {
+    return this.call(`/artifacts/${artifactId}/versions`)
+  }
+
+  /** What travels with this file that is not on its screen. */
+  metadata(artifactId: string): Promise<HiddenReport> {
+    return this.call(`/artifacts/${artifactId}/metadata`)
+  }
+
   figures(artifactId: string): Promise<FigureMap> {
     return this.call(`/artifacts/${artifactId}/figures`)
   }
@@ -733,6 +844,26 @@ export class TieOutApi {
   /** Read what has changed, and re-check the deal. */
   syncFolder(dealId: string): Promise<ConnectedFolder> {
     return this.at(`/v1/connector/deals/${dealId}/sync`, { method: 'POST' })
+  }
+
+  // --- mail -------------------------------------------------------------
+
+  mail(dealId: string, folder: string): Promise<MailMessage[]> {
+    return this.at(`/v1/connector/deals/${dealId}/mail?folder=${folder}`)
+  }
+
+  message(dealId: string, messageId: string): Promise<MailMessage> {
+    return this.at(
+      `/v1/connector/deals/${dealId}/mail/${encodeURIComponent(messageId)}`,
+    )
+  }
+
+  /** Read this message into the deal and reconcile it. On a press. */
+  checkMessage(dealId: string, messageId: string): Promise<MailMessage> {
+    return this.at(
+      `/v1/connector/deals/${dealId}/mail/${encodeURIComponent(messageId)}/check`,
+      { method: 'POST' },
+    )
   }
 
   disconnect(connectionId: string): Promise<void> {

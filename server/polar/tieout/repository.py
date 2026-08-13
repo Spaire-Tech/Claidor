@@ -37,6 +37,7 @@ from polar.models import (
     FindingState,
     LinkState,
     ModelCell,
+    OneOffCheck,
     User,
 )
 
@@ -111,9 +112,7 @@ class TieOutRepository(RepositoryBase[Artifact]):
         filename, which is a guess and has always been one, and keeps it.
         """
         lineage_id = (
-            lineage_of
-            or await self.find_lineage(dossier_id, filename)
-            or uuid4()
+            lineage_of or await self.find_lineage(dossier_id, filename) or uuid4()
         )
         version = await self.next_version(dossier_id, lineage_id)
         artifact = Artifact(
@@ -659,15 +658,20 @@ class TieOutRepository(RepositoryBase[Artifact]):
         return (await self.session.execute(statement)).scalar_one_or_none()
 
     async def set_finding_state(
-        self, finding: Finding, *, state: FindingState, user_id: UUID
+        self, finding: Finding, *, state: FindingState, user_id: UUID, note: str = ""
     ) -> Finding:
         finding.state = state
         if state is FindingState.dismissed:
             finding.dismissed_by_id = user_id
             finding.dismissed_at = datetime.now(UTC)
+            finding.note = note
         else:
             finding.dismissed_by_id = None
             finding.dismissed_at = None
+            # The note goes with the dismissal it explained. Reopening a
+            # finding and keeping the old reason would attach yesterday's
+            # judgement to tomorrow's state.
+            finding.note = ""
         self.session.add(finding)
         await self.session.flush()
         return finding
@@ -720,6 +724,41 @@ class TieOutRepository(RepositoryBase[Artifact]):
     async def get_correction(self, correction_id: UUID) -> Correction | None:
         statement = select(Correction).where(
             Correction.id == correction_id, Correction.deleted_at.is_(None)
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    # --- one-off checks -------------------------------------------------
+
+    async def save_one_off(self, check: OneOffCheck) -> OneOffCheck:
+        self.session.add(check)
+        await self.session.flush()
+        return check
+
+    async def recent_checks(
+        self, user_id: UUID, *, limit: int = 20
+    ) -> Sequence[OneOffCheck]:
+        """One person's recent one-off checks, newest first.
+
+        Scoped to the person, not the organization: a loose file checked
+        before it is anybody's deal is not yet the team's business.
+        """
+        statement = (
+            select(OneOffCheck)
+            .where(
+                OneOffCheck.user_id == user_id,
+                OneOffCheck.deleted_at.is_(None),
+            )
+            .order_by(OneOffCheck.created_at.desc())
+            .limit(limit)
+        )
+        return (await self.session.execute(statement)).scalars().all()
+
+    async def get_one_off(self, check_id: UUID, user_id: UUID) -> OneOffCheck | None:
+        """One stored check — only ever its owner's."""
+        statement = select(OneOffCheck).where(
+            OneOffCheck.id == check_id,
+            OneOffCheck.user_id == user_id,
+            OneOffCheck.deleted_at.is_(None),
         )
         return (await self.session.execute(statement)).scalar_one_or_none()
 

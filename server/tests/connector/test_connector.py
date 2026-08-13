@@ -64,6 +64,8 @@ class FakeGraph:
         self.downloads: list[str] = []
         self.token_calls: list[dict[str, str]] = []
         self.refresh_token = "refresh-1"
+        #: Messages, by folder. Keyed the way Graph addresses them.
+        self.mail: dict[str, list[dict[str, Any]]] = {}
 
     def transport(self) -> httpx.MockTransport:
         return httpx.MockTransport(self._handle)
@@ -119,6 +121,23 @@ class FakeGraph:
                 200, json={"value": [{"id": "drive-2", "name": "Documents"}]}
             )
 
+        if "/mailFolders/" in url:
+            folder = url.split("/mailFolders/")[1].split("/")[0]
+            return httpx.Response(
+                200,
+                json={"value": [_graph_mail(one) for one in self.mail.get(folder, [])]},
+            )
+
+        if "/me/messages/" in url:
+            message_id = url.rsplit("/me/messages/", 1)[1]
+            for held in self.mail.values():
+                for one in held:
+                    if one["id"] == message_id:
+                        return httpx.Response(200, json=_graph_mail(one, body=True))
+            return httpx.Response(
+                404, json={"error": {"message": "The message was not found."}}
+            )
+
         if "/content" in url:
             item_id = url.split("/items/")[1].split("/content")[0]
             self.downloads.append(item_id)
@@ -155,6 +174,45 @@ def _graph_item(one: dict[str, Any]) -> dict[str, Any]:
     if one.get("folder"):
         payload["folder"] = {"childCount": 0}
     return payload
+
+
+def _graph_mail(one: dict[str, Any], body: bool = False) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "id": one["id"],
+        "changeKey": one.get("change_key", "k1"),
+        "subject": one.get("subject", ""),
+        "from": {
+            "emailAddress": {
+                "name": one.get("from", "J. Mercer"),
+                "address": "j.mercer@rothmoor.example",
+            }
+        },
+        "toRecipients": [{"emailAddress": {"address": "helena.vos@kestrel.example"}}],
+        "receivedDateTime": "2026-08-11T08:22:00Z",
+        "bodyPreview": one.get("body", "")[:80],
+        "isDraft": one.get("draft", False),
+        "isRead": True,
+        "hasAttachments": False,
+    }
+    if body:
+        payload["body"] = {"contentType": "html", "content": one.get("body", "")}
+    return payload
+
+
+def a_message(
+    subject: str,
+    body: str,
+    id: str = "msg-1",
+    change_key: str = "k1",
+    draft: bool = True,
+) -> dict[str, Any]:
+    return {
+        "id": id,
+        "subject": subject,
+        "body": body,
+        "change_key": change_key,
+        "draft": draft,
+    }
 
 
 def a_file(name: str, path: Path, ctag: str = "c1", id: str = "") -> dict[str, Any]:
@@ -614,6 +672,248 @@ class TestTheSync:
                 item_id="item-model",
                 client=graph.client(),
             )
+
+
+# --- mail ----------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+class TestMail:
+    async def test_a_draft_is_checked_against_the_model(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The whole argument for reading mail.
+
+        A deck can be pulled back out of a data room. A sent message
+        cannot be pulled back out of anything, so a figure that is wrong
+        in a draft is the one worth catching before the press.
+        """
+        owner = await create_user(save_fixture)
+        graph = FakeGraph()
+        deal, folder = await _connected(
+            session, save_fixture, owner, graph, monkeypatch
+        )
+        graph.items = [a_file("cascade_model.xlsx", MODEL)]
+        await connector.sync(
+            session, folder=folder, user_id=owner.id, client=graph.client()
+        )
+        await session.flush()
+
+        # The model says 228.9. The draft says 235.3 — a paper written
+        # against last week's model, which is the realistic failure.
+        graph.mail["drafts"] = [
+            a_message(
+                "Cascade — FY2025A summary",
+                "<p>The business generated $235.3mm of revenue in FY2025A.</p>",
+            )
+        ]
+        await connector.check_message(
+            session,
+            dossier_id=deal.id,
+            connection=(
+                await ConnectorRepository.from_session(session).get(
+                    folder.connection_id
+                )
+            ),
+            message_id="msg-1",
+            user_id=owner.id,
+            client=graph.client(),
+        )
+        await session.flush()
+
+        repository = TieOutRepository.from_session(session)
+        messages = [
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.message
+        ]
+        assert len(messages) == 1
+        assert messages[0].filename == "Cascade — FY2025A summary"
+
+        drifts = [
+            one
+            for one in await repository.findings_of(deal.id)
+            if one.artifact_id == messages[0].id
+        ]
+        assert [one.printed for one in drifts] == ["$235.3mm"]
+        assert drifts[0].expected == "$228.9mm"
+
+    async def test_an_edited_draft_is_a_new_version_of_the_same_draft(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Somebody fixes the figure and checks again.
+
+        Not a second message in the deal — the same one, moved on. « The
+        figure we flagged is not in there any more » has to be answerable,
+        and it is only answerable if both versions are on one lineage.
+        """
+        owner = await create_user(save_fixture)
+        graph = FakeGraph()
+        deal, folder = await _connected(
+            session, save_fixture, owner, graph, monkeypatch
+        )
+        graph.items = [a_file("cascade_model.xlsx", MODEL)]
+        await connector.sync(
+            session, folder=folder, user_id=owner.id, client=graph.client()
+        )
+        await session.flush()
+        connection = await ConnectorRepository.from_session(session).get(
+            folder.connection_id
+        )
+        assert connection is not None
+
+        async def check() -> None:
+            await connector.check_message(
+                session,
+                dossier_id=deal.id,
+                connection=connection,
+                message_id="msg-1",
+                user_id=owner.id,
+                client=graph.client(),
+            )
+            await session.flush()
+
+        graph.mail["drafts"] = [
+            a_message(
+                "Cascade — FY2025A summary",
+                "<p>The business generated $235.3mm of revenue in FY2025A.</p>",
+            )
+        ]
+        await check()
+
+        graph.mail["drafts"] = [
+            a_message(
+                "Cascade — FY2025A summary",
+                "<p>The business generated $228.9mm of revenue in FY2025A.</p>",
+                change_key="k2",
+            )
+        ]
+        await check()
+
+        repository = TieOutRepository.from_session(session)
+        messages = [
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.message
+        ]
+        assert len(messages) == 1
+        assert messages[0].version == 2
+        assert [
+            one
+            for one in await repository.findings_of(deal.id)
+            if one.artifact_id == messages[0].id
+        ] == []
+
+    async def test_a_draft_that_has_not_moved_is_not_read_again(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Checking twice re-runs the check and not the read.
+
+        The *model* moving under a draft is the ordinary case, so the
+        check has to run; the draft has not changed, so it is not a new
+        version of anything.
+        """
+        owner = await create_user(save_fixture)
+        graph = FakeGraph()
+        deal, folder = await _connected(
+            session, save_fixture, owner, graph, monkeypatch
+        )
+        graph.items = [a_file("cascade_model.xlsx", MODEL)]
+        await connector.sync(
+            session, folder=folder, user_id=owner.id, client=graph.client()
+        )
+        graph.mail["drafts"] = [
+            a_message("Cascade", "<p>Revenue was $235.3mm in FY2025A.</p>")
+        ]
+        connection = await ConnectorRepository.from_session(session).get(
+            folder.connection_id
+        )
+        assert connection is not None
+
+        for _ in range(2):
+            await connector.check_message(
+                session,
+                dossier_id=deal.id,
+                connection=connection,
+                message_id="msg-1",
+                user_id=owner.id,
+                client=graph.client(),
+            )
+            await session.flush()
+
+        repository = TieOutRepository.from_session(session)
+        messages = [
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.message
+        ]
+        assert len(messages) == 1
+        assert messages[0].version == 1
+
+    async def test_a_message_is_corrected_in_outlook_and_says_so(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The server has no write scope on a mailbox and never will.
+
+        « Cannot » is not the useful half of that sentence; where it *can*
+        be done is.
+        """
+        from polar.tieout.writing import NotCorrectable, writing
+
+        owner = await create_user(save_fixture)
+        graph = FakeGraph()
+        deal, folder = await _connected(
+            session, save_fixture, owner, graph, monkeypatch
+        )
+        graph.items = [a_file("cascade_model.xlsx", MODEL)]
+        await connector.sync(
+            session, folder=folder, user_id=owner.id, client=graph.client()
+        )
+        graph.mail["drafts"] = [
+            a_message(
+                "Cascade",
+                "<p>The business generated $235.3mm of revenue in FY2025A.</p>",
+            )
+        ]
+        connection = await ConnectorRepository.from_session(session).get(
+            folder.connection_id
+        )
+        assert connection is not None
+        await connector.check_message(
+            session,
+            dossier_id=deal.id,
+            connection=connection,
+            message_id="msg-1",
+            user_id=owner.id,
+            client=graph.client(),
+        )
+        await session.flush()
+
+        repository = TieOutRepository.from_session(session)
+        messages = [
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.message
+        ]
+        finding = next(
+            one
+            for one in await repository.findings_of(deal.id)
+            if one.artifact_id == messages[0].id
+        )
+        with pytest.raises(NotCorrectable, match="corrected in Outlook"):
+            await writing.propose(session, finding=finding, user_id=owner.id)
 
 
 # --- what the screens see ------------------------------------------------

@@ -10,6 +10,7 @@ from polar.checkout.endpoints import router as checkout_router
 from polar.checkout_link.endpoints import router as checkout_link_router
 from polar.cli.endpoints import router as cli_router
 from polar.client_invoice.endpoints import router as client_invoice_router
+from polar.connector.endpoints import router as connector_router
 from polar.corpus.endpoints import router as corpus_router
 from polar.custom_field.endpoints import router as custom_field_router
 from polar.customer.endpoints import router as customer_router
@@ -76,7 +77,6 @@ from polar.redline.endpoints import router as redline_router
 from polar.refund.endpoints import router as refund_router
 from polar.storefront.endpoints import router as storefront_router
 from polar.subscription.endpoints import router as subscription_router
-from polar.connector.endpoints import router as connector_router
 from polar.tieout.endpoints import router as tieout_router
 from polar.transaction.endpoints import router as transaction_router
 from polar.user.endpoints import router as user_router

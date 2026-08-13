@@ -43,9 +43,22 @@ NUMBER = re.compile(
     (?P<open>\()?                      # negative in parentheses
     \s*(?P<currency>[$€£])?\s*
     (?P<digits>\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)
-    \s*(?P<scale>mm|bn|bn\.|m|k)?      # millions, billions, thousands
+    # Spelled-out scales first: alternation is ordered, and `m` would
+    # otherwise win against « million » and leave « illion » behind.
+    \s*(?P<scale>million|billion|thousand|mm|bn\.|bn|m|k)?
     \s*(?P<suffix>%|x)?
-    (?P<close>\))?
+    # **A scale letter cannot begin the next word, or precede a digit.**
+    # Without this, a contents page reading « 18 More value » parses as
+    # eighteen million — the number fabricated rather than merely
+    # misnamed, and 191 of them in one real annual report. Backtracking
+    # does the right thing: the scale gives up, the bare integer fails
+    # the no-marks test below, and nothing is claimed. The digit half
+    # is « 12 m3 per day », which an annual report has hundreds of.
+    (?![A-Za-z0-9])
+    # A closing bracket only counts when this figure opened one. Taken
+    # unconditionally it swallows the bracket of a footnote or an adjacent
+    # column — « $16.5) » — and prints a value the document does not.
+    (?(open)\)|)
     """,
     re.VERBOSE | re.IGNORECASE,
 )
@@ -63,11 +76,16 @@ NOT_A_FIGURE = re.compile(
     re.VERBOSE | re.IGNORECASE,
 )
 
+#: In the model's own units, which are millions.
 SCALES = {
     "k": Decimal(1) / 1000,
+    "thousand": Decimal(1) / 1000,
     "m": Decimal(1),
     "mm": Decimal(1),
+    "million": Decimal(1),
     "bn": Decimal(1000),
+    "bn.": Decimal(1000),
+    "billion": Decimal(1000),
 }
 
 
@@ -162,6 +180,11 @@ class Extraction:
     #: Numbers seen and rejected as not-figures, for tuning. A count that
     #: climbs unexpectedly means the rejection rules have drifted.
     rejected: int = 0
+    #: Pages this reader declined, and why — « page 318, a table ». Rule 3:
+    #: what was not read is part of the answer, and a document reported as
+    #: « 40 figures » when 300 pages of it were skipped is the coverage
+    #: line lying by omission.
+    skipped: list[tuple[int, str]] = field(default_factory=list)
 
 
 def _decimals(digits: str) -> int:
@@ -198,7 +221,7 @@ def parse_number(token: str) -> tuple[Decimal, int, str] | None:
 
     if scale:
         value = value * SCALES.get(scale, Decimal(1))
-    if match.group("open") and match.group("close"):
+    if match.group("open"):
         value = -value
 
     return value, decimals, "currency" if currency else "plain"
@@ -253,7 +276,7 @@ def figures_in(text: str) -> list[Found]:
                 kind=kind,
                 start=start,
                 end=start + len(token),
-                parenthesised=bool(match.group("open") and match.group("close")),
+                parenthesised=bool(match.group("open")),
             )
         )
     return found

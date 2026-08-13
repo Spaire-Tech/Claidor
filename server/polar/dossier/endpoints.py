@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, Query
 
+from polar.agent import Stopped
 from polar.config import settings
 from polar.exceptions import ResourceNotFound
 from polar.file.repository import FileRepository
@@ -25,7 +26,11 @@ from polar.routing import APIRouter
 from polar.user.repository import UserRepository
 
 from . import auth
+from .agent import service as agent_service
+from .agent.service import AgentNotConfigured, build_client
+from .crosscheck import Commitment, cross_check
 from .repository import DossierRepository
+from .review import review_matter
 from .schemas import (
     AgentStepRead,
     AgentTaskCreate,
@@ -50,11 +55,6 @@ from .schemas import (
     MatterFinding,
     MatterReviewRead,
 )
-from .agent import service as agent_service
-from polar.agent import Stopped
-from .agent.service import AgentNotConfigured, build_client
-from .crosscheck import Commitment, cross_check
-from .review import review_matter
 from .service import dossier_service
 
 router = APIRouter(prefix="/dossiers", tags=["dossiers", APITag.private])

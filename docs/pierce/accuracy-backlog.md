@@ -18,6 +18,9 @@ measured cause and a named next step.
 | Deck tie-out — coverage | **80%** | 102 of 128 printed figures linked to the model |
 | Deck tie-out — collateral false positives | **0** | Same run |
 | Legacy `.xls` reading | 99.2% of 1,590 files | 202,499 formulas decompiled |
+| Solo check — false positives | **1** on 29 real decks | gov.uk corpus, every finding read by hand |
+| Solo check — the Cascade drift | Caught, both decks, nothing else | Slide 3's chart against its table |
+| Solo check — recall | **NOT MEASURED** | Needs planted drifts, same method as the deck recall |
 
 By rule, on planted defects:
 
@@ -191,3 +194,551 @@ hour, by breaking spreadsheets on purpose.
 **A checker with no recall measurement is a checker that is silently
 allowed to be quiet.** Every rule added from here starts with the mutation
 that proves it fires.
+
+---
+
+## Measured and rejected: reading a PDF with geometry
+
+11 August. A research pass recommended `pdfplumber` (MIT) for the source
+reader, on the argument that character coordinates would fix the debris
+labels — a figure named by the number in the next column rather than by
+words. That argument is right about the *cause* and wrong about the fix,
+and this is the measurement, so nobody reads the recommendation again and
+repeats it.
+
+**What was built.** Words with boxes, grouped into lines by baseline,
+each line cut wherever the gap between two words exceeded the word's own
+height. Prose word-gaps on a real annual report measure 2.1–2.4pt and
+table column-gaps 17–52pt, so the separation is clean and the threshold is
+not a guess. (The page's median gap is *not* usable as the denominator: a
+page that is mostly table has a median gap of 33pt and the measure eats
+itself.)
+
+**What it did, on five pages of Shell plc's 2025 annual report:**
+
+| | flat text | with geometry |
+|---|---|---|
+| figures | 85 | 14 |
+| poorly labelled | 29 | 2 |
+
+Which looks like a win until you read the 78 it dropped. **Forty-nine of
+them were correctly labelled:**
+
+```
+27,361  'Future cash inflows'
+ 6,529  'Future production costs'
+ 1,731  'Standardised measure of discounted future net cash flows'
+```
+
+On a statement, the row label sits in column 1 and the first figure in
+column 2 — separated by exactly the gap the split fires on. So splitting
+severs the label from the figure it names.
+
+**Flattening already produces the right outcome, by accident.** The row
+label and its first number land in one line, so the first figure is named;
+the remaining columns have only a number in front of them and the
+`_named` rule rejects them. One named figure per row, the rest declined —
+which is what the geometry was supposed to achieve.
+
+**And it cost 212 seconds against 20.7.** Ten times slower on one file.
+
+**What geometry does win.** Multi-column *prose*, where flattening merges
+two columns: it newly found seven figures such as `11%` named « increased
+by ». Seven against forty-nine.
+
+**When to revisit.** Not with a splitter. The only version of this that
+works is real table reading — first cell names the row, header row names
+the column — and that is the project already deferred. If it is ever
+built, `pdfplumber` is still the right tool and this note is the design.
+
+## The metadata checker, measured on files nobody here made
+
+Built 12 August. A pure function from the bytes of an Office file to a
+list of things in it that are not on its screen: `polar/tieout/metadata.py`.
+No deal, no model, no corpus, no login.
+
+**The corpus is 85 public gov.uk attachments** — 34 Excel, 29 PowerPoint,
+20 Word — fetched by `scripts/document_corpus.py` and chosen for nothing
+at all. Departments publish decks built in PowerPoint and in Google
+Slides, spreadsheets built by analysts and by consultants, letters saved
+with track changes still on. It is not investment banking. It is real work
+by people under deadline, and every leak in it is one somebody shipped.
+
+```
+uv run python -m scripts.document_corpus     # fetch
+uv run python -m scripts.metadata_survey     # measure
+uv run python -m scripts.metadata_check FILE # one file, read cold
+```
+
+| | |
+|---|---|
+| Files read | 83 of 85 |
+| Refused, correctly | 2 — password protected, both named `.xlsx` |
+| **Files with no leaks at all** | **50 of 83 (60%)** |
+| Files with nothing at all, not even a trace | 2 |
+
+| Rule | Grade | Files | Found |
+|---|---|---|---|
+| `document-properties` | trace | 79 | 391 |
+| `cell-comment` | leak | 8 | 228 |
+| `custom-property` | trace | 55 | 200 |
+| `custom-xml` | trace | 54 | 180 |
+| `speaker-notes` | leak | 9 | 55 |
+| `cropped-image` | leak | 12 | 35 |
+| `very-hidden-sheet` | leak | 1 | 33 |
+| `hidden-sheet` | trace | 7 | 29 |
+| `external-workbook` | leak | 5 | 17 |
+| `embedded-file` | leak | 6 | 12 |
+| `external-cached-values` | leak | 4 | 9 |
+| `macros` | leak | 6 | 6 |
+| `local-path` | leak | 2 | 2 |
+| `hidden-slide` | leak | 1 | 2 |
+| `tracked-changes` | leak | 1 | 1 |
+| `comment` | leak | 1 | 1 |
+| `off-canvas-shape` | leak | **0** | **0** |
+| `hidden-text` | leak | **0** | **0** |
+
+**60% of files come back with no leaks.** That is the number to watch, and
+it matters more than any of the others: a checker that finds something in
+every file has found nothing in any of them.
+
+### What it actually found
+
+Real things, in files a government department published:
+
+- `\\ad.culture.gov.uk\dfs\Bids\BDUK\Devon & Somerset\4. D&S (blended
+  contingency)\…` — a bid folder tree, inside a published procurement
+  template, carried by an external workbook link. This is the incident the
+  rule exists for, found on the first corpus it was ever run against.
+- `\\Ofqual.internal\DFS\UserData\Beth.Black\Documents\BB projects\…` — a
+  named person's home directory, reached from a chart in a published deck.
+- **33 very hidden sheets in one published financial model**, including
+  ones called `Dashboard`, `Key Outputs >>>` and `Scenario Manager`.
+  Confirmed independently by loading the same workbook with `openpyxl`.
+- 74 values cached from another workbook inside a workforce statistics
+  spreadsheet — the other file's numbers, travelling.
+- Two hidden slides in a survey deck, with their text.
+
+### Two rules with no confirmation in the wild, said plainly
+
+`off-canvas-shape` and `hidden-text` fire on constructed files in the unit
+tests and on **nothing** in 83 real ones. For `hidden-text` that is
+unremarkable — Word's hidden-text formatting is rare.
+
+`off-canvas-shape` is the interesting one, because it *did* fire three
+times before being tightened, and all three were wrong in the way that
+matters: empty text boxes left beside the slide by a Google Slides export.
+Off the canvas, correctly identified, holding nothing. The rule now
+requires the shape to carry something, and the honest state of it is: the
+geometry is verified, the judgement is not, and a deck with a real parked
+chart on it has not yet been seen.
+
+### Four defects in my own rules, all found by reading the output
+
+1. **`cropped to 100% of itself`** — a negative `a:srcRect` side scales a
+   picture *out* of its frame rather than hiding any of it, and Office
+   writes one whenever a picture is nudged inside a placeholder. Read as
+   « any side set means cropped », the report contained a sentence about
+   nothing. Fixed by clamping and requiring a real hidden fraction: 70
+   findings became 35.
+2. **The same cropped logo, six times.** A crop in a slide layout appears
+   in every layout that inherits it. Folded by image and crop.
+3. **The same path said twice** — once by `local-path`, once by
+   `external-workbook`. Two findings, one fact. 15 became 2.
+4. **One sensitivity label written as eight properties.**
+   `MSIP_Label_<guid>_Name`, `_SiteId`, `_SetDate` and five more are one
+   action by one person. 309 custom properties became 200.
+
+And one that was not a defect in a rule but in a grading: `custom-property`
+and `custom-xml` were `leak`. 55 of 83 files carry custom properties —
+`ContentTypeId` 48 times — and grading those as leaks buried the speaker
+notes and the hidden slides underneath them. Both are traces now. **The
+cost is stated rather than hidden:** a matter number naming another client
+is now graded the same as a `ContentTypeId`, and the only thing separating
+them is reading them. Every one is still reported.
+
+### What this number is not
+
+There is no recall figure and there cannot be one from this corpus. Nobody
+has labelled these files, so « how many speaker notes did it miss » has no
+answer short of opening 29 decks by hand. What *was* checked is the other
+direction: every finding above was confirmed by unzipping the file and
+reading the part, and the very-hidden sheets were confirmed by a second
+library.
+
+The sample is also not stable — gov.uk publishes and withdraws constantly,
+so a run next month returns an overlapping but different set. The survey
+prints its own file count for that reason.
+
+## The metadata checker's recall, and the bug it exposed
+
+The section above ended with « there is no recall figure and there cannot
+be one from this corpus ». That was true of *that* corpus and not of the
+question, and leaving a check in the state « I don't know what it misses »
+was the wrong place to stop.
+
+**So the misses are manufactured.** `scripts/metadata_recall.py` plants one
+known leak into a real file that was silent about that rule before, checks
+the file again, and records whether the rule fired. The same method as the
+model audit's 150 planted defects: ground truth by construction, inside
+somebody else's real work rather than a fixture built to be found.
+
+**The first run returned 100% on 204 plants, which was not a result.**
+Every plant was the shape I had in mind while writing the rule, so all it
+measured was my imagination. The plants were then rewritten as the *other*
+legitimate spellings of the same leak — the attribute Office also accepts,
+the element nested where a real document nests it, the newer part that
+replaced the old one — and one of them failed.
+
+### `cell-comment`: 0 of 12
+
+Excel has two kinds of comment. The original *note* lives in
+`xl/comments1.xml` in the spreadsheet namespace. The **threaded comment**,
+which is what the « New Comment » button has produced since 2018, lives in
+`xl/threadedComments/` in a Microsoft namespace of its own, with the names
+held separately in `xl/persons/person.xml`. The rule knew only the first.
+
+**What that cost in practice was smaller than 0-of-12 suggests, and the
+difference is worth stating.** Excel usually writes a legacy fallback note
+beside each threaded comment. The one corpus file that has threaded
+comments — an FSA data collection spreadsheet with 21 of them — has those
+fallbacks, so the *text* was being read all along. What was missing was
+the name on each one, and the names are real: Craig Jones, Ese Hughes. The
+plant is the case where no fallback was written, and there the loss is
+total.
+
+Fixed, with both kinds read and the fallback deduplicated against the
+threaded comment so nothing is reported twice.
+
+### Where it stands after the fix
+
+| | |
+|---|---|
+| Plants | 264, across 23 variants of 17 rules |
+| Found | **264 (100%)** |
+| Collateral findings | **0** |
+| Rules with a plant written by a real Office writer | 4 of 23 variants, marked `library` |
+| Rules with a hand-written plant | 19 of 23, marked `hand` |
+
+**What 100% here does and does not mean.** It means every rule fires on
+the leak it is for, in each spelling tested, inside a real file, without
+making a second rule fire. It does not mean the checker finds every leak a
+real person leaves — the threaded comment was invisible until somebody
+thought to plant one, and the next gap will be invisible the same way
+until the next variant is written. The number is a floor that moves up as
+the plants get more awkward, not a score.
+
+`document-properties` has no plant: every file in the corpus already
+carries `docProps/core.xml`, so there is nothing silent to plant into. It
+fires on 79 of 83 real files in the survey, which is stronger evidence
+than a plant would be.
+
+## Grounding meets a pair nobody here wrote
+
+The chain has three legs. The deck against the model has been measured on
+real decks; the formula graph on real models; the figure reader on a real
+annual report. **Grounding** — a figure in a source document matched to the
+typed input cell it is the origin of — had only ever run against the
+Cascade fixture, where the accounts and the model were both written here,
+by the same hand, on the same afternoon. That is not evidence of anything.
+
+**A real pair is a government department publishing a report and the
+spreadsheet behind it on the same page, on the same day.** A PDF stating
+figures and a workbook whose typed cells are where those figures came from,
+by people who have never heard of us. `scripts/grounding_pairs.py` measures
+it; the pairs come from gov.uk the same way the document corpus does.
+
+### The first pair found two links and both were false
+
+NHS workforce statistics, September 2015 — a 113-figure overview report
+against the workbook published beside it.
+
+```
+0.74 (next 0.57)   13,686  p8  'FTE are Support to clinical staff'
+                   → Controls!A10 'Support to clinical staff' = 10
+0.56 (next 0.45)   11,237  p8  'FTE are Infrastructure support staff'
+                   → Controls!A11 'NHS infrastructure support' = 11
+```
+
+`Controls` is a lookup list. Column A counts `1, 2, 3 … 15`; column B holds
+the staff group's name. So `A10` is *named* « Support to clinical staff »
+and *holds* the number ten. The label matched; the cell was never a
+quantity. And because the values differ, each was then reported as the
+document **contradicting** the model — the confidently-wrong finding this
+whole product exists to avoid, produced on the first real file it saw.
+
+**Fixed structurally, not by a threshold.** A column that counts its own
+rows is an index, and an index is not something a set of accounts can be
+the origin of. Two shapes, both about position rather than magnitude: the
+value equals the row it sits on, or the values count up from one. A column
+of years fails both — 2015 is not row 3 and does not start at 1 — which
+was checked, because suppressing a model's period headers would take real
+inputs out of the grounding set. On this workbook it removed exactly one
+column, `Controls!A`, and 15 of 167 candidate inputs. Nothing else.
+
+### The true match exists, and the linker declines it
+
+The report's `13,686` really is in the workbook: sheet `3`, cell `C24`,
+`13686.22044000018`, row label *Support to clinical staff*. The linker
+scores it **0.82** — and refuses:
+
+```
+two outputs fit equally well (4!I24 0.82, 4!H24 0.82)
+```
+
+The same staff category appears on many sheets and in many columns, one
+per period, and the report's prose — « FTE are Support to clinical staff »
+— names no period at all. So the label genuinely does not identify a cell,
+and declining is the designed behaviour working rather than failing. Using
+the value to break the tie would fix this case and destroy the product:
+picking the cell that already matches is how a checker stops finding
+discrepancies.
+
+**What this leaves.** No false positives on this pair after the fix, and no
+true positives either. Real accounts name their period — « for the year
+ended 31 December 2025 », which is what `as_fiscal_year` exists to
+translate — and a statistical release does not. Whether that is the whole
+explanation is not yet established, and the honest state of the grounding
+leg is: **one class of false positive found and removed on real data, and
+still no demonstrated true positive outside a fixture we wrote.**
+
+## Grounding, finished: three true positives on a model nobody here wrote
+
+The section above ended with « one class of false positive found and
+removed on real data, and still no demonstrated true positive outside a
+fixture we wrote ». That is no longer where it stands.
+
+**The pair that made it possible.** Ofgem publishes the RIIO-ET1 price
+control financial model *and* the direction document that states the values
+fed into it — a real financial model built by working analysts, and a real
+source document, published by the same regulator on the same day. The
+statistical pairs used before were a narrative report against a data dump;
+this is the shape a deal actually has.
+
+```
+uv run python -m scripts.grounding_pairs scripts/corpus_pairs/ofgem-et1-aip-2015
+```
+
+| | Before | After |
+|---|---|---|
+| Typed input cells the model offers | **0** of 26,392 | 7,265 of 25,852 |
+| Figures linked | 0 | 3 |
+| **Agreeing** | 0 | **3** |
+| **Contradicting** | 0 | **0** |
+
+All three confirmed by hand against page 7 of the direction:
+
+```
+15.7  'Legacy price control allowed revenue adjustment 7A …SOLAR'
+      → NGET SO!AH16  = 15.739015040384885
+ 2.9  'Legacy price control RAV additions adjustment 7A …SOLRAV'
+      → NGET SO!AH17  = 2.9301486584244367
+12.6  'Uncertain costs - enhanced security 7D …SOIAEEPS'
+      → NGET SO!AH10  'FY2014 Uncertain costs - enhanced security' = 12.6
+```
+
+### Four defects, each of which produced silence or a lie
+
+Every one was invisible until a real model met a real document, and every
+one now has a test.
+
+**1 · A label may sit past column D.** The label-column search stopped at
+D. Ofgem's model indents through B, C and D for section headings and puts
+its parameter names in **column E**, so all 26,392 cells came back with no
+name at all — which empties the tie-out and the grounding both, since each
+needs a named cell to have anything to match. Widened to H, and the column
+is now chosen by how many *different* things it says rather than how much:
+`£m 09/10 prices` appears on 247 rows of one sheet against 251 parameter
+names beside it, indistinguishable by volume and 10 distinct values against
+143.
+
+**2 · A label that is a formula still names its row.** The model builds one
+sheet per licensed business from its input sheet, so the name beside every
+row of `NGET TO` is `=Input!E31` rather than words, and `_label` refuses a
+formula. The reason it refuses one is about the formula *text* — a column
+of arithmetic must not name the figures beside it — and not about what the
+formula produces. The formula text is still refused; the cached words are
+used. A numeric formula still produces no label, because numbers are not
+strings.
+
+**3 · `TO` is a preposition and also a licensed business.** The transmission
+owner is on `NGET TO` and the system operator on `NGET SO`. `to` is a
+stopword, so `NGET TO` tokenised to `['nget']` — a strict subset of `NGET
+SO`, unable to win any match against it. Every transmission-owner figure in
+the document went to a system-operator cell: **seven false contradictions**.
+A run of capitals is now read as a name rather than a word, unless the whole
+line is set in capitals and is therefore shouting.
+
+**4 · A period header written as a date is not a header.** Ofgem writes
+`2017-03-31` where a banker writes `FY2017A`. A date is not a string, so
+the header row came back empty and all eight year columns of a row carried
+the same name — and a figure naming the row matched whichever column
+happened to hold a typed value. Two more false contradictions, both now
+honest declines. Read as `FY` plus the calendar year, which is a convention
+and is documented as one.
+
+### And one thing the model knew that the matcher was not told
+
+The model holds `Legacy price control adjustments to allowed revenue` on
+the transmission owner's sheet *and* on the system operator's, word for
+word. The direction document prints the same row and tells them apart by
+the licence term beside it — `LAR` against `SOLAR` — and **the model has
+that term too, three columns along**. Those descriptors now go into the
+matcher's `basis`, weighted below the name so they can settle a tie and
+never carry a match on their own: `£m 09/10 prices` is on hundreds of rows
+and says nothing about which one.
+
+### A miss the Cascade deck had been carrying
+
+Adding row descriptors put a sheet called *FY2025 balance sheet* into a
+cell's basis and broke a grounding test — which turned out to be a latent
+bug rather than a regression. `FY2025` was treated as a different period
+from `FY2025A`. An unmarked year asserts a year and not a basis; refusing
+to match it rejects the right cell for saying less rather than for saying
+something else. Actuals and estimates are still held apart, which is what
+the gate is for.
+
+Fixing it raised the Cascade deck's reconciled count from **102 to 103**:
+slide 4's « ERP implementation of FY2025 programme cost » is `Model!D21`,
+*FY2025A EBITDA adjustments ERP implementation costs*, and both say 2.8.
+One figure, verified by hand, and a real miss rather than a new guess.
+
+### What still declines, and why that is the right answer
+
+- **The other two directions** — SHE Transmission and SP Transmission — are
+  narrative documents that name a figure by its licence code alone: « ARC
+  revision », « ACO revision ». The code is in the model, in the basis, and
+  the basis is deliberately not allowed to carry a match by itself. Nothing
+  links, and nothing is wrong.
+- **The gov.uk statistical pairs** link nothing. A narrative release against
+  a data dump repeats the same row label across dozens of sheets and
+  columns, and the prose names no period, so the matcher ties and declines.
+  Verified on one: the true cell for « 13,686 FTE are Support to clinical
+  staff » is sheet `3`, `C24`, `13686.22` — scored 0.82 and refused because
+  two other cells scored 0.82 as well.
+- **A row of eight years** gives its label to the first figure only; the
+  rest are rejected as unnamed. Reading those needs real table reading,
+  which stays deferred — see the pdfplumber note above.
+
+**Formula coverage was re-measured after all of this and is unchanged**:
+59,705 formulas across three real models, 0 silent partial losses.
+
+### Nine minutes to read a two-megabyte spreadsheet
+
+Found by the same sweep, on a published schools funding allocation:
+22,004 rows, 135,348 cells, **555 seconds**. Against Ofgem's model at
+25,852 cells in 16 seconds that is 6.5× the cost per cell, so something was
+superlinear rather than merely large.
+
+It was not `openpyxl`: iterating all 308,056 cells of the offending sheet
+takes **0.5 seconds**. It was this module.
+
+`max_row` and `max_column` are not attributes. `openpyxl` computes each one
+by walking every cell it has read, so `range(1, sheet.max_column + 1)`
+written *inside* a row loop is a full sweep of the sheet per row. The tags
+loop added earlier the same day did exactly that: 3,000 labelled rows ×
+90,000 cells = **126 million comparisons**, all re-answering one question.
+
+Asked once per sheet and passed down:
+
+| | Before | After |
+|---|---|---|
+| Schools allocation, 135,348 cells | 555s | **10.1s** |
+| Ofgem ET1, 25,852 cells | 15.9s | **12.3s** |
+
+Same cell counts, same grounding result — 3 links, 3 agreeing, 0
+contradicting. Two smaller costs went with it: the label-column search now
+reads the first 1,000 rows rather than all of them (which column names the
+rows is a fact about a sheet's layout, and a sheet does not change layout
+half way down), and row descriptors are collected only for rows that have a
+name.
+
+**Two process notes, because they cost more than the bug did.** Timings
+taken earlier in the session were inflated by runaway processes from
+previous runs that had not been killed — including the « 40 minutes » that
+started this. And a test run that came back with 248 errors was two `pytest`
+sessions started concurrently, fighting over the template database, not a
+regression.
+
+## The solo check: 82 findings argued down to 1, all of them read
+
+*13 August 2026.* `polar/tieout/solo.py` — a file checked against itself,
+the check that works on a loose attachment before anybody has made a deal.
+It looks for one thing: the same name carrying two figures. Measured
+against the 29 gov.uk decks in the corpus and the Cascade pair before any
+screen shows its output.
+
+**The first honest number was 82.** Group figures by full label, flag any
+group holding two values, and 29 real decks produce 82 « disagreements » —
+nearly three per deck, on decks that are not wrong. Every one was read.
+None was a drift. The reading produced four rules, each with its cause
+written down:
+
+**1 · Two values inside one shape are data, not statements (82 → 23).**
+Nearly every false positive was two points in one chart series or two
+cells in one table, read under one truncated label — a chart plotting
+« Double mark » scores for two seed items is not a deck restating a
+figure. The filter keys on the anchor's `kind` **plus** shape identity,
+never `shape_id` alone: PowerPoint numbers charts and tables
+independently, and on Cascade's slide 3 the chart and the table both
+carry `shape_id` 4 while being two shapes — the pair that *is* the real
+finding. It filters pairs, not groups, so a chart against a table
+survives while the chart's own points merge.
+
+**2 · The year is part of the name (23 → 12, with rule 3).** `tokens`
+drops number-only words — right for deck-against-model, where the model
+writes `FY2023A`, and wrong here: « 2018 Aldi » and « 2019 Aldi » fell
+into one key and eleven of the twenty-three survivors were chart
+categories differing only in a bare calendar year. The solo key appends
+bare years.
+
+**3 · Two charts never disagree with each other.** A plotted point is
+data wherever it is plotted; a restatement needs at least one side to
+*state* the figure — a cell, a tile, a sentence. Every chart-against-chart
+pair in the corpus was two different survey questions sharing answer
+labels (« Yes », « No », « Don't know »). A real drift between two
+copies of one chart is now a deliberate miss, written down here.
+
+**4 · A fragment is not a name, and neither is one word (12 → 1).**
+« Events = » is the front half of a sentence about one exam board — the
+words telling two boards apart came *after* the number. A label ending
+mid-thought (`=`, `:`, a dash, a line break) is skipped. And « Average »
+names a row of whatever table it sits in; a one-word label matched two
+different quantities every time it was read by hand, so a name must
+carry at least two content words.
+
+**The one that stays, examined.** Beth_Black.pptx, slides 23 and 24: two
+tables with the identical column « Average difference (%) in probability
+of candidates receiving the definitive grade », row « Average », 4.95
+against 1.3. It is false — slide 23 is Geography and slide 24 is English
+Literature — and the distinguishing words live in the slide *title*, not
+the label. Requiring section agreement would kill the check's central
+case, a summary slide restating a detail slide, so this stays: **one
+false finding per 29 real decks, cause known, trade named.**
+
+**Cascade, both decks, hand-verified.** Exactly two findings each and
+nothing else: slide 3's chart series says adjusted EBITDA was 37.8 and
+43.0 while the table beside it says 30.8 and 39.6. The « clean » deck
+genuinely carries this — its chart was drawn from pre-adjustment EBITDA
+and never redrawn (documented in `deck.py` when charts were first read).
+The broken deck's planted errors are deck-against-*model* drifts: the
+same number changed on every slide that states it, which is internally
+consistent and exactly what a solo check must stay silent about.
+
+**Owed, and said plainly:**
+
+- **Recall is not measured.** The false-positive side has a corpus;
+  the recall side needs planted second statements, the same
+  one-at-a-time method as `scripts/deck_recall.py`. Until then the solo
+  check's claim is « quiet on correct files, catches the Cascade chart
+  drift » — not a percentage.
+- **Totals are not checked**, and no screen claims they are. « The rows
+  sum to the total row » needs real table reconstruction; a totals check
+  that guesses its columns reports correct tables as broken.
+- **Memos have no corpus yet.** The rules were measured on decks; the
+  paragraph-anchor path (two sentences restating a figure) is covered by
+  unit tests but has not met 29 real memos. The corpus has `.docx` files
+  waiting.
+
+Rules pinned in `tests/tieout/test_solo.py`, one test per rule, plus the
+Cascade regression: both decks, the same two findings, nothing more.

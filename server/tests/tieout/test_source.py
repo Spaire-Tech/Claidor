@@ -27,6 +27,7 @@ from polar.models import (
     FindingKind,
     User,
 )
+from polar.tieout.figures import figures_in
 from polar.tieout.ingest import Unreadable, kind_for, read_artifact
 from polar.tieout.provenance import inputs_from_workbook
 from polar.tieout.repository import TieOutRepository
@@ -436,3 +437,92 @@ def test_the_fixture_is_built_from_the_model_it_grounds() -> None:
             abs(cell.value) for cell in book.cells.values() if cell.value is not None
         }, f"{figure.printed} is not a value in the model"
     assert read_workbook(str(MODEL)).get("Model!D6").value == Decimal("228.9")
+
+
+# --- what a real annual report does to this reader ----------------------
+#
+# Every case below is a line taken from Shell plc's Annual Report and
+# Accounts 2025 — 461 pages, downloaded from shell.com, written by nobody
+# here. The first run of this reader over it produced 8,387 figures, 0
+# rejected, and 63% of them named by debris. The Cascade fixture, which I
+# generated, produces 8 clean ones. The tests were never going to catch it.
+
+
+class TestAScaleLetterIsNotTheNextWord:
+    def test_a_contents_page_is_not_eighteen_million(self) -> None:
+        """« 18 More value » parsed as eighteen million: the number
+        *fabricated*, not merely misnamed. 191 of them in one report, and
+        the same failure as « 60-70 minutes » becoming $70m."""
+        for line in ("18 More value", "25 Market overview", "52 Marketing"):
+            assert figures_in(line) == [], line
+
+    def test_a_unit_is_not_a_scale(self) -> None:
+        """« 12 m3 per day » is cubic metres. A digit disqualifies a scale
+        letter exactly as a letter does."""
+        assert figures_in("12 m3 per day") == []
+        assert figures_in("a 3 m2 site") == []
+
+    def test_the_spelled_out_scales_are_read(self) -> None:
+        """Bounding the suffix would otherwise have *lost* « $1.5 billion »,
+        which an annual report writes far more often than « $1.5bn »."""
+        assert [
+            (one.printed, one.value) for one in figures_in("profit of $1.5 billion")
+        ] == [("$1.5 billion", Decimal("1500.0"))]
+        assert figures_in("revenue of 18 million")[0].value == Decimal("18")
+        assert figures_in("costs of 250 thousand")[0].value == Decimal("0.250")
+
+    def test_bn_with_a_full_stop_is_still_billions(self) -> None:
+        """`bn.` was in the pattern and never in the scale table, so
+        « $1.5bn. » had always read as 1.5 — a factor of a thousand,
+        pre-existing, found while fixing something else."""
+        assert figures_in("$1.5bn. of debt")[0].value == Decimal("1500.0")
+
+
+class TestABracketBelongsToTheFigureThatOpenedIt:
+    def test_a_footnote_bracket_is_not_part_of_the_number(self) -> None:
+        """« $16.5) [A] » printed a value the document does not contain.
+        291 of them in one report."""
+        found = figures_in("net income $16.5) [A]")
+        assert [one.printed for one in found] == ["$16.5"]
+        assert found[0].parenthesised is False
+
+    def test_a_real_negative_keeps_both_brackets(self) -> None:
+        found = figures_in("total debt of (96.4)")
+        assert found[0].printed == "(96.4)"
+        assert found[0].parenthesised is True
+
+
+class TestAFigureWithNoWordsInFrontOfIt:
+    def test_only_the_columns_with_nothing_in_front_of_them(self) -> None:
+        """A statement row keeps its first figure and loses the rest.
+
+        « Future cash inflows 27,361 105,021 53,210 13,059 » names one
+        number — the line item is in front of it — and the other three
+        have only the previous number in front of them. Those can never
+        link, because there is nothing to match on, so they are counted
+        and dropped while the named one survives.
+
+        Which is the right shape: the row is not thrown away, it is read
+        as the one claim it can actually be read as.
+        """
+        extraction = read_pages(["Future cash inflows 27,361 105,021 53,210 13,059"])
+        assert [one.printed for one in extraction.figures] == ["27,361"]
+        assert extraction.figures[0].label == "Future cash inflows"
+        assert extraction.rejected == 3
+
+    def test_a_one_word_label_is_enough(self) -> None:
+        """« Revenue » names a line item. The rule is a real word, not
+        several — being stricter would cost the figures this reader is for."""
+        found = read_pages(["Revenue of $228.9m in the year"]).figures
+        assert [one.printed for one in found] == ["$228.9m"]
+
+
+class TestTheSameSentenceTwice:
+    def test_a_non_breaking_space_does_not_make_a_second_claim(self) -> None:
+        """A real report carries a visible text layer and an accessibility
+        one. Read as written, one claim became two figures."""
+        page = (
+            "Adjusted earnings were $18.1 billion\n"
+            "Adjusted\xa0earnings\xa0were\xa0$18.1\xa0billion"
+        )
+        assert len(read_pages([page]).figures) == 1

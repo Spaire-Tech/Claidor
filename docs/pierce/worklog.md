@@ -1044,3 +1044,327 @@ What the screenshots caught: the status column said « Changed » where the
 design's word is « Stale »; the folder rows had a text arrow where the
 design has an amber folder; and the breadcrumb at the library root read
 « Documents Rothmoor Deals », which is two names and no relationship.
+
+---
+
+## 11 August — the draft, before it goes
+
+Phase 8's other half. A message in Outlook is read, reconciled against the
+deal's model, and the correction shown as a tracked change — the design's
+own card, made real.
+
+### Why mail rather than Teams
+
+Of everything this product checks, an email is the one where being late is
+final. A deck can be pulled back out of a data room; a model can be
+replaced; a memo can be reissued. A sent message cannot be pulled back out
+of anything. So the draft is worth more than the sent item, and the sent
+item is worth more than the rest of the mailbox.
+
+### A message is a memo
+
+`ArtifactKind.message`, and after that the tie-out cannot tell the two
+apart — `run_tieout` already treated a memo exactly as a deck, and a
+message went in beside them on one line. The reader is
+`tieout/memo.read_memo_text` unchanged. What is genuinely new is small and
+it is all about **what is not the message**:
+
+**The quoted thread.** A reply carries the conversation under it. Those
+figures were typed by somebody else, possibly weeks ago, possibly already
+corrected — and a drift reported against them is a false positive whose
+only available fix is « edit a message you did not send ».
+
+**The signature.** « 20 Finsbury Circus » is a plausible-looking 20 to
+anything reading digits.
+
+**Word's inline stylesheet.** Outlook writes CSS into the body and CSS is
+all numbers. `0.75in` and `11pt` are not figures, and a reader that took
+them would report drift against a margin.
+
+Each of those is a false positive, which is the one failure this product
+cannot afford, so the test file is mostly about them.
+
+### The subject is a claim
+
+« Northgate — FY24 Adjusted EBITDA of $41.9m » is the line people read
+without opening anything. It is read as the first paragraph.
+
+### « Accept and send » cannot exist, and that is a decision
+
+The design's card ends in two buttons: **Accept and send**, and Reject.
+The scope list is `Mail.Read`, not `Mail.ReadWrite`, and that is a
+decision rather than an omission — a server that edits somebody's outgoing
+email is a product nobody connects twice.
+
+So the split is the same one decks already have: **the server shows it,
+and the add-in writes it.** A correction to a deck goes into the deal's
+copy on the server and into the banker's own copy through the panel; a
+correction to a draft goes in through the panel only, in their own compose
+window, on their own press. What sits where the design's button is: the
+corrected sentence, to take, and a line naming where the change can
+actually be made. `writing.py` refuses a message with that sentence rather
+than a generic one — « cannot » is not the useful half.
+
+### Verified
+
+Through the interface, at 1440×900, against the stub's mailbox and the
+real Cascade model.
+
+| | |
+|---|---|
+| Not connected | the Mail screen falls back to « Connect Microsoft », same as SharePoint |
+| A draft, unchecked | « Nothing here has been read » — not « clean » |
+| Checked | *the business generated ~~$235.3mm~~ $228.9mm of revenue in FY2025A* · FY2025A revenue · `Model!D6` |
+| An inbox message quoting the right figure | « Checked — every figure in this message ties to the model » |
+| Total debt of $96.4m, in the same draft | correctly silent: it ties to `Assumptions!B24` |
+
+267 tests, 14 of them this.
+
+What the screenshots caught: the struck figure and the inserted one ran
+together as `$235.3mm$228.9mm`, and « Copy the corrected sentence » was a
+button label long enough to wrap onto two lines in the design's own
+padding.
+
+### The stub grew a mailbox
+
+`scripts/graph_stub.py` now serves `/me/mailFolders/{folder}/messages` and
+`/me/messages/{id}` beside the document library. The draft in it is
+written against the Cascade model on purpose — 235.3 where the model says
+228.9, in the sentence shape a memo actually uses — so the screen has a
+real drift against a real cell to draw rather than a hand-written one.
+
+---
+
+## 12 August — the metadata checker
+
+Third item on the queue, and the one with a property the others do not
+have: it needs no deal, no model, no corpus and no login, so a stranger
+can judge it cold on a file we have never seen.
+
+`polar/tieout/metadata.py` — bytes of an Office file in, a list of
+findings out. Sixteen rules over the OOXML package itself, read part by
+part rather than through `openpyxl` or `python-pptx`, because both of
+those normalise away exactly the things being looked for.
+
+**Two grades, never added.** A `leak` is content in the file that the
+recipient can read and the sender did not put on the page — speaker notes,
+a hidden slide, an off-canvas shape, a very hidden sheet, a folder path,
+the values cached from another workbook, a whole worksheet behind a chart.
+A `trace` is who and when and how it was filed.
+
+**No new dependency.** `lxml` was already installed as a transitive
+dependency of `python-pptx`; it is now declared, because a direct import
+on a transitive dependency breaks the day the thing carrying it changes
+its mind. `olefile` was already declared, and is used for one sentence:
+telling a legacy `.doc` apart from an encrypted `.docx`, which look
+identical from outside and need opposite advice.
+
+**Measured against 85 public gov.uk attachments** — `scripts/document_corpus.py`
+fetches them, `scripts/metadata_survey.py` measures, `scripts/metadata_check.py`
+reports on one file. Numbers, the four defects the run exposed in my own
+rules, and the two rules that have no confirmation in the wild are all in
+`accuracy-backlog.md`.
+
+The headline: **60% of real files come back with no leaks at all**, and
+the ones that do include a bid folder tree inside a published procurement
+template, a named civil servant's home directory reached from a chart, and
+33 very hidden tabs in a published financial model.
+
+**What is not done.** There is no screen. The check is a function and a
+command line, deliberately — the Word and web designs are yours and I am
+not inventing one to sit in front of this.
+
+---
+
+## 12 August, later — grounding, finished against a real pair
+
+The chain's third leg — a figure in a source document matched to the typed
+input cell it is the origin of — had only ever run against a fixture
+written here. It now runs against Ofgem's price control financial model and
+the direction document that states the values fed into it: **three links,
+three correct, none wrong**, all three checked by hand against page 7.
+
+Getting there meant finding four defects, each of which produced silence or
+a lie rather than an error, and none of which any fixture could have shown:
+
+1. The label-column search stopped at column D; that model names in E, so
+   **all 26,392 of its cells came back unnamed**.
+2. That model builds one sheet per licensed business with `=Input!E31` in
+   the label column, and a formula is not a label — so a whole licence
+   entity had no names.
+3. `TO` is a stopword. `NGET TO` tokenised to `['nget']`, a strict subset
+   of `NGET SO`, so every transmission-owner figure matched a
+   system-operator cell. Seven false contradictions.
+4. Period headers written as dates were not read, so eight year columns
+   shared one name. Two more false contradictions.
+
+Along the way, the Cascade deck turned out to have been carrying a miss:
+`FY2025` was treated as a different period from `FY2025A`. Reconciled went
+from 102 to 103, verified by hand, and the actual-versus-estimate
+distinction the gate exists for is untouched.
+
+Also fixed earlier in the day, on the first real pair the leg ever saw: a
+lookup column counting `1, 2, 3 …` was being offered as a source figure, so
+« 13,686 FTE » matched a cell holding the number ten.
+
+**297 tests.** Formula coverage re-measured and unchanged — 59,705
+formulas, 0 silent losses. Numbers, the declines that are correct declines,
+and what is still deferred are in `accuracy-backlog.md`.
+
+**Still not started: the trace viewer.** Waiting on your design, as agreed.
+
+---
+
+## 12 August, night — the workspace begins, from the full design
+
+The founder finished the complete workspace design — every screen, one
+file — and the build order is now theirs: analyse the whole thing, then
+one round at a time.
+
+**The design is checked in** at `docs/pierce/design/` — markup, the
+component logic, the stylesheet, and a README that records the canvas
+(1440×900), the one prop (`notConnected`), and the standing rule on
+writing boxes: `border:0; outline:none`, focus is a soft glow or nothing.
+Never a square outline. The fonts (Switzer 400/500/600, IBM Plex Mono)
+and the file icons were extracted from the design file itself and
+self-hosted — no external font host.
+
+**Round one, built and looked at:** the shell (floating card over the
+radial ground, glassy pill dock at bottom centre, account popover), the
+Deals list (Needs attention / Clean groups, the design's own rows), and
+the first-run empty state (Connect Microsoft → waiting → connected,
+driven by the real connector state). The old workspace screens — the
+previous design — are deleted.
+
+**Wired, not mocked.** The list renders `GET /v1/tieout/deals`, which now
+also serves `stale` / `stale_kind` / `stale_at`: a current artifact that
+arrived after the last run finished, computed from timestamps the
+endpoint already loaded. The sentence (« The model changed at 11:40
+today ») is built in the browser, where the reader's clock lives.
+
+**Two states the design's demo data never draws, composed from its
+nearest patterns and said so in the code:** a never-checked deal joins
+the attention group as « Not checked yet » (it cannot sit under Clean —
+the API docstring forbids those two sharing a word), and the loading
+face is the bare well for the one paint it exists.
+
+**Verified** with Playwright at 1440×900 against the seeded deals:
+list, deal-open header, placeholder tabs, account popover. Switzer
+confirmed loaded via `document.fonts`. 52 server tests pass on the
+endpoint change; web typecheck clean.
+
+**Flagged to the founder:** the popover's « Notifications » item goes
+nowhere in the design (its own handler just closes the popover) — built
+as drawn, needs a destination or dropping.
+
+---
+
+## 13 August, small hours — the deal page, wired
+
+Round two. Inside a deal: « Where the numbers come from » (models and
+sources, with Current / Changed states), « Documents » (decks, memos,
+messages, each carrying its own state — N differences, Clean, Not read,
+Not checked), the stale banner with real counts, and « What the team
+decided ».
+
+**The decision log is derived, never authored.** The server assembles it
+from corrections that were decided and findings that were dismissed, so
+it can never disagree with the records it describes. Plumbing —
+connecting a folder, uploading a file — is excluded by construction.
+
+**A dismissal now requires a reason.** New column `tieout_findings.note`
+(migration `c4d8e2f16a53`), the user's own words, required when
+dismissing and only then — a box everyone must type past collects
+« ok ». The server refuses a bare dismissal with a sentence; reopening
+clears the note, because yesterday's judgement must not attach to
+tomorrow's state. The person's words beat the server's sentence on
+screen when present.
+
+**Verified end to end against Cascade:** bare dismissal → 422; dismissal
+with a note → stored, echoed, rendered at the top of the log next to two
+real corrections from sessions past. Per-document counts (7 differences
+on the deck, Clean on the memo) are the live findings, grouped in the
+browser. « Check now » runs a real check and reloads. Screenshots at
+1440×900.
+
+**Borrowed patterns, named in code:** `source` kind (a PDF) wears the
+document icon — the design's assets have no PDF face; « Not read » /
+« Not checked » row states composed from the design's colour vocabulary;
+« uploaded » where the design says « edited », because the upload is
+what this data records — « edited » arrives with the connector metadata.
+
+35 route tests pass, including the new dismissal contract.
+
+---
+
+## 13 August — the document panel, and the metadata checker gets its door
+
+Round three. Clicking a document opens the design's side panel: facts,
+version history, « Hidden inside it », and the findings on that document
+with their evidence.
+
+**The metadata checker is finally reachable.** New endpoint
+`GET /artifacts/{id}/metadata` — the checker run on the stored bytes, on
+request, never persisted: it is a second's work, it is always about the
+current version, and a stored copy is one more thing that can silently
+disagree with the file. A file it does not read — a PDF, a legacy .doc —
+comes back with the checker's own refusal sentence in a `refused` field:
+an answer about the file, not an error. On the Cascade deck the panel
+shows the speaker notes with their text quoted and the four charts that
+carry their worksheets, live.
+
+**Versions** — `GET /artifacts/{id}/versions`, the lineage's uploads
+with who and when. The design's change-summary column needs a per-pair
+diff engine; until then the row says who brought the version, which is
+what is true today.
+
+**Evidence, by the finding's shape.** A cell finding shows four rows of
+the real model around its cell from the grid endpoint, target
+highlighted; a prose finding shows its sentence with the figure marked;
+a slide finding wears the design's sketch carrying the real figure. The
+« Rebase » button runs the real correction flow (propose, then apply);
+« Not a problem » opens the design's writing box for the required
+reason, because the server refuses a bare dismissal.
+
+**The staleness loop proved itself by accident.** Repeated test uploads
+made Cascade genuinely stale, and the banner appeared unprompted with
+true counts — « The deck changed at 00:10 today. Seven figures across
+one document were read before that. » After a recheck the findings moved
+to the new version and the banner cleared. Nothing about that path was
+staged.
+
+**Environment repairs, for the next time the container is reclaimed:**
+`server/.env` was lost with the container, which silently pointed S3 at
+real AWS — every upload « succeeded » and stored nothing. A minimal
+`.env` (S3 → local Minio) fixes it; `scripts/dev_services.sh` now
+fetches `mc` like it fetches the server binary, because without it the
+app user is never recreated and the same silent failure returns.
+
+Verified at 1440×900 against Cascade throughout. Screenshots in the
+thread; typecheck and lint clean; 34 route tests pass.
+
+## 13 August 2026 — the solo engine, argued down to quiet
+
+The Check-a-file round starts with its engine: `polar/tieout/solo.py`,
+a file checked against itself. One idea — the same name carrying two
+figures — and most of the work was earning the right to stay quiet.
+
+**82 to 1.** The naive version (group by full label, flag any group
+holding two values) produced 82 findings on 29 correct gov.uk decks.
+Every one was read by hand, and the reading produced four rules: two
+values inside one shape are that shape's data (keyed on anchor kind
+*plus* shape identity — on Cascade's slide 3 the chart and the table
+both carry `shape_id` 4 and are two shapes, and that pair is the real
+finding); a bare year is part of the name even though `tokens` drops it
+(« 2018 Aldi » is not « 2019 Aldi »); two charts never disagree with
+each other; and a label must be a name — two content words, no
+trailing « = ». After all four: **one finding on 29 decks**, examined
+and written down as false with its cause named (the words telling
+slides 23 and 24 apart live in the slide title, and requiring title
+agreement would kill the summary-restates-detail case the check is
+for). Both Cascade decks report exactly the slide-3 chart-against-table
+drift and nothing else.
+
+Full numbers, the survivor's autopsy, and what is still owed (recall,
+totals, a memo corpus) are in `accuracy-backlog.md`. Rules pinned one
+test each in `tests/tieout/test_solo.py`.

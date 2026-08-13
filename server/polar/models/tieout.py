@@ -84,6 +84,11 @@ class ArtifactKind(StrEnum):
     deck = "deck"
     #: A memo, a CIM, an IC paper. Prose with figures in it.
     memo = "memo"
+    #: An email. Prose with figures in it, read exactly as a memo is, and
+    #: a deliverable exactly as a deck is — with the difference that a
+    #: deck can be pulled back out of a data room and a sent message
+    #: cannot be pulled back out of anything.
+    message = "message"
     #: Audited accounts, a term sheet — the beginning of the chain.
     source = "source"
 
@@ -340,6 +345,19 @@ class ModelCell(RecordModel):
     #: The cells this one is computed from, so the chain renders without
     #: re-parsing the workbook.
     precedents: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    #: What this cell reads that could *not* be resolved to a cell, each
+    #: with a sentence saying why: a reference into another workbook, a
+    #: defined name left pointing at `#REF!`, a range longer than the
+    #: chain will follow.
+    #:
+    #: Stored beside the precedents rather than dropped, because the two
+    #: together are the honest answer and one alone is not. A chain short
+    #: by an input, presented as complete, was the state of 4.4% of
+    #: formulas across two real Ofgem models — and of the one input that
+    #: decided the answer in 3,542 of them.
+    unresolved: Mapped[list[list[str]]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
     #: Set when the whole formula is one reference — a pointer, not a
     #: figure. Excluded from linking so one figure does not have two homes.
     alias_of: Mapped[str | None] = mapped_column(
@@ -586,6 +604,13 @@ class Finding(RecordModel):
     dismissed_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )
+    #: The reason, in the person's own words — « pre-IFRS 16 EBITDA,
+    #: agreed with the client ». Required when dismissing and only then:
+    #: a dismissal says the check is wrong about this one, which is the
+    #: decision somebody questions three weeks later. Pierce stores its
+    #: own words about every finding; this is the one field that is the
+    #: user's.
+    note: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
 
 class CorrectionState(StrEnum):
@@ -708,6 +733,57 @@ class Correction(RecordModel):
     )
 
 
+class OneOffCheck(RecordModel):
+    """One file checked outside any deal's data room.
+
+    The check that works on a loose attachment forwarded at 11pm: no
+    deal, no upload into a room, just a file and an answer. What is kept
+    is the *answer* — the counts and the findings, exactly as the screen
+    drew them — and never the file. The bytes are read, checked and
+    dropped in one request, which is the strictest form of the product's
+    retention posture: a one-off check has no correction to write, so
+    there is nothing the bytes would ever be needed for again.
+
+    A row here is one line of « Recent one-off checks ». Reopening one
+    replays the stored result; it does not re-run anything, because the
+    file is gone and a silent re-check against a moved deal would show a
+    different answer under an old date.
+    """
+
+    __tablename__ = "tieout_one_off_checks"
+
+    #: Whose check this was. Recents are personal — a loose file checked
+    #: before it is anybody's deal is not yet the team's business.
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+
+    #: The deal whose model the file was checked against, when one was
+    #: picked. Set-null rather than cascade: the check happened, and a
+    #: deleted deal should not silently erase the record of it.
+    dossier_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("dossiers.id", ondelete="set null"), nullable=True, index=True
+    )
+    #: The deal's name as it read at check time, because the row above is
+    #: allowed to go null and « Checked against Project Falcon » must not
+    #: quietly become « Checked on its own ». Empty for a solo check.
+    against: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+
+    filename: Mapped[str] = mapped_column(String(512), nullable=False)
+    kind: Mapped[ArtifactKind] = mapped_column(
+        StrEnumType(ArtifactKind, length=16), nullable=False
+    )
+
+    #: What was read and what was compared — slides, figures, names
+    #: stated more than once, differences. The tally row, verbatim.
+    counts: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    #: The findings as the screen received them, stored whole so a recent
+    #: reopens to the same answer it showed. Three lists, by shape:
+    #: `disagreements` (the file against itself), `drifts` (the file
+    #: against a deal's model), `defects` (a model's own audit).
+    result: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+
+
 __all__ = [
     "Artifact",
     "ArtifactKind",
@@ -726,4 +802,5 @@ __all__ = [
     "FindingState",
     "LinkState",
     "ModelCell",
+    "OneOffCheck",
 ]

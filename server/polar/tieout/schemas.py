@@ -159,6 +159,43 @@ class DealPage(Schema):
     #: was last true and whether a run failed.
     last_tieout: CheckRunRead | None
     last_audit: CheckRunRead | None
+    #: A current document arrived after the last tie-out finished, so its
+    #: results — including the counts above — describe a deal that no
+    #: longer exists. Same fact and same fields as the deals list.
+    stale: bool = False
+    stale_kind: str | None = None
+    stale_at: datetime | None = None
+    #: What the stale banner's second line counts: the deliverables the
+    #: last run actually read, and the figures it read in them — real
+    #: sums from the run's own artifacts, not an estimate.
+    stale_documents: int = 0
+    stale_figures: int = 0
+    #: What the team decided, newest first. **Derived, never authored** —
+    #: assembled from findings that were ruled on and corrections that
+    #: were decided, so it can never disagree with them.
+    decisions: list["DecisionRead"] = []
+
+
+class DecisionRead(Schema):
+    """One judgement somebody made about a number.
+
+    Only judgements. Plumbing — connecting a folder, uploading a file —
+    is not a decision, and one such entry is how a decision log turns
+    into an activity feed and drowns.
+    """
+
+    id: UUID
+    who: Uploader | None
+    at: datetime
+    #: `accepted` · `kept` · `reversed` · `dismissed` — the correction
+    #: states plus dismissal, in the words the screen uses.
+    action: str
+    #: The server's own factual sentence — « Accepted the model's $48.2mm
+    #: over $48.9mm — slide 4, FY2025A adjusted EBITDA. »
+    text: str
+    #: The person's reason, verbatim, when they gave one. Shown in place
+    #: of `text` when present — their words beat ours.
+    note: str = ""
 
 
 # --- findings ------------------------------------------------------------
@@ -266,6 +303,10 @@ class FindingRead(Schema):
     standard: str | None
     rule: str | None
     created_at: datetime
+    #: The reason a person gave when they ruled on it, in their own words.
+    #: Empty until somebody writes one; the only field on a finding that
+    #: is the user's rather than Pierce's.
+    note: str = ""
     #: The change proposed for this finding, once anybody has looked at
     #: it. Null means nothing has been proposed — never « nothing can be ».
     correction: CorrectionRead | None = None
@@ -279,6 +320,11 @@ class FindingUpdate(Schema):
     """
 
     state: FindingState
+    #: The reason, required when dismissing and only then. Dismissal says
+    #: the check is wrong about this one — the decision somebody questions
+    #: three weeks later — and « ok » typed to get past a box is worse
+    #: than nothing, so no other state asks.
+    note: str = ""
 
 
 # --- the chain -----------------------------------------------------------
@@ -303,6 +349,15 @@ class ChainStep(Schema):
     basis: str | None = None
     note: str | None = None
     inputs: list[ChainInput] = Field(default_factory=list)
+    #: What this cell reads that could not be followed, each already
+    #: phrased as a sentence — « in another workbook, which is not in this
+    #: deal », « a defined name pointing at #REF! ».
+    #:
+    #: The reason this is on the wire at all: a chain that quietly omits an
+    #: input looks exactly like a chain that had none, and this product's
+    #: whole claim is the chain. Rule 3 — what was not checked is part of
+    #: the answer.
+    unresolved: list[str] = Field(default_factory=list)
 
 
 class ChainRead(Schema):
@@ -477,6 +532,16 @@ class DealListItem(Schema):
     open_findings: int
     #: When this deal was last reconciled. Null: never.
     checked_at: datetime | None = None
+    #: A current document arrived after that check, so its results are out
+    #: of date — including the findings count on this very row. The screen
+    #: leads with this over any number, because the numbers are what went
+    #: stale.
+    stale: bool = False
+    #: What arrived — an :class:`ArtifactKind` value — and when. The
+    #: sentence (« The model changed at 11:40 today ») is the client's to
+    #: build, because only the reader's browser knows their clock.
+    stale_kind: str | None = None
+    stale_at: datetime | None = None
 
 
 # --- the model page ------------------------------------------------------
@@ -585,6 +650,49 @@ class SheetGrid(Schema):
     rows_total: int
 
 
+class HiddenFinding(Schema):
+    """One thing in the file that is not on its screen."""
+
+    rule: str
+    #: `leak` — content a recipient can read that the sender did not put
+    #: on the page. `trace` — who, when, how it was filed. Never added.
+    severity: str
+    where: str
+    detail: str
+    evidence: str = ""
+
+
+class HiddenReport(Schema):
+    """What travels with this file — the metadata checker, on the wire.
+
+    Computed on request from the stored bytes rather than persisted: the
+    answer is a second's work, it is always about the current version,
+    and a stored copy would be one more thing that can silently disagree
+    with the file it describes.
+    """
+
+    kind: str
+    parts: int
+    findings: list[HiddenFinding]
+    #: The refusal sentence, when the file is not one the checker reads —
+    #: a PDF, a legacy .doc, a password-protected workbook. A valid
+    #: answer about the file, not an error: the screen shows it in place
+    #: of the list.
+    refused: str | None = None
+
+
+class VersionRead(Schema):
+    """One upload of a document, oldest last."""
+
+    id: UUID
+    version: int
+    uploaded_by: Uploader | None
+    uploaded_at: datetime
+    #: Figures, cells, slides — whatever this kind of file has, so the
+    #: row can say what each version brought without a diff engine.
+    counts: dict[str, Any]
+
+
 class ModelGrid(Schema):
     """A model as it is laid out, rather than as a search box.
 
@@ -600,7 +708,133 @@ class ModelGrid(Schema):
     sheets: list[SheetGrid]
 
 
+# --- one-off checks ------------------------------------------------------
+
+
+class SoloStatement(Schema):
+    """One place a file states a figure, for the check-a-file card."""
+
+    printed: str
+    location: str
+    page: int
+    #: The slide's title or the heading over the block — what the card
+    #: prints under the value so a reader knows where they are being sent.
+    section: str = ""
+    #: The sentence around the figure, when there is one, so the evidence
+    #: card can quote the file rather than paraphrase it.
+    context: str = ""
+
+
+class SoloFindingRead(Schema):
+    """One name carrying two figures in the same file.
+
+    Which one is *right* is not knowable from the file alone, and the
+    shape deliberately does not guess — `first` and `other` are the two
+    statements in reading order, and the finding is that the file says
+    both.
+    """
+
+    label: str
+    #: How many times the file states this name in total, counting the
+    #: agreeing ones.
+    statements: int
+    first: SoloStatement
+    other: SoloStatement
+
+
+class OneOffDrift(Schema):
+    """A printed figure that disagrees with the picked deal's model.
+
+    The model is a real artifact in that deal, so `model_artifact_id`
+    reaches the same grid endpoint the document panel uses for its
+    four-rows-around-the-cell evidence.
+    """
+
+    printed: str
+    expected: str
+    label: str
+    page: int
+    location: str
+    context: str
+    ref: str
+    name: str
+    basis: str
+    confidence: float
+    one_tick: bool
+    model_artifact_id: UUID | None = None
+
+
+class OneOffDefect(Schema):
+    """One mechanical defect from a model's own audit."""
+
+    rule: str
+    #: `error` or `smell` — never added into one number.
+    severity: str
+    ref: str
+    sheet: str
+    name: str
+    detail: str
+    #: The standard the rule comes from, so a banker asking « says who »
+    #: has an answer.
+    standard: str = ""
+
+
+class AgainstModel(Schema):
+    """One model the file was compared with — the « Compared with » card."""
+
+    artifact_id: UUID
+    filename: str
+    version: int
+    read_at: datetime
+
+
+class OneOffResult(Schema):
+    """One loose file, checked, with everything the screen draws.
+
+    Three finding lists rather than one union: a solo disagreement, a
+    drift against a model and an audit defect are different facts with
+    different evidence, and a screen that receives them separately can
+    never mistake one for another. Lists the check did not run are empty,
+    not null — an empty list is « ran and found nothing ».
+    """
+
+    id: UUID
+    filename: str
+    kind: str
+    checked_at: datetime
+    #: The deal it was checked against, as named at check time. Empty for
+    #: a check on the file's own. The name is a snapshot: deleting the
+    #: deal later must not rewrite what this check was.
+    against: str = ""
+    dossier_id: UUID | None = None
+    #: The models the file was compared with, for the « Compared with »
+    #: card. Empty for a solo check.
+    models: list[AgainstModel] = []
+    #: What was read and compared — slides, figures, repeated names,
+    #: differences. The tally row.
+    counts: dict[str, Any]
+    disagreements: list[SoloFindingRead] = []
+    drifts: list[OneOffDrift] = []
+    defects: list[OneOffDefect] = []
+
+
+class RecentCheck(Schema):
+    """One line of « Recent one-off checks »."""
+
+    id: UUID
+    filename: str
+    kind: str
+    #: The deal's name at check time, or empty — the sub-line is
+    #: « Checked against {against} » or « Checked on its own ».
+    against: str
+    checked_at: datetime
+    #: Enough for the row without the findings: the stored result comes
+    #: back whole when the row is opened.
+    counts: dict[str, Any]
+
+
 __all__ = [
+    "AgainstModel",
     "ArtifactPage",
     "ArtifactRead",
     "CellRead",
@@ -631,8 +865,14 @@ __all__ = [
     "LinkRead",
     "ModelDiff",
     "ModelGrid",
+    "OneOffDefect",
+    "OneOffDrift",
+    "OneOffResult",
     "PanelToken",
+    "RecentCheck",
     "SheetGrid",
     "SlideFigures",
+    "SoloFindingRead",
+    "SoloStatement",
     "Uploader",
 ]

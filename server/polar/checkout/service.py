@@ -39,11 +39,11 @@ from polar.event.system import (
     build_checkout_event,
 )
 from polar.exceptions import (
+    ClaidorRequestValidationError,
     NotPermitted,
     PaymentNotReady,
     PolarError,
     ResourceNotFound,
-    ClaidorRequestValidationError,
     ValidationError,
 )
 from polar.integrations.stripe.service import stripe as stripe_service

@@ -50,20 +50,24 @@ thing the design drew that this could not do.
 pointed at a SharePoint folder and syncs from it, and nothing about that
 has been proven against a real Microsoft tenant.
 
-What is left is the rest of the connectors — Outlook and Teams, and house
-rules as configuration — and accuracy, which is forever.
+**A figure is checked before it leaves the building.** As of 11 August a
+draft in Outlook is reconciled against the model on a press, and the
+correction is shown as a tracked change in the design's own card.
+
+What is left is Teams, house rules as configuration, and accuracy, which
+is forever.
 
 | | State |
 |---|---|
 | Engine — decks, models, memos, audit, chain | Done |
 | Persisted spine — artifacts, figures, cells, links, findings | Done |
 | API — 37 routes, anchors, identity, panel auth | Done |
-| Workspace — 12 of 13 screens on real data, 2 waiting on a source | Done |
+| Workspace — 13 of 14 screens on real data, 1 waiting on a source | Done |
 | Office panel — plumbing and screen both done | Done |
 | Writing — proposals, apply, reverse | Done |
 | PDF sources — the chain's last hop | Done |
-| SharePoint and OneDrive | Done, against a stub |
-| Outlook, Teams, firm standards | Not started |
+| SharePoint, OneDrive, Outlook | Done, against a stub |
+| Teams, firm standards | Not started |
 | Accuracy — deck 83 %, model 56 %, both by mutation | Measured |
 
 ---
@@ -204,11 +208,12 @@ prose reader cannot see, so a figure in one is named by its row alone and
 usually goes unlinked — the safe direction, and a real gap. Notes carry
 the period in words and link cleanly.
 
-### 8 · Connectors and firm standards  ◐ *(11 August — SharePoint only)*
+### 8 · Connectors and firm standards  ◐ *(11 August — SharePoint and Outlook)*
 
-SharePoint and OneDrive as sources, through Microsoft Graph. Delegated
-access only — this connector reads exactly what the person who connected
-it can already open, and **never writes to a customer's file store**.
+SharePoint, OneDrive and Outlook as sources, through Microsoft Graph.
+Delegated access only, and read scopes only — this connector reads exactly
+what the person who connected it can already open, and **never writes to a
+customer's file store or their mailbox**.
 
 - ~~Connect an account~~ — `connector/`, OAuth with a signed state that
   carries the organization and the person, because the browser coming
@@ -224,12 +229,37 @@ it can already open, and **never writes to a customer's file store**.
   Cascade files as a document library over Graph's own shapes, which is
   how everything above got looked at
 
+Then Outlook, which is the same plumbing pointed at a mailbox and a
+different argument for existing: a deck can be pulled back out of a data
+room, and a sent message cannot be pulled back out of anything.
+
+- ~~Read a message~~ — `tieout/message.py`, which is the *memo* reader
+  with Outlook's HTML in front of it and the quoted thread and signature
+  cut off, because a drift reported against a sentence somebody else
+  wrote three weeks ago is a false positive with no available fix
+- ~~Check it~~ — a message is an `ArtifactKind.message` and the tie-out
+  cannot tell it from a memo. One press, one message: a product that
+  quietly reconciled an inbox would be a surveillance tool that also
+  checks numbers
+- ~~The screen~~ — `screens/Mail.tsx`, the design's mailbox with the
+  tracked-change card real: the sentence as written, the figure struck
+  through, the model's figure underlined
+- **« Accept and send » cannot exist.** The design's button, and the
+  server has no write scope on a mailbox by decision. What is there is
+  the corrected sentence to take, and the add-in — which writes it into
+  the draft in the writer's own compose window, on their own press
+
 **Nothing here has run against a real tenant**, and that is the honest
 state: the shapes come from the published API and the wiring above them is
-real. The first connection will find something.
+real. The first connection will find something — and
+`scripts/connector_doctor.py` is what makes it say what, rather than a 502
+on a screen and an afternoon. Register the application, connect once
+through the SharePoint screen, run the doctor: it makes every call the
+connector makes, in dependency order, and each failure carries the
+permission or the setting that would fix it.
 
-Still waiting: Outlook and Teams — Mail and Calendar are still
-`screens/Waiting.tsx`, and house rules as configuration has not started.
+Still waiting: Teams, and house rules as configuration. Calendar is still
+`screens/Waiting.tsx`.
 
 ### 9 · Accuracy — forever, never blocking
 
@@ -264,3 +294,36 @@ quoting.
    the model: the obvious generalisation cost a false positive and was
    dropped on evidence, not taste.
 6. **Every failure message says what a person can do about it.**
+
+---
+
+## How work gets reported
+
+Added 11 August, after I told the founder the product was « finished
+enough to sell ». It was not. Nothing was deployed anywhere, the Office
+task pane had never once been loaded inside Office, the connector had
+never met a real Microsoft tenant, and every document it had ever been
+shown was one I generated myself. All four of those facts were written
+down honestly in `worklog.md` by me, and I still aggregated them into a
+verdict they did not support — because I was measuring against this
+roadmap instead of against a stranger opening the thing.
+
+He found it in thirty seconds by uploading a document I had not made. It
+turned « think 60–70 minutes » into a financial figure of $70m and printed
+a linker score at him as the explanation.
+
+So, three rules, and they bind harder than the six above because breaking
+them makes the six unverifiable:
+
+7. **Test against something you did not make.** Their files, real files,
+   the wrong kind of file entirely. A fixture you generated cannot tell
+   you the reader is wrong, because you wrote both. If only your own
+   fixtures have been run, that is *not tested* — say so in the same
+   sentence as the result.
+8. **Report a failure in the turn you find it.** Not folded into a summary
+   afterwards, not softened, not balanced against three things that
+   worked.
+9. **State the test conditions, never the verdict.** « Checked against the
+   Cascade fixtures I wrote, at 1440×900, by me » is a report. « Ready to
+   show » is a judgement that belongs to the person who owns the product.
+   Whether something is showable is never yours to declare.

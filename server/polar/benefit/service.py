@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import case, delete
 
 from polar.auth.models import AuthSubject
-from polar.exceptions import NotPermitted, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, NotPermitted
 from polar.kit.db.postgres import AsyncSession
 from polar.kit.metadata import MetadataQuery, apply_metadata_clause
 from polar.kit.pagination import PaginationParams

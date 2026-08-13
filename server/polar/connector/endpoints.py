@@ -36,6 +36,7 @@ from .schemas import (
     DriveRead,
     FolderRead,
     ItemRead,
+    MessageRead,
     PointAt,
 )
 from .service import ConnectorError, connector
@@ -279,6 +280,110 @@ async def list_items(
     ]
     rows.sort(key=lambda one: (not one.folder, one.name.lower()))
     return rows
+
+
+# --- mail ----------------------------------------------------------------
+
+
+def _message(
+    message: Any, artifact: Any | None = None, *, body: bool = False
+) -> MessageRead:
+    return MessageRead(
+        id=message.id,
+        subject=message.subject,
+        from_name=message.from_name,
+        from_email=message.from_email,
+        to=list(message.to),
+        received_at=message.received_at,
+        preview=message.preview,
+        is_draft=message.is_draft,
+        is_read=message.is_read,
+        has_attachments=message.has_attachments,
+        body=message.body if body else "",
+        artifact_id=artifact.id if artifact else None,
+        current=bool(artifact and artifact.external_version == message.change_key),
+    )
+
+
+@router.get("/deals/{dossier_id}/mail", response_model=list[MessageRead])
+async def list_mail(
+    dossier_id: UUID,
+    auth_subject: WebUserRead,
+    folder: str = Query(default="inbox"),
+    session: AsyncSession = Depends(get_db_session),
+) -> list[MessageRead]:
+    """A mail folder, and what this deal has already checked in it.
+
+    Scoped to a deal rather than to the mailbox because the second half of
+    every row is « has this been checked against *this* model » — a
+    question that has a different answer on every deal the person is on.
+    """
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    connection = await _their_connection(session, deal.organization_id, auth_subject)
+    try:
+        graph = await connector.client_for(session, connection=connection)
+        messages = await graph.messages(folder)
+    except (ConnectorError, GraphError) as problem:
+        raise HTTPException(status_code=502, detail=str(problem)) from problem
+
+    known = await ConnectorRepository.from_session(session).artifacts_by_external_id(
+        dossier_id
+    )
+    return [_message(one, known.get(one.id)) for one in messages]
+
+
+@router.get("/deals/{dossier_id}/mail/{message_id}", response_model=MessageRead)
+async def read_mail(
+    dossier_id: UUID,
+    message_id: str,
+    auth_subject: WebUserRead,
+    session: AsyncSession = Depends(get_db_session),
+) -> MessageRead:
+    """One message, with its body. Reading it checks nothing."""
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    connection = await _their_connection(session, deal.organization_id, auth_subject)
+    try:
+        graph = await connector.client_for(session, connection=connection)
+        message = await graph.message(message_id)
+    except (ConnectorError, GraphError) as problem:
+        raise HTTPException(status_code=502, detail=str(problem)) from problem
+
+    known = await ConnectorRepository.from_session(session).artifacts_by_external_id(
+        dossier_id
+    )
+    return _message(message, known.get(message.id), body=True)
+
+
+@router.post("/deals/{dossier_id}/mail/{message_id}/check", response_model=MessageRead)
+async def check_mail(
+    dossier_id: UUID,
+    message_id: str,
+    auth_subject: WebUserWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> MessageRead:
+    """Read this message into the deal and reconcile it against the model.
+
+    On a press, and one message. Nothing here reads a mailbox on its own.
+    """
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    connection = await _their_connection(session, deal.organization_id, auth_subject)
+    try:
+        await connector.check_message(
+            session,
+            dossier_id=dossier_id,
+            connection=connection,
+            message_id=message_id,
+            user_id=auth_subject.subject.id,
+        )
+        graph = await connector.client_for(session, connection=connection)
+        message = await graph.message(message_id)
+    except (ConnectorError, GraphError) as problem:
+        raise HTTPException(status_code=502, detail=str(problem)) from problem
+
+    known = await ConnectorRepository.from_session(session).artifacts_by_external_id(
+        dossier_id
+    )
+    return _message(message, known.get(message.id), body=True)
 
 
 # --- a deal's folder -----------------------------------------------------

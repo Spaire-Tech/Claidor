@@ -9,7 +9,7 @@ from polar.config import settings
 from polar.email.react import render_email_template
 from polar.email.schemas import EmailUpdateEmail, EmailUpdateProps
 from polar.email.sender import enqueue_email
-from polar.exceptions import PolarError, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, PolarError
 from polar.kit.crypto import generate_token_hash_pair, get_token_hash
 from polar.kit.extensions.sqlalchemy import sql
 from polar.kit.services import ResourceServiceReader

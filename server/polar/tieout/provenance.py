@@ -169,6 +169,12 @@ def chain(book: Workbook, ref: str, depth: int = DEPTH) -> str:
         parts.append(f"{_relative(cell, source) or precedent}{shown}")
     if len(cell.precedents) > 4:
         parts.append(f"and {len(cell.precedents) - 4} more")
+    # An input that could not be followed belongs in the sentence, not
+    # under it. A chain reading « = EBIT 41.2, taxes 9.8 » when a third
+    # input existed and was dropped is the product asserting something it
+    # does not know.
+    for _, why in cell.unresolved[:2]:
+        parts.append(f"and one {why}")
     return f"{line} = {', '.join(parts)}" if parts else line
 
 
@@ -256,14 +262,28 @@ def inputs_from_workbook(book: Workbook) -> list[Output]:
     the deal wrote — against its largest set of candidates, which is how a
     grounding engine starts inventing origins. Cascade has 85 typed inputs
     against 313 named cells, and the narrower set is the safer one.
+
+    **And not a row number.** Measured against the first real pair this
+    ever saw — an NHS workforce report and the workbook published beside
+    it — the only two links it made were both to a lookup list whose first
+    column counts `1, 2, 3 …` and whose second column holds the staff
+    group's name. « 13,686 FTE are Support to clinical staff » on page 8
+    matched `Controls!A10`, named *Support to clinical staff*, holding the
+    number **10**. Two links, two false positives, and each one was then
+    reported as the document contradicting the model.
+
+    The label was right. The cell was never a quantity. A column that
+    counts its own rows is an index, and an index is not something a set of
+    accounts can be the origin of — see :func:`_counting_columns`.
     """
+    counting = _counting_columns(book)
     return [
         Output(
             ref=cell.ref,
             name=cell.name,
             value=cell.value,
             source=cell.ref,
-            basis=cell.sheet,
+            basis=basis_of(cell),
         )
         for cell in book.cells.values()
         if cell.formula is None
@@ -271,7 +291,80 @@ def inputs_from_workbook(book: Workbook) -> list[Output]:
         and cell.row_label
         and cell.alias_of is None
         and cell.sheet.lower() not in RESTATING_SHEETS
+        and (cell.sheet, cell.column) not in counting
     ]
+
+
+def basis_of(cell: Cell) -> str:
+    """What kind of thing a cell is, for the matcher to weigh below its name.
+
+    The sheet, and the short descriptors printed beside the row. A sheet
+    name is the nearest thing a raw workbook has to a stated basis — a
+    figure on the Comps tab is a trading comparable and one on the DCF tab
+    is not — and the descriptors are the rest of that sentence: the units,
+    the licence condition, the mnemonic.
+
+    **Below the name, deliberately.** These words identify a row when its
+    name cannot, and they must never be able to carry a match on their own:
+    `£m 09/10 prices` appears on hundreds of rows of a regulator's model
+    and says nothing about which one.
+    """
+    return " ".join((cell.sheet, *cell.row_tags))
+
+
+#: How many cells in a row must count before the column is an index rather
+#: than a coincidence. Four consecutive integers each one more than the
+#: last, in one column, is not something a table of quantities does.
+COUNTING_RUN = 4
+
+
+def _counting_columns(book: Workbook) -> set[tuple[str, int]]:
+    """Columns that number their own rows, as `(sheet, column)`.
+
+    Two shapes, both structural rather than a guess about magnitude:
+
+    - **The value is the row it sits on.** `A10 = 10`, `A11 = 11`. This is
+      what a lookup list written straight down a sheet looks like.
+    - **The values count from one.** `A5 = 1`, `A6 = 2`, `A7 = 3`. The same
+      list, started lower down the page.
+
+    Nothing here excludes a column of years — 2015, 2016, 2017 also ascend
+    by one — because a year column fails both tests: 2015 is not row 3, and
+    it does not start at 1. That mattered enough to check: suppressing a
+    model's period headers would take real inputs out of the grounding set.
+    """
+    columns: dict[tuple[str, int], list[tuple[int, int]]] = {}
+    for cell in book.cells.values():
+        if cell.formula is not None or cell.value is None:
+            continue
+        if cell.value != int(cell.value):
+            continue
+        columns.setdefault((cell.sheet, cell.column), []).append(
+            (cell.row, int(cell.value))
+        )
+
+    counting: set[tuple[str, int]] = set()
+    for where, cells in columns.items():
+        ordered = sorted(cells)
+        run_as_row = from_one = 0
+        previous: tuple[int, int] | None = None
+        for row, number in ordered:
+            run_as_row = run_as_row + 1 if number == row else 0
+            # A run only counts once it has seen a one. Without that
+            # condition any column ascending by one qualifies — which is
+            # every column of consecutive years, and suppressing those
+            # would take a model's period headers out of the grounding set.
+            if number == 1:
+                from_one = 1
+            elif from_one and previous is not None and number == previous[1] + 1:
+                from_one += 1
+            else:
+                from_one = 0
+            previous = (row, number)
+            if max(run_as_row, from_one) >= COUNTING_RUN:
+                counting.add(where)
+                break
+    return counting
 
 
 def repair_outputs(outputs: list[Output], book: Workbook) -> list[Output]:
