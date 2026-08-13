@@ -114,13 +114,13 @@ def _read_source(path: str) -> Ingested:
         ) from error
 
     pages = {figure.slide for figure in extraction.figures}
-    return Ingested(
-        figures=extraction.figures,
-        counts={
-            "figures": len(extraction.figures),
-            "pages_with_figures": len(pages),
-        },
-    )
+    counts: dict[str, Any] = {
+        "figures": len(extraction.figures),
+        "pages_with_figures": len(pages),
+    }
+    if extraction.year is not None:
+        counts["document_year"] = extraction.year
+    return Ingested(figures=extraction.figures, counts=counts)
 
 
 def _read_model(path: str) -> Ingested:

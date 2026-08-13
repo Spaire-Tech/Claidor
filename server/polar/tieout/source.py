@@ -26,6 +26,7 @@ says what it is and what to do about it instead.
 
 import io
 import re
+from typing import Any
 
 from .figures import Extraction, Figure
 from .memo import is_heading
@@ -85,7 +86,40 @@ def read_source_bytes(payload: bytes) -> Extraction:
             "and upload it again"
         )
 
-    return read_pages(pages)
+    extraction = read_pages(pages)
+    extraction.year = _document_year(reader, pages)
+    return extraction
+
+
+#: « December 2025 » on a title page. Month first, because a bare year on
+#: a cover is as often a figure or a filename fragment as a date.
+MONTH_YEAR = re.compile(
+    r"\b(?:January|February|March|April|May|June|July|August|September|"
+    r"October|November|December)\s+((?:19|20)\d{2})\b"
+)
+
+
+def _document_year(reader: Any, pages: list[str]) -> int | None:
+    """The year this document speaks from, when it says.
+
+    The PDF's own creation date first — machine-written and rarely wrong
+    on a published document — then a « Month YYYY » on the first two
+    pages, which is where a determination or a set of accounts states
+    its date. `None` when neither speaks: the era tiebreak simply does
+    not run, which is the correct amount of confidence.
+    """
+    try:
+        created = getattr(reader.metadata, "creation_date", None)
+        year = getattr(created, "year", None)
+        if isinstance(year, int) and 2000 <= year <= 2100:
+            return year
+    except Exception:
+        pass
+    for text in pages[:2]:
+        found = MONTH_YEAR.search(text)
+        if found is not None:
+            return int(found.group(1))
+    return None
 
 
 #: A label has to carry at least one real word. Three letters, because

@@ -341,9 +341,7 @@ class Vocabulary:
         #: outcome, only the bill: 1,234 figures against 137,852 cells
         #: was twenty minutes of scoring zeros.
         self.postings: dict[str, list[int]] = {}
-        for index, (name, basis) in enumerate(
-            zip(self.names, self.bases, strict=True)
-        ):
+        for index, (name, basis) in enumerate(zip(self.names, self.bases, strict=True)):
             for word in set(name) | set(basis):
                 document_frequency[word] = document_frequency.get(word, 0) + 1
                 self.postings.setdefault(word, []).append(index)
@@ -482,9 +480,15 @@ def _admissible(figure: Figure, output: Output, label: list[str]) -> bool:
 
 
 def link(
-    figures: list[Figure], outputs: list[Output]
+    figures: list[Figure], outputs: list[Output], year: int | None = None
 ) -> tuple[list[Link], list[Unlinked]]:
-    """Match each figure to the output row it claims to be, or to nothing."""
+    """Match each figure to the output row it claims to be, or to nothing.
+
+    `year` is the year the *document* speaks from, when it says (a
+    price-control decision published December 2025 speaks from 2025).
+    It powers exactly one thing: the era tiebreak on mixed-value ties,
+    below. Without it that tiebreak simply does not run.
+    """
     vocabulary = Vocabulary(outputs)
     links: list[Link] = []
     unlinked: list[Unlinked] = []
@@ -514,9 +518,7 @@ def link(
         scored.sort(reverse=True)
 
         if not scored:
-            unlinked.append(
-                Unlinked(figure, "no output fits the label (best 0.00)")
-            )
+            unlinked.append(Unlinked(figure, "no output fits the label (best 0.00)"))
             continue
         best, best_index = scored[0]
         runner_up = scored[1][0] if len(scored) > 1 else 0.0
@@ -524,6 +526,20 @@ def link(
         if best < THRESHOLD:
             unlinked.append(
                 Unlinked(figure, f"no output fits the label (best {best:.2f})")
+            )
+            continue
+        if _derivative(figure) and not _agrees(figure, outputs[best_index]):
+            # « plus or minus the baseline return on equity », « penalty
+            # thresholds are 8% » — prose naming a *derivative* of a
+            # quantity: a sensitivity band, a threshold, a cap. The words
+            # match the quantity's cell and the number never will, and
+            # both false drifts the round-1 re-test produced were this
+            # shape. A derivative may corroborate; it may not contradict.
+            unlinked.append(
+                Unlinked(
+                    figure,
+                    "states a threshold or sensitivity, not the quantity",
+                )
             )
             continue
         if _uncorroborated(label_set | context, outputs[best_index]) and not _agrees(
@@ -549,10 +565,13 @@ def link(
             continue
         if best - runner_up < MARGIN:
             tied = [
-                index
-                for score, index in scored
-                if score > 0 and best - score < MARGIN
+                index for score, index in scored if score > 0 and best - score < MARGIN
             ]
+            era = _era_pick(outputs, tied, label, label_set | context, year)
+            if era is not None:
+                tied = era
+                best_index = tied[0]
+                best = next(score for score, i in scored if i == best_index)
             if _one_answer(outputs, tied):
                 # The « ambiguity » is one flat parameter repeated across
                 # the model's year columns — « FY2027 Risk-free rate »
@@ -612,6 +631,24 @@ def _timeless(output: Output) -> list[str]:
     ]
 
 
+#: Prose that marks a derivative of a quantity rather than the quantity:
+#: bands, limits, and stress ranges. Both round-1 false drifts on the
+#: regulator pair were one of these.
+DERIVATIVE_WORDS = frozenset(
+    {"threshold", "sensitivity", "cap", "collar", "floor", "tolerance", "deadband"}
+)
+DERIVATIVE_PHRASES = ("plus or minus", "+/-", "±")
+
+
+def _derivative(figure: Figure) -> bool:
+    """True when the figure's own words say it is a band or a limit."""
+    words = set(tokens(figure.label)) | set(tokens(figure.context))
+    if words & DERIVATIVE_WORDS:
+        return True
+    raw = f"{figure.label} {figure.context}".lower()
+    return any(phrase in raw for phrase in DERIVATIVE_PHRASES)
+
+
 def _uncorroborated(said: set[str], output: Output) -> bool:
     """True when the match rests on one shared content word and nothing
     else.
@@ -639,6 +676,84 @@ def _uncorroborated(said: set[str], output: Output) -> bool:
     # claim resting entirely on entity-shaped tokens has named no
     # quantity at all.
     return all(len(word) <= 3 for word in content)
+
+
+#: Words a document uses to say it means the current regime's number
+#: rather than history's — and the reverse. Ofgem's own vocabulary
+#: (« allowance », « outturn »); the Bank of England's forecast
+#: methodology draws the same line in the same words.
+FORWARD_WORDS = frozenset(
+    {"forecast", "projected", "allowance", "allowed", "estimate", "assumption"}
+)
+BACKWARD_WORDS = frozenset(
+    {"actual", "outturn", "historical", "historic", "realized", "realised"}
+)
+
+
+def _era_pick(
+    outputs: list[Output],
+    tied: list[int],
+    label: list[str],
+    said: set[str],
+    year: int | None,
+) -> list[int] | None:
+    """The tied candidates from the era the document means, or None.
+
+    The mixed-value tie that defeated every recall target on the fair
+    pair: a parameter and its own history under one name. « Notional
+    gearing » ties ten 0.6 cells (FY2022-31) against FY2021's 0.65 —
+    RIIO-2's value — and a December 2025 decision quoting the parameter
+    bare means the regime it is deciding, not the one before.
+
+    Three rules, in order of how much the document actually said:
+
+    - A label that carries its own period gets no help — the period
+      gates have it.
+    - A qualifier word picks a side: « outturn » means history,
+      « allowance » means the regime. The words are the regulator's
+      own, and they are features, not oracles — the pick still has to
+      survive `_one_answer` before anything links.
+    - Bare, with a known document year: the document speaks from its
+      own era, so candidates whose column-year is at or behind it step
+      back. **At**, not just behind: the Finance Annex speaks from
+      inside FY2026, and FY2026 is the year being lived — its cells
+      hold history's blend (RFR 0.0214 against the regime's flat
+      0.023), and keeping it in the set left every recall target
+      refusing as « two values ». Forward means strictly after the
+      document's own year. The risk taken knowingly: a document
+      quoting the *current* year's number in forward-tone prose would
+      step that year back and could land on the regime's cell — a
+      wrong link the `_one_answer` value test only catches when the
+      eras genuinely differ. The other direction of the same
+      off-by-one merely refuses, which is the cheap error here.
+
+    Never a value in sight, and the narrowed set must still agree with
+    itself — this chooses which *era* to consider, not which cell wins.
+    """
+    if _period(label):
+        return None
+    tone = None
+    if said & BACKWARD_WORDS:
+        tone = "past"
+    elif said & FORWARD_WORDS or year is not None:
+        tone = "present"
+    if tone is None or year is None:
+        return None
+
+    def era_of(index: int) -> str:
+        years = [
+            int(match.group(1)) + (2000 if len(match.group(1)) == 2 else 0)
+            for word in tokens(outputs[index].name)
+            if (match := FISCAL_YEAR.match(word)) is not None
+        ]
+        if not years:
+            return "either"
+        return "past" if max(years) <= year else "present"
+
+    kept = [index for index in tied if era_of(index) in (tone, "either")]
+    if kept and len(kept) < len(tied):
+        return kept
+    return None
 
 
 def _agrees(figure: Figure, output: Output) -> bool:

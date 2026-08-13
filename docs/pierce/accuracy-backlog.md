@@ -1082,3 +1082,88 @@ ten 0.6s; RFR/TMR/CoE/beta tie their parameter rows against their own
 history rows. One cause, one fix owed: the document-date-anchored
 period prior plus flat-vs-dated row shape — round 2, exactly as the
 research sequenced it.
+
+### Linker round 2: era prior + qualifier gazetteer, measured
+
+The round the recall problem was built for. Three pieces, in order of
+what the document actually says: a **derivative suppressor** (prose
+naming a threshold, a sensitivity, a « plus or minus » band may
+corroborate a cell and may never contradict it — both round-1 false
+drifts were this shape, and both are dead); a **qualifier gazetteer**
+(« outturn » and « actual » say history, « forecast » and
+« allowance » say the regime — the regulator's own vocabulary, used
+as features that still have to survive the one-answer test); and the
+**era prior** itself: a source PDF now carries the year it speaks from
+(`_document_year`: metadata creation date, else « Month YYYY » on the
+first two pages), and a mixed-value tie steps the other era's columns
+back before refusing.
+
+**The boundary was the round's real finding.** First cut said a
+column is past when its year is *strictly below* the document's, and
+every recall target still refused — diagnosed to one row each time:
+the history rows end at FY2026, the document speaks from inside
+FY2026 (published December 2025), and FY2026's cell holds history's
+blend (RFR 0.0214 against the regime's flat 0.023). Forward means
+strictly *after* the document's own year; with that boundary the kept
+set is single-valued and the one-answer collapse does the rest. Risk
+taken knowingly and written at the definition: a document quoting the
+current year's own number in forward-tone prose could now step that
+year back and land on the regime's cell. The off-by-one's other
+direction merely refuses, which is the cheap error here. Honesty
+note: the year is 2026 because the PDF's metadata stamps it so; a
+correct calendar reading (December *2025*) would put the boundary a
+year lower and the targets would still refuse — safely. Month-aware
+fiscal-year conversion is future work, named here.
+
+**The identical Annex ↔ GD-BPFM pair, graded by the unchanged
+protocol (`ofgem-crosscheck-protocol.md`, untouched since before the
+first result):**
+
+- **V = 18** proposals (≤ ~150) — PASS.
+- **P = 13 of 18 = 72%** (all eighteen hand-adjudicated, no
+  sampling) — PASS, barely.
+- **R = 5 of 5 verified-present targets = 100%** — PASS. RFR 2.30% →
+  `Cadent!AY869` 0.023; TMR 6.9% → `AY871` 0.069; equity beta 0.83 →
+  `AY870` 0.83; notional gearing 60% → `MainInputs!AY381` 0.6; cost
+  of equity 6.12% → `MainInputs!AY365` 0.06118. Every one agreeing,
+  every cell hand-checked as genuinely the quantity.
+- **D: five drifts claimed, all five false — FAIL.** The round fails
+  here and only here.
+
+Denominator removals, each with the search that failed (protocol
+rule): asset beta 0.375 and debt beta 0.075 — zero candidates whose
+name contains either, across all 137,852 (the BPFM takes CoE as an
+input; the CAPM decomposition lives elsewhere); 20-year ILG 2.21% —
+zero names containing « ilg » or « gilt », and the only 0.0221 cell
+is a depreciation ratio; CoD 4.56% and WACC 5.18% — the model's CoD
+and WACC rows exist and none holds those values (nominal CoD ramps
+0.041→0.052, vanilla WACC is CPIH-real ~0.042; the document quotes
+semi-nominal allowances the workbook never states as cells); equity
+beta 0.74 and gearing 55% — ET parameters, and this is the gas
+distribution model (sheets are Cadent…WWU; no ET anywhere).
+
+**The five false drifts, by cause — the whole remaining failure:**
+
+1. **Entity sibling, three of five** — 55% (ET gearing, twice) and
+   5.70% (ET's cost of equity at 55% gearing) reconciled against the
+   GD cells and reported as disagreeing. The document names ET in
+   prose the label does not carry. This is round 3's mandate,
+   already sequenced: an entity gazetteer built from the model's own
+   sheet names, nearest-entity attachment, and a scope gate.
+2. **Fragment labels, two of five — new, named here.** Clause
+   segmentation hands a figure a dangling parenthetical as its whole
+   label: « gearing) and » carries 5.18% (the WACC), « gearing) »
+   carries 60% (the qualifier inside « at 60% gearing »), and both
+   land on `Cost of equity at 60% gearing` because the row's *name
+   contains the qualifier*. « 60% vs 6% » is exactly the
+   embarrassing-shape drift the protocol fails on. The fix is in the
+   reader, not the linker: a label that is an unbalanced fragment
+   with no head of its own should not carry a link. Two pinned
+   examples for that round.
+
+Round 1 to round 2 on the same pair: 4 proposals → 18; agreeing 2 →
+13; recall 0 of 5 → 5 of 5; false drifts 2 → 5 (three of them the
+entity class that was always coming). Cascade unmoved throughout:
+7/8 all agreeing on the accounts pair, 113/105/8 pinned in the suite,
+356 tests green. Recall is solved on this pair; every remaining wrong
+answer now has a name and a queue position.

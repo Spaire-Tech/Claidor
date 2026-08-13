@@ -1802,3 +1802,48 @@ worker runs, after the founder's Microsoft hour); and there is no
 email or push — « tell me » is the deals list telling you, which is
 the only channel the design draws. The cadence is fixed at 15 minutes;
 making it a house rule is a founder decision when wanted.
+
+## 13 August 2026 — linker round 2: the document knows what year it is
+
+The second round of the recall plan, and the one aimed at the shape
+that defeated every target on the Ofgem pair: a parameter and its own
+history under one name.
+
+**What was built.** A source PDF now records the year it speaks from
+(`Extraction.year`, read from the PDF's creation date or a « Month
+YYYY » on the opening pages, carried through ingest counts and into
+the crosscheck). On a mixed-value tie the linker asks which era the
+document means — « outturn » says history, « forecast » and
+« allowance » say the regime, and a bare parameter with a known
+document year means the document's own era — then steps the other
+era's columns back and lets the existing one-answer collapse decide.
+Never a value in sight; the narrowed set must still agree with
+itself. Alongside it, the derivative suppressor: prose that names a
+band or a threshold (« plus or minus », « thresholds are ») may
+corroborate a cell and may never contradict one. Both round-1 false
+drifts were that shape; both are dead.
+
+**The boundary was the discovery.** With « past » meaning strictly
+below the document's year, every target still refused — one diagnosis
+later, the reason was FY2026: the document speaks from *inside* it,
+and its column holds history's blend, not the regime's number.
+Forward means strictly after the document's own year. One character
+(`<` to `<=`), argued at the definition with its risk stated, and
+the entire headline family linked: RFR, TMR, equity beta, cost of
+equity, gearing — five of five verified-present targets, all
+agreeing, all hand-checked.
+
+**Graded by the untouched protocol: still FAIL, now purely on
+drifts.** Volume 18, precision 72%, recall 100% — and five false
+drifts, which the protocol rightly refuses to forgive. Three are the
+entity sibling (ET's 55% against GD's 60%), which is round 3's
+already-sequenced mandate. Two are a new named class: clause
+segmentation handing a figure a dangling fragment (« gearing) and »)
+whose one word sits inside another row's name. The autopsy, the
+denominator removals with their named searches, and both queues are
+in the accuracy backlog.
+
+Also fixed en route: the month-name regex in `_document_year` had
+literal backspace bytes where `\b` was meant (a heredoc artifact) —
+caught by its own new test failing on « December 2025 ». Cascade
+unmoved: 7/8 agreeing, 113/105/8 pinned, 356 tieout tests green.

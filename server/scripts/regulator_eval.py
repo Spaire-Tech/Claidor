@@ -118,12 +118,15 @@ def crosscheck(pdf: str, model: str) -> None:
     got, model_took = _read(Path(model))
     candidates = outputs_from_workbook(_book_of(got))
     print(
-        f"{Path(pdf).name} ({len(doc.figures)} figures, {doc_took:.0f}s) vs"
+        f"{Path(pdf).name} ({len(doc.figures)} figures, {doc_took:.0f}s,"
+        f" year={doc.counts.get('document_year')}) vs"
         f" {Path(model).name} ({len(candidates)} candidates, {model_took:.0f}s)",
         flush=True,
     )
     start = time.monotonic()
-    proposed, unlinked = propose_links(list(doc.figures), candidates)
+    proposed, unlinked = propose_links(
+        list(doc.figures), candidates, year=doc.counts.get("document_year")
+    )
     drifts, agreed = compare(proposed)
     print(
         f"linker: {time.monotonic() - start:.0f}s;"

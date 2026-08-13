@@ -404,8 +404,16 @@ def test_a_parameter_echoed_across_sheets_is_also_one_answer() -> None:
 
     echoed = [
         Output("E1", "FY2027 Risk-free rate", Decimal("0.023"), "In!AU869", "In"),
-        Output("E2", "FY2027 Risk-free rate", Decimal("0.023"), "Cadent!AW869", "Cadent"),
-        Output("E3", "FY2028 Risk-free rate", Decimal("0.023"), "Northern!AW869", "Northern"),
+        Output(
+            "E2", "FY2027 Risk-free rate", Decimal("0.023"), "Cadent!AW869", "Cadent"
+        ),
+        Output(
+            "E3",
+            "FY2028 Risk-free rate",
+            Decimal("0.023"),
+            "Northern!AW869",
+            "Northern",
+        ),
     ]
     fig = figure(
         "Risk-free rate forecast",
@@ -440,3 +448,224 @@ def test_a_cells_own_year_does_not_dilute_its_name() -> None:
     links, unlinked = run([fig], beta)
     assert links, unlinked
     assert links[0].output.ref == "B1"
+
+
+GEARING = [
+    Output("G0", "FY2021 Notional gearing", Decimal("0.65"), "In!AT880", "In"),
+    Output("G1", "FY2022 Notional gearing", Decimal("0.6"), "In!AU880", "In"),
+    Output("G2", "FY2023 Notional gearing", Decimal("0.6"), "In!AV880", "In"),
+    Output("G3", "FY2024 Notional gearing", Decimal("0.6"), "In!AW880", "In"),
+    Output("G4", "FY2025 Notional gearing", Decimal("0.6"), "In!AX880", "In"),
+    Output("G5", "FY2026 Notional gearing", Decimal("0.6"), "In!AY880", "In"),
+]
+
+
+def test_a_bare_parameter_means_the_documents_own_era() -> None:
+    """The mixed-value tie that defeated every recall target on the fair
+    pair: « Notional gearing » ties ten 0.6 columns against FY2021's
+    0.65 — RIIO-2's value — and a December 2025 decision quoting the
+    parameter bare means the regime it is deciding, not the one before.
+    With the document's year known, the earlier era steps back and the
+    remainder is one answer."""
+    from polar.tieout.link import link as run
+
+    fig = figure(
+        "Notional gearing",
+        kind="percent",
+        printed="60%",
+        value=Decimal("0.6"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], GEARING, year=2025)
+    assert links, unlinked
+    assert links[0].output.value == Decimal("0.6")
+
+
+def test_without_a_document_year_the_tie_still_refuses() -> None:
+    """The era prior runs on what the document said about itself and on
+    nothing else. No year, no prior — the mixed-value tie refuses
+    exactly as before, which is the honest answer when nobody knows
+    which era is speaking."""
+    from polar.tieout.link import link as run
+
+    fig = figure(
+        "Notional gearing",
+        kind="percent",
+        printed="60%",
+        value=Decimal("0.6"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], GEARING)
+    assert not links
+    assert "equally well" in unlinked[0].reason
+
+
+def test_outturn_says_history_and_history_is_what_links() -> None:
+    """« Outturn » is the regulator's own word for what actually
+    happened. A 2021 document quoting the outturn gearing means
+    FY2021's 0.65, not the regime's 0.6 — the qualifier picks the era,
+    and the document year alone would have picked the other one."""
+    from polar.tieout.link import link as run
+
+    fig = figure(
+        "Notional gearing outturn",
+        kind="percent",
+        printed="65%",
+        value=Decimal("0.65"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], GEARING, year=2021)
+    assert links, unlinked
+    assert links[0].output.ref == "G0"
+
+
+def test_an_outturn_era_with_more_than_one_value_still_refuses() -> None:
+    """« Outturn » from a 2025 document leaves five past columns on the
+    table — FY2021's 0.65 and four 0.6s — and the document has not
+    said which year it means. The qualifier chooses an era, never a
+    cell: a narrowed set that disagrees with itself refuses exactly as
+    the unnarrowed one would. No value is ever consulted to break it."""
+    from polar.tieout.link import link as run
+
+    fig = figure(
+        "Notional gearing outturn",
+        kind="percent",
+        printed="65%",
+        value=Decimal("0.65"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], GEARING, year=2025)
+    assert not links
+    assert "equally well" in unlinked[0].reason
+
+
+def test_a_label_carrying_its_own_period_needs_no_prior() -> None:
+    """A document that says « FY2021 » has said everything: the period
+    gates settle it, and the era prior must not argue with an explicit
+    year even when the document speaks from a later one."""
+    from polar.tieout.link import link as run
+
+    fig = figure(
+        "FY2021 notional gearing",
+        kind="percent",
+        printed="65%",
+        value=Decimal("0.65"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], GEARING, year=2025)
+    assert links, unlinked
+    assert links[0].output.ref == "G0"
+
+
+def test_a_parameter_ties_against_its_own_history_rows() -> None:
+    """The RFR shape from the fair pair: the regime's flat 0.023 in the
+    parameter columns, history's varying rates further down, one name
+    over all of it. The document quotes the parameter; the history rows
+    are behind its year and step back."""
+    from polar.tieout.link import link as run
+
+    rows = [
+        Output("H1", "FY2027 Risk-free rate", Decimal("0.023"), "In!AU869", "In"),
+        Output("H2", "FY2028 Risk-free rate", Decimal("0.023"), "In!AV869", "In"),
+        Output("H3", "FY2015 Risk-free rate", Decimal("0.019"), "In!AU1137", "In"),
+        Output("H4", "FY2016 Risk-free rate", Decimal("0.015"), "In!AV1137", "In"),
+    ]
+    fig = figure(
+        "Risk-free rate",
+        kind="percent",
+        printed="2.30%",
+        value=Decimal("0.023"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], rows, year=2025)
+    assert links, unlinked
+    assert links[0].output.value == Decimal("0.023")
+
+
+def test_a_threshold_cannot_contradict_the_quantity_it_is_set_around() -> None:
+    """« RoRE ranges of plus or minus 4% around the baseline return on
+    equity » names a band, not the baseline — and 4% against the cell's
+    5.5% was a false drift on the re-test. A derivative of a quantity
+    may never contradict it."""
+    from polar.tieout.link import link as run
+
+    cells = [
+        Output("Q1", "Baseline return on equity", Decimal("0.055"), "In!C40", "In"),
+    ]
+    fig = figure(
+        "baseline return on equity",
+        kind="percent",
+        printed="4%",
+        value=Decimal("0.04"),
+        decimals=0,
+        context="RoRE ranges of plus or minus 4% around the baseline return on equity",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], cells)
+    assert not links
+    assert "threshold or sensitivity" in unlinked[0].reason
+
+
+def test_a_threshold_that_agrees_still_corroborates() -> None:
+    """The suppressor draws the same line as every other gate here: a
+    derivative may corroborate, it may never contradict. Prose quoting
+    the threshold *at the cell's own value* is still a grounded figure."""
+    from polar.tieout.link import link as run
+
+    cells = [
+        Output("Q2", "Return on equity", Decimal("0.055"), "In!C41", "In"),
+    ]
+    fig = figure(
+        "return on equity threshold",
+        kind="percent",
+        printed="5.5%",
+        value=Decimal("0.055"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], cells)
+    assert links, unlinked
+    assert links[0].output.ref == "Q2"
+
+
+def test_the_documents_own_year_is_not_the_forward_era() -> None:
+    """The shape that defeated the first cut of this prior: a history
+    row ending at the document's own year (FY2026 Risk-free rate,
+    0.0214 — history's blend) against the regime rows after it
+    (FY2027-31, flat 0.023). The document speaks from inside FY2026;
+    forward means strictly after it. Keeping FY2026 left the kept set
+    holding two values, and every recall target on the fair pair
+    refused over exactly this."""
+    from polar.tieout.link import link as run
+
+    rows = [
+        Output("F1", "FY2026 Risk-free rate", Decimal("0.0214"), "C!AT1137", "C"),
+        Output("F2", "FY2027 Risk-free rate", Decimal("0.023"), "C!AU869", "C"),
+        Output("F3", "FY2028 Risk-free rate", Decimal("0.023"), "C!AV869", "C"),
+    ]
+    fig = figure(
+        "Risk-free rate forecast",
+        kind="percent",
+        printed="2.30%",
+        value=Decimal("0.023"),
+        context="",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], rows, year=2026)
+    assert links, unlinked
+    assert links[0].output.value == Decimal("0.023")
