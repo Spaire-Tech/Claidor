@@ -27,6 +27,7 @@ from polar.models import (
     DossierMember,
     DossierRole,
     User,
+    UserOrganization,
 )
 from polar.tieout.repository import TieOutRepository
 from polar.tieout.service import tieout
@@ -55,6 +56,11 @@ async def _deal_for(
     await session.flush()
     session.add(
         DossierMember(dossier_id=deal.id, user_id=owner.id, role=DossierRole.lead)
+    )
+    # The dashboard only reaches an organization its user belongs to, so
+    # every real caller has this row; the settings routes check it.
+    session.add(
+        UserOrganization(user_id=owner.id, organization_id=organization.id)
     )
     await session.flush()
     return deal
@@ -1141,3 +1147,156 @@ class TestCheckAFile:
         await session.flush()
         response = await client.get(f"/v1/tieout/check-file/{theirs.id}")
         assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestHouseRules:
+    """The firm's rules: stored per organization, and actually obeyed."""
+
+    async def _org_of(self, session: AsyncSession, deal: Dossier):
+        from uuid import UUID
+
+        return deal.organization_id
+
+    @pytest.mark.auth
+    async def test_defaults_before_anybody_decided(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        response = await client.get(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}"
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["rounding"] == "together"
+        assert body["grounding"] is True
+        # The audit's own catalogue, all on — never a list a screen invented.
+        assert len(body["rules"]) == 10
+        assert all(rule["on"] for rule in body["rules"])
+
+    @pytest.mark.auth
+    async def test_a_stranger_finds_no_organization(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        deal = await _deal_for(session, save_fixture, stranger)
+        response = await client.get(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}"
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_an_unknown_rule_key_is_refused_whole(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        response = await client.put(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}",
+            json={"audit_rules_off": ["skipped-cell", "made-up-rule"]},
+        )
+        assert response.status_code == 422
+        assert "made-up-rule" in str(response.json())
+
+    @pytest.mark.auth
+    async def test_a_rule_switched_off_is_skipped_and_on_the_record(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The Cascade model carries hardcode smells; switch the rule off
+        and the audit stays quiet about them — while its summary names
+        the switch, because a rule turned off is a decision, never a
+        silence."""
+        deal = await _loaded(session, save_fixture, user)
+        with_rule = (
+            await client.get(f"/v1/tieout/deals/{deal.id}/findings?kind=audit")
+        ).json()
+
+        response = await client.put(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}",
+            json={"audit_rules_off": ["hardcode-in-formula"]},
+        )
+        assert response.status_code == 200
+        assert not [
+            rule
+            for rule in response.json()["rules"]
+            if rule["key"] == "hardcode-in-formula" and rule["on"]
+        ]
+
+        runs = (await client.post(f"/v1/tieout/deals/{deal.id}/check")).json()
+        audit = next(one for one in runs if one["kind"] == "audit")
+        assert audit["summary"]["rules_off"] == ["hardcode-in-formula"]
+
+        without_rule = (
+            await client.get(f"/v1/tieout/deals/{deal.id}/findings?kind=audit")
+        ).json()
+        assert [one for one in with_rule if one["rule"] == "hardcode-in-formula"]
+        assert not [
+            one for one in without_rule if one["rule"] == "hardcode-in-formula"
+        ]
+
+    @pytest.mark.auth
+    async def test_grounding_off_means_two_runs_not_a_failed_third(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _loaded(session, save_fixture, user)
+        await client.put(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}",
+            json={"grounding": False},
+        )
+        runs = (await client.post(f"/v1/tieout/deals/{deal.id}/check")).json()
+        assert sorted(one["kind"] for one in runs) == ["audit", "tieout"]
+
+
+@pytest.mark.asyncio
+class TestTheTeam:
+    @pytest.mark.auth
+    async def test_everyone_appears_with_their_deals_only(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        colleague = await create_user(save_fixture)
+        session.add(
+            UserOrganization(
+                user_id=colleague.id, organization_id=deal.organization_id
+            )
+        )
+        await session.flush()
+
+        response = await client.get(
+            f"/v1/tieout/team?organization_id={deal.organization_id}"
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["total_deals"] == 1
+        by_id = {one["id"]: one for one in body["members"]}
+        mine = by_id[str(user.id)]
+        assert mine["you"] is True
+        assert mine["deals"] == ["Project Cascade"]
+        theirs = by_id[str(colleague.id)]
+        assert theirs["you"] is False
+        # The colleague is in the organization and on no deal — an empty
+        # list, never a borrowed one.
+        assert theirs["deals"] == []

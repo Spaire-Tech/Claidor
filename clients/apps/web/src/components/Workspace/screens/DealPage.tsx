@@ -103,13 +103,13 @@ const AVATARS = [
   { bg: 'linear-gradient(150deg,#ece0f7,#d2bfe8)', fg: '#553a7a' },
 ]
 
-const avatarOf = (name: string) => {
+export const avatarOf = (name: string) => {
   let hash = 0
   for (const character of name) hash = (hash * 31 + character.charCodeAt(0)) | 0
   return AVATARS[Math.abs(hash) % AVATARS.length]!
 }
 
-const initialsOf = (name: string): string =>
+export const initialsOf = (name: string): string =>
   name
     .split(/\s+/)
     .filter(Boolean)

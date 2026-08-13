@@ -135,6 +135,24 @@ class Audit:
         return dict(Counter(finding.rule for finding in self.findings))
 
 
+#: Every rule this audit runs, in the words a settings screen shows —
+#: the one place the list lives, so a screen can never invent a rule the
+#: audit does not run or miss one it does. Ordered as a reader meets
+#: them: what a cell shows, what a formula reaches, how a row behaves.
+RULE_NAMES: dict[str, str] = {
+    "error-value": "Cells showing an error value",
+    "external-link": "Links into other workbooks",
+    "volatile": "Volatile functions",
+    "long-formula": "Formulas too long to follow",
+    "hardcode-in-formula": "Hardcoded values inside formulas",
+    "typed-over-formula": "Values typed over formulas",
+    "inconsistent-anchoring": "Anchoring that changes along a row",
+    "inconsistent-row": "Formulas inconsistent across a row",
+    "circular": "Circular references",
+    "skipped-cell": "Sum ranges that miss a cell",
+}
+
+
 def audit(book: Workbook) -> Audit:
     """Every mechanical defect in a model, graded."""
     result = Audit(examined=len(book.cells))
@@ -705,6 +723,7 @@ __all__ = [
     "BROKEN",
     "INNOCENT",
     "LONG_FORMULA",
+    "RULE_NAMES",
     "VOLATILE",
     "Audit",
     "Finding",

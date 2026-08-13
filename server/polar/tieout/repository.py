@@ -35,10 +35,12 @@ from polar.models import (
     Finding,
     FindingKind,
     FindingState,
+    HouseRules,
     LinkState,
     ModelCell,
     OneOffCheck,
     User,
+    UserOrganization,
 )
 
 
@@ -726,6 +728,96 @@ class TieOutRepository(RepositoryBase[Artifact]):
             Correction.id == correction_id, Correction.deleted_at.is_(None)
         )
         return (await self.session.execute(statement)).scalar_one_or_none()
+
+    # --- house rules and the team ---------------------------------------
+
+    async def is_in_organization(
+        self, organization_id: UUID, user_id: UUID
+    ) -> bool:
+        """Organization membership — for the settings screens only.
+
+        Deliberately weaker than deal membership: house rules and the
+        team list are the organization's, not any deal's, and the deal
+        rule (`_member_of`) must never be loosened to answer this.
+        """
+        statement = select(UserOrganization.user_id).where(
+            UserOrganization.organization_id == organization_id,
+            UserOrganization.user_id == user_id,
+            UserOrganization.deleted_at.is_(None),
+        )
+        return (await self.session.execute(statement)).first() is not None
+
+    async def house_rules_for(self, organization_id: UUID) -> HouseRules | None:
+        statement = select(HouseRules).where(
+            HouseRules.organization_id == organization_id,
+            HouseRules.deleted_at.is_(None),
+        )
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    async def save_house_rules(self, rules: HouseRules) -> HouseRules:
+        self.session.add(rules)
+        await self.session.flush()
+        return rules
+
+    async def organization_of(self, dossier_id: UUID) -> UUID | None:
+        """Whose policy applies to this deal."""
+        statement = select(Dossier.organization_id).where(Dossier.id == dossier_id)
+        return (await self.session.execute(statement)).scalar_one_or_none()
+
+    async def team_of(
+        self, organization_id: UUID
+    ) -> list[tuple[User, list[str]]]:
+        """Everyone in the organization, with the deals each is on.
+
+        The deals are names, already scoped to this organization — the
+        People screen says « Falcon, Meridian » under a colleague, and
+        never a deal from some other firm they also belong to.
+        """
+        people = (
+            (
+                await self.session.execute(
+                    select(User)
+                    .join(
+                        UserOrganization,
+                        UserOrganization.user_id == User.id,
+                    )
+                    .where(
+                        UserOrganization.organization_id == organization_id,
+                        UserOrganization.deleted_at.is_(None),
+                    )
+                    .order_by(User.email)
+                )
+            )
+            .scalars()
+            # The User model eager-loads collections; without unique()
+            # SQLAlchemy refuses to hand the joined rows back.
+            .unique()
+            .all()
+        )
+        rows = (
+            await self.session.execute(
+                select(DossierMember.user_id, Dossier.name)
+                .join(Dossier, Dossier.id == DossierMember.dossier_id)
+                .where(
+                    Dossier.organization_id == organization_id,
+                    Dossier.deleted_at.is_(None),
+                    DossierMember.deleted_at.is_(None),
+                )
+                .order_by(Dossier.created_at)
+            )
+        ).all()
+        deals: dict[UUID, list[str]] = {}
+        for user_id, name in rows:
+            deals.setdefault(user_id, []).append(name)
+        return [(person, deals.get(person.id, [])) for person in people]
+
+    async def organization_deals(self, organization_id: UUID) -> int:
+        """How many deals the organization has — « All six deals »."""
+        statement = select(func.count(Dossier.id)).where(
+            Dossier.organization_id == organization_id,
+            Dossier.deleted_at.is_(None),
+        )
+        return int((await self.session.execute(statement)).scalar_one())
 
     # --- one-off checks -------------------------------------------------
 

@@ -21,6 +21,7 @@ import { CheckFile } from './screens/CheckFile'
 import { Deals } from './screens/Deals'
 import { DocPanel } from './screens/DocPanel'
 import { NewDeal } from './screens/NewDeal'
+import { Settings } from './screens/Settings'
 import './workspace.css'
 
 /**
@@ -254,20 +255,7 @@ export const Workspace = ({
           ) : view === 'check' ? (
             <CheckFile api={api} deals={deals} />
           ) : (
-            //: The design's own face for a view that is not there — the
-            //: `vOther` placeholder, borrowed until this screen's round.
-            <div
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#a19f9d',
-                fontSize: 13.5,
-              }}
-            >
-              {LABELS[view]}
-            </div>
+            <Settings api={api} organizationId={organizationId} deals={deals} />
           )}
         </div>
 

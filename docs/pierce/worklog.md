@@ -1470,3 +1470,58 @@ this sheet.
 StrictMode's mount–unmount–mount cycle silently dropped every
 response in the sheet. Re-armed in the effect body; symptom was an
 empty drives list under a 200 response.
+
+## 13 August 2026 — Settings: the firm's rules become mechanism
+
+The design's three tabs, wired, with the rule that everything on screen
+is real or absent.
+
+**House rules exist now** — one row per organization
+(`tieout_house_rules`, migration `a1c5e7b93d42`), read and saved on
+every tap because the design draws no save button. Two of them are
+already obeyed by the actual runs:
+
+- **Audit rules can be switched off, and the audit says so.** The rule
+  list on screen is `RULE_NAMES` from `audit.py` itself — the audit's
+  own ten rules, never a list the screen invented — and `run_audit`
+  skips what the firm switched off while naming the switch in its
+  summary (`rules_off`), because a rule turned off is a decision on the
+  record, never a silence. The design's master toggle maps to « every
+  rule off / every rule on »; the audit itself always runs. An unknown
+  rule key is refused whole (422), not stored and ignored.
+- **The grounding pass obeys its toggle** in both places checks run —
+  the Check-now route and the connector's sync. Off means two runs come
+  back, not a third marked failed.
+- Rounding (`together`/`separate`) and the four writing conventions are
+  stored; rounding awaits its consumer in the findings lists, and the
+  writing conventions bite when the House style check exists — which
+  the screen itself says (« Not available yet »).
+
+**Connections** is the live connector card — account, connected date,
+Disconnect (owner-only, the server refuses anyone else's) — plus the
+trust sentence. Before anything is connected the card offers the same
+Connect Microsoft the deals empty state does.
+
+**People** is the organization's real team with each person's deals in
+this organization (« All 4 deals » only when true), and the invite
+sheet drives the existing deal-member route per ticked deal.
+
+Verified live at 1440×900: a rule unticked on screen landed in the
+database and back; the refused invite showed the server's own sentence
+in place. Six new route tests; 48 pass.
+
+**Flagged for the founder:**
+
+- « Folders Pierce can see », « Mailbox Pierce can read » and the
+  Office add-in install section are omitted, not faked — the Change
+  buttons have no destination yet, and the add-in manifests still carry
+  a placeholder domain (`YOUR-DOMAIN.example.com`). They return when
+  those exist.
+- The invite route requires an existing account and answers in French
+  (the dossier module's inherited voice): « Aucun compte Claidor avec
+  cette adresse… » shown verbatim in the sheet. Decide whether the
+  dossier module grows English sentences or the invite grows its own
+  route.
+- The People role column shows only « You » — job titles are not a
+  thing the system knows, so the design's « Vice President » column
+  waits for a real field.

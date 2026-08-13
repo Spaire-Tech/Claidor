@@ -311,16 +311,18 @@ class ConnectorService:
         if read:
             # The same unconditional re-check an upload does, and for the
             # same reason: a document that moved changes what is true about
-            # the ones it was checked against.
+            # the ones it was checked against. Grounding runs only when
+            # the firm's house rules say so.
             await tieout.run_tieout(
                 session, dossier_id=folder.dossier_id, user_id=user_id
             )
             await tieout.run_audit(
                 session, dossier_id=folder.dossier_id, user_id=user_id
             )
-            await tieout.run_crosscheck(
-                session, dossier_id=folder.dossier_id, user_id=user_id
-            )
+            if await tieout.grounding_on(session, dossier_id=folder.dossier_id):
+                await tieout.run_crosscheck(
+                    session, dossier_id=folder.dossier_id, user_id=user_id
+                )
         return result
 
     # --- mail -----------------------------------------------------------

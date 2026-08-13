@@ -708,6 +708,65 @@ class ModelGrid(Schema):
     sheets: list[SheetGrid]
 
 
+# --- settings ------------------------------------------------------------
+
+
+class AuditRuleRead(Schema):
+    """One audit rule, as the settings screen shows it."""
+
+    key: str
+    label: str
+    on: bool
+
+
+class HouseRulesRead(Schema):
+    """How the firm wants Pierce to behave.
+
+    `rules` is the audit's own catalogue with the firm's switches on it —
+    sent whole so the screen can never invent a rule the audit does not
+    run or miss one it does.
+    """
+
+    #: `together` — rounding differences sit with everything else;
+    #: `separate` — the screens group them under their own head. Found
+    #: either way, never hidden.
+    rounding: Literal["together", "separate"]
+    #: Ranges, fiscal years, units, negatives — as the firm writes them.
+    writing: dict[str, str]
+    #: Whether the grounding pass runs with the others.
+    grounding: bool
+    rules: list[AuditRuleRead]
+
+
+class HouseRulesUpdate(Schema):
+    """Only what changed. Left-out fields keep their value."""
+
+    rounding: Literal["together", "separate"] | None = None
+    writing: dict[str, str] | None = None
+    grounding: bool | None = None
+    #: Rule keys to switch off, replacing the previous set whole.
+    audit_rules_off: list[str] | None = None
+
+
+class TeamMember(Schema):
+    """One person on the team, and where they are."""
+
+    id: UUID
+    name: str
+    email: str
+    avatar_url: str | None
+    you: bool
+    #: The deals they are on, in this organization only.
+    deals: list[str]
+
+
+class TeamRead(Schema):
+    members: list[TeamMember]
+    #: How many deals the organization has, so the screen can say
+    #: « All six deals » only when it is true.
+    total_deals: int
+
+
 # --- one-off checks ------------------------------------------------------
 
 
@@ -837,6 +896,7 @@ __all__ = [
     "AgainstModel",
     "ArtifactPage",
     "ArtifactRead",
+    "AuditRuleRead",
     "CellRead",
     "ChainInput",
     "ChainRead",
@@ -856,6 +916,8 @@ __all__ = [
     "FindingWhere",
     "GridCell",
     "GridRow",
+    "HouseRulesRead",
+    "HouseRulesUpdate",
     "Identified",
     "Identify",
     "LinkAlternative",
@@ -874,5 +936,7 @@ __all__ = [
     "SlideFigures",
     "SoloFindingRead",
     "SoloStatement",
+    "TeamMember",
+    "TeamRead",
     "Uploader",
 ]

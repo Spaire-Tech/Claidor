@@ -555,6 +555,42 @@ export interface OneOffResult {
   defects: OneOffDefect[]
 }
 
+/** One audit rule, as the settings screen shows it. */
+export interface AuditRule {
+  key: string
+  label: string
+  on: boolean
+}
+
+/** How the firm wants Pierce to behave. */
+export interface HouseRules {
+  /** `together` — rounding differences sit with everything else;
+   *  `separate` — grouped under their own head. Found either way. */
+  rounding: 'together' | 'separate'
+  /** Ranges, fiscal years, units, negatives — as the firm writes them. */
+  writing: Record<string, string>
+  grounding: boolean
+  /** The audit's own catalogue with the firm's switches — never a list
+   *  the screen invented. */
+  rules: AuditRule[]
+}
+
+/** One person on the team, with the deals they are on here. */
+export interface TeamMember {
+  id: string
+  name: string
+  email: string
+  avatar_url: string | null
+  you: boolean
+  deals: string[]
+}
+
+export interface Team {
+  members: TeamMember[]
+  /** So « All six deals » is only said when it is true. */
+  total_deals: number
+}
+
 /** One line of « Recent one-off checks ». */
 export interface RecentCheck {
   id: string
@@ -923,6 +959,46 @@ export class TieOutApi {
   /** A stored one-off check, replayed exactly as it was answered. */
   oneOffCheck(checkId: string): Promise<OneOffResult> {
     return this.call(`/check-file/${checkId}`)
+  }
+
+  /** How the firm wants Pierce to behave. Defaults until somebody decides. */
+  houseRules(organizationId: string): Promise<HouseRules> {
+    return this.call(`/house-rules?organization_id=${organizationId}`)
+  }
+
+  /** Change the firm's rules. Only what is sent changes. */
+  putHouseRules(
+    organizationId: string,
+    update: {
+      rounding?: 'together' | 'separate'
+      writing?: Record<string, string>
+      grounding?: boolean
+      audit_rules_off?: string[]
+    },
+  ): Promise<HouseRules> {
+    return this.call(`/house-rules?organization_id=${organizationId}`, {
+      method: 'PUT',
+      body: JSON.stringify(update),
+    })
+  }
+
+  /** Who's on the team, with the deals each is on in this organization. */
+  team(organizationId: string): Promise<Team> {
+    return this.call(`/team?organization_id=${organizationId}`)
+  }
+
+  /**
+   * Put a colleague on a deal, by the email they sign in with.
+   *
+   * The dossier route, and its rule: access is granted to a person the
+   * system knows, never to an address on faith — an unknown email comes
+   * back 404 with the server's own sentence.
+   */
+  addDealMember(dealId: string, email: string): Promise<unknown> {
+    return this.at(`/v1/dossiers/${dealId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    })
   }
 
   // --- the connected file store ---------------------------------------
