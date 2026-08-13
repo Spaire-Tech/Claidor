@@ -55,7 +55,14 @@ RESTATING_SHEETS = frozenset({"outputs", "output", "summary"})
 #: (`scripts/corpus_regulator/annex_bpfm2.log`). Matched by substring
 #: because real names decorate the convention (« F7 - Data Validation »,
 #: « DROPDOWN LISTS »).
-MACHINERY = re.compile(r"data\s*.?validation|dropdown|power\s*.?query|lookup", re.I)
+#: `scenario` covers the run-dump case: GD-BPFM's
+#: « ScenarioRun_AllOutputData » is « Output summary (live) » — a cache
+#: of one scenario run whose unpopulated columns are zeros, and two of
+#: the re-test's three remaining claimed drifts compared a stated
+#: capitalisation rate against exactly such a zero.
+MACHINERY = re.compile(
+    r"data\s*.?validation|dropdown|power\s*.?query|lookup|scenario\s*.?run", re.I
+)
 
 
 @dataclass(frozen=True)

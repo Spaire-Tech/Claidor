@@ -547,10 +547,20 @@ def link(
 
 
 def _timeless(output: Output) -> list[str]:
-    """An output's name and basis, with the period words removed."""
+    """An output's name with the period words removed.
+
+    The basis — the sheet — is deliberately left out. A model parameter
+    is echoed per licensee sheet as well as per year column (GD-BPFM
+    holds « Risk-free rate » 0.023 on InputSummary *and* on every
+    network's own sheet), and with the sheet in the comparison the
+    re-test still refused four of five present targets as ambiguous.
+    Same name, same value, different sheet is one answer for the same
+    reason two year columns are: whichever copy is chosen, what the
+    document is told about its figure is identical.
+    """
     return [
         word
-        for word in tokens(output.name) + tokens(output.basis)
+        for word in tokens(output.name)
         if FISCAL_YEAR.match(word) is None and word not in PERIOD_WORDS
     ]
 

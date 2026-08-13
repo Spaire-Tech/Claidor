@@ -392,3 +392,27 @@ def test_machinery_sheets_are_not_candidates() -> None:
     book.sheets = ["F7 - Data Validation", "PowerQuery", "DROPDOWN LISTS", "Model"]
     offered = {one.ref for one in outputs_from_workbook(book)}
     assert offered == {"Model!D6"}
+
+
+def test_a_parameter_echoed_across_sheets_is_also_one_answer() -> None:
+    """GD-BPFM holds « Risk-free rate » 0.023 on InputSummary and again
+    on every licensee's own sheet. Same name, same value, different
+    sheet: whichever copy is chosen, the document is told the same
+    thing — the re-test refused four of five present targets over
+    exactly this."""
+    from polar.tieout.link import link as run
+
+    echoed = [
+        Output("E1", "FY2027 Risk-free rate", Decimal("0.023"), "In!AU869", "In"),
+        Output("E2", "FY2027 Risk-free rate", Decimal("0.023"), "Cadent!AW869", "Cadent"),
+        Output("E3", "FY2028 Risk-free rate", Decimal("0.023"), "Northern!AW869", "Northern"),
+    ]
+    fig = figure(
+        "Risk-free rate forecast",
+        kind="percent",
+        printed="2.30%",
+        value=Decimal("0.023"),
+        subject=None,
+    )
+    links, unlinked = run([fig], echoed)
+    assert links, unlinked

@@ -161,14 +161,21 @@ class TestChecking:
         was refused for saying `FY2025` rather than `FY2025A`. One figure,
         and it was a real miss rather than a new guess — see
         `link._same_period`.
+
+        And 103/95 until a parameter echoed at the same value under the
+        same name on two sheets stopped being read as ambiguous (see
+        `link._timeless`) — the deck's `11.8%` growth figure now reaches
+        `Model!E7`, which the DCF sheet restates at the same value, and
+        the memo gains its twin figures the same way. Every gained link
+        agrees; the drift set is unchanged.
         """
         deal = await _deal(session, save_fixture, user)
         await _load(session, deal, user)
 
         run = await tieout.run_tieout(session, dossier_id=deal.id, user_id=user.id)
         assert run.status is CheckStatus.done
-        assert run.summary["reconciled"] == 103
-        assert run.summary["agreeing"] == 95
+        assert run.summary["reconciled"] == 106
+        assert run.summary["agreeing"] == 98
         assert run.summary["drifting"] == 8
         # What was *not* checked is part of the answer, and it is counted
         # with the reasons rather than quietly dropped.
