@@ -1342,3 +1342,29 @@ app user is never recreated and the same silent failure returns.
 
 Verified at 1440×900 against Cascade throughout. Screenshots in the
 thread; typecheck and lint clean; 34 route tests pass.
+
+## 13 August 2026 — the solo engine, argued down to quiet
+
+The Check-a-file round starts with its engine: `polar/tieout/solo.py`,
+a file checked against itself. One idea — the same name carrying two
+figures — and most of the work was earning the right to stay quiet.
+
+**82 to 1.** The naive version (group by full label, flag any group
+holding two values) produced 82 findings on 29 correct gov.uk decks.
+Every one was read by hand, and the reading produced four rules: two
+values inside one shape are that shape's data (keyed on anchor kind
+*plus* shape identity — on Cascade's slide 3 the chart and the table
+both carry `shape_id` 4 and are two shapes, and that pair is the real
+finding); a bare year is part of the name even though `tokens` drops it
+(« 2018 Aldi » is not « 2019 Aldi »); two charts never disagree with
+each other; and a label must be a name — two content words, no
+trailing « = ». After all four: **one finding on 29 decks**, examined
+and written down as false with its cause named (the words telling
+slides 23 and 24 apart live in the slide title, and requiring title
+agreement would kill the summary-restates-detail case the check is
+for). Both Cascade decks report exactly the slide-3 chart-against-table
+drift and nothing else.
+
+Full numbers, the survivor's autopsy, and what is still owed (recall,
+totals, a memo corpus) are in `accuracy-backlog.md`. Rules pinned one
+test each in `tests/tieout/test_solo.py`.

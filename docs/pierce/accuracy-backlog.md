@@ -18,6 +18,9 @@ measured cause and a named next step.
 | Deck tie-out — coverage | **80%** | 102 of 128 printed figures linked to the model |
 | Deck tie-out — collateral false positives | **0** | Same run |
 | Legacy `.xls` reading | 99.2% of 1,590 files | 202,499 formulas decompiled |
+| Solo check — false positives | **1** on 29 real decks | gov.uk corpus, every finding read by hand |
+| Solo check — the Cascade drift | Caught, both decks, nothing else | Slide 3's chart against its table |
+| Solo check — recall | **NOT MEASURED** | Needs planted drifts, same method as the deck recall |
 
 By rule, on planted defects:
 
@@ -656,3 +659,86 @@ previous runs that had not been killed — including the « 40 minutes » that
 started this. And a test run that came back with 248 errors was two `pytest`
 sessions started concurrently, fighting over the template database, not a
 regression.
+
+## The solo check: 82 findings argued down to 1, all of them read
+
+*13 August 2026.* `polar/tieout/solo.py` — a file checked against itself,
+the check that works on a loose attachment before anybody has made a deal.
+It looks for one thing: the same name carrying two figures. Measured
+against the 29 gov.uk decks in the corpus and the Cascade pair before any
+screen shows its output.
+
+**The first honest number was 82.** Group figures by full label, flag any
+group holding two values, and 29 real decks produce 82 « disagreements » —
+nearly three per deck, on decks that are not wrong. Every one was read.
+None was a drift. The reading produced four rules, each with its cause
+written down:
+
+**1 · Two values inside one shape are data, not statements (82 → 23).**
+Nearly every false positive was two points in one chart series or two
+cells in one table, read under one truncated label — a chart plotting
+« Double mark » scores for two seed items is not a deck restating a
+figure. The filter keys on the anchor's `kind` **plus** shape identity,
+never `shape_id` alone: PowerPoint numbers charts and tables
+independently, and on Cascade's slide 3 the chart and the table both
+carry `shape_id` 4 while being two shapes — the pair that *is* the real
+finding. It filters pairs, not groups, so a chart against a table
+survives while the chart's own points merge.
+
+**2 · The year is part of the name (23 → 12, with rule 3).** `tokens`
+drops number-only words — right for deck-against-model, where the model
+writes `FY2023A`, and wrong here: « 2018 Aldi » and « 2019 Aldi » fell
+into one key and eleven of the twenty-three survivors were chart
+categories differing only in a bare calendar year. The solo key appends
+bare years.
+
+**3 · Two charts never disagree with each other.** A plotted point is
+data wherever it is plotted; a restatement needs at least one side to
+*state* the figure — a cell, a tile, a sentence. Every chart-against-chart
+pair in the corpus was two different survey questions sharing answer
+labels (« Yes », « No », « Don't know »). A real drift between two
+copies of one chart is now a deliberate miss, written down here.
+
+**4 · A fragment is not a name, and neither is one word (12 → 1).**
+« Events = » is the front half of a sentence about one exam board — the
+words telling two boards apart came *after* the number. A label ending
+mid-thought (`=`, `:`, a dash, a line break) is skipped. And « Average »
+names a row of whatever table it sits in; a one-word label matched two
+different quantities every time it was read by hand, so a name must
+carry at least two content words.
+
+**The one that stays, examined.** Beth_Black.pptx, slides 23 and 24: two
+tables with the identical column « Average difference (%) in probability
+of candidates receiving the definitive grade », row « Average », 4.95
+against 1.3. It is false — slide 23 is Geography and slide 24 is English
+Literature — and the distinguishing words live in the slide *title*, not
+the label. Requiring section agreement would kill the check's central
+case, a summary slide restating a detail slide, so this stays: **one
+false finding per 29 real decks, cause known, trade named.**
+
+**Cascade, both decks, hand-verified.** Exactly two findings each and
+nothing else: slide 3's chart series says adjusted EBITDA was 37.8 and
+43.0 while the table beside it says 30.8 and 39.6. The « clean » deck
+genuinely carries this — its chart was drawn from pre-adjustment EBITDA
+and never redrawn (documented in `deck.py` when charts were first read).
+The broken deck's planted errors are deck-against-*model* drifts: the
+same number changed on every slide that states it, which is internally
+consistent and exactly what a solo check must stay silent about.
+
+**Owed, and said plainly:**
+
+- **Recall is not measured.** The false-positive side has a corpus;
+  the recall side needs planted second statements, the same
+  one-at-a-time method as `scripts/deck_recall.py`. Until then the solo
+  check's claim is « quiet on correct files, catches the Cascade chart
+  drift » — not a percentage.
+- **Totals are not checked**, and no screen claims they are. « The rows
+  sum to the total row » needs real table reconstruction; a totals check
+  that guesses its columns reports correct tables as broken.
+- **Memos have no corpus yet.** The rules were measured on decks; the
+  paragraph-anchor path (two sentences restating a figure) is covered by
+  unit tests but has not met 29 real memos. The corpus has `.docx` files
+  waiting.
+
+Rules pinned in `tests/tieout/test_solo.py`, one test per rule, plus the
+Cascade regression: both decks, the same two findings, nothing more.
