@@ -1368,3 +1368,60 @@ drift and nothing else.
 Full numbers, the survivor's autopsy, and what is still owed (recall,
 totals, a memo corpus) are in `accuracy-backlog.md`. Rules pinned one
 test each in `tests/tieout/test_solo.py`.
+
+## 13 August 2026 — Check a file, wired end to end
+
+The round's remaining three pieces, on top of the morning's engine:
+
+**The record.** `tieout_one_off_checks` (hand-written migration
+`e9a3f5c27b18`): one row per loose file checked, keeping the counts and
+findings exactly as the screen received them and never the file — a
+one-off check has no correction to write, so the bytes are read, checked
+and dropped in one request. `dossier_id` set-null with the deal's name
+snapshotted beside it, so deleting a deal cannot rewrite « Checked
+against Project Falcon » into « Checked on its own ». Recents are
+personal; someone else's check is 404.
+
+**The route.** `POST /tieout/check-file` (multipart, optional
+`dossier_id`): a deck or memo meets the solo check, and with a deal
+picked is also reconciled against that deal's current models through
+the same two-pass linker as the deal tie-out — the drift evidence
+points at the real model artifact, so the screen's grid slices reuse
+the panel's endpoint. A model routes to its audit; a deal picked
+alongside one is deliberately ignored rather than half-run, and the
+row honestly says « on its own ». Plus `/check-file/recents` and
+`/check-file/{id}` to replay a stored answer without re-running
+anything. Eight route tests.
+
+**The screen.** `screens/CheckFile.tsx` — all four drawn states wired:
+cIdle (drop card, against picker with the glassy menu, recents),
+cRunning (the glassy progress card; steps tick while the one request
+flies, real notes fill when it lands), cDone (tally, compared-with
+pair, finding cards with the two-sided evidence — quoted sentence with
+the amber mark on one side, real model rows or the slide sketch on the
+other), cFirst (no deals, no recents). Verified at 1440×900 against
+Cascade: solo run reads 128 figures, 9 names stated more than once,
+the 2 real chart-against-table differences; against the deal it reads
+103 traced, 10 differences.
+
+**Departures from the drawing, flagged for the founder:**
+
+- The solo run's « Checking that totals add up » step and « totals
+  checked » tally are omitted — the engine deliberately does not check
+  totals yet (accuracy-backlog.md says why), and a step that pretends
+  to is theatre.
+- The finding cards' « Rebase / Reconcile » and « Not a problem »
+  buttons are omitted. No file is kept, so there is nothing to write a
+  correction into, and a dismissal would not survive replaying the
+  stored answer. If these should exist, the honest versions need
+  decisions: what does Reconcile do on a file Pierce does not hold?
+- The compared-with card's « · and the accounts to Jun-26 » sub-line is
+  not claimed — a one-off check reads the deal's models only, and only
+  the models are named.
+- A refused file (a corrupt deck, a password-protected model) has no
+  drawn state; the server's sentence is shown in the result card's
+  place, the metadata panel's answer-not-error pattern.
+- « The chart on slide 3 says 37.8 · the table on slide 3 says 30.8 » —
+  the design's says-line assumes the two statements sit on different
+  slides; when they share one, the place words are read off the real
+  location so the line still says which two places disagree.

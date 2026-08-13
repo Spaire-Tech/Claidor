@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Artifact, DealListItem, TieOutApi } from './api'
 import { blueButton, card, font, ground, ink } from './design'
+import { CheckFile } from './screens/CheckFile'
 import { Deals } from './screens/Deals'
 import { DocPanel } from './screens/DocPanel'
 import './workspace.css'
@@ -244,6 +245,8 @@ export const Workspace = ({
               openDocId={doc?.id ?? null}
               onOpenDoc={setDoc}
             />
+          ) : view === 'check' ? (
+            <CheckFile api={api} deals={deals} />
           ) : (
             //: The design's own face for a view that is not there — the
             //: `vOther` placeholder, borrowed until this screen's round.

@@ -475,6 +475,96 @@ export interface Version {
   counts: Record<string, unknown>
 }
 
+/** One place a file states a figure, for the check-a-file card. */
+export interface SoloStatement {
+  printed: string
+  location: string
+  page: number
+  /** The slide's title or the heading over the block. */
+  section: string
+  /** The sentence around the figure, when there is one. */
+  context: string
+}
+
+/**
+ * One name carrying two figures in the same file.
+ *
+ * Which one is *right* is not knowable from the file alone, and the
+ * shape deliberately does not guess — the finding is that the file says
+ * both.
+ */
+export interface SoloFinding {
+  label: string
+  /** How many times the file states this name, counting the agreeing ones. */
+  statements: number
+  first: SoloStatement
+  other: SoloStatement
+}
+
+/** A printed figure that disagrees with the picked deal's model. */
+export interface OneOffDrift {
+  printed: string
+  expected: string
+  label: string
+  page: number
+  location: string
+  context: string
+  ref: string
+  name: string
+  basis: string
+  confidence: number
+  one_tick: boolean
+  /** A real artifact in that deal — the same grid endpoint the document
+   *  panel uses works here. */
+  model_artifact_id: string | null
+}
+
+/** One mechanical defect from a model's own audit. */
+export interface OneOffDefect {
+  rule: string
+  /** Never added into one number with the other. */
+  severity: 'error' | 'smell'
+  ref: string
+  sheet: string
+  name: string
+  detail: string
+  standard: string
+}
+
+/** One model the file was compared with — the « Compared with » card. */
+export interface AgainstModel {
+  artifact_id: string
+  filename: string
+  version: number
+  read_at: string
+}
+
+/** One loose file, checked, with everything the screen draws. */
+export interface OneOffResult {
+  id: string
+  filename: string
+  kind: string
+  checked_at: string
+  /** The deal's name at check time, or empty for a check on its own. */
+  against: string
+  dossier_id: string | null
+  models: AgainstModel[]
+  counts: Record<string, number>
+  disagreements: SoloFinding[]
+  drifts: OneOffDrift[]
+  defects: OneOffDefect[]
+}
+
+/** One line of « Recent one-off checks ». */
+export interface RecentCheck {
+  id: string
+  filename: string
+  kind: string
+  against: string
+  checked_at: string
+  counts: Record<string, number>
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -786,6 +876,53 @@ export class TieOutApi {
   /** The last tie-out and the last audit: when this was last true. */
   runs(dealId: string): Promise<CheckRun[]> {
     return this.call(`/deals/${dealId}/runs`)
+  }
+
+  /**
+   * Check a loose file without putting it in any deal.
+   *
+   * Multipart for the same reason `upload` is. The file is read, checked
+   * and dropped in one request; the answer comes back whole and is also
+   * kept as a recent. A file the reader cannot open is a 422 whose
+   * message is the server's own sentence, meant to be shown in place.
+   */
+  async checkFile(
+    file: File,
+    dossierId?: string | null,
+  ): Promise<OneOffResult> {
+    const body = new FormData()
+    body.append('file', file)
+    const token = this.options.token?.() ?? null
+    const query = dossierId ? `?dossier_id=${dossierId}` : ''
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/check-file${query}`,
+      {
+        method: 'POST',
+        body,
+        credentials: 'include',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      },
+    )
+    if (!response.ok) {
+      const problem = (await response.json().catch(() => null)) as {
+        detail?: string
+      } | null
+      throw new ApiError(
+        response.status,
+        problem?.detail ?? 'that file could not be checked',
+      )
+    }
+    return (await response.json()) as OneOffResult
+  }
+
+  /** The caller's own recent one-off checks, newest first. */
+  recentChecks(): Promise<RecentCheck[]> {
+    return this.call('/check-file/recents')
+  }
+
+  /** A stored one-off check, replayed exactly as it was answered. */
+  oneOffCheck(checkId: string): Promise<OneOffResult> {
+    return this.call(`/check-file/${checkId}`)
   }
 
   // --- the connected file store ---------------------------------------
