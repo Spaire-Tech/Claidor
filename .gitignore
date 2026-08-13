@@ -167,3 +167,7 @@ server/.corpus-cache/
 server/scripts/corpus_models/
 server/scripts/corpus_documents/
 server/scripts/corpus_pairs/
+
+# Redis persistence snapshot, written by the dev Redis into the working
+# tree. Runtime state, recreated on every save — never source.
+server/dump.rdb
