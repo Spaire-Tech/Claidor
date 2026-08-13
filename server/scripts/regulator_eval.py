@@ -139,9 +139,9 @@ def crosscheck(pdf: str, model: str) -> None:
                 state = f"DRIFT (model says {drift.expected})"
                 break
         print(
-            f"  p{fig.slide:>3} {fig.printed!r:>14} {state:24}"
-            f" -> {item.output.ref} {item.output.name[:44]!r}"
-            f" conf={item.confidence:.2f}  label={fig.label[:60]!r}",
+            f"  p{fig.slide!r:>4} {fig.printed!r:>14} {state:24}"
+            f" -> {item.output.ref} {str(item.output.name)[:44]!r}"
+            f" conf={item.confidence:.2f}  label={str(fig.label)[:60]!r}",
             flush=True,
         )
 
