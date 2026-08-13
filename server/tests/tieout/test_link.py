@@ -669,3 +669,114 @@ def test_the_documents_own_year_is_not_the_forward_era() -> None:
     links, unlinked = run([fig], rows, year=2026)
     assert links, unlinked
     assert links[0].output.value == Decimal("0.023")
+
+
+GAS_MODEL = [
+    Output("N1", "FY2031 Notional gearing", Decimal("0.6"), "MainInputs", "MainInputs"),
+    Output("N2", "FY2031 Notional gearing", Decimal("0.6"), "Cadent", "Cadent"),
+]
+
+
+def test_a_label_naming_a_foreign_entity_cannot_contradict() -> None:
+    """« 55% notional gearing for ET and » against the gas model: the
+    55% is Electricity Transmission's number, ET is an acronym no name
+    or sheet in this model has ever used, and reporting it as
+    disagreeing with the gas networks' 60% was three of the five false
+    drifts on the round-2 re-test."""
+    from polar.tieout.link import link as run
+
+    fig = figure(
+        "notional gearing for ET and",
+        kind="percent",
+        printed="55%",
+        value=Decimal("0.55"),
+        context="55% notional gearing for ET and 60% for the gas sectors",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], GAS_MODEL, year=2026)
+    assert not links
+    assert "ET" in unlinked[0].reason
+
+
+def test_the_same_foreign_label_agreeing_still_corroborates() -> None:
+    """The same sentence's 60% carries the same ET-bearing label and is
+    the gas figure, correctly agreeing — the gate is corroborate-only,
+    like every other gate in this module."""
+    from polar.tieout.link import link as run
+
+    fig = figure(
+        "notional gearing for ET and",
+        kind="percent",
+        printed="60%",
+        value=Decimal("0.6"),
+        context="55% notional gearing for ET and 60% for the gas sectors",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], GAS_MODEL, year=2026)
+    assert links, unlinked
+
+
+def test_a_sentence_attaches_its_nearest_entity() -> None:
+    """« ET: Notional gearing of 55% for the » — the label is clean and
+    the sentence says who. The figure attaches to its nearest
+    capitals-mention, and a mention the model has never used silences
+    the contradiction."""
+    from polar.tieout.link import link as run
+
+    fig = figure(
+        "Notional gearing of",
+        kind="percent",
+        printed="55%",
+        value=Decimal("0.55"),
+        context="ET: Notional gearing of 55% for the",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], GAS_MODEL, year=2026)
+    assert not links
+    assert "ET" in unlinked[0].reason
+
+
+def test_a_known_nearest_entity_still_carries_its_drift() -> None:
+    """« 58% for Cadent ... 55% for ET »: the 58% figure's nearest
+    mention is Cadent, whom the model knows — a foreign acronym
+    elsewhere in the sentence must not mute a genuine drift, or one
+    mention of ET would silence the whole paragraph."""
+    from polar.tieout.link import link as run
+
+    fig = figure(
+        "Notional gearing of",
+        kind="percent",
+        printed="58%",
+        value=Decimal("0.58"),
+        context="Notional gearing of 58% for Cadent and 55% for ET",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], GAS_MODEL, year=2026)
+    assert links, unlinked
+    assert links[0].figure.printed == "58%"
+
+
+def test_a_quantity_acronym_the_model_uses_is_not_an_entity() -> None:
+    """« WACC » is capitals and is nobody: the model's own rows say
+    WACC, so it is in the vocabulary and the gate never fires. A
+    genuine WACC drift still reports."""
+    from polar.tieout.link import link as run
+
+    cells = [
+        Output("W1", "FY2031 Vanilla WACC", Decimal("0.0421"), "MainInputs", "In"),
+    ]
+    fig = figure(
+        "Vanilla WACC of",
+        kind="percent",
+        printed="5.18%",
+        value=Decimal("0.0518"),
+        context="a Vanilla WACC of 5.18% across the period",
+        section="",
+        subject=None,
+    )
+    links, unlinked = run([fig], cells, year=2026)
+    assert links, unlinked

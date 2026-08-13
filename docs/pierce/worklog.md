@@ -1847,3 +1847,46 @@ Also fixed en route: the month-name regex in `_document_year` had
 literal backspace bytes where `\b` was meant (a heredoc artifact) —
 caught by its own new test failing on « December 2025 ». Cascade
 unmoved: 7/8 agreeing, 113/105/8 pinned, 356 tieout tests green.
+
+## 13 August 2026 — decision noted: Check-a-file stays, for now
+
+The advisor's question — is Check-a-file worth its page — got mapped
+against the code before answering. It is three separable things: the
+deck/memo self-check (`solo.py`, measured on 29 real decks — the only
+genuinely banking-only half); the workbook path, which already routes
+to the model audit (« a workbook checked by itself *is* the model
+audit »); and the hidden-inside checks, which were never part of
+Check-a-file at all — they are a per-document report inside the deal
+page. Decision, founder's call: keep everything as it stands until
+the buyer question (documents-leaving-the-firm vs model-audit) is
+actually decided; the engines cost nothing dormant and the Office
+panel does not depend on the page. One fold queued regardless of
+buyer (task #16): very-hidden sheets, external links and embedded
+workbooks should surface as *audit findings* on a model, not only in
+the hidden-inside panel.
+
+## 13 August 2026 — linker round 3: the model knows who it is about
+
+Entity scoping, the round the 55%-versus-60% false drifts were
+waiting for. No curated gazetteer: the entity set is the model's own
+vocabulary (its sheets are named Cadent, NGN, WWU — and it has never
+said ET), a figure is attached to the acronym in its own label or to
+the nearest mention in its sentence, and a figure about somebody the
+model has never heard of may corroborate but never contradict. The
+nearest-mention rule earned its keep in the tests before it met the
+corpus: proper nouns count as mentions only when they match a sheet
+name, because « Notional » capitalised at a sentence start is a
+quantity word, and an early version of the rule let a distant ET
+outvote an adjacent Cadent.
+
+On the identical Ofgem pair: all three entity drifts dead, the
+fragment-labelled 5.18% dead as a bonus (its nearest mention is ET),
+all thirteen agreeing links held — including the 60% that shares the
+ET-bearing label, which is why the gate is corroborate-only. Volume
+15, precision 87%, recall still five of five. Grade against the
+untouched protocol: **still FAIL, by one clause** — the two
+surviving drifts are the fragment-label pair from a single line, and
+« document says 60%, model says 6% » is the embarrassing shape the
+fail criterion names. The grade sheet does not bend after the number
+arrives. The fix is the reader's (task #15), and it is the only
+failure class left on this pair. Cascade untouched; 361 tests green.

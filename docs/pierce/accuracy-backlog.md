@@ -1167,3 +1167,56 @@ entity class that was always coming). Cascade unmoved throughout:
 7/8 all agreeing on the accounts pair, 113/105/8 pinned in the suite,
 356 tests green. Recall is solved on this pair; every remaining wrong
 answer now has a name and a queue position.
+
+### Linker round 3: entity scoping, measured
+
+The gazetteer was never going to be a curated list. A model says who
+it is about the way it says everything else — its sheets and rows are
+named that way — so the entity set is the model's own vocabulary, and
+« foreign » means an acronym it has never used. A gas model knows
+NGN, WWU, Cadent, Scotland; it has never said ET, and that asymmetry
+is the entire signal.
+
+Two readings, in order of how directly the document said it: an
+acronym in the figure's own label (« notional gearing for ET and »),
+or, with a clean label, the *nearest* mention in the sentence by
+character distance — capitals-runs plus proper nouns matching the
+model's sheet names, so « 58% for Cadent and 55% for ET » resolves
+each figure to its own entity and one mention of ET cannot silence a
+whole paragraph. Corroborate-only, like every gate in the module:
+the same p8 sentence carries ET in *both* figures' labels, and the
+60% is the gas number, correctly agreeing — full suppression would
+have killed a true link. Cost taken knowingly and written at the
+definition: a quantity acronym the model spells out in words reads
+as foreign, and the drift such a figure can no longer carry is the
+price of never hand-building an entity list.
+
+**The identical pair, graded by the unchanged protocol:**
+
+- **V = 15** — PASS. **P = 13 of 15 = 87%** (all adjudicated) —
+  PASS. **R = 5 of 5 = 100%**, same five cells as round 2, all
+  agreeing — PASS.
+- **D: two drifts claimed, both false — still the failing grade.**
+  The protocol's investigate band (1–2 false drifts with
+  identifiable causes) is arguable, but one of the two is « document
+  says 60%, model says 6% », which is the embarrassing shape the
+  fail clause names, and the grade sheet does not bend after the
+  number arrives: **FAIL**, on that clause alone.
+
+Both survivors come from one line — « Our proposed cost of equity
+(55%/60% gearing) 5.70% / 6.12% » — whose figures carry the dangling
+fragment « gearing) » as their whole label and no entity anywhere.
+Entity scoping cannot reach them and honestly did not. They are the
+fragment-label class, pinned in round 2, queued as the reader fix
+(task #15): a label that is an unbalanced fragment with no head of
+its own should not carry a link.
+
+The bonus the diagnosis predicted: the p8 5.18% fragment drift died
+*this* round anyway — its nearest sentence-mention is ET, so the
+entity gate caught what the fragment fix will catch more honestly.
+
+Same pair, three rounds: proposals 4 → 18 → 15; agreeing 2 → 13 →
+13; false drifts 2 → 5 → 2; recall 0/5 → 5/5 → 5/5; precision — →
+72% → 87%. Cascade untouched throughout (7/8 agreeing, 113/105/8
+pinned); 361 tieout tests green. One named failure class left on
+this pair, one owner, already queued.

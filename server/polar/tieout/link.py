@@ -356,6 +356,12 @@ class Vocabulary:
         #: that an unknown word in a label counts against every candidate.
         self.unknown = math.log(total / 0.5) + 1.0
         self.known = frozenset(document_frequency)
+        #: The words of the bases alone — sheet names, which is where a
+        #: model says who it is about: « Cadent », « Scotland », « NGN ».
+        #: The entity gate reads prose proper nouns against this set, not
+        #: against the whole vocabulary, because « Notional » capitalised
+        #: at a sentence start is a quantity word, never a place.
+        self.places = frozenset(word for basis in self.bases for word in basis)
 
     def weight_of(self, word: str) -> float:
         return self.weight.get(word, self.unknown)
@@ -542,6 +548,26 @@ def link(
                 )
             )
             continue
+        stranger = _foreign(figure, vocabulary)
+        if stranger is not None and not _agrees(figure, outputs[best_index]):
+            # « 55% notional gearing for ET and 60% for the gas
+            # sectors »: the 55% is Electricity Transmission's number,
+            # the model on the other side is the gas one, and the
+            # words that say so — the entity acronym — are exactly the
+            # words the model has never used. Three of the five false
+            # drifts on the round-2 re-test were this shape. The
+            # gazetteer is the model's own vocabulary, not a curated
+            # list: a model knows who it is about because its sheets
+            # and rows are named that way. Corroborate-only, because
+            # the same sentence's 60% carries the same ET-bearing
+            # label and is the gas figure, correctly agreeing.
+            unlinked.append(
+                Unlinked(
+                    figure,
+                    f"speaks of {stranger.upper()}, which this model does not know",
+                )
+            )
+            continue
         if _uncorroborated(label_set | context, outputs[best_index]) and not _agrees(
             figure, outputs[best_index]
         ):
@@ -647,6 +673,67 @@ def _derivative(figure: Figure) -> bool:
         return True
     raw = f"{figure.label} {figure.context}".lower()
     return any(phrase in raw for phrase in DERIVATIVE_PHRASES)
+
+
+#: A proper noun in prose: one capital, then lowercase. Read only
+#: against the model's sheet-name words — « Cadent » is a mention
+#: because a sheet says so; « Notional » capitalised at a sentence
+#: start matches nothing and stays a quantity word.
+TITLED = re.compile(r"\b[A-Z][a-z]+\b")
+
+
+def _foreign(figure: Figure, vocabulary: "Vocabulary") -> str | None:
+    """The entity this figure speaks of when it is not this model's —
+    the acronym itself, or None.
+
+    Two readings, in order of how directly the document said it:
+
+    - **The label carries the acronym.** « notional gearing for ET
+      and » names who the figure is about in the figure's own name.
+      Any capitals-run in the label that the model's entire vocabulary
+      has never used is somebody the model is not about.
+    - **The sentence attaches it.** « ET: Notional gearing of 55% for
+      the » carries a clean label and says ET only in the sentence —
+      so the figure is attached to its *nearest* mention by character
+      distance, the way a reader resolves « 58% for Cadent and 55%
+      for ET » without thinking about it. Mentions are capitals-runs
+      plus proper nouns the model's sheets are named for, and only
+      the nearest one decides: a foreign acronym elsewhere in the
+      sentence must not mute a figure whose own nearest entity the
+      model knows, or one mention of ET would silence every drift in
+      the paragraph.
+
+    Known-ness is membership in the model's own token vocabulary —
+    names and sheet bases — not a curated gazetteer. A gas model knows
+    « NGN », « WWU », « Cadent » because its sheets are named that
+    way, and has never said « ET »; that asymmetry is the whole
+    signal. It also means a quantity acronym the model spells out in
+    full (« SG&A » against a row named in words) reads as foreign —
+    such a figure can still corroborate, and the drift it can no
+    longer carry is the price, paid knowingly, of never inventing an
+    entity list by hand.
+    """
+    strange = {
+        one for one in acronyms(figure.label) if normalise(one) not in vocabulary.known
+    }
+    if strange:
+        return sorted(strange)[0]
+    context = figure.context or ""
+    at = context.find(figure.printed)
+    if at < 0:
+        return None
+    mentions = [
+        (abs(match.start() - at), match.group(0).lower())
+        for match in CAPITALS.finditer(context)
+    ] + [
+        (abs(match.start() - at), match.group(0).lower())
+        for match in TITLED.finditer(context)
+        if normalise(match.group(0).lower()) in vocabulary.places
+    ]
+    if not mentions:
+        return None
+    _, nearest = min(mentions)
+    return nearest if normalise(nearest) not in vocabulary.known else None
 
 
 def _uncorroborated(said: set[str], output: Output) -> bool:
