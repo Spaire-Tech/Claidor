@@ -189,6 +189,15 @@ MAILBOX: dict[str, list[dict[str, Any]]] = {
 # --- sign-in -------------------------------------------------------------
 
 
+@app.get("/{tenant}/v2.0/.well-known/openid-configuration")
+async def openid(tenant: str) -> dict[str, Any]:
+    """Enough of the OpenID document for the preflight's tenant check."""
+    return {
+        "issuer": f"http://127.0.0.1:8900/{tenant}/v2.0",
+        "token_endpoint": f"http://127.0.0.1:8900/{tenant}/oauth2/v2.0/token",
+    }
+
+
 @app.get("/{tenant}/oauth2/v2.0/authorize")
 async def authorize(tenant: str, redirect_uri: str, state: str) -> Response:
     """No sign-in screen. There is nobody to sign in as."""

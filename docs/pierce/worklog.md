@@ -1722,3 +1722,45 @@ named scaling debt.
 
 Everything measured is in the accuracy backlog with the sweep log and
 scripts (`regulator_eval.py`) to reproduce it.
+
+## 13 August 2026 — the Microsoft round: the hour scripted, the panel dressed
+
+The founder's directive: Microsoft first, best-effort design on the
+panel, theirs to redesign later.
+
+**The tenant, made a paint-by-numbers hour.** `microsoft-hour.md` walks
+the Azure registration step by step with the exact values the code
+expects — multitenant account type, the five delegated scopes with the
+one admin-consent click `Sites.Read.All` forces, the localhost-not-
+127.0.0.1 trap Entra sets for dev redirects, the secret's
+value-not-Secret-ID trap, the expiry calendar note. And the connector
+doctor gained `--preflight`: it proves the registration **before any
+browser sign-in** by asking Entra's token endpoint with a deliberately
+bogus code — Entra checks the client credentials first, and its error
+codes distinguish wrong-app-id (AADSTS700016), wrong-or-expired secret
+(AADSTS7000215), and « credentials fine, only the code refused »
+(invalid_grant), which is the pass state. The stub grew the OpenID
+route so the dev loop preflights all-green; against the real tenant
+every branch is reachable. What remains genuinely unprovable from this
+container is unchanged and stated: the first real connection runs
+through `connector_doctor`, one line per Graph call, so whatever it
+finds is one sentence to hand over.
+
+**The panel, dressed in the design.** Best effort, every borrow named
+in `ui.tsx`: the sign-in screen is the workspace welcome at panel
+scale (the Pierce mark, one quiet line, the screen's single filled
+control — the header's blue button); findings print their figures in
+the design's mono as the chain cards do, with the deal page's severity
+dot before the state word; Re-check is the workspace card's grey
+button, the same word; rows lift on hover with the wash; the deal
+chooser carries a faint chevron; the clean state gets the clean dot.
+Verified in the browser against the real API — the container restart
+had taken the database with it, so the stack (docker, migrations,
+seed user, session, Cascade deal) was rebuilt first and the
+screenshots show live data: 112 reconciled · 23 not checked, the
+Cascade drifts in mono. 16/16 panel tests, typecheck and lint clean.
+
+Also: the `.env` base section and the minio provisioning scripts are
+reconstruction casualties of container restarts twice now — both are
+documented in this entry as the first two things to check when the
+dev stack dies.
