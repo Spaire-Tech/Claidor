@@ -1154,7 +1154,6 @@ class TestHouseRules:
     """The firm's rules: stored per organization, and actually obeyed."""
 
     async def _org_of(self, session: AsyncSession, deal: Dossier):
-        from uuid import UUID
 
         return deal.organization_id
 
