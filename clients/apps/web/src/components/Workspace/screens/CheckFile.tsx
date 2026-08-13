@@ -53,7 +53,7 @@ import {
 import { ago } from './DealPage'
 
 /** What each kind of file wears, same mapping as the deal page. */
-const iconOf = (kind: string): string => {
+export const iconOf = (kind: string): string => {
   if (kind === 'model') return fileIcon.xls
   if (kind === 'deck') return fileIcon.ppt
   if (kind === 'message') return fileIcon.mail
@@ -893,7 +893,7 @@ const FileLine = ({
 
 /** What the file's name says it is, for the running card before the
  *  server has answered. */
-const kindFor = (filename: string): string => {
+export const kindFor = (filename: string): string => {
   const suffix = filename.toLowerCase().split('.').pop() ?? ''
   if (['xlsx', 'xlsm', 'xls', 'xlt'].includes(suffix)) return 'model'
   if (['pptx', 'pptm'].includes(suffix)) return 'deck'

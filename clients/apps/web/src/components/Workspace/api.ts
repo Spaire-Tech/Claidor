@@ -966,10 +966,25 @@ export class TieOutApi {
 
   pointAt(
     dealId: string,
-    body: { drive_id: string; item_id: string },
+    body: { drive_id: string; item_id: string; model_item_id?: string | null },
   ): Promise<ConnectedFolder> {
     return this.at(`/v1/connector/deals/${dealId}/folder`, {
       method: 'PUT',
+      body: JSON.stringify(body),
+    })
+  }
+
+  /**
+   * Open a deal. The dossier route, not the tie-out's — a deal is a
+   * matter first, and the creator lands on it as lead. The New deal
+   * flow names it after its folder and points it there right after.
+   */
+  createDeal(
+    organizationId: string,
+    body: { name: string; client_name: string },
+  ): Promise<{ id: string; name: string }> {
+    return this.at(`/v1/dossiers?organization_id=${organizationId}`, {
+      method: 'POST',
       body: JSON.stringify(body),
     })
   }

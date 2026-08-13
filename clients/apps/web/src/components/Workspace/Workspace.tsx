@@ -20,6 +20,7 @@ import { blueButton, card, font, ground, ink } from './design'
 import { CheckFile } from './screens/CheckFile'
 import { Deals } from './screens/Deals'
 import { DocPanel } from './screens/DocPanel'
+import { NewDeal } from './screens/NewDeal'
 import './workspace.css'
 
 /**
@@ -66,6 +67,7 @@ export const Workspace = ({
   const [deal, setDeal] = useState<DealListItem | null>(null)
   const [doc, setDoc] = useState<Artifact | null>(null)
   const [acctOpen, setAcctOpen] = useState(false)
+  const [newOpen, setNewOpen] = useState(false)
 
   //: Every deal this person is on. Null while loading — the screens tell
   //: « still asking » apart from « asked, and there are none », because
@@ -221,7 +223,10 @@ export const Workspace = ({
               </button>
             )}
             {view === 'deals' && deal === null && (deals?.length ?? 0) > 0 && (
-              <button style={{ ...blueButton, marginRight: 4 }}>
+              <button
+                onClick={() => setNewOpen(true)}
+                style={{ ...blueButton, marginRight: 4 }}
+              >
                 New deal
               </button>
             )}
@@ -244,6 +249,7 @@ export const Workspace = ({
               }}
               openDocId={doc?.id ?? null}
               onOpenDoc={setDoc}
+              onNewDeal={() => setNewOpen(true)}
             />
           ) : view === 'check' ? (
             <CheckFile api={api} deals={deals} />
@@ -275,6 +281,15 @@ export const Workspace = ({
           />
         )}
       </div>
+
+      {newOpen && (
+        <NewDeal
+          api={api}
+          organizationId={organizationId}
+          onClose={() => setNewOpen(false)}
+          onCreated={() => setDealsAt((was) => was + 1)}
+        />
+      )}
 
       {/* The dock. */}
       <div

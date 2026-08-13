@@ -1425,3 +1425,48 @@ the 2 real chart-against-table differences; against the deal it reads
   the design's says-line assumes the two statements sit on different
   slides; when they share one, the place words are read off the real
   location so the line still says which two places disagree.
+
+## 13 August 2026 — New deal, from a SharePoint folder to a checked deal
+
+The design's `newOpen` sheet, wired end to end: browse the connected
+store, tick folders, name the clients, and — where a folder holds more
+than one workbook — say which one is the model.
+
+**The model choice is real, not decoration.** One column,
+`connected_folders.model_item_id`, chosen on the confirm card and
+honoured by the sync: the working copies, sensitivities and comps are
+skipped with a counted reason (« a second spreadsheet — the deal chose
+its model »), because reconciling the deck against a working copy
+reports the copy's every difference as a finding. Null keeps the old
+read-everything behaviour, so no existing folder changes. Connector
+test added.
+
+**Create composes what already exists** — `POST /dossiers` (creator
+lands as lead), `PUT …/folder` with the model choice, `POST …/sync`
+(which ingests and runs all three checks) — one sequence per picked
+folder, so one folder failing leaves the others' deals standing, with
+the failed one's sentence shown in place.
+
+**Verified against the Graph stub**, which now serves a second room —
+Project Kestrel, holding the model *and a working copy* — exactly the
+shape that makes the flow ask. Watched live: browse → pick → confirm
+(« 4 files · 2 spreadsheets, 1 deck, 1 other », real counts from the
+folder's own listing) → create → « Syncing the folders — 3 files ·
+Reading the models — 1 model » → the list re-opens with **Project
+Kestrel · Kestrel Holdings · 3 documents · 9 to review · Checked just
+now**, and the database shows the working copy skipped with its reason
+and `model_item_id` stored. Nobody uploaded anything.
+
+**Mappings and borrows, named** (also at their code sites): the crumb
+root « SharePoint » is the drives list; folder rows say « Changed … »
+from the store's own clock instead of the design's file counts (the
+counts appear on the confirm card, where the folder has actually been
+opened); only unreadable files are dimmed, because that meaning is
+real; the failure sentence-in-place is borrowed from the metadata
+panel. « Choose your deals » on the connected empty state now opens
+this sheet.
+
+**One bug worth remembering:** an `alive` ref latched `false` by
+StrictMode's mount–unmount–mount cycle silently dropped every
+response in the sheet. Re-armed in the effect body; symptom was an
+empty drives list under a 200 response.

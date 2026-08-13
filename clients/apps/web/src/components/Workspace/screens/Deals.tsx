@@ -115,6 +115,8 @@ export interface DealsProps {
   onChecking: (running: boolean) => void
   openDocId: string | null
   onOpenDoc: (doc: import('./../api').Artifact) => void
+  /** Opens the New-deal browser — the connected empty state's button. */
+  onNewDeal: () => void
 }
 
 export const Deals = ({
@@ -127,6 +129,7 @@ export const Deals = ({
   onChecking,
   openDocId,
   onOpenDoc,
+  onNewDeal,
 }: DealsProps) => {
   //: The connector, for the empty state's three faces. Asked only once
   //: the list has answered and come back empty — the list screen never
@@ -195,6 +198,7 @@ export const Deals = ({
           setWaiting(true)
         }}
         onCancel={() => setWaiting(false)}
+        onNewDeal={onNewDeal}
       />
     )
   }
@@ -376,11 +380,13 @@ const EmptyState = ({
   waiting,
   onConnect,
   onCancel,
+  onNewDeal,
 }: {
   connector: ConnectorState | null
   waiting: boolean
   onConnect: () => void
   onCancel: () => void
+  onNewDeal: () => void
 }) => {
   const connected = !!connector?.connection
   return (
@@ -609,9 +615,8 @@ const EmptyState = ({
             >
               {connector?.connection?.account_email}
             </span>
-            {/* « Choose your deals » opens the New-deal browser — a later
-                round. Present as drawn; wired when the browser exists. */}
             <button
+              onClick={onNewDeal}
               style={{
                 width: 270,
                 marginTop: 30,

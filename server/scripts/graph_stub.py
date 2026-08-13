@@ -52,6 +52,26 @@ ROOM_FILES = (
     "cascade_accounts.pdf",
 )
 
+#: A second room, holding the model *and a working copy* — the shape that
+#: makes the New-deal flow ask which workbook is the model. The bytes are
+#: the same Cascade files under the names a second deal would use; what
+#: is being served is the shape, and the shape is real.
+ROOMS: dict[str, dict[str, Any]] = {
+    ROOM: {
+        "name": "Project Cascade",
+        "files": [(name, name) for name in ROOM_FILES],
+    },
+    "folder-kestrel": {
+        "name": "Project Kestrel",
+        "files": [
+            ("kestrel_model_v9.xlsx", "cascade_model.xlsx"),
+            ("kestrel_working_v3.xlsx", "cascade_model.xlsx"),
+            ("kestrel_deck.pptx", "cascade_deck.pptx"),
+            ("kestrel_accounts.pdf", "cascade_accounts.pdf"),
+        ],
+    },
+}
+
 #: Each file's content tag. Editing this while the server is running is the
 #: whole point — bump one, press Sync now, and the deal reads that file
 #: again and re-checks itself.
@@ -60,34 +80,60 @@ TAGS: dict[str, str] = {}
 app = FastAPI(title="Graph stub")
 
 
-def _files() -> list[Path]:
-    return [one for one in (HERE / name for name in ROOM_FILES) if one.is_file()]
+def _room_files(room: str) -> list[tuple[str, Path]]:
+    """(served name, disk path) for one room, existing files only."""
+    return [
+        (served, HERE / disk)
+        for served, disk in ROOMS[room]["files"]
+        if (HERE / disk).is_file()
+    ]
 
 
-def _tag(path: Path) -> str:
+def _tag(served: str, path: Path) -> str:
     """Content, not name. A stat is close enough to a content hash here and
     it means saving over a file in `scripts/cascade/` moves the tag."""
     stamp = path.stat()
-    return TAGS.get(path.name) or f"{{stub}},{stamp.st_mtime_ns}-{stamp.st_size}"
+    return TAGS.get(served) or f"{{stub}},{stamp.st_mtime_ns}-{stamp.st_size}"
 
 
-def _item(path: Path) -> dict[str, Any]:
+def _item(served: str, path: Path, room: str) -> dict[str, Any]:
     from datetime import UTC, datetime
 
     stamp = path.stat()
     return {
-        "id": f"item-{path.name}",
-        "name": path.name,
+        "id": f"item-{served}",
+        "name": served,
         "size": stamp.st_size,
-        "cTag": _tag(path),
-        "eTag": _tag(path),
+        "cTag": _tag(served, path),
+        "eTag": _tag(served, path),
         # From the same stat as the tag, so touching a file moves both.
         # A room where the content changed and the date did not is a state
         # Graph never produces and the screen should never be shown.
         "lastModifiedDateTime": datetime.fromtimestamp(stamp.st_mtime, UTC).isoformat(),
         "lastModifiedBy": {"user": {"displayName": "R. Duval"}},
-        "parentReference": {"driveId": DRIVE, "path": "/drive/root:/Cascade"},
+        "parentReference": {
+            "driveId": DRIVE,
+            "path": f"/drive/root:/{ROOMS[room]['name']}",
+        },
         "file": {"mimeType": "application/octet-stream"},
+    }
+
+
+def _folder(room: str, drive_id: str) -> dict[str, Any]:
+    files = _room_files(room)
+    return {
+        "id": room,
+        "name": ROOMS[room]["name"],
+        "folder": {"childCount": len(files)},
+        "lastModifiedDateTime": max(
+            (
+                _item(served, path, room)["lastModifiedDateTime"]
+                for served, path in files
+            ),
+            default="2026-08-04T09:12:00Z",
+        ),
+        "lastModifiedBy": {"user": {"displayName": "R. Duval"}},
+        "parentReference": {"driveId": drive_id, "path": "/drive/root:"},
     }
 
 
@@ -233,52 +279,37 @@ async def drives(site_id: str) -> dict[str, Any]:
 
 @app.get("/v1.0/drives/{drive_id}/root/children")
 async def root_children(drive_id: str) -> dict[str, Any]:
-    return {
-        "value": [
-            {
-                "id": ROOM,
-                "name": "Project Cascade",
-                "folder": {"childCount": len(_files())},
-                "lastModifiedDateTime": max(
-                    (one["lastModifiedDateTime"] for one in map(_item, _files())),
-                    default="2026-08-04T09:12:00Z",
-                ),
-                "lastModifiedBy": {"user": {"displayName": "R. Duval"}},
-                "parentReference": {"driveId": drive_id, "path": "/drive/root:"},
-            }
-        ]
-    }
+    return {"value": [_folder(room, drive_id) for room in ROOMS]}
 
 
 @app.get("/v1.0/drives/{drive_id}/items/{item_id}")
 async def item(drive_id: str, item_id: str) -> Response:
-    if item_id == ROOM:
-        return _json(
-            {
-                "id": ROOM,
-                "name": "Project Cascade",
-                "folder": {"childCount": len(_files())},
-                "parentReference": {"driveId": drive_id, "path": "/drive/root:"},
-            }
-        )
-    for path in _files():
-        if f"item-{path.name}" == item_id:
-            return _json(_item(path))
+    if item_id in ROOMS:
+        return _json(_folder(item_id, drive_id))
+    for room in ROOMS:
+        for served, path in _room_files(room):
+            if f"item-{served}" == item_id:
+                return _json(_item(served, path, room))
     return _json({"error": {"message": "itemNotFound"}}, 404)
 
 
 @app.get("/v1.0/drives/{drive_id}/items/{item_id}/children")
 async def children(drive_id: str, item_id: str) -> dict[str, Any]:
-    if item_id != ROOM:
+    if item_id not in ROOMS:
         return {"value": []}
-    return {"value": [_item(one) for one in _files()]}
+    return {
+        "value": [_item(served, path, item_id) for served, path in _room_files(item_id)]
+    }
 
 
 @app.get("/v1.0/drives/{drive_id}/items/{item_id}/content")
 async def content(drive_id: str, item_id: str) -> Response:
-    for path in _files():
-        if f"item-{path.name}" == item_id:
-            return Response(path.read_bytes(), media_type="application/octet-stream")
+    for room in ROOMS:
+        for served, path in _room_files(room):
+            if f"item-{served}" == item_id:
+                return Response(
+                    path.read_bytes(), media_type="application/octet-stream"
+                )
     return _json({"error": {"message": "itemNotFound"}}, 404)
 
 
