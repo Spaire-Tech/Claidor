@@ -1576,3 +1576,17 @@ boundaries, errors) is verified without one.
 **With this, every view of the 12 August workspace design is built and
 wired**: Deals, the deal page, the document panel, Check a file, New
 deal, Settings, and the chat.
+
+## 13 August 2026 — the square in the writing boxes, found and killed
+
+The founder caught it in a screenshot: the chat's writing box drew a
+blue rectangle on focus — the exact thing the standing rule forbids.
+The culprit was not the user-agent outline (long dead) but
+`@tailwindcss/forms`, which the app ships globally and which paints a
+focus ring through **box-shadow** — the one channel `border: 0;
+outline: none` does not close. `workspace.css` now zeroes outline,
+border, box-shadow and the Tailwind ring variables on every workspace
+input and textarea in every focus state. Inline styles still win, so
+the sanctioned soft glow (`inputGlow`) is untouched — verified focused
+on the chat box (clean), the dismissal note (soft glow), and the
+invite email (soft glow).

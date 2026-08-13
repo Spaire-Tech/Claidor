@@ -89,10 +89,24 @@
 
 /* The design's writing boxes carry no border, no outline, no underline —
    focus, where it exists at all, is a soft glow set inline. This kills
-   the user-agent focus ring so nothing square ever appears. */
+   every source of the square: the user-agent focus ring (outline), and
+   the app's @tailwindcss/forms plugin, which paints a border on every
+   input and a blue ring on focus through box-shadow — the one channel
+   the inline `border: 0; outline: none` did not close, and the exact
+   square the founder ruled out. Inline styles still win over these
+   rules, so the sanctioned soft glow (`inputGlow`, set inline) is
+   unaffected. */
 .pc-workspace input,
-.pc-workspace textarea {
+.pc-workspace textarea,
+.pc-workspace input:focus,
+.pc-workspace input:focus-visible,
+.pc-workspace textarea:focus,
+.pc-workspace textarea:focus-visible {
   outline: none;
+  border: 0;
+  box-shadow: none;
+  --tw-ring-color: transparent;
+  --tw-ring-shadow: 0 0 #0000;
 }
 
 @keyframes pcIn {
