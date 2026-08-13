@@ -21,7 +21,7 @@
  * embedded rather than as part of the application.
  */
 
-import { colour, font, size, space } from './design'
+import { font, ink, shade, size, space } from './design'
 
 export function Heading({
   title,
@@ -40,7 +40,7 @@ export function Heading({
         alignItems: 'baseline',
         gap: 10,
         padding: `${space.gutter}px ${space.gutter}px 10px`,
-        borderBottom: `1px solid ${colour.rule}`,
+        borderBottom: `1px solid ${shade.rule}`,
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -48,7 +48,7 @@ export function Heading({
           style={{
             fontSize: size.title,
             fontWeight: 600,
-            color: colour.ink,
+            color: ink.base,
             letterSpacing: '-.01em',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -61,7 +61,7 @@ export function Heading({
           <div
             style={{
               fontSize: size.small,
-              color: colour.faint,
+              color: ink.secondary,
               marginTop: 3,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -111,10 +111,10 @@ export function Text({
         font: 'inherit',
         fontSize: size.small,
         color: disabled
-          ? colour.fainter
+          ? ink.faint
           : tone === 'blue'
-            ? colour.blue
-            : colour.faint,
+            ? ink.accent
+            : ink.secondary,
         cursor: disabled ? 'default' : 'pointer',
       }}
     >
@@ -155,7 +155,7 @@ export function Row({
   children?: React.ReactNode
 }) {
   return (
-    <div style={{ borderTop: `1px solid ${colour.bandWarm}` }}>
+    <div style={{ borderTop: `1px solid ${shade.rule}` }}>
       <button
         onClick={onClick}
         style={{
@@ -176,7 +176,7 @@ export function Row({
             style={{
               display: 'block',
               fontSize: size.body,
-              color: colour.ink,
+              color: ink.base,
               lineHeight: 1.45,
             }}
           >
@@ -186,7 +186,7 @@ export function Row({
             style={{
               display: 'block',
               fontSize: size.tiny,
-              color: colour.faint,
+              color: ink.secondary,
               marginTop: 3,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -227,7 +227,7 @@ export function Quiet({
     <div
       style={{
         fontSize: size.meta,
-        color: tone === 'critical' ? colour.critical : colour.muted,
+        color: tone === 'critical' ? ink.danger : ink.secondary,
         lineHeight: 1.6,
         padding: `10px ${space.gutter}px`,
       }}
@@ -256,7 +256,7 @@ export function Truncation({
   if (shown >= total) return null
   return (
     <div style={{ padding: `12px ${space.gutter}px 16px` }}>
-      <span style={{ fontSize: size.tiny, color: colour.fainter }}>
+      <span style={{ fontSize: size.tiny, color: ink.faint }}>
         showing {shown.toLocaleString()} of {total.toLocaleString()} —{' '}
       </span>
       <Text onClick={onMore}>show more</Text>
@@ -274,9 +274,9 @@ export function Bar({ children }: { children: React.ReactNode }) {
         alignItems: 'center',
         gap: 14,
         padding: `9px ${space.gutter}px`,
-        borderTop: `1px solid ${colour.rule}`,
-        background: colour.wash,
-        fontFamily: font.office,
+        borderTop: `1px solid ${shade.rule}`,
+        background: shade.wash,
+        fontFamily: font.ui,
       }}
     >
       {children}

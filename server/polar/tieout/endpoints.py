@@ -41,6 +41,7 @@ from polar.models import (
     Finding,
     FindingKind,
     FindingState,
+    HouseRules,
     LinkState,
     ModelCell,
     OneOffCheck,
@@ -53,6 +54,7 @@ from polar.user.repository import UserRepository
 
 from . import auth
 from .agent import service as agent
+from .audit import RULE_NAMES
 from .ingest import Unreadable, kind_for
 from .repository import TieOutRepository
 from .schemas import (
@@ -62,6 +64,7 @@ from .schemas import (
     Ask,
     Asked,
     AskedStep,
+    AuditRuleRead,
     CellRead,
     ChainRead,
     ChainStep,
@@ -81,6 +84,8 @@ from .schemas import (
     FindingWhere,
     HiddenFinding,
     HiddenReport,
+    HouseRulesRead,
+    HouseRulesUpdate,
     Identified,
     Identify,
     LinkAlternative,
@@ -97,6 +102,8 @@ from .schemas import (
     RecentCheck,
     SlideFigures,
     SoloFindingRead,
+    TeamMember,
+    TeamRead,
     Uploader,
     VersionRead,
 )
@@ -985,8 +992,14 @@ async def run_checks(
     runs = [
         await tieout.run_tieout(session, dossier_id=dossier_id, user_id=user_id),
         await tieout.run_audit(session, dossier_id=dossier_id, user_id=user_id),
-        await tieout.run_crosscheck(session, dossier_id=dossier_id, user_id=user_id),
     ]
+    # The firm's call, from the house rules. A pass switched off simply
+    # does not run — no failed row, no error: the runs list says what
+    # ran, and two entries is the honest answer.
+    if await tieout.grounding_on(session, dossier_id=dossier_id):
+        runs.append(
+            await tieout.run_crosscheck(session, dossier_id=dossier_id, user_id=user_id)
+        )
     return [one for one in (_run(run) for run in runs) if one is not None]
 
 
@@ -1005,6 +1018,111 @@ async def list_runs(
         await repository.latest_run(dossier_id, CheckKind.crosscheck),
     ]
     return [one for one in (_run(run) for run in runs) if one is not None]
+
+
+# --- settings ------------------------------------------------------------
+
+
+async def _in_organization(
+    session: AsyncSession | AsyncReadSession, organization_id: UUID, user_id: UUID
+) -> None:
+    """Organization membership, 404 on the outside — same posture as a
+    deal: a stranger does not learn the organization exists."""
+    repository = TieOutRepository.from_session(session)
+    if not await repository.is_in_organization(organization_id, user_id):
+        raise ResourceNotFound("Organization not found.")
+
+
+def _house_rules(rules: HouseRules | None) -> HouseRulesRead:
+    off = set(rules.audit_rules_off) if rules else set()
+    return HouseRulesRead(
+        rounding="separate" if rules and rules.rounding == "separate" else "together",
+        writing=dict(rules.writing) if rules else {},
+        grounding=rules.grounding if rules else True,
+        rules=[
+            AuditRuleRead(key=key, label=label, on=key not in off)
+            for key, label in RULE_NAMES.items()
+        ],
+    )
+
+
+@router.get("/house-rules", response_model=HouseRulesRead)
+async def get_house_rules(
+    auth_subject: auth.TieOutRead,
+    organization_id: UUID = Query(),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> HouseRulesRead:
+    """How this firm wants Pierce to behave. No row yet means defaults."""
+    await _in_organization(session, organization_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    return _house_rules(await repository.house_rules_for(organization_id))
+
+
+@router.put("/house-rules", response_model=HouseRulesRead)
+async def put_house_rules(
+    update: HouseRulesUpdate,
+    auth_subject: auth.TieOutWrite,
+    organization_id: UUID = Query(),
+    session: AsyncSession = Depends(get_db_session),
+) -> HouseRulesRead:
+    """Change the firm's rules. Only what is sent changes.
+
+    An unknown rule key is refused whole rather than stored and
+    ignored — a switch that does nothing is worse than an error.
+    """
+    await _in_organization(session, organization_id, auth_subject.subject.id)
+    if update.audit_rules_off is not None:
+        unknown = [key for key in update.audit_rules_off if key not in RULE_NAMES]
+        if unknown:
+            raise ClaidorRequestValidationError(
+                [
+                    {
+                        "loc": ("body", "audit_rules_off"),
+                        "msg": f"{', '.join(unknown)} is not a rule the audit runs",
+                        "type": "value_error",
+                        "input": unknown,
+                    }
+                ]
+            )
+    repository = TieOutRepository.from_session(session)
+    rules = await repository.house_rules_for(organization_id) or HouseRules(
+        organization_id=organization_id
+    )
+    if update.rounding is not None:
+        rules.rounding = update.rounding
+    if update.writing is not None:
+        rules.writing = dict(update.writing)
+    if update.grounding is not None:
+        rules.grounding = update.grounding
+    if update.audit_rules_off is not None:
+        rules.audit_rules_off = sorted(set(update.audit_rules_off))
+    return _house_rules(await repository.save_house_rules(rules))
+
+
+@router.get("/team", response_model=TeamRead)
+async def get_team(
+    auth_subject: auth.TieOutRead,
+    organization_id: UUID = Query(),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> TeamRead:
+    """Who's on the team, and which of this organization's deals each is on."""
+    await _in_organization(session, organization_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    people = await repository.team_of(organization_id)
+    return TeamRead(
+        members=[
+            TeamMember(
+                id=person.id,
+                name=person.public_name,
+                email=person.email,
+                avatar_url=person.avatar_url,
+                you=person.id == auth_subject.subject.id,
+                deals=deals,
+            )
+            for person, deals in people
+        ],
+        total_deals=await repository.organization_deals(organization_id),
+    )
 
 
 # --- one-off checks ------------------------------------------------------
@@ -1562,11 +1680,18 @@ async def ask(
     except AgentNotConfigured as problem:
         raise HTTPException(status_code=503, detail=str(problem)) from problem
 
+    finding: Finding | None = None
+    if body.finding_id is not None:
+        repository = TieOutRepository.from_session(session)
+        finding = await repository.get_finding(body.finding_id)
+        if finding is None or finding.dossier_id != deal.id:
+            raise ResourceNotFound("Finding not found.")
+
     task, outcome = await agent.ask(
         session,
         dossier_id=deal.id,
         user_id=auth_subject.subject.id,
-        prompt=body.prompt,
+        prompt=_conversation(body, finding),
         client=client,
         name=deal.name,
     )
@@ -1576,6 +1701,106 @@ async def ask(
         answer=task.answer,
         stopped=task.stopped,
         error=task.error,
+        steps=[
+            AskedStep(
+                ordinal=step.ordinal,
+                tool=step.tool,
+                ok=step.ok,
+                summary=step.summary,
+                milliseconds=step.milliseconds,
+            )
+            for step in outcome.steps
+        ],
+    )
+
+
+#: How much of a conversation is replayed to the agent. The last few
+#: exchanges are context; a whole afternoon of chat is a second corpus,
+#: and the tools — not the transcript — are where answers come from.
+MOST_TURNS = 6
+
+
+def _conversation(body: Ask, finding: Finding | None) -> str:
+    """One prompt for the loop, carrying the chat's context.
+
+    The loop takes a single prompt, so the finding the chat was opened
+    from and the last few exchanges are folded in, labelled — the
+    banker's own words and the agent's earlier answers, never anything
+    invented between them. The tools still bound every figure in the
+    reply.
+    """
+    parts: list[str] = []
+    if finding is not None:
+        about = (
+            f"This conversation is about one finding: « {finding.title} » — "
+            f"{finding.location}."
+        )
+        if finding.printed and finding.expected:
+            about += (
+                f" The document prints {finding.printed}; the model says "
+                f"{finding.expected}."
+            )
+        parts.append(about)
+    for turn in body.history[-MOST_TURNS:]:
+        speaker = "The banker said" if turn.who == "you" else "You answered"
+        parts.append(f"{speaker}: {turn.text}")
+    if parts:
+        parts.append(f"The banker now asks: {body.prompt}")
+        return "\n\n".join(parts)
+    return body.prompt
+
+
+@router.post(
+    "/check-file/{check_id}/ask", response_model=Asked, status_code=201
+)
+async def ask_about_check(
+    check_id: UUID,
+    body: Ask,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> Asked:
+    """Ask about one stored one-off check — and only about it.
+
+    The agent here holds the check's stored answer and two tools over
+    it, nothing else: no deal, no model history, no decisions. A deal
+    question gets the boundary sentence, which is a correct answer and
+    not a failure — the deal's own page is where those are answered.
+
+    Nothing is persisted: recorded agent tasks are a deal's record, and
+    a one-off check has no deal. The trace still comes back with the
+    answer, which is where it matters.
+    """
+    from uuid import uuid4
+
+    from polar.agent import run as run_agent
+
+    from .agent.file_tools import FILE_TOOLSET, FileRoom
+
+    repository = TieOutRepository.from_session(session)
+    row = await repository.get_one_off(check_id, auth_subject.subject.id)
+    if row is None:
+        raise ResourceNotFound("Check not found.")
+    try:
+        client = agent_client()
+    except AgentNotConfigured as problem:
+        raise HTTPException(status_code=503, detail=str(problem)) from problem
+
+    room = FileRoom(
+        filename=row.filename,
+        kind=row.kind.value,
+        against=row.against,
+        counts=row.counts or {},
+        result=row.result or {},
+    )
+    outcome = await run_agent(
+        client, FILE_TOOLSET, room, _conversation(body, None)
+    )
+    return Asked(
+        id=uuid4(),
+        prompt=body.prompt,
+        answer=outcome.answer,
+        stopped=outcome.stopped,
+        error=outcome.error,
         steps=[
             AskedStep(
                 ordinal=step.ordinal,

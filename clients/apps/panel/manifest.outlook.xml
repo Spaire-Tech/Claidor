@@ -21,10 +21,12 @@
        reads the *attachment's* name to work out which deal this is, and
        says what does not tie out, before Send.
 
-       Replace YOUR-DOMAIN.example.com throughout before sideloading. -->
+       YOUR-DOMAIN.example.com is a placeholder on purpose. See
+       SIDELOAD.md — `scripts/stamp-manifests.mjs` writes a stamped copy
+       into dist/ and the dashboard's build does it on every deploy. -->
 
   <Id>9f42c7d1-58ab-4e63-b0c9-6d3e15a97284</Id>
-  <Version>0.1.0.0</Version>
+  <Version>1.0.0.0</Version>
   <ProviderName>Claidor</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Claidor" />

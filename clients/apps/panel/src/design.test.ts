@@ -46,14 +46,16 @@ describe('the design tokens', () => {
   it('still carry the shades the panel actually paints with', () => {
     // A guard against a well-meaning tidy-up: these five are the only
     // colours a finding row can be, and losing one silently would make a
-    // severity invisible rather than wrong.
+    // severity invisible rather than wrong. Updated 13 August with the
+    // 12 August workspace design — the deliberate event this guard
+    // exists to tell apart from an accident.
     const block = shared(PANEL)
     for (const shade of [
-      '#b04434',
-      '#b3822f',
-      '#8a8886',
-      '#0b62c4',
-      '#4f7a5c',
+      '#0060d0',
+      '#ff9f0a',
+      '#34c759',
+      '#86868b',
+      '#ff3b30',
     ]) {
       expect(block).toContain(shade)
     }

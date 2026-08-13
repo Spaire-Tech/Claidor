@@ -397,6 +397,12 @@ export interface FigureMap {
   slides: { page: number; figures: Figure[] }[]
 }
 
+/** One earlier exchange, replayed so a follow-up reads as one. */
+export interface AskTurn {
+  who: 'you' | 'pierce'
+  text: string
+}
+
 /** One tool call, as the chat shows it under « Used N tools ». */
 export interface AskedStep {
   ordinal: number
@@ -473,6 +479,132 @@ export interface Version {
   uploaded_by: { id: string; name: string; avatar_url: string | null } | null
   uploaded_at: string
   counts: Record<string, unknown>
+}
+
+/** One place a file states a figure, for the check-a-file card. */
+export interface SoloStatement {
+  printed: string
+  location: string
+  page: number
+  /** The slide's title or the heading over the block. */
+  section: string
+  /** The sentence around the figure, when there is one. */
+  context: string
+}
+
+/**
+ * One name carrying two figures in the same file.
+ *
+ * Which one is *right* is not knowable from the file alone, and the
+ * shape deliberately does not guess — the finding is that the file says
+ * both.
+ */
+export interface SoloFinding {
+  label: string
+  /** How many times the file states this name, counting the agreeing ones. */
+  statements: number
+  first: SoloStatement
+  other: SoloStatement
+}
+
+/** A printed figure that disagrees with the picked deal's model. */
+export interface OneOffDrift {
+  printed: string
+  expected: string
+  label: string
+  page: number
+  location: string
+  context: string
+  ref: string
+  name: string
+  basis: string
+  confidence: number
+  one_tick: boolean
+  /** A real artifact in that deal — the same grid endpoint the document
+   *  panel uses works here. */
+  model_artifact_id: string | null
+}
+
+/** One mechanical defect from a model's own audit. */
+export interface OneOffDefect {
+  rule: string
+  /** Never added into one number with the other. */
+  severity: 'error' | 'smell'
+  ref: string
+  sheet: string
+  name: string
+  detail: string
+  standard: string
+}
+
+/** One model the file was compared with — the « Compared with » card. */
+export interface AgainstModel {
+  artifact_id: string
+  filename: string
+  version: number
+  read_at: string
+}
+
+/** One loose file, checked, with everything the screen draws. */
+export interface OneOffResult {
+  id: string
+  filename: string
+  kind: string
+  checked_at: string
+  /** The deal's name at check time, or empty for a check on its own. */
+  against: string
+  dossier_id: string | null
+  models: AgainstModel[]
+  counts: Record<string, number>
+  disagreements: SoloFinding[]
+  drifts: OneOffDrift[]
+  defects: OneOffDefect[]
+}
+
+/** One audit rule, as the settings screen shows it. */
+export interface AuditRule {
+  key: string
+  label: string
+  on: boolean
+}
+
+/** How the firm wants Pierce to behave. */
+export interface HouseRules {
+  /** `together` — rounding differences sit with everything else;
+   *  `separate` — grouped under their own head. Found either way. */
+  rounding: 'together' | 'separate'
+  /** Ranges, fiscal years, units, negatives — as the firm writes them. */
+  writing: Record<string, string>
+  grounding: boolean
+  /** The audit's own catalogue with the firm's switches — never a list
+   *  the screen invented. */
+  rules: AuditRule[]
+}
+
+/** One person on the team, with the deals they are on here. */
+export interface TeamMember {
+  id: string
+  name: string
+  email: string
+  avatar_url: string | null
+  you: boolean
+  deals: string[]
+}
+
+export interface Team {
+  members: TeamMember[]
+  /** So « All six deals » is only said when it is true. */
+  total_deals: number
+}
+
+/** One line of « Recent one-off checks ». */
+export interface RecentCheck {
+  id: string
+  filename: string
+  kind: string
+  against: string
+  checked_at: string
+  counts: Record<string, number>
 }
 
 export class ApiError extends Error {
@@ -718,11 +850,39 @@ export class TieOutApi {
    * Slow by nature — it is a model call with tool calls inside it — so the
    * caller shows « Working » rather than a spinner, and the trace that
    * comes back with the answer is shown rather than logged.
+   *
+   * `finding_id` scopes the conversation to one finding; `history`
+   * replays the last few exchanges so follow-ups read as follow-ups.
    */
-  ask(dealId: string, prompt: string): Promise<Asked> {
+  ask(
+    dealId: string,
+    prompt: string,
+    options: { history?: AskTurn[]; findingId?: string | null } = {},
+  ): Promise<Asked> {
     return this.call(`/deals/${dealId}/ask`, {
       method: 'POST',
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({
+        prompt,
+        history: options.history ?? [],
+        finding_id: options.findingId ?? null,
+      }),
+    })
+  }
+
+  /**
+   * Ask about one stored one-off check — and only about it.
+   *
+   * The agent behind this holds the check's stored answer and two tools
+   * over it, nothing else; a deal question gets the boundary sentence.
+   */
+  askFile(
+    checkId: string,
+    prompt: string,
+    options: { history?: AskTurn[] } = {},
+  ): Promise<Asked> {
+    return this.call(`/check-file/${checkId}/ask`, {
+      method: 'POST',
+      body: JSON.stringify({ prompt, history: options.history ?? [] }),
     })
   }
 
@@ -788,6 +948,93 @@ export class TieOutApi {
     return this.call(`/deals/${dealId}/runs`)
   }
 
+  /**
+   * Check a loose file without putting it in any deal.
+   *
+   * Multipart for the same reason `upload` is. The file is read, checked
+   * and dropped in one request; the answer comes back whole and is also
+   * kept as a recent. A file the reader cannot open is a 422 whose
+   * message is the server's own sentence, meant to be shown in place.
+   */
+  async checkFile(
+    file: File,
+    dossierId?: string | null,
+  ): Promise<OneOffResult> {
+    const body = new FormData()
+    body.append('file', file)
+    const token = this.options.token?.() ?? null
+    const query = dossierId ? `?dossier_id=${dossierId}` : ''
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/check-file${query}`,
+      {
+        method: 'POST',
+        body,
+        credentials: 'include',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      },
+    )
+    if (!response.ok) {
+      const problem = (await response.json().catch(() => null)) as {
+        detail?: string
+      } | null
+      throw new ApiError(
+        response.status,
+        problem?.detail ?? 'that file could not be checked',
+      )
+    }
+    return (await response.json()) as OneOffResult
+  }
+
+  /** The caller's own recent one-off checks, newest first. */
+  recentChecks(): Promise<RecentCheck[]> {
+    return this.call('/check-file/recents')
+  }
+
+  /** A stored one-off check, replayed exactly as it was answered. */
+  oneOffCheck(checkId: string): Promise<OneOffResult> {
+    return this.call(`/check-file/${checkId}`)
+  }
+
+  /** How the firm wants Pierce to behave. Defaults until somebody decides. */
+  houseRules(organizationId: string): Promise<HouseRules> {
+    return this.call(`/house-rules?organization_id=${organizationId}`)
+  }
+
+  /** Change the firm's rules. Only what is sent changes. */
+  putHouseRules(
+    organizationId: string,
+    update: {
+      rounding?: 'together' | 'separate'
+      writing?: Record<string, string>
+      grounding?: boolean
+      audit_rules_off?: string[]
+    },
+  ): Promise<HouseRules> {
+    return this.call(`/house-rules?organization_id=${organizationId}`, {
+      method: 'PUT',
+      body: JSON.stringify(update),
+    })
+  }
+
+  /** Who's on the team, with the deals each is on in this organization. */
+  team(organizationId: string): Promise<Team> {
+    return this.call(`/team?organization_id=${organizationId}`)
+  }
+
+  /**
+   * Put a colleague on a deal, by the email they sign in with.
+   *
+   * The dossier route, and its rule: access is granted to a person the
+   * system knows, never to an address on faith — an unknown email comes
+   * back 404 with the server's own sentence.
+   */
+  addDealMember(dealId: string, email: string): Promise<unknown> {
+    return this.at(`/v1/dossiers/${dealId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    })
+  }
+
   // --- the connected file store ---------------------------------------
   //
   // A different prefix from everything above: the connector is not part of
@@ -829,10 +1076,25 @@ export class TieOutApi {
 
   pointAt(
     dealId: string,
-    body: { drive_id: string; item_id: string },
+    body: { drive_id: string; item_id: string; model_item_id?: string | null },
   ): Promise<ConnectedFolder> {
     return this.at(`/v1/connector/deals/${dealId}/folder`, {
       method: 'PUT',
+      body: JSON.stringify(body),
+    })
+  }
+
+  /**
+   * Open a deal. The dossier route, not the tie-out's — a deal is a
+   * matter first, and the creator lands on it as lead. The New deal
+   * flow names it after its folder and points it there right after.
+   */
+  createDeal(
+    organizationId: string,
+    body: { name: string; client_name: string },
+  ): Promise<{ id: string; name: string }> {
+    return this.at(`/v1/dossiers?organization_id=${organizationId}`, {
+      method: 'POST',
       body: JSON.stringify(body),
     })
   }

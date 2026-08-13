@@ -27,6 +27,7 @@ from polar.models import (
     DossierMember,
     DossierRole,
     User,
+    UserOrganization,
 )
 from polar.tieout.repository import TieOutRepository
 from polar.tieout.service import tieout
@@ -55,6 +56,11 @@ async def _deal_for(
     await session.flush()
     session.add(
         DossierMember(dossier_id=deal.id, user_id=owner.id, role=DossierRole.lead)
+    )
+    # The dashboard only reaches an organization its user belongs to, so
+    # every real caller has this row; the settings routes check it.
+    session.add(
+        UserOrganization(user_id=owner.id, organization_id=organization.id)
     )
     await session.flush()
     return deal
@@ -1140,4 +1146,307 @@ class TestCheckAFile:
         )
         await session.flush()
         response = await client.get(f"/v1/tieout/check-file/{theirs.id}")
+        assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestHouseRules:
+    """The firm's rules: stored per organization, and actually obeyed."""
+
+    async def _org_of(self, session: AsyncSession, deal: Dossier):
+        from uuid import UUID
+
+        return deal.organization_id
+
+    @pytest.mark.auth
+    async def test_defaults_before_anybody_decided(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        response = await client.get(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}"
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["rounding"] == "together"
+        assert body["grounding"] is True
+        # The audit's own catalogue, all on — never a list a screen invented.
+        assert len(body["rules"]) == 10
+        assert all(rule["on"] for rule in body["rules"])
+
+    @pytest.mark.auth
+    async def test_a_stranger_finds_no_organization(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        deal = await _deal_for(session, save_fixture, stranger)
+        response = await client.get(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}"
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_an_unknown_rule_key_is_refused_whole(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        response = await client.put(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}",
+            json={"audit_rules_off": ["skipped-cell", "made-up-rule"]},
+        )
+        assert response.status_code == 422
+        assert "made-up-rule" in str(response.json())
+
+    @pytest.mark.auth
+    async def test_a_rule_switched_off_is_skipped_and_on_the_record(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The Cascade model carries hardcode smells; switch the rule off
+        and the audit stays quiet about them — while its summary names
+        the switch, because a rule turned off is a decision, never a
+        silence."""
+        deal = await _loaded(session, save_fixture, user)
+        with_rule = (
+            await client.get(f"/v1/tieout/deals/{deal.id}/findings?kind=audit")
+        ).json()
+
+        response = await client.put(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}",
+            json={"audit_rules_off": ["hardcode-in-formula"]},
+        )
+        assert response.status_code == 200
+        assert not [
+            rule
+            for rule in response.json()["rules"]
+            if rule["key"] == "hardcode-in-formula" and rule["on"]
+        ]
+
+        runs = (await client.post(f"/v1/tieout/deals/{deal.id}/check")).json()
+        audit = next(one for one in runs if one["kind"] == "audit")
+        assert audit["summary"]["rules_off"] == ["hardcode-in-formula"]
+
+        without_rule = (
+            await client.get(f"/v1/tieout/deals/{deal.id}/findings?kind=audit")
+        ).json()
+        assert [one for one in with_rule if one["rule"] == "hardcode-in-formula"]
+        assert not [
+            one for one in without_rule if one["rule"] == "hardcode-in-formula"
+        ]
+
+    @pytest.mark.auth
+    async def test_grounding_off_means_two_runs_not_a_failed_third(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _loaded(session, save_fixture, user)
+        await client.put(
+            f"/v1/tieout/house-rules?organization_id={deal.organization_id}",
+            json={"grounding": False},
+        )
+        runs = (await client.post(f"/v1/tieout/deals/{deal.id}/check")).json()
+        assert sorted(one["kind"] for one in runs) == ["audit", "tieout"]
+
+
+@pytest.mark.asyncio
+class TestTheTeam:
+    @pytest.mark.auth
+    async def test_everyone_appears_with_their_deals_only(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        colleague = await create_user(save_fixture)
+        session.add(
+            UserOrganization(
+                user_id=colleague.id, organization_id=deal.organization_id
+            )
+        )
+        await session.flush()
+
+        response = await client.get(
+            f"/v1/tieout/team?organization_id={deal.organization_id}"
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["total_deals"] == 1
+        by_id = {one["id"]: one for one in body["members"]}
+        mine = by_id[str(user.id)]
+        assert mine["you"] is True
+        assert mine["deals"] == ["Project Cascade"]
+        theirs = by_id[str(colleague.id)]
+        assert theirs["you"] is False
+        # The colleague is in the organization and on no deal — an empty
+        # list, never a borrowed one.
+        assert theirs["deals"] == []
+
+
+@pytest.mark.asyncio
+class TestTheChat:
+    """The three chat scopes, with a scripted model.
+
+    The loop itself is proven in `tests/dossier/test_agent_loop.py`;
+    what is proven here is the wiring — that a finding's context and the
+    conversation reach the prompt, that the one-off chat holds only its
+    file's tools, and that a stranger's check stays closed.
+    """
+
+    def _client(self, *script):
+        from tests.dossier.test_agent_loop import FakeClient
+
+        return FakeClient(*script)
+
+    def _configure(self, monkeypatch: pytest.MonkeyPatch, client) -> None:
+        import polar.tieout.endpoints as endpoints
+
+        monkeypatch.setattr(endpoints, "agent_client", lambda: client)
+
+    @pytest.mark.auth
+    async def test_the_finding_and_the_conversation_reach_the_prompt(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from tests.dossier.test_agent_loop import says
+
+        deal = await _loaded(session, save_fixture, user)
+        finding = (
+            await client.get(f"/v1/tieout/deals/{deal.id}/findings")
+        ).json()[0]
+
+        fake = self._client(says("Looked up, not composed."))
+        self._configure(monkeypatch, fake)
+        response = await client.post(
+            f"/v1/tieout/deals/{deal.id}/ask",
+            json={
+                "prompt": "What else reads this cell?",
+                "finding_id": finding["id"],
+                "history": [
+                    {"who": "you", "text": "Where does it come from?"},
+                    {"who": "pierce", "text": "Model!B26, a formula."},
+                ],
+            },
+        )
+
+        assert response.status_code == 201
+        assert response.json()["answer"] == "Looked up, not composed."
+        sent = fake.messages.calls[0]["messages"][0]["content"]
+        assert finding["title"] in sent
+        assert "The banker said: Where does it come from?" in sent
+        assert "You answered: Model!B26, a formula." in sent
+        assert sent.endswith("The banker now asks: What else reads this cell?")
+
+    @pytest.mark.auth
+    async def test_a_finding_from_another_deal_is_refused(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from tests.dossier.test_agent_loop import says
+
+        deal = await _loaded(session, save_fixture, user)
+        other = await _loaded(session, save_fixture, user)
+        stray = (
+            await client.get(f"/v1/tieout/deals/{other.id}/findings")
+        ).json()[0]
+
+        self._configure(monkeypatch, self._client(says("never reached")))
+        response = await client.post(
+            f"/v1/tieout/deals/{deal.id}/ask",
+            json={"prompt": "About that finding?", "finding_id": stray["id"]},
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_the_file_chat_holds_only_its_files_tools(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from tests.dossier.test_agent_loop import calls, says
+
+        checked = (
+            await client.post(
+                "/v1/tieout/check-file",
+                files={"file": ("cascade_deck.pptx", CLEAN.read_bytes(), DECK_MEDIA)},
+            )
+        ).json()
+
+        fake = self._client(
+            calls("list_findings"),
+            says("The chart and the table disagree on slide 3."),
+        )
+        self._configure(monkeypatch, fake)
+        response = await client.post(
+            f"/v1/tieout/check-file/{checked['id']}/ask",
+            json={"prompt": "What disagrees inside this file?"},
+        )
+
+        assert response.status_code == 201
+        body = response.json()
+        assert body["answer"] == "The chart and the table disagree on slide 3."
+        assert [step["tool"] for step in body["steps"]] == ["list_findings"]
+        # The toolset offered is the file's own two tools and nothing
+        # else — no deal tools to reach with.
+        offered = {tool["name"] for tool in fake.messages.calls[0]["tools"]}
+        assert offered == {"file_summary", "list_findings"}
+        # And the system prompt carries the boundary.
+        assert "one file" in fake.messages.calls[0]["system"]
+
+    @pytest.mark.auth
+    async def test_someone_elses_check_cannot_be_asked_about(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from tests.dossier.test_agent_loop import says
+
+        other = await create_user(save_fixture)
+        theirs = await tieout.check_file(
+            session,
+            user_id=other.id,
+            kind=ArtifactKind.deck,
+            filename="cascade_deck.pptx",
+            payload=CLEAN.read_bytes(),
+        )
+        await session.flush()
+
+        self._configure(monkeypatch, self._client(says("never reached")))
+        response = await client.post(
+            f"/v1/tieout/check-file/{theirs.id}/ask",
+            json={"prompt": "What is in it?"},
+        )
         assert response.status_code == 404

@@ -733,6 +733,54 @@ class Correction(RecordModel):
     )
 
 
+class HouseRules(RecordModel):
+    """How this firm wants Pierce to behave, one row per organization.
+
+    Policy, not state: nothing here records what happened — the runs do
+    that — only what the firm decided. A missing row means nobody has
+    decided anything yet, and every reader treats that as the defaults,
+    so creating the row lazily changes nothing.
+    """
+
+    __tablename__ = "tieout_house_rules"
+    __table_args__ = (
+        UniqueConstraint("organization_id", name="uq_tieout_house_rules_organization"),
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("organizations.id", ondelete="cascade"),
+        nullable=False,
+        index=True,
+    )
+
+    #: `together` — rounding differences sit in the findings list with
+    #: everything else. `separate` — the screens group them under their
+    #: own head. Found either way; never hidden. Display policy only,
+    #: which is why the checkers never read it.
+    rounding: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="together"
+    )
+
+    #: How the firm writes numbers — ranges, fiscal years, units,
+    #: negatives. Stored now; the design's own words on the screen say
+    #: when they bite: « used whenever Pierce proposes a correction,
+    #: enforced only if the House style check is on » — and that check
+    #: is not built yet, which the screen says too.
+    writing: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+
+    #: Whether the grounding pass — model inputs against the deal's
+    #: source documents — runs with the others. On by default.
+    grounding: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    #: Audit rules this firm has switched off, by the rule's own name
+    #: (`inconsistent-row`). The audit skips them and says so in its
+    #: summary — a rule turned off is a decision, never a silence.
+    audit_rules_off: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
+
+
 class OneOffCheck(RecordModel):
     """One file checked outside any deal's data room.
 
@@ -800,6 +848,7 @@ __all__ = [
     "FindingKind",
     "FindingSeverity",
     "FindingState",
+    "HouseRules",
     "LinkState",
     "ModelCell",
     "OneOffCheck",

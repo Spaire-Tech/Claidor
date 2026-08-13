@@ -19,12 +19,14 @@
        nothing to select. That is a real difference in the host, not a
        packaging decision.
 
-       Before sideloading, replace YOUR-DOMAIN.example.com throughout with
-       wherever `pnpm build` was deployed. The manifest names a live origin;
-       Office will not load a task pane from a file path. -->
+       YOUR-DOMAIN.example.com is a placeholder on purpose — a manifest is
+       a deployment artifact. `scripts/stamp-manifests.mjs` writes stamped
+       copies into dist/, and the dashboard's build does that on every
+       deploy (see SIDELOAD.md). The manifest names a live origin; Office
+       will not load a task pane from a file path. -->
 
   <Id>3e1b9a24-7c05-4d18-9f6e-2a41c8d5b730</Id>
-  <Version>0.1.0.0</Version>
+  <Version>1.0.0.0</Version>
   <ProviderName>Claidor</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Claidor" />
@@ -184,7 +186,7 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="https://YOUR-DOMAIN.example.com/index.html" />
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://YOUR-DOMAIN.example.com/panel" />
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://YOUR-DOMAIN.example.com/index.html" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Claidor is ready" />

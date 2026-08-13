@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# the Office panel, embedded at build by scripts/embed-panel.mjs
+/public/panel

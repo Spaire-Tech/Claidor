@@ -605,8 +605,26 @@ class Asked(Schema):
     steps: list[AskedStep]
 
 
+class AskTurn(Schema):
+    """One earlier exchange in the conversation, replayed to the agent.
+
+    The loop takes a single prompt, so the transcript is folded into it,
+    labelled — the person's own words and the agent's earlier answers,
+    never anything invented between them.
+    """
+
+    who: Literal["you", "pierce"]
+    text: str = Field(max_length=2_000)
+
+
 class Ask(Schema):
     prompt: str = Field(min_length=1, max_length=4_000)
+    #: The conversation so far, oldest first. Only the last few turns are
+    #: replayed — a chat is context, not a second corpus.
+    history: list[AskTurn] = Field(default_factory=list, max_length=12)
+    #: When the chat was opened from one finding, its id — the question
+    #: is answered about that finding first.
+    finding_id: UUID | None = None
 
 
 class GridCell(Schema):
@@ -706,6 +724,65 @@ class ModelGrid(Schema):
     version: int
     uploaded_at: datetime
     sheets: list[SheetGrid]
+
+
+# --- settings ------------------------------------------------------------
+
+
+class AuditRuleRead(Schema):
+    """One audit rule, as the settings screen shows it."""
+
+    key: str
+    label: str
+    on: bool
+
+
+class HouseRulesRead(Schema):
+    """How the firm wants Pierce to behave.
+
+    `rules` is the audit's own catalogue with the firm's switches on it —
+    sent whole so the screen can never invent a rule the audit does not
+    run or miss one it does.
+    """
+
+    #: `together` — rounding differences sit with everything else;
+    #: `separate` — the screens group them under their own head. Found
+    #: either way, never hidden.
+    rounding: Literal["together", "separate"]
+    #: Ranges, fiscal years, units, negatives — as the firm writes them.
+    writing: dict[str, str]
+    #: Whether the grounding pass runs with the others.
+    grounding: bool
+    rules: list[AuditRuleRead]
+
+
+class HouseRulesUpdate(Schema):
+    """Only what changed. Left-out fields keep their value."""
+
+    rounding: Literal["together", "separate"] | None = None
+    writing: dict[str, str] | None = None
+    grounding: bool | None = None
+    #: Rule keys to switch off, replacing the previous set whole.
+    audit_rules_off: list[str] | None = None
+
+
+class TeamMember(Schema):
+    """One person on the team, and where they are."""
+
+    id: UUID
+    name: str
+    email: str
+    avatar_url: str | None
+    you: bool
+    #: The deals they are on, in this organization only.
+    deals: list[str]
+
+
+class TeamRead(Schema):
+    members: list[TeamMember]
+    #: How many deals the organization has, so the screen can say
+    #: « All six deals » only when it is true.
+    total_deals: int
 
 
 # --- one-off checks ------------------------------------------------------
@@ -837,6 +914,7 @@ __all__ = [
     "AgainstModel",
     "ArtifactPage",
     "ArtifactRead",
+    "AuditRuleRead",
     "CellRead",
     "ChainInput",
     "ChainRead",
@@ -856,6 +934,8 @@ __all__ = [
     "FindingWhere",
     "GridCell",
     "GridRow",
+    "HouseRulesRead",
+    "HouseRulesUpdate",
     "Identified",
     "Identify",
     "LinkAlternative",
@@ -874,5 +954,7 @@ __all__ = [
     "SlideFigures",
     "SoloFindingRead",
     "SoloStatement",
+    "TeamMember",
+    "TeamRead",
     "Uploader",
 ]

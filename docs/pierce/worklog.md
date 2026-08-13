@@ -1368,3 +1368,300 @@ drift and nothing else.
 Full numbers, the survivor's autopsy, and what is still owed (recall,
 totals, a memo corpus) are in `accuracy-backlog.md`. Rules pinned one
 test each in `tests/tieout/test_solo.py`.
+
+## 13 August 2026 — Check a file, wired end to end
+
+The round's remaining three pieces, on top of the morning's engine:
+
+**The record.** `tieout_one_off_checks` (hand-written migration
+`e9a3f5c27b18`): one row per loose file checked, keeping the counts and
+findings exactly as the screen received them and never the file — a
+one-off check has no correction to write, so the bytes are read, checked
+and dropped in one request. `dossier_id` set-null with the deal's name
+snapshotted beside it, so deleting a deal cannot rewrite « Checked
+against Project Falcon » into « Checked on its own ». Recents are
+personal; someone else's check is 404.
+
+**The route.** `POST /tieout/check-file` (multipart, optional
+`dossier_id`): a deck or memo meets the solo check, and with a deal
+picked is also reconciled against that deal's current models through
+the same two-pass linker as the deal tie-out — the drift evidence
+points at the real model artifact, so the screen's grid slices reuse
+the panel's endpoint. A model routes to its audit; a deal picked
+alongside one is deliberately ignored rather than half-run, and the
+row honestly says « on its own ». Plus `/check-file/recents` and
+`/check-file/{id}` to replay a stored answer without re-running
+anything. Eight route tests.
+
+**The screen.** `screens/CheckFile.tsx` — all four drawn states wired:
+cIdle (drop card, against picker with the glassy menu, recents),
+cRunning (the glassy progress card; steps tick while the one request
+flies, real notes fill when it lands), cDone (tally, compared-with
+pair, finding cards with the two-sided evidence — quoted sentence with
+the amber mark on one side, real model rows or the slide sketch on the
+other), cFirst (no deals, no recents). Verified at 1440×900 against
+Cascade: solo run reads 128 figures, 9 names stated more than once,
+the 2 real chart-against-table differences; against the deal it reads
+103 traced, 10 differences.
+
+**Departures from the drawing, flagged for the founder:**
+
+- The solo run's « Checking that totals add up » step and « totals
+  checked » tally are omitted — the engine deliberately does not check
+  totals yet (accuracy-backlog.md says why), and a step that pretends
+  to is theatre.
+- The finding cards' « Rebase / Reconcile » and « Not a problem »
+  buttons are omitted. No file is kept, so there is nothing to write a
+  correction into, and a dismissal would not survive replaying the
+  stored answer. If these should exist, the honest versions need
+  decisions: what does Reconcile do on a file Pierce does not hold?
+- The compared-with card's « · and the accounts to Jun-26 » sub-line is
+  not claimed — a one-off check reads the deal's models only, and only
+  the models are named.
+- A refused file (a corrupt deck, a password-protected model) has no
+  drawn state; the server's sentence is shown in the result card's
+  place, the metadata panel's answer-not-error pattern.
+- « The chart on slide 3 says 37.8 · the table on slide 3 says 30.8 » —
+  the design's says-line assumes the two statements sit on different
+  slides; when they share one, the place words are read off the real
+  location so the line still says which two places disagree.
+
+## 13 August 2026 — New deal, from a SharePoint folder to a checked deal
+
+The design's `newOpen` sheet, wired end to end: browse the connected
+store, tick folders, name the clients, and — where a folder holds more
+than one workbook — say which one is the model.
+
+**The model choice is real, not decoration.** One column,
+`connected_folders.model_item_id`, chosen on the confirm card and
+honoured by the sync: the working copies, sensitivities and comps are
+skipped with a counted reason (« a second spreadsheet — the deal chose
+its model »), because reconciling the deck against a working copy
+reports the copy's every difference as a finding. Null keeps the old
+read-everything behaviour, so no existing folder changes. Connector
+test added.
+
+**Create composes what already exists** — `POST /dossiers` (creator
+lands as lead), `PUT …/folder` with the model choice, `POST …/sync`
+(which ingests and runs all three checks) — one sequence per picked
+folder, so one folder failing leaves the others' deals standing, with
+the failed one's sentence shown in place.
+
+**Verified against the Graph stub**, which now serves a second room —
+Project Kestrel, holding the model *and a working copy* — exactly the
+shape that makes the flow ask. Watched live: browse → pick → confirm
+(« 4 files · 2 spreadsheets, 1 deck, 1 other », real counts from the
+folder's own listing) → create → « Syncing the folders — 3 files ·
+Reading the models — 1 model » → the list re-opens with **Project
+Kestrel · Kestrel Holdings · 3 documents · 9 to review · Checked just
+now**, and the database shows the working copy skipped with its reason
+and `model_item_id` stored. Nobody uploaded anything.
+
+**Mappings and borrows, named** (also at their code sites): the crumb
+root « SharePoint » is the drives list; folder rows say « Changed … »
+from the store's own clock instead of the design's file counts (the
+counts appear on the confirm card, where the folder has actually been
+opened); only unreadable files are dimmed, because that meaning is
+real; the failure sentence-in-place is borrowed from the metadata
+panel. « Choose your deals » on the connected empty state now opens
+this sheet.
+
+**One bug worth remembering:** an `alive` ref latched `false` by
+StrictMode's mount–unmount–mount cycle silently dropped every
+response in the sheet. Re-armed in the effect body; symptom was an
+empty drives list under a 200 response.
+
+## 13 August 2026 — Settings: the firm's rules become mechanism
+
+The design's three tabs, wired, with the rule that everything on screen
+is real or absent.
+
+**House rules exist now** — one row per organization
+(`tieout_house_rules`, migration `a1c5e7b93d42`), read and saved on
+every tap because the design draws no save button. Two of them are
+already obeyed by the actual runs:
+
+- **Audit rules can be switched off, and the audit says so.** The rule
+  list on screen is `RULE_NAMES` from `audit.py` itself — the audit's
+  own ten rules, never a list the screen invented — and `run_audit`
+  skips what the firm switched off while naming the switch in its
+  summary (`rules_off`), because a rule turned off is a decision on the
+  record, never a silence. The design's master toggle maps to « every
+  rule off / every rule on »; the audit itself always runs. An unknown
+  rule key is refused whole (422), not stored and ignored.
+- **The grounding pass obeys its toggle** in both places checks run —
+  the Check-now route and the connector's sync. Off means two runs come
+  back, not a third marked failed.
+- Rounding (`together`/`separate`) and the four writing conventions are
+  stored; rounding awaits its consumer in the findings lists, and the
+  writing conventions bite when the House style check exists — which
+  the screen itself says (« Not available yet »).
+
+**Connections** is the live connector card — account, connected date,
+Disconnect (owner-only, the server refuses anyone else's) — plus the
+trust sentence. Before anything is connected the card offers the same
+Connect Microsoft the deals empty state does.
+
+**People** is the organization's real team with each person's deals in
+this organization (« All 4 deals » only when true), and the invite
+sheet drives the existing deal-member route per ticked deal.
+
+Verified live at 1440×900: a rule unticked on screen landed in the
+database and back; the refused invite showed the server's own sentence
+in place. Six new route tests; 48 pass.
+
+**Flagged for the founder:**
+
+- « Folders Pierce can see », « Mailbox Pierce can read » and the
+  Office add-in install section are omitted, not faked — the Change
+  buttons have no destination yet, and the add-in manifests still carry
+  a placeholder domain (`YOUR-DOMAIN.example.com`). They return when
+  those exist.
+- The invite route requires an existing account and answers in French
+  (the dossier module's inherited voice): « Aucun compte Claidor avec
+  cette adresse… » shown verbatim in the sheet. Decide whether the
+  dossier module grows English sentences or the invite grows its own
+  route.
+- The People role column shows only « You » — job titles are not a
+  thing the system knows, so the design's « Vice President » column
+  waits for a real field.
+
+## 13 August 2026 — the chat, and the workspace design is built
+
+The last drawn piece: one glassy panel, three scopes, and the scope
+decides what the agent can reach.
+
+**Per-finding.** Opening a finding opens the chat on it: « Reading the
+chain » is a real wait on the real chain endpoint, the sentence beside
+the chain is the server's own summary, and the chain card walks the
+actual path — slide 3's chart, `Model!C26` and its formula, the cells
+feeding it — with the values in mono. Steps the chain could not follow
+are printed under the card rather than dropped, which closes a gap the
+API had been carrying unrendered (4.4% of formulas on real models have
+one). Follow-ups carry the finding and the transcript to the deal
+agent.
+
+**Per-deal.** The deal page's chat goes to the existing agent — six
+read-only tools over the loaded deal, arithmetic never through the
+language model. The ask route now takes the finding and the last few
+exchanges (`history`), folded into the prompt labelled, so follow-ups
+read as follow-ups; a finding from another deal is 404.
+
+**Per-file.** A finished one-off check gets its own, deliberately
+smaller agent: `POST /check-file/{id}/ask`, two tools
+(`file_summary`, `list_findings`) over the stored answer, and a prompt
+whose boundary is the feature — a deal question gets « I only have this
+one file », which is a correct answer, not a failure. Owner-only, 404
+for anyone else. Nothing persisted: recorded tasks are a deal's
+record, and a one-off has no deal.
+
+**Honesty over theatre, throughout:** waiting states are real waits;
+a failed or step-limited run says so; an unconfigured agent shows the
+server's own sentence — the screenshot in the thread shows « No
+ANTHROPIC_API_KEY configured. » in place of an answer, which is this
+environment's truth. The suggestion rows are questions the tools can
+genuinely answer, not the design's demo lines, which name people and
+cells a real deal may not have.
+
+Four new route tests with a scripted model (the finding and transcript
+reach the prompt; the file chat holds only its two tools and its
+boundary prompt; strangers get 404s). 328 tieout tests pass.
+
+**Flagged for the founder:** the input pill's + and microphone buttons
+are drawn without behaviour in the design and are kept exactly so;
+live agent answers in dev await an `ANTHROPIC_API_KEY` in
+`server/.env` — every deterministic part of the chat (chains, scopes,
+boundaries, errors) is verified without one.
+
+**With this, every view of the 12 August workspace design is built and
+wired**: Deals, the deal page, the document panel, Check a file, New
+deal, Settings, and the chat.
+
+## 13 August 2026 — the square in the writing boxes, found and killed
+
+The founder caught it in a screenshot: the chat's writing box drew a
+blue rectangle on focus — the exact thing the standing rule forbids.
+The culprit was not the user-agent outline (long dead) but
+`@tailwindcss/forms`, which the app ships globally and which paints a
+focus ring through **box-shadow** — the one channel `border: 0;
+outline: none` does not close. `workspace.css` now zeroes outline,
+border, box-shadow and the Tailwind ring variables on every workspace
+input and textarea in every focus state. Inline styles still win, so
+the sanctioned soft glow (`inputGlow`) is untouched — verified focused
+on the chat box (clean), the dismissal note (soft glow), and the
+invite email (soft glow).
+
+## 13 August 2026 — the panel reaches for real Office
+
+The panel existed as a state machine and four host bridges pointed at a
+placeholder domain, loading fonts it did not have. This round gives it
+everything it needs to be sideloaded into real Office — everything,
+that is, except an Office, which this machine does not have. That
+boundary is stated plainly below rather than papered over.
+
+**The design's face, restored.** The panel's copy of the workspace
+tokens had rotted: the 12 August redesign rewrote `design.ts` on the
+web side and dropped the shared-block markers, so the byte-compare
+test that guards the copy was failing. The shared block (font + ink)
+is back in both files, byte-identical; every panel component was moved
+off the old palette onto the new tokens; the shade guard in
+`design.test.ts` now names the new five colours, with a comment
+marking the redesign as the deliberate event it exists to tell apart
+from an accident. New `panel.css` self-hosts Switzer and IBM Plex Mono
+— the same five woff2 binaries the workspace loads, copied into the
+panel's own `public/fonts/`, because an Office webview must not depend
+on a font CDN. The writing-box rule is in it too: inputs get no
+outline and no box-shadow, focus is the soft glow or nothing.
+
+**Riding the dashboard's origin.** Office loads a task pane from a
+live HTTPS origin, and the panel had none. Now every `pnpm build` of
+the web app runs `scripts/embed-panel.mjs` first: it builds the panel
+with `base=/panel/` and the API/dashboard origins taken from the same
+`NEXT_PUBLIC_*` variables the dashboard itself uses, then copies the
+result into `public/panel/` (generated, git-ignored). One deploy, one
+origin, one TLS certificate; `signin.html` stays same-origin with the
+panel, which `messageParent` requires, and first-party with the API,
+which the session cookie requires.
+
+**Manifests as deployment artifacts.** The checked-in manifests keep
+their placeholder domain on purpose; `scripts/stamp-manifests.mjs`
+writes stamped copies into `dist/` — AppDomain gets the bare origin
+(Office matches domains, not paths), resources get origin + `/panel`,
+and SupportUrl gets the product site rather than a `/panel/support`
+that would 404 inside an error dialog. The embed script stamps
+automatically when the deploy's origin is https, so the site serves
+its own sideloadable manifests at `/panel/manifest.xml` and
+`/panel/manifest.outlook.xml`. Version bumped to 1.0.0.0 — Microsoft's
+validator refuses anything lower — and **both stamped manifests
+validate clean against Microsoft's acceptance service**. Two URL bugs
+found on the way: LearnMoreUrl stamped to `/panel/panel`, and the
+Outlook manifest wanted `icon-64`/`icon-128` which did not exist. All
+five icon sizes now ship, drawn from the Pierce mark.
+
+**Watched against the real API.** With `http://127.0.0.1:3100` added
+to the API's CORS origins (dev-only, in `.env` beside the Graph stub
+lines), the browser loop runs end to end on real data: a minted panel
+token, `?filename=cascade_deck.pptx`, the choose-a-deal screen —
+first-open behaviour, by design, since a filename is never matched
+across deals — then the identified panel: Project Cascade, 109
+reconciled · 26 not checked, the drift rows with the model's values
+and « now 39.6 in this document » on the resolved one. On reopen the
+detached bridge asks again, which is correct: it has no document to
+stamp. Inside real PowerPoint the stamp persists in the file.
+
+**The runbook.** `SIDELOAD.md` — what is proven and what is not,
+Office-on-the-web upload (the gentlest first test), Mac `wef` folder,
+Windows shared-folder catalog and the `office-addin-debugging`
+scripts, Outlook's separate dialog, the tunnel recipe for pointing
+real Office at a local server, and a short what-to-look-at-when-it-
+fails. The README's sideloading section was three claims stale
+(manual placeholder editing, icons not committed, validator
+unreachable) and now matches reality.
+
+**Flagged honestly:** no real Office application has loaded the add-in
+yet — the container has no Office, so the ribbon button, the stamp
+surviving Save As, and jumping to a shape are built and unit-tested
+but not yet watched running inside PowerPoint. The first sideload from
+the runbook is that test. `Panel.tsx` remains the deliberate
+placeholder; the panel's own design is the founder's, still to come.
+16/16 panel tests pass, typecheck and lint clean.

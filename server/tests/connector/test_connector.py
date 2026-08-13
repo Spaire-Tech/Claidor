@@ -512,6 +512,54 @@ class TestTheSync:
         # And the deal has been checked, without anybody pressing anything.
         assert (await repository.latest_run(deal.id)) is not None
 
+    async def test_the_deal_chose_its_model_and_the_working_copy_is_not_read(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A deal room carries the model beside its working copies, and
+        reconciling the deck against a working copy reports the copy's
+        every difference as a finding. The choice is made when the deal
+        is made; the copy is counted as skipped, never silently."""
+        owner = await create_user(save_fixture)
+        graph = FakeGraph()
+        deal, folder = await _connected(
+            session, save_fixture, owner, graph, monkeypatch
+        )
+        connection = await ConnectorRepository.from_session(session).get(
+            folder.connection_id
+        )
+        assert connection is not None
+        graph.items = [{"id": "folder-1", "name": "Cascade", "folder": True}]
+        folder = await connector.point(
+            session,
+            dossier_id=deal.id,
+            connection=connection,
+            drive_id="drive-2",
+            item_id="folder-1",
+            model_item_id="item-cascade_model.xlsx",
+            client=graph.client(),
+        )
+        graph.items = [
+            a_file("cascade_model.xlsx", MODEL),
+            a_file("cascade_working_v3.xlsx", MODEL, id="item-working"),
+            a_file("cascade_deck.pptx", DECK),
+        ]
+
+        result = await connector.sync(
+            session, folder=folder, user_id=owner.id, client=graph.client()
+        )
+        await session.flush()
+
+        assert result["read"] == 2
+        assert result["skipped"] == [
+            {"reason": "a second spreadsheet — the deal chose its model", "count": 1}
+        ]
+        repository = TieOutRepository.from_session(session)
+        names = {one.filename for one in await repository.current_artifacts(deal.id)}
+        assert names == {"cascade_model.xlsx", "cascade_deck.pptx"}
+
     async def test_a_file_that_has_not_changed_is_not_downloaded_again(
         self,
         session: AsyncSession,

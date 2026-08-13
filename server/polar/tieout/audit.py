@@ -135,6 +135,24 @@ class Audit:
         return dict(Counter(finding.rule for finding in self.findings))
 
 
+#: Every rule this audit runs, in the words a settings screen shows —
+#: the one place the list lives, so a screen can never invent a rule the
+#: audit does not run or miss one it does. Ordered as a reader meets
+#: them: what a cell shows, what a formula reaches, how a row behaves.
+RULE_NAMES: dict[str, str] = {
+    "error-value": "Cells showing an error value",
+    "external-link": "Links into other workbooks",
+    "volatile": "Volatile functions",
+    "long-formula": "Formulas too long to follow",
+    "hardcode-in-formula": "Hardcoded values inside formulas",
+    "typed-over-formula": "Values typed over formulas",
+    "inconsistent-anchoring": "Anchoring that changes along a row",
+    "inconsistent-row": "Formulas inconsistent across a row",
+    "circular": "Circular references",
+    "skipped-cell": "Sum ranges that miss a cell",
+}
+
+
 def audit(book: Workbook) -> Audit:
     """Every mechanical defect in a model, graded."""
     result = Audit(examined=len(book.cells))
@@ -145,11 +163,66 @@ def audit(book: Workbook) -> Audit:
     _long_formulas(book, result)
     _literals(book, result)
     _rows(book, result)
+    _typed_islands(book, result)
     _circularity(book, result)
     _skipped_cells(book, result)
 
+    result.findings = _collapsed(book, result.findings)
     result.findings.sort(key=lambda f: (f.severity != "error", f.sheet, f.rule, f.ref))
     return result
+
+
+#: Rules where a fill-copied formula fires once per cell it was filled
+#: into. On a real base-cost model from the 2024 water price review, one
+#: 625-character formula filled across a grid produced 7,752 of the
+#: file's 8,017 findings — one authoring decision reported 7,752 times,
+#: which buries the 265 findings that are about anything else.
+FILLED_RULES = frozenset({"long-formula", "volatile", "hardcode-in-formula"})
+
+
+def _collapsed(book: Workbook, findings: list[Finding]) -> list[Finding]:
+    """One finding per authoring decision, not per cell it was filled to.
+
+    Findings from :data:`FILLED_RULES` whose cells share a sheet and a
+    formula shape (references made relative, numbers erased) are one
+    formula somebody wrote once and dragged. For the hardcode rule the
+    buried numbers themselves stay in the key — via the detail, which
+    prints them — so a row of *different* hardcoded assumptions is still
+    reported cell by cell: those are distinct decisions.
+    """
+    keep: list[Finding] = []
+    groups: dict[tuple[str, ...], list[Finding]] = {}
+    for finding in findings:
+        if finding.rule not in FILLED_RULES:
+            keep.append(finding)
+            continue
+        cell = book.cells.get(finding.ref)
+        shape = _shape(cell) if cell is not None else finding.ref
+        key: tuple[str, ...] = (finding.sheet, finding.rule, shape)
+        if finding.rule == "hardcode-in-formula":
+            key = (*key, finding.detail)
+        groups.setdefault(key, []).append(finding)
+
+    for group in groups.values():
+        first = group[0]
+        if len(group) == 1:
+            keep.append(first)
+            continue
+        keep.append(
+            Finding(
+                rule=first.rule,
+                severity=first.severity,
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=(
+                    f"{first.detail} — one formula filled across "
+                    f"{len(group)} cells ({first.ref} to {group[-1].ref})"
+                ),
+                source=first.source,
+            )
+        )
+    return keep
 
 
 def _error_values(book: Workbook, result: Audit) -> None:
@@ -447,13 +520,150 @@ def _runs(cells: list[Cell]) -> list[list[Cell]]:
     return runs
 
 
+#: How tall a stack of typed cells can be and still read as one
+#: paste-over rather than a column of parameters. Both ends measured on
+#: real files: Ofwat's own queries document confirms a four-cell block
+#: hard-keyed into the FM02 financial model (InpS!N1885-1888 — every row
+#: a formula series, one year typed), and `CollarsAnalysisv3-1.XLS`
+#: carries typed parameter columns fifty-nine cells tall that are data,
+#: not damage. The line sits between four and fifty-nine with room on
+#: the paste side, because a hand pastes a handful and a column runs the
+#: length of its table.
+TYPED_BLOCK = 8
+
+
 def _stacked(book: Workbook, cell: Cell) -> bool:
-    """True when a constant has a constant directly above or below it."""
-    for row in (cell.row - 1, cell.row + 1):
-        neighbour = book.get(f"{cell.sheet}!{get_column_letter(cell.column)}{row}")
-        if neighbour is not None and neighbour.formula is None:
-            return True
-    return False
+    """True when a constant belongs to a column of typed values.
+
+    A first version vetoed on *any* constant directly above or below —
+    which also vetoed a block of values pasted over four adjacent rows
+    of formulas, the exact defect Ofwat's queries document confirms in
+    two published FM02 models, so the audit scored 0 of 4 on the one
+    ground truth it had. Now the whole contiguous vertical run of
+    constants is measured: a short stack is a paste, a long one is a
+    parameter column.
+    """
+    tall = 1
+    for step in (-1, 1):
+        row = cell.row + step
+        while tall <= TYPED_BLOCK:
+            neighbour = book.get(
+                f"{cell.sheet}!{get_column_letter(cell.column)}{row}"
+            )
+            if neighbour is None or neighbour.formula is not None:
+                break
+            tall += 1
+            row += step
+    return tall > TYPED_BLOCK
+
+
+def _typed_islands(book: Workbook, result: Audit) -> None:
+    """Values pasted over a *block* of formulas, seen down the columns.
+
+    The row pass catches one cell typed into a formula row. Yorkshire's
+    FM02 — one of the two models Ofwat's queries document confirms
+    hard-keyed — defeats it: five year-columns typed across four
+    adjacent rows, so no row keeps a formula majority. The columns still
+    show it plainly: each is a repeating calculation interrupted by a
+    short island of constants, with the same formula resuming below.
+
+    Two things keep this from flagging what is data on purpose. An
+    input column with a total under it: the island only counts when the
+    column's own formulas *repeat* (the same shape at least twice) and
+    the cell at the island's edge carries that repeating shape — a
+    `SUM` under typed inputs appears once, and repeats nothing. And a
+    model's typed history: every island row must hold a formula to the
+    *left* of the typed cell, because a paste over a forecast sits
+    after the row's calculations begin, and history is the reverse —
+    constants first, formulas after. (The sheet-wide history boundary
+    is deliberately not used here: on Yorkshire's own InpS sheet it
+    votes for column 19, which would skip the confirmed paste in
+    column N.)
+    """
+    columns: dict[tuple[str, int], list[Cell]] = {}
+    leftmost: dict[tuple[str, int], int] = {}
+    for cell in book.cells.values():
+        columns.setdefault((cell.sheet, cell.column), []).append(cell)
+        if cell.formula:
+            at = (cell.sheet, cell.row)
+            if cell.column < leftmost.get(at, 1 << 20):
+                leftmost[at] = cell.column
+
+    already = {f.ref for f in result.findings if f.rule == "typed-over-formula"}
+
+    for (sheet, column), cells in columns.items():
+        cells.sort(key=lambda c: c.row)
+
+        run: list[Cell] = []
+        for cell in cells:
+            # Strictly adjacent rows: a blank row is a section break, and
+            # stitching across one would let two unrelated blocks lend
+            # each other formulas.
+            if run and cell.row - run[-1].row == 1:
+                run.append(cell)
+                continue
+            _island_findings(sheet, run, leftmost, already, result)
+            run = [cell]
+        _island_findings(sheet, run, leftmost, already, result)
+
+
+def _island_findings(
+    sheet: str,
+    run: list[Cell],
+    leftmost: dict[tuple[str, int], int],
+    already: set[str],
+    result: Audit,
+) -> None:
+    """The typed islands of one vertical run, reported."""
+    if len(run) < MIN_SERIES:
+        return
+    calculated = [cell for cell in run if cell.formula]
+    shapes = Counter(_shape(cell) for cell in calculated)
+    if not shapes:
+        return
+    usual, count = shapes.most_common(1)[0]
+    if count < 2:
+        return
+
+    index = 0
+    while index < len(run):
+        if run[index].formula is not None:
+            index += 1
+            continue
+        end = index
+        while end < len(run) and run[end].formula is None:
+            end += 1
+        island = run[index:end]
+        # Maximal by construction, so any neighbour inside the run is a
+        # formula; it must carry the column's repeating shape.
+        edges = [run[at] for at in (index - 1, end) if 0 <= at < len(run)]
+        if (
+            len(island) <= TYPED_BLOCK
+            and len(island) < len(run)
+            and any(_shape(edge) == usual for edge in edges)
+            and all(
+                leftmost.get((sheet, cell.row), 1 << 20) < cell.column
+                for cell in island
+            )
+        ):
+            for cell in island:
+                if cell.ref in already:
+                    continue
+                result.findings.append(
+                    Finding(
+                        rule="typed-over-formula",
+                        severity="error",
+                        ref=cell.ref,
+                        sheet=sheet,
+                        name=cell.name,
+                        detail=(
+                            f"{cell.value} typed into a column that is "
+                            f"otherwise calculated: {_example(calculated, usual)}"
+                        ),
+                        source="ICAEW P14, FAST",
+                    )
+                )
+        index = end
 
 
 def _boundaries(rows: dict[tuple[str, int], list[Cell]]) -> dict[str, int]:
@@ -705,6 +915,7 @@ __all__ = [
     "BROKEN",
     "INNOCENT",
     "LONG_FORMULA",
+    "RULE_NAMES",
     "VOLATILE",
     "Audit",
     "Finding",

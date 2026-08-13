@@ -79,6 +79,8 @@ class FolderRead(Schema):
     name: str
     path: str
     site_name: str
+    #: The workbook the deal calls its model, when one was chosen.
+    model_item_id: str | None = None
     connection: ConnectionRead | None
     last_synced_at: datetime | None
     #: `read`, `unchanged`, `failed`, and everything skipped with a reason.
@@ -118,6 +120,10 @@ class MessageRead(Schema):
 class PointAt(Schema):
     drive_id: str
     item_id: str
+    #: The workbook the deal calls *the* model, when the folder holds
+    #: more than one — the store's item id. Left out, every workbook is
+    #: read, which is the right behaviour for a one-workbook folder.
+    model_item_id: str | None = None
 
 
 __all__ = [

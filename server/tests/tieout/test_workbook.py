@@ -244,8 +244,10 @@ def test_without_a_name_map_a_name_is_reported_not_swallowed() -> None:
 
 
 def _sheet(rows: list[list[object]], formulas: dict[str, str] | None = None):
-    """A worksheet pair — formulas and cached values — from a grid."""
+    """One sheet's grid — formulas and cached values — from row lists."""
     from openpyxl import Workbook as Book
+
+    from polar.tieout.workbook import _grid_of
 
     values = Book()
     written = Book()
@@ -255,7 +257,7 @@ def _sheet(rows: list[list[object]], formulas: dict[str, str] | None = None):
             written.active.cell(index, column).value = cell
     for ref, formula in (formulas or {}).items():
         written.active[ref] = formula
-    return written.active, values.active
+    return _grid_of(written.active, values.active)
 
 
 def test_a_label_may_sit_past_column_d() -> None:
@@ -266,7 +268,7 @@ def test_a_label_may_sit_past_column_d() -> None:
     """
     from polar.tieout.workbook import _label_column
 
-    written, values = _sheet(
+    grid = _sheet(
         [
             ["Depn", None, None, None, None, None],
             [None, "NGET TO", None, None, None, None],
@@ -275,7 +277,7 @@ def test_a_label_may_sit_past_column_d() -> None:
             [None, None, None, None, "Pre-RIIO net RAV additions", "£m 09/10 prices"],
         ]
     )
-    assert _label_column(written, values, written.max_row, written.max_column) == 5
+    assert _label_column(grid, grid.last_row, grid.last_column) == 5
 
 
 def test_the_label_column_is_the_one_with_the_most_different_things_to_say() -> None:
@@ -287,10 +289,10 @@ def test_the_label_column_is_the_one_with_the_most_different_things_to_say() -> 
     """
     from polar.tieout.workbook import _label_column
 
-    written, values = _sheet(
+    grid = _sheet(
         [["Allowed revenue", "£m", None], ["Actual opex", "£m", None]] * 6
     )
-    assert _label_column(written, values, written.max_row, written.max_column) == 1
+    assert _label_column(grid, grid.last_row, grid.last_column) == 1
 
 
 def test_a_label_that_is_a_formula_still_names_its_row() -> None:
@@ -299,11 +301,11 @@ def test_a_label_that_is_a_formula_still_names_its_row() -> None:
     """
     from polar.tieout.workbook import _shown
 
-    written, values = _sheet(
+    grid = _sheet(
         [["Legacy price control adjustments", 95.5]],
         formulas={"A1": "=Input!A31"},
     )
-    assert _shown(written, values, 1, 1) == "Legacy price control adjustments"
+    assert _shown(grid, 1, 1) == "Legacy price control adjustments"
 
 
 def test_a_numeric_formula_is_still_not_a_label() -> None:
@@ -311,8 +313,8 @@ def test_a_numeric_formula_is_still_not_a_label() -> None:
     arithmetic must not name every figure beside it."""
     from polar.tieout.workbook import _shown
 
-    written, values = _sheet([[42, 7]], formulas={"A1": "=B1*6"})
-    assert _shown(written, values, 1, 1) is None
+    grid = _sheet([[42, 7]], formulas={"A1": "=B1*6"})
+    assert _shown(grid, 1, 1) is None
 
 
 def test_a_date_header_names_the_period_it_heads() -> None:

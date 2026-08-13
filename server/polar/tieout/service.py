@@ -382,10 +382,17 @@ class TieOutService:
     async def run_audit(
         self, session: AsyncSession, *, dossier_id: UUID, user_id: UUID | None
     ) -> CheckRun:
-        """Check every model in the deal against itself."""
+        """Check every model in the deal against itself.
+
+        The firm's house rules apply here: an audit rule the
+        organization switched off is skipped, and the run's summary
+        names what was skipped — a rule turned off is a decision on the
+        record, never a silence.
+        """
         from .audit import audit as run_rules
 
         repository = TieOutRepository.from_session(session)
+        rules_off = await self._rules_off(repository, dossier_id)
         models = [
             one
             for one in await repository.current_artifacts(dossier_id)
@@ -408,6 +415,9 @@ class TieOutService:
             cells = await repository.cells_of(model.id)
             book = _workbook_of(cells)
             result = run_rules(book)
+            result.findings = [
+                one for one in result.findings if one.rule not in rules_off
+            ]
             errors += len(result.errors)
             smells += len(result.smells)
             for defect in result.findings:
@@ -450,8 +460,30 @@ class TieOutService:
                 "smells": smells,
                 "models": len(models),
                 "cells": sum(int(one.counts.get("cells", 0)) for one in models),
+                "rules_off": sorted(rules_off),
             },
         )
+
+    async def _rules_off(
+        self, repository: TieOutRepository, dossier_id: UUID
+    ) -> set[str]:
+        """The audit rules this deal's organization switched off."""
+        organization_id = await repository.organization_of(dossier_id)
+        if organization_id is None:
+            return set()
+        rules = await repository.house_rules_for(organization_id)
+        return set(rules.audit_rules_off) if rules else set()
+
+    async def grounding_on(
+        self, session: AsyncSession, *, dossier_id: UUID
+    ) -> bool:
+        """Whether the firm runs the grounding pass with the others."""
+        repository = TieOutRepository.from_session(session)
+        organization_id = await repository.organization_of(dossier_id)
+        if organization_id is None:
+            return True
+        rules = await repository.house_rules_for(organization_id)
+        return rules.grounding if rules else True
 
     async def run_crosscheck(
         self, session: AsyncSession, *, dossier_id: UUID, user_id: UUID | None

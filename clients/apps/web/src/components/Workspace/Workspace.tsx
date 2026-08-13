@@ -16,9 +16,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Artifact, DealListItem, TieOutApi } from './api'
+import { Chat, ChatContext, chatKeyOf } from './Chat'
 import { blueButton, card, font, ground, ink } from './design'
+import { CheckFile } from './screens/CheckFile'
 import { Deals } from './screens/Deals'
 import { DocPanel } from './screens/DocPanel'
+import { NewDeal } from './screens/NewDeal'
+import { Settings } from './screens/Settings'
 import './workspace.css'
 
 /**
@@ -65,6 +69,11 @@ export const Workspace = ({
   const [deal, setDeal] = useState<DealListItem | null>(null)
   const [doc, setDoc] = useState<Artifact | null>(null)
   const [acctOpen, setAcctOpen] = useState(false)
+  const [newOpen, setNewOpen] = useState(false)
+  //: What the chat is about. The document panel and the check screen
+  //: report their finding contexts; the deal scope is derived below.
+  const [docChat, setDocChat] = useState<ChatContext | null>(null)
+  const [checkChat, setCheckChat] = useState<ChatContext | null>(null)
 
   //: Every deal this person is on. Null while loading — the screens tell
   //: « still asking » apart from « asked, and there are none », because
@@ -89,8 +98,28 @@ export const Workspace = ({
     setView(next)
     setDeal(null)
     setDoc(null)
+    setDocChat(null)
+    setCheckChat(null)
     setAcctOpen(false)
   }
+
+  //: A different document is a different conversation; closing one ends it.
+  const openDoc = (next: Artifact | null) => {
+    setDoc(next)
+    setDocChat(null)
+  }
+
+  //: The design's rule: the chat rides beside a deal page, beside an
+  //: open finding, and beside a finished check — never beside a document
+  //: panel that has no finding open.
+  const chatContext: ChatContext | null =
+    view === 'deals' && deal !== null
+      ? doc !== null
+        ? docChat
+        : { scope: 'deal', dealId: deal.id, dealName: deal.name }
+      : view === 'check'
+        ? checkChat
+        : null
 
   const hasDeal = view === 'deals' && deal !== null
   const dock = (k: View) => ({
@@ -171,7 +200,7 @@ export const Workspace = ({
                 <button
                   onClick={() => {
                     setDeal(null)
-                    setDoc(null)
+                    openDoc(null)
                   }}
                   style={{
                     display: 'flex',
@@ -220,7 +249,10 @@ export const Workspace = ({
               </button>
             )}
             {view === 'deals' && deal === null && (deals?.length ?? 0) > 0 && (
-              <button style={{ ...blueButton, marginRight: 4 }}>
+              <button
+                onClick={() => setNewOpen(true)}
+                style={{ ...blueButton, marginRight: 4 }}
+              >
                 New deal
               </button>
             )}
@@ -242,23 +274,13 @@ export const Workspace = ({
                 if (!running) setDealsAt((was) => was + 1)
               }}
               openDocId={doc?.id ?? null}
-              onOpenDoc={setDoc}
+              onOpenDoc={openDoc}
+              onNewDeal={() => setNewOpen(true)}
             />
+          ) : view === 'check' ? (
+            <CheckFile api={api} deals={deals} onChat={setCheckChat} />
           ) : (
-            //: The design's own face for a view that is not there — the
-            //: `vOther` placeholder, borrowed until this screen's round.
-            <div
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#a19f9d',
-                fontSize: 13.5,
-              }}
-            >
-              {LABELS[view]}
-            </div>
+            <Settings api={api} organizationId={organizationId} deals={deals} />
           )}
         </div>
 
@@ -267,11 +289,31 @@ export const Workspace = ({
             api={api}
             dealId={deal!.id}
             doc={doc}
-            onClose={() => setDoc(null)}
+            onClose={() => openDoc(null)}
             onChanged={() => setDealsAt((was) => was + 1)}
+            onChat={(ctx) =>
+              setDocChat(
+                ctx === null
+                  ? null
+                  : { scope: 'finding', dealId: deal!.id, ...ctx },
+              )
+            }
           />
         )}
+
+        {chatContext !== null && (
+          <Chat key={chatKeyOf(chatContext)} api={api} context={chatContext} />
+        )}
       </div>
+
+      {newOpen && (
+        <NewDeal
+          api={api}
+          organizationId={organizationId}
+          onClose={() => setNewOpen(false)}
+          onCreated={() => setDealsAt((was) => was + 1)}
+        />
+      )}
 
       {/* The dock. */}
       <div
