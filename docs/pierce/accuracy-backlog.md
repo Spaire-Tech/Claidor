@@ -889,12 +889,62 @@ Banker models offer ~250 candidates and it is instant; regulator
 models offer 146k. Owed: candidate pre-filtering by shared vocabulary
 before scoring.
 
+### The Annex drift adjudication: FAIL, per the protocol
+
+All twelve proposals hand-checked, and all twelve are **false
+drifts** — the expensive failure, and the pre-registered criteria say
+what that means without room to argue: **the fair crosscheck test
+fails.** R = 0 of the five verified-present targets linked. P = 0 of
+12. D = 12 false. Only V (12 proposals, not 900) passed.
+
+What the twelve actually are, verified in the raw file: every one
+links a document figure whose extracted label is a bare licensee
+acronym (« NGET », « SHET », « SPTL » — from the Annex's
+electricity-transmission tables) to cells on the BPFM's
+**« F7 - Data Validation » sheet — the integers 6, 7 and 8 in an
+inflation-lag dropdown list** that happen to sit in rows the label
+reader named with the same acronyms. Score 0.54 with runner-up 0.00:
+one shared token, nothing else in 146k candidates matched at all, and
+one lone token cleared the 0.50 threshold. The checker then compared
+« £13,359.4m » against « 8 » and called it a disagreement.
+
+Causes, named:
+
+1. **A lone-acronym label can clear the threshold when both sides are
+   the same lone token.** The solo check already learned this lesson —
+   its names require two content words, measured (« Average » matched
+   two different quantities every time it was read by hand). The
+   linker never inherited the rule. It should, and the fix is testable
+   against this exact log.
+2. **Machinery sheets are candidate material.** A data-validation
+   sheet's dropdown integers are not statements a document can
+   disagree with. Candidate harvesting needs to refuse
+   validation/lookup furniture — by sheet-name convention at minimum,
+   better by shape (a column of consecutive small integers under an
+   enum header names nothing).
+3. **The five present targets went unlinked for reasons not yet
+   known.** « Risk-free rate » sits in the model under exactly that
+   label (`InputSummary!AU869`) and the document prints 2.30% beside
+   the words « Risk-free rate forecast » — this should have linked and
+   did not. A focused debug is owed before any claim about regulator-
+   scale recall; do not guess the cause in a document.
+
+What still stands, unchanged by this grade: the banker-vocabulary
+pair links correctly (Cascade accounts ↔ model: 7 of 8, all
+agreeing, measured the same day with the same code), and both honest
+zeros (code-labelled Ofwat, wrong-pairing Cadent) graded as designed.
+The fail is specific: at regulator scale, with acronym-labelled
+tables and machinery sheets in the candidate pool, the linker
+produces confident nonsense — twelve pieces of it, now pinned in
+`annex_bpfm2.log` as the regression corpus for the fixes.
+
 ### Owed from this round
 
-- **The Annex drift adjudication** — the 12 claimed drifts, each
-  hand-checked (in progress as this is written; a false drift is the
-  expensive failure and the grade is decided by the committed
-  protocol, not by this paragraph).
+- **The linker's two fixes from the failed Annex test** — the
+  two-content-word rule the solo check already carries, and refusing
+  machinery sheets as candidates — then the re-test against the same
+  pair, graded by the same protocol, plus the debug of the five
+  unlinked present targets.
 - Data-shaped workbooks (daily-rate series) need either detection
   (« this is not a model ») or restraint; 354k findings is not an
   answer a person can use.

@@ -1709,8 +1709,15 @@ mapping layer (Ofwat publishes the mapping themselves). Cadent against
 the sector model: zero links, graded specificity success — its numbers
 verifiably are not in that file, and the linker declined 432 chances
 to guess. The Finance Annex pair produced 12 proposals from 1,234
-figures, all claimed as drifts; their hand adjudication closes the
-round. The linker's 20-minute run against 146k candidates is now a
+figures, all claimed as drifts — and all twelve, hand-checked, are
+false: lone licensee acronyms matched against dropdown integers on a
+data-validation sheet. Per the pre-registered protocol the fair test
+**fails**, with three causes named in the backlog (a lone-token label
+can clear the threshold; machinery sheets are candidate material; the
+five genuinely-present targets went unlinked for reasons owed a
+debug). The twelve false links are pinned as the regression corpus
+for the fixes. The banker-vocabulary pair measured the same day with
+the same code links 7 of 8, all agreeing. The linker's 20-minute run against 146k candidates is now a
 named scaling debt.
 
 Everything measured is in the accuracy backlog with the sweep log and
