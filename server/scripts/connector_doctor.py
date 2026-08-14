@@ -47,17 +47,24 @@ async def preflight() -> int:
     """Prove the Azure registration before any browser is involved.
 
     Run with `--preflight`, needs no database and no prior connection.
-    Three checks, and the third is the clever one: a token request with
-    a deliberately bogus code makes Entra check the client id and
-    secret *first*, and its error codes tell them apart —
+    Three checks. The credential one is a **client_credentials token
+    request**, because that grant makes Entra genuinely validate the
+    secret — measured, not assumed. The first version used a bogus
+    authorization code and read `invalid_grant` as « credentials
+    fine »; Entra rejects the fake code *before* looking at the secret,
+    so that check passed with pure garbage in the secret slot — and
+    passed, twice, on the founder's Secret-ID-instead-of-Value mistake
+    that the real connection then failed on. Entra's codes, from the
+    live experiment that replaced it:
 
-    - `AADSTS700016` / `unauthorized_client` — the application id does
-      not exist in this tenant. Wrong id, or wrong tenant.
-    - `AADSTS7000215` / `invalid_client` — the id is right and the
-      secret is wrong (or expired: secrets have end dates).
-    - `invalid_grant` / `AADSTS70000` — **the credentials passed** and
-      only the bogus code was refused. That is the pass state: the app
-      registration works, and the browser half will too.
+    - `AADSTS700016` — the application id does not exist. Wrong id, or
+      wrong tenant.
+    - `AADSTS7000215` / `AADSTS7000222` — the id is right and the
+      secret is wrong or expired. This is what the Secret-ID mistake
+      produces.
+    - A token, or any *policy* refusal (conditional access, missing
+      app roles) — client authentication itself passed: the id and
+      secret are right, which is all this preflight claims.
     """
     import httpx
 
@@ -96,15 +103,17 @@ async def preflight() -> int:
         else:
             line(OK, f"Tenant « {tenant} » resolves")
 
-        # 2. The credentials, told apart by Entra's own error codes.
+        # 2. The credentials — a grant that actually validates the
+        #    secret. The bogus-code trick did not: Entra refuses the
+        #    fake code before reading the secret, and this preflight
+        #    green-lit a Secret ID pasted where the Value belongs.
         response = await client.post(
             f"{login}/{tenant}/oauth2/v2.0/token",
             data={
-                "grant_type": "authorization_code",
-                "code": "preflight-bogus-code",
-                "redirect_uri": f"{settings.BASE_URL}/v1/connector/microsoft/callback",
+                "grant_type": "client_credentials",
                 "client_id": settings.MICROSOFT_CLIENT_ID,
                 "client_secret": settings.MICROSOFT_CLIENT_SECRET,
+                "scope": "https://graph.microsoft.com/.default",
             },
         )
         try:
@@ -115,11 +124,8 @@ async def preflight() -> int:
         description = str(payload.get("error_description", ""))
 
         if response.status_code < 400:
-            # Only the development stub accepts a bogus code.
-            line(OK, "The token endpoint accepted the request (a stub, then).")
-        elif refused == "invalid_grant" or "AADSTS70000" in description:
-            line(OK, "Client id and secret accepted — only the bogus code refused.")
-        elif "AADSTS700016" in description or refused == "unauthorized_client":
+            line(OK, "Client id and secret accepted — Entra issued a token.")
+        elif "AADSTS700016" in description:
             failures += 1
             line(
                 BAD,
@@ -128,22 +134,32 @@ async def preflight() -> int:
                 "page, and that CLAIDOR_MICROSOFT_TENANT is the same directory "
                 "the app was registered in.",
             )
-        elif "AADSTS7000215" in description or refused == "invalid_client":
+        elif "AADSTS7000215" in description or "AADSTS7000222" in description:
             failures += 1
             line(
                 BAD,
                 "The client secret is wrong or has expired.",
-                "Secrets have end dates. Azure shows the secret's *value* only "
-                "once, at creation — make a new one under Certificates & "
-                "secrets and put its Value (not its Secret ID) in "
+                "Azure shows the secret's *value* only once, at creation — and "
+                "the UUID in the « Secret ID » column is not it. Make a new "
+                "one under Certificates & secrets and put its Value in "
                 "CLAIDOR_MICROSOFT_CLIENT_SECRET.",
             )
-        else:
+        elif refused == "invalid_client":
             failures += 1
             line(
                 BAD,
-                f"Entra answered {response.status_code}: {refused}",
+                "Entra refused the client credentials.",
                 description[:200],
+            )
+        else:
+            #: A policy refusal — conditional access, no app roles. The
+            #: credential check itself passed before policy was applied,
+            #: and the browser flow uses a different grant that policy
+            #: does not block the same way.
+            line(
+                OK,
+                "Client id and secret accepted — Entra refused only the "
+                "grant's policy, which the browser flow does not use.",
             )
 
     redirect = f"{settings.BASE_URL}/v1/connector/microsoft/callback"

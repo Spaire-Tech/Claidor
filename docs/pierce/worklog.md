@@ -1934,3 +1934,39 @@ the same tab cleans the address bar and carries the verdict to the
 Connections screen. The root cause of the founder's failed attempt is
 still unknown — it is sitting in that popup's address bar, and the
 next attempt will print it on the screen instead.
+
+## 14 August 2026 — the preflight lied, and what replaced it
+
+The failed connection's root cause was the classic Azure mistake — the
+UUID in the « Secret ID » column pasted where the secret's *Value*
+belongs — and the preflight had green-lit it. Twice. The bogus-code
+trick assumed Entra validates the client secret before the
+authorization code; measured with deliberate garbage in the secret
+slot, it does not — the fake code is refused first and the secret is
+never read, so the check could not fail. Replaced with a
+client-credentials token request, which the same experiment shows
+genuinely validates the secret (garbage → AADSTS7000215 every time),
+and re-run against both the garbage secret and the founder's actual
+mistake: both now fail, with the Secret-ID trap named in the failure
+line itself. A policy-stage refusal (conditional access, no app
+roles) reads as a pass, said in so many words, because client
+authentication happens before policy and is all the preflight claims.
+The lesson written down: the check that cannot fail is worse than no
+check, because it converts a founder's caution into confidence.
+
+## 14 August 2026 — the Office add-in section, built at last
+
+The founder asked where the install surface from their design had
+gone, and the answer was in the screen's own docstring: omitted
+deliberately while the manifests carried a placeholder domain — an
+Install button that installs a broken add-in is worse than none —
+and flagged. Both manifests now serve from app.claidor.com (checked
+against production before building), so the section went in exactly
+as drawn: Word/Excel/PowerPoint with an Install, Outlook with its
+own, and « Deploy to the whole team » with a Copy-link for IT's
+central deployment. One composed behavior, flagged for the founder's
+pass: a web page cannot reach inside Office to install an add-in, so
+Install downloads the manifest and a sentence appears below the card
+— the « Pierce reads » card idiom — saying where the file goes
+(Office's Upload My Add-in; aka.ms/olksideload for Outlook). The
+design draws no post-click state; this is the borrowed one.
