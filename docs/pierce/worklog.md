@@ -1970,3 +1970,21 @@ Install downloads the manifest and a sentence appears below the card
 — the « Pierce reads » card idiom — saying where the file goes
 (Office's Upload My Add-in; aka.ms/olksideload for Outlook). The
 design draws no post-click state; this is the borrowed one.
+
+## 14 August 2026 — the panel's first breath inside real Word
+
+Exactly the promised « first sideload will surface something »: the
+Claidor button appeared, the pane opened, and it said
+« app.claidor.com refused to connect ». Cause read off the live
+headers: the site sends `frame-ancestors 'self'` and
+`X-Frame-Options: SAMEORIGIN` everywhere, and Office renders task
+panes inside its own hosts' frames — word.cloud.microsoft and kin.
+Fix follows the checkout route's existing pattern: `/panel/*` is
+excluded from the strict base rule and gets a CSP that declares
+*only* who may embed it (Office's web hosts, `*.cloud.microsoft`
+included — modern desktop Office frames add-ins through it too), no
+X-Frame-Options at all, and deliberately nothing else — the pane
+loads office.js from Microsoft's CDN, and a fuller policy would be a
+second way for the pane to break that nothing else shares. Verified
+by evaluating the config's headers directly: the panel rule carries
+the one line, the base rule no longer covers /panel.
