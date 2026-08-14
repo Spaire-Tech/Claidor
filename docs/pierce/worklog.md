@@ -1953,3 +1953,20 @@ roles) reads as a pass, said in so many words, because client
 authentication happens before policy and is all the preflight claims.
 The lesson written down: the check that cannot fail is worse than no
 check, because it converts a founder's caution into confidence.
+
+## 14 August 2026 — the Office add-in section, built at last
+
+The founder asked where the install surface from their design had
+gone, and the answer was in the screen's own docstring: omitted
+deliberately while the manifests carried a placeholder domain — an
+Install button that installs a broken add-in is worse than none —
+and flagged. Both manifests now serve from app.claidor.com (checked
+against production before building), so the section went in exactly
+as drawn: Word/Excel/PowerPoint with an Install, Outlook with its
+own, and « Deploy to the whole team » with a Copy-link for IT's
+central deployment. One composed behavior, flagged for the founder's
+pass: a web page cannot reach inside Office to install an add-in, so
+Install downloads the manifest and a sentence appears below the card
+— the « Pierce reads » card idiom — saying where the file goes
+(Office's Upload My Add-in; aka.ms/olksideload for Outlook). The
+design draws no post-click state; this is the borrowed one.

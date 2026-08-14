@@ -9,10 +9,15 @@
  *
  * - The Microsoft card is the live connector state; Disconnect calls the
  *   real route (owner only — the server refuses anyone else's).
- * - The « Folders Pierce can see » and « Mailbox » rows and the Office
- *   add-in install section are omitted, not faked: the Change buttons
- *   have no destination yet, and the add-in manifests still carry a
- *   placeholder domain. Both are flagged in the worklog.
+ * - The « Folders Pierce can see » and « Mailbox » rows are omitted, not
+ *   faked: the Change buttons have no destination yet. Flagged in the
+ *   worklog.
+ * - The Office add-in section is the design's, built the day the
+ *   manifests started serving from the real domain (it was omitted
+ *   while they carried a placeholder — an Install button that installs
+ *   a broken add-in is worse than none). Install downloads the
+ *   manifest and says where it goes; Copy link is the same manifest
+ *   for IT's central deployment.
  * - House rules load from and save to the organization's stored row on
  *   every tap — no save button is drawn, so none exists. The audit rule
  *   list is the server's own catalogue; the grounding toggle and the
@@ -37,16 +42,46 @@ import {
   TieOutApi,
 } from '../api'
 import {
+  excelLogo,
   font,
   hairline,
   ink,
   inputGlow,
   listCard,
   microsoftLogo,
+  outlookLogo,
+  powerpointLogo,
   sectionHead,
   well,
+  wordLogo,
 } from '../design'
 import { avatarOf, initialsOf } from './DealPage'
+
+//: The design's Install button — blue, one size smaller than the
+//: toolbar's.
+const installButton = {
+  flex: '0 0 auto',
+  border: 0,
+  background: ink.accent,
+  color: '#fff',
+  borderRadius: 9,
+  padding: '7px 15px',
+  font: 'inherit',
+  fontSize: 13.5,
+  fontWeight: 500,
+  cursor: 'pointer',
+} as const
+
+//: Download without leaving the page — navigating to the manifest
+//: would render XML in the tab instead of saving it.
+const takeManifest = (path: string) => {
+  const link = document.createElement('a')
+  link.href = path
+  link.download = ''
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+}
 
 type Tab = 'conn' | 'rules' | 'people'
 
@@ -101,6 +136,12 @@ export const Settings = ({
   const [inviteOpen, setInviteOpen] = useState(false)
   const [connAt, setConnAt] = useState(0)
   const [teamAt, setTeamAt] = useState(0)
+  //: Which add-in's install steps are showing, after its Install
+  //: pressed. A web page cannot reach inside Office to install an
+  //: add-in — the button downloads the manifest and the sentence
+  //: below the card says where it goes.
+  const [installNote, setInstallNote] = useState<'docs' | 'mail' | null>(null)
+  const [copied, setCopied] = useState(false)
 
   //: The Microsoft popup reports back and closes itself (the shell's
   //: landing effect posts this message). Success refreshes the state;
@@ -438,6 +479,160 @@ export const Settings = ({
                 Pierce reads. It never writes to your files or your mailbox. It
                 can only see what you can already open.
               </div>
+
+              {/* The design's « The Office add-in » section. Install
+                  downloads the manifest — a web page cannot reach inside
+                  Office to install one — and the sentence that appears
+                  under the card with the next step is the borrowed
+                  « Pierce reads » card idiom: the design draws no
+                  post-click state. Flagged for the founder's pass. */}
+              <div style={{ ...sectionHead, padding: '26px 4px 9px' }}>
+                The Office add-in
+              </div>
+              <div style={{ ...listCard, overflow: 'hidden' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '17px 16px 17px 20px',
+                  }}
+                >
+                  <span style={{ display: 'flex', gap: 12, flex: '0 0 auto' }}>
+                    {[
+                      [wordLogo, 'Word'],
+                      [excelLogo, 'Excel'],
+                      [powerpointLogo, 'PowerPoint'],
+                    ].map(([logo, name]) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={name}
+                        src={logo}
+                        alt={name}
+                        style={{ width: 30, height: 30, objectFit: 'contain' }}
+                      />
+                    ))}
+                  </span>
+                  <span style={{ flex: 1 }} />
+                  <button
+                    onClick={() => {
+                      setInstallNote('docs')
+                      takeManifest('/panel/manifest.xml')
+                    }}
+                    style={installButton}
+                  >
+                    Install
+                  </button>
+                </div>
+                <div
+                  style={{
+                    borderTop: hairline,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '17px 16px 17px 20px',
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={outlookLogo}
+                    alt="Outlook"
+                    style={{
+                      flex: '0 0 30px',
+                      width: 30,
+                      height: 30,
+                      objectFit: 'contain',
+                    }}
+                  />
+                  <span style={{ flex: 1 }} />
+                  <button
+                    onClick={() => {
+                      setInstallNote('mail')
+                      takeManifest('/panel/manifest.outlook.xml')
+                    }}
+                    style={installButton}
+                  >
+                    Install
+                  </button>
+                </div>
+                <div
+                  style={{
+                    borderTop: hairline,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    padding: '15px 16px 15px 20px',
+                  }}
+                >
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 16,
+                        fontWeight: 500,
+                        letterSpacing: '-.015em',
+                      }}
+                    >
+                      Deploy to the whole team
+                    </span>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 13.5,
+                        color: ink.secondary,
+                        marginTop: 2,
+                      }}
+                    >
+                      A manifest link for IT to push through Microsoft 365 admin
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard
+                        .writeText(
+                          `${window.location.origin}/panel/manifest.xml`,
+                        )
+                        .then(() => {
+                          setCopied(true)
+                          setTimeout(() => setCopied(false), 1800)
+                        })
+                        .catch(() => undefined)
+                    }}
+                    style={{
+                      flex: '0 0 auto',
+                      border: 0,
+                      background: 'transparent',
+                      font: 'inherit',
+                      fontSize: 14,
+                      color: ink.accent,
+                      cursor: 'pointer',
+                      padding: '4px 6px',
+                    }}
+                  >
+                    {copied ? 'Copied' : 'Copy link'}
+                  </button>
+                </div>
+              </div>
+              {installNote && (
+                <div
+                  style={{
+                    marginTop: 12,
+                    padding: '15px 20px',
+                    ...listCard,
+                    fontSize: 14.5,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {installNote === 'docs'
+                    ? 'The manifest is downloading. In PowerPoint, Excel or ' +
+                      'Word: Home → Add-ins → More Add-ins → My Add-ins → ' +
+                      'Upload My Add-in, and pick the file. IT can push it ' +
+                      'to everyone at once with the link below.'
+                    : 'The manifest is downloading. In Outlook: ' +
+                      'aka.ms/olksideload → My Add-ins → Add a custom ' +
+                      'add-in → Add from file, and pick the file.'}
+                </div>
+              )}
               {/* The design's « Folders Pierce can see » / « Mailbox »
                   rows and the Office add-in install section are omitted
                   until they have real destinations — see the worklog. */}

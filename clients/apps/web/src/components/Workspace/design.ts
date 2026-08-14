@@ -130,6 +130,10 @@ export const fileIcon = {
 
 export const microsoftLogo = '/workspace/microsoft.webp'
 export const sharepointLogo = '/workspace/sharepoint.webp'
+export const wordLogo = '/workspace/word.webp'
+export const excelLogo = '/workspace/excel.webp'
+export const powerpointLogo = '/workspace/powerpoint.webp'
+export const outlookLogo = '/workspace/outlook.webp'
 
 /** The canvas every screen was drawn at, and the size to verify at. */
 export const canvas = { width: 1440, height: 900 } as const
