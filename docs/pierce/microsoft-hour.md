@@ -82,10 +82,12 @@ cd server && uv run python -m scripts.connector_doctor --preflight
 ```
 
 This proves the registration **before** any sign-in: the tenant
-resolves, and Entra's own error codes distinguish a wrong client id, a
-wrong/expired secret, and "credentials fine" — you want the line
-*"Client id and secret accepted — only the bogus code refused."* It
-also prints the exact redirect URI to double-check against step 1.4.
+resolves, and a client-credentials token request makes Entra genuinely
+validate the id and secret — you want a line starting *"Client id and
+secret accepted"*. A failed line names the mistake, including the
+classic one: the UUID in Azure's "Secret ID" column is not the secret;
+the **Value** shown once at creation is. It also prints the exact
+redirect URI to double-check against step 1.4.
 
 ### 4. Connect, then the full doctor (~5 min)
 
