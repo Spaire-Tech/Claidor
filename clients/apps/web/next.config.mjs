@@ -48,6 +48,19 @@ const oauth2CSP = `
   frame-ancestors 'none';
 `
 
+// The Office task pane. Office hosts render it inside their own frames —
+// word.cloud.microsoft, *.officeapps.live.com, Outlook on the web — so the
+// base frame-ancestors 'self' showed « app.claidor.com refused to connect »
+// inside real Word on the very first sideload. Only frame-ancestors is
+// declared, deliberately: the pane loads office.js from Microsoft's CDN and
+// its own assets besides, and a fuller policy here would be a second way
+// for the pane to break that nothing else on the site shares. Desktop
+// Office loads the pane top-level (no ancestor), so this list is for the
+// web hosts; no X-Frame-Options is sent for these paths at all.
+const panelCSP = `
+  frame-ancestors 'self' https://*.cloud.microsoft https://*.office.com https://*.officeapps.live.com https://*.sharepoint.com https://outlook.office.com https://outlook.office365.com;
+`
+
 // We rewrite Mintlify docs to polar.sh/docs, so we need a specific CSP for them
 // Ref: https://www.mintlify.com/docs/guides/csp-configuration#content-security-policy-csp-configuration
 const docsCSP = `
@@ -393,8 +406,17 @@ const nextConfig = {
 
     return [
       {
-        source: '/((?!checkout|oauth2|docs).*)',
+        source: '/((?!checkout|oauth2|docs|panel).*)',
         headers: baseHeaders,
+      },
+      {
+        source: '/panel/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: panelCSP.replace(/\n/g, ''),
+          },
+        ],
       },
       {
         source: '/oauth2/:path*',
