@@ -183,3 +183,9 @@ server/dump.rdb
 # download only — cite and link, never republish, so never commit.
 # docs/pierce/closed-deal-ground-truth.md records what each file is.
 server/scripts/corpus_sft/
+
+# PR24 draft-determination models for the revision-defect study.
+# Fetched from the UK Government Web Archive by the commands recorded
+# in docs/pierce/revision-defect-protocol.md's round; results logs kept
+# beside them. Public files, not ours to redistribute.
+server/scripts/corpus_pr24dd/
