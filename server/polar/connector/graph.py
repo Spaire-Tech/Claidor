@@ -254,7 +254,15 @@ class Graph:
         async with _session(client) as session:
             response = await session.post(url, data=body)
         if response.status_code >= 400:
-            raise GraphError(_reason(response))
+            # The token endpoint speaks a different dialect from Graph:
+            # its body is {"error": "invalid_client", "error_description":
+            # "AADSTS7000215: Invalid client secret…"} — a *string* where
+            # Graph puts an object. Read through `_reason`, that shape
+            # produced « Microsoft refused that as this account » with no
+            # detail and advice about site access, on the first real
+            # connection attempt whose actual problem was the server's
+            # own secret. The AADSTS sentence names its own fix; say it.
+            raise GraphError(_token_refusal(response))
 
         payload = response.json()
         return Token(
@@ -440,6 +448,33 @@ async def _wait(response: httpx.Response, attempt: int) -> None:
     after = response.headers.get("Retry-After")
     delay = float(after) if after and after.isdigit() else 2.0**attempt
     await asyncio.sleep(min(delay, MAX_BACKOFF))
+
+
+def _token_refusal(response: httpx.Response) -> str:
+    """The sign-in service's own sentence for a refused token request.
+
+    `error_description` starts with an AADSTS code — searchable, and
+    usually carrying the fix in plain words (« Invalid client secret
+    provided »). Shown as it stands for the same reason every other
+    message here is.
+    """
+    detail = ""
+    try:
+        payload = response.json()
+        found = payload.get("error_description") or payload.get("error", {})
+        if isinstance(found, dict):
+            # Some refusals arrive in Graph's dialect anyway; read both.
+            found = found.get("message", "")
+        detail = str(found).split("\n")[0]
+    except Exception:
+        detail = ""
+    if detail:
+        return f"Microsoft refused the connection: {detail}"
+    return (
+        f"Microsoft refused the connection ({response.status_code}) "
+        "without saying why. The server's client id and secret are the "
+        "usual suspects."
+    )
 
 
 def _reason(response: httpx.Response) -> str:

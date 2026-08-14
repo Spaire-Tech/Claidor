@@ -428,10 +428,20 @@ class TestConnecting:
         session.add(connection)
         await session.flush()
 
+        #: The token endpoint's real dialect: `error` is a *string* and
+        #: the sentence lives in `error_description` — not Graph's
+        #: {"error": {"message": …}}. The first real connection attempt
+        #: failed against a mock-shaped assumption here: the reader saw
+        #: the wrong dialect, found nothing, and the screen showed a
+        #: refusal with the explanation missing.
         refusing = httpx.AsyncClient(
             transport=httpx.MockTransport(
                 lambda request: httpx.Response(
-                    400, json={"error": {"message": "AADSTS70000: expired"}}
+                    400,
+                    json={
+                        "error": "invalid_grant",
+                        "error_description": "AADSTS70000: expired",
+                    },
                 )
             )
         )
@@ -442,6 +452,33 @@ class TestConnecting:
         # two kinds of « not working » this is.
         assert connection.status is ConnectionStatus.expired
         assert "AADSTS70000" in (connection.error or "")
+
+    async def test_a_refused_secret_names_itself(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The first real connection attempt, pinned: Microsoft returned
+        a code, the server's own secret was refused at the token
+        exchange, and the person saw advice about site access. The
+        AADSTS sentence names the actual fix and must reach them
+        verbatim."""
+        from polar.connector.graph import Graph, GraphError
+
+        configure(monkeypatch)
+        refusing = httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(
+                    401,
+                    json={
+                        "error": "invalid_client",
+                        "error_description": (
+                            "AADSTS7000215: Invalid client secret provided."
+                        ),
+                    },
+                )
+            )
+        )
+        with pytest.raises(GraphError, match="AADSTS7000215"):
+            await Graph.exchange("a-real-code", "https://api/cb", refusing)
 
 
 # --- the sync ------------------------------------------------------------
