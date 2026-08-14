@@ -20,6 +20,15 @@ export const DASHBOARD_URL =
  * It must be on the add-in's own origin. Office enforces that — it is not
  * a convention — because `messageParent` is same-origin only, and that
  * message is how the token gets back to the panel.
+ *
+ * `BASE_URL` is Vite's own base path — `/panel/` in the deployed build,
+ * `/` in dev — and it belongs in this URL. The first run inside real
+ * Word opened the dialog on `/signin.html` at the *root*, which is the
+ * dashboard's 404 page wearing the dashboard's own « nobody frames me »
+ * policy: Office's dialog frame was refused, no token ever came back,
+ * and Office reported « couldn't start this add-in » with the actual
+ * reason one console line long.
  */
 export const SIGN_IN_URL =
-  import.meta.env.VITE_SIGN_IN_URL ?? `${window.location.origin}/signin.html`
+  import.meta.env.VITE_SIGN_IN_URL ??
+  `${window.location.origin}${import.meta.env.BASE_URL}signin.html`

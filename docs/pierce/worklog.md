@@ -1988,3 +1988,17 @@ loads office.js from Microsoft's CDN, and a fuller policy would be a
 second way for the pane to break that nothing else shares. Verified
 by evaluating the config's headers directly: the panel rule carries
 the one line, the base rule no longer covers /panel.
+
+## 14 August 2026 — the pane's real blocker: a sign-in dialog aimed at a 404
+
+The founder walked the diagnosis to the door: pane loads standalone,
+Word web console shows one violation — the Office dialog framing the
+dashboard's root against `frame-ancestors 'self'`. The sign-in
+dialog's default URL forgot the panel lives under `/panel/`: it
+opened `/signin.html` at the origin root, which is the dashboard's
+404 wearing the dashboard's own nobody-frames-me policy. Office's
+dialog frame was refused, no token came back, and Office said
+« couldn't start this add-in ». One line — the URL now carries
+Vite's own `BASE_URL` — and the whole sign-in journey sits under the
+`/panel/*` CSP rule that already welcomes Office's hosts. Verified in
+the compiled bundle before committing.
