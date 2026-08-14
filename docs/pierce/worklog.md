@@ -2037,3 +2037,36 @@ closed-deal model it ever touched, the engine produced findings a
 model auditor bills for. The grounding story on published pairs is
 capped by redaction itself — the strongest argument yet that the
 full product belongs inside live deals, not public archives.
+
+## 14 August 2026 — the revision-defect study: the claim becomes a table
+
+The founder's brief: the yearly-subscription argument rests on a
+claim nobody has ever measured — that revising a professional model
+introduces new defects. Ofwat published its PR24 suite twice, five
+months apart, revised under formal objection. We own the only tool
+that could measure the difference, so we did, protocol first.
+
+Sixteen matched pairs, company by company, identities verified from
+each workbook's own cover cell (one carried United Utilities' legacy
+code, one identified by airtight elimination). Findings matched on
+rule + sheet + cell name — never the address — with unmatchable
+findings bucketed, not guessed. Then twelve NEW findings read by
+hand in the cells on both sides before anything counted.
+
+The result: **84 new mechanical defects across one revision cycle,
+ten of sixteen models gained at least one, and Yorkshire gained
+forty in a single block** — the post-financeability adjustments, the
+exact mechanism reworked as allowances moved from £88bn to £104bn.
+Verified shapes: live input formulas overwritten with typed
+constants, and late adjustments hardcoded into formula tails
+(`-0.490096707821704` bolted onto a restored formula). Three cases
+where the revision fixed one defect class by introducing another.
+Also honest: revision *repaired* 338 findings while introducing 84,
+and the template itself ships ~581 standing findings into every
+company model. Full table, verified samples, and pre-committed
+caveats in `revision-defect-results.md`.
+
+The sentence this buys, exactly as pre-registered: across one major
+revision of a professional financial model suite, 84 new mechanical
+defects appeared. No competitor can say it, because no competitor
+measured it.
