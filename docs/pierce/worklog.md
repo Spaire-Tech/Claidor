@@ -2002,3 +2002,38 @@ dialog frame was refused, no token came back, and Office said
 Vite's own `BASE_URL` — and the whole sign-in journey sits under the
 `/panel/*` CSP rule that already welcomes Office's hosts. Verified in
 the compiled bundle before committing.
+
+## 14 August 2026 — the closed-deal test, found, run, and graded in a night
+
+The founder went hunting for a closed deal published beside its
+contract and the research pointed at Scotland: SFT publishes
+financial-close models next to redacted Project Agreements. The
+portal blocks robots and its own TLS certificate is expired; the
+files came through a reader proxy, a search endpoint, and the S3
+bucket the portal fronts. The pair that completed first: Dumfries &
+Galloway Royal Infirmary — a 359-page Project Agreement and the
+6.4MB financial-close model, values-only as published.
+
+Discipline held in order: protocol pre-registered before the files
+existed, ground truth hand-read from the contract and committed
+before the first run. The redaction finding came first and matters
+most — ten readable pound-figures in 359 pages, no rates at all: the
+redaction regime deletes precisely what a model holds.
+
+Grades, by the unmodified protocol: **audit leg PASS** — 107 frozen
+#REF! errors and 96 formula-attested dependencies on an unpublished
+sensitivities workbook, hand-verified, auditor-billable, zero
+configuration. **Grounding leg FAIL on recall, 0 of 3** — and a
+perfect zero false drifts across 1,497 × 199,098, the criterion
+pre-named as decisive on a redacted pair. The recall causes are
+named with evidence: OCR'd tables sever a shareholder's name from
+the 25,500 it owns (the model literally has a row called « Laing
+O'Rourke » waiting), and « issued share capital » shares no word
+with a row called « Equity ». One is the reader's next round; the
+other is a synonym-bridge decision owed corpus evidence.
+
+The night's verdict for the model-audit thesis: on the first real
+closed-deal model it ever touched, the engine produced findings a
+model auditor bills for. The grounding story on published pairs is
+capped by redaction itself — the strongest argument yet that the
+full product belongs inside live deals, not public archives.

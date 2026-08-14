@@ -1270,3 +1270,91 @@ held-out *recall* — no ground truth has been hand-built for that
 document. That is the next measurement debt, named: a ground-truth
 set for a pair no round has touched (the WACC-rates workbook, the
 CoD model, or an Ofwat document pair), graded by this same protocol.
+
+### The closed-deal test: Dumfries & Galloway Royal Infirmary, graded
+
+The first test against a real closed deal — the SFT-published pair:
+the 359-page redacted Project Agreement (financial close March 2015,
+Dumfries and Galloway Health Board ↔ High Wood Health) against the
+6.4MB financial-close model. Protocol pre-registered before the files
+were found (`closed-deal-test-protocol.md`); ground truth hand-built
+and committed before the first run (`closed-deal-ground-truth.md`).
+
+**The corpus finding outranks both grades.** The full readable
+pound-figure inventory of a 359-page deal contract is ten values and
+not one decimal rate: the redaction regime removes exactly the
+figures a financial model holds — every deduction sum reads « the sum
+of £ [blank] », every share and margin « a % share ». Published pairs
+can only ever test the residue; the numbers everyone redacts are the
+numbers this product checks. That is a market fact about where the
+grounding leg can and cannot be demonstrated, recorded before any
+grade below.
+
+**Audit leg: PASS.** 251 findings on the published financial-close
+model, hand-adjudicated by class:
+
+- **107 frozen `#REF!` errors** — broken references published in the
+  operative model, several on the workbook's own « Audit » sheet.
+  Material; any model auditor reports every one.
+- **96 external links to an unpublished workbook** — the model reads
+  from « DGRI FC - Base Case (v32 0) - Sensitivities - Base_v5_GL »,
+  which is not part of the publication: the published model is
+  incomplete by its own formulas' testimony. Material.
+- 45 long-formula and 3 hardcode-in-formula (`=0.22`, `=8760`, `=6`)
+  — style-grade, honest, below the noise line.
+
+Material classes are 203 of 251; noise well under half. The engine
+produced auditor-billable findings on a real closed-deal model with
+zero configuration. One declared limitation held: the publication is
+values-only (formulas flattened), so the typed-over-formula class had
+nothing to bite — that class needs live models, which is where the
+product would run anyway.
+
+**Grounding leg: FAIL on recall, exactly as the protocol grades it.**
+1,497 document figures against 199,098 candidate cells:
+
+- **D — zero drifts claimed, zero false. Perfect**, and pre-named as
+  the criterion that matters most on a pair whose model-shaped
+  figures are redacted: the engine declined to manufacture a single
+  false accusation from two hundred thousand opportunities.
+- **V = 0, P vacuous.**
+- **R = 0 of 3 verified-present targets — FAIL.** The model holds
+  `GAPSLIST!C30 'Equity' = 51,000` and, remarkably, two rows named
+  for the shareholders themselves — « Laing O'Rourke » and
+  « Aberdeen » at 25,500 each (`Funds Flow_ACT!G5/G6`). None linked.
+
+**The misses, adjudicated individually:**
+
+1. **OCR table-severing (two targets).** The reader extracted 25,500
+   correctly — with label « ordinary shares ». The holder's name sits
+   in a different column of a scanned table, and the text layer hands
+   the columns over as separate runs, so « Laing O'Rourke » never
+   touches the figure it owns. The linker then stayed silent on a
+   zero-word overlap, which is its correct behaviour on the evidence
+   it was given. The failure class is table-structure reading in
+   OCR'd PDFs. Not among the protocol's pre-declared limitations, so
+   it counts in full — and goes on the reader's queue with the
+   fragment-label class it resembles.
+2. **Legalese-to-model vocabulary gulf (one target).** The contract
+   says « issued share capital … 51,000 ordinary shares of £1 each »;
+   the model row says « Equity ». No shared word survives
+   normalisation. A synonym bridge (share capital ↔ equity) is
+   thinkable but is exactly the kind of dictionary the linker has
+   refused on principle without corpus evidence; parked with that
+   note rather than bolted on overnight.
+
+**Absences, verified with the searches named:** 999 (Project Co 'A'
+shares) — no cell holds it; 50,000 (Issuer capital) — no cell; the
+process thresholds (£200,000, £100,000, £5,000, £250,000, 2% over
+LIBOR, the 10%/50%/5% APB ladder) — searched by value and by name,
+none present as labelled cells, all removed from the denominator as
+predicted in the ground-truth file.
+
+**What this test actually said:** the audit engine is ready for real
+closed-deal models today — it found publication-grade defects a human
+auditor would bill for, unprompted. The grounding engine's precision
+discipline held perfectly under the heaviest silence test it has
+faced, and its recall on legal documents is gated by one named reader
+problem — scanned tables — plus a vocabulary bridge decision that
+deserves corpus evidence, not a guess. Both go on the queue with
+their evidence attached.
