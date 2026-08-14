@@ -7,17 +7,45 @@ versus final determinations (19 December 2024). Same audit engine,
 same configuration, both sides. Findings matched on rule + sheet +
 cell name, never address; unmatchable findings bucketed, not guessed.
 
-## The earned sentence
+## The headline, and how to tell it
 
-**Across one major revision of a professional financial model suite,
-84 new mechanical defects appeared across sixteen company models —
-ten of the sixteen models gained at least one.** Hand-verified
-sample: 11 of 12 genuine regressions read in the cells, 1 of 12 new
-structure, 0 reading artefacts.
+**Lead with Yorkshire, not with the total.** During the revision, one
+company's entire post-financeability-adjustments block — forty cells
+across five years — went from live formulas to typed constants, in
+exactly the section the revision was about. That is the finding a
+modeller feels; the suite-wide total is the evidence it was not a
+fluke: **84 new mechanical defects across sixteen company models,
+ten of sixteen gaining at least one.** Hand-verified sample: 11 of
+12 genuine regressions read in the cells, 1 of 12 new structure,
+0 reading artefacts.
 
 One revision cycle, one publisher, the regulator's own FAST-standard
 models — not bank-built deal models, and not a per-version rate.
-Exactly this and nothing more.
+Exactly this and nothing more. And a caveat volunteered before
+anyone else raises it: **this was an unusually violent revision** —
+the programme moved from £88bn to £104bn under formal objection — so
+84 is better read as a ceiling than an average.
+
+## The four-to-one question, answered in advance
+
+Revision also repaired 338 findings — a reader will divide 338 by 84
+in six seconds and ask why churn that nets positive needs watching.
+Three answers, in ascending order of weight:
+
+1. **Attention asymmetry.** The 338 were fixed because people were
+   looking — a live consultation, companies objecting, every figure
+   contested. The 84 arrived silently through the same process.
+2. **Averages are not what anyone buys.** No director is harmed by
+   their model improving on average; they are harmed by the forty
+   cells nobody told them about. One undetected regression is the
+   cost event; net improvement is irrelevant to it.
+3. **Timing.** The 338 were caught mid-process, while scrutiny was
+   still running. The 84 sit in the *final published version* — the
+   one that governs £104bn for five years — and no further revision
+   is coming to catch them. Every defect that survives the last
+   human checkpoint is permanent. Continuous checking is not a
+   nicer cadence; it is the only thing that looks after the last
+   look.
 
 ## Per-pair results
 
@@ -72,6 +100,21 @@ The financeability mechanism — the very thing reworked as allowances
 moved from £88bn to £104bn under company objections — is where the
 regressions cluster. Revision under pressure marks exactly the cells
 the pressure touches.
+
+**The defect-changed-class cases are the most valuable technical
+result here.** A checklist asking « is this cell a formula? » scores
+Severn Trent's `N1885` as *fixed* — the formula is back. Only reading
+*inside* the formula finds the `-0.490096707821704` typed into its
+tail. A process that checks cell types cannot make this distinction;
+an engine that parses formulas makes it in milliseconds, and it is
+demonstrable to a sceptic in seconds.
+
+**The ~581 template findings are a product instruction, not a
+footnote.** If a professional model opens with hundreds of inherited
+findings, a screen that lists « everything wrong » is unusable on day
+one — « new since the version you trusted » is not a nice default
+but the only usable view. This study is the empirical validation of
+the readiness dashboard's design.
 
 Sampling note, stated plainly: the 12 verified findings were chosen
 across companies and rule classes (stratified), not by uniform random
