@@ -176,3 +176,10 @@ server/scripts/corpus_regulator/
 # Redis persistence snapshot, written by the dev Redis into the working
 # tree. Runtime state, recreated on every save — never source.
 server/dump.rdb
+
+# SFT closed-deal corpus (Dumfries & Galloway pair and siblings),
+# fetched from contracts.scottishfuturestrust.org.uk's S3 bucket for the
+# closed-deal test. NOT openly licensed: SFT's terms allow personal-use
+# download only — cite and link, never republish, so never commit.
+# docs/pierce/closed-deal-ground-truth.md records what each file is.
+server/scripts/corpus_sft/
