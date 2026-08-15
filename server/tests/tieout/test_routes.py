@@ -807,6 +807,37 @@ class TestThePanel:
         assert len(ids) == 1
 
     @pytest.mark.auth
+    async def test_a_deal_can_be_removed_and_stays_removed(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The route that did not exist: the panel's picker was listing
+        every pre-pivot test deal with no way anywhere to be rid of
+        them. Soft delete, membership as the whole permission."""
+        deal = await _deal_for(session, save_fixture, user)
+        await session.flush()
+
+        assert (await client.delete(f"/v1/tieout/deals/{deal.id}")).status_code == 204
+        ids = [one["id"] for one in (await client.get("/v1/tieout/deals")).json()]
+        assert str(deal.id) not in ids
+
+    @pytest.mark.auth
+    async def test_a_stranger_cannot_remove_a_deal(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        deal = await _deal_for(session, save_fixture, stranger)
+        await session.flush()
+
+        assert (await client.delete(f"/v1/tieout/deals/{deal.id}")).status_code == 404
+
+    @pytest.mark.auth
     async def test_a_deal_nobody_has_checked_does_not_look_clear(
         self,
         client: AsyncClient,

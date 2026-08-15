@@ -622,6 +622,26 @@ async def list_deals(
     return items
 
 
+@router.delete("/deals/{dossier_id}", status_code=204)
+async def delete_deal(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    """Remove a deal from Antford — soft, like every delete here.
+
+    The route that did not exist, found the day the panel's picker was
+    still listing every test deal from before the product pivoted and
+    there was no way anywhere to be rid of them. Membership is the
+    whole permission, matching the rest of the module: a person on the
+    deal can remove it, and a person not on it gets the same 404 as
+    everywhere else. Soft deletion keeps the rows — findings, notes,
+    decisions — so nothing a team wrote is destroyed by a cleanup.
+    """
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    deal.set_deleted_at()
+
+
 @router.post("/deals/{dossier_id}/visit", status_code=204)
 async def visit_deal(
     dossier_id: UUID,

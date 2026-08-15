@@ -150,6 +150,8 @@ export interface DealPageProps {
   onChecking: (running: boolean) => void
   openDocId: string | null
   onOpenDoc: (doc: Artifact) => void
+  /** The model was removed — the shell goes back to the list. */
+  onRemoved?: () => void
 }
 
 export const DealPage = ({
@@ -159,6 +161,7 @@ export const DealPage = ({
   onChecking,
   openDocId,
   onOpenDoc,
+  onRemoved,
 }: DealPageProps) => {
   const [page, setPage] = useState<DealPageData | null>(null)
   const [findings, setFindings] = useState<Finding[] | null>(null)
@@ -176,6 +179,9 @@ export const DealPage = ({
   const [noteText, setNoteText] = useState<string | null>(null)
   const [noteGlow, setNoteGlow] = useState(false)
   const [saving, setSaving] = useState(false)
+  //: The remove control's two steps — a destructive act never fires
+  //: on its first click.
+  const [removing, setRemoving] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -956,6 +962,78 @@ export const DealPage = ({
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+          {/* Remove — quiet until asked, and never done on one click. */}
+          {onRemoved !== undefined && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: 14,
+                padding: '26px 0 8px',
+              }}
+            >
+              {!removing ? (
+                <button
+                  type="button"
+                  onClick={() => setRemoving(true)}
+                  style={{
+                    border: 0,
+                    outline: 'none',
+                    background: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    color: ink.faint,
+                  }}
+                >
+                  Remove this model from Antford
+                </button>
+              ) : (
+                <>
+                  <span style={{ fontSize: 13, color: ink.secondary }}>
+                    Its findings and notes are kept. Remove it?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      api
+                        .removeDeal(dealId)
+                        .then(() => onRemoved())
+                        .catch(() => setRemoving(false))
+                    }
+                    style={{
+                      border: 0,
+                      outline: 'none',
+                      background: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: ink.danger,
+                    }}
+                  >
+                    Remove
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRemoving(false)}
+                    style={{
+                      border: 0,
+                      outline: 'none',
+                      background: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      color: ink.secondary,
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </>
               )}
             </div>
           )}

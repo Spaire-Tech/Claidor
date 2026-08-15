@@ -598,7 +598,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               textWrap: 'balance',
             }}
           >
-            Which deal does this belong to?
+            Which model does this belong to?
           </div>
           <div
             style={{
@@ -610,7 +610,25 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
           >
             Asked once — the answer is kept inside the file itself.
           </div>
-          <DealList onChoose={(id) => void panel.chooseDeal(id)} />
+          {panel.error && (
+            //: The refusal that breaks the old ask-loop: picking a
+            //: model that does not hold this file now says so instead
+            //: of asking the same question again.
+            <div
+              style={{
+                fontSize: 13,
+                color: '#a35c07',
+                lineHeight: 1.5,
+                marginTop: 12,
+                textWrap: 'pretty',
+              }}
+            >
+              {panel.error}
+            </div>
+          )}
+          <DealList
+            onChoose={(id, name) => void panel.chooseDeal(id, name)}
+          />
         </div>
       </Shell>
     )
@@ -1143,7 +1161,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
         {panel.identity?.matched_by === 'filename' && (
           <button
             onClick={panel.rechoose}
-            title="Not this deal?"
+            title="Not this model?"
             style={{
               flex: '0 0 auto',
               border: 0,
@@ -1155,7 +1173,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               padding: 2,
             }}
           >
-            Not this deal?
+            Not this model?
           </button>
         )}
         <button
@@ -1183,7 +1201,11 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
  * design's row type. Each carries its file count and open findings,
  * because two deals named alike are told apart by what is in them.
  */
-function DealList({ onChoose }: { onChoose: (id: string) => void }) {
+function DealList({
+  onChoose,
+}: {
+  onChoose: (id: string, name: string) => void
+}) {
   const [deals, setDeals] = useState<DealListItem[] | null>(null)
   const asked = useRef(false)
 
@@ -1209,7 +1231,7 @@ function DealList({ onChoose }: { onChoose: (id: string) => void }) {
   if (deals.length === 0)
     return (
       <div style={{ padding: '14px 0', fontSize: 13, color: '#a1a1a6' }}>
-        You are not on any deals yet.
+        You are not on any models yet.
       </div>
     )
 
@@ -1218,7 +1240,7 @@ function DealList({ onChoose }: { onChoose: (id: string) => void }) {
       {deals.map((deal, index) => (
         <button
           key={deal.id}
-          onClick={() => onChoose(deal.id)}
+          onClick={() => onChoose(deal.id, deal.name)}
           style={{
             display: 'flex',
             alignItems: 'baseline',

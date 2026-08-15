@@ -6,18 +6,22 @@
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
 
-  <!-- Claidor in PowerPoint, Excel and Word.
+  <!-- Antford in Excel.
 
-       ONE manifest for three hosts, not three. The panel is the same web
-       page in all of them; what differs is which document API it calls,
-       and that is decided at run time in `src/host/`. Three manifests
-       would be three files to keep in step for no gain.
+       Excel only, by the product's own posture: the customer lives in
+       Excel, and the panel audits the model they have open. The Word and
+       PowerPoint hosts this manifest used to register are retired with
+       that decision — their bridge code stays in `src/host/` dormant, and
+       re-adding a <Host> line here is all it would take to wake one.
 
-       Outlook is separate — `manifest.outlook.xml` — and has to be. It is
-       a MailApp, a different `xsi:type` with a different override schema,
-       because a draft is not a document: there is nothing to stamp and
-       nothing to select. That is a real difference in the host, not a
-       packaging decision.
+       The Id is unchanged from the first release on purpose: Office
+       treats the Id as the add-in's identity, so re-adding this manifest
+       *updates* the existing install instead of standing a second add-in
+       beside it.
+
+       Outlook remains a separate file — `manifest.outlook.xml` — because
+       a MailApp is a different xsi:type; it is dormant and not offered
+       anywhere in the product.
 
        YOUR-DOMAIN.example.com is a placeholder on purpose — a manifest is
        a deployment artifact. `scripts/stamp-manifests.mjs` writes stamped
@@ -26,11 +30,11 @@
        will not load a task pane from a file path. -->
 
   <Id>3e1b9a24-7c05-4d18-9f6e-2a41c8d5b730</Id>
-  <Version>1.0.0.0</Version>
-  <ProviderName>Claidor</ProviderName>
+  <Version>1.1.0.0</Version>
+  <ProviderName>Antford</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Claidor" />
-  <Description DefaultValue="Checks that every figure in this document ties back to the model it came from, and shows the chain behind each one." />
+  <DisplayName DefaultValue="Antford" />
+  <Description DefaultValue="Audits the model you have open — every check an auditor runs, each one pointing at a cell." />
   <IconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-80.png" />
   <SupportUrl DefaultValue="https://YOUR-DOMAIN.example.com/support" />
@@ -43,9 +47,7 @@
   </AppDomains>
 
   <Hosts>
-    <Host Name="Presentation" />
     <Host Name="Workbook" />
-    <Host Name="Document" />
   </Hosts>
 
   <DefaultSettings>
@@ -56,46 +58,6 @@
 
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
     <Hosts>
-
-      <!-- PowerPoint. The host the panel exists for: a findings list beside
-           the slide, jumping to the shape as you click it. -->
-      <Host xsi:type="Presentation">
-        <DesktopFormFactor>
-          <GetStarted>
-            <Title resid="GetStarted.Title" />
-            <Description resid="GetStarted.Description" />
-            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
-          </GetStarted>
-          <ExtensionPoint xsi:type="PrimaryCommandSurface">
-            <OfficeTab id="TabHome">
-              <Group id="Claidor.Group">
-                <Label resid="Group.Label" />
-                <Icon>
-                  <bt:Image size="16" resid="Icon.16" />
-                  <bt:Image size="32" resid="Icon.32" />
-                  <bt:Image size="80" resid="Icon.80" />
-                </Icon>
-                <Control xsi:type="Button" id="Claidor.Open">
-                  <Label resid="Button.Label" />
-                  <Supertip>
-                    <Title resid="Button.Label" />
-                    <Description resid="Button.Tooltip" />
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16" />
-                    <bt:Image size="32" resid="Icon.32" />
-                    <bt:Image size="80" resid="Icon.80" />
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>Claidor.Taskpane</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url" />
-                  </Action>
-                </Control>
-              </Group>
-            </OfficeTab>
-          </ExtensionPoint>
-        </DesktopFormFactor>
-      </Host>
 
       <!-- Excel. The model's own host: an audit finding names a cell, and
            a cell is a coordinate Excel selects as it stands. -->
@@ -108,14 +70,14 @@
           </GetStarted>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
-              <Group id="Claidor.Group.Excel">
+              <Group id="Antford.Group.Excel">
                 <Label resid="Group.Label" />
                 <Icon>
                   <bt:Image size="16" resid="Icon.16" />
                   <bt:Image size="32" resid="Icon.32" />
                   <bt:Image size="80" resid="Icon.80" />
                 </Icon>
-                <Control xsi:type="Button" id="Claidor.Open.Excel">
+                <Control xsi:type="Button" id="Antford.Open.Excel">
                   <Label resid="Button.Label" />
                   <Supertip>
                     <Title resid="Button.Label" />
@@ -127,46 +89,7 @@
                     <bt:Image size="80" resid="Icon.80" />
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>Claidor.Taskpane</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url" />
-                  </Action>
-                </Control>
-              </Group>
-            </OfficeTab>
-          </ExtensionPoint>
-        </DesktopFormFactor>
-      </Host>
-
-      <!-- Word. A memo cites the same figures the deck prints. -->
-      <Host xsi:type="Document">
-        <DesktopFormFactor>
-          <GetStarted>
-            <Title resid="GetStarted.Title" />
-            <Description resid="GetStarted.Description" />
-            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
-          </GetStarted>
-          <ExtensionPoint xsi:type="PrimaryCommandSurface">
-            <OfficeTab id="TabHome">
-              <Group id="Claidor.Group.Word">
-                <Label resid="Group.Label" />
-                <Icon>
-                  <bt:Image size="16" resid="Icon.16" />
-                  <bt:Image size="32" resid="Icon.32" />
-                  <bt:Image size="80" resid="Icon.80" />
-                </Icon>
-                <Control xsi:type="Button" id="Claidor.Open.Word">
-                  <Label resid="Button.Label" />
-                  <Supertip>
-                    <Title resid="Button.Label" />
-                    <Description resid="Button.Tooltip" />
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16" />
-                    <bt:Image size="32" resid="Icon.32" />
-                    <bt:Image size="80" resid="Icon.80" />
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>Claidor.Taskpane</TaskpaneId>
+                    <TaskpaneId>Antford.Taskpane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
                   </Action>
                 </Control>
@@ -189,13 +112,13 @@
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://YOUR-DOMAIN.example.com/index.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Claidor is ready" />
-        <bt:String id="Group.Label" DefaultValue="Claidor" />
-        <bt:String id="Button.Label" DefaultValue="Check figures" />
+        <bt:String id="GetStarted.Title" DefaultValue="Antford is ready" />
+        <bt:String id="Group.Label" DefaultValue="Antford" />
+        <bt:String id="Button.Label" DefaultValue="Antford" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Open the panel to see which figures in this document tie back to the model, and which do not." />
-        <bt:String id="Button.Tooltip" DefaultValue="Open Claidor beside this document." />
+        <bt:String id="GetStarted.Description" DefaultValue="Open the panel to audit the model in front of you. Every finding points at the cell it came from." />
+        <bt:String id="Button.Tooltip" DefaultValue="Audit the model you have open." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

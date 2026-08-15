@@ -949,6 +949,12 @@ export class TieOutApi {
     return this.call(`/deals/${dealId}/visit`, { method: 'POST' })
   }
 
+  /** Remove a model from Antford. Soft on the server — findings and
+   *  notes are kept, nothing a team wrote is destroyed by a cleanup. */
+  removeDeal(dealId: string): Promise<void> {
+    return this.call(`/deals/${dealId}`, { method: 'DELETE' })
+  }
+
   /**
    * Run both checks. Comes back with the runs themselves — their status,
    * their summary and when they started and finished — which is what the
