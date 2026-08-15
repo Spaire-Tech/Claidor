@@ -49,11 +49,8 @@ import {
   inputGlow,
   listCard,
   microsoftLogo,
-  outlookLogo,
-  powerpointLogo,
   sectionHead,
   well,
-  wordLogo,
 } from '../design'
 import { avatarOf, initialsOf } from './DealPage'
 
@@ -251,15 +248,10 @@ export const Settings = ({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            padding: '8px 12px',
-            background: 'rgba(255,255,255,.55)',
-            backdropFilter: 'blur(34px) saturate(1.8)',
-            WebkitBackdropFilter: 'blur(34px) saturate(1.8)',
-            border: '1px solid rgba(255,255,255,.9)',
-            borderRadius: 30,
-            boxShadow:
-              '0 12px 34px rgba(16,20,28,.14), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.95)',
+            gap: 4,
+            padding: 4,
+            background: 'rgba(21,23,27,.045)',
+            borderRadius: 26,
           }}
         >
           {(
@@ -274,14 +266,14 @@ export const Settings = ({
               onClick={() => setTab(one.key)}
               style={{
                 border: 0,
-                background: tab === one.key ? '#fff' : 'transparent',
+                background: tab === one.key ? '#ffffff' : 'transparent',
                 boxShadow:
-                  tab === one.key ? '0 2px 8px rgba(16,20,28,.14)' : 'none',
+                  tab === one.key ? '0 1px 2px rgba(16,20,28,.10)' : 'none',
                 borderRadius: 22,
                 padding: '11px 26px',
                 font: 'inherit',
                 fontSize: 14.5,
-                fontWeight: tab === one.key ? 600 : 400,
+                fontWeight: tab === one.key ? 500 : 400,
                 letterSpacing: '-.01em',
                 color: tab === one.key ? ink.accent : ink.dock,
                 cursor: 'pointer',
@@ -303,7 +295,7 @@ export const Settings = ({
           justifyContent: 'center',
         }}
       >
-        <div style={{ width: '100%', maxWidth: 760 }}>
+        <div style={{ width: '100%', maxWidth: 620 }}>
           {tab === 'conn' && (
             <div>
               <div style={{ ...sectionHead, padding: '0 4px 9px' }}>
@@ -476,18 +468,20 @@ export const Settings = ({
                   textOverflow: 'ellipsis',
                 }}
               >
-                Pierce reads. It never writes to your files or your mailbox. It
+                Antford reads. It never writes to your files or your mailbox. It
                 can only see what you can already open.
               </div>
 
-              {/* The design's « The Office add-in » section. Install
+              {/* The design's « The Excel add-in » section — Excel is the
+                  product's one Office surface now; the Word, PowerPoint
+                  and Outlook rows are retired with the posture. Install
                   downloads the manifest — a web page cannot reach inside
                   Office to install one — and the sentence that appears
                   under the card with the next step is the borrowed
-                  « Pierce reads » card idiom: the design draws no
-                  post-click state. Flagged for the founder's pass. */}
+                  read-only card idiom: the design draws no post-click
+                  state. Flagged for the founder's pass. */}
               <div style={{ ...sectionHead, padding: '26px 4px 9px' }}>
-                The Office add-in
+                The Excel add-in
               </div>
               <div style={{ ...listCard, overflow: 'hidden' }}>
                 <div
@@ -498,45 +492,10 @@ export const Settings = ({
                     padding: '17px 16px 17px 20px',
                   }}
                 >
-                  <span style={{ display: 'flex', gap: 12, flex: '0 0 auto' }}>
-                    {[
-                      [wordLogo, 'Word'],
-                      [excelLogo, 'Excel'],
-                      [powerpointLogo, 'PowerPoint'],
-                    ].map(([logo, name]) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        key={name}
-                        src={logo}
-                        alt={name}
-                        style={{ width: 30, height: 30, objectFit: 'contain' }}
-                      />
-                    ))}
-                  </span>
-                  <span style={{ flex: 1 }} />
-                  <button
-                    onClick={() => {
-                      setInstallNote('docs')
-                      takeManifest('/panel/manifest.xml')
-                    }}
-                    style={installButton}
-                  >
-                    Install
-                  </button>
-                </div>
-                <div
-                  style={{
-                    borderTop: hairline,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 16,
-                    padding: '17px 16px 17px 20px',
-                  }}
-                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={outlookLogo}
-                    alt="Outlook"
+                    src={excelLogo}
+                    alt="Excel"
                     style={{
                       flex: '0 0 30px',
                       width: 30,
@@ -544,11 +503,21 @@ export const Settings = ({
                       objectFit: 'contain',
                     }}
                   />
-                  <span style={{ flex: 1 }} />
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 16,
+                      fontWeight: 500,
+                      letterSpacing: '-.015em',
+                    }}
+                  >
+                    Microsoft Excel
+                  </span>
                   <button
                     onClick={() => {
-                      setInstallNote('mail')
-                      takeManifest('/panel/manifest.outlook.xml')
+                      setInstallNote('docs')
+                      takeManifest('/panel/manifest.xml')
                     }}
                     style={installButton}
                   >
@@ -623,14 +592,10 @@ export const Settings = ({
                     lineHeight: 1.5,
                   }}
                 >
-                  {installNote === 'docs'
-                    ? 'The manifest is downloading. In PowerPoint, Excel or ' +
-                      'Word: Home → Add-ins → More Add-ins → My Add-ins → ' +
-                      'Upload My Add-in, and pick the file. IT can push it ' +
-                      'to everyone at once with the link below.'
-                    : 'The manifest is downloading. In Outlook: ' +
-                      'aka.ms/olksideload → My Add-ins → Add a custom ' +
-                      'add-in → Add from file, and pick the file.'}
+                  {'The manifest is downloading. In Excel: Home → Add-ins → ' +
+                    'More Add-ins → My Add-ins → Upload My Add-in, and pick ' +
+                    'the file. IT can push it to everyone at once with the ' +
+                    'link below.'}
                 </div>
               )}
               {/* The design's « Folders Pierce can see » / « Mailbox »
