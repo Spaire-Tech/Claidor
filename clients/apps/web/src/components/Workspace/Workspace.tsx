@@ -77,6 +77,12 @@ export const Workspace = ({
   //: The Antford design opens the deal's chat from the header's « Ask »
   //: — the pane no longer rides along uninvited.
   const [askOpen, setAskOpen] = useState(false)
+  //: The check screen's phase, reported up so the header can grow
+  //: « Check another » beside a finished check.
+  const [checkPhase, setCheckPhase] = useState<'idle' | 'running' | 'done'>(
+    'idle',
+  )
+  const [checkResetNonce, setCheckResetNonce] = useState(0)
 
   //: Every deal this person is on. Null while loading — the screens tell
   //: « still asking » apart from « asked, and there are none », because
@@ -156,7 +162,9 @@ export const Workspace = ({
           ? { scope: 'deal', dealId: deal.id, dealName: deal.name }
           : null
       : view === 'check'
-        ? checkChat
+        ? askOpen
+          ? checkChat
+          : null
         : null
 
   const hasDeal = view === 'deals' && deal !== null
@@ -333,6 +341,39 @@ export const Workspace = ({
                 </button>
               </>
             )}
+            {view === 'check' && checkPhase === 'done' && (
+              //: The design's `cDoneBar`: Ask beside « Check another ».
+              //: « Export report » joins them with the report sheet it
+              //: opens, next phase.
+              <>
+                <button
+                  onClick={() => setAskOpen((was) => !was)}
+                  style={{
+                    border: 0,
+                    background: askOpen ? '#e7e7ea' : '#f0f0f2',
+                    color: ink.primary,
+                    borderRadius: 11,
+                    padding: '9px 15px',
+                    font: 'inherit',
+                    fontSize: 13.5,
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Ask
+                </button>
+                <button
+                  onClick={() => {
+                    setAskOpen(false)
+                    setCheckResetNonce((was) => was + 1)
+                  }}
+                  style={{ ...blueButton, marginRight: 4 }}
+                >
+                  Check another
+                </button>
+              </>
+            )}
             {view === 'deals' && deal === null && (deals?.length ?? 0) > 0 && (
               <button
                 onClick={() => setNewOpen(true)}
@@ -370,7 +411,13 @@ export const Workspace = ({
               onNewDeal={() => setNewOpen(true)}
             />
           ) : view === 'check' ? (
-            <CheckFile api={api} deals={deals} onChat={setCheckChat} />
+            <CheckFile
+              api={api}
+              organizationId={organizationId}
+              onChat={setCheckChat}
+              onPhase={setCheckPhase}
+              resetNonce={checkResetNonce}
+            />
           ) : (
             <Settings
               api={api}
