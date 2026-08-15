@@ -2149,3 +2149,54 @@ The verdict line's «M checks pass» comes from the firm's own rule
 catalogue against the failing rules, and «· 11:42» from the last
 finished check — both new panel API reads. The old panel's UI
 primitives retired with their design.
+
+---
+
+## 15 August — structure layer, round 1: the floor under the analytical checks
+
+**Protocol first** (`analytical-checks-protocol.md`), tolerances and
+pass criteria fixed before any code, grounded in a survey of AFW and
+Dumfries recorded inside it. Then `polar/tieout/structure.py` — period
+axes from each sheet's own labels, sections from the model's own SUMs,
+opening/closing pairs by vocabulary, block location needing two
+independent anchors or abstaining — and a survey harness run over all
+22 corpus models.
+
+**Round-1 results.** Balance sheet located on 19 of 22 (86%): all
+sixteen Ofwat models (the five FinStat sheets each, every anchor
+printed), Bertha Park, Dumfries (BS and its audited twin), RHSC
+(PF8_Balance Sheet). Debt schedules on the three biggest close models
+(eight schedules between them — Constr/Ops splits and per-phase calcs
+— each anchored by tranche vocabulary plus a carried pair). The Ofwat
+models abstain on debt, which is right: a regulator's notional debt
+has no repayment schedule. 103 opening/closing pairs across the close
+models. Check sheets found everywhere they exist, including « Audit »,
+« Integrity Checks » and Ofwat's « Model Checks and Alerts ».
+
+**Zero mislocations seen** in the printed anchors, with the protocol's
+full hand-verification sample still owed before Phase 1 is declared
+passed — the claim so far is « nothing wrong found », not « verified ».
+
+**Two discoveries bigger than the round:**
+
+1. **Every issued Scottish close model is values-pasted** — zero
+   formula tags across millions of cells, in all five files. Issued
+   close models routinely ship with formulas stripped, which means the
+   mechanical audit is half blind on exactly the files deals publish —
+   and the analytical checks, which run on cached values, are the only
+   checks that can speak there. The layer records the fact
+   (`values_pasted`) so a screen can say it.
+2. **Label-pairing is the wrong balance arithmetic.** A dry run
+   pairing « Net assets » with « Total equity » on AFW produced a 0.86
+   discrepancy on a published determination model — multiple bases
+   share those words. Phase 2's balance check will key on the model's
+   own check rows and subtotal tree, or abstain. Corroborate, never
+   impose.
+
+**Round 2 items** (accuracy backlog): Ofwat pairs are found by
+formula shape, not vocabulary (their continuity lives in « Error
+chks » rows); Anderson and Elgin abstain on everything — coverage,
+not correctness, and the next vocabulary round; the `.xls` Ayrshire
+file loads but yields no axis — the old-format label path needs
+reading. Semi-annual Dumfries recorded as 2 columns/year rather than
+flagged, as the protocol demands.

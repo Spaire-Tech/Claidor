@@ -1358,3 +1358,21 @@ faced, and its recall on legal documents is gated by one named reader
 problem — scanned tables — plus a vocabulary bridge decision that
 deserves corpus evidence, not a guess. Both go on the queue with
 their evidence attached.
+
+## Structure layer, after round 1 (15 August)
+
+- **Ofwat opening/closing pairs: 0 found.** Their continuity is not in
+  opening/closing vocabulary but in per-item « Error chks X balance »
+  rows and in formula shape (closing = opening + movements). Add
+  formula-shape pair detection; key the cash check on it.
+- **Anderson and Elgin: full abstention.** Both located nothing —
+  correct behaviour, missing coverage. Read their sheet and row
+  vocabulary and grow the anchors.
+- **Ayrshire (.xls): no period axis.** The legacy-format path loads
+  cells but the column labels do not come through as periods.
+- **Balance arithmetic: label-pairing rejected** (0.86 on AFW naive
+  net-assets-vs-equity). Phase 2 keys on the model's own check rows
+  and the subtotal tree, or abstains.
+- **Phase-1 hand-verification sample owed**: every sheet of two Ofwat
+  and two Scottish models read against the survey's claims before the
+  phase is declared passed.
