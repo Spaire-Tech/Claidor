@@ -3,9 +3,9 @@
 /**
  * The chat — the founder's design, wired to the agent.
  *
- * Source of truth: `docs/pierce/design/markup.html`, the `chatOpen`
- * block. One panel, three scopes, and the scope decides what the agent
- * can reach:
+ * Source of truth: `docs/pierce/design-antford/workspace.html`, the
+ * `chatOpen` block. One pane, three scopes, and the scope decides what
+ * the agent can reach:
  *
  * - **A deal.** Questions go to the deal agent — six read-only tools
  *   over the loaded deal, every figure in the answer from a tool call,
@@ -74,27 +74,29 @@ const rowOf = (step: ChainStep): ChainRow => {
   return { what: what ?? '', value: step.printed ?? step.value ?? '' }
 }
 
-/** Questions each scope's tools can genuinely answer — not the design's
- *  demo lines, which name people and cells this deal may not have. */
+/** Questions each scope's tools can genuinely answer — in the Antford
+ *  design's own register (its demo asks « What is a hardcode, in plain
+ *  terms? »), but never its demo lines, which name people and cells
+ *  this deal may not have. */
 const SUGGESTIONS: Record<ChatContext['scope'], string[]> = {
   deal: [
-    'What is open on this deal?',
-    'What was not checked, and why?',
-    'Which files could not be read?',
+    'What fails on this model right now?',
+    'What was accepted, and why?',
+    'What did the checks not cover?',
   ],
   finding: [
-    'Where does the model figure come from?',
+    'Where does this figure come from?',
     'What else reads this cell?',
-    'What feeds the cell behind it?',
+    'Does this actually matter?',
   ],
   file: [
-    'What disagrees inside this file?',
+    'What is a hardcode, in plain terms?',
+    'Does any of this actually matter?',
     'What was read, and what was not?',
-    'What was it checked against?',
   ],
   'file-finding': [
-    'Where exactly do these appear?',
-    'How was the match made?',
+    'Where exactly does this appear?',
+    'Does this actually matter?',
     'What else did the check find?',
   ],
 }
@@ -247,12 +249,12 @@ export const Chat = ({
 
   const fresh = asked === 0 && (rows.length === 0 || rows.length > 1)
   const empty = rows.length === 0
+  //: The design's greeting, verbatim — « this model », not the deal's
+  //: name: the product's unit of speech is the model now.
   const greeting =
-    context.scope === 'file' || context.scope === 'file-finding'
-      ? 'Ask me about this file.'
-      : context.scope === 'deal'
-        ? `Ask me about ${context.dealName}.`
-        : `Ask me about this finding.`
+    context.scope === 'finding'
+      ? 'Ask me about this finding.'
+      : 'Ask me about this model.'
 
   return (
     <div
@@ -362,11 +364,14 @@ export const Chat = ({
             }}
           >
             {row.role === 'user' && (
+              //: The design writes this bubble in translucent white — a
+              //: value from the glassy frame it retired, invisible on
+              //: the pane's own white. The nearest drawn surface that
+              //: reads here is the writing-box wash; borrowed, flagged.
               <div
                 style={{
                   alignSelf: 'flex-end',
-                  background: 'rgba(255,255,255,.78)',
-                  border: '1px solid rgba(255,255,255,.7)',
+                  background: '#f5f5f7',
                   borderRadius: 15,
                   padding: '11px 15px',
                   maxWidth: '90%',
@@ -469,7 +474,18 @@ export const Chat = ({
             gap: 18,
           }}
         >
-          <PierceMark />
+          {/* The Antford mark — the design's Bodoni « A », which
+              retires the old nine-dot Pierce mark. */}
+          <span
+            style={{
+              fontFamily: font.brand,
+              fontSize: 34,
+              fontWeight: 400,
+              lineHeight: 1,
+            }}
+          >
+            A
+          </span>
           <span
             style={{
               fontSize: 22,
@@ -666,24 +682,3 @@ export const Chat = ({
     </div>
   )
 }
-
-/** The Pierce mark, from the design's own paths. */
-const PierceMark = () => (
-  <svg
-    width="44"
-    height="44"
-    viewBox="0 0 100 100"
-    fill="#0b62c4"
-    aria-label="Pierce"
-  >
-    <circle cx="26" cy="26" r="13" />
-    <ellipse cx="50" cy="26" rx="13" ry="8" transform="rotate(-45 50 26)" />
-    <ellipse cx="74" cy="26" rx="13" ry="4" transform="rotate(-45 74 26)" />
-    <ellipse cx="26" cy="50" rx="13" ry="8" transform="rotate(-45 26 50)" />
-    <ellipse cx="50" cy="50" rx="9.5" ry="4" transform="rotate(-45 50 50)" />
-    <ellipse cx="74" cy="50" rx="13" ry="8" transform="rotate(-45 74 50)" />
-    <ellipse cx="26" cy="74" rx="13" ry="4" transform="rotate(-45 26 74)" />
-    <ellipse cx="50" cy="74" rx="13" ry="8" transform="rotate(-45 50 74)" />
-    <circle cx="74" cy="74" r="13" />
-  </svg>
-)

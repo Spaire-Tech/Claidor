@@ -144,9 +144,23 @@ export interface Coverage {
   reasons: { reason: string; count: number }[]
 }
 
-/** Coverage, and whether a check ever produced it. */
+/** Coverage, and whether a check ever produced it — plus the facts the
+ *  Antford verdict line needs: whose rules to ask for, when the last
+ *  check finished, and whether the model has changed since. */
 export interface Checked extends Coverage {
   checked: boolean
+  organization_id: string
+  /** When the last finished check ended. Null: never. */
+  checked_at: string | null
+  /** The model changed after that check — the verdict is out of date. */
+  stale: boolean
+}
+
+/** One audit rule, as the house-rules endpoint lists it. */
+export interface AuditRule {
+  key: string
+  label: string
+  on: boolean
 }
 
 export class ApiError extends Error {
@@ -243,11 +257,24 @@ export class TieOutApi {
     })
   }
 
-  dismiss(findingId: string, state: Finding['state']): Promise<Finding> {
+  dismiss(
+    findingId: string,
+    state: Finding['state'],
+    note = '',
+  ): Promise<Finding> {
     return this.call(`/findings/${findingId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ state }),
+      body: JSON.stringify({ state, note }),
     })
+  }
+
+  /** The audit's own catalogue with the firm's switches — what
+   *  « N checks pass » counts against. */
+  async auditRules(organizationId: string): Promise<AuditRule[]> {
+    const rules = await this.call<{ rules: AuditRule[] }>(
+      `/house-rules?organization_id=${organizationId}`,
+    )
+    return rules.rules
   }
 
   /**
@@ -263,8 +290,23 @@ export class TieOutApi {
   async coverage(dealId: string): Promise<Checked> {
     const deal = await this.call<{
       coverage: Coverage
-      last_tieout: { status: string; error: string | null } | null
+      organization_id: string
+      stale: boolean
+      last_tieout: {
+        status: string
+        error: string | null
+        finished_at: string | null
+      } | null
+      last_audit: {
+        status: string
+        error: string | null
+        finished_at: string | null
+      } | null
     }>(`/deals/${dealId}`)
+    //: The audit's clock beats the tie-out's for a model panel — it is
+    //: the check whose findings this column shows.
+    const checkedAt =
+      deal.last_audit?.finished_at ?? deal.last_tieout?.finished_at ?? null
     return {
       ...deal.coverage,
       checked: Boolean(
@@ -272,6 +314,9 @@ export class TieOutApi {
         deal.last_tieout.status === 'done' &&
         !deal.last_tieout.error,
       ),
+      organization_id: deal.organization_id,
+      checked_at: checkedAt,
+      stale: deal.stale,
     }
   }
 

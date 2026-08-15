@@ -1,0 +1,1 @@
+{"$preview":{"width":1440,"height":900},"startScreen":{"editor":"enum","options":["Log in","Authorize","Checking","Findings"],"default":"Log in","tsType":"string","section":"Panel"},"modelEdited":{"editor":"boolean","default":false,"tsType":"boolean","section":"Panel"}}
