@@ -59,9 +59,7 @@ async def _deal_for(
     )
     # The dashboard only reaches an organization its user belongs to, so
     # every real caller has this row; the settings routes check it.
-    session.add(
-        UserOrganization(user_id=owner.id, organization_id=organization.id)
-    )
+    session.add(UserOrganization(user_id=owner.id, organization_id=organization.id))
     await session.flush()
     return deal
 
@@ -1081,8 +1079,7 @@ class TestCheckAFile:
                 "file": (
                     "cascade_model.xlsx",
                     MODEL.read_bytes(),
-                    "application/vnd.openxmlformats-officedocument"
-                    ".spreadsheetml.sheet",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
             },
         )
@@ -1144,9 +1141,7 @@ class TestCheckAFile:
         assert recents[0]["filename"] == "cascade_deck.pptx"
         assert recents[0]["against"] == ""
 
-        replayed = (
-            await client.get(f"/v1/tieout/check-file/{checked['id']}")
-        ).json()
+        replayed = (await client.get(f"/v1/tieout/check-file/{checked['id']}")).json()
         assert replayed == checked
 
         # Another person's recent does not exist, rather than being
@@ -1169,7 +1164,6 @@ class TestHouseRules:
     """The firm's rules: stored per organization, and actually obeyed."""
 
     async def _org_of(self, session: AsyncSession, deal: Dossier):
-
         return deal.organization_id
 
     @pytest.mark.auth
@@ -1259,9 +1253,7 @@ class TestHouseRules:
             await client.get(f"/v1/tieout/deals/{deal.id}/findings?kind=audit")
         ).json()
         assert [one for one in with_rule if one["rule"] == "hardcode-in-formula"]
-        assert not [
-            one for one in without_rule if one["rule"] == "hardcode-in-formula"
-        ]
+        assert not [one for one in without_rule if one["rule"] == "hardcode-in-formula"]
 
     @pytest.mark.auth
     async def test_grounding_off_means_two_runs_not_a_failed_third(
@@ -1293,9 +1285,7 @@ class TestTheTeam:
         deal = await _deal_for(session, save_fixture, user)
         colleague = await create_user(save_fixture)
         session.add(
-            UserOrganization(
-                user_id=colleague.id, organization_id=deal.organization_id
-            )
+            UserOrganization(user_id=colleague.id, organization_id=deal.organization_id)
         )
         await session.flush()
 
@@ -1348,9 +1338,7 @@ class TestTheChat:
         from tests.dossier.test_agent_loop import says
 
         deal = await _loaded(session, save_fixture, user)
-        finding = (
-            await client.get(f"/v1/tieout/deals/{deal.id}/findings")
-        ).json()[0]
+        finding = (await client.get(f"/v1/tieout/deals/{deal.id}/findings")).json()[0]
 
         fake = self._client(says("Looked up, not composed."))
         self._configure(monkeypatch, fake)
@@ -1387,9 +1375,7 @@ class TestTheChat:
 
         deal = await _loaded(session, save_fixture, user)
         other = await _loaded(session, save_fixture, user)
-        stray = (
-            await client.get(f"/v1/tieout/deals/{other.id}/findings")
-        ).json()[0]
+        stray = (await client.get(f"/v1/tieout/deals/{other.id}/findings")).json()[0]
 
         self._configure(monkeypatch, self._client(says("never reached")))
         response = await client.post(
