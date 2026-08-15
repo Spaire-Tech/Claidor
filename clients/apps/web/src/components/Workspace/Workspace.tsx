@@ -74,6 +74,9 @@ export const Workspace = ({
   //: report their finding contexts; the deal scope is derived below.
   const [docChat, setDocChat] = useState<ChatContext | null>(null)
   const [checkChat, setCheckChat] = useState<ChatContext | null>(null)
+  //: The Antford design opens the deal's chat from the header's « Ask »
+  //: — the pane no longer rides along uninvited.
+  const [askOpen, setAskOpen] = useState(false)
 
   //: Every deal this person is on. Null while loading — the screens tell
   //: « still asking » apart from « asked, and there are none », because
@@ -132,6 +135,7 @@ export const Workspace = ({
     setDoc(null)
     setDocChat(null)
     setCheckChat(null)
+    setAskOpen(false)
     setAcctOpen(false)
   }
 
@@ -141,14 +145,16 @@ export const Workspace = ({
     setDocChat(null)
   }
 
-  //: The design's rule: the chat rides beside a deal page, beside an
-  //: open finding, and beside a finished check — never beside a document
-  //: panel that has no finding open.
+  //: The design's rule: the chat rides beside an open finding and
+  //: beside a finished check; beside a deal page it appears only when
+  //: « Ask » was pressed — never uninvited.
   const chatContext: ChatContext | null =
     view === 'deals' && deal !== null
       ? doc !== null
         ? docChat
-        : { scope: 'deal', dealId: deal.id, dealName: deal.name }
+        : askOpen
+          ? { scope: 'deal', dealId: deal.id, dealName: deal.name }
+          : null
       : view === 'check'
         ? checkChat
         : null
@@ -235,6 +241,7 @@ export const Workspace = ({
                   onClick={() => {
                     setDeal(null)
                     openDoc(null)
+                    setAskOpen(false)
                   }}
                   style={{
                     display: 'flex',
@@ -274,21 +281,57 @@ export const Workspace = ({
                 >
                   {deal!.name}
                 </span>
+                {deal!.client && (
+                  <span
+                    style={{
+                      flex: '0 1 auto',
+                      minWidth: 0,
+                      color: ink.secondary,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {deal!.client}
+                  </span>
+                )}
               </>
             )}
             <div style={{ flex: 1 }} />
             {hasDeal && (
-              <button
-                onClick={() => !checking && setCheckNonce((was) => was + 1)}
-                style={{
-                  ...blueButton,
-                  marginRight: 4,
-                  opacity: checking ? 0.55 : 1,
-                  cursor: checking ? 'default' : 'pointer',
-                }}
-              >
-                {checking ? 'Checking' : 'Recheck now'}
-              </button>
+              <>
+                {/* « Export report » sits beside Ask in the design; it
+                    opens the report sheet, which is the next phase —
+                    the button arrives with the thing it opens. */}
+                <button
+                  onClick={() => setAskOpen((was) => !was)}
+                  style={{
+                    border: 0,
+                    background: askOpen ? '#e7e7ea' : '#f0f0f2',
+                    color: ink.primary,
+                    borderRadius: 11,
+                    padding: '9px 15px',
+                    font: 'inherit',
+                    fontSize: 13.5,
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Ask
+                </button>
+                <button
+                  onClick={() => !checking && setCheckNonce((was) => was + 1)}
+                  style={{
+                    ...blueButton,
+                    marginRight: 4,
+                    opacity: checking ? 0.55 : 1,
+                    cursor: checking ? 'default' : 'pointer',
+                  }}
+                >
+                  {checking ? 'Checking' : 'Recheck now'}
+                </button>
+              </>
             )}
             {view === 'deals' && deal === null && (deals?.length ?? 0) > 0 && (
               <button
@@ -309,6 +352,7 @@ export const Workspace = ({
               deal={deal}
               onOpen={(one) => {
                 setDeal(one)
+                setAskOpen(false)
                 // Opening is the seen-event: « since you looked » clears
                 // for this person, and only for them. Fire-and-forget —
                 // a failed mark must never block the page.
