@@ -25,7 +25,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import type { Checked, Finding, Identified } from './api'
+import type { AuditRule, Checked, Finding, Identified } from './api'
 import { ApiError, TieOutApi } from './api'
 import { current, signOut as forget, signIn as openSignIn } from './auth'
 import type { GoToResult, HostBridge, OpenDocument, WriteResult } from './host'
@@ -44,6 +44,9 @@ export interface PanelState {
   identity: Identified | null
   findings: Finding[]
   coverage: Checked | null
+  /** The audit's catalogue with the firm's switches, for « N checks
+   *  pass ». Null until the deal names its organization. */
+  rules: AuditRule[] | null
   error: string | null
   /** True while a check is running, so a button can say so. */
   working: boolean
@@ -55,6 +58,7 @@ const EMPTY: PanelState = {
   identity: null,
   findings: [],
   coverage: null,
+  rules: null,
   error: null,
   working: false,
 }
@@ -63,6 +67,11 @@ export function usePanel(
   bridge: HostBridge,
   api: TieOutApi,
   signInUrl: string,
+  //: The design's « Allow access » face gates Antford's own reading:
+  //: until it is pressed once, the panel does not touch the workbook.
+  //: False holds the machine at `loading` so the consent screen can sit
+  //: in front; flipping it true lets the ordinary resolve run.
+  allowed = true,
 ) {
   const [state, setState] = useState<PanelState>(EMPTY)
 
@@ -81,6 +90,12 @@ export function usePanel(
         findings,
         coverage,
       }))
+      //: The catalogue arrives second and quietly — the findings list
+      //: does not wait on a settings read to render.
+      api
+        .auditRules(coverage.organization_id)
+        .then((rules) => setState((was) => ({ ...was, rules })))
+        .catch(() => undefined)
     },
     [api],
   )
@@ -138,14 +153,17 @@ export function usePanel(
       setState((was) => ({ ...was, stage: 'signed-out' }))
       return
     }
+    if (!allowed) return
     void resolve()
-  }, [resolve])
+  }, [resolve, allowed])
 
   const signIn = useCallback(async () => {
     try {
       await openSignIn(signInUrl)
       setState((was) => ({ ...was, stage: 'loading', error: null }))
-      await resolve()
+      //: Not yet allowed: hold at `loading` — the consent face sits in
+      //: front, and flipping `allowed` runs the resolve effect above.
+      if (allowed) await resolve()
     } catch (error) {
       setState((was) => ({
         ...was,
@@ -196,8 +214,8 @@ export function usePanel(
   )
 
   const dismiss = useCallback(
-    async (finding: Finding, next: Finding['state']) => {
-      const updated = await api.dismiss(finding.id, next)
+    async (finding: Finding, next: Finding['state'], note = '') => {
+      const updated = await api.dismiss(finding.id, next, note)
       setState((was) => ({
         ...was,
         findings: was.findings.map((one) =>

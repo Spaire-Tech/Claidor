@@ -50,3 +50,33 @@ textarea {
   outline: none;
   box-shadow: none;
 }
+
+/* The Antford panel design's own keyframes and scrollbar. */
+@keyframes antford-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes antford-fade {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(21, 23, 27, 0.16);
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
