@@ -95,5 +95,88 @@ if __name__ == '__main__':
         print('  MISSED: the own-check reader did not catch the seeded value')
         passes = False
 
+    #: Cash: break a carry mid-life — an opening cell that should
+    #: read the previous closing gets 5000 added, in a period with
+    #: live carries after it.
+    from polar.tieout.structure import read_structure as _rs
+    structure = _rs(source)
+    seeded_cash = None
+    for pair in structure.pairs:
+        if pair.sheet != 'Ph2 Calcs' or 'sub debt' not in (pair.label or ''):
+            continue
+        axis = structure.axes[pair.sheet]
+        columns = [c for c, _ in axis.columns]
+        middle = columns[len(columns) // 2]
+        from openpyxl.utils import get_column_letter
+        coordinate = f'{get_column_letter(middle)}{pair.opening_row}'
+        cell = source.cells.get(f'{pair.sheet}!{coordinate}')
+        if cell is None or cell.value is None:
+            continue
+        seeded_cash = (pair.sheet, coordinate, float(cell.value) + 5000.0)
+        break
+    if seeded_cash is None:
+        print('  no cash seed target found')
+        passes = False
+    else:
+        seeded = seed('cash', seeded_cash[0], seeded_cash[1], seeded_cash[2])
+        if not expect(seeded, 'cash-continuity', seeded_cash[1]):
+            print('  MISSED: the cash check did not catch the seeded break')
+            passes = False
+
+    #: Debt: an amortising tranche left nonzero — find a closing row on
+    #: a debt sheet that declines to zero, and lift its final decline
+    #: step so it ends at 4200 instead.
+    seeded_debt = None
+    for pair in structure.pairs:
+        if pair.sheet not in {b.sheet for b in structure.located if b.kind == 'debt-schedule'}:
+            continue
+        if not pair.label or 'sub debt' not in pair.label:
+            continue
+        axis = structure.axes[pair.sheet]
+        closing = {}
+        for c, _ in axis.columns:
+            from openpyxl.utils import get_column_letter
+            cell = source.cells.get(f'{pair.sheet}!{get_column_letter(c)}{pair.closing_row}')
+            if cell is not None and cell.value is not None:
+                closing[c] = float(cell.value)
+        lived = [c for c in sorted(closing) if abs(closing[c]) > 1]
+        if len(lived) < 5:
+            continue
+        #: The tranche's own last four closings must already decline.
+        tail = [closing[c] for c in lived[-4:]]
+        if not all(abs(tail[i]) > abs(tail[i + 1]) for i in range(3)):
+            continue
+        last = lived[-1]
+        from openpyxl.utils import get_column_letter
+        # every column after the last live one gets the nonzero remnant
+        seeded_debt = (pair.sheet, pair.closing_row, last, axis)
+        break
+    if seeded_debt is None:
+        print('  no debt seed target found')
+        passes = False
+    else:
+        sheet, row, last, axis = seeded_debt
+        from openpyxl.utils import get_column_letter
+        SEEDED.mkdir(exist_ok=True)
+        out = SEEDED / 'dumfries_debt.xlsx'
+        workbook = openpyxl.load_workbook(str(SOURCE), data_only=True, keep_vba=False)
+        page = workbook[sheet]
+        #: The remnant must look like what the check exists for: a
+        #: balance still amortising at the horizon — strictly declining
+        #: and never reaching zero. A flat remnant is (correctly)
+        #: rejected by the decline gate; the first seed proved that.
+        step = 0
+        for c, _ in axis.columns:
+            if c >= last:
+                cell = page[f'{get_column_letter(c)}{row}']
+                if isinstance(cell.value, (int, float)):
+                    cell.value = float(cell.value) + 4200.0 * (0.9 ** step)
+                    step += 1
+        print(f'debt: seeded {sheet} row {row}: +4200 from column {last} on')
+        workbook.save(str(out))
+        if not expect(out, 'debt-terminal', sheet):
+            print('  MISSED: the debt check did not catch the seeded remnant')
+            passes = False
+
     print('\nrecall:', 'PASS' if passes else 'FAIL')
     sys.exit(0 if passes else 1)

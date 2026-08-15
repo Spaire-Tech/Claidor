@@ -93,6 +93,8 @@ def run_analytics(book: Workbook, structure: Structure) -> Analytics:
     _own_checks(book, structure, result)
     _balance(book, structure, result)
     _time_axis(structure, result)
+    _cash_continuity(book, structure, result)
+    _debt_terminal(book, structure, result)
     return result
 
 
@@ -370,3 +372,231 @@ def _time_axis(structure: Structure, result: Analytics) -> None:
                     )
                 )
                 break
+
+
+# --- cash tie-through -----------------------------------------------------
+
+#: A pair is only walked when it behaves like a carry: at least this
+#: share of its adjacent-column comparisons agree. A genuinely broken
+#: link breaks in one or a few periods; a pair that disagrees half the
+#: time is a mispairing, and flagging it would be our error published
+#: as the model's.
+CARRY_AGREEMENT = 0.8
+
+#: And at least this many comparable adjacent columns before the pair
+#: can claim anything.
+CARRY_COLUMNS = 4
+
+
+def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) -> None:
+    """Closing balance in one period must be opening in the next.
+
+    Walks every pair the structure layer found — vocabulary and formula
+    alike — column by column along the sheet's own axis, comparing the
+    previous column's closing value with this column's opening value.
+    Values, not formulas, so it speaks on values-pasted files, and it
+    is exactly the check that catches the error nothing mechanical can
+    see: a healthy-looking formula pointing at the wrong place shows up
+    only as cash that does not carry.
+
+    Three gates, all structural:
+    - Comparisons stay inside one monotone segment of the axis — the
+      side-by-side blocks of a budget sheet never compare across.
+    - A pair claims nothing until CARRY_AGREEMENT of its comparisons
+      agree: broken links are isolated; wholesale disagreement means
+      the pairing itself is wrong, which is our abstention, not the
+      model's finding.
+    - The protocol tolerance, floor and relative part both.
+    """
+    if not structure.pairs:
+        result.abstentions.append(
+            Abstention('cash-continuity', 'No opening/closing pairs were found.')
+        )
+        return
+
+    year = re.compile(r"^(?:19|20)\d{2}$")
+    for pair in structure.pairs:
+        axis = structure.axes.get(pair.sheet)
+        if axis is None:
+            continue
+        opening: dict[int, float] = {}
+        closing: dict[int, float] = {}
+        for cell in book.cells.values():
+            if cell.sheet != pair.sheet or not isinstance(cell.value, Decimal):
+                continue
+            if cell.row == pair.opening_row:
+                opening[cell.column] = float(cell.value)
+            elif cell.row == pair.closing_row:
+                closing[cell.column] = float(cell.value)
+
+        #: Adjacent axis columns, never across a backwards step — the
+        #: segment boundary of a side-by-side layout.
+        steps: list[tuple[int, int, str]] = []
+        columns = list(axis.columns)
+        for at in range(1, len(columns)):
+            previous_column, previous_label = columns[at - 1]
+            column, label = columns[at]
+            canon_prev, canon_here = _canon(previous_label), _canon(label)
+            if (
+                year.match(canon_prev)
+                and year.match(canon_here)
+                and int(canon_here) < int(canon_prev)
+            ):
+                continue
+            steps.append((previous_column, column, label))
+
+        breaks: list[tuple[int, int, str, float, float]] = []
+        agreed = 0
+        live_agreements: list[int] = []
+        for previous_column, column, label in steps:
+            was = closing.get(previous_column)
+            now = opening.get(column)
+            if was is None or now is None:
+                continue
+            scale = max(abs(was), abs(now), 1.0)
+            if abs(now - was) <= max(FLOOR, scale * 1e-6):
+                agreed += 1
+                #: An agreement between zeros is dormancy, not a carry.
+                if abs(was) > FLOOR or abs(now) > FLOOR:
+                    live_agreements.append(column)
+            else:
+                breaks.append((previous_column, column, label, was, now))
+
+        #: A real broken link is a gap the carry *resumes after* — a
+        #: live agreement beyond the break. An account that never
+        #: carries again is winding down: Anderson's construction cash
+        #: agrees for years, sweeps out over two settlement periods and
+        #: goes dormant (hand-read, 15 August); nothing there is a
+        #: defect, and zero-against-zero tails do not count as life.
+        breaks = [
+            one
+            for one in breaks
+            if any(later > one[1] for later in live_agreements)
+        ]
+
+        compared = agreed + len(breaks)
+        if compared < CARRY_COLUMNS:
+            continue
+        if not breaks:
+            continue
+        if agreed / compared < CARRY_AGREEMENT:
+            #: Wholesale disagreement is a mispairing — ours, not the
+            #: model's. One abstention per pair, named.
+            result.abstentions.append(
+                Abstention(
+                    'cash-continuity',
+                    f'{pair.sheet} rows {pair.opening_row}/{pair.closing_row} '
+                    f'(« {pair.label} »): {len(breaks)} of {compared} periods '
+                    'disagree — treated as a mispairing, not reported.',
+                )
+            )
+            continue
+        from openpyxl.utils import get_column_letter
+
+        for previous_column, column, label, was, now in breaks:
+            result.findings.append(
+                AnalyticFinding(
+                    rule='cash-continuity',
+                    sheet=pair.sheet,
+                    ref=f'{pair.sheet}!{get_column_letter(column)}{pair.opening_row}',
+                    row_label=pair.label or 'balance',
+                    period=label,
+                    value=now - was,
+                    detail=(
+                        f'« {pair.label or "This account"} » does not carry '
+                        f'forward into {label}: closing {was:,.6g} against '
+                        f'opening {now:,.6g}.'
+                    ),
+                )
+            )
+
+
+# --- debt repays to zero --------------------------------------------------
+
+_DEBTISH_LABEL = re.compile(
+    r"\b(?:debt|loan|senior|sub[- ]?debt|bond|tranche|facilit|mezz)\b",
+    re.IGNORECASE,
+)
+
+#: A tranche only claims « ends nonzero » when its balance was walking
+#: down — at least this many strictly-declining closing values before
+#: the end. A revolver fluctuates and is not a repayment profile.
+DECLINE_STEPS = 3
+
+
+def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> None:
+    """A repaying tranche whose balance does not reach zero.
+
+    Scope: pairs on located debt-machinery sheets whose label reads as
+    debt. The claim is narrow by construction — the balance must have
+    been amortising (DECLINE_STEPS strictly-declining closings into the
+    end of the axis) and still end above tolerance relative to its own
+    peak. A tranche that reaches zero and stays there passes; one that
+    fluctuates to the end is a revolver and abstains silently; one
+    still amortising at the model's horizon may simply outlive the
+    model, which the declining gate cannot tell apart from a broken
+    repayment — so the finding quotes the peak, and the reader judges.
+    """
+    debt_sheets = {
+        block.sheet for block in structure.located if block.kind == 'debt-schedule'
+    }
+    if not debt_sheets:
+        result.abstentions.append(
+            Abstention('debt-terminal', 'No debt schedule was located.')
+        )
+        return
+
+    from openpyxl.utils import get_column_letter
+
+    for pair in structure.pairs:
+        if pair.sheet not in debt_sheets:
+            continue
+        if pair.label and not _DEBTISH_LABEL.search(pair.label):
+            continue
+        axis = structure.axes.get(pair.sheet)
+        if axis is None:
+            continue
+        closing = {
+            cell.column: float(cell.value)
+            for cell in book.cells.values()
+            if cell.sheet == pair.sheet
+            and cell.row == pair.closing_row
+            and isinstance(cell.value, Decimal)
+        }
+        series = [
+            closing[column] for column, _ in axis.columns if column in closing
+        ]
+        if len(series) < DECLINE_STEPS + 2:
+            continue
+        peak = max(abs(value) for value in series)
+        if peak <= FLOOR:
+            continue
+        terminal = series[-1]
+        if abs(terminal) <= max(FLOOR, peak * 1e-6):
+            continue
+        #: Was it amortising into the end? Strictly-declining magnitudes
+        #: over the last DECLINE_STEPS+1 values.
+        tail = series[-(DECLINE_STEPS + 1):]
+        declining = all(
+            abs(tail[at]) > abs(tail[at + 1]) for at in range(len(tail) - 1)
+        )
+        if not declining:
+            continue
+        last_column = [column for column, _ in axis.columns if column in closing][-1]
+        last_label = dict(axis.columns).get(last_column, '')
+        result.findings.append(
+            AnalyticFinding(
+                rule='debt-terminal',
+                sheet=pair.sheet,
+                ref=f'{pair.sheet}!{get_column_letter(last_column)}{pair.closing_row}',
+                row_label=pair.label or 'debt balance',
+                period=last_label,
+                value=terminal,
+                detail=(
+                    f'« {pair.label or "This tranche"} » amortises to the end '
+                    f'of the model but finishes at {terminal:,.6g}, not zero'
+                    + (f' ({last_label})' if last_label else '')
+                    + f' — against a peak of {peak:,.6g}.'
+                ),
+            )
+        )

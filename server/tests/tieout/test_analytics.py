@@ -170,3 +170,95 @@ class TestTimeAxis:
         ]
         result = _run(cells)
         assert [f for f in result.findings if f.rule == 'time-axis'] == []
+
+
+class TestCashContinuity:
+    def _pair(self, opening: list[float], closing: list[float]) -> list:
+        count = len(opening)
+        cells = [
+            _cell('S', f'H{i}1', 1, i + 3, column_label=f'FY{2020 + i}')
+            for i in range(count)
+        ]
+        cells += [
+            _cell('S', f'C{i}10', 10, i + 3, value=Decimal(str(v)),
+                  row_label='DSRA opening balance')
+            for i, v in enumerate(opening)
+        ]
+        cells += [
+            _cell('S', f'C{i}14', 14, i + 3, value=Decimal(str(v)),
+                  row_label='DSRA closing balance')
+            for i, v in enumerate(closing)
+        ]
+        return cells
+
+    def test_a_clean_carry_says_nothing(self) -> None:
+        result = _run(self._pair([0, 10, 20, 30, 40, 50],
+                                 [10, 20, 30, 40, 50, 60]))
+        assert [f for f in result.findings if f.rule == 'cash-continuity'] == []
+
+    def test_a_break_in_a_living_account_is_a_finding(self) -> None:
+        #: Closing 20 in FY2021 never reaches FY2022's opening — and
+        #: the account keeps living, so this is the invisible error.
+        result = _run(self._pair([0, 10, 999, 30, 40, 50],
+                                 [10, 20, 30, 40, 50, 60]))
+        fired = [f for f in result.findings if f.rule == 'cash-continuity']
+        assert len(fired) == 1
+        assert fired[0].period == 'FY2022'
+
+    def test_a_wind_down_is_not_a_break(self) -> None:
+        #: Anderson's construction cash: carries, then sweeps out over
+        #: two settlement periods and goes dormant. Hand-read;
+        #: deliberate — and the zero-against-zero tail is not life.
+        result = _run(self._pair([0, 10, 20, 30, 0, 0],
+                                 [10, 20, 30, -5, 40, 0]))
+        assert [f for f in result.findings if f.rule == 'cash-continuity'] == []
+
+    def test_wholesale_disagreement_claims_nothing(self) -> None:
+        #: Rows that never agree were never a carry — the pairing is
+        #: ours to doubt, and a carry that never resumes is never a
+        #: break. Silence, not a finding.
+        result = _run(self._pair([0, 1, 2, 3, 4, 5],
+                                 [66, 77, 88, 99, 111, 122]))
+        assert [f for f in result.findings if f.rule == 'cash-continuity'] == []
+
+
+class TestDebtTerminal:
+    def _tranche(self, closing: list[float], label: str = 'Senior loan closing balance') -> list:
+        count = len(closing)
+        cells = [
+            _cell('Debt', f'H{i}1', 1, i + 3, column_label=f'FY{2020 + i}')
+            for i in range(count)
+        ]
+        #: The sheet must locate as debt machinery: tranche vocabulary
+        #: plus the pair itself.
+        cells += [
+            _cell('Debt', 'A2', 2, 3, row_label='Drawdown'),
+            _cell('Debt', 'A3', 3, 3, row_label='Repayment'),
+            _cell('Debt', 'A4', 4, 3, row_label='Interest'),
+        ]
+        cells += [
+            _cell('Debt', f'C{i}10', 10, i + 3, value=Decimal(str(v)),
+                  row_label='Senior loan opening balance')
+            for i, v in enumerate(closing)
+        ]
+        cells += [
+            _cell('Debt', f'C{i}14', 14, i + 3, value=Decimal(str(v)),
+                  row_label=label)
+            for i, v in enumerate(closing)
+        ]
+        return cells
+
+    def test_a_tranche_that_repays_to_zero_passes(self) -> None:
+        result = _run(self._tranche([100, 80, 60, 40, 20, 0]))
+        assert [f for f in result.findings if f.rule == 'debt-terminal'] == []
+
+    def test_an_amortising_tranche_ending_nonzero_is_the_finding(self) -> None:
+        result = _run(self._tranche([100, 80, 60, 40, 20, 4.2]))
+        fired = [f for f in result.findings if f.rule == 'debt-terminal']
+        assert len(fired) == 1
+        assert fired[0].value == 4.2
+        assert 'not zero' in fired[0].detail
+
+    def test_a_revolver_abstains_silently(self) -> None:
+        result = _run(self._tranche([100, 40, 90, 30, 80, 20]))
+        assert [f for f in result.findings if f.rule == 'debt-terminal'] == []
