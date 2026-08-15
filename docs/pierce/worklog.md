@@ -2327,3 +2327,34 @@ model's structure, checks it as a set of financial statements, finds
 the fired checks nobody reads in the files deals actually closed on —
 and has never once, across 44 model-runs of survey, said something
 about a published model that a hand-read did not confirm.
+
+## The panel audit — why « it just does not work »
+
+The founder opened the add-in in Excel and got the old product: the
+name Claidor, the old logo, deals from before the pivot, and a
+choose-screen that asked the same question forever. Audited end to
+end; four distinct defects, all real.
+
+**The ask-loop.** The identify endpoint answers `matched_by: none`
+when the chosen deal holds no file by the open workbook's name — and
+the panel answered that by silently showing the choose screen again.
+Pick, loop, pick, loop. Fixed by making the refusal speak: the choose
+face now says which model was tried and which filename it does not
+hold, and what to do about it.
+
+**The branding.** The deployed manifest still said Claidor everywhere
+— provider, display name, ribbon button, tooltips — and shipped the
+old mark. Rewritten as Antford throughout, new Bodoni-A icons at all
+five sizes, and trimmed to Excel only: the Word and PowerPoint host
+entries are gone with the pivot. Same manifest Id, so re-adding the
+add-in updates the install in place.
+
+**The stale deals.** Nothing could ever be removed — no delete route
+existed, so pre-pivot deals polluted the picker forever. Added
+`DELETE /deals/{id}` (soft, findings and notes kept), a two-step
+remove control on the model page, and the shell wiring that closes
+the page and refreshes the list.
+
+**The deployment fact underneath all of it:** what the founder tested
+is the last deployed build. Every fix here — and the entire Antford
+panel — lands only when the branch merges.
