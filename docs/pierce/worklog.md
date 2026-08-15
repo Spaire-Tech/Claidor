@@ -2070,3 +2070,52 @@ The sentence this buys, exactly as pre-registered: across one major
 revision of a professional financial model suite, 84 new mechanical
 defects appeared. No competitor can say it, because no competitor
 measured it.
+
+---
+
+## 15 August — the Antford workspace, rebuilt to the founder's redesign
+
+**The brief.** The founder redesigned the whole workspace (and the brand:
+Bodoni Moda wordmark, Instrument Sans face) and handed over the file —
+"the design changes. the logo too btw. mind everything." Checked in at
+`docs/pierce/design-antford/` as the new source of truth; built in three
+phases, each committed and pushed separately.
+
+**Phase 1 — brand, shell, models list.** Fonts vendored from the design's
+own binaries into web and panel (shared design block kept byte-identical;
+panel tests pin it). The floating-card frame retired: full-bleed white
+panes over a 1px `#eae7e2` seam, 54px header, translucent dock bar, the
+wordmark in Bodoni. The deals list became the design's sentence-rows —
+name left, verdict right («6 checks fail» amber, «Changed since check»
+blue, «All checks pass» green) over «Checked Tuesday 11:52». That verdict
+needed a number the API didn't carry: `failing_checks`, distinct rules
+among the open findings, tie-out counting as one — added to the deals
+endpoint and pinned in the route test against the findings list's own
+rules. Groups are «Needs attention» and «Clear»; never-checked deals keep
+their own undrawn state («Not checked yet», flagged).
+
+**Phase 2 — the model page.** Verdict in four faces (clean · stale ·
+spelled-out failing count · never-checked, the last composed because the
+design doesn't draw it). One card per failing check with new-vs-inherited
+tags read off the finding's first sighting against the current model
+version. Card modal: the finding's sentences, places listed, «Accept with
+a note» wired to the real per-finding accept (note required). Sectioned
+card: Checks that pass / did not run / Evidence locker / The model /
+Documents that quote it. Departures (all data-absent, none faked): no
+mini Excel grid in the modal, no «Open the cell» in web, no per-rule
+tallies, version rows say who uploaded rather than what changed.
+
+**Phase 3 — the rest.** Check a model rebuilt to the front door («Would
+this model survive its audit today?», dashed drop zone, glassy progress
+card with the design's staged steps, done view in the model page's own
+shapes with real sheet/formula counts). The design cut the against-picker
+and recents from that screen; so did the build. Settings: flat tab pill,
+design width, «The Excel add-in» only — Word/PowerPoint/Outlook rows
+retired with the two-surface posture. Doc panel and chat became flat
+panes; chat appears only when «Ask» is pressed and carries the design's
+close button.
+
+**Still open.** «Export report» and the report sheet ride with the demo
+kit (#18) — the button arrives with the thing it opens. The «Folders
+Antford watches» / «Mailbox» rows stay omitted (Change has no
+destination). The panel's own Antford redesign is with the founder.
