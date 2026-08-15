@@ -158,6 +158,58 @@ class TestBalancePairs:
         assert _account_word('DSRA opening balance') == 'dsra'
         assert _account_word('Closing cash') == 'cash'
 
+    def test_a_block_scoped_pair_survives_twelve_movement_rows(self) -> None:
+        #: Anderson's « Opening Cash » closes twelve rows later, with
+        #: the movements between — the block, not a distance cap, is
+        #: what scopes the closing.
+        cells = [
+            _cell('S', f'{c}1', 1, i + 3, column_label=f'FY{2020 + i}')
+            for i, c in enumerate('CDE')
+        ] + [
+            _cell('S', 'C217', 217, 3, row_label='Opening Cash'),
+            _cell('S', 'C229', 229, 3, row_label='Closing Cash'),
+            _cell('S', 'C240', 240, 3, row_label='Opening Balance'),
+            _cell('S', 'C250', 250, 3, row_label='Closing Balance'),
+        ]
+        pairs = balance_pairs(_book(cells), period_axes(_book(cells)))
+        assert [(p.opening_row, p.closing_row) for p in pairs] == [
+            (217, 229),
+            (240, 250),
+        ]
+
+    def test_a_closing_never_crosses_into_the_next_block(self) -> None:
+        cells = [
+            _cell('S', f'{c}1', 1, i + 3, column_label=f'FY{2020 + i}')
+            for i, c in enumerate('CDE')
+        ] + [
+            _cell('S', 'C10', 10, 3, row_label='Opening Balance'),
+            _cell('S', 'C12', 12, 3, row_label='Opening Balance'),
+            _cell('S', 'C14', 14, 3, row_label='Closing Balance'),
+        ]
+        pairs = balance_pairs(_book(cells), period_axes(_book(cells)))
+        #: The closing at 14 belongs to the block that starts at 12.
+        assert [(p.opening_row, p.closing_row) for p in pairs] == [(12, 14)]
+
+    def test_formula_shape_pairs_need_three_recurrences(self) -> None:
+        #: The FAST idiom: no vocabulary, the carry lives in a bare
+        #: reference to the previous period's closing row.
+        header = [
+            _cell('S', f'{c}1', 1, i + 3, column_label=f'FY{2020 + i}')
+            for i, c in enumerate('CDEF')
+        ]
+        carries = [
+            _cell('S', 'D10', 10, 4, formula='=C14'),
+            _cell('S', 'E10', 10, 5, formula='=D14'),
+            _cell('S', 'F10', 10, 6, formula='=E14'),
+        ]
+        pairs = balance_pairs(_book(header + carries), period_axes(_book(header)))
+        assert [(p.opening_row, p.closing_row, p.how) for p in pairs] == [
+            (10, 14, 'formula')
+        ]
+        #: Two recurrences are a coincidence, not a carry.
+        fewer = _book(header + carries[:2])
+        assert balance_pairs(fewer, period_axes(fewer)) == []
+
 
 class TestLocation:
     def test_one_anchor_is_not_enough(self) -> None:

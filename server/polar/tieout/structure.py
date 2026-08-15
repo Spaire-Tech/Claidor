@@ -259,21 +259,34 @@ def balance_pairs(book: Workbook, axes: dict[str, PeriodAxis]) -> list[BalancePa
 
     pairs: list[BalancePair] = []
     for sheet, cells in by_sheet.items():
-        openings = [c for c in cells if _OPENING.search(c.row_label)]
-        closings = [c for c in cells if _CLOSING.search(c.row_label)]
+        openings = sorted(
+            (c for c in cells if _OPENING.search(c.row_label)), key=lambda c: c.row
+        )
+        closings = sorted(
+            (c for c in cells if _CLOSING.search(c.row_label)), key=lambda c: c.row
+        )
         used: set[int] = set()
-        for opening in sorted(openings, key=lambda c: c.row):
+        for at, opening in enumerate(openings):
+            #: The block ends where the next opening begins — measured
+            #: on Anderson, whose « Opening Cash » closes twelve rows
+            #: later and whose dozens of generic « Opening Balance »
+            #: rows each head their own block.
+            block_end = (
+                openings[at + 1].row if at + 1 < len(openings) else opening.row + 40
+            )
             best: Cell | None = None
             for closing in closings:
-                if closing.row in used or closing.row == opening.row:
+                if closing.row in used or closing.row <= opening.row:
                     continue
-                if abs(closing.row - opening.row) > 8:
+                if closing.row >= block_end:
                     continue
-                if _account_word(opening.row_label) != _account_word(closing.row_label):
+                mine = _account_word(opening.row_label)
+                theirs = _account_word(closing.row_label)
+                #: Named accounts must agree; a generic label agrees
+                #: with anything inside its own block.
+                if mine and theirs and mine != theirs:
                     continue
-                if best is None or abs(closing.row - opening.row) < abs(
-                    best.row - opening.row
-                ):
+                if best is None or closing.row < best.row:
                     best = closing
             if best is None:
                 continue
@@ -290,7 +303,78 @@ def balance_pairs(book: Workbook, axes: dict[str, PeriodAxis]) -> list[BalancePa
                     how=how,
                 )
             )
+
+    #: The Ofwat idiom has no opening/closing vocabulary at all — its
+    #: carry lives in formula shape: a row's cell reads another row one
+    #: period earlier, column after column. Rows already paired by
+    #: words are not paired again.
+    worded = {(pair.sheet, pair.opening_row) for pair in pairs}
+    pairs.extend(
+        pair
+        for pair in _formula_pairs(book, axes)
+        if (pair.sheet, pair.opening_row) not in worded
+    )
     return pairs
+
+
+def _formula_pairs(book: Workbook, axes: dict[str, PeriodAxis]) -> list[BalancePair]:
+    """Pairs the formulas declare: row A's cell in period *n* is a bare
+    reference to row B in period *n−1*, recurring across at least three
+    periods. The recurrence is the model itself saying « B carries into
+    A » — no vocabulary needed, which is how the FAST models write
+    their continuity.
+    """
+    from collections import Counter
+
+    from openpyxl.utils import column_index_from_string
+
+    single = re.compile(r"^=\s*\$?([A-Z]{1,3})\$?(\d+)\s*$")
+    votes: Counter[tuple[str, int, int]] = Counter()
+    columns_of = {
+        sheet: [column for column, _ in axis.columns] for sheet, axis in axes.items()
+    }
+    for cell in book.cells.values():
+        columns = columns_of.get(cell.sheet)
+        if columns is None or not cell.formula:
+            continue
+        match = single.match(cell.formula.replace(" ", ""))
+        if not match:
+            continue
+        try:
+            at = columns.index(cell.column)
+        except ValueError:
+            continue
+        if at == 0:
+            continue
+        read_column = column_index_from_string(match.group(1))
+        read_row = int(match.group(2))
+        if read_column != columns[at - 1] or read_row == cell.row:
+            continue
+        votes[(cell.sheet, cell.row, read_row)] += 1
+
+    labels: dict[tuple[str, int], str] = {}
+    for cell in book.cells.values():
+        if cell.row_label:
+            labels.setdefault((cell.sheet, cell.row), cell.row_label.strip())
+
+    found: list[BalancePair] = []
+    taken: set[tuple[str, int]] = set()
+    for (sheet, opening_row, closing_row), count in votes.most_common():
+        if count < 3:
+            break
+        if (sheet, opening_row) in taken:
+            continue
+        taken.add((sheet, opening_row))
+        found.append(
+            BalancePair(
+                sheet=sheet,
+                opening_row=opening_row,
+                closing_row=closing_row,
+                label=labels.get((sheet, opening_row), ""),
+                how="formula",
+            )
+        )
+    return found
 
 
 def _account_word(label: str) -> str:
