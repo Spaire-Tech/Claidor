@@ -1389,3 +1389,13 @@ their evidence attached.
 - **Seeded axis dip on a real file**, matching the unit test.
 - **Anderson/Elgin present no balance sheet** — abstention is right;
   a statements-inside-workings locator is a coverage round, not a bug.
+
+## Analytical checks, after Phases 3-4 (15 August)
+
+- **Interest self-consistency** (the deferred Phase-4 half): needs
+  tranche-to-interest-row association before the stability test means
+  anything on floating-rate models.
+- **Catalogue integration**: surface the five analytic rules through
+  the audit's catalogue so findings reach the workspace, panel and
+  deals-list arithmetic; grade severity by magnitude relative to the
+  row's own scale.

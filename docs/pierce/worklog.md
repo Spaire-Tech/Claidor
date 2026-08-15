@@ -2283,3 +2283,47 @@ pairing vocabulary; when a model's own balance check itself fires, the
 own-check finding and the independent identity can both speak — de-dup
 before the catalogue; severity grading for tiny firings (±0.5); a
 seeded axis dip on a real file to match the unit test.
+
+---
+
+## 15 August — analytical checks, Phases 3 and 4: cash and debt pass
+
+**Cash tie-through** walks all 4,566 carries the structure layer found,
+along each sheet's own axis, on cached values — the check that catches
+the error nothing mechanical can see, on the values-pasted files where
+nothing else can be checked. Its three gates were each earned by a
+hand-read, not designed at a desk: segment boundaries are never
+compared across; a pair that mostly disagrees is our mispairing and
+says nothing; and a break only counts where the carry *resumes with
+live values* — Anderson's construction cash agrees for years, sweeps
+out over two settlement periods, and goes dormant, and no part of that
+is a defect, including the zero-against-zero tail that must not count
+as life. Round 1 fired nine times on the twins; every firing was read
+in the cells; the resume-gate silenced all nine as the phase-end
+sweeps they are.
+
+**Debt-terminal** claims the narrow thing a project financier cares
+about: a debt-worded tranche on located debt machinery, strictly
+amortising into the model's horizon, still above tolerance against
+its own peak. Revolvers fluctuate and abstain; repaid tranches pass.
+
+**Final sweep, all 22 models: six findings, zero false positives.**
+Every finding is a model's own check row firing, every one hand-read,
+every one in an issued financial-close file — Dumfries (329.15 and
+50.92), Elgin (±0.5), Ayrshire (±700,016). Recall proven on seeded
+copies of the real Dumfries file for all four shapes — imbalance,
+fired check row, mid-life carry break, declining debt remnant — each
+caught by cell name. The first debt seed was flat and the decline
+gate correctly refused it; the seed was reshaped, not the gate. 33
+unit tests pin every gate.
+
+**Interest self-consistency is the one protocol item deferred**, with
+its reason: floating-rate models make naive stability tests abstain
+everywhere, and doing it honestly needs tranche-to-interest-row
+association — its own measured round. Backlogged, not forgotten.
+
+**What exists now that did not a day ago:** an engine that reads a
+model's structure, checks it as a set of financial statements, finds
+the fired checks nobody reads in the files deals actually closed on —
+and has never once, across 44 model-runs of survey, said something
+about a published model that a hand-read did not confirm.
