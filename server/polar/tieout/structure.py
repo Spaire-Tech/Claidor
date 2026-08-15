@@ -45,7 +45,8 @@ PERIOD_LABEL = re.compile(
     r"""^\s*(?:
         (?:FY|CY|AY|LTM|NTM)?\s*(?:19|20)\d{2}(?:\s*/\s*\d{2})?\s*[AEPF]?
       | Q[1-4](?:\s*(?:19|20)\d{2})?
-      | (?:Year|Yr|Period|Sem|Semester|Half|H[12])\s*\d+
+      | (?:Year|Yr|Period|Sem|Semester)\s*\d+
+      | (?:Half\s*[12]|H[12])(?:\s*(?:19|20)\d{2})?
       | \d{1,2}[-/\s](?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s](?:19|20)?\d{2}
       | (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s](?:19|20)\d{2}
     )\s*$""",
