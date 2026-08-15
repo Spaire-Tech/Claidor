@@ -2119,3 +2119,33 @@ close button.
 kit (#18) — the button arrives with the thing it opens. The «Folders
 Antford watches» / «Mailbox» rows stay omitted (Change has no
 destination). The panel's own Antford redesign is with the founder.
+
+---
+
+## 15 August — the Excel panel, rebuilt to the founder's design
+
+The founder handed over the panel redesign («Floor is yours»). Checked
+in at `docs/pierce/design-antford-panel/`; the panel is the right-hand
+column of that file — the left half is a mock Excel drawn for context.
+
+What changed in kind, not just in dress: the panel's buttons are black
+(blue is for links and cell references), the mark is a Bodoni «A», a
+finding is a cell reference that moves the sheet when tapped, and the
+design draws the two ideas the product decided on earlier — the
+deliberate dismissal («That's fine» → «Why is this deliberate?», no
+save without a note) and the new-vs-inherited split («N older
+findings, carried over from before this file was watched»). Both were
+wired to real behaviour: the note goes through the per-finding accept,
+and the split reads each finding's first sighting against the current
+version's arrival.
+
+The consent face was the one place theatre threatened: «Allow access»
+looks like a permission exchange, and Office granted the add-in its
+permissions at install. It was made true instead — the state machine
+now holds before its first read of the workbook until Allow is pressed
+once, so the button gates exactly what it claims to.
+
+The verdict line's «M checks pass» comes from the firm's own rule
+catalogue against the failing rules, and «· 11:42» from the last
+finished check — both new panel API reads. The old panel's UI
+primitives retired with their design.
