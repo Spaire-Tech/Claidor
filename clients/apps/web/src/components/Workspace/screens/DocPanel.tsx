@@ -48,7 +48,7 @@ const OPEN_LABEL: Record<string, string> = {
 
 const panelHead = {
   fontSize: 12,
-  fontWeight: 600,
+  fontWeight: 500,
   letterSpacing: '.05em',
   textTransform: 'uppercase',
   color: '#86868b',
@@ -321,7 +321,7 @@ export const DocPanel = ({
 
         {facts.length > 0 && (
           <>
-            <div style={panelHead}>What Pierce found in it</div>
+            <div style={panelHead}>What Antford found in it</div>
             <div style={panelCard}>
               {facts.map((fact, index) => (
                 <div

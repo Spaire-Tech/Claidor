@@ -679,8 +679,8 @@ export const Settings = ({
                   lineHeight: 1.5,
                 }}
               >
-                Used whenever Pierce proposes a correction. Enforced only if the
-                House style check is on below.
+                Used whenever Antford proposes a correction. Enforced only if
+                the House style check is on below.
               </div>
               <div style={{ ...listCard, overflow: 'hidden' }}>
                 {WRITING.map((row, index) => (
