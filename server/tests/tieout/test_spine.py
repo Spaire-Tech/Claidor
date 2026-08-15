@@ -236,6 +236,56 @@ class TestChecking:
         assert "errors" in run.summary
         assert "smells" in run.summary
 
+    async def test_the_statement_checks_run_with_the_audit(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """The analytical layer lands in the same findings table.
+
+        A model whose own check row fires — the shape found in real
+        issued close files — must come back from an ordinary audit run
+        as a finding with the rule key, the headline figure, and the
+        run's tally saying one check row was read and none were clean.
+        """
+        import io
+
+        from openpyxl import Workbook as XlsxWorkbook
+
+        book = XlsxWorkbook()
+        sheet = book.active
+        assert sheet is not None
+        sheet.title = "Checks"
+        sheet["A1"] = "Check: cash ties to balance sheet"
+        for at, value in enumerate((0, 0, 0, 0, 42.5), start=2):
+            sheet.cell(row=1, column=at, value=value)
+        payload = io.BytesIO()
+        book.save(payload)
+
+        deal = await _deal(session, save_fixture, user)
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="close_model.xlsx",
+            payload=payload.getvalue(),
+            user_id=user.id,
+        )
+        run = await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
+        assert run.status is CheckStatus.done
+
+        repository = TieOutRepository.from_session(session)
+        fired = [
+            one
+            for one in await repository.findings_of(deal.id)
+            if one.rule == "model-own-check"
+        ]
+        assert fired, "the fired check row must land as a finding"
+        assert fired[0].evidence["figure"] == "42.5"
+        assert "built to read zero" in fired[0].evidence["figure_unit"]
+        assert run.summary["tallies"]["model-own-check"] == {
+            "total": 1,
+            "clean": 0,
+        }
+
 
 @pytest.mark.asyncio
 class TestWhatAPersonDecides:

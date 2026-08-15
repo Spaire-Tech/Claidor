@@ -310,6 +310,13 @@ class FindingRead(Schema):
     #: The change proposed for this finding, once anybody has looked at
     #: it. Null means nothing has been proposed — never « nothing can be ».
     correction: CorrectionRead | None = None
+    #: Statement-check findings only: the headline number, the phrase
+    #: saying what it is, the period it sits in, and the standard
+    #: spelled out — all composed by the engine, never by a screen.
+    figure: str = ""
+    figure_unit: str = ""
+    period: str = ""
+    standard_sentence: str = ""
 
 
 class FindingUpdate(Schema):
@@ -747,6 +754,14 @@ class AuditRuleRead(Schema):
     key: str
     label: str
     on: bool
+    #: True for the statement checks — whether the accounts hold
+    #: together — so the screens can group the two families without
+    #: keeping a list of their own.
+    analytical: bool = False
+    #: The check's passing sentence, where its name states the failure
+    #: — a « Checks that pass » row must never read « Cash does not
+    #: carry forward ». Empty when the label already serves.
+    pass_label: str = ""
 
 
 class HouseRulesRead(Schema):
@@ -854,7 +869,7 @@ class OneOffDrift(Schema):
 
 
 class OneOffDefect(Schema):
-    """One mechanical defect from a model's own audit."""
+    """One defect from a model's own audit — mechanical or statement."""
 
     rule: str
     #: `error` or `smell` — never added into one number.
@@ -866,6 +881,14 @@ class OneOffDefect(Schema):
     #: The standard the rule comes from, so a banker asking « says who »
     #: has an answer.
     standard: str = ""
+    #: True for a statement check — the family the screens group under
+    #: « Whether the accounts add up ».
+    analytical: bool = False
+    #: The headline number and its phrase, composed by the engine where
+    #: the measured values live. Empty for mechanical defects.
+    figure: str = ""
+    figure_unit: str = ""
+    period: str = ""
 
 
 class AgainstModel(Schema):
@@ -905,6 +928,12 @@ class OneOffResult(Schema):
     disagreements: list[SoloFindingRead] = []
     drifts: list[OneOffDrift] = []
     defects: list[OneOffDefect] = []
+    #: The statement checks' own record for a model: whether this is a
+    #: values-only copy, why a check stayed silent, and what each check
+    #: examined — so a pass row can carry a real count.
+    values_only: bool = False
+    abstentions: list[dict[str, str]] = []
+    tallies: dict[str, dict[str, int]] = {}
 
 
 class RecentCheck(Schema):

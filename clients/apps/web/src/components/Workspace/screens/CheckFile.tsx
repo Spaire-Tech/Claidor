@@ -39,11 +39,36 @@ import {
 } from '../api'
 import { ChatContext } from '../Chat'
 import { excelLogo, fileIcon, greyButton, ink, listCard, well } from '../design'
+import { FailCard, failGrid, failHead } from './DealPage'
 
 type Phase = 'idle' | 'running' | 'done'
 
-/** The design's spelled-out verdict — « Six checks don't pass. » */
-const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six']
+/** The design's spelled-out verdict — « Eleven checks don't pass. » */
+const WORDS = [
+  'No',
+  'One',
+  'Two',
+  'Three',
+  'Four',
+  'Five',
+  'Six',
+  'Seven',
+  'Eight',
+  'Nine',
+  'Ten',
+  'Eleven',
+  'Twelve',
+]
+
+/** What each statement check counts, for the pass row's tally —
+ *  same nouns as the model page. */
+const TALLY_NOUNS: Record<string, string> = {
+  'balance-sheet': 'periods',
+  'cash-continuity': 'accounts',
+  'debt-terminal': 'tranches',
+  'model-own-check': 'rows',
+  'time-axis': 'sheets',
+}
 
 /** `hardcode-in-formula` → « Hardcode in formula ». */
 const humanize = (key: string): string => {
@@ -59,6 +84,14 @@ interface FailGroup {
   label: string
   standard: string | null
   places: { text: string; where: string }[]
+  /** A statement check — « Whether the accounts add up ». */
+  analytical: boolean
+  /** The card's headline: the engine's figure for a statement check,
+   *  the count of places for anything else. */
+  figure: string
+  figureUnit: string
+  /** The mono line under the sentence. */
+  whereLine: string
 }
 
 const ACCEPT = '.pptx,.pptm,.docx,.doc,.xlsx,.xlsm,.xls,.xlt'
@@ -214,6 +247,13 @@ export const CheckFile = ({
         key: 'solo',
         label: 'The file disagrees with itself',
         standard: null,
+        analytical: false,
+        figure: String(result.disagreements.length),
+        figureUnit:
+          result.disagreements.length === 1
+            ? 'figure told two ways inside the file'
+            : 'figures told two ways inside the file',
+        whereLine: result.disagreements[0]!.first.location,
         places: result.disagreements.map((one) => ({
           text: `${one.label}: ${one.first.printed} on ${one.first.location}, ${one.other.printed} on ${one.other.location}.`,
           where: `Stated ${one.statements} times`,
@@ -228,16 +268,39 @@ export const CheckFile = ({
     const catalogue = new Map(
       (rules?.rules ?? []).map((rule) => [rule.key, rule.label]),
     )
-    for (const [key, group] of byRule)
+    for (const [key, group] of byRule) {
+      const analytical = group[0]!.analytical
+      //: The headline — the engine's figure for a statement check
+      //: (worst first, by magnitude), the count of places otherwise.
+      const magnitude = (one: OneOffDefect) => {
+        const parsed = Number(one.figure.replace(/,/g, ''))
+        return Number.isFinite(parsed) ? Math.abs(parsed) : 0
+      }
+      const worst = analytical
+        ? [...group].sort((a, b) => magnitude(b) - magnitude(a))[0]!
+        : group[0]!
+      const first = `'${worst.sheet}'!${worst.ref}`
       list.push({
         key,
         label: catalogue.get(key) ?? humanize(key),
         standard: group[0]!.standard || null,
+        analytical,
+        figure:
+          analytical && worst.figure ? worst.figure : String(group.length),
+        figureUnit:
+          analytical && worst.figure
+            ? worst.figure_unit
+            : group.length === 1
+              ? 'place in the model'
+              : 'places in the model',
+        whereLine:
+          group.length === 1 ? first : `${first} · ${group.length} places`,
         places: group.map((one) => ({
           text: one.detail,
           where: `'${one.sheet}'!${one.ref}`,
         })),
       })
+    }
     list.sort((a, b) => b.places.length - a.places.length)
     return list
   }, [result, rules])
@@ -271,14 +334,76 @@ export const CheckFile = ({
 
   //: Checks that pass / did not run — the same catalogue arithmetic as
   //: the model page, only claimed for a model whose audit actually ran.
+  //: On a values-only copy the construction rules claim nothing either
+  //: way; a statement check's pass row carries the engine's own tally.
   const failingKeys = new Set(fails.map((one) => one.key))
   const isModel = result?.kind === 'model'
-  const passRows =
+  const valuesOnly = result?.values_only === true
+  const passRows: { key: string; label: string; count: string }[] =
     isModel && rules !== null
-      ? rules.rules.filter((rule) => rule.on && !failingKeys.has(rule.key))
+      ? rules.rules
+          .filter(
+            (rule) =>
+              rule.on &&
+              !failingKeys.has(rule.key) &&
+              (!valuesOnly || rule.analytical),
+          )
+          .map((rule) => {
+            const tally = result?.tallies[rule.key]
+            const noun = TALLY_NOUNS[rule.key] ?? ''
+            return {
+              key: rule.key,
+              label: rule.pass_label || rule.label,
+              count: !tally
+                ? ''
+                : tally.clean === tally.total
+                  ? `${tally.total} ${noun}`
+                  : `${tally.clean} of ${tally.total} ${noun}${
+                      rule.key === 'model-own-check' ? ' clean' : ''
+                    }`,
+            }
+          })
       : []
-  const notRunRows =
-    isModel && rules !== null ? rules.rules.filter((rule) => !rule.on) : []
+  const notRunRows: { label: string; count: string; why: string }[] =
+    isModel && rules !== null
+      ? rules.rules
+          .filter((rule) => !rule.on)
+          .map((rule) => ({
+            label: rule.label,
+            count: '',
+            why: 'Switched off in Settings.',
+          }))
+      : []
+  if (isModel && rules !== null) {
+    const catalogue = new Map(rules.rules.map((rule) => [rule.key, rule.label]))
+    const byRule = new Map<string, string[]>()
+    for (const one of result?.abstentions ?? []) {
+      const had = byRule.get(one.rule)
+      if (had) had.push(one.why)
+      else byRule.set(one.rule, [one.why])
+    }
+    for (const [key, whys] of byRule)
+      notRunRows.push({
+        label: catalogue.get(key) ?? humanize(key),
+        count:
+          whys.length === 1
+            ? ''
+            : `${whys.length} ${TALLY_NOUNS[key] ?? 'places'}`,
+        why: whys[0]!,
+      })
+    if (valuesOnly) {
+      const buildRules = rules.rules.filter(
+        (rule) => !rule.analytical && rule.on,
+      ).length
+      notRunRows.push({
+        label: 'How the model is built',
+        count: buildRules > 0 ? `${buildRules} checks` : '',
+        why:
+          'This copy carries values only. With no formulas left in the ' +
+          'file, there is nothing to read about how it was made.',
+      })
+    }
+  }
 
   const sheets = Number(result?.counts['sheets'] ?? 0)
   const formulas = Number(result?.counts['formulas'] ?? 0)
@@ -708,79 +833,83 @@ export const CheckFile = ({
               </div>
             </div>
 
-            {fails.length > 0 && (
+            {/* A values-only copy says so before any card. */}
+            {valuesOnly && (
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(268px, 1fr))',
-                  gap: 12,
-                  marginTop: 18,
-                  alignItems: 'start',
+                  fontSize: 14.5,
+                  color: '#75757a',
+                  lineHeight: 1.5,
+                  maxWidth: '64ch',
+                  padding: '9px 2px 0',
+                  textWrap: 'pretty',
                 }}
               >
-                {fails.map((group) => (
-                  <div
-                    key={group.key}
-                    onClick={() => setPicked(group.key)}
-                    style={{
-                      background: '#fff',
-                      borderRadius: 12,
-                      boxShadow:
-                        '0 1px 2px rgba(0,0,0,.04), 0 0 0 .5px rgba(0,0,0,.07)',
-                      padding: '15px 17px 16px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div
-                      style={{ display: 'flex', alignItems: 'center', gap: 9 }}
-                    >
-                      <span
-                        style={{
-                          flex: '0 0 6px',
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          background: '#ff3b30',
-                        }}
-                      />
-                      <span
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          fontSize: 13,
-                          color: '#8e8e93',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {group.places.length}{' '}
-                        {group.places.length === 1 ? 'place' : 'places'}
-                      </span>
-                      <span
-                        style={{
-                          flex: '0 0 auto',
-                          fontSize: 13,
-                          color: '#c0c0c5',
-                        }}
-                      >
-                        {group.standard ?? ''}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 15.5,
-                        letterSpacing: '-.014em',
-                        lineHeight: 1.32,
-                        marginTop: 10,
-                        textWrap: 'pretty',
-                      }}
-                    >
-                      {group.label}
-                    </div>
-                  </div>
-                ))}
+                This copy carries values only — the construction checks could
+                not read it; the statement checks did.
               </div>
+            )}
+
+            {/* The failing checks, in the v2 design's two families —
+                the same sections and card face as the model page. The
+                solo card (the file disagreeing with itself) keeps the
+                untitled grid above both, like the tie-out's card. */}
+            {fails.some((one) => one.key === 'solo') && (
+              <div style={{ ...failGrid, marginTop: 18 }}>
+                {fails
+                  .filter((one) => one.key === 'solo')
+                  .map((group) => (
+                    <FailCard
+                      key={group.key}
+                      figure={group.figure}
+                      figureUnit={group.figureUnit}
+                      label={group.label}
+                      where={group.whereLine}
+                      tag=""
+                      onPick={() => setPicked(group.key)}
+                    />
+                  ))}
+              </div>
+            )}
+            {fails.some((one) => one.key !== 'solo' && !one.analytical) && (
+              <>
+                {failHead('How the model is built', true)}
+                <div style={failGrid}>
+                  {fails
+                    .filter((one) => one.key !== 'solo' && !one.analytical)
+                    .map((group) => (
+                      <FailCard
+                        key={group.key}
+                        figure={group.figure}
+                        figureUnit={group.figureUnit}
+                        label={group.label}
+                        where={group.whereLine}
+                        tag=""
+                        onPick={() => setPicked(group.key)}
+                      />
+                    ))}
+                </div>
+              </>
+            )}
+            {fails.some((one) => one.analytical) && (
+              <>
+                {failHead('Whether the accounts add up', false)}
+                <div style={failGrid}>
+                  {fails
+                    .filter((one) => one.analytical)
+                    .map((group) => (
+                      <FailCard
+                        key={group.key}
+                        figure={group.figure}
+                        figureUnit={group.figureUnit}
+                        label={group.label}
+                        where={group.whereLine}
+                        tag=""
+                        onPick={() => setPicked(group.key)}
+                      />
+                    ))}
+                </div>
+              </>
             )}
 
             {(passRows.length > 0 || notRunRows.length > 0 || isModel) && (
@@ -827,6 +956,16 @@ export const CheckFile = ({
                         >
                           {rule.label}
                         </span>
+                        <span
+                          style={{
+                            flex: '0 0 auto',
+                            fontSize: 12.5,
+                            color: ink.clean,
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {rule.count}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -846,25 +985,51 @@ export const CheckFile = ({
                       borderTop: '.5px solid #f0eff1',
                     }}
                   >
-                    {notRunRows.map((rule, index) => (
+                    {notRunRows.map((row, index) => (
                       <div
-                        key={rule.key}
+                        key={row.label}
                         style={{
                           borderTop: index === 0 ? 0 : '.5px solid #eceaec',
                           padding: '11px 20px 12px 32px',
                         }}
                       >
-                        <div style={{ fontSize: 14.5, color: '#3a3a3c' }}>
-                          {rule.label}
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                          }}
+                        >
+                          <span
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              fontSize: 14.5,
+                              color: '#3a3a3c',
+                            }}
+                          >
+                            {row.label}
+                          </span>
+                          <span
+                            style={{
+                              flex: '0 0 auto',
+                              fontSize: 12.5,
+                              color: ink.faint,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {row.count}
+                          </span>
                         </div>
                         <div
                           style={{
                             fontSize: 13,
                             color: '#a1a1a6',
                             marginTop: 2,
+                            textWrap: 'pretty',
                           }}
                         >
-                          Switched off in Settings.
+                          {row.why}
                         </div>
                       </div>
                     ))}

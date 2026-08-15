@@ -5,19 +5,20 @@
  * behind them.
  *
  * Source of truth: `docs/pierce/design-antford/workspace.html`, the
- * `hasDeal` section. Verdict line on top, the failing checks as a grid
- * of cards, and one sectioned card beneath: Checks that pass · Checks
- * that did not run · Evidence locker · The model · Documents that
- * quote it. Every name, count and sentence is the server's; the
- * design's demo names appear nowhere.
+ * `hasDeal` section, as revised 15 August: verdict line on top, the
+ * failing checks in two titled families — « How the model is built »
+ * and « Whether the accounts add up » — on figure-led cards, and one
+ * sectioned card beneath: Checks that pass · Checks that did not run ·
+ * Evidence locker · The model · Documents that quote it. Every name,
+ * count and sentence is the server's; the design's demo names appear
+ * nowhere.
  *
  * A « check » here is what the deals list counts: one rule of the
  * audit, with the tie-out — every rule-less finding — as one check
  * among them. One card per failing check, however many cells it fails
  * at; the card's modal lists the places.
  *
- * Departures from the drawn design, each because the data behind the
- * drawing does not exist yet (absent, not faked):
+ * Departures from the drawn design, each named (absent, not faked):
  * - The modal's little Excel grid is the design's demo prop — the
  *   server does not ship a cell's neighbours. The modal shows the
  *   finding's own sentences instead, and lists the cells when a check
@@ -25,9 +26,17 @@
  *   idiom).
  * - « Open the cell » needs Excel under the button — that is the
  *   panel's move. The web modal keeps only « Accept with a note ».
- * - Pass rows carry no tallies (« 214,061 cells ») because the engine
- *   does not record per-rule tallies yet; the one real count — figures
- *   agreeing across documents — is shown on the tie-out's row.
+ * - The tie-out's card sits in an untitled grid above the two
+ *   families: documents disagreeing with the model is neither
+ *   construction nor statements, and the design draws no third
+ *   section for it.
+ * - A construction card's headline figure is the count of failing
+ *   places — the design's per-cell figures (« 19,100 ») need per-cell
+ *   value extraction the mechanical audit does not do yet. Statement
+ *   cards carry the engine's own figure.
+ * - The design's pass list names checks the engine does not run yet
+ *   (retained earnings, interest accrual, depreciation) — they appear
+ *   nowhere until built; interest is its own backlogged round.
  * - Version rows say who uploaded, not what changed: the change
  *   summary is the version-diff work, queued.
  * - A deal never checked gets a verdict face the design does not draw
@@ -35,9 +44,10 @@
  *   checked must never read as a pass.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Artifact,
+  auditRecord,
   DealPage as DealPageData,
   Decision,
   Finding,
@@ -45,7 +55,18 @@ import {
   TieOutApi,
   Version,
 } from './../api'
-import { font, greyButton, ink, inputGlow, listCard, well } from './../design'
+import {
+  cardRing,
+  cardRingHover,
+  cellRefInk,
+  figureInk,
+  font,
+  greyButton,
+  ink,
+  inputGlow,
+  listCard,
+  well,
+} from './../design'
 import { checkedLine, staleNote } from './Deals'
 
 /** « 1 hour ago » · « yesterday, 19:40 » · « 4 August » — the design's
@@ -98,8 +119,32 @@ export const initialsOf = (name: string): string =>
     .slice(0, 2)
     .join('')
 
-/** The design's spelled-out verdict — « Six checks don't pass. » */
-const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six']
+/** The design's spelled-out verdict — « Eleven checks don't pass. » */
+const WORDS = [
+  'No',
+  'One',
+  'Two',
+  'Three',
+  'Four',
+  'Five',
+  'Six',
+  'Seven',
+  'Eight',
+  'Nine',
+  'Ten',
+  'Eleven',
+  'Twelve',
+]
+
+/** What each statement check counts, for the pass row's tally —
+ *  « 102 of 103 accounts », « 223 of 226 rows clean ». */
+const TALLY_NOUNS: Record<string, string> = {
+  'balance-sheet': 'periods',
+  'cash-continuity': 'accounts',
+  'debt-terminal': 'tranches',
+  'model-own-check': 'rows',
+  'time-axis': 'sheets',
+}
 
 /** The tie-out's rule key is the empty string; its face needs words. */
 const TIEOUT_LABEL = 'Documents disagree with the model'
@@ -118,6 +163,141 @@ interface FailGroup {
   standard: string | null
   findings: Finding[]
   fresh: number
+  /** A statement check — the « Whether the accounts add up » family. */
+  analytical: boolean
+  /** The card's headline: the engine's figure for the worst finding of
+   *  a statement check; the count of places for a construction rule. */
+  figure: string
+  figureUnit: string
+  /** The mono line under the sentence — where in the model. */
+  where: string
+}
+
+/**
+ * One failing check, on the v2 design's card face: the headline figure
+ * in the design's purple, the phrase saying what it is, the rule's
+ * sentence, and the mono cell reference in green. The ring shadow
+ * lifts softly under the pointer — the design's own hover. Shared with
+ * the Check-a-model screen, which the design draws with the same card.
+ */
+export const FailCard = ({
+  figure,
+  figureUnit,
+  label,
+  where,
+  tag,
+  onPick,
+}: {
+  figure: string
+  figureUnit: string
+  label: string
+  where: string
+  tag: string
+  onPick: () => void
+}) => {
+  const [over, setOver] = useState(false)
+  return (
+    <div
+      onClick={onPick}
+      onMouseEnter={() => setOver(true)}
+      onMouseLeave={() => setOver(false)}
+      style={{
+        background: '#fff',
+        borderRadius: 14,
+        boxShadow: over ? cardRingHover : cardRing,
+        padding: '21px 22px 18px',
+        cursor: 'pointer',
+        transition: 'box-shadow .16s ease',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+        <span
+          style={{
+            flex: '0 0 auto',
+            fontSize: 20.5,
+            letterSpacing: '-.022em',
+            lineHeight: 1.15,
+            color: figureInk,
+            fontVariantNumeric: 'tabular-nums lining-nums',
+          }}
+        >
+          {figure}
+        </span>
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            fontSize: 12.5,
+            color: '#9a9aa0',
+            lineHeight: 1.4,
+            textWrap: 'pretty',
+          }}
+        >
+          {figureUnit}
+        </span>
+      </div>
+      <div
+        style={{
+          fontSize: 16,
+          letterSpacing: '-.014em',
+          lineHeight: 1.34,
+          marginTop: 17,
+          textWrap: 'pretty',
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 12,
+          marginTop: 18,
+        }}
+      >
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            fontFamily: font.mono,
+            fontSize: 11.5,
+            color: cellRefInk,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {where}
+        </span>
+        <span style={{ flex: '0 0 auto', fontSize: 11.5, color: '#b6b6bc' }}>
+          {tag}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/** The v2 design's section label over a grid of failing checks. */
+export const failHead = (words: string, first: boolean) => (
+  <div
+    style={{
+      fontSize: 12.5,
+      color: '#8b8b90',
+      letterSpacing: '.045em',
+      textTransform: 'uppercase',
+      padding: first ? '32px 2px 13px' : '36px 2px 13px',
+    }}
+  >
+    {words}
+  </div>
+)
+
+/** The grid the failing cards sit in. */
+export const failGrid: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(282px, 1fr))',
+  gap: 16,
+  alignItems: 'start',
 }
 
 const sectionChevron = (open: boolean) => (
@@ -244,15 +424,52 @@ export const DealPage = ({
     const catalogue = new Map(
       (rules?.rules ?? []).map((rule) => [rule.key, rule.label]),
     )
+    const analytic = new Set(
+      (rules?.rules ?? [])
+        .filter((rule) => rule.analytical)
+        .map((rule) => rule.key),
+    )
     const savedAt = model ? new Date(model.uploaded_at) : null
     const list: FailGroup[] = []
     for (const [key, group] of groups) {
+      const analytical = analytic.has(key)
+      //: The headline. A statement check's worst finding brings the
+      //: engine's own figure; a construction rule's real number is how
+      //: many places it fails at. Nothing here is composed from thin
+      //: air — the figure came from the walk that found it.
+      const magnitude = (one: Finding) => {
+        const parsed = Number(one.figure.replace(/,/g, ''))
+        return Number.isFinite(parsed) ? Math.abs(parsed) : 0
+      }
+      const worst = analytical
+        ? [...group].sort((a, b) => magnitude(b) - magnitude(a))[0]!
+        : group[0]!
+      const figure =
+        analytical && worst.figure ? worst.figure : String(group.length)
+      const figureUnit =
+        analytical && worst.figure
+          ? worst.figure_unit
+          : key === ''
+            ? group.length === 1
+              ? 'figure disagreeing with the model'
+              : 'figures disagreeing with the model'
+            : group.length === 1
+              ? 'place in the model'
+              : 'places in the model'
+      const where =
+        group.length === 1
+          ? worst.where.detail
+          : `${worst.where.detail} · ${group.length} places`
       list.push({
         key,
         label:
           key === '' ? TIEOUT_LABEL : (catalogue.get(key) ?? humanize(key)),
         standard: group[0]!.standard,
         findings: group,
+        analytical,
+        figure,
+        figureUnit,
+        where,
         //: Fresh: appeared with the current version of the model — the
         //: finding was first seen after that file arrived. Dismissals
         //: survive re-runs, so `created_at` is the finding's first
@@ -332,10 +549,16 @@ export const DealPage = ({
           fails.length === 1 ? 'check failed' : 'checks failed'
         }.`
 
+  //: The audit's statement-check record: values-only copies, real
+  //: tallies, named abstentions. Absent on runs that predate it.
+  const record = auditRecord(page.last_audit)
+
   //: Checks that pass: the catalogue's rules that are on and not
   //: failing — only claimed once the audit has actually run. The
-  //: tie-out's row leads when its figures agree, with the one real
-  //: tally this page has.
+  //: tie-out's row leads when its figures agree; a statement check's
+  //: row carries the engine's own tally. On a values-only copy the
+  //: construction rules make no claim either way — the design's rule:
+  //: only the statement checks could read it.
   const failingKeys = new Set(fails.map((one) => one.key))
   const passRows: { name: string; count: string }[] = []
   if (checkedAt !== null && !failingKeys.has('') && page.coverage.agreeing > 0)
@@ -346,18 +569,65 @@ export const DealPage = ({
       }`,
     })
   if (auditAt !== null)
-    for (const rule of rules?.rules ?? [])
-      if (rule.on && !failingKeys.has(rule.key))
-        passRows.push({ name: rule.label, count: '' })
+    for (const rule of rules?.rules ?? []) {
+      if (!rule.on || failingKeys.has(rule.key)) continue
+      if (record.values_only && !rule.analytical) continue
+      const tally = record.tallies[rule.key]
+      const noun = TALLY_NOUNS[rule.key] ?? ''
+      const count = !tally
+        ? ''
+        : tally.clean === tally.total
+          ? `${tally.total} ${noun}`
+          : `${tally.clean} of ${tally.total} ${noun}${
+              rule.key === 'model-own-check' ? ' clean' : ''
+            }`
+      passRows.push({ name: rule.pass_label || rule.label, count })
+    }
 
-  //: Checks that did not run — a rule turned off is a decision, never
-  //: a silence, and this is where the decision stays visible.
-  const notRunRows = (rules?.rules ?? [])
+  //: Checks that did not run — a rule turned off is a decision, an
+  //: abstention is a check refusing to guess, and a values-only copy
+  //: is a fact about the file. All three stay visible here, each with
+  //: its reason in words.
+  const notRunRows: { label: string; count: string; why: string }[] = (
+    rules?.rules ?? []
+  )
     .filter((rule) => !rule.on)
     .map((rule) => ({
       label: rule.label,
+      count: '',
       why: 'Switched off in Settings.',
     }))
+  {
+    const byRule = new Map<string, { whys: string[] }>()
+    for (const one of record.abstentions) {
+      const had = byRule.get(one.rule)
+      if (had) had.whys.push(one.why)
+      else byRule.set(one.rule, { whys: [one.why] })
+    }
+    const catalogue = new Map(
+      (rules?.rules ?? []).map((rule) => [rule.key, rule.label]),
+    )
+    for (const [key, { whys }] of byRule) {
+      const noun = TALLY_NOUNS[key] ?? 'places'
+      notRunRows.push({
+        label: catalogue.get(key) ?? humanize(key),
+        count: whys.length === 1 ? '' : `${whys.length} ${noun}`,
+        why: whys[0]!,
+      })
+    }
+  }
+  if (record.values_only && auditAt !== null) {
+    const buildRules = (rules?.rules ?? []).filter(
+      (rule) => !rule.analytical && rule.on,
+    ).length
+    notRunRows.push({
+      label: 'How the model is built',
+      count: buildRules > 0 ? `${buildRules} checks` : '',
+      why:
+        'This copy carries values only. With no formulas left in the ' +
+        'file, there is nothing to read about how it was made.',
+    })
+  }
 
   const deliverables = page.documents.filter(
     (one) => one.kind === 'deck' || one.kind === 'memo',
@@ -550,94 +820,89 @@ export const DealPage = ({
             )}
           </div>
 
-          {/* The failing checks, one card each. */}
-          {!clean && !stale && !never && fails.length > 0 && (
+          {/* A values-only copy says so before any card — the fact
+              that decides which checks could speak at all. */}
+          {!stale && !never && auditAt !== null && record.values_only && (
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(268px, 1fr))',
-                gap: 12,
-                marginTop: 18,
-                alignItems: 'start',
+                fontSize: 14.5,
+                color: '#75757a',
+                lineHeight: 1.5,
+                maxWidth: '64ch',
+                padding: '9px 2px 0',
+                textWrap: 'pretty',
               }}
             >
-              {fails.map((group) => {
-                const tag =
-                  model === null
-                    ? `${group.findings.length} ${
-                        group.findings.length === 1 ? 'place' : 'places'
-                      }`
-                    : group.fresh === 0
-                      ? `Open before version ${model.version}`
-                      : group.fresh === group.findings.length
-                        ? `New since version ${model.version}`
-                        : //: A mixed check — some cells new, some
-                          //: inherited. The design's demo never draws
-                          //: it; the tag says the split.
-                          `${group.fresh} of ${group.findings.length} new since version ${model.version}`
-                return (
-                  <div
-                    key={group.key}
-                    onClick={() => setPicked(group.key)}
-                    style={{
-                      background: '#fff',
-                      borderRadius: 12,
-                      boxShadow:
-                        '0 1px 2px rgba(0,0,0,.04), 0 0 0 .5px rgba(0,0,0,.07)',
-                      padding: '15px 17px 16px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div
-                      style={{ display: 'flex', alignItems: 'center', gap: 9 }}
-                    >
-                      <span
-                        style={{
-                          flex: '0 0 6px',
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          background: '#ff3b30',
-                        }}
-                      />
-                      <span
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          fontSize: 13,
-                          color: '#8e8e93',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {tag}
-                      </span>
-                      <span
-                        style={{
-                          flex: '0 0 auto',
-                          fontSize: 13,
-                          color: '#c0c0c5',
-                        }}
-                      >
-                        {group.standard ?? ''}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 15.5,
-                        letterSpacing: '-.014em',
-                        lineHeight: 1.32,
-                        marginTop: 10,
-                        textWrap: 'pretty',
-                      }}
-                    >
-                      {group.label}
-                    </div>
-                  </div>
-                )
-              })}
+              This copy carries values only — the construction checks could not
+              read it; the statement checks did.
             </div>
+          )}
+
+          {/* The failing checks, in the v2 design's two families. The
+              tie-out's card — documents disagreeing with the model — is
+              neither construction nor statements, so it keeps the v1
+              untitled grid above both (the design draws no section for
+              it; nearest pattern, not an invention). */}
+          {!clean && !stale && !never && (
+            <>
+              {fails.some((one) => one.key === '') && (
+                <div style={{ ...failGrid, marginTop: 18 }}>
+                  {fails
+                    .filter((one) => one.key === '')
+                    .map((group) => (
+                      <FailCard
+                        key={group.key}
+                        figure={group.figure}
+                        figureUnit={group.figureUnit}
+                        label={group.label}
+                        where={group.where}
+                        tag={group.fresh > 0 ? 'New' : ''}
+                        onPick={() => setPicked(group.key)}
+                      />
+                    ))}
+                </div>
+              )}
+              {fails.some((one) => one.key !== '' && !one.analytical) && (
+                <>
+                  {failHead('How the model is built', true)}
+                  <div style={failGrid}>
+                    {fails
+                      .filter((one) => one.key !== '' && !one.analytical)
+                      .map((group) => (
+                        <FailCard
+                          key={group.key}
+                          figure={group.figure}
+                          figureUnit={group.figureUnit}
+                          label={group.label}
+                          where={group.where}
+                          tag={group.fresh > 0 ? 'New' : ''}
+                          onPick={() => setPicked(group.key)}
+                        />
+                      ))}
+                  </div>
+                </>
+              )}
+              {fails.some((one) => one.analytical) && (
+                <>
+                  {failHead('Whether the accounts add up', false)}
+                  <div style={failGrid}>
+                    {fails
+                      .filter((one) => one.analytical)
+                      .map((group) => (
+                        <FailCard
+                          key={group.key}
+                          figure={group.figure}
+                          figureUnit={group.figureUnit}
+                          label={group.label}
+                          where={group.where}
+                          tag={group.fresh > 0 ? 'New' : ''}
+                          onPick={() => setPicked(group.key)}
+                        />
+                      ))}
+                  </div>
+                </>
+              )}
+            </>
           )}
 
           {/* The sectioned card. */}
@@ -695,6 +960,7 @@ export const DealPage = ({
                           flex: '0 0 auto',
                           fontSize: 12.5,
                           color: ink.clean,
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
                         {row.count}
@@ -726,8 +992,33 @@ export const DealPage = ({
                         padding: '11px 20px 12px 32px',
                       }}
                     >
-                      <div style={{ fontSize: 14.5, color: '#3a3a3c' }}>
-                        {row.label}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                        }}
+                      >
+                        <span
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            fontSize: 14.5,
+                            color: '#3a3a3c',
+                          }}
+                        >
+                          {row.label}
+                        </span>
+                        <span
+                          style={{
+                            flex: '0 0 auto',
+                            fontSize: 12.5,
+                            color: ink.faint,
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {row.count}
+                        </span>
                       </div>
                       <div
                         style={{
@@ -1199,6 +1490,24 @@ export const DealPage = ({
                 }}
               >
                 {pickedGroup.findings[0]!.context}
+              </div>
+            )}
+
+            {/* « Says who », spelled out — the engine's sentence for a
+                statement check; construction rules keep their short
+                citation in the header line. */}
+            {pickedGroup.findings[0]!.standard_sentence && (
+              <div
+                style={{
+                  fontSize: 13,
+                  color: '#a1a1a6',
+                  lineHeight: 1.5,
+                  marginTop: 14,
+                  maxWidth: '62ch',
+                  textWrap: 'pretty',
+                }}
+              >
+                {pickedGroup.findings[0]!.standard_sentence}
               </div>
             )}
 

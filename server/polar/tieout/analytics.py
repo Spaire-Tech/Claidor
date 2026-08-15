@@ -29,7 +29,7 @@ Verified against hands-on reads before anything shipped:
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 
 from .structure import Structure, _canon
@@ -57,6 +57,65 @@ ZERO_CELLS = 4
 
 _CHECKISH = re.compile(r"\bcheck\b|\bchk\b|\bchecks\b", re.IGNORECASE)
 
+#: The statement-check catalogue, in the settings screen's own words —
+#: the same contract as `audit.RULE_NAMES`: the one place this list
+#: lives, so a screen can never invent a check the engine does not run
+#: or miss one it does. Keys are the rule strings the findings carry.
+ANALYTIC_RULE_NAMES: dict[str, str] = {
+    "balance-sheet": "Balance sheet does not balance",
+    "cash-continuity": "Cash does not carry forward between periods",
+    "debt-terminal": "Debt does not repay to zero at maturity",
+    "model-own-check": "The model's own check rows are firing",
+    "time-axis": "Period columns out of order",
+}
+
+#: The same checks with their passing sentence — what the « Checks
+#: that pass » row says, from the design's own pass list. A check named
+#: for its failure (« Cash does not carry forward ») must never appear
+#: under a pass heading wearing those words.
+ANALYTIC_PASS_NAMES: dict[str, str] = {
+    "balance-sheet": "Balance sheet balances every period",
+    "cash-continuity": "Cash carries forward",
+    "debt-terminal": "Debt schedule repays to zero at maturity",
+    "model-own-check": "The model's own checks",
+    "time-axis": "Time axis consistent across sheets",
+}
+
+#: The answer to « says who », per rule — the short citation the
+#: finding's `standard` column carries, in the design's own printing.
+ANALYTIC_STANDARDS: dict[str, str] = {
+    "balance-sheet": "ICAEW 8",
+    "cash-continuity": "ICAEW 8",
+    "debt-terminal": "FAST C4",
+    "model-own-check": "Own checks",
+    "time-axis": "FAST B1",
+}
+
+#: The same answer spelled out — the sentence the finding's modal
+#: shows under the claim. Rides in the finding's evidence.
+ANALYTIC_STANDARD_SENTENCES: dict[str, str] = {
+    "balance-sheet": (
+        "ICAEW Twenty Principles, 8: the statements must reconcile "
+        "to each other in every period."
+    ),
+    "cash-continuity": (
+        "ICAEW Twenty Principles, 8: a balance carried between periods "
+        "must be the same number on both sides of the join."
+    ),
+    "debt-terminal": (
+        "FAST Standard C4: a debt schedule repays in full by its "
+        "maturity date."
+    ),
+    "model-own-check": (
+        "The model's own convention: a check row shows zero when the "
+        "model agrees with itself."
+    ),
+    "time-axis": (
+        "FAST Standard B1: one time axis, running in order, shared by "
+        "every sheet."
+    ),
+}
+
 
 @dataclass(frozen=True)
 class AnalyticFinding:
@@ -72,6 +131,11 @@ class AnalyticFinding:
     value: float
     #: The claim, ready for a screen.
     detail: str
+    #: The headline number, printed — the one figure the card leads
+    #: with — and the phrase that says what it is. Both composed here,
+    #: where the measured values are in scope, never on a screen.
+    figure: str = ""
+    figure_unit: str = ""
 
 
 @dataclass(frozen=True)
@@ -86,6 +150,11 @@ class Abstention:
 class Analytics:
     findings: list[AnalyticFinding]
     abstentions: list[Abstention]
+    #: What each check examined and how much of it was clean — real
+    #: counters from the walks below, so a pass row can say « 223 of
+    #: 226 rows clean » and mean it. Keyed by rule; absent means the
+    #: check examined nothing it could count.
+    tallies: dict[str, dict[str, int]] = field(default_factory=dict)
 
 
 def run_analytics(book: Workbook, structure: Structure) -> Analytics:
@@ -125,12 +194,14 @@ def _own_checks(book: Workbook, structure: Structure, result: Analytics) -> None
         rows.setdefault(key, []).append((cell, float(cell.value)))
         labels.setdefault(key, label)
 
+    examined = clean = 0
     for key, valued in sorted(rows.items()):
         if len(valued) < ZERO_CELLS:
             continue
         zeros = sum(1 for _, value in valued if value == 0)
         if zeros / len(valued) < ZERO_SHARE:
             continue
+        examined += 1
         #: ±1 in a zero row is a flag wherever it sits — Bertha's first-
         #: period marker, Ayrshire's counter column beside real
         #: magnitudes. Excluded per cell, not per row: a £1 check
@@ -142,6 +213,7 @@ def _own_checks(book: Workbook, structure: Structure, result: Analytics) -> None
             if abs(value) > FLOOR and abs(abs(value) - 1.0) > 1e-12
         ]
         if not fired:
+            clean += 1
             continue
         sheet, _ = key
         axis = structure.axes.get(sheet)
@@ -166,8 +238,15 @@ def _own_checks(book: Workbook, structure: Structure, result: Analytics) -> None
                         + (f' in {period}' if period else '')
                         + ' — a row that is zero everywhere else.'
                     ),
+                    figure=f'{value:,.4g}',
+                    figure_unit=(
+                        f"on the model's own « {labels[key]} » row, "
+                        'built to read zero'
+                    ),
                 )
             )
+    if examined:
+        result.tallies['model-own-check'] = {'total': examined, 'clean': clean}
 
 
 # --- the balance sheet ---------------------------------------------------
@@ -198,6 +277,7 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
         )
         return
 
+    compared = agreeing = 0
     for block in located:
         cells = [c for c in book.cells.values() if c.sheet == block.sheet]
         net_rows = sorted(
@@ -244,7 +324,9 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
         for column in shared:
             difference = net[column] - equity[column]
             scale = max(abs(net[column]), abs(equity[column]), 1.0)
+            compared += 1
             if abs(difference) <= max(FLOOR, scale * 1e-6):
+                agreeing += 1
                 continue
             if own_zero:
                 result.abstentions.append(
@@ -276,8 +358,18 @@ def _balance(book: Workbook, structure: Structure, result: Analytics) -> None:
                         + (f' in {period}' if period else '')
                         + f': net assets and equity differ by {difference:,.6g}.'
                     ),
+                    figure=f'{abs(difference):,.6g}',
+                    figure_unit=(
+                        'between net assets and equity'
+                        + (f' in {period}' if period else '')
+                    ),
                 )
             )
+    if compared:
+        result.tallies['balance-sheet'] = {
+            'total': compared,
+            'clean': agreeing,
+        }
 
 
 def _workbook_balance_check_passes(book: Workbook) -> bool:
@@ -349,13 +441,18 @@ def _time_axis(structure: Structure, result: Analytics) -> None:
     FY2028 — where the run resumes as if the dip were not there.
     """
     year = re.compile(r"^(?:19|20)\d{2}$")
+    examined = clean = 0
     for sheet, axis in structure.axes.items():
         canon = [(column, _canon(label), label) for column, label in axis.columns]
         years = [(column, int(text), label) for column, text, label in canon
                  if year.match(text)]
+        if len(years) >= 3:
+            examined += 1
+        fired = False
         for at in range(1, len(years) - 1):
             before, here, after = years[at - 1], years[at], years[at + 1]
             if here[1] < before[1] and after[1] >= before[1]:
+                fired = True
                 result.findings.append(
                     AnalyticFinding(
                         rule='time-axis',
@@ -369,9 +466,17 @@ def _time_axis(structure: Structure, result: Analytics) -> None:
                             f'« {here[2]} » sits between « {before[2]} » and '
                             f'« {after[2]} ».'
                         ),
+                        figure=here[2],
+                        figure_unit=(
+                            f'between « {before[2]} » and « {after[2]} »'
+                        ),
                     )
                 )
                 break
+        if len(years) >= 3 and not fired:
+            clean += 1
+    if examined:
+        result.tallies['time-axis'] = {'total': examined, 'clean': clean}
 
 
 # --- cash tie-through -----------------------------------------------------
@@ -415,6 +520,7 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
         return
 
     year = re.compile(r"^(?:19|20)\d{2}$")
+    walked = carried = 0
     for pair in structure.pairs:
         axis = structure.axes.get(pair.sheet)
         if axis is None:
@@ -478,6 +584,8 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
         if compared < CARRY_COLUMNS:
             continue
         if not breaks:
+            walked += 1
+            carried += 1
             continue
         if agreed / compared < CARRY_AGREEMENT:
             #: Wholesale disagreement is a mispairing — ours, not the
@@ -491,6 +599,7 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
                 )
             )
             continue
+        walked += 1
         from openpyxl.utils import get_column_letter
 
         for previous_column, column, label, was, now in breaks:
@@ -507,8 +616,17 @@ def _cash_continuity(book: Workbook, structure: Structure, result: Analytics) ->
                         f'forward into {label}: closing {was:,.6g} against '
                         f'opening {now:,.6g}.'
                     ),
+                    figure=f'{was:,.6g}',
+                    figure_unit=(
+                        f'closing, while {label} opens at {now:,.6g}'
+                    ),
                 )
             )
+    if walked:
+        result.tallies['cash-continuity'] = {
+            'total': walked,
+            'clean': carried,
+        }
 
 
 # --- debt repays to zero --------------------------------------------------
@@ -548,6 +666,7 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
 
     from openpyxl.utils import get_column_letter
 
+    judged = repaid = 0
     for pair in structure.pairs:
         if pair.sheet not in debt_sheets:
             continue
@@ -573,6 +692,8 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
             continue
         terminal = series[-1]
         if abs(terminal) <= max(FLOOR, peak * 1e-6):
+            judged += 1
+            repaid += 1
             continue
         #: Was it amortising into the end? Strictly-declining magnitudes
         #: over the last DECLINE_STEPS+1 values.
@@ -581,7 +702,11 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
             abs(tail[at]) > abs(tail[at + 1]) for at in range(len(tail) - 1)
         )
         if not declining:
+            #: A revolver — fluctuating to the end. Not judged either
+            #: way, so it joins neither count: the pass row must only
+            #: claim tranches the check actually followed down.
             continue
+        judged += 1
         last_column = [column for column, _ in axis.columns if column in closing][-1]
         last_label = dict(axis.columns).get(last_column, '')
         result.findings.append(
@@ -598,5 +723,13 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
                     + (f' ({last_label})' if last_label else '')
                     + f' — against a peak of {peak:,.6g}.'
                 ),
+                figure=f'{abs(terminal):,.6g}',
+                figure_unit=(
+                    'still outstanding at '
+                    + (last_label or 'the end of the model')
+                    + f', against a peak of {peak:,.6g}'
+                ),
             )
         )
+    if judged:
+        result.tallies['debt-terminal'] = {'total': judged, 'clean': repaid}

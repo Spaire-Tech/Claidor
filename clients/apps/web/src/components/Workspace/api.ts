@@ -86,6 +86,12 @@ export interface Finding {
   /** The change proposed for this finding, once anybody has looked at
    *  it. Null means nothing has been proposed — never « nothing can be ». */
   correction: Correction | null
+  /** Statement-check findings only — the headline number, its phrase,
+   *  the period, and the standard spelled out. Empty otherwise. */
+  figure: string
+  figure_unit: string
+  period: string
+  standard_sentence: string
 }
 
 export interface ChainStep {
@@ -326,6 +332,34 @@ export interface CheckRun {
   finished_at: string | null
 }
 
+/** The statement-check record inside an audit run's summary — read
+ *  with `auditRecord`, never by guessing at the dict. */
+export interface AuditRecord {
+  values_only: boolean
+  abstentions: { rule: string; why: string }[]
+  tallies: Record<string, { total: number; clean: number }>
+}
+
+/** The audit summary's statement block, absent-aware: an old run that
+ *  predates the statement checks reads as « recorded nothing », never
+ *  as « everything clean ». */
+export const auditRecord = (run: CheckRun | null): AuditRecord => {
+  const summary = run?.summary ?? {}
+  return {
+    values_only: summary['values_only'] === true,
+    abstentions: Array.isArray(summary['abstentions'])
+      ? (summary['abstentions'] as { rule: string; why: string }[])
+      : [],
+    tallies:
+      typeof summary['tallies'] === 'object' && summary['tallies'] !== null
+        ? (summary['tallies'] as Record<
+            string,
+            { total: number; clean: number }
+          >)
+        : {},
+  }
+}
+
 export interface DealPage {
   id: string
   name: string
@@ -535,7 +569,7 @@ export interface OneOffDrift {
   model_artifact_id: string | null
 }
 
-/** One mechanical defect from a model's own audit. */
+/** One defect from a model's own audit — mechanical or statement. */
 export interface OneOffDefect {
   rule: string
   /** Never added into one number with the other. */
@@ -545,6 +579,14 @@ export interface OneOffDefect {
   name: string
   detail: string
   standard: string
+  /** True for a statement check — grouped under « Whether the
+   *  accounts add up ». */
+  analytical: boolean
+  /** The headline number and its phrase, composed by the engine.
+   *  Empty for mechanical defects. */
+  figure: string
+  figure_unit: string
+  period: string
 }
 
 /** One model the file was compared with — the « Compared with » card. */
@@ -569,6 +611,11 @@ export interface OneOffResult {
   disagreements: SoloFinding[]
   drifts: OneOffDrift[]
   defects: OneOffDefect[]
+  /** The statement checks' record: whether this is a values-only copy,
+   *  why a check stayed silent, what each check examined. */
+  values_only: boolean
+  abstentions: { rule: string; why: string }[]
+  tallies: Record<string, { total: number; clean: number }>
 }
 
 /** One audit rule, as the settings screen shows it. */
@@ -576,6 +623,11 @@ export interface AuditRule {
   key: string
   label: string
   on: boolean
+  /** True for the statement checks — « Whether the accounts add up ». */
+  analytical: boolean
+  /** The check's passing sentence, where its name states the failure.
+   *  Empty when the label already serves. */
+  pass_label: string
 }
 
 /** How the firm wants Pierce to behave. */

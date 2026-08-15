@@ -1,9 +1,8 @@
-
 const DEALS = [
   { name:'Northbank Bid Model', client:'Ollie Fenwick · version 22', file:'Northbank_Bid_Model_v22.xlsx', findings:true,
-    state:'6 checks fail', dot:'#e8a33d', stateFg:'#c8790a', checked:'Checked Tuesday 11:52',
-    since:'Model changed Tuesday 11:40. Two of the six failures are new since then.',
-    line:'41 checks pass, 6 don\'t · checked Tuesday 11:52', pass:41, notRun:3, ver:'v22', docs:4, locker:4, failCount:6, main:true },
+    state:'11 checks fail', dot:'#e8a33d', stateFg:'#c8790a', checked:'Checked Tuesday 11:52',
+    since:'Model changed Tuesday 11:40. Two of the eleven failures are new since then.',
+    line:'36 checks pass, 11 don\'t · checked Tuesday 11:52', pass:36, notRun:5, ver:'v22', docs:4, locker:4, failCount:11, main:true },
   { name:'Calder Rail Concession', client:'Priya Anand · version 8', file:'Calder_Concession_Model_v8.xlsx', findings:true,
     state:'4 checks fail', dot:'#e8a33d', stateFg:'#c8790a', checked:'Checked 09:15 today',
     since:'Saved twice since you last looked on Monday. The debt schedule moved both times.',
@@ -18,6 +17,11 @@ const DEALS = [
   { name:'Ashgrove Energy from Waste', client:'You · version 5', file:'Ashgrove_EfW_Model_v5.xlsx',
     state:'52 checks pass', stateFg:'#34c759', checked:'Checked Monday 14:05', since:'One input changed on Monday and was rechecked.',
     line:'52 of 52 checks pass · checked Monday 14:05', pass:52, notRun:0, ver:'v5', docs:0, locker:0, failCount:0 },
+  { name:'Glenmuir Offshore Wind', client:'Closed deal · filed copy', file:'Glenmuir_Close_Model_FINAL.xlsx', findings:true,
+    state:'3 checks fail', dot:'#e8a33d', stateFg:'#c8790a', checked:'Checked 08:40 today',
+    since:'Filed at financial close in March. Nothing in it has changed since.',
+    line:'14 checks pass, 3 don\'t · checked 08:40 today', pass:14, notRun:19, ver:'v1', docs:0, locker:0,
+    failKeys:['a4','a1','a2'], valuesOnly:true },
   { name:'Ridgeway Highways PPP', client:'Tom Reagan · version 19', file:'Ridgeway_PPP_Model_v19.xlsx',
     state:'46 checks pass', stateFg:'#34c759', checked:'Checked 1 August', since:'Untouched for eleven days.',
     line:'46 of 46 checks pass · checked 1 August', pass:46, notRun:0, ver:'v19', docs:0, locker:0, failCount:0 }
@@ -25,7 +29,7 @@ const DEALS = [
 
 const CELLS = (rows) => rows.map((r, i) => ({ ...r, rule: i === 0 ? '0' : '.5px solid #eef0f2', hl: r.hl || 'transparent' }));
 
-const SHEETS = ['Cover','Inputs','Revenue','Opex','Costs','Funding','Debt','Tax','Cashflow','Covenants','Outputs'];
+const SHEETS = ['Cover','Inputs','Revenue','Opex','Costs','Funding','Debt','Tax','Cashflow','Balance Sheet','Covenants','Outputs','Checks'];
 const R = (v) => ({ v, al:'r' });
 const RB = (v) => ({ v, al:'r', bad:true });
 
@@ -42,6 +46,7 @@ const FAILS = [
         { n:44, cells:[{ v:'Opex' }, R('18,204'), R('18,750'), RB('19,100'), R('19,905')] }
       ] },
     explain:'The typed figure sits £505k away from what the row would calculate. It will not move when the indexation assumption moves, so the bid price stops responding to inflation from FY2032 onward.',
+    fig:'19,100', figUnit:'typed, where the row would calculate 19,605',
     standard:'FAST Standard D3: a calculation row carries one formula across its whole width.' },
   { key:'r2', rule:'Formula breaks across the row', std:'FAST D3', isNew:true,
     says:'Revenue switches formula at FY2029 and never switches back.',
@@ -55,6 +60,7 @@ const FAILS = [
         { n:11, cells:[{ v:'Revenue' }, R('46,120'), RB('46,120'), R('46,120')] }
       ] },
     explain:'From FY2029 the row locks onto the FY2028 tariff. Eleven years of revenue are flat whatever the tariff assumption says.',
+    fig:'FY2029', figUnit:'where the formula changes, and stays changed',
     standard:'FAST Standard D3: consistent formulas, one row at a time.' },
   { key:'r3', rule:'Sum range misses a row', std:'ICAEW 5', isNew:false,
     says:'Total project costs excludes the insurance line directly above it.',
@@ -68,6 +74,7 @@ const FAILS = [
         { n:61, cells:[{ v:'Total project costs' }, R('451,300')] }
       ] },
     explain:'Total project costs are understated by £6.12m, which flows into the funding requirement and the equity IRR.',
+    fig:'6,120', figUnit:'left out of the total below it',
     standard:'ICAEW Twenty Principles, 5: check that ranges cover everything they claim to.' },
   { key:'r4', rule:'External link to a file outside the model', std:'ICAEW 18', isNew:false,
     says:'Two rate inputs read a workbook on a personal drive.',
@@ -80,6 +87,7 @@ const FAILS = [
         { n:14, cells:[{ v:'All-in cost of debt' }, R('6.20%')] }
       ] },
     explain:'The source file is not in the deal folder. Anyone else who opens the model gets the cached values with no way to refresh them.',
+    fig:'2 inputs', figUnit:'read from a file outside the model',
     standard:'ICAEW Twenty Principles, 18: a model should be self-contained and its inputs visible.' },
   { key:'r5', rule:'Sign flips between schedules', std:'FAST B2', isNew:false,
     says:'Interest is negative in the cash flow and positive in the covenant test.',
@@ -92,6 +100,7 @@ const FAILS = [
         { n:15, cells:[{ v:'DSCR' }, R('2.63x')] }
       ] },
     explain:'The cash flow subtracts interest at Cashflow!H38 and the covenant test adds it. The reported cover ratio is 0.24x too high across the whole term.',
+    fig:'0.24x', figUnit:'overstated cover, across the whole term',
     standard:'FAST Standard B2: one sign convention, applied everywhere.' },
   { key:'r6', rule:'Input typed into a calculation sheet', std:'FAST A1', isNew:false,
     says:'The tax rate is typed on the calculation sheet, not on Inputs.',
@@ -104,7 +113,73 @@ const FAILS = [
         { n:11, cells:[{ v:'Tax charge' }, R('2,914')] }
       ] },
     explain:'Inputs!B47 carries 25.0% and the calculation uses this typed 19.0%. Changing the input sheet has no effect on the tax charge.',
-    standard:'FAST Standard A1: inputs live in one place and nowhere else.' }
+    fig:'19.0%', figUnit:'used, while Inputs carries 25.0%',
+    standard:'FAST Standard A1: inputs live in one place and nowhere else.' },
+  { key:'a1', rule:'The balance sheet does not balance', std:'ICAEW 8', isNew:false, analytical:true,
+    says:'Assets and claims part company from FY2031 onward.',
+    where:"'Balance Sheet'!M52:U52",
+    xl: { sheet:'Balance Sheet', sel:'M52', formula:'=M50-M51',
+      cols:[{ l:'B', w:214 },{ l:'K', w:78 },{ l:'L', w:78 },{ l:'M', w:78 },{ l:'N', w:78 }],
+      rows:[
+        { n:48, cells:[{ v:'' }, R('FY2029'), R('FY2030'), R('FY2031'), R('FY2032')] },
+        { n:50, cells:[{ v:'Total assets' }, R('486,200'), R('501,940'), R('517,880'), R('533,120')] },
+        { n:51, cells:[{ v:'Total equity and liabilities' }, R('486,200'), R('501,940'), R('516,760'), R('531,910')] },
+        { n:52, cells:[{ v:'Difference' }, R('0'), R('0'), RB('1,120'), RB('1,210')] }
+      ] },
+    fig:'1,120', figUnit:'apart in FY2031, and wider in every period after',
+    explain:'The two sides agree until FY2030. From FY2031 they differ: 1,120 in FY2031, 1,210 in FY2032, and a difference in every one of the nine periods after that. The gap grows, so it is not a rounding difference.',
+    standard:'ICAEW Twenty Principles, 8: the statements must reconcile to each other in every period.' },
+  { key:'a2', rule:'Cash does not carry forward', std:'ICAEW 8', isNew:false, analytical:true,
+    says:'Escrow account: closing 37,311 against opening 0.',
+    where:"'Cashflow'!G60, H61",
+    xl: { sheet:'Cashflow', sel:'H61', formula:'0',
+      cols:[{ l:'B', w:246 },{ l:'G', w:96 },{ l:'H', w:96 }],
+      rows:[
+        { n:58, cells:[{ v:'' }, R('FY2031'), R('FY2032')] },
+        { n:60, cells:[{ v:'Escrow — closing balance' }, R('37,311'), R('41,004')] },
+        { n:61, cells:[{ v:'Escrow — opening balance' }, R('34,880'), RB('0')] }
+      ] },
+    fig:'37,311', figUnit:'closes FY2031, and the next period opens at nothing',
+    explain:'FY2031 closes with 37,311 in the escrow account and FY2032 opens with nothing. The account restarts from zero, so 37,311 leaves the model without ever being spent or distributed.',
+    standard:'ICAEW Twenty Principles, 8: a balance carried between periods must be the same number on both sides of the join.' },
+  { key:'a3', rule:'The debt does not repay to zero', std:'FAST C4', isNew:false, analytical:true,
+    says:'Senior debt ends at 4.2m against a peak of 120m.',
+    where:"'Debt'!AJ29",
+    xl: { sheet:'Debt', sel:'AJ29', formula:'=AI29-AJ28',
+      cols:[{ l:'B', w:246 },{ l:'AH', w:90 },{ l:'AI', w:90 },{ l:'AJ', w:90 }],
+      rows:[
+        { n:26, cells:[{ v:'' }, R('FY2046'), R('FY2047'), R('FY2048')] },
+        { n:28, cells:[{ v:'Scheduled repayment' }, R('4,220'), R('4,210'), R('4,210')] },
+        { n:29, cells:[{ v:'Senior debt — closing balance' }, R('12,640'), R('8,430'), RB('4,220')] }
+      ] },
+    fig:'4.22m', figUnit:'still outstanding at maturity, against a peak of 120m',
+    explain:'FY2048 is the final period of the facility and the balance is still 4.22m. The amortisation row stops one period short, so 3.5% of the loan is never repaid and the exit is overstated by the same amount.',
+    standard:'FAST Standard C4: a debt schedule repays in full by its maturity date.' },
+  { key:'a4', rule:"The model's own checks are firing", std:'Own checks', isNew:false, analytical:true,
+    says:'“Check: cash ties to BS” reads 2,431. It should read zero.',
+    where:"'Checks'!F13",
+    xl: { sheet:'Checks', sel:'F13', formula:'=Cashflow!F60-\'Balance Sheet\'!F44',
+      cols:[{ l:'B', w:268 },{ l:'E', w:90 },{ l:'F', w:90 }],
+      rows:[
+        { n:12, cells:[{ v:'Check: balance sheet balances' }, R('0'), R('0')] },
+        { n:13, cells:[{ v:'Check: cash ties to BS' }, R('0'), RB('2,431')] },
+        { n:14, cells:[{ v:'Check: debt repaid at maturity' }, R('0'), R('0')] }
+      ] },
+    fig:'2,431', figUnit:'on the model’s own “Check: cash ties to BS” row, which was built to read zero',
+    explain:'The modeller built this row to show zero whenever the model agrees with itself. Three of the 226 check rows in this file are returning a non-zero value, and this one has read 2,431 since the version that was filed. Nobody has opened the Checks sheet since.',
+    standard:'The model’s own convention: a check row shows zero when the model agrees with itself.' },
+  { key:'a5', rule:'Period columns out of order', std:'FAST B1', isNew:false, analytical:true,
+    says:'The timeline dips at FY2034, then jumps to FY2036.',
+    where:"'Inputs'!R7",
+    xl: { sheet:'Inputs', sel:'R7', formula:'FY2032',
+      cols:[{ l:'B', w:214 },{ l:'P', w:74 },{ l:'Q', w:74 },{ l:'R', w:74 },{ l:'S', w:74 }],
+      rows:[
+        { n:7, cells:[{ v:'Period end' }, R('FY2033'), R('FY2034'), RB('FY2032'), R('FY2036')] },
+        { n:8, cells:[{ v:'Period number' }, R('9'), R('10'), RB('8'), R('12')] }
+      ] },
+    fig:'FY2032', figUnit:'in column R, between FY2034 and FY2036',
+    explain:'Column R sits out of sequence: FY2034 is followed by FY2032, and then the row jumps to FY2036. Anything that reads the timeline in order — indexation, debt amortisation, the tax pools — reads it wrong from column R onward.',
+    standard:'FAST Standard B1: one time axis, running in order, shared by every sheet.' }
 ];
 
 const XL = (f) => {
@@ -123,27 +198,36 @@ const XL = (f) => {
           bg: c.bad ? '#ffeb9c' : '#ffffff', fg: c.bad ? '#9c5700' : '#1a1a1a',
           sh: (x.cols[i].l === sc && isR) ? 'inset 0 0 0 2px #107c41' : 'none' })) };
     }),
-    sheets: SHEETS.map(s => ({ name:s, fg: s === x.sheet ? SF : '#5f5f5f', fw: s === x.sheet ? 600 : 400, bd: s === x.sheet ? '#107c41' : 'transparent' }))
+    sheets: (() => {
+      const W = 5, ai = SHEETS.indexOf(x.sheet);
+      const start = ai < 0 ? 0 : Math.max(0, Math.min(ai - 2, SHEETS.length - W));
+      return SHEETS.slice(start, start + W).map(s => ({ name:s, on: s === x.sheet ? 'true' : 'false',
+        fg: s === x.sheet ? SF : '#5f5f5f', fw: s === x.sheet ? 600 : 400, bd: s === x.sheet ? '#107c41' : 'transparent' }));
+    })()
   };
 };
 
 const PASSES = [
   { name:'No circular references', std:'ICAEW 12', count:'214,061 cells' },
-  { name:'Balance sheet balances every period', std:'ICAEW 8', count:'40 periods' },
-  { name:'Cash flow ties to the balance sheet', std:'ICAEW 8', count:'40 periods' },
-  { name:'Time axis consistent across sheets', std:'FAST B1', count:'31 sheets' },
   { name:'One formula per calculation row', std:'FAST D3', count:'1,842 of 1,844 rows' },
   { name:'No hidden sheets or hidden rows', std:'ICAEW 18', count:'31 sheets' },
   { name:'Sum ranges cover their blocks', std:'ICAEW 5', count:'611 of 612 totals' },
   { name:'Units labelled on every input', std:'FAST A2', count:'308 inputs' },
   { name:'No error values anywhere in the workbook', std:'ICAEW 14', count:'0 errors' },
-  { name:'Debt schedule repays to zero at maturity', std:'FAST C4', count:'3 tranches' }
+  { name:'Cash carries forward', std:'ICAEW 8', count:'102 of 103 accounts', analytical:true },
+  { name:'Retained earnings roll forward', std:'ICAEW 8', count:'86 periods', analytical:true },
+  { name:'Interest accrues on the opening balance', std:'FAST C4', count:'3 tranches', analytical:true },
+  { name:'Depreciation stays within the asset base', std:'ICAEW 8', count:'86 periods', analytical:true },
+  { name:"The model's own checks", std:'Own checks', count:'223 of 226 rows clean', analytical:true }
 ];
 
 const COVERAGE = [
   { label:'Macros and VBA', count:'2 modules', why:'Antford reads formulas, not code. Both modules are named in the report so a human can look.' },
   { label:'Assumption reasonableness', count:'308 inputs', why:'Whether a 2.4% inflation rate is right is a judgement, not a check.' },
-  { label:'Linked bank case workbook', count:'1 file', why:'Not in the folder Antford watches, so its contents were never read.' }
+  { label:'Linked bank case workbook', count:'1 file', why:'Not in the folder Antford watches, so its contents were never read.' },
+  { label:'Working capital carry-forward', count:'2 accounts', why:'Our arithmetic and the model’s own check row disagree — not reported.' },
+  { label:'Distribution waterfall', count:'1 schedule', why:'The order of payments could not be established with certainty, so nothing was tested against it.' },
+  { label:'How the model is built', count:'6 checks', why:'This copy carries values only. With no formulas left in the file, there is nothing to read about how it was made.', only:'values' }
 ];
 
 const VERSIONS = [
@@ -472,7 +556,12 @@ const AUDIT_RULES = [
   'Inputs typed into calculation cells',
   'Duplicated line items',
   'Unused inputs',
-  'Growth rates outside a set range'
+  'Growth rates outside a set range',
+  'Balance sheet does not balance',
+  'Cash does not carry forward between periods',
+  'Debt does not repay to zero at maturity',
+  'The model’s own check rows are firing',
+  'Period columns out of order'
 ];
 
 const DEAL_CHAT = {
@@ -536,7 +625,7 @@ class Component extends DCLogic {
     cPhase: 'idle', cStep: 0, cStartedAt: 0, askOpen: false, accepted: [], noteFor: null, noteText: '', cFinding: null, fail: null, sec: null, reportOpen: false, reportOff: [],
     chat: null, chatMsgs: [], prompt: '', asked: 0, against: null, menuOpen: false, sTab: 'conn', round: 'Group separately', write: { range: '$455–528mm', fy: 'FY2025A', unit: 'mm', neg: '(139.2)' },
     acctOpen: false, conn: 'none', newOpen: false, ndStep: 'browse', ndPath: ['Investment Banking', 'Deals'], ndPicks: [], ndMeta: {}, ndStep2: 0, inviteOpen: false, inviteEmail: '', invitePicks: ['Project Falcon'],
-    sw: { grounding: true, audit: true }, auditOpen: false, offRules: ['Growth rates outside a set range'] };
+    sw: { grounding: true, audit: true, statements: true }, auditOpen: false, offRules: ['Growth rates outside a set range'] };
   go = (v) => () => { this.clearChatTimer(); this.setState({ view: v, doc: null, finding: null, chat: null, chatMsgs: [], asked: 0, prompt: '' }); };
   clearChatTimer = () => { if (this.ctimer) { clearTimeout(this.ctimer); this.ctimer = null; } };
   ndReady = () => {
@@ -603,12 +692,30 @@ class Component extends DCLogic {
     const sel = FAILS.find(f => f.key === s.fail) || null;
     const rv = sel || FAILS[0];
     const rvx = XL(rv);
-    const dFails = s.deal ? FAILS.slice(0, s.deal.failCount || 0) : FAILS;
+    const dFails = s.deal
+      ? (s.deal.failKeys ? s.deal.failKeys.map(k => FAILS.find(f => f.key === k)).filter(Boolean) : FAILS.slice(0, s.deal.failCount || 0))
+      : FAILS;
     const liveFails = dFails.filter(f => s.accepted.indexOf(f.key) === -1);
+    const dVerLabel = 'version ' + String(s.deal ? s.deal.ver : 'v22').replace('v', '');
+    const buildFails = liveFails.filter(f => !f.analytical);
+    const stateFails = liveFails.filter(f => f.analytical);
+    const CARD = (f) => {
+      const open = s.fail === f.key, x = XL(f);
+      return { key:f.key, rule:f.rule, std:f.std, where:f.where, says:f.says,
+        explain:f.explain, standard:f.standard, isNew:f.isNew, open,
+        age: f.isNew ? 'New since Tuesday, when version 22 was saved.' : 'Open since before Tuesday.',
+        tag: (f.isNew ? 'New since ' : 'Open before ') + dVerLabel,
+        tagShort: f.isNew ? 'New' : '',
+        dot: '#ff3b30',
+        hasFig: !!f.fig, fig: f.fig || '', figUnit: f.figUnit || '', figCap: f.figCap || '',
+        hasQuote: !!f.quoteLabel, quoteLabel: f.quoteLabel || '', quoteVal: f.quoteVal || '',
+        xName:x.name, xFormula:x.formula, xCols:x.cols, xRows:x.rows, xSheets:x.sheets,
+        pick: () => this.setState({ fail: open ? null : f.key }) };
+    };
+    const dValuesOnly = !!(s.deal && s.deal.valuesOnly);
     const dClean = !!(s.deal && !s.deal.findings);
     const dStale = !!(s.deal && s.deal.stale);
-    const dVerLabel = 'version ' + String(s.deal ? s.deal.ver : 'v22').replace('v', '');
-    const WORDS = ['No','One','Two','Three','Four','Five','Six'];
+    const WORDS = ['No','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve'];
     const on = (k) => s.view === k ? 'rgba(21,23,27,.055)' : 'transparent';
     const ink = (k) => s.view === k ? '#0060d0' : '#5b6068';
     const fw = (k) => s.view === k ? 500 : 400;
@@ -686,16 +793,9 @@ class Component extends DCLogic {
         dot: f.isNew ? '#e8a33d' : '#d2d2d7',
         age: f.isNew ? 'New since Tuesday, when version 22 was saved.' : 'Open since before Tuesday.',
         toggle: () => this.setState(st => ({ fail: st.fail === f.key ? null : f.key })) })),
-      rvFails: liveFails.map((f) => {
-        const open = s.fail === f.key, x = XL(f);
-        return { key:f.key, rule:f.rule, std:f.std, where:f.where, says:f.says,
-          explain:f.explain, standard:f.standard, isNew:f.isNew, open,
-          age: f.isNew ? 'New since Tuesday, when version 22 was saved.' : 'Open since before Tuesday.',
-          tag: (f.isNew ? 'New since ' : 'Open before ') + dVerLabel,
-          dot: '#ff3b30',
-          xName:x.name, xFormula:x.formula, xCols:x.cols, xRows:x.rows, xSheets:x.sheets,
-          pick: () => this.setState({ fail: open ? null : f.key }) };
-      }),
+      rvFails: liveFails.map(CARD), rvBuild: buildFails.map(CARD), rvState: stateFails.map(CARD),
+      hasBuild: !dClean && !dStale && buildFails.length > 0,
+      hasState: !dClean && !dStale && stateFails.length > 0,
       verdictLine: liveFails.length === 0 ? 'Everything checked passes.' : (WORDS[liveFails.length] || liveFails.length) + (liveFails.length === 1 ? " check doesn't pass." : " checks don't pass."),
       acceptedCount: s.accepted.length,
       hasAccepted: s.accepted.length > 0,
@@ -711,6 +811,7 @@ class Component extends DCLogic {
       dDocs: s.deal ? s.deal.docs : 4,
       dLocker: s.deal ? s.deal.locker : 4,
       dealMain: !!(s.deal && s.deal.main),
+      dealValuesOnly: !!(s.deal && s.deal.valuesOnly),
       dealSince: s.deal ? s.deal.since : '',
       dealCleanLine: s.deal ? s.deal.line : '',
       noteOpen: !!s.noteFor, notNote: !s.noteFor, noteText: s.noteText,
@@ -724,8 +825,10 @@ class Component extends DCLogic {
       rvRule: rv.rule, rvStd: rv.std, rvSays: rv.says, rvExplain: rv.explain, rvStandard: rv.standard,
       rvWhere: rv.where, rvAge: rv.isNew ? 'New since Tuesday, when version 22 was saved.' : 'Open since before Tuesday.',
       rvName: rvx.name, rvFormula: rvx.formula, rvFrameW: rvx.frameW, rvCols: rvx.cols, rvRows: rvx.rows, rvSheets: rvx.sheets,
-      passes: PASSES.map((p, i) => ({ ...p, rule: i === 0 ? '0' : '.5px solid #eceaec' })),
-      coverage: COVERAGE.map((c, i) => ({ ...c, rule: i === 0 ? '0' : '.5px solid #eceaec' })),
+      passes: PASSES.filter(p => !dValuesOnly || p.analytical)
+        .map((p, i) => ({ ...p, rule: i === 0 ? '0' : '.5px solid #eceaec' })),
+      coverage: COVERAGE.filter(c => !c.only || dValuesOnly)
+        .map((c, i) => ({ ...c, rule: i === 0 ? '0' : '.5px solid #eceaec' })),
       mdVersions: VERSIONS,
       mdVersionsShown: (s.deal && !s.deal.main) ? [] : VERSIONS,
       mdFile: s.deal ? s.deal.file : 'Northbank_Bid_Model_v22.xlsx',
@@ -736,7 +839,7 @@ class Component extends DCLogic {
       openReport: () => this.setState({ reportOpen: true }),
       closeReport: () => this.setState({ reportOpen: false }),
       reportLines: FAILS.map(f => ({ rule: f.rule, std: f.std, where: f.where })),
-      reportOpts: ['The six failing checks, with the cells', 'The forty-one checks that pass', 'What was not checked, and why', 'The evidence locker'].map((label, i) => {
+      reportOpts: ['The eleven failing checks, with the cells', 'The thirty-six checks that pass', 'What was not checked, and why', 'The evidence locker'].map((label, i) => {
         const on = s.reportOff.indexOf(label) === -1;
         return { label, on, rule: i === 0 ? '0' : '.5px solid #f0eff1',
           boxBg: on ? '#0060d0' : 'transparent', boxBd: on ? '#0060d0' : '#d4d4d8',
@@ -909,7 +1012,8 @@ class Component extends DCLogic {
       })),
       checks: [
         { key:'grounding', name:'Model inputs against sources', sub:'Typed inputs traced back to the audited accounts' },
-        { key:'audit', name:'Model audit rules', sub:'Hardcodes, broken links, formulas that break across a row', hasRules:true }
+        { key:'audit', name:'Model audit rules', sub:'Hardcodes, broken links, formulas that break across a row', hasRules:true },
+        { key:'statements', name:'Statement checks', sub:'Whether the accounts hold together: balancing, cash carried forward, debt repaid, and the model’s own check rows' }
       ].map(x => {
         const on = s.sw[x.key];
         return { ...x, track: on ? '#34c759' : '#e9e9eb', justify: on ? 'flex-end' : 'flex-start',

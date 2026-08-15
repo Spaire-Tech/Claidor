@@ -2358,3 +2358,57 @@ the page and refreshes the list.
 **The deployment fact underneath all of it:** what the founder tested
 is the last deployed build. Every fix here — and the entire Antford
 panel — lands only when the branch merges.
+
+## Analytics into the product — the founder's v2 design, wired
+
+The founder revised the workspace design (`Antford_Workspace_2.html`,
+checked into `docs/pierce/design-antford/`): the failing checks split
+into « How the model is built » and « Whether the accounts add up »,
+figure-led cards with the mono cell reference in green, the
+values-only banner, pass rows with real tallies, abstention rows
+under « Checks that did not run », and a « Statement checks » switch
+in Settings. That drawing is the face of what Phases 1–4 built — so
+this round put the engine into the product behind it.
+
+**Server.** The statement checks now run inside every ordinary audit
+— `run_audit` reads the structure, runs the analytics, and lands the
+findings in the same findings table as the mechanical rules, with
+rule keys, short standards (« ICAEW 8 », « FAST C4 »), the spelled-out
+standard sentence, and a headline figure composed where the measured
+values live (« 50.92 — on the model's own « check » row, built to
+read zero »). The run summary carries what the screens must never
+invent: whether the copy is values-pasted, every abstention with its
+sentence, and per-rule tallies counted inside the walks themselves —
+rows read and clean, accounts walked and carried, periods compared,
+tranches judged, sheets examined. The one-off Check-a-model path runs
+the same checks on the cells it just read, before the file is
+dropped. The house-rules catalogue serves both families with the
+statement checks flagged, so no screen keeps a list of its own; the
+five statement keys ride in `audit_rules_off` like any rule, which is
+what the Settings switch flips — no new column, no migration.
+
+**Spot-check against the real files** before anything shipped:
+Dumfries reports its two known firings with their figures (50.92 at
+Audit!BP156, 329.2 at InputPh2!T150), tallies « 2 of 4 rows clean »,
+129 balance periods, 13 carrying accounts, 1 tranche repaid;
+Anderson reports clean tallies and the named balance-sheet
+abstention. Same verdicts as the hand-verified survey — the fold
+changed where the answers land, not what they are.
+
+**One defect caught in the round:** the pass rows would have worn the
+catalogue's failure names — « Cash does not carry forward between
+periods » as a *pass*. The catalogue now carries each statement
+check's passing sentence too (« Cash carries forward », from the
+design's own pass list), and the pass rows wear those.
+
+**Departures from the drawing, flagged in the code where they live:**
+the tie-out's card keeps an untitled grid above the two families (the
+design draws no third section for documents-vs-model); construction
+cards headline the count of failing places, not a per-cell figure the
+mechanical audit doesn't extract yet; the design's pass list names
+checks the engine does not run (retained earnings, interest accrual,
+depreciation) — absent, not faked, interest being its own backlogged
+measured round; and the two Settings master switches are each scoped
+to their own family so flipping one never silently moves the other.
+
+400 server tests pass, web and panel typecheck, panel suite green.

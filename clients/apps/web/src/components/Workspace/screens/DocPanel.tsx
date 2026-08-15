@@ -35,7 +35,15 @@ import {
   TieOutApi,
   Version,
 } from './../api'
-import { fileIcon, font, hairline, ink, inputGlow, well } from './../design'
+import {
+  cardRing,
+  fileIcon,
+  font,
+  hairline,
+  ink,
+  inputGlow,
+  well,
+} from './../design'
 import { ago } from './DealPage'
 
 const OPEN_LABEL: Record<string, string> = {
@@ -58,7 +66,7 @@ const panelHead = {
 const panelCard = {
   background: '#fff',
   borderRadius: 13,
-  boxShadow: '0 1px 2px rgba(0,0,0,.05), 0 0 0 .5px rgba(0,0,0,.06)',
+  boxShadow: cardRing,
   overflow: 'hidden',
 } as const
 
@@ -311,8 +319,7 @@ export const DocPanel = ({
               fontSize: 14,
               fontWeight: 500,
               cursor: 'pointer',
-              boxShadow:
-                '0 1px 2px rgba(0,0,0,.05), 0 0 0 .5px rgba(0,0,0,.06)',
+              boxShadow: cardRing,
             }}
           >
             Download
@@ -604,7 +611,7 @@ const FindingCard = ({
         borderRadius: open ? 17 : 13,
         boxShadow: open
           ? '0 16px 40px rgba(16,20,28,.18), 0 0 0 1px rgba(16,20,28,.05), inset 0 1px 0 rgba(255,255,255,.95)'
-          : '0 1px 2px rgba(0,0,0,.05), 0 0 0 .5px rgba(0,0,0,.06)',
+          : cardRing,
         overflow: 'hidden',
         transition: 'box-shadow .18s ease',
       }}
