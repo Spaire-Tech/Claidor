@@ -1376,3 +1376,16 @@ their evidence attached.
 - **Phase-1 hand-verification sample owed**: every sheet of two Ofwat
   and two Scottish models read against the survey's claims before the
   phase is declared passed.
+
+## Analytical checks, after Phase 2 (15 August)
+
+- **RHSC balance pairing**: « PF8_Balance Sheet » located but its
+  net-assets/equity rows miss the pairing regexes (0 candidates) —
+  widen from its own vocabulary.
+- **Own-check + independent identity de-dup**: a fired balance check
+  row and the identity can report the same fact twice.
+- **Severity grading**: ±0.5 in pounds and ±700k are both true; the
+  catalogue should grade them, not flatten them.
+- **Seeded axis dip on a real file**, matching the unit test.
+- **Anderson/Elgin present no balance sheet** — abstention is right;
+  a statements-inside-workings locator is a coverage round, not a bug.

@@ -2240,3 +2240,46 @@ where there are none.
 80% on both block kinds, zero mislocations found, the sample read.
 Next: Phase 2, the balance check, keyed on each model's own check rows
 and subtotal tree (label-pairing stays rejected).
+
+---
+
+## 15 August — analytical checks, Phase 2: the balance check passes
+
+**The design was decided by a diagnosis.** Before writing the rule, the
+0.86 from the dry run was traced: AFW's net assets and total equity
+genuinely differ in the tail periods — while the model's own « FinStat
+- BS - Appointee - check overall » reads zero. Their identity is not
+the textbook's. So the instrument became the model's own check rows,
+zero-convention gated; the independent identity runs only where its
+rows are unique and never against the model's own passing verdict —
+the protocol's agreement rule, enforced workbook-wide after round 1
+fired twelve retail findings that AFW's and WSX's own checks
+contradict.
+
+**One amendment under the protocol's own rule.** The floor moved from
+1e-6 to 0.01 working units: Dumfries carries accumulated rounding walk
+of ~3e-4 in £000 units — about 29 pence on a £779m model — and the
+registered floor was measuring float noise, not money. Prompting
+result and reason recorded here as the rule requires.
+
+**Round 2, all 22 models.** Zero false balance findings; zero axis
+findings (the axis rule claims only the dip that cannot be layout —
+Dumfries' side-by-side budget blocks, hand-read, made segments legal).
+Five own-check findings, each read in the cells before counting, and
+every one sits in an **issued financial-close file**: Dumfries' own
+audit rows report 329.15 (sub-debt sculpting residual, FY2019) and
+50.92 (FY2043); Elgin's drawdown-vs-participation check reports ±0.5;
+Ayrshire's project-vs-financing cash flow check reports ±700,016 — a
+one-period timing slip of £700k in the file a deal closed on. Recall
+proven on seeded copies of the real Dumfries file, caught by cell
+name. Ten unit tests pin the gates.
+
+**The product sentence this buys:** the models deals actually close on
+ship with their own checks firing, nobody reads them, and Antford
+does — on the values-pasted copies where nothing else can.
+
+**Held for later rounds** (backlog): RHSC's balance rows need a wider
+pairing vocabulary; when a model's own balance check itself fires, the
+own-check finding and the independent identity can both speak — de-dup
+before the catalogue; severity grading for tiny firings (±0.5); a
+seeded axis dip on a real file to match the unit test.
