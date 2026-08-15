@@ -146,6 +146,13 @@ export interface DealListItem {
   artifacts: number
   open_findings: number
   /**
+   * How many *checks* the open findings belong to — distinct rules, the
+   * tie-out counting as one. The row says « 6 checks fail », never a
+   * findings count: one check can produce forty findings, and the row
+   * would read like forty problems.
+   */
+  failing_checks: number
+  /**
    * When the deal was last reconciled. **Null means never**, and that is
    * a different thing from « no findings » — a list that let those two
    * share a word would be claiming a check nobody ran.

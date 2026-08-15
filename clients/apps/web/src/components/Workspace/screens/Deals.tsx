@@ -1,21 +1,27 @@
 'use client'
 
 /**
- * Deals — the list, and the first-run empty state.
+ * Models — the list, and the first-run empty state.
  *
- * Source of truth: `docs/pierce/design/markup.html`, the `vDealsList` and
- * `vDealsEmpty` sections. The rows are the design's rows; the data is the
- * server's. Where a real data state has no drawn equivalent, the borrowed
- * pattern is named at the site.
+ * Source of truth: `docs/pierce/design-antford/workspace.html`, the
+ * `vDealsList` and `vDealsEmpty` sections. The rows are the design's
+ * rows; the data is the server's. Where a real data state has no drawn
+ * equivalent, the borrowed pattern is named at the site.
  *
- * The design's grouping rule, from its own component logic:
- * « open » — deals with findings (and the stale one leads with its note);
- * « clean » — the rest. One addition the design's demo data never shows:
- * a deal that has **never been checked** cannot sit under « Clean » — no
- * findings on a deal nobody checked reads exactly like no findings on a
- * deal checked this morning, and the API docstring forbids those two ever
- * sharing a word. Never-checked deals join the attention group, in the
- * open row's own shape, and their state says « Not checked yet ».
+ * The Antford row is a sentence, not a dashboard: name on the left,
+ * verdict on the right — « 6 checks fail » amber, « Changed since
+ * check » blue, « All checks pass » green — over a quiet « Checked
+ * Tuesday 11:52 ». No dot, no subtitle; the first design's since-notes
+ * and document counts have no home here and are not drawn.
+ *
+ * The groups are « Needs attention » and « Clear » — the design's own
+ * words. One addition its demo data never shows: a deal that has
+ * **never been checked** cannot sit under « Clear » — no findings on a
+ * deal nobody checked reads exactly like no findings on a deal checked
+ * this morning, and the API docstring forbids those two ever sharing a
+ * word. Never-checked deals join the attention group, in the open row's
+ * own shape, and their state says « Not checked yet » (a state the
+ * design does not draw; secondary ink, borrowed from its meta text).
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -31,44 +37,31 @@ import {
 } from './../design'
 import { DealPage } from './DealPage'
 
-/** « Checked 2 hours ago » — the design's own time phrasing. */
-export const checkedLine = (at: string | null): string => {
+/**
+ * « Checked 09:15 today » / « Checked Tuesday 11:52 » / « Checked
+ * 1 August » — the Antford design's own time phrasing, read off its demo
+ * rows. Stale rows lead with « Last checked », as the design's stale row
+ * does: the check is no longer *the* check, only the last one.
+ */
+export const checkedLine = (at: string | null, stale = false): string => {
   if (!at) return 'Not checked yet'
+  const lead = stale ? 'Last checked' : 'Checked'
   const then = new Date(at)
   const now = new Date()
-  const minutes = Math.floor((now.getTime() - then.getTime()) / 60_000)
-  if (minutes < 1) return 'Checked just now'
-  if (minutes < 60)
-    return `Checked ${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24 && then.getDate() === now.getDate())
-    return `Checked ${hours} ${hours === 1 ? 'hour' : 'hours'} ago`
   const time = then.toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   })
+  if (then.toDateString() === now.toDateString()) return `${lead} ${time} today`
   const yesterday = new Date(now)
   yesterday.setDate(now.getDate() - 1)
   if (then.toDateString() === yesterday.toDateString())
-    return `Checked yesterday, ${time}`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `Checked ${days} ${days === 1 ? 'day' : 'days'} ago`
-  return `Checked ${then.toLocaleDateString([], { day: 'numeric', month: 'long' })}`
-}
-
-/** « 2 files · 3 new findings since you looked » — the watch's voice.
- * Composed from the stale note's idiom: a sentence in the subtitle slot,
- * carried in a state colour. Accent, not amber — arrivals the background
- * watch has already re-checked are news, not danger. */
-export const sinceNote = (files: number, findings: number): string => {
-  const parts = [
-    files > 0 ? `${files} ${files === 1 ? 'file' : 'files'}` : null,
-    findings > 0
-      ? `${findings} new ${findings === 1 ? 'finding' : 'findings'}`
-      : null,
-  ].filter(Boolean)
-  return `${parts.join(' · ')} since you looked`
+    return `${lead} yesterday ${time}`
+  const days = Math.floor((now.getTime() - then.getTime()) / 86_400_000)
+  if (days < 7)
+    return `${lead} ${then.toLocaleDateString([], { weekday: 'long' })} ${time}`
+  return `${lead} ${then.toLocaleDateString([], { day: 'numeric', month: 'long' })}`
 }
 
 /** « The model changed at 11:40 today. » — the stale row's own sentence. */
@@ -245,6 +238,15 @@ export const Deals = ({
         }}
         onCancel={() => setWaiting(false)}
         onNewDeal={onNewDeal}
+        onDisconnect={() => {
+          const id = connector?.connection?.id
+          if (!id) return
+          api
+            .disconnect(id)
+            .then(() => api.connectorState(organizationId))
+            .then(setConnector)
+            .catch(() => undefined)
+        }}
       />
     )
   }
@@ -252,33 +254,33 @@ export const Deals = ({
   //: The design's grouping, from its own logic — plus never-checked
   //: deals in the attention group, which its demo data never shows.
   const open = deals.filter(
-    (d) => d.open_findings > 0 || d.stale || d.checked_at === null,
+    (d) => d.failing_checks > 0 || d.stale || d.checked_at === null,
   )
   const clean = deals.filter((d) => !open.includes(d))
 
   const row = (d: DealListItem, first: boolean, group: 'open' | 'clean') => {
     const stale = !!d.stale
     const never = d.checked_at === null
-    //: Stale outranks it — stale means the numbers on this very row are
-    //: wrong, which is graver than them being new.
-    const since =
-      !stale && (d.arrived_since_visit > 0 || d.findings_since_visit > 0)
-        ? sinceNote(d.arrived_since_visit, d.findings_since_visit)
-        : null
-    const sub = stale
-      ? staleNote(d.stale_kind, d.stale_at)
-      : (since ??
-        [
-          d.client,
-          `${d.artifacts} ${d.artifacts === 1 ? 'document' : 'documents'}`,
-        ]
-          .filter(Boolean)
-          .join(' · '))
-    const state = stale
-      ? 'Stale'
-      : never
-        ? 'Not checked yet'
-        : `${d.open_findings} to review`
+    //: Stale outranks the count — stale means the numbers on this very
+    //: row were made against a model that no longer exists.
+    const state =
+      group === 'clean'
+        ? 'All checks pass'
+        : stale
+          ? 'Changed since check'
+          : never
+            ? 'Not checked yet'
+            : `${d.failing_checks} ${d.failing_checks === 1 ? 'check fails' : 'checks fail'}`
+    const stateFg =
+      group === 'clean'
+        ? ink.clean
+        : stale
+          ? ink.accent
+          : never
+            ? //: A state the design does not draw; secondary ink,
+              //: borrowed from its own meta text.
+              ink.secondary
+            : ink.stale
     return (
       <button
         key={d.id}
@@ -295,19 +297,9 @@ export const Deals = ({
           font: 'inherit',
           cursor: 'pointer',
           padding:
-            group === 'open' ? '16px 16px 16px 20px' : '14px 16px 14px 20px',
+            group === 'open' ? '17px 16px 17px 20px' : '15px 16px 15px 20px',
         }}
       >
-        <span
-          style={{
-            flex: '0 0 8px',
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background:
-              group === 'clean' ? ink.clean : stale ? ink.staleDot : ink.accent,
-          }}
-        />
         <span style={{ flex: 1, minWidth: 0 }}>
           <span
             style={{
@@ -319,48 +311,34 @@ export const Deals = ({
           >
             {d.name}
           </span>
+        </span>
+        <span style={{ flex: '0 0 auto', textAlign: 'right' }}>
           <span
             style={{
               display: 'block',
-              fontSize: 13.5,
-              color: since ? ink.accent : ink.secondary,
-              marginTop: 2,
+              fontSize: 14.5,
+              fontWeight: 500,
+              color: stateFg,
+              letterSpacing: '-.01em',
+              whiteSpace: 'nowrap',
             }}
           >
-            {sub}
+            {state}
           </span>
-        </span>
-        {group === 'open' ? (
-          <span style={{ flex: '0 0 auto', textAlign: 'right' }}>
-            <span
-              style={{
-                display: 'block',
-                fontSize: 15,
-                fontWeight: 500,
-                //: « Not checked yet » is a state the design does not
-                //: draw; secondary ink, borrowed from the row subtitle.
-                color: stale ? ink.stale : never ? ink.secondary : ink.accent,
-                letterSpacing: '-.01em',
-              }}
-            >
-              {state}
-            </span>
+          {!never && (
             <span
               style={{
                 display: 'block',
                 fontSize: 12.5,
                 color: ink.faint,
                 marginTop: 2,
+                whiteSpace: 'nowrap',
               }}
             >
-              {never ? '' : checkedLine(d.checked_at)}
+              {checkedLine(d.checked_at, stale)}
             </span>
-          </span>
-        ) : (
-          <span style={{ flex: '0 0 auto', fontSize: 12.5, color: ink.faint }}>
-            {checkedLine(d.checked_at)}
-          </span>
-        )}
+          )}
+        </span>
         {chevron}
       </button>
     )
@@ -384,12 +362,13 @@ export const Deals = ({
           padding: '28px 34px 34px',
           display: 'flex',
           justifyContent: 'center',
+          alignItems: 'flex-start',
         }}
       >
         <div
           style={{
             width: '100%',
-            maxWidth: 760,
+            maxWidth: 620,
             display: 'flex',
             flexDirection: 'column',
           }}
@@ -409,7 +388,7 @@ export const Deals = ({
           {clean.length > 0 && (
             <>
               <div style={{ ...sectionHead, padding: '4px 4px 9px' }}>
-                Clean
+                Clear
               </div>
               <div style={{ ...listCard, overflow: 'hidden' }}>
                 {clean.map((d, i) => row(d, i === 0, 'clean'))}
@@ -435,6 +414,7 @@ const EmptyState = ({
   onConnect,
   onCancel,
   onNewDeal,
+  onDisconnect,
 }: {
   connector: ConnectorState | null
   waiting: boolean
@@ -443,6 +423,7 @@ const EmptyState = ({
   onConnect: () => void
   onCancel: () => void
   onNewDeal: () => void
+  onDisconnect: () => void
 }) => {
   const connected = !!connector?.connection
   return (
@@ -503,7 +484,7 @@ const EmptyState = ({
                 textWrap: 'pretty',
               }}
             >
-              Pierce reads your models and decks from SharePoint.
+              Antford reads your models and decks from SharePoint.
             </span>
             {problem && (
               //: The refusal verbatim — an AADSTS sentence names its own
@@ -575,7 +556,7 @@ const EmptyState = ({
                 <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
               </svg>
               <span style={{ fontSize: 13, lineHeight: 1.5 }}>
-                Read-only. Pierce never writes to your files.
+                Read-only. Antford never writes to your files.
               </span>
             </span>
           </span>
@@ -705,6 +686,22 @@ const EmptyState = ({
               }}
             >
               Choose your deals
+            </button>
+            <button
+              onClick={onDisconnect}
+              style={{
+                marginTop: 16,
+                border: 0,
+                background: 'transparent',
+                font: 'inherit',
+                fontSize: 15,
+                color: ink.accent,
+                cursor: 'pointer',
+                padding: '6px 12px',
+                borderRadius: 9,
+              }}
+            >
+              Disconnect
             </button>
           </span>
         )}

@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Artifact, DealListItem, TieOutApi } from './api'
 import { Chat, ChatContext, chatKeyOf } from './Chat'
-import { blueButton, card, font, ground, ink } from './design'
+import { blueButton, font, ground, ink, shell, wordmark } from './design'
 import { CheckFile } from './screens/CheckFile'
 import { Deals } from './screens/Deals'
 import { DocPanel } from './screens/DocPanel'
@@ -36,8 +36,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 type View = 'deals' | 'check' | 'settings'
 
 const LABELS: Record<View, string> = {
-  deals: 'Deals',
-  check: 'Check a file',
+  deals: 'Models',
+  check: 'Check a model',
   settings: 'Settings',
 }
 
@@ -154,18 +154,20 @@ export const Workspace = ({
         : null
 
   const hasDeal = view === 'deals' && deal !== null
+  //: The Antford dock pill: a soft dark wash and the accent when active,
+  //: quiet grey otherwise. No shadow — the bar itself carries the depth.
   const dock = (k: View) => ({
     border: 0,
-    background: view === k ? '#ffffff' : 'transparent',
+    background: view === k ? 'rgba(21,23,27,.055)' : 'transparent',
     borderRadius: 22,
     padding: '11px 26px',
     font: 'inherit',
     fontSize: 14.5,
-    fontWeight: view === k ? 600 : 400,
+    fontWeight: view === k ? 500 : 400,
     letterSpacing: '-.01em',
     color: view === k ? ink.accent : ink.dock,
     cursor: 'pointer',
-    boxShadow: view === k ? '0 2px 8px rgba(16,20,28,.14)' : 'none',
+    boxShadow: 'none',
   })
 
   return (
@@ -174,10 +176,10 @@ export const Workspace = ({
       style={{
         height: '100vh',
         width: '100%',
-        padding: '18px 18px 0',
+        padding: 0,
         display: 'flex',
         flexDirection: 'column',
-        gap: 14,
+        gap: 0,
         fontFamily: font.ui,
         color: ink.base,
         fontSize: 14.5,
@@ -186,46 +188,46 @@ export const Workspace = ({
         background: ground,
       }}
     >
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 14 }}>
-        {/* The main card. */}
+      {/* Panes sit edge to edge with a 1px seam — the Antford design
+          retires the first workspace's floating cards. */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          gap: 1,
+          background: shell.paneSeam,
+        }}
+      >
+        {/* The main pane. */}
         <div
           style={{
             flex: '1 1 0',
-            minWidth: 540,
+            minWidth: 420,
             display: 'flex',
             flexDirection: 'column',
             order: 1,
             overflow: 'hidden',
-            ...card,
+            background: '#ffffff',
           }}
         >
-          {/* Header row. */}
+          {/* Header bar. */}
           <div
             style={{
               flex: '0 0 auto',
+              height: shell.headerHeight,
+              boxSizing: 'border-box',
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              padding: '9px 10px',
-              borderBottom: '1px solid #f0eeec',
+              padding: '0 10px',
+              borderBottom: shell.headerHairline,
             }}
           >
             {!hasDeal && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 9,
-                  background: 'rgba(255,255,255,.75)',
-                  border: '1px solid rgba(255,255,255,.7)',
-                  boxShadow: '0 1px 2px rgba(18,24,40,.08)',
-                  borderRadius: 11,
-                  padding: '8px 14px',
-                  fontWeight: 500,
-                }}
-              >
-                <span>{LABELS[view]}</span>
-              </div>
+              <span style={{ ...wordmark, margin: '0 6px 0 10px' }}>
+                Antford
+              </span>
             )}
             {hasDeal && (
               <>
@@ -261,9 +263,17 @@ export const Workspace = ({
                   >
                     <polyline points="7.5,1.5 1.5,7.5 7.5,13.5" />
                   </svg>
-                  <span>Deals</span>
+                  <span>Models</span>
                 </button>
-                <span style={{ fontWeight: 500 }}>{deal!.name}</span>
+                <span
+                  style={{
+                    flex: '0 0 auto',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {deal!.name}
+                </span>
               </>
             )}
             <div style={{ flex: 1 }} />
@@ -277,7 +287,7 @@ export const Workspace = ({
                   cursor: checking ? 'default' : 'pointer',
                 }}
               >
-                {checking ? 'Checking' : 'Check now'}
+                {checking ? 'Checking' : 'Recheck now'}
               </button>
             )}
             {view === 'deals' && deal === null && (deals?.length ?? 0) > 0 && (
@@ -285,7 +295,7 @@ export const Workspace = ({
                 onClick={() => setNewOpen(true)}
                 style={{ ...blueButton, marginRight: 4 }}
               >
-                New deal
+                Add models
               </button>
             )}
           </div>
@@ -358,7 +368,8 @@ export const Workspace = ({
         />
       )}
 
-      {/* The dock. */}
+      {/* The dock — the Antford design's translucent bar along the
+          bottom, pills resting directly on it. */}
       <div
         style={{
           flex: '0 0 auto',
@@ -366,7 +377,11 @@ export const Workspace = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '10px 0 14px',
+          padding: '9px 20px 11px',
+          background: 'rgba(255,255,255,.92)',
+          borderTop: shell.headerHairline,
+          backdropFilter: 'blur(20px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
         }}
       >
         <div
@@ -374,21 +389,14 @@ export const Workspace = ({
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            padding: '8px 12px',
-            background: 'rgba(255,255,255,.55)',
-            backdropFilter: 'blur(34px) saturate(1.8)',
-            WebkitBackdropFilter: 'blur(34px) saturate(1.8)',
-            border: '1px solid rgba(255,255,255,.9)',
-            borderRadius: 30,
-            boxShadow:
-              '0 12px 34px rgba(16,20,28,.14), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.95)',
+            padding: 0,
           }}
         >
           <button onClick={go('deals')} style={dock('deals')}>
-            Deals
+            Models
           </button>
           <button onClick={go('check')} style={dock('check')}>
-            Check a file
+            Check a model
           </button>
           <button onClick={go('settings')} style={dock('settings')}>
             Settings
@@ -425,7 +433,7 @@ export const Workspace = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: 11,
-                  fontWeight: 600,
+                  fontWeight: 500,
                   color: '#2c4a80',
                 }}
               >
@@ -475,7 +483,7 @@ export const Workspace = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: 13.5,
-                        fontWeight: 600,
+                        fontWeight: 500,
                         color: '#2c4a80',
                       }}
                     >
@@ -486,7 +494,7 @@ export const Workspace = ({
                         style={{
                           display: 'block',
                           fontSize: 15.5,
-                          fontWeight: 600,
+                          fontWeight: 500,
                           letterSpacing: '-.015em',
                         }}
                       >

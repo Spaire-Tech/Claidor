@@ -16,26 +16,23 @@
  * and are prefixed instead.
  */
 
-/* Switzer — the design's face, extracted from the design file itself and
-   self-hosted. 400/500/600, exactly the weights the markup uses. */
+/* Instrument Sans — the Antford design's face, self-hosted from the
+   design file's own binary. A variable font: one file carries the 400
+   and 500 the markup uses. Switzer (the first workspace's face) is
+   retired with its design; its files stay on disk for git history. */
 @font-face {
-  font-family: 'Switzer';
-  src: url('/workspace/switzer-400.woff2') format('woff2');
+  font-family: 'Instrument Sans';
+  src: url('/workspace/instrument-sans-var.woff2') format('woff2');
+  font-weight: 400 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+/* Bodoni Moda — the Antford wordmark, and only the wordmark. */
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('/workspace/bodoni-moda-400.woff2') format('woff2');
   font-weight: 400;
-  font-display: swap;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Switzer';
-  src: url('/workspace/switzer-500.woff2') format('woff2');
-  font-weight: 500;
-  font-display: swap;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Switzer';
-  src: url('/workspace/switzer-600.woff2') format('woff2');
-  font-weight: 600;
   font-display: swap;
   font-style: normal;
 }

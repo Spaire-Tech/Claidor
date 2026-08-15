@@ -1,11 +1,12 @@
 /**
  * The design's values, named.
  *
- * Source of truth: `docs/pierce/design/markup.html` (12 August workspace).
- * Every constant here is a value that appears verbatim in that file; if a
- * value here disagrees with the file, the file is right. Nothing here is
- * invented — where a screen needs something the design does not draw, the
- * component says which pattern it borrowed, not this file.
+ * Source of truth: `docs/pierce/design-antford/workspace.html` (the
+ * founder's Antford redesign, 14 August). Every constant here is a value
+ * that appears verbatim in that file; if a value here disagrees with the
+ * file, the file is right. Nothing here is invented — where a screen
+ * needs something the design does not draw, the component says which
+ * pattern it borrowed, not this file.
  */
 
 // --- shared with the Office panel: keep byte-identical --------------------
@@ -19,8 +20,10 @@
 
 /** The face. Loaded by `workspace.css` from the design's own binaries. */
 export const font = {
-  ui: "'Switzer', -apple-system, system-ui, sans-serif",
+  ui: "'Instrument Sans', -apple-system, system-ui, sans-serif",
   mono: "'IBM Plex Mono', ui-monospace, monospace",
+  /** The Antford wordmark, and only the wordmark. */
+  brand: "'Bodoni Moda', Didot, Georgia, serif",
 } as const
 
 export const ink = {
@@ -42,6 +45,8 @@ export const ink = {
   stale: '#c8790a',
   /** Stale dot and the model grid's highlight. */
   staleDot: '#ff9f0a',
+  /** The failing check's dot — the Antford design's amber. */
+  failDot: '#e8a33d',
   /** Clean state text and dot. */
   clean: '#34c759',
   /** Destructive — "Sign out". */
@@ -77,13 +82,39 @@ export const listCard = {
 /** Hairline between rows — always via border-top, never on the first. */
 export const hairline = '.5px solid #eceaec'
 
-/** Section heading over a list card. */
+/** Section heading over a list card. The Antford design sets it 500. */
 export const sectionHead = {
   fontSize: 12,
-  fontWeight: 600,
+  fontWeight: 500,
   letterSpacing: '.05em',
   textTransform: 'uppercase',
   color: '#86868b',
+} as const
+
+/**
+ * The Antford shell: a full-bleed white pane under a 54px header bar,
+ * panes separated by a 1px seam, the dock a translucent bar along the
+ * bottom. The floating-card frame of the first workspace is retired
+ * with it.
+ */
+export const shell = {
+  headerHeight: 54,
+  headerHairline: '1px solid #f0eeec',
+  paneSeam: '#eae7e2',
+  dockBar: {
+    background: 'rgba(247,247,249,.82)',
+    borderTop: '1px solid #f0eeec',
+    backdropFilter: 'blur(20px) saturate(1.4)',
+  },
+} as const
+
+/** The wordmark as the design draws it, ready to spread. */
+export const wordmark = {
+  fontFamily: font.brand,
+  fontSize: 23,
+  fontWeight: 400,
+  letterSpacing: '.005em',
+  lineHeight: 1,
 } as const
 
 /** The grey secondary button — "Recheck", "Cancel" on cards. */
