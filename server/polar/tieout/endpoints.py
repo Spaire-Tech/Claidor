@@ -582,16 +582,23 @@ async def list_deals(
         visited_at = visits.get(deal.id)
         arrived_since = 0
         findings_since = 0
+        open_findings = await repository.findings_of(
+            deal.id, state=FindingState.open
+        )
         if visited_at is not None:
             arrived_since = sum(
                 1 for artifact in current if artifact.created_at > visited_at
             )
-            open_findings = await repository.findings_of(
-                deal.id, state=FindingState.open
-            )
             findings_since = sum(
                 1 for finding in open_findings if finding.created_at > visited_at
             )
+
+        # « 6 checks fail », not « 41 findings »: the row states how many
+        # *checks* the model does not pass, and one check can produce many
+        # findings. Distinct rules among the open findings — the tie-out
+        # findings carry no rule and so collapse into one check between
+        # them, which is right: they are all the same check failing.
+        failing_checks = len({finding.rule for finding in open_findings})
 
         items.append(
             DealListItem(
@@ -600,6 +607,7 @@ async def list_deals(
                 client=deal.client_name,
                 artifacts=len(current),
                 open_findings=counts.get("open", 0),
+                failing_checks=failing_checks,
                 # The run's own finishing time, not the row's: a run that
                 # was started and never finished has not checked anything.
                 checked_at=run.finished_at if run else None,

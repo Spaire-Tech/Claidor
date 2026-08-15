@@ -7,23 +7,16 @@
  */
 
 @font-face {
-  font-family: 'Switzer';
-  src: url('/fonts/switzer-400.woff2') format('woff2');
+  font-family: 'Instrument Sans';
+  src: url('/fonts/instrument-sans-var.woff2') format('woff2');
+  font-weight: 400 700;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('/fonts/bodoni-moda-400.woff2') format('woff2');
   font-weight: 400;
-  font-display: swap;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Switzer';
-  src: url('/fonts/switzer-500.woff2') format('woff2');
-  font-weight: 500;
-  font-display: swap;
-  font-style: normal;
-}
-@font-face {
-  font-family: 'Switzer';
-  src: url('/fonts/switzer-600.woff2') format('woff2');
-  font-weight: 600;
   font-display: swap;
   font-style: normal;
 }

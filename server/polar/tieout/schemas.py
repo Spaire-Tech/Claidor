@@ -530,6 +530,11 @@ class DealListItem(Schema):
     client: str | None
     artifacts: int
     open_findings: int
+    #: How many *checks* the open findings belong to — distinct rules, the
+    #: tie-out counting as one. The Antford list states « 6 checks fail »,
+    #: never a findings count, because one check can produce forty
+    #: findings and the row would read like forty problems.
+    failing_checks: int = 0
     #: When this deal was last reconciled. Null: never.
     checked_at: datetime | None = None
     #: When this person last opened the deal. Null: never. The two counts

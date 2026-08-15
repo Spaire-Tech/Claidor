@@ -2002,3 +2002,120 @@ dialog frame was refused, no token came back, and Office said
 Vite's own `BASE_URL` — and the whole sign-in journey sits under the
 `/panel/*` CSP rule that already welcomes Office's hosts. Verified in
 the compiled bundle before committing.
+
+## 14 August 2026 — the closed-deal test, found, run, and graded in a night
+
+The founder went hunting for a closed deal published beside its
+contract and the research pointed at Scotland: SFT publishes
+financial-close models next to redacted Project Agreements. The
+portal blocks robots and its own TLS certificate is expired; the
+files came through a reader proxy, a search endpoint, and the S3
+bucket the portal fronts. The pair that completed first: Dumfries &
+Galloway Royal Infirmary — a 359-page Project Agreement and the
+6.4MB financial-close model, values-only as published.
+
+Discipline held in order: protocol pre-registered before the files
+existed, ground truth hand-read from the contract and committed
+before the first run. The redaction finding came first and matters
+most — ten readable pound-figures in 359 pages, no rates at all: the
+redaction regime deletes precisely what a model holds.
+
+Grades, by the unmodified protocol: **audit leg PASS** — 107 frozen
+#REF! errors and 96 formula-attested dependencies on an unpublished
+sensitivities workbook, hand-verified, auditor-billable, zero
+configuration. **Grounding leg FAIL on recall, 0 of 3** — and a
+perfect zero false drifts across 1,497 × 199,098, the criterion
+pre-named as decisive on a redacted pair. The recall causes are
+named with evidence: OCR'd tables sever a shareholder's name from
+the 25,500 it owns (the model literally has a row called « Laing
+O'Rourke » waiting), and « issued share capital » shares no word
+with a row called « Equity ». One is the reader's next round; the
+other is a synonym-bridge decision owed corpus evidence.
+
+The night's verdict for the model-audit thesis: on the first real
+closed-deal model it ever touched, the engine produced findings a
+model auditor bills for. The grounding story on published pairs is
+capped by redaction itself — the strongest argument yet that the
+full product belongs inside live deals, not public archives.
+
+## 14 August 2026 — the revision-defect study: the claim becomes a table
+
+The founder's brief: the yearly-subscription argument rests on a
+claim nobody has ever measured — that revising a professional model
+introduces new defects. Ofwat published its PR24 suite twice, five
+months apart, revised under formal objection. We own the only tool
+that could measure the difference, so we did, protocol first.
+
+Sixteen matched pairs, company by company, identities verified from
+each workbook's own cover cell (one carried United Utilities' legacy
+code, one identified by airtight elimination). Findings matched on
+rule + sheet + cell name — never the address — with unmatchable
+findings bucketed, not guessed. Then twelve NEW findings read by
+hand in the cells on both sides before anything counted.
+
+The result: **84 new mechanical defects across one revision cycle,
+ten of sixteen models gained at least one, and Yorkshire gained
+forty in a single block** — the post-financeability adjustments, the
+exact mechanism reworked as allowances moved from £88bn to £104bn.
+Verified shapes: live input formulas overwritten with typed
+constants, and late adjustments hardcoded into formula tails
+(`-0.490096707821704` bolted onto a restored formula). Three cases
+where the revision fixed one defect class by introducing another.
+Also honest: revision *repaired* 338 findings while introducing 84,
+and the template itself ships ~581 standing findings into every
+company model. Full table, verified samples, and pre-committed
+caveats in `revision-defect-results.md`.
+
+The sentence this buys, exactly as pre-registered: across one major
+revision of a professional financial model suite, 84 new mechanical
+defects appeared. No competitor can say it, because no competitor
+measured it.
+
+---
+
+## 15 August — the Antford workspace, rebuilt to the founder's redesign
+
+**The brief.** The founder redesigned the whole workspace (and the brand:
+Bodoni Moda wordmark, Instrument Sans face) and handed over the file —
+"the design changes. the logo too btw. mind everything." Checked in at
+`docs/pierce/design-antford/` as the new source of truth; built in three
+phases, each committed and pushed separately.
+
+**Phase 1 — brand, shell, models list.** Fonts vendored from the design's
+own binaries into web and panel (shared design block kept byte-identical;
+panel tests pin it). The floating-card frame retired: full-bleed white
+panes over a 1px `#eae7e2` seam, 54px header, translucent dock bar, the
+wordmark in Bodoni. The deals list became the design's sentence-rows —
+name left, verdict right («6 checks fail» amber, «Changed since check»
+blue, «All checks pass» green) over «Checked Tuesday 11:52». That verdict
+needed a number the API didn't carry: `failing_checks`, distinct rules
+among the open findings, tie-out counting as one — added to the deals
+endpoint and pinned in the route test against the findings list's own
+rules. Groups are «Needs attention» and «Clear»; never-checked deals keep
+their own undrawn state («Not checked yet», flagged).
+
+**Phase 2 — the model page.** Verdict in four faces (clean · stale ·
+spelled-out failing count · never-checked, the last composed because the
+design doesn't draw it). One card per failing check with new-vs-inherited
+tags read off the finding's first sighting against the current model
+version. Card modal: the finding's sentences, places listed, «Accept with
+a note» wired to the real per-finding accept (note required). Sectioned
+card: Checks that pass / did not run / Evidence locker / The model /
+Documents that quote it. Departures (all data-absent, none faked): no
+mini Excel grid in the modal, no «Open the cell» in web, no per-rule
+tallies, version rows say who uploaded rather than what changed.
+
+**Phase 3 — the rest.** Check a model rebuilt to the front door («Would
+this model survive its audit today?», dashed drop zone, glassy progress
+card with the design's staged steps, done view in the model page's own
+shapes with real sheet/formula counts). The design cut the against-picker
+and recents from that screen; so did the build. Settings: flat tab pill,
+design width, «The Excel add-in» only — Word/PowerPoint/Outlook rows
+retired with the two-surface posture. Doc panel and chat became flat
+panes; chat appears only when «Ask» is pressed and carries the design's
+close button.
+
+**Still open.** «Export report» and the report sheet ride with the demo
+kit (#18) — the button arrives with the thing it opens. The «Folders
+Antford watches» / «Mailbox» rows stay omitted (Change has no
+destination). The panel's own Antford redesign is with the founder.

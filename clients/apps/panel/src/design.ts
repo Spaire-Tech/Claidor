@@ -20,11 +20,20 @@
  */
 
 // --- shared with the Office panel: keep byte-identical --------------------
+//
+// The panel is a separate application with a separate bundler, and these
+// values have to be the same in both or the two halves of the product
+// drift apart a shade at a time. Rather than couple two build systems
+// over a block of constants, it is copied into
+// `clients/apps/panel/src/design.ts` and `design.test.ts` there fails the
+// build if the two ever differ. Edit one, edit the other.
 
 /** The face. Loaded by `workspace.css` from the design's own binaries. */
 export const font = {
-  ui: "'Switzer', -apple-system, system-ui, sans-serif",
+  ui: "'Instrument Sans', -apple-system, system-ui, sans-serif",
   mono: "'IBM Plex Mono', ui-monospace, monospace",
+  /** The Antford wordmark, and only the wordmark. */
+  brand: "'Bodoni Moda', Didot, Georgia, serif",
 } as const
 
 export const ink = {
@@ -46,6 +55,8 @@ export const ink = {
   stale: '#c8790a',
   /** Stale dot and the model grid's highlight. */
   staleDot: '#ff9f0a',
+  /** The failing check's dot — the Antford design's amber. */
+  failDot: '#e8a33d',
   /** Clean state text and dot. */
   clean: '#34c759',
   /** Destructive — "Sign out". */

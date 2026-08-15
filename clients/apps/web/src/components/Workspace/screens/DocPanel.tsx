@@ -177,18 +177,14 @@ export const DocPanel = ({
   return (
     <div
       style={{
-        flex: '0 1 560px',
-        minWidth: 360,
+        //: The Antford pane: full-bleed white beside the main pane's
+        //: seam — the floating glass card is retired with its design.
+        flex: '1 1 0',
+        minWidth: 380,
         order: 2,
         display: 'flex',
         flexDirection: 'column',
-        background: 'rgba(255,255,255,.92)',
-        backdropFilter: 'blur(20px) saturate(1.4)',
-        WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-        border: '1px solid rgba(255,255,255,.9)',
-        borderRadius: 20,
-        boxShadow:
-          '0 14px 40px rgba(16,20,28,.10), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.9)',
+        background: '#ffffff',
         overflow: 'hidden',
       }}
     >
@@ -225,7 +221,7 @@ export const DocPanel = ({
             flex: 1,
             minWidth: 0,
             fontSize: 15.5,
-            fontWeight: 600,
+            fontWeight: 500,
             letterSpacing: '-.015em',
             overflow: 'hidden',
             textOverflow: 'ellipsis',

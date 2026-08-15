@@ -829,6 +829,7 @@ class TestThePanel:
         never = (await client.get("/v1/tieout/deals")).json()[0]
         assert never["checked_at"] is None
         assert never["open_findings"] == 0
+        assert never["failing_checks"] == 0
 
         checked = await _loaded(session, save_fixture, user)
         await session.flush()
@@ -836,6 +837,17 @@ class TestThePanel:
         rows = {one["id"]: one for one in (await client.get("/v1/tieout/deals")).json()}
         assert rows[str(checked.id)]["checked_at"] is not None
         assert rows[str(checked.id)]["open_findings"] > 0
+
+        # « 6 checks fail », not « 41 findings »: the row counts distinct
+        # *checks* among the open findings, so it must agree with the
+        # findings list's own rules — and can never exceed the findings.
+        findings = (
+            await client.get(f"/v1/tieout/deals/{checked.id}/findings?state=open")
+        ).json()
+        assert rows[str(checked.id)]["failing_checks"] == len(
+            {one["rule"] for one in findings}
+        )
+        assert 0 < rows[str(checked.id)]["failing_checks"] <= len(findings)
 
     @pytest.mark.auth
     async def test_a_finding_carries_coordinates_a_host_can_act_on(
