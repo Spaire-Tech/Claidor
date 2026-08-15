@@ -446,7 +446,15 @@ export const Workspace = ({
         )}
 
         {chatContext !== null && (
-          <Chat key={chatKeyOf(chatContext)} api={api} context={chatContext} />
+          <Chat
+            key={chatKeyOf(chatContext)}
+            api={api}
+            context={chatContext}
+            onClose={() => {
+              setAskOpen(false)
+              setDocChat(null)
+            }}
+          />
         )}
       </div>
 

@@ -112,9 +112,12 @@ export const chatKeyOf = (context: ChatContext): string => {
 export const Chat = ({
   api,
   context,
+  onClose,
 }: {
   api: TieOutApi
   context: ChatContext
+  /** The pane's X — the design's `askClosable`. Absent, no X is drawn. */
+  onClose?: () => void
 }) => {
   //: The opening rows come from the context itself; a deal-finding chat
   //: starts on the working line its chain fetch replaces.
@@ -254,19 +257,14 @@ export const Chat = ({
   return (
     <div
       style={{
-        flex: '0 1 440px',
+        //: The Antford pane: 38% of the row, flat white beside the
+        //: seam — the glass card is retired with its design.
+        flex: '0 0 38%',
         minWidth: 320,
-        maxWidth: 520,
         order: 3,
         display: 'flex',
         flexDirection: 'column',
-        background: 'rgba(255,255,255,.72)',
-        backdropFilter: 'blur(30px) saturate(1.8)',
-        WebkitBackdropFilter: 'blur(30px) saturate(1.8)',
-        border: '1px solid rgba(255,255,255,.95)',
-        borderRadius: 20,
-        boxShadow:
-          '0 14px 40px rgba(16,20,28,.14), 0 0 0 1px rgba(16,20,28,.04), inset 0 1px 0 rgba(255,255,255,.95)',
+        background: '#ffffff',
         overflow: 'hidden',
       }}
     >
@@ -276,9 +274,38 @@ export const Chat = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-end',
+          gap: 2,
           padding: '12px 14px 10px',
         }}
       >
+        {onClose !== undefined && (
+          <button
+            onClick={onClose}
+            title="Close"
+            style={{
+              border: 0,
+              background: 'transparent',
+              borderRadius: 9,
+              padding: 6,
+              cursor: 'pointer',
+              display: 'flex',
+              color: '#8e8e93',
+            }}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            >
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          </button>
+        )}
         <button
           onClick={() => {
             flight.current++
