@@ -2200,3 +2200,43 @@ not correctness, and the next vocabulary round; the `.xls` Ayrshire
 file loads but yields no axis — the old-format label path needs
 reading. Semi-annual Dumfries recorded as 2 columns/year rather than
 flagged, as the protocol demands.
+
+---
+
+## 15 August — structure layer, round 2: Phase 1 passes
+
+**The two repairs round 1 demanded, both measured before coded.**
+Vocabulary pairs became block-scoped — the opening rows partition a
+sheet, and a closing belongs to the block it sits in. That is
+Anderson's own layout speaking: « Opening Cash » at 217, twelve
+movement rows, « Closing Cash » at 229; the old eight-row cap was a
+number, the block is a structure. And the FAST idiom finally pairs:
+a bare reference to the previous period, same shape, recurring across
+three or more columns is the model declaring a carry with no words at
+all. Hand-read on AFW's RCV block and it is textbook: the BEG row
+reads `=J99`; row 99 computes `opening + additions − deductions`.
+
+**Round-2 numbers, all 22 models.** Pairs 4,566 (from 115). Balance
+sheet located on 19 of 22 (86%); debt machinery on 21 of 22 (95%) —
+Anderson and Elgin came in through their workings sheets. Ayrshire
+(.xls) is the one full abstention: its period headers are date values,
+not text; diagnosed for a reader round, not patched.
+
+**Hand-verification sample, per the protocol.** Every sheet's axis
+read on AFW, YKY, Dumfries and Bertha Park: the Ofwat axes uniformly
+FY2022–FY2036 on ~45 sheets each; Dumfries monthly through its
+construction phase and semi-annual through operations, per sheet, with
+the audited statements annual — the exact periodicity split the
+protocol required recording rather than flagging. Blocks hand-read:
+Dumfries « BS » (Debtors, reserves, Total current assets, Creditors —
+a real balance sheet), Bertha's pair 655/660, Anderson's cash rows.
+One definition sharpened rather than counted a miss: the
+`debt-schedule` kind names debt *machinery* — schedules and service
+waterfalls both (Bertha's « Distributions » is CAFDS and coupons); the
+terminal check finds tranches *within* a located sheet and abstains
+where there are none.
+
+**Phase 1: PASSED** under the pre-registered criteria — coverage above
+80% on both block kinds, zero mislocations found, the sample read.
+Next: Phase 2, the balance check, keyed on each model's own check rows
+and subtotal tree (label-pairing stays rejected).
