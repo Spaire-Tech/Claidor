@@ -433,6 +433,13 @@ class TieOutService:
         for model in models:
             cells = await repository.cells_of(model.id)
             book = _workbook_of(cells)
+            #: The cells cannot say what the workbook hides — that fact
+            #: was kept on the artifact at ingest, and the audit needs
+            #: it back before it runs.
+            book.hidden_sheets = tuple(model.counts.get("hidden_sheets", []))
+            book.very_hidden_sheets = tuple(
+                model.counts.get("very_hidden_sheets", [])
+            )
             result = run_rules(book)
             result.findings = [
                 one for one in result.findings if one.rule not in rules_off

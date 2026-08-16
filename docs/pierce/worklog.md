@@ -2489,3 +2489,32 @@ protocol's instrument-primacy rule. Grading and de-dup both run as
 post-passes inside the engine, so the deal audit, the one-off check
 and the panel all inherit them unchanged. 28 analytics unit tests;
 411 tieout tests green.
+
+## Hidden sheets folded into the audit (16 August)
+
+The document panel has said what a workbook hides since the metadata
+round; the audit now says it too, so concealment reaches the model
+page, the panel and the deals arithmetic like any other check. One
+new construction rule, « Hidden sheets », with the two states the
+file format distinguishes carrying their own weights: *hidden* is a
+smell — one right-click from visible, everybody can see it exists —
+and *very hidden* is an error: the sheet is absent from Excel's own
+unhide menu, reachable only through the VBA editor, and concealment
+at that grade is a repeated cause in the published spreadsheet-
+disaster catalogues (EuSpRIG, cited on the finding).
+
+The fact is kept on the artifact at ingest — the stored cells alone
+cannot recover a sheet's visibility — and handed back to the audit
+when it runs on the reconstruction; the one-off check inherits the
+rule for free because its defects come from the same audit at read
+time. The legacy .xls path now distinguishes very hidden too (xlrd
+visibility 2), where it previously collapsed the states.
+
+**On the corpus:** Dumfries — an issued financial-close copy —
+carries two very hidden sheets, « TM_Databook » and « TM_Ph2 Calcs »,
+confirmed by two independent readers; RHSC carries 27 hidden sheets
+of which « INTEG » is very hidden. What those sheets hold was not
+judged — the finding states the concealment and the reader decides —
+and models ingested before this change surface the rule on their
+next upload, since the fact is recorded at read time. 412 tieout
+tests green; the catalogue grows to eleven construction rules.

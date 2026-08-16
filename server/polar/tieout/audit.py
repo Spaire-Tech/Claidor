@@ -150,6 +150,7 @@ RULE_NAMES: dict[str, str] = {
     "inconsistent-row": "Formulas inconsistent across a row",
     "circular": "Circular references",
     "skipped-cell": "Sum ranges that miss a cell",
+    "hidden-sheet": "Hidden sheets",
 }
 
 
@@ -166,6 +167,7 @@ def audit(book: Workbook) -> Audit:
     _typed_islands(book, result)
     _circularity(book, result)
     _skipped_cells(book, result)
+    _hidden_sheets(book, result)
 
     result.findings = _collapsed(book, result.findings)
     result.findings.sort(key=lambda f: (f.severity != "error", f.sheet, f.rule, f.ref))
@@ -909,6 +911,43 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                         source="ICAEW P19, EuSpRIG",
                     )
                 )
+
+
+def _hidden_sheets(book: Workbook, result: Audit) -> None:
+    """Sheets the workbook is hiding — the document panel's fact,
+    folded into the audit so it reaches the model page, the panel and
+    the deals arithmetic.
+
+    Two states, two weights. A *hidden* sheet is one right-click away
+    from visible — everybody can see it exists — so it is a smell: a
+    fact worth a look, often innocent. A *very hidden* sheet does not
+    appear in Excel's own unhide menu and is reachable only through
+    the VBA editor; concealment at that grade is a repeated cause in
+    the published catalogues of spreadsheet disasters, and it is an
+    error.
+    """
+    very = set(book.very_hidden_sheets)
+    for sheet in book.hidden_sheets:
+        concealed = sheet in very
+        result.findings.append(
+            Finding(
+                rule="hidden-sheet",
+                severity="error" if concealed else "smell",
+                ref=f"{sheet}!A1",
+                sheet=sheet,
+                name=sheet,
+                detail=(
+                    f"« {sheet} » is very hidden — it does not appear in "
+                    "Excel's unhide menu and can only be reached through "
+                    "the VBA editor. Whatever it holds feeds the model "
+                    "without being on any screen."
+                    if concealed
+                    else f"« {sheet} » is hidden — it is in the workbook "
+                    "and one right-click away from visible."
+                ),
+                source="EuSpRIG",
+            )
+        )
 
 
 __all__ = [

@@ -186,3 +186,32 @@ def test_an_input_column_with_a_total_under_it_is_data_not_damage() -> None:
 
     result = _tmp_book(build)
     assert not any(f.rule == "typed-over-formula" for f in result.findings)
+
+
+def test_hidden_and_very_hidden_sheets_are_findings() -> None:
+    """The document panel's concealment facts, folded into the audit:
+    hidden is a smell (one right-click from visible), very hidden is an
+    error (absent from Excel's own unhide menu)."""
+    import tempfile
+
+    from openpyxl import Workbook as Book
+
+    book = Book()
+    sheet = book.active
+    assert sheet is not None
+    sheet.title = "Model"
+    sheet["A1"] = 1
+    shy = book.create_sheet("Workings")
+    shy["A1"] = 2
+    shy.sheet_state = "hidden"
+    dark = book.create_sheet("Plug")
+    dark["A1"] = 3
+    dark.sheet_state = "veryHidden"
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    found = {
+        f.sheet: f.severity for f in result.findings if f.rule == "hidden-sheet"
+    }
+    assert found == {"Workings": "smell", "Plug": "error"}
