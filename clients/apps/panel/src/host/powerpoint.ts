@@ -333,6 +333,11 @@ function goToSlideOnly(page: number): Promise<GoToResult> {
 }
 
 export const powerpoint: HostBridge = {
+  //: Dormant host — the product is Excel-only. Nothing to hand over.
+  async readFile() {
+    return null
+  },
+
   host: 'powerpoint',
 
   async read(): Promise<OpenDocument> {

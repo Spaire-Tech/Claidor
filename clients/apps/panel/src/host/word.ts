@@ -130,6 +130,11 @@ async function writeInto(
 }
 
 export const word: HostBridge = {
+  //: Dormant host — the product is Excel-only. Nothing to hand over.
+  async readFile() {
+    return null
+  },
+
   host: 'word',
 
   async read(): Promise<OpenDocument> {

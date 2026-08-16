@@ -154,6 +154,57 @@ RULE_NAMES: dict[str, str] = {
 }
 
 
+def plain_words(finding: Finding) -> str:
+    """The finding as a person hears it — one sentence, no formula.
+
+    The engine's `detail` is evidence: the formula, the neighbours, the
+    span. Evidence under a claim is right; evidence *as* the claim is
+    what the founder read and could not: « =Z104+1 where the series
+    does =IF(... ». Every rule gets its sentence here, with the row's
+    own label leading when the model gave one. Screens show this first
+    and the evidence beneath.
+    """
+    who = f"« {finding.name} » — " if finding.name else ""
+    at = finding.ref
+    sentence = {
+        "error-value": f"{at} shows an error instead of a number.",
+        "external-link": (
+            f"{at} depends on another workbook that is not here."
+        ),
+        "volatile": (
+            f"{at} recalculates every time anything changes, so its "
+            "value never sits still."
+        ),
+        "long-formula": (
+            f"The formula at {at} is too long for a person to follow."
+        ),
+        "hardcode-in-formula": (
+            f"A number is typed inside the formula at {at}, where the "
+            "row calculates."
+        ),
+        "typed-over-formula": (
+            f"{at} holds a typed value where the rest of its row runs "
+            "a formula."
+        ),
+        "inconsistent-anchoring": (
+            f"{at} anchors its references differently from the rest "
+            "of its row."
+        ),
+        "inconsistent-row": (
+            f"{at} does not do what the rest of its row does."
+        ),
+        "circular": f"{at} feeds its own calculation.",
+        "skipped-cell": (
+            f"The total at {at} misses cells directly above it."
+        ),
+    }.get(finding.rule)
+    if sentence is None:
+        #: Hidden sheets and the statement checks already write their
+        #: detail as a sentence — it is the plain words.
+        return finding.detail
+    return f"{who}{sentence}"
+
+
 def audit(book: Workbook) -> Audit:
     """Every mechanical defect in a model, graded."""
     result = Audit(examined=len(book.cells))
@@ -179,7 +230,20 @@ def audit(book: Workbook) -> Audit:
 #: 625-character formula filled across a grid produced 7,752 of the
 #: file's 8,017 findings — one authoring decision reported 7,752 times,
 #: which buries the 265 findings that are about anything else.
-FILLED_RULES = frozenset({"long-formula", "volatile", "hardcode-in-formula"})
+FILLED_RULES = frozenset(
+    {
+        "long-formula",
+        "volatile",
+        "hardcode-in-formula",
+        #: Added after the founder's own file came back with 114
+        #: inconsistent-row findings and 100 skipped-cell findings —
+        #: six dragged counter columns and four dragged totals, each
+        #: reported once per cell it was filled into. One authoring
+        #: decision, one finding, with the span in the sentence.
+        "inconsistent-row",
+        "skipped-cell",
+    }
+)
 
 
 def _collapsed(book: Workbook, findings: list[Finding]) -> list[Finding]:

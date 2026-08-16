@@ -54,6 +54,11 @@ export function firstReadable(): DraftAttachment | null {
 }
 
 export const outlook: HostBridge = {
+  //: Dormant host — the product is Excel-only. Nothing to hand over.
+  async readFile() {
+    return null
+  },
+
   host: 'outlook',
 
   async read(): Promise<OpenDocument> {

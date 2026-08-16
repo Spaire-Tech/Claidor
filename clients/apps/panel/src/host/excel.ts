@@ -57,6 +57,59 @@ export const excel: HostBridge = {
     }
   },
 
+  /**
+   * The workbook's own bytes, in 4MB slices — Office's way of handing
+   * a file over. The panel checks *this* copy, exactly as it stands,
+   * unsaved edits included: that is the copy the person is looking at.
+   */
+  async readFile(): Promise<{ bytes: Uint8Array; filename: string } | null> {
+    const file = await new Promise<Office.File | null>((resolve) => {
+      try {
+        Office.context.document.getFileAsync(
+          Office.FileType.Compressed,
+          { sliceSize: 4 * 1024 * 1024 },
+          (result) =>
+            resolve(
+              result.status === Office.AsyncResultStatus.Succeeded
+                ? result.value
+                : null,
+            ),
+        )
+      } catch {
+        resolve(null)
+      }
+    })
+    if (file === null) return null
+
+    try {
+      const parts: Uint8Array[] = []
+      for (let at = 0; at < file.sliceCount; at++) {
+        const slice = await new Promise<Office.Slice | null>((resolve) => {
+          file.getSliceAsync(at, (result) =>
+            resolve(
+              result.status === Office.AsyncResultStatus.Succeeded
+                ? result.value
+                : null,
+            ),
+          )
+        })
+        if (slice === null) return null
+        parts.push(new Uint8Array(slice.data as number[]))
+      }
+      const bytes = new Uint8Array(
+        parts.reduce((sum, part) => sum + part.length, 0),
+      )
+      let offset = 0
+      for (const part of parts) {
+        bytes.set(part, offset)
+        offset += part.length
+      }
+      return { bytes, filename: filenameFromUrl() || 'model.xlsx' }
+    } finally {
+      file.closeAsync(() => undefined)
+    }
+  },
+
   stamp: writeStamp,
 
   async goTo(anchor: Anchor): Promise<GoToResult> {

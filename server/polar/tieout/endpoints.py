@@ -348,6 +348,7 @@ def _finding(
         figure_unit=str(evidence.get("figure_unit") or ""),
         period=str(evidence.get("period") or ""),
         standard_sentence=str(evidence.get("standard_sentence") or ""),
+        grid=evidence.get("grid") or None,
     )
 
 

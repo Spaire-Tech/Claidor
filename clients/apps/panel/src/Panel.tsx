@@ -7,15 +7,20 @@
  * column, and this file is that column against real data. Everything it
  * *does* is in `usePanel`; this file is only what it looks like.
  *
+ * **What the panel does now is its one job: check the model that is
+ * open.** The workbook's own bytes are read out of Excel and put
+ * through the engine — no deal, no picker, nobody asked where their
+ * own file « belongs ». The deal-identification faces are gone with
+ * the pivot.
+ *
  * The design's own decisions, kept:
  * - Buttons are **black**. Blue is for links and cell references.
  * - The mark is a Bodoni « A », not the wordmark.
  * - A finding is a cell reference in Excel's own face — tap it and the
  *   sheet moves there — beside one plain sentence, the standard beneath.
- * - Dismissal is deliberate: « That's fine » asks « Why is this
- *   deliberate? » and will not save without an answer.
- * - Findings carried over from before this file was watched sit in a
- *   collapsed « older findings » drawer, out of the way and not gone.
+ * - « That's fine » with its deliberate note needs somewhere to keep
+ *   the answer; a one-off check keeps nothing, so the flow is out
+ *   until checks persist per model — flagged, not faked.
  *
  * Departures, each because the drawn thing has no data or no home yet:
  * - « Signed in as … » on the consent face is omitted — the token the
@@ -30,9 +35,9 @@
  *   that moved somewhere wrong.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import type { DealListItem, Finding } from './api'
+import type { PanelDefect } from './api'
 import { TieOutApi } from './api'
 import { current } from './auth'
 import { API_BASE, SIGN_IN_URL } from './config'
@@ -84,9 +89,6 @@ const timeWord = (at: string): string => {
     return `yesterday ${time}`
   return then.toLocaleDateString([], { day: 'numeric', month: 'long' })
 }
-
-/** How many older rows are drawn before « N more » takes over. */
-const OLDER_SHOWN = 6
 
 const PHASES = [
   'Reading the workbook',
@@ -242,11 +244,8 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
   )
   const panel = usePanel(bridge, api, SIGN_IN_URL, allowed)
   const [problem, setProblem] = useState<string | null>(null)
-  //: The picked finding, and the note flow inside it.
+  //: The picked finding — selected here, selected in the sheet.
   const [sel, setSel] = useState<string | null>(null)
-  const [noting, setNoting] = useState<string | null>(null)
-  const [noteText, setNoteText] = useState('')
-  const [oldOpen, setOldOpen] = useState(false)
 
   const signedIn = current() !== null
 
@@ -488,7 +487,11 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
     )
   }
 
-  if (panel.stage === 'loading' || panel.working) {
+  if (
+    panel.stage === 'loading' ||
+    panel.stage === 'checking' ||
+    panel.working
+  ) {
     return (
       <Shell>
         <div
@@ -504,8 +507,8 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
         >
           {/* The phase words describe a check run; a plain load keeps
               the ring and stays quiet rather than claiming one. */}
-          <Ring phases={panel.working} />
-          {(panel.document?.filename || panel.identity?.artifact?.filename) && (
+          <Ring phases={panel.stage === 'checking' || panel.working} />
+          {panel.document?.filename && (
             <div
               style={{
                 fontSize: 12.5,
@@ -518,7 +521,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                 textOverflow: 'ellipsis',
               }}
             >
-              {panel.identity?.artifact?.filename ?? panel.document?.filename}
+              {panel.document.filename}
             </div>
           )}
         </div>
@@ -561,7 +564,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
     )
   }
 
-  if (panel.stage === 'unsupported') {
+  if (panel.stage === 'no-workbook') {
     return (
       <Shell>
         <div
@@ -570,113 +573,54 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
             fontSize: 14,
             color: ink.secondary,
             lineHeight: 1.55,
+            textWrap: 'pretty',
           }}
         >
-          There is no document open here. Open a model and this reads it.
+          There is no workbook to check here. Open a model in Excel, and
+          Antford reads this copy — exactly as it stands, unsaved edits
+          included.
         </div>
       </Shell>
     )
   }
 
-  if (panel.stage === 'choose-deal') {
-    return (
-      <Shell>
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '8px 24px 24px',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 19,
-              letterSpacing: '-.02em',
-              lineHeight: 1.28,
-              textWrap: 'balance',
-            }}
-          >
-            Which model does this belong to?
-          </div>
-          <div
-            style={{
-              fontSize: 12.5,
-              color: '#a1a1a6',
-              marginTop: 6,
-              textWrap: 'pretty',
-            }}
-          >
-            Asked once — the answer is kept inside the file itself.
-          </div>
-          {panel.error && (
-            //: The refusal that breaks the old ask-loop: picking a
-            //: model that does not hold this file now says so instead
-            //: of asking the same question again.
-            <div
-              style={{
-                fontSize: 13,
-                color: '#a35c07',
-                lineHeight: 1.5,
-                marginTop: 12,
-                textWrap: 'pretty',
-              }}
-            >
-              {panel.error}
-            </div>
-          )}
-          <DealList
-            onChoose={(id, name) => void panel.chooseDeal(id, name)}
-          />
-        </div>
-      </Shell>
-    )
-  }
-
-  //: Ready — the design's `isIn` face.
-  const artifact = panel.identity?.artifact ?? null
-  const savedAt = artifact ? new Date(artifact.uploaded_at) : null
-  const open = panel.findings.filter((one) => one.state === 'open')
-  //: The split the design draws: what arrived with the version being
-  //: watched, and what was already there. No history — everything is
-  //: this file's own.
-  const fresh = savedAt
-    ? open.filter((one) => new Date(one.created_at) > savedAt)
-    : open
-  const older = savedAt
-    ? open.filter((one) => new Date(one.created_at) <= savedAt)
-    : []
-  const accepted = panel.findings.filter((one) => one.state === 'accepted')
+  //: Checked — the design's `isIn` face, over the open workbook's own
+  //: check. Errors lead, smells follow. Each row is the design's: the
+  //: cell reference in Excel's face (tap, and the sheet moves there),
+  //: one plain sentence, the standard beneath.
+  const result = panel.result
+  const defects = result?.defects ?? []
+  const ordered = [
+    ...defects.filter((one) => one.severity === 'error'),
+    ...defects.filter((one) => one.severity === 'smell'),
+  ]
+  const SHOWN = 40
+  const shown = ordered.slice(0, SHOWN)
 
   const failLabel =
-    fresh.length === 0
+    defects.length === 0
       ? 'Nothing to fix'
-      : `${fresh.length} ${fresh.length === 1 ? 'finding' : 'findings'}`
-  const failingKeys = new Set(open.map((one) => one.rule ?? ''))
+      : `${defects.length} ${defects.length === 1 ? 'finding' : 'findings'}`
+  const failingRules = new Set(defects.map((one) => one.rule))
   const passing =
     panel.rules === null
       ? null
-      : panel.rules.filter((rule) => rule.on && !failingKeys.has(rule.key))
+      : panel.rules.filter((rule) => rule.on && !failingRules.has(rule.key))
           .length
-  const passLabel =
-    panel.coverage?.checked_at == null
-      ? 'Not checked yet'
-      : `${passing === null ? '' : `${passing} checks pass · `}${timeWord(
-          panel.coverage.checked_at,
-        )}`
+  const passLabel = result
+    ? `${passing === null ? '' : `${passing} checks pass · `}${timeWord(
+        result.checked_at,
+      )}`
+    : ''
 
-  const refOf = (finding: Finding): string =>
-    finding.where.anchor.ref ?? finding.where.detail ?? finding.where.label
+  const keyOf = (defect: PanelDefect) => `${defect.rule}:${defect.ref}`
 
-  const jump = (finding: Finding) => {
+  const jump = (defect: PanelDefect) => {
     setProblem(null)
-    void panel.goTo(finding).then((result) => {
-      setProblem(result.moved ? null : (result.reason ?? 'could not go there'))
+    void panel.goTo(defect).then((moved) => {
+      setProblem(moved.moved ? null : (moved.reason ?? 'could not go there'))
     })
   }
-
-  const noteReady = noteText.trim().length > 2
 
   return (
     <Shell>
@@ -717,38 +661,18 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
           </span>
         </div>
 
-        {panel.coverage?.stale && (
+        {result?.values_only && (
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              marginTop: 12,
+              fontSize: 12.5,
+              color: '#a1a1a6',
+              marginTop: 8,
+              lineHeight: 1.5,
+              textWrap: 'pretty',
             }}
           >
-            <span
-              style={{
-                flex: 1,
-                minWidth: 0,
-                fontSize: 13,
-                color: '#a35c07',
-                lineHeight: 1.4,
-              }}
-            >
-              Model changed since this check.
-            </span>
-            <button
-              onClick={() => void panel.recheck()}
-              style={{
-                ...black,
-                flex: '0 0 auto',
-                borderRadius: 9,
-                padding: '7px 13px',
-                fontSize: 13,
-              }}
-            >
-              Recheck
-            </button>
+            This copy carries values only — the construction checks could
+            not read it; the statement checks did.
           </div>
         )}
 
@@ -756,13 +680,13 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
         <div
           style={{ display: 'flex', flexDirection: 'column', marginTop: 16 }}
         >
-          {fresh.map((finding, index) => {
-            const isSel = sel === finding.id
-            const isNoting = noting === finding.id
-            const prevSel = index > 0 && sel === fresh[index - 1]!.id
+          {shown.map((defect, index) => {
+            const key = keyOf(defect)
+            const isSel = sel === key
+            const prevSel = index > 0 && sel === keyOf(shown[index - 1]!)
             return (
               <div
-                key={finding.id}
+                key={key}
                 style={{
                   borderTop:
                     index === 0 || isSel || prevSel ? 0 : '.5px solid #f0eff1',
@@ -775,10 +699,8 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               >
                 <button
                   onClick={() => {
-                    setSel(finding.id)
-                    setNoting(null)
-                    setNoteText('')
-                    jump(finding)
+                    setSel(key)
+                    jump(defect)
                   }}
                   style={{
                     display: 'grid',
@@ -804,7 +726,8 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                           width: 4,
                           height: 4,
                           borderRadius: '50%',
-                          background: '#ff3b30',
+                          background:
+                            defect.severity === 'error' ? '#ff3b30' : '#e8a33d',
                         }}
                       />
                       <span
@@ -819,10 +742,10 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                           textOverflow: 'ellipsis',
                         }}
                       >
-                        {addressOf(refOf(finding))}
+                        {addressOf(defect.ref)}
                       </span>
                     </span>
-                    {finding.standard && (
+                    {defect.standard && (
                       <span
                         style={{
                           display: 'block',
@@ -832,9 +755,11 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                           marginTop: 3,
                           paddingLeft: 10,
                           whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
                       >
-                        {finding.standard}
+                        {defect.standard}
                       </span>
                     )}
                   </span>
@@ -847,10 +772,10 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                       textWrap: 'pretty',
                     }}
                   >
-                    {finding.title}
+                    {defect.plain || defect.detail}
                   </span>
                 </button>
-                {isSel && !isNoting && (
+                {isSel && (
                   <div
                     style={{
                       display: 'flex',
@@ -869,102 +794,27 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                     >
                       Selected in the sheet
                     </span>
-                    <button
-                      onClick={() => {
-                        setNoting(finding.id)
-                        setNoteText('')
-                      }}
-                      style={{
-                        flex: '0 0 auto',
-                        border: 0,
-                        background: 'transparent',
-                        color: ink.accent,
-                        font: 'inherit',
-                        fontSize: 12.5,
-                        cursor: 'pointer',
-                        padding: '2px 0',
-                      }}
-                    >
-                      That&apos;s fine
-                    </button>
-                  </div>
-                )}
-                {isNoting && (
-                  <div style={{ padding: '0 0 15px 96px' }}>
-                    <textarea
-                      value={noteText}
-                      onChange={(event) => setNoteText(event.target.value)}
-                      rows={2}
-                      placeholder="Why is this deliberate?"
-                      autoFocus
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        resize: 'none',
-                        border: 0,
-                        background: '#f5f5f7',
-                        borderRadius: 10,
-                        padding: '10px 12px',
-                        font: 'inherit',
-                        fontSize: 13,
-                        lineHeight: 1.5,
-                        color: ink.primary,
-                        outline: 'none',
-                      }}
-                    />
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 16,
-                        marginTop: 9,
-                      }}
-                    >
-                      <button
-                        onClick={() => {
-                          if (!noteReady) return
-                          setNoting(null)
-                          setSel(null)
-                          void panel.dismiss(finding, 'accepted', noteText)
-                          setNoteText('')
-                        }}
-                        style={{
-                          border: 0,
-                          background: noteReady ? ink.primary : '#d8d8dc',
-                          color: '#fff',
-                          borderRadius: 9,
-                          padding: '7px 13px',
-                          font: 'inherit',
-                          fontSize: 12.5,
-                          cursor: noteReady ? 'pointer' : 'default',
-                        }}
-                      >
-                        Mark deliberate
-                      </button>
-                      <button
-                        onClick={() => {
-                          setNoting(null)
-                          setNoteText('')
-                        }}
-                        style={{
-                          border: 0,
-                          background: 'transparent',
-                          color: '#a1a1a6',
-                          font: 'inherit',
-                          fontSize: 12.5,
-                          cursor: 'pointer',
-                          padding: '2px 0',
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
                   </div>
                 )}
               </div>
             )
           })}
         </div>
+
+        {ordered.length > SHOWN && (
+          <div
+            style={{
+              fontSize: 12.5,
+              color: '#c7c7cc',
+              borderTop: '.5px solid #f0eff1',
+              paddingTop: 13,
+              marginTop: 4,
+              textWrap: 'pretty',
+            }}
+          >
+            {ordered.length - SHOWN} more — the workspace lists every one.
+          </div>
+        )}
 
         {/* A jump that did not land, said out loud — undrawn, kept. */}
         {problem && (
@@ -976,133 +826,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
           </div>
         )}
 
-        {accepted.length > 0 && (
-          <div
-            style={{
-              fontSize: 12.5,
-              color: '#c0c0c5',
-              borderTop: '.5px solid #f0eff1',
-              paddingTop: 13,
-              marginTop: 4,
-            }}
-          >
-            {accepted.length === 1
-              ? '1 finding marked deliberate.'
-              : `${accepted.length} findings marked deliberate.`}
-          </div>
-        )}
-
-        {older.length > 0 && (
-          <div style={{ borderTop: '.5px solid #f0eff1', marginTop: 4 }}>
-            <button
-              onClick={() => setOldOpen((was) => !was)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                width: '100%',
-                textAlign: 'left',
-                border: 0,
-                background: 'transparent',
-                font: 'inherit',
-                cursor: 'pointer',
-                padding: '14px 0',
-              }}
-            >
-              <span
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  fontSize: 14,
-                  color: ink.secondary,
-                }}
-              >
-                {older.length} older{' '}
-                {older.length === 1 ? 'finding' : 'findings'}
-              </span>
-              <svg
-                width="8"
-                height="13"
-                viewBox="0 0 9 15"
-                fill="none"
-                stroke="#c7c7cc"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{
-                  flex: '0 0 8px',
-                  transform: oldOpen ? 'rotate(90deg)' : 'none',
-                  transition: 'transform .2s ease',
-                }}
-              >
-                <polyline points="1.5,1.5 7.5,7.5 1.5,13.5" />
-              </svg>
-            </button>
-            {oldOpen && (
-              <div style={{ paddingBottom: 4 }}>
-                {older.slice(0, OLDER_SHOWN).map((finding) => (
-                  <button
-                    key={finding.id}
-                    onClick={() => jump(finding)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      gap: 10,
-                      width: '100%',
-                      textAlign: 'left',
-                      border: 0,
-                      borderTop: '.5px solid #f7f6f8',
-                      background: 'transparent',
-                      font: 'inherit',
-                      cursor: 'pointer',
-                      padding: '11px 0 11px 16px',
-                    }}
-                  >
-                    <span
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        fontSize: 13.5,
-                        color: ink.secondary,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {finding.title}
-                    </span>
-                    <span
-                      style={{
-                        flex: '0 0 auto',
-                        fontFamily: excelFace,
-                        fontSize: 12,
-                        color: '#c0c0c5',
-                      }}
-                    >
-                      {addressOf(refOf(finding))}
-                    </span>
-                  </button>
-                ))}
-                {older.length > OLDER_SHOWN && (
-                  <div
-                    style={{
-                      borderTop: '.5px solid #f7f6f8',
-                      padding: '12px 0 4px 16px',
-                      fontSize: 12.5,
-                      color: '#c7c7cc',
-                    }}
-                  >
-                    {older.length - OLDER_SHOWN} more, carried over from before
-                    this file was watched.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Not stale and never checked: honesty over silence. */}
-        {panel.coverage?.checked_at == null && (
+        {defects.length === 0 && result && (
           <div
             style={{
               fontSize: 12.5,
@@ -1111,8 +835,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               textWrap: 'pretty',
             }}
           >
-            No check has run on this deal yet. Recheck reads the model and comes
-            back with findings.
+            Every check that could read this workbook passes.
           </div>
         )}
       </div>
@@ -1139,43 +862,24 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
             textOverflow: 'ellipsis',
           }}
         >
-          Against FAST and ICAEW{artifact ? ` · v${artifact.version}` : ''}
+          Against FAST and ICAEW
+          {result?.filename ? ` · ${result.filename}` : ''}
         </span>
-        {!panel.coverage?.stale && (
-          <button
-            onClick={() => void panel.recheck()}
-            style={{
-              flex: '0 0 auto',
-              border: 0,
-              background: 'transparent',
-              font: 'inherit',
-              fontSize: 13,
-              color: ink.accent,
-              cursor: 'pointer',
-              padding: 2,
-            }}
-          >
-            Recheck
-          </button>
-        )}
-        {panel.identity?.matched_by === 'filename' && (
-          <button
-            onClick={panel.rechoose}
-            title="Not this model?"
-            style={{
-              flex: '0 0 auto',
-              border: 0,
-              background: 'transparent',
-              font: 'inherit',
-              fontSize: 13,
-              color: '#a1a1a6',
-              cursor: 'pointer',
-              padding: 2,
-            }}
-          >
-            Not this model?
-          </button>
-        )}
+        <button
+          onClick={() => void panel.recheck()}
+          style={{
+            flex: '0 0 auto',
+            border: 0,
+            background: 'transparent',
+            font: 'inherit',
+            fontSize: 13,
+            color: ink.accent,
+            cursor: 'pointer',
+            padding: 2,
+          }}
+        >
+          Recheck
+        </button>
         <button
           onClick={panel.signOut}
           style={{
@@ -1193,84 +897,5 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
         </button>
       </div>
     </Shell>
-  )
-}
-
-/**
- * The deals this person is on — the choose-deal face's list, in the
- * design's row type. Each carries its file count and open findings,
- * because two deals named alike are told apart by what is in them.
- */
-function DealList({
-  onChoose,
-}: {
-  onChoose: (id: string, name: string) => void
-}) {
-  const [deals, setDeals] = useState<DealListItem[] | null>(null)
-  const asked = useRef(false)
-
-  useEffect(() => {
-    if (asked.current) return
-    asked.current = true
-    let live = true
-    api
-      .deals()
-      .then((found) => live && setDeals(found))
-      .catch(() => live && setDeals([]))
-    return () => {
-      live = false
-    }
-  }, [])
-
-  if (deals === null)
-    return (
-      <div style={{ padding: '14px 0', fontSize: 13, color: '#a1a1a6' }}>
-        Loading…
-      </div>
-    )
-  if (deals.length === 0)
-    return (
-      <div style={{ padding: '14px 0', fontSize: 13, color: '#a1a1a6' }}>
-        You are not on any models yet.
-      </div>
-    )
-
-  return (
-    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', marginTop: 14 }}>
-      {deals.map((deal, index) => (
-        <button
-          key={deal.id}
-          onClick={() => onChoose(deal.id, deal.name)}
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: 10,
-            width: '100%',
-            textAlign: 'left',
-            border: 0,
-            borderTop: index === 0 ? 0 : '.5px solid #f0eff1',
-            background: 'transparent',
-            font: 'inherit',
-            cursor: 'pointer',
-            padding: '13px 0',
-          }}
-        >
-          <span
-            style={{
-              flex: 1,
-              minWidth: 0,
-              fontSize: 15,
-              fontWeight: 500,
-              letterSpacing: '-.01em',
-            }}
-          >
-            {deal.name}
-          </span>
-          <span style={{ flex: '0 0 auto', fontSize: 12.5, color: '#a1a1a6' }}>
-            {deal.artifacts} {deal.artifacts === 1 ? 'file' : 'files'}
-          </span>
-        </button>
-      ))}
-    </div>
   )
 }

@@ -32,9 +32,9 @@ export default async function Page(props: {
           <LogoIcon className="text-blue-500" size={80} />
 
           <div className="flex flex-col gap-y-4">
-            <h1 className="text-3xl">Sign up to Claidor</h1>
-            <p className=" text-xl text-gray-500">
-              Turn what you know into a Masterclass.
+            <h1 className="text-3xl">Sign up to Antford</h1>
+            <p className="text-xl text-gray-500">
+              Every check an auditor runs on a model, run on yours.
             </p>
           </div>
 
@@ -60,7 +60,7 @@ export default async function Page(props: {
                 Already have an account?{' '}
                 <Link
                   href="/login"
-                  className="text-blue-500 hover:text-blue-600 "
+                  className="text-blue-500 hover:text-blue-600"
                 >
                   Sign in
                 </Link>
@@ -68,7 +68,7 @@ export default async function Page(props: {
             </div>
           </div>
         </div>
-        <div className=" col-span-2 hidden overflow-hidden rounded-4xl rounded-r-none border border-r-0 border-gray-200 bg-gray-100 md:flex">
+        <div className="col-span-2 hidden overflow-hidden rounded-4xl rounded-r-none border border-r-0 border-gray-200 bg-gray-100 md:flex">
           <picture className="flex h-full">
             <source
               media="(prefers-color-scheme: dark)"
@@ -85,4 +85,3 @@ export default async function Page(props: {
     </div>
   )
 }
-

@@ -59,6 +59,19 @@ const detached: HostBridge = {
       currentPage: null,
     }
   },
+  //: In a browser there is no workbook — unless dev handed one over:
+  //: `?file=<url>` fetches real bytes so the whole checked face can be
+  //: driven and screenshotted without sideloading into Excel. Never
+  //: available inside Office, where the real bridge answers.
+  async readFile() {
+    const url = new URLSearchParams(window.location.search).get('file')
+    if (!url) return null
+    const response = await fetch(url)
+    if (!response.ok) return null
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    const filename = url.split('/').pop() || 'model.xlsx'
+    return { bytes, filename }
+  },
   async stamp() {
     return false
   },

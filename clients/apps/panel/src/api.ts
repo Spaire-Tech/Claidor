@@ -55,6 +55,50 @@ export interface Correction {
   created_at: string
 }
 
+/** One cell of the little Excel grid a finding carries. */
+export interface GridCell {
+  v: string
+  hot: boolean
+}
+
+/** The finding's cell with its neighbours, composed at check time. */
+export interface FindingGrid {
+  sheet: string
+  sel: string
+  formula: string
+  cols: string[]
+  rows: { n: number; label: string; cells: GridCell[] }[]
+}
+
+/** One defect from checking the open workbook — the panel's row. */
+export interface PanelDefect {
+  rule: string
+  severity: 'error' | 'smell'
+  ref: string
+  sheet: string
+  name: string
+  /** What a person reads first. `detail` is the evidence beneath. */
+  plain: string
+  detail: string
+  standard: string
+  analytical: boolean
+  figure: string
+  figure_unit: string
+  grid: FindingGrid | null
+}
+
+/** The whole answer for the open workbook, from `/check-file`. */
+export interface PanelCheck {
+  id: string
+  filename: string
+  checked_at: string
+  counts: Record<string, number>
+  defects: PanelDefect[]
+  values_only: boolean
+  abstentions: { rule: string; why: string }[]
+  tallies: Record<string, { total: number; clean: number }>
+}
+
 export interface Finding {
   id: string
   kind: 'drift' | 'audit' | 'contradiction' | 'stale'
@@ -275,6 +319,56 @@ export class TieOutApi {
       `/house-rules?organization_id=${organizationId}`,
     )
     return rules.rules
+  }
+
+  /** The signed-in person's organization, for the catalogue. */
+  async organization(): Promise<string | null> {
+    const token = this.options.token()
+    const response = await fetch(`${this.options.baseUrl}/v1/organizations/`, {
+      headers: token ? { authorization: `Bearer ${token}` } : {},
+    })
+    if (!response.ok) return null
+    const body = (await response.json()) as
+      | { id: string }[]
+      | { items?: { id: string }[] }
+    const rows = Array.isArray(body) ? body : (body.items ?? [])
+    return rows[0]?.id ?? null
+  }
+
+  /**
+   * Check the workbook that is open right here — the panel's one job.
+   *
+   * The bytes go up, the engine checks them, the bytes are dropped:
+   * the same retention posture as the workspace's Check a model,
+   * because it is the same endpoint.
+   */
+  async checkFile(bytes: Uint8Array, filename: string): Promise<PanelCheck> {
+    const token = this.options.token()
+    const body = new FormData()
+    body.append(
+      'file',
+      new Blob([bytes.buffer as ArrayBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+      filename,
+    )
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/check-file`,
+      {
+        method: 'POST',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+        body,
+      },
+    )
+    if (!response.ok) {
+      const answer = await response.json().catch(() => null)
+      throw new ApiError(
+        response.status,
+        (answer as { detail?: string } | null)?.detail ??
+          'that workbook could not be checked',
+      )
+    }
+    return (await response.json()) as PanelCheck
   }
 
   /**
