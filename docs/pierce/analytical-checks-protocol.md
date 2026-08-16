@@ -192,3 +192,30 @@ the amendment rule, with the prompting results named in the worklog:
    Several live candidates remain the named abstention, and an
    associated tranche with fewer than six rated periods now abstains
    by name exactly as registered.
+
+## Severity grading and de-duplication — registration (16 August)
+
+**Grading.** A statement finding whose value is money grades against
+the model's own scale: the workbook-wide median absolute cell value
+above FLOOR. Below one thousandth of that scale the finding is a
+`smell` — true, reported, and marked as sitting below the model's own
+materiality; at or above it is an `error`. The line was calibrated on
+the hand-read close-model findings and sits four orders of magnitude
+clear on both sides: Elgin's ±0.5 grades smell at 4.3e-6 of its
+model's scale, while the smallest genuine money finding (Dumfries,
+50.92) sits at 0.282 — 280 times above the line — and Ayrshire's
+±700,016 at 9.0. Money rules: `model-own-check`, `balance-sheet`,
+`cash-continuity`, `debt-terminal`. Structural findings — a period
+column out of order, an implied rate a factor of three off its own
+convention, interest charged after repayment — are always `error`:
+no rounding produces them. Grading never creates or suppresses a
+finding; it only says how loud it is.
+
+**De-duplication.** A fired balance-flavoured check row and the
+independent balance identity can state the same fact twice. The
+model's own words win, as everywhere in this protocol: a
+`balance-sheet` identity finding is dropped when a `model-own-check`
+finding with a balance-flavoured label reports the same period — or,
+where the check row carries no period, the same sheet. The kept
+finding is the model's own; nothing is silenced, one sentence is
+chosen over its echo.
