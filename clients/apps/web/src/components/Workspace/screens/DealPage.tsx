@@ -142,6 +142,7 @@ const TALLY_NOUNS: Record<string, string> = {
   'balance-sheet': 'periods',
   'cash-continuity': 'accounts',
   'debt-terminal': 'tranches',
+  'interest-consistency': 'tranches',
   'model-own-check': 'rows',
   'time-axis': 'sheets',
 }

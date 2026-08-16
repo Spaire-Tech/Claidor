@@ -65,6 +65,9 @@ ANALYTIC_RULE_NAMES: dict[str, str] = {
     "balance-sheet": "Balance sheet does not balance",
     "cash-continuity": "Cash does not carry forward between periods",
     "debt-terminal": "Debt does not repay to zero at maturity",
+    #: The design names only this check's passing sentence; the failure
+    #: name is composed in its siblings' shape and flagged as such.
+    "interest-consistency": "Interest does not follow the opening balance",
     "model-own-check": "The model's own check rows are firing",
     "time-axis": "Period columns out of order",
 }
@@ -77,6 +80,7 @@ ANALYTIC_PASS_NAMES: dict[str, str] = {
     "balance-sheet": "Balance sheet balances every period",
     "cash-continuity": "Cash carries forward",
     "debt-terminal": "Debt schedule repays to zero at maturity",
+    "interest-consistency": "Interest accrues on the opening balance",
     "model-own-check": "The model's own checks",
     "time-axis": "Time axis consistent across sheets",
 }
@@ -87,6 +91,7 @@ ANALYTIC_STANDARDS: dict[str, str] = {
     "balance-sheet": "ICAEW 8",
     "cash-continuity": "ICAEW 8",
     "debt-terminal": "FAST C4",
+    "interest-consistency": "FAST C4",
     "model-own-check": "Own checks",
     "time-axis": "FAST B1",
 }
@@ -105,6 +110,10 @@ ANALYTIC_STANDARD_SENTENCES: dict[str, str] = {
     "debt-terminal": (
         "FAST Standard C4: a debt schedule repays in full by its "
         "maturity date."
+    ),
+    "interest-consistency": (
+        "FAST Standard C4: interest accrues on the balance it is "
+        "charged on, at the schedule's own rate."
     ),
     "model-own-check": (
         "The model's own convention: a check row shows zero when the "
@@ -164,6 +173,7 @@ def run_analytics(book: Workbook, structure: Structure) -> Analytics:
     _time_axis(structure, result)
     _cash_continuity(book, structure, result)
     _debt_terminal(book, structure, result)
+    _interest_consistency(book, structure, result)
     return result
 
 
@@ -733,3 +743,205 @@ def _debt_terminal(book: Workbook, structure: Structure, result: Analytics) -> N
         )
     if judged:
         result.tallies['debt-terminal'] = {'total': judged, 'clean': repaid}
+
+
+# --- interest self-consistency --------------------------------------------
+
+#: An interest *amount* row: says interest, and is not a rate row.
+_INTERESTISH = re.compile(r"\binterest\b", re.IGNORECASE)
+_RATE_ROW = re.compile(r"\brate\b|\bindex\b|%", re.IGNORECASE)
+
+#: The registered gates (protocol, 16 August): a convention needs this
+#: many rated periods to exist, stands when three quarters of them sit
+#: inside the ±50% band around the median implied rate, and only a
+#: factor-of-three departure from that median may be claimed — wide
+#: enough that no real rate reset or floating drift can reach it.
+RATED_PERIODS = 6
+CONVENTION_BAND = 1.5
+CONVENTION_SHARE = 0.75
+DEPARTURE_FACTOR = 3.0
+
+
+def _interest_consistency(
+    book: Workbook, structure: Structure, result: Analytics
+) -> None:
+    """Interest against the model's own convention — never a textbook's.
+
+    For each debt tranche, the implied per-period rate is
+    |interest| / |opening|; the median of those rates *is* the model's
+    convention, so floating rates, indexation and sub-annual periods
+    all carry their own baseline. Two claims only, both registered
+    before any survey ran: a rated period a factor of three off the
+    tranche's own median, and interest charged after the tranche's
+    last live balance. Zero-interest periods with a live balance are
+    deliberately not claimed — semi-annual interest inside a monthly
+    model produces them by convention.
+    """
+    debt_sheets = {
+        block.sheet for block in structure.located if block.kind == 'debt-schedule'
+    }
+    if not debt_sheets:
+        result.abstentions.append(
+            Abstention('interest-consistency', 'No debt schedule was located.')
+        )
+        return
+
+    from statistics import median
+
+    from openpyxl.utils import get_column_letter
+
+    judged = clean = 0
+    for pair in structure.pairs:
+        if pair.sheet not in debt_sheets:
+            continue
+        if pair.label and not _DEBTISH_LABEL.search(pair.label):
+            continue
+        axis = structure.axes.get(pair.sheet)
+        if axis is None:
+            continue
+
+        #: The association gate: exactly one interest-amount row
+        #: strictly between the pair's own rows, or nothing is claimed.
+        low, high = sorted((pair.opening_row, pair.closing_row))
+        opening: dict[int, float] = {}
+        by_row: dict[int, dict[int, float]] = {}
+        row_names: dict[int, str] = {}
+        for cell in book.cells.values():
+            if cell.sheet != pair.sheet or not isinstance(cell.value, Decimal):
+                continue
+            if cell.row == pair.opening_row:
+                opening[cell.column] = float(cell.value)
+            elif low < cell.row < high:
+                label = cell.row_label.strip()
+                if not label or not _INTERESTISH.search(label):
+                    continue
+                if _RATE_ROW.search(label):
+                    continue
+                by_row.setdefault(cell.row, {})[cell.column] = float(cell.value)
+                row_names.setdefault(cell.row, label)
+        if len(by_row) != 1:
+            if by_row:
+                result.abstentions.append(
+                    Abstention(
+                        'interest-consistency',
+                        f'{pair.sheet} « {pair.label} »: '
+                        f'{len(by_row)} interest rows inside the tranche '
+                        '— no single row associates, not guessed.',
+                    )
+                )
+            continue
+        interest_row = next(iter(by_row))
+        interest = by_row[interest_row]
+        interest_label = row_names[interest_row]
+
+        columns = [column for column, _ in axis.columns]
+        labels = dict(axis.columns)
+        rated: list[tuple[int, float]] = []
+        for column in columns:
+            balance = opening.get(column)
+            charged = interest.get(column)
+            if balance is None or charged is None:
+                continue
+            if abs(balance) > FLOOR and abs(charged) > FLOOR:
+                rated.append((column, abs(charged) / abs(balance)))
+        if len(rated) < RATED_PERIODS:
+            continue
+        judged += 1
+        convention = median(rate for _, rate in rated)
+        agreeing = sum(
+            1
+            for _, rate in rated
+            if convention / CONVENTION_BAND <= rate <= convention * CONVENTION_BAND
+        )
+        if agreeing / len(rated) < CONVENTION_SHARE:
+            judged -= 1
+            result.abstentions.append(
+                Abstention(
+                    'interest-consistency',
+                    f'{pair.sheet} « {pair.label} »: no stable interest '
+                    f'convention ({agreeing} of {len(rated)} periods agree) '
+                    '— nothing measured against a convention that does '
+                    'not exist.',
+                )
+            )
+            continue
+
+        fired = False
+        for column, rate in rated:
+            if (
+                rate <= convention * DEPARTURE_FACTOR
+                and rate >= convention / DEPARTURE_FACTOR
+            ):
+                continue
+            fired = True
+            period = labels.get(column, '')
+            result.findings.append(
+                AnalyticFinding(
+                    rule='interest-consistency',
+                    sheet=pair.sheet,
+                    ref=f'{pair.sheet}!{get_column_letter(column)}{interest_row}',
+                    row_label=interest_label,
+                    period=period,
+                    value=rate,
+                    detail=(
+                        f'« {interest_label} » implies a rate of '
+                        f'{rate * 100:,.3g}%'
+                        + (f' in {period}' if period else '')
+                        + f" against the schedule's own "
+                        f'{convention * 100:,.3g}% — a factor of '
+                        f'{max(rate / convention, convention / rate):,.1f} off '
+                        'its own convention.'
+                    ),
+                    figure=f'{rate * 100:,.3g}%',
+                    figure_unit=(
+                        'implied'
+                        + (f' in {period}' if period else '')
+                        + f", against the schedule's own "
+                        f'{convention * 100:,.3g}%'
+                    ),
+                )
+            )
+
+        #: Interest on nothing: charged after the last live balance.
+        live = [column for column in columns if abs(opening.get(column, 0.0)) > FLOOR]
+        if live:
+            last_live = live[-1]
+            for column in columns:
+                if column <= last_live:
+                    continue
+                charged = interest.get(column)
+                if charged is None or abs(charged) <= FLOOR:
+                    continue
+                fired = True
+                period = labels.get(column, '')
+                result.findings.append(
+                    AnalyticFinding(
+                        rule='interest-consistency',
+                        sheet=pair.sheet,
+                        ref=(
+                            f'{pair.sheet}!'
+                            f'{get_column_letter(column)}{interest_row}'
+                        ),
+                        row_label=interest_label,
+                        period=period,
+                        value=charged,
+                        detail=(
+                            f'« {interest_label} » charges {abs(charged):,.6g}'
+                            + (f' in {period}' if period else '')
+                            + ' — after the tranche was repaid.'
+                        ),
+                        figure=f'{abs(charged):,.6g}',
+                        figure_unit=(
+                            'of interest'
+                            + (f' in {period}' if period else '')
+                            + ', after the tranche was repaid'
+                        ),
+                    )
+                )
+        if not fired:
+            clean += 1
+    if judged:
+        result.tallies['interest-consistency'] = {
+            'total': judged,
+            'clean': clean,
+        }

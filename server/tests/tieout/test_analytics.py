@@ -262,3 +262,124 @@ class TestDebtTerminal:
     def test_a_revolver_abstains_silently(self) -> None:
         result = _run(self._tranche([100, 40, 90, 30, 80, 20]))
         assert [f for f in result.findings if f.rule == 'debt-terminal'] == []
+
+
+class TestInterestConsistency:
+    def _tranche(
+        self,
+        opening: list[float],
+        interest: list[float],
+        *,
+        second_interest: list[float] | None = None,
+        count: int | None = None,
+    ) -> list:
+        count = count or len(opening)
+        cells = [
+            _cell('Debt', f'H{i}1', 1, i + 3, column_label=f'FY{2018 + i}')
+            for i in range(count)
+        ]
+        #: The sheet must locate as debt machinery.
+        cells += [
+            _cell('Debt', 'A2', 2, 3, row_label='Drawdown'),
+            _cell('Debt', 'A3', 3, 3, row_label='Repayment'),
+            _cell('Debt', 'A4', 4, 3, row_label='Tranche'),
+        ]
+        cells += [
+            _cell('Debt', f'C{i}10', 10, i + 3, value=Decimal(str(v)),
+                  row_label='Senior loan opening balance')
+            for i, v in enumerate(opening)
+        ]
+        cells += [
+            _cell('Debt', f'C{i}12', 12, i + 3, value=Decimal(str(v)),
+                  row_label='Senior loan interest')
+            for i, v in enumerate(interest)
+        ]
+        if second_interest is not None:
+            cells += [
+                _cell('Debt', f'C{i}13', 13, i + 3, value=Decimal(str(v)),
+                      row_label='Interest rolled up')
+                for i, v in enumerate(second_interest)
+            ]
+        cells += [
+            _cell('Debt', f'C{i}14', 14, i + 3, value=Decimal(str(v)),
+                  row_label='Senior loan closing balance')
+            for i, v in enumerate(opening)
+        ]
+        return cells
+
+    def _fired(self, cells: list) -> list:
+        return [
+            f for f in _run(cells).findings if f.rule == 'interest-consistency'
+        ]
+
+    def test_a_steady_rate_says_nothing(self) -> None:
+        opening = [100, 90, 80, 70, 60, 50, 40]
+        result = _run(self._tranche(opening, [v * 0.05 for v in opening]))
+        assert [
+            f for f in result.findings if f.rule == 'interest-consistency'
+        ] == []
+        assert result.tallies['interest-consistency'] == {
+            'total': 1,
+            'clean': 1,
+        }
+
+    def test_floating_drift_stays_inside_the_band(self) -> None:
+        #: A rate walking 4% → 5.6% is a market, not a defect.
+        opening = [100, 90, 80, 70, 60, 50, 40]
+        rates = [0.040, 0.043, 0.046, 0.049, 0.052, 0.055, 0.056]
+        interest = [o * r for o, r in zip(opening, rates)]
+        assert self._fired(self._tranche(opening, interest)) == []
+
+    def test_a_departure_is_the_finding(self) -> None:
+        #: One period charges 25% against the schedule's own 5% — the
+        #: wrong-cell error a healthy-looking formula hides.
+        opening = [100, 90, 80, 70, 60, 50, 40]
+        interest = [5, 4.5, 4, 22.5, 3, 2.5, 2]
+        fired = self._fired(self._tranche(opening, interest))
+        assert len(fired) == 1
+        assert fired[0].period == 'FY2021'
+        assert 'convention' in fired[0].detail
+
+    def test_interest_after_repayment_is_the_finding(self) -> None:
+        opening = [100, 80, 60, 40, 20, 10, 0, 0]
+        interest = [5, 4, 3, 2, 1, 0.5, 0, 1.7]
+        fired = self._fired(self._tranche(opening, interest))
+        assert len(fired) == 1
+        assert 'after the tranche was repaid' in fired[0].detail
+
+    def test_two_interest_rows_abstain_by_name(self) -> None:
+        opening = [100, 90, 80, 70, 60, 50, 40]
+        interest = [v * 0.05 for v in opening]
+        result = _run(
+            self._tranche(opening, interest, second_interest=interest)
+        )
+        assert [
+            f for f in result.findings if f.rule == 'interest-consistency'
+        ] == []
+        assert any(
+            'no single row associates' in a.why
+            for a in result.abstentions
+            if a.rule == 'interest-consistency'
+        )
+
+    def test_a_short_series_has_no_convention(self) -> None:
+        #: Five rated periods is below the registered six — silence.
+        opening = [100, 80, 60, 40, 20]
+        assert self._fired(
+            self._tranche(opening, [v * 0.05 for v in opening])
+        ) == []
+
+    def test_no_convention_is_an_abstention_not_a_verdict(self) -> None:
+        #: Rates all over the place: the association is doubted, not
+        #: the model.
+        opening = [100, 100, 100, 100, 100, 100, 100, 100]
+        interest = [1, 9, 2, 14, 3, 20, 4, 30]
+        result = _run(self._tranche(opening, interest))
+        assert [
+            f for f in result.findings if f.rule == 'interest-consistency'
+        ] == []
+        assert any(
+            'no stable interest convention' in a.why
+            for a in result.abstentions
+            if a.rule == 'interest-consistency'
+        )
