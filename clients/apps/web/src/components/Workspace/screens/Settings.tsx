@@ -224,7 +224,15 @@ export const Settings = ({
   }
 
   const offRules = rules?.rules.filter((one) => !one.on) ?? []
-  const auditOn = rules !== null && offRules.length < rules.rules.length
+  //: Two families under two switches. The design draws both master
+  //: switches over one checklist; scoping each to its own family —
+  //: construction rules under « Model audit rules », statement checks
+  //: under « Statement checks » — is the only reading where flipping
+  //: one never silently moves the other.
+  const buildRules = rules?.rules.filter((one) => !one.analytical) ?? []
+  const stateRules = rules?.rules.filter((one) => one.analytical) ?? []
+  const auditOn = rules !== null && buildRules.some((one) => one.on)
+  const statementsOn = rules !== null && stateRules.some((one) => one.on)
 
   return (
     <div
@@ -891,14 +899,25 @@ export const Settings = ({
                     <Switch
                       on={auditOn}
                       onFlip={() =>
-                        //: The design's master switch, mapped honestly:
-                        //: off is every rule off, on is every rule on.
-                        //: The audit itself always runs, and its summary
-                        //: names what was skipped.
+                        //: The design's master switch, mapped honestly
+                        //: and scoped to its family: off is every
+                        //: construction rule off, on is every one on.
+                        //: The audit itself always runs, and its
+                        //: summary names what was skipped.
                         change({
                           audit_rules_off: auditOn
-                            ? rules.rules.map((one) => one.key)
-                            : [],
+                            ? [
+                                ...new Set([
+                                  ...offRules.map((one) => one.key),
+                                  ...buildRules.map((one) => one.key),
+                                ]),
+                              ]
+                            : offRules
+                                .map((one) => one.key)
+                                .filter(
+                                  (key) =>
+                                    !buildRules.some((one) => one.key === key),
+                                ),
                         })
                       }
                     />
@@ -981,6 +1000,64 @@ export const Settings = ({
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* The statement checks' own switch — the v2 design's
+                    new group, in its words. */}
+                <div style={{ borderTop: hairline }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      padding: '13px 16px 13px 20px',
+                    }}
+                  >
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 16,
+                          fontWeight: 500,
+                          letterSpacing: '-.015em',
+                        }}
+                      >
+                        Statement checks
+                      </span>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 13.5,
+                          color: ink.secondary,
+                          marginTop: 2,
+                        }}
+                      >
+                        Whether the accounts hold together: balancing, cash
+                        carried forward, debt repaid, and the model&rsquo;s own
+                        check rows
+                      </span>
+                    </span>
+                    <Switch
+                      on={statementsOn}
+                      onFlip={() =>
+                        change({
+                          audit_rules_off: statementsOn
+                            ? [
+                                ...new Set([
+                                  ...offRules.map((one) => one.key),
+                                  ...stateRules.map((one) => one.key),
+                                ]),
+                              ]
+                            : offRules
+                                .map((one) => one.key)
+                                .filter(
+                                  (key) =>
+                                    !stateRules.some((one) => one.key === key),
+                                ),
+                        })
+                      }
+                    />
+                  </div>
                 </div>
 
                 {SOON.map((one) => (

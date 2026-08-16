@@ -108,7 +108,7 @@ export function usePanel(
    * lineage to write, so the guess is made once and never again.
    */
   const resolve = useCallback(
-    async (dossierId?: string) => {
+    async (dossierId?: string, dossierName?: string) => {
       try {
         const document = await bridge.read()
         setState((was) => ({ ...was, document }))
@@ -120,7 +120,21 @@ export function usePanel(
         })
 
         if (identity.matched_by === 'none' || !identity.dossier_id) {
-          setState((was) => ({ ...was, stage: 'choose-deal', identity }))
+          //: A person who just picked a model and got « none » back was
+          //: silently re-asked the same question, forever — the loop
+          //: the founder hit. The honest answer is a sentence: that
+          //: model does not hold this file.
+          setState((was) => ({
+            ...was,
+            stage: 'choose-deal',
+            identity,
+            error: dossierId
+              ? `${dossierName ? `« ${dossierName} »` : 'That model'} doesn't ` +
+                `include a file named ${document.filename || 'this one'}. ` +
+                'Upload it to that model in the workspace, and the panel ' +
+                'will find it here.'
+              : null,
+          }))
           return
         }
 
@@ -178,11 +192,12 @@ export function usePanel(
     setState({ ...EMPTY, stage: 'signed-out' })
   }, [])
 
-  /** « This document belongs to that deal. » Asked once, then remembered. */
+  /** « This workbook belongs to that model. » Asked once, then
+   *  remembered — the name rides along so a refusal can say it. */
   const chooseDeal = useCallback(
-    async (dossierId: string) => {
-      setState((was) => ({ ...was, stage: 'loading' }))
-      await resolve(dossierId)
+    async (dossierId: string, dossierName?: string) => {
+      setState((was) => ({ ...was, stage: 'loading', error: null }))
+      await resolve(dossierId, dossierName)
     },
     [resolve],
   )

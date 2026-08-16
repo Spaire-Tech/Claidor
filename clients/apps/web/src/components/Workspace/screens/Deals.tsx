@@ -124,6 +124,8 @@ export interface DealsProps {
   onOpenDoc: (doc: import('./../api').Artifact) => void
   /** Opens the New-deal browser — the connected empty state's button. */
   onNewDeal: () => void
+  /** The open model was removed — the shell closes it and refreshes. */
+  onRemoved: () => void
 }
 
 export const Deals = ({
@@ -137,6 +139,7 @@ export const Deals = ({
   openDocId,
   onOpenDoc,
   onNewDeal,
+  onRemoved,
 }: DealsProps) => {
   //: The connector, for the empty state's three faces. Asked only once
   //: the list has answered and come back empty — the list screen never
@@ -214,6 +217,7 @@ export const Deals = ({
         onChecking={onChecking}
         openDocId={openDocId}
         onOpenDoc={onOpenDoc}
+        onRemoved={onRemoved}
       />
     )
   }

@@ -54,6 +54,7 @@ from polar.user.repository import UserRepository
 
 from . import auth
 from .agent import service as agent
+from .analytics import ANALYTIC_PASS_NAMES, ANALYTIC_RULE_NAMES
 from .audit import RULE_NAMES
 from .ingest import Unreadable, kind_for
 from .repository import TieOutRepository
@@ -343,6 +344,10 @@ def _finding(
         rule=finding.rule or None,
         created_at=finding.created_at,
         note=finding.note,
+        figure=str(evidence.get("figure") or ""),
+        figure_unit=str(evidence.get("figure_unit") or ""),
+        period=str(evidence.get("period") or ""),
+        standard_sentence=str(evidence.get("standard_sentence") or ""),
     )
 
 
@@ -620,6 +625,26 @@ async def list_deals(
             )
         )
     return items
+
+
+@router.delete("/deals/{dossier_id}", status_code=204)
+async def delete_deal(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    """Remove a deal from Antford — soft, like every delete here.
+
+    The route that did not exist, found the day the panel's picker was
+    still listing every test deal from before the product pivoted and
+    there was no way anywhere to be rid of them. Membership is the
+    whole permission, matching the rest of the module: a person on the
+    deal can remove it, and a person not on it gets the same 404 as
+    everywhere else. Soft deletion keeps the rows — findings, notes,
+    decisions — so nothing a team wrote is destroyed by a cleanup.
+    """
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    deal.set_deleted_at()
 
 
 @router.post("/deals/{dossier_id}/visit", status_code=204)
@@ -1086,6 +1111,9 @@ async def _in_organization(
 
 def _house_rules(rules: HouseRules | None) -> HouseRulesRead:
     off = set(rules.audit_rules_off) if rules else set()
+    #: One catalogue, both families: the construction rules first, then
+    #: the statement checks, each marked so the screens can group them
+    #: without ever inventing a list of their own.
     return HouseRulesRead(
         rounding="separate" if rules and rules.rounding == "separate" else "together",
         writing=dict(rules.writing) if rules else {},
@@ -1093,6 +1121,16 @@ def _house_rules(rules: HouseRules | None) -> HouseRulesRead:
         rules=[
             AuditRuleRead(key=key, label=label, on=key not in off)
             for key, label in RULE_NAMES.items()
+        ]
+        + [
+            AuditRuleRead(
+                key=key,
+                label=label,
+                on=key not in off,
+                analytical=True,
+                pass_label=ANALYTIC_PASS_NAMES.get(key, ""),
+            )
+            for key, label in ANALYTIC_RULE_NAMES.items()
         ],
     )
 
@@ -1123,7 +1161,11 @@ async def put_house_rules(
     """
     await _in_organization(session, organization_id, auth_subject.subject.id)
     if update.audit_rules_off is not None:
-        unknown = [key for key in update.audit_rules_off if key not in RULE_NAMES]
+        unknown = [
+            key
+            for key in update.audit_rules_off
+            if key not in RULE_NAMES and key not in ANALYTIC_RULE_NAMES
+        ]
         if unknown:
             raise ClaidorRequestValidationError(
                 [
@@ -1195,6 +1237,9 @@ def _one_off(row: OneOffCheck) -> OneOffResult:
         ],
         drifts=[OneOffDrift(**one) for one in stored.get("drifts", [])],
         defects=[OneOffDefect(**one) for one in stored.get("defects", [])],
+        values_only=bool(stored.get("values_only", False)),
+        abstentions=stored.get("abstentions", []),
+        tallies=stored.get("tallies", {}),
     )
 
 

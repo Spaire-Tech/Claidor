@@ -59,9 +59,7 @@ async def _deal_for(
     )
     # The dashboard only reaches an organization its user belongs to, so
     # every real caller has this row; the settings routes check it.
-    session.add(
-        UserOrganization(user_id=owner.id, organization_id=organization.id)
-    )
+    session.add(UserOrganization(user_id=owner.id, organization_id=organization.id))
     await session.flush()
     return deal
 
@@ -809,6 +807,37 @@ class TestThePanel:
         assert len(ids) == 1
 
     @pytest.mark.auth
+    async def test_a_deal_can_be_removed_and_stays_removed(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """The route that did not exist: the panel's picker was listing
+        every pre-pivot test deal with no way anywhere to be rid of
+        them. Soft delete, membership as the whole permission."""
+        deal = await _deal_for(session, save_fixture, user)
+        await session.flush()
+
+        assert (await client.delete(f"/v1/tieout/deals/{deal.id}")).status_code == 204
+        ids = [one["id"] for one in (await client.get("/v1/tieout/deals")).json()]
+        assert str(deal.id) not in ids
+
+    @pytest.mark.auth
+    async def test_a_stranger_cannot_remove_a_deal(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        deal = await _deal_for(session, save_fixture, stranger)
+        await session.flush()
+
+        assert (await client.delete(f"/v1/tieout/deals/{deal.id}")).status_code == 404
+
+    @pytest.mark.auth
     async def test_a_deal_nobody_has_checked_does_not_look_clear(
         self,
         client: AsyncClient,
@@ -1081,8 +1110,7 @@ class TestCheckAFile:
                 "file": (
                     "cascade_model.xlsx",
                     MODEL.read_bytes(),
-                    "application/vnd.openxmlformats-officedocument"
-                    ".spreadsheetml.sheet",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
             },
         )
@@ -1144,9 +1172,7 @@ class TestCheckAFile:
         assert recents[0]["filename"] == "cascade_deck.pptx"
         assert recents[0]["against"] == ""
 
-        replayed = (
-            await client.get(f"/v1/tieout/check-file/{checked['id']}")
-        ).json()
+        replayed = (await client.get(f"/v1/tieout/check-file/{checked['id']}")).json()
         assert replayed == checked
 
         # Another person's recent does not exist, rather than being
@@ -1169,7 +1195,6 @@ class TestHouseRules:
     """The firm's rules: stored per organization, and actually obeyed."""
 
     async def _org_of(self, session: AsyncSession, deal: Dossier):
-
         return deal.organization_id
 
     @pytest.mark.auth
@@ -1188,9 +1213,13 @@ class TestHouseRules:
         body = response.json()
         assert body["rounding"] == "together"
         assert body["grounding"] is True
-        # The audit's own catalogue, all on — never a list a screen invented.
-        assert len(body["rules"]) == 10
+        # The audit's own catalogue, all on — never a list a screen
+        # invented. Both families: the ten construction rules and the
+        # five statement checks, the latter flagged so the screens can
+        # group them.
+        assert len(body["rules"]) == 15
         assert all(rule["on"] for rule in body["rules"])
+        assert sum(1 for rule in body["rules"] if rule["analytical"]) == 5
 
     @pytest.mark.auth
     async def test_a_stranger_finds_no_organization(
@@ -1259,9 +1288,7 @@ class TestHouseRules:
             await client.get(f"/v1/tieout/deals/{deal.id}/findings?kind=audit")
         ).json()
         assert [one for one in with_rule if one["rule"] == "hardcode-in-formula"]
-        assert not [
-            one for one in without_rule if one["rule"] == "hardcode-in-formula"
-        ]
+        assert not [one for one in without_rule if one["rule"] == "hardcode-in-formula"]
 
     @pytest.mark.auth
     async def test_grounding_off_means_two_runs_not_a_failed_third(
@@ -1293,9 +1320,7 @@ class TestTheTeam:
         deal = await _deal_for(session, save_fixture, user)
         colleague = await create_user(save_fixture)
         session.add(
-            UserOrganization(
-                user_id=colleague.id, organization_id=deal.organization_id
-            )
+            UserOrganization(user_id=colleague.id, organization_id=deal.organization_id)
         )
         await session.flush()
 
@@ -1348,9 +1373,7 @@ class TestTheChat:
         from tests.dossier.test_agent_loop import says
 
         deal = await _loaded(session, save_fixture, user)
-        finding = (
-            await client.get(f"/v1/tieout/deals/{deal.id}/findings")
-        ).json()[0]
+        finding = (await client.get(f"/v1/tieout/deals/{deal.id}/findings")).json()[0]
 
         fake = self._client(says("Looked up, not composed."))
         self._configure(monkeypatch, fake)
@@ -1387,9 +1410,7 @@ class TestTheChat:
 
         deal = await _loaded(session, save_fixture, user)
         other = await _loaded(session, save_fixture, user)
-        stray = (
-            await client.get(f"/v1/tieout/deals/{other.id}/findings")
-        ).json()[0]
+        stray = (await client.get(f"/v1/tieout/deals/{other.id}/findings")).json()[0]
 
         self._configure(monkeypatch, self._client(says("never reached")))
         response = await client.post(

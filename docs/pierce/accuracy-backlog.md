@@ -1358,3 +1358,59 @@ faced, and its recall on legal documents is gated by one named reader
 problem — scanned tables — plus a vocabulary bridge decision that
 deserves corpus evidence, not a guess. Both go on the queue with
 their evidence attached.
+
+## Structure layer, after round 1 (15 August)
+
+- **Ofwat opening/closing pairs: 0 found.** Their continuity is not in
+  opening/closing vocabulary but in per-item « Error chks X balance »
+  rows and in formula shape (closing = opening + movements). Add
+  formula-shape pair detection; key the cash check on it.
+- **Anderson and Elgin: full abstention.** Both located nothing —
+  correct behaviour, missing coverage. Read their sheet and row
+  vocabulary and grow the anchors.
+- **Ayrshire (.xls): no period axis.** The legacy-format path loads
+  cells but the column labels do not come through as periods.
+- **Balance arithmetic: label-pairing rejected** (0.86 on AFW naive
+  net-assets-vs-equity). Phase 2 keys on the model's own check rows
+  and the subtotal tree, or abstains.
+- **Phase-1 hand-verification sample owed**: every sheet of two Ofwat
+  and two Scottish models read against the survey's claims before the
+  phase is declared passed.
+
+## Analytical checks, after Phase 2 (15 August)
+
+- **RHSC balance pairing**: « PF8_Balance Sheet » located but its
+  net-assets/equity rows miss the pairing regexes (0 candidates) —
+  widen from its own vocabulary.
+- **Own-check + independent identity de-dup**: a fired balance check
+  row and the identity can report the same fact twice.
+- **Severity grading**: ±0.5 in pounds and ±700k are both true; the
+  catalogue should grade them, not flatten them.
+- **Seeded axis dip on a real file**, matching the unit test.
+- **Anderson/Elgin present no balance sheet** — abstention is right;
+  a statements-inside-workings locator is a coverage round, not a bug.
+
+## Analytical checks, after Phases 3-4 (15 August)
+
+- **Interest self-consistency** (the deferred Phase-4 half): needs
+  tranche-to-interest-row association before the stability test means
+  anything on floating-rate models.
+- **Catalogue integration**: surface the five analytic rules through
+  the audit's catalogue so findings reach the workspace, panel and
+  deals-list arithmetic; grade severity by magnitude relative to the
+  row's own scale.
+
+## Interest self-consistency, after round 1 (16 August)
+
+- **Cross-row/cross-sheet tranche-to-interest association**: the
+  corpus keeps interest outside the tranche block (Scottish models)
+  or five ways split (Ofwat control accounts). Associating across
+  needs evidence — label affinity scored against arithmetic fit —
+  and is its own measured round.
+- **Corpus gap**: no file in hand carries a live in-block interest
+  row; a lender-case PF model with per-tranche interest schedules
+  would let the check judge real tranches. Acquire before the next
+  round.
+- **Sub-annual convention**: monthly models with semi-annual pay
+  periods produce zero-interest live periods; claiming a genuine
+  stop needs payment-frequency detection (registered as unclaimed).

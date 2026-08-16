@@ -2,11 +2,12 @@
  * The design's values, named.
  *
  * Source of truth: `docs/pierce/design-antford/workspace.html` (the
- * founder's Antford redesign, 14 August). Every constant here is a value
- * that appears verbatim in that file; if a value here disagrees with the
- * file, the file is right. Nothing here is invented — where a screen
- * needs something the design does not draw, the component says which
- * pattern it borrowed, not this file.
+ * founder's Antford redesign, 14 August, revised 15 August — the v2
+ * file with the statement-check sections). Every constant here is a
+ * value that appears verbatim in that file; if a value here disagrees
+ * with the file, the file is right. Nothing here is invented — where a
+ * screen needs something the design does not draw, the component says
+ * which pattern it borrowed, not this file.
  */
 
 // --- shared with the Office panel: keep byte-identical --------------------
@@ -72,12 +73,24 @@ export const card = {
 /** Content wells inside the card sit on this. */
 export const well = '#f5f5f7'
 
+/** The card's edge — the v2 design retires the drop shadow for a flat
+ *  hairline ring, and raises it softly only under a pointer. */
+export const cardRing = '0 0 0 .5px rgba(30,32,38,.09)'
+export const cardRingHover =
+  '0 0 0 .5px rgba(30,32,38,.18), 0 6px 18px rgba(20,23,30,.06)'
+
 /** The white list card that rows live in. */
 export const listCard = {
   background: '#fff',
   borderRadius: 14,
-  boxShadow: '0 1px 2px rgba(0,0,0,.05), 0 0 0 .5px rgba(0,0,0,.06)',
+  boxShadow: cardRing,
 } as const
+
+/** The failing card's headline figure — the v2 design's one purple. */
+export const figureInk = '#635bff'
+
+/** The cell reference under a failing card, set in the mono face. */
+export const cellRefInk = '#2a9d4f'
 
 /** Hairline between rows — always via border-top, never on the first. */
 export const hairline = '.5px solid #eceaec'

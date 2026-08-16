@@ -388,8 +388,23 @@ class TieOutService:
         organization switched off is skipped, and the run's summary
         names what was skipped — a rule turned off is a decision on the
         record, never a silence.
+
+        The statement checks run with the mechanical rules and land in
+        the same findings table: whether the balance sheet balances,
+        cash carries forward, debt repays, the time axis holds, and
+        what the model's own check rows say. They read cached values,
+        so they still speak on values-pasted close copies — and the
+        summary says when a model is such a copy, what each check
+        examined, and where one abstained rather than guess.
         """
+        from .analytics import (
+            ANALYTIC_RULE_NAMES,
+            ANALYTIC_STANDARD_SENTENCES,
+            ANALYTIC_STANDARDS,
+            run_analytics,
+        )
         from .audit import audit as run_rules
+        from .structure import read_structure
 
         repository = TieOutRepository.from_session(session)
         rules_off = await self._rules_off(repository, dossier_id)
@@ -411,6 +426,10 @@ class TieOutService:
 
         findings: list[FindingRow] = []
         errors = smells = 0
+        values_only = False
+        abstentions: list[dict[str, str]] = []
+        tallies: dict[str, dict[str, int]] = {}
+        statement_keys = set(ANALYTIC_RULE_NAMES) - rules_off
         for model in models:
             cells = await repository.cells_of(model.id)
             book = _workbook_of(cells)
@@ -452,6 +471,69 @@ class TieOutService:
                     )
                 )
 
+            #: The statement checks, on the same workbook. They read
+            #: values, not formulas, so a values-pasted close copy —
+            #: where the rules above are nearly blind — is exactly
+            #: where they earn their keep.
+            structure = read_structure(book)
+            values_only = values_only or structure.values_pasted
+            if statement_keys:
+                told = run_analytics(book, structure)
+                for claim in told.findings:
+                    if claim.rule not in statement_keys:
+                        continue
+                    errors += 1
+                    findings.append(
+                        FindingRow(
+                            dossier_id=dossier_id,
+                            check_run_id=run.id,
+                            artifact_id=model.id,
+                            kind=FindingKind.audit,
+                            severity=FindingSeverity.error,
+                            fingerprint=_fingerprint(
+                                "audit", model.lineage_id, claim.ref, claim.rule
+                            ),
+                            rule=claim.rule,
+                            standard=ANALYTIC_STANDARDS.get(claim.rule, ""),
+                            printed=claim.figure,
+                            title=(
+                                f"{ANALYTIC_RULE_NAMES[claim.rule]}"
+                                f" at {claim.ref}"
+                            ),
+                            detail=claim.detail,
+                            location=claim.ref,
+                            anchor={
+                                "kind": "cell",
+                                "ref": claim.ref,
+                                "sheet": claim.sheet,
+                            },
+                            evidence={
+                                "sheet": claim.sheet,
+                                "name": claim.row_label,
+                                "period": claim.period,
+                                "value": claim.value,
+                                "figure": claim.figure,
+                                "figure_unit": claim.figure_unit,
+                                "standard_sentence": (
+                                    ANALYTIC_STANDARD_SENTENCES.get(
+                                        claim.rule, ""
+                                    )
+                                ),
+                            },
+                        )
+                    )
+                abstentions.extend(
+                    {"rule": one.rule, "why": one.why}
+                    for one in told.abstentions
+                    if one.rule in statement_keys
+                )
+                for rule, tally in told.tallies.items():
+                    if rule not in statement_keys:
+                        continue
+                    merged = tallies.setdefault(rule, {"total": 0, "clean": 0})
+                    merged["total"] += tally["total"]
+                    merged["clean"] += tally["clean"]
+
         await repository.replace_findings(dossier_id, CheckKind.audit, findings)
         return await repository.finish_run(
             run,
@@ -461,6 +543,12 @@ class TieOutService:
                 "models": len(models),
                 "cells": sum(int(one.counts.get("cells", 0)) for one in models),
                 "rules_off": sorted(rules_off),
+                #: The statement checks' own record: what a pass row may
+                #: claim, why a check stayed silent, and whether this is
+                #: a copy the construction rules could not read.
+                "values_only": values_only,
+                "abstentions": abstentions,
+                "tallies": tallies,
             },
         )
 
@@ -709,6 +797,42 @@ class TieOutService:
                 }
                 for defect in ingested.defects
             ]
+
+            #: The statement checks run here too — same engine as the
+            #: deal audit, on the cells just read, before the file is
+            #: dropped. They read values, so a values-pasted close copy
+            #: still gets a verdict about whether its accounts add up.
+            from .analytics import ANALYTIC_STANDARDS, run_analytics
+            from .structure import read_structure
+            from .workbook import Workbook as EngineWorkbook
+
+            book = EngineWorkbook()
+            for cell in ingested.cells:
+                book.cells[cell.ref] = cell
+            book.sheets = list(ingested.counts.get("sheet_order", []))
+            structure = read_structure(book)
+            told = run_analytics(book, structure)
+            result["defects"].extend(
+                {
+                    "rule": claim.rule,
+                    "severity": "error",
+                    "ref": claim.ref,
+                    "sheet": claim.sheet,
+                    "name": claim.row_label,
+                    "detail": claim.detail,
+                    "standard": ANALYTIC_STANDARDS.get(claim.rule, ""),
+                    "analytical": True,
+                    "figure": claim.figure,
+                    "figure_unit": claim.figure_unit,
+                    "period": claim.period,
+                }
+                for claim in told.findings
+            )
+            result["values_only"] = structure.values_pasted
+            result["abstentions"] = [
+                {"rule": one.rule, "why": one.why} for one in told.abstentions
+            ]
+            result["tallies"] = told.tallies
         else:
             extraction = engine_figures.Extraction(figures=list(ingested.figures))
             found = disagreements(extraction)

@@ -189,3 +189,8 @@ server/scripts/corpus_sft/
 # in docs/pierce/revision-defect-protocol.md's round; results logs kept
 # beside them. Public files, not ours to redistribute.
 server/scripts/corpus_pr24dd/
+
+# Seeded-break copies for analytical-check recall tests. Made from the
+# corpus models by scripts/seed_break.py; never evidence of anything
+# except that a check catches what it exists to catch.
+server/scripts/seeded/

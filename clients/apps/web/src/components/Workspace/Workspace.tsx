@@ -409,6 +409,10 @@ export const Workspace = ({
               openDocId={doc?.id ?? null}
               onOpenDoc={openDoc}
               onNewDeal={() => setNewOpen(true)}
+              onRemoved={() => {
+                setDeal(null)
+                setDealsAt((was) => was + 1)
+              }}
             />
           ) : view === 'check' ? (
             <CheckFile

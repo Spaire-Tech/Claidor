@@ -2149,3 +2149,317 @@ The verdict line's «M checks pass» comes from the firm's own rule
 catalogue against the failing rules, and «· 11:42» from the last
 finished check — both new panel API reads. The old panel's UI
 primitives retired with their design.
+
+---
+
+## 15 August — structure layer, round 1: the floor under the analytical checks
+
+**Protocol first** (`analytical-checks-protocol.md`), tolerances and
+pass criteria fixed before any code, grounded in a survey of AFW and
+Dumfries recorded inside it. Then `polar/tieout/structure.py` — period
+axes from each sheet's own labels, sections from the model's own SUMs,
+opening/closing pairs by vocabulary, block location needing two
+independent anchors or abstaining — and a survey harness run over all
+22 corpus models.
+
+**Round-1 results.** Balance sheet located on 19 of 22 (86%): all
+sixteen Ofwat models (the five FinStat sheets each, every anchor
+printed), Bertha Park, Dumfries (BS and its audited twin), RHSC
+(PF8_Balance Sheet). Debt schedules on the three biggest close models
+(eight schedules between them — Constr/Ops splits and per-phase calcs
+— each anchored by tranche vocabulary plus a carried pair). The Ofwat
+models abstain on debt, which is right: a regulator's notional debt
+has no repayment schedule. 103 opening/closing pairs across the close
+models. Check sheets found everywhere they exist, including « Audit »,
+« Integrity Checks » and Ofwat's « Model Checks and Alerts ».
+
+**Zero mislocations seen** in the printed anchors, with the protocol's
+full hand-verification sample still owed before Phase 1 is declared
+passed — the claim so far is « nothing wrong found », not « verified ».
+
+**Two discoveries bigger than the round:**
+
+1. **Every issued Scottish close model is values-pasted** — zero
+   formula tags across millions of cells, in all five files. Issued
+   close models routinely ship with formulas stripped, which means the
+   mechanical audit is half blind on exactly the files deals publish —
+   and the analytical checks, which run on cached values, are the only
+   checks that can speak there. The layer records the fact
+   (`values_pasted`) so a screen can say it.
+2. **Label-pairing is the wrong balance arithmetic.** A dry run
+   pairing « Net assets » with « Total equity » on AFW produced a 0.86
+   discrepancy on a published determination model — multiple bases
+   share those words. Phase 2's balance check will key on the model's
+   own check rows and subtotal tree, or abstain. Corroborate, never
+   impose.
+
+**Round 2 items** (accuracy backlog): Ofwat pairs are found by
+formula shape, not vocabulary (their continuity lives in « Error
+chks » rows); Anderson and Elgin abstain on everything — coverage,
+not correctness, and the next vocabulary round; the `.xls` Ayrshire
+file loads but yields no axis — the old-format label path needs
+reading. Semi-annual Dumfries recorded as 2 columns/year rather than
+flagged, as the protocol demands.
+
+---
+
+## 15 August — structure layer, round 2: Phase 1 passes
+
+**The two repairs round 1 demanded, both measured before coded.**
+Vocabulary pairs became block-scoped — the opening rows partition a
+sheet, and a closing belongs to the block it sits in. That is
+Anderson's own layout speaking: « Opening Cash » at 217, twelve
+movement rows, « Closing Cash » at 229; the old eight-row cap was a
+number, the block is a structure. And the FAST idiom finally pairs:
+a bare reference to the previous period, same shape, recurring across
+three or more columns is the model declaring a carry with no words at
+all. Hand-read on AFW's RCV block and it is textbook: the BEG row
+reads `=J99`; row 99 computes `opening + additions − deductions`.
+
+**Round-2 numbers, all 22 models.** Pairs 4,566 (from 115). Balance
+sheet located on 19 of 22 (86%); debt machinery on 21 of 22 (95%) —
+Anderson and Elgin came in through their workings sheets. Ayrshire
+(.xls) is the one full abstention: its period headers are date values,
+not text; diagnosed for a reader round, not patched.
+
+**Hand-verification sample, per the protocol.** Every sheet's axis
+read on AFW, YKY, Dumfries and Bertha Park: the Ofwat axes uniformly
+FY2022–FY2036 on ~45 sheets each; Dumfries monthly through its
+construction phase and semi-annual through operations, per sheet, with
+the audited statements annual — the exact periodicity split the
+protocol required recording rather than flagging. Blocks hand-read:
+Dumfries « BS » (Debtors, reserves, Total current assets, Creditors —
+a real balance sheet), Bertha's pair 655/660, Anderson's cash rows.
+One definition sharpened rather than counted a miss: the
+`debt-schedule` kind names debt *machinery* — schedules and service
+waterfalls both (Bertha's « Distributions » is CAFDS and coupons); the
+terminal check finds tranches *within* a located sheet and abstains
+where there are none.
+
+**Phase 1: PASSED** under the pre-registered criteria — coverage above
+80% on both block kinds, zero mislocations found, the sample read.
+Next: Phase 2, the balance check, keyed on each model's own check rows
+and subtotal tree (label-pairing stays rejected).
+
+---
+
+## 15 August — analytical checks, Phase 2: the balance check passes
+
+**The design was decided by a diagnosis.** Before writing the rule, the
+0.86 from the dry run was traced: AFW's net assets and total equity
+genuinely differ in the tail periods — while the model's own « FinStat
+- BS - Appointee - check overall » reads zero. Their identity is not
+the textbook's. So the instrument became the model's own check rows,
+zero-convention gated; the independent identity runs only where its
+rows are unique and never against the model's own passing verdict —
+the protocol's agreement rule, enforced workbook-wide after round 1
+fired twelve retail findings that AFW's and WSX's own checks
+contradict.
+
+**One amendment under the protocol's own rule.** The floor moved from
+1e-6 to 0.01 working units: Dumfries carries accumulated rounding walk
+of ~3e-4 in £000 units — about 29 pence on a £779m model — and the
+registered floor was measuring float noise, not money. Prompting
+result and reason recorded here as the rule requires.
+
+**Round 2, all 22 models.** Zero false balance findings; zero axis
+findings (the axis rule claims only the dip that cannot be layout —
+Dumfries' side-by-side budget blocks, hand-read, made segments legal).
+Five own-check findings, each read in the cells before counting, and
+every one sits in an **issued financial-close file**: Dumfries' own
+audit rows report 329.15 (sub-debt sculpting residual, FY2019) and
+50.92 (FY2043); Elgin's drawdown-vs-participation check reports ±0.5;
+Ayrshire's project-vs-financing cash flow check reports ±700,016 — a
+one-period timing slip of £700k in the file a deal closed on. Recall
+proven on seeded copies of the real Dumfries file, caught by cell
+name. Ten unit tests pin the gates.
+
+**The product sentence this buys:** the models deals actually close on
+ship with their own checks firing, nobody reads them, and Antford
+does — on the values-pasted copies where nothing else can.
+
+**Held for later rounds** (backlog): RHSC's balance rows need a wider
+pairing vocabulary; when a model's own balance check itself fires, the
+own-check finding and the independent identity can both speak — de-dup
+before the catalogue; severity grading for tiny firings (±0.5); a
+seeded axis dip on a real file to match the unit test.
+
+---
+
+## 15 August — analytical checks, Phases 3 and 4: cash and debt pass
+
+**Cash tie-through** walks all 4,566 carries the structure layer found,
+along each sheet's own axis, on cached values — the check that catches
+the error nothing mechanical can see, on the values-pasted files where
+nothing else can be checked. Its three gates were each earned by a
+hand-read, not designed at a desk: segment boundaries are never
+compared across; a pair that mostly disagrees is our mispairing and
+says nothing; and a break only counts where the carry *resumes with
+live values* — Anderson's construction cash agrees for years, sweeps
+out over two settlement periods, and goes dormant, and no part of that
+is a defect, including the zero-against-zero tail that must not count
+as life. Round 1 fired nine times on the twins; every firing was read
+in the cells; the resume-gate silenced all nine as the phase-end
+sweeps they are.
+
+**Debt-terminal** claims the narrow thing a project financier cares
+about: a debt-worded tranche on located debt machinery, strictly
+amortising into the model's horizon, still above tolerance against
+its own peak. Revolvers fluctuate and abstain; repaid tranches pass.
+
+**Final sweep, all 22 models: six findings, zero false positives.**
+Every finding is a model's own check row firing, every one hand-read,
+every one in an issued financial-close file — Dumfries (329.15 and
+50.92), Elgin (±0.5), Ayrshire (±700,016). Recall proven on seeded
+copies of the real Dumfries file for all four shapes — imbalance,
+fired check row, mid-life carry break, declining debt remnant — each
+caught by cell name. The first debt seed was flat and the decline
+gate correctly refused it; the seed was reshaped, not the gate. 33
+unit tests pin every gate.
+
+**Interest self-consistency is the one protocol item deferred**, with
+its reason: floating-rate models make naive stability tests abstain
+everywhere, and doing it honestly needs tranche-to-interest-row
+association — its own measured round. Backlogged, not forgotten.
+
+**What exists now that did not a day ago:** an engine that reads a
+model's structure, checks it as a set of financial statements, finds
+the fired checks nobody reads in the files deals actually closed on —
+and has never once, across 44 model-runs of survey, said something
+about a published model that a hand-read did not confirm.
+
+## The panel audit — why « it just does not work »
+
+The founder opened the add-in in Excel and got the old product: the
+name Claidor, the old logo, deals from before the pivot, and a
+choose-screen that asked the same question forever. Audited end to
+end; four distinct defects, all real.
+
+**The ask-loop.** The identify endpoint answers `matched_by: none`
+when the chosen deal holds no file by the open workbook's name — and
+the panel answered that by silently showing the choose screen again.
+Pick, loop, pick, loop. Fixed by making the refusal speak: the choose
+face now says which model was tried and which filename it does not
+hold, and what to do about it.
+
+**The branding.** The deployed manifest still said Claidor everywhere
+— provider, display name, ribbon button, tooltips — and shipped the
+old mark. Rewritten as Antford throughout, new Bodoni-A icons at all
+five sizes, and trimmed to Excel only: the Word and PowerPoint host
+entries are gone with the pivot. Same manifest Id, so re-adding the
+add-in updates the install in place.
+
+**The stale deals.** Nothing could ever be removed — no delete route
+existed, so pre-pivot deals polluted the picker forever. Added
+`DELETE /deals/{id}` (soft, findings and notes kept), a two-step
+remove control on the model page, and the shell wiring that closes
+the page and refreshes the list.
+
+**The deployment fact underneath all of it:** what the founder tested
+is the last deployed build. Every fix here — and the entire Antford
+panel — lands only when the branch merges.
+
+## Analytics into the product — the founder's v2 design, wired
+
+The founder revised the workspace design (`Antford_Workspace_2.html`,
+checked into `docs/pierce/design-antford/`): the failing checks split
+into « How the model is built » and « Whether the accounts add up »,
+figure-led cards with the mono cell reference in green, the
+values-only banner, pass rows with real tallies, abstention rows
+under « Checks that did not run », and a « Statement checks » switch
+in Settings. That drawing is the face of what Phases 1–4 built — so
+this round put the engine into the product behind it.
+
+**Server.** The statement checks now run inside every ordinary audit
+— `run_audit` reads the structure, runs the analytics, and lands the
+findings in the same findings table as the mechanical rules, with
+rule keys, short standards (« ICAEW 8 », « FAST C4 »), the spelled-out
+standard sentence, and a headline figure composed where the measured
+values live (« 50.92 — on the model's own « check » row, built to
+read zero »). The run summary carries what the screens must never
+invent: whether the copy is values-pasted, every abstention with its
+sentence, and per-rule tallies counted inside the walks themselves —
+rows read and clean, accounts walked and carried, periods compared,
+tranches judged, sheets examined. The one-off Check-a-model path runs
+the same checks on the cells it just read, before the file is
+dropped. The house-rules catalogue serves both families with the
+statement checks flagged, so no screen keeps a list of its own; the
+five statement keys ride in `audit_rules_off` like any rule, which is
+what the Settings switch flips — no new column, no migration.
+
+**Spot-check against the real files** before anything shipped:
+Dumfries reports its two known firings with their figures (50.92 at
+Audit!BP156, 329.2 at InputPh2!T150), tallies « 2 of 4 rows clean »,
+129 balance periods, 13 carrying accounts, 1 tranche repaid;
+Anderson reports clean tallies and the named balance-sheet
+abstention. Same verdicts as the hand-verified survey — the fold
+changed where the answers land, not what they are.
+
+**One defect caught in the round:** the pass rows would have worn the
+catalogue's failure names — « Cash does not carry forward between
+periods » as a *pass*. The catalogue now carries each statement
+check's passing sentence too (« Cash carries forward », from the
+design's own pass list), and the pass rows wear those.
+
+**Departures from the drawing, flagged in the code where they live:**
+the tie-out's card keeps an untitled grid above the two families (the
+design draws no third section for documents-vs-model); construction
+cards headline the count of failing places, not a per-cell figure the
+mechanical audit doesn't extract yet; the design's pass list names
+checks the engine does not run (retained earnings, interest accrual,
+depreciation) — absent, not faked, interest being its own backlogged
+measured round; and the two Settings master switches are each scoped
+to their own family so flipping one never silently moves the other.
+
+400 server tests pass, web and panel typecheck, panel suite green.
+
+## Interest self-consistency — the deferred Phase-4 half, measured (16 August)
+
+Registered before results (protocol addendum, 16 August): association
+only when exactly one interest row sits inside the tranche's own
+block; the convention is the median implied rate over at least six
+rated periods, standing when three quarters sit within ±50% of it;
+two claims only — a factor-of-three departure from the model's own
+median, and interest charged after repayment. Zero-interest periods
+with a live balance deliberately unclaimed (payment frequency looks
+identical to a stop).
+
+**Two amendments on the first survey's evidence**, recorded in the
+addendum before any finding was counted: a candidate row must be
+*live* — Dumfries's sub-debt corkscrews keep « Interest rolled up »
+rows that are entirely zeros, and an empty row is presentation, not
+an instrument — and a pair with no live in-block interest row is
+silence, not an abstention: on Anderson, Bertha Park, Elgin and RHSC
+interest lives elsewhere in the model, so nothing was measured and
+nothing was declined.
+
+**Final survey, all 22 models: zero interest findings, zero judged
+tranches.** That second number is the round's real result. The
+corpus never presents the shape the check fires on: the Ofwat models
+keep five-way interest splits on five-year control accounts —
+ambiguous by name (86 abstentions) or too short for a convention
+(11) — and the Scottish corkscrews carry empty interest rows with
+the real interest charged outside the block. Every refusal hand-read
+on Dumfries and spot-read on AFW; each one is the gate doing its
+job. The other five checks reproduced their known results exactly —
+the same six own-check findings, nothing else.
+
+**Recall: proven, with a declared enabling edit.** No real tranche
+associates, so the seeds populate sub debt 1's own empty interest
+row at a steady 5% of opening — the convention the row was built
+for — before introducing one defect per copy. The harness prints the
+enabling edit; it is part of the seed, never hidden. Both defects
+caught by cell name: 20% against the schedule's own 5% at
+Ph2 Calcs!AQ984 (« a factor of 4.0 off its own convention »), and
+500 of interest at BQ984 after the tranche was repaid. All four
+earlier seeds still pass; 26 unit tests pin the gates.
+
+**What this round honestly bought:** a sixth statement check that is
+armed, gated, product-wired (catalogue, pass sentence, tallies,
+Settings) and provably able to catch both defect shapes — and that
+on today's corpus says nothing, out loud, for named reasons. It will
+speak on the models the product is actually for: lender-case project
+finance files that keep each tranche's interest inside its own
+schedule. Cross-row association — reaching the interest a model
+keeps outside the block — is the next evidence round, not a guess to
+bolt on.
