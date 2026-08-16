@@ -800,8 +800,15 @@ def _interest_consistency(
         if axis is None:
             continue
 
-        #: The association gate: exactly one interest-amount row
+        #: The association gate: exactly one *live* interest-amount row
         #: strictly between the pair's own rows, or nothing is claimed.
+        #: Live means at least one value above FLOOR — Dumfries's
+        #: sub-debt corkscrew keeps two interest rows that are all
+        #: zeros, and an empty row is presentation, not an interest row
+        #: in use (amendment to the registration, worklog 16 August).
+        #: A pair with no live interest row at all is silence, not an
+        #: abstention: its interest simply lives elsewhere, and nothing
+        #: was measured or declined (same amendment).
         low, high = sorted((pair.opening_row, pair.closing_row))
         opening: dict[int, float] = {}
         by_row: dict[int, dict[int, float]] = {}
@@ -819,18 +826,23 @@ def _interest_consistency(
                     continue
                 by_row.setdefault(cell.row, {})[cell.column] = float(cell.value)
                 row_names.setdefault(cell.row, label)
-        if len(by_row) != 1:
-            if by_row:
+        live_rows = [
+            row
+            for row, cells_of in by_row.items()
+            if any(abs(value) > FLOOR for value in cells_of.values())
+        ]
+        if len(live_rows) != 1:
+            if len(live_rows) > 1:
                 result.abstentions.append(
                     Abstention(
                         'interest-consistency',
                         f'{pair.sheet} « {pair.label} »: '
-                        f'{len(by_row)} interest rows inside the tranche '
+                        f'{len(live_rows)} interest rows inside the tranche '
                         '— no single row associates, not guessed.',
                     )
                 )
             continue
-        interest_row = next(iter(by_row))
+        interest_row = live_rows[0]
         interest = by_row[interest_row]
         interest_label = row_names[interest_row]
 
@@ -845,6 +857,18 @@ def _interest_consistency(
             if abs(balance) > FLOOR and abs(charged) > FLOOR:
                 rated.append((column, abs(charged) / abs(balance)))
         if len(rated) < RATED_PERIODS:
+            #: An associated tranche too short to have a convention —
+            #: the registration's named abstention, so the coverage
+            #: list says why nothing was claimed about a row that does
+            #: exist and does carry interest.
+            result.abstentions.append(
+                Abstention(
+                    'interest-consistency',
+                    f'{pair.sheet} « {pair.label} »: only {len(rated)} '
+                    f'rated period{"s" if len(rated) != 1 else ""} — too '
+                    'short to have a convention.',
+                )
+            )
             continue
         judged += 1
         convention = median(rate for _, rate in rated)

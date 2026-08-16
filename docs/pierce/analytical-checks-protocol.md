@@ -173,3 +173,22 @@ findings across all 22 corpus models, every firing hand-read in the
 cells before it counts; a seeded departure and a seeded
 interest-after-repayment on a real file both caught by cell name.
 Tally: tranches with a standing convention, clean = no findings.
+
+### Amendment, same day, before any finding was counted (16 August)
+
+Two behaviors above are amended on the first survey's evidence, per
+the amendment rule, with the prompting results named in the worklog:
+
+1. **A candidate interest row must be live** — at least one value
+   above FLOOR inside the axis. Prompting result: Dumfries's sub-debt
+   corkscrews carry « Interest rolled up » rows that are entirely
+   zeros; counting empty presentation rows as candidates blocked
+   association with nothing.
+2. **Zero live candidates is silence, not an abstention.** Prompting
+   result: on Anderson, Bertha Park, Elgin and RHSC no debt pair
+   holds any in-block interest row — their interest lives elsewhere
+   in the model. A named abstention per such pair describes layout,
+   not a declined claim; nothing was measured and nothing refused.
+   Several live candidates remain the named abstention, and an
+   associated tranche with fewer than six rated periods now abstains
+   by name exactly as registered.

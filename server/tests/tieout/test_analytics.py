@@ -363,11 +363,18 @@ class TestInterestConsistency:
         )
 
     def test_a_short_series_has_no_convention(self) -> None:
-        #: Five rated periods is below the registered six — silence.
+        #: Five rated periods is below the registered six — the named
+        #: abstention, never a claim.
         opening = [100, 80, 60, 40, 20]
-        assert self._fired(
-            self._tranche(opening, [v * 0.05 for v in opening])
-        ) == []
+        result = _run(self._tranche(opening, [v * 0.05 for v in opening]))
+        assert [
+            f for f in result.findings if f.rule == 'interest-consistency'
+        ] == []
+        assert any(
+            'too short to have a convention' in a.why
+            for a in result.abstentions
+            if a.rule == 'interest-consistency'
+        )
 
     def test_no_convention_is_an_abstention_not_a_verdict(self) -> None:
         #: Rates all over the place: the association is doubted, not
@@ -383,3 +390,17 @@ class TestInterestConsistency:
             for a in result.abstentions
             if a.rule == 'interest-consistency'
         )
+
+    def test_a_dead_second_row_does_not_block_association(self) -> None:
+        #: Dumfries's corkscrew: a second interest row that is all
+        #: zeros is presentation, not a candidate (registration
+        #: amendment, 16 August).
+        opening = [100, 90, 80, 70, 60, 50, 40]
+        interest = [5, 4.5, 4, 22.5, 3, 2.5, 2]
+        fired = self._fired(
+            self._tranche(
+                opening, interest, second_interest=[0] * len(opening)
+            )
+        )
+        assert len(fired) == 1
+        assert fired[0].period == 'FY2021'

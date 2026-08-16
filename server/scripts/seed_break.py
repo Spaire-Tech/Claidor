@@ -178,5 +178,78 @@ if __name__ == '__main__':
             print('  MISSED: the debt check did not catch the seeded remnant')
             passes = False
 
+    #: Interest: the corpus truth (worklog, 16 August) is that no live
+    #: tranche keeps a usable interest row inside its own block —
+    #: Dumfries's « Interest rolled up » rows exist but hold zeros. So
+    #: the interest seeds carry a DECLARED ENABLING EDIT: sub debt 1's
+    #: own empty « Interest rolled up, expensed » row (Ph2 Calcs 984)
+    #: is populated at a steady 5% of the opening balance — the
+    #: convention the row was built for — and then one defect is
+    #: introduced per copy. The enabling edit is part of the seed and
+    #: is printed, never hidden; recall is still the claim that the
+    #: check catches the defect cell by name.
+    sub = next(
+        (p for p in structure.pairs
+         if p.sheet == 'Ph2 Calcs' and (p.label or '') == 'sub debt 1'),
+        None,
+    )
+    if sub is None:
+        print('  no sub debt 1 pair found for the interest seeds')
+        passes = False
+    else:
+        from openpyxl.utils import get_column_letter
+        axis = structure.axes[sub.sheet]
+        interest_row = 984
+        opening_values = {
+            c.column: float(c.value)
+            for c in source.cells.values()
+            if c.sheet == sub.sheet and c.row == sub.opening_row
+            and c.value is not None
+        }
+        live = [c for c, _ in axis.columns if abs(opening_values.get(c, 0.0)) > 0.01]
+        after = [c for c, _ in axis.columns if c > live[-1]]
+
+        def enabled(name: str) -> tuple:
+            SEEDED.mkdir(exist_ok=True)
+            out = SEEDED / f'dumfries_{name}.xlsx'
+            workbook = openpyxl.load_workbook(
+                str(SOURCE), data_only=True, keep_vba=False
+            )
+            page = workbook[sub.sheet]
+            for c in live:
+                page[f'{get_column_letter(c)}{interest_row}'].value = (
+                    opening_values[c] * 0.05
+                )
+            return out, workbook, page
+
+        #: Seed A: one mid-life period charged at 20% against the 5%.
+        target = live[len(live) // 2]
+        out, workbook, page = enabled('interest-departure')
+        coordinate = f'{get_column_letter(target)}{interest_row}'
+        page[coordinate].value = opening_values[target] * 0.20
+        print(f'interest-departure: enabled 5% on row {interest_row}, '
+              f'seeded {sub.sheet}!{coordinate} at 20%')
+        workbook.save(str(out))
+        if not expect(out, 'interest-consistency', coordinate):
+            print('  MISSED: the departure was not caught')
+            passes = False
+
+        #: Seed B: interest goes on being charged after the tranche
+        #: was repaid.
+        if not after:
+            print('  no post-repayment column for the interest seed')
+            passes = False
+        else:
+            target = after[min(1, len(after) - 1)]
+            out, workbook, page = enabled('interest-after-repayment')
+            coordinate = f'{get_column_letter(target)}{interest_row}'
+            page[coordinate].value = 500.0
+            print(f'interest-after-repayment: enabled 5% on row '
+                  f'{interest_row}, seeded {sub.sheet}!{coordinate} = 500')
+            workbook.save(str(out))
+            if not expect(out, 'interest-consistency', coordinate):
+                print('  MISSED: interest after repayment was not caught')
+                passes = False
+
     print('\nrecall:', 'PASS' if passes else 'FAIL')
     sys.exit(0 if passes else 1)
