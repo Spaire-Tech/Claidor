@@ -2518,3 +2518,46 @@ judged — the finding states the concealment and the reader decides —
 and models ingested before this change surface the rule on their
 next upload, since the fact is recorded at read time. 412 tieout
 tests green; the catalogue grows to eleven construction rules.
+
+## The founder's reckoning, and the rebuild it ordered (16 August)
+
+The founder opened the product as a stranger would and it failed them
+— and their audit of my work was right on every count. What this
+round changed, each piece driven in a real browser and screenshotted
+before it was called done (the new rule, permanent):
+
+**The panel does its job now.** It reads the open workbook's own
+bytes out of Excel (4MB slices, unsaved edits included) and puts them
+through the check directly — no deal, no picker, no asking a person
+where their own file « belongs ». Signed out → consent → the ring →
+the findings, each row a jump to its cell. The deal-identification
+machinery is gone from the panel entirely. Driven end to end in a
+browser through the dev file bridge.
+
+**Findings speak person-first.** Every construction rule composes a
+plain sentence shown before the formula, which is evidence beneath,
+not the headline. The doubled sheet name the founder pasted was my
+rendering bug — fixed. Dragged breaks collapse to one finding with
+the span (their file's 114 + 100 findings were ~10 authoring
+decisions). And the design's little Excel grid is REAL: the engine
+composes each finding's cell with its neighbours at check time and
+the modal draws it — formula bar, column letters, row labels, the
+offending cell in red. My earlier « absent, not faked » note claiming
+the server could not ship neighbours was wrong; the founder caught it.
+
+**The chat has a voice and a face.** Prompts are Antford's — model
+language, the answer in the first sentence, ~120 words unless asked —
+and the web renders the answer's light markdown instead of printing
+asterisks at the reader.
+
+**Excel only, as ordered.** Check a model accepts spreadsheets alone;
+the auth pages lost the inherited « Masterclass » boilerplate and
+wear the Bodoni A.
+
+Verified: 413 server tests, panel and web typecheck and suites green,
+and — the new permanent rule — the screens themselves, screenshotted
+from a locally running stack and sent to the founder. Still open,
+named honestly: the model-first information architecture (deals as
+folders, the model as the object) is directed but not yet rebuilt
+underneath the workspace, and the chat's voice needs a production
+key to be heard.
