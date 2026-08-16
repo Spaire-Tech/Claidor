@@ -404,3 +404,76 @@ class TestInterestConsistency:
         )
         assert len(fired) == 1
         assert fired[0].period == 'FY2021'
+
+
+class TestGrading:
+    #: A real axis row is text — its cells carry no number, so it must
+    #: not weigh on the model's scale.
+    def _axis(self) -> list[Cell]:
+        return [
+            _cell('S', f'H{i}1', 1, i + 3, value=None,
+                  column_label=f'FY{2020 + i}')
+            for i in range(6)
+        ]
+
+    def test_a_vanishing_check_residue_grades_smell(self) -> None:
+        #: Elgin's shape: ±0.5 on a sheet of millions — true, reported,
+        #: and marked below the model's own materiality.
+        cells = self._axis() + [
+            _cell('S', f'C{i}5', 5, i + 3, value=Decimal(str(v)),
+                  row_label='DSRA Check')
+            for i, v in enumerate([0, 0, 0, 0, 0, 0.5])
+        ] + [
+            _cell('S', f'C{i}8', 8, i + 3, value=Decimal(str(v)),
+                  row_label='Balance b/f')
+            for i, v in enumerate([1e6, 2e6, 3e6, 4e6, 5e6, 6e6])
+        ]
+        result = _run(cells)
+        fired = [f for f in result.findings if f.rule == 'model-own-check']
+        assert len(fired) == 1
+        assert fired[0].severity == 'smell'
+
+    def test_money_grades_error(self) -> None:
+        #: Ayrshire's shape: a real magnitude against the model's own
+        #: scale stays an error.
+        cells = self._axis() + [
+            _cell('S', f'C{i}5', 5, i + 3, value=Decimal(str(v)),
+                  row_label='DSRA Check')
+            for i, v in enumerate([0, 0, 0, 0, 0, 700_016])
+        ] + [
+            _cell('S', f'C{i}8', 8, i + 3, value=Decimal(str(v)),
+                  row_label='Balance b/f')
+            for i, v in enumerate([1e6, 2e6, 3e6, 4e6, 5e6, 6e6])
+        ]
+        result = _run(cells)
+        fired = [f for f in result.findings if f.rule == 'model-own-check']
+        assert len(fired) == 1
+        assert fired[0].severity == 'error'
+
+
+class TestDeduplication:
+    def test_the_models_own_words_beat_the_identity_echo(self) -> None:
+        #: A fired balance check row and the independent identity state
+        #: the same fact; only the model's own sentence survives.
+        cells = _axis_row('BS') + [
+            _cell('BS', f'C{i}5', 5, i + 3, value=Decimal(str(v)),
+                  row_label='Net assets')
+            for i, v in enumerate([100, 110, 120, 130, 140, 150])
+        ] + [
+            _cell('BS', f'C{i}6', 6, i + 3, value=Decimal(str(v)),
+                  row_label='Total equity')
+            for i, v in enumerate([100, 110, 120, 130, 140, 100])
+        ] + [
+            #: The sheet's own balance check, firing where they differ.
+            _cell('BS', f'C{i}9', 9, i + 3, value=Decimal(str(v)),
+                  row_label='Check BS balances')
+            for i, v in enumerate([0, 0, 0, 0, 0, 50])
+        ] + [
+            #: Statement vocabulary so the block locates.
+            _cell('BS', 'A2', 2, 3, row_label='Total assets'),
+            _cell('BS', 'A3', 3, 3, row_label='Total liabilities'),
+        ]
+        result = _run(cells)
+        rules = [f.rule for f in result.findings]
+        assert 'model-own-check' in rules
+        assert 'balance-sheet' not in rules

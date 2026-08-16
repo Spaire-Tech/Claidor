@@ -482,14 +482,17 @@ class TieOutService:
                 for claim in told.findings:
                     if claim.rule not in statement_keys:
                         continue
-                    errors += 1
+                    if claim.severity == "smell":
+                        smells += 1
+                    else:
+                        errors += 1
                     findings.append(
                         FindingRow(
                             dossier_id=dossier_id,
                             check_run_id=run.id,
                             artifact_id=model.id,
                             kind=FindingKind.audit,
-                            severity=FindingSeverity.error,
+                            severity=FindingSeverity(claim.severity),
                             fingerprint=_fingerprint(
                                 "audit", model.lineage_id, claim.ref, claim.rule
                             ),
@@ -815,7 +818,7 @@ class TieOutService:
             result["defects"].extend(
                 {
                     "rule": claim.rule,
-                    "severity": "error",
+                    "severity": claim.severity,
                     "ref": claim.ref,
                     "sheet": claim.sheet,
                     "name": claim.row_label,

@@ -2463,3 +2463,29 @@ finance files that keep each tranche's interest inside its own
 schedule. Cross-row association — reaching the interest a model
 keeps outside the block — is the next evidence round, not a guess to
 bolt on.
+
+## Severity grading and de-duplication (16 August)
+
+Registered first (protocol, 16 August), calibrated on the hand-read
+findings, then built. **Grading:** a money finding measures against
+the model's own scale — the workbook-wide median absolute cell value
+— and below one thousandth of it grades as a `smell`: true, reported,
+marked as below the model's own materiality. The line sits four
+orders of magnitude clear on both sides of the calibration set:
+Elgin's ±0.5 grades smell at 4.3e-6 of its model's scale; the
+smallest genuine money finding (Dumfries's 50.92) sits 280× above
+the line; Ayrshire's ±700,016 at 9× the whole scale. Structural
+findings — period order, a rate a factor of three off its own
+convention, interest after repayment — are always errors: no
+rounding produces them. Verified on the corpus after building:
+Elgin's two grade smell, the four money findings grade error,
+nothing appeared or disappeared.
+
+**De-duplication:** a fired balance-flavoured check row and the
+independent balance identity can state one fact twice; the model's
+own words win — the identity finding for the same period (or sheet,
+where the check row carries no period) is dropped, per the
+protocol's instrument-primacy rule. Grading and de-dup both run as
+post-passes inside the engine, so the deal audit, the one-off check
+and the panel all inherit them unchanged. 28 analytics unit tests;
+411 tieout tests green.
