@@ -2463,3 +2463,101 @@ finance files that keep each tranche's interest inside its own
 schedule. Cross-row association — reaching the interest a model
 keeps outside the block — is the next evidence round, not a guess to
 bolt on.
+
+## Severity grading and de-duplication (16 August)
+
+Registered first (protocol, 16 August), calibrated on the hand-read
+findings, then built. **Grading:** a money finding measures against
+the model's own scale — the workbook-wide median absolute cell value
+— and below one thousandth of it grades as a `smell`: true, reported,
+marked as below the model's own materiality. The line sits four
+orders of magnitude clear on both sides of the calibration set:
+Elgin's ±0.5 grades smell at 4.3e-6 of its model's scale; the
+smallest genuine money finding (Dumfries's 50.92) sits 280× above
+the line; Ayrshire's ±700,016 at 9× the whole scale. Structural
+findings — period order, a rate a factor of three off its own
+convention, interest after repayment — are always errors: no
+rounding produces them. Verified on the corpus after building:
+Elgin's two grade smell, the four money findings grade error,
+nothing appeared or disappeared.
+
+**De-duplication:** a fired balance-flavoured check row and the
+independent balance identity can state one fact twice; the model's
+own words win — the identity finding for the same period (or sheet,
+where the check row carries no period) is dropped, per the
+protocol's instrument-primacy rule. Grading and de-dup both run as
+post-passes inside the engine, so the deal audit, the one-off check
+and the panel all inherit them unchanged. 28 analytics unit tests;
+411 tieout tests green.
+
+## Hidden sheets folded into the audit (16 August)
+
+The document panel has said what a workbook hides since the metadata
+round; the audit now says it too, so concealment reaches the model
+page, the panel and the deals arithmetic like any other check. One
+new construction rule, « Hidden sheets », with the two states the
+file format distinguishes carrying their own weights: *hidden* is a
+smell — one right-click from visible, everybody can see it exists —
+and *very hidden* is an error: the sheet is absent from Excel's own
+unhide menu, reachable only through the VBA editor, and concealment
+at that grade is a repeated cause in the published spreadsheet-
+disaster catalogues (EuSpRIG, cited on the finding).
+
+The fact is kept on the artifact at ingest — the stored cells alone
+cannot recover a sheet's visibility — and handed back to the audit
+when it runs on the reconstruction; the one-off check inherits the
+rule for free because its defects come from the same audit at read
+time. The legacy .xls path now distinguishes very hidden too (xlrd
+visibility 2), where it previously collapsed the states.
+
+**On the corpus:** Dumfries — an issued financial-close copy —
+carries two very hidden sheets, « TM_Databook » and « TM_Ph2 Calcs »,
+confirmed by two independent readers; RHSC carries 27 hidden sheets
+of which « INTEG » is very hidden. What those sheets hold was not
+judged — the finding states the concealment and the reader decides —
+and models ingested before this change surface the rule on their
+next upload, since the fact is recorded at read time. 412 tieout
+tests green; the catalogue grows to eleven construction rules.
+
+## The founder's reckoning, and the rebuild it ordered (16 August)
+
+The founder opened the product as a stranger would and it failed them
+— and their audit of my work was right on every count. What this
+round changed, each piece driven in a real browser and screenshotted
+before it was called done (the new rule, permanent):
+
+**The panel does its job now.** It reads the open workbook's own
+bytes out of Excel (4MB slices, unsaved edits included) and puts them
+through the check directly — no deal, no picker, no asking a person
+where their own file « belongs ». Signed out → consent → the ring →
+the findings, each row a jump to its cell. The deal-identification
+machinery is gone from the panel entirely. Driven end to end in a
+browser through the dev file bridge.
+
+**Findings speak person-first.** Every construction rule composes a
+plain sentence shown before the formula, which is evidence beneath,
+not the headline. The doubled sheet name the founder pasted was my
+rendering bug — fixed. Dragged breaks collapse to one finding with
+the span (their file's 114 + 100 findings were ~10 authoring
+decisions). And the design's little Excel grid is REAL: the engine
+composes each finding's cell with its neighbours at check time and
+the modal draws it — formula bar, column letters, row labels, the
+offending cell in red. My earlier « absent, not faked » note claiming
+the server could not ship neighbours was wrong; the founder caught it.
+
+**The chat has a voice and a face.** Prompts are Antford's — model
+language, the answer in the first sentence, ~120 words unless asked —
+and the web renders the answer's light markdown instead of printing
+asterisks at the reader.
+
+**Excel only, as ordered.** Check a model accepts spreadsheets alone;
+the auth pages lost the inherited « Masterclass » boilerplate and
+wear the Bodoni A.
+
+Verified: 413 server tests, panel and web typecheck and suites green,
+and — the new permanent rule — the screens themselves, screenshotted
+from a locally running stack and sent to the founder. Still open,
+named honestly: the model-first information architecture (deals as
+folders, the model as the object) is directed but not yet rebuilt
+underneath the workspace, and the chat's voice needs a production
+key to be heard.

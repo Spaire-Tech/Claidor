@@ -13,6 +13,7 @@ both the offline scripts and the running product.
 """
 
 import hashlib
+import re
 from collections.abc import Sequence
 from decimal import Decimal
 from typing import Any
@@ -404,6 +405,7 @@ class TieOutService:
             run_analytics,
         )
         from .audit import audit as run_rules
+        from .audit import plain_words
         from .structure import read_structure
 
         repository = TieOutRepository.from_session(session)
@@ -433,6 +435,13 @@ class TieOutService:
         for model in models:
             cells = await repository.cells_of(model.id)
             book = _workbook_of(cells)
+            #: The cells cannot say what the workbook hides — that fact
+            #: was kept on the artifact at ingest, and the audit needs
+            #: it back before it runs.
+            book.hidden_sheets = tuple(model.counts.get("hidden_sheets", []))
+            book.very_hidden_sheets = tuple(
+                model.counts.get("very_hidden_sheets", [])
+            )
             result = run_rules(book)
             result.findings = [
                 one for one in result.findings if one.rule not in rules_off
@@ -453,7 +462,10 @@ class TieOutService:
                         rule=defect.rule,
                         standard=defect.source,
                         printed=defect.ref,
-                        title=f"{defect.rule.replace('-', ' ')} at {defect.ref}",
+                        #: The plain sentence is the title — what a
+                        #: person reads first; the formula stays in the
+                        #: detail as evidence beneath it.
+                        title=plain_words(defect),
                         detail=defect.detail,
                         location=defect.ref,
                         # An audit finding already sits at a cell, which
@@ -467,6 +479,9 @@ class TieOutService:
                             "sheet": defect.sheet,
                             "name": defect.name,
                             "chain": render_chain(book, defect.ref),
+                            "grid": _neighbourhood(
+                                book, defect.sheet, defect.ref
+                            ),
                         },
                     )
                 )
@@ -482,14 +497,17 @@ class TieOutService:
                 for claim in told.findings:
                     if claim.rule not in statement_keys:
                         continue
-                    errors += 1
+                    if claim.severity == "smell":
+                        smells += 1
+                    else:
+                        errors += 1
                     findings.append(
                         FindingRow(
                             dossier_id=dossier_id,
                             check_run_id=run.id,
                             artifact_id=model.id,
                             kind=FindingKind.audit,
-                            severity=FindingSeverity.error,
+                            severity=FindingSeverity(claim.severity),
                             fingerprint=_fingerprint(
                                 "audit", model.lineage_id, claim.ref, claim.rule
                             ),
@@ -514,6 +532,9 @@ class TieOutService:
                                 "value": claim.value,
                                 "figure": claim.figure,
                                 "figure_unit": claim.figure_unit,
+                                "grid": _neighbourhood(
+                                    book, claim.sheet, claim.ref
+                                ),
                                 "standard_sentence": (
                                     ANALYTIC_STANDARD_SENTENCES.get(
                                         claim.rule, ""
@@ -785,6 +806,18 @@ class TieOutService:
         checked_against = ""
 
         if kind is ArtifactKind.model:
+            #: The workbook, rebuilt once for everything below: the
+            #: plain sentences, the little grids, the statement checks.
+            from .analytics import ANALYTIC_STANDARDS, run_analytics
+            from .audit import plain_words
+            from .structure import read_structure
+            from .workbook import Workbook as EngineWorkbook
+
+            book = EngineWorkbook()
+            for cell in ingested.cells:
+                book.cells[cell.ref] = cell
+            book.sheets = list(ingested.counts.get("sheet_order", []))
+
             result["defects"] = [
                 {
                     "rule": defect.rule,
@@ -792,8 +825,12 @@ class TieOutService:
                     "ref": defect.ref,
                     "sheet": defect.sheet,
                     "name": defect.name,
+                    #: What a person reads first; the formula is
+                    #: evidence beneath it, never the headline.
+                    "plain": plain_words(defect),
                     "detail": defect.detail,
                     "standard": defect.source,
+                    "grid": _neighbourhood(book, defect.sheet, defect.ref),
                 }
                 for defect in ingested.defects
             ]
@@ -802,29 +839,23 @@ class TieOutService:
             #: deal audit, on the cells just read, before the file is
             #: dropped. They read values, so a values-pasted close copy
             #: still gets a verdict about whether its accounts add up.
-            from .analytics import ANALYTIC_STANDARDS, run_analytics
-            from .structure import read_structure
-            from .workbook import Workbook as EngineWorkbook
-
-            book = EngineWorkbook()
-            for cell in ingested.cells:
-                book.cells[cell.ref] = cell
-            book.sheets = list(ingested.counts.get("sheet_order", []))
             structure = read_structure(book)
             told = run_analytics(book, structure)
             result["defects"].extend(
                 {
                     "rule": claim.rule,
-                    "severity": "error",
+                    "severity": claim.severity,
                     "ref": claim.ref,
                     "sheet": claim.sheet,
                     "name": claim.row_label,
+                    "plain": claim.detail,
                     "detail": claim.detail,
                     "standard": ANALYTIC_STANDARDS.get(claim.rule, ""),
                     "analytical": True,
                     "figure": claim.figure,
                     "figure_unit": claim.figure_unit,
                     "period": claim.period,
+                    "grid": _neighbourhood(book, claim.sheet, claim.ref),
                 }
                 for claim in told.findings
             )
@@ -1597,6 +1628,79 @@ def _steps_from(
             None,
         )
     return steps
+
+
+def _neighbourhood(
+    book: Workbook, sheet: str, ref: str, *, rows: int = 4, columns: int = 4
+) -> dict[str, Any] | None:
+    """The finding's cell with its neighbours — the design's little
+    Excel grid, composed where the cells are in scope so every screen
+    (workspace modal, panel, a stored one-off) can draw it without a
+    second request. The window is small on purpose: enough to see the
+    row break its pattern, never a spreadsheet viewer.
+
+    Shape follows the design's `xl` block: the sheet, the selected
+    coordinate, its formula (or its printed value), the column letters,
+    and the rows — first cell of each row is the model's own label for
+    it, `hot` marks the finding's cell.
+    """
+    from openpyxl.utils import column_index_from_string, get_column_letter
+
+    coordinate = ref.split("!", 1)[-1]
+    match = re.match(r"^([A-Z]+)(\d+)$", coordinate)
+    if match is None:
+        return None
+    column = column_index_from_string(match.group(1))
+    row = int(match.group(2))
+
+    per_sheet = [c for c in book.cells.values() if c.sheet == sheet]
+    if not per_sheet:
+        return None
+    first_row = max(1, row - (rows - 2))
+    first_column = max(1, column - (columns - 2))
+    span_rows = list(range(first_row, first_row + rows))
+    span_columns = list(range(first_column, first_column + columns))
+
+    by_place = {(c.row, c.column): c for c in per_sheet}
+    labels = {
+        c.row: c.row_label
+        for c in per_sheet
+        if c.row in span_rows and c.row_label
+    }
+    target = by_place.get((row, column))
+
+    def printed(cell: EngineCell | None) -> str:
+        if cell is None or cell.value is None:
+            return ""
+        text = f"{cell.value.normalize():f}"
+        try:
+            number = float(text)
+        except ValueError:
+            return text
+        return f"{number:,.6g}"
+
+    return {
+        "sheet": sheet,
+        "sel": coordinate,
+        "formula": (
+            (target.formula or printed(target)) if target is not None else ""
+        ),
+        "cols": [get_column_letter(c) for c in span_columns],
+        "rows": [
+            {
+                "n": r,
+                "label": labels.get(r, ""),
+                "cells": [
+                    {
+                        "v": printed(by_place.get((r, c))),
+                        "hot": r == row and c == column,
+                    }
+                    for c in span_columns
+                ],
+            }
+            for r in span_rows
+        ],
+    }
 
 
 def _fingerprint(kind: str, lineage: UUID, where: str, what: str) -> str:

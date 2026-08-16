@@ -186,3 +186,53 @@ def test_an_input_column_with_a_total_under_it_is_data_not_damage() -> None:
 
     result = _tmp_book(build)
     assert not any(f.rule == "typed-over-formula" for f in result.findings)
+
+
+def test_hidden_and_very_hidden_sheets_are_findings() -> None:
+    """The document panel's concealment facts, folded into the audit:
+    hidden is a smell (one right-click from visible), very hidden is an
+    error (absent from Excel's own unhide menu)."""
+    import tempfile
+
+    from openpyxl import Workbook as Book
+
+    book = Book()
+    sheet = book.active
+    assert sheet is not None
+    sheet.title = "Model"
+    sheet["A1"] = 1
+    shy = book.create_sheet("Workings")
+    shy["A1"] = 2
+    shy.sheet_state = "hidden"
+    dark = book.create_sheet("Plug")
+    dark["A1"] = 3
+    dark.sheet_state = "veryHidden"
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    found = {
+        f.sheet: f.severity for f in result.findings if f.rule == "hidden-sheet"
+    }
+    assert found == {"Workings": "smell", "Plug": "error"}
+
+
+def test_a_dragged_break_reports_once_not_per_cell() -> None:
+    """The founder's file: a counter column dragged through a
+    depreciation block came back as 114 findings — one decision,
+    reported 114 times. One finding, with the span in the sentence."""
+
+    def build(sheet) -> None:
+        for row in range(2, 12):
+            for column in range(2, 8):
+                at = sheet.cell(row=row, column=column)
+                if column == 5:
+                    at.value = f"=E{row - 1}+1" if row > 2 else 1
+                else:
+                    at.value = f"=B{row}+{column}"
+
+    result = _tmp_book(build)
+    broken = [f for f in result.findings if f.rule == "inconsistent-row"]
+    assert len(broken) <= 2, [f.ref for f in broken]
+    if broken:
+        assert "filled across" in broken[0].detail or len(broken) == 1

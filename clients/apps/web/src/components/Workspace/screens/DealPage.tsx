@@ -19,11 +19,11 @@
  * at; the card's modal lists the places.
  *
  * Departures from the drawn design, each named (absent, not faked):
- * - The modal's little Excel grid is the design's demo prop — the
- *   server does not ship a cell's neighbours. The modal shows the
- *   finding's own sentences instead, and lists the cells when a check
- *   fails at more than one (rows composed from the section-expansion
- *   idiom).
+ * - The modal's little Excel grid is REAL now — the engine composes
+ *   each finding's cell with its neighbours at check time and the
+ *   modal draws it (`MiniGrid`). The earlier note here claiming the
+ *   server could not ship a cell's neighbours was wrong, and the
+ *   founder caught it.
  * - « Open the cell » needs Excel under the button — that is the
  *   panel's move. The web modal keeps only « Accept with a note ».
  * - The tie-out's card sits in an untitled grid above the two
@@ -51,6 +51,7 @@ import {
   DealPage as DealPageData,
   Decision,
   Finding,
+  FindingGrid,
   HouseRules,
   TieOutApi,
   Version,
@@ -278,6 +279,148 @@ export const FailCard = ({
   )
 }
 
+/** Excel's own face, for the little grid only. */
+const excelFace = "'Aptos Narrow','Calibri','Segoe UI',sans-serif"
+
+/**
+ * The design's little Excel grid: the finding's cell in its own
+ * neighbourhood — formula bar on top, column letters, the model's row
+ * labels, the offending cell in red. Composed by the server when the
+ * check ran; this only draws it.
+ */
+export const MiniGrid = ({ grid }: { grid: FindingGrid }) => (
+  <div
+    style={{
+      marginTop: 16,
+      borderRadius: 10,
+      overflow: 'hidden',
+      boxShadow: '0 0 0 .5px rgba(0,0,0,.14)',
+      background: '#fff',
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '7px 12px',
+        borderBottom: '.5px solid #e8e8e8',
+        fontFamily: font.mono,
+        fontSize: 11.5,
+      }}
+    >
+      <span style={{ flex: '0 0 auto', color: '#107c41', fontWeight: 600 }}>
+        {`'${grid.sheet}'!${grid.sel}`}
+      </span>
+      <span
+        style={{
+          flex: 1,
+          minWidth: 0,
+          color: '#5f5f5f',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {grid.formula}
+      </span>
+    </div>
+    <div style={{ overflowX: 'auto' }}>
+      <table
+        style={{
+          borderCollapse: 'collapse',
+          width: '100%',
+          fontFamily: excelFace,
+          fontSize: 12.5,
+        }}
+      >
+        <thead>
+          <tr>
+            <th
+              style={{
+                width: 34,
+                background: '#f6f6f6',
+                borderBottom: '.5px solid #e2e2e2',
+              }}
+            />
+            <th
+              style={{
+                background: '#f6f6f6',
+                borderBottom: '.5px solid #e2e2e2',
+              }}
+            />
+            {grid.cols.map((letter) => (
+              <th
+                key={letter}
+                style={{
+                  background: '#f6f6f6',
+                  borderBottom: '.5px solid #e2e2e2',
+                  borderLeft: '.5px solid #ececec',
+                  padding: '4px 10px',
+                  fontWeight: 400,
+                  color: '#8a8a8a',
+                  textAlign: 'center',
+                  minWidth: 74,
+                }}
+              >
+                {letter}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {grid.rows.map((row) => (
+            <tr key={row.n}>
+              <td
+                style={{
+                  background: '#f6f6f6',
+                  borderTop: '.5px solid #ececec',
+                  padding: '5px 8px',
+                  color: '#8a8a8a',
+                  textAlign: 'center',
+                }}
+              >
+                {row.n}
+              </td>
+              <td
+                style={{
+                  borderTop: '.5px solid #ececec',
+                  padding: '5px 10px',
+                  color: '#3a3a3c',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: 220,
+                }}
+              >
+                {row.label}
+              </td>
+              {row.cells.map((cell, at) => (
+                <td
+                  key={at}
+                  style={{
+                    borderTop: '.5px solid #ececec',
+                    borderLeft: '.5px solid #f2f2f2',
+                    padding: '5px 10px',
+                    textAlign: 'right',
+                    fontVariantNumeric: 'tabular-nums',
+                    color: cell.hot ? '#c22b1e' : '#1d1d1f',
+                    fontWeight: cell.hot ? 650 : 400,
+                    background: cell.hot ? '#fdf1f0' : 'transparent',
+                    boxShadow: cell.hot ? 'inset 0 0 0 1.5px #c22b1e' : 'none',
+                  }}
+                >
+                  {cell.v}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)
+
 /** The v2 design's section label over a grid of failing checks. */
 export const failHead = (words: string, first: boolean) => (
   <div
@@ -363,6 +506,9 @@ export const DealPage = ({
   //: The remove control's two steps — a destructive act never fires
   //: on its first click.
   const [removing, setRemoving] = useState(false)
+  //: Which of the picked check's places the modal's grid is showing.
+  const [place, setPlace] = useState(0)
+  useEffect(() => setPlace(0), [picked])
 
   useEffect(() => {
     let live = true
@@ -492,6 +638,11 @@ export const DealPage = ({
   }, [findings, rules, model])
 
   const pickedGroup = fails.find((one) => one.key === picked) ?? null
+  //: The place whose grid and sentences the modal is showing.
+  const shownFinding = pickedGroup
+    ? (pickedGroup.findings[Math.min(place, pickedGroup.findings.length - 1)] ??
+      pickedGroup.findings[0]!)
+    : null
 
   const closeModal = () => {
     setPicked(null)
@@ -1333,7 +1484,7 @@ export const DealPage = ({
       </div>
 
       {/* The picked check. */}
-      {pickedGroup !== null && (
+      {pickedGroup !== null && shownFinding !== null && (
         <div
           style={{
             position: 'fixed',
@@ -1436,13 +1587,16 @@ export const DealPage = ({
                 textWrap: 'pretty',
               }}
             >
-              {pickedGroup.findings[0]!.title}
+              {shownFinding.title}
             </div>
 
+            {/* The design's little Excel grid — the picked place's
+                cell in its own neighbourhood. */}
+            {shownFinding.grid && <MiniGrid grid={shownFinding.grid} />}
+
             {pickedGroup.findings.length > 1 && (
-              //: The design's modal draws one cell; a check that fails
-              //: at many gets its places as rows, in the section
-              //: expansions' own idiom.
+              //: A check that fails at many places gets its places as
+              //: rows; picking one swaps the grid above to that cell.
               <div
                 style={{
                   marginTop: 16,
@@ -1452,10 +1606,17 @@ export const DealPage = ({
                 }}
               >
                 {pickedGroup.findings.map((one, index) => (
-                  <div
+                  <button
                     key={one.id}
+                    onClick={() => setPlace(index)}
                     style={{
-                      background: '#fafafc',
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'left',
+                      border: 0,
+                      font: 'inherit',
+                      cursor: 'pointer',
+                      background: index === place ? '#f2f6fd' : '#fafafc',
                       borderTop: index === 0 ? 0 : '.5px solid #f0eff1',
                       padding: '10px 14px',
                     }}
@@ -1470,16 +1631,21 @@ export const DealPage = ({
                       {one.title}
                     </div>
                     <div
-                      style={{ fontSize: 12.5, color: '#a1a1a6', marginTop: 2 }}
+                      style={{
+                        fontSize: 12.5,
+                        color: index === place ? ink.accent : '#a1a1a6',
+                        fontFamily: font.mono,
+                        marginTop: 2,
+                      }}
                     >
                       {one.where.detail || one.where.label}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
 
-            {pickedGroup.findings[0]!.context && (
+            {shownFinding.context && (
               <div
                 style={{
                   fontSize: 14.5,
@@ -1490,14 +1656,14 @@ export const DealPage = ({
                   textWrap: 'pretty',
                 }}
               >
-                {pickedGroup.findings[0]!.context}
+                {shownFinding.context}
               </div>
             )}
 
             {/* « Says who », spelled out — the engine's sentence for a
                 statement check; construction rules keep their short
                 citation in the header line. */}
-            {pickedGroup.findings[0]!.standard_sentence && (
+            {shownFinding.standard_sentence && (
               <div
                 style={{
                   fontSize: 13,
@@ -1508,7 +1674,7 @@ export const DealPage = ({
                   textWrap: 'pretty',
                 }}
               >
-                {pickedGroup.findings[0]!.standard_sentence}
+                {shownFinding.standard_sentence}
               </div>
             )}
 

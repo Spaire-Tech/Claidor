@@ -238,6 +238,10 @@ class Workbook:
     #: published catalogue of spreadsheet disasters, so it is recorded
     #: even though hiding a working sheet is often perfectly innocent.
     hidden_sheets: tuple[str, ...] = ()
+    #: The subset set to *very hidden* — absent from Excel's own unhide
+    #: menu, reachable only through the VBA editor. A different fact
+    #: from hidden, and reported as one.
+    very_hidden_sheets: tuple[str, ...] = ()
     #: True when the workbook has iterative calculation switched on, which
     #: is a model saying its circular references are deliberate.
     iterative: bool = False
@@ -351,6 +355,12 @@ def read_workbook(path: str) -> Workbook:
                 name
                 for name in formulas.sheetnames
                 if getattr(formulas[name], "sheet_state", "visible") != "visible"
+            ),
+            very_hidden_sheets=tuple(
+                name
+                for name in formulas.sheetnames
+                if getattr(formulas[name], "sheet_state", "visible")
+                == "veryHidden"
             ),
             iterative=bool(getattr(formulas.calculation, "iterate", False)),
         )

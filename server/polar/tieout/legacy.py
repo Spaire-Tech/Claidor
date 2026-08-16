@@ -138,7 +138,15 @@ def read_legacy(path: str) -> tuple[LegacyBook, LegacyBook]:
         sheet = values.sheet_by_index(index)
         holder = _Sheet(
             title=name,
-            sheet_state="visible" if sheet.visibility == 0 else "hidden",
+            #: xlrd visibility: 0 visible, 1 hidden, 2 very hidden —
+            #: the same three states the modern format spells out.
+            sheet_state=(
+                "visible"
+                if sheet.visibility == 0
+                else "veryHidden"
+                if sheet.visibility == 2
+                else "hidden"
+            ),
             max_row=sheet.nrows,
             max_column=sheet.ncols,
         )

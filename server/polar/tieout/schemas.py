@@ -317,6 +317,10 @@ class FindingRead(Schema):
     figure_unit: str = ""
     period: str = ""
     standard_sentence: str = ""
+    #: The design's little Excel grid — the finding's cell with its
+    #: neighbours, composed when the check ran. None on findings that
+    #: predate it or that do not sit at a cell.
+    grid: dict[str, Any] | None = None
 
 
 class FindingUpdate(Schema):
@@ -889,6 +893,12 @@ class OneOffDefect(Schema):
     figure: str = ""
     figure_unit: str = ""
     period: str = ""
+    #: The finding as a person hears it — shown first, with `detail`
+    #: as the evidence beneath.
+    plain: str = ""
+    #: The design's little Excel grid: the cell with its neighbours,
+    #: composed at check time. None where the coordinate is not a cell.
+    grid: dict[str, Any] | None = None
 
 
 class AgainstModel(Schema):

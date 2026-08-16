@@ -181,6 +181,11 @@ def _read_model(path: str) -> Ingested:
             "errors": len(result.errors),
             "smells": len(result.smells),
             "iterative": book.iterative,
+            # What the workbook hides, kept with the artifact because
+            # the cells alone cannot recover it — the deal audit runs
+            # on stored rows and still has to say what was concealed.
+            "hidden_sheets": list(book.hidden_sheets),
+            "very_hidden_sheets": list(book.very_hidden_sheets),
         },
         cells=list(book.cells.values()),
         defects=list(result.findings),

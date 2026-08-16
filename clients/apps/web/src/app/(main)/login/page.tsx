@@ -1,10 +1,9 @@
 import Login from '@/components/Auth/Login'
-import { ClaidorLogotype } from '@/components/Layout/Public/ClaidorLogotype'
-import Link from 'next/link'
 import { Metadata } from 'next'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Log in to Claidor',
+  title: 'Log in to Antford',
 }
 
 export default async function Page(props: {
@@ -18,15 +17,22 @@ export default async function Page(props: {
 
   return (
     <div className="flex h-screen w-full grow items-center justify-center">
-      <div className=" flex w-full max-w-md flex-col justify-between gap-16 rounded-4xl bg-gray-50 p-12">
+      <div className="flex w-full max-w-md flex-col justify-between gap-16 rounded-4xl bg-gray-50 p-12">
         <div className="flex flex-col gap-y-8">
-          <ClaidorLogotype logoVariant="icon" size={60} />
+          <span
+            style={{
+              fontFamily: "'Bodoni Moda', Didot, Georgia, serif",
+              fontSize: 44,
+              lineHeight: 1,
+              color: '#1d1d1f',
+            }}
+          >
+            A
+          </span>
           <div className="flex flex-col gap-4">
-            <h2 className="text-2xl text-black">
-              Welcome back to Claidor
-            </h2>
-            <h2 className=" text-lg text-gray-500">
-              Turn what you know into a Masterclass.
+            <h2 className="text-2xl text-black">Welcome back to Antford</h2>
+            <h2 className="text-lg text-gray-500">
+              Every check an auditor runs on a model, run on yours.
             </h2>
           </div>
         </div>
@@ -34,10 +40,7 @@ export default async function Page(props: {
           <Login returnTo={return_to} returnParams={rest} />
           <p className="text-center text-sm text-gray-500">
             Don't have an account?{' '}
-            <Link
-              href="/signup"
-              className="text-blue-500 hover:text-blue-600 "
-            >
+            <Link href="/signup" className="text-blue-500 hover:text-blue-600">
               Sign up
             </Link>
           </p>

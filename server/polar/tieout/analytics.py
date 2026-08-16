@@ -145,6 +145,10 @@ class AnalyticFinding:
     #: where the measured values are in scope, never on a screen.
     figure: str = ""
     figure_unit: str = ""
+    #: `error`, or `smell` for a money finding below one thousandth of
+    #: the model's own scale (protocol registration, 16 August). True
+    #: either way — grading says how loud, never whether.
+    severity: str = "error"
 
 
 @dataclass(frozen=True)
@@ -166,6 +170,75 @@ class Analytics:
     tallies: dict[str, dict[str, int]] = field(default_factory=dict)
 
 
+#: The rules whose finding value is money, graded against the model's
+#: own scale. Structural findings — an out-of-order period, a rate a
+#: factor of three off its own convention, interest after repayment —
+#: are always errors: no rounding produces them.
+_MONEY_RULES = frozenset(
+    {"model-own-check", "balance-sheet", "cash-continuity", "debt-terminal"}
+)
+
+#: Below this share of the workbook's median absolute cell value, a
+#: money finding grades as a smell. Calibrated on the hand-read close
+#: models with four orders of magnitude to spare on both sides
+#: (protocol registration, 16 August).
+MATERIALITY_SHARE = 1e-3
+
+_BALANCE_FLAVOURED = re.compile(r"\bbalance\b|\bbs\b", re.IGNORECASE)
+
+
+def _graded(book: Workbook, result: Analytics) -> None:
+    """Grade money findings against the model's own scale, in place."""
+    from dataclasses import replace
+    from statistics import median
+
+    magnitudes = [
+        abs(float(cell.value))
+        for cell in book.cells.values()
+        if isinstance(cell.value, Decimal) and abs(float(cell.value)) > FLOOR
+    ]
+    if not magnitudes:
+        return
+    scale = median(magnitudes)
+    result.findings = [
+        replace(finding, severity='smell')
+        if finding.rule in _MONEY_RULES
+        and abs(finding.value) < scale * MATERIALITY_SHARE
+        else finding
+        for finding in result.findings
+    ]
+
+
+def _deduplicated(result: Analytics) -> None:
+    """One sentence, not its echo: the independent balance identity
+    yields to the model's own fired balance check for the same period
+    (or, where the check row carries no period, the same sheet)."""
+    fired_periods: set[str] = set()
+    fired_sheets: set[str] = set()
+    for finding in result.findings:
+        if finding.rule != 'model-own-check':
+            continue
+        if not _BALANCE_FLAVOURED.search(finding.row_label):
+            continue
+        if finding.period:
+            fired_periods.add(finding.period)
+        else:
+            fired_sheets.add(finding.sheet)
+    if not fired_periods and not fired_sheets:
+        return
+    result.findings = [
+        finding
+        for finding in result.findings
+        if not (
+            finding.rule == 'balance-sheet'
+            and (
+                (finding.period and finding.period in fired_periods)
+                or finding.sheet in fired_sheets
+            )
+        )
+    ]
+
+
 def run_analytics(book: Workbook, structure: Structure) -> Analytics:
     result = Analytics(findings=[], abstentions=[])
     _own_checks(book, structure, result)
@@ -174,6 +247,8 @@ def run_analytics(book: Workbook, structure: Structure) -> Analytics:
     _cash_continuity(book, structure, result)
     _debt_terminal(book, structure, result)
     _interest_consistency(book, structure, result)
+    _deduplicated(result)
+    _graded(book, result)
     return result
 
 

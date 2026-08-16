@@ -1214,12 +1214,12 @@ class TestHouseRules:
         assert body["rounding"] == "together"
         assert body["grounding"] is True
         # The audit's own catalogue, all on — never a list a screen
-        # invented. Both families: the ten construction rules and the
-        # five statement checks, the latter flagged so the screens can
+        # invented. Both families: the eleven construction rules and the
+        # six statement checks, the latter flagged so the screens can
         # group them.
-        assert len(body["rules"]) == 15
+        assert len(body["rules"]) == 17
         assert all(rule["on"] for rule in body["rules"])
-        assert sum(1 for rule in body["rules"] if rule["analytical"]) == 5
+        assert sum(1 for rule in body["rules"] if rule["analytical"]) == 6
 
     @pytest.mark.auth
     async def test_a_stranger_finds_no_organization(

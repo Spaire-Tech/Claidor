@@ -92,6 +92,8 @@ export interface Finding {
   figure_unit: string
   period: string
   standard_sentence: string
+  /** The little Excel grid, when the check composed one. */
+  grid: FindingGrid | null
 }
 
 export interface ChainStep {
@@ -587,6 +589,25 @@ export interface OneOffDefect {
   figure: string
   figure_unit: string
   period: string
+  /** What a person reads first; `detail` is the evidence beneath. */
+  plain: string
+  /** The finding's cell with its neighbours, composed at check time. */
+  grid: FindingGrid | null
+}
+
+/** One cell of the little Excel grid a finding carries. */
+export interface GridCell {
+  v: string
+  hot: boolean
+}
+
+/** The design's little Excel grid — the cell in its neighbourhood. */
+export interface FindingGrid {
+  sheet: string
+  sel: string
+  formula: string
+  cols: string[]
+  rows: { n: number; label: string; cells: GridCell[] }[]
 }
 
 /** One model the file was compared with — the « Compared with » card. */

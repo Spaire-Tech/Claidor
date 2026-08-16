@@ -32,6 +32,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ApiError,
+  FindingGrid,
   HouseRules,
   OneOffDefect,
   OneOffResult,
@@ -39,7 +40,7 @@ import {
 } from '../api'
 import { ChatContext } from '../Chat'
 import { excelLogo, fileIcon, greyButton, ink, listCard, well } from '../design'
-import { FailCard, failGrid, failHead } from './DealPage'
+import { FailCard, failGrid, failHead, MiniGrid } from './DealPage'
 
 type Phase = 'idle' | 'running' | 'done'
 
@@ -84,7 +85,7 @@ interface FailGroup {
   key: string
   label: string
   standard: string | null
-  places: { text: string; where: string }[]
+  places: { text: string; where: string; grid: FindingGrid | null }[]
   /** A statement check — « Whether the accounts add up ». */
   analytical: boolean
   /** The card's headline: the engine's figure for a statement check,
@@ -95,7 +96,8 @@ interface FailGroup {
   whereLine: string
 }
 
-const ACCEPT = '.pptx,.pptm,.docx,.doc,.xlsx,.xlsm,.xls,.xlt'
+//: Excel only — a model is the product's one file.
+const ACCEPT = '.xlsx,.xlsm,.xls,.xlt'
 
 /** What each kind of file wears, same mapping as the deal page. */
 export const iconOf = (kind: string): string => {
@@ -141,6 +143,8 @@ export const CheckFile = ({
   const [rules, setRules] = useState<HouseRules | null>(null)
   const [sec, setSec] = useState<'pass' | 'cov' | 'model' | null>(null)
   const [picked, setPicked] = useState<string | null>(null)
+  const [placeAt, setPlaceAt] = useState(0)
+  useEffect(() => setPlaceAt(0), [picked])
   const [dragOver, setDragOver] = useState(false)
   const fileInput = useRef<HTMLInputElement | null>(null)
   //: Cancel forgets the request rather than aborting it — a response
@@ -258,6 +262,7 @@ export const CheckFile = ({
         places: result.disagreements.map((one) => ({
           text: `${one.label}: ${one.first.printed} on ${one.first.location}, ${one.other.printed} on ${one.other.location}.`,
           where: `Stated ${one.statements} times`,
+          grid: null,
         })),
       })
     const byRule = new Map<string, OneOffDefect[]>()
@@ -280,7 +285,10 @@ export const CheckFile = ({
       const worst = analytical
         ? [...group].sort((a, b) => magnitude(b) - magnitude(a))[0]!
         : group[0]!
-      const first = `'${worst.sheet}'!${worst.ref}`
+      //: The ref already carries its sheet — « Depreciation
+      //: Schedule!Z105 » — prefixing the sheet again printed it twice,
+      //: which the founder read live. The ref stands as it is.
+      const first = worst.ref
       list.push({
         key,
         label: catalogue.get(key) ?? humanize(key),
@@ -297,8 +305,10 @@ export const CheckFile = ({
         whereLine:
           group.length === 1 ? first : `${first} · ${group.length} places`,
         places: group.map((one) => ({
-          text: one.detail,
-          where: `'${one.sheet}'!${one.ref}`,
+          //: The plain sentence leads; the formula is evidence.
+          text: one.plain || one.detail,
+          where: one.ref,
+          grid: one.grid,
         })),
       })
     }
@@ -332,6 +342,11 @@ export const CheckFile = ({
   const pick = () => fileInput.current?.click()
 
   const pickedGroup = fails.find((one) => one.key === picked) ?? null
+  //: Which of the picked check's places the modal's grid shows.
+  const shownPlace = pickedGroup
+    ? (pickedGroup.places[Math.min(placeAt, pickedGroup.places.length - 1)] ??
+      pickedGroup.places[0]!)
+    : null
 
   //: Checks that pass / did not run — the same catalogue arithmetic as
   //: the model page, only claimed for a model whose audit actually ran.
@@ -1084,7 +1099,7 @@ export const CheckFile = ({
 
       {/* The picked check — the model page's modal, without the accept:
           a one-off keeps no state for a note to live in. */}
-      {pickedGroup !== null && (
+      {pickedGroup !== null && shownPlace !== null && (
         <div
           style={{
             position: 'fixed',
@@ -1186,10 +1201,15 @@ export const CheckFile = ({
                 textWrap: 'pretty',
               }}
             >
-              {pickedGroup.places[0]!.text}
+              {shownPlace.text}
             </div>
 
+            {/* The design's little Excel grid — the picked place's
+                cell in its own neighbourhood. */}
+            {shownPlace.grid && <MiniGrid grid={shownPlace.grid} />}
+
             {pickedGroup.places.length > 1 && (
+              //: Picking a place swaps the grid above to that cell.
               <div
                 style={{
                   marginTop: 16,
@@ -1198,11 +1218,18 @@ export const CheckFile = ({
                   boxShadow: '0 0 0 .5px rgba(0,0,0,.08)',
                 }}
               >
-                {pickedGroup.places.map((place, index) => (
-                  <div
-                    key={`${place.where}-${index}`}
+                {pickedGroup.places.map((one, index) => (
+                  <button
+                    key={`${one.where}-${index}`}
+                    onClick={() => setPlaceAt(index)}
                     style={{
-                      background: '#fafafc',
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'left',
+                      border: 0,
+                      font: 'inherit',
+                      cursor: 'pointer',
+                      background: index === placeAt ? '#f2f6fd' : '#fafafc',
                       borderTop: index === 0 ? 0 : '.5px solid #f0eff1',
                       padding: '10px 14px',
                     }}
@@ -1214,14 +1241,18 @@ export const CheckFile = ({
                         textWrap: 'pretty',
                       }}
                     >
-                      {place.text}
+                      {one.text}
                     </div>
                     <div
-                      style={{ fontSize: 12.5, color: '#a1a1a6', marginTop: 2 }}
+                      style={{
+                        fontSize: 12.5,
+                        color: index === placeAt ? ink.accent : '#a1a1a6',
+                        marginTop: 2,
+                      }}
                     >
-                      {place.where}
+                      {one.where}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}

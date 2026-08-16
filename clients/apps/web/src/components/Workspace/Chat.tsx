@@ -104,6 +104,76 @@ const SUGGESTIONS: Record<ChatContext['scope'], string[]> = {
 /** One string per conversation. The shell keys the panel on this, so a
  *  new context is a fresh mount and a fresh thread — never a reset
  *  performed inside an effect. */
+
+/**
+ * The agent's answer, rendered as it was written. The model writes
+ * light markdown; printing it raw put literal asterisks in front of
+ * the founder. This covers exactly what the prompts allow — bold,
+ * inline code, dash lists, paragraphs — and nothing speculative.
+ */
+const Answer = ({ text }: { text: string }) => {
+  const inline = (line: string, key: number) => {
+    const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean)
+    return (
+      <span key={key}>
+        {parts.map((part, at) =>
+          part.startsWith('**') && part.endsWith('**') ? (
+            <strong key={at} style={{ fontWeight: 600 }}>
+              {part.slice(2, -2)}
+            </strong>
+          ) : part.startsWith('`') && part.endsWith('`') ? (
+            <code
+              key={at}
+              style={{
+                fontFamily: font.mono,
+                fontSize: '.92em',
+                background: '#f4f4f6',
+                borderRadius: 4,
+                padding: '1px 4px',
+              }}
+            >
+              {part.slice(1, -1)}
+            </code>
+          ) : (
+            part
+          ),
+        )}
+      </span>
+    )
+  }
+
+  const blocks: { kind: 'p' | 'li'; text: string }[] = []
+  for (const raw of text.split('\n')) {
+    const line = raw.replace(/^#+\s*/, '').trimEnd()
+    if (!line.trim()) continue
+    const item = /^[-•]\s+(.*)$/.exec(line.trim())
+    if (item) blocks.push({ kind: 'li', text: item[1]! })
+    else blocks.push({ kind: 'p', text: line })
+  }
+
+  return (
+    <>
+      {blocks.map((block, at) =>
+        block.kind === 'li' ? (
+          <div
+            key={at}
+            style={{ display: 'flex', gap: 8, padding: '2px 0 2px 4px' }}
+          >
+            <span style={{ flex: '0 0 auto', color: '#a1a1a6' }}>–</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              {inline(block.text, at)}
+            </span>
+          </div>
+        ) : (
+          <p key={at} style={{ margin: at === 0 ? 0 : '9px 0 0' }}>
+            {inline(block.text, at)}
+          </p>
+        ),
+      )}
+    </>
+  )
+}
+
 export const chatKeyOf = (context: ChatContext): string => {
   if (context.scope === 'deal') return `deal:${context.dealId}`
   if (context.scope === 'finding') return `finding:${context.findingId}`
@@ -383,7 +453,7 @@ export const Chat = ({
             )}
             {row.role === 'agent' && (
               <div style={{ lineHeight: 1.7, color: '#22252b' }}>
-                {row.text}
+                <Answer text={row.text ?? ''} />
               </div>
             )}
             {row.role === 'tools' && (

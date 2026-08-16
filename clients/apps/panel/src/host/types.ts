@@ -96,6 +96,14 @@ export interface HostBridge {
   read(): Promise<OpenDocument>
 
   /**
+   * The open document's own bytes, so the panel can check the model
+   * that is actually in front of the person — the product's one job.
+   * Null in a host that cannot hand its file over, which the panel
+   * says plainly rather than working around.
+   */
+  readFile(): Promise<{ bytes: Uint8Array; filename: string } | null>
+
+  /**
    * Write the lineage id into the document so the next open needs no
    * guessing. Returns false where the host has no document to write to.
    */
