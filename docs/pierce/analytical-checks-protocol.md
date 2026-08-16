@@ -126,3 +126,50 @@ Assumption reasonableness (a judgement, not a check), covenant and
 ratio recomputation, tax, sculpting — all sit on the same structure
 layer and are cheap later; none are in these four rounds. Macros
 remain unread, as everywhere in the engine.
+
+## Interest self-consistency — registration before results (16 August)
+
+The deferred Phase-4 half, made concrete. Everything below is fixed
+before the survey runs; changing any number after results exist
+requires the worklog entry naming the prompting result.
+
+**Rule key** `interest-consistency`. Scope: pairs on located
+debt-schedule sheets whose label reads as debt — the same population
+`debt-terminal` walks.
+
+**Association gate.** A tranche's interest row must be found, never
+assumed: candidate rows are those strictly between the pair's opening
+and closing rows whose label contains the word « interest » and is
+not a rate row (label also containing « rate », « index », or a
+percent sign disqualifies). **Exactly one candidate associates; zero
+or several is a named abstention.** No cross-sheet association in
+this round.
+
+**The model's own convention.** For each axis column where the
+opening balance and the interest amount both clear the FLOOR
+(0.01 working units, as registered), the implied rate is
+|interest| / |opening|. At least **6 rated periods** or the tranche
+abstains (too short to have a convention). The convention is the
+median implied rate m; a period agrees when its rate lies within
+[m/1.5, 1.5m] — wide enough that floating drift and indexation never
+fire. The convention stands when at least **three quarters** of rated
+periods agree (the fraction already registered above); below that
+the tranche abstains as having no stable convention.
+
+**What may be claimed** (only where a convention stands):
+1. **Departure**: a rated period whose implied rate exceeds 3m or
+   falls below m/3 — a factor of three against the model's own
+   median, so no real rate reset can reach it.
+2. **Interest on nothing**: interest above FLOOR in a period after
+   the tranche's last live balance — charged on debt already repaid.
+
+Zero-interest periods with a live balance are **not** claimed in this
+round: semi-annual interest inside a monthly model produces them by
+convention, and telling that pattern from a genuine stop needs
+payment-frequency detection that would otherwise be guessed.
+
+**Pass criteria**, same shape as the sibling checks: zero false
+findings across all 22 corpus models, every firing hand-read in the
+cells before it counts; a seeded departure and a seeded
+interest-after-repayment on a real file both caught by cell name.
+Tally: tranches with a standing convention, clean = no findings.
