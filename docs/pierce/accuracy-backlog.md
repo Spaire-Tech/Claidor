@@ -1399,3 +1399,18 @@ their evidence attached.
   the audit's catalogue so findings reach the workspace, panel and
   deals-list arithmetic; grade severity by magnitude relative to the
   row's own scale.
+
+## Interest self-consistency, after round 1 (16 August)
+
+- **Cross-row/cross-sheet tranche-to-interest association**: the
+  corpus keeps interest outside the tranche block (Scottish models)
+  or five ways split (Ofwat control accounts). Associating across
+  needs evidence — label affinity scored against arithmetic fit —
+  and is its own measured round.
+- **Corpus gap**: no file in hand carries a live in-block interest
+  row; a lender-case PF model with per-tranche interest schedules
+  would let the check judge real tranches. Acquire before the next
+  round.
+- **Sub-annual convention**: monthly models with semi-annual pay
+  periods produce zero-interest live periods; claiming a genuine
+  stop needs payment-frequency detection (registered as unclaimed).

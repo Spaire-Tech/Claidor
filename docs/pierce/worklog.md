@@ -2412,3 +2412,54 @@ measured round; and the two Settings master switches are each scoped
 to their own family so flipping one never silently moves the other.
 
 400 server tests pass, web and panel typecheck, panel suite green.
+
+## Interest self-consistency — the deferred Phase-4 half, measured (16 August)
+
+Registered before results (protocol addendum, 16 August): association
+only when exactly one interest row sits inside the tranche's own
+block; the convention is the median implied rate over at least six
+rated periods, standing when three quarters sit within ±50% of it;
+two claims only — a factor-of-three departure from the model's own
+median, and interest charged after repayment. Zero-interest periods
+with a live balance deliberately unclaimed (payment frequency looks
+identical to a stop).
+
+**Two amendments on the first survey's evidence**, recorded in the
+addendum before any finding was counted: a candidate row must be
+*live* — Dumfries's sub-debt corkscrews keep « Interest rolled up »
+rows that are entirely zeros, and an empty row is presentation, not
+an instrument — and a pair with no live in-block interest row is
+silence, not an abstention: on Anderson, Bertha Park, Elgin and RHSC
+interest lives elsewhere in the model, so nothing was measured and
+nothing was declined.
+
+**Final survey, all 22 models: zero interest findings, zero judged
+tranches.** That second number is the round's real result. The
+corpus never presents the shape the check fires on: the Ofwat models
+keep five-way interest splits on five-year control accounts —
+ambiguous by name (86 abstentions) or too short for a convention
+(11) — and the Scottish corkscrews carry empty interest rows with
+the real interest charged outside the block. Every refusal hand-read
+on Dumfries and spot-read on AFW; each one is the gate doing its
+job. The other five checks reproduced their known results exactly —
+the same six own-check findings, nothing else.
+
+**Recall: proven, with a declared enabling edit.** No real tranche
+associates, so the seeds populate sub debt 1's own empty interest
+row at a steady 5% of opening — the convention the row was built
+for — before introducing one defect per copy. The harness prints the
+enabling edit; it is part of the seed, never hidden. Both defects
+caught by cell name: 20% against the schedule's own 5% at
+Ph2 Calcs!AQ984 (« a factor of 4.0 off its own convention »), and
+500 of interest at BQ984 after the tranche was repaid. All four
+earlier seeds still pass; 26 unit tests pin the gates.
+
+**What this round honestly bought:** a sixth statement check that is
+armed, gated, product-wired (catalogue, pass sentence, tallies,
+Settings) and provably able to catch both defect shapes — and that
+on today's corpus says nothing, out loud, for named reasons. It will
+speak on the models the product is actually for: lender-case project
+finance files that keep each tranche's interest inside its own
+schedule. Cross-row association — reaching the interest a model
+keeps outside the block — is the next evidence round, not a guess to
+bolt on.
