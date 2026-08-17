@@ -139,6 +139,9 @@ class Item:
     #: Where it sits, for a person. Never used to find it again.
     path: str
     drive_id: str
+    #: The file's own page on SharePoint — what « Open the cell » sends
+    #: the browser to, so the real workbook opens, not a copy.
+    web_url: str = ""
 
 
 @dataclass(frozen=True)
@@ -552,6 +555,7 @@ def _item(payload: dict[str, Any], drive_id: str) -> Item:
         modified_by=str((modified.get("user") or {}).get("displayName") or ""),
         path=str(reference.get("path") or ""),
         drive_id=str(reference.get("driveId") or drive_id),
+        web_url=str(payload.get("webUrl") or ""),
     )
 
 

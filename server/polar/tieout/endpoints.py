@@ -18,6 +18,7 @@ already right for the day the work moves.
 """
 
 from datetime import timedelta
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import Depends, File, HTTPException, Query, UploadFile
@@ -1755,6 +1756,66 @@ async def decide_correction(
     except NotCorrectable as problem:
         raise HTTPException(status_code=422, detail=str(problem)) from problem
     return _correction(settled, user)
+
+
+@router.get("/artifacts/{artifact_id}/open", response_model=None)
+async def open_artifact(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    ref: str = Query(default="", description="A cell to land on — « Opex!G6 »."),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict[str, str]:
+    """Where « Open the cell » sends the browser: the real document.
+
+    A model synced from SharePoint opens as the actual workbook on the
+    site — the same file the deal reads — with a best-effort cell
+    landing in the URL. A model uploaded by hand has no live document
+    anywhere; the stored bytes are the truth, so the answer is a
+    download of the exact version that was checked, and the screen says
+    which it got. A write session, because reaching SharePoint may
+    refresh the connection's token.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+
+    if artifact.external_id:
+        from polar.connector.graph import GraphError
+        from polar.connector.repository import ConnectorRepository
+        from polar.connector.service import ConnectorError, connector
+
+        repository = ConnectorRepository.from_session(session)
+        folder = await repository.folder_of(artifact.dossier_id)
+        connection = (
+            await repository.get(folder.connection_id) if folder is not None else None
+        )
+        if folder is not None and connection is not None:
+            try:
+                graph = await connector.client_for(session, connection=connection)
+                item = await graph.item(folder.drive_id, artifact.external_id)
+            except (ConnectorError, GraphError):
+                #: The site is unreachable or the connection is dead —
+                #: the stored copy below is still openable, and honest.
+                item = None
+            if item is not None and item.web_url:
+                url = item.web_url
+                if ref and "!" in ref:
+                    #: Best-effort: Excel on the web reads `activeCell`
+                    #: from the query on SharePoint document links. The
+                    #: file opens either way; the landing needs the real
+                    #: tenant to confirm — the local stub cannot.
+                    sheet, coordinate = ref.rsplit("!", 1)
+                    url += ("&" if "?" in url else "?") + (
+                        f"activeCell='{quote(sheet)}'!{coordinate}"
+                    )
+                return {"kind": "sharepoint", "url": url}
+
+    try:
+        return {
+            "kind": "download",
+            "url": download_url(artifact),
+            "filename": artifact.filename,
+        }
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
 
 
 @router.get("/artifacts/{artifact_id}/download", response_model=None)

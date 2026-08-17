@@ -1260,6 +1260,56 @@ class TestCheckAFile:
 
 
 @pytest.mark.asyncio
+class TestOpenArtifact:
+    """« Open the cell »'s destination: the real document."""
+
+    @pytest.mark.auth
+    async def test_an_uploaded_model_answers_with_a_download(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """No SharePoint identity means no live document anywhere — the
+        stored bytes are the truth, and the answer says so."""
+        deal = await _loaded(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+        model = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.model
+        )
+
+        response = await client.get(
+            f"/v1/tieout/artifacts/{model.id}/open?ref=Model%21C6"
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["kind"] == "download"
+        assert body["url"]
+        assert body["filename"] == "cascade_model.xlsx"
+
+    @pytest.mark.auth
+    async def test_someone_elses_model_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        deal = await _loaded(session, save_fixture, stranger)
+        repository = TieOutRepository.from_session(session)
+        model = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.model
+        )
+        response = await client.get(f"/v1/tieout/artifacts/{model.id}/open")
+        assert response.status_code == 404
+
+
+@pytest.mark.asyncio
 class TestHouseRules:
     """The firm's rules: stored per organization, and actually obeyed."""
 

@@ -1139,6 +1139,22 @@ export class TieOutApi {
   }
 
   /**
+   * Where « Open the cell » sends the browser: the real document. A
+   * SharePoint-synced model answers with the workbook's own page on
+   * the site (best-effort cell landing); an uploaded one answers with
+   * a download of the exact stored version — there is no live document
+   * anywhere else.
+   */
+  openArtifact(
+    artifactId: string,
+    ref: string,
+  ): Promise<{ kind: 'sharepoint' | 'download'; url: string }> {
+    return this.call(
+      `/artifacts/${artifactId}/open?ref=${encodeURIComponent(ref)}`,
+    )
+  }
+
+  /**
    * « Accept with a note » on a one-off check — one rule, one note.
    * Every place the rule fails is accepted together, written into the
    * stored answer, so a recent replays with the ruling standing.
