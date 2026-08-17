@@ -592,39 +592,80 @@ class TieOutRepository(RepositoryBase[Artifact]):
 
     # --- findings -------------------------------------------------------
 
-    async def dismissed_fingerprints(self, dossier_id: UUID) -> set[str]:
-        statement = select(Finding.fingerprint).where(
-            Finding.dossier_id == dossier_id,
-            Finding.state == FindingState.dismissed,
-            Finding.deleted_at.is_(None),
-        )
-        return set((await self.session.execute(statement)).scalars().all())
-
     async def replace_findings(
         self, dossier_id: UUID, kind: CheckKind, findings: Sequence[Finding]
     ) -> None:
-        """Swap this checker's findings, and let dismissals survive.
+        """Fold a run's findings in, and let every ruling survive.
 
-        A dismissed finding that comes back is the fastest way to lose a
-        user, so the new rows inherit the state of any older row with the
-        same fingerprint. Only the findings of *this* kind are cleared —
-        an audit re-run must not wipe the tie-out's.
+        This used to delete everything and recreate it, letting only
+        *dismissals* back through — so a finding accepted with a note
+        came back open on the very next run, and pressing « Fix the
+        cell » (which re-checks) resurrected everything the banker had
+        already ruled on. A ruling that evaporates on refresh is the
+        fastest way to lose a user.
+
+        Now a finding that recurs — same fingerprint — **is the same
+        row**: it keeps its id, its state (accepted, dismissed, open),
+        its note, and its `created_at`, which is what makes « first
+        seen with version N » a fact rather than the last run's clock.
+        Its content is refreshed from the new run, because the
+        sentences and evidence may have improved. A fingerprint the new
+        run no longer produces is a defect that no longer exists, and
+        its row goes. Only the findings of *this* kind are touched — an
+        audit re-run must not wipe the tie-out's.
         """
-        dismissed = await self.dismissed_fingerprints(dossier_id)
         mapping = {
             CheckKind.tieout: ("drift", "stale"),
             CheckKind.audit: ("audit", "reference"),
             CheckKind.crosscheck: ("contradiction",),
         }[kind]
-        await self.session.execute(
-            delete(Finding).where(
-                Finding.dossier_id == dossier_id, Finding.kind.in_(mapping)
-            )
+        statement = select(Finding).where(
+            Finding.dossier_id == dossier_id,
+            Finding.kind.in_(mapping),
+            Finding.deleted_at.is_(None),
         )
-        for finding in findings:
-            if finding.fingerprint in dismissed:
-                finding.state = FindingState.dismissed
-        self.session.add_all(findings)
+        existing: dict[str, Finding] = {}
+        for row in (await self.session.execute(statement)).scalars():
+            existing.setdefault(row.fingerprint, row)
+
+        matched: set[UUID] = set()
+        for fresh in findings:
+            old = existing.get(fresh.fingerprint)
+            if old is None or old.id in matched:
+                self.session.add(fresh)
+                continue
+            matched.add(old.id)
+            for field in (
+                "check_run_id",
+                "artifact_id",
+                "kind",
+                "severity",
+                "rule",
+                "standard",
+                "page",
+                "printed",
+                "expected",
+                "one_tick",
+                "title",
+                "detail",
+                "location",
+                "anchor",
+                "evidence",
+            ):
+                value = getattr(fresh, field)
+                #: An unset attribute on the fresh row is a column
+                #: default waiting to fire at insert — a drift finding
+                #: never sets `rule` — and copying its None over the old
+                #: row would null a NOT NULL column. Only the two
+                #: genuinely nullable references may carry None across.
+                if value is None and field not in ("check_run_id", "artifact_id"):
+                    continue
+                setattr(old, field, value)
+            self.session.add(old)
+
+        stale = [row.id for row in existing.values() if row.id not in matched]
+        if stale:
+            await self.session.execute(delete(Finding).where(Finding.id.in_(stale)))
         await self.session.flush()
 
     async def findings_of(
@@ -688,14 +729,18 @@ class TieOutRepository(RepositoryBase[Artifact]):
         self, finding: Finding, *, state: FindingState, user_id: UUID, note: str = ""
     ) -> Finding:
         finding.state = state
-        if state is FindingState.dismissed:
+        if state in (FindingState.dismissed, FindingState.accepted):
+            #: Both are rulings, and a ruling keeps its reason and its
+            #: author. « Accept with a note » used to fall through to
+            #: the reopen branch below — the note was thrown away at the
+            #: moment the screen promised it was being kept.
             finding.dismissed_by_id = user_id
             finding.dismissed_at = datetime.now(UTC)
             finding.note = note
         else:
             finding.dismissed_by_id = None
             finding.dismissed_at = None
-            # The note goes with the dismissal it explained. Reopening a
+            # The note goes with the ruling it explained. Reopening a
             # finding and keeping the old reason would attach yesterday's
             # judgement to tomorrow's state.
             finding.note = ""
@@ -756,9 +801,7 @@ class TieOutRepository(RepositoryBase[Artifact]):
 
     # --- house rules and the team ---------------------------------------
 
-    async def is_in_organization(
-        self, organization_id: UUID, user_id: UUID
-    ) -> bool:
+    async def is_in_organization(self, organization_id: UUID, user_id: UUID) -> bool:
         """Organization membership — for the settings screens only.
 
         Deliberately weaker than deal membership: house rules and the
@@ -789,9 +832,7 @@ class TieOutRepository(RepositoryBase[Artifact]):
         statement = select(Dossier.organization_id).where(Dossier.id == dossier_id)
         return (await self.session.execute(statement)).scalar_one_or_none()
 
-    async def team_of(
-        self, organization_id: UUID
-    ) -> list[tuple[User, list[str]]]:
+    async def team_of(self, organization_id: UUID) -> list[tuple[User, list[str]]]:
         """Everyone in the organization, with the deals each is on.
 
         The deals are names, already scoped to this organization — the

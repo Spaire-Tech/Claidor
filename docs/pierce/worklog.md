@@ -2902,3 +2902,95 @@ deleted, not redesigned: a one-off keeps no file, so there is nothing
 real to open, and the panel was another view of the grid already on
 screen. Two endpoint tests: an upload answers with a download; a
 stranger's model does not exist.
+
+## The audit of the audit: nine noise findings, traced and killed (17 August)
+
+The founder ran their example model and did not believe the findings.
+They were right to not believe them. The file went through the engine
+and then through my hands, cell by cell, and of seventeen production
+findings nine were the audit misreading structure:
+
+- **A year-counter helper column** (typed `1` at each block's top,
+  `=Z23+1` beneath) read as six « values typed over formulas » and one
+  « inconsistent formula ». Fixed with two exemptions, both measured
+  rather than guessed: a typed cell whose below-neighbour formula
+  *reads it* is that formula's declared seed; a cell whose formula
+  shape matches its column neighbours belongs to a vertical series the
+  row check has no claim on.
+- **A conditional that picks two loan rows** (`=IF(SUM(D29:D30)<0,…)`
+  fourteen rows away) read as a broken total with an invented 8.5bn
+  miss. Fixed: only a formula that *is* a sum claims to be a total.
+- **Total Revenue rightly excluding the detail rows already inside an
+  included subtotal** read as incomplete. Fixed: rows an included
+  cell's own formula reads are covered, not skipped — counting them
+  again would double count.
+
+Two more findings were real but dishonest in the telling. The one
+genuinely broken total — Total Senior Debt Service, a one-cell SUM
+missing its interest — claimed 512.5m by lumping in the Outstanding
+Principal balance row between the components; a balance is not a flow
+and no correct total includes it, so the figure is now the true 12.5m.
+And « Module1 », a very hidden sheet, was described as feeding the
+model from the dark; measured, it holds zero populated cells and
+nothing references it — a leftover from an older file format, now said
+exactly that way and graded a note, not an error. The workbook reader
+now records raw populated counts per sheet so emptiness is a fact
+about the file, not about what survived labelling. Also: « has 20, 20
+typed into it » reads once per distinct number now, and the
+block-fold's beat tolerates one row of drift (the founder's blocks
+run 27-27-27-27-26 and a strict beat heard no pattern).
+
+The example model is committed as a fixture with a test pinning the
+exact defensible seven: one incomplete total at 12.5m, two buried
+assumptions, three long formulas, one empty very-hidden sheet.
+Sixteen findings before; seven after; each one now survives the
+founder reading it with the file open. Suite at 441 passing; the
+report driven in the browser on the real file.
+
+## The rulings that evaporated (17 August, evening)
+
+The founder: « you realize that your fix cell is a lie? … you refresh
+the page, the things come back ». Audited the whole ruling path, and
+they had caught not one lie but three, stacked:
+
+**Accepted findings resurrected on every re-check.** The audit's
+replace deleted every finding row and recreated it, letting only
+*dismissals* back through — accepted was not in the survival set. So
+accept a finding, press « Fix the cell » (which re-checks, correctly),
+refresh: every acceptance gone. Reproduced cold through the API before
+touching anything: one accept, one re-check, fifteen open again.
+
+**The note was never kept.** `set_finding_state` stored the note only
+for dismissals; the accepted branch fell through to the reopen path
+and cleared it. « Accept with a note » threw the note away at the
+moment the screen promised to keep it.
+
+**Accept swept the whole group.** The modal opens on one table row;
+pressing accept dismissed every finding of the rule — accepting one
+hardcode silently accepted thirteen.
+
+The repair, at the root: a finding that recurs across runs — same
+fingerprint — **is the same row**. It keeps its id, its state
+(accepted, dismissed, or open), its note, and its `created_at`, which
+also makes « first seen with version N » and the rail's by-version
+bars facts rather than the last run's clock; its sentences and
+evidence refresh from the new run; a fingerprint the run no longer
+produces is a defect that no longer exists, and its row goes. One
+subtlety the spine tests caught: a tie-out drift row never sets
+`rule`, and copying that unset None over an old row nulled a NOT NULL
+column — only genuinely nullable references may carry None across.
+Both rulings now require their reason at the endpoint, both keep it,
+and the web accepts exactly the finding on screen.
+
+« Fix the cell » itself was never the lie — write the row's own
+formula back, verify cell by cell, new version, re-measure the finding
+out of existence — the resurrection around it was. Proven live, the
+founder's exact sequence: accept one hardcode with a note → two
+re-checks → the same row, still accepted, note intact, fourteen others
+untouched. Then the fix: correction applied, model to version 3, the
+typed-over finding measured out of existence, the acceptance standing
+through it. Driven in the browser with a recheck and a full page
+reload: « 2 failures accepted with a note », the bars honest at
+0 → 12 → 12, and « None of them is new with version 3 » — a sentence
+the preserved clock finally makes true. New spine test pins all of it.
+Suite at 442 passing.

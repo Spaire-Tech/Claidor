@@ -246,6 +246,11 @@ class Workbook:
     #: True when the workbook has iterative calculation switched on, which
     #: is a model saying its circular references are deliberate.
     iterative: bool = False
+    #: Raw populated cells per sheet, counted at read time — `cells`
+    #: holds only what the reader could name, and « is this sheet
+    #: empty » must be answered from the file, not from what survived
+    #: labelling. Absent on hand-built books.
+    populated: dict[str, int] = field(default_factory=dict)
 
     def get(self, ref: str) -> Cell | None:
         return self.cells.get(ref)
@@ -360,8 +365,7 @@ def read_workbook(path: str) -> Workbook:
             very_hidden_sheets=tuple(
                 name
                 for name in formulas.sheetnames
-                if getattr(formulas[name], "sheet_state", "visible")
-                == "veryHidden"
+                if getattr(formulas[name], "sheet_state", "visible") == "veryHidden"
             ),
             iterative=bool(getattr(formulas.calculation, "iterate", False)),
         )
@@ -375,6 +379,7 @@ def read_workbook(path: str) -> Workbook:
             if not hasattr(sheet, "max_row"):
                 continue
             grids[name] = _grid_of(sheet, values[name])
+            book.populated[name] = len(grids[name].written)
         names = _names_of(formulas, grids)
         for name, grid in grids.items():
             _read_sheet(book, name, grid, names)
@@ -919,9 +924,7 @@ def _decimal(value: Any) -> Decimal | None:
     if isinstance(value, datetime.date):
         return Decimal((value - datetime.date(1899, 12, 30)).days)
     if isinstance(value, datetime.time):
-        seconds = (
-            value.hour * 3600 + value.minute * 60 + value.second
-        )
+        seconds = value.hour * 3600 + value.minute * 60 + value.second
         return Decimal(seconds) / Decimal(86400)
     return None
 

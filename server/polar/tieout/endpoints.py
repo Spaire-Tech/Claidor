@@ -1441,18 +1441,22 @@ async def update_finding(
         raise ResourceNotFound("Finding not found.")
     await _deal(session, finding.dossier_id, auth_subject.subject.id)
 
-    # **A dismissal needs a reason, and only a dismissal.** Dismissing
-    # says the check is wrong about this one — the decision somebody
-    # questions three weeks later with the author on holiday. No other
-    # state asks, because a box everyone must type past collects « ok ».
-    if update.state is FindingState.dismissed and not update.note.strip():
+    # **A ruling needs a reason.** Dismissing says the check is wrong
+    # about this one; accepting says it is right and lived with — both
+    # are the decision somebody questions three weeks later with the
+    # author on holiday. Reopening asks nothing: a box everyone must
+    # type past collects « ok ».
+    if (
+        update.state in (FindingState.dismissed, FindingState.accepted)
+        and not update.note.strip()
+    ):
         raise ClaidorRequestValidationError(
             [
                 {
                     "loc": ("body", "note"),
                     "msg": (
-                        "Dismissing says the check is wrong about this one — "
-                        "say why, so the decision survives you moving on."
+                        "A ruling needs its reason — one sentence, so the "
+                        "decision survives you moving on."
                     ),
                     "type": "value_error",
                     "input": update.note,
