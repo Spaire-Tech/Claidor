@@ -1817,9 +1817,10 @@ export const DealPage = ({
             {noteText === null ? (
               <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
                 {/* « Open the cell » — the workspace's own model reader,
-                    landed on this finding's cell. Wears the same blue
-                    as « Open in Excel » with the Excel mark beside it,
-                    because it is the same family of move. */}
+                    landed on this finding's cell. Wears Excel's own
+                    green — the same #107c41 the mini-grid's active
+                    column and sheet tab already speak — with the Excel
+                    mark beside it. */}
                 {model !== null &&
                   shownFinding.where.artifact_id === model.id && (
                     <button
@@ -1832,7 +1833,7 @@ export const DealPage = ({
                         alignItems: 'center',
                         gap: 8,
                         border: 0,
-                        background: ink.accent,
+                        background: '#107c41',
                         color: '#fff',
                         borderRadius: 9,
                         padding: '9px 16px',
