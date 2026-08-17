@@ -620,6 +620,18 @@ class AskedStep(Schema):
     milliseconds: int
 
 
+class AskedRow(Schema):
+    """One cell in an assistant answer — the tool's own row, verbatim.
+
+    Rows never pass through the language model: the screen draws them
+    from here, which is what keeps a listed figure a looked-up figure.
+    """
+
+    ref: str
+    what: str
+    value: str
+
+
 class Asked(Schema):
     """An answer, and every step it took to get there.
 
@@ -636,6 +648,9 @@ class Asked(Schema):
     stopped: str
     error: str | None
     steps: list[AskedStep]
+    #: The cells behind the answer, from the last tool that returned
+    #: any — drawn under the prose, each one clickable.
+    rows: list[AskedRow] = []
 
 
 class AskTurn(Schema):

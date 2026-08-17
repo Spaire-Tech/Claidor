@@ -468,6 +468,14 @@ export interface AskedStep {
   milliseconds: number
 }
 
+/** One cell in an assistant answer — the tool's own row, verbatim.
+ *  Rows never pass through the language model. */
+export interface AskedRow {
+  ref: string
+  what: string
+  value: string
+}
+
 export interface Asked {
   id: string
   prompt: string
@@ -476,6 +484,8 @@ export interface Asked {
   stopped: 'answered' | 'step_limit' | 'failed'
   error: string | null
   steps: AskedStep[]
+  /** The cells behind the answer, from the last tool that returned any. */
+  rows?: AskedRow[]
 }
 
 export interface GridCell {
@@ -982,6 +992,23 @@ export class TieOutApi {
     options: { history?: AskTurn[] } = {},
   ): Promise<Asked> {
     return this.call(`/check-file/${checkId}/ask`, {
+      method: 'POST',
+      body: JSON.stringify({ prompt, history: options.history ?? [] }),
+    })
+  }
+
+  /**
+   * The assistant: one question about one model, answered from its
+   * stored graph — where a number comes from, what moves if it changes,
+   * what is typed, how the sheets are laid out, what changed between
+   * versions. The rows come back verbatim from the tools.
+   */
+  assist(
+    dealId: string,
+    prompt: string,
+    options: { history?: AskTurn[] } = {},
+  ): Promise<Asked> {
+    return this.call(`/deals/${dealId}/assist`, {
       method: 'POST',
       body: JSON.stringify({ prompt, history: options.history ?? [] }),
     })

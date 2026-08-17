@@ -64,6 +64,7 @@ from .schemas import (
     ArtifactRead,
     Ask,
     Asked,
+    AskedRow,
     AskedStep,
     AuditRuleRead,
     CellRead,
@@ -1846,6 +1847,76 @@ def _conversation(body: Ask, finding: Finding | None) -> str:
         parts.append(f"The banker now asks: {body.prompt}")
         return "\n\n".join(parts)
     return body.prompt
+
+
+@router.post("/deals/{dossier_id}/assist", response_model=Asked, status_code=201)
+async def assist(
+    dossier_id: UUID,
+    body: Ask,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> Asked:
+    """The assistant: one question about one model, answered from its
+    stored graph.
+
+    A different job from `/ask`. That chat defends findings; this one
+    answers « what is this model » for someone who did not build it —
+    where a number comes from, what moves if it changes, what is typed,
+    how the sheets are laid out, what changed between versions. Every
+    figure in the reply came out of a tool over the stored cells, and
+    the rows come back verbatim from the last tool that produced any —
+    they never pass through the language model.
+    """
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    try:
+        client = agent_client()
+    except AgentNotConfigured as problem:
+        raise HTTPException(status_code=503, detail=str(problem)) from problem
+
+    try:
+        task, outcome = await agent.ask_model(
+            session,
+            dossier_id=deal.id,
+            user_id=auth_subject.subject.id,
+            prompt=_conversation(body, None),
+            client=client,
+            name=deal.name,
+        )
+    except ValueError as problem:
+        raise HTTPException(status_code=409, detail=str(problem)) from problem
+
+    #: The last tool that returned rows carries the cells the answer is
+    #: about; the screen draws them from here, never from the prose.
+    rows: list[AskedRow] = []
+    for step in outcome.steps:
+        step_rows = step.data.get("rows") if step.ok else None
+        if step_rows:
+            rows = [
+                AskedRow(
+                    ref=str(one.get("ref", "")),
+                    what=str(one.get("what", "")),
+                    value=str(one.get("value", "")),
+                )
+                for one in step_rows
+            ]
+    return Asked(
+        id=task.id,
+        prompt=task.prompt,
+        answer=task.answer,
+        stopped=task.stopped,
+        error=task.error,
+        steps=[
+            AskedStep(
+                ordinal=step.ordinal,
+                tool=step.tool,
+                ok=step.ok,
+                summary=step.summary,
+                milliseconds=step.milliseconds,
+            )
+            for step in outcome.steps
+        ],
+        rows=rows,
+    )
 
 
 @router.post("/check-file/{check_id}/ask", response_model=Asked, status_code=201)

@@ -2697,3 +2697,52 @@ the list's Needs attention / Clear groups, the failing report face,
 the modal's new grid, Export report, the open accordions, and the
 clean two-version face with the bars. Web typecheck, 23 design tests,
 prettier all green. The Assistant tab is the next round.
+
+## The Assistant: the model answers for itself (17 August)
+
+The workspace's first tab is now the Assistant — the founder's design,
+built to the idea behind it: the review chat answers *why did you flag
+this*; this one answers *what is this model* for someone who did not
+build it. Five families of questions, one discipline: every claim in
+an answer comes out of a tool that read the graph, never out of the
+language model's memory.
+
+Six tools in `polar/tieout/agent/model_tools.py`, pure functions over
+a workspace loaded before the loop starts (workbook, period axes, an
+inverted dependents index, the version list, the latest diff):
+**locate** finds a cell by ref or by the model's own words;
+**trace_back** walks precedents and ends with a sentence naming the
+typed inputs the chain stops at; **trace_forward** lists the direct
+readers, counts the full reach from real edges, and names the labelled
+totals the cell flows into — or says « Nothing in the model reads
+this », which is its own finding; **inventory** lists typed inputs,
+hardcodes, or external links, sorted by weight; **structure** gives
+the sheets in workbook order with each one's time axis; **versions**
+carries the lineage and the latest diff. Refusals are sentences naming
+what does exist — an unknown sheet is refused with the real sheet
+names.
+
+The rows never pass through the language model: each tool returns
+`{ref, what, value}` rows, the agent Step now carries the tool's
+payload verbatim, and the new `POST /deals/{id}/assist` endpoint hands
+the last row-bearing step's rows straight to the screen. The screen
+draws them as a clickable card — ref in mono, the model's own words,
+the shown number — and a row click opens the model. The answer's last
+paragraph is the contract's boundary line: where the chain ends and
+what this file cannot see; the prompt forbids skipping it. The scope
+bar keeps the picked model visible — Excel mark, name, sheet and cell
+counts, version — and picking another resets the conversation, because
+the scope is one model.
+
+Proven the honest way this environment allows: the six tools were run
+live against the demo model (the 512.5m rows, the Opex → Opex total →
+Net cashflow flow, the exact reach counts) and are pinned by
+`tests/tieout/test_model_tools.py` — a hand-checkable workbook where
+reach == 3 is countable on paper, labels resolve before walking, and
+every tool's every row is exactly {ref, what, value}. The empty face
+was driven in the browser and screenshotted. The one thing this
+sandbox cannot drive is the live narration itself: there is no
+ANTHROPIC_API_KEY here, the endpoint answers 503 saying so, same as
+the review chat — it runs on the production keys after merge. Named
+smaller follow-up: the suggested questions are three static family
+questions; composing them from the model's own labels is the intent.

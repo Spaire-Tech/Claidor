@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Artifact, DealListItem, TieOutApi } from './api'
 import { Chat, ChatContext, chatKeyOf } from './Chat'
 import { blueButton, font, ground, ink, shell, wordmark } from './design'
+import { Assistant } from './screens/Assistant'
 import { CheckFile } from './screens/CheckFile'
 import { Deals } from './screens/Deals'
 import { DocPanel } from './screens/DocPanel'
@@ -33,9 +34,10 @@ import './workspace.css'
  */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
-type View = 'deals' | 'check' | 'settings'
+type View = 'assist' | 'deals' | 'check' | 'settings'
 
 const LABELS: Record<View, string> = {
+  assist: 'Assistant',
   deals: 'Models',
   check: 'Check a model',
   settings: 'Settings',
@@ -407,7 +409,17 @@ export const Workspace = ({
           </div>
 
           {/* Content. */}
-          {view === 'deals' ? (
+          {view === 'assist' ? (
+            <Assistant
+              api={api}
+              deals={deals}
+              onOpenModel={(one) => {
+                setView('deals')
+                setDeal(one)
+                setAskOpen(false)
+              }}
+            />
+          ) : view === 'deals' ? (
             <Deals
               api={api}
               organizationId={organizationId}
@@ -519,6 +531,9 @@ export const Workspace = ({
             padding: 0,
           }}
         >
+          <button onClick={go('assist')} style={dock('assist')}>
+            Assistant
+          </button>
           <button onClick={go('deals')} style={dock('deals')}>
             Models
           </button>
