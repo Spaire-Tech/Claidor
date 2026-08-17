@@ -2946,3 +2946,51 @@ assumptions, three long formulas, one empty very-hidden sheet.
 Sixteen findings before; seven after; each one now survives the
 founder reading it with the file open. Suite at 441 passing; the
 report driven in the browser on the real file.
+
+## The rulings that evaporated (17 August, evening)
+
+The founder: « you realize that your fix cell is a lie? … you refresh
+the page, the things come back ». Audited the whole ruling path, and
+they had caught not one lie but three, stacked:
+
+**Accepted findings resurrected on every re-check.** The audit's
+replace deleted every finding row and recreated it, letting only
+*dismissals* back through — accepted was not in the survival set. So
+accept a finding, press « Fix the cell » (which re-checks, correctly),
+refresh: every acceptance gone. Reproduced cold through the API before
+touching anything: one accept, one re-check, fifteen open again.
+
+**The note was never kept.** `set_finding_state` stored the note only
+for dismissals; the accepted branch fell through to the reopen path
+and cleared it. « Accept with a note » threw the note away at the
+moment the screen promised to keep it.
+
+**Accept swept the whole group.** The modal opens on one table row;
+pressing accept dismissed every finding of the rule — accepting one
+hardcode silently accepted thirteen.
+
+The repair, at the root: a finding that recurs across runs — same
+fingerprint — **is the same row**. It keeps its id, its state
+(accepted, dismissed, or open), its note, and its `created_at`, which
+also makes « first seen with version N » and the rail's by-version
+bars facts rather than the last run's clock; its sentences and
+evidence refresh from the new run; a fingerprint the run no longer
+produces is a defect that no longer exists, and its row goes. One
+subtlety the spine tests caught: a tie-out drift row never sets
+`rule`, and copying that unset None over an old row nulled a NOT NULL
+column — only genuinely nullable references may carry None across.
+Both rulings now require their reason at the endpoint, both keep it,
+and the web accepts exactly the finding on screen.
+
+« Fix the cell » itself was never the lie — write the row's own
+formula back, verify cell by cell, new version, re-measure the finding
+out of existence — the resurrection around it was. Proven live, the
+founder's exact sequence: accept one hardcode with a note → two
+re-checks → the same row, still accepted, note intact, fourteen others
+untouched. Then the fix: correction applied, model to version 3, the
+typed-over finding measured out of existence, the acceptance standing
+through it. Driven in the browser with a recheck and a full page
+reload: « 2 failures accepted with a note », the bars honest at
+0 → 12 → 12, and « None of them is new with version 3 » — a sentence
+the preserved clock finally makes true. New spine test pins all of it.
+Suite at 442 passing.

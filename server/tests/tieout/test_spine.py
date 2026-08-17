@@ -318,6 +318,45 @@ class TestWhatAPersonDecides:
         assert same, "the finding should still be found"
         assert same[0].state is FindingState.dismissed
 
+    async def test_an_acceptance_survives_a_recheck_with_its_note(
+        self, session: AsyncSession, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """The founder accepted findings with notes, pressed « Fix the
+        cell » — which re-checks — and refreshed to find every ruling
+        gone. Two lies at once: the old replace recreated every row and
+        let only *dismissals* back through, and the accept path threw
+        the note away at the moment the screen promised to keep it. A
+        ruling is the same row across runs — same id, same clock, same
+        state, same reason."""
+        deal = await _deal(session, save_fixture, user)
+        await _load(session, deal, user)
+        await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
+
+        repository = TieOutRepository.from_session(session)
+        audited = [
+            one
+            for one in await repository.findings_of(deal.id)
+            if one.kind is FindingKind.audit
+        ]
+        assert audited, "the cascade model must yield at least one audit finding"
+        victim = audited[0]
+        identity, born = victim.id, victim.created_at
+        await repository.set_finding_state(
+            victim,
+            state=FindingState.accepted,
+            user_id=user.id,
+            note="known and priced in",
+        )
+
+        await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
+        again = [
+            one for one in await repository.findings_of(deal.id) if one.id == identity
+        ]
+        assert again, "the finding must keep its identity across runs"
+        assert again[0].state is FindingState.accepted
+        assert again[0].note == "known and priced in"
+        assert again[0].created_at == born
+
     async def test_a_confirmation_is_never_proposed_over(
         self, session: AsyncSession, save_fixture: SaveFixture, user: User
     ) -> None:

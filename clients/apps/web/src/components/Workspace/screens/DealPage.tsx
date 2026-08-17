@@ -881,11 +881,14 @@ export const DealPage = ({
     setNoteText(null)
   }
 
-  const acceptGroup = (group: FailGroup, note: string) => {
+  //: The ruling is about the finding on screen, not the rule. This
+  //: used to sweep every finding in the group — accepting one hardcode
+  //: silently accepted thirteen, which the founder read as a lie. The
+  //: modal opens on one table row; the ruling lands on that row.
+  const acceptFinding = (finding: Finding, note: string) => {
     setSaving(true)
-    Promise.all(
-      group.findings.map((one) => api.dismiss(one.id, 'accepted', note)),
-    )
+    api
+      .dismiss(finding.id, 'accepted', note)
       .catch(() => undefined)
       .then(() => {
         setSaving(false)
@@ -2585,7 +2588,7 @@ export const DealPage = ({
                 >
                   <button
                     onClick={() =>
-                      noteReady && !saving && acceptGroup(pickedGroup, noteText)
+                      noteReady && !saving && acceptFinding(shownFinding, noteText)
                     }
                     style={{
                       border: 0,
