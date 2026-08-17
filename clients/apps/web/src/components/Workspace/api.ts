@@ -99,6 +99,9 @@ export interface Finding {
   /** The fix, where one is derivable rather than a choice: the row's
    *  own formula, re-anchored to this cell. Empty everywhere else. */
   fix: string
+  /** What is wrong, in two or three words — « Incomplete total »,
+   *  « Unexpected hardcode ». The line a reader scans first. */
+  headline: string
   /** The little Excel grid, when the check composed one. */
   grid: FindingGrid | null
 }
@@ -599,6 +602,8 @@ export interface OneOffDefect {
   /** Where the cell's value goes, in the model's own words. Empty when
    *  nothing downstream reads the cell. */
   flow: string
+  /** What is wrong, in two or three words — the scan line. */
+  headline: string
   /** What a person reads first; `detail` is the evidence beneath. */
   plain: string
   /** The finding's cell with its neighbours, composed at check time. */

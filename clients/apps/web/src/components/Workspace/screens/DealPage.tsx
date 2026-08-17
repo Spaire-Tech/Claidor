@@ -679,8 +679,15 @@ export const DealPage = ({
           : `${worst.where.detail} · ${group.length} places`
       list.push({
         key,
+        //: What is wrong, in the finding's own two or three words —
+        //: « Incomplete total » — falling back to the catalogue's rule
+        //: name for rows stored before headlines existed.
         label:
-          key === '' ? TIEOUT_LABEL : (catalogue.get(key) ?? humanize(key)),
+          key === ''
+            ? TIEOUT_LABEL
+            : (group.find((one) => one.headline)?.headline ??
+              catalogue.get(key) ??
+              humanize(key)),
         standard: group[0]!.standard,
         findings: group,
         analytical,
@@ -1606,16 +1613,35 @@ export const DealPage = ({
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
               <span style={{ flex: 1, minWidth: 0 }}>
+                {/* What is wrong — the mentor's order: what, where, why.
+                    The dot is the severity, borrowed from the panel's
+                    own severity mark. */}
                 <span
                   style={{
-                    display: 'block',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
                     fontSize: 17,
                     letterSpacing: '-.016em',
                     lineHeight: 1.3,
                   }}
                 >
-                  {pickedGroup.label}
+                  <span
+                    style={{
+                      flex: '0 0 6px',
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background:
+                        shownFinding.severity === 'error'
+                          ? '#ff3b30'
+                          : '#e8a33d',
+                    }}
+                  />
+                  {shownFinding.headline || pickedGroup.label}
                 </span>
+                {/* Where: the cell, then the model's own name for the
+                    row — « E41 — Total Senior Debt Service ». */}
                 <span
                   style={{
                     display: 'block',
@@ -1625,11 +1651,16 @@ export const DealPage = ({
                   }}
                 >
                   {[
+                    [
+                      shownFinding.where.detail || shownFinding.where.label,
+                      shownFinding.source.name,
+                    ]
+                      .filter(Boolean)
+                      .join(' — '),
+                    pickedGroup.findings.length > 1
+                      ? `${pickedGroup.findings.length} places`
+                      : '',
                     pickedGroup.standard,
-                    pickedGroup.findings.length === 1
-                      ? pickedGroup.findings[0]!.where.detail ||
-                        pickedGroup.findings[0]!.where.label
-                      : `${pickedGroup.findings.length} places`,
                   ]
                     .filter(Boolean)
                     .join(' · ')}

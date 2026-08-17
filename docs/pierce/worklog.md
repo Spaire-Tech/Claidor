@@ -2625,3 +2625,36 @@ themselves — deal modal with grid, flow line and all three buttons;
 Open the cell; the after-fix verdict; Check a model's card; the
 panel's finding with its flow and Fix — screenshotted from the
 locally running stack and sent to the founder.
+
+## The mentor's voice: what is wrong, where, why it matters (17 August)
+
+The founder's mentor read the findings and named the disease exactly:
+they read like machine-generated audit notes — location, diagnosis and
+explanation mixed into one sentence a person has to decode before they
+can act. The structure adopted, whole: a finding answers **what is
+wrong → where → why it matters**, in that order.
+
+Every mechanical rule now carries a two-or-three-word headline
+(« Incomplete total », « Unexpected hardcode », « Complex formula »),
+shipped by the engine so every screen scans the same way; the
+where-line reads « Debt!C8 — Total Senior Debt Service » — the cell,
+then the model's own name for the row — with the standard demoted
+behind it; and the sentence is the diagnosis plus the consequence in
+the mentor's own register: « Total Senior Debt Service is incomplete:
+the formula at C8 excludes rows immediately above it, leaving 512.5m
+outside the total. » Cards lead with the headline; the modal adds a
+severity mark; the panel's scan line under each address is the
+headline rather than the clipped standard citation.
+
+And the bug his example exposed: « worth 5.125e+08 together » was
+Python's `,.6g` silently dropping thousands-grouping once `g` falls
+back to an exponent. Figures in sentences now come through one
+formatter that speaks banker — 512.5m, 1.2bn, 19,100 — and the little
+Excel grid prints digits with separators the way Excel does
+(512,500,000), never scientific notation anywhere a person reads.
+
+Verified the standing way: 423 tieout tests, web and panel typechecks
+and suites green, and the three surfaces — deal cards and modal,
+Check a model's modal, the panel — driven in the browser on a model
+carrying the mentor's own flagship case and screenshotted to the
+founder.

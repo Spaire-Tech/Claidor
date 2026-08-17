@@ -350,6 +350,7 @@ def _finding(
         standard_sentence=str(evidence.get("standard_sentence") or ""),
         flow=str(evidence.get("flow") or ""),
         fix=str(evidence.get("fix") or ""),
+        headline=str(evidence.get("headline") or ""),
         grid=evidence.get("grid") or None,
     )
 

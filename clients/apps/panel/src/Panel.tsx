@@ -756,7 +756,10 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                         {addressOf(defect.ref)}
                       </span>
                     </span>
-                    {defect.standard && (
+                    {/* The scan line: what is wrong, in the finding's
+                        own two or three words. The standard still backs
+                        the claim, from the row's expanded state. */}
+                    {(defect.headline || defect.standard) && (
                       <span
                         style={{
                           display: 'block',
@@ -770,7 +773,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                           textOverflow: 'ellipsis',
                         }}
                       >
-                        {defect.standard}
+                        {defect.headline || defect.standard}
                       </span>
                     )}
                   </span>

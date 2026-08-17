@@ -324,6 +324,9 @@ class FindingRead(Schema):
     #: The fix, where one is derivable rather than a choice: the row's
     #: own formula, re-anchored to this cell. Empty everywhere else.
     fix: str = ""
+    #: What is wrong, in two or three words — « Incomplete total »,
+    #: « Unexpected hardcode ». The line a reader scans first.
+    headline: str = ""
     #: The design's little Excel grid — the finding's cell with its
     #: neighbours, composed when the check ran. None on findings that
     #: predate it or that do not sit at a cell.
@@ -910,6 +913,9 @@ class OneOffDefect(Schema):
     #: which the writer checks is still there before touching anything.
     fix: str = ""
     fix_before: str = ""
+    #: What is wrong, in two or three words — « Incomplete total »,
+    #: « Unexpected hardcode ». The line a reader scans first.
+    headline: str = ""
     #: The finding as a person hears it — shown first, with `detail`
     #: as the evidence beneath.
     plain: str = ""
