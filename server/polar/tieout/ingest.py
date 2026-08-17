@@ -164,7 +164,9 @@ def _read_model(path: str) -> Ingested:
         # The common case in the wild. The workbook pass carries it alone.
         pass
 
-    result = audit(book)
+    from .structure import period_axes
+
+    result = audit(book, axes=period_axes(book))
     return Ingested(
         outputs=published,
         counts={

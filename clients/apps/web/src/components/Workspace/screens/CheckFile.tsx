@@ -85,7 +85,13 @@ interface FailGroup {
   key: string
   label: string
   standard: string | null
-  places: { text: string; where: string; grid: FindingGrid | null }[]
+  places: {
+    text: string
+    where: string
+    /** Where the cell's value goes, from the dependents walk. */
+    flow: string
+    grid: FindingGrid | null
+  }[]
   /** A statement check — « Whether the accounts add up ». */
   analytical: boolean
   /** The card's headline: the engine's figure for a statement check,
@@ -262,6 +268,7 @@ export const CheckFile = ({
         places: result.disagreements.map((one) => ({
           text: `${one.label}: ${one.first.printed} on ${one.first.location}, ${one.other.printed} on ${one.other.location}.`,
           where: `Stated ${one.statements} times`,
+          flow: '',
           grid: null,
         })),
       })
@@ -282,9 +289,11 @@ export const CheckFile = ({
         const parsed = Number(one.figure.replace(/,/g, ''))
         return Number.isFinite(parsed) ? Math.abs(parsed) : 0
       }
-      const worst = analytical
-        ? [...group].sort((a, b) => magnitude(b) - magnitude(a))[0]!
-        : group[0]!
+      const carrying = group.filter((one) => one.figure)
+      const worst =
+        carrying.length > 0
+          ? [...carrying].sort((a, b) => magnitude(b) - magnitude(a))[0]!
+          : group[0]!
       //: The ref already carries its sheet — « Depreciation
       //: Schedule!Z105 » — prefixing the sheet again printed it twice,
       //: which the founder read live. The ref stands as it is.
@@ -294,20 +303,19 @@ export const CheckFile = ({
         label: catalogue.get(key) ?? humanize(key),
         standard: group[0]!.standard || null,
         analytical,
-        figure:
-          analytical && worst.figure ? worst.figure : String(group.length),
-        figureUnit:
-          analytical && worst.figure
-            ? worst.figure_unit
-            : group.length === 1
-              ? 'place in the model'
-              : 'places in the model',
+        figure: worst.figure || String(group.length),
+        figureUnit: worst.figure
+          ? worst.figure_unit
+          : group.length === 1
+            ? 'place in the model'
+            : 'places in the model',
         whereLine:
           group.length === 1 ? first : `${first} · ${group.length} places`,
         places: group.map((one) => ({
           //: The plain sentence leads; the formula is evidence.
           text: one.plain || one.detail,
           where: one.ref,
+          flow: one.flow,
           grid: one.grid,
         })),
       })
@@ -1207,6 +1215,23 @@ export const CheckFile = ({
             {/* The design's little Excel grid — the picked place's
                 cell in its own neighbourhood. */}
             {shownPlace.grid && <MiniGrid grid={shownPlace.grid} />}
+
+            {/* The consequence, in the model's own words — where the
+                cell's value goes, from the dependents walk. */}
+            {shownPlace.flow && (
+              <div
+                style={{
+                  fontSize: 14.5,
+                  color: '#3a3a3c',
+                  lineHeight: 1.55,
+                  marginTop: 14,
+                  maxWidth: '62ch',
+                  textWrap: 'pretty',
+                }}
+              >
+                Flows into {shownPlace.flow}.
+              </div>
+            )}
 
             {pickedGroup.places.length > 1 && (
               //: Picking a place swaps the grid above to that cell.

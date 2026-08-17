@@ -446,8 +446,9 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               textWrap: 'pretty',
             }}
           >
-            Antford never writes to your cells. Revoke access from the workbook
-            at any time.
+            Antford writes to a cell only when you press « Fix the cell », and
+            only to put a row's own formula back. Revoke access from the
+            workbook at any time.
           </div>
           <div style={{ flex: 1 }} />
           <button
@@ -576,9 +577,8 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
             textWrap: 'pretty',
           }}
         >
-          There is no workbook to check here. Open a model in Excel, and
-          Antford reads this copy — exactly as it stands, unsaved edits
-          included.
+          There is no workbook to check here. Open a model in Excel, and Antford
+          reads this copy — exactly as it stands, unsaved edits included.
         </div>
       </Shell>
     )
@@ -619,6 +619,17 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
     setProblem(null)
     void panel.goTo(defect).then((moved) => {
       setProblem(moved.moved ? null : (moved.reason ?? 'could not go there'))
+    })
+  }
+
+  //: « Fix the cell » — the row's own formula goes back, live, and the
+  //: whole check re-runs on the workbook as it now stands. A refusal is
+  //: the writer's own sentence, shown where jump refusals show.
+  const fixCell = (defect: PanelDefect) => {
+    setProblem(null)
+    void panel.fix(defect).then((wrote) => {
+      if (!wrote.written)
+        setProblem(wrote.reason ?? 'the cell could not be fixed')
     })
   }
 
@@ -671,8 +682,8 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               textWrap: 'pretty',
             }}
           >
-            This copy carries values only — the construction checks could
-            not read it; the statement checks did.
+            This copy carries values only — the construction checks could not
+            read it; the statement checks did.
           </div>
         )}
 
@@ -776,25 +787,66 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
                   </span>
                 </button>
                 {isSel && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '0 0 15px 96px',
-                    }}
-                  >
-                    <span
+                  <>
+                    {/* The consequence, from the dependents walk — where
+                        this cell's value goes, in the model's own words.
+                        Styled on the standard's grey meta line. */}
+                    {defect.flow && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          lineHeight: 1.45,
+                          color: '#a1a1a6',
+                          padding: '0 0 8px 96px',
+                          textWrap: 'pretty',
+                        }}
+                      >
+                        Flows into {defect.flow}.
+                      </div>
+                    )}
+                    <div
                       style={{
-                        flex: 1,
-                        minWidth: 0,
-                        fontSize: 12,
-                        color: '#c7c7cc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '0 0 15px 96px',
                       }}
                     >
-                      Selected in the sheet
-                    </span>
-                  </div>
+                      <span
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          fontSize: 12,
+                          color: '#c7c7cc',
+                        }}
+                      >
+                        Selected in the sheet
+                      </span>
+                      {/* The fix, where one is derivable: the row's own
+                          formula goes back and Excel recalculates in
+                          front of them. */}
+                      {defect.fix && (
+                        <button
+                          onClick={() => fixCell(defect)}
+                          disabled={panel.working}
+                          style={{
+                            flex: '0 0 auto',
+                            border: 0,
+                            background: '#f5f5f7',
+                            borderRadius: 7,
+                            padding: '5px 11px',
+                            font: 'inherit',
+                            fontSize: 12,
+                            color: ink.primary,
+                            cursor: 'pointer',
+                            opacity: panel.working ? 0.6 : 1,
+                          }}
+                        >
+                          Fix the cell
+                        </button>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             )

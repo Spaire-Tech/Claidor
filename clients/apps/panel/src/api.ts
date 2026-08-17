@@ -66,7 +66,10 @@ export interface FindingGrid {
   sheet: string
   sel: string
   formula: string
-  cols: string[]
+  /** The workbook's tabs around the finding's sheet, for the tab strip. */
+  sheets: string[]
+  /** Each column: its letter, and the period label the model gives it. */
+  cols: { l: string; p: string }[]
   rows: { n: number; label: string; cells: GridCell[] }[]
 }
 
@@ -84,6 +87,15 @@ export interface PanelDefect {
   analytical: boolean
   figure: string
   figure_unit: string
+  /** Where the cell's value goes, in the model's own words. Empty when
+   *  nothing downstream reads the cell. */
+  flow: string
+  /** The fix, where one is derivable rather than a choice: the row's
+   *  own formula, re-anchored to this cell — what « Fix the cell »
+   *  writes. `fix_before` is the typed value it replaces; the write
+   *  checks it is still there first. */
+  fix: string
+  fix_before: string
   grid: FindingGrid | null
 }
 

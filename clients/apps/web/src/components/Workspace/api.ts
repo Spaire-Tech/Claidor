@@ -92,6 +92,13 @@ export interface Finding {
   figure_unit: string
   period: string
   standard_sentence: string
+  /** Where the cell's value goes, in the model's own words —
+   *  « Opex total » → « Cashflow » → « Equity IRR ». Empty when
+   *  nothing downstream reads the cell. */
+  flow: string
+  /** The fix, where one is derivable rather than a choice: the row's
+   *  own formula, re-anchored to this cell. Empty everywhere else. */
+  fix: string
   /** The little Excel grid, when the check composed one. */
   grid: FindingGrid | null
 }
@@ -589,6 +596,9 @@ export interface OneOffDefect {
   figure: string
   figure_unit: string
   period: string
+  /** Where the cell's value goes, in the model's own words. Empty when
+   *  nothing downstream reads the cell. */
+  flow: string
   /** What a person reads first; `detail` is the evidence beneath. */
   plain: string
   /** The finding's cell with its neighbours, composed at check time. */
@@ -606,7 +616,10 @@ export interface FindingGrid {
   sheet: string
   sel: string
   formula: string
-  cols: string[]
+  /** The sheet-tab strip, windowed around the active sheet. */
+  sheets: string[]
+  /** Column letter and, when the model has an axis, its own period. */
+  cols: { l: string; p: string }[]
   rows: { n: number; label: string; cells: GridCell[] }[]
 }
 

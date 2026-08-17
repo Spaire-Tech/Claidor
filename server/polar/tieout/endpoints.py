@@ -348,6 +348,8 @@ def _finding(
         figure_unit=str(evidence.get("figure_unit") or ""),
         period=str(evidence.get("period") or ""),
         standard_sentence=str(evidence.get("standard_sentence") or ""),
+        flow=str(evidence.get("flow") or ""),
+        fix=str(evidence.get("fix") or ""),
         grid=evidence.get("grid") or None,
     )
 
@@ -588,9 +590,7 @@ async def list_deals(
         visited_at = visits.get(deal.id)
         arrived_since = 0
         findings_since = 0
-        open_findings = await repository.findings_of(
-            deal.id, state=FindingState.open
-        )
+        open_findings = await repository.findings_of(deal.id, state=FindingState.open)
         if visited_at is not None:
             arrived_since = sum(
                 1 for artifact in current if artifact.created_at > visited_at
@@ -1847,9 +1847,7 @@ def _conversation(body: Ask, finding: Finding | None) -> str:
     return body.prompt
 
 
-@router.post(
-    "/check-file/{check_id}/ask", response_model=Asked, status_code=201
-)
+@router.post("/check-file/{check_id}/ask", response_model=Asked, status_code=201)
 async def ask_about_check(
     check_id: UUID,
     body: Ask,
@@ -1889,9 +1887,7 @@ async def ask_about_check(
         counts=row.counts or {},
         result=row.result or {},
     )
-    outcome = await run_agent(
-        client, FILE_TOOLSET, room, _conversation(body, None)
-    )
+    outcome = await run_agent(client, FILE_TOOLSET, room, _conversation(body, None))
     return Asked(
         id=uuid4(),
         prompt=body.prompt,

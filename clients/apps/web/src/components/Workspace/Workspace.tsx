@@ -68,6 +68,9 @@ export const Workspace = ({
   const [view, setView] = useState<View>('deals')
   const [deal, setDeal] = useState<DealListItem | null>(null)
   const [doc, setDoc] = useState<Artifact | null>(null)
+  //: « Open the cell » — the finding whose cell the document panel
+  //: should open on, when the panel was opened from a finding's modal.
+  const [docAt, setDocAt] = useState<string | null>(null)
   const [acctOpen, setAcctOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
   //: What the chat is about. The document panel and the check screen
@@ -146,8 +149,9 @@ export const Workspace = ({
   }
 
   //: A different document is a different conversation; closing one ends it.
-  const openDoc = (next: Artifact | null) => {
+  const openDoc = (next: Artifact | null, at: string | null = null) => {
     setDoc(next)
+    setDocAt(at)
     setDocChat(null)
   }
 
@@ -437,6 +441,7 @@ export const Workspace = ({
             api={api}
             dealId={deal!.id}
             doc={doc}
+            openAt={docAt}
             onClose={() => openDoc(null)}
             onChanged={() => setDealsAt((was) => was + 1)}
             onChat={(ctx) =>

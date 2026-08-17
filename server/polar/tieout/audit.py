@@ -38,6 +38,7 @@ and the two are never added into one number.
 import re
 from collections import Counter
 from dataclasses import dataclass, field
+from typing import Any
 
 from openpyxl.formula.tokenizer import Tokenizer
 from openpyxl.utils import get_column_letter
@@ -115,6 +116,22 @@ class Finding:
     #: The standard the rule comes from, so a banker asking « says who »
     #: gets an answer that is not « the tool ».
     source: str = ""
+    #: The headline number, printed, and the phrase saying what it is —
+    #: « 19,100 » / « typed, where the row would calculate 19,605 ».
+    #: Composed here, where the values are in scope, never on a screen.
+    figure: str = ""
+    figure_unit: str = ""
+    #: Where the cell's value goes, in the model's own words —
+    #: « Opex total » → « Cashflow » → « Equity IRR ». Empty when
+    #: nothing downstream reads the cell, which is worth knowing too.
+    flow: str = ""
+    #: The fix, where one is derivable rather than a choice: the row's
+    #: own formula, re-anchored to this column. Empty for every finding
+    #: whose fix is a decision belonging to the model's author.
+    fix: str = ""
+    #: What the cell holds now, exactly as the reader recorded it — the
+    #: writer refuses unless this is still there when it arrives.
+    fix_before: str = ""
 
 
 @dataclass
@@ -154,7 +171,104 @@ RULE_NAMES: dict[str, str] = {
 }
 
 
-def plain_words(finding: Finding) -> str:
+#: `dict[sheet, PeriodAxis]` from the structure layer — typed loosely
+#: here so the audit does not import the structure module (the axes are
+#: handed in by the callers that already have them).
+PeriodAxes = dict[str, Any]
+
+
+def _period(axes: "PeriodAxes | None", sheet: str, ref: str) -> str:
+    """The model's own label for a finding's column, or nothing."""
+    if not axes:
+        return ""
+    axis = axes.get(sheet)
+    if axis is None:
+        return ""
+    match = re.search(r"([A-Z]{1,3})(\d+)$", ref)
+    if match is None:
+        return ""
+    from openpyxl.utils import column_index_from_string
+
+    column = column_index_from_string(match.group(1))
+    for at, label in axis.columns:
+        if at == column:
+            return label
+    return ""
+
+
+def _quantified(book: Workbook, result: Audit, axes: "PeriodAxes | None") -> None:
+    """Attach the headline numbers the founder's design leads with.
+
+    For a typed value in a calculated row: what the row would
+    calculate there — the nearest formula in the row, shifted to this
+    column and evaluated one step against cached values (the
+    registered evaluator; silence where it abstains). For a skipped
+    total: the worth of the rows it leaves out, straight from their
+    cached values.
+    """
+    from .evaluate import evaluate, shifted
+
+    quantifiable = {"typed-over-formula", "inconsistent-row"}
+    replaced: list[Finding] = []
+    for finding in result.findings:
+        if finding.rule not in quantifiable:
+            replaced.append(finding)
+            continue
+        cell = book.cells.get(finding.ref)
+        if cell is None or cell.value is None:
+            replaced.append(finding)
+            continue
+        #: The donor: the nearest cell in the same row with a formula.
+        donor = None
+        for distance in range(1, 41):
+            for direction in (-1, 1):
+                at = cell.column + direction * distance
+                if at < 1:
+                    continue
+                from openpyxl.utils import get_column_letter
+
+                neighbour = book.cells.get(
+                    f"{cell.sheet}!{get_column_letter(at)}{cell.row}"
+                )
+                if neighbour is not None and neighbour.formula:
+                    donor = neighbour
+                    break
+            if donor is not None:
+                break
+        if donor is None:
+            replaced.append(finding)
+            continue
+        moved = shifted(donor.formula or "", cell.column - donor.column)
+        expected = evaluate(book, cell.sheet, moved)
+        typed = float(cell.value)
+        #: The fix rides on the donor alone: putting the row's formula
+        #: back is right even where the evaluator abstains from saying
+        #: what it will compute. Only for a *typed* cell — prescribing
+        #: a formula over a different formula is the author's decision.
+        changes: dict[str, str] = (
+            {
+                "fix": moved if moved.startswith("=") else f"={moved}",
+                "fix_before": str(cell.value),
+            }
+            if finding.rule == "typed-over-formula" and cell.formula is None
+            else {}
+        )
+        if expected is not None and abs(expected - typed) > 1e-9:
+            changes["figure"] = f"{typed:,.6g}"
+            changes["figure_unit"] = (
+                f"typed, where the row would calculate {expected:,.6g}"
+            )
+        replaced.append(replace_finding(finding, **changes))
+    result.findings = replaced
+
+
+def replace_finding(finding: Finding, **changes: str) -> Finding:
+    from dataclasses import replace
+
+    return replace(finding, **changes)
+
+
+def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
     """The finding as a person hears it — one sentence, no formula.
 
     The engine's `detail` is evidence: the formula, the neighbours, the
@@ -164,39 +278,63 @@ def plain_words(finding: Finding) -> str:
     own label leading when the model gave one. Screens show this first
     and the evidence beneath.
     """
-    who = f"« {finding.name} » — " if finding.name else ""
     at = finding.ref
+    period = _period(axes, finding.sheet, at)
+    #: « Opex FY2032 » beats « 'Opex'!N44 »: the row's own name and the
+    #: model's own year, with the coordinate left to the meta line. The
+    #: name a cell composes for itself already carries its column label
+    #: — « FY2032 Opex » — so the period is taken back out of it rather
+    #: than said twice.
+    label = finding.name
+    if period and period in label:
+        label = " ".join(label.replace(period, "").split())
+    subject = (
+        f"« {label} » {period}".strip()
+        if label and period
+        else f"« {label} »"
+        if label
+        else at
+    )
+    who = f"« {label} » — " if label else ""
+
+    if finding.rule == "typed-over-formula":
+        return (
+            f"{subject} is typed. The rest of the row is calculated."
+            if label
+            else f"{at} is typed. The rest of its row is calculated."
+        )
+    if finding.rule == "inconsistent-row":
+        return (
+            f"{subject} does not do what the rest of the row does."
+            if label
+            else f"{at} does not do what the rest of its row does."
+        )
+    if finding.rule == "skipped-cell":
+        worth = f", worth {finding.figure} together" if finding.figure else ""
+        return f"{who}the total misses rows directly above it{worth}."
+    if finding.rule == "hardcode-in-formula":
+        span = (
+            f" across {finding.figure_unit}"
+            if finding.figure_unit.startswith("filled")
+            else f" in {period}"
+            if period
+            else ""
+        )
+        number = finding.figure or "a number"
+        return f"{who}{number} is typed inside the formula{span}."
+
     sentence = {
         "error-value": f"{at} shows an error instead of a number.",
-        "external-link": (
-            f"{at} depends on another workbook that is not here."
-        ),
+        "external-link": (f"{at} depends on another workbook that is not here."),
         "volatile": (
             f"{at} recalculates every time anything changes, so its "
             "value never sits still."
         ),
-        "long-formula": (
-            f"The formula at {at} is too long for a person to follow."
-        ),
-        "hardcode-in-formula": (
-            f"A number is typed inside the formula at {at}, where the "
-            "row calculates."
-        ),
-        "typed-over-formula": (
-            f"{at} holds a typed value where the rest of its row runs "
-            "a formula."
-        ),
+        "long-formula": (f"The formula at {at} is too long for a person to follow."),
         "inconsistent-anchoring": (
-            f"{at} anchors its references differently from the rest "
-            "of its row."
-        ),
-        "inconsistent-row": (
-            f"{at} does not do what the rest of its row does."
+            f"{at} anchors its references differently from the rest of its row."
         ),
         "circular": f"{at} feeds its own calculation.",
-        "skipped-cell": (
-            f"The total at {at} misses cells directly above it."
-        ),
     }.get(finding.rule)
     if sentence is None:
         #: Hidden sheets and the statement checks already write their
@@ -205,8 +343,15 @@ def plain_words(finding: Finding) -> str:
     return f"{who}{sentence}"
 
 
-def audit(book: Workbook) -> Audit:
-    """Every mechanical defect in a model, graded."""
+def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
+    """Every mechanical defect in a model, graded.
+
+    `axes` — each sheet's period axis, from the structure layer — lets
+    the findings speak the model's own time vocabulary (« FY2032 »
+    instead of a column letter) and lets a typed cell say what the row
+    would calculate there. Absent, every sentence falls back to
+    coordinates; nothing is guessed.
+    """
     result = Audit(examined=len(book.cells))
 
     _error_values(book, result)
@@ -220,9 +365,29 @@ def audit(book: Workbook) -> Audit:
     _skipped_cells(book, result)
     _hidden_sheets(book, result)
 
-    result.findings = _collapsed(book, result.findings)
+    _quantified(book, result, axes)
+    result.findings = _collapsed(book, result.findings, axes)
+    _flows(book, result)
     result.findings.sort(key=lambda f: (f.severity != "error", f.sheet, f.rule, f.ref))
     return result
+
+
+def _flows(book: Workbook, result: Audit) -> None:
+    """Attach where each finding's value goes — after the collapse, so
+    the walk runs once per authoring decision rather than once per cell
+    a formula was filled into."""
+    from .flows import dependents_index, flow
+
+    if not result.findings:
+        return
+    index = dependents_index(book)
+    result.findings = [
+        replace_finding(
+            finding,
+            flow=" → ".join(f"« {stop} »" for stop in flow(book, index, finding.ref)),
+        )
+        for finding in result.findings
+    ]
 
 
 #: Rules where a fill-copied formula fires once per cell it was filled
@@ -246,7 +411,11 @@ FILLED_RULES = frozenset(
 )
 
 
-def _collapsed(book: Workbook, findings: list[Finding]) -> list[Finding]:
+def _collapsed(
+    book: Workbook,
+    findings: list[Finding],
+    axes: "PeriodAxes | None" = None,
+) -> list[Finding]:
     """One finding per authoring decision, not per cell it was filled to.
 
     Findings from :data:`FILLED_RULES` whose cells share a sheet and a
@@ -266,7 +435,16 @@ def _collapsed(book: Workbook, findings: list[Finding]) -> list[Finding]:
         shape = _shape(cell) if cell is not None else finding.ref
         key: tuple[str, ...] = (finding.sheet, finding.rule, shape)
         if finding.rule == "hardcode-in-formula":
-            key = (*key, finding.detail)
+            #: Same buried numbers = same decision. Keying on the whole
+            #: detail — which contains the formula text — made twenty
+            #: findings out of one dragged `*240000`, because the cell
+            #: references inside the formula differ by one letter per
+            #: column. The founder read all twenty. The numbers are the
+            #: decision; the key is the numbers.
+            key = (
+                *key,
+                ",".join(_buried(cell.formula or "")) if cell else finding.detail,
+            )
         groups.setdefault(key, []).append(finding)
 
     for group in groups.values():
@@ -274,6 +452,12 @@ def _collapsed(book: Workbook, findings: list[Finding]) -> list[Finding]:
         if len(group) == 1:
             keep.append(first)
             continue
+        #: The span in the model's own time vocabulary when the axis
+        #: knows these columns — « FY2014–FY2033 » beats « E17 to X17 ».
+        edges = sorted(one.ref for one in group)
+        start = _period(axes, first.sheet, edges[0])
+        end = _period(axes, first.sheet, edges[-1])
+        span = f"{start}–{end}" if start and end else f"{edges[0]} to {edges[-1]}"
         keep.append(
             Finding(
                 rule=first.rule,
@@ -283,9 +467,11 @@ def _collapsed(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 name=first.name,
                 detail=(
                     f"{first.detail} — one formula filled across "
-                    f"{len(group)} cells ({first.ref} to {group[-1].ref})"
+                    f"{len(group)} cells ({span})"
                 ),
                 source=first.source,
+                figure=first.figure,
+                figure_unit=f"filled across {span}",
             )
         )
     return keep
@@ -377,17 +563,7 @@ def _literals(book: Workbook, result: Audit) -> None:
     for cell in book.cells.values():
         if not cell.formula:
             continue
-        buried = []
-        for token in Tokenizer(cell.formula).items:
-            if token.type != "OPERAND" or token.subtype != "NUMBER":
-                continue
-            try:
-                number = float(token.value)
-            except ValueError:
-                continue
-            if number in INNOCENT or (number.is_integer() and abs(number) <= 4):
-                continue
-            buried.append(token.value)
+        buried = _buried(cell.formula)
         if buried:
             result.findings.append(
                 Finding(
@@ -398,8 +574,27 @@ def _literals(book: Workbook, result: Audit) -> None:
                     name=cell.name,
                     detail=f"{', '.join(buried[:4])} inside {cell.formula[:60]}",
                     source="ICAEW P14, FAST",
+                    figure=", ".join(buried[:2]),
                 )
             )
+
+
+def _buried(formula: str) -> tuple[str, ...]:
+    """The assumption-shaped numbers typed inside a formula — the
+    decision the hardcode rule is about, and therefore the identity the
+    collapse groups by."""
+    found: list[str] = []
+    for token in Tokenizer(formula).items:
+        if token.type != "OPERAND" or token.subtype != "NUMBER":
+            continue
+        try:
+            number = float(token.value)
+        except ValueError:
+            continue
+        if number in INNOCENT or (number.is_integer() and abs(number) <= 4):
+            continue
+        found.append(token.value)
+    return tuple(found)
 
 
 def _rows(book: Workbook, result: Audit) -> None:
@@ -613,9 +808,7 @@ def _stacked(book: Workbook, cell: Cell) -> bool:
     for step in (-1, 1):
         row = cell.row + step
         while tall <= TYPED_BLOCK:
-            neighbour = book.get(
-                f"{cell.sheet}!{get_column_letter(cell.column)}{row}"
-            )
+            neighbour = book.get(f"{cell.sheet}!{get_column_letter(cell.column)}{row}")
             if neighbour is None or neighbour.formula is not None:
                 break
             tall += 1
@@ -961,6 +1154,9 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                 if f"{sheet}!{column}{row}" in book.cells
             ]
             if missed:
+                #: What the misses are worth, straight from the cells —
+                #: the number the founder's design leads the card with.
+                worth = sum(float(book.cells[ref].value or 0) for ref in missed)
                 result.findings.append(
                     Finding(
                         rule="skipped-cell",
@@ -971,8 +1167,15 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                         detail=(
                             f"{cell.formula} leaves out "
                             f"{', '.join(missed[:3])} above it"
+                            + (
+                                f" — worth {worth:,.6g} together"
+                                if abs(worth) > 1e-9
+                                else ""
+                            )
                         ),
                         source="ICAEW P19, EuSpRIG",
+                        figure=f"{worth:,.6g}" if abs(worth) > 1e-9 else "",
+                        figure_unit="left out of the total below it",
                     )
                 )
 

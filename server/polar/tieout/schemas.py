@@ -317,6 +317,13 @@ class FindingRead(Schema):
     figure_unit: str = ""
     period: str = ""
     standard_sentence: str = ""
+    #: Where the cell's value goes, in the model's own words —
+    #: « Opex total » → « Cashflow » → « Equity IRR ». Empty when
+    #: nothing downstream reads the cell.
+    flow: str = ""
+    #: The fix, where one is derivable rather than a choice: the row's
+    #: own formula, re-anchored to this cell. Empty everywhere else.
+    fix: str = ""
     #: The design's little Excel grid — the finding's cell with its
     #: neighbours, composed when the check ran. None on findings that
     #: predate it or that do not sit at a cell.
@@ -893,6 +900,16 @@ class OneOffDefect(Schema):
     figure: str = ""
     figure_unit: str = ""
     period: str = ""
+    #: Where the cell's value goes, in the model's own words —
+    #: « Opex total » → « Cashflow » → « Equity IRR ». Empty when
+    #: nothing downstream reads the cell.
+    flow: str = ""
+    #: The fix, where one is derivable rather than a choice: the row's
+    #: own formula, re-anchored to this cell — what the panel writes on
+    #: « Fix the cell ». `fix_before` is the typed value it replaces,
+    #: which the writer checks is still there before touching anything.
+    fix: str = ""
+    fix_before: str = ""
     #: The finding as a person hears it — shown first, with `detail`
     #: as the evidence beneath.
     plain: str = ""

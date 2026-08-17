@@ -439,10 +439,9 @@ class TieOutService:
             #: was kept on the artifact at ingest, and the audit needs
             #: it back before it runs.
             book.hidden_sheets = tuple(model.counts.get("hidden_sheets", []))
-            book.very_hidden_sheets = tuple(
-                model.counts.get("very_hidden_sheets", [])
-            )
-            result = run_rules(book)
+            book.very_hidden_sheets = tuple(model.counts.get("very_hidden_sheets", []))
+            structure = read_structure(book)
+            result = run_rules(book, axes=structure.axes)
             result.findings = [
                 one for one in result.findings if one.rule not in rules_off
             ]
@@ -465,7 +464,7 @@ class TieOutService:
                         #: The plain sentence is the title — what a
                         #: person reads first; the formula stays in the
                         #: detail as evidence beneath it.
-                        title=plain_words(defect),
+                        title=plain_words(defect, structure.axes),
                         detail=defect.detail,
                         location=defect.ref,
                         # An audit finding already sits at a cell, which
@@ -479,8 +478,16 @@ class TieOutService:
                             "sheet": defect.sheet,
                             "name": defect.name,
                             "chain": render_chain(book, defect.ref),
+                            "figure": defect.figure,
+                            "figure_unit": defect.figure_unit,
+                            "flow": defect.flow,
+                            "fix": defect.fix,
+                            "fix_before": defect.fix_before,
                             "grid": _neighbourhood(
-                                book, defect.sheet, defect.ref
+                                book,
+                                defect.sheet,
+                                defect.ref,
+                                axes=structure.axes,
                             ),
                         },
                     )
@@ -490,7 +497,6 @@ class TieOutService:
             #: values, not formulas, so a values-pasted close copy —
             #: where the rules above are nearly blind — is exactly
             #: where they earn their keep.
-            structure = read_structure(book)
             values_only = values_only or structure.values_pasted
             if statement_keys:
                 told = run_analytics(book, structure)
@@ -514,10 +520,7 @@ class TieOutService:
                             rule=claim.rule,
                             standard=ANALYTIC_STANDARDS.get(claim.rule, ""),
                             printed=claim.figure,
-                            title=(
-                                f"{ANALYTIC_RULE_NAMES[claim.rule]}"
-                                f" at {claim.ref}"
-                            ),
+                            title=(f"{ANALYTIC_RULE_NAMES[claim.rule]} at {claim.ref}"),
                             detail=claim.detail,
                             location=claim.ref,
                             anchor={
@@ -533,12 +536,13 @@ class TieOutService:
                                 "figure": claim.figure,
                                 "figure_unit": claim.figure_unit,
                                 "grid": _neighbourhood(
-                                    book, claim.sheet, claim.ref
+                                    book,
+                                    claim.sheet,
+                                    claim.ref,
+                                    axes=structure.axes,
                                 ),
                                 "standard_sentence": (
-                                    ANALYTIC_STANDARD_SENTENCES.get(
-                                        claim.rule, ""
-                                    )
+                                    ANALYTIC_STANDARD_SENTENCES.get(claim.rule, "")
                                 ),
                             },
                         )
@@ -583,9 +587,7 @@ class TieOutService:
         rules = await repository.house_rules_for(organization_id)
         return set(rules.audit_rules_off) if rules else set()
 
-    async def grounding_on(
-        self, session: AsyncSession, *, dossier_id: UUID
-    ) -> bool:
+    async def grounding_on(self, session: AsyncSession, *, dossier_id: UUID) -> bool:
         """Whether the firm runs the grounding pass with the others."""
         repository = TieOutRepository.from_session(session)
         organization_id = await repository.organization_of(dossier_id)
@@ -817,6 +819,7 @@ class TieOutService:
             for cell in ingested.cells:
                 book.cells[cell.ref] = cell
             book.sheets = list(ingested.counts.get("sheet_order", []))
+            structure = read_structure(book)
 
             result["defects"] = [
                 {
@@ -827,10 +830,17 @@ class TieOutService:
                     "name": defect.name,
                     #: What a person reads first; the formula is
                     #: evidence beneath it, never the headline.
-                    "plain": plain_words(defect),
+                    "plain": plain_words(defect, structure.axes),
                     "detail": defect.detail,
                     "standard": defect.source,
-                    "grid": _neighbourhood(book, defect.sheet, defect.ref),
+                    "figure": defect.figure,
+                    "figure_unit": defect.figure_unit,
+                    "flow": defect.flow,
+                    "fix": defect.fix,
+                    "fix_before": defect.fix_before,
+                    "grid": _neighbourhood(
+                        book, defect.sheet, defect.ref, axes=structure.axes
+                    ),
                 }
                 for defect in ingested.defects
             ]
@@ -839,7 +849,6 @@ class TieOutService:
             #: deal audit, on the cells just read, before the file is
             #: dropped. They read values, so a values-pasted close copy
             #: still gets a verdict about whether its accounts add up.
-            structure = read_structure(book)
             told = run_analytics(book, structure)
             result["defects"].extend(
                 {
@@ -855,7 +864,9 @@ class TieOutService:
                     "figure": claim.figure,
                     "figure_unit": claim.figure_unit,
                     "period": claim.period,
-                    "grid": _neighbourhood(book, claim.sheet, claim.ref),
+                    "grid": _neighbourhood(
+                        book, claim.sheet, claim.ref, axes=structure.axes
+                    ),
                 }
                 for claim in told.findings
             )
@@ -1631,7 +1642,13 @@ def _steps_from(
 
 
 def _neighbourhood(
-    book: Workbook, sheet: str, ref: str, *, rows: int = 4, columns: int = 4
+    book: Workbook,
+    sheet: str,
+    ref: str,
+    *,
+    rows: int = 4,
+    columns: int = 4,
+    axes: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """The finding's cell with its neighbours — the design's little
     Excel grid, composed where the cells are in scope so every screen
@@ -1663,9 +1680,7 @@ def _neighbourhood(
 
     by_place = {(c.row, c.column): c for c in per_sheet}
     labels = {
-        c.row: c.row_label
-        for c in per_sheet
-        if c.row in span_rows and c.row_label
+        c.row: c.row_label for c in per_sheet if c.row in span_rows and c.row_label
     }
     target = by_place.get((row, column))
 
@@ -1679,13 +1694,29 @@ def _neighbourhood(
             return text
         return f"{number:,.6g}"
 
+    #: The model's own year for each column, from the structure layer —
+    #: the founder's grid shows « FY2032 », not « N ».
+    periods: dict[int, str] = {}
+    axis = (axes or {}).get(sheet)
+    if axis is not None:
+        periods = dict(axis.columns)
+
+    #: The sheet-tab strip, windowed around this sheet, as the design
+    #: draws beneath the grid.
+    tabs: list[str] = []
+    if book.sheets and sheet in book.sheets:
+        at = book.sheets.index(sheet)
+        start = max(0, min(at - 2, len(book.sheets) - 5))
+        tabs = book.sheets[start : start + 5]
+
     return {
         "sheet": sheet,
         "sel": coordinate,
-        "formula": (
-            (target.formula or printed(target)) if target is not None else ""
-        ),
-        "cols": [get_column_letter(c) for c in span_columns],
+        "formula": ((target.formula or printed(target)) if target is not None else ""),
+        "sheets": tabs,
+        "cols": [
+            {"l": get_column_letter(c), "p": periods.get(c, "")} for c in span_columns
+        ],
         "rows": [
             {
                 "n": r,
