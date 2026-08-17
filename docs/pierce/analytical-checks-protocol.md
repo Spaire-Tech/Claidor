@@ -219,3 +219,38 @@ finding with a balance-flavoured label reports the same period — or,
 where the check row carries no period, the same sheet. The kept
 finding is the model's own; nothing is silenced, one sentence is
 chosen over its echo.
+
+## The one-step evaluator — registration before results (17 August)
+
+To say « typed 19,100 where the row would calculate 19,605 », the
+engine must compute what a cell's formula would produce. Registered
+before any number is shown:
+
+**Method.** One-step substitution only: the formula's references are
+replaced by the cached values Excel itself last computed — never a
+recursive recomputation. Whitelist of forms: numbers, cell and range
+references, `+ - * / ^`, unary minus, percent, parentheses,
+comparisons, and the functions SUM, IF (lazy — only the taken branch
+is evaluated), MIN, MAX, ABS, ROUND, AVERAGE. Anything else — any
+other function, any text arithmetic, any reference to a cell whose
+cached value is unknown — is an **abstention**: the evaluator claims
+nothing rather than guessing. A reference to a coordinate holding no
+stored numeric cell counts as empty (zero in arithmetic, skipped in
+aggregates), which is Excel's own convention; the corpus grading
+below judges whether that assumption survives contact with real
+files.
+
+**Proof.** The corpus grades the evaluator: every formula cell in the
+22 models whose cached value is known is a test case with the answer
+written in it. Acceptance: agreement with Excel's cached value
+(relative tolerance one part in a million) on **at least 99.5%** of
+the cells the evaluator claims, and a hand-read sample of the
+disagreements with each cause named. Coverage (how many cells it
+claims) is reported, never inflated — an abstention is not a failure.
+
+**Use.** Where a typed value interrupts a formula row, the row's
+nearest formula is shifted to the typed cell's column (respecting
+absolute references) and evaluated; the finding then says the typed
+figure, the calculated figure, and the difference. No standing
+evaluation, no claim — the finding falls back to its structural
+sentence.
