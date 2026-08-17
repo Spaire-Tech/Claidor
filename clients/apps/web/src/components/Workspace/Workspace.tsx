@@ -91,6 +91,7 @@ export const Workspace = ({
   //: « still asking » apart from « asked, and there are none », because
   //: the second one is the Connect Microsoft screen and the first is not.
   const [checkNonce, setCheckNonce] = useState(0)
+  const [reportNonce, setReportNonce] = useState(0)
   const [checking, setChecking] = useState(false)
 
   const [deals, setDeals] = useState<DealListItem[] | null>(null)
@@ -333,6 +334,23 @@ export const Workspace = ({
                   Ask
                 </button>
                 <button
+                  onClick={() => setReportNonce((was) => was + 1)}
+                  style={{
+                    border: 0,
+                    background: '#f0f0f2',
+                    color: ink.primary,
+                    borderRadius: 11,
+                    padding: '9px 15px',
+                    font: 'inherit',
+                    fontSize: 13.5,
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Export report
+                </button>
+                <button
                   onClick={() => !checking && setCheckNonce((was) => was + 1)}
                   style={{
                     ...blueButton,
@@ -405,6 +423,7 @@ export const Workspace = ({
               }}
               onChanged={() => setDealsAt((was) => was + 1)}
               checkNonce={checkNonce}
+              reportNonce={reportNonce}
               onChecking={(running) => {
                 setChecking(running)
                 //: A finished check changes the list's counts too.

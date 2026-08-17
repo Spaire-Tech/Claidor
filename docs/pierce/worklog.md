@@ -2658,3 +2658,42 @@ and suites green, and the three surfaces — deal cards and modal,
 Check a model's modal, the panel — driven in the browser on a model
 carrying the mentor's own flagship case and screenshotted to the
 founder.
+
+## Workspace 3 — the models page as a report (17 August)
+
+The founder redesigned the workspace again and the models page went
+first. The page stopped being a card wall and became a report a bid
+director reads top to bottom: the model's name with its state said in
+three words (« Not ready to send » / « Ready to send » / « Recheck
+needed ») and a version pill; **Summary of the check** in sentences
+composed from measured facts — what is material and where it sits,
+what arrived with the current version, what could not run; the
+**findings as a table** — sentence, cell, figure, and a severity pill;
+**Where the findings sit** — sheets ranked by open findings with the
+role read from the sheet's own name; the accordion sections (checks
+that pass, checks that did not run, the evidence locker, the model,
+documents that quote it); and a right rail with the run's facts and
+**open findings by version** — bars counting currently-open findings
+by the version each was first seen with, real timestamps only.
+
+The severity pills speak the design's three words — Material,
+Significant, Observation — as a per-rule view mapping declared in one
+place; the engine's own error/smell grading is unchanged underneath.
+The finding modal's little grid is now drawn the way Excel draws it:
+letters across the top, row numbers down the side, the model's own
+labels in the first column, the warning-yellow cell with the selection
+ring in Excel's green, and the sheet's time axis as a muted band —
+drawn from the structure layer, since the reader keeps numbers, not
+header strings, and it claims no false row number. **Export report**
+opens the design's modal — the serif preview, the include switches —
+and exports through the browser's own print-to-PDF over a clean print
+view; a server-rendered PDF is a named next step, not something the
+button pretends to be. Kept, per the founder's instruction: the
+mentor-voice sentences everywhere, and the modal's Excel-green « Open
+the cell » with the mark, « Fix the cell », « Accept with a note ».
+
+Driven in the browser on real data and screenshotted to the founder:
+the list's Needs attention / Clear groups, the failing report face,
+the modal's new grid, Export report, the open accordions, and the
+clean two-version face with the bars. Web typecheck, 23 design tests,
+prettier all green. The Assistant tab is the next round.
