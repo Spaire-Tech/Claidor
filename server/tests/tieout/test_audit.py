@@ -196,6 +196,11 @@ def test_designed_error_tails_fold_and_interior_breaks_are_loud() -> None:
     closed-deal file's frozen references land."""
 
     def build(sheet) -> None:
+        # A label column, so the data columns read as data — without it
+        # the engine elects column B as the sheet's labels and its
+        # numbers never become cells at all.
+        for row in range(2, 11):
+            sheet.cell(row=row, column=1).value = f"Series row {row}"
         for row in range(2, 7):
             sheet.cell(row=row, column=2).value = row * 1.0
         for row in range(7, 11):
@@ -242,6 +247,86 @@ def test_a_daily_series_calendar_gaps_fold_quiet() -> None:
     assert errors[0].severity == "smell"
     assert "routine gaps" in errors[0].detail
     assert "24 cells" in errors[0].detail
+
+
+def test_cross_column_agreement_tells_a_calendar_from_a_break() -> None:
+    """The mentor's stronger signal, with « a break in one column »
+    meant literally. Rows 5 and 9 are holidays — every column gaps, no
+    stride, only two of them where the stride rule wants ten: calendar.
+    Row 11 gaps in columns B and C while D stays live — a family on
+    its own calendar, the shape that put two source families on one
+    RIIO-3 daily sheet and would otherwise read as 620 breaks: still
+    calendar, because a sister gaps with it. Row 13 gaps in C alone
+    while B and D carry values — the break, loud even as the only one
+    in the file."""
+
+    def build(sheet) -> None:
+        gaps = {2: {5, 9, 11}, 3: {5, 9, 11, 13}, 4: {5, 9}}
+        for row in range(2, 15):
+            sheet.cell(row=row, column=1).value = f"Day {row}"
+            for col in (2, 3, 4):
+                if row in gaps[col]:
+                    sheet.cell(row=row, column=col).value = "#N/A"
+                else:
+                    sheet.cell(row=row, column=col).value = float(row)
+
+    result = _tmp_book(build)
+    errors = [f for f in result.findings if f.rule == "error-value"]
+    breaks = [f for f in errors if f.figure_unit == "breaks a live column"]
+    quiet = [f for f in errors if f.severity == "smell"]
+    assert len(breaks) == 1
+    assert breaks[0].ref == "Sheet!C13"
+    assert "every sister column holds live values there" in breaks[0].detail
+    assert len(quiet) == 1
+    assert "8 cells across 3 columns" in quiet[0].detail
+
+
+def test_broken_cells_sharing_one_formula_fold_to_one_loud_finding() -> None:
+    """The RIIO-3 ET3 model carries 334 `#REF!` cells that are exactly
+    two formulas, each pasted across its block. One deletion, one
+    finding, however many cells it tore — still an error, so nothing
+    broken goes quiet, and a lone broken cell reports as it always
+    did."""
+
+    def build(sheet) -> None:
+        for row in range(2, 8):
+            sheet.cell(row=row, column=1).value = f"Row {row}"
+            sheet.cell(row=row, column=2).value = "#REF!"
+            sheet.cell(row=row, column=3).value = float(row)
+        sheet.cell(row=3, column=4).value = "#NAME?"
+
+    result = _tmp_book(build)
+    broken = [
+        f for f in result.findings if f.rule == "error-value" and f.severity == "error"
+    ]
+    folded = [f for f in broken if f.figure_unit == "cells sharing one broken formula"]
+    assert len(folded) == 1
+    assert folded[0].figure == "6"
+    assert "shows #REF! across 6 cells" in folded[0].detail
+    lone = [f for f in broken if f.detail == "shows #NAME?"]
+    assert len(lone) == 1
+
+
+def test_a_sparse_anchor_column_beside_a_daily_sister_is_not_broken() -> None:
+    """The RIIO-3 SONIA sheet: forecast anchors every 182 daily rows,
+    `#N/A` between them, beside sisters interpolated for every day.
+    Every gap is « alone » — which is the column's design. Aloneness
+    is only evidence when it is exceptional for the column."""
+
+    def build(sheet) -> None:
+        for row in range(2, 40):
+            sheet.cell(row=row, column=1).value = f"Day {row}"
+            sheet.cell(row=row, column=2).value = float(row) if row % 3 == 2 else "#N/A"
+            #: The daily sister ends two rows early — a tail, which is
+            #: what keeps it on the sheet's error-carrying panel, the
+            #: way the real interpolation columns are.
+            sheet.cell(row=row, column=3).value = row * 2.0 if row < 38 else "#N/A"
+
+    result = _tmp_book(build)
+    errors = [f for f in result.findings if f.rule == "error-value"]
+    assert not [f for f in errors if f.figure_unit == "breaks a live column"]
+    assert len(errors) == 1
+    assert errors[0].severity == "smell"
 
 
 def test_a_circular_loop_is_one_finding_not_one_per_cell() -> None:
@@ -338,6 +423,31 @@ def test_an_input_column_with_a_total_under_it_is_data_not_damage() -> None:
 
     result = _tmp_book(build)
     assert not any(f.rule == "typed-over-formula" for f in result.findings)
+
+
+def test_a_sibling_view_of_the_summed_range_is_not_a_skipped_row() -> None:
+    """The sum that survived eleven versions of Ofgem's ED2 model,
+    hand-verified: « impacting tax allowance » `=SUM(AR146:AR147)`
+    sits below two neighbours that are themselves derived from the
+    same pair — `=-SUM(...)` and a net-debt view reading it too.
+    Three views of one authoring decision; adding the neighbours into
+    the total would double count. A row that reads the summed range
+    is a sibling, not a forgotten input."""
+
+    def build(sheet) -> None:
+        sheet["A2"] = "Miscellaneous revenue"
+        sheet["B2"] = 4.2
+        sheet["A3"] = "Miscellaneous costs"
+        sheet["B3"] = -4.7
+        sheet["A5"] = "Services contributing to allowed revenue"
+        sheet["B5"] = "=-SUM(B2:B3)"
+        sheet["A6"] = "Services impacting core net debt"
+        sheet["B6"] = "=B5+SUM(B2:B3)"
+        sheet["A7"] = "Services impacting tax allowance"
+        sheet["B7"] = "=SUM(B2:B3)"
+
+    result = _tmp_book(build)
+    assert not [f for f in result.findings if f.rule == "skipped-cell"]
 
 
 def test_the_example_preapp_model_reports_the_defensible_seven() -> None:

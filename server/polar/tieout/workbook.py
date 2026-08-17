@@ -538,6 +538,49 @@ def precedents_of(
     return references_of(formula, sheet, names).refs
 
 
+# Not every reference argument is a read. `ROW(A1)` is 1 whatever A1
+# holds — the argument names a place, and the function answers a
+# question about the place, never about the value in it. An edge from
+# such an argument is a false precedent, and with the dependency graph
+# feeding cycle detection a false edge can invent a loop that is not
+# there — `=CELL("filename",$A$1)` sitting in A1 read as A1 depending
+# on itself. These functions' reference arguments never become edges.
+METADATA_ARGS = frozenset(
+    {"SHEET", "SHEETS", "ISREF", "ROW", "COLUMN", "ROWS", "COLUMNS", "AREAS"}
+)
+
+# CELL is the split case: the first argument decides whether the second
+# is read. These info types ask about the cell's location or dressing —
+# never its value — so the reference stays out of the graph. The other
+# three ("contents", "type", "prefix") do look at what the cell holds,
+# and an unrecognisable first argument is treated as if it might, which
+# keeps the edge; a doubtful edge is a smaller lie than a missing one.
+LOCATION_INFO = frozenset(
+    {
+        "filename",
+        "address",
+        "row",
+        "col",
+        "width",
+        "format",
+        "color",
+        "protect",
+        "parentheses",
+    }
+)
+
+# The two whose real read happens at run time. The references they show
+# are genuine dependencies — `INDIRECT("S"&D4)` reads D4 to build the
+# string, OFFSET's anchor decides where the walk starts — so those stay
+# edges. What neither can show a static read is where the walk *lands*,
+# and pretending otherwise is how a builder gets these exactly half
+# right. The landing place is declared unfollowable instead.
+RUNTIME_TARGET = {
+    "INDIRECT": "a reference assembled while the model runs, which a read of the file cannot follow",
+    "OFFSET": "a range measured out at run time from the anchor it names",
+}
+
+
 def references_of(formula: str, sheet: str, names: Names | None = None) -> Precedents:
     """Everything a formula reads, and everything it reads that we cannot.
 
@@ -550,6 +593,12 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
     did before there was anything else. With them it resolves defined
     names in scope and expands whole-column and whole-row references
     against the sheet's real extent.
+
+    References are read in the context of the function holding them,
+    against the tables above — the same operand is a precedent inside
+    SUM and not one inside ROW. Nesting is honoured through a frame
+    stack: in `SUM((A1), ROW(C3))` the parenthesised A1 still belongs
+    to SUM and C3 to ROW.
     """
     found: list[str] = []
     seen: set[str] = set()
@@ -567,9 +616,57 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
             said.add(text)
             missing.append((text, why))
 
+    # One frame per open call or parenthesis. A parenthesis frame has no
+    # name and defers to the nearest named frame around it, so grouping
+    # an argument does not change whose argument it is.
+    frames: list[dict[str, Any]] = []
+
+    def enclosing() -> dict[str, Any] | None:
+        for frame in reversed(frames):
+            if frame["name"]:
+                return frame
+        return None
+
     for token in Tokenizer(formula).items:
-        if token.type != "OPERAND" or token.subtype != "RANGE":
+        for frame in frames:
+            frame["call"].append(token.value)
+        if token.type == "FUNC" and token.subtype == "OPEN":
+            name = token.value[:-1].upper().removeprefix("_XLFN.")
+            frames.append({"name": name, "arg": 0, "info": None, "call": [token.value]})
             continue
+        if token.type == "PAREN" and token.subtype == "OPEN":
+            frames.append({"name": "", "arg": 0, "info": None, "call": []})
+            continue
+        if token.type in ("FUNC", "PAREN") and token.subtype == "CLOSE":
+            if frames:
+                closed = frames.pop()
+                if closed["name"] in RUNTIME_TARGET:
+                    give_up("".join(closed["call"]), RUNTIME_TARGET[closed["name"]])
+            continue
+        if token.type == "SEP" and token.subtype == "ARG" and frames:
+            frames[-1]["arg"] += 1
+            continue
+        if token.type != "OPERAND":
+            continue
+
+        here = frames[-1] if frames else None
+        if here is not None and here["name"] == "CELL" and here["arg"] == 0:
+            # The first argument, when it is one clean string literal,
+            # is the info type; anything else leaves it unknown and the
+            # unknown case keeps its edges.
+            if here["info"] is None and token.subtype == "TEXT":
+                here["info"] = token.value.strip('"').lower()
+            else:
+                here["info"] = "?"
+
+        if token.subtype != "RANGE":
+            continue
+        owner = enclosing()
+        if owner is not None:
+            if owner["name"] in METADATA_ARGS:
+                continue
+            if owner["name"] == "CELL" and owner["info"] in LOCATION_INFO:
+                continue
         text = token.value.strip()
         refs = _expand(text, sheet, names, give_up)
         if refs:

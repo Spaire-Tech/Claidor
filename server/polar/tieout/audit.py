@@ -392,6 +392,13 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
                 "otherwise live column — the cells beneath it calculate. "
                 "Check what broke the series."
             )
+        if finding.figure_unit == "cells sharing one broken formula":
+            return (
+                f"{finding.figure} cells on « {finding.sheet} » show "
+                f"{finding.detail.split(' across ')[0].removeprefix('shows ')} "
+                "from one formula whose target was deleted, then filled "
+                "across the block. Repair the formula once and refill it."
+            )
         return (
             f"{at} shows an error value instead of a number, and "
             "everything reading it calculates on top of the error."
@@ -682,24 +689,62 @@ def _error_values(book: Workbook, result: Audit) -> None:
     half-million-cell daily-gilt columns.
     """
     designed: dict[tuple[str, str], list[tuple[int, int, str]]] = {}
+    #: Broken cells, by the formula that broke. The RIIO-3 ET3 model
+    #: carries 334 `#REF!` cells that are exactly two formulas — a
+    #: block of `=InputSummary!#REF!` links and one CHOOSE whose three
+    #: arms all lost their target — each pasted across its block. One
+    #: deletion, one finding, however many cells it tore: the fold
+    #: keeps the severity, so nothing broken ever goes quiet, and a
+    #: lone broken cell reports exactly as it always did.
+    torn: dict[tuple[str, str, str], list[str]] = {}
     for ref, value in book.errors.items():
         if value in BROKEN:
+            sheet = ref.split("!")[0]
+            cell = book.cells.get(ref)
+            formula = (cell.formula if cell else None) or ""
+            torn.setdefault((sheet, formula, value), []).append(ref)
+            continue
+        sheet, coordinate = ref.rsplit("!", 1)
+        column = "".join(ch for ch in coordinate if ch.isalpha())
+        row = int("".join(ch for ch in coordinate if ch.isdigit()) or 0)
+        designed.setdefault((sheet, column), []).append((row, row, value))
+
+    for (sheet, formula, value), refs in torn.items():
+        if len(refs) == 1:
             result.findings.append(
                 Finding(
                     rule="error-value",
                     severity="error",
-                    ref=ref,
-                    sheet=ref.split("!")[0],
+                    ref=refs[0],
+                    sheet=sheet,
                     name="",
                     detail=f"shows {value}",
                     source="ICAEW P19",
                 )
             )
             continue
-        sheet, coordinate = ref.rsplit("!", 1)
-        column = "".join(ch for ch in coordinate if ch.isalpha())
-        row = int("".join(ch for ch in coordinate if ch.isdigit()) or 0)
-        designed.setdefault((sheet, column), []).append((row, row, value))
+        span = f"{refs[0]} to {refs[-1].rsplit('!', 1)[-1]}"
+        what = (
+            f"`{formula[:60]}` repeated over the block"
+            if formula
+            else "the same value pasted over the block"
+        )
+        result.findings.append(
+            Finding(
+                rule="error-value",
+                severity="error",
+                ref=refs[0],
+                sheet=sheet,
+                name="",
+                detail=(
+                    f"shows {value} across {len(refs):,} cells, {span} — "
+                    f"one broken formula, {what}"
+                ),
+                source="ICAEW P19",
+                figure=f"{len(refs):,}",
+                figure_unit="cells sharing one broken formula",
+            )
+        )
 
     #: The populated extent of each column, across values and errors —
     #: a run is a tail only if nothing live sits beneath it.
@@ -715,6 +760,30 @@ def _error_values(book: Workbook, result: Audit) -> None:
         if row > extent.get((sheet, column), 0):
             extent[(sheet, column)] = row
 
+    def live_witness(sheet: str, sisters: list[str], start: int, end: int) -> bool:
+        """Whether any sister column holds a live value on these rows."""
+        for row in range(start, end + 1):
+            for other in sisters:
+                if extent.get((sheet, other), 0) < row:
+                    continue
+                at = f"{sheet}!{other}{row}"
+                if at in book.cells and at not in book.errors:
+                    return True
+        return False
+
+    #: Each error-carrying column's gap rows, for the aloneness test.
+    gap_rows: dict[tuple[str, str], set[int]] = {
+        key: {row for row, _, _ in cells} for key, cells in designed.items()
+    }
+
+    def gap_witness(sheet: str, sisters: list[str], start: int, end: int) -> bool:
+        """Whether any sister column gaps on any of these same rows."""
+        return any(
+            row in gap_rows[(sheet, other)]
+            for other in sisters
+            for row in range(start, end + 1)
+        )
+
     quiet: dict[str, dict[str, Any]] = {}
     for (sheet, column), cells in designed.items():
         cells.sort()
@@ -728,14 +797,63 @@ def _error_values(book: Workbook, result: Audit) -> None:
         #: The corpus's third shape, found on the first re-run: a daily
         #: gilt-yields column carries thousands of two-cell `#N/A` gaps
         #: at a seven-row rhythm — weekends, with the odd longer run for
-        #: a bank holiday. Many short gaps down one column are the
-        #: series' calendar, not breaks: the column folds whole into the
-        #: sheet's quiet finding. One or two interior runs are the
-        #: opposite — a genuine interruption, each reported loudly.
+        #: a bank holiday. Many short gaps down one column read as the
+        #: series' calendar. But the stride is the weak signal — bank
+        #: holidays keep no stride — and it fails both ways: it also
+        #: folds a genuine break that hides in a gappy column. The
+        #: strong signal is **cross-column agreement**, and the mentor's
+        #: word « a break in one column » is meant literally: a run is a
+        #: break only when the column gaps *alone*. A sister gapping on
+        #: the same rows means the source had no data that day for a
+        #: whole family of columns — calendar, whatever the stride: the
+        #: RIIO-3 daily-gilt sheet carries one quartet and one eleven-
+        #: column family on different calendars, and reading either
+        #: family's shared gaps against the other's live days invented
+        #: 620 breaks on a published file. Sisters all live where this
+        #: one gaps — nobody missing with it — is the break, loud even
+        #: if it is the only one in the file. The sisters are the
+        #: sheet's other error-carrying columns; a column alone has no
+        #: witnesses either way and falls back to the stride.
         routine_column = len(interior) >= ROUTINE_GAPS
+        sisters = [
+            other
+            for peer_sheet, other in designed
+            if peer_sheet == sheet and other != column
+        ]
+        #: Aloneness is only evidence when it is exceptional for the
+        #: column. The RIIO-3 SONIA sheet holds forecast anchors every
+        #: 182 daily rows with `#N/A` between them, beside sisters
+        #: interpolated for every day — all of its gaps are « alone »,
+        #: which is the column's design, not twenty-two breaks. A
+        #: column that routinely gaps where its sisters are live keeps
+        #: its own calendar; the break is the *rare* alone run in a
+        #: column whose gaps otherwise move with its sisters.
+        alone_runs = (
+            sum(
+                1
+                for start, end, _ in interior
+                if not gap_witness(sheet, sisters, start, end)
+            )
+            if sisters
+            else 0
+        )
+        sparse_by_design = alone_runs >= ROUTINE_GAPS
         for start, end, value in runs:
             tail = end >= extent[(sheet, column)]
-            if tail or routine_column:
+            alone = False
+            if sisters and not tail:
+                if gap_witness(sheet, sisters, start, end):
+                    calendar = True
+                elif sparse_by_design:
+                    calendar = True
+                elif live_witness(sheet, sisters, start, end):
+                    calendar = False
+                    alone = True
+                else:
+                    calendar = routine_column
+            else:
+                calendar = routine_column
+            if tail or calendar:
                 fold = quiet.setdefault(
                     sheet,
                     {
@@ -759,6 +877,13 @@ def _error_values(book: Workbook, result: Audit) -> None:
                     if start == end
                     else f"{column}{start}:{column}{end}"
                 )
+                #: When the sisters testified, say so — the evidence
+                #: that keeps a solo break loud belongs in the sentence.
+                witness = (
+                    ", while every sister column holds live values there"
+                    if alone
+                    else ""
+                )
                 result.findings.append(
                     Finding(
                         rule="error-value",
@@ -769,6 +894,7 @@ def _error_values(book: Workbook, result: Audit) -> None:
                         detail=(
                             f"{value} at {span} inside an otherwise live "
                             f"column — values resume at {column}{end + 1}"
+                            f"{witness}"
                         ),
                         source="ICAEW P19",
                         figure_unit="breaks a live column",
@@ -1515,6 +1641,12 @@ def _true_self_loop(book: Workbook, ref: str) -> bool:
     CELL's reference argument as a dependency, and a hundred false
     one-cell loops taught this audit not to either: the self-reference
     only counts if it survives outside every CELL(...) call.
+
+    The real fix now lives where the mentor said it belonged — in the
+    edge builder's per-function policy table (`references_of`), so the
+    false edge is never built. This check stays as the second line: if
+    a regression ever rebuilds such an edge, the loop still does not
+    reach a person.
     """
     cell = book.get(ref)
     if cell is None or not cell.formula:
@@ -1615,13 +1747,18 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
     summed range and asking whether the cell immediately above it holds a
     number that the range does not reach.
 
-    Three exemptions, each learned from a real false alarm:
+    Four exemptions, each learned from a real false alarm:
     only a formula that *is* a sum is judged as a total; a skipped row
     already counted through an included subtotal is not skipped —
     « Total Revenue = Net Sales + Other Income » rightly excludes the
     two detail rows inside Other Income, and adding them again would
-    double count; and a running balance between the components is
-    stepped over by every correct total ever written.
+    double count; a running balance between the components is stepped
+    over by every correct total ever written; and a row that itself
+    *reads the summed range* is a sibling view of the same inputs, not
+    a forgotten one — hand-verified on the sum that survived eleven
+    versions of Ofgem's ED2 model, where « impacting tax allowance »
+    `=SUM(AR146:AR147)` sits under two neighbours each derived from
+    the very same pair, and adding them in would double count.
     """
     for cell in book.cells.values():
         if not cell.formula or not BARE_SUM.match(cell.formula):
@@ -1660,12 +1797,18 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                     first = int(span.group("row"))
                     last = int(span.group("row2") or first)
                     covered.update(range(min(first, last), max(first, last) + 1))
+            summed = {f"{sheet}!{column}{row}" for row in range(top, bottom + 1)}
             missed: list[Cell] = []
             for row in range(bottom + 1, cell.row):
                 above = book.cells.get(f"{sheet}!{column}{row}")
                 if above is None or row in covered:
                     continue
                 if above.row_label and BALANCE_LABEL.search(above.row_label):
+                    continue
+                #: The sibling exemption: a row that reads the summed
+                #: range holds another view of the same inputs, and a
+                #: total is right to step over it.
+                if summed & set(above.precedents):
                     continue
                 missed.append(above)
             if missed:

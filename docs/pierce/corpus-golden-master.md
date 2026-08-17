@@ -1,0 +1,47 @@
+# The golden-master corpus gate
+
+After the flood collapses landed, every corpus file the change was not
+aimed at reported byte-identically. The mentor's direction: promote
+that from an observation to a permanent gate.
+
+**The rule: any engine change runs the corpus, and the diff must be
+empty except where intended.**
+
+## The pieces
+
+- `docs/pierce/corpus-au-uk-manifest.md` — re-fetchable URLs for every
+  file (the files are public, together >150MB, and not committed).
+- `server/scripts/corpus_gate.py` — the sweep and the comparison.
+- `docs/pierce/corpus-golden-master.json` — the committed baseline:
+  every finding of every file, `(rule, severity, ref, figure, detail)`
+  in report order. Not counts — counts can match while reports drift.
+
+## The protocol
+
+```bash
+# from server/, with the corpus fetched per the manifest
+uv run python scripts/corpus_gate.py sweep  CORPUS_DIR  /tmp/current.json
+uv run python scripts/corpus_gate.py diff   ../docs/pierce/corpus-golden-master.json  /tmp/current.json
+```
+
+Exit 0 means every file reports identically, finding for finding. A
+non-zero exit prints each changed file with `-` and `+` lines.
+
+An engine change that *means* to change reports regenerates the
+baseline and commits it in the same change — the baseline's own git
+diff is then the review artifact, file by file, finding by finding,
+and the reviewer reads exactly what the change did to real models and
+nothing else.
+
+## Honest bounds
+
+- The gate covers what the corpus covers. AER models are still absent
+  (aer.gov.au blocks non-browser fetches — see the manifest); files
+  the founder feeds through Check a model are not in it.
+- `detail` sentences are part of the fingerprint on purpose: a wording
+  change is a report change and must be intended too.
+- The baseline was first cut on 2026-08-17, after the mentor round
+  (reference-semantics policy table, cross-column gap agreement,
+  sibling-aggregate exemption). History before that lives in
+  `corpus-au-uk-sweep.json` / `corpus-au-uk-sweep-after-collapses.json`
+  as counts.
