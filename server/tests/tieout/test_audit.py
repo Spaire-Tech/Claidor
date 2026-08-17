@@ -187,6 +187,97 @@ def test_a_block_pasted_over_several_columns_is_caught_down_the_columns() -> Non
     assert "J6" in last.detail
 
 
+def test_designed_error_tails_fold_and_interior_breaks_are_loud() -> None:
+    """The mentor's discriminator: `#N/A` is a designed return value,
+    and the shape of the region says whether the sheet is working. A
+    tail past the data's edge folds to one quiet finding; an interior
+    `#N/A` in a live column is a break and stays loud; `#REF!` is
+    always damage and stays per cell — the result that made a real
+    closed-deal file's frozen references land."""
+
+    def build(sheet) -> None:
+        for row in range(2, 7):
+            sheet.cell(row=row, column=2).value = row * 1.0
+        for row in range(7, 11):
+            sheet.cell(row=row, column=2).value = "#N/A"
+        for row in range(2, 9):
+            sheet.cell(row=row, column=3).value = "#N/A" if row == 4 else row * 2.0
+        sheet.cell(row=3, column=4).value = "#REF!"
+        sheet.cell(row=4, column=4).value = 5.0
+
+    result = _tmp_book(build)
+    errors = [f for f in result.findings if f.rule == "error-value"]
+    tails = [f for f in errors if f.figure_unit == "cells past the data's edge"]
+    breaks = [f for f in errors if f.figure_unit == "breaks a live column"]
+    broken = [f for f in errors if "#REF!" in f.detail]
+    assert len(tails) == 1
+    assert tails[0].severity == "smell"
+    assert "4 cells" in tails[0].detail
+    assert len(breaks) == 1
+    assert breaks[0].severity == "error"
+    assert breaks[0].ref == "Sheet!C4"
+    assert len(broken) == 1
+    assert broken[0].severity == "error"
+
+
+def test_a_daily_series_calendar_gaps_fold_quiet() -> None:
+    """The corpus's third shape: a daily-rates column with a `#N/A`
+    every weekend — thousands of short gaps at a regular rhythm. Many
+    short interior runs are the series' calendar, not breaks."""
+
+    def build(sheet) -> None:
+        row = 2
+        for _week in range(12):
+            for _day in range(5):
+                sheet.cell(row=row, column=2).value = float(row)
+                row += 1
+            for _closed in range(2):
+                sheet.cell(row=row, column=2).value = "#N/A"
+                row += 1
+        sheet.cell(row=row, column=2).value = float(row)
+
+    result = _tmp_book(build)
+    errors = [f for f in result.findings if f.rule == "error-value"]
+    assert len(errors) == 1
+    assert errors[0].severity == "smell"
+    assert "routine gaps" in errors[0].detail
+    assert "24 cells" in errors[0].detail
+
+
+def test_a_circular_loop_is_one_finding_not_one_per_cell() -> None:
+    """Heathrow's H7 model put 22,519 cells into circular chains — the
+    graph resolves them into components, and the component is the
+    finding."""
+
+    def build(sheet) -> None:
+        sheet["B2"] = "=C2+1"
+        sheet["C2"] = "=B2+1"
+
+    result = _tmp_book(build)
+    loops = [f for f in result.findings if f.rule == "circular"]
+    assert len(loops) == 1
+    assert loops[0].figure == "2"
+    assert "loop of 2 cells" in loops[0].detail
+
+
+def test_a_loop_dragged_across_periods_folds_to_one_finding() -> None:
+    """A per-period interest loop dragged across ten columns is ten
+    identical components and one authoring decision."""
+    from openpyxl.utils import get_column_letter
+
+    def build(sheet) -> None:
+        for column in range(2, 12):
+            letter = get_column_letter(column)
+            sheet.cell(row=2, column=column).value = f"={letter}3+1"
+            sheet.cell(row=3, column=column).value = f"={letter}2+1"
+
+    result = _tmp_book(build)
+    loops = [f for f in result.findings if f.rule == "circular"]
+    assert len(loops) == 1
+    assert "repeated 10" in loops[0].detail
+    assert loops[0].figure == "20"
+
+
 def test_typed_over_the_same_line_of_repeating_blocks_is_one_finding() -> None:
     """The founder's file: a depreciation schedule of identical blocks,
     27 rows each, the same line typed over in every one — Z23, Z50,
