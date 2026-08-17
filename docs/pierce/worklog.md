@@ -2902,3 +2902,47 @@ deleted, not redesigned: a one-off keeps no file, so there is nothing
 real to open, and the panel was another view of the grid already on
 screen. Two endpoint tests: an upload answers with a download; a
 stranger's model does not exist.
+
+## The audit of the audit: nine noise findings, traced and killed (17 August)
+
+The founder ran their example model and did not believe the findings.
+They were right to not believe them. The file went through the engine
+and then through my hands, cell by cell, and of seventeen production
+findings nine were the audit misreading structure:
+
+- **A year-counter helper column** (typed `1` at each block's top,
+  `=Z23+1` beneath) read as six « values typed over formulas » and one
+  « inconsistent formula ». Fixed with two exemptions, both measured
+  rather than guessed: a typed cell whose below-neighbour formula
+  *reads it* is that formula's declared seed; a cell whose formula
+  shape matches its column neighbours belongs to a vertical series the
+  row check has no claim on.
+- **A conditional that picks two loan rows** (`=IF(SUM(D29:D30)<0,…)`
+  fourteen rows away) read as a broken total with an invented 8.5bn
+  miss. Fixed: only a formula that *is* a sum claims to be a total.
+- **Total Revenue rightly excluding the detail rows already inside an
+  included subtotal** read as incomplete. Fixed: rows an included
+  cell's own formula reads are covered, not skipped — counting them
+  again would double count.
+
+Two more findings were real but dishonest in the telling. The one
+genuinely broken total — Total Senior Debt Service, a one-cell SUM
+missing its interest — claimed 512.5m by lumping in the Outstanding
+Principal balance row between the components; a balance is not a flow
+and no correct total includes it, so the figure is now the true 12.5m.
+And « Module1 », a very hidden sheet, was described as feeding the
+model from the dark; measured, it holds zero populated cells and
+nothing references it — a leftover from an older file format, now said
+exactly that way and graded a note, not an error. The workbook reader
+now records raw populated counts per sheet so emptiness is a fact
+about the file, not about what survived labelling. Also: « has 20, 20
+typed into it » reads once per distinct number now, and the
+block-fold's beat tolerates one row of drift (the founder's blocks
+run 27-27-27-27-26 and a strict beat heard no pattern).
+
+The example model is committed as a fixture with a test pinning the
+exact defensible seven: one incomplete total at 12.5m, two buried
+assumptions, three long formulas, one empty very-hidden sheet.
+Sixteen findings before; seven after; each one now survives the
+founder reading it with the file open. Suite at 441 passing; the
+report driven in the browser on the real file.

@@ -249,6 +249,52 @@ def test_an_input_column_with_a_total_under_it_is_data_not_damage() -> None:
     assert not any(f.rule == "typed-over-formula" for f in result.findings)
 
 
+def test_the_example_preapp_model_reports_the_defensible_seven() -> None:
+    """The founder's real file, kept as the audit's conscience.
+
+    Sixteen findings before this test existed; nine were the audit
+    misreading structure. A year-counter column's typed seeds read as
+    hardcodes (six findings) and its `=Z23+1` as a row departure (one);
+    a conditional that picks two loan rows read as a broken total with
+    an invented 8.5bn miss; a Total Revenue that rightly excludes the
+    detail rows already inside an included subtotal read as incomplete.
+    What survives is what a person would defend: one genuinely broken
+    total (debt service missing its interest — 12.5m, not the 512.5m a
+    balance row inflated it to), two buried assumptions, three
+    unreadable formulas, and an empty very-hidden sheet said plainly.
+    """
+    from polar.tieout.structure import read_structure
+
+    book = read_workbook(str(CASCADE / "example_preapp_model.xlsx"))
+    result = audit(book, read_structure(book).axes)
+
+    assert sorted((f.rule, f.ref) for f in result.findings) == [
+        ("hardcode-in-formula", "Assumptions Processing!E17"),
+        ("hardcode-in-formula", "Control Panel!E56"),
+        ("hidden-sheet", "Module1!A1"),
+        ("long-formula", "Assumptions Processing!E23"),
+        ("long-formula", "Assumptions Processing!E37"),
+        ("long-formula", "Assumptions Processing!E47"),
+        ("skipped-cell", "Assumptions Processing!E41"),
+    ]
+
+    #: The real miss is the interest row; the outstanding-balance row
+    #: between the components does not belong in a service total.
+    skipped = next(f for f in result.findings if f.rule == "skipped-cell")
+    assert skipped.figure == "12.5m"
+    assert "E40" in skipped.detail
+    assert "E38" not in skipped.detail
+
+    #: An empty, unreferenced very-hidden sheet is a note, not a threat.
+    hidden = next(f for f in result.findings if f.rule == "hidden-sheet")
+    assert hidden.severity == "smell"
+    assert "empty and nothing in the model reads it" in hidden.detail
+
+    #: A bound tested twice reads once.
+    validation = next(f for f in result.findings if f.ref == "Control Panel!E56")
+    assert validation.figure == "20"
+
+
 def test_hidden_and_very_hidden_sheets_are_findings() -> None:
     """The document panel's concealment facts, folded into the audit:
     hidden is a smell (one right-click from visible), very hidden is an

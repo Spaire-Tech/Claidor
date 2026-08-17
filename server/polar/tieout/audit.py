@@ -607,14 +607,17 @@ def _typed_blocks(findings: list[Finding]) -> list[Finding]:
             else:
                 rest.extend(same)
         #: What remains — labelled differently or not at all — folds on
-        #: the beat alone: at least three places at a constant spacing
-        #: is a repeating block, whatever each block calls its line.
+        #: the beat alone: at least three places at a near-constant
+        #: spacing is a repeating block, whatever each block calls its
+        #: line. Near-constant, because real blocks drift: the founder's
+        #: depreciation schedule runs 27-row blocks with one of 26, and
+        #: a strict beat heard that as no pattern at all.
         rest.sort(key=_row)
         deltas = {
             _row(after) - _row(before)
             for before, after in zip(rest, rest[1:], strict=False)
         }
-        if len(rest) >= 3 and len(deltas) == 1:
+        if len(rest) >= 3 and max(deltas) - min(deltas) <= 1:
             keep.append(_fold(rest))
         else:
             keep.extend(rest)
@@ -709,6 +712,11 @@ def _literals(book: Workbook, result: Audit) -> None:
             continue
         buried = _buried(cell.formula)
         if buried:
+            #: Shown once each — « 20, 20 » for a bound tested twice
+            #: read like a machine. The collapse still keys on the full
+            #: tuple: how often a number appears is part of the identity,
+            #: not part of the sentence.
+            distinct = tuple(dict.fromkeys(buried))
             result.findings.append(
                 Finding(
                     rule="hardcode-in-formula",
@@ -716,9 +724,9 @@ def _literals(book: Workbook, result: Audit) -> None:
                     ref=cell.ref,
                     sheet=cell.sheet,
                     name=cell.name,
-                    detail=f"{', '.join(buried[:4])} inside {cell.formula[:60]}",
+                    detail=f"{', '.join(distinct[:4])} inside {cell.formula[:60]}",
                     source="ICAEW P14, FAST",
-                    figure=", ".join(buried[:2]),
+                    figure=", ".join(distinct[:2]),
                 )
             )
 
@@ -874,7 +882,17 @@ def _rows(book: Workbook, result: Audit) -> None:
                             source="FAST, ICAEW P12",
                         )
                     )
-                elif cell is not run[0] and cell is not run[-1]:
+                elif (
+                    cell is not run[0]
+                    and cell is not run[-1]
+                    #: A cell that continues a consistent *vertical*
+                    #: series — a counter or cumulative helper column
+                    #: crossing this row — belongs to the column's
+                    #: structure, and the row has no claim on it. The
+                    #: founder's file: `=Z23+1` flagged against a row
+                    #: whose real series runs sideways.
+                    and not _column_series(book, cell)
+                ):
                     result.findings.append(
                         Finding(
                             rule="inconsistent-row",
@@ -889,6 +907,27 @@ def _rows(book: Workbook, result: Audit) -> None:
                             source="FAST, ICAEW P12",
                         )
                     )
+
+
+def _column_series(book: Workbook, cell: Cell) -> bool:
+    """True when the cell's formula continues a consistent vertical run.
+
+    Measured, not guessed: at least two of the four column neighbours
+    within two rows carry the same relative formula shape. A dragged
+    horizontal error does not qualify — its vertical neighbours belong
+    to their own rows' series and share nothing with it.
+    """
+    mine = _shape(cell)
+    if not mine:
+        return False
+    matching = 0
+    for step in (-2, -1, 1, 2):
+        neighbour = book.get(
+            f"{cell.sheet}!{get_column_letter(cell.column)}{cell.row + step}"
+        )
+        if neighbour is not None and neighbour.formula and _shape(neighbour) == mine:
+            matching += 1
+    return matching >= 2
 
 
 def _over_time(run: list[Cell]) -> bool:
@@ -959,6 +998,25 @@ def _stacked(book: Workbook, cell: Cell) -> bool:
             tall += 1
             row += step
     return tall > TYPED_BLOCK
+
+
+def _seed(island: list[Cell], below: "Cell | None") -> bool:
+    """True when a typed cell is a running column's starting value.
+
+    The founder's file: a depreciation schedule with a year-counter
+    helper column — `1` typed at each block's top, `=Z23+1` continuing
+    beneath it. The audit called each `1` a value typed over a
+    calculation; every one was the seed a counter cannot start without.
+    The test is exact, not a guess about intent: the formula directly
+    below *reads the typed cell itself*, so the typed cell is that
+    formula's declared input. One cell only — a taller island is a
+    paste, whatever sits under it.
+    """
+    if len(island) != 1 or below is None or below.formula is None:
+        return False
+    cell = island[0]
+    at = re.compile(rf"\$?{get_column_letter(cell.column)}\$?{cell.row}(?![0-9])")
+    return bool(at.search(below.formula))
 
 
 def _typed_islands(book: Workbook, result: Audit) -> None:
@@ -1049,6 +1107,7 @@ def _island_findings(
                 leftmost.get((sheet, cell.row), 1 << 20) < cell.column
                 for cell in island
             )
+            and not _seed(island, run[end] if end < len(run) else None)
         ):
             for cell in island:
                 if cell.ref in already:
@@ -1268,6 +1327,25 @@ def _circularity(book: Workbook, result: Audit) -> None:
                     path.pop()
 
 
+#: A formula that *is* a sum — the only shape that claims to be a total.
+#: A SUM buried inside an IF or a MIN is a component of logic: the
+#: founder's cashflow picks the repayment out of two loan rows fourteen
+#: rows away with `=IF(SUM(D29:D30)<0,…)`, and reading that as a broken
+#: total invented an 8.5bn miss that never existed.
+BARE_SUM = re.compile(r"^=?\s*SUM\([^()]*\)\s*$", re.IGNORECASE)
+
+#: A row label that names a running balance rather than a flow. A total
+#: routinely and correctly skips « Outstanding Principal (End of Year) »
+#: sitting between its components — a balance does not belong in a
+#: service total, and counting it as « left out » overstated a real
+#: 12.5m miss as 512.5m.
+BALANCE_LABEL = re.compile(
+    r"outstanding|balance|brought forward|carried forward|\bb/f\b|\bc/f\b"
+    r"|opening|closing|beginning|end of (?:year|period)|cumulative",
+    re.IGNORECASE,
+)
+
+
 def _skipped_cells(book: Workbook, result: Audit) -> None:
     """A total that leaves a row out.
 
@@ -1276,9 +1354,17 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
     invisible: the total looks like a total. Checked by walking up from the
     summed range and asking whether the cell immediately above it holds a
     number that the range does not reach.
+
+    Three exemptions, each learned from a real false alarm:
+    only a formula that *is* a sum is judged as a total; a skipped row
+    already counted through an included subtotal is not skipped —
+    « Total Revenue = Net Sales + Other Income » rightly excludes the
+    two detail rows inside Other Income, and adding them again would
+    double count; and a running balance between the components is
+    stepped over by every correct total ever written.
     """
     for cell in book.cells.values():
-        if not cell.formula or "SUM(" not in cell.formula.upper():
+        if not cell.formula or not BARE_SUM.match(cell.formula):
             continue
         for token in Tokenizer(cell.formula).items:
             if token.type != "OPERAND" or token.subtype != "RANGE":
@@ -1294,15 +1380,38 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
             if not (top <= cell.row and bottom < cell.row and sheet == cell.sheet):
                 continue
             column = match.group("column")
-            missed = [
-                f"{sheet}!{column}{row}"
-                for row in range(bottom + 1, cell.row)
-                if f"{sheet}!{column}{row}" in book.cells
-            ]
+            #: Rows the included cells already count: an included row
+            #: whose own formula reads a same-column range or cell is a
+            #: subtotal, and everything it reads is covered.
+            covered: set[int] = set()
+            for row in range(top, bottom + 1):
+                inside = book.cells.get(f"{sheet}!{column}{row}")
+                if inside is None or not inside.formula:
+                    continue
+                for part in Tokenizer(inside.formula).items:
+                    if part.type != "OPERAND" or part.subtype != "RANGE":
+                        continue
+                    span = REFERENCE.fullmatch(part.value.strip())
+                    if span is None:
+                        continue
+                    span_sheet = (span.group("sheet") or sheet).strip("'")
+                    if span_sheet != sheet or span.group("column") != column:
+                        continue
+                    first = int(span.group("row"))
+                    last = int(span.group("row2") or first)
+                    covered.update(range(min(first, last), max(first, last) + 1))
+            missed: list[Cell] = []
+            for row in range(bottom + 1, cell.row):
+                above = book.cells.get(f"{sheet}!{column}{row}")
+                if above is None or row in covered:
+                    continue
+                if above.row_label and BALANCE_LABEL.search(above.row_label):
+                    continue
+                missed.append(above)
             if missed:
                 #: What the misses are worth, straight from the cells —
                 #: the number the founder's design leads the card with.
-                worth = sum(float(book.cells[ref].value or 0) for ref in missed)
+                worth = sum(float(one.value or 0) for one in missed)
                 result.findings.append(
                     Finding(
                         rule="skipped-cell",
@@ -1312,7 +1421,7 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                         name=cell.name,
                         detail=(
                             f"{cell.formula} leaves out "
-                            f"{', '.join(missed[:3])} above it"
+                            f"{', '.join(one.ref for one in missed[:3])} above it"
                             + (
                                 f" — worth {shown_number(worth)} together"
                                 if abs(worth) > 1e-9
@@ -1342,22 +1451,54 @@ def _hidden_sheets(book: Workbook, result: Audit) -> None:
     very = set(book.very_hidden_sheets)
     for sheet in book.hidden_sheets:
         concealed = sheet in very
+        #: What the sheet actually is, before the sentence claims
+        #: anything: « whatever it holds feeds the model » was said of a
+        #: sheet holding nothing that nothing read — a conversion
+        #: leftover, dressed as a threat. The raw populated count, where
+        #: the reader recorded one — `cells` holds only what could be
+        #: named, and a lone unlabelled number is still content.
+        raw = book.populated.get(sheet)
+        holds = (
+            raw > 0
+            if raw is not None
+            else any(cell.sheet == sheet for cell in book.cells.values())
+        )
+        read = any(
+            cell.formula
+            and (f"'{sheet}'!" in cell.formula or f"{sheet}!" in cell.formula)
+            for cell in book.cells.values()
+            if cell.sheet != sheet
+        )
+        if concealed and not holds and not read:
+            severity = "smell"
+            detail = (
+                f"« {sheet} » is very hidden — invisible in Excel's "
+                "unhide menu — but it is empty and nothing in the model "
+                "reads it. Most likely left over from an older file "
+                "format, and worth deleting rather than fearing."
+            )
+        elif concealed:
+            severity = "error"
+            detail = (
+                f"« {sheet} » is very hidden — it does not appear in "
+                "Excel's unhide menu and can only be reached through "
+                "the VBA editor. Whatever it holds feeds the model "
+                "without being on any screen."
+            )
+        else:
+            severity = "smell"
+            detail = (
+                f"« {sheet} » is hidden — it is in the workbook "
+                "and one right-click away from visible."
+            )
         result.findings.append(
             Finding(
                 rule="hidden-sheet",
-                severity="error" if concealed else "smell",
+                severity=severity,
                 ref=f"{sheet}!A1",
                 sheet=sheet,
                 name=sheet,
-                detail=(
-                    f"« {sheet} » is very hidden — it does not appear in "
-                    "Excel's unhide menu and can only be reached through "
-                    "the VBA editor. Whatever it holds feeds the model "
-                    "without being on any screen."
-                    if concealed
-                    else f"« {sheet} » is hidden — it is in the workbook "
-                    "and one right-click away from visible."
-                ),
+                detail=detail,
                 source="EuSpRIG",
             )
         )
