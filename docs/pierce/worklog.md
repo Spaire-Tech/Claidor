@@ -3079,3 +3079,15 @@ Five new tests pin the tail fold, the calendar fold, the loud
 interior break with `#REF!` untouched beside it, the one-loop-one-
 finding rule, and the dragged-loop fold. Suite at 446 passing. The
 full corpus re-sweep table follows when the run completes.
+
+**The full re-sweep, for the record.** Every file the floods did not
+touch reports *identically* — the ED2 versions, the draft PCFMs, the
+debt models, down to the finding — which is the collapses proving
+they change nothing but the floods. The floods themselves: the two
+WACC models 65,685 and 65,606 → 10 and 15; the two H7 price control
+models 28,276 and 28,246 → 90 and 87; the six RIIO-3 BPFMs from
+1,593–1,944 → 157–506. Corpus total: roughly 199,000 findings down
+to about 2,900, with not one `#REF!`, hardcode, typed-over or
+skipped-cell result altered anywhere. The BPFMs' remaining hundreds
+are the next hand-review target — their error values now fold, so
+what remains is real enough to read one by one.
