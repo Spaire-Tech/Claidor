@@ -732,8 +732,9 @@ def _rows(book: Workbook, result: Audit) -> None:
                         sheet=sheet,
                         name=cell.name,
                         detail=(
-                            f"{cell.value} typed into a series that is "
-                            f"otherwise calculated: {_example(calculated, usual)}"
+                            f"{shown_number(float(cell.value))} typed into "
+                            "a series that is otherwise calculated: "
+                            f"{_example(calculated, usual)}"
                         ),
                         source="ICAEW P14, FAST",
                     )
@@ -967,8 +968,9 @@ def _island_findings(
                         sheet=sheet,
                         name=cell.name,
                         detail=(
-                            f"{cell.value} typed into a column that is "
-                            f"otherwise calculated: {_example(calculated, usual)}"
+                            f"{shown_number(float(cell.value))} typed into "
+                            "a column that is otherwise calculated: "
+                            f"{_example(calculated, usual)}"
                         ),
                         source="ICAEW P14, FAST",
                     )

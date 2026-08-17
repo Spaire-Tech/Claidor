@@ -60,6 +60,7 @@ import {
   cardRing,
   cardRingHover,
   cellRefInk,
+  excelLogo,
   figureInk,
   font,
   greyButton,
@@ -1816,8 +1817,9 @@ export const DealPage = ({
             {noteText === null ? (
               <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
                 {/* « Open the cell » — the workspace's own model reader,
-                    landed on this finding's cell. The Excel-native jump
-                    stays the panel's move. */}
+                    landed on this finding's cell. Wears the same blue
+                    as « Open in Excel » with the Excel mark beside it,
+                    because it is the same family of move. */}
                 {model !== null &&
                   shownFinding.where.artifact_id === model.id && (
                     <button
@@ -1826,12 +1828,28 @@ export const DealPage = ({
                         closeModal()
                       }}
                       style={{
-                        ...greyButton,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        border: 0,
+                        background: ink.accent,
+                        color: '#fff',
                         borderRadius: 9,
                         padding: '9px 16px',
+                        font: 'inherit',
                         fontSize: 14,
+                        fontWeight: 500,
+                        cursor: 'pointer',
                       }}
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={excelLogo}
+                        alt=""
+                        width={16}
+                        height={16}
+                        style={{ display: 'block' }}
+                      />
                       Open the cell
                     </button>
                   )}
