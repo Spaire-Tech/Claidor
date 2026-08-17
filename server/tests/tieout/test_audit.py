@@ -114,8 +114,13 @@ def test_a_pasted_block_is_still_typed_over_formula() -> None:
                     at.value = f"=B{row}+1"
 
     result = _tmp_book(build)
-    typed = {f.ref for f in result.findings if f.rule == "typed-over-formula"}
-    assert {"Sheet!E2", "Sheet!E3", "Sheet!E4", "Sheet!E5"} <= typed
+    typed = [f for f in result.findings if f.rule == "typed-over-formula"]
+    #: Detected cell by cell, reported as the one paste it was: a single
+    #: finding anchored on the first cell, every place in its evidence.
+    assert len(typed) == 1
+    assert typed[0].ref == "Sheet!E2"
+    for coordinate in ("E2", "E3", "E4", "E5"):
+        assert coordinate in typed[0].detail
 
 
 def test_a_parameter_column_is_not_typed_over_formula() -> None:
@@ -138,7 +143,7 @@ def test_a_parameter_column_is_not_typed_over_formula() -> None:
 def test_a_filled_formula_is_one_finding_not_thousands() -> None:
     """One 625-character formula filled across a grid produced 7,752 of
     a real base-cost model's 8,017 findings. A fill is one decision."""
-    long = "=" + "+".join(["INDIRECT(\"A1\")"] * 20)
+    long = "=" + "+".join(['INDIRECT("A1")'] * 20)
 
     def build(sheet) -> None:
         sheet.cell(row=2, column=1).value = "Interest cover"
@@ -168,10 +173,66 @@ def test_a_block_pasted_over_several_columns_is_caught_down_the_columns() -> Non
                     at.value = f"=B{row}+{column}"
 
     result = _tmp_book(build)
+    typed = [f for f in result.findings if f.rule == "typed-over-formula"]
+    #: Every column of the paste is seen, and each column's run reports
+    #: once — five findings for a five-column paste, not twenty.
+    assert {f.ref for f in typed} == {
+        "Sheet!F3",
+        "Sheet!G3",
+        "Sheet!H3",
+        "Sheet!I3",
+        "Sheet!J3",
+    }
+    last = next(f for f in typed if f.ref == "Sheet!J3")
+    assert "J6" in last.detail
+
+
+def test_typed_over_the_same_line_of_repeating_blocks_is_one_finding() -> None:
+    """The founder's file: a depreciation schedule of identical blocks,
+    27 rows each, the same line typed over in every one — Z23, Z50,
+    Z77… Six copies of one sentence bury the report; the drumbeat is
+    one decision."""
+
+    def build(sheet) -> None:
+        for block in range(6):
+            top = 2 + block * 27
+            for row in range(top, top + 4):
+                for column in range(2, 9):
+                    at = sheet.cell(row=row, column=column)
+                    if column == 5 and row == top + 2:
+                        at.value = 0.89
+                    else:
+                        at.value = f"=B{row}+1"
+
+    result = _tmp_book(build)
+    typed = [f for f in result.findings if f.rule == "typed-over-formula"]
+    assert len(typed) == 1
+    assert "typed over in 6 places" in typed[0].detail
+    assert "E4" in typed[0].detail
+    assert "E139" in typed[0].detail
+    #: The collapsed finding claims no single figure and offers no
+    #: one-cell fix — each place holds its own number.
+    assert typed[0].figure == ""
+    assert typed[0].fix == ""
+
+
+def test_two_unrelated_typed_cells_stay_two_findings() -> None:
+    """Two typed cells that merely share a column are coincidence, not
+    a pattern — the collapse needs a shared label or a constant beat of
+    at least three."""
+
+    def build(sheet) -> None:
+        for row in (2, 3, 4, 9, 10, 11):
+            for column in range(2, 9):
+                at = sheet.cell(row=row, column=column)
+                if column == 5 and row in (3, 10):
+                    at.value = 0.89
+                else:
+                    at.value = f"=B{row}+1"
+
+    result = _tmp_book(build)
     typed = {f.ref for f in result.findings if f.rule == "typed-over-formula"}
-    assert "Sheet!F3" in typed
-    assert "Sheet!J6" in typed
-    assert len([ref for ref in typed if ref.startswith("Sheet!")]) >= 20
+    assert typed == {"Sheet!E3", "Sheet!E10"}
 
 
 def test_an_input_column_with_a_total_under_it_is_data_not_damage() -> None:
@@ -211,9 +272,7 @@ def test_hidden_and_very_hidden_sheets_are_findings() -> None:
         path = Path(folder) / "built.xlsx"
         book.save(path)
         result = audit(read_workbook(str(path)))
-    found = {
-        f.sheet: f.severity for f in result.findings if f.rule == "hidden-sheet"
-    }
+    found = {f.sheet: f.severity for f in result.findings if f.rule == "hidden-sheet"}
     assert found == {"Workings": "smell", "Plug": "error"}
 
 

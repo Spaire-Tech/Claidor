@@ -328,6 +328,17 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
     subject = f"{label} {period}".strip() if label else at
 
     if finding.rule == "typed-over-formula":
+        if finding.detail.startswith("typed over in "):
+            #: The block collapse: one decision, made once per repeated
+            #: block or once per row of a paste — said once, with every
+            #: place in the sentence.
+            coords = finding.detail.split(": ", 1)[-1]
+            lead = f"{label} is" if label else "One column is"
+            return (
+                f"{lead} typed over in {len(coords.split(', '))} places — "
+                f"{coords} — while the rest of each row is calculated. "
+                "Check whether these are intentional overrides."
+            )
         return (
             f"{subject} contains a fixed value while the rest of the row "
             "is calculated. Check whether this is an intentional override."
@@ -525,6 +536,88 @@ def _collapsed(
                 figure_unit=f"filled across {span}",
             )
         )
+    return _typed_blocks(keep)
+
+
+def _typed_blocks(findings: list[Finding]) -> list[Finding]:
+    """A value typed over the same line of a repeating block is one
+    decision, not one finding per block.
+
+    The founder's file: a depreciation schedule built as six identical
+    asset blocks, 27 rows each, the same line typed over in every one —
+    Z23, Z50, Z77, Z104, Z131, Z157. Six copies of the same sentence
+    bury whatever else the report has to say. The fill collapse above
+    cannot catch this — it compares formula shapes and a typed cell has
+    no formula — so the evidence of repetition here is the layout
+    itself: same sheet, same column, and either the same row label or
+    at least three cells at a constant row spacing. Two typed cells
+    that merely share a column stay two findings: two is coincidence,
+    a drumbeat is a pattern.
+
+    The collapsed finding drops the per-cell figure and fix — each
+    place holds its own number, and the one-cell writer should not
+    claim to fix six cells by fixing one.
+    """
+    keep = [one for one in findings if one.rule != "typed-over-formula"]
+    typed = [one for one in findings if one.rule == "typed-over-formula"]
+
+    by_column: dict[tuple[str, str], list[Finding]] = {}
+    for finding in typed:
+        coordinate = finding.ref.rsplit("!", 1)[-1]
+        column = "".join(ch for ch in coordinate if ch.isalpha())
+        by_column.setdefault((finding.sheet, column), []).append(finding)
+
+    def _row(finding: Finding) -> int:
+        digits = "".join(ch for ch in finding.ref.rsplit("!", 1)[-1] if ch.isdigit())
+        return int(digits or 0)
+
+    def _fold(group: list[Finding]) -> Finding:
+        group = sorted(group, key=_row)
+        first = group[0]
+        coords = [one.ref.rsplit("!", 1)[-1] for one in group]
+        #: One shared label speaks for the fold; six different block
+        #: labels do not — the sentence then leads with the column.
+        labels = {one.name for one in group}
+        return Finding(
+            rule=first.rule,
+            severity=first.severity,
+            ref=first.ref,
+            sheet=first.sheet,
+            name=first.name if len(labels) == 1 else "",
+            detail=(
+                f"typed over in {len(group)} places down one column: "
+                f"{', '.join(coords)}"
+            ),
+            source=first.source,
+            figure_unit=f"typed over in {len(group)} places",
+        )
+
+    for group in by_column.values():
+        #: The same named line typed over twice is already a pattern.
+        named: dict[str, list[Finding]] = {}
+        rest: list[Finding] = []
+        for finding in group:
+            if finding.name:
+                named.setdefault(finding.name, []).append(finding)
+            else:
+                rest.append(finding)
+        for same in named.values():
+            if len(same) > 1:
+                keep.append(_fold(same))
+            else:
+                rest.extend(same)
+        #: What remains — labelled differently or not at all — folds on
+        #: the beat alone: at least three places at a constant spacing
+        #: is a repeating block, whatever each block calls its line.
+        rest.sort(key=_row)
+        deltas = {
+            _row(after) - _row(before)
+            for before, after in zip(rest, rest[1:], strict=False)
+        }
+        if len(rest) >= 3 and len(deltas) == 1:
+            keep.append(_fold(rest))
+        else:
+            keep.extend(rest)
     return keep
 
 

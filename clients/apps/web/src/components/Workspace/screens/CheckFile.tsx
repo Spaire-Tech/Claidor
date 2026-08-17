@@ -22,10 +22,10 @@
  *   it, and the fix writes a verified new version of a kept file —
  *   there is nothing here to write into. If the bench should keep
  *   files, that is a named product change, not a button.
- * - « Open the cell » opens the bench's own panel, composed from the
- *   stored answer — the deal's opens the data room's document panel,
- *   and a one-off has no artifact for that panel to stand on. Same
- *   face: the file's facts, the findings with their cells.
+ * - No « Open the cell » either: the deal's button opens the real
+ *   document (SharePoint, or the stored upload) — a one-off keeps no
+ *   file, so there is nothing real to open, and a button whose
+ *   destination is another view of the same grid is worse than none.
  * - The state tag speaks the report's words — Ready to send / Not
  *   ready to send — same mapping as the deal page.
  */
@@ -41,7 +41,6 @@ import {
 } from '../api'
 import { ChatContext } from '../Chat'
 import {
-  cardRing,
   cellRefInk,
   excelLogo,
   fileIcon,
@@ -171,12 +170,6 @@ export const CheckFile = ({
   const [picked, setPicked] = useState<string | null>(null)
   const [placeAt, setPlaceAt] = useState(0)
   useEffect(() => setPlaceAt(0), [picked])
-  //: « Open the cell » — which place the bench's panel is landed on;
-  //: null keeps the panel closed.
-  const [cellAt, setCellAt] = useState<{ group: string; place: number } | null>(
-    null,
-  )
-  const [openCard, setOpenCard] = useState<string | null>(null)
   //: « Accept with a note » — the deal modal's own flow. `null` means
   //: the writing box is closed.
   const [noteText, setNoteText] = useState<string | null>(null)
@@ -239,7 +232,6 @@ export const CheckFile = ({
     setRunning({ name: file.name, kind: kindFor(file.name) })
     setResult(null)
     setPicked(null)
-    setCellAt(null)
     setSec(null)
     setRefusal('')
     setStep(0)
@@ -269,7 +261,6 @@ export const CheckFile = ({
     setResult(null)
     setRunning(null)
     setPicked(null)
-    setCellAt(null)
     setNoteText(null)
     setSec(null)
     setRefusal('')
@@ -401,16 +392,6 @@ export const CheckFile = ({
       .catch(() => undefined)
       .then(() => setSaving(false))
   }
-
-  //: « Open the cell » lands the panel on that finding's card.
-  useEffect(() => {
-    if (cellAt === null) return
-    const id = `bench-${cellAt.group}-${cellAt.place}`
-    setOpenCard(id)
-    requestAnimationFrame(() =>
-      document.getElementById(id)?.scrollIntoView({ block: 'center' }),
-    )
-  }, [cellAt])
 
   //: Checks that pass / did not run — the same catalogue arithmetic as
   //: the model page, only claimed for a model whose audit actually ran.
@@ -698,17 +679,6 @@ export const CheckFile = ({
   )
 
   const noteReady = (noteText ?? '').trim().length > 2
-
-  //: The flat list the bench's panel draws — every open place, with its
-  //: group's words, in table order.
-  const panelCards = fails.flatMap((group) =>
-    group.places.map((one, index) => ({
-      id: `bench-${group.key}-${index}`,
-      label: group.label,
-      severity: group.severity,
-      place: one,
-    })),
-  )
 
   return (
     <div
@@ -1665,229 +1635,6 @@ export const CheckFile = ({
               )}
             </div>
           </div>
-
-          {/* « Open the cell » — the bench's own panel, composed from
-              the stored answer: the file's facts, then every open
-              finding with its cell, landed on the one that was picked.
-              The deal's button opens the data room's document panel;
-              a one-off has no artifact for that panel to stand on. */}
-          {cellAt !== null && (
-            <div
-              style={{
-                flex: '1 1 0',
-                minWidth: 380,
-                display: 'flex',
-                flexDirection: 'column',
-                background: '#ffffff',
-                borderLeft: '1px solid #f0f0f2',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  flex: '0 0 auto',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '14px 16px 13px 20px',
-                  borderBottom: '1px solid #f0eeec',
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={fileIcon.xls}
-                  alt=""
-                  style={{
-                    flex: '0 0 22px',
-                    width: 22,
-                    height: 22,
-                    objectFit: 'contain',
-                  }}
-                />
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span
-                    style={{
-                      display: 'block',
-                      fontSize: 15,
-                      fontWeight: 500,
-                      letterSpacing: '-.014em',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {result.filename}
-                  </span>
-                  <span
-                    style={{
-                      display: 'block',
-                      fontSize: 12.5,
-                      color: '#86868b',
-                      marginTop: 1,
-                    }}
-                  >
-                    {[
-                      sheets > 0
-                        ? `${sheets} ${sheets === 1 ? 'sheet' : 'sheets'}`
-                        : '',
-                      formulas > 0 ? `${comma(formulas)} formulas` : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </span>
-                </span>
-                <button
-                  onClick={() => setCellAt(null)}
-                  title="Close"
-                  style={{
-                    flex: '0 0 auto',
-                    border: 0,
-                    background: 'transparent',
-                    borderRadius: 8,
-                    padding: 5,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    color: ink.faint,
-                  }}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  >
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                  </svg>
-                </button>
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  minHeight: 0,
-                  overflow: 'auto',
-                  background: well,
-                  padding: '0 20px 24px',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 500,
-                    letterSpacing: '.05em',
-                    textTransform: 'uppercase',
-                    color: '#86868b',
-                    padding: '20px 4px 8px',
-                  }}
-                >
-                  Findings
-                </div>
-                <div
-                  style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-                >
-                  {panelCards.map((card) => (
-                    <div
-                      key={card.id}
-                      id={card.id}
-                      style={{
-                        background: '#fff',
-                        borderRadius: 13,
-                        boxShadow: cardRing,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <button
-                        onClick={() =>
-                          setOpenCard((was) =>
-                            was === card.id ? null : card.id,
-                          )
-                        }
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 9,
-                          width: '100%',
-                          textAlign: 'left',
-                          border: 0,
-                          background: 'transparent',
-                          font: 'inherit',
-                          cursor: 'pointer',
-                          padding: '12px 14px',
-                        }}
-                      >
-                        <span
-                          style={{
-                            flex: '0 0 6px',
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            background:
-                              card.severity === 'error' ? '#ff3b30' : '#e8a33d',
-                          }}
-                        />
-                        <span
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            fontSize: 14,
-                            letterSpacing: '-.008em',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {card.label}
-                        </span>
-                        <span
-                          style={{
-                            flex: '0 0 auto',
-                            fontFamily: font.mono,
-                            fontSize: 11.5,
-                            color: cellRefInk,
-                          }}
-                        >
-                          {card.place.where}
-                        </span>
-                      </button>
-                      {openCard === card.id && (
-                        <div style={{ padding: '0 14px 14px' }}>
-                          <div
-                            style={{
-                              fontSize: 13.5,
-                              color: '#3a3a3c',
-                              lineHeight: 1.55,
-                              textWrap: 'pretty',
-                            }}
-                          >
-                            {card.place.text}
-                          </div>
-                          {card.place.grid && (
-                            <MiniGrid grid={card.place.grid} />
-                          )}
-                          {card.place.flow && (
-                            <div
-                              style={{
-                                fontSize: 13,
-                                color: '#3a3a3c',
-                                lineHeight: 1.5,
-                                marginTop: 10,
-                                textWrap: 'pretty',
-                              }}
-                            >
-                              Flows into {card.place.flow}.
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -2026,55 +1773,9 @@ export const CheckFile = ({
                 cell in its own neighbourhood. */}
             {shownPlace.grid && <MiniGrid grid={shownPlace.grid} />}
 
-            {pickedGroup.places.length > 1 && (
-              //: Picking a place swaps the grid above to that cell.
-              <div
-                style={{
-                  marginTop: 16,
-                  borderRadius: 10,
-                  overflow: 'hidden',
-                  boxShadow: '0 0 0 .5px rgba(0,0,0,.08)',
-                }}
-              >
-                {pickedGroup.places.map((one, index) => (
-                  <button
-                    key={`${one.where}-${index}`}
-                    onClick={() => setPlaceAt(index)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      textAlign: 'left',
-                      border: 0,
-                      font: 'inherit',
-                      cursor: 'pointer',
-                      background: index === placeAt ? '#f2f6fd' : '#fafafc',
-                      borderTop: index === 0 ? 0 : '.5px solid #f0eff1',
-                      padding: '10px 14px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 14,
-                        color: '#3a3a3c',
-                        textWrap: 'pretty',
-                      }}
-                    >
-                      {one.text}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12.5,
-                        color: index === placeAt ? ink.accent : '#a1a1a6',
-                        fontFamily: font.mono,
-                        marginTop: 2,
-                      }}
-                    >
-                      {one.where}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* No place-list: the findings table already itemizes
+                every place as its own row — repeating them here read
+                as bloat, the founder's word. */}
 
             {/* The consequence, in the model's own words — where the
                 cell's value goes, from the dependents walk. */}
@@ -2095,42 +1796,6 @@ export const CheckFile = ({
 
             {noteText === null ? (
               <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-                {/* « Open the cell » — the bench's own panel, landed on
-                    this finding's cell. Excel's own green, the same
-                    #107c41 the mini-grid already speaks, with the mark
-                    beside it — exactly the deal modal's button. */}
-                {isModel && pickedGroup.key !== 'solo' && (
-                  <button
-                    onClick={() => {
-                      setCellAt({ group: pickedGroup.key, place: placeAt })
-                      closeModal()
-                    }}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      border: 0,
-                      background: '#107c41',
-                      color: '#fff',
-                      borderRadius: 9,
-                      padding: '9px 16px',
-                      font: 'inherit',
-                      fontSize: 14,
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={excelLogo}
-                      alt=""
-                      width={16}
-                      height={16}
-                      style={{ display: 'block' }}
-                    />
-                    Open the cell
-                  </button>
-                )}
                 {pickedGroup.key !== 'solo' && (
                   <button
                     onClick={() => setNoteText('')}

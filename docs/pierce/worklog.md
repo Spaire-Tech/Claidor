@@ -2857,3 +2857,48 @@ An honest note on how this escaped: the pre-merge drives were real
 but the data was small. The lesson kept: the demo deal now holds a
 fifteen-finding version, so the next layout change is driven against
 a model big enough to cross the word list's edge.
+
+## The drumbeat is one decision, and the button opens the real file (17 August)
+
+The founder read a report with the same sentence six times — Z23, Z50,
+Z77, Z104, Z131, Z157, one typed-over finding per depreciation block —
+then opened the modal and read the same six places again, then pressed
+« Open the cell » and got a right-panel copy of the grid already on
+screen. Their verdict: bloated, and the button makes zero sense. Both
+verdicts were correct.
+
+**The collapse.** The audit already knew one dragged formula is one
+finding; it could not see the same truth for typed cells, because that
+collapse compares formula shapes and a typed cell has no formula. The
+evidence of repetition is the layout itself: same sheet, same column,
+and either the same row label typed over twice or at least three
+places at a constant row spacing — a drumbeat, not a coincidence. Six
+fold into one sentence: « One column is typed over in 6 places — E32,
+E59, E86, E113, E140, E167 — while the rest of each row is
+calculated. » A shared label leads the sentence; six different block
+labels do not pretend to be one. The collapsed finding drops the
+per-cell figure and fix — each place holds its own number, and the
+one-cell writer must not claim six. Two typed cells that merely share
+a column stay two findings. The vertical-paste tests were updated to
+the new granularity — the paste is detected cell by cell and reported
+once, its every place in the evidence — and two new tests pin the
+block fold and the two-is-coincidence rule.
+
+**The modal.** The place-list is gone from both report faces: the
+findings table already itemizes every place as its own row, and the
+modal repeating them was a leftover from the card design. The header's
+« N places » stays.
+
+**Open the cell.** The deal's button now asks the server where the
+real document is. A SharePoint-synced model answers with the
+workbook's own page on the site — Graph's `webUrl`, carried through a
+new field on the connector's Item — with a best-effort `activeCell`
+landing in the URL (the file opens regardless; the landing needs the
+real tenant to confirm, which the stub cannot). An uploaded model has
+no live document anywhere, so the answer is a download of the exact
+stored version — driven: the press came back with
+antford_demo_model.xlsx itself. The bench's button and its panel are
+deleted, not redesigned: a one-off keeps no file, so there is nothing
+real to open, and the panel was another view of the grid already on
+screen. Two endpoint tests: an upload answers with a download; a
+stranger's model does not exist.

@@ -2411,56 +2411,10 @@ export const DealPage = ({
                 cell in its own neighbourhood. */}
             {shownFinding.grid && <MiniGrid grid={shownFinding.grid} />}
 
-            {pickedGroup.findings.length > 1 && (
-              //: A check that fails at many places gets its places as
-              //: rows; picking one swaps the grid above to that cell.
-              <div
-                style={{
-                  marginTop: 16,
-                  borderRadius: 10,
-                  overflow: 'hidden',
-                  boxShadow: '0 0 0 .5px rgba(0,0,0,.08)',
-                }}
-              >
-                {pickedGroup.findings.map((one, index) => (
-                  <button
-                    key={one.id}
-                    onClick={() => setPlace(index)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      textAlign: 'left',
-                      border: 0,
-                      font: 'inherit',
-                      cursor: 'pointer',
-                      background: index === place ? '#f2f6fd' : '#fafafc',
-                      borderTop: index === 0 ? 0 : '.5px solid #f0eff1',
-                      padding: '10px 14px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 14,
-                        color: '#3a3a3c',
-                        textWrap: 'pretty',
-                      }}
-                    >
-                      {one.title}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12.5,
-                        color: index === place ? ink.accent : '#a1a1a6',
-                        fontFamily: font.mono,
-                        marginTop: 2,
-                      }}
-                    >
-                      {one.where.detail || one.where.label}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* No place-list here: the findings table already itemizes
+                every place as its own row, and the modal repeating them
+                read as bloat — the founder's word. The header's
+                « N places » stays; the table is the navigation. */}
 
             {shownFinding.context && (
               <div
@@ -2514,16 +2468,24 @@ export const DealPage = ({
 
             {noteText === null ? (
               <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-                {/* « Open the cell » — the workspace's own model reader,
-                    landed on this finding's cell. Wears Excel's own
-                    green — the same #107c41 the mini-grid's active
-                    column and sheet tab already speak — with the Excel
-                    mark beside it. */}
+                {/* « Open the cell » — the real document, not another
+                    view of the grid. A SharePoint-synced model opens as
+                    the actual workbook on the site; an uploaded one
+                    downloads the exact stored version, because no live
+                    document exists anywhere else. Excel's own green,
+                    with the mark beside it. */}
                 {model !== null &&
                   shownFinding.where.artifact_id === model.id && (
                     <button
                       onClick={() => {
-                        onOpenDoc(model, shownFinding.id)
+                        api
+                          .openArtifact(
+                            model.id,
+                            shownFinding.source.ref ??
+                              shownFinding.where.detail,
+                          )
+                          .then((answer) => window.open(answer.url, '_blank'))
+                          .catch(() => undefined)
                         closeModal()
                       }}
                       style={{
