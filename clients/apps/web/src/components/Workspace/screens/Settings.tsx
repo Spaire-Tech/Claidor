@@ -172,8 +172,10 @@ export const Settings = ({
         if (!live) return
         setConnector(state)
         //: The moment consent lands, stop waiting — settled here where
-        //: the answer arrives rather than in a second effect.
-        if (state.connection) setWaiting(false)
+        //: the answer arrives rather than in a second effect. Active
+        //: only: a disconnected row still exists, and treating it as
+        //: the answer ended every reconnect before consent landed.
+        if (state.connection?.status === 'active') setWaiting(false)
       })
       .catch(() => live && setConnector(null))
     return () => {
@@ -310,7 +312,12 @@ export const Settings = ({
                 Microsoft account
               </div>
               <div style={{ ...listCard, overflow: 'hidden' }}>
-                {connector?.connection ? (
+                {/* Active only. A disconnected or expired row still
+                    exists — kept so a deal's folder can say why it
+                    stopped syncing — and this card wearing « Connected »
+                    over it was the bug that made Disconnect look dead
+                    and Reconnect impossible. */}
+                {connector?.connection?.status === 'active' ? (
                   <div
                     style={{
                       display: 'flex',
@@ -361,8 +368,16 @@ export const Settings = ({
                       onClick={() => {
                         void api
                           .disconnect(connector.connection!.id)
-                          .then(() => setConnAt((was) => was + 1))
-                          .catch(() => undefined)
+                          .then(() => {
+                            setSaid(null)
+                            setConnAt((was) => was + 1)
+                          })
+                          //: A failed disconnect says so, in the
+                          //: server's words — silence here reads as
+                          //: « the button does nothing ».
+                          .catch((problem) =>
+                            setSaid(String(problem?.message ?? problem)),
+                          )
                       }}
                       style={{
                         flex: '0 0 auto',
@@ -414,8 +429,37 @@ export const Settings = ({
                           ? 'Waiting for Microsoft…'
                           : said
                             ? 'Microsoft said no'
-                            : 'Nothing connected yet'}
+                            : connector?.connection?.status === 'expired'
+                              ? 'The connection expired'
+                              : connector?.connection
+                                ? 'Disconnected'
+                                : 'Nothing connected yet'}
                       </span>
+                      {/* This branch is only ever a non-active row —
+                          the active one wears the connected card. */}
+                      {!said && !waiting && connector?.connection && (
+                        //: Which account this was, and — for an expiry —
+                        //: Microsoft's own reason. Reconnecting is the
+                        //: same press as connecting.
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: 13,
+                            lineHeight: 1.45,
+                            color: ink.secondary,
+                            marginTop: 3,
+                          }}
+                        >
+                          {[
+                            connector.connection.account_email,
+                            connector.connection.status === 'expired'
+                              ? connector.connection.error
+                              : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' — ')}
+                        </span>
+                      )}
                       {said && !waiting && (
                         //: The refusal verbatim — an AADSTS sentence names
                         //: its own fix, and paraphrasing it hides the code
