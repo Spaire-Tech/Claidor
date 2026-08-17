@@ -99,6 +99,9 @@ export interface Finding {
   /** The fix, where one is derivable rather than a choice: the row's
    *  own formula, re-anchored to this cell. Empty everywhere else. */
   fix: string
+  /** What is wrong, in two or three words — « Incomplete total »,
+   *  « Unexpected hardcode ». The line a reader scans first. */
+  headline: string
   /** The little Excel grid, when the check composed one. */
   grid: FindingGrid | null
 }
@@ -465,6 +468,14 @@ export interface AskedStep {
   milliseconds: number
 }
 
+/** One cell in an assistant answer — the tool's own row, verbatim.
+ *  Rows never pass through the language model. */
+export interface AskedRow {
+  ref: string
+  what: string
+  value: string
+}
+
 export interface Asked {
   id: string
   prompt: string
@@ -473,6 +484,8 @@ export interface Asked {
   stopped: 'answered' | 'step_limit' | 'failed'
   error: string | null
   steps: AskedStep[]
+  /** The cells behind the answer, from the last tool that returned any. */
+  rows?: AskedRow[]
 }
 
 export interface GridCell {
@@ -599,6 +612,8 @@ export interface OneOffDefect {
   /** Where the cell's value goes, in the model's own words. Empty when
    *  nothing downstream reads the cell. */
   flow: string
+  /** What is wrong, in two or three words — the scan line. */
+  headline: string
   /** What a person reads first; `detail` is the evidence beneath. */
   plain: string
   /** The finding's cell with its neighbours, composed at check time. */
@@ -977,6 +992,23 @@ export class TieOutApi {
     options: { history?: AskTurn[] } = {},
   ): Promise<Asked> {
     return this.call(`/check-file/${checkId}/ask`, {
+      method: 'POST',
+      body: JSON.stringify({ prompt, history: options.history ?? [] }),
+    })
+  }
+
+  /**
+   * The assistant: one question about one model, answered from its
+   * stored graph — where a number comes from, what moves if it changes,
+   * what is typed, how the sheets are laid out, what changed between
+   * versions. The rows come back verbatim from the tools.
+   */
+  assist(
+    dealId: string,
+    prompt: string,
+    options: { history?: AskTurn[] } = {},
+  ): Promise<Asked> {
+    return this.call(`/deals/${dealId}/assist`, {
       method: 'POST',
       body: JSON.stringify({ prompt, history: options.history ?? [] }),
     })

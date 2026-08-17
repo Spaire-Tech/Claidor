@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Artifact, DealListItem, TieOutApi } from './api'
 import { Chat, ChatContext, chatKeyOf } from './Chat'
 import { blueButton, font, ground, ink, shell, wordmark } from './design'
+import { Assistant } from './screens/Assistant'
 import { CheckFile } from './screens/CheckFile'
 import { Deals } from './screens/Deals'
 import { DocPanel } from './screens/DocPanel'
@@ -33,9 +34,10 @@ import './workspace.css'
  */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
-type View = 'deals' | 'check' | 'settings'
+type View = 'assist' | 'deals' | 'check' | 'settings'
 
 const LABELS: Record<View, string> = {
+  assist: 'Assistant',
   deals: 'Models',
   check: 'Check a model',
   settings: 'Settings',
@@ -91,6 +93,7 @@ export const Workspace = ({
   //: « still asking » apart from « asked, and there are none », because
   //: the second one is the Connect Microsoft screen and the first is not.
   const [checkNonce, setCheckNonce] = useState(0)
+  const [reportNonce, setReportNonce] = useState(0)
   const [checking, setChecking] = useState(false)
 
   const [deals, setDeals] = useState<DealListItem[] | null>(null)
@@ -333,6 +336,23 @@ export const Workspace = ({
                   Ask
                 </button>
                 <button
+                  onClick={() => setReportNonce((was) => was + 1)}
+                  style={{
+                    border: 0,
+                    background: '#f0f0f2',
+                    color: ink.primary,
+                    borderRadius: 11,
+                    padding: '9px 15px',
+                    font: 'inherit',
+                    fontSize: 13.5,
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Export report
+                </button>
+                <button
                   onClick={() => !checking && setCheckNonce((was) => was + 1)}
                   style={{
                     ...blueButton,
@@ -389,7 +409,17 @@ export const Workspace = ({
           </div>
 
           {/* Content. */}
-          {view === 'deals' ? (
+          {view === 'assist' ? (
+            <Assistant
+              api={api}
+              deals={deals}
+              onOpenModel={(one) => {
+                setView('deals')
+                setDeal(one)
+                setAskOpen(false)
+              }}
+            />
+          ) : view === 'deals' ? (
             <Deals
               api={api}
               organizationId={organizationId}
@@ -405,6 +435,7 @@ export const Workspace = ({
               }}
               onChanged={() => setDealsAt((was) => was + 1)}
               checkNonce={checkNonce}
+              reportNonce={reportNonce}
               onChecking={(running) => {
                 setChecking(running)
                 //: A finished check changes the list's counts too.
@@ -500,6 +531,9 @@ export const Workspace = ({
             padding: 0,
           }}
         >
+          <button onClick={go('assist')} style={dock('assist')}>
+            Assistant
+          </button>
           <button onClick={go('deals')} style={dock('deals')}>
             Models
           </button>

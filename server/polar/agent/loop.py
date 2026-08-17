@@ -82,6 +82,10 @@ class Step:
     #: One line: « Read Project_Atlas_SPA.docx ».
     summary: str
     milliseconds: int = 0
+    #: The tool's own payload, verbatim. Screens that show structured
+    #: rows read them from here — never from the model's narration —
+    #: which is what keeps a listed figure a looked-up figure.
+    data: dict[str, Any] = field(default_factory=dict)
 
 
 class Stopped:
@@ -210,6 +214,7 @@ async def run(
                     ok=result.ok,
                     summary=result.summary,
                     milliseconds=elapsed,
+                    data=result.data,
                 )
             )
             results.append(

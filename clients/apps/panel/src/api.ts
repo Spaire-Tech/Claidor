@@ -96,6 +96,8 @@ export interface PanelDefect {
    *  checks it is still there first. */
   fix: string
   fix_before: string
+  /** What is wrong, in two or three words — the scan line. */
+  headline: string
   grid: FindingGrid | null
 }
 

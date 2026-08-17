@@ -119,6 +119,7 @@ export interface DealsProps {
   onChanged: () => void
   /** The shell's « Check now », forwarded to the open deal. */
   checkNonce: number
+  reportNonce?: number
   onChecking: (running: boolean) => void
   openDocId: string | null
   onOpenDoc: (
@@ -138,6 +139,7 @@ export const Deals = ({
   deal,
   onOpen,
   checkNonce,
+  reportNonce,
   onChecking,
   openDocId,
   onOpenDoc,
@@ -217,6 +219,7 @@ export const Deals = ({
         api={api}
         dealId={deal.id}
         checkNonce={checkNonce}
+        reportNonce={reportNonce}
         onChecking={onChecking}
         openDocId={openDocId}
         onOpenDoc={onOpenDoc}

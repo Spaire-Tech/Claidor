@@ -324,6 +324,9 @@ class FindingRead(Schema):
     #: The fix, where one is derivable rather than a choice: the row's
     #: own formula, re-anchored to this cell. Empty everywhere else.
     fix: str = ""
+    #: What is wrong, in two or three words — « Incomplete total »,
+    #: « Unexpected hardcode ». The line a reader scans first.
+    headline: str = ""
     #: The design's little Excel grid — the finding's cell with its
     #: neighbours, composed when the check ran. None on findings that
     #: predate it or that do not sit at a cell.
@@ -617,6 +620,18 @@ class AskedStep(Schema):
     milliseconds: int
 
 
+class AskedRow(Schema):
+    """One cell in an assistant answer — the tool's own row, verbatim.
+
+    Rows never pass through the language model: the screen draws them
+    from here, which is what keeps a listed figure a looked-up figure.
+    """
+
+    ref: str
+    what: str
+    value: str
+
+
 class Asked(Schema):
     """An answer, and every step it took to get there.
 
@@ -633,6 +648,9 @@ class Asked(Schema):
     stopped: str
     error: str | None
     steps: list[AskedStep]
+    #: The cells behind the answer, from the last tool that returned
+    #: any — drawn under the prose, each one clickable.
+    rows: list[AskedRow] = []
 
 
 class AskTurn(Schema):
@@ -910,6 +928,9 @@ class OneOffDefect(Schema):
     #: which the writer checks is still there before touching anything.
     fix: str = ""
     fix_before: str = ""
+    #: What is wrong, in two or three words — « Incomplete total »,
+    #: « Unexpected hardcode ». The line a reader scans first.
+    headline: str = ""
     #: The finding as a person hears it — shown first, with `detail`
     #: as the evidence beneath.
     plain: str = ""

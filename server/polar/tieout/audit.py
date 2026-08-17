@@ -176,6 +176,42 @@ RULE_NAMES: dict[str, str] = {
 #: handed in by the callers that already have them).
 PeriodAxes = dict[str, Any]
 
+#: What is wrong, in two or three words — the line a reader scans
+#: before deciding whether to read on. The catalogue names in
+#: RULE_NAMES describe the *rule* for a settings screen; these name
+#: the *defect* for a finding, which is a different sentence.
+HEADLINES: dict[str, str] = {
+    "error-value": "Error value",
+    "external-link": "External link",
+    "volatile": "Volatile function",
+    "long-formula": "Complex formula",
+    "hardcode-in-formula": "Hardcoded assumption",
+    "typed-over-formula": "Unexpected hardcode",
+    "inconsistent-anchoring": "Inconsistent anchoring",
+    "inconsistent-row": "Inconsistent formula",
+    "circular": "Circular reference",
+    "skipped-cell": "Incomplete total",
+    "hidden-sheet": "Hidden sheet",
+}
+
+
+def shown_number(value: float) -> str:
+    """A figure as a banker says it: 512.5m, 1.2bn, 19,100.
+
+    Never scientific notation — « 5.125e+08 » in a sentence is the
+    engine talking to itself. Python's `,` grouping silently stops
+    applying once `g` falls back to an exponent, which is exactly how
+    that string reached a founder's screen.
+    """
+    magnitude = abs(value)
+    if magnitude >= 1e9:
+        return f"{value / 1e9:.4g}bn"
+    if magnitude >= 1e6:
+        return f"{value / 1e6:.4g}m"
+    if magnitude >= 1e4:
+        return f"{value:,.0f}"
+    return f"{value:,.6g}"
+
 
 def _period(axes: "PeriodAxes | None", sheet: str, ref: str) -> str:
     """The model's own label for a finding's column, or nothing."""
@@ -254,9 +290,9 @@ def _quantified(book: Workbook, result: Audit, axes: "PeriodAxes | None") -> Non
             else {}
         )
         if expected is not None and abs(expected - typed) > 1e-9:
-            changes["figure"] = f"{typed:,.6g}"
+            changes["figure"] = shown_number(typed)
             changes["figure_unit"] = (
-                f"typed, where the row would calculate {expected:,.6g}"
+                f"typed, where the row would calculate {shown_number(expected)}"
             )
         replaced.append(replace_finding(finding, **changes))
     result.findings = replaced
@@ -269,78 +305,93 @@ def replace_finding(finding: Finding, **changes: str) -> Finding:
 
 
 def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
-    """The finding as a person hears it — one sentence, no formula.
+    """The finding as a banker hears it: what is wrong, then why it matters.
 
-    The engine's `detail` is evidence: the formula, the neighbours, the
-    span. Evidence under a claim is right; evidence *as* the claim is
-    what the founder read and could not: « =Z104+1 where the series
-    does =IF(... ». Every rule gets its sentence here, with the row's
-    own label leading when the model gave one. Screens show this first
-    and the evidence beneath.
+    The structure is the mentor's, adopted whole: a finding answers
+    **what is wrong → where → why it matters**, in that order. The
+    headline (:data:`HEADLINES`) says what kind of wrong; the screens
+    say where (« E41 — Total Senior Debt Service »); this sentence
+    carries the diagnosis and the consequence, in words a person scans
+    once. The engine's `detail` stays what it always was — evidence
+    beneath the claim, never the claim.
     """
-    at = finding.ref
-    period = _period(axes, finding.sheet, at)
-    #: « Opex FY2032 » beats « 'Opex'!N44 »: the row's own name and the
-    #: model's own year, with the coordinate left to the meta line. The
-    #: name a cell composes for itself already carries its column label
-    #: — « FY2032 Opex » — so the period is taken back out of it rather
-    #: than said twice.
+    #: « E41 », not « Term Sheet!E41 » — the screens put the sheet on
+    #: the where-line, and a sentence that repeats it reads like a log.
+    at = finding.ref.rsplit("!", 1)[-1]
+    period = _period(axes, finding.sheet, finding.ref)
+    #: The cell's own composed name already carries its column label —
+    #: « FY2032 Opex » — so the period is taken back out rather than
+    #: said twice.
     label = finding.name
     if period and period in label:
         label = " ".join(label.replace(period, "").split())
-    subject = (
-        f"« {label} » {period}".strip()
-        if label and period
-        else f"« {label} »"
-        if label
-        else at
-    )
-    who = f"« {label} » — " if label else ""
+    subject = f"{label} {period}".strip() if label else at
 
     if finding.rule == "typed-over-formula":
         return (
-            f"{subject} is typed. The rest of the row is calculated."
-            if label
-            else f"{at} is typed. The rest of its row is calculated."
+            f"{subject} contains a fixed value while the rest of the row "
+            "is calculated. Check whether this is an intentional override."
         )
     if finding.rule == "inconsistent-row":
         return (
-            f"{subject} does not do what the rest of the row does."
-            if label
-            else f"{at} does not do what the rest of its row does."
+            f"{subject} does not follow the formula the rest of the row "
+            "uses. Check whether the departure is deliberate."
         )
     if finding.rule == "skipped-cell":
-        worth = f", worth {finding.figure} together" if finding.figure else ""
-        return f"{who}the total misses rows directly above it{worth}."
+        leaving = (
+            f", leaving {finding.figure} outside the total" if finding.figure else ""
+        )
+        opening = (
+            f"{label} is incomplete: the formula at {at}"
+            if label
+            else f"The total at {at}"
+        )
+        return f"{opening} excludes rows immediately above it{leaving}."
     if finding.rule == "hardcode-in-formula":
         span = (
-            f" across {finding.figure_unit}"
+            f" across {finding.figure_unit.removeprefix('filled across ')}"
             if finding.figure_unit.startswith("filled")
             else f" in {period}"
             if period
             else ""
         )
         number = finding.figure or "a number"
-        return f"{who}{number} is typed inside the formula{span}."
+        return (
+            f"The formula at {at} has {number} typed directly into it"
+            f"{span}. If the assumption moves, this cell will not."
+        )
 
     sentence = {
-        "error-value": f"{at} shows an error instead of a number.",
-        "external-link": (f"{at} depends on another workbook that is not here."),
+        "error-value": (
+            f"{at} shows an error value instead of a number, and "
+            "everything reading it calculates on top of the error."
+        ),
+        "external-link": (
+            f"{at} pulls its value from another workbook that is not "
+            "here, so nothing about it can be traced or checked."
+        ),
         "volatile": (
-            f"{at} recalculates every time anything changes, so its "
-            "value never sits still."
+            f"{at} recalculates every time anything in the workbook "
+            "changes, so its value never sits still."
         ),
-        "long-formula": (f"The formula at {at} is too long for a person to follow."),
+        "long-formula": (
+            f"{at} contains an unusually complex formula. Its logic is "
+            "difficult to trace and verify by hand."
+        ),
         "inconsistent-anchoring": (
-            f"{at} anchors its references differently from the rest of its row."
+            f"{at} anchors its references differently from the rest of "
+            "its row, so filling the row again would change its result."
         ),
-        "circular": f"{at} feeds its own calculation.",
+        "circular": (
+            f"{at} feeds its own calculation, and the workbook does not "
+            "declare iterative calculation."
+        ),
     }.get(finding.rule)
     if sentence is None:
         #: Hidden sheets and the statement checks already write their
         #: detail as a sentence — it is the plain words.
         return finding.detail
-    return f"{who}{sentence}"
+    return sentence
 
 
 def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
@@ -384,7 +435,7 @@ def _flows(book: Workbook, result: Audit) -> None:
     result.findings = [
         replace_finding(
             finding,
-            flow=" → ".join(f"« {stop} »" for stop in flow(book, index, finding.ref)),
+            flow=" → ".join(flow(book, index, finding.ref)),
         )
         for finding in result.findings
     ]
@@ -681,8 +732,9 @@ def _rows(book: Workbook, result: Audit) -> None:
                         sheet=sheet,
                         name=cell.name,
                         detail=(
-                            f"{cell.value} typed into a series that is "
-                            f"otherwise calculated: {_example(calculated, usual)}"
+                            f"{shown_number(float(cell.value))} typed into "
+                            "a series that is otherwise calculated: "
+                            f"{_example(calculated, usual)}"
                         ),
                         source="ICAEW P14, FAST",
                     )
@@ -916,8 +968,9 @@ def _island_findings(
                         sheet=sheet,
                         name=cell.name,
                         detail=(
-                            f"{cell.value} typed into a column that is "
-                            f"otherwise calculated: {_example(calculated, usual)}"
+                            f"{shown_number(float(cell.value))} typed into "
+                            "a column that is otherwise calculated: "
+                            f"{_example(calculated, usual)}"
                         ),
                         source="ICAEW P14, FAST",
                     )
@@ -1168,13 +1221,13 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                             f"{cell.formula} leaves out "
                             f"{', '.join(missed[:3])} above it"
                             + (
-                                f" — worth {worth:,.6g} together"
+                                f" — worth {shown_number(worth)} together"
                                 if abs(worth) > 1e-9
                                 else ""
                             )
                         ),
                         source="ICAEW P19, EuSpRIG",
-                        figure=f"{worth:,.6g}" if abs(worth) > 1e-9 else "",
+                        figure=shown_number(worth) if abs(worth) > 1e-9 else "",
                         figure_unit="left out of the total below it",
                     )
                 )

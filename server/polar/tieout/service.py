@@ -404,8 +404,8 @@ class TieOutService:
             ANALYTIC_STANDARDS,
             run_analytics,
         )
+        from .audit import HEADLINES, plain_words
         from .audit import audit as run_rules
-        from .audit import plain_words
         from .structure import read_structure
 
         repository = TieOutRepository.from_session(session)
@@ -477,6 +477,7 @@ class TieOutService:
                         evidence={
                             "sheet": defect.sheet,
                             "name": defect.name,
+                            "headline": HEADLINES.get(defect.rule, ""),
                             "chain": render_chain(book, defect.ref),
                             "figure": defect.figure,
                             "figure_unit": defect.figure_unit,
@@ -531,6 +532,7 @@ class TieOutService:
                             evidence={
                                 "sheet": claim.sheet,
                                 "name": claim.row_label,
+                                "headline": ANALYTIC_RULE_NAMES[claim.rule],
                                 "period": claim.period,
                                 "value": claim.value,
                                 "figure": claim.figure,
@@ -810,8 +812,12 @@ class TieOutService:
         if kind is ArtifactKind.model:
             #: The workbook, rebuilt once for everything below: the
             #: plain sentences, the little grids, the statement checks.
-            from .analytics import ANALYTIC_STANDARDS, run_analytics
-            from .audit import plain_words
+            from .analytics import (
+                ANALYTIC_RULE_NAMES,
+                ANALYTIC_STANDARDS,
+                run_analytics,
+            )
+            from .audit import HEADLINES, plain_words
             from .structure import read_structure
             from .workbook import Workbook as EngineWorkbook
 
@@ -831,6 +837,7 @@ class TieOutService:
                     #: What a person reads first; the formula is
                     #: evidence beneath it, never the headline.
                     "plain": plain_words(defect, structure.axes),
+                    "headline": HEADLINES.get(defect.rule, ""),
                     "detail": defect.detail,
                     "standard": defect.source,
                     "figure": defect.figure,
@@ -858,6 +865,7 @@ class TieOutService:
                     "sheet": claim.sheet,
                     "name": claim.row_label,
                     "plain": claim.detail,
+                    "headline": ANALYTIC_RULE_NAMES.get(claim.rule, ""),
                     "detail": claim.detail,
                     "standard": ANALYTIC_STANDARDS.get(claim.rule, ""),
                     "analytical": True,
@@ -1692,6 +1700,11 @@ def _neighbourhood(
             number = float(text)
         except ValueError:
             return text
+        #: What Excel shows: digits with thousands separators, never
+        #: scientific notation — `,.6g` quietly turns 512,500,000 into
+        #: « 5.125e+08 » once `g` runs out of significant figures.
+        if abs(number) >= 1e5:
+            return f"{number:,.0f}"
         return f"{number:,.6g}"
 
     #: The model's own year for each column, from the structure layer —

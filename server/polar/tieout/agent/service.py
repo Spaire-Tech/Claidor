@@ -29,6 +29,7 @@ from polar.postgres import AsyncSession
 
 from ..repository import TieOutRepository
 from ..service import tieout
+from .model_tools import ModelWorkspace
 from .tools import TOOLSET, Workspace
 
 log = structlog.get_logger()
@@ -171,4 +172,100 @@ async def ask(
     return task, outcome
 
 
-__all__ = ["ask", "load_workspace", "record"]
+async def load_model_workspace(
+    session: AsyncSession, dossier_id: UUID, name: str = "this model"
+) -> "ModelWorkspace | None":
+    """One model as the assistant's whole world: the rebuilt workbook
+    with its exact precedent graph, the time axes, the versions and the
+    diff to the version before. None when the deal holds no model yet.
+    """
+    from ..service import _workbook_of
+    from ..structure import period_axes
+    from .model_tools import build_workspace
+
+    repository = TieOutRepository.from_session(session)
+    artifacts = await repository.current_artifacts(dossier_id)
+    model_artifact = next((one for one in artifacts if one.kind == "model"), None)
+    if model_artifact is None:
+        return None
+
+    cells = await repository.cells_of(model_artifact.id)
+    book = _workbook_of(cells)
+    book.hidden_sheets = tuple(model_artifact.counts.get("hidden_sheets", []))
+    book.very_hidden_sheets = tuple(model_artifact.counts.get("very_hidden_sheets", []))
+    order = model_artifact.counts.get("sheet_order")
+    if order:
+        book.sheets = list(order)
+
+    version_rows = [
+        one
+        for one in await repository.list_artifacts(dossier_id)
+        if one.lineage_id == model_artifact.lineage_id
+    ]
+    version_rows.sort(key=lambda one: one.version, reverse=True)
+    versions_list = [
+        {
+            "version": one.version,
+            "by": None,
+            "when": one.created_at.strftime("%d %B %H:%M") if one.created_at else "",
+        }
+        for one in version_rows
+    ]
+    diff = await tieout.model_diff(
+        session, dossier_id=dossier_id, artifact_id=model_artifact.id
+    )
+
+    return build_workspace(
+        dossier_id=dossier_id,
+        name=name,
+        filename=model_artifact.filename,
+        version=model_artifact.version,
+        book=book,
+        axes=period_axes(book),
+        versions_list=versions_list,
+        diff=diff,
+    )
+
+
+async def ask_model(
+    session: AsyncSession,
+    *,
+    dossier_id: UUID,
+    user_id: UUID,
+    prompt: str,
+    client: Client,
+    name: str = "this model",
+    model: str = AGENT_MODEL,
+    max_steps: int = MAX_STEPS,
+) -> tuple[AgentTask, Outcome]:
+    """Answer one question about one model — the assistant's loop."""
+    from .model_tools import MODEL_TOOLSET
+
+    workspace = await load_model_workspace(session, dossier_id, name)
+    if workspace is None:
+        raise ValueError("this deal holds no model to ask about")
+    outcome = await run(
+        client,
+        MODEL_TOOLSET,
+        workspace,
+        prompt,
+        model=model,
+        max_steps=max_steps,
+    )
+    task = await record(
+        session,
+        dossier_id=dossier_id,
+        user_id=user_id,
+        prompt=prompt,
+        outcome=outcome,
+    )
+    return task, outcome
+
+
+__all__ = [
+    "ask",
+    "ask_model",
+    "load_model_workspace",
+    "load_workspace",
+    "record",
+]

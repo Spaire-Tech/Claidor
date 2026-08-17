@@ -85,9 +85,13 @@ interface FailGroup {
   key: string
   label: string
   standard: string | null
+  /** `error` or `smell` — colours the modal's severity mark. */
+  severity: 'error' | 'smell'
   places: {
     text: string
     where: string
+    /** The model's own name for the row, for « E41 — Opex total ». */
+    name: string
     /** Where the cell's value goes, from the dependents walk. */
     flow: string
     grid: FindingGrid | null
@@ -265,9 +269,11 @@ export const CheckFile = ({
             ? 'figure told two ways inside the file'
             : 'figures told two ways inside the file',
         whereLine: result.disagreements[0]!.first.location,
+        severity: 'error',
         places: result.disagreements.map((one) => ({
           text: `${one.label}: ${one.first.printed} on ${one.first.location}, ${one.other.printed} on ${one.other.location}.`,
           where: `Stated ${one.statements} times`,
+          name: '',
           flow: '',
           grid: null,
         })),
@@ -300,8 +306,14 @@ export const CheckFile = ({
       const first = worst.ref
       list.push({
         key,
-        label: catalogue.get(key) ?? humanize(key),
+        //: What is wrong, in the finding's own words — « Incomplete
+        //: total » — with the catalogue's rule name as the fallback.
+        label:
+          group.find((one) => one.headline)?.headline ??
+          catalogue.get(key) ??
+          humanize(key),
         standard: group[0]!.standard || null,
+        severity: group[0]!.severity === 'error' ? 'error' : 'smell',
         analytical,
         figure: worst.figure || String(group.length),
         figureUnit: worst.figure
@@ -315,6 +327,7 @@ export const CheckFile = ({
           //: The plain sentence leads; the formula is evidence.
           text: one.plain || one.detail,
           where: one.ref,
+          name: one.name,
           flow: one.flow,
           grid: one.grid,
         })),
@@ -1142,16 +1155,34 @@ export const CheckFile = ({
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
               <span style={{ flex: 1, minWidth: 0 }}>
+                {/* What is wrong — then where, then why. The dot is the
+                    severity, borrowed from the panel's mark. */}
                 <span
                   style={{
-                    display: 'block',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
                     fontSize: 17,
                     letterSpacing: '-.016em',
                     lineHeight: 1.3,
                   }}
                 >
+                  <span
+                    style={{
+                      flex: '0 0 6px',
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background:
+                        pickedGroup.severity === 'error'
+                          ? '#ff3b30'
+                          : '#e8a33d',
+                    }}
+                  />
                   {pickedGroup.label}
                 </span>
+                {/* « E41 — Total Senior Debt Service » — the cell, then
+                    the model's own name for its row. */}
                 <span
                   style={{
                     display: 'block',
@@ -1161,10 +1192,13 @@ export const CheckFile = ({
                   }}
                 >
                   {[
+                    [shownPlace.where, shownPlace.name]
+                      .filter(Boolean)
+                      .join(' — '),
+                    pickedGroup.places.length > 1
+                      ? `${pickedGroup.places.length} places`
+                      : '',
                     pickedGroup.standard,
-                    pickedGroup.places.length === 1
-                      ? pickedGroup.places[0]!.where
-                      : `${pickedGroup.places.length} places`,
                   ]
                     .filter(Boolean)
                     .join(' · ')}

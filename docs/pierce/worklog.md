@@ -2625,3 +2625,124 @@ themselves — deal modal with grid, flow line and all three buttons;
 Open the cell; the after-fix verdict; Check a model's card; the
 panel's finding with its flow and Fix — screenshotted from the
 locally running stack and sent to the founder.
+
+## The mentor's voice: what is wrong, where, why it matters (17 August)
+
+The founder's mentor read the findings and named the disease exactly:
+they read like machine-generated audit notes — location, diagnosis and
+explanation mixed into one sentence a person has to decode before they
+can act. The structure adopted, whole: a finding answers **what is
+wrong → where → why it matters**, in that order.
+
+Every mechanical rule now carries a two-or-three-word headline
+(« Incomplete total », « Unexpected hardcode », « Complex formula »),
+shipped by the engine so every screen scans the same way; the
+where-line reads « Debt!C8 — Total Senior Debt Service » — the cell,
+then the model's own name for the row — with the standard demoted
+behind it; and the sentence is the diagnosis plus the consequence in
+the mentor's own register: « Total Senior Debt Service is incomplete:
+the formula at C8 excludes rows immediately above it, leaving 512.5m
+outside the total. » Cards lead with the headline; the modal adds a
+severity mark; the panel's scan line under each address is the
+headline rather than the clipped standard citation.
+
+And the bug his example exposed: « worth 5.125e+08 together » was
+Python's `,.6g` silently dropping thousands-grouping once `g` falls
+back to an exponent. Figures in sentences now come through one
+formatter that speaks banker — 512.5m, 1.2bn, 19,100 — and the little
+Excel grid prints digits with separators the way Excel does
+(512,500,000), never scientific notation anywhere a person reads.
+
+Verified the standing way: 423 tieout tests, web and panel typechecks
+and suites green, and the three surfaces — deal cards and modal,
+Check a model's modal, the panel — driven in the browser on a model
+carrying the mentor's own flagship case and screenshotted to the
+founder.
+
+## Workspace 3 — the models page as a report (17 August)
+
+The founder redesigned the workspace again and the models page went
+first. The page stopped being a card wall and became a report a bid
+director reads top to bottom: the model's name with its state said in
+three words (« Not ready to send » / « Ready to send » / « Recheck
+needed ») and a version pill; **Summary of the check** in sentences
+composed from measured facts — what is material and where it sits,
+what arrived with the current version, what could not run; the
+**findings as a table** — sentence, cell, figure, and a severity pill;
+**Where the findings sit** — sheets ranked by open findings with the
+role read from the sheet's own name; the accordion sections (checks
+that pass, checks that did not run, the evidence locker, the model,
+documents that quote it); and a right rail with the run's facts and
+**open findings by version** — bars counting currently-open findings
+by the version each was first seen with, real timestamps only.
+
+The severity pills speak the design's three words — Material,
+Significant, Observation — as a per-rule view mapping declared in one
+place; the engine's own error/smell grading is unchanged underneath.
+The finding modal's little grid is now drawn the way Excel draws it:
+letters across the top, row numbers down the side, the model's own
+labels in the first column, the warning-yellow cell with the selection
+ring in Excel's green, and the sheet's time axis as a muted band —
+drawn from the structure layer, since the reader keeps numbers, not
+header strings, and it claims no false row number. **Export report**
+opens the design's modal — the serif preview, the include switches —
+and exports through the browser's own print-to-PDF over a clean print
+view; a server-rendered PDF is a named next step, not something the
+button pretends to be. Kept, per the founder's instruction: the
+mentor-voice sentences everywhere, and the modal's Excel-green « Open
+the cell » with the mark, « Fix the cell », « Accept with a note ».
+
+Driven in the browser on real data and screenshotted to the founder:
+the list's Needs attention / Clear groups, the failing report face,
+the modal's new grid, Export report, the open accordions, and the
+clean two-version face with the bars. Web typecheck, 23 design tests,
+prettier all green. The Assistant tab is the next round.
+
+## The Assistant: the model answers for itself (17 August)
+
+The workspace's first tab is now the Assistant — the founder's design,
+built to the idea behind it: the review chat answers *why did you flag
+this*; this one answers *what is this model* for someone who did not
+build it. Five families of questions, one discipline: every claim in
+an answer comes out of a tool that read the graph, never out of the
+language model's memory.
+
+Six tools in `polar/tieout/agent/model_tools.py`, pure functions over
+a workspace loaded before the loop starts (workbook, period axes, an
+inverted dependents index, the version list, the latest diff):
+**locate** finds a cell by ref or by the model's own words;
+**trace_back** walks precedents and ends with a sentence naming the
+typed inputs the chain stops at; **trace_forward** lists the direct
+readers, counts the full reach from real edges, and names the labelled
+totals the cell flows into — or says « Nothing in the model reads
+this », which is its own finding; **inventory** lists typed inputs,
+hardcodes, or external links, sorted by weight; **structure** gives
+the sheets in workbook order with each one's time axis; **versions**
+carries the lineage and the latest diff. Refusals are sentences naming
+what does exist — an unknown sheet is refused with the real sheet
+names.
+
+The rows never pass through the language model: each tool returns
+`{ref, what, value}` rows, the agent Step now carries the tool's
+payload verbatim, and the new `POST /deals/{id}/assist` endpoint hands
+the last row-bearing step's rows straight to the screen. The screen
+draws them as a clickable card — ref in mono, the model's own words,
+the shown number — and a row click opens the model. The answer's last
+paragraph is the contract's boundary line: where the chain ends and
+what this file cannot see; the prompt forbids skipping it. The scope
+bar keeps the picked model visible — Excel mark, name, sheet and cell
+counts, version — and picking another resets the conversation, because
+the scope is one model.
+
+Proven the honest way this environment allows: the six tools were run
+live against the demo model (the 512.5m rows, the Opex → Opex total →
+Net cashflow flow, the exact reach counts) and are pinned by
+`tests/tieout/test_model_tools.py` — a hand-checkable workbook where
+reach == 3 is countable on paper, labels resolve before walking, and
+every tool's every row is exactly {ref, what, value}. The empty face
+was driven in the browser and screenshotted. The one thing this
+sandbox cannot drive is the live narration itself: there is no
+ANTHROPIC_API_KEY here, the endpoint answers 503 saying so, same as
+the review chat — it runs on the production keys after merge. Named
+smaller follow-up: the suggested questions are three static family
+questions; composing them from the model's own labels is the intent.
