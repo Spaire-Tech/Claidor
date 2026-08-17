@@ -2561,3 +2561,67 @@ named honestly: the model-first information architecture (deals as
 folders, the model as the object) is directed but not yet rebuilt
 underneath the workspace, and the chat's voice needs a production
 key to be heard.
+
+## The meaning layer: sentences with numbers, flows, and the fix (17 August)
+
+The founder's card — « Opex FY2032 is typed. The typed figure sits
+away from what the row would calculate » — is now composed by the
+engine, end to end, and was driven in a real browser before being
+called done.
+
+**The evaluator, graded before use.** One-step substitution over
+Excel's own cached values, registered in the analytical-checks
+protocol before results: 99.9985% agreement across 6.08 million
+corpus cells against a 99.5% bar, disagreement cause hand-read and
+named (strict-equality checksum rows), coverage and the SFT
+zero-case gap reported honestly. It powers the card's headline:
+« 19,100 — typed, where the row would calculate 19,605 », the donor
+being the row's nearest formula re-anchored to the typed column.
+
+**The dependents walk.** Every formula's precedents were already
+expanded by the reader; inverting them gives true dependents. Each
+finding now carries where its cell's value goes, three named stops
+in the model's own vocabulary — « Opex total » → « Net cashflow » →
+« Equity IRR » — walking through unnamed intermediates, refusing to
+call a row its own consequence, falling back to a sheet's name only
+when the crossing is real. A cell nothing reads walks nowhere, and
+says so by being empty.
+
+**One decision, one finding.** The hardcode collapse now keys on the
+buried literals rather than the per-column formula text — the
+founder's twenty « Production » findings were one dragged formula —
+and inconsistent-row and skipped-cell collapse with their spans said
+in periods (« FY2014–FY2033 »). Sentences no longer say the period
+twice; the row's own label leads, the coordinate lives on the grey
+meta line.
+
+**The fix, with the proof the founder asked for.** « Fix the cell »
+on a typed-over finding writes the row's own formula back into the
+deal's copy — a surgical one-cell XML edit, never a rewrite — and
+then **re-reads the corrected copy and compares every cell against
+the original**: one cell changed, exactly as asked, or the write is
+refused whole with the reason in words. The corrected copy is a new
+version through the same ingest as any upload; the audit re-runs and
+the finding is measured out of existence, not marked away. Pressed
+in the browser: the deal went from « One check doesn't pass » to
+« Everything checked passes », the model to v2, the correction row
+holding both sides. The old « a model is not written to at all »
+refusal is reversed for exactly this one derivable fix and no other
+— restoring the row's formula is not choosing a number, it is
+undoing the choosing of one. The panel carries the same button
+through Office's own API (cell must still hold the typed value, or
+it refuses), its consent copy updated to say precisely when Antford
+writes; outside real Excel it refuses out loud, which is what the
+screenshot shows — a real write in a real workbook is the one step
+this environment cannot drive, said exactly.
+
+**Open the cell.** The modal's first button lands the workspace's own
+model reader on the finding, scrolled to its card with the cell's
+neighbourhood as evidence; the Excel-native jump stays the panel's.
+
+Verified: 423 server tieout tests, web and panel typechecks and
+suites green, mypy clean on the new modules, and the screens
+themselves — deal modal with grid, flow line and all three buttons;
+Open the cell; the after-fix verdict; Check a model's card; the
+panel's finding with its flow and Fix — screenshotted from the
+locally running stack and sent to the founder.

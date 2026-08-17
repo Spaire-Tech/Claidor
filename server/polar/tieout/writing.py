@@ -52,7 +52,14 @@ from . import storage
 from .repository import TieOutRepository
 from .service import tieout
 from .storage import FileNotKept
-from .write import CannotWrite, Edit, replacement_for, write_deck, write_memo
+from .write import (
+    CannotWrite,
+    Edit,
+    replacement_for,
+    write_deck,
+    write_memo,
+    write_workbook,
+)
 
 log = structlog.get_logger()
 
@@ -92,6 +99,17 @@ class TieOutWritingService:
             return existing
 
         artifact = await self._writable_artifact(session, finding)
+        evidence = finding.evidence or {}
+        #: An audit fix is not a figure replacement: `before` is the
+        #: typed value exactly as the reader recorded it, `after` the
+        #: row's own formula the audit derived. Both came out of the
+        #: engine — nothing here is composed.
+        if finding.kind is FindingKind.audit:
+            before = str(evidence.get("fix_before") or "")
+            after = str(evidence.get("fix") or "")
+        else:
+            before = finding.printed
+            after = replacement_for(finding.printed, finding.expected)
         return await repository.save_correction(
             Correction(
                 dossier_id=finding.dossier_id,
@@ -101,13 +119,9 @@ class TieOutWritingService:
                 anchor=finding.anchor or {},
                 page=finding.page,
                 location=finding.location,
-                before=finding.printed,
-                after=replacement_for(finding.printed, finding.expected),
-                source=str(
-                    (finding.evidence or {}).get("source")
-                    or (finding.evidence or {}).get("ref")
-                    or ""
-                ),
+                before=before,
+                after=after,
+                source=str(evidence.get("source") or evidence.get("ref") or ""),
                 state=CorrectionState.proposed,
                 proposed_by_id=user_id,
             )
@@ -120,13 +134,24 @@ class TieOutWritingService:
 
         Three refusals, all of them things a screen has to be able to say.
         """
-        if finding.kind is not FindingKind.drift:
+        if finding.kind is FindingKind.audit:
+            #: The one audit fix that is derivable rather than a choice:
+            #: a typed value in a calculated row gets the row's own
+            #: formula back. Every other audit finding stays the model
+            #: author's decision — that refusal was right and stands.
+            if not (finding.evidence or {}).get("fix"):
+                raise NotCorrectable(
+                    "This is a defect in the model whose fix is a decision "
+                    "for whoever built it — there is no formula this can "
+                    "derive and put back."
+                )
+        elif finding.kind is not FindingKind.drift:
             raise NotCorrectable(
                 "This is a defect in the model rather than a figure printed "
                 "in a deliverable, so there is nothing to correct in a "
                 "document — the model's own author decides what it should say."
             )
-        if not finding.expected:
+        elif not finding.expected:
             raise NotCorrectable(
                 "This finding does not say what the figure should read, so "
                 "there is nothing to write."
@@ -154,7 +179,12 @@ class TieOutWritingService:
                 "draft with the Pierce add-in and the corrected sentence "
                 "goes in as you press it."
             )
-        if artifact.kind not in (ArtifactKind.deck, ArtifactKind.memo):
+        allowed = (
+            (ArtifactKind.model,)
+            if finding.kind is FindingKind.audit
+            else (ArtifactKind.deck, ArtifactKind.memo)
+        )
+        if artifact.kind not in allowed:
             raise NotCorrectable(
                 f"A {artifact.kind.value} is not written into by this — a "
                 "figure is corrected where it is published."
@@ -271,6 +301,16 @@ class TieOutWritingService:
                 "This was accepted in the copy open in Office, not in the "
                 "deal's. Undo it there, in the panel."
             )
+        if (correction.anchor or {}).get("kind") == "cell":
+            #: The workbook writer restores formulas over typed values,
+            #: never the other way round — typing a number over a formula
+            #: is the defect it exists to undo. The road back is the one
+            #: the deal already keeps: the version before the fix.
+            raise NotCorrectable(
+                "A fix put the row's formula back into the cell. To undo "
+                "it, the version before the fix is still in the deal — "
+                "open the model's versions."
+            )
         return await self._write(
             session,
             correction=correction,
@@ -317,7 +357,13 @@ class TieOutWritingService:
             before=before,
             after=after,
         )
-        writer = write_memo if artifact.kind is ArtifactKind.memo else write_deck
+        writer = (
+            write_workbook
+            if artifact.kind is ArtifactKind.model
+            else write_memo
+            if artifact.kind is ArtifactKind.memo
+            else write_deck
+        )
         try:
             written = writer(payload, [edit])
         except CannotWrite as problem:
@@ -346,10 +392,16 @@ class TieOutWritingService:
         # The deal's answer has changed, so it is re-answered — the same
         # unconditional re-check an upload does, and for the same reason:
         # a document that moved changes what is true about the ones it was
-        # checked against, not only about itself.
+        # checked against, not only about itself. A fixed model re-runs
+        # its audit too: the finding the fix answered is re-measured out
+        # of existence rather than marked away.
         await tieout.run_tieout(
             session, dossier_id=artifact.dossier_id, user_id=user_id
         )
+        if artifact.kind is ArtifactKind.model:
+            await tieout.run_audit(
+                session, dossier_id=artifact.dossier_id, user_id=user_id
+            )
 
         log.info(
             "tieout.correction.written",

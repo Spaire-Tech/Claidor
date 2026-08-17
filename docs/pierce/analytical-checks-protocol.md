@@ -254,3 +254,24 @@ absolute references) and evaluated; the finding then says the typed
 figure, the calculated figure, and the difference. No standing
 evaluation, no claim — the finding falls back to its structural
 sentence.
+
+**Results (17 August, same day, after the registration above).**
+Graded against the full corpus: 6,076,269 formula cells with cached
+values across the 16 Ofwat PR24 DD models and Bertha Park; the
+evaluator claimed 91.4% of them and agreed with Excel's own cached
+value on **99.9985%** of those it claimed — worst single model
+99.995% (UUW), against the registered bar of 99.5%. The hand-read of
+the disagreement sample found one cause, named: strict-equality flag
+rows (`IF(sum of six allocation fractions <> 1, 1, 0)` on the Tax
+sheets), where Excel's live arithmetic sums to exactly 1 but
+re-summing the file's decimal-serialised cached copies lands a few
+billionths off, flipping the strict `<>`. That is the known limit of
+one-step substitution over cached values, not a parse error, and it
+touches ~0.0015% of claimed cells, all in checksum rows. Honest
+coverage gap: five of the six SFT files (Anderson, Ayrshire,
+Dumfries, Elgin, RHSC) contribute zero test cases — no
+formula-with-cached-value pairs survive their values-pasted or
+legacy formats — so the grade rests on the Ofwat sixteen and Bertha
+Park (107/107). One reader fix fell out of the grading: dates are
+numbers (Excel serials) now, which took Bertha Park from 88.8% to
+100% agreement and was the entire cause of its disagreements.

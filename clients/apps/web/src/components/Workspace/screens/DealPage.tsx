@@ -298,25 +298,52 @@ export const MiniGrid = ({ grid }: { grid: FindingGrid }) => (
       background: '#fff',
     }}
   >
+    {/* Name box and formula bar, as Excel draws them. */}
     <div
       style={{
         display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '7px 12px',
-        borderBottom: '.5px solid #e8e8e8',
-        fontFamily: font.mono,
-        fontSize: 11.5,
+        alignItems: 'stretch',
+        gap: 8,
+        padding: '7px 10px',
+        borderBottom: '.5px solid #e2e2e2',
       }}
     >
-      <span style={{ flex: '0 0 auto', color: '#107c41', fontWeight: 600 }}>
-        {`'${grid.sheet}'!${grid.sel}`}
+      <span
+        style={{
+          flex: '0 0 auto',
+          minWidth: 64,
+          border: '.5px solid #d9d9d9',
+          borderRadius: 4,
+          padding: '3px 9px',
+          fontFamily: excelFace,
+          fontSize: 12.5,
+          color: '#1d1d1f',
+        }}
+      >
+        {grid.sel}
+      </span>
+      <span
+        style={{
+          flex: '0 0 auto',
+          alignSelf: 'center',
+          fontFamily: 'Georgia, serif',
+          fontStyle: 'italic',
+          fontSize: 12,
+          color: '#8a8a8a',
+        }}
+      >
+        fx
       </span>
       <span
         style={{
           flex: 1,
           minWidth: 0,
-          color: '#5f5f5f',
+          border: '.5px solid #d9d9d9',
+          borderRadius: 4,
+          padding: '3px 9px',
+          fontFamily: font.mono,
+          fontSize: 11.5,
+          color: '#3a3a3c',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -349,21 +376,30 @@ export const MiniGrid = ({ grid }: { grid: FindingGrid }) => (
                 borderBottom: '.5px solid #e2e2e2',
               }}
             />
-            {grid.cols.map((letter) => (
+            {grid.cols.map((col) => (
               <th
-                key={letter}
+                key={col.l}
                 style={{
-                  background: '#f6f6f6',
-                  borderBottom: '.5px solid #e2e2e2',
+                  background:
+                    grid.sel.replace(/\d+$/, '') === col.l
+                      ? '#e7f0e9'
+                      : '#f6f6f6',
+                  borderBottom:
+                    grid.sel.replace(/\d+$/, '') === col.l
+                      ? '1.5px solid #107c41'
+                      : '.5px solid #e2e2e2',
                   borderLeft: '.5px solid #ececec',
                   padding: '4px 10px',
-                  fontWeight: 400,
-                  color: '#8a8a8a',
-                  textAlign: 'center',
+                  fontWeight: col.p ? 500 : 400,
+                  color: col.p ? '#3a3a3c' : '#8a8a8a',
+                  textAlign: col.p ? 'right' : 'center',
                   minWidth: 74,
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {letter}
+                {/* The model's own year when it has one; the bare
+                    letter is the fallback, not the headline. */}
+                {col.p || col.l}
               </th>
             ))}
           </tr>
@@ -404,10 +440,10 @@ export const MiniGrid = ({ grid }: { grid: FindingGrid }) => (
                     padding: '5px 10px',
                     textAlign: 'right',
                     fontVariantNumeric: 'tabular-nums',
-                    color: cell.hot ? '#c22b1e' : '#1d1d1f',
+                    color: cell.hot ? '#9a6a00' : '#1d1d1f',
                     fontWeight: cell.hot ? 650 : 400,
-                    background: cell.hot ? '#fdf1f0' : 'transparent',
-                    boxShadow: cell.hot ? 'inset 0 0 0 1.5px #c22b1e' : 'none',
+                    background: cell.hot ? '#fff3cd' : 'transparent',
+                    boxShadow: cell.hot ? 'inset 0 0 0 1.5px #107c41' : 'none',
                   }}
                 >
                   {cell.v}
@@ -418,6 +454,40 @@ export const MiniGrid = ({ grid }: { grid: FindingGrid }) => (
         </tbody>
       </table>
     </div>
+    {/* The sheet-tab strip, the active tab in Excel's green. */}
+    {grid.sheets.length > 0 && (
+      <div
+        style={{
+          display: 'flex',
+          gap: 2,
+          padding: '5px 10px 0',
+          borderTop: '.5px solid #e2e2e2',
+          background: '#fafafa',
+          overflow: 'hidden',
+        }}
+      >
+        {grid.sheets.map((tab) => (
+          <span
+            key={tab}
+            style={{
+              flex: '0 0 auto',
+              padding: '5px 11px 6px',
+              fontFamily: excelFace,
+              fontSize: 12,
+              color: tab === grid.sheet ? '#107c41' : '#5f5f5f',
+              fontWeight: tab === grid.sheet ? 600 : 400,
+              borderBottom:
+                tab === grid.sheet
+                  ? '2px solid #107c41'
+                  : '2px solid transparent',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {tab}
+          </span>
+        ))}
+      </div>
+    )}
   </div>
 )
 
@@ -473,7 +543,7 @@ export interface DealPageProps {
   checkNonce: number
   onChecking: (running: boolean) => void
   openDocId: string | null
-  onOpenDoc: (doc: Artifact) => void
+  onOpenDoc: (doc: Artifact, atFindingId?: string | null) => void
   /** The model was removed — the shell goes back to the list. */
   onRemoved?: () => void
 }
@@ -588,21 +658,21 @@ export const DealPage = ({
         const parsed = Number(one.figure.replace(/,/g, ''))
         return Number.isFinite(parsed) ? Math.abs(parsed) : 0
       }
-      const worst = analytical
-        ? [...group].sort((a, b) => magnitude(b) - magnitude(a))[0]!
-        : group[0]!
-      const figure =
-        analytical && worst.figure ? worst.figure : String(group.length)
-      const figureUnit =
-        analytical && worst.figure
-          ? worst.figure_unit
-          : key === ''
-            ? group.length === 1
-              ? 'figure disagreeing with the model'
-              : 'figures disagreeing with the model'
-            : group.length === 1
-              ? 'place in the model'
-              : 'places in the model'
+      const carrying = group.filter((one) => one.figure)
+      const worst =
+        carrying.length > 0
+          ? [...carrying].sort((a, b) => magnitude(b) - magnitude(a))[0]!
+          : group[0]!
+      const figure = worst.figure || String(group.length)
+      const figureUnit = worst.figure
+        ? worst.figure_unit
+        : key === ''
+          ? group.length === 1
+            ? 'figure disagreeing with the model'
+            : 'figures disagreeing with the model'
+          : group.length === 1
+            ? 'place in the model'
+            : 'places in the model'
       const where =
         group.length === 1
           ? worst.where.detail
@@ -654,6 +724,23 @@ export const DealPage = ({
     Promise.all(
       group.findings.map((one) => api.dismiss(one.id, 'accepted', note)),
     )
+      .catch(() => undefined)
+      .then(() => {
+        setSaving(false)
+        closeModal()
+        setReload((was) => was + 1)
+      })
+  }
+
+  //: « Fix the cell » — the server writes the row's own formula into
+  //: the deal's copy as a new version, re-reads it, and compares every
+  //: cell against the original before keeping it. A refusal comes back
+  //: as the correction's own sentence.
+  const fixCell = (finding: Finding) => {
+    setSaving(true)
+    api
+      .propose(finding.id)
+      .then((correction) => api.decideCorrection(correction.id, 'accept'))
       .catch(() => undefined)
       .then(() => {
         setSaving(false)
@@ -1660,6 +1747,23 @@ export const DealPage = ({
               </div>
             )}
 
+            {/* The consequence, in the model's own words — where the
+                cell's value goes, from the dependents walk. */}
+            {shownFinding.flow && (
+              <div
+                style={{
+                  fontSize: 14.5,
+                  color: '#3a3a3c',
+                  lineHeight: 1.55,
+                  marginTop: 10,
+                  maxWidth: '62ch',
+                  textWrap: 'pretty',
+                }}
+              >
+                Flows into {shownFinding.flow}.
+              </div>
+            )}
+
             {/* « Says who », spelled out — the engine's sentence for a
                 statement check; construction rules keep their short
                 citation in the header line. */}
@@ -1680,6 +1784,44 @@ export const DealPage = ({
 
             {noteText === null ? (
               <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+                {/* « Open the cell » — the workspace's own model reader,
+                    landed on this finding's cell. The Excel-native jump
+                    stays the panel's move. */}
+                {model !== null &&
+                  shownFinding.where.artifact_id === model.id && (
+                    <button
+                      onClick={() => {
+                        onOpenDoc(model, shownFinding.id)
+                        closeModal()
+                      }}
+                      style={{
+                        ...greyButton,
+                        borderRadius: 9,
+                        padding: '9px 16px',
+                        fontSize: 14,
+                      }}
+                    >
+                      Open the cell
+                    </button>
+                  )}
+                {/* « Fix the cell » — only where the fix is derivable:
+                    the row's own formula goes back, as a new version,
+                    verified cell by cell before it is kept. */}
+                {shownFinding.fix && (
+                  <button
+                    onClick={() => fixCell(shownFinding)}
+                    disabled={saving}
+                    style={{
+                      ...greyButton,
+                      borderRadius: 9,
+                      padding: '9px 16px',
+                      fontSize: 14,
+                      opacity: saving ? 0.6 : 1,
+                    }}
+                  >
+                    Fix the cell
+                  </button>
+                )}
                 <button
                   onClick={() => setNoteText('')}
                   style={{

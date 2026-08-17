@@ -27,7 +27,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { AuditRule, PanelCheck, PanelDefect } from './api'
 import { ApiError, TieOutApi } from './api'
 import { current, signOut as forget, signIn as openSignIn } from './auth'
-import type { GoToResult, HostBridge, OpenDocument } from './host'
+import type { GoToResult, HostBridge, OpenDocument, WriteResult } from './host'
 
 export type Stage =
   | 'loading'
@@ -156,12 +156,32 @@ export function usePanel(
     await check()
   }, [check])
 
+  /** « Fix the cell » — put the row's own formula back into the open
+   *  workbook, live, then re-check the model as it now stands. Excel
+   *  recalculates in front of the person; the re-check is the proof. */
+  const fix = useCallback(
+    async (defect: PanelDefect): Promise<WriteResult> => {
+      const wrote = await bridge.write(
+        { kind: 'cell', ref: defect.ref, sheet: defect.sheet },
+        defect.fix_before,
+        defect.fix,
+      )
+      if (wrote.written) {
+        setState((was) => ({ ...was, working: true }))
+        await check()
+      }
+      return wrote
+    },
+    [bridge, check],
+  )
+
   return {
     ...state,
     signIn,
     signOut,
     goTo,
     recheck,
+    fix,
     api,
   }
 }

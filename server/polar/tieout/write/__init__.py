@@ -27,15 +27,21 @@ figure, `w:ins` carrying the new one — through
 :func:`polar.redline.ooxml.replace_tracked`, which the redline engine
 already uses for the same purpose in a different product.
 
-**A model is not written to at all.** A cell is either a formula, in which
-case the number is an output and correcting it is correcting the deck, or
-it is an input, in which case whoever owns the model owns the number. This
-is a deliberate absence, not a gap.
+**A model gets exactly one kind of write: the fix.** A cell somebody typed
+over a calculated row gets the row's own formula back — the formula the
+audit derived from the cell's neighbours, not a number anybody chose. The
+old refusal (« whoever owns the model owns the number ») was right about
+numbers and wrong about this: restoring the row's formula is not choosing
+a number, it is undoing the choosing of one. The write is surgical, and
+the corrected copy is re-read and compared **cell by cell** against the
+original — one cell changed, exactly as asked, or the write is refused
+whole. See :mod:`.workbook`.
 """
 
 from .deck import write_deck
 from .edit import CannotWrite, Edit, replacement_for
 from .memo import write_memo
+from .workbook import write_workbook
 
 __all__ = [
     "CannotWrite",
@@ -43,4 +49,5 @@ __all__ = [
     "replacement_for",
     "write_deck",
     "write_memo",
+    "write_workbook",
 ]

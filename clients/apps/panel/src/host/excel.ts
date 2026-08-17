@@ -153,16 +153,82 @@ export const excel: HostBridge = {
     }))
   },
 
-  // A model is not written into by this product, deliberately. A cell is
-  // either a formula — in which case the number is an output and the deck
-  // is what needs correcting — or an input, in which case whoever owns the
-  // model owns the number.
-  async write() {
-    return {
-      written: false,
-      by: 'none',
-      reason:
-        'a model is not corrected from here — a figure is corrected where it is published',
+  /**
+   * The one write a model gets: the fix. The row's own formula — derived
+   * by the audit, not chosen by anybody — goes back into a cell somebody
+   * typed over, and Excel recalculates it live in front of them.
+   *
+   * The same rule as every writer on the server: the cell must still be
+   * what the finding read — a typed value, not a formula — or this
+   * refuses with the reason. (The old blanket refusal was right about
+   * choosing numbers and wrong about this: restoring the row's formula
+   * is not choosing a number, it is undoing the choosing of one.)
+   */
+  async write(anchor: Anchor, before: string, after: string) {
+    const ref = anchor.ref
+    if (!ref || !after.startsWith('=')) {
+      return {
+        written: false as const,
+        by: 'none' as const,
+        reason: 'this finding carries no formula to put back',
+      }
     }
+    const { sheet, address } = splitRef(ref)
+    const name = anchor.sheet || sheet
+
+    return Excel.run(async (context) => {
+      const worksheet = name
+        ? context.workbook.worksheets.getItemOrNullObject(name)
+        : context.workbook.worksheets.getActiveWorksheet()
+      worksheet.load('isNullObject')
+      await context.sync()
+      if ((worksheet as { isNullObject?: boolean }).isNullObject) {
+        return {
+          written: false as const,
+          by: 'none' as const,
+          reason: `this workbook has no sheet called « ${name} »`,
+        }
+      }
+
+      const range = worksheet.getRange(address)
+      range.load(['formulas', 'values'])
+      await context.sync()
+
+      const holds = String(range.formulas[0]?.[0] ?? '')
+      if (holds.startsWith('=')) {
+        return {
+          written: false as const,
+          by: 'none' as const,
+          reason: `${address} already calculates — the typed value this fix replaces is no longer there`,
+        }
+      }
+      const wanted = Number(before.replace(/,/g, ''))
+      const held = Number(range.values[0]?.[0])
+      if (
+        before &&
+        Number.isFinite(wanted) &&
+        (!Number.isFinite(held) ||
+          Math.abs(held - wanted) > Math.max(1e-9, Math.abs(wanted) * 1e-9))
+      ) {
+        return {
+          written: false as const,
+          by: 'none' as const,
+          reason: `${address} holds ${String(range.values[0]?.[0])}, not ${before} — the model has moved since this was found`,
+        }
+      }
+
+      range.formulas = [[after]]
+      worksheet.activate()
+      range.select()
+      await context.sync()
+      return { written: true as const, by: 'cell' as const }
+    }).catch((error: unknown) => ({
+      written: false as const,
+      by: 'none' as const,
+      reason:
+        error instanceof Error
+          ? error.message
+          : 'Excel refused to write into that cell',
+    }))
   },
 }

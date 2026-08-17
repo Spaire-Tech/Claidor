@@ -74,6 +74,9 @@ export interface DocPanelProps {
   api: TieOutApi
   dealId: string
   doc: Artifact
+  /** « Open the cell » — a finding id to arrive open on, so the panel
+   *  lands with that finding's cell and its neighbourhood showing. */
+  openAt?: string | null
   onClose: () => void
   /** A ruling changed a finding — the page behind should reload. */
   onChanged: () => void
@@ -87,6 +90,7 @@ export const DocPanel = ({
   api,
   dealId,
   doc,
+  openAt = null,
   onClose,
   onChanged,
   onChat,
@@ -138,6 +142,17 @@ export const DocPanel = ({
       live = false
     }
   }, [api, dealId, doc.id])
+
+  //: « Open the cell » from a finding's modal: the panel arrives with
+  //: that finding open, scrolled into view — the cell and its
+  //: neighbourhood are its evidence.
+  useEffect(() => {
+    if (!openAt || findings.every((one) => one.id !== openAt)) return
+    setOpen(openAt)
+    document
+      .getElementById(`finding-${openAt}`)
+      ?.scrollIntoView({ block: 'center' })
+  }, [openAt, findings])
 
   //: The model grid, once, for cell evidence. Loaded lazily on the first
   //: cell finding opened rather than with the panel.
@@ -519,6 +534,7 @@ export const DocPanel = ({
               {mine.map((finding) => (
                 <FindingCard
                   key={finding.id}
+                  id={`finding-${finding.id}`}
                   api={api}
                   finding={finding}
                   grid={grid}
@@ -557,6 +573,7 @@ const saysOf = (finding: Finding): string =>
 
 const FindingCard = ({
   api,
+  id,
   finding,
   grid,
   open,
@@ -564,6 +581,7 @@ const FindingCard = ({
   onChanged,
 }: {
   api: TieOutApi
+  id?: string
   finding: Finding
   grid: ModelGrid | null
   open: boolean
@@ -603,6 +621,7 @@ const FindingCard = ({
 
   return (
     <div
+      id={id}
       style={{
         background: open ? 'rgba(255,255,255,.62)' : '#fff',
         backdropFilter: open ? 'blur(30px) saturate(1.8)' : 'none',

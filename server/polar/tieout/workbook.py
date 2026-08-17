@@ -31,6 +31,7 @@ last computed values in the file, and reading them is both sufficient and
 honest — the model's own answer, not a re-derivation of it.
 """
 
+import datetime
 import re
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -905,6 +906,23 @@ def _decimal(value: Any) -> Decimal | None:
         return Decimal(repr(value))
     if isinstance(value, Decimal):
         return value
+    #: A date IS a number to Excel — the serial it computes with. The
+    #: reader used to drop date cells, which made every formula that
+    #: reads one (`=InpC!F109` on Bertha Park) unevaluable and hid the
+    #: whole timeline machinery of a model from the engine. Serial
+    #: convention: days since 1899-12-30, fraction for time of day.
+    if isinstance(value, datetime.datetime):
+        delta = value - datetime.datetime(1899, 12, 30)
+        return Decimal(delta.days) + (
+            Decimal(delta.seconds) / Decimal(86400) if delta.seconds else 0
+        )
+    if isinstance(value, datetime.date):
+        return Decimal((value - datetime.date(1899, 12, 30)).days)
+    if isinstance(value, datetime.time):
+        seconds = (
+            value.hour * 3600 + value.minute * 60 + value.second
+        )
+        return Decimal(seconds) / Decimal(86400)
     return None
 
 

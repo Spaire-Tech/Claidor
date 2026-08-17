@@ -121,7 +121,10 @@ export interface DealsProps {
   checkNonce: number
   onChecking: (running: boolean) => void
   openDocId: string | null
-  onOpenDoc: (doc: import('./../api').Artifact) => void
+  onOpenDoc: (
+    doc: import('./../api').Artifact,
+    atFindingId?: string | null,
+  ) => void
   /** Opens the New-deal browser — the connected empty state's button. */
   onNewDeal: () => void
   /** The open model was removed — the shell closes it and refreshes. */
