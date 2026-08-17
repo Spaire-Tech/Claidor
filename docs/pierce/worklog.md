@@ -3091,3 +3091,74 @@ to about 2,900, with not one `#REF!`, hardcode, typed-over or
 skipped-cell result altered anywhere. The BPFMs' remaining hundreds
 are the next hand-review target — their error values now fold, so
 what remains is real enough to read one by one.
+
+## The mentor's round: semantics, agreement, and the third collapse (17 August)
+
+Five directives, taken in order, each measured before being believed.
+
+**The CELL bug was a class, and the table now exists.** The edge
+builder treated every reference argument as a read; it now keeps a
+frame stack over Microsoft's own tokenizer and reads each reference
+in the context of the function holding it. The locator class — SHEET,
+SHEETS, ISREF, ROW, COLUMN, ROWS, COLUMNS, AREAS — contributes no
+edges; CELL splits by its first argument (« contents » reads the
+cell, « filename » reads the address); INDIRECT and OFFSET keep their
+visible arguments as real edges and declare the run-time landing
+place unfollowable, in the cell's own provenance. One honest
+departure from the mentor's list: N and T stay as dependencies,
+because `N(A1)` and `T(A1)` do read the value. The audit-side
+CELL(...) patch remains as a second line of defense; seven new tests
+pin the table. On the corpus this changed no report — which is the
+point: the same protection, moved from a patch over one symptom to
+the root.
+
+**Cross-column agreement, and what it took to get it true.** First
+cut: any sister live where a column gaps = break. The corpus said no:
+the WACC model went 15 → 657, because « Daily Data » holds two
+families on different calendars (a quartet gapping on 3,965 days, an
+eleven-column family on 3,789), and each family's shared gaps read as
+breaks against the other's live days. Second cut: « a break in one
+column » is literal — a sister *gapping with* you means the source
+had no data that day (calendar, whatever the stride, which is what
+bank holidays needed); a break is a run alone among live sisters.
+The corpus said no again, quietly: the SONIA sheet keeps forecast
+anchors every 182 daily rows beside sisters interpolated for every
+day — all its gaps are « alone », by design, and 22 breaks appeared.
+Third cut: aloneness only counts when it is exceptional for the
+column. All three cuts are in the tests; the WACC model reports 15
+findings again, with truer sentences than before the round.
+
+**The 506, diagnosed in the mentor's ten minutes.** Sorted by kind:
+error-value 392 of 506, and 334 of those are `#REF!` cells that are
+exactly *two formulas* — `=InputSummary!#REF!` filled over 58 cells,
+and one CHOOSE with all three arms torn filled over 276. Third
+collapse: broken cells sharing one formula fold to one finding, still
+an error, nothing quiet, a lone broken cell unchanged. ET3 final:
+506 → 124. What remains across the BPFMs (74–182) is the genuinely-
+messier profile — dozens of distinct hardcodes and typed-over blocks,
+each its own authoring decision — which is the mentor's « ranking »
+branch, not another collapse.
+
+**The golden-master gate is protocol now.** `scripts/corpus_gate.py`
+sweeps and diffs finding-for-finding — rule, severity, ref, figure
+and sentence, not counts. The baseline (`corpus-golden-master.json`,
+27 files, 1,259 findings) is committed; an intended change
+regenerates it in the same commit and the baseline's git diff is the
+review artifact. This round is its own first demonstration: against
+the pre-round counts, 18 files changed and every changed line is one
+of the three intended changes; the other 9 match to the finding.
+
+**The eleven-version sum is not a live defect.** Hand-read in the
+cells of V5 and confirmed in all eleven versions: `=SUM(AR146:AR147)`
+(« impacting tax allowance ») sits under `=-SUM(AR146:AR147)`
+(« contributing to allowed revenue ») and a net-debt row that reads
+the same pair — three views of DRS15, feeding three different rows of
+Finance&Tax, correct as published. The « skipped » rows read the very
+range the sum reads; adding them would double count. The engine
+learned it as the fourth skipped-cell exemption (a row that reads the
+summed range is a sibling view), the founder's example model still
+reports its genuine 12.5m miss by test, and the ED2 versions each
+dropped their one false finding.
+
+Corpus: 1,981 → 1,259 findings. Suite: 456 passing, 4 skipped. The
+two mypy complaints in audit.py predate the round and are untouched.
