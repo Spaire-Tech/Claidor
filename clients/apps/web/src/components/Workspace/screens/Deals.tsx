@@ -174,7 +174,9 @@ export const Deals = ({
         .connectorState(organizationId)
         .then((state) => {
           setConnector(state)
-          if (state.connection) setWaiting(false)
+          //: Active only — a disconnected row still exists, and taking
+          //: it for the answer ended every reconnect early.
+          if (state.connection?.status === 'active') setWaiting(false)
         })
         .catch(() => undefined)
     }, 2500)
@@ -254,8 +256,13 @@ export const Deals = ({
           api
             .disconnect(id)
             .then(() => api.connectorState(organizationId))
-            .then(setConnector)
-            .catch(() => undefined)
+            .then((state) => {
+              setSaid(null)
+              setConnector(state)
+            })
+            //: A failed disconnect says so — silence reads as « the
+            //: button does nothing ».
+            .catch((problem) => setSaid(String(problem?.message ?? problem)))
         }}
       />
     )
@@ -435,7 +442,11 @@ const EmptyState = ({
   onNewDeal: () => void
   onDisconnect: () => void
 }) => {
-  const connected = !!connector?.connection
+  //: Active only. A disconnected or expired row still exists — kept so
+  //: a deal's folder can say why it stopped syncing — and this face
+  //: wearing « SharePoint connected » over it made Disconnect look
+  //: dead and hid the Connect button that reconnects.
+  const connected = connector?.connection?.status === 'active'
   return (
     <div
       style={{

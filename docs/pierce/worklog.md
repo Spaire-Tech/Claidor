@@ -2786,3 +2786,40 @@ written, and the report after — one check left, « 1 failure accepted
 with a note ». Server: two new endpoint tests (accept marks every
 place and survives replay; bare or unknown refused), the one-off
 suite at 10 passing. Web typecheck and prettier clean.
+
+## Microsoft disconnect, found dead and brought back (17 August)
+
+The founder: « microsoft disconnect isnt working. the whole microsoft
+makes no sense. i cant disconnect. or reconnect ». Audited the whole
+path — server, endpoints, every screen that reads the connection.
+
+The server was never the problem: Disconnect marks the row revoked
+and clears the tokens, deliberately keeping the row so a deal's
+folder can say why it stopped syncing. The defect was one idea broken
+in four places on the web: every screen tested *whether a connection
+row exists* where it meant *whether the connection is active*. So
+after a disconnect the state still returned the (revoked) row,
+Settings kept wearing « Connected » with a Disconnect button that
+looked dead, the SharePoint empty state kept saying « SharePoint
+connected », and the Connect button never came back — reconnecting
+was impossible by construction. Worse, both reconnect polls used the
+same test, so a reconnect attempt was declared successful the moment
+the poll saw the *old revoked row*, before consent ever landed.
+
+Fixed at all four sites: the Settings card and the deals empty state
+now gate on `status === 'active'`; both polls stop waiting only on an
+active connection; a disconnected card says « Disconnected » with the
+account it was, an expired one says so with Microsoft's own reason,
+and the blue « Connect Microsoft » button is the same press as
+connecting was. A failed disconnect now says so in the server's words
+instead of silently doing nothing.
+
+Proven the real way: the local Graph stub serves the full OAuth loop,
+so the whole cycle was driven in the browser and screenshotted —
+nothing connected → Connect → the stub's consent → « Connected,
+r.duval@rothmoor.example » → Disconnect → the card flips to
+« Disconnected » with the Connect button back → Connect again →
+connected again. No console errors. What this cannot prove is
+Microsoft's own behaviour on the production tenant — same caveat the
+stub has always carried — but the disconnect/reconnect defect was
+entirely in the screens, and the screens are what was driven.
