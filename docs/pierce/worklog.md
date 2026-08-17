@@ -2746,3 +2746,43 @@ ANTHROPIC_API_KEY here, the endpoint answers 503 saying so, same as
 the review chat — it runs on the production keys after merge. Named
 smaller follow-up: the suggested questions are three static family
 questions; composing them from the model's own labels is the intent.
+
+## Check a model becomes the founder's bench, in the report's clothes (17 August)
+
+The founder's word: Check a model is theirs — a private bench to test
+the checker and to run in demos; clients will not have it, but for now
+it stays in the dashboard. So it now wears exactly what the deal's
+model page wears: name and state tag, the verdict in words, the
+severity sentence, **Summary of the check** in sentences, the
+**findings as a table** — sentence, mono cell reference, figure,
+severity pill — **Where the findings sit** with the sheet's role read
+from its own name, the sectioned rows (checks that pass, checks that
+did not run, the model), and the right rail with the run's facts.
+
+The modal is the deal modal, verbatim: the severity dot and the
+headline, « Debt!C8 — Total Senior Debt Service · ICAEW P19 », the
+plain sentence, the Excel-true grid, and the verbs. **Open the cell**
+— Excel's green, the mark beside it — opens the bench's own panel,
+composed from the stored answer: the file's facts in the header,
+every open finding as a card with its cell in its neighbourhood,
+landed on the one that was picked. **Accept with a note** now works
+on a one-off: a new endpoint writes the ruling into the stored check
+— every place the rule fails, one note, same sweep as the deal — so
+a recent replays with the ruling standing. Owner only; a bare note or
+an unknown rule is refused in words.
+
+The honest absences, named: no version pill, version bullet or
+by-version bars — a loose file has one version and no history. And no
+« Fix the cell »: the one-off drops the workbook after reading it,
+and the fix writes a verified new version of a kept file — there is
+nothing to write into. If the bench should keep files so Fix can live
+here too, that is a product decision about what Check a model stores,
+offered to the founder as a named next step.
+
+Driven end to end on the demo model and screenshotted: the report
+with the 512.5m material row and the 19,100 hardcode, the modal, the
+panel with the Debt sheet's grid landed on C8, the note being
+written, and the report after — one check left, « 1 failure accepted
+with a note ». Server: two new endpoint tests (accept marks every
+place and survives replay; bare or unknown refused), the one-off
+suite at 10 passing. Web typecheck and prettier clean.

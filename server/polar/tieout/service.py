@@ -960,6 +960,45 @@ class TieOutService:
             )
         )
 
+    async def accept_check_rule(
+        self,
+        session: AsyncSession,
+        row: OneOffCheck,
+        *,
+        rule: str,
+        note: str,
+    ) -> OneOffCheck:
+        """Accept a failing check on a stored one-off, with the reason.
+
+        The bench's « Accept with a note » — the same sweep the deal
+        modal makes: every place the rule fails is accepted together,
+        under one note, because the ruling is about the check, not one
+        of its cells. The ruling lands in the stored answer itself, so
+        a recent reopens with it standing. A rule the stored answer
+        does not carry is refused in words — there is nothing to rule
+        on.
+        """
+        cleaned = note.strip()
+        if not cleaned:
+            raise ValueError("an acceptance needs its reason — one sentence.")
+        stored = dict(row.result or {})
+        defects = [dict(one) for one in stored.get("defects", [])]
+        hit = False
+        for one in defects:
+            if one.get("rule") == rule:
+                one["accepted"] = True
+                one["accepted_note"] = cleaned
+                hit = True
+        if not hit:
+            raise ValueError(f"no failing check named {rule} on this file.")
+        stored["defects"] = defects
+        #: Reassigned whole rather than mutated in place — a JSON column
+        #: only notices a new value.
+        row.result = stored
+        session.add(row)
+        await session.flush()
+        return row
+
     # --- reading --------------------------------------------------------
 
     async def coverage_of(
