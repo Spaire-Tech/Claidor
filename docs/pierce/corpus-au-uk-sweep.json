@@ -1,0 +1,371 @@
+[
+ {
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "sheets": 3,
+  "cells": 5443,
+  "errors": 4,
+  "smells": 16,
+  "by_rule": {
+   "typed-over-formula": 4,
+   "hardcode-in-formula": 16
+  },
+  "seconds": 1.2
+ },
+ {
+  "file": "caa_h7/h7_new_debt_indexation_fp.xlsx",
+  "sheets": 3,
+  "cells": 6750,
+  "errors": 0,
+  "smells": 16,
+  "by_rule": {
+   "hardcode-in-formula": 16
+  },
+  "seconds": 1.2
+ },
+ {
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "sheets": 62,
+  "cells": 340413,
+  "errors": 22559,
+  "smells": 5717,
+  "by_rule": {
+   "circular": 22519,
+   "skipped-cell": 7,
+   "inconsistent-row": 3,
+   "typed-over-formula": 30,
+   "hardcode-in-formula": 38,
+   "volatile": 4,
+   "long-formula": 3,
+   "error-value": 5672
+  },
+  "seconds": 62.6
+ },
+ {
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "sheets": 62,
+  "cells": 340415,
+  "errors": 22558,
+  "smells": 5688,
+  "by_rule": {
+   "circular": 22519,
+   "skipped-cell": 7,
+   "typed-over-formula": 30,
+   "inconsistent-row": 2,
+   "hardcode-in-formula": 38,
+   "volatile": 4,
+   "long-formula": 3,
+   "error-value": 5643
+  },
+  "seconds": 63.8
+ },
+ {
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "sheets": 31,
+  "cells": 41153,
+  "errors": 1,
+  "smells": 41,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 41
+  },
+  "seconds": 34.1
+ },
+ {
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "sheets": 31,
+  "cells": 41024,
+  "errors": 1,
+  "smells": 41,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 41
+  },
+  "seconds": 38.1
+ },
+ {
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "sheets": 31,
+  "cells": 41048,
+  "errors": 1,
+  "smells": 41,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 41
+  },
+  "seconds": 34.6
+ },
+ {
+  "file": "ofgem_ed2/v3_2023-10.xlsx",
+  "sheets": 31,
+  "cells": 40947,
+  "errors": 1,
+  "smells": 41,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 41
+  },
+  "seconds": 34.9
+ },
+ {
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "sheets": 31,
+  "cells": 40947,
+  "errors": 1,
+  "smells": 41,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 41
+  },
+  "seconds": 36.0
+ },
+ {
+  "file": "ofgem_ed2/v3_2024-01.xlsm",
+  "sheets": 31,
+  "cells": 42601,
+  "errors": 1,
+  "smells": 9,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 9
+  },
+  "seconds": 35.0
+ },
+ {
+  "file": "ofgem_ed2/v4_2024-07.xlsx",
+  "sheets": 31,
+  "cells": 42615,
+  "errors": 1,
+  "smells": 9,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 9
+  },
+  "seconds": 35.1
+ },
+ {
+  "file": "ofgem_ed2/v4_2025-01.xlsx",
+  "sheets": 31,
+  "cells": 43100,
+  "errors": 1,
+  "smells": 9,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 9
+  },
+  "seconds": 35.7
+ },
+ {
+  "file": "ofgem_ed2/v4_2025-07.xlsx",
+  "sheets": 31,
+  "cells": 43124,
+  "errors": 1,
+  "smells": 10,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 9,
+   "error-value": 1
+  },
+  "seconds": 33.3
+ },
+ {
+  "file": "ofgem_ed2/v4_2026-01.xlsx",
+  "sheets": 31,
+  "cells": 43127,
+  "errors": 1,
+  "smells": 10,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 9,
+   "error-value": 1
+  },
+  "seconds": 33.4
+ },
+ {
+  "file": "ofgem_ed2/v5_2026-06.xlsx",
+  "sheets": 31,
+  "cells": 43177,
+  "errors": 1,
+  "smells": 9,
+  "by_rule": {
+   "skipped-cell": 1,
+   "hardcode-in-formula": 9
+  },
+  "seconds": 33.4
+ },
+ {
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "sheets": 14,
+  "cells": 27286,
+  "errors": 7,
+  "smells": 8,
+  "by_rule": {
+   "skipped-cell": 7,
+   "hardcode-in-formula": 1,
+   "long-formula": 1,
+   "volatile": 6
+  },
+  "seconds": 4.9
+ },
+ {
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "sheets": 14,
+  "cells": 16476,
+  "errors": 4,
+  "smells": 3,
+  "by_rule": {
+   "skipped-cell": 4,
+   "hardcode-in-formula": 2,
+   "long-formula": 1
+  },
+  "seconds": 2.8
+ },
+ {
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "sheets": 18,
+  "cells": 27293,
+  "errors": 6,
+  "smells": 8,
+  "by_rule": {
+   "skipped-cell": 5,
+   "error-value": 1,
+   "hardcode-in-formula": 7,
+   "long-formula": 1
+  },
+  "seconds": 4.4
+ },
+ {
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "sheets": 40,
+  "cells": 556509,
+  "errors": 68,
+  "smells": 1548,
+  "by_rule": {
+   "skipped-cell": 7,
+   "error-value": 1547,
+   "inconsistent-row": 1,
+   "typed-over-formula": 2,
+   "hardcode-in-formula": 38,
+   "long-formula": 10,
+   "volatile": 11
+  },
+  "seconds": 162.6
+ },
+ {
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "sheets": 46,
+  "cells": 604778,
+  "errors": 43,
+  "smells": 1565,
+  "by_rule": {
+   "skipped-cell": 6,
+   "typed-over-formula": 14,
+   "error-value": 1519,
+   "hardcode-in-formula": 46,
+   "long-formula": 12,
+   "volatile": 11
+  },
+  "seconds": 186.8
+ },
+ {
+  "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+  "sheets": 6,
+  "cells": 497,
+  "errors": 0,
+  "smells": 6,
+  "by_rule": {
+   "hardcode-in-formula": 6
+  },
+  "seconds": 0.4
+ },
+ {
+  "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+  "sheets": 17,
+  "cells": 527260,
+  "errors": 0,
+  "smells": 65685,
+  "by_rule": {
+   "error-value": 65677,
+   "hardcode-in-formula": 5,
+   "long-formula": 3
+  },
+  "seconds": 145.1
+ },
+ {
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "sheets": 40,
+  "cells": 553440,
+  "errors": 34,
+  "smells": 1559,
+  "by_rule": {
+   "skipped-cell": 5,
+   "typed-over-formula": 29,
+   "hardcode-in-formula": 45,
+   "long-formula": 12,
+   "error-value": 1490,
+   "volatile": 12
+  },
+  "seconds": 200.0
+ },
+ {
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "sheets": 43,
+  "cells": 578079,
+  "errors": 367,
+  "smells": 1577,
+  "by_rule": {
+   "skipped-cell": 12,
+   "error-value": 1830,
+   "inconsistent-row": 1,
+   "typed-over-formula": 20,
+   "hardcode-in-formula": 42,
+   "long-formula": 8,
+   "volatile": 31
+  },
+  "seconds": 177.5
+ },
+ {
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "sheets": 49,
+  "cells": 646350,
+  "errors": 41,
+  "smells": 1584,
+  "by_rule": {
+   "error-value": 1499,
+   "skipped-cell": 11,
+   "typed-over-formula": 27,
+   "hardcode-in-formula": 46,
+   "long-formula": 10,
+   "volatile": 32
+  },
+  "seconds": 235.7
+ },
+ {
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "sheets": 44,
+  "cells": 560436,
+  "errors": 60,
+  "smells": 1612,
+  "by_rule": {
+   "skipped-cell": 10,
+   "typed-over-formula": 50,
+   "hardcode-in-formula": 51,
+   "error-value": 1500,
+   "long-formula": 10,
+   "volatile": 51
+  },
+  "seconds": 172.5
+ },
+ {
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "sheets": 16,
+  "cells": 500483,
+  "errors": 0,
+  "smells": 65606,
+  "by_rule": {
+   "error-value": 65593,
+   "hardcode-in-formula": 7,
+   "long-formula": 6
+  },
+  "seconds": 160.3
+ }
+]

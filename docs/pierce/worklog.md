@@ -2994,3 +2994,42 @@ reload: « 2 failures accepted with a note », the bars honest at
 0 → 12 → 12, and « None of them is new with version 3 » — a sentence
 the preserved clock finally makes true. New spine test pins all of it.
 Suite at 442 passing.
+
+## The new corpus's first sweep: two floods and a model that cleaned itself (17 August, night)
+
+The founder sourced four new public corpora — AER PTRM/RFM, Ofgem's
+ED2 PCFM with its eleven changelogged versions, RIIO-3's
+draft-to-final pairs, the CAA's Heathrow H7 model — and asked for
+them fetched. Twenty-seven files landed (the AER's site resets
+non-browser connections; marked in the committed manifest for the
+founder's own browser). The engine swept all of them. The tally, and
+what it teaches:
+
+**Two floods, both structural lessons rather than defects.** The
+WACC models carry ~65,600 findings each — 99.9% `error-value`, one
+finding per `#N/A` cell in half-million-cell daily-rates sheets,
+where a lookup past the data's edge is the template's normal state.
+The H7 price control model carries 28,276 — 22,519 of them
+`circular`, one finding per cell of what is likely one deliberate
+loop (whether the workbook declares iterative calculation there needs
+checking against the reader first). Both are the same disease the
+fill-collapse cured for formulas: one authoring situation reported
+tens of thousands of times. The cures are the next round: error
+values folded per region with a count, circular loops folded per
+loop, and the iterative flag verified on real .xlsm.
+
+**The quiet files are already defensible.** The RIIO-3 draft PCFMs
+report 7–15 findings each; the ED2 PCFM reports 10; the H7 debt
+models 16–20. On 40,000-cell regulator models those are reports a
+person can read to the end.
+
+**And one real story found by accident:** the ED2 PCFM's own history
+shows Ofgem cleaning their model — V1 through V3-October carry 41
+hardcode findings; from the V3 January re-publication onward it drops
+to 9. The version trail also keeps one `skipped-cell` finding alive
+across all eleven versions — three years unfixed, or our next junk
+lesson; the hand-review round will say which.
+
+Full per-file, per-rule numbers in the sweep record; hand-review of
+the quiet files' findings is the next round, with every verdict
+becoming a rule or a confirmed defect.
