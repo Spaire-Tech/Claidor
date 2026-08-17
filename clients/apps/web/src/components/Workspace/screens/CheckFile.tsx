@@ -533,7 +533,10 @@ export const CheckFile = ({
     .filter(({ n }) => n > 0)
     .map(
       ({ tier, n }) =>
-        `${(WORDS[n] ?? String(n)).toLowerCase()} ${tier.toLowerCase()}`,
+        //: « thirteen observations » — same plural rule as the deal page.
+        `${(WORDS[n] ?? String(n)).toLowerCase()} ${tier.toLowerCase()}${
+          tier === 'Observation' && n !== 1 ? 's' : ''
+        }`,
     )
     .join(', ')
     .replace(/^./, (c) => c.toUpperCase())
