@@ -1125,7 +1125,12 @@ export const DealPage = ({
     .filter(({ n }) => n > 0)
     .map(
       ({ tier, n }) =>
-        `${(WORDS[n] ?? String(n)).toLowerCase()} ${tier.toLowerCase()}`,
+        //: « thirteen observations », not « thirteen observation » —
+        //: material and significant read as adjectives, observation is
+        //: a noun and takes its plural.
+        `${(WORDS[n] ?? String(n)).toLowerCase()} ${tier.toLowerCase()}${
+          tier === 'Observation' && n !== 1 ? 's' : ''
+        }`,
     )
     .join(', ')
     .replace(/^./, (c) => c.toUpperCase())
@@ -1269,10 +1274,14 @@ export const DealPage = ({
     }
   })
   const trendMax = Math.max(1, ...trendCounts.map((t) => t.n))
+  //: `String(...)` on the fallback is load-bearing: past the word
+  //: list's twelve entries the fallback is a *number*, and a number
+  //: has no `.toLowerCase` — which unmounted this whole page on any
+  //: model with thirteen or more open findings.
   const trendNote =
     model && freshTotal > 0 && openFindings.length > 0
       ? `${WORDS[freshTotal] ?? freshTotal} of the ${(
-          WORDS[openFindings.length] ?? openFindings.length
+          WORDS[openFindings.length] ?? String(openFindings.length)
         ).toLowerCase()} arrived with version ${model.version}.`
       : ''
 

@@ -2823,3 +2823,37 @@ connected again. No console errors. What this cannot prove is
 Microsoft's own behaviour on the production tenant — same caveat the
 stub has always carried — but the disconnect/reconnect defect was
 entirely in the screens, and the screens are what was driven.
+
+## The thirteenth finding crashed the page (17 August, after merge)
+
+The founder opened a real model on the deployed build and got
+« Something went wrong ». The stack trace decoded to one line of the
+new report layout: the rail's trend note spells counts with a word
+list — One, Two … Twelve — and falls back past twelve entries. Every
+other fallback lands inside a sentence, where a number prints as
+itself; this one was lowercased first, and a number has no
+`.toLowerCase`. So any model with thirteen or more open findings
+unmounted the entire page. The demo models carried two findings each,
+which is why every driven proof passed over the bug.
+
+Reproduced before fixing, not assumed: a variant of the demo model
+with thirteen distinct hardcoded assumptions (the hardcode rule keeps
+different buried numbers apart on purpose — same-number fills
+collapse to one authoring decision, which the first attempt at a
+heavy model ran into) went into Harbour PFI as version 2, the check
+ran, fifteen findings opened, and the deal page died with exactly the
+founder's screen. Screenshotted. Then the one-word fix — the fallback
+becomes a string before it is lowercased — and the same page drove
+clean: fifteen rows, the bars at v1 → v2, « 15 of the 15 arrived with
+version 2 ». A second sweep found no other fallback that calls a
+method on a maybe-number, on the web or the panel.
+
+While the fifteen-finding page was on screen, one more sentence went
+wrong: « One material, one significant, 13 observation ». Material
+and significant read as adjectives; observation is a noun and takes
+its plural. Both report faces now write « 13 observations ».
+
+An honest note on how this escaped: the pre-merge drives were real
+but the data was small. The lesson kept: the demo deal now holds a
+fifteen-finding version, so the next layout change is driven against
+a model big enough to cross the word list's edge.
