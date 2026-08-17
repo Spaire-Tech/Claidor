@@ -1,32 +1,33 @@
 'use client'
 
 /**
- * Check a model — the Antford front door, wired to the one-off check.
+ * Check a model — the founder's private bench, wearing the model page.
  *
- * Source of truth: `docs/pierce/design-antford/workspace.html`, the
- * `vCheck` block. Four states, as drawn: `cFirst` (nothing connected,
- * nothing checked), `cIdle` (« Would this model survive its audit
- * today? » over the dashed drop zone), `cRunning` (the glassy progress
- * card with its staged steps), `cDone` (the verdict, the failing checks
- * as cards, and the sectioned card beneath — the model page's own
- * shapes, because a finished one-off *is* a model page without a deal).
+ * Source of truth: `docs/pierce/design-antford/workspace3.html` — the
+ * same report face the deal's model page wears, because the founder
+ * runs this screen to test the checker and to show it: name and state,
+ * the summary in sentences, the findings as a table with the design's
+ * three severity words, where they sit, the sectioned card, the right
+ * rail. The idle drop zone and the running card are unchanged from the
+ * earlier design; a finished check *is* a model page without a deal.
  *
- * What the redesign cut, cut here too: the against-picker and the
- * recent-checks list are not drawn in the Antford design and are not
- * rendered — the API still takes `against` for the panel's sake, this
- * screen simply checks the file on its own. Flagged to the founder.
- *
- * Departures, each at its code site:
- * - The one-off keeps no state, so the fail modal has no « Accept with
- *   a note » — a dismissal here would not survive a replay. Close is
- *   the only verb.
- * - The fail cards' tag slot says how many places the check fails at;
- *   the deal page's « new since version N » needs a history a one-off
- *   does not have.
- * - The running card's step notes fill when the answer lands — the real
- *   check is one request whose numbers all arrive together.
- * - The design draws no refusal state; the server's sentence is shown
- *   in the idle face's small print, as an answer rather than an error.
+ * Departures, each honest about what a one-off is:
+ * - No version pill, no version bullet, no « open findings by version »
+ *   bars: a loose file has one version and no history. Absent, not
+ *   faked.
+ * - « Accept with a note » writes the ruling into the stored check —
+ *   its own endpoint — so a recent replays with the ruling standing.
+ *   The deal writes to a Finding row instead; a one-off has none.
+ * - No « Fix the cell »: the one-off drops the workbook after reading
+ *   it, and the fix writes a verified new version of a kept file —
+ *   there is nothing here to write into. If the bench should keep
+ *   files, that is a named product change, not a button.
+ * - « Open the cell » opens the bench's own panel, composed from the
+ *   stored answer — the deal's opens the data room's document panel,
+ *   and a one-off has no artifact for that panel to stand on. Same
+ *   face: the file's facts, the findings with their cells.
+ * - The state tag speaks the report's words — Ready to send / Not
+ *   ready to send — same mapping as the deal page.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -39,8 +40,26 @@ import {
   TieOutApi,
 } from '../api'
 import { ChatContext } from '../Chat'
-import { excelLogo, fileIcon, greyButton, ink, listCard, well } from '../design'
-import { FailCard, failGrid, failHead, MiniGrid } from './DealPage'
+import {
+  cardRing,
+  cellRefInk,
+  excelLogo,
+  fileIcon,
+  font,
+  greyButton,
+  ink,
+  inputGlow,
+  well,
+} from '../design'
+import {
+  categoryOfKey,
+  MiniGrid,
+  roleOf,
+  TIER_BG,
+  TIER_FG,
+  tierOfKey,
+} from './DealPage'
+import { checkedLine } from './Deals'
 
 type Phase = 'idle' | 'running' | 'done'
 
@@ -95,15 +114,12 @@ interface FailGroup {
     /** Where the cell's value goes, from the dependents walk. */
     flow: string
     grid: FindingGrid | null
+    /** The place's own headline number, for the table's figure column. */
+    figure: string
+    figureUnit: string
   }[]
   /** A statement check — « Whether the accounts add up ». */
   analytical: boolean
-  /** The card's headline: the engine's figure for a statement check,
-   *  the count of places for anything else. */
-  figure: string
-  figureUnit: string
-  /** The mono line under the sentence. */
-  whereLine: string
 }
 
 //: Excel only — a model is the product's one file.
@@ -155,6 +171,17 @@ export const CheckFile = ({
   const [picked, setPicked] = useState<string | null>(null)
   const [placeAt, setPlaceAt] = useState(0)
   useEffect(() => setPlaceAt(0), [picked])
+  //: « Open the cell » — which place the bench's panel is landed on;
+  //: null keeps the panel closed.
+  const [cellAt, setCellAt] = useState<{ group: string; place: number } | null>(
+    null,
+  )
+  const [openCard, setOpenCard] = useState<string | null>(null)
+  //: « Accept with a note » — the deal modal's own flow. `null` means
+  //: the writing box is closed.
+  const [noteText, setNoteText] = useState<string | null>(null)
+  const [noteGlow, setNoteGlow] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const fileInput = useRef<HTMLInputElement | null>(null)
   //: Cancel forgets the request rather than aborting it — a response
@@ -212,6 +239,7 @@ export const CheckFile = ({
     setRunning({ name: file.name, kind: kindFor(file.name) })
     setResult(null)
     setPicked(null)
+    setCellAt(null)
     setSec(null)
     setRefusal('')
     setStep(0)
@@ -241,6 +269,8 @@ export const CheckFile = ({
     setResult(null)
     setRunning(null)
     setPicked(null)
+    setCellAt(null)
+    setNoteText(null)
     setSec(null)
     setRefusal('')
   }
@@ -250,6 +280,14 @@ export const CheckFile = ({
     if (resetNonce !== undefined && resetNonce > 0) reset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetNonce])
+
+  //: The report reads the open defects; an accepted one has been ruled
+  //: on and shows in the accepted line, not the table.
+  const openDefects = useMemo<OneOffDefect[]>(
+    () => (result?.defects ?? []).filter((one) => !one.accepted),
+    [result],
+  )
+  const acceptedCount = (result?.defects.length ?? 0) - openDefects.length
 
   //: The failing checks: defects gathered by rule, the file's internal
   //: disagreements as one check between them — the model page's own
@@ -263,12 +301,6 @@ export const CheckFile = ({
         label: 'The file disagrees with itself',
         standard: null,
         analytical: false,
-        figure: String(result.disagreements.length),
-        figureUnit:
-          result.disagreements.length === 1
-            ? 'figure told two ways inside the file'
-            : 'figures told two ways inside the file',
-        whereLine: result.disagreements[0]!.first.location,
         severity: 'error',
         places: result.disagreements.map((one) => ({
           text: `${one.label}: ${one.first.printed} on ${one.first.location}, ${one.other.printed} on ${one.other.location}.`,
@@ -276,10 +308,12 @@ export const CheckFile = ({
           name: '',
           flow: '',
           grid: null,
+          figure: '',
+          figureUnit: '',
         })),
       })
     const byRule = new Map<string, OneOffDefect[]>()
-    for (const defect of result.defects) {
+    for (const defect of openDefects) {
       const had = byRule.get(defect.rule)
       if (had) had.push(defect)
       else byRule.set(defect.rule, [defect])
@@ -288,22 +322,6 @@ export const CheckFile = ({
       (rules?.rules ?? []).map((rule) => [rule.key, rule.label]),
     )
     for (const [key, group] of byRule) {
-      const analytical = group[0]!.analytical
-      //: The headline — the engine's figure for a statement check
-      //: (worst first, by magnitude), the count of places otherwise.
-      const magnitude = (one: OneOffDefect) => {
-        const parsed = Number(one.figure.replace(/,/g, ''))
-        return Number.isFinite(parsed) ? Math.abs(parsed) : 0
-      }
-      const carrying = group.filter((one) => one.figure)
-      const worst =
-        carrying.length > 0
-          ? [...carrying].sort((a, b) => magnitude(b) - magnitude(a))[0]!
-          : group[0]!
-      //: The ref already carries its sheet — « Depreciation
-      //: Schedule!Z105 » — prefixing the sheet again printed it twice,
-      //: which the founder read live. The ref stands as it is.
-      const first = worst.ref
       list.push({
         key,
         //: What is wrong, in the finding's own words — « Incomplete
@@ -314,15 +332,7 @@ export const CheckFile = ({
           humanize(key),
         standard: group[0]!.standard || null,
         severity: group[0]!.severity === 'error' ? 'error' : 'smell',
-        analytical,
-        figure: worst.figure || String(group.length),
-        figureUnit: worst.figure
-          ? worst.figure_unit
-          : group.length === 1
-            ? 'place in the model'
-            : 'places in the model',
-        whereLine:
-          group.length === 1 ? first : `${first} · ${group.length} places`,
+        analytical: group[0]!.analytical,
         places: group.map((one) => ({
           //: The plain sentence leads; the formula is evidence.
           text: one.plain || one.detail,
@@ -330,12 +340,14 @@ export const CheckFile = ({
           name: one.name,
           flow: one.flow,
           grid: one.grid,
+          figure: one.figure,
+          figureUnit: one.figure_unit,
         })),
       })
     }
     list.sort((a, b) => b.places.length - a.places.length)
     return list
-  }, [result, rules])
+  }, [result, rules, openDefects])
 
   //: The chat rides beside a finished check when asked, and narrows to
   //: a finding while its modal is open. The shell owns the panel.
@@ -368,6 +380,37 @@ export const CheckFile = ({
     ? (pickedGroup.places[Math.min(placeAt, pickedGroup.places.length - 1)] ??
       pickedGroup.places[0]!)
     : null
+
+  const closeModal = () => {
+    setPicked(null)
+    setNoteText(null)
+  }
+
+  //: « Accept with a note » — the ruling lands in the stored check, so
+  //: a recent replays with it standing. Every place the rule fails is
+  //: accepted together: the ruling is about the check, not one cell.
+  const acceptGroup = (group: FailGroup, note: string) => {
+    if (result === null) return
+    setSaving(true)
+    api
+      .acceptCheckRule(result.id, group.key, note)
+      .then((updated) => {
+        setResult(updated)
+        closeModal()
+      })
+      .catch(() => undefined)
+      .then(() => setSaving(false))
+  }
+
+  //: « Open the cell » lands the panel on that finding's card.
+  useEffect(() => {
+    if (cellAt === null) return
+    const id = `bench-${cellAt.group}-${cellAt.place}`
+    setOpenCard(id)
+    requestAnimationFrame(() =>
+      document.getElementById(id)?.scrollIntoView({ block: 'center' }),
+    )
+  }, [cellAt])
 
   //: Checks that pass / did not run — the same catalogue arithmetic as
   //: the model page, only claimed for a model whose audit actually ran.
@@ -444,6 +487,7 @@ export const CheckFile = ({
 
   const sheets = Number(result?.counts['sheets'] ?? 0)
   const formulas = Number(result?.counts['formulas'] ?? 0)
+  const cellCount = Number(result?.counts['cells'] ?? 0)
 
   const verdictLine =
     fails.length === 0
@@ -452,6 +496,154 @@ export const CheckFile = ({
           fails.length === 1 ? "check doesn't pass." : "checks don't pass."
         }`
 
+  //: The report's list: every open place is one table row, in group
+  //: order, numbered the way the export numbers them. A row opens the
+  //: modal on its own group and place.
+  let rowNumber = 0
+  const tableRows = fails.flatMap((group) =>
+    group.places.map((one, index) => {
+      rowNumber += 1
+      return {
+        id: `F-${String(rowNumber).padStart(2, '0')}`,
+        rowKey: `${group.key}-${index}`,
+        title: one.text,
+        figUnit: one.figure ? one.figureUnit : '',
+        cat:
+          group.key === 'solo'
+            ? 'The file against itself'
+            : categoryOfKey(group.key),
+        where: one.where,
+        fig: one.figure,
+        tier:
+          group.key === 'solo'
+            ? ('Material' as const)
+            : tierOfKey(group.key, group.severity),
+        open: () => {
+          setPicked(group.key)
+          setPlaceAt(index)
+        },
+      }
+    }),
+  )
+  const tierCount = (tier: string) =>
+    tableRows.filter((one) => one.tier === tier).length
+  const materialCount = tierCount('Material')
+  const sevSentence = (['Material', 'Significant', 'Observation'] as const)
+    .map((tier) => ({ tier, n: tierCount(tier) }))
+    .filter(({ n }) => n > 0)
+    .map(
+      ({ tier, n }) =>
+        `${(WORDS[n] ?? String(n)).toLowerCase()} ${tier.toLowerCase()}`,
+    )
+    .join(', ')
+    .replace(/^./, (c) => c.toUpperCase())
+
+  //: The header's plain state tag — the design's own words. A one-off
+  //: is checked the moment it exists, so there is no stale face here.
+  const clean = fails.length === 0
+  const heroTag = clean ? 'Ready to send' : 'Not ready to send'
+  const heroTagFg = clean ? '#137a43' : '#c9302c'
+  //: « checked Tuesday 11:52 », lowered into the middle of a sentence.
+  const checkedLower = result
+    ? checkedLine(result.checked_at).replace(/^Checked/, 'checked')
+    : ''
+  const heroSub = clean
+    ? `Every check passed · ${checkedLower} · on its own`
+    : sevSentence
+      ? `${sevSentence}.${
+          materialCount > 0
+            ? ' Material findings should clear before the model leaves the deal team.'
+            : ''
+        }`
+      : ''
+  const acceptedLine =
+    acceptedCount === 1
+      ? '1 failure accepted with a note'
+      : `${acceptedCount} failures accepted with a note`
+
+  //: « Summary of the check » — sentences composed from measured facts,
+  //: dropped when there is nothing to say. No version sentence: a
+  //: one-off has no history to speak about.
+  const materialSheets = [
+    ...new Set(
+      openDefects
+        .filter((one) => tierOfKey(one.rule, one.severity) === 'Material')
+        .map((one) => one.sheet)
+        .filter(Boolean),
+    ),
+  ]
+  const summaryBullets: string[] = []
+  if (!clean && tableRows.length > 0) {
+    summaryBullets.push(
+      materialCount > 0
+        ? `${WORDS[materialCount] ?? materialCount} of the findings ${
+            materialCount === 1 ? 'is' : 'are'
+          } material${
+            materialSheets.length > 0
+              ? `, sitting in ${materialSheets.slice(0, 2).join(' and ')}`
+              : ''
+          }. A wrong number there changes the price.`
+        : 'None of the open findings is material — review them before the model is relied on, but nothing here rewrites the price.',
+    )
+    if (notRunRows.length > 0)
+      summaryBullets.push(
+        `${WORDS[notRunRows.length] ?? notRunRows.length} check${
+          notRunRows.length === 1 ? '' : 's'
+        } could not run — ${notRunRows
+          .slice(0, 2)
+          .map((row) => row.label.toLowerCase())
+          .join(
+            ', ',
+          )}${notRunRows.length > 2 ? ', and more' : ''} — each with its reason below.`,
+      )
+  }
+
+  //: « Where the findings sit » — sheets ranked by open findings, the
+  //: role read from the sheet's own name, nothing guessed beyond it.
+  const bySheet = new Map<string, number>()
+  for (const one of openDefects) {
+    if (one.sheet) bySheet.set(one.sheet, (bySheet.get(one.sheet) ?? 0) + 1)
+  }
+  const sheetRows = [...bySheet.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, hits]) => ({
+      name,
+      role: roleOf(name),
+      n: `${hits} ${hits === 1 ? 'finding' : 'findings'}`,
+    }))
+  const sheetsNote =
+    sheets > sheetRows.length && sheetRows.length > 0
+      ? `The other ${sheets - sheetRows.length} sheets carry no open findings.`
+      : ''
+
+  //: The right rail — the run's facts. No version bars: one version.
+  const railItems = result
+    ? [
+        { k: 'File', v: result.filename },
+        {
+          k: 'Checked',
+          v: `${checkedLine(result.checked_at).replace(/^Checked /, '')}, on its own`,
+        },
+        {
+          k: 'Read',
+          v: [
+            sheets > 0 ? `${sheets} ${sheets === 1 ? 'sheet' : 'sheets'}` : '',
+            cellCount > 0 ? `${comma(cellCount)} cells` : '',
+            formulas > 0 ? `${comma(formulas)} formulas` : '',
+          ]
+            .filter(Boolean)
+            .join(' · '),
+        },
+        { k: 'Standards', v: 'FAST · ICAEW · the model’s own checks' },
+        {
+          k: 'Coverage',
+          v: `${passRows.length + fails.length} checks · ${notRunRows.length} did not run`,
+        },
+      ].filter((item) => item.v)
+    : []
+
+  //: The section rows, in the design's order. Each: label · count ·
+  //: chevron, expansion on `#fafafc`.
   const sectionRow = (
     key: 'pass' | 'cov' | 'model',
     label: string,
@@ -502,6 +694,19 @@ export const CheckFile = ({
     </button>
   )
 
+  const noteReady = (noteText ?? '').trim().length > 2
+
+  //: The flat list the bench's panel draws — every open place, with its
+  //: group's words, in table order.
+  const panelCards = fails.flatMap((group) =>
+    group.places.map((one, index) => ({
+      id: `bench-${group.key}-${index}`,
+      label: group.label,
+      severity: group.severity,
+      place: one,
+    })),
+  )
+
   return (
     <div
       style={{
@@ -509,7 +714,7 @@ export const CheckFile = ({
         minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
-        background: well,
+        background: phase === 'done' ? '#fff' : well,
       }}
     >
       <input
@@ -807,320 +1012,888 @@ export const CheckFile = ({
       )}
 
       {phase === 'done' && result !== null && (
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflow: 'auto',
-            padding: '28px 40px 40px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: 1060,
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ padding: '4px 6px 2px' }}>
-              {fails.length === 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <svg
-                    width="17"
-                    height="17"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#34c759"
-                    strokeWidth="2.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ flex: '0 0 17px' }}
-                  >
-                    <polyline points="5,12.5 10,17.5 19,6.5" />
-                  </svg>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+          <div style={{ flex: '1 1 0', minWidth: 0, overflow: 'auto' }}>
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'flex-start',
+              }}
+            >
+              {/* The report's main column — the model page's own
+                  Workspace 3 layout, over a loose file. */}
+              <div
+                style={{
+                  flex: '1 1 0',
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  padding: '28px 36px 52px',
+                }}
+              >
+                {/* Name · state tag. No version pill: one version. */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <span
                     style={{
-                      fontSize: 21,
-                      letterSpacing: '-.02em',
+                      flex: '0 1 auto',
+                      minWidth: 0,
+                      fontSize: 23,
+                      fontWeight: 600,
+                      letterSpacing: '-.022em',
                       lineHeight: 1.2,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    Everything checked passes.
+                    {result.filename}
+                  </span>
+                  <span
+                    style={{
+                      flex: '0 0 auto',
+                      color: heroTagFg,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {heroTag}
                   </span>
                 </div>
-              ) : (
-                <div
-                  style={{
-                    fontSize: 21,
-                    letterSpacing: '-.02em',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {verdictLine}
-                </div>
-              )}
-              <div
-                style={{ fontSize: 14.5, color: ink.secondary, marginTop: 7 }}
-              >
-                {result.filename} · checked on its own
-              </div>
-            </div>
-
-            {/* A values-only copy says so before any card. */}
-            {valuesOnly && (
-              <div
-                style={{
-                  fontSize: 14.5,
-                  color: '#75757a',
-                  lineHeight: 1.5,
-                  maxWidth: '64ch',
-                  padding: '9px 2px 0',
-                  textWrap: 'pretty',
-                }}
-              >
-                This copy carries values only — the construction checks could
-                not read it; the statement checks did.
-              </div>
-            )}
-
-            {/* The failing checks, in the v2 design's two families —
-                the same sections and card face as the model page. The
-                solo card (the file disagreeing with itself) keeps the
-                untitled grid above both, like the tie-out's card. */}
-            {fails.some((one) => one.key === 'solo') && (
-              <div style={{ ...failGrid, marginTop: 18 }}>
-                {fails
-                  .filter((one) => one.key === 'solo')
-                  .map((group) => (
-                    <FailCard
-                      key={group.key}
-                      figure={group.figure}
-                      figureUnit={group.figureUnit}
-                      label={group.label}
-                      where={group.whereLine}
-                      tag=""
-                      onPick={() => setPicked(group.key)}
-                    />
-                  ))}
-              </div>
-            )}
-            {fails.some((one) => one.key !== 'solo' && !one.analytical) && (
-              <>
-                {failHead('How the model is built', true)}
-                <div style={failGrid}>
-                  {fails
-                    .filter((one) => one.key !== 'solo' && !one.analytical)
-                    .map((group) => (
-                      <FailCard
-                        key={group.key}
-                        figure={group.figure}
-                        figureUnit={group.figureUnit}
-                        label={group.label}
-                        where={group.whereLine}
-                        tag=""
-                        onPick={() => setPicked(group.key)}
-                      />
-                    ))}
-                </div>
-              </>
-            )}
-            {fails.some((one) => one.analytical) && (
-              <>
-                {failHead('Whether the accounts add up', false)}
-                <div style={failGrid}>
-                  {fails
-                    .filter((one) => one.analytical)
-                    .map((group) => (
-                      <FailCard
-                        key={group.key}
-                        figure={group.figure}
-                        figureUnit={group.figureUnit}
-                        label={group.label}
-                        where={group.whereLine}
-                        tag=""
-                        onPick={() => setPicked(group.key)}
-                      />
-                    ))}
-                </div>
-              </>
-            )}
-
-            {(passRows.length > 0 || notRunRows.length > 0 || isModel) && (
-              <div
-                style={{
-                  ...listCard,
-                  borderRadius: 14,
-                  overflow: 'hidden',
-                  marginTop: 22,
-                }}
-              >
-                {passRows.length > 0 &&
-                  sectionRow(
-                    'pass',
-                    'Checks that pass',
-                    String(passRows.length),
-                    true,
-                  )}
-                {sec === 'pass' && (
+                {clean ? (
                   <div
                     style={{
-                      background: '#fafafc',
-                      borderTop: '.5px solid #f0eff1',
+                      fontSize: 14,
+                      color: '#86868b',
+                      lineHeight: 1.55,
+                      marginTop: 8,
+                      maxWidth: '82ch',
+                      textWrap: 'pretty',
                     }}
                   >
-                    {passRows.map((rule, index) => (
+                    Everything checked passes. {heroSub}
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        lineHeight: 1.45,
+                        marginTop: 8,
+                      }}
+                    >
+                      {verdictLine}
+                    </div>
+                    {heroSub && (
                       <div
-                        key={rule.key}
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          borderTop: index === 0 ? 0 : '.5px solid #eceaec',
-                          padding: '10px 20px 10px 32px',
+                          fontSize: 14,
+                          color: '#86868b',
+                          lineHeight: 1.55,
+                          marginTop: 5,
+                          maxWidth: '82ch',
+                          textWrap: 'pretty',
                         }}
                       >
-                        <span
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            fontSize: 14.5,
-                            color: '#3a3a3c',
-                          }}
-                        >
-                          {rule.label}
-                        </span>
-                        <span
-                          style={{
-                            flex: '0 0 auto',
-                            fontSize: 12.5,
-                            color: ink.clean,
-                            fontVariantNumeric: 'tabular-nums',
-                          }}
-                        >
-                          {rule.count}
-                        </span>
+                        {heroSub}
                       </div>
-                    ))}
+                    )}
+                  </>
+                )}
+                {acceptedCount > 0 && (
+                  <div
+                    style={{ fontSize: 13.5, color: '#a1a1a6', marginTop: 6 }}
+                  >
+                    {acceptedLine}
                   </div>
                 )}
 
-                {notRunRows.length > 0 &&
-                  sectionRow(
-                    'cov',
-                    'Checks that did not run',
-                    String(notRunRows.length),
-                    passRows.length === 0,
-                  )}
-                {sec === 'cov' && (
+                {/* A values-only copy says so before anything else. */}
+                {valuesOnly && (
                   <div
                     style={{
-                      background: '#fafafc',
-                      borderTop: '.5px solid #f0eff1',
+                      fontSize: 14.5,
+                      color: '#75757a',
+                      lineHeight: 1.5,
+                      maxWidth: '64ch',
+                      padding: '9px 0 0',
+                      textWrap: 'pretty',
                     }}
                   >
-                    {notRunRows.map((row, index) => (
-                      <div
-                        key={row.label}
-                        style={{
-                          borderTop: index === 0 ? 0 : '.5px solid #eceaec',
-                          padding: '11px 20px 12px 32px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 12,
-                          }}
-                        >
+                    This copy carries values only — the construction checks
+                    could not read it; the statement checks did.
+                  </div>
+                )}
+
+                {/* Summary of the check — sentences, not counts. */}
+                {summaryBullets.length > 0 && (
+                  <>
+                    <div
+                      style={{
+                        fontSize: 16.5,
+                        fontWeight: 600,
+                        letterSpacing: '-.014em',
+                        padding: '30px 0 11px',
+                      }}
+                    >
+                      Summary of the check
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}
+                    >
+                      {summaryBullets.map((text) => (
+                        <div key={text} style={{ display: 'flex', gap: 11 }}>
+                          <span style={{ flex: '0 0 auto', color: '#c2c2c7' }}>
+                            ·
+                          </span>
                           <span
                             style={{
                               flex: 1,
                               minWidth: 0,
-                              fontSize: 14.5,
+                              fontSize: 14,
+                              lineHeight: 1.6,
                               color: '#3a3a3c',
+                              textWrap: 'pretty',
                             }}
                           >
-                            {row.label}
+                            {text}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* The findings, as the report lists them. */}
+                {tableRows.length > 0 && (
+                  <>
+                    <div
+                      style={{
+                        fontSize: 16.5,
+                        fontWeight: 600,
+                        letterSpacing: '-.014em',
+                        padding: '34px 0 2px',
+                      }}
+                    >
+                      Findings
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 20,
+                        borderBottom: '1px solid #e6e6ea',
+                        padding: '12px 4px 11px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          flex: '1 1 260px',
+                          minWidth: 150,
+                          fontSize: 12.5,
+                          color: '#8e8e93',
+                        }}
+                      >
+                        Finding
+                      </span>
+                      <span
+                        style={{
+                          flex: '0 1 176px',
+                          minWidth: 96,
+                          fontSize: 12.5,
+                          color: '#8e8e93',
+                        }}
+                      >
+                        Where
+                      </span>
+                      <span
+                        style={{
+                          flex: '0 0 80px',
+                          textAlign: 'right',
+                          fontSize: 12.5,
+                          color: '#8e8e93',
+                        }}
+                      >
+                        Figure
+                      </span>
+                      <span
+                        style={{
+                          flex: '0 0 96px',
+                          fontSize: 12.5,
+                          color: '#8e8e93',
+                        }}
+                      >
+                        Severity
+                      </span>
+                    </div>
+                    {tableRows.map((row) => (
+                      <div
+                        key={row.rowKey}
+                        onClick={row.open}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: '8px 20px',
+                          borderBottom: '1px solid #f2f2f4',
+                          padding: '14px 4px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span style={{ flex: '1 1 240px', minWidth: 150 }}>
+                          <span
+                            style={{
+                              display: 'block',
+                              fontSize: 14,
+                              letterSpacing: '-.008em',
+                              lineHeight: 1.4,
+                              textWrap: 'pretty',
+                            }}
+                          >
+                            {row.title}
                           </span>
                           <span
                             style={{
-                              flex: '0 0 auto',
-                              fontSize: 12.5,
-                              color: ink.faint,
-                              fontVariantNumeric: 'tabular-nums',
+                              display: 'flex',
+                              alignItems: 'baseline',
+                              flexWrap: 'wrap',
+                              gap: '2px 8px',
+                              marginTop: 3,
                             }}
                           >
-                            {row.count}
+                            {row.figUnit && (
+                              <span
+                                style={{
+                                  fontSize: 12.5,
+                                  color: '#a0a0a6',
+                                  lineHeight: 1.45,
+                                  textWrap: 'pretty',
+                                }}
+                              >
+                                {row.figUnit}
+                              </span>
+                            )}
+                            <span
+                              style={{
+                                fontSize: 12.5,
+                                color: '#c2c2c7',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {row.cat}
+                            </span>
                           </span>
-                        </div>
-                        <div
+                        </span>
+                        <span
                           style={{
-                            fontSize: 13,
-                            color: '#a1a1a6',
-                            marginTop: 2,
-                            textWrap: 'pretty',
+                            flex: '0 1 176px',
+                            minWidth: 96,
+                            fontFamily: font.mono,
+                            fontSize: 11.5,
+                            color: cellRefInk,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          {row.why}
-                        </div>
+                          {row.where}
+                        </span>
+                        <span
+                          style={{
+                            flex: '0 0 80px',
+                            textAlign: 'right',
+                            fontSize: 14,
+                            color: ink.accent,
+                            fontVariantNumeric: 'tabular-nums lining-nums',
+                          }}
+                        >
+                          {row.fig}
+                        </span>
+                        <span style={{ flex: '0 0 96px' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              background: TIER_BG[row.tier],
+                              color: TIER_FG[row.tier],
+                              borderRadius: 999,
+                              padding: '3px 9px',
+                              fontSize: 12,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {row.tier}
+                          </span>
+                        </span>
                       </div>
                     ))}
-                  </div>
+                  </>
                 )}
 
-                {isModel &&
-                  sectionRow(
-                    'model',
-                    'The model',
-                    '',
-                    passRows.length === 0 && notRunRows.length === 0,
-                  )}
-                {sec === 'model' && (
-                  <div
-                    style={{
-                      background: '#fafafc',
-                      borderTop: '.5px solid #f0eff1',
-                    }}
-                  >
-                    <div style={{ padding: '11px 20px 12px 32px' }}>
-                      <div style={{ fontSize: 14.5, color: '#3a3a3c' }}>
-                        {result.filename}
-                      </div>
-                      {(sheets > 0 || formulas > 0) && (
-                        <div
+                {/* Where the findings sit. */}
+                {sheetRows.length > 0 && (
+                  <>
+                    <div
+                      style={{
+                        fontSize: 16.5,
+                        fontWeight: 600,
+                        letterSpacing: '-.014em',
+                        padding: '36px 0 2px',
+                      }}
+                    >
+                      Where the findings sit
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 20,
+                        borderBottom: '1px solid #e6e6ea',
+                        padding: '12px 4px 11px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          flex: '1 1 auto',
+                          minWidth: 0,
+                          fontSize: 12.5,
+                          color: '#8e8e93',
+                        }}
+                      >
+                        Sheet
+                      </span>
+                      <span
+                        style={{
+                          flex: '0 1 176px',
+                          minWidth: 88,
+                          fontSize: 12.5,
+                          color: '#8e8e93',
+                        }}
+                      >
+                        Role
+                      </span>
+                      <span
+                        style={{
+                          flex: '0 0 140px',
+                          textAlign: 'right',
+                          fontSize: 12.5,
+                          color: '#8e8e93',
+                        }}
+                      >
+                        Findings
+                      </span>
+                    </div>
+                    {sheetRows.map((row) => (
+                      <div
+                        key={row.name}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 20,
+                          borderBottom: '1px solid #f2f2f4',
+                          padding: '14px 4px',
+                        }}
+                      >
+                        <span
                           style={{
-                            fontSize: 13,
-                            color: '#a1a1a6',
-                            marginTop: 2,
+                            flex: '1 1 auto',
+                            minWidth: 0,
+                            fontSize: 14,
+                            letterSpacing: '-.006em',
                           }}
                         >
-                          {[
-                            sheets > 0
-                              ? `${sheets} ${sheets === 1 ? 'sheet' : 'sheets'}`
-                              : null,
-                            formulas > 0 ? `${comma(formulas)} formulas` : null,
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </div>
+                          {row.name}
+                        </span>
+                        <span
+                          style={{
+                            flex: '0 1 176px',
+                            minWidth: 88,
+                            fontSize: 13,
+                            color: '#86868b',
+                          }}
+                        >
+                          {row.role}
+                        </span>
+                        <span
+                          style={{
+                            flex: '0 0 140px',
+                            textAlign: 'right',
+                            fontSize: 13,
+                            color: '#86868b',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {row.n}
+                        </span>
+                      </div>
+                    ))}
+                    {sheetsNote && (
+                      <div
+                        style={{
+                          fontSize: 12.5,
+                          color: '#a8a8ad',
+                          lineHeight: 1.5,
+                          padding: '13px 4px 0',
+                          maxWidth: '86ch',
+                          textWrap: 'pretty',
+                        }}
+                      >
+                        {sheetsNote}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* The sectioned rows, as the report draws them. */}
+                {(passRows.length > 0 || notRunRows.length > 0 || isModel) && (
+                  <div
+                    style={{ marginTop: 44, borderTop: '.5px solid #eceaec' }}
+                  >
+                    {passRows.length > 0 &&
+                      sectionRow(
+                        'pass',
+                        'Checks that pass',
+                        String(passRows.length),
+                        true,
                       )}
-                    </div>
+                    {sec === 'pass' && (
+                      <div
+                        style={{
+                          background: '#fafafc',
+                          borderTop: '.5px solid #f0eff1',
+                        }}
+                      >
+                        {passRows.map((rule, index) => (
+                          <div
+                            key={rule.key}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              borderTop: index === 0 ? 0 : '.5px solid #eceaec',
+                              padding: '10px 20px 10px 32px',
+                            }}
+                          >
+                            <span
+                              style={{
+                                flex: 1,
+                                minWidth: 0,
+                                fontSize: 14.5,
+                                color: '#3a3a3c',
+                              }}
+                            >
+                              {rule.label}
+                            </span>
+                            <span
+                              style={{
+                                flex: '0 0 auto',
+                                fontSize: 12.5,
+                                color: ink.clean,
+                                fontVariantNumeric: 'tabular-nums',
+                              }}
+                            >
+                              {rule.count}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {notRunRows.length > 0 &&
+                      sectionRow(
+                        'cov',
+                        'Checks that did not run',
+                        String(notRunRows.length),
+                        passRows.length === 0,
+                      )}
+                    {sec === 'cov' && (
+                      <div
+                        style={{
+                          background: '#fafafc',
+                          borderTop: '.5px solid #f0eff1',
+                        }}
+                      >
+                        {notRunRows.map((row, index) => (
+                          <div
+                            key={row.label}
+                            style={{
+                              borderTop: index === 0 ? 0 : '.5px solid #eceaec',
+                              padding: '11px 20px 12px 32px',
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                  fontSize: 14.5,
+                                  color: '#3a3a3c',
+                                }}
+                              >
+                                {row.label}
+                              </span>
+                              <span
+                                style={{
+                                  flex: '0 0 auto',
+                                  fontSize: 12.5,
+                                  color: ink.faint,
+                                  fontVariantNumeric: 'tabular-nums',
+                                }}
+                              >
+                                {row.count}
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 13,
+                                color: '#a1a1a6',
+                                marginTop: 2,
+                                textWrap: 'pretty',
+                              }}
+                            >
+                              {row.why}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {isModel &&
+                      sectionRow(
+                        'model',
+                        'The model',
+                        '',
+                        passRows.length === 0 && notRunRows.length === 0,
+                      )}
+                    {sec === 'model' && (
+                      <div
+                        style={{
+                          background: '#fafafc',
+                          borderTop: '.5px solid #f0eff1',
+                        }}
+                      >
+                        <div style={{ padding: '11px 20px 12px 32px' }}>
+                          <div style={{ fontSize: 14.5, color: '#3a3a3c' }}>
+                            {result.filename}
+                          </div>
+                          {(sheets > 0 || formulas > 0) && (
+                            <div
+                              style={{
+                                fontSize: 13,
+                                color: '#a1a1a6',
+                                marginTop: 2,
+                              }}
+                            >
+                              {[
+                                sheets > 0
+                                  ? `${sheets} ${sheets === 1 ? 'sheet' : 'sheets'}`
+                                  : null,
+                                formulas > 0
+                                  ? `${comma(formulas)} formulas`
+                                  : null,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+
+              {/* The right rail — the run's facts. No version bars:
+                  a one-off has one version. */}
+              {railItems.length > 0 && (
+                <div
+                  style={{
+                    flex: '0 0 288px',
+                    alignSelf: 'stretch',
+                    borderLeft: '1px solid #f0f0f2',
+                    padding: '34px 28px 44px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  {railItems.map((item) => (
+                    <span
+                      key={item.k}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4,
+                        paddingBottom: 22,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 500,
+                          letterSpacing: '-.004em',
+                        }}
+                      >
+                        {item.k}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: '#86868b',
+                          lineHeight: 1.5,
+                          textWrap: 'pretty',
+                          overflowWrap: 'anywhere',
+                        }}
+                      >
+                        {item.v}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* « Open the cell » — the bench's own panel, composed from
+              the stored answer: the file's facts, then every open
+              finding with its cell, landed on the one that was picked.
+              The deal's button opens the data room's document panel;
+              a one-off has no artifact for that panel to stand on. */}
+          {cellAt !== null && (
+            <div
+              style={{
+                flex: '1 1 0',
+                minWidth: 380,
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#ffffff',
+                borderLeft: '1px solid #f0f0f2',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  flex: '0 0 auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '14px 16px 13px 20px',
+                  borderBottom: '1px solid #f0eeec',
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={fileIcon.xls}
+                  alt=""
+                  style={{
+                    flex: '0 0 22px',
+                    width: 22,
+                    height: 22,
+                    objectFit: 'contain',
+                  }}
+                />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: 15,
+                      fontWeight: 500,
+                      letterSpacing: '-.014em',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {result.filename}
+                  </span>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: 12.5,
+                      color: '#86868b',
+                      marginTop: 1,
+                    }}
+                  >
+                    {[
+                      sheets > 0
+                        ? `${sheets} ${sheets === 1 ? 'sheet' : 'sheets'}`
+                        : '',
+                      formulas > 0 ? `${comma(formulas)} formulas` : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                </span>
+                <button
+                  onClick={() => setCellAt(null)}
+                  title="Close"
+                  style={{
+                    flex: '0 0 auto',
+                    border: 0,
+                    background: 'transparent',
+                    borderRadius: 8,
+                    padding: 5,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    color: ink.faint,
+                  }}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  >
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  overflow: 'auto',
+                  background: well,
+                  padding: '0 20px 24px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    letterSpacing: '.05em',
+                    textTransform: 'uppercase',
+                    color: '#86868b',
+                    padding: '20px 4px 8px',
+                  }}
+                >
+                  Findings
+                </div>
+                <div
+                  style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+                >
+                  {panelCards.map((card) => (
+                    <div
+                      key={card.id}
+                      id={card.id}
+                      style={{
+                        background: '#fff',
+                        borderRadius: 13,
+                        boxShadow: cardRing,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <button
+                        onClick={() =>
+                          setOpenCard((was) =>
+                            was === card.id ? null : card.id,
+                          )
+                        }
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 9,
+                          width: '100%',
+                          textAlign: 'left',
+                          border: 0,
+                          background: 'transparent',
+                          font: 'inherit',
+                          cursor: 'pointer',
+                          padding: '12px 14px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            flex: '0 0 6px',
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            background:
+                              card.severity === 'error' ? '#ff3b30' : '#e8a33d',
+                          }}
+                        />
+                        <span
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            fontSize: 14,
+                            letterSpacing: '-.008em',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {card.label}
+                        </span>
+                        <span
+                          style={{
+                            flex: '0 0 auto',
+                            fontFamily: font.mono,
+                            fontSize: 11.5,
+                            color: cellRefInk,
+                          }}
+                        >
+                          {card.place.where}
+                        </span>
+                      </button>
+                      {openCard === card.id && (
+                        <div style={{ padding: '0 14px 14px' }}>
+                          <div
+                            style={{
+                              fontSize: 13.5,
+                              color: '#3a3a3c',
+                              lineHeight: 1.55,
+                              textWrap: 'pretty',
+                            }}
+                          >
+                            {card.place.text}
+                          </div>
+                          {card.place.grid && (
+                            <MiniGrid grid={card.place.grid} />
+                          )}
+                          {card.place.flow && (
+                            <div
+                              style={{
+                                fontSize: 13,
+                                color: '#3a3a3c',
+                                lineHeight: 1.5,
+                                marginTop: 10,
+                                textWrap: 'pretty',
+                              }}
+                            >
+                              Flows into {card.place.flow}.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* The picked check — the model page's modal, without the accept:
-          a one-off keeps no state for a note to live in. */}
-      {pickedGroup !== null && shownPlace !== null && (
+      {/* The picked check — the model page's modal: what is wrong,
+          where, why; the cell in its neighbourhood; the places; and
+          the verbs. « Fix the cell » is deliberately not here: the
+          one-off drops the workbook after reading it, and a fix writes
+          a verified new version of a kept file. */}
+      {pickedGroup !== null && shownPlace !== null && result !== null && (
         <div
           style={{
             position: 'fixed',
@@ -1136,7 +1909,7 @@ export const CheckFile = ({
           }}
         >
           <div
-            onClick={() => setPicked(null)}
+            onClick={closeModal}
             style={{ position: 'absolute', inset: 0 }}
           />
           <div
@@ -1205,7 +1978,7 @@ export const CheckFile = ({
                 </span>
               </span>
               <button
-                onClick={() => setPicked(null)}
+                onClick={closeModal}
                 title="Close"
                 style={{
                   flex: '0 0 auto',
@@ -1250,23 +2023,6 @@ export const CheckFile = ({
                 cell in its own neighbourhood. */}
             {shownPlace.grid && <MiniGrid grid={shownPlace.grid} />}
 
-            {/* The consequence, in the model's own words — where the
-                cell's value goes, from the dependents walk. */}
-            {shownPlace.flow && (
-              <div
-                style={{
-                  fontSize: 14.5,
-                  color: '#3a3a3c',
-                  lineHeight: 1.55,
-                  marginTop: 14,
-                  maxWidth: '62ch',
-                  textWrap: 'pretty',
-                }}
-              >
-                Flows into {shownPlace.flow}.
-              </div>
-            )}
-
             {pickedGroup.places.length > 1 && (
               //: Picking a place swaps the grid above to that cell.
               <div
@@ -1306,6 +2062,7 @@ export const CheckFile = ({
                       style={{
                         fontSize: 12.5,
                         color: index === placeAt ? ink.accent : '#a1a1a6',
+                        fontFamily: font.mono,
                         marginTop: 2,
                       }}
                     >
@@ -1313,6 +2070,148 @@ export const CheckFile = ({
                     </div>
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* The consequence, in the model's own words — where the
+                cell's value goes, from the dependents walk. */}
+            {shownPlace.flow && (
+              <div
+                style={{
+                  fontSize: 14.5,
+                  color: '#3a3a3c',
+                  lineHeight: 1.55,
+                  marginTop: 14,
+                  maxWidth: '62ch',
+                  textWrap: 'pretty',
+                }}
+              >
+                Flows into {shownPlace.flow}.
+              </div>
+            )}
+
+            {noteText === null ? (
+              <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+                {/* « Open the cell » — the bench's own panel, landed on
+                    this finding's cell. Excel's own green, the same
+                    #107c41 the mini-grid already speaks, with the mark
+                    beside it — exactly the deal modal's button. */}
+                {isModel && pickedGroup.key !== 'solo' && (
+                  <button
+                    onClick={() => {
+                      setCellAt({ group: pickedGroup.key, place: placeAt })
+                      closeModal()
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      border: 0,
+                      background: '#107c41',
+                      color: '#fff',
+                      borderRadius: 9,
+                      padding: '9px 16px',
+                      font: 'inherit',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={excelLogo}
+                      alt=""
+                      width={16}
+                      height={16}
+                      style={{ display: 'block' }}
+                    />
+                    Open the cell
+                  </button>
+                )}
+                {pickedGroup.key !== 'solo' && (
+                  <button
+                    onClick={() => setNoteText('')}
+                    style={{
+                      ...greyButton,
+                      borderRadius: 9,
+                      padding: '9px 16px',
+                      fontSize: 14,
+                    }}
+                  >
+                    Accept with a note
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div style={{ marginTop: 18 }}>
+                <div style={{ fontSize: 13.5, color: ink.secondary }}>
+                  Why is this acceptable? The note is kept with the check and
+                  shown when it is opened again.
+                </div>
+                <textarea
+                  value={noteText}
+                  onChange={(event) => setNoteText(event.target.value)}
+                  onFocus={() => setNoteGlow(true)}
+                  onBlur={() => setNoteGlow(false)}
+                  rows={3}
+                  autoFocus
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    marginTop: 10,
+                    resize: 'none',
+                    border: 0,
+                    background: '#f5f5f7',
+                    borderRadius: 10,
+                    padding: '12px 13px',
+                    font: 'inherit',
+                    fontSize: 14.5,
+                    lineHeight: 1.5,
+                    color: ink.primary,
+                    outline: 'none',
+                    boxShadow: noteGlow ? inputGlow : 'none',
+                  }}
+                />
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginTop: 12,
+                  }}
+                >
+                  <button
+                    onClick={() =>
+                      noteReady &&
+                      !saving &&
+                      acceptGroup(pickedGroup, (noteText ?? '').trim())
+                    }
+                    style={{
+                      border: 0,
+                      background: noteReady && !saving ? ink.accent : '#c9d6e8',
+                      color: '#fff',
+                      borderRadius: 9,
+                      padding: '9px 16px',
+                      font: 'inherit',
+                      fontSize: 14,
+                      cursor: noteReady && !saving ? 'pointer' : 'default',
+                    }}
+                  >
+                    {saving ? 'Accepting' : 'Accept and close'}
+                  </button>
+                  <button
+                    onClick={() => setNoteText(null)}
+                    style={{
+                      ...greyButton,
+                      borderRadius: 9,
+                      padding: '9px 16px',
+                      fontSize: 14,
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>

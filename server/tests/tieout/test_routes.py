@@ -1189,6 +1189,75 @@ class TestCheckAFile:
         response = await client.get(f"/v1/tieout/check-file/{theirs.id}")
         assert response.status_code == 404
 
+    @pytest.mark.auth
+    async def test_accepting_a_rule_marks_every_place_and_survives_replay(
+        self, client: AsyncClient, user: User
+    ) -> None:
+        """The bench's « Accept with a note » — the ruling is about the
+        check, so every place the rule fails is accepted together, and
+        it stands when the recent is reopened."""
+        checked = (
+            await client.post(
+                "/v1/tieout/check-file",
+                files={
+                    "file": (
+                        "cascade_model.xlsx",
+                        MODEL.read_bytes(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    )
+                },
+            )
+        ).json()
+        assert len(checked["defects"]) > 0
+        rule = checked["defects"][0]["rule"]
+        of_rule = [one for one in checked["defects"] if one["rule"] == rule]
+
+        response = await client.post(
+            f"/v1/tieout/check-file/{checked['id']}/accept",
+            json={"rule": rule, "note": "Known and priced in."},
+        )
+        assert response.status_code == 200
+        accepted = [one for one in response.json()["defects"] if one["accepted"]]
+        assert len(accepted) == len(of_rule)
+        assert all(one["rule"] == rule for one in accepted)
+        assert all(one["accepted_note"] == "Known and priced in." for one in accepted)
+
+        #: The ruling is in the stored answer, not the response alone.
+        replayed = (await client.get(f"/v1/tieout/check-file/{checked['id']}")).json()
+        assert replayed == response.json()
+
+    @pytest.mark.auth
+    async def test_an_acceptance_without_a_reason_or_a_rule_is_refused(
+        self, client: AsyncClient, user: User
+    ) -> None:
+        checked = (
+            await client.post(
+                "/v1/tieout/check-file",
+                files={
+                    "file": (
+                        "cascade_model.xlsx",
+                        MODEL.read_bytes(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    )
+                },
+            )
+        ).json()
+        rule = checked["defects"][0]["rule"]
+
+        bare = await client.post(
+            f"/v1/tieout/check-file/{checked['id']}/accept",
+            json={"rule": rule, "note": "   "},
+        )
+        assert bare.status_code == 422
+        assert "reason" in bare.json()["detail"]
+
+        unknown = await client.post(
+            f"/v1/tieout/check-file/{checked['id']}/accept",
+            json={"rule": "no-such-rule", "note": "still no"},
+        )
+        assert unknown.status_code == 422
+        assert "no failing check named no-such-rule" in unknown.json()["detail"]
+
 
 @pytest.mark.asyncio
 class TestHouseRules:

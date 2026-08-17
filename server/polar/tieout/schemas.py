@@ -937,6 +937,19 @@ class OneOffDefect(Schema):
     #: The design's little Excel grid: the cell with its neighbours,
     #: composed at check time. None where the coordinate is not a cell.
     grid: dict[str, Any] | None = None
+    #: Accepted on the bench, with the note that says why — kept in the
+    #: stored answer, so a recent reopens with the ruling standing.
+    accepted: bool = False
+    accepted_note: str = ""
+
+
+class AcceptCheck(Schema):
+    """« Accept with a note » on a one-off check — one rule, one note."""
+
+    rule: str
+    #: Why this is acceptable. The server refuses a bare acceptance,
+    #: same as a deal's dismissal: a ruling without a reason is not one.
+    note: str
 
 
 class AgainstModel(Schema):
@@ -1000,6 +1013,7 @@ class RecentCheck(Schema):
 
 
 __all__ = [
+    "AcceptCheck",
     "AgainstModel",
     "ArtifactPage",
     "ArtifactRead",

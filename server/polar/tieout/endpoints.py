@@ -59,6 +59,7 @@ from .audit import RULE_NAMES
 from .ingest import Unreadable, kind_for
 from .repository import TieOutRepository
 from .schemas import (
+    AcceptCheck,
     AgainstModel,
     ArtifactPage,
     ArtifactRead,
@@ -1355,6 +1356,35 @@ async def get_one_off_check(
     row = await repository.get_one_off(check_id, auth_subject.subject.id)
     if row is None:
         raise ResourceNotFound("Check not found.")
+    return _one_off(row)
+
+
+@router.post("/check-file/{check_id}/accept", response_model=OneOffResult)
+async def accept_check_rule(
+    check_id: UUID,
+    body: AcceptCheck,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> OneOffResult:
+    """« Accept with a note » on a stored one-off check.
+
+    The bench wears the model page's report face, and the report's
+    ruling works here too: every place the named rule fails is accepted
+    together under one note, written into the stored answer, so the
+    check replays from « Recents » with the ruling standing. Owner only
+    — anyone else gets 404, not 403. A rule the answer does not carry,
+    or a note with nothing in it, is refused with the reason in words.
+    """
+    repository = TieOutRepository.from_session(session)
+    row = await repository.get_one_off(check_id, auth_subject.subject.id)
+    if row is None:
+        raise ResourceNotFound("Check not found.")
+    try:
+        row = await tieout.accept_check_rule(
+            session, row, rule=body.rule, note=body.note
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     return _one_off(row)
 
 

@@ -618,6 +618,10 @@ export interface OneOffDefect {
   plain: string
   /** The finding's cell with its neighbours, composed at check time. */
   grid: FindingGrid | null
+  /** Accepted on the bench, with the note that says why — kept in the
+   *  stored answer, so a recent replays with the ruling standing. */
+  accepted?: boolean
+  accepted_note?: string
 }
 
 /** One cell of the little Excel grid a finding carries. */
@@ -1132,6 +1136,22 @@ export class TieOutApi {
   /** A stored one-off check, replayed exactly as it was answered. */
   oneOffCheck(checkId: string): Promise<OneOffResult> {
     return this.call(`/check-file/${checkId}`)
+  }
+
+  /**
+   * « Accept with a note » on a one-off check — one rule, one note.
+   * Every place the rule fails is accepted together, written into the
+   * stored answer, so a recent replays with the ruling standing.
+   */
+  acceptCheckRule(
+    checkId: string,
+    rule: string,
+    note: string,
+  ): Promise<OneOffResult> {
+    return this.call(`/check-file/${checkId}/accept`, {
+      method: 'POST',
+      body: JSON.stringify({ rule, note }),
+    })
   }
 
   /** How the firm wants Pierce to behave. Defaults until somebody decides. */

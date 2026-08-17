@@ -154,7 +154,10 @@ const TIEOUT_LABEL = 'Documents disagree with the model'
 /** The design's three severities, mapped per rule. The engine's own
  *  grading (error / smell) stays the measured truth underneath; this
  *  is the report's vocabulary — what a bid director scans. */
-const TIER_OF: Record<string, 'Material' | 'Significant' | 'Observation'> = {
+export const TIER_OF: Record<
+  string,
+  'Material' | 'Significant' | 'Observation'
+> = {
   'skipped-cell': 'Material',
   'error-value': 'Material',
   circular: 'Material',
@@ -173,19 +176,25 @@ const TIER_OF: Record<string, 'Material' | 'Significant' | 'Observation'> = {
   'long-formula': 'Observation',
   'inconsistent-anchoring': 'Observation',
 }
-const TIER_FG: Record<string, string> = {
+export const TIER_FG: Record<string, string> = {
   Material: '#c9302c',
   Significant: '#0060d0',
   Observation: '#5b52e0',
 }
-const TIER_BG: Record<string, string> = {
+export const TIER_BG: Record<string, string> = {
   Material: '#fdecea',
   Significant: '#eaf2fd',
   Observation: '#f0efff',
 }
+/** The tier by rule key — shared with the Check-a-model bench, so both
+ *  report faces speak the same three words for the same rule. */
+export const tierOfKey = (
+  rule: string,
+  severity: string,
+): 'Material' | 'Significant' | 'Observation' =>
+  TIER_OF[rule] ?? (severity === 'error' ? 'Material' : 'Observation')
 const tierOf = (finding: Finding): 'Material' | 'Significant' | 'Observation' =>
-  TIER_OF[finding.rule ?? ''] ??
-  (finding.severity === 'error' ? 'Material' : 'Observation')
+  tierOfKey(finding.rule ?? '', finding.severity)
 
 /** The design's finding families — the grey category word on a row. */
 const CATEGORY_OF: Record<string, string> = {
@@ -207,15 +216,18 @@ const CATEGORY_OF: Record<string, string> = {
   'long-formula': 'Auditability risks',
   'hidden-sheet': 'Auditability risks',
 }
-const categoryOf = (finding: Finding): string =>
-  finding.rule === null || finding.rule === ''
+/** The family by rule key — shared with the Check-a-model bench. */
+export const categoryOfKey = (rule: string): string =>
+  rule === ''
     ? 'Documents against the model'
-    : (CATEGORY_OF[finding.rule] ?? 'Other findings')
+    : (CATEGORY_OF[rule] ?? 'Other findings')
+const categoryOf = (finding: Finding): string =>
+  categoryOfKey(finding.rule ?? '')
 
 /** A sheet's role, from its own name — the middle column of « Where
  *  the findings sit ». A name that matches nothing stays unlabelled
- *  rather than guessed. */
-const roleOf = (sheet: string): string => {
+ *  rather than guessed. Shared with the Check-a-model bench. */
+export const roleOf = (sheet: string): string => {
   if (/input|assumption|driver|funding/i.test(sheet)) return 'inputs'
   if (/revenue|opex|cost|tax|ops|operat|production/i.test(sheet))
     return 'operations'
