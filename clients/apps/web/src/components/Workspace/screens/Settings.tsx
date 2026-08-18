@@ -520,7 +520,7 @@ export const Settings = ({
                   textOverflow: 'ellipsis',
                 }}
               >
-                Antford reads. It never writes to your files or your mailbox. It
+                Ances reads. It never writes to your files or your mailbox. It
                 can only see what you can already open.
               </div>
 
@@ -731,7 +731,7 @@ export const Settings = ({
                   lineHeight: 1.5,
                 }}
               >
-                Used whenever Antford proposes a correction. Enforced only if
+                Used whenever Ances proposes a correction. Enforced only if
                 the House style check is on below.
               </div>
               <div style={{ ...listCard, overflow: 'hidden' }}>

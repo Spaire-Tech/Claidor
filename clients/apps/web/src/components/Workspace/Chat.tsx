@@ -74,7 +74,7 @@ const rowOf = (step: ChainStep): ChainRow => {
   return { what: what ?? '', value: step.printed ?? step.value ?? '' }
 }
 
-/** Questions each scope's tools can genuinely answer — in the Antford
+/** Questions each scope's tools can genuinely answer — in the Ances
  *  design's own register (its demo asks « What is a hardcode, in plain
  *  terms? »), but never its demo lines, which name people and cells
  *  this deal may not have. */
@@ -329,7 +329,7 @@ export const Chat = ({
   return (
     <div
       style={{
-        //: The Antford pane: 38% of the row, flat white beside the
+        //: The Ances pane: 38% of the row, flat white beside the
         //: seam — the glass card is retired with its design.
         flex: '0 0 38%',
         minWidth: 320,
@@ -544,7 +544,7 @@ export const Chat = ({
             gap: 18,
           }}
         >
-          {/* The Antford mark — the design's Bodoni « A », which
+          {/* The Ances mark — the design's Bodoni « A », which
               retires the old nine-dot Pierce mark. */}
           <span
             style={{

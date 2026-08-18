@@ -8,7 +8,7 @@
  * rows; the data is the server's. Where a real data state has no drawn
  * equivalent, the borrowed pattern is named at the site.
  *
- * The Antford row is a sentence, not a dashboard: name on the left,
+ * The Ances row is a sentence, not a dashboard: name on the left,
  * verdict on the right — « 6 checks fail » amber, « Changed since
  * check » blue, « All checks pass » green — over a quiet « Checked
  * Tuesday 11:52 ». No dot, no subtitle; the first design's since-notes
@@ -39,7 +39,7 @@ import { DealPage } from './DealPage'
 
 /**
  * « Checked 09:15 today » / « Checked Tuesday 11:52 » / « Checked
- * 1 August » — the Antford design's own time phrasing, read off its demo
+ * 1 August » — the Ances design's own time phrasing, read off its demo
  * rows. Stale rows lead with « Last checked », as the design's stale row
  * does: the check is no longer *the* check, only the last one.
  */
@@ -505,7 +505,7 @@ const EmptyState = ({
                 textWrap: 'pretty',
               }}
             >
-              Antford reads your models and decks from SharePoint.
+              Ances reads your models and decks from SharePoint.
             </span>
             {problem && (
               //: The refusal verbatim — an AADSTS sentence names its own
@@ -577,7 +577,7 @@ const EmptyState = ({
                 <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
               </svg>
               <span style={{ fontSize: 13, lineHeight: 1.5 }}>
-                Read-only. Antford never writes to your files.
+                Read-only. Ances never writes to your files.
               </span>
             </span>
           </span>

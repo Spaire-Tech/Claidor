@@ -2108,7 +2108,7 @@ export const DealPage = ({
                       color: ink.faint,
                     }}
                   >
-                    Remove this model from Antford
+                    Remove this model from Ances
                   </button>
                 ) : (
                   <>
@@ -2711,7 +2711,7 @@ export const DealPage = ({
                     day: 'numeric',
                     month: 'long',
                   })}{' '}
-                  · Antford
+                  · Ances
                 </div>
                 <div style={{ fontSize: 14.5, marginTop: 14 }}>
                   {passRows.length} checks pass. {fails.length} don&apos;t.{' '}
@@ -2948,7 +2948,7 @@ td{border-top:1px solid #eee;padding:8px 10px 8px 0;vertical-align:top}
 .sub{color:#6b6b70;font-size:12px}
 @media print{body{margin:0 auto}}</style></head><body>
 <h1>${esc(page.name)}${model ? `, version ${model.version}` : ''}</h1>
-<div class="meta">Readiness report · prepared ${new Date().toLocaleString('en-GB')} · Antford</div>
+<div class="meta">Readiness report · prepared ${new Date().toLocaleString('en-GB')} · Ances</div>
 <div class="verdict">${passRows.length} checks pass. ${fails.length} don't. ${notRunRows.length} did not run.</div>
 ${wantFindings && rows ? `<h2>Findings</h2><table>${rows}</table>` : ''}
 ${wantPasses && passes ? `<h2>Checks that pass</h2><table>${passes}</table>` : ''}

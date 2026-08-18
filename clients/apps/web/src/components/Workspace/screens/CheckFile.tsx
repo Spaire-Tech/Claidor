@@ -735,7 +735,7 @@ export const CheckFile = ({
               textWrap: 'pretty',
             }}
           >
-            Drop a model in and Antford runs the checks a model auditor runs.
+            Drop a model in and Ances runs the checks a model auditor runs.
             Nothing to set up.
           </span>
           <button
@@ -817,7 +817,7 @@ export const CheckFile = ({
               textWrap: 'pretty',
             }}
           >
-            Against the FAST and ICAEW standards. Antford reports what it found,
+            Against the FAST and ICAEW standards. Ances reports what it found,
             not an audit opinion.
           </span>
         </div>

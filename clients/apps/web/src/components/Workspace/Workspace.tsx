@@ -79,7 +79,7 @@ export const Workspace = ({
   //: report their finding contexts; the deal scope is derived below.
   const [docChat, setDocChat] = useState<ChatContext | null>(null)
   const [checkChat, setCheckChat] = useState<ChatContext | null>(null)
-  //: The Antford design opens the deal's chat from the header's « Ask »
+  //: The Ances design opens the deal's chat from the header's « Ask »
   //: — the pane no longer rides along uninvited.
   const [askOpen, setAskOpen] = useState(false)
   //: The check screen's phase, reported up so the header can grow
@@ -175,7 +175,7 @@ export const Workspace = ({
         : null
 
   const hasDeal = view === 'deals' && deal !== null
-  //: The Antford dock pill: a soft dark wash and the accent when active,
+  //: The Ances dock pill: a soft dark wash and the accent when active,
   //: quiet grey otherwise. No shadow — the bar itself carries the depth.
   const dock = (k: View) => ({
     border: 0,
@@ -209,7 +209,7 @@ export const Workspace = ({
         background: ground,
       }}
     >
-      {/* Panes sit edge to edge with a 1px seam — the Antford design
+      {/* Panes sit edge to edge with a 1px seam — the Ances design
           retires the first workspace's floating cards. */}
       <div
         style={{
@@ -247,7 +247,7 @@ export const Workspace = ({
           >
             {!hasDeal && (
               <span style={{ ...wordmark, margin: '0 6px 0 10px' }}>
-                Antford
+                Ances
               </span>
             )}
             {hasDeal && (
@@ -507,7 +507,7 @@ export const Workspace = ({
         />
       )}
 
-      {/* The dock — the Antford design's translucent bar along the
+      {/* The dock — the Ances design's translucent bar along the
           bottom, pills resting directly on it. */}
       <div
         style={{

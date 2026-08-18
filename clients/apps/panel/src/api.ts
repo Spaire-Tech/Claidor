@@ -203,7 +203,7 @@ export interface Coverage {
 }
 
 /** Coverage, and whether a check ever produced it — plus the facts the
- *  Antford verdict line needs: whose rules to ask for, when the last
+ *  Ances verdict line needs: whose rules to ask for, when the last
  *  check finished, and whether the model has changed since. */
 export interface Checked extends Coverage {
   checked: boolean

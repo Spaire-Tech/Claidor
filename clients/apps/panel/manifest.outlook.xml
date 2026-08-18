@@ -6,7 +6,7 @@
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides"
   xsi:type="MailApp">
 
-  <!-- Claidor in Outlook.
+  <!-- Ances in Outlook.
 
        Separate from `manifest.xml` because Outlook is a `MailApp`, not a
        `TaskPaneApp` — a different xsi:type with its own override schema.
@@ -27,9 +27,9 @@
 
   <Id>9f42c7d1-58ab-4e63-b0c9-6d3e15a97284</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Claidor</ProviderName>
+  <ProviderName>Ances</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Claidor" />
+  <DisplayName DefaultValue="Ances" />
   <Description DefaultValue="Checks the figures in an attached deck against the model before the message goes out." />
   <IconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-64.png" />
   <HighResolutionIconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-128.png" />
@@ -83,9 +83,9 @@
           <FunctionFile resid="Taskpane.Url" />
           <ExtensionPoint xsi:type="MessageComposeCommandSurface">
             <OfficeTab id="TabDefault">
-              <Group id="Claidor.Group.Outlook">
+              <Group id="Ances.Group.Outlook">
                 <Label resid="Group.Label" />
-                <Control xsi:type="Button" id="Claidor.Open.Outlook">
+                <Control xsi:type="Button" id="Ances.Open.Outlook">
                   <Label resid="Button.Label" />
                   <Supertip>
                     <Title resid="Button.Label" />
@@ -117,7 +117,7 @@
         <bt:Url id="Taskpane.Url" DefaultValue="https://YOUR-DOMAIN.example.com/index.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Group.Label" DefaultValue="Claidor" />
+        <bt:String id="Group.Label" DefaultValue="Ances" />
         <bt:String id="Button.Label" DefaultValue="Check attachment" />
       </bt:ShortStrings>
       <bt:LongStrings>

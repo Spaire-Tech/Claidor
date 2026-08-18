@@ -638,7 +638,7 @@ async def delete_deal(
     auth_subject: auth.TieOutWrite,
     session: AsyncSession = Depends(get_db_session),
 ) -> None:
-    """Remove a deal from Antford — soft, like every delete here.
+    """Remove a deal from Ances — soft, like every delete here.
 
     The route that did not exist, found the day the panel's picker was
     still listing every test deal from before the product pivoted and

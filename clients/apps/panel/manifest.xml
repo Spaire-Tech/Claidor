@@ -6,7 +6,7 @@
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
 
-  <!-- Antford in Excel.
+  <!-- Ances in Excel.
 
        Excel only, by the product's own posture: the customer lives in
        Excel, and the panel audits the model they have open. The Word and
@@ -31,9 +31,9 @@
 
   <Id>3e1b9a24-7c05-4d18-9f6e-2a41c8d5b730</Id>
   <Version>1.1.0.0</Version>
-  <ProviderName>Antford</ProviderName>
+  <ProviderName>Ances</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Antford" />
+  <DisplayName DefaultValue="Ances" />
   <Description DefaultValue="Audits the model you have open — every check an auditor runs, each one pointing at a cell." />
   <IconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://YOUR-DOMAIN.example.com/assets/icon-80.png" />
@@ -70,14 +70,14 @@
           </GetStarted>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
-              <Group id="Antford.Group.Excel">
+              <Group id="Ances.Group.Excel">
                 <Label resid="Group.Label" />
                 <Icon>
                   <bt:Image size="16" resid="Icon.16" />
                   <bt:Image size="32" resid="Icon.32" />
                   <bt:Image size="80" resid="Icon.80" />
                 </Icon>
-                <Control xsi:type="Button" id="Antford.Open.Excel">
+                <Control xsi:type="Button" id="Ances.Open.Excel">
                   <Label resid="Button.Label" />
                   <Supertip>
                     <Title resid="Button.Label" />
@@ -89,7 +89,7 @@
                     <bt:Image size="80" resid="Icon.80" />
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>Antford.Taskpane</TaskpaneId>
+                    <TaskpaneId>Ances.Taskpane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
                   </Action>
                 </Control>
@@ -112,9 +112,9 @@
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://YOUR-DOMAIN.example.com/index.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Antford is ready" />
-        <bt:String id="Group.Label" DefaultValue="Antford" />
-        <bt:String id="Button.Label" DefaultValue="Antford" />
+        <bt:String id="GetStarted.Title" DefaultValue="Ances is ready" />
+        <bt:String id="Group.Label" DefaultValue="Ances" />
+        <bt:String id="Button.Label" DefaultValue="Ances" />
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Open the panel to audit the model in front of you. Every finding points at the cell it came from." />

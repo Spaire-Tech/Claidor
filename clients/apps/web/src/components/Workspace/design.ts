@@ -2,7 +2,7 @@
  * The design's values, named.
  *
  * Source of truth: `docs/pierce/design-antford/workspace.html` (the
- * founder's Antford redesign, 14 August, revised 15 August — the v2
+ * founder's Ances redesign, 14 August, revised 15 August — the v2
  * file with the statement-check sections). Every constant here is a
  * value that appears verbatim in that file; if a value here disagrees
  * with the file, the file is right. Nothing here is invented — where a
@@ -23,7 +23,7 @@
 export const font = {
   ui: "'Instrument Sans', -apple-system, system-ui, sans-serif",
   mono: "'IBM Plex Mono', ui-monospace, monospace",
-  /** The Antford wordmark, and only the wordmark. */
+  /** The Ances wordmark, and only the wordmark. */
   brand: "'Bodoni Moda', Didot, Georgia, serif",
 } as const
 
@@ -46,7 +46,7 @@ export const ink = {
   stale: '#c8790a',
   /** Stale dot and the model grid's highlight. */
   staleDot: '#ff9f0a',
-  /** The failing check's dot — the Antford design's amber. */
+  /** The failing check's dot — the Ances design's amber. */
   failDot: '#e8a33d',
   /** Clean state text and dot. */
   clean: '#34c759',
@@ -95,7 +95,7 @@ export const cellRefInk = '#2a9d4f'
 /** Hairline between rows — always via border-top, never on the first. */
 export const hairline = '.5px solid #eceaec'
 
-/** Section heading over a list card. The Antford design sets it 500. */
+/** Section heading over a list card. The Ances design sets it 500. */
 export const sectionHead = {
   fontSize: 12,
   fontWeight: 500,
@@ -105,7 +105,7 @@ export const sectionHead = {
 } as const
 
 /**
- * The Antford shell: a full-bleed white pane under a 54px header bar,
+ * The Ances shell: a full-bleed white pane under a 54px header bar,
  * panes separated by a 1px seam, the dock a translucent bar along the
  * bottom. The floating-card frame of the first workspace is retired
  * with it.

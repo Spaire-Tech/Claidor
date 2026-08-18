@@ -552,7 +552,7 @@ class DealListItem(Schema):
     artifacts: int
     open_findings: int
     #: How many *checks* the open findings belong to — distinct rules, the
-    #: tie-out counting as one. The Antford list states « 6 checks fail »,
+    #: tie-out counting as one. The Ances list states « 6 checks fail »,
     #: never a findings count, because one check can produce forty
     #: findings and the row would read like forty problems.
     failing_checks: int = 0
