@@ -69,4 +69,20 @@ from its description alone.
 
 ## Amendments
 
-- (none yet)
+- During the pass, three volatile verdicts first marked B (#114, #116,
+  #117) were revised to D when later cards showed the same sheet's
+  OFFSET idiom recurring row by row in the same files — the group
+  membership only became visible across cards. Revised before any
+  tally was computed; recorded here per protocol.
+
+## Result (18 August)
+
+Raw sample of 145: **A 12 · B 35 · C 54 · D 44.**
+Stratified over the 1,259: **A ≈ 4% · B ≈ 22% · C ≈ 39% · D ≈ 35%.**
+The pre-registered bar — a majority of remaining findings A/B — is
+**not met**: A+B ≈ 26%. Per-finding verdicts with reasons:
+`findings-usefulness-verdicts.json`. The C mass reduces to fourteen
+named rule fixes (one reader gap — array formulas read as typed
+values — accounts for the largest slice) and the D mass to four
+collapse patterns; both lists are in the worklog entry for this
+round, each verdict naming its fix.

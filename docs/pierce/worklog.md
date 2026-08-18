@@ -3204,3 +3204,63 @@ with its Excel frame, the Assistant drawer, Settings saying Ances.
 Typecheck clean; lint at baseline. The « Open the cell » button keeps
 its Excel-green — the founder-approved departure from the drawn blue,
 because the button opens Excel — and stands flagged here again.
+
+## The usefulness audit: 145 findings read from their cells (18 August)
+
+The mentor's question — are the remaining findings useful to a
+professional auditor — answered the only honest way: protocol and
+seeded stratified sample committed first (28 family-by-rule strata,
+145 findings), then every sampled finding judged from a harvested
+neighbourhood of the real cells (formulas, values, row labels), never
+from its own sentence. Verdicts with reasons:
+`findings-usefulness-verdicts.json`.
+
+**The tally, as measured.** Raw: A 12, B 35, C 54, D 44. Stratified
+over the 1,259: **A ≈ 4%, B ≈ 22%, C ≈ 39%, D ≈ 35%.** The bar the
+mentor set — a majority A/B — is **not met**: A+B ≈ 26%. Said plainly
+and first.
+
+**What A looks like.** The twelve are exactly the product's pitch:
+the 21,365-cell financing loop; a #REF! in a published PCFM; totals
+with six-figure sums sitting in skipped live rows; a row that
+switches calculation basis at one column of a uniform fill; typed
+seeds where links belong; « Sharing factor » written =25% where the
+determination's number should flow.
+
+**Where C comes from — fourteen causes, all mechanical.** The single
+biggest: the reader drops array formulas, so array-calculated cells
+register as typed values — one reader fix erases most of the BPFM
+typed-over stratum. Then: DATE()/EOMONTH() argument literals; check-
+row tolerances and ROUND precisions; 10^n unit conversions; literals
+inside text-only functions (REPT); constants documented by the row's
+own label; policy years compared against the model's own time axis;
+lookup-scaffold index bounds; the totals column read as inconsistent
+with its own row; partitioned pick-out subtotals whose sibling SUMs
+jointly cover the « skipped » rows; alternative-aggregate tables
+(EBITDA excludes D&A by definition); typed input rows misread
+column-wise; mnemonic columns read as calculated series; and one
+outright bug — multi-area SUM coverage mis-parsed, producing a
+finding that names rows the SUM includes.
+
+**Where D comes from — four collapse patterns.** The same typed
+balance convention repeated across sibling DNO sheets (one grouped
+finding per file, and the content is A-grade); the same row flagged
+once per column; one sheet's OFFSET idiom (TaxPools, RatingSimulator,
+FinInput) reported per row; the same convention constant repeated
+across sibling rows. D is not junk — it is A/B content printed too
+many times.
+
+**Found on the way, for the next round.** Two new A-grade rules the
+corpus asks for: a model's own check row reading non-zero in the solo
+audit (one BPFM's Equity check reads False today, unreported), and
+literal drift inside one fill (a 2025 in the first cell where every
+sibling says 2022 — sampled, and currently visible only as a hardcode
+flag). Plus a tolerance-outlier check: one gearing check's tolerance
+is a million times looser than its siblings'.
+
+**Ranking, answered by the data.** The twelve A verdicts concentrate
+in five rule-shapes: skipped totals with live money, inconsistent
+rows, circularity with iteration off, typed-over with drift, broken
+references — plus parameter-grade hardcodes. Severity tiers plus
+figure worth plus those shapes IS the attention ordering the mentor
+asked for; the engine already carries every ingredient.
