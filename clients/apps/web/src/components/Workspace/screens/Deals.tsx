@@ -130,6 +130,8 @@ export interface DealsProps {
   onNewDeal: () => void
   /** The open model was removed — the shell closes it and refreshes. */
   onRemoved: () => void
+  /** The Ask sheet is open — the model page hides its rail. */
+  railHidden?: boolean
 }
 
 export const Deals = ({
@@ -145,6 +147,7 @@ export const Deals = ({
   onOpenDoc,
   onNewDeal,
   onRemoved,
+  railHidden,
 }: DealsProps) => {
   //: The connector, for the empty state's three faces. Asked only once
   //: the list has answered and come back empty — the list screen never
@@ -226,6 +229,7 @@ export const Deals = ({
         openDocId={openDocId}
         onOpenDoc={onOpenDoc}
         onRemoved={onRemoved}
+        railHidden={railHidden}
       />
     )
   }

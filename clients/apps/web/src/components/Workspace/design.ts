@@ -1,10 +1,13 @@
 /**
  * The design's values, named.
  *
- * Source of truth: `docs/pierce/design-antford/workspace.html` (the
- * founder's Ances redesign, 14 August, revised 15 August — the v2
- * file with the statement-check sections). Every constant here is a
- * value that appears verbatim in that file; if a value here disagrees
+ * Source of truth: `docs/pierce/design-ances/markup.html` (the
+ * founder's Ances workspace, 18 August — the rename to Ances, the
+ * left rail, the gradient summary heading, the plum Observation and
+ * the assistant's history drawer), with
+ * `docs/pierce/design-antford/workspace3.html` behind it for the
+ * screens the revision left untouched. Every constant here is a value
+ * that appears verbatim in those files; if a value here disagrees
  * with the file, the file is right. Nothing here is invented — where a
  * screen needs something the design does not draw, the component says
  * which pattern it borrowed, not this file.

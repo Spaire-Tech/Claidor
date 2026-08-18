@@ -179,12 +179,13 @@ export const TIER_OF: Record<
 export const TIER_FG: Record<string, string> = {
   Material: '#c9302c',
   Significant: '#0060d0',
-  Observation: '#5b52e0',
+  //: The 18 August design retires the blue-violet for a plum.
+  Observation: '#7a4a8c',
 }
 export const TIER_BG: Record<string, string> = {
   Material: '#fdecea',
   Significant: '#eaf2fd',
-  Observation: '#f0efff',
+  Observation: '#f6eef8',
 }
 /** The tier by rule key — shared with the Check-a-model bench, so both
  *  report faces speak the same three words for the same rule. */
@@ -693,6 +694,8 @@ export interface DealPageProps {
   onOpenDoc: (doc: Artifact, atFindingId?: string | null) => void
   /** The model was removed — the shell goes back to the list. */
   onRemoved?: () => void
+  /** The 18 August design hides the rail while the Ask sheet is open. */
+  railHidden?: boolean
 }
 
 export const DealPage = ({
@@ -704,6 +707,7 @@ export const DealPage = ({
   openDocId,
   onOpenDoc,
   onRemoved,
+  railHidden = false,
 }: DealPageProps) => {
   const [page, setPage] = useState<DealPageData | null>(null)
   const [findings, setFindings] = useState<Finding[] | null>(null)
@@ -1415,7 +1419,9 @@ export const DealPage = ({
               </div>
             )}
 
-            {/* Summary of the check — sentences, not counts. */}
+            {/* Summary of the check — sentences, not counts. The 18
+                August design sets the heading in a blue gradient and
+                swaps the grey middot for a round blue point. */}
             {summaryBullets.length > 0 && (
               <>
                 <div
@@ -1424,6 +1430,13 @@ export const DealPage = ({
                     fontWeight: 600,
                     letterSpacing: '-.014em',
                     padding: '30px 0 11px',
+                    background:
+                      'linear-gradient(96deg,#0060d0 0%,#3b6ee0 42%,#5b52e0 100%)',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    color: '#0060d0',
+                    width: 'fit-content',
                   }}
                 >
                   Summary of the check
@@ -1433,9 +1446,16 @@ export const DealPage = ({
                 >
                   {summaryBullets.map((text) => (
                     <div key={text} style={{ display: 'flex', gap: 11 }}>
-                      <span style={{ flex: '0 0 auto', color: '#c2c2c7' }}>
-                        ·
-                      </span>
+                      <span
+                        style={{
+                          flex: '0 0 auto',
+                          width: 5,
+                          height: 5,
+                          marginTop: 8,
+                          borderRadius: '50%',
+                          background: '#0060d0',
+                        }}
+                      />
                       <span
                         style={{
                           flex: 1,
@@ -1525,7 +1545,7 @@ export const DealPage = ({
                       alignItems: 'center',
                       flexWrap: 'wrap',
                       gap: '8px 20px',
-                      borderBottom: '1px solid #f2f2f4',
+                      borderBottom: '1px solid #e6e6e9',
                       padding: '14px 4px',
                       cursor: 'pointer',
                     }}
@@ -2157,14 +2177,19 @@ export const DealPage = ({
             )}
           </div>
 
-          {/* The right rail: the run's facts, and the open findings
-              by version — counted by when each open finding was first
-              seen, real timestamps only. */}
+          {/* The rail: the run's facts, and the open findings by
+              version — counted by when each open finding was first
+              seen, real timestamps only. The 18 August design moves
+              it to the left on its own soft ground, and hides it
+              while the Ask sheet is open. */}
+          {!railHidden && (
           <div
             style={{
               flex: '0 0 288px',
+              order: -1,
               alignSelf: 'stretch',
-              borderLeft: '1px solid #f0f0f2',
+              background: '#fafaf9',
+              borderRight: '1px solid #eceaea',
               padding: '34px 28px 44px',
               display: 'flex',
               flexDirection: 'column',
@@ -2276,6 +2301,7 @@ export const DealPage = ({
               </>
             )}
           </div>
+          )}
         </div>
       </div>
 
@@ -2645,18 +2671,18 @@ export const DealPage = ({
           <div
             style={{
               position: 'relative',
-              width: 'min(560px,100%)',
+              width: 'min(440px,100%)',
               maxHeight: '86vh',
               display: 'flex',
               flexDirection: 'column',
-              background: '#fff',
+              background: '#ffffff',
               borderRadius: 18,
               boxShadow:
                 '0 30px 70px rgba(0,0,0,.28), 0 0 0 .5px rgba(0,0,0,.08)',
               overflow: 'hidden',
             }}
           >
-            <div style={{ flex: '0 0 auto', padding: '24px 26px 0' }}>
+            <div style={{ flex: '0 0 auto', padding: '26px 28px 0' }}>
               <div
                 style={{
                   fontSize: 19,
@@ -2664,17 +2690,21 @@ export const DealPage = ({
                   letterSpacing: '-.02em',
                 }}
               >
-                Findings report
+                Export report
               </div>
               <div
                 style={{
                   fontSize: 13.5,
                   color: '#86868b',
-                  marginTop: 3,
-                  textWrap: 'pretty',
+                  marginTop: 4,
+                  lineHeight: 1.5,
                 }}
               >
-                One page a bid director can forward without editing it.
+                {page.name}
+                {model ? `, version ${model.version}` : ''} ·{' '}
+                {tableRows.length === 1
+                  ? '1 open finding'
+                  : `${tableRows.length} open findings`}
               </div>
             </div>
             <div
@@ -2682,186 +2712,99 @@ export const DealPage = ({
                 flex: 1,
                 minHeight: 0,
                 overflow: 'auto',
-                padding: '18px 26px 4px',
+                padding: '22px 28px 6px',
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
               <div
                 style={{
-                  background: '#fff',
-                  borderRadius: 12,
-                  boxShadow: '0 0 0 .5px rgba(0,0,0,.09)',
-                  padding: '18px 20px',
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: "'Bodoni Moda',Didot,Georgia,serif",
-                    fontSize: 17,
-                  }}
-                >
-                  {page.name}
-                  {model ? `, version ${model.version}` : ''}
-                </div>
-                <div style={{ fontSize: 13, color: '#86868b', marginTop: 3 }}>
-                  Readiness report · prepared{' '}
-                  {new Date().toLocaleString('en-GB', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                  })}{' '}
-                  · Ances
-                </div>
-                <div style={{ fontSize: 14.5, marginTop: 14 }}>
-                  {passRows.length} checks pass. {fails.length} don&apos;t.{' '}
-                  {notRunRows.length} did not run.
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 7,
-                    marginTop: 14,
-                    borderTop: '.5px solid #eceaec',
-                    paddingTop: 14,
-                  }}
-                >
-                  {tableRows.slice(0, 6).map((row) => (
-                    <div
-                      key={row.finding.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        gap: 10,
-                      }}
-                    >
-                      <span
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          fontSize: 13.5,
-                          color: '#3a3a3c',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {row.finding.headline || row.title}
-                      </span>
-                      <span
-                        style={{
-                          flex: '0 0 auto',
-                          fontSize: 11.5,
-                          color: '#86868b',
-                        }}
-                      >
-                        {row.finding.standard ?? ''}
-                      </span>
-                      <span
-                        style={{
-                          flex: '0 0 92px',
-                          textAlign: 'right',
-                          fontFamily: font.mono,
-                          fontSize: 12,
-                          color: '#86868b',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {row.where}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div
-                style={{
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 500,
-                  letterSpacing: '.05em',
-                  textTransform: 'uppercase',
-                  color: '#86868b',
-                  padding: '20px 4px 8px',
+                  letterSpacing: '-.004em',
+                  paddingBottom: 4,
                 }}
               >
                 Include
               </div>
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: 12,
-                  boxShadow: '0 0 0 .5px rgba(0,0,0,.09)',
-                  overflow: 'hidden',
-                }}
-              >
-                {[
-                  `The ${tableRows.length} findings, with their cells`,
-                  `The ${passRows.length} checks that pass`,
-                  'What was not checked, and why',
-                  'The evidence locker',
-                ].map((label, index) => {
-                  const on = reportOff.indexOf(label) === -1
-                  return (
-                    <button
-                      key={label}
-                      onClick={() =>
-                        setReportOff((was) =>
-                          was.indexOf(label) === -1
-                            ? was.concat(label)
-                            : was.filter((one) => one !== label),
-                        )
-                      }
+              {[
+                `The ${tableRows.length} open findings, with cells`,
+                `The ${passRows.length} checks that pass`,
+                'What could not be checked',
+                'Evidence locker',
+              ].map((label) => {
+                const on = reportOff.indexOf(label) === -1
+                return (
+                  <button
+                    key={label}
+                    onClick={() =>
+                      setReportOff((was) =>
+                        was.indexOf(label) === -1
+                          ? was.concat(label)
+                          : was.filter((one) => one !== label),
+                      )
+                    }
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      width: '100%',
+                      textAlign: 'left',
+                      border: 0,
+                      background: 'transparent',
+                      font: 'inherit',
+                      cursor: 'pointer',
+                      padding: '10px 0',
+                    }}
+                  >
+                    <span
                       style={{
+                        flex: '0 0 17px',
+                        width: 17,
+                        height: 17,
+                        borderRadius: 5,
+                        background: on ? ink.accent : 'transparent',
+                        boxShadow: `inset 0 0 0 1.5px ${on ? ink.accent : '#d4d4d8'}`,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 12,
-                        width: '100%',
-                        textAlign: 'left',
-                        border: 0,
-                        borderTop: index === 0 ? 0 : '.5px solid #f0eff1',
-                        background: 'transparent',
-                        font: 'inherit',
-                        cursor: 'pointer',
-                        padding: '12px 15px',
+                        justifyContent: 'center',
+                        color: '#fff',
                       }}
                     >
-                      <span
-                        style={{
-                          flex: '0 0 19px',
-                          width: 19,
-                          height: 19,
-                          borderRadius: '50%',
-                          background: on ? ink.accent : 'transparent',
-                          boxShadow: `inset 0 0 0 1.5px ${on ? ink.accent : '#d4d4d8'}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#fff',
-                        }}
-                      >
-                        {on && (
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polyline points="5,12.5 10,17.5 19,6.5" />
-                          </svg>
-                        )}
-                      </span>
-                      <span style={{ flex: 1, minWidth: 0, fontSize: 14.5 }}>
-                        {label}
-                      </span>
-                    </button>
-                  )
-                })}
+                      {on && (
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3.4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="5,12.5 10,17.5 19,6.5" />
+                        </svg>
+                      )}
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 14.5 }}>
+                      {label}
+                    </span>
+                  </button>
+                )
+              })}
+              <div
+                style={{
+                  fontSize: 12.5,
+                  color: '#a8a8ad',
+                  lineHeight: 1.5,
+                  borderTop: '.5px solid #f0eff1',
+                  marginTop: 14,
+                  paddingTop: 14,
+                  textWrap: 'pretty',
+                }}
+              >
+                Every finding carries its cell reference. Nothing is
+                summarised away.
               </div>
             </div>
             <div
@@ -2869,7 +2812,7 @@ export const DealPage = ({
                 flex: '0 0 auto',
                 display: 'flex',
                 gap: 9,
-                padding: '18px 26px 22px',
+                padding: '20px 28px 24px',
               }}
             >
               <button
@@ -2893,13 +2836,13 @@ export const DealPage = ({
                 onClick={() => {
                   const off = new Set(reportOff)
                   const wantFindings = !off.has(
-                    `The ${tableRows.length} findings, with their cells`,
+                    `The ${tableRows.length} open findings, with cells`,
                   )
                   const wantPasses = !off.has(
                     `The ${passRows.length} checks that pass`,
                   )
-                  const wantNotRun = !off.has('What was not checked, and why')
-                  const wantLocker = !off.has('The evidence locker')
+                  const wantNotRun = !off.has('What could not be checked')
+                  const wantLocker = !off.has('Evidence locker')
                   const esc = (text: string) =>
                     text
                       .replace(/&/g, '&amp;')

@@ -287,29 +287,8 @@ export const Workspace = ({
                   </svg>
                   <span>Models</span>
                 </button>
-                <span
-                  style={{
-                    flex: '0 0 auto',
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {deal!.name}
-                </span>
-                {deal!.client && (
-                  <span
-                    style={{
-                      flex: '0 1 auto',
-                      minWidth: 0,
-                      color: ink.secondary,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {deal!.client}
-                  </span>
-                )}
+                {/* The 18 August design drops the name and client from
+                    the header — the page's own title carries them. */}
               </>
             )}
             <div style={{ flex: 1 }} />
@@ -444,6 +423,7 @@ export const Workspace = ({
               openDocId={doc?.id ?? null}
               onOpenDoc={openDoc}
               onNewDeal={() => setNewOpen(true)}
+              railHidden={askOpen}
               onRemoved={() => {
                 setDeal(null)
                 setDealsAt((was) => was + 1)

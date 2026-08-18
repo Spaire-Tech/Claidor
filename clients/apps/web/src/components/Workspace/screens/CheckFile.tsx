@@ -1098,7 +1098,9 @@ export const CheckFile = ({
                   </div>
                 )}
 
-                {/* Summary of the check — sentences, not counts. */}
+                {/* Summary of the check — sentences, not counts. The
+                    18 August design's gradient heading and blue points,
+                    same as the model page. */}
                 {summaryBullets.length > 0 && (
                   <>
                     <div
@@ -1107,6 +1109,13 @@ export const CheckFile = ({
                         fontWeight: 600,
                         letterSpacing: '-.014em',
                         padding: '30px 0 11px',
+                        background:
+                          'linear-gradient(96deg,#0060d0 0%,#3b6ee0 42%,#5b52e0 100%)',
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        color: '#0060d0',
+                        width: 'fit-content',
                       }}
                     >
                       Summary of the check
@@ -1120,9 +1129,16 @@ export const CheckFile = ({
                     >
                       {summaryBullets.map((text) => (
                         <div key={text} style={{ display: 'flex', gap: 11 }}>
-                          <span style={{ flex: '0 0 auto', color: '#c2c2c7' }}>
-                            ·
-                          </span>
+                          <span
+                            style={{
+                              flex: '0 0 auto',
+                              width: 5,
+                              height: 5,
+                              marginTop: 8,
+                              borderRadius: '50%',
+                              background: '#0060d0',
+                            }}
+                          />
                           <span
                             style={{
                               flex: 1,
@@ -1212,7 +1228,7 @@ export const CheckFile = ({
                           alignItems: 'center',
                           flexWrap: 'wrap',
                           gap: '8px 20px',
-                          borderBottom: '1px solid #f2f2f4',
+                          borderBottom: '1px solid #e6e6e9',
                           padding: '14px 4px',
                           cursor: 'pointer',
                         }}

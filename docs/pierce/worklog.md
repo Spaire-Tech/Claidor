@@ -3162,3 +3162,45 @@ dropped their one false finding.
 
 Corpus: 1,981 → 1,259 findings. Suite: 456 passing, 4 skipped. The
 two mypy complaints in audit.py predate the round and are untouched.
+
+## Ances, and the 18 August design (18 August)
+
+**The rename.** Antford is Ances everywhere a person can read it — the
+workspace, sign-in and sign-up, the tieout copy, the Excel panel and
+both Office manifests. The panel was the real find: its deployed
+bundle under `web/public/panel` predated the *last* rename, so Excel
+was still calling the product Claidor while the sources said Antford.
+Rebuilt from source, redeployed; the ribbon's name lives in the
+sideloaded manifest, so the founder must re-add the stamped
+`dist/manifest.xml` once to see Ances in Excel itself.
+
+**The design revision, measured before it was implemented.** The new
+canvas (`docs/pierce/design-ances/`) was diffed against the previous
+one file-to-file. The whole revision is nine deltas, and only nine:
+the rail moves to the left of the model page on its own soft ground
+and hides while Ask is open; « Summary of the check » sets its heading
+in a blue gradient and swaps the grey middots for round blue points;
+the findings table's hairline darkens a step; Observation turns from
+blue-violet to plum, pill and text; the header drops the model's name
+(the page title carries it); the Export modal shrinks to a plain
+440px form — no preview card, square checkboxes, « Every finding
+carries its cell reference. Nothing is summarised away. »; the report
+options get shorter names; the Assistant gains a history drawer; and
+the drawer's toggle joins the scope bar. Everything else on the canvas
+is the previous design byte-for-byte, which the diff proves.
+
+**The history drawer is real history.** The design draws canned rows;
+the build keeps the person's own past conversations on their machine
+and lists them by recency — Today, previous seven days, older — with
+an honest « Past conversations land here. » before any exist. Opening
+one restores the conversation and its model; New chat starts a fresh
+one. Nothing invented.
+
+**Proofs.** Driven in the real app against the Harbour deal at
+1440×900: list, model page (left rail, gradient heading, plum pills),
+Ask open with the rail hidden, the new Export form (subtitle count
+fixed to match the table during the proof pass), the finding modal
+with its Excel frame, the Assistant drawer, Settings saying Ances.
+Typecheck clean; lint at baseline. The « Open the cell » button keeps
+its Excel-green — the founder-approved departure from the drawn blue,
+because the button opens Excel — and stands flagged here again.
