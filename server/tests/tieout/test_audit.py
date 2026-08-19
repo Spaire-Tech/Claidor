@@ -919,3 +919,66 @@ def test_an_index_table_including_its_own_cell_is_not_a_loop() -> None:
     assert not any(f.rule == "circular" for f in result.findings), [
         f.detail for f in result.findings if f.rule == "circular"
     ]
+
+
+def test_labelled_hardcodes_with_different_numbers_fold_across_sheets() -> None:
+    """ED2 types each company's own opening balance into the same row
+    of every DNO sheet. Fourteen different numbers are one layout
+    decision — the label and the shape are the identity, not the
+    numbers."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+
+    book = Book()
+    for name, value in (("DNOa", 769.27), ("DNOb", 52.07), ("DNOc", 113.9)):
+        sheet = book.create_sheet(name)
+        sheet["A2"] = "Special rates pool opening balance brought forward"
+        sheet["B2"] = f"={value}+0"
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert len(hardcodes) == 1, [(f.ref, f.detail) for f in hardcodes]
+    assert "each sheet holding its own number" in hardcodes[0].detail
+
+
+def test_the_same_check_row_repeated_down_a_sheet_is_one_finding() -> None:
+    """The BPFM F1 sheet repeats its per-block check row every fifteen
+    rows — same column, same length, block-anchored references that
+    defeat the shape-keyed fill collapse. One template, one finding."""
+
+    def build(sheet) -> None:
+        for n, row in ((11, 10), (22, 20), (33, 30)):
+            chain = "+".join(f"IF(C{n + k}>0,C{n + k},0)" for k in range(12))
+            sheet.cell(row=row, column=14).value = f"=IF($Z${n}>0,{chain},0)"
+
+    result = _tmp_book(build)
+    lengthy = [f for f in result.findings if f.rule == "long-formula"]
+    assert len(lengthy) == 1, [(f.ref, f.detail) for f in lengthy]
+    assert "down column N" in lengthy[0].detail
+
+
+def test_the_same_template_formula_across_sheets_is_one_finding() -> None:
+    """The PCFM files stamp one import-source formula into column D of
+    sheet after sheet, at whatever row each sheet's block starts. Same
+    column, same length: one template."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+
+    chain = "+".join(f"IF(Z{k}>0,Z{k},0)" for k in range(1, 13))
+    book = Book()
+    for name, row in (("TIM", 7), ("NonCore", 8), ("Tax", 9)):
+        sheet = book.create_sheet(name)
+        sheet.cell(row=row, column=4).value = f"=IF($Y$1>0,{chain},0)"
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    lengthy = [f for f in result.findings if f.rule == "long-formula"]
+    assert len(lengthy) == 1, [(f.ref, f.detail) for f in lengthy]
+    assert "across 3 sheets" in lengthy[0].detail

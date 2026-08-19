@@ -412,6 +412,17 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         )
         return f"{opening} excludes rows immediately above it{leaving}."
     if finding.rule == "hardcode-in-formula":
+        if finding.figure_unit.endswith("each with its own number"):
+            #: The sibling-sheet fold over differing numbers: one
+            #: layout decision, one value typed per company sheet.
+            sheets = finding.figure_unit.removeprefix("repeated on ").split(" sheets")[
+                0
+            ]
+            return (
+                f"Each of {sheets} sheets has its own value typed into the "
+                f"formula at {at} — one layout decision, and none of the "
+                "values can be traced to an input."
+            )
         if finding.figure_unit.startswith("repeated on"):
             #: The sibling-sheet fold: one decision, one sheet per company.
             return (
@@ -442,6 +453,13 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         )
 
     if finding.rule == "error-value":
+        if finding.figure_unit.startswith("repeated on"):
+            #: The sibling-sheet fold for designed tails: one pasted
+            #: formula erroring identically on every copy.
+            return (
+                f"{finding.detail}. One pasted formula — fix it once "
+                "and refill the sheets."
+            )
         if finding.figure_unit == "cells past the data's edge":
             #: The designed tail: the data ends and the lookups say so.
             return (
@@ -820,8 +838,18 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
     coincidence.
     """
     SIBLING_RULES = ("hardcode-in-formula", "long-formula", "volatile")
-    keep = [one for one in findings if one.rule not in SIBLING_RULES]
-    pool = [one for one in findings if one.rule in SIBLING_RULES]
+
+    def sibling_pool(one: Finding) -> bool:
+        #: Designed error tails join the smells here: the BPFM files
+        #: paste one filename-title formula into A1 of every F-sheet,
+        #: and its cached error reports once per sheet. Loud errors
+        #: (#REF!, a break in a live column) never enter a fold.
+        return one.rule in SIBLING_RULES or (
+            one.rule == "error-value" and one.severity == "smell"
+        )
+
+    keep = [one for one in findings if not sibling_pool(one)]
+    pool = [one for one in findings if sibling_pool(one)]
 
     def base_detail(finding: Finding) -> str:
         return finding.detail.split(" — one formula filled")[0]
@@ -867,12 +895,23 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
 
     #: The same finding at the same address under the same label on
     #: three or more sheets: a per-company workbook's repeated
-    #: decision, whichever smell rule saw it.
+    #: decision, whichever smell rule saw it. For a *labelled* hardcode
+    #: the identity is the shape and the label, not the numbers — ED2
+    #: types each company's own opening balance into the same row of
+    #: every DNO sheet, and fourteen different numbers are still one
+    #: layout decision. An unlabelled cell keeps the stricter
+    #: numbers-bearing key, because without the label the numbers are
+    #: the only evidence the cells mean the same thing.
     by_address: dict[tuple[str, str, str, str], list[Finding]] = {}
     for finding in pool:
         coordinate = finding.ref.rsplit("!", 1)[-1]
+        if finding.rule == "hardcode-in-formula" and finding.name:
+            cell = book.cells.get(finding.ref)
+            identity = _shape(cell) if cell is not None else base_detail(finding)
+        else:
+            identity = base_detail(finding)
         by_address.setdefault(
-            (finding.rule, coordinate, finding.name, base_detail(finding)), []
+            (finding.rule, coordinate, finding.name, identity), []
         ).append(finding)
     solo: list[Finding] = []
     for group in by_address.values():
@@ -882,6 +921,21 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
             continue
         first = min(group, key=lambda one: one.sheet)
         shown = ", ".join(sheets[:4]) + (", …" if len(sheets) > 4 else "")
+        details = {base_detail(one) for one in group}
+        if len(details) == 1:
+            what = (
+                f"{base_detail(first)} — the same formula at "
+                f"{first.ref.rsplit('!', 1)[-1]} on {len(sheets)} sheets "
+                f"({shown})"
+            )
+            unit = f"repeated on {len(sheets)} sheets"
+        else:
+            what = (
+                f"{base_detail(first)} — the same decision at "
+                f"{first.ref.rsplit('!', 1)[-1]} on {len(sheets)} sheets "
+                f"({shown}), each sheet holding its own number"
+            )
+            unit = f"repeated on {len(sheets)} sheets, each with its own number"
         keep.append(
             Finding(
                 rule=first.rule,
@@ -889,17 +943,60 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 ref=first.ref,
                 sheet=first.sheet,
                 name=first.name,
-                detail=(
-                    f"{base_detail(first)} — the same formula at "
-                    f"{first.ref.rsplit('!', 1)[-1]} on {len(sheets)} sheets "
-                    f"({shown})"
-                ),
+                detail=what,
                 source=first.source,
                 figure=first.figure,
-                figure_unit=f"repeated on {len(sheets)} sheets",
+                figure_unit=unit,
             )
         )
-    keep.extend(one for one in solo if one.rule == "long-formula")
+    keep.extend(one for one in solo if one.rule == "error-value")
+
+    #: What survives the address fold and is still a long formula may
+    #: yet be one template: the BPFM F1 sheet repeats its per-block
+    #: 326-character check row every fifteen rows, and the PCFM files
+    #: stamp one 325-character import-source formula into column D of
+    #: sheet after sheet. Same column, same length, three or more
+    #: times in one file is one authoring decision, wherever its
+    #: copies sit.
+    lengthy = [one for one in solo if one.rule == "long-formula"]
+    by_template: dict[tuple[str, str], list[Finding]] = {}
+    for finding in lengthy:
+        coordinate = finding.ref.rsplit("!", 1)[-1]
+        column = "".join(ch for ch in coordinate if ch.isalpha())
+        by_template.setdefault((column, base_detail(finding)), []).append(finding)
+    for (column, base), group in by_template.items():
+        if len(group) < 3:
+            keep.extend(group)
+            continue
+        sheets = sorted({one.sheet for one in group})
+        first = min(group, key=lambda one: (one.sheet, row_of(one)))
+        if len(sheets) > 1:
+            shown = ", ".join(sheets[:4]) + (", …" if len(sheets) > 4 else "")
+            what = (
+                f"{base} — the same formula in {len(group)} places "
+                f"across {len(sheets)} sheets ({shown})"
+            )
+        else:
+            at_rows = sorted(row_of(one) for one in group)
+            spots = ", ".join(f"{column}{row}" for row in at_rows[:5]) + (
+                ", …" if len(at_rows) > 5 else ""
+            )
+            what = (
+                f"{base} — the same formula in {len(group)} places "
+                f"down column {column} ({spots})"
+            )
+        keep.append(
+            Finding(
+                rule=first.rule,
+                severity=first.severity,
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=what,
+                source=first.source,
+                figure_unit=f"in {len(group)} places",
+            )
+        )
     solo_hardcodes = [one for one in solo if one.rule == "hardcode-in-formula"]
 
     #: The same numbers in three or more rows' otherwise different
