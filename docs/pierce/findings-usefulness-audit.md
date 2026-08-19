@@ -234,3 +234,48 @@ fourth draw is registered here first:
 - Seed for the fourth draw: **20260821**. Sample:
   `findings-usefulness-sample-4.json`; verdicts:
   `findings-usefulness-verdicts-4.json`.
+
+### Result (19 August, fourth measurement)
+
+Raw sample of 185: **A 31 · B 143 · C 11 · D 0.**
+Stratified over the 632: **A ≈ 8% · B ≈ 90% · C ≈ 2% · D = 0 —
+A+B ≈ 98%**, against 91% after Round 2, 61% after the fix round,
+26% at the start. No amendments this pass. False positives are at
+2.2%, under the mentor's 5% line; duplicates are gone from the
+sample entirely.
+
+Per detector (raw counts; stratified A+B beside it):
+
+| Detector | n | A | B | C | D | A+B raw | A+B stratified |
+|---|---|---|---|---|---|---|---|
+| hardcode-in-formula | 49 | 3 | 46 | 0 | 0 | 100% | 100% |
+| long-formula | 47 | 0 | 47 | 0 | 0 | 100% | 100% |
+| error-value | 25 | 5 | 17 | 3 | 0 | 88% | 87% |
+| volatile | 25 | 0 | 25 | 0 | 0 | 100% | 100% |
+| skipped-cell | 24 | 14 | 2 | 8 | 0 | 67% | 67% |
+| typed-over-formula | 11 | 5 | 6 | 0 | 0 | 100% | 100% |
+| inconsistent-row | 4 | 4 | 0 | 0 | 0 | 100% | 100% |
+
+Round 3's fixes read directly in the deltas: typed-over-formula
+47% → 100% (the varying-run fold turned ten duplicate verdicts into
+two folded findings judged worth seeing); hardcode 88% → 100% (the
+spelling-family fold, number words, and the header walk each
+removed their judged cause and nothing else).
+
+Per tier, as registered — the tiers judged for the first time:
+
+| Tier | n | A | B | C | A+B | C rate |
+|---|---|---|---|---|---|---|
+| 1 — Defect | 45 | 28 | 9 | 8 | 82% | 17.8% |
+| 2 — Assumption at risk | 49 | 3 | 46 | 0 | 100% | 0% |
+| 3 — Hygiene | 91 | 0 | 88 | 3 | 97% | 3.3% |
+
+Honestly read: **every remaining C is a documented limitation** —
+the eight tier-1 C are all the index-factor pattern (the omitted
+row is the multiplicative factor the block reads; a general skip
+was weighed and rejected because it pins judged-A totals), and the
+three tier-3 C are the end-of-sheet-marker and market-calendar
+patterns in error-value. The concentration of noise in tier 1 is
+the measurement doing its job: the one remaining engine debt sits
+exactly where a false positive costs the most, and it has one
+name. Nothing else in the corpus is unexplained.

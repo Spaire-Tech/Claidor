@@ -3427,3 +3427,29 @@ Known gap, recorded: the statement checks (analytics) do not carry
 tiers yet — they join the elevation layer when their findings move
 through the same pipeline. Next: the fourth measurement, seed
 20260821 as registered, judging tier alongside class.
+
+## 20 August, small hours — The fourth measurement: 98%, and zero duplicates
+
+Fresh draw of 185 (seed 20260821, registered first), neighbourhoods
+harvested, every verdict from the cells, tier judged alongside for
+the first time. Raw: A 31 · B 143 · C 11 · D 0. Stratified over the
+632: **A ≈ 8% · B ≈ 90% · C ≈ 2% · D = 0 — A+B ≈ 98%**, against
+91%, 61%, 26% on the three measurements before it. The mentor's
+lines — 90%+ worth attention, under 5% false positives — are both
+cleared, and the duplicate class is empty for the first time.
+
+Per detector: hardcode, long-formula, volatile, typed-over, and
+inconsistent-row all judge 100% A+B; typed-over rose from 47% on
+the strength of one fold. Per tier: tier 2 carries no noise at
+all, tier 3 almost none — and tier 1 carries 17.8% C, all of it
+the one documented index-factor limitation. Every C in the corpus
+now has a name and a written reason; nothing is unexplained.
+
+What the next rounds owe: the index-factor limitation is now the
+whole of the noise and it sits in the costliest tier — Round 4's
+corpus growth should include files that settle whether a general
+multiplicative-block rule can clear it without pinning real
+skipped-money totals. The statement checks still ride outside the
+elevation layer. And 98% on 27 familiar models is not 98% on the
+next model a customer uploads — which is exactly what Round 4's
+stress test exists to find out.
