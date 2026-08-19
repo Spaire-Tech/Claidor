@@ -3453,3 +3453,40 @@ skipped-money totals. The statement checks still ride outside the
 elevation layer. And 98% on 27 familiar models is not 98% on the
 next model a customer uploads — which is exactly what Round 4's
 stress test exists to find out.
+
+## 20 August — Round 4: the stress test, and the honest number
+
+The engine left the laboratory: eleven unseen models (Ofwat PR24,
+NZ Commerce Commission DPP4, Damodaran), protocol and seeds
+registered before any finding was read, engine run as shipped.
+
+**Generalization: the lab's 98% became 5.8%.** One convention the
+AU/UK corpus never exercised — a determination built as workbooks
+that read each other — flooded two files with 1,496 per-cell
+external-link findings that are one import decision per source.
+Excluding the floods, 54%: the unseen files taught seven noise
+principles (lookup column indexes alone account for most of the C
+mass) and four fold families the engine does not have. The signal
+did generalize: seven ACT-grade findings on files never seen —
+typed-over ERPs, a torn check row in a shipped draft determination,
+four values hand-keyed down Thames Water's 2024-25 revenue column,
+a recurring unexplained 0.999 haircut across the NZCC suite.
+
+**Quiet on clean: clean.** No believed-clean file produced an
+A-grade defect claim; one was perfectly silent. The engine chatters
+on unfamiliar styles but does not invent defects.
+
+**Recall: 68% registered, 60% on-point** over 72 planted defects in
+three hosts (collateral: one finding). Broken references 100%,
+overwritten formulas 86%, wrong assumptions 80%, skipped totals
+70% — and two honest zeros: single-cell reference shifts and
+operator flips in short rows are nearly invisible to the row pass,
+and totals narrowed at the head of their own range slip past a rule
+that only looks above the total. The planting harness
+(scripts/plant_defects.py) is now permanent equipment.
+
+The round changed no engine code — the measurements are of the
+engine as Round 3 left it — and wrote the Round 5 agenda: the
+external-link fold, seven noise principles, four fold families,
+two recall gaps, reader error-tolerance, and the Thames FM02
+under-reach investigation.
