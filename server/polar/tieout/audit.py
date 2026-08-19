@@ -478,11 +478,23 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             "the workbook does not declare iterative calculation."
         )
 
-    if finding.rule == "volatile" and finding.figure_unit.startswith("in "):
-        #: The idiom folds: the sheet's habit, or one row's cluster.
+    if finding.rule == "volatile" and (
+        finding.figure_unit.startswith("in ")
+        or finding.figure_unit.startswith("repeated on")
+    ):
+        #: The idiom and sibling-sheet folds: one habit, said once.
         return (
             f"« {finding.sheet} » {finding.detail}. It recalculates on "
             "every change, and its targets cannot be traced by eye."
+        )
+    if finding.rule == "long-formula" and (
+        finding.figure_unit.startswith("in ")
+        or finding.figure_unit.startswith("repeated on")
+    ):
+        #: The row and sibling-sheet folds for long formulas.
+        return (
+            f"An unusually complex formula, {finding.detail}. Its logic "
+            "is difficult to trace and verify by hand."
         )
 
     sentence = {
@@ -807,9 +819,9 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
     Every fold needs at least three members: two of anything is
     coincidence.
     """
-    keep = [
-        one for one in findings if one.rule not in ("volatile", "hardcode-in-formula")
-    ]
+    SIBLING_RULES = ("hardcode-in-formula", "long-formula", "volatile")
+    keep = [one for one in findings if one.rule not in SIBLING_RULES]
+    pool = [one for one in findings if one.rule in SIBLING_RULES]
 
     def base_detail(finding: Finding) -> str:
         return finding.detail.split(" — one formula filled")[0]
@@ -819,20 +831,54 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
             "".join(ch for ch in finding.ref.rsplit("!", 1)[-1] if ch.isdigit()) or 0
         )
 
-    #: The same hardcode at the same address under the same label on
-    #: three or more sheets: a per-company workbook's repeated decision.
-    hardcodes = [one for one in findings if one.rule == "hardcode-in-formula"]
-    by_address: dict[tuple[str, str, str], list[Finding]] = {}
-    for finding in hardcodes:
+    #: A row of near-identical long formulas first — ED2's transpose
+    #: rows array-enter the same 343-character formula seven times with
+    #: one anchored index hand-walked per column, so no two shapes
+    #: match and the fill collapse cannot see the fill. Same row, same
+    #: length, three or more times is one authoring pattern.
+    folded_rows: list[Finding] = []
+    by_line_key: dict[tuple[str, int, str], list[Finding]] = {}
+    for finding in pool:
+        if finding.rule != "long-formula":
+            continue
+        by_line_key.setdefault(
+            (finding.sheet, row_of(finding), base_detail(finding)), []
+        ).append(finding)
+    for line in by_line_key.values():
+        if len(line) < 3:
+            continue
+        first = min(line, key=lambda one: one.ref)
+        folded_rows.append(
+            Finding(
+                rule=first.rule,
+                severity=first.severity,
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=f"{base_detail(first)}, in {len(line)} cells of one row",
+                source=first.source,
+                figure_unit=f"in {len(line)} cells of one row",
+            )
+        )
+    folded_away = {
+        id(one) for line in by_line_key.values() if len(line) >= 3 for one in line
+    }
+    pool = [one for one in pool if id(one) not in folded_away] + folded_rows
+
+    #: The same finding at the same address under the same label on
+    #: three or more sheets: a per-company workbook's repeated
+    #: decision, whichever smell rule saw it.
+    by_address: dict[tuple[str, str, str, str], list[Finding]] = {}
+    for finding in pool:
         coordinate = finding.ref.rsplit("!", 1)[-1]
         by_address.setdefault(
-            (coordinate, finding.name, base_detail(finding)), []
+            (finding.rule, coordinate, finding.name, base_detail(finding)), []
         ).append(finding)
-    solo_hardcodes: list[Finding] = []
+    solo: list[Finding] = []
     for group in by_address.values():
         sheets = sorted({one.sheet for one in group})
         if len(sheets) < 3 or len(sheets) != len(group):
-            solo_hardcodes.extend(group)
+            solo.extend(group)
             continue
         first = min(group, key=lambda one: one.sheet)
         shown = ", ".join(sheets[:4]) + (", …" if len(sheets) > 4 else "")
@@ -853,6 +899,8 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 figure_unit=f"repeated on {len(sheets)} sheets",
             )
         )
+    keep.extend(one for one in solo if one.rule == "long-formula")
+    solo_hardcodes = [one for one in solo if one.rule == "hardcode-in-formula"]
 
     #: The same numbers in three or more rows' otherwise different
     #: formulas on one sheet: a convention typed everywhere rather
@@ -891,7 +939,7 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
     #: A sheet's function idiom: the same volatile function in three
     #: or more rows is how the sheet is built, said once — and short
     #: of that, twice in one row is one authoring decision.
-    volatile = [one for one in findings if one.rule == "volatile"]
+    volatile = [one for one in solo if one.rule == "volatile"]
     by_idiom: dict[tuple[str, str], list[Finding]] = {}
     for finding in volatile:
         by_idiom.setdefault((finding.sheet, base_detail(finding)), []).append(finding)

@@ -854,3 +854,48 @@ def test_an_array_formula_is_a_formula_not_a_typed_value() -> None:
     cell = read.cells.get("Sheet!B1")
     assert cell is not None
     assert cell.formula == "=TRANSPOSE(A1:A4)"
+
+
+def test_the_same_long_formula_on_sibling_sheets_is_one_finding() -> None:
+    """The sibling-sheet fold is not only for hardcodes: ED2's array
+    formulas sit at the same address on fourteen company sheets, and
+    fourteen copies of « 343 characters » is one finding."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+
+    long = "=" + "+".join(f"IF(Z{n}>0,Z{n},0)" for n in range(1, 20))
+
+    book = Book()
+    for name in ("DNOa", "DNOb", "DNOc"):
+        sheet = book.create_sheet(name)
+        sheet["B2"] = long
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    lengthy = [f for f in result.findings if f.rule == "long-formula"]
+    assert len(lengthy) == 1, [(f.ref, f.detail) for f in lengthy]
+    assert "3 sheets" in lengthy[0].detail
+
+
+def test_a_row_of_near_identical_long_formulas_is_one_finding() -> None:
+    """ED2's transpose rows array-enter the same formula with one
+    anchored index hand-walked per column, so no two shapes match and
+    the fill collapse is blind. Same row, same length, one pattern."""
+
+    def build(sheet) -> None:
+        from openpyxl.utils import get_column_letter
+
+        for column in range(3, 7):
+            letter = get_column_letter(column)
+            row_picked = 10 + column
+            sheet.cell(row=4, column=column).value = "=" + "+".join(
+                f"IF($Z${row_picked}>{n},{letter}{n},0)" for n in range(1, 14)
+            )
+
+    result = _tmp_book(build)
+    lengthy = [f for f in result.findings if f.rule == "long-formula"]
+    assert len(lengthy) == 1, [(f.ref, f.detail) for f in lengthy]
+    assert "4 cells of one row" in lengthy[0].detail
