@@ -151,3 +151,26 @@ What remains, honestly read:
   instead of 1,259, and the B mass around them is dominated by real
   formulas the reader could not even see before (array-entered
   blocks), folded to one line each.
+
+## The third measurement (registered 19 August, before any draw)
+
+After the collapse and purify rounds settle the population, the
+third measurement changes one thing about the draw, on the mentor's
+direction, and it is registered here first:
+
+- **Stratified by detector.** Each rule is guaranteed
+  min(rule size, 25) picks, distributed over its family strata
+  proportionally with every non-empty stratum contributing at least
+  one — so the four inconsistent-row findings are judged whole and
+  the hardcode mass cannot crowd out the skipped-cell detector. The
+  sampler takes the floor as its fourth argument; a floor of zero
+  reproduces the earlier draws exactly.
+- **Reported per detector.** The tally is published as a
+  useful/noise/duplicate table *per rule*, alongside the stratified
+  whole-population estimate. The question graduates from « is the
+  report useful » to « which detector is excellent and which still
+  needs work ».
+- Classes, judging procedure, and amendment discipline are unchanged.
+- Seed for the third draw: **20260820**. Sample:
+  `findings-usefulness-sample-3.json`; verdicts:
+  `findings-usefulness-verdicts-3.json`.
