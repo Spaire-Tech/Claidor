@@ -16,7 +16,7 @@
  * and are prefixed instead.
  */
 
-/* Instrument Sans — the Antford design's face, self-hosted from the
+/* Instrument Sans — the Ances design's face, self-hosted from the
    design file's own binary. A variable font: one file carries the 400
    and 500 the markup uses. Switzer (the first workspace's face) is
    retired with its design; its files stay on disk for git history. */
@@ -28,7 +28,7 @@
   font-style: normal;
 }
 
-/* Bodoni Moda — the Antford wordmark, and only the wordmark. */
+/* Bodoni Moda — the Ances wordmark, and only the wordmark. */
 @font-face {
   font-family: 'Bodoni Moda';
   src: url('/workspace/bodoni-moda-400.woff2') format('woff2');

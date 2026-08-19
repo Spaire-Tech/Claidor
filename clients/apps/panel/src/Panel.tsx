@@ -1,5 +1,5 @@
 /**
- * The Antford panel, inside Excel (and any Office host that opens it).
+ * The Ances panel, inside Excel (and any Office host that opens it).
  *
  * Source of truth: `docs/pierce/design-antford-panel/panel.html` — the
  * founder's Excel-panel redesign, 15 August. The left half of that file
@@ -63,7 +63,7 @@ const black = {
 } as const
 
 /** « Allow access » is asked once per install, then remembered here —
- *  it gates Antford's reading, which is real, so the answer is kept. */
+ *  it gates Ances's reading, which is real, so the answer is kept. */
 const ALLOWED = 'claidor.panel.allowed'
 
 /** `'Opex'!N1885` → `N1885` — the sheet is where the jump goes, not
@@ -371,7 +371,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               textWrap: 'balance',
             }}
           >
-            Antford wants access to this workbook
+            Ances wants access to this workbook
           </div>
           <div
             style={{ display: 'flex', flexDirection: 'column', marginTop: 22 }}
@@ -446,7 +446,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
               textWrap: 'pretty',
             }}
           >
-            Antford writes to a cell only when you press « Fix the cell », and
+            Ances writes to a cell only when you press « Fix the cell », and
             only to put a row's own formula back. Revoke access from the
             workbook at any time.
           </div>
@@ -577,7 +577,7 @@ export function Panel({ bridge }: { bridge: HostBridge }) {
             textWrap: 'pretty',
           }}
         >
-          There is no workbook to check here. Open a model in Excel, and Antford
+          There is no workbook to check here. Open a model in Excel, and Ances
           reads this copy — exactly as it stands, unsaved edits included.
         </div>
       </Shell>

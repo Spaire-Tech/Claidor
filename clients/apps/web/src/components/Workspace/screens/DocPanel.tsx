@@ -200,7 +200,7 @@ export const DocPanel = ({
   return (
     <div
       style={{
-        //: The Antford pane: full-bleed white beside the main pane's
+        //: The Ances pane: full-bleed white beside the main pane's
         //: seam — the floating glass card is retired with its design.
         flex: '1 1 0',
         minWidth: 380,
@@ -343,7 +343,7 @@ export const DocPanel = ({
 
         {facts.length > 0 && (
           <>
-            <div style={panelHead}>What Antford found in it</div>
+            <div style={panelHead}>What Ances found in it</div>
             <div style={panelCard}>
               {facts.map((fact, index) => (
                 <div

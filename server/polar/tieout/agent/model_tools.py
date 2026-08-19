@@ -355,7 +355,7 @@ def versions(workspace: ModelWorkspace) -> ToolResult:
             data={
                 "rows": rows,
                 "note": "This is the first version — there is nothing "
-                "earlier in Antford to compare against.",
+                "earlier in Ances to compare against.",
             },
         )
     changed = diff.get("changed", [])

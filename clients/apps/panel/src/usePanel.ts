@@ -63,7 +63,7 @@ export function usePanel(
   bridge: HostBridge,
   api: TieOutApi,
   signInUrl: string,
-  //: The design's « Allow access » face gates Antford's own reading:
+  //: The design's « Allow access » face gates Ances's own reading:
   //: until it is pressed once, the panel does not touch the workbook.
   allowed = true,
 ) {

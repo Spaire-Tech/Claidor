@@ -32,7 +32,7 @@ export default async function Page(props: {
           <LogoIcon className="text-blue-500" size={80} />
 
           <div className="flex flex-col gap-y-4">
-            <h1 className="text-3xl">Sign up to Antford</h1>
+            <h1 className="text-3xl">Sign up to Ances</h1>
             <p className="text-xl text-gray-500">
               Every check an auditor runs on a model, run on yours.
             </p>

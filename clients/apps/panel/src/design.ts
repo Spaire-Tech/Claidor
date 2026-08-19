@@ -32,7 +32,7 @@
 export const font = {
   ui: "'Instrument Sans', -apple-system, system-ui, sans-serif",
   mono: "'IBM Plex Mono', ui-monospace, monospace",
-  /** The Antford wordmark, and only the wordmark. */
+  /** The Ances wordmark, and only the wordmark. */
   brand: "'Bodoni Moda', Didot, Georgia, serif",
 } as const
 
@@ -55,7 +55,7 @@ export const ink = {
   stale: '#c8790a',
   /** Stale dot and the model grid's highlight. */
   staleDot: '#ff9f0a',
-  /** The failing check's dot — the Antford design's amber. */
+  /** The failing check's dot — the Ances design's amber. */
   failDot: '#e8a33d',
   /** Clean state text and dot. */
   clean: '#34c759',

@@ -2994,3 +2994,273 @@ reload: « 2 failures accepted with a note », the bars honest at
 0 → 12 → 12, and « None of them is new with version 3 » — a sentence
 the preserved clock finally makes true. New spine test pins all of it.
 Suite at 442 passing.
+
+## The new corpus's first sweep: two floods and a model that cleaned itself (17 August, night)
+
+The founder sourced four new public corpora — AER PTRM/RFM, Ofgem's
+ED2 PCFM with its eleven changelogged versions, RIIO-3's
+draft-to-final pairs, the CAA's Heathrow H7 model — and asked for
+them fetched. Twenty-seven files landed (the AER's site resets
+non-browser connections; marked in the committed manifest for the
+founder's own browser). The engine swept all of them. The tally, and
+what it teaches:
+
+**Two floods, both structural lessons rather than defects.** The
+WACC models carry ~65,600 findings each — 99.9% `error-value`, one
+finding per `#N/A` cell in half-million-cell daily-rates sheets,
+where a lookup past the data's edge is the template's normal state.
+The H7 price control model carries 28,276 — 22,519 of them
+`circular`, one finding per cell of what is likely one deliberate
+loop (whether the workbook declares iterative calculation there needs
+checking against the reader first). Both are the same disease the
+fill-collapse cured for formulas: one authoring situation reported
+tens of thousands of times. The cures are the next round: error
+values folded per region with a count, circular loops folded per
+loop, and the iterative flag verified on real .xlsm.
+
+**The quiet files are already defensible.** The RIIO-3 draft PCFMs
+report 7–15 findings each; the ED2 PCFM reports 10; the H7 debt
+models 16–20. On 40,000-cell regulator models those are reports a
+person can read to the end.
+
+**And one real story found by accident:** the ED2 PCFM's own history
+shows Ofgem cleaning their model — V1 through V3-October carry 41
+hardcode findings; from the V3 January re-publication onward it drops
+to 9. The version trail also keeps one `skipped-cell` finding alive
+across all eleven versions — three years unfixed, or our next junk
+lesson; the hand-review round will say which.
+
+Full per-file, per-rule numbers in the sweep record; hand-review of
+the quiet files' findings is the next round, with every verdict
+becoming a rule or a confirmed defect.
+
+## The floods, folded by their real shapes (18 August, small hours)
+
+The mentor's direction, followed exactly: check the class before you
+collapse, and read the setting before you count.
+
+**The setting was read first.** All three flood files carry
+`<calcPr calcId="191028"/>` — no `iterate` attribute. Iteration is
+genuinely off in the published files, so the H7 loop is reportable;
+the reader's `iterative` flag was correct all along.
+
+**Error values, by class and by region.** `#REF!` and `#NAME?` stay
+per-cell — the result that made the closed-deal file's frozen
+references land is untouched, by test. The designed returns — `#N/A`
+and kin — are judged by the shape of their region: a run at the tail
+of a column whose data simply ends folds quiet; a lone run inside a
+live column is a break and stays loud, per run, as an error. The
+first re-run taught the third shape within minutes: a daily
+gilt-yields column carries thousands of two-cell `#N/A` gaps at a
+seven-row rhythm — weekends, with longer runs at bank holidays. Many
+short interior runs are the series' calendar (ten or more folds the
+column; a real break is one or two), so the WACC model's « Daily
+Data » sheet now reports as one sentence: « carries #N/A in 29,860
+routine gaps in its series — 61,328 cells across 16 columns. A
+lookup's designed answer for missing data, not damage. »
+
+**Circular references, by component.** Tarjan over the in-book
+precedent edges, iteratively; the finding is the strongly connected
+component, not the cell, and identical components — a per-period loop
+dragged across the time axis — fold further by formula shape into
+one. The H7 model's 22,519 circular cells resolved into **one real
+loop**: « a loop of 21,365 cells », the financing circle, reported
+once as an error because the workbook does not declare iterative
+calculation. The other hundred-odd « loops » were the engine's own
+mistake, found by refusing to believe A1 on fifty sheets: `=CELL(
+"filename", $A$1 )` — the classic sheet-name header — anchors
+metadata, not a value, and Excel does not treat it as a dependency.
+Now neither does the audit: a one-cell loop only counts if the
+self-reference survives outside every CELL(...) call.
+
+Measured on the corpus: the WACC model 65,606 → 15 findings; the
+Heathrow H7 model 28,246 → 87, its financing loop one honest line.
+Five new tests pin the tail fold, the calendar fold, the loud
+interior break with `#REF!` untouched beside it, the one-loop-one-
+finding rule, and the dragged-loop fold. Suite at 446 passing. The
+full corpus re-sweep table follows when the run completes.
+
+**The full re-sweep, for the record.** Every file the floods did not
+touch reports *identically* — the ED2 versions, the draft PCFMs, the
+debt models, down to the finding — which is the collapses proving
+they change nothing but the floods. The floods themselves: the two
+WACC models 65,685 and 65,606 → 10 and 15; the two H7 price control
+models 28,276 and 28,246 → 90 and 87; the six RIIO-3 BPFMs from
+1,593–1,944 → 157–506. Corpus total: roughly 199,000 findings down
+to about 2,900, with not one `#REF!`, hardcode, typed-over or
+skipped-cell result altered anywhere. The BPFMs' remaining hundreds
+are the next hand-review target — their error values now fold, so
+what remains is real enough to read one by one.
+
+## The mentor's round: semantics, agreement, and the third collapse (17 August)
+
+Five directives, taken in order, each measured before being believed.
+
+**The CELL bug was a class, and the table now exists.** The edge
+builder treated every reference argument as a read; it now keeps a
+frame stack over Microsoft's own tokenizer and reads each reference
+in the context of the function holding it. The locator class — SHEET,
+SHEETS, ISREF, ROW, COLUMN, ROWS, COLUMNS, AREAS — contributes no
+edges; CELL splits by its first argument (« contents » reads the
+cell, « filename » reads the address); INDIRECT and OFFSET keep their
+visible arguments as real edges and declare the run-time landing
+place unfollowable, in the cell's own provenance. One honest
+departure from the mentor's list: N and T stay as dependencies,
+because `N(A1)` and `T(A1)` do read the value. The audit-side
+CELL(...) patch remains as a second line of defense; seven new tests
+pin the table. On the corpus this changed no report — which is the
+point: the same protection, moved from a patch over one symptom to
+the root.
+
+**Cross-column agreement, and what it took to get it true.** First
+cut: any sister live where a column gaps = break. The corpus said no:
+the WACC model went 15 → 657, because « Daily Data » holds two
+families on different calendars (a quartet gapping on 3,965 days, an
+eleven-column family on 3,789), and each family's shared gaps read as
+breaks against the other's live days. Second cut: « a break in one
+column » is literal — a sister *gapping with* you means the source
+had no data that day (calendar, whatever the stride, which is what
+bank holidays needed); a break is a run alone among live sisters.
+The corpus said no again, quietly: the SONIA sheet keeps forecast
+anchors every 182 daily rows beside sisters interpolated for every
+day — all its gaps are « alone », by design, and 22 breaks appeared.
+Third cut: aloneness only counts when it is exceptional for the
+column. All three cuts are in the tests; the WACC model reports 15
+findings again, with truer sentences than before the round.
+
+**The 506, diagnosed in the mentor's ten minutes.** Sorted by kind:
+error-value 392 of 506, and 334 of those are `#REF!` cells that are
+exactly *two formulas* — `=InputSummary!#REF!` filled over 58 cells,
+and one CHOOSE with all three arms torn filled over 276. Third
+collapse: broken cells sharing one formula fold to one finding, still
+an error, nothing quiet, a lone broken cell unchanged. ET3 final:
+506 → 124. What remains across the BPFMs (74–182) is the genuinely-
+messier profile — dozens of distinct hardcodes and typed-over blocks,
+each its own authoring decision — which is the mentor's « ranking »
+branch, not another collapse.
+
+**The golden-master gate is protocol now.** `scripts/corpus_gate.py`
+sweeps and diffs finding-for-finding — rule, severity, ref, figure
+and sentence, not counts. The baseline (`corpus-golden-master.json`,
+27 files, 1,259 findings) is committed; an intended change
+regenerates it in the same commit and the baseline's git diff is the
+review artifact. This round is its own first demonstration: against
+the pre-round counts, 18 files changed and every changed line is one
+of the three intended changes; the other 9 match to the finding.
+
+**The eleven-version sum is not a live defect.** Hand-read in the
+cells of V5 and confirmed in all eleven versions: `=SUM(AR146:AR147)`
+(« impacting tax allowance ») sits under `=-SUM(AR146:AR147)`
+(« contributing to allowed revenue ») and a net-debt row that reads
+the same pair — three views of DRS15, feeding three different rows of
+Finance&Tax, correct as published. The « skipped » rows read the very
+range the sum reads; adding them would double count. The engine
+learned it as the fourth skipped-cell exemption (a row that reads the
+summed range is a sibling view), the founder's example model still
+reports its genuine 12.5m miss by test, and the ED2 versions each
+dropped their one false finding.
+
+Corpus: 1,981 → 1,259 findings. Suite: 456 passing, 4 skipped. The
+two mypy complaints in audit.py predate the round and are untouched.
+
+## Ances, and the 18 August design (18 August)
+
+**The rename.** Antford is Ances everywhere a person can read it — the
+workspace, sign-in and sign-up, the tieout copy, the Excel panel and
+both Office manifests. The panel was the real find: its deployed
+bundle under `web/public/panel` predated the *last* rename, so Excel
+was still calling the product Claidor while the sources said Antford.
+Rebuilt from source, redeployed; the ribbon's name lives in the
+sideloaded manifest, so the founder must re-add the stamped
+`dist/manifest.xml` once to see Ances in Excel itself.
+
+**The design revision, measured before it was implemented.** The new
+canvas (`docs/pierce/design-ances/`) was diffed against the previous
+one file-to-file. The whole revision is nine deltas, and only nine:
+the rail moves to the left of the model page on its own soft ground
+and hides while Ask is open; « Summary of the check » sets its heading
+in a blue gradient and swaps the grey middots for round blue points;
+the findings table's hairline darkens a step; Observation turns from
+blue-violet to plum, pill and text; the header drops the model's name
+(the page title carries it); the Export modal shrinks to a plain
+440px form — no preview card, square checkboxes, « Every finding
+carries its cell reference. Nothing is summarised away. »; the report
+options get shorter names; the Assistant gains a history drawer; and
+the drawer's toggle joins the scope bar. Everything else on the canvas
+is the previous design byte-for-byte, which the diff proves.
+
+**The history drawer is real history.** The design draws canned rows;
+the build keeps the person's own past conversations on their machine
+and lists them by recency — Today, previous seven days, older — with
+an honest « Past conversations land here. » before any exist. Opening
+one restores the conversation and its model; New chat starts a fresh
+one. Nothing invented.
+
+**Proofs.** Driven in the real app against the Harbour deal at
+1440×900: list, model page (left rail, gradient heading, plum pills),
+Ask open with the rail hidden, the new Export form (subtitle count
+fixed to match the table during the proof pass), the finding modal
+with its Excel frame, the Assistant drawer, Settings saying Ances.
+Typecheck clean; lint at baseline. The « Open the cell » button keeps
+its Excel-green — the founder-approved departure from the drawn blue,
+because the button opens Excel — and stands flagged here again.
+
+## The usefulness audit: 145 findings read from their cells (18 August)
+
+The mentor's question — are the remaining findings useful to a
+professional auditor — answered the only honest way: protocol and
+seeded stratified sample committed first (28 family-by-rule strata,
+145 findings), then every sampled finding judged from a harvested
+neighbourhood of the real cells (formulas, values, row labels), never
+from its own sentence. Verdicts with reasons:
+`findings-usefulness-verdicts.json`.
+
+**The tally, as measured.** Raw: A 12, B 35, C 54, D 44. Stratified
+over the 1,259: **A ≈ 4%, B ≈ 22%, C ≈ 39%, D ≈ 35%.** The bar the
+mentor set — a majority A/B — is **not met**: A+B ≈ 26%. Said plainly
+and first.
+
+**What A looks like.** The twelve are exactly the product's pitch:
+the 21,365-cell financing loop; a #REF! in a published PCFM; totals
+with six-figure sums sitting in skipped live rows; a row that
+switches calculation basis at one column of a uniform fill; typed
+seeds where links belong; « Sharing factor » written =25% where the
+determination's number should flow.
+
+**Where C comes from — fourteen causes, all mechanical.** The single
+biggest: the reader drops array formulas, so array-calculated cells
+register as typed values — one reader fix erases most of the BPFM
+typed-over stratum. Then: DATE()/EOMONTH() argument literals; check-
+row tolerances and ROUND precisions; 10^n unit conversions; literals
+inside text-only functions (REPT); constants documented by the row's
+own label; policy years compared against the model's own time axis;
+lookup-scaffold index bounds; the totals column read as inconsistent
+with its own row; partitioned pick-out subtotals whose sibling SUMs
+jointly cover the « skipped » rows; alternative-aggregate tables
+(EBITDA excludes D&A by definition); typed input rows misread
+column-wise; mnemonic columns read as calculated series; and one
+outright bug — multi-area SUM coverage mis-parsed, producing a
+finding that names rows the SUM includes.
+
+**Where D comes from — four collapse patterns.** The same typed
+balance convention repeated across sibling DNO sheets (one grouped
+finding per file, and the content is A-grade); the same row flagged
+once per column; one sheet's OFFSET idiom (TaxPools, RatingSimulator,
+FinInput) reported per row; the same convention constant repeated
+across sibling rows. D is not junk — it is A/B content printed too
+many times.
+
+**Found on the way, for the next round.** Two new A-grade rules the
+corpus asks for: a model's own check row reading non-zero in the solo
+audit (one BPFM's Equity check reads False today, unreported), and
+literal drift inside one fill (a 2025 in the first cell where every
+sibling says 2022 — sampled, and currently visible only as a hardcode
+flag). Plus a tolerance-outlier check: one gearing check's tolerance
+is a million times looser than its siblings'.
+
+**Ranking, answered by the data.** The twelve A verdicts concentrate
+in five rule-shapes: skipped totals with live money, inconsistent
+rows, circularity with iteration off, typed-over with drift, broken
+references — plus parameter-grade hardcodes. Severity tiers plus
+figure worth plus those shapes IS the attention ordering the mentor
+asked for; the engine already carries every ingredient.

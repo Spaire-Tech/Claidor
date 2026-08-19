@@ -51,7 +51,7 @@ textarea {
   box-shadow: none;
 }
 
-/* The Antford panel design's own keyframes and scrollbar. */
+/* The Ances panel design's own keyframes and scrollbar. */
 @keyframes antford-spin {
   to {
     transform: rotate(360deg);

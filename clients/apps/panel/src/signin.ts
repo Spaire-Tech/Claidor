@@ -80,7 +80,7 @@ async function attempt(): Promise<void> {
     // time land here, and « sign in over there, then come back » is the
     // instruction, not a failure message.
     status.textContent =
-      'Sign in to Antford in your browser, then come back here.'
+      'Sign in to Ances in your browser, then come back here.'
     status.className = 'quiet'
     dashboard.href = DASHBOARD_URL
     dashboard.target = '_blank'

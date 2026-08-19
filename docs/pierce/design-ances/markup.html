@@ -1,0 +1,1252 @@
+
+<div style="height:100vh; width:100%; padding:0; display:flex; flex-direction:column; gap:0; font-family:'Instrument Sans',-apple-system,system-ui,sans-serif; color:#242424; font-size:14.5px; line-height:1.5; overflow:hidden; background:radial-gradient(120% 100% at 20% -10%, #ffffff 0%, #f4f5f7 42%, #e9ebef 72%, #e2e4e9 100%)">
+
+  <div style="flex:1; min-height:0; display:flex; gap:1px; background:#eae7e2">
+    <sc-if value="{{ mainOpen }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1 1 0; min-width:420px; display:flex; flex-direction:column; background:#ffffff; order:1; border-radius:0; overflow:hidden">
+
+      <div style="flex:0 0 auto; height:54px; box-sizing:border-box; display:flex; align-items:center; gap:10px; padding:0 10px; border-bottom:1px solid #f0eeec">
+        <sc-if value="{{ showMark }}" hint-placeholder-val="{{ true }}">
+          <span style="font-family:'Bodoni Moda',Didot,Georgia,serif; font-size:23px; font-weight:400; letter-spacing:.005em; line-height:1; margin:0 6px 0 10px">Ances</span>
+        </sc-if>
+        <sc-if value="{{ hasBack }}" hint-placeholder-val="{{ false }}">
+          <button sc-camel-on-click="{{ back }}" style="display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.7); box-shadow:0 1px 2px rgba(18,24,40,.08); border-radius:11px; padding:8px 14px 8px 11px; font:inherit; font-weight:500; color:#0060d0; cursor:pointer" style-hover="background:#fff">
+            <svg width="9" height="15" sc-camel-view-box="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7.5,1.5 1.5,7.5 7.5,13.5"></polyline></svg>
+            <span>Models</span>
+          </button>
+        </sc-if>
+        <sc-if value="{{ hasDeal }}" hint-placeholder-val="{{ false }}">
+        </sc-if>
+        <div style="flex:1"></div>
+        <sc-if value="{{ hasDeal }}" hint-placeholder-val="{{ false }}">
+          <button sc-camel-on-click="{{ openAsk }}" style="border:0; background:#f0f0f2; color:#1d1d1f; border-radius:11px; padding:9px 15px; font:inherit; font-size:13.5px; font-weight:500; white-space:nowrap; cursor:pointer" style-hover="background:#e7e7ea">Ask</button>
+          <button sc-camel-on-click="{{ openReport }}" style="border:0; background:#f0f0f2; color:#1d1d1f; border-radius:11px; padding:9px 15px; font:inherit; font-size:13.5px; font-weight:500; white-space:nowrap; cursor:pointer" style-hover="background:#e7e7ea">Export report</button>
+          <button style="border:0; background:#0060d0; color:#fff; border-radius:11px; padding:9px 16px; font:inherit; font-size:13.5px; font-weight:500; white-space:nowrap; cursor:pointer; margin-right:4px" style-hover="background:#0055ba">Recheck now</button>
+        </sc-if>
+        <sc-if value="{{ cDoneBar }}" hint-placeholder-val="{{ false }}">
+          <button sc-camel-on-click="{{ openAsk }}" style="border:0; background:#f0f0f2; color:#1d1d1f; border-radius:11px; padding:9px 15px; font:inherit; font-size:13.5px; font-weight:500; white-space:nowrap; cursor:pointer" style-hover="background:#e7e7ea">Ask</button>
+          <button sc-camel-on-click="{{ openReport }}" style="border:0; background:#f0f0f2; color:#1d1d1f; border-radius:11px; padding:9px 15px; font:inherit; font-size:13.5px; font-weight:500; white-space:nowrap; cursor:pointer" style-hover="background:#e7e7ea">Export report</button>
+          <button sc-camel-on-click="{{ cReset }}" style="border:0; background:#0060d0; color:#fff; border-radius:11px; padding:9px 16px; font:inherit; font-size:13.5px; font-weight:500; white-space:nowrap; cursor:pointer; margin-right:4px" style-hover="background:#0055ba">Check another</button>
+        </sc-if>
+        <sc-if value="{{ vDealsList }}" hint-placeholder-val="{{ true }}">
+          <button sc-camel-on-click="{{ openNew }}" style="border:0; background:#0060d0; color:#fff; border-radius:11px; padding:9px 16px; font:inherit; font-size:13.5px; font-weight:500; white-space:nowrap; cursor:pointer; margin-right:4px" style-hover="background:#0055ba">Add models</button>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ hasDeal }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1; min-height:0; display:flex; flex-direction:column; background:#fff">
+        <div style="flex:1; min-height:0; overflow:auto">
+        <div style="width:100%; display:flex; align-items:flex-start; gap:0">
+
+          <div style="flex:1 1 0; min-width:0; overflow:hidden; padding:28px 36px 52px">
+            <div style="display:flex; align-items:center; gap:14px">
+              <span style="flex:0 0 auto; font-size:23px; font-weight:600; letter-spacing:-.022em; line-height:1.2">{{ dealName }}</span>
+              <span style="flex:0 0 auto; color:{{ pillFg }}; font-size:13px; font-weight:500; white-space:nowrap">{{ heroTag }}</span>
+              <span style="flex:1"></span>
+              <span style="flex:0 0 auto; display:inline-flex; align-items:center; gap:8px; border:1px solid #e6e6ea; border-radius:999px; padding:6px 12px; font-size:13px; color:#1d1d1f; white-space:nowrap">
+                <span>Version {{ dVerNum }}</span>
+                <svg width="11" height="11" sc-camel-view-box="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,9 12,16 19,9"></polyline></svg>
+              </span>
+            </div>
+            <div style="font-size:14px; color:#86868b; line-height:1.55; margin-top:8px; max-width:82ch; text-wrap:pretty">{{ heroSub }}</div>
+
+            <div style="font-size:16.5px; font-weight:600; letter-spacing:-.014em; padding:30px 0 11px; background:linear-gradient(96deg,#0060d0 0%,#3b6ee0 42%,#5b52e0 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:#0060d0; width:fit-content">Summary of the check</div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <sc-for list="{{ summaryBullets }}" as="b" hint-placeholder-count="3">
+                <div style="display:flex; gap:11px">
+                  <span style="flex:0 0 auto; width:5px; height:5px; margin-top:8px; border-radius:50%; background:#0060d0"></span>
+                  <span style="flex:1; min-width:0; font-size:14px; line-height:1.6; color:#3a3a3c; text-wrap:pretty">{{ b.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="font-size:16.5px; font-weight:600; letter-spacing:-.014em; padding:34px 0 2px">Findings</div>
+            <div style="display:flex; align-items:center; gap:20px; border-bottom:1px solid #e6e6ea; padding:12px 4px 11px">
+              <span style="flex:1 1 260px; min-width:150px; font-size:12.5px; color:#8e8e93">Finding</span>
+              <span style="flex:0 1 176px; min-width:96px; font-size:12.5px; color:#8e8e93">Where</span>
+              <span style="flex:0 0 80px; text-align:right; font-size:12.5px; color:#8e8e93">Figure</span>
+              <span style="flex:0 0 96px; font-size:12.5px; color:#8e8e93">Severity</span>
+            </div>
+            <sc-for list="{{ rvTable }}" as="f" hint-placeholder-count="11">
+              <div sc-camel-on-click="{{ f.pick }}" style="display:flex; align-items:center; flex-wrap:wrap; gap:8px 20px; border-bottom:1px solid #e6e6e9; padding:14px 4px; cursor:pointer; transition:background .14s ease" style-hover="background:#fafafa">
+                <span style="flex:1 1 240px; min-width:150px">
+                  <span style="display:block; font-size:14px; letter-spacing:-.008em; line-height:1.4; text-wrap:pretty">{{ f.rule }}</span>
+                  <span style="display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 8px; margin-top:3px">
+                    <span style="font-size:12.5px; color:#a0a0a6; line-height:1.45; text-wrap:pretty">{{ f.figUnit }}</span>
+                    <span style="font-size:12.5px; color:#c2c2c7; white-space:nowrap">{{ f.cat }}</span>
+                  </span>
+                </span>
+                <span style="flex:0 1 176px; min-width:96px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#2a9d4f; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ f.where }}</span>
+                <span style="flex:0 0 80px; text-align:right; font-size:14px; color:#0060d0; font-variant-numeric:tabular-nums lining-nums">{{ f.fig }}</span>
+                <span style="flex:0 0 96px">
+                  <span style="display:inline-flex; align-items:center; background:{{ f.sevBg }}; color:{{ f.sevFg }}; border-radius:999px; padding:3px 9px; font-size:12px; white-space:nowrap">{{ f.sev }}</span>
+                </span>
+              </div>
+            </sc-for>
+
+            <div style="font-size:16.5px; font-weight:600; letter-spacing:-.014em; padding:36px 0 2px">Where the findings sit</div>
+            <div style="display:flex; align-items:center; gap:20px; border-bottom:1px solid #e6e6ea; padding:12px 4px 11px">
+              <span style="flex:1 1 auto; min-width:0; font-size:12.5px; color:#8e8e93">Sheet</span>
+              <span style="flex:0 1 176px; min-width:88px; font-size:12.5px; color:#8e8e93">Role</span>
+              <span style="flex:0 0 140px; text-align:right; font-size:12.5px; color:#8e8e93">Findings</span>
+            </div>
+            <sc-for list="{{ hotSheets }}" as="t" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:20px; border-bottom:1px solid #f2f2f4; padding:14px 4px">
+                <span style="flex:1 1 auto; min-width:0; font-size:14px; letter-spacing:-.006em">{{ t.name }}</span>
+                <span style="flex:0 1 176px; min-width:88px; font-size:13px; color:#86868b">{{ t.role }}</span>
+                <span style="flex:0 0 140px; text-align:right; font-size:13px; color:#86868b; font-variant-numeric:tabular-nums">{{ t.n }}</span>
+              </div>
+            </sc-for>
+            <div style="font-size:12.5px; color:#a8a8ad; line-height:1.5; padding:13px 4px 0; max-width:86ch; text-wrap:pretty">{{ sheetsNote }}</div>
+
+            <div style="flex:0 0 auto; margin-top:44px; border-top:.5px solid #eceaec">
+                <button sc-camel-on-click="{{ togglePass }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-top:0; background:transparent; font:inherit; cursor:pointer; padding:13px 18px 13px 20px" style-hover="background:#fafafa">
+                  <span style="flex:1; min-width:0; font-size:14px; letter-spacing:-.006em">Checks that pass</span>
+                  <span style="flex:0 0 auto; font-size:14px; color:#aeaeb2">{{ dPass }}</span>
+                  <svg width="8" height="13" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 8px; transform:{{ spinPass }}; transition:transform .18s ease"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+                </button>
+              <sc-if value="{{ secPass }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fafafc; border-top:.5px solid #f0eff1">
+                  <sc-for list="{{ passes }}" as="p" hint-placeholder-count="10">
+                    <div style="display:flex; align-items:center; gap:12px; border-top:{{ p.rule }}; padding:10px 20px 10px 32px">
+                      <span style="flex:1; min-width:0; font-size:14.5px; color:#3a3a3c">{{ p.name }}</span>
+                      <span style="flex:0 0 auto; font-size:12.5px; color:#34c759; font-variant-numeric:tabular-nums">{{ p.count }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ hasNotRun }}" hint-placeholder-val="{{ true }}">
+                <button sc-camel-on-click="{{ toggleCov }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-top:.5px solid #eceaec; background:transparent; font:inherit; cursor:pointer; padding:13px 18px 13px 20px" style-hover="background:#fafafa">
+                  <span style="flex:1; min-width:0; font-size:14px; letter-spacing:-.006em">Checks that did not run</span>
+                  <span style="flex:0 0 auto; font-size:14px; color:#aeaeb2">{{ dNotRun }}</span>
+                  <svg width="8" height="13" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 8px; transform:{{ spinCov }}; transition:transform .18s ease"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+                </button>
+              <sc-if value="{{ secCov }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fafafc; border-top:.5px solid #f0eff1">
+                  <sc-for list="{{ coverage }}" as="c" hint-placeholder-count="3">
+                    <div style="border-top:{{ c.rule }}; padding:11px 20px 12px 32px">
+                      <div style="font-size:14.5px; color:#3a3a3c">{{ c.label }}</div>
+                      <div style="font-size:13px; color:#a1a1a6; margin-top:2px; text-wrap:pretty">{{ c.why }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              </sc-if>
+              <sc-if value="{{ dealMain }}" hint-placeholder-val="{{ true }}">
+                <button sc-camel-on-click="{{ toggleLog }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-top:.5px solid #eceaec; background:transparent; font:inherit; cursor:pointer; padding:13px 18px 13px 20px" style-hover="background:#fafafa">
+                  <span style="flex:1; min-width:0; font-size:14px; letter-spacing:-.006em">Evidence locker</span>
+                  <span style="flex:0 0 auto; font-size:14px; color:#aeaeb2">{{ dLocker }}</span>
+                  <svg width="8" height="13" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 8px; transform:{{ spinLog }}; transition:transform .18s ease"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+                </button>
+              <sc-if value="{{ secLog }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fafafc; border-top:.5px solid #f0eff1">
+                  <sc-for list="{{ dealLog }}" as="l" hint-placeholder-count="4">
+                    <div style="border-top:{{ l.rule }}; padding:12px 20px 13px 32px">
+                      <div style="font-size:14.5px; color:#3a3a3c; line-height:1.45; text-wrap:pretty">{{ l.text }}</div>
+                      <div style="font-size:12.5px; color:#a1a1a6; margin-top:3px">{{ l.when }} · {{ l.cell }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              </sc-if>
+                <button sc-camel-on-click="{{ toggleModel }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-top:.5px solid #eceaec; background:transparent; font:inherit; cursor:pointer; padding:13px 18px 13px 20px" style-hover="background:#fafafa">
+                  <span style="flex:1; min-width:0; font-size:14px; letter-spacing:-.006em">The model</span>
+                  <span style="flex:0 0 auto; font-size:14px; color:#aeaeb2">{{ dVer }}</span>
+                  <svg width="8" height="13" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 8px; transform:{{ spinModel }}; transition:transform .18s ease"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+                </button>
+              <sc-if value="{{ secModel }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fafafc; border-top:.5px solid #f0eff1">
+                  <div style="padding:11px 20px 12px 32px">
+                    <div style="font-size:14.5px; color:#3a3a3c">{{ mdFile }}</div>
+                    <div style="font-size:13px; color:#a1a1a6; margin-top:2px">{{ mdFileSub }}</div>
+                  </div>
+                  <sc-for list="{{ mdVersionsShown }}" as="v" hint-placeholder-count="3">
+                    <div style="display:flex; align-items:baseline; gap:12px; border-top:.5px solid #f0eff1; padding:10px 20px 10px 32px">
+                      <span style="flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#86868b">{{ v.tag }}</span>
+                      <span style="flex:1; min-width:0; font-size:14px; color:#3a3a3c">{{ v.what }}</span>
+                      <span style="flex:0 0 auto; font-size:12.5px; color:#a1a1a6">{{ v.when }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ dealMain }}" hint-placeholder-val="{{ true }}">
+                <button sc-camel-on-click="{{ toggleDocs }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-top:.5px solid #eceaec; background:transparent; font:inherit; cursor:pointer; padding:13px 18px 13px 20px" style-hover="background:#fafafa">
+                  <span style="flex:1; min-width:0; font-size:14px; letter-spacing:-.006em">Documents that quote it</span>
+                  <span style="flex:0 0 auto; font-size:14px; color:#aeaeb2">{{ dDocs }}</span>
+                  <svg width="8" height="13" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 8px; transform:{{ spinDocs }}; transition:transform .18s ease"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+                </button>
+              <sc-if value="{{ secDocs }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fafafc; border-top:.5px solid #f0eff1">
+                  <sc-for list="{{ dealDocs }}" as="d" hint-placeholder-count="4">
+                    <button sc-camel-on-click="{{ d.open }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-top:{{ d.rule }}; background:{{ d.rowBg }}; font:inherit; cursor:pointer; padding:11px 20px 11px 32px" style-hover="background:#f2f2f5">
+                      <span style="flex:1; min-width:0; font-size:14.5px; color:#3a3a3c">{{ d.name }}</span>
+                      <span style="flex:0 0 auto; font-size:13px; color:{{ d.fg }}">{{ d.state }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
+              </sc-if>
+            </div>
+          </div>
+
+          <sc-if value="{{ railShow }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:0 0 288px; order:-1; align-self:stretch; background:#fafaf9; border-right:1px solid #eceaea; padding:34px 28px 44px; display:flex; flex-direction:column">
+            <sc-for list="{{ railItems }}" as="r" hint-placeholder-count="5">
+              <span style="display:flex; flex-direction:column; gap:4px; padding-bottom:22px">
+                <span style="font-size:13px; font-weight:500; letter-spacing:-.004em">{{ r.k }}</span>
+                <span style="font-size:13px; color:#86868b; line-height:1.5; text-wrap:pretty">{{ r.v }}</span>
+              </span>
+            </sc-for>
+            <span style="font-size:13px; font-weight:500; letter-spacing:-.004em; padding:2px 0 13px">Open findings by version</span>
+            <span style="display:flex; align-items:flex-end; gap:14px">
+              <sc-for list="{{ trend }}" as="t" hint-placeholder-count="4">
+                <span style="flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:8px">
+                  <span style="font-size:12.5px; color:{{ t.fg }}; font-variant-numeric:tabular-nums">{{ t.n }}</span>
+                  <span style="width:100%; height:{{ t.h }}; border-radius:3px; background:{{ t.bg }}"></span>
+                  <span style="font-size:11.5px; color:#b6b6bc">{{ t.v }}</span>
+                </span>
+              </sc-for>
+            </span>
+            <span style="font-size:12.5px; color:#a8a8ad; line-height:1.5; padding-top:13px; text-wrap:pretty">{{ trendNote }}</span>
+          </div>
+          </sc-if>
+        </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ vDealsEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1; min-height:0; display:flex; align-items:center; justify-content:center; background:#f5f5f7; padding:40px">
+        <div style="width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; text-align:center">
+
+          <sc-if value="{{ connNone }}" hint-placeholder-val="{{ true }}">
+            <span style="display:flex; flex-direction:column; align-items:center; padding-bottom:8px">
+              <img src="94f0bf30-b258-4b7c-ba00-83c845eb0a71" alt="" style="width:58px; height:58px; object-fit:contain">
+              <span style="font-size:23px; font-weight:500; letter-spacing:-.022em; line-height:1.25; margin-top:22px; text-wrap:balance">Connect Microsoft to get started</span>
+              <span style="font-size:14.5px; color:#86868b; line-height:1.55; margin-top:8px; max-width:35ch; text-wrap:pretty">Antford reads your models and decks from SharePoint.</span>
+              <button sc-camel-on-click="{{ connect }}" style="display:flex; align-items:center; justify-content:center; gap:11px; width:270px; margin-top:30px; border:0; background:#fff; color:#1d1d1f; border-radius:12px; padding:14px 22px; font:inherit; font-size:15px; font-weight:500; letter-spacing:-.01em; box-shadow:0 1px 2px rgba(0,0,0,.06), 0 0 0 .5px rgba(0,0,0,.11); cursor:pointer" style-hover="background:#fafafc">
+                <img src="94f0bf30-b258-4b7c-ba00-83c845eb0a71" alt="" style="width:19px; height:19px; object-fit:contain">
+                <span>Connect Microsoft</span>
+              </button>
+              <span style="display:flex; align-items:center; gap:7px; margin-top:26px; color:#a1a1a6">
+                <svg width="13" height="13" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 13px"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>
+                <span style="font-size:13px; line-height:1.5">Read-only. Antford never writes to your files.</span>
+              </span>
+            </span>
+          </sc-if>
+
+          <sc-if value="{{ connWait }}" hint-placeholder-val="{{ false }}">
+            <span style="display:flex; flex-direction:column; align-items:center; padding-bottom:8px">
+              <span style="width:58px; height:58px; display:flex; align-items:center; justify-content:center">
+                <span style="width:32px; height:32px; border-radius:50%; border:2.5px solid rgba(21,23,27,.13); border-top-color:#0060d0; animation:pcSpin .8s linear infinite"></span>
+              </span>
+              <span style="font-size:23px; font-weight:500; letter-spacing:-.022em; line-height:1.25; margin-top:22px">Waiting for Microsoft</span>
+              <span style="font-size:14.5px; color:#86868b; line-height:1.55; margin-top:8px; max-width:35ch; text-wrap:pretty">Approve access in the window that opened.</span>
+              <button sc-camel-on-click="{{ connBack }}" style="margin-top:34px; border:0; background:transparent; font:inherit; font-size:15px; color:#0060d0; cursor:pointer; padding:6px 12px; border-radius:9px" style-hover="background:rgba(0,96,208,.08)">Cancel</button>
+            </span>
+          </sc-if>
+
+          <sc-if value="{{ connDone }}" hint-placeholder-val="{{ false }}">
+            <span style="display:flex; flex-direction:column; align-items:center; padding-bottom:8px">
+              <img src="4e54f648-39d8-4391-a9c4-a4f675c61b7a" alt="" style="width:58px; height:58px; object-fit:contain">
+              <span style="font-size:23px; font-weight:500; letter-spacing:-.022em; line-height:1.25; margin-top:22px">SharePoint connected</span>
+              <span style="font-size:14.5px; color:#86868b; line-height:1.55; margin-top:8px">e.whitmore@harbourline.com</span>
+              <button sc-camel-on-click="{{ openNew }}" style="width:270px; margin-top:30px; border:0; background:#0060d0; color:#fff; border-radius:11px; padding:12px 22px; font:inherit; font-size:15px; font-weight:500; letter-spacing:-.01em; cursor:pointer" style-hover="background:#0055ba">Choose your deals</button>
+              <button sc-camel-on-click="{{ connBack }}" style="margin-top:16px; border:0; background:transparent; font:inherit; font-size:15px; color:#0060d0; cursor:pointer; padding:6px 12px; border-radius:9px" style-hover="background:rgba(0,96,208,.08)">Disconnect</button>
+            </span>
+          </sc-if>
+
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ vDealsList }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1; min-height:0; display:flex; flex-direction:column; background:#f5f5f7">
+        <div style="flex:1; min-height:0; overflow:auto; padding:28px 34px 34px; display:flex; justify-content:center; align-items:flex-start">
+        <div style="width:100%; max-width:620px; display:flex; flex-direction:column">
+
+          <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:4px 4px 9px">Needs attention</div>
+          <div style="flex:0 0 auto; background:#fff; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden; margin-bottom:26px">
+            <sc-for list="{{ open }}" as="m" hint-placeholder-count="3">
+              <button sc-camel-on-click="{{ m.go }}" style="display:flex; align-items:center; gap:16px; width:100%; text-align:left; border:0; border-top:{{ m.rule }}; background:transparent; font:inherit; cursor:pointer; padding:17px 16px 17px 20px" style-hover="background:#f7f7f9">
+                <span style="flex:1; min-width:0">
+                  <span style="display:block; font-size:16px; font-weight:500; letter-spacing:-.015em">{{ m.name }}</span>
+                </span>
+                <span style="flex:0 0 auto; text-align:right">
+                  <span style="display:block; font-size:14.5px; font-weight:500; color:{{ m.stateFg }}; letter-spacing:-.01em; white-space:nowrap">{{ m.state }}</span>
+                  <span style="display:block; font-size:12.5px; color:#aeaeb2; margin-top:2px; white-space:nowrap">{{ m.checked }}</span>
+                </span>
+                <svg width="9" height="15" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 9px"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:4px 4px 9px">Clear</div>
+          <div style="flex:0 0 auto; background:#fff; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden">
+            <sc-for list="{{ clean }}" as="m" hint-placeholder-count="3">
+              <button sc-camel-on-click="{{ m.go }}" style="display:flex; align-items:center; gap:16px; width:100%; text-align:left; border:0; border-top:{{ m.rule }}; background:transparent; font:inherit; cursor:pointer; padding:15px 16px 15px 20px" style-hover="background:#f7f7f9">
+                <span style="flex:1; min-width:0">
+                  <span style="display:block; font-size:16px; font-weight:500; letter-spacing:-.015em">{{ m.name }}</span>
+                </span>
+                <span style="flex:0 0 auto; text-align:right">
+                  <span style="display:block; font-size:14.5px; font-weight:500; color:{{ m.stateFg }}; letter-spacing:-.01em; white-space:nowrap">{{ m.state }}</span>
+                  <span style="display:block; font-size:12.5px; color:#aeaeb2; margin-top:2px; white-space:nowrap">{{ m.checked }}</span>
+                </span>
+                <svg width="9" height="15" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 9px"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ vCheck }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1; min-height:0; display:flex; flex-direction:column; background:#f5f5f7">
+        <div style="flex:1; min-height:0; overflow:auto; padding:28px 40px 40px; display:flex; justify-content:center; align-items:flex-start">
+        <div style="width:100%; max-width:1060px; display:flex; flex-direction:column">
+
+        <sc-if value="{{ cRunning }}" hint-placeholder-val="{{ false }}">
+          <div style="width:100%; max-width:620px; align-self:center; background:rgba(255,255,255,.62); backdrop-filter:blur(30px) saturate(1.8); -webkit-backdrop-filter:blur(30px) saturate(1.8); border:1px solid rgba(255,255,255,.95); border-radius:18px; box-shadow:0 16px 40px rgba(16,20,28,.16), inset 0 1px 0 rgba(255,255,255,.95); padding:26px 28px 24px">
+            <div style="display:flex; align-items:center; gap:14px">
+              <img src="6f06acad-2d3e-4a6a-b10c-319a6e4efade" alt="" style="flex:0 0 30px; width:30px; height:30px; object-fit:contain">
+              <span style="flex:1; min-width:0">
+                <span style="display:block; font-size:18px; font-weight:500; letter-spacing:-.02em">Northbank_Bid_Model_v22.xlsx</span>
+                <span style="display:block; font-size:13.5px; color:#86868b; margin-top:2px">31 sheets · 214,061 formulas</span>
+              </span>
+              <button sc-camel-on-click="{{ cCancel }}" style="flex:0 0 auto; border:0; background:#f0f0f2; border-radius:9px; padding:8px 15px; font:inherit; font-size:13.5px; font-weight:500; color:#1d1d1f; cursor:pointer" style-hover="background:#e7e7ea">Cancel</button>
+            </div>
+
+            <div style="height:5px; border-radius:3px; background:rgba(21,23,27,.09); margin-top:20px; overflow:hidden">
+              <div style="height:100%; width:{{ cPct }}; background:#0060d0; border-radius:3px; transition:width .45s ease"></div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:11px; margin-top:20px">
+              <sc-for list="{{ cSteps }}" as="st" hint-placeholder-count="4">
+                <div style="display:flex; align-items:center; gap:11px">
+                  <span style="flex:0 0 18px; width:18px; height:18px; display:flex; align-items:center; justify-content:center">
+                    <sc-if value="{{ st.done }}" hint-placeholder-val="{{ false }}">
+                      <svg width="17" height="17" sc-camel-view-box="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,12.5 10,17.5 19,6.5"></polyline></svg>
+                    </sc-if>
+                    <sc-if value="{{ st.now }}" hint-placeholder-val="{{ true }}">
+                      <span style="width:14px; height:14px; border-radius:50%; border:2px solid rgba(0,96,208,.25); border-top-color:#0060d0; animation:pcSpin .7s linear infinite"></span>
+                    </sc-if>
+                    <sc-if value="{{ st.wait }}" hint-placeholder-val="{{ false }}">
+                      <span style="width:7px; height:7px; border-radius:50%; background:#d2d2d7"></span>
+                    </sc-if>
+                  </span>
+                  <span style="flex:1; min-width:0; font-size:15px; color:{{ st.fg }}">{{ st.label }}</span>
+                  <span style="flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#86868b">{{ st.note }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ cDone }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:4px 6px 2px">
+            <div style="font-size:25px; letter-spacing:-.022em; line-height:1.2">{{ verdictLine }}</div>
+            <div style="font-size:14.5px; color:#86868b; margin-top:9px; text-wrap:pretty">{{ sevLine }}</div>
+            <sc-if value="{{ hasAccepted }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:14px; color:#a1a1a6; margin-top:7px">{{ acceptedLine }}</div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ dealValuesOnly }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:14.5px; color:#75757a; line-height:1.5; max-width:64ch; padding:9px 2px 0; text-wrap:pretty">This copy carries values only — the construction checks could not read it; the statement checks did.</div>
+          </sc-if>
+
+          <sc-if value="{{ showFailGrid }}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{ rvGroups }}" as="g" hint-placeholder-count="4">
+            <div style="display:flex; align-items:baseline; gap:14px; padding:38px 2px 11px">
+              <span style="flex:0 0 auto; font-size:12px; color:#8e8e93; letter-spacing:.05em; text-transform:uppercase">{{ g.name }}</span>
+              <span style="flex:1; min-width:0; height:.5px; background:#ececef"></span>
+              <span style="flex:0 0 auto; font-size:12.5px; color:#8e8e93; white-space:nowrap">{{ g.count }}</span>
+            </div>
+            <div style="border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.11); overflow:hidden">
+              <sc-for list="{{ g.items }}" as="f" hint-placeholder-count="3">
+                <div sc-camel-on-click="{{ f.pick }}" style="border-top:{{ f.sep }}; padding:15px 20px 14px; cursor:pointer; transition:background .14s ease" style-hover="background:#fafafa">
+                  <div style="display:flex; align-items:baseline; gap:16px">
+                    <span style="flex:0 0 34px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#b8b8bd">{{ f.id }}</span>
+                    <span style="flex:1; min-width:0; font-size:16px; letter-spacing:-.012em; line-height:1.35; text-wrap:pretty">{{ f.rule }}</span>
+                    <span style="flex:0 0 auto; font-size:16px; letter-spacing:-.02em; color:#0060d0; font-variant-numeric:tabular-nums lining-nums">{{ f.fig }}</span>
+                  </div>
+                  <div style="display:flex; align-items:baseline; gap:14px; margin-top:7px; padding-left:50px">
+                    <span style="flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#2a9d4f; white-space:nowrap">{{ f.where }}</span>
+                    <span style="flex:1; min-width:0; font-size:12.5px; color:#a0a0a6; line-height:1.45; text-wrap:pretty">{{ f.figUnit }}</span>
+                    <span style="flex:0 0 auto; font-size:11.5px; color:#b6b6bc">{{ f.tagShort }}</span>
+                    <span style="flex:0 0 auto; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:{{ f.sevFg }}">{{ f.sev }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+          </sc-if>
+
+          <div style="flex:0 0 auto; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.11); overflow:hidden; margin-top:34px">
+            <button sc-camel-on-click="{{ togglePass }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; background:transparent; font:inherit; cursor:pointer; padding:14px 18px 14px 20px" style-hover="background:#f7f7f9">
+              <span style="flex:1; min-width:0; font-size:14px; letter-spacing:-.006em">Checks that pass</span>
+              <span style="flex:0 0 auto; font-size:14px; color:#aeaeb2">41</span>
+              <svg width="8" height="13" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 8px; transform:{{ spinPass }}; transition:transform .18s ease"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+            </button>
+            <sc-if value="{{ secPass }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fafafc; border-top:.5px solid #f0eff1">
+                <sc-for list="{{ passes }}" as="p" hint-placeholder-count="8">
+                  <div style="display:flex; align-items:center; gap:12px; border-top:{{ p.rule }}; padding:10px 20px 10px 32px">
+                    <span style="flex:1; min-width:0; font-size:14.5px; color:#3a3a3c">{{ p.name }}</span>
+                    <span style="flex:0 0 auto; font-size:12.5px; color:#34c759; font-variant-numeric:tabular-nums">{{ p.count }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+              <button sc-camel-on-click="{{ toggleCov }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-top:.5px solid #eceaec; background:transparent; font:inherit; cursor:pointer; padding:13px 18px 13px 20px" style-hover="background:#f7f7f9">
+                <span style="flex:1; min-width:0; font-size:14px; letter-spacing:-.006em">Checks that did not run</span>
+                <span style="flex:0 0 auto; font-size:14px; color:#aeaeb2">3</span>
+                <svg width="8" height="13" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 8px; transform:{{ spinCov }}; transition:transform .18s ease"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+              </button>
+            <sc-if value="{{ secCov }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fafafc; border-top:.5px solid #f0eff1">
+                <sc-for list="{{ coverage }}" as="c" hint-placeholder-count="3">
+                  <div style="border-top:{{ c.rule }}; padding:11px 20px 12px 32px">
+                    <div style="font-size:14.5px; color:#3a3a3c">{{ c.label }}</div>
+                    <div style="font-size:13px; color:#a1a1a6; margin-top:2px; text-wrap:pretty">{{ c.why }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+              <button sc-camel-on-click="{{ toggleModel }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-top:.5px solid #eceaec; background:transparent; font:inherit; cursor:pointer; padding:13px 18px 13px 20px" style-hover="background:#f7f7f9">
+                <span style="flex:1; min-width:0; font-size:14px; letter-spacing:-.006em">The model</span>
+                <span style="flex:0 0 auto; font-size:14px; color:#aeaeb2">v22</span>
+                <svg width="8" height="13" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 8px; transform:{{ spinModel }}; transition:transform .18s ease"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+              </button>
+            <sc-if value="{{ secModel }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fafafc; border-top:.5px solid #f0eff1">
+                <div style="padding:11px 20px 12px 32px">
+                  <div style="font-size:14.5px; color:#3a3a3c">Northbank_Bid_Model_v22.xlsx</div>
+                  <div style="font-size:13px; color:#a1a1a6; margin-top:2px">31 sheets · 214,061 formulas · read in 3m 41s</div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ cFirst }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:20px">
+          <div style="max-width:380px; display:flex; flex-direction:column; align-items:center; text-align:center">
+            <svg width="52" height="52" sc-camel-view-box="0 0 24 24" fill="none" stroke="#0060d0" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5V4"></path><polyline points="7.5,8.5 12,4 16.5,8.5"></polyline><path d="M4.5 14.5v4A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5v-4"></path></svg>
+            <span style="font-size:23px; font-weight:500; letter-spacing:-.022em; line-height:1.25; margin-top:22px">Nothing checked yet</span>
+            <span style="font-size:14.5px; color:#86868b; line-height:1.55; margin-top:8px; text-wrap:pretty">A deck, a model or a memo. Antford reads it and tells you where it disagrees with itself.</span>
+            <button sc-camel-on-click="{{ cStart }}" style="width:270px; margin-top:30px; border:0; background:#0060d0; color:#fff; border-radius:11px; padding:12px 22px; font:inherit; font-size:15px; font-weight:500; letter-spacing:-.01em; cursor:pointer" style-hover="background:#0055ba">Choose a file</button>
+            <span style="font-size:13px; color:#a1a1a6; line-height:1.55; margin-top:16px; text-wrap:pretty">No deal needed.</span>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ cIdle }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 0">
+          <span style="font-size:21px; letter-spacing:-.02em; text-align:center; text-wrap:balance">Would this model survive its audit today?</span>
+          <span style="font-size:14.5px; color:#86868b; line-height:1.5; margin-top:7px; max-width:40ch; text-align:center; text-wrap:pretty">Drop a model in and Antford runs the checks a model auditor runs. Nothing to set up.</span>
+          <button sc-camel-on-click="{{ cStart }}" style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:460px; margin-top:26px; background:#fff; border:1px dashed #d3d3d9; border-radius:20px; padding:44px 36px 40px; font:inherit; color:#1d1d1f; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.04); transition:border-color .16s ease, box-shadow .16s ease" style-hover="border-color:#0060d0; box-shadow:0 6px 20px rgba(16,20,28,.09)">
+            <img src="6f06acad-2d3e-4a6a-b10c-319a6e4efade" alt="" style="width:34px; height:34px; object-fit:contain">
+            <span style="font-size:16px; letter-spacing:-.014em; margin-top:16px">Drag a model here</span>
+            <span style="font-size:14px; color:#0060d0; margin-top:6px">or choose a file</span>
+            <span style="font-size:12.5px; color:#86868b; margin-top:14px">.xlsx · .xlsm · up to 250 MB</span>
+          </button>
+          <span style="font-size:13px; color:#a1a1a6; margin-top:18px; max-width:44ch; text-align:center; text-wrap:pretty">Against the FAST and ICAEW standards. Antford reports what it found, not an audit opinion.</span>
+        </div>
+        </sc-if>
+        </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ vSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1; min-height:0; display:flex; flex-direction:column; background:#f5f5f7">
+
+        <div style="flex:0 0 auto; display:flex; justify-content:center; padding:22px 34px 4px">
+          <div style="display:flex; align-items:center; gap:4px; padding:4px; background:rgba(21,23,27,.045); border-radius:26px">
+            <sc-for list="{{ sTabs }}" as="t" hint-placeholder-count="3">
+              <button sc-camel-on-click="{{ t.go }}" style="border:0; background:{{ t.bg }}; box-shadow:{{ t.sh }}; border-radius:22px; padding:11px 26px; font:inherit; font-size:14.5px; font-weight:{{ t.fw }}; letter-spacing:-.01em; color:{{ t.fg }}; cursor:pointer" style-hover="background:rgba(255,255,255,.7)">{{ t.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="flex:1; min-height:0; overflow:auto; padding:20px 34px 34px; display:flex; justify-content:center; align-items:flex-start">
+        <div style="width:100%; max-width:620px">
+
+          <sc-if value="{{ sConn }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:0 4px 9px">Microsoft account</div>
+            <div style="flex:0 0 auto; background:#fff; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden">
+              <div style="display:flex; align-items:center; gap:14px; padding:15px 16px 15px 20px">
+                <img src="94f0bf30-b258-4b7c-ba00-83c845eb0a71" alt="" style="flex:0 0 20px; width:20px; height:20px; object-fit:contain">
+                <span style="flex:1; min-width:0">
+                  <span style="display:block; font-size:16px; font-weight:500; letter-spacing:-.015em">e.whitmore@harbourline.com</span>
+                  <span style="display:block; font-size:13.5px; color:#86868b; margin-top:2px">Connected 14 July</span>
+                </span>
+                <button style="flex:0 0 auto; border:0; background:transparent; font:inherit; font-size:14px; color:#ff3b30; cursor:pointer; padding:4px 6px">Disconnect</button>
+              </div>
+              <div style="border-top:.5px solid #eceaec; display:flex; align-items:center; gap:14px; padding:15px 16px 15px 20px">
+                <span style="flex:1; min-width:0; font-size:16px; font-weight:500; letter-spacing:-.015em">Folders Antford watches</span>
+                <button style="flex:0 0 auto; border:0; background:transparent; font:inherit; font-size:14px; color:#0060d0; cursor:pointer; padding:4px 6px">Change</button>
+              </div>
+              <div style="border-top:.5px solid #eceaec; display:flex; align-items:center; gap:14px; padding:15px 16px 15px 20px">
+                <span style="flex:1; min-width:0; font-size:16px; font-weight:500; letter-spacing:-.015em">Mailbox Antford can read</span>
+                <button style="flex:0 0 auto; border:0; background:transparent; font:inherit; font-size:14px; color:#0060d0; cursor:pointer; padding:4px 6px">Change</button>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; padding:15px 20px; background:#fff; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); font-size:14.5px; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">Antford reads. It never writes to your files or your mailbox. It can only see what you can already open.</div>
+
+            <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:26px 4px 9px">The Excel add-in</div>
+            <div style="flex:0 0 auto; background:#fff; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden">
+              <div style="display:flex; align-items:center; gap:16px; padding:17px 16px 17px 20px">
+                <img src="6f06acad-2d3e-4a6a-b10c-319a6e4efade" alt="Excel" style="flex:0 0 30px; width:30px; height:30px; object-fit:contain">
+                <span style="flex:1; min-width:0; font-size:16px; font-weight:500; letter-spacing:-.015em">Microsoft Excel</span>
+                <button style="flex:0 0 auto; border:0; background:#0060d0; color:#fff; border-radius:9px; padding:7px 15px; font:inherit; font-size:13.5px; font-weight:500; cursor:pointer" style-hover="background:#0055ba">Install</button>
+              </div>
+              <div style="border-top:.5px solid #eceaec; display:flex; align-items:center; gap:14px; padding:15px 16px 15px 20px">
+                <span style="flex:1; min-width:0">
+                  <span style="display:block; font-size:16px; font-weight:500; letter-spacing:-.015em">Deploy to the whole team</span>
+                  <span style="display:block; font-size:13.5px; color:#86868b; margin-top:2px">A manifest link for IT to push through Microsoft 365 admin</span>
+                </span>
+                <button style="flex:0 0 auto; border:0; background:transparent; font:inherit; font-size:14px; color:#0060d0; cursor:pointer; padding:4px 6px">Copy link</button>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ sRules }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:0 4px 9px">Rounding differences</div>
+            <div style="background:#fff; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); padding:16px 20px 17px">
+              <div style="font-size:15.5px; line-height:1.5">Figures that agree once rounded to the deck's own precision.</div>
+              <div style="display:inline-flex; align-items:center; gap:4px; margin-top:13px; padding:4px; background:#f0f0f2; border-radius:22px">
+                <sc-for list="{{ rounding }}" as="r" hint-placeholder-count="2">
+                  <button sc-camel-on-click="{{ r.pick }}" style="border:0; background:{{ r.bg }}; box-shadow:{{ r.sh }}; color:{{ r.fg }}; border-radius:18px; padding:8px 18px; font:inherit; font-size:14px; font-weight:{{ r.fw }}; letter-spacing:-.01em; cursor:pointer" style-hover="background:rgba(255,255,255,.7)">{{ r.label }}</button>
+                </sc-for>
+              </div>
+              <div style="font-size:13.5px; color:#86868b; margin-top:11px">Found either way. Never hidden.</div>
+            </div>
+
+            <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:26px 4px 4px">How we write numbers</div>
+            <div style="font-size:13.5px; color:#86868b; padding:0 4px 9px; line-height:1.5">Used whenever Antford proposes a correction. Enforced only if the House style check is on below.</div>
+            <div style="flex:0 0 auto; background:#fff; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden">
+              <sc-for list="{{ writing }}" as="w" hint-placeholder-count="4">
+                <div style="display:flex; align-items:center; gap:16px; border-top:{{ w.rule }}; padding:12px 16px 12px 20px">
+                  <div style="flex:1; min-width:0; font-size:16px; font-weight:500; letter-spacing:-.015em">{{ w.name }}</div>
+                  <div style="flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; padding:3px; background:#f0f0f2; border-radius:20px">
+                    <sc-for list="{{ w.opts }}" as="o" hint-placeholder-count="2">
+                      <button sc-camel-on-click="{{ o.pick }}" style="border:0; background:{{ o.bg }}; box-shadow:{{ o.sh }}; color:{{ o.fg }}; border-radius:17px; padding:7px 16px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:{{ o.fw }}; cursor:pointer" style-hover="background:rgba(255,255,255,.7)">{{ o.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:26px 4px 9px">Checks</div>
+            <div style="flex:0 0 auto; background:#fff; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden">
+
+              <div style="display:flex; align-items:center; gap:14px; padding:14px 20px">
+                <span style="flex:1; min-width:0">
+                  <span style="display:block; font-size:16px; font-weight:500; letter-spacing:-.015em">Figures against the model</span>
+                  <span style="display:block; font-size:13.5px; color:#86868b; margin-top:2px">Every figure traced to the cell it came from</span>
+                </span>
+                <span style="flex:0 0 auto; font-size:14px; color:#86868b">Always on</span>
+              </div>
+
+              <sc-for list="{{ checks }}" as="c" hint-placeholder-count="2">
+                <div style="border-top:.5px solid #eceaec">
+                  <div style="display:flex; align-items:center; gap:14px; padding:13px 16px 13px 20px">
+                    <span style="flex:1; min-width:0">
+                      <span style="display:block; font-size:16px; font-weight:500; letter-spacing:-.015em">{{ c.name }}</span>
+                      <span style="display:block; font-size:13.5px; color:#86868b; margin-top:2px">{{ c.sub }}</span>
+                    </span>
+                    <sc-if value="{{ c.hasRules }}" hint-placeholder-val="{{ false }}">
+                      <button sc-camel-on-click="{{ c.expand }}" style="flex:0 0 auto; border:0; background:transparent; font:inherit; font-size:14px; color:#0060d0; cursor:pointer; padding:4px 8px">{{ c.rulesLabel }}</button>
+                    </sc-if>
+                    <button sc-camel-on-click="{{ c.flip }}" style="flex:0 0 51px; width:51px; height:31px; border:0; border-radius:16px; background:{{ c.track }}; cursor:pointer; padding:2px; display:flex; justify-content:{{ c.justify }}; transition:background .2s ease">
+                      <span style="width:27px; height:27px; border-radius:50%; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.2), 0 0 0 .5px rgba(0,0,0,.04)"></span>
+                    </button>
+                  </div>
+                  <sc-if value="{{ c.showRules }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:#fafafc; border-top:.5px solid #eceaec; padding:6px 0">
+                      <sc-for list="{{ auditRules }}" as="a" hint-placeholder-count="10">
+                        <button sc-camel-on-click="{{ a.flip }}" style="display:flex; align-items:center; gap:11px; width:100%; text-align:left; border:0; background:transparent; font:inherit; cursor:pointer; padding:8px 20px 8px 32px" style-hover="background:#f2f2f5">
+                          <span style="flex:0 0 17px; width:17px; height:17px; border-radius:4px; background:{{ a.boxBg }}; box-shadow:inset 0 0 0 1.5px {{ a.boxBd }}; display:flex; align-items:center; justify-content:center; color:#fff">
+                            <sc-if value="{{ a.on }}" hint-placeholder-val="{{ true }}">
+                              <svg width="11" height="11" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,12.5 10,17.5 19,6.5"></polyline></svg>
+                            </sc-if>
+                          </span>
+                          <span style="flex:1; min-width:0; font-size:14.5px; color:{{ a.fg }}">{{ a.name }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+
+              <sc-for list="{{ soonChecks }}" as="c" hint-placeholder-count="3">
+                <div style="display:flex; align-items:center; gap:14px; border-top:.5px solid #eceaec; padding:13px 16px 13px 20px">
+                  <span style="flex:1; min-width:0">
+                    <span style="display:block; font-size:16px; font-weight:500; letter-spacing:-.015em; color:#aeaeb2">{{ c.name }}</span>
+                    <span style="display:block; font-size:13.5px; color:#c7c7cc; margin-top:2px">{{ c.sub }}</span>
+                  </span>
+                  <span style="flex:0 0 auto; font-size:13.5px; color:#aeaeb2">Not available yet</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ sPeople }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:0 4px 9px">Who's on the team</div>
+            <div style="flex:0 0 auto; background:#fff; border-radius:14px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden">
+              <sc-for list="{{ team }}" as="m" hint-placeholder-count="4">
+                <div style="display:flex; align-items:center; gap:14px; border-top:{{ m.rule }}; padding:13px 16px 13px 20px">
+                  <span style="flex:0 0 34px; width:34px; height:34px; border-radius:50%; background:{{ m.bg }}; box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:500; letter-spacing:.01em; color:{{ m.fg }}">{{ m.initials }}</span>
+                  <span style="flex:1; min-width:0">
+                    <span style="display:block; font-size:16px; font-weight:500; letter-spacing:-.015em">{{ m.name }}</span>
+                    <span style="display:block; font-size:13.5px; color:#86868b; margin-top:2px">{{ m.models }}</span>
+                  </span>
+                  <span style="flex:0 0 auto; font-size:14px; color:#86868b">{{ m.role }}</span>
+                </div>
+              </sc-for>
+              <div style="border-top:.5px solid #eceaec; padding:13px 16px 13px 20px">
+                <button sc-camel-on-click="{{ openInvite }}" style="border:0; background:transparent; font:inherit; font-size:15px; color:#0060d0; cursor:pointer; padding:2px 0">Invite someone</button>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+
+          <sc-if value="{{ inviteOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center; background:rgba(16,20,28,.28); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); padding:24px">
+            <div sc-camel-on-click="{{ closeInvite }}" style="position:absolute; inset:0"></div>
+            <div style="position:relative; width:min(460px,100%); background:rgba(255,255,255,.94); backdrop-filter:blur(30px) saturate(1.8); -webkit-backdrop-filter:blur(30px) saturate(1.8); border-radius:18px; box-shadow:0 30px 70px rgba(0,0,0,.28), 0 0 0 .5px rgba(0,0,0,.08); overflow:hidden; animation:pcIn .16s ease both">
+
+              <div style="padding:24px 24px 4px; text-align:center">
+                <div style="font-size:19px; font-weight:500; letter-spacing:-.02em">Invite someone</div>
+                <div style="font-size:13.5px; color:#86868b; margin-top:3px">They will see only the models you tick.</div>
+              </div>
+
+              <div style="padding:18px 24px 6px">
+                <input value="{{ inviteEmail }}" sc-camel-on-change="{{ setEmail }}" placeholder="name@harbourline.com" style="width:100%; border:0; background:#f0f0f2; border-radius:11px; padding:13px 15px; font:inherit; font-size:15.5px; color:#1d1d1f; outline:none" style-focus="box-shadow:0 0 0 3.5px rgba(0,96,208,.25)">
+              </div>
+
+              <div style="padding:16px 24px 4px; font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b">Models they can see</div>
+              <div style="margin:0 24px; max-height:210px; overflow:auto; background:#fff; border-radius:12px; box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+                <sc-for list="{{ inviteDeals }}" as="d" hint-placeholder-count="6">
+                  <button sc-camel-on-click="{{ d.flip }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-top:{{ d.rule }}; background:transparent; font:inherit; cursor:pointer; padding:11px 14px" style-hover="background:#f5f5f7">
+                    <span style="flex:0 0 19px; width:19px; height:19px; border-radius:50%; background:{{ d.boxBg }}; box-shadow:inset 0 0 0 1.5px {{ d.boxBd }}; display:flex; align-items:center; justify-content:center; color:#fff">
+                      <sc-if value="{{ d.on }}" hint-placeholder-val="{{ false }}">
+                        <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,12.5 10,17.5 19,6.5"></polyline></svg>
+                      </sc-if>
+                    </span>
+                    <span style="flex:1; min-width:0; font-size:15px; font-weight:500; letter-spacing:-.01em">{{ d.name }}</span>
+                  </button>
+                </sc-for>
+              </div>
+
+              <div style="display:flex; gap:9px; padding:20px 24px 22px">
+                <button sc-camel-on-click="{{ closeInvite }}" style="flex:1; border:0; background:#f0f0f2; border-radius:11px; padding:12px; font:inherit; font-size:15px; font-weight:500; color:#1d1d1f; cursor:pointer" style-hover="background:#e7e7ea">Cancel</button>
+                <button sc-camel-on-click="{{ closeInvite }}" style="flex:1; border:0; background:#0060d0; border-radius:11px; padding:12px; font:inherit; font-size:15px; font-weight:500; color:#fff; cursor:pointer" style-hover="background:#0055ba">Send invite</button>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ vAssist }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1; min-height:0; display:flex; background:#fff">
+
+      <div style="flex:0 0 {{ histW }}; width:{{ histW }}; align-self:stretch; overflow:hidden; background:#f7f7f5; border-right:.5px solid #eceae8; transition:flex-basis .18s ease, width .18s ease">
+        <div style="width:244px; height:100%; box-sizing:border-box; display:flex; flex-direction:column; padding:13px 11px">
+          <button sc-camel-on-click="{{ asNew }}" style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; border:0; background:transparent; border-radius:9px; font:inherit; font-size:14px; color:#15171b; cursor:pointer; padding:8px 10px; margin-bottom:12px" style-hover="background:rgba(16,20,28,.06)">
+            <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" style="flex:0 0 15px"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>New chat</span>
+          </button>
+          <div style="flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column">
+            <sc-for list="{{ histGroups }}" as="g" hint-placeholder-count="2">
+              <div style="display:flex; flex-direction:column; padding-bottom:12px">
+                <div style="font-size:11.5px; color:#a4a49e; letter-spacing:.02em; padding:6px 10px 4px">{{ g.label }}</div>
+                <sc-for list="{{ g.items }}" as="h" hint-placeholder-count="3">
+                  <button sc-camel-on-click="{{ h.open }}" style="display:block; width:100%; text-align:left; border:0; background:{{ h.bg }}; border-radius:9px; font:inherit; font-size:13.5px; color:{{ h.fg }}; cursor:pointer; padding:7px 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis" style-hover="background:rgba(16,20,28,.06)">{{ h.title }}</button>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1; min-width:0; display:flex; flex-direction:column">
+
+        <div style="flex:0 0 auto; display:flex; align-items:center; gap:12px; padding:13px 22px 12px; border-bottom:.5px solid #f0eff1">
+          <button sc-camel-on-click="{{ toggleHist }}" title="Chat history" style="flex:0 0 auto; border:0; background:transparent; border-radius:9px; padding:6px; cursor:pointer; display:flex; color:#8e8e93" style-hover="background:rgba(0,0,0,.06)">
+            <svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"></rect><line x1="9.5" y1="4.5" x2="9.5" y2="19.5"></line></svg>
+          </button>
+          <div style="position:relative; display:flex; flex:0 0 auto">
+            <button sc-camel-on-click="{{ toggleAsPick }}" style="display:flex; align-items:center; gap:9px; border:0; background:#f5f5f7; border-radius:11px; padding:8px 12px 8px 11px; font:inherit; font-size:14px; color:#1d1d1f; cursor:pointer" style-hover="background:#ededf0">
+              <img src="6f06acad-2d3e-4a6a-b10c-319a6e4efade" alt="" style="width:16px; height:16px; object-fit:contain">
+              <span style="font-weight:500; letter-spacing:-.01em">{{ asModelName }}</span>
+              <span style="color:#86868b">{{ asModelVer }}</span>
+              <svg width="11" height="11" sc-camel-view-box="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,9 12,16 19,9"></polyline></svg>
+            </button>
+            <sc-if value="{{ asPick }}" hint-placeholder-val="{{ false }}">
+              <div sc-camel-on-click="{{ closeAsPick }}" style="position:fixed; inset:0; z-index:39"></div>
+              <div style="position:absolute; top:calc(100% + 8px); left:0; z-index:40; width:340px; background:rgba(255,255,255,.94); backdrop-filter:blur(30px) saturate(1.8); -webkit-backdrop-filter:blur(30px) saturate(1.8); border-radius:14px; box-shadow:0 18px 44px rgba(0,0,0,.2), 0 0 0 .5px rgba(0,0,0,.08); overflow:hidden; padding:6px; animation:pcIn .14s ease both">
+                <sc-for list="{{ asModels }}" as="m" hint-placeholder-count="6">
+                  <button sc-camel-on-click="{{ m.pick }}" style="display:flex; align-items:center; gap:11px; width:100%; text-align:left; border:0; background:{{ m.bg }}; border-radius:9px; padding:9px 11px; font:inherit; cursor:pointer" style-hover="background:rgba(0,96,208,.08)">
+                    <span style="flex:1; min-width:0">
+                      <span style="display:block; font-size:14.5px; letter-spacing:-.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ m.name }}</span>
+                      <span style="display:block; font-size:12.5px; color:#86868b; margin-top:1px">{{ m.sub }}</span>
+                    </span>
+                    <sc-if value="{{ m.on }}" hint-placeholder-val="{{ false }}">
+                      <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="#0060d0" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 14px"><polyline points="5,12.5 10,17.5 19,6.5"></polyline></svg>
+                    </sc-if>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <span style="flex:1; min-width:0; font-size:13px; color:#a1a1a6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ asMeta }}</span>
+          <button sc-camel-on-click="{{ asNew }}" title="New chat" style="flex:0 0 auto; border:0; background:transparent; border-radius:9px; padding:6px; cursor:pointer; display:flex; color:#8e8e93" style-hover="background:rgba(0,0,0,.06)">
+            <svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+        </div>
+
+        <div ref="{{ asRef }}" style="flex:1 1 0; min-height:0; overflow:auto; display:flex; flex-direction:column; align-items:center; padding:26px 22px 8px">
+          <div style="width:100%; max-width:720px; display:flex; flex-direction:column; gap:26px">
+            <sc-for list="{{ asMsgs }}" as="m" hint-placeholder-count="0">
+              <div style="display:flex; flex-direction:column; animation:pcIn .22s ease both">
+                <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
+                  <div style="align-self:flex-end; background:#f5f5f7; border-radius:15px; padding:11px 15px; max-width:86%; line-height:1.6">{{ m.text }}</div>
+                </sc-if>
+                <sc-if value="{{ m.isWorking }}" hint-placeholder-val="{{ false }}">
+                  <div style="color:#7c828c; animation:pcDim 1.4s infinite">{{ m.text }}</div>
+                </sc-if>
+                <sc-if value="{{ m.isAnswer }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:16px; line-height:1.6; letter-spacing:-.008em; max-width:64ch; text-wrap:pretty">{{ m.text }}</div>
+                  <sc-if value="{{ m.hasRows }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:16px; background:#fff; border-radius:13px; box-shadow:0 0 0 .5px rgba(30,32,38,.1); overflow:hidden">
+                      <sc-for list="{{ m.rows }}" as="r" hint-placeholder-count="4">
+                        <button title="Open the cell" style="display:flex; align-items:baseline; gap:16px; width:100%; text-align:left; border:0; border-top:{{ r.rule }}; background:transparent; font:inherit; cursor:pointer; padding:12px 16px" style-hover="background:#f8f8fa">
+                          <span style="flex:0 0 138px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#2a9d4f; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ r.ref }}</span>
+                          <span style="flex:1; min-width:0; font-size:14.5px; line-height:1.45; text-wrap:pretty">{{ r.what }}</span>
+                          <span style="flex:0 0 auto; font-size:14px; color:#0060d0; font-variant-numeric:tabular-nums lining-nums">{{ r.value }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <div style="margin-top:15px; font-size:14px; color:#86868b; line-height:1.6; max-width:70ch; text-wrap:pretty">{{ m.ends }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <sc-if value="{{ asEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:0 0 auto; padding:0 22px 22px; display:flex; flex-direction:column; align-items:center; gap:16px">
+            <span style="font-family:'Bodoni Moda',Didot,Georgia,serif; font-size:38px; font-weight:400; line-height:1">A</span>
+            <span style="font-size:23px; letter-spacing:-.02em; text-align:center; text-wrap:pretty">What would you like to know about this model?</span>
+          </div>
+        </sc-if>
+
+        <div style="flex:0 0 auto; padding:10px 22px 8px; display:flex; justify-content:center">
+          <div style="width:100%; max-width:720px; display:flex; align-items:center; gap:10px; border:1px solid #d7d7d3; background:#fff; border-radius:999px; padding:9px 9px 9px 16px; box-shadow:0 6px 22px rgba(16,20,28,.13)">
+            <textarea value="{{ asPrompt }}" sc-camel-on-change="{{ setAsPrompt }}" sc-camel-on-key-down="{{ asKey }}" placeholder="Ask about this model" rows="1" style="flex:1; min-width:0; border:0; outline:none; resize:none; font:inherit; font-size:15px; line-height:1.5; color:#15171b; background:transparent; padding:6px 0"></textarea>
+            <button sc-camel-on-click="{{ asSend }}" title="Send" style="width:34px; height:34px; border-radius:50%; border:0; background:linear-gradient(180deg,#1d7de6 0%,#0b62c4 55%,#0a51a5 100%); box-shadow:0 1px 2px rgba(0,60,140,.28), 0 0 0 .5px rgba(0,80,180,.35) inset, 0 1px 0 rgba(255,255,255,.45) inset; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto" style-hover="background:linear-gradient(180deg,#2f8bef 0%,#146fd2 55%,#0d5cb4 100%)">
+              <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5,12 12,5 19,12"></polyline></svg>
+            </button>
+          </div>
+        </div>
+
+        <sc-if value="{{ asEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:0 0 auto; padding:6px 22px 20px; display:flex; justify-content:center">
+            <div style="width:100%; max-width:720px; display:flex; flex-direction:column">
+              <sc-for list="{{ asSuggest }}" as="q" hint-placeholder-count="5">
+                <button sc-camel-on-click="{{ q.ask }}" style="display:flex; align-items:baseline; gap:16px; width:100%; text-align:left; border:0; border-top:{{ q.rule }}; background:transparent; font:inherit; cursor:pointer; padding:12px 4px" style-hover="color:#0060d0">
+                  <span style="flex:0 0 92px; font-size:12.5px; color:#a1a1a6">{{ q.cat }}</span>
+                  <span style="flex:1; min-width:0; font-size:15px; letter-spacing:-.01em; color:inherit">{{ q.text }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ asEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1 1 0"></div>
+        </sc-if>
+      </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ vOther }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#a19f9d; font-size:13.5px">{{ tabLabel }}</div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ docOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1 1 0; min-width:380px; order:2; display:flex; flex-direction:column; background:#ffffff; border-radius:0; overflow:hidden">
+
+      <div style="flex:0 0 auto; display:flex; align-items:center; gap:12px; padding:14px 16px 13px 20px; border-bottom:1px solid #f0eeec">
+        <sc-if value="{{ docIsPpt }}" hint-placeholder-val="{{ true }}"><img src="b4378cac-36d3-4002-82f7-e0777edc9b46" alt="" style="flex:0 0 22px; width:22px; height:22px; object-fit:contain"></sc-if>
+        <sc-if value="{{ docIsDoc }}" hint-placeholder-val="{{ false }}"><img src="89a2773d-bff7-4074-9a27-883870dac8af" alt="" style="flex:0 0 22px; width:22px; height:22px; object-fit:contain"></sc-if>
+        <sc-if value="{{ docIsXls }}" hint-placeholder-val="{{ false }}"><img src="6f06acad-2d3e-4a6a-b10c-319a6e4efade" alt="" style="flex:0 0 22px; width:22px; height:22px; object-fit:contain"></sc-if>
+        <sc-if value="{{ docIsMail }}" hint-placeholder-val="{{ false }}"><img src="2dfe0e40-7e18-4b78-a151-b12c63a7b54f" alt="" style="flex:0 0 22px; width:22px; height:22px; object-fit:contain"></sc-if>
+        <span style="flex:1; min-width:0; font-size:15.5px; font-weight:500; letter-spacing:-.015em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ docName }}</span>
+        <button sc-camel-on-click="{{ closeDoc }}" title="Close" style="flex:0 0 auto; border:0; background:transparent; border-radius:8px; padding:5px; cursor:pointer; display:flex; color:#8e8e93" style-hover="background:#f0f0f2">
+          <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div style="flex:1; min-height:0; overflow:auto; background:#f5f5f7; padding:18px">
+
+        <div style="display:flex; gap:8px">
+          <button style="flex:1; border:0; background:#0060d0; color:#fff; border-radius:11px; padding:11px; font:inherit; font-size:14px; font-weight:500; cursor:pointer" style-hover="background:#0055ba">{{ docOpenLabel }}</button>
+          <button style="flex:0 0 auto; border:0; background:#fff; color:#1d1d1f; border-radius:11px; padding:11px 16px; font:inherit; font-size:14px; font-weight:500; cursor:pointer; box-shadow:0 0 0 .5px rgba(30,32,38,.09)" style-hover="background:#fafafc">Download</button>
+        </div>
+
+        <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:20px 4px 8px">What Antford found in it</div>
+        <div style="background:#fff; border-radius:13px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden">
+          <sc-for list="{{ docFacts }}" as="f" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:12px; border-top:{{ f.rule }}; padding:11px 16px">
+              <span style="flex:1; min-width:0; font-size:14.5px">{{ f.label }}</span>
+              <span style="flex:0 0 auto; font-size:14.5px; font-weight:500; color:{{ f.fg }}">{{ f.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:20px 4px 8px">Version history</div>
+        <div style="background:#fff; border-radius:13px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden">
+          <sc-for list="{{ docVersions }}" as="v" hint-placeholder-count="3">
+            <div style="display:flex; align-items:baseline; gap:12px; border-top:{{ v.rule }}; padding:11px 16px">
+              <span style="flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#1d1d1f">{{ v.tag }}</span>
+              <span style="flex:1; min-width:0; font-size:14px; color:#1d1d1f">{{ v.what }}</span>
+              <span style="flex:0 0 auto; font-size:12.5px; color:#aeaeb2">{{ v.when }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:20px 4px 8px">Hidden inside it</div>
+        <div style="background:#fff; border-radius:13px; box-shadow:0 0 0 .5px rgba(30,32,38,.09); overflow:hidden">
+          <sc-for list="{{ docHidden }}" as="h" hint-placeholder-count="3">
+            <div style="border-top:{{ h.rule }}; padding:11px 16px">
+              <div style="display:flex; align-items:center; gap:12px">
+                <span style="flex:1; min-width:0; font-size:14.5px">{{ h.label }}</span>
+                <span style="flex:0 0 auto; font-size:14.5px; font-weight:500; color:#c8790a">{{ h.count }}</span>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#86868b; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ h.detail }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="font-size:12px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:#86868b; padding:20px 4px 8px">Findings</div>
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <sc-for list="{{ docFindings }}" as="f" hint-placeholder-count="3">
+            <div style="background:{{ f.cardBg }}; backdrop-filter:{{ f.cardBlur }}; -webkit-backdrop-filter:{{ f.cardBlur }}; border:{{ f.cardBd }}; border-radius:{{ f.cardRadius }}; box-shadow:{{ f.cardSh }}; overflow:hidden; transition:box-shadow .18s ease">
+              <button sc-camel-on-click="{{ f.toggle }}" style="display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left; border:0; background:transparent; font:inherit; cursor:pointer; padding:13px 14px 13px 16px" style-hover="background:#fafafc">
+                <span style="flex:0 0 8px; width:8px; height:8px; border-radius:50%; background:{{ f.dot }}; margin-top:6px"></span>
+                <span style="flex:1; min-width:0">
+                  <span style="display:block; font-size:14.5px; font-weight:500; letter-spacing:-.01em">{{ f.title }}</span>
+                  <span style="display:block; font-size:13.5px; color:#3a3a3c; margin-top:3px">{{ f.says }}</span>
+                  <span style="display:block; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#86868b; margin-top:3px">{{ f.where }}</span>
+                </span>
+              </button>
+
+              <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}">
+                <div style="border-top:1px solid rgba(255,255,255,.7); padding:15px 17px 17px; background:transparent">
+
+                  <sc-if value="{{ f.isSlide }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:#fff; border-radius:9px; box-shadow:0 0 0 .5px rgba(0,0,0,.12); padding:16px 18px; aspect-ratio:16/9; display:flex; flex-direction:column; gap:9px">
+                      <div style="font-size:12.5px; font-weight:500; letter-spacing:-.01em; color:#1d1d1f">Trading performance</div>
+                      <div style="height:5px; width:62%; background:#eaeaee; border-radius:3px"></div>
+                      <div style="height:5px; width:48%; background:#eaeaee; border-radius:3px"></div>
+                      <div style="display:flex; align-items:baseline; gap:8px; margin-top:6px">
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:500; background:rgba(255,159,10,.28); box-shadow:0 0 0 2px rgba(255,159,10,.28); border-radius:3px">$48.9mm</span>
+                        <span style="font-size:11.5px; color:#86868b">FY2026E EBITDA</span>
+                      </div>
+                      <div style="flex:1"></div>
+                      <div style="display:flex; gap:6px">
+                        <div style="flex:1; height:22px; background:#f2f2f5; border-radius:3px"></div>
+                        <div style="flex:1; height:32px; background:#f2f2f5; border-radius:3px"></div>
+                        <div style="flex:1; height:42px; background:#f2f2f5; border-radius:3px"></div>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ f.isCell }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:#fff; border-radius:9px; box-shadow:0 0 0 .5px rgba(0,0,0,.12); overflow:hidden; font-family:'IBM Plex Mono',monospace; font-size:12px">
+                      <sc-for list="{{ f.grid }}" as="row" hint-placeholder-count="4">
+                        <div style="display:flex; border-top:.5px solid #eef0f2">
+                          <span style="flex:0 0 34px; padding:7px 6px; text-align:right; color:#aeaeb2; background:#f7f7f9">{{ row.n }}</span>
+                          <span style="flex:1; padding:7px 9px; color:#1d1d1f; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ row.label }}</span>
+                          <span style="flex:0 0 96px; padding:7px 9px; text-align:right; background:{{ row.hl }}; color:#1d1d1f">{{ row.value }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ f.isText }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:#fff; border-radius:9px; box-shadow:0 0 0 .5px rgba(0,0,0,.12); padding:14px 16px; font-size:14.5px; line-height:1.6">{{ f.before }}<span style="background:rgba(255,159,10,.28); box-shadow:0 0 0 2px rgba(255,159,10,.28); border-radius:3px">{{ f.mark }}</span>{{ f.after }}</div>
+                  </sc-if>
+
+                  <div style="font-size:13.5px; color:#3a3a3c; line-height:1.5; margin-top:12px">{{ f.explain }}</div>
+                  <div style="display:flex; gap:8px; margin-top:12px">
+                    <button style="border:0; background:#0060d0; color:#fff; border-radius:9px; padding:8px 14px; font:inherit; font-size:13.5px; font-weight:500; cursor:pointer" style-hover="background:#0055ba">{{ f.action }}</button>
+                    <button style="border:0; background:#f0f0f2; color:#1d1d1f; border-radius:9px; padding:8px 14px; font:inherit; font-size:13.5px; font-weight:500; cursor:pointer" style-hover="background:#e7e7ea">Not a problem</button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ newOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; background:rgba(16,20,28,.3); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); padding:24px">
+      <div sc-camel-on-click="{{ closeNew }}" style="position:absolute; inset:0"></div>
+      <div style="position:relative; width:min(520px,100%); height:min(560px,86vh); display:flex; flex-direction:column; background:#f2f2f7; border-radius:16px; box-shadow:0 30px 70px rgba(0,0,0,.3), 0 0 0 .5px rgba(0,0,0,.08); overflow:hidden; animation:pcIn .16s ease both">
+
+        <div style="flex:0 0 auto; display:flex; align-items:center; gap:12px; padding:0 14px; height:52px; background:rgba(255,255,255,.8); backdrop-filter:blur(20px) saturate(1.6); -webkit-backdrop-filter:blur(20px) saturate(1.6); border-bottom:.5px solid rgba(0,0,0,.12)">
+          <button sc-camel-on-click="{{ ndBack }}" style="flex:0 0 auto; min-width:72px; text-align:left; border:0; background:transparent; font:inherit; font-size:15px; color:#0060d0; cursor:pointer; padding:6px 4px; border-radius:8px" style-hover="opacity:.65">{{ ndBackLabel }}</button>
+          <div style="flex:1; min-width:0; text-align:center">
+            <div style="font-size:15.5px; font-weight:590; letter-spacing:-.012em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ ndHead }}</div>
+          </div>
+          <button sc-camel-on-click="{{ ndNext }}" style="flex:0 0 auto; min-width:72px; text-align:right; border:0; background:transparent; font:inherit; font-size:15px; font-weight:590; color:{{ ndNextInk }}; cursor:{{ ndNextCur }}; padding:6px 4px; border-radius:8px" style-hover="opacity:.65">{{ ndNextLabel }}</button>
+        </div>
+
+        <sc-if value="{{ ndBrowse }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column">
+          <div style="flex:0 0 auto; display:flex; align-items:center; gap:1px; padding:11px 20px 8px; flex-wrap:wrap">
+            <sc-for list="{{ ndCrumbs }}" as="c" hint-placeholder-count="2">
+              <span style="display:flex; align-items:center; gap:1px">
+                <button sc-camel-on-click="{{ c.go }}" style="border:0; background:transparent; font:inherit; font-size:13px; color:{{ c.fg }}; cursor:pointer; padding:2px 4px; border-radius:6px" style-hover="opacity:.6">{{ c.name }}</button>
+                <sc-if value="{{ c.more }}" hint-placeholder-val="{{ false }}">
+                  <svg width="6" height="11" sc-camel-view-box="0 0 9 15" fill="none" stroke="#c4c4c9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+                </sc-if>
+              </span>
+            </sc-for>
+          </div>
+
+          <div style="flex:1; min-height:0; overflow:auto; padding:0 16px 18px">
+            <div style="background:#fff; border-radius:10px; overflow:hidden">
+              <sc-for list="{{ ndRows }}" as="r" hint-placeholder-count="5">
+                <div style="display:flex; align-items:stretch">
+                  <button sc-camel-on-click="{{ r.tick }}" style="flex:1; min-width:0; display:flex; align-items:center; gap:11px; text-align:left; border:0; background:transparent; font:inherit; cursor:{{ r.cursor }}; padding:0 0 0 15px" style-hover="background:{{ r.hoverBg }}">
+                    <sc-if value="{{ r.isFolder }}" hint-placeholder-val="{{ true }}">
+                      <svg width="21" height="21" sc-camel-view-box="0 0 24 24" fill="{{ r.folderFill }}" style="flex:0 0 21px"><path d="M3 7.6a2 2 0 0 1 2-2h4.1l1.7 2h8.2a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ r.isPpt }}" hint-placeholder-val="{{ false }}"><img src="b4378cac-36d3-4002-82f7-e0777edc9b46" alt="" style="flex:0 0 19px; width:19px; height:19px; object-fit:contain"></sc-if>
+                    <sc-if value="{{ r.isDoc }}" hint-placeholder-val="{{ false }}"><img src="89a2773d-bff7-4074-9a27-883870dac8af" alt="" style="flex:0 0 19px; width:19px; height:19px; object-fit:contain"></sc-if>
+                    <sc-if value="{{ r.isXls }}" hint-placeholder-val="{{ false }}"><img src="6f06acad-2d3e-4a6a-b10c-319a6e4efade" alt="" style="flex:0 0 19px; width:19px; height:19px; object-fit:contain"></sc-if>
+                    <sc-if value="{{ r.isMail }}" hint-placeholder-val="{{ false }}"><img src="2dfe0e40-7e18-4b78-a151-b12c63a7b54f" alt="" style="flex:0 0 19px; width:19px; height:19px; object-fit:contain"></sc-if>
+                    <span style="flex:1; min-width:0; border-top:{{ r.rule }}; padding:11px 0">
+                      <span style="display:block; font-size:15px; letter-spacing:-.01em; color:{{ r.fg }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ r.name }}</span>
+                      <span style="display:block; font-size:12.5px; color:#a1a1a6; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ r.sub }}</span>
+                    </span>
+                    <sc-if value="{{ r.on }}" hint-placeholder-val="{{ false }}">
+                      <span style="flex:0 0 auto; display:flex; padding:0 6px 0 8px; color:#0060d0">
+                        <svg width="17" height="17" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,12.5 10,17.5 19,6.5"></polyline></svg>
+                      </span>
+                    </sc-if>
+                  </button>
+                  <sc-if value="{{ r.isFolder }}" hint-placeholder-val="{{ true }}">
+                    <button sc-camel-on-click="{{ r.open }}" title="Open" style="flex:0 0 auto; border:0; background:transparent; cursor:pointer; padding:0 15px; display:flex; align-items:center; color:#c4c4c9" style-hover="color:#8e8e93">
+                      <svg width="8" height="14" sc-camel-view-box="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,1.5 7.5,7.5 1.5,13.5"></polyline></svg>
+                    </button>
+                  </sc-if>
+                  <sc-if value="{{ r.isFile }}" hint-placeholder-val="{{ false }}">
+                    <span style="flex:0 0 auto; width:38px"></span>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ ndConfirm }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; overflow:auto; padding:16px 16px 20px; display:flex; flex-direction:column; gap:20px">
+          <sc-for list="{{ ndPicked }}" as="p" hint-placeholder-count="2">
+            <div>
+              <div style="font-size:12.5px; color:#8a8a8e; padding:0 16px 6px; letter-spacing:-.005em">{{ p.name }}</div>
+              <div style="background:#fff; border-radius:10px; overflow:hidden">
+                <div style="display:flex; align-items:center; gap:12px; padding:10px 15px">
+                  <span style="flex:0 0 auto; font-size:15px; letter-spacing:-.01em">Files</span>
+                  <span style="flex:1; min-width:0; text-align:right; font-size:15px; color:#a1a1a6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ p.sub }}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:0 15px">
+                  <span style="flex:0 0 auto; font-size:15px; letter-spacing:-.01em">Client</span>
+                  <span style="flex:1; min-width:0; border-top:.5px solid #e6e6ea">
+                    <input value="{{ p.client }}" sc-camel-on-change="{{ p.setClient }}" placeholder="Required" style="width:100%; border:0; background:transparent; padding:11px 0; font:inherit; font-size:15px; color:#1d1d1f; text-align:right; outline:none">
+                  </span>
+                </div>
+                <sc-if value="{{ p.needsModel }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; align-items:flex-start; gap:12px; padding:0 15px">
+                    <span style="flex:0 0 auto; font-size:15px; letter-spacing:-.01em; padding:11px 0">Model</span>
+                    <span style="flex:1; min-width:0; border-top:.5px solid #e6e6ea; padding:5px 0 7px">
+                      <sc-for list="{{ p.models }}" as="m" hint-placeholder-count="2">
+                        <button sc-camel-on-click="{{ m.pick }}" style="display:flex; align-items:center; gap:8px; width:100%; text-align:right; border:0; background:transparent; font:inherit; font-size:14.5px; color:{{ m.fg }}; cursor:pointer; padding:6px 0" style-hover="opacity:.7">
+                          <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ m.name }}</span>
+                          <span style="flex:0 0 15px; display:flex; color:#0060d0">
+                            <sc-if value="{{ m.on }}" hint-placeholder-val="{{ false }}">
+                              <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,12.5 10,17.5 19,6.5"></polyline></svg>
+                            </sc-if>
+                          </span>
+                        </button>
+                      </sc-for>
+                    </span>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ ndRunning }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; min-height:0; overflow:auto; padding:16px 16px 20px">
+          <div style="background:#fff; border-radius:10px; overflow:hidden">
+            <sc-for list="{{ ndSteps }}" as="st" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:11px; padding:0 15px">
+                <span style="flex:0 0 17px; width:17px; height:17px; display:flex; align-items:center; justify-content:center">
+                  <sc-if value="{{ st.done }}" hint-placeholder-val="{{ false }}">
+                    <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,12.5 10,17.5 19,6.5"></polyline></svg>
+                  </sc-if>
+                  <sc-if value="{{ st.now }}" hint-placeholder-val="{{ true }}">
+                    <span style="width:13px; height:13px; border-radius:50%; border:2px solid rgba(21,23,27,.14); border-top-color:#0060d0; animation:pcSpin .8s linear infinite"></span>
+                  </sc-if>
+                  <sc-if value="{{ st.wait }}" hint-placeholder-val="{{ false }}">
+                    <span style="width:6px; height:6px; border-radius:50%; background:#d2d2d7"></span>
+                  </sc-if>
+                </span>
+                <span style="flex:1; min-width:0; display:flex; align-items:center; gap:12px; border-top:{{ st.rule }}; padding:12px 0">
+                  <span style="flex:1; min-width:0; font-size:15px; letter-spacing:-.01em; color:{{ st.fg }}">{{ st.label }}</span>
+                  <span style="flex:0 0 auto; font-size:14.5px; color:#a1a1a6">{{ st.note }}</span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ chatOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:0 0 38%; min-width:320px; order:3; display:flex; flex-direction:column; background:#ffffff; border-radius:0; overflow:hidden">
+
+      <div style="flex:0 0 auto; display:flex; align-items:center; justify-content:flex-end; gap:2px; padding:12px 14px 10px">
+        <sc-if value="{{ askClosable }}" hint-placeholder-val="{{ false }}">
+          <button sc-camel-on-click="{{ closeAsk }}" title="Close" style="border:0; background:transparent; border-radius:9px; padding:6px; cursor:pointer; display:flex; color:#8e8e93" style-hover="background:rgba(0,0,0,.06)">
+            <svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+          </button>
+        </sc-if>
+        <button sc-camel-on-click="{{ newChat }}" title="New chat" style="border:0; background:transparent; border-radius:9px; padding:6px; cursor:pointer; display:flex; color:#8e8e93" style-hover="background:rgba(0,0,0,.06)">
+          <svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+      </div>
+
+      <div style="flex:1 1 0; min-height:0; overflow:auto; padding:14px 18px 12px; display:flex; flex-direction:column; gap:14px">
+        <sc-for list="{{ chatMsgs }}" as="m" hint-placeholder-count="2">
+          <div style="display:flex; flex-direction:column; animation:pcIn .22s ease both">
+            <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
+              <div style="align-self:flex-end; background:rgba(255,255,255,.78); border:1px solid rgba(255,255,255,.7); border-radius:15px; padding:11px 15px; max-width:90%; line-height:1.6">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isAgent }}" hint-placeholder-val="{{ true }}">
+              <div style="line-height:1.7; color:#22252b">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isTools }}" hint-placeholder-val="{{ false }}">
+              <div style="color:#8b909a; font-size:13.5px">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isWorking }}" hint-placeholder-val="{{ true }}">
+              <div style="color:#7c828c; animation:pcDim 1.4s infinite">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isChain }}" hint-placeholder-val="{{ false }}">
+              <div style="background:rgba(255,255,255,.8); border-radius:12px; box-shadow:0 0 0 .5px rgba(0,0,0,.08); overflow:hidden; margin-top:4px">
+                <sc-for list="{{ m.chain }}" as="c" hint-placeholder-count="4">
+                  <div style="display:flex; align-items:baseline; gap:10px; border-top:{{ c.rule }}; padding:9px 13px">
+                    <span style="flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#aeaeb2">{{ c.step }}</span>
+                    <span style="flex:1; min-width:0; font-size:13.5px">{{ c.what }}</span>
+                    <span style="flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#86868b">{{ c.value }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+      </div>
+
+      <sc-if value="{{ chatEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:0 0 auto; padding:0 14px 20px; display:flex; flex-direction:column; align-items:center; gap:18px">
+          <span style="font-family:'Bodoni Moda',Didot,Georgia,serif; font-size:34px; font-weight:400; line-height:1">A</span>
+          <span style="font-size:22px; color:#15171b; letter-spacing:-.015em; text-align:center; text-wrap:pretty">{{ chatGreeting }}</span>
+        </div>
+      </sc-if>
+      <div style="flex:0 0 auto; padding:10px 14px 16px; display:flex; justify-content:center">
+        <div style="width:100%; display:flex; align-items:center; gap:10px; border:1px solid #d7d7d3; background:#ffffff; border-radius:999px; padding:9px 9px 9px 16px; box-shadow:0 6px 22px rgba(16,20,28,.13)">
+          <button style="border:0; background:transparent; color:#5b6068; cursor:pointer; padding:4px; border-radius:999px; display:flex; flex:0 0 auto" style-hover="background:rgba(16,20,28,.06); color:#15171b">
+            <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <textarea value="{{ prompt }}" sc-camel-on-change="{{ setPrompt }}" sc-camel-on-key-down="{{ onKey }}" placeholder="Ask anything" rows="1" style="flex:1; min-width:0; border:0; outline:none; resize:none; font:inherit; font-size:15px; line-height:1.5; color:#15171b; background:transparent; padding:6px 0"></textarea>
+          <button style="border:0; background:transparent; color:#5b6068; cursor:pointer; padding:4px; border-radius:999px; display:flex; flex:0 0 auto" style-hover="background:rgba(16,20,28,.06); color:#15171b">
+            <svg width="19" height="19" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><line x1="12" y1="18" x2="12" y2="21"></line></svg>
+          </button>
+          <button sc-camel-on-click="{{ send }}" style="width:34px; height:34px; border-radius:50%; border:0; background:linear-gradient(180deg,#1d7de6 0%,#0b62c4 55%,#0a51a5 100%); box-shadow:0 1px 2px rgba(0,60,140,.28), 0 0 0 .5px rgba(0,80,180,.35) inset, 0 1px 0 rgba(255,255,255,.45) inset; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto" style-hover="background:linear-gradient(180deg,#2f8bef 0%,#146fd2 55%,#0d5cb4 100%)">
+            <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5,12 12,5 19,12"></polyline></svg>
+          </button>
+        </div>
+      </div>
+      <sc-if value="{{ chatFresh }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:0 0 auto; padding:2px 26px 18px; display:flex; flex-direction:column">
+          <sc-for list="{{ chatSuggestions }}" as="q" hint-placeholder-count="3">
+            <button sc-camel-on-click="{{ q.ask }}" style="display:flex; align-items:center; gap:13px; width:100%; text-align:left; border:0; background:transparent; font:inherit; font-size:14.5px; color:#6b7078; cursor:pointer; padding:11px 2px" style-hover="color:#15171b">
+              <svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="#a4a8b0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 15px"><polyline points="3,17 9.5,10.5 13.5,14.5 21,7"></polyline><polyline points="15,7 21,7 21,13"></polyline></svg>
+              <span style="flex:1; min-width:0">{{ q.text }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ chatEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1 1 0"></div>
+      </sc-if>
+    </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ reportOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; background:rgba(16,20,28,.3); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); padding:24px">
+    <div sc-camel-on-click="{{ closeReport }}" style="position:absolute; inset:0"></div>
+    <div style="position:relative; width:min(440px,100%); max-height:86vh; display:flex; flex-direction:column; background:#ffffff; border-radius:18px; box-shadow:0 30px 70px rgba(0,0,0,.28), 0 0 0 .5px rgba(0,0,0,.08); overflow:hidden; animation:pcIn .16s ease both">
+      <div style="flex:0 0 auto; padding:26px 28px 0">
+        <div style="font-size:19px; font-weight:500; letter-spacing:-.02em">Export report</div>
+        <div style="font-size:13.5px; color:#86868b; margin-top:4px; line-height:1.5">Northbank Bid Model, version 22 · 11 open findings</div>
+      </div>
+      <div style="flex:1; min-height:0; overflow:auto; padding:22px 28px 6px; display:flex; flex-direction:column">
+        <div style="font-size:13px; font-weight:500; letter-spacing:-.004em; padding-bottom:4px">Include</div>
+        <sc-for list="{{ reportOpts }}" as="o" hint-placeholder-count="4">
+          <button sc-camel-on-click="{{ o.flip }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; background:transparent; font:inherit; cursor:pointer; padding:10px 0" style-hover="color:#0060d0">
+            <span style="flex:0 0 17px; width:17px; height:17px; border-radius:5px; background:{{ o.boxBg }}; box-shadow:inset 0 0 0 1.5px {{ o.boxBd }}; display:flex; align-items:center; justify-content:center; color:#fff">
+              <sc-if value="{{ o.on }}" hint-placeholder-val="{{ true }}">
+                <svg width="11" height="11" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,12.5 10,17.5 19,6.5"></polyline></svg>
+              </sc-if>
+            </span>
+            <span style="flex:1; min-width:0; font-size:14.5px">{{ o.label }}</span>
+          </button>
+        </sc-for>
+        <div style="font-size:12.5px; color:#a8a8ad; line-height:1.5; border-top:.5px solid #f0eff1; margin-top:14px; padding-top:14px; text-wrap:pretty">Every finding carries its cell reference. Nothing is summarised away.</div>
+      </div>
+      <div style="flex:0 0 auto; display:flex; gap:9px; padding:20px 28px 24px">
+        <button sc-camel-on-click="{{ closeReport }}" style="flex:1; border:0; background:#f0f0f2; border-radius:11px; padding:12px; font:inherit; font-size:15px; font-weight:500; color:#1d1d1f; cursor:pointer" style-hover="background:#e7e7ea">Cancel</button>
+        <button sc-camel-on-click="{{ closeReport }}" style="flex:1; border:0; background:#0060d0; border-radius:11px; padding:12px; font:inherit; font-size:15px; font-weight:500; color:#fff; cursor:pointer" style-hover="background:#0055ba">Export PDF</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="flex:0 0 auto; position:relative; display:flex; align-items:center; justify-content:center; padding:9px 20px 11px; background:rgba(255,255,255,.92); border-top:1px solid #f0eeec; backdrop-filter:blur(20px) saturate(1.4); -webkit-backdrop-filter:blur(20px) saturate(1.4)">
+    <div style="display:flex; align-items:center; gap:6px; padding:0">
+      <button sc-camel-on-click="{{ goAssist }}" style="border:0; background: {{ dock.assist }}; border-radius:22px; padding:11px 26px; font:inherit; font-size:14.5px; font-weight: {{ dockFw.assist }}; white-space:nowrap; letter-spacing:-.01em; color: {{ dockInk.assist }}; cursor:pointer; box-shadow: {{ dockSh.assist }}" style-hover="background:rgba(21,23,27,.03)">Assistant</button>
+      <button sc-camel-on-click="{{ goDeals }}" style="border:0; background: {{ dock.deals }}; border-radius:22px; padding:11px 26px; font:inherit; font-size:14.5px; font-weight: {{ dockFw.deals }}; white-space:nowrap; letter-spacing:-.01em; color: {{ dockInk.deals }}; cursor:pointer; box-shadow: {{ dockSh.deals }}" style-hover="background:rgba(21,23,27,.03)">Models</button>
+      <button sc-camel-on-click="{{ goCheck }}" style="border:0; background: {{ dock.check }}; border-radius:22px; padding:11px 26px; font:inherit; font-size:14.5px; font-weight: {{ dockFw.check }}; white-space:nowrap; letter-spacing:-.01em; color: {{ dockInk.check }}; cursor:pointer; box-shadow: {{ dockSh.check }}" style-hover="background:rgba(21,23,27,.03)">Check a model</button>
+      <button sc-camel-on-click="{{ goSettings }}" style="border:0; background: {{ dock.settings }}; border-radius:22px; padding:11px 26px; font:inherit; font-size:14.5px; font-weight: {{ dockFw.settings }}; white-space:nowrap; letter-spacing:-.01em; color: {{ dockInk.settings }}; cursor:pointer; box-shadow: {{ dockSh.settings }}" style-hover="background:rgba(21,23,27,.03)">Settings</button>
+      <span style="width:1px; height:22px; background:rgba(21,23,27,.12); margin:0 8px"></span>
+      <div style="position:relative; display:flex">
+        <button sc-camel-on-click="{{ goAccount }}" title="Elena Whitmore" style="border:0; background: {{ dock.account }}; border-radius:22px; padding:7px 9px; cursor:pointer; display:flex" style-hover="background:rgba(21,23,27,.03)">
+          <span style="width:26px; height:26px; border-radius:50%; background:linear-gradient(150deg,#d8e6ff,#b9cdf5); box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:500; color:#2c4a80">EW</span>
+        </button>
+        <sc-if value="{{ acctOpen }}" hint-placeholder-val="{{ false }}">
+          <div sc-camel-on-click="{{ closeAcct }}" style="position:fixed; inset:0; z-index:29"></div>
+          <div style="position:absolute; bottom:calc(100% + 12px); left:-4px; z-index:30; width:272px; background:rgba(255,255,255,.88); backdrop-filter:blur(30px) saturate(1.8); -webkit-backdrop-filter:blur(30px) saturate(1.8); border-radius:15px; box-shadow:0 18px 44px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.08); overflow:hidden; animation:pcIn .14s ease both">
+            <div style="display:flex; align-items:center; gap:12px; padding:15px 16px 14px">
+              <span style="flex:0 0 38px; width:38px; height:38px; border-radius:50%; background:linear-gradient(150deg,#d8e6ff,#b9cdf5); box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06); display:flex; align-items:center; justify-content:center; font-size:13.5px; font-weight:500; color:#2c4a80">EW</span>
+              <span style="flex:1; min-width:0; text-align:left">
+                <span style="display:block; font-size:15.5px; font-weight:500; letter-spacing:-.015em">Elena Whitmore</span>
+                <span style="display:block; font-size:13px; color:#86868b; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">e.whitmore@harbourline.com</span>
+              </span>
+            </div>
+            <div style="border-top:.5px solid rgba(0,0,0,.09); padding:6px">
+              <sc-for list="{{ acctItems }}" as="a" hint-placeholder-count="3">
+                <button sc-camel-on-click="{{ a.go }}" style="display:block; width:100%; text-align:left; border:0; background:transparent; border-radius:9px; padding:9px 11px; font:inherit; font-size:14.5px; color:{{ a.fg }}; cursor:pointer" style-hover="background:rgba(0,96,208,.1)">{{ a.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <sc-if value="{{ selOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed; inset:0; z-index:60; background:rgba(20,22,26,.24); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:36px">
+        <div sc-camel-on-click="{{ closeSel }}" style="position:absolute; inset:0"></div>
+        <div style="position:relative; max-width:760px; background:#fff; border-radius:16px; box-shadow:0 24px 60px rgba(16,20,28,.24), 0 0 0 .5px rgba(0,0,0,.08); padding:26px 28px 24px">
+          <div style="display:flex; align-items:flex-start; gap:16px">
+            <span style="flex:1; min-width:0">
+              <span style="display:block; font-size:17px; letter-spacing:-.016em; line-height:1.3">{{ rvRule }}</span>
+              <span style="display:block; font-size:13px; color:#a1a1a6; margin-top:5px">{{ rvStd }} · {{ rvWhere }}</span>
+            </span>
+            <button sc-camel-on-click="{{ closeSel }}" title="Close" style="flex:0 0 auto; border:0; background:transparent; border-radius:8px; padding:5px; cursor:pointer; display:flex; color:#aeaeb2" style-hover="background:#f2f2f4">
+              <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+            </button>
+          </div>
+          <div style="font-size:15px; color:#3a3a3c; line-height:1.55; margin-top:14px; max-width:62ch; text-wrap:pretty">{{ rvSays }}</div>
+          <sc-if value="{{ notNote }}" hint-placeholder-val="{{ true }}">
+          <div style="width:{{ rvFrameW }}; max-width:100%; margin-top:18px; border-radius:6px; overflow:hidden; box-shadow:0 0 0 .5px rgba(0,0,0,.16); background:#fff; font-family:'Aptos Narrow','Calibri','Segoe UI',sans-serif">
+            <div style="display:flex; align-items:stretch; background:#f7f7f7; border-bottom:1px solid #e2e2e2; padding:6px 7px">
+              <span style="flex:0 0 92px; display:flex; align-items:center; background:#fff; border:1px solid #d4d4d4; border-radius:2px; padding:4px 8px; font-size:12px; color:#1a1a1a">{{ rvName }}</span>
+              <span style="flex:0 0 auto; display:flex; align-items:center; padding:0 11px; font-size:12.5px; font-style:italic; color:#6b6b6b">fx</span>
+              <span style="flex:1 1 0; width:0; min-width:0; display:flex; align-items:center; background:#fff; border:1px solid #d4d4d4; border-radius:2px; padding:4px 9px; font-size:12px; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ rvFormula }}</span>
+            </div>
+            <div>
+              <div style="display:flex; min-width:max-content">
+                <span style="flex:0 0 34px; height:21px; background:#f5f5f5; border-right:1px solid #d0d0d0; border-bottom:1px solid #d0d0d0"></span>
+                <sc-for list="{{ rvCols }}" as="c" hint-placeholder-count="3">
+                  <span style="flex:0 0 {{ c.w }}; height:21px; display:flex; align-items:center; justify-content:center; background:{{ c.bg }}; color:{{ c.fg }}; border-right:1px solid #d0d0d0; border-bottom:1px solid {{ c.bd }}; font-size:11px">{{ c.l }}</span>
+                </sc-for>
+              </div>
+              <sc-for list="{{ rvRows }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex; min-width:max-content">
+                  <span style="flex:0 0 34px; height:26px; display:flex; align-items:center; justify-content:center; background:{{ r.numBg }}; color:{{ r.numFg }}; border-right:1px solid {{ r.numBd }}; border-bottom:1px solid #d0d0d0; font-size:11px">{{ r.n }}</span>
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="2">
+                    <span style="flex:0 0 {{ c.w }}; height:26px; display:flex; align-items:center; justify-content:{{ c.jc }}; padding:0 7px; background:{{ c.bg }}; color:{{ c.fg }}; box-shadow:{{ c.sh }}; border-right:1px solid #dedede; border-bottom:1px solid #dedede; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ c.v }}</span>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; align-items:center; gap:2px; width:0; min-width:100%; overflow-x:auto; background:#f7f7f7; border-top:1px solid #e2e2e2; padding:0 7px">
+              <sc-for list="{{ rvSheets }}" as="t" hint-placeholder-count="6">
+                <span data-sheet-active="{{ t.on }}" style="flex:0 0 auto; padding:7px 10px 5px; border-bottom:2px solid {{ t.bd }}; font-size:12px; color:{{ t.fg }}; font-weight:{{ t.fw }}; white-space:nowrap">{{ t.name }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="font-size:14.5px; color:#3a3a3c; line-height:1.55; margin-top:18px; max-width:62ch; text-wrap:pretty">{{ rvExplain }}</div>
+          </sc-if>
+          <sc-if value="{{ noteOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:18px">
+              <div style="font-size:13.5px; color:#86868b">Why is this acceptable? The note is kept with the model and shown to whoever opens it next.</div>
+              <textarea value="{{ noteText }}" sc-camel-on-change="{{ noteType }}" rows="3" style="display:block; width:100%; box-sizing:border-box; margin-top:10px; resize:none; border:0; background:#f5f5f7; border-radius:10px; padding:12px 13px; font:inherit; font-size:14.5px; line-height:1.5; color:#1d1d1f; outline:none" style-focus="box-shadow:0 0 0 2px rgba(0,96,208,.35)"></textarea>
+              <div style="display:flex; align-items:center; gap:8px; margin-top:12px">
+                <button sc-camel-on-click="{{ saveNote }}" style="border:0; background:{{ saveBg }}; color:#fff; border-radius:9px; padding:9px 16px; font:inherit; font-size:14px; cursor:pointer">Accept and close</button>
+                <button sc-camel-on-click="{{ cancelNote }}" style="border:0; background:#f0f0f2; color:#1d1d1f; border-radius:9px; padding:9px 16px; font:inherit; font-size:14px; cursor:pointer" style-hover="background:#e7e7ea">Cancel</button>
+                <span style="flex:1"></span>
+                <span style="font-size:13px; color:#a1a1a6">Eleanor Whitcombe · today</span>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ notNote }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; gap:8px; margin-top:20px">
+              <button style="border:0; background:#0060d0; color:#fff; border-radius:9px; padding:9px 16px; font:inherit; font-size:14px; cursor:pointer" style-hover="background:#0055ba">Open the cell</button>
+              <button sc-camel-on-click="{{ startNote }}" style="border:0; background:#f0f0f2; color:#1d1d1f; border-radius:9px; padding:9px 16px; font:inherit; font-size:14px; cursor:pointer" style-hover="background:#e7e7ea">Accept with a note</button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>

@@ -224,6 +224,66 @@ def test_a_table_reference_is_named_rather_than_dropped(names) -> None:
     assert "table reference" in read.unresolved[0][1]
 
 
+def test_a_locator_argument_is_not_a_precedent() -> None:
+    """`=CELL("filename",$A$1)` sitting in A1 used to read as A1 depending
+    on itself — a self-loop the cycle detector then reported as circular.
+    ROW(A1) is 1 whatever A1 holds: the argument names a place, and no
+    value crosses the edge. The real self-reference stays."""
+    assert precedents_of('=CELL("filename",$A$1)', "Model") == ()
+    assert precedents_of("=ROW(A1)", "Model") == ()
+    assert precedents_of("=COLUMNS(B2:D4)", "Model") == ()
+    assert precedents_of("=SHEET(A1)+ISREF(B2)", "Model") == ()
+    assert precedents_of("=A1+1", "Model") == ("Model!A1",)
+
+
+def test_cell_reads_its_reference_only_when_the_info_type_asks_for_the_value() -> None:
+    """CELL is the split case: « contents » looks at what the cell holds,
+    « width » at where it sits. An unrecognisable first argument keeps the
+    edge — a doubtful edge is a smaller lie than a missing one."""
+    assert precedents_of('=CELL("contents",A1)', "Model") == ("Model!A1",)
+    assert precedents_of('=CELL("type",A1)', "Model") == ("Model!A1",)
+    assert precedents_of('=CELL("width",A1)', "Model") == ()
+    assert precedents_of("=CELL(B1,A1)", "Model") == ("Model!B1", "Model!A1")
+
+
+def test_n_and_t_read_their_arguments_value() -> None:
+    """Named alongside the locators, but they do not belong with them:
+    N(A1) converts A1's value to a number and T(A1) returns its text —
+    both read the cell, so both keep their edges."""
+    assert precedents_of("=N(A1)", "Model") == ("Model!A1",)
+    assert precedents_of("=T(A1)", "Model") == ("Model!A1",)
+
+
+def test_the_frame_stack_survives_nesting_and_grouping() -> None:
+    """In `SUM((A1), ROW(C3))` the parenthesised A1 still belongs to SUM
+    and C3 to ROW — grouping an argument does not change whose it is."""
+    assert precedents_of("=SUM((A1),ROW(C3))", "Model") == ("Model!A1",)
+    assert precedents_of("=ROW(A1)+SUM(B2)", "Model") == ("Model!B2",)
+
+
+def test_indirect_keeps_its_visible_reads_and_declares_the_hidden_one() -> None:
+    """`INDIRECT("S"&D4)` reads D4 to build the string — a real edge. What
+    the string names is decided while the model runs, and pretending a
+    static read can follow it is how a builder gets this half right."""
+    read = references_of('=INDIRECT("S"&D4&"!A1")', "Model")
+    assert read.refs == ("Model!D4",)
+    assert read.unresolved == (
+        (
+            'INDIRECT("S"&D4&"!A1")',
+            "a reference assembled while the model runs, "
+            "which a read of the file cannot follow",
+        ),
+    )
+
+
+def test_offset_keeps_its_anchor_and_declares_where_it_lands() -> None:
+    read = references_of("=OFFSET(B2,1,0)", "Model")
+    assert read.refs == ("Model!B2",)
+    assert read.unresolved == (
+        ("OFFSET(B2,1,0)", "a range measured out at run time from the anchor it names"),
+    )
+
+
 def test_without_a_name_map_a_name_is_reported_not_swallowed() -> None:
     """A legacy `.xls` has no defined names to give. The honest answer is
     a sentence saying so, not an empty tuple."""

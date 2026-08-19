@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Log in to Antford',
+  title: 'Log in to Ances',
 }
 
 export default async function Page(props: {
@@ -30,7 +30,7 @@ export default async function Page(props: {
             A
           </span>
           <div className="flex flex-col gap-4">
-            <h2 className="text-2xl text-black">Welcome back to Antford</h2>
+            <h2 className="text-2xl text-black">Welcome back to Ances</h2>
             <h2 className="text-lg text-gray-500">
               Every check an auditor runs on a model, run on yours.
             </h2>

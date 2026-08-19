@@ -33,6 +33,40 @@ interface Message {
   trace?: string
 }
 
+/** A finished conversation, kept on this machine — the drawer's rows
+ *  are the person's own past chats, never invented. */
+interface PastChat {
+  id: string
+  at: number
+  dealId: string
+  dealName: string
+  title: string
+  messages: Message[]
+}
+
+const HISTORY_KEY = 'ances-assistant-history'
+
+const loadHistory = (): PastChat[] => {
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY)
+    const list = raw ? (JSON.parse(raw) as PastChat[]) : []
+    return Array.isArray(list) ? list : []
+  } catch {
+    return []
+  }
+}
+
+const saveHistory = (list: PastChat[]) => {
+  try {
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 40)))
+  } catch {
+    // Storage full or blocked — history is a convenience, never a failure.
+  }
+}
+
+const freshId = (): string =>
+  `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
 export interface AssistantProps {
   api: TieOutApi
   /** Null while loading. The picker lists every model this person is on. */
@@ -65,6 +99,37 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
   const [busy, setBusy] = useState(false)
   const [meta, setMeta] = useState('')
   const scroll = useRef<HTMLDivElement | null>(null)
+
+  //: The 18 August design's history drawer. Its rows are this
+  //: machine's own past conversations — real titles, real order,
+  //: grouped by recency; empty says so rather than inventing rows.
+  const [histOpen, setHistOpen] = useState(false)
+  const [past, setPast] = useState<PastChat[]>([])
+  const chatId = useRef<string>(freshId())
+  useEffect(() => {
+    setPast(loadHistory())
+  }, [])
+  useEffect(() => {
+    if (picked === null) return
+    const asked = messages.filter((one) => one.role === 'you')
+    const last = messages[messages.length - 1]
+    if (asked.length === 0 || !last || last.role !== 'answer') return
+    const title = asked[0]!.text.slice(0, 80)
+    setPast((was) => {
+      const record: PastChat = {
+        id: chatId.current,
+        at: Date.now(),
+        dealId: picked.id,
+        dealName: picked.name,
+        title,
+        messages,
+      }
+      const next = [record, ...was.filter((one) => one.id !== record.id)]
+      saveHistory(next)
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages])
 
   //: The visible scope line: the model's own counts, asked once per
   //: pick. Absent while unknown — never invented.
@@ -221,16 +286,185 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
     )
   }
 
+  const dayMs = 24 * 60 * 60 * 1000
+  const startOfToday = new Date().setHours(0, 0, 0, 0)
+  const histGroups = [
+    {
+      label: 'Today',
+      items: past.filter((one) => one.at >= startOfToday),
+    },
+    {
+      label: 'Previous 7 days',
+      items: past.filter(
+        (one) => one.at < startOfToday && one.at >= startOfToday - 7 * dayMs,
+      ),
+    },
+    {
+      label: 'Older',
+      items: past.filter((one) => one.at < startOfToday - 7 * dayMs),
+    },
+  ].filter((group) => group.items.length > 0)
+
   return (
     <div
       style={{
         flex: 1,
         minHeight: 0,
         display: 'flex',
-        flexDirection: 'column',
         background: '#fff',
       }}
     >
+      {/* The history drawer — the person's own past conversations. */}
+      <div
+        style={{
+          flex: `0 0 ${histOpen ? 244 : 0}px`,
+          width: histOpen ? 244 : 0,
+          alignSelf: 'stretch',
+          overflow: 'hidden',
+          background: '#f7f7f5',
+          borderRight: histOpen ? '.5px solid #eceae8' : 0,
+          transition: 'flex-basis .18s ease, width .18s ease',
+        }}
+      >
+        <div
+          style={{
+            width: 244,
+            height: '100%',
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '13px 11px',
+          }}
+        >
+          <button
+            onClick={() => {
+              chatId.current = freshId()
+              setMessages([])
+              setPrompt('')
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              width: '100%',
+              textAlign: 'left',
+              border: 0,
+              background: 'transparent',
+              borderRadius: 9,
+              font: 'inherit',
+              fontSize: 14,
+              color: '#15171b',
+              cursor: 'pointer',
+              padding: '8px 10px',
+              marginBottom: 12,
+            }}
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              style={{ flex: '0 0 15px' }}
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>New chat</span>
+          </button>
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflow: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {histGroups.length === 0 && (
+              <div
+                style={{
+                  fontSize: 13,
+                  color: '#a4a49e',
+                  lineHeight: 1.5,
+                  padding: '6px 10px',
+                  textWrap: 'pretty',
+                }}
+              >
+                Past conversations land here.
+              </div>
+            )}
+            {histGroups.map((group) => (
+              <div
+                key={group.label}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  paddingBottom: 12,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11.5,
+                    color: '#a4a49e',
+                    letterSpacing: '.02em',
+                    padding: '6px 10px 4px',
+                  }}
+                >
+                  {group.label}
+                </div>
+                {group.items.map((one) => {
+                  const current = one.id === chatId.current
+                  return (
+                    <button
+                      key={one.id}
+                      onClick={() => {
+                        chatId.current = one.id
+                        setPickedId(one.dealId)
+                        setMessages(one.messages)
+                        setPrompt('')
+                        setHistOpen(false)
+                      }}
+                      title={`${one.title} — ${one.dealName}`}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        border: 0,
+                        background: current
+                          ? 'rgba(16,20,28,.07)'
+                          : 'transparent',
+                        borderRadius: 9,
+                        font: 'inherit',
+                        fontSize: 13.5,
+                        color: current ? '#15171b' : '#5b6068',
+                        cursor: 'pointer',
+                        padding: '7px 10px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {one.title}
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
       {/* The scope bar: the model, picked and staying picked. */}
       <div
         style={{
@@ -242,6 +476,34 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
           borderBottom: '.5px solid #f0eff1',
         }}
       >
+        <button
+          onClick={() => setHistOpen((was) => !was)}
+          title="Chat history"
+          style={{
+            flex: '0 0 auto',
+            border: 0,
+            background: 'transparent',
+            borderRadius: 9,
+            padding: 6,
+            cursor: 'pointer',
+            display: 'flex',
+            color: '#8e8e93',
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+            <line x1="9.5" y1="4.5" x2="9.5" y2="19.5" />
+          </svg>
+        </button>
         <div
           style={{ position: 'relative', display: 'flex', flex: '0 0 auto' }}
         >
@@ -310,6 +572,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
                   <button
                     key={one.id}
                     onClick={() => {
+                      chatId.current = freshId()
                       setPickedId(one.id)
                       setPickOpen(false)
                       setMessages([])
@@ -381,7 +644,10 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
           {meta}
         </span>
         <button
-          onClick={() => setMessages([])}
+          onClick={() => {
+            chatId.current = freshId()
+            setMessages([])
+          }}
           title="New chat"
           style={{
             flex: '0 0 auto',
@@ -752,6 +1018,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
         </div>
       )}
       {empty && <div style={{ flex: '1 1 0' }} />}
+      </div>
     </div>
   )
 }
