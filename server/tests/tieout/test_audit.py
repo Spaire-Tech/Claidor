@@ -542,3 +542,315 @@ def test_a_dragged_break_reports_once_not_per_cell() -> None:
     assert len(broken) <= 2, [f.ref for f in broken]
     if broken:
         assert "filled across" in broken[0].detail or len(broken) == 1
+
+
+def test_notation_numbers_are_not_hardcodes() -> None:
+    """A fifth of all hardcode noise in the judged corpus sample was
+    numbers that are notation, not assumptions: date-constructor
+    arguments, text-function counts, rounding precisions, powers of
+    ten, ABS tolerances, and equality selectors. A real assumption in
+    the same column still reports."""
+
+    def build(sheet) -> None:
+        sheet["A2"] = "Lines"
+        sheet["B2"] = "=DATE(2025,4,1)"
+        sheet["B3"] = "=EOMONTH(DATE(2025,4,1),6)"
+        sheet["B4"] = '=REPT("-",25)'
+        sheet["B5"] = "=ROUND(Z5,8)=ROUND(Y5,8)"
+        sheet["B6"] = "=Z6*10^6"
+        sheet["B7"] = "=ABS(Z7-Y7)<0.005"
+        sheet["B8"] = "=IF(Z8=2025,1,0)"
+        sheet["B9"] = "=Z9*1.2345"
+
+    result = _tmp_book(build)
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert [f.ref for f in hardcodes] == ["Sheet!B9"], [
+        (f.ref, f.detail) for f in hardcodes
+    ]
+    assert "1.2345" in hardcodes[0].detail
+
+
+def test_a_label_documented_constant_is_not_a_hardcode() -> None:
+    """« 70% Grid / 30% Water » over a `*0.7` documents the number
+    where the reader is already looking. The same constant under a
+    label that does not state it still reports."""
+
+    def build(sheet) -> None:
+        sheet["A2"] = "Split 70% Grid / 30% Water"
+        sheet["B2"] = "=Z2*0.7"
+        sheet["A3"] = "Grid share"
+        sheet["B3"] = "=Z3*0.7"
+
+    result = _tmp_book(build)
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert [f.ref for f in hardcodes] == ["Sheet!B3"], [
+        (f.ref, f.detail) for f in hardcodes
+    ]
+
+
+def test_a_drifted_selector_is_the_finding_and_agreeing_ones_are_not() -> None:
+    """`IF(C$1=2025,…)` filled across a row: the equality literals are
+    switch settings, not hardcodes — but the one cell testing 2022
+    among seven testing 2025 is a stale copy or an unwritten
+    exception, and shapes cannot see it because shapes erase numbers."""
+
+    def build(sheet) -> None:
+        from openpyxl.utils import get_column_letter
+
+        for column in range(3, 11):
+            letter = get_column_letter(column)
+            sheet.cell(row=1, column=column).value = 2025
+            year = 2022 if letter == "G" else 2025
+            sheet.cell(
+                row=3, column=column
+            ).value = f"=IF({letter}$1={year},{letter}2,0)"
+
+    result = _tmp_book(build)
+    assert not any(f.rule == "hardcode-in-formula" for f in result.findings)
+    drifted = [f for f in result.findings if f.rule == "inconsistent-row"]
+    assert [f.ref for f in drifted] == ["Sheet!G3"], [
+        (f.ref, f.detail) for f in drifted
+    ]
+    assert "2022" in drifted[0].detail
+    assert "2025" in drifted[0].detail
+
+
+def test_a_row_total_column_is_not_an_inconsistent_row() -> None:
+    """A bare SUM across its own row is the row's totals column — it
+    departs from the series because it is about the series."""
+
+    def build(sheet) -> None:
+        from openpyxl.utils import get_column_letter
+
+        sheet["A4"] = "Revenue"
+        for column in (3, 4, 5, 7, 8):
+            letter = get_column_letter(column)
+            sheet.cell(row=4, column=column).value = f"={letter}3*2"
+        sheet["F4"] = "=SUM(C4:E4)"
+
+    result = _tmp_book(build)
+    assert not any(f.rule == "inconsistent-row" for f in result.findings), [
+        (f.ref, f.detail) for f in result.findings if f.rule == "inconsistent-row"
+    ]
+
+
+def test_a_long_enumeration_is_not_a_long_formula() -> None:
+    """Forty references joined by plus signs: nothing nests, nothing
+    branches, and splitting it would not make it clearer."""
+    chain = "=" + "+".join(f"C{row}" for row in range(1, 60))
+
+    def build(sheet) -> None:
+        assert len(chain) > 180
+        sheet["B2"] = chain
+
+    result = _tmp_book(build)
+    assert not any(f.rule == "long-formula" for f in result.findings)
+
+
+def test_a_multi_area_sum_is_one_total_not_three() -> None:
+    """`SUM(B5:B8,B2:B3,B4)` reads rows 2 through 8 in three pieces.
+    Judging each piece alone accused the formula of leaving out rows
+    its other pieces include — the bug the usefulness audit caught in
+    its own sample."""
+
+    def build(sheet) -> None:
+        for row in range(2, 9):
+            sheet.cell(row=row, column=2).value = row * 10
+        sheet["B10"] = "=SUM(B5:B8,B2:B3,B4)"
+
+    result = _tmp_book(build)
+    assert not any(f.rule == "skipped-cell" for f in result.findings), [
+        f.detail for f in result.findings if f.rule == "skipped-cell"
+    ]
+
+
+def test_partitioned_detail_rows_are_not_skipped_but_bare_ones_are() -> None:
+    """Ofgem's RoRE tables sum one slice while a sibling bare SUM in
+    the same column covers the rest: a partition, not a miss. Remove
+    the sibling and the same rows are genuinely unclaimed."""
+
+    def partitioned(sheet) -> None:
+        for row in range(2, 10):
+            sheet.cell(row=row, column=2).value = row * 10
+        sheet["B11"] = "=SUM(B6:B9)"
+        sheet["B12"] = "=SUM(B2:B5)"
+
+    result = _tmp_book(partitioned)
+    assert not any(f.rule == "skipped-cell" for f in result.findings), [
+        f.detail for f in result.findings if f.rule == "skipped-cell"
+    ]
+
+    def unclaimed(sheet) -> None:
+        for row in range(2, 10):
+            sheet.cell(row=row, column=2).value = row * 10
+        sheet["B12"] = "=SUM(B2:B5)"
+
+    result = _tmp_book(unclaimed)
+    skipped = [f for f in result.findings if f.rule == "skipped-cell"]
+    assert len(skipped) == 1, [f.detail for f in skipped]
+    assert "B6" in skipped[0].detail
+
+
+def test_the_walk_above_a_total_stops_at_a_section_break() -> None:
+    """A total's claim ends with its own block: two blank rows are a
+    section break, and the table beyond them belongs to someone else.
+    The live row inside the block still reports."""
+
+    def build(sheet) -> None:
+        sheet["B2"] = 10
+        sheet["B3"] = 20
+        sheet["B4"] = 30
+        for row in range(7, 11):
+            sheet.cell(row=row, column=2).value = row * 10
+        sheet["B12"] = "=SUM(B2:B3)"
+
+    result = _tmp_book(build)
+    skipped = [f for f in result.findings if f.rule == "skipped-cell"]
+    assert len(skipped) == 1, [f.detail for f in skipped]
+    assert "B4" in skipped[0].detail
+    assert "B7" not in skipped[0].detail
+
+
+def test_a_mnemonic_column_is_not_typed_over() -> None:
+    """A defined name repeated down a column is the sheet's text
+    scaffolding — a value typed between its rows is a heading, not a
+    paste over a calculation."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+    from openpyxl.workbook.defined_name import DefinedName
+
+    book = Book()
+    sheet = book.active
+    book.defined_names["price_label"] = DefinedName(
+        "price_label", attr_text="Sheet!$Z$1"
+    )
+    for row in range(2, 9):
+        sheet.cell(row=row, column=1).value = f"=Z{row}*2"
+        if row == 5:
+            sheet.cell(row=row, column=2).value = 7
+        else:
+            sheet.cell(row=row, column=2).value = "=price_label"
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    assert not any(f.rule == "typed-over-formula" for f in result.findings), [
+        f.detail for f in result.findings if f.rule == "typed-over-formula"
+    ]
+
+
+def test_one_value_pasted_across_a_row_folds_and_an_input_row_drops() -> None:
+    """A typed row crossing many calculated columns: one value in ten
+    columns is one paste, said once; ten different values are an input
+    series the column pass misread, and data is not damage."""
+
+    def one_value(sheet) -> None:
+        from openpyxl.utils import get_column_letter
+
+        for column in range(2, 14):
+            letter = get_column_letter(column - 1)
+            for row in range(2, 9):
+                at = sheet.cell(row=row, column=column)
+                if row == 5 and 3 <= column <= 12:
+                    at.value = 0.89
+                else:
+                    at.value = f"={letter}{row}*2"
+
+    result = _tmp_book(one_value)
+    typed = [f for f in result.findings if f.rule == "typed-over-formula"]
+    assert len(typed) == 1, [(f.ref, f.detail) for f in typed]
+    assert "10 cells" in typed[0].detail
+
+    def input_series(sheet) -> None:
+        from openpyxl.utils import get_column_letter
+
+        for column in range(2, 14):
+            letter = get_column_letter(column - 1)
+            for row in range(2, 9):
+                at = sheet.cell(row=row, column=column)
+                if row == 5 and 3 <= column <= 12:
+                    at.value = column * 1.7
+                else:
+                    at.value = f"={letter}{row}*2"
+
+    result = _tmp_book(input_series)
+    assert not any(f.rule == "typed-over-formula" for f in result.findings)
+
+
+def test_the_same_hardcode_on_sibling_sheets_is_one_finding() -> None:
+    """Ofgem's ED2 model types the same pool balance into fourteen DNO
+    sheets — one decision per company workbook, one sentence."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+
+    book = Book()
+    for name in ("DNOa", "DNOb", "DNOc"):
+        sheet = book.create_sheet(name)
+        sheet["B2"] = "=719.23+0"
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert len(hardcodes) == 1, [(f.ref, f.detail) for f in hardcodes]
+    assert "3 sheets" in hardcodes[0].detail
+
+
+def test_a_sheets_volatile_idiom_is_one_finding() -> None:
+    """OFFSET in row after row with varying arguments defeats the fill
+    collapse — the shapes differ — but « this sheet is built on
+    OFFSET » is one fact about one sheet."""
+
+    def build(sheet) -> None:
+        sheet["B2"] = "=OFFSET(A1,1,1)"
+        sheet["B3"] = "=OFFSET(A1,2,1)"
+        sheet["B4"] = "=OFFSET(A2,1,1)*2"
+        sheet["B5"] = "=OFFSET(A1,1,2)"
+
+    result = _tmp_book(build)
+    noisy = [f for f in result.findings if f.rule == "volatile"]
+    assert len(noisy) == 1, [(f.ref, f.detail) for f in noisy]
+    assert "4 places" in noisy[0].detail
+
+
+def test_a_convention_constant_across_many_formulas_is_one_finding() -> None:
+    """The 0.5 of a half-period adjustment appears in row after row of
+    otherwise different formulas: one convention, one finding."""
+
+    def build(sheet) -> None:
+        sheet["B2"] = "=Z2*0.5"
+        sheet["B3"] = "=Z3+0.5*Y3"
+        sheet["B4"] = "=SUM(Z4:Y4)*0.5"
+
+    result = _tmp_book(build)
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert len(hardcodes) == 1, [(f.ref, f.detail) for f in hardcodes]
+    assert "convention" in hardcodes[0].detail
+
+
+def test_an_array_formula_is_a_formula_not_a_typed_value() -> None:
+    """The reader dropped ArrayFormula objects, so every array-entered
+    cell registered as a typed value — the single largest source of
+    false typed-over findings in the judged sample."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+    from openpyxl.worksheet.formula import ArrayFormula
+
+    book = Book()
+    sheet = book.active
+    for row in range(1, 5):
+        sheet.cell(row=row, column=1).value = row
+    sheet["B1"] = ArrayFormula("B1:B4", "=TRANSPOSE(A1:A4)")
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        read = read_workbook(str(path))
+    cell = read.cells.get("Sheet!B1")
+    assert cell is not None
+    assert cell.formula == "=TRANSPOSE(A1:A4)"

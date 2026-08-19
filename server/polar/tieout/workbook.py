@@ -40,6 +40,7 @@ from typing import Any
 from openpyxl import load_workbook
 from openpyxl.formula.tokenizer import Tokenizer
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.formula import ArrayFormula
 
 from .legacy import read_legacy
 
@@ -981,6 +982,15 @@ def _label_column(grid: _Grid, last_row: int, last_column: int) -> int:
 
 
 def _formula(value: Any) -> str | None:
+    #: Array formulas arrive as objects, not strings, and dropping them
+    #: registered every array-calculated cell as a typed value — the
+    #: single largest source of false typed-over findings in the
+    #: usefulness audit (the RIIO-3 models array-enter whole blocks).
+    if isinstance(value, ArrayFormula):
+        text = value.text or ""
+        if not text:
+            return None
+        return text if text.startswith("=") else f"={text}"
     return value if isinstance(value, str) and value.startswith("=") else None
 
 
