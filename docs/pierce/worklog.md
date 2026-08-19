@@ -3326,3 +3326,25 @@ fix (shape, not numbers) plus a column-beat fold for repeated check
 rows and a same-file template fold cover 30 of 34 raw D verdicts.
 C reduces to nine small named skips recorded on the verdicts. Both
 lists are the next round's spec, exactly as last time.
+
+## 19 August, later — Round 1 of the mentor's four: Collapse
+
+The mentor's direction, adopted whole as the next four rounds
+(collapse → purify → elevate → stress test), with the standing rule:
+every finding earns its place, nothing detected is deleted — the
+folds change what the report says, not what the engine sees.
+
+Round 1 shipped: the sibling-sheet fold keys a labelled hardcode by
+shape and label rather than numbers (fourteen company balances are
+one layout decision); a long formula surviving the address fold
+folds as a template when the same column carries the same length
+three or more times in one file (the F1 check row repeating down
+the sheet, the PCFM import formula stamped across sheets); designed
+error tails join the sibling fold (the F-sheet title formula, once).
+
+The corpus: **852 → 696**, no sample drawn — the population had to
+settle first, per the round's design. The diff: 185 removed, 29
+grouped representatives added, every line traced. ED2 files 39 → 15.
+The shape-keyed rule also collapsed a family nobody named — the GD3
+network sheets' per-network innovation allowances — which is what a
+general rule is for. Baseline regenerated and committed; 476 tests.

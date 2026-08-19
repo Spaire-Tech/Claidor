@@ -329,7 +329,7 @@
     "detail": "uses TODAY"
    }
   ],
-  "seconds": 47.3
+  "seconds": 46.9
  },
  {
   "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
@@ -578,16 +578,16 @@
     "detail": "uses TODAY"
    }
   ],
-  "seconds": 46.9
+  "seconds": 48.5
  },
  {
   "file": "ofgem_ed2/v1_2023-02.xlsx",
   "sheets": 31,
   "cells": 41153,
   "errors": 0,
-  "smells": 39,
+  "smells": 15,
   "by_rule": {
-   "hardcode-in-formula": 37,
+   "hardcode-in-formula": 13,
    "long-formula": 2
   },
   "findings": [
@@ -603,14 +603,14 @@
     "severity": "smell",
     "ref": "EMID!AR342",
     "figure": "113.925671333617, 37.8311076869707",
-    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707"
+    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707 \u2014 the same decision at AR342 on 6 sheets (EMID, NPgN, NPgY, SWALES, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "EMID!AR343",
     "figure": "876.721958362195, 21.464269053998",
-    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998"
+    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998 \u2014 the same decision at AR343 on 10 sheets (EMID, NPgN, NPgY, SPD, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -638,7 +638,7 @@
     "severity": "smell",
     "ref": "ENWL!AR344",
     "figure": "1152.74958394555",
-    "detail": "1152.74958394555 inside =1152.74958394555+0"
+    "detail": "1152.74958394555 inside =1152.74958394555+0 \u2014 the same decision at AR344 on 8 sheets (ENWL, NPgN, NPgY, SSEH, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -671,72 +671,9 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "NPgN!AR342",
-    "figure": "56.3024478396442, 0.702460659051489",
-    "detail": "56.3024478396442, 0.702460659051489 inside =56.3024478396442+-0.702460659051489"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR343",
-    "figure": "279.835469386282, 4.8995510368768",
-    "detail": "279.835469386282, 4.8995510368768 inside =279.835469386282+4.8995510368768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR344",
-    "figure": "1354.23327221235",
-    "detail": "1354.23327221235 inside =1354.23327221235+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR342",
-    "figure": "61.799014047027, 0.423327309442584",
-    "detail": "61.799014047027, 0.423327309442584 inside =61.799014047027+-0.423327309442584"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR343",
-    "figure": "289.84500577757, 4.88323368282414",
-    "detail": "289.84500577757, 4.88323368282414 inside =289.84500577757+4.88323368282414"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR344",
-    "figure": "1971.00377564998",
-    "detail": "1971.00377564998 inside =1971.00377564998+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "SPD!AR342",
     "figure": "53.189004167367",
-    "detail": "53.189004167367 inside =53.189004167367+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPD!AR343",
-    "figure": "1410.58154652655",
-    "detail": "1410.58154652655 inside =1410.58154652655+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR342",
-    "figure": "65.816908330231",
-    "detail": "65.816908330231 inside =65.816908330231+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR343",
-    "figure": "1529.96976992339",
-    "detail": "1529.96976992339 inside =1529.96976992339+0"
+    "detail": "53.189004167367 inside =53.189004167367+0 \u2014 the same decision at AR342 on 4 sheets (SPD, SPMW, SSEH, SSES), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -758,123 +695,18 @@
     "ref": "SPN!AR344",
     "figure": "1099.46567302972",
     "detail": "1099.46567302972 inside =1099.46567302972"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR342",
-    "figure": "16.1147192965519",
-    "detail": "16.1147192965519 inside =16.1147192965519+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR343",
-    "figure": "336.390487753237",
-    "detail": "336.390487753237 inside =336.390487753237+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR344",
-    "figure": "700.111546896409",
-    "detail": "700.111546896409 inside =700.111546896409+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR342",
-    "figure": "61.2538186259898",
-    "detail": "61.2538186259898 inside =61.2538186259898+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR343",
-    "figure": "769.265649331827",
-    "detail": "769.265649331827 inside =769.265649331827+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR344",
-    "figure": "1589.70086727133",
-    "detail": "1589.70086727133 inside =1589.70086727133+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR342",
-    "figure": "69.9579737038677, 20.8620753463558",
-    "detail": "69.9579737038677, 20.8620753463558 inside =69.9579737038677+-20.8620753463558"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR343",
-    "figure": "299.708099208489, 1.28238993067509",
-    "detail": "299.708099208489, 1.28238993067509 inside =299.708099208489+1.28238993067509"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR344",
-    "figure": "719.233843643029",
-    "detail": "719.233843643029 inside =719.233843643029+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR342",
-    "figure": "102.957901672309, 35.4762696071982",
-    "detail": "102.957901672309, 35.4762696071982 inside =102.957901672309+-35.4762696071982"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR343",
-    "figure": "438.770490912948, 0.354180632201178",
-    "detail": "438.770490912948, 0.354180632201178 inside =438.770490912948+0.354180632201178"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR344",
-    "figure": "1135.33915595323, 1.81898940354586E-12",
-    "detail": "1135.33915595323, 1.81898940354586E-12 inside =1135.33915595323+1.81898940354586E-12"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR342",
-    "figure": "120.168638005644, 41.8194323392424",
-    "detail": "120.168638005644, 41.8194323392424 inside =120.168638005644+-41.8194323392424"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR343",
-    "figure": "779.343580237547, 10.4774345799768",
-    "detail": "779.343580237547, 10.4774345799768 inside =779.343580237547+10.4774345799768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR344",
-    "figure": "1459.47027500976",
-    "detail": "1459.47027500976 inside =1459.47027500976+0"
    }
   ],
-  "seconds": 24.3
+  "seconds": 24.7
  },
  {
   "file": "ofgem_ed2/v2_2023-07-14.xlsx",
   "sheets": 31,
   "cells": 41024,
   "errors": 0,
-  "smells": 39,
+  "smells": 15,
   "by_rule": {
-   "hardcode-in-formula": 37,
+   "hardcode-in-formula": 13,
    "long-formula": 2
   },
   "findings": [
@@ -890,14 +722,14 @@
     "severity": "smell",
     "ref": "EMID!AR345",
     "figure": "113.925671333617, 37.8311076869707",
-    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707"
+    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707 \u2014 the same decision at AR345 on 6 sheets (EMID, NPgN, NPgY, SWALES, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "EMID!AR346",
     "figure": "876.721958362195, 21.464269053998",
-    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998"
+    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998 \u2014 the same decision at AR346 on 10 sheets (EMID, NPgN, NPgY, SPD, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -925,7 +757,7 @@
     "severity": "smell",
     "ref": "ENWL!AR347",
     "figure": "1152.74958394555",
-    "detail": "1152.74958394555 inside =1152.74958394555+0"
+    "detail": "1152.74958394555 inside =1152.74958394555+0 \u2014 the same decision at AR347 on 8 sheets (ENWL, NPgN, NPgY, SSEH, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -958,72 +790,9 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "NPgN!AR345",
-    "figure": "56.3024478396442, 0.702460659051489",
-    "detail": "56.3024478396442, 0.702460659051489 inside =56.3024478396442+-0.702460659051489"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR346",
-    "figure": "279.835469386282, 4.8995510368768",
-    "detail": "279.835469386282, 4.8995510368768 inside =279.835469386282+4.8995510368768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR347",
-    "figure": "1354.23327221235",
-    "detail": "1354.23327221235 inside =1354.23327221235+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR345",
-    "figure": "61.799014047027, 0.423327309442584",
-    "detail": "61.799014047027, 0.423327309442584 inside =61.799014047027+-0.423327309442584"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR346",
-    "figure": "289.84500577757, 4.88323368282414",
-    "detail": "289.84500577757, 4.88323368282414 inside =289.84500577757+4.88323368282414"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR347",
-    "figure": "1971.00377564998",
-    "detail": "1971.00377564998 inside =1971.00377564998+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "SPD!AR345",
     "figure": "53.189004167367",
-    "detail": "53.189004167367 inside =53.189004167367+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPD!AR346",
-    "figure": "1410.58154652655",
-    "detail": "1410.58154652655 inside =1410.58154652655+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR345",
-    "figure": "65.816908330231",
-    "detail": "65.816908330231 inside =65.816908330231+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR346",
-    "figure": "1529.96976992339",
-    "detail": "1529.96976992339 inside =1529.96976992339+0"
+    "detail": "53.189004167367 inside =53.189004167367+0 \u2014 the same decision at AR345 on 4 sheets (SPD, SPMW, SSEH, SSES), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1045,123 +814,18 @@
     "ref": "SPN!AR347",
     "figure": "1099.46567302972",
     "detail": "1099.46567302972 inside =1099.46567302972"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR345",
-    "figure": "16.1147192965519",
-    "detail": "16.1147192965519 inside =16.1147192965519+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR346",
-    "figure": "336.390487753237",
-    "detail": "336.390487753237 inside =336.390487753237+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR347",
-    "figure": "700.111546896409",
-    "detail": "700.111546896409 inside =700.111546896409+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR345",
-    "figure": "61.2538186259898",
-    "detail": "61.2538186259898 inside =61.2538186259898+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR346",
-    "figure": "769.265649331827",
-    "detail": "769.265649331827 inside =769.265649331827+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR347",
-    "figure": "1589.70086727133",
-    "detail": "1589.70086727133 inside =1589.70086727133+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR345",
-    "figure": "69.9579737038677, 20.8620753463558",
-    "detail": "69.9579737038677, 20.8620753463558 inside =69.9579737038677+-20.8620753463558"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR346",
-    "figure": "299.708099208489, 1.28238993067509",
-    "detail": "299.708099208489, 1.28238993067509 inside =299.708099208489+1.28238993067509"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR347",
-    "figure": "719.233843643029",
-    "detail": "719.233843643029 inside =719.233843643029+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR345",
-    "figure": "102.957901672309, 35.4762696071982",
-    "detail": "102.957901672309, 35.4762696071982 inside =102.957901672309+-35.4762696071982"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR346",
-    "figure": "438.770490912948, 0.354180632201178",
-    "detail": "438.770490912948, 0.354180632201178 inside =438.770490912948+0.354180632201178"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR347",
-    "figure": "1135.33915595323, 1.81898940354586E-12",
-    "detail": "1135.33915595323, 1.81898940354586E-12 inside =1135.33915595323+1.81898940354586E-12"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR345",
-    "figure": "120.168638005644, 41.8194323392424",
-    "detail": "120.168638005644, 41.8194323392424 inside =120.168638005644+-41.8194323392424"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR346",
-    "figure": "779.343580237547, 10.4774345799768",
-    "detail": "779.343580237547, 10.4774345799768 inside =779.343580237547+10.4774345799768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR347",
-    "figure": "1459.47027500976",
-    "detail": "1459.47027500976 inside =1459.47027500976+0"
    }
   ],
-  "seconds": 24.1
+  "seconds": 24.7
  },
  {
   "file": "ofgem_ed2/v2_2023-07-31.xlsx",
   "sheets": 31,
   "cells": 41048,
   "errors": 0,
-  "smells": 39,
+  "smells": 15,
   "by_rule": {
-   "hardcode-in-formula": 37,
+   "hardcode-in-formula": 13,
    "long-formula": 2
   },
   "findings": [
@@ -1177,14 +841,14 @@
     "severity": "smell",
     "ref": "EMID!AR345",
     "figure": "113.925671333617, 37.8311076869707",
-    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707"
+    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707 \u2014 the same decision at AR345 on 6 sheets (EMID, NPgN, NPgY, SWALES, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "EMID!AR346",
     "figure": "876.721958362195, 21.464269053998",
-    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998"
+    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998 \u2014 the same decision at AR346 on 10 sheets (EMID, NPgN, NPgY, SPD, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1212,7 +876,7 @@
     "severity": "smell",
     "ref": "ENWL!AR347",
     "figure": "1152.74958394555",
-    "detail": "1152.74958394555 inside =1152.74958394555+0"
+    "detail": "1152.74958394555 inside =1152.74958394555+0 \u2014 the same decision at AR347 on 8 sheets (ENWL, NPgN, NPgY, SSEH, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1245,72 +909,9 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "NPgN!AR345",
-    "figure": "56.3024478396442, 0.702460659051489",
-    "detail": "56.3024478396442, 0.702460659051489 inside =56.3024478396442+-0.702460659051489"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR346",
-    "figure": "279.835469386282, 4.8995510368768",
-    "detail": "279.835469386282, 4.8995510368768 inside =279.835469386282+4.8995510368768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR347",
-    "figure": "1354.23327221235",
-    "detail": "1354.23327221235 inside =1354.23327221235+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR345",
-    "figure": "61.799014047027, 0.423327309442584",
-    "detail": "61.799014047027, 0.423327309442584 inside =61.799014047027+-0.423327309442584"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR346",
-    "figure": "289.84500577757, 4.88323368282414",
-    "detail": "289.84500577757, 4.88323368282414 inside =289.84500577757+4.88323368282414"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR347",
-    "figure": "1971.00377564998",
-    "detail": "1971.00377564998 inside =1971.00377564998+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "SPD!AR345",
     "figure": "53.189004167367",
-    "detail": "53.189004167367 inside =53.189004167367+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPD!AR346",
-    "figure": "1410.58154652655",
-    "detail": "1410.58154652655 inside =1410.58154652655+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR345",
-    "figure": "65.816908330231",
-    "detail": "65.816908330231 inside =65.816908330231+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR346",
-    "figure": "1529.96976992339",
-    "detail": "1529.96976992339 inside =1529.96976992339+0"
+    "detail": "53.189004167367 inside =53.189004167367+0 \u2014 the same decision at AR345 on 4 sheets (SPD, SPMW, SSEH, SSES), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1332,111 +933,6 @@
     "ref": "SPN!AR347",
     "figure": "1099.46567302972",
     "detail": "1099.46567302972 inside =1099.46567302972"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR345",
-    "figure": "16.1147192965519",
-    "detail": "16.1147192965519 inside =16.1147192965519+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR346",
-    "figure": "336.390487753237",
-    "detail": "336.390487753237 inside =336.390487753237+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR347",
-    "figure": "700.111546896409",
-    "detail": "700.111546896409 inside =700.111546896409+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR345",
-    "figure": "61.2538186259898",
-    "detail": "61.2538186259898 inside =61.2538186259898+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR346",
-    "figure": "769.265649331827",
-    "detail": "769.265649331827 inside =769.265649331827+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR347",
-    "figure": "1589.70086727133",
-    "detail": "1589.70086727133 inside =1589.70086727133+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR345",
-    "figure": "69.9579737038677, 20.8620753463558",
-    "detail": "69.9579737038677, 20.8620753463558 inside =69.9579737038677+-20.8620753463558"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR346",
-    "figure": "299.708099208489, 1.28238993067509",
-    "detail": "299.708099208489, 1.28238993067509 inside =299.708099208489+1.28238993067509"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR347",
-    "figure": "719.233843643029",
-    "detail": "719.233843643029 inside =719.233843643029+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR345",
-    "figure": "102.957901672309, 35.4762696071982",
-    "detail": "102.957901672309, 35.4762696071982 inside =102.957901672309+-35.4762696071982"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR346",
-    "figure": "438.770490912948, 0.354180632201178",
-    "detail": "438.770490912948, 0.354180632201178 inside =438.770490912948+0.354180632201178"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR347",
-    "figure": "1135.33915595323, 1.81898940354586E-12",
-    "detail": "1135.33915595323, 1.81898940354586E-12 inside =1135.33915595323+1.81898940354586E-12"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR345",
-    "figure": "120.168638005644, 41.8194323392424",
-    "detail": "120.168638005644, 41.8194323392424 inside =120.168638005644+-41.8194323392424"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR346",
-    "figure": "779.343580237547, 10.4774345799768",
-    "detail": "779.343580237547, 10.4774345799768 inside =779.343580237547+10.4774345799768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR347",
-    "figure": "1459.47027500976",
-    "detail": "1459.47027500976 inside =1459.47027500976+0"
    }
   ],
   "seconds": 24.3
@@ -1446,9 +942,9 @@
   "sheets": 31,
   "cells": 40947,
   "errors": 0,
-  "smells": 39,
+  "smells": 15,
   "by_rule": {
-   "hardcode-in-formula": 37,
+   "hardcode-in-formula": 13,
    "long-formula": 2
   },
   "findings": [
@@ -1464,14 +960,14 @@
     "severity": "smell",
     "ref": "EMID!AR345",
     "figure": "113.925671333617, 37.8311076869707",
-    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707"
+    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707 \u2014 the same decision at AR345 on 6 sheets (EMID, NPgN, NPgY, SWALES, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "EMID!AR346",
     "figure": "876.721958362195, 21.464269053998",
-    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998"
+    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998 \u2014 the same decision at AR346 on 10 sheets (EMID, NPgN, NPgY, SPD, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1499,7 +995,7 @@
     "severity": "smell",
     "ref": "ENWL!AR347",
     "figure": "1152.74958394555",
-    "detail": "1152.74958394555 inside =1152.74958394555+0"
+    "detail": "1152.74958394555 inside =1152.74958394555+0 \u2014 the same decision at AR347 on 8 sheets (ENWL, NPgN, NPgY, SSEH, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1532,72 +1028,9 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "NPgN!AR345",
-    "figure": "56.3024478396442, 0.702460659051489",
-    "detail": "56.3024478396442, 0.702460659051489 inside =56.3024478396442+-0.702460659051489"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR346",
-    "figure": "279.835469386282, 4.8995510368768",
-    "detail": "279.835469386282, 4.8995510368768 inside =279.835469386282+4.8995510368768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR347",
-    "figure": "1354.23327221235",
-    "detail": "1354.23327221235 inside =1354.23327221235+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR345",
-    "figure": "61.799014047027, 0.423327309442584",
-    "detail": "61.799014047027, 0.423327309442584 inside =61.799014047027+-0.423327309442584"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR346",
-    "figure": "289.84500577757, 4.88323368282414",
-    "detail": "289.84500577757, 4.88323368282414 inside =289.84500577757+4.88323368282414"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR347",
-    "figure": "1971.00377564998",
-    "detail": "1971.00377564998 inside =1971.00377564998+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "SPD!AR345",
     "figure": "53.189004167367",
-    "detail": "53.189004167367 inside =53.189004167367+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPD!AR346",
-    "figure": "1410.58154652655",
-    "detail": "1410.58154652655 inside =1410.58154652655+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR345",
-    "figure": "65.816908330231",
-    "detail": "65.816908330231 inside =65.816908330231+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR346",
-    "figure": "1529.96976992339",
-    "detail": "1529.96976992339 inside =1529.96976992339+0"
+    "detail": "53.189004167367 inside =53.189004167367+0 \u2014 the same decision at AR345 on 4 sheets (SPD, SPMW, SSEH, SSES), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1619,123 +1052,18 @@
     "ref": "SPN!AR347",
     "figure": "1099.46567302972",
     "detail": "1099.46567302972 inside =1099.46567302972"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR345",
-    "figure": "16.1147192965519",
-    "detail": "16.1147192965519 inside =16.1147192965519+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR346",
-    "figure": "336.390487753237",
-    "detail": "336.390487753237 inside =336.390487753237+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR347",
-    "figure": "700.111546896409",
-    "detail": "700.111546896409 inside =700.111546896409+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR345",
-    "figure": "61.2538186259898",
-    "detail": "61.2538186259898 inside =61.2538186259898+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR346",
-    "figure": "769.265649331827",
-    "detail": "769.265649331827 inside =769.265649331827+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR347",
-    "figure": "1589.70086727133",
-    "detail": "1589.70086727133 inside =1589.70086727133+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR345",
-    "figure": "69.9579737038677, 20.8620753463558",
-    "detail": "69.9579737038677, 20.8620753463558 inside =69.9579737038677+-20.8620753463558"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR346",
-    "figure": "299.708099208489, 1.28238993067509",
-    "detail": "299.708099208489, 1.28238993067509 inside =299.708099208489+1.28238993067509"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR347",
-    "figure": "719.233843643029",
-    "detail": "719.233843643029 inside =719.233843643029+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR345",
-    "figure": "102.957901672309, 35.4762696071982",
-    "detail": "102.957901672309, 35.4762696071982 inside =102.957901672309+-35.4762696071982"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR346",
-    "figure": "438.770490912948, 0.354180632201178",
-    "detail": "438.770490912948, 0.354180632201178 inside =438.770490912948+0.354180632201178"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR347",
-    "figure": "1135.33915595323, 1.81898940354586E-12",
-    "detail": "1135.33915595323, 1.81898940354586E-12 inside =1135.33915595323+1.81898940354586E-12"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR345",
-    "figure": "120.168638005644, 41.8194323392424",
-    "detail": "120.168638005644, 41.8194323392424 inside =120.168638005644+-41.8194323392424"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR346",
-    "figure": "779.343580237547, 10.4774345799768",
-    "detail": "779.343580237547, 10.4774345799768 inside =779.343580237547+10.4774345799768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR347",
-    "figure": "1459.47027500976",
-    "detail": "1459.47027500976 inside =1459.47027500976+0"
    }
   ],
-  "seconds": 24.7
+  "seconds": 24.8
  },
  {
   "file": "ofgem_ed2/v3_2023-11.xlsx",
   "sheets": 31,
   "cells": 40947,
   "errors": 0,
-  "smells": 39,
+  "smells": 15,
   "by_rule": {
-   "hardcode-in-formula": 37,
+   "hardcode-in-formula": 13,
    "long-formula": 2
   },
   "findings": [
@@ -1751,14 +1079,14 @@
     "severity": "smell",
     "ref": "EMID!AR345",
     "figure": "113.925671333617, 37.8311076869707",
-    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707"
+    "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707 \u2014 the same decision at AR345 on 6 sheets (EMID, NPgN, NPgY, SWALES, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "EMID!AR346",
     "figure": "876.721958362195, 21.464269053998",
-    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998"
+    "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998 \u2014 the same decision at AR346 on 10 sheets (EMID, NPgN, NPgY, SPD, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1786,7 +1114,7 @@
     "severity": "smell",
     "ref": "ENWL!AR347",
     "figure": "1152.74958394555",
-    "detail": "1152.74958394555 inside =1152.74958394555+0"
+    "detail": "1152.74958394555 inside =1152.74958394555+0 \u2014 the same decision at AR347 on 8 sheets (ENWL, NPgN, NPgY, SSEH, \u2026), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1819,72 +1147,9 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "NPgN!AR345",
-    "figure": "56.3024478396442, 0.702460659051489",
-    "detail": "56.3024478396442, 0.702460659051489 inside =56.3024478396442+-0.702460659051489"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR346",
-    "figure": "279.835469386282, 4.8995510368768",
-    "detail": "279.835469386282, 4.8995510368768 inside =279.835469386282+4.8995510368768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgN!AR347",
-    "figure": "1354.23327221235",
-    "detail": "1354.23327221235 inside =1354.23327221235+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR345",
-    "figure": "61.799014047027, 0.423327309442584",
-    "detail": "61.799014047027, 0.423327309442584 inside =61.799014047027+-0.423327309442584"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR346",
-    "figure": "289.84500577757, 4.88323368282414",
-    "detail": "289.84500577757, 4.88323368282414 inside =289.84500577757+4.88323368282414"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "NPgY!AR347",
-    "figure": "1971.00377564998",
-    "detail": "1971.00377564998 inside =1971.00377564998+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "SPD!AR345",
     "figure": "53.189004167367",
-    "detail": "53.189004167367 inside =53.189004167367+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPD!AR346",
-    "figure": "1410.58154652655",
-    "detail": "1410.58154652655 inside =1410.58154652655+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR345",
-    "figure": "65.816908330231",
-    "detail": "65.816908330231 inside =65.816908330231+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SPMW!AR346",
-    "figure": "1529.96976992339",
-    "detail": "1529.96976992339 inside =1529.96976992339+0"
+    "detail": "53.189004167367 inside =53.189004167367+0 \u2014 the same decision at AR345 on 4 sheets (SPD, SPMW, SSEH, SSES), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
@@ -1906,111 +1171,6 @@
     "ref": "SPN!AR347",
     "figure": "1099.46567302972",
     "detail": "1099.46567302972 inside =1099.46567302972"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR345",
-    "figure": "16.1147192965519",
-    "detail": "16.1147192965519 inside =16.1147192965519+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR346",
-    "figure": "336.390487753237",
-    "detail": "336.390487753237 inside =336.390487753237+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSEH!AR347",
-    "figure": "700.111546896409",
-    "detail": "700.111546896409 inside =700.111546896409+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR345",
-    "figure": "61.2538186259898",
-    "detail": "61.2538186259898 inside =61.2538186259898+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR346",
-    "figure": "769.265649331827",
-    "detail": "769.265649331827 inside =769.265649331827+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SSES!AR347",
-    "figure": "1589.70086727133",
-    "detail": "1589.70086727133 inside =1589.70086727133+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR345",
-    "figure": "69.9579737038677, 20.8620753463558",
-    "detail": "69.9579737038677, 20.8620753463558 inside =69.9579737038677+-20.8620753463558"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR346",
-    "figure": "299.708099208489, 1.28238993067509",
-    "detail": "299.708099208489, 1.28238993067509 inside =299.708099208489+1.28238993067509"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWALES!AR347",
-    "figure": "719.233843643029",
-    "detail": "719.233843643029 inside =719.233843643029+0"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR345",
-    "figure": "102.957901672309, 35.4762696071982",
-    "detail": "102.957901672309, 35.4762696071982 inside =102.957901672309+-35.4762696071982"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR346",
-    "figure": "438.770490912948, 0.354180632201178",
-    "detail": "438.770490912948, 0.354180632201178 inside =438.770490912948+0.354180632201178"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SWEST!AR347",
-    "figure": "1135.33915595323, 1.81898940354586E-12",
-    "detail": "1135.33915595323, 1.81898940354586E-12 inside =1135.33915595323+1.81898940354586E-12"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR345",
-    "figure": "120.168638005644, 41.8194323392424",
-    "detail": "120.168638005644, 41.8194323392424 inside =120.168638005644+-41.8194323392424"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR346",
-    "figure": "779.343580237547, 10.4774345799768",
-    "detail": "779.343580237547, 10.4774345799768 inside =779.343580237547+10.4774345799768"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "WMID!AR347",
-    "figure": "1459.47027500976",
-    "detail": "1459.47027500976 inside =1459.47027500976+0"
    }
   ],
   "seconds": 24.1
@@ -2076,7 +1236,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 25.2
+  "seconds": 24.6
  },
  {
   "file": "ofgem_ed2/v4_2024-07.xlsx",
@@ -2139,7 +1299,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.4
+  "seconds": 24.0
  },
  {
   "file": "ofgem_ed2/v4_2025-01.xlsx",
@@ -2202,7 +1362,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.4
+  "seconds": 24.0
  },
  {
   "file": "ofgem_ed2/v4_2025-07.xlsx",
@@ -2273,7 +1433,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.8
+  "seconds": 24.2
  },
  {
   "file": "ofgem_ed2/v4_2026-01.xlsx",
@@ -2344,7 +1504,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.9
+  "seconds": 24.1
  },
  {
   "file": "ofgem_ed2/v5_2026-06.xlsx",
@@ -2407,17 +1567,17 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.4
+  "seconds": 23.8
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
   "sheets": 14,
   "cells": 27493,
   "errors": 5,
-  "smells": 12,
+  "smells": 6,
   "by_rule": {
    "skipped-cell": 5,
-   "long-formula": 9,
+   "long-formula": 3,
    "hardcode-in-formula": 1,
    "volatile": 2
   },
@@ -2462,7 +1622,7 @@
     "severity": "smell",
     "ref": "Finance!D7",
     "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 25 cells (Finance!D10 to Finance!D9)"
+    "detail": "325 characters \u2014 the same formula in 7 places across 7 sheets (Finance, NonCore, RAVBalances, Return&RAV, \u2026)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2495,48 +1655,6 @@
    {
     "rule": "long-formula",
     "severity": "smell",
-    "ref": "NonCore!D8",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 24 cells (NonCore!D10 to NonCore!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "RAVBalances!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 25 cells (RAVBalances!D10 to RAVBalances!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Return&RAV!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 16 cells (Return&RAV!D10 to Return&RAV!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "TIM!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 27 cells (TIM!D11 to TIM!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Tax!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 19 cells (Tax!D10 to Tax!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "TaxPools!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 29 cells (TaxPools!D10 to TaxPools!D8)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
     "ref": "Totex!D10",
     "figure": "",
     "detail": "340 characters \u2014 one formula filled across 30 cells (Totex!D10 to Totex!D43)"
@@ -2549,10 +1667,10 @@
   "sheets": 14,
   "cells": 16656,
   "errors": 3,
-  "smells": 10,
+  "smells": 3,
   "by_rule": {
    "skipped-cell": 3,
-   "long-formula": 9,
+   "long-formula": 2,
    "hardcode-in-formula": 1
   },
   "findings": [
@@ -2582,14 +1700,7 @@
     "severity": "smell",
     "ref": "Finance!D7",
     "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 23 cells (Finance!D10 to Finance!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "FuelPoor!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 5 cells (FuelPoor!D10 to FuelPoor!D9)"
+    "detail": "325 characters \u2014 the same formula in 8 places across 8 sheets (Finance, FuelPoor, RAVBalances, Return&RAV, \u2026)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2604,62 +1715,20 @@
     "ref": "MainInputs!AY76",
     "figure": "",
     "detail": "202 characters \u2014 one formula filled across 40 cells (FY2031\u2013FY2031)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "RAVBalances!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 18 cells (RAVBalances!D10 to RAVBalances!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Return&RAV!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 14 cells (Return&RAV!D10 to Return&RAV!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "TIM!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 24 cells (TIM!D10 to TIM!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Tax!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 19 cells (Tax!D10 to Tax!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "TaxPools!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 29 cells (TaxPools!D10 to TaxPools!D8)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Totex!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 27 cells (Totex!D10 to Totex!D8)"
    }
   ],
-  "seconds": 2.6
+  "seconds": 2.5
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
   "sheets": 18,
   "cells": 27555,
   "errors": 5,
-  "smells": 12,
+  "smells": 4,
   "by_rule": {
    "skipped-cell": 4,
    "error-value": 1,
-   "long-formula": 10,
+   "long-formula": 2,
    "hardcode-in-formula": 2
   },
   "findings": [
@@ -2703,35 +1772,7 @@
     "severity": "smell",
     "ref": "Finance!D7",
     "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 36 cells (Finance!D10 to Finance!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "NonCore!D8",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 20 cells (NonCore!D10 to NonCore!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "RAVBalances!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 17 cells (RAVBalances!D10 to RAVBalances!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Return&RAV!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 16 cells (Return&RAV!D10 to Return&RAV!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "SO_Calculations!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 52 cells (SO_Calculations!D100 to SO_Calculations!D99)"
+    "detail": "325 characters \u2014 the same formula in 9 places across 9 sheets (Finance, NonCore, RAVBalances, Return&RAV, \u2026)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2739,13 +1780,6 @@
     "ref": "SO_MainInputs!AY35",
     "figure": "1.5, 2.5",
     "detail": "1.5, 2.5 inside =IF(AND(AW35=\"PCD\",AV35=\"RPEs Apply\"),1,IF(AND(AW35=\"UM\",AV3 \u2014 one formula filled across 14 cells (FY2031\u2013FY2031)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "TIM!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 27 cells (TIM!D11 to TIM!D9)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2760,30 +1794,9 @@
     "ref": "TO_MainInputs!AY75",
     "figure": "",
     "detail": "202 characters \u2014 one formula filled across 33 cells (FY2031\u2013FY2031)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Tax!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 18 cells (Tax!D10 to Tax!D9)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "TaxPools!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 29 cells (TaxPools!D10 to TaxPools!D8)"
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Totex!D7",
-    "figure": "",
-    "detail": "325 characters \u2014 one formula filled across 32 cells (Totex!D10 to Totex!D8)"
    }
   ],
-  "seconds": 4.0
+  "seconds": 3.7
  },
  {
   "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -3270,20 +2283,20 @@
     "detail": "260 characters \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)"
    }
   ],
-  "seconds": 325.0
+  "seconds": 357.8
  },
  {
   "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
   "sheets": 46,
   "cells": 652141,
   "errors": 6,
-  "smells": 84,
+  "smells": 80,
   "by_rule": {
    "inconsistent-row": 1,
    "skipped-cell": 1,
    "error-value": 7,
    "typed-over-formula": 1,
-   "hardcode-in-formula": 38,
+   "hardcode-in-formula": 34,
    "volatile": 6,
    "long-formula": 36
   },
@@ -3874,28 +2887,14 @@
     "severity": "smell",
     "ref": "Scotland!AU815",
     "figure": "6.2",
-    "detail": "6.2 inside =6.2/10 \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+    "detail": "6.2 inside =6.2/10 \u2014 the same decision at AU815 on 3 sheets (Scotland, Southern, Wales & West), each sheet holding its own number"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scotland!AU817",
     "figure": "44.76",
-    "detail": "44.76 inside =44.76/10 \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Southern!AU815",
-    "figure": "6.2",
-    "detail": "6.2 inside =6.2/10 \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Southern!AU817",
-    "figure": "44.76",
-    "detail": "44.76 inside =44.76/10 \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+    "detail": "44.76 inside =44.76/10 \u2014 the same decision at AU817 on 3 sheets (Scotland, Southern, Wales & West), each sheet holding its own number"
    },
    {
     "rule": "long-formula",
@@ -3903,23 +2902,9 @@
     "ref": "Totex!AP25",
     "figure": "",
     "detail": "186 characters \u2014 one formula filled across 50 cells (FY2022\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Wales & West!AU815",
-    "figure": "11.8, 5",
-    "detail": "11.8, 5 inside =11.8/5 \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Wales & West!AU817",
-    "figure": "19.19, 5",
-    "detail": "19.19, 5 inside =19.19/5 \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    }
   ],
-  "seconds": 383.9
+  "seconds": 384.4
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
@@ -3960,7 +2945,7 @@
     "detail": "22 inside =IF(A14=2030, 22/24, IF(A14=2031, 10/24,0)) \u2014 one formula filled across 23 cells (One-Off Wedge!E14 to One-Off Wedge!E36)"
    }
   ],
-  "seconds": 1.9
+  "seconds": 1.7
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
@@ -4031,7 +3016,7 @@
     "detail": "365.2425 inside =ROUND(SONIA_Fwd_Curve[[#This Row],[Date]]+(365.2425*SONIA_F \u2014 one formula filled across 29700 cells (SONIA_Fwd_Curve!E10 to SONIA_Fwd_Curve!E9999)"
    }
   ],
-  "seconds": 121.6
+  "seconds": 120.1
  },
  {
   "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -4525,17 +3510,17 @@
     "detail": "5 inside =IF($I$275=1,($AU$273+$AU$274)/5,AT10*($AU$273+$AU$274)) \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    }
   ],
-  "seconds": 335.7
+  "seconds": 331.9
  },
  {
   "file": "ofgem_riio3/final_et3_bpfm.xlsm",
   "sheets": 43,
   "cells": 624026,
   "errors": 5,
-  "smells": 69,
+  "smells": 66,
   "by_rule": {
    "skipped-cell": 1,
-   "error-value": 10,
+   "error-value": 7,
    "inconsistent-row": 1,
    "typed-over-formula": 1,
    "volatile": 8,
@@ -4674,7 +3659,7 @@
     "severity": "smell",
     "ref": "F2b - Financial Summary (YE)!A1",
     "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
+    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns \u2014 the same formula at A1 on 4 sheets (F2b - Financial Summary (YE), F4 - Floating Rate Debt, F5 - Inflation Linked Debt, PCFMInterface)"
    },
    {
     "rule": "long-formula",
@@ -4754,13 +3739,6 @@
     "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F3 - Fixed Rate Debt!HT100 to F3 - Fixed Rate Debt!II99)"
    },
    {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "F4 - Floating Rate Debt!A1",
-    "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
-   },
-   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "F4 - Floating Rate Debt!AM12",
@@ -4794,13 +3772,6 @@
     "ref": "F4 - Floating Rate Debt!GH12",
     "figure": "",
     "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!GH100 to F4 - Floating Rate Debt!GW99)"
-   },
-   {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "F5 - Inflation Linked Debt!A1",
-    "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
    },
    {
     "rule": "long-formula",
@@ -4943,13 +3914,6 @@
     "detail": "0.5 inside =IF($A2 < DATE(2021, 4, 1), K2, IF($A2 = DATE(2021, 4, 1), L \u2014 one formula filled across 384 cells (Monthly Inflation!L10 to Monthly Inflation!L99)"
    },
    {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "PCFMInterface!A1",
-    "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
-   },
-   {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "PCFMInterface!I1094",
@@ -5062,21 +4026,21 @@
     "detail": "uses OFFSET in 10 cells of one row"
    }
   ],
-  "seconds": 347.0
+  "seconds": 340.7
  },
  {
   "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
   "sheets": 49,
   "cells": 693716,
   "errors": 7,
-  "smells": 84,
+  "smells": 79,
   "by_rule": {
-   "error-value": 10,
+   "error-value": 7,
    "inconsistent-row": 1,
    "skipped-cell": 1,
    "typed-over-formula": 3,
    "volatile": 7,
-   "hardcode-in-formula": 35,
+   "hardcode-in-formula": 33,
    "long-formula": 34
   },
   "findings": [
@@ -5246,7 +4210,7 @@
     "severity": "smell",
     "ref": "F2b - Financial Summary (YE)!A1",
     "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
+    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns \u2014 the same formula at A1 on 4 sheets (F2b - Financial Summary (YE), F4 - Floating Rate Debt, F5 - Inflation Linked Debt, PCFMInterface)"
    },
    {
     "rule": "long-formula",
@@ -5326,13 +4290,6 @@
     "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (FY2015\u2013FY2030)"
    },
    {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "F4 - Floating Rate Debt!A1",
-    "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
-   },
-   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "F4 - Floating Rate Debt!AM12",
@@ -5366,13 +4323,6 @@
     "ref": "F4 - Floating Rate Debt!GH12",
     "figure": "",
     "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!GH100 to F4 - Floating Rate Debt!GW99)"
-   },
-   {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "F5 - Inflation Linked Debt!A1",
-    "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
    },
    {
     "rule": "long-formula",
@@ -5506,13 +4456,6 @@
     "ref": "Monthly Inflation!L2",
     "figure": "0.5",
     "detail": "0.5 inside =IF($A2 < DATE(2021, 4, 1), K2, IF($A2 = DATE(2021, 4, 1), L \u2014 one formula filled across 384 cells (Monthly Inflation!L10 to Monthly Inflation!L99)"
-   },
-   {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "PCFMInterface!A1",
-    "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
    },
    {
     "rule": "hardcode-in-formula",
@@ -5687,14 +4630,7 @@
     "severity": "smell",
     "ref": "Scotland!AU818",
     "figure": "44.76",
-    "detail": "44.76 inside =44.76/10 \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Southern!AU818",
-    "figure": "44.76",
-    "detail": "44.76 inside =44.76/10 \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+    "detail": "44.76 inside =44.76/10 \u2014 the same decision at AU818 on 3 sheets (Scotland, Southern, Wales & West), each sheet holding its own number"
    },
    {
     "rule": "volatile",
@@ -5709,28 +4645,21 @@
     "ref": "Totex!AP25",
     "figure": "",
     "detail": "189 characters \u2014 one formula filled across 50 cells (FY2022\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Wales & West!AU818",
-    "figure": "19.19, 5",
-    "detail": "19.19, 5 inside =19.19/5 \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    }
   ],
-  "seconds": 381.9
+  "seconds": 380.5
  },
  {
   "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
   "sheets": 44,
   "cells": 604371,
   "errors": 6,
-  "smells": 73,
+  "smells": 70,
   "by_rule": {
    "skipped-cell": 2,
    "typed-over-formula": 4,
    "volatile": 10,
-   "error-value": 10,
+   "error-value": 7,
    "hardcode-in-formula": 21,
    "long-formula": 32
   },
@@ -5894,7 +4823,7 @@
     "severity": "smell",
     "ref": "F2b - Financial Summary (YE)!A1",
     "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
+    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns \u2014 the same formula at A1 on 4 sheets (F2b - Financial Summary (YE), F4 - Floating Rate Debt, F5 - Inflation Linked Debt, PCFMInterface_SO)"
    },
    {
     "rule": "long-formula",
@@ -5974,13 +4903,6 @@
     "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F3 - Fixed Rate Debt!HT100 to F3 - Fixed Rate Debt!II99)"
    },
    {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "F4 - Floating Rate Debt!A1",
-    "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
-   },
-   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "F4 - Floating Rate Debt!AM12",
@@ -6014,13 +4936,6 @@
     "ref": "F4 - Floating Rate Debt!GH12",
     "figure": "",
     "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!GH100 to F4 - Floating Rate Debt!GW99)"
-   },
-   {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "F5 - Inflation Linked Debt!A1",
-    "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
    },
    {
     "rule": "long-formula",
@@ -6147,13 +5062,6 @@
     "ref": "Monthly Inflation!L2",
     "figure": "0.5",
     "detail": "0.5 inside =IF($A2 < DATE(2021, 4, 1), K2, IF($A2 = DATE(2021, 4, 1), L \u2014 one formula filled across 384 cells (Monthly Inflation!L10 to Monthly Inflation!L99)"
-   },
-   {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "PCFMInterface_SO!A1",
-    "figure": "1",
-    "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
    },
    {
     "rule": "error-value",
@@ -6289,7 +5197,7 @@
     "detail": "uses OFFSET in 10 cells of one row"
    }
   ],
-  "seconds": 353.1
+  "seconds": 344.8
  },
  {
   "file": "ofgem_riio3/final_wacc.xlsx",
@@ -6381,6 +5289,6 @@
     "detail": "365.2425 inside =ROUND(SONIA_Fwd_Curve[[#This Row],[Date]]+(365.2425*SONIA_F \u2014 one formula filled across 26350 cells (SONIA_Fwd_Curve!E10 to SONIA_Fwd_Curve!E9999)"
    }
   ],
-  "seconds": 131.8
+  "seconds": 130.5
  }
 ]
