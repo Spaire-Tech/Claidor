@@ -1103,16 +1103,18 @@ def test_a_partition_sibling_just_below_the_total_covers_its_rows() -> None:
 
 
 def test_number_words_document_their_constants() -> None:
-    """A row named « Half year discount factor » has said everything
-    about its `^0.5` — English states numbers in words as surely as
-    in digits. The same power under a label that does not speak it
-    still reports."""
+    """A row named « Half weighting » has said everything about its
+    `*0.5` — English states numbers in words as surely as in digits.
+    The same factor under a label that does not speak it still
+    reports. (The judged card was a `^0.5`; Round 5's square-root
+    principle now makes exponent halves notation everywhere, so the
+    words principle is tested on a multiplier.)"""
 
     def build(sheet) -> None:
-        sheet["A2"] = "Half year discount factor"
-        sheet["B2"] = "=Z2^0.5"
-        sheet["A4"] = "Discount factor"
-        sheet["B4"] = "=Z4^0.5"
+        sheet["A2"] = "Half weighting"
+        sheet["B2"] = "=Z2*0.5"
+        sheet["A4"] = "Weighting"
+        sheet["B4"] = "=Z4*0.5"
 
     result = _tmp_book(build)
     hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
@@ -1274,3 +1276,132 @@ def test_a_folded_finding_names_every_cell_it_stands_for() -> None:
     assert "F3" in members
     assert "J6" in members
     assert "H4" in members
+
+
+def test_one_malformed_formula_is_one_finding_not_a_dead_workbook() -> None:
+    """Round 4's planting run watched the reader die on a partial-range
+    #REF! and take the whole file with it. One bad formula costs one
+    loud finding; every other cell still gets audited."""
+
+    def build(sheet) -> None:
+        sheet["A2"] = "Total"
+        sheet["B2"] = "=SUM(B3:#REF!)"
+        for row in range(3, 8):
+            sheet[f"A{row}"] = f"Series {row}"
+            sheet[f"B{row}"] = f"=Z{row}*1.05"
+
+    result = _tmp_book(build)
+    broken = [
+        f
+        for f in result.findings
+        if f.rule == "error-value" and "could not be parsed" in f.detail
+    ]
+    assert [f.ref for f in broken] == ["Sheet!B2"], [
+        (f.ref, f.detail) for f in result.findings
+    ]
+    assert result.examined > 1
+
+
+def test_the_unseen_corpus_grammar_is_learned() -> None:
+    """Round 4's six judged noise classes, one row each: a lookup's
+    index argument, an index chosen through a conditional, an
+    infinity sentinel, a square root written as a power, a
+    diagnostic's threshold, a self-labelling year counter, and the
+    arithmetic mean written out — none is an assumption. The genuine
+    assumption beside them still reports."""
+
+    def build(sheet) -> None:
+        sheet["A2"] = "Rating lookup"
+        sheet["B2"] = "=VLOOKUP(Z2,'Sheet'!A10:S95,15)"
+        sheet["B3"] = '=VLOOKUP(Z3,A10:F79,IF(Z1="US",7,6))'
+        sheet["B4"] = "=IF(Z4>0,Y4/Z4,10000000)"
+        sheet["B5"] = "=(Y5^0.5)*(Z5^(0.5))"
+        sheet["B6"] = '=IF(Z6>1.2,"Too high a beta for stable growth"," ")'
+        sheet["B7"] = '=IF(Z7<5," ",5)'
+        sheet["B8"] = "=(Q8+R8+S8+T8+U8)/5"
+        sheet["B9"] = "=SUM(Q9:U9)/5"
+        sheet["B11"] = "=Z11*1.2345"
+
+    result = _tmp_book(build)
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert [f.ref for f in hardcodes] == ["Sheet!B11"], [
+        (f.ref, f.detail) for f in hardcodes
+    ]
+
+
+def test_external_links_are_one_event_per_source_workbook() -> None:
+    """Round 4's flood: 762 cells reading sibling workbooks are not
+    762 findings — they are « this workbook imports from [1] and
+    [2] », two events with rosters."""
+
+    def build(sheet) -> None:
+        for row in range(2, 9):
+            sheet[f"B{row}"] = f"=[1]Outputs!C{row}"
+        sheet["C4"] = "=[2]Output!I8"
+        sheet["C5"] = "=[2]Output!J8"
+
+    result = _tmp_book(build)
+    links = [f for f in result.findings if f.rule == "external-link"]
+    assert len(links) == 2, [(f.ref, f.detail) for f in links]
+    assert {f.severity for f in links} == {"smell"}
+    one = next(f for f in links if "[1]" in f.detail)
+    assert "7 cells" in one.detail
+    assert one.cells.count(",") == 6
+
+
+def test_a_flipped_operator_in_a_short_run_is_seen() -> None:
+    """Round 4's zero: `=Revenue+Costs` flipped to `=Revenue-Costs`
+    beside two identical siblings went unseen where the row pass's
+    gates never opened. A uniform family with exactly one changed
+    token is the strongest witness a static reader gets."""
+
+    def build(sheet) -> None:
+        sheet["A5"] = "Margin"
+        sheet["C5"] = "=C3-C4*C2"
+        sheet["D5"] = "=D3+D4*D2"
+        sheet["E5"] = "=E3-E4*E2"
+
+    result = _tmp_book(build)
+    breaks = [f for f in result.findings if f.rule == "inconsistent-row"]
+    assert [f.ref for f in breaks] == ["Sheet!D5"], [(f.ref, f.detail) for f in breaks]
+
+    def unlabelled(sheet) -> None:
+        #: No row label — the row pass's gates stay closed, and only
+        #: the single-token family witness sees the flip.
+        sheet["C5"] = "=C3-C4*C2"
+        sheet["D5"] = "=D3+D4*D2"
+        sheet["E5"] = "=E3-E4*E2"
+
+    result = _tmp_book(unlabelled)
+    breaks = [f for f in result.findings if f.rule == "inconsistent-row"]
+    assert [f.ref for f in breaks] == ["Sheet!D5"], [(f.ref, f.detail) for f in breaks]
+
+
+def test_a_displaced_reference_in_a_short_run_is_seen() -> None:
+    """The same family with one reference shifted a row — the classic
+    off-by-one — reads as a displaced window, not a different formula."""
+
+    def build(sheet) -> None:
+        sheet["A5"] = "Index"
+        sheet["C5"] = "=C3*1.21"
+        sheet["D5"] = "=D3*1.21"
+        sheet["E5"] = "=E2*1.21"
+        sheet["F5"] = "=F3*1.21"
+
+    result = _tmp_book(build)
+    breaks = [f for f in result.findings if f.rule == "inconsistent-row"]
+    assert [f.ref for f in breaks] == ["Sheet!E5"], [(f.ref, f.detail) for f in breaks]
+
+
+def test_a_deliberate_alternating_row_is_not_a_mutation() -> None:
+    """Two shapes taking turns is a pattern, not a family with one
+    deviant — the detector demands all-but-one agreement."""
+
+    def build(sheet) -> None:
+        sheet["C5"] = "=C3+C4"
+        sheet["D5"] = "=D3-D4"
+        sheet["E5"] = "=E3+E4"
+        sheet["F5"] = "=F3-F4"
+
+    result = _tmp_book(build)
+    assert not any(f.rule == "inconsistent-row" for f in result.findings)

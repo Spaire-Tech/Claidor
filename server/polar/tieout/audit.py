@@ -264,6 +264,17 @@ HEADLINES: dict[str, str] = {
 }
 
 
+def _tokens(formula: str) -> list[Any]:
+    """The formula's tokens, or nothing when the grammar rejects it.
+
+    The reader already records rejected formulas on the workbook and
+    the audit reports each once — every other pass just skips them."""
+    try:
+        return list(Tokenizer(formula).items)
+    except Exception:
+        return []
+
+
 def shown_number(value: float) -> str:
     """A figure as a banker says it: 512.5m, 1.2bn, 19,100.
 
@@ -528,6 +539,15 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             "is calculated. Check whether this is an intentional override."
         )
     if finding.rule == "inconsistent-row":
+        if finding.detail.startswith("the same calculation as"):
+            return (
+                f"{subject} computes {finding.detail}. A flipped sign "
+                "changes the answer everywhere this cell flows."
+            )
+        if finding.detail.startswith("the same formula as"):
+            return (
+                f"{subject} is {finding.detail}. Check which row it should be reading."
+            )
         if finding.detail.startswith("tests "):
             #: The selector drift: same formula, different switch value.
             what = finding.detail.split(":", 1)[0]
@@ -656,8 +676,9 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
 
     sentence = {
         "external-link": (
-            f"{at} pulls its value from another workbook that is not "
-            "here, so nothing about it can be traced or checked."
+            f"This workbook {finding.detail.split(' — ')[0].removeprefix('reads')} "
+            f"— {finding.figure or 'its'} cells pull values from it, and "
+            "none of them can be traced or checked here."
         ),
         "volatile": (
             f"{at} recalculates every time anything in the workbook "
@@ -694,6 +715,7 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     """
     result = Audit(examined=len(book.cells))
 
+    _unreadable_formulas(book, result)
     _error_values(book, result)
     _external_links(book, result)
     _volatile(book, result)
@@ -701,6 +723,7 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _literals(book, result)
     _rows(book, result)
     _selector_drift(book, result)
+    _mutations(book, result)
     _typed_islands(book, result)
     _circularity(book, result)
     _skipped_cells(book, result)
@@ -1336,6 +1359,30 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
     return keep
 
 
+def _unreadable_formulas(book: Workbook, result: Audit) -> None:
+    """One malformed formula is one finding, never a dead workbook.
+
+    Round 4's planting run watched the reader die on a partial-range
+    `#REF!` and take the whole file with it. The reader now records
+    what the grammar rejected and moves on; this reports each rejected
+    cell once, loud — a formula Excel's own grammar cannot parse is
+    damage by definition."""
+    for ref in book.unparseable:
+        cell = book.cells.get(ref)
+        shown = (cell.formula or "")[:60] if cell else ""
+        result.findings.append(
+            Finding(
+                rule="error-value",
+                severity="error",
+                ref=ref,
+                sheet=ref.rsplit("!", 1)[0],
+                name=cell.name if cell else "",
+                detail=f"its formula could not be parsed: {shown}",
+                source="ISO/IEC 29500 formula grammar",
+            )
+        )
+
+
 def _error_values(book: Workbook, result: Audit) -> None:
     """Error values, by what kind of error they are.
 
@@ -1611,19 +1658,54 @@ def _error_values(book: Workbook, result: Audit) -> None:
 
 
 def _external_links(book: Workbook, result: Audit) -> None:
+    """One import decision per source workbook, however many cells ride on it.
+
+    Round 4's exam: the NZ Commerce Commission builds a determination
+    as a suite of workbooks that read each other, and per-cell
+    reporting flooded two files with ~1,500 findings that a human
+    reads as « this workbook imports from its six siblings ». The
+    event is the *source*: workbook [2] → the import family → every
+    cell that reads it as the roster. Excel numbers the sources
+    (`[1]`, `[2]`, …) per file, so the number is the identity even
+    when the path is not stored in the formula text.
+
+    Severity: a smell, not an error — a link is provenance that
+    cannot be checked here, which is an assumption at risk, not
+    damage the model displays.
+    """
+    by_source: dict[str, list[Cell]] = {}
     for cell in book.cells.values():
-        if cell.formula and EXTERNAL.search(cell.formula):
-            result.findings.append(
-                Finding(
-                    rule="external-link",
-                    severity="error",
-                    ref=cell.ref,
-                    sheet=cell.sheet,
-                    name=cell.name,
-                    detail=f"reads another workbook: {cell.formula[:70]}",
-                    source="ICAEW P19",
-                )
+        if cell.formula and (m := EXTERNAL.search(cell.formula)):
+            by_source.setdefault(m.group(0), []).append(cell)
+    for source, cells in sorted(by_source.items()):
+        cells.sort(key=lambda one: one.ref)
+        first = cells[0]
+        sheets = sorted({one.sheet for one in cells})
+        shown = ", ".join(sheets[:4]) + (", …" if len(sheets) > 4 else "")
+        where = (
+            f"in {len(cells)} cells across {len(sheets)} sheets ({shown})"
+            if len(sheets) > 1
+            else f"in {len(cells)} cells of « {sheets[0]} »"
+            if len(cells) > 1
+            else f"at {first.ref}"
+        )
+        result.findings.append(
+            Finding(
+                rule="external-link",
+                severity="smell",
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=(
+                    f"reads another workbook, {source} — {where} — for "
+                    f"example {(first.formula or '')[:60]}"
+                ),
+                source="ICAEW P19",
+                figure=str(len(cells)),
+                figure_unit=f"cells reading {source}",
+                cells=_roster([one.ref for one in cells]),
             )
+        )
 
 
 def _volatile(book: Workbook, result: Audit) -> None:
@@ -1637,7 +1719,7 @@ def _volatile(book: Workbook, result: Audit) -> None:
             continue
         used = {
             token.value.rstrip("(").upper()
-            for token in Tokenizer(cell.formula).items
+            for token in _tokens(cell.formula)
             if token.type == "FUNC"
         } & VOLATILE
         #: A TODAY() nothing reads is a « data valid from » stamp —
@@ -1671,7 +1753,7 @@ def _enumeration(formula: str) -> bool:
     """
     depth = 0
     deepest = 0
-    for token in Tokenizer(formula).items:
+    for token in _tokens(formula):
         if token.type in ("FUNC", "PAREN"):
             if token.subtype == "OPEN":
                 depth += 1
@@ -1803,24 +1885,74 @@ def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
     check row's tolerance); the exponent of a power of ten (`10^6` is
     a unit conversion); and a tolerance beside an ABS comparison
     (`ABS(a-b)<0.001` is the model checking itself).
+
+    Round 4's unseen corpus taught six more pieces of the grammar,
+    each from judged noise: a lookup's index argument is a selector
+    (`VLOOKUP(x,table,15)` picks column fifteen, it does not assume
+    fifteen); a round power of ten standing bare in a branch is an
+    infinity sentinel (`IF(F4>0,F3/F4,10000000)`); `^0.5` is the
+    square root written as a power; a literal in a formula whose
+    outputs are sentences is a diagnostic's threshold, not a number
+    that moves the model; a literal both compared against and echoed
+    bare (`IF(D14<5," ",5)`) is the cell's own index; and a divisor
+    equal to the operand count of what it divides is the arithmetic
+    mean written out (`(a+b+c+d+e)/5`, `SUM(B8:F8)/5`).
     """
     tokens = [
         token
-        for token in Tokenizer(formula).items
+        for token in _tokens(formula)
         if token.type not in ("WHITE-SPACE", "WHITESPACE")
     ]
     found: list[str] = []
     selectors: list[str] = []
     #: One frame per open call, parenthesis or array constant:
-    #: [function name, argument index] — the same walk `references_of`
-    #: does in the reader. An array constant's frame is named « { ».
+    #: [function name, argument index, top-level plus terms, range
+    #: span] — the same walk `references_of` does in the reader. An
+    #: array constant's frame is named « { ».
     frames: list[list[Any]] = []
+    #: What each CLOSE token's group counted as addends — the mean's
+    #: divisor check reads it: `(a+b+c)/3` and `SUM(B8:F8)/5`.
+    closed_terms: dict[int, float] = {}
     #: Which function each CLOSE token ended, so a literal can know
     #: what it is being compared against: in `WEEKDAY(A2,2)<6` the
     #: token before the `<` closed WEEKDAY, and the 6 is a day of the
     #: week, not an assumption.
     closed_at: dict[int, str] = {}
     tolerant = "ABS(" in formula.upper()
+    #: A formula that speaks sentences is a diagnostic — its numbers
+    #: are the message's thresholds, not the model's.
+    diagnostic = any(
+        token.type == "OPERAND"
+        and token.subtype == "TEXT"
+        and " " in token.value.strip('"').strip()
+        for token in tokens
+    )
+    #: Every literal that stands next to a comparison anywhere in the
+    #: formula — the echo check reads it: a number compared against
+    #: and then returned bare is the cell's own label.
+    compared: set[str] = set()
+    echoed: set[str] = set()
+    for index, token in enumerate(tokens):
+        if token.type == "OPERAND" and token.subtype == "NUMBER":
+            before = tokens[index - 1] if index else None
+            behind = tokens[index + 1] if index + 1 < len(tokens) else None
+            if any(
+                one is not None
+                and one.type.startswith("OPERATOR")
+                and one.value in ("<", "<=", ">", ">=", "=", "<>")
+                for one in (before, behind)
+            ):
+                compared.add(token.value)
+            elif (
+                before is None
+                or before.type == "SEP"
+                or (before.type in ("FUNC", "PAREN") and before.subtype == "OPEN")
+            ) and (
+                behind is None
+                or behind.type == "SEP"
+                or (behind.type in ("FUNC", "PAREN") and behind.subtype == "CLOSE")
+            ):
+                echoed.add(token.value)
 
     #: A formula that joins text with `&` at its top level *is* a
     #: label — « £m 23/24 prices » built from a year cell — and every
@@ -1842,20 +1974,43 @@ def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
 
     for index, token in enumerate(tokens):
         if token.type == "FUNC" and token.subtype == "OPEN":
-            frames.append([token.value.rstrip("(").upper(), 0])
+            frames.append([token.value.rstrip("(").upper(), 0, 0, 0.0])
             continue
         if token.type == "ARRAY" and token.subtype == "OPEN":
-            frames.append(["{", 0])
+            frames.append(["{", 0, 0, 0.0])
             continue
         if token.type == "PAREN" and token.subtype == "OPEN":
-            frames.append(["", 0])
+            frames.append(["", 0, 0, 0.0])
             continue
         if token.type in ("FUNC", "PAREN", "ARRAY") and token.subtype == "CLOSE":
             if frames:
-                closed_at[index] = frames.pop()[0]
+                name, _, plus, span = frames.pop()
+                closed_at[index] = name
+                #: What the group would count as addends: a run of
+                #: `+` terms, or a SUM/AVERAGE over one plain range.
+                closed_terms[index] = span if span else plus + 1 if plus else 0.0
             continue
         if token.type == "SEP" and token.subtype == "ARG" and frames:
             frames[-1][1] += 1
+            continue
+        if token.type.startswith("OPERATOR") and token.value == "+" and frames:
+            frames[-1][2] += 1
+            continue
+        if token.type == "OPERAND" and token.subtype == "RANGE" and frames:
+            span_match = re.fullmatch(
+                r"\$?([A-Z]{1,3})\$?(\d+):\$?([A-Z]{1,3})\$?(\d+)",
+                token.value.strip(),
+            )
+            if span_match:
+                c1, r1, c2, r2 = span_match.groups()
+                if c1 == c2:
+                    frames[-1][3] = abs(int(r2) - int(r1)) + 1
+                elif r1 == r2:
+                    wide = [0, 0]
+                    for at, letters in enumerate((c1, c2)):
+                        for ch in letters:
+                            wide[at] = wide[at] * 26 + ord(ch) - 64
+                    frames[-1][3] = abs(wide[1] - wide[0]) + 1
             continue
         if token.type != "OPERAND" or token.subtype != "NUMBER":
             continue
@@ -1886,10 +2041,11 @@ def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
         #: — `MATCH(m_identity,{6,7,8},0)` — is a list of case labels,
         #: switch settings like any equality selector. An array
         #: constant anywhere else (SUMPRODUCT weights) stays a number.
-        if any(name == "{" for name, _ in frames):
-            at = max(i for i, (name, _) in enumerate(frames) if name == "{")
+        if any(frame[0] == "{" for frame in frames):
+            at = max(i for i, frame in enumerate(frames) if frame[0] == "{")
             owner = next(
-                ((name, arg) for name, arg in reversed(frames[:at]) if name), None
+                ((frame[0], frame[1]) for frame in reversed(frames[:at]) if frame[0]),
+                None,
             )
             if owner is not None and owner[0] == "MATCH" and owner[1] == 1:
                 selectors.append(spelled)
@@ -1901,7 +2057,7 @@ def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
             and closed_at.get(index - 2) in CALENDAR_PARTS
         ):
             continue
-        if any(name in DATE_FUNCS or name in TEXT_FUNCS for name, _ in frames):
+        if any(frame[0] in DATE_FUNCS or frame[0] in TEXT_FUNCS for frame in frames):
             continue
         if frames and frames[-1][0] in ROUND_FUNCS and frames[-1][1] >= 1:
             continue
@@ -1919,10 +2075,92 @@ def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
             continue
         if tolerant and (_operator(prev, ("<", "<=")) or _operator(after, (">", ">="))):
             continue
+        #: A lookup's index argument picks a column or a case — it is
+        #: a selector, never an assumption. `VLOOKUP(x, table, 15)`
+        #: reads column fifteen; conditionals wrapping the argument
+        #: (`…IF(mode="US",2,3)…`) pass the position through.
+        owner = next(
+            (
+                (name, arg)
+                for name, arg, _, _ in reversed(frames)
+                if name and name not in ("{", "IF", "IFS", "IFERROR", "IFNA")
+            ),
+            None,
+        )
+        if owner in SELECTOR_ARGS:
+            selectors.append(spelled)
+            continue
+        comparator = _operator(prev, ("<", "<=", ">", ">=", "=", "<>")) or _operator(
+            after, ("<", "<=", ">", ">=", "=", "<>")
+        )
+        bare = (
+            prev is None
+            or prev.type == "SEP"
+            or (prev.type in ("FUNC", "PAREN") and prev.subtype == "OPEN")
+            or prev.type == "OPERATOR-PREFIX"
+        ) and (
+            after is None
+            or after.type == "SEP"
+            or (after.type in ("FUNC", "PAREN") and after.subtype == "CLOSE")
+        )
+        #: A round power of ten standing bare in a branch is an
+        #: infinity sentinel — `IF(F4>0,F3/F4,10000000)` says « no
+        #: interest expense, coverage unbounded », not ten million.
+        if bare and abs(number) >= 1e5 and math.log10(abs(number)).is_integer():
+            continue
+        #: In a formula that speaks sentences, a compared literal is
+        #: the diagnostic's threshold — the message's bound, not the
+        #: model's number.
+        if diagnostic and comparator:
+            continue
+        #: Compared against somewhere in the formula and echoed bare
+        #: elsewhere (or here): the cell's own index — `IF(D14<5," ",5)`
+        #: is a year counter labelling itself, and both fives are the
+        #: label.
+        if token.value in compared and (bare or token.value in echoed):
+            continue
+        #: `^0.5` is the square root written as a power. `^(0.5)` too.
+        if number == 0.5 and (
+            _operator(prev, ("^",))
+            or (
+                prev is not None
+                and prev.type == "PAREN"
+                and prev.subtype == "OPEN"
+                and index >= 2
+                and _operator(tokens[index - 2], ("^",))
+            )
+        ):
+            continue
+        #: A divisor equal to the operand count of what it divides is
+        #: the arithmetic mean written out — `(a+b+c+d+e)/5`,
+        #: `SUM(B8:F8)/5`.
+        if (
+            _operator(prev, ("/",))
+            and index >= 2
+            and closed_terms.get(index - 2) == number
+        ):
+            continue
         if number in INNOCENT or (number.is_integer() and abs(number) <= 4):
             continue
         found.append(spelled)
     return tuple(found), tuple(selectors)
+
+
+#: The argument positions (zero-based) that pick rather than assume:
+#: a lookup's column or row index, a CHOOSE or SUBTOTAL case, MATCH's
+#: match type. Learned whole from Round 4's unseen corpus, where they
+#: were most of the judged noise.
+SELECTOR_ARGS = frozenset(
+    {
+        ("VLOOKUP", 2),
+        ("HLOOKUP", 2),
+        ("MATCH", 2),
+        ("INDEX", 1),
+        ("INDEX", 2),
+        ("CHOOSE", 0),
+        ("SUBTOTAL", 0),
+    }
+)
 
 
 def _buried(formula: str) -> tuple[str, ...]:
@@ -2197,6 +2435,159 @@ def _rows(book: Workbook, result: Audit) -> None:
                     )
 
 
+def _shape_list(cell: Cell) -> list[str]:
+    """The cell's shape as a token list, for position-level comparison."""
+    if cell.formula is None:
+        return []
+    out = []
+    for token in _tokens(cell.formula):
+        if token.type == "OPERAND" and token.subtype == "RANGE":
+            out.append(_offset(token.value, cell.row, cell.column))
+        elif token.type == "OPERAND" and token.subtype == "NUMBER":
+            out.append("#")
+        elif token.type == "OPERAND" and token.subtype == "TEXT":
+            out.append('"..."')
+        elif token.type in ("WHITE-SPACE", "WHITESPACE"):
+            continue
+        else:
+            out.append(token.value)
+    return out
+
+
+ARITHMETIC = ("+", "-", "*", "/")
+
+
+def _mutations(book: Workbook, result: Audit) -> None:
+    """One changed token inside an otherwise identical family.
+
+    Round 4's planted mutations went unseen where the row pass's
+    evidence gates never opened: an operator flipped in a short row,
+    a reference shifted one row in a three-cell run. But a run whose
+    members are token-for-token identical except one cell, where that
+    cell differs in exactly one position, is not « a different
+    formula » — it is the same calculation structure with one token
+    changed, and a single changed token against a uniform family is
+    the strongest witness a static reader gets. `=A1-B1` beside two
+    `=A1+B1` siblings is a flipped sign; `=SUM(B11:B21)` beside
+    `=SUM(B10:B20)` twins is a displaced window.
+
+    Rows only: a row shares one label, so its cells are one family by
+    the sheet's own words. Column runs cross differently-labelled line
+    items, where a uniform shape is usually a chain and the deviant is
+    a section seed — the unseen corpus judged every column deviation a
+    structure, not a mutation. Three more exemptions from the same
+    judging: the run's first cell displacing a reference is the row's
+    seed (it reads the anchor the chain hangs from); a deviant whose
+    shape repeats in its own column belongs to the crossing vertical
+    family (a column total crossing a row of row totals); and both
+    exemptions apply only to displaced references — a flipped operator
+    is suspect wherever it sits.
+    """
+    #: One shape per cell, computed once — this pass walks every
+    #: formula twice (column census, then runs), and the big BPFM
+    #: files hold two hundred thousand of them.
+    shaped: dict[str, tuple[str, ...]] = {
+        cell.ref: tuple(_shape_list(cell))
+        for cell in book.cells.values()
+        if cell.formula
+    }
+    by_column_shape: dict[tuple[str, int], Counter[tuple[str, ...]]] = {}
+    for cell in book.cells.values():
+        if cell.formula:
+            by_column_shape.setdefault(
+                (cell.sheet, cell.column), Counter()
+            )[shaped[cell.ref]] += 1
+
+    lines: dict[tuple[str, str, int], list[Cell]] = {}
+    for cell in book.cells.values():
+        if not cell.formula:
+            continue
+        lines.setdefault(("row", cell.sheet, cell.row), []).append(cell)
+
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule in ("inconsistent-row", "inconsistent-anchoring")
+    }
+
+    for (axis, _, _), cells in sorted(lines.items()):
+        cells.sort(key=lambda one: one.column if axis == "row" else one.row)
+        #: Contiguous runs only — a gap is a block boundary.
+        runs: list[list[Cell]] = [[cells[0]]]
+        for one in cells[1:]:
+            step = (
+                one.column - runs[-1][-1].column
+                if axis == "row"
+                else one.row - runs[-1][-1].row
+            )
+            if step == 1:
+                runs[-1].append(one)
+            else:
+                runs.append([one])
+        for run in runs:
+            if len(run) < 3:
+                continue
+            shapes = [shaped[one.ref] for one in run]
+            counts = Counter(shapes)
+            usual, votes = counts.most_common(1)[0]
+            if votes != len(run) - 1 or not usual:
+                continue
+            deviant = run[shapes.index(next(s for s in shapes if s != usual))]
+            if deviant.ref in already:
+                continue
+            theirs = shaped[deviant.ref]
+            if len(theirs) != len(usual):
+                continue
+            changed = [at for at in range(len(usual)) if usual[at] != theirs[at]]
+            if len(changed) != 1:
+                continue
+            at = changed[0]
+            was, now = usual[at], theirs[at]
+            n = len(run) - 1
+            displaced = was.startswith("R") and now.startswith("R")
+            if displaced:
+                #: The row's first cell reading elsewhere is the seed.
+                if deviant is run[0]:
+                    continue
+                #: A shape that repeats down the deviant's own column
+                #: is the crossing family — a column total crossing a
+                #: row of row totals is two designs meeting, not a
+                #: mutation.
+                if (
+                    by_column_shape.get((deviant.sheet, deviant.column), Counter())[
+                        theirs
+                    ]
+                    >= 2
+                ):
+                    continue
+            if was in ARITHMETIC and now in ARITHMETIC:
+                what = (
+                    f"the same calculation as its {n} siblings with one "
+                    f"operator changed — {was} became {now}: "
+                    f"{(deviant.formula or '')[:60]}"
+                )
+            elif was.startswith("R") and now.startswith("R"):
+                what = (
+                    f"the same formula as its {n} siblings with one "
+                    f"reference displaced — where they read {was}, it "
+                    f"reads {now}: {(deviant.formula or '')[:60]}"
+                )
+            else:
+                continue
+            already.add(deviant.ref)
+            result.findings.append(
+                Finding(
+                    rule="inconsistent-row",
+                    severity="error",
+                    ref=deviant.ref,
+                    sheet=deviant.sheet,
+                    name=deviant.name,
+                    detail=what,
+                    source="EuSpRIG, ICAEW P11",
+                )
+            )
+
+
 def _selector_drift(book: Workbook, result: Audit) -> None:
     """A filled row whose switch setting drifted.
 
@@ -2282,7 +2673,7 @@ def _row_total(cell: Cell) -> bool:
         return False
     ranges = [
         REFERENCE.fullmatch(token.value.strip())
-        for token in Tokenizer(cell.formula).items
+        for token in _tokens(cell.formula)
         if token.type == "OPERAND" and token.subtype == "RANGE"
     ]
     if not ranges or any(match is None for match in ranges):
@@ -2556,7 +2947,11 @@ def _shape(cell: Cell, anchoring: bool = True) -> str:
     if cell.formula is None:
         return ""
     out = []
-    for token in Tokenizer(cell.formula).items:
+    try:
+        tokens = _tokens(cell.formula)
+    except Exception:
+        return ""
+    for token in tokens:
         if token.type == "OPERAND" and token.subtype == "RANGE":
             out.append(_offset(token.value, cell.row, cell.column, anchoring))
         elif token.type == "OPERAND" and token.subtype == "NUMBER":
@@ -2622,8 +3017,8 @@ def _same_calculation(cell: Cell, twin: Cell | None) -> bool:
     """
     if twin is None or cell.formula is None or twin.formula is None:
         return False
-    mine = list(Tokenizer(cell.formula).items)
-    theirs = list(Tokenizer(twin.formula).items)
+    mine = list(_tokens(cell.formula))
+    theirs = list(_tokens(twin.formula))
     if len(mine) != len(theirs):
         return False
 
@@ -2851,7 +3246,7 @@ def _sum_spans(cell: Cell) -> tuple[dict[str, set[int]], set[str]]:
     columns it reads through a real range rather than a lone cell."""
     spans: dict[str, set[int]] = {}
     multi: set[str] = set()
-    for token in Tokenizer(cell.formula or "").items:
+    for token in _tokens(cell.formula or ""):
         if token.type != "OPERAND" or token.subtype != "RANGE":
             continue
         match = REFERENCE.fullmatch(token.value.strip())
@@ -2941,7 +3336,7 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                 inside = book.cells.get(f"{cell.sheet}!{column}{row}")
                 if inside is None or not inside.formula:
                     continue
-                for part in Tokenizer(inside.formula).items:
+                for part in _tokens(inside.formula):
                     if part.type != "OPERAND" or part.subtype != "RANGE":
                         continue
                     span = REFERENCE.fullmatch(part.value.strip())
@@ -3001,6 +3396,17 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                 ):
                     continue
                 missed.append(above)
+            #: A total whose own words state its window — « Total MAR,
+            #: 5 years of DPP4 » summing exactly five year-rows — has
+            #: declared what it excludes. The count must match the
+            #: range and be tied to a period word; a bare number in a
+            #: label proves nothing. Round 4, NZCC.
+            if missed and re.search(
+                rf"\b{len(rows_summed)}\s*(?:year|month|quarter|week|day)s?\b",
+                f"{cell.name} {cell.row_label}",
+                re.IGNORECASE,
+            ):
+                continue
             if missed:
                 #: What the misses are worth, straight from the cells —
                 #: the number the founder's design leads the card with.

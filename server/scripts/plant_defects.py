@@ -21,25 +21,21 @@ import sys
 import zipfile
 from collections import defaultdict
 from pathlib import Path
-from xml.sax.saxutils import escape
-
-from openpyxl.utils import column_index_from_string, get_column_letter
+from xml.sax.saxutils import escape, unescape
 
 A1 = re.compile(r"(?<![A-Za-z0-9_$!])(\$?)([A-Z]{1,3})(\$?)(\d+)(?![0-9(])")
-SUM_RANGE = re.compile(r"SUM\(\s*(\$?[A-Z]{1,3}\$?\d+)\s*:\s*(\$?[A-Z]{1,3}\$?\d+)\s*\)")
+SUM_RANGE = re.compile(
+    r"SUM\(\s*(\$?[A-Z]{1,3}\$?\d+)\s*:\s*(\$?[A-Z]{1,3}\$?\d+)\s*\)"
+)
 
 
 def sheet_files(zf: zipfile.ZipFile) -> dict[str, str]:
     """Sheet name -> archive path, via workbook.xml and its rels."""
     book = zf.read("xl/workbook.xml").decode("utf-8")
     rels = zf.read("xl/_rels/workbook.xml.rels").decode("utf-8")
-    rel_to_target = dict(
-        re.findall(r'Id="([^"]+)"[^>]*Target="([^"]+)"', rels)
-    )
+    rel_to_target = dict(re.findall(r'Id="([^"]+)"[^>]*Target="([^"]+)"', rels))
     out = {}
-    for name, rid in re.findall(
-        r'<sheet[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"', book
-    ):
+    for name, rid in re.findall(r'<sheet[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"', book):
         target = rel_to_target.get(rid, "")
         if target.startswith("/"):
             target = target[1:]
@@ -64,7 +60,9 @@ def formula_of(cell_xml: str) -> str | None:
     attrs = m.group(1) or ""
     if "t=" in attrs:  # shared or array — surgery would corrupt siblings
         return None
-    return m.group(2)
+    #: The XML stores `<` as `&lt;` — unescape here, escape once on
+    #: the way back, or every planted comparison arrives garbled.
+    return unescape(m.group(2))
 
 
 def value_of(cell_xml: str) -> str | None:
@@ -141,7 +139,9 @@ def eligible(sheets: dict[str, dict[str, str]]) -> dict[str, list[tuple[str, str
     return sites
 
 
-def plant(host: Path, out: Path, truth_path: Path, seed: int, per_class: int = 5) -> None:
+def plant(
+    host: Path, out: Path, truth_path: Path, seed: int, per_class: int = 5
+) -> None:
     shutil.copy(host, out)
     with zipfile.ZipFile(host) as zf:
         names = sheet_files(zf)
@@ -156,10 +156,23 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int, per_class: int = 5
     rng = random.Random(seed)
     truth: list[dict[str, str]] = []
     taken: set[tuple[str, str]] = set()
+    #: One plant per row and per column of a sheet — three flips in
+    #: one row destroy the family that is supposed to witness them.
+    taken_lines: set[tuple[str, str]] = set()
     changed: dict[str, str] = dict(sheets)
 
+    def lines_of(sheet: str, ref: str) -> tuple[tuple[str, str], tuple[str, str]]:
+        row = re.search(r"\d+", ref).group(0)
+        column = re.match(r"[A-Z]+", ref).group(0)
+        return (sheet, f"r{row}"), (sheet, f"c{column}")
+
     for kind in sorted(sites):
-        pool = [s for s in sorted(sites[kind]) if s not in taken]
+        pool = [
+            s
+            for s in sorted(sites[kind])
+            if s not in taken
+            and not any(line in taken_lines for line in lines_of(*s))
+        ]
         for sheet, ref in rng.sample(pool, min(per_class, len(pool))):
             cells = cells_of(changed[sheet])
             if ref not in cells:
@@ -246,6 +259,7 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int, per_class: int = 5
                 continue
             changed[sheet] = replace_cell(changed[sheet], ref, cell_xml, new_cell)
             taken.add((sheet, ref))
+            taken_lines.update(lines_of(sheet, ref))
             truth.append(
                 {
                     "host": host.name,
@@ -258,9 +272,10 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int, per_class: int = 5
 
     truth_path.write_text(json.dumps(truth, indent=1))
 
-    with zipfile.ZipFile(host) as zin, zipfile.ZipFile(
-        out, "w", zipfile.ZIP_DEFLATED
-    ) as zout:
+    with (
+        zipfile.ZipFile(host) as zin,
+        zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zout,
+    ):
         for item in zin.infolist():
             data = zin.read(item.filename)
             for name, path in names.items():

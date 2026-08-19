@@ -185,3 +185,98 @@ rows above it; per-formula error tolerance in the reader; the
 Thames under-reach investigation; and the banner-error tier miss.
 Fixes come as their own gated round — nothing was patched between
 the sweeps and these verdicts.
+
+---
+
+## The fifth measurement (registered 20 August, before any verdict)
+
+Round 5 changed the engine; the mentor's success criterion is that
+the **unseen corpus** improves — the original 27 are regression
+only. Registered before any finding was read:
+
+- Population: the Round-5 engine's findings on the same 11 unseen
+  models. The re-sweep produced 169 findings, small enough to judge
+  **whole** — no draw needed (the per-detector sampler stands ready
+  if a future population outgrows judging-whole; seed 20260824 is
+  reserved for it).
+- Classes A/B/C/D and action grades ACT/NOTE/IGNORE exactly as the
+  Round 4 protocol. Judged from harvested neighbourhoods. The 34
+  new `inconsistent-row` findings from the mutation detector get
+  judged like everything else — if the detector sprays on real
+  files, this measurement is where it shows.
+- Recall v2 was measured with the corrected planter (the Round 4
+  planter double-escaped XML, garbling planted formulas containing
+  `<` or `&`; the Round 4 recall numbers are amended below) and one
+  plant per row/column so plants cannot destroy their own witness.
+
+### Result — the fifth measurement (20 August)
+
+All 136 findings the Round-5 engine raises on the unseen corpus,
+judged whole: **A 5 · B 104 · C 4 · D 23 — A+B ≈ 80.1%**, against
+5.8% one round earlier on the same eleven files. Action grades:
+**ACT 8 · NOTE 101 · IGNORE 27**. False positives 2.9%, still under
+the 5% line.
+
+| Detector | n | A+B | C | D |
+|---|---|---|---|---|
+| hardcode-in-formula | 70 | 70% | 2 | 19 |
+| long-formula | 29 | 100% | 0 | 0 |
+| error-value | 14 | 71% | 0 | 4 |
+| external-link | 14 | **100%** | 0 | 0 |
+| typed-over-formula | 3 | 100% | 0 | 0 |
+| skipped-cell | 3 | 33% | 2 | 0 |
+| volatile / inconsistent-row / hidden-sheet | 3 | 100% | 0 | 0 |
+
+What moved, and why:
+
+- **External links became events.** The 1,496-cell flood is now 14
+  findings — « reads workbook [1] in 602 cells of Inputs », one per
+  source, roster attached — every one judged worth the appendix.
+- **The seven grammar principles held.** The lookup-index, sentinel,
+  square-root, diagnostic, ladder, mean-divisor and count-window
+  noise is gone; two residual C are diagnostic bounds sitting one
+  arithmetic step inside the compared expression (named fix), two
+  are window totals whose labels omit the count (documented
+  limitation).
+- **The mutation detector paid for itself.** Its first version
+  sprayed 34 findings over real files in three recognisable
+  patterns — row seeds, column chains, crossing families — which
+  became three exemptions; the second version raises exactly **one**
+  finding on the whole unseen corpus, and it is an ACT: a summary
+  row's last column summing another section's rows (Outputs!R86),
+  which the skipped-cell lens had mis-diagnosed in Round 4.
+- **The residual D (17%) is three unbuilt folds**, all named in
+  Round 4: the rolling-average seed family, the torn `#REF!` check
+  row, and the per-company literal column. Nothing new appeared.
+
+### Recall v2 (corrected planter, Round-5 engine)
+
+**Amendment to the Round 4 recall table:** the Round 4 planter
+double-escaped XML, so planted formulas containing `<` or `&`
+arrived garbled; its recall numbers overstated some classes and
+understated others. The corrected planter (escaping fixed, one
+plant per row/column so plants cannot destroy their own witness)
+plants 66 valid defects with the same registered seed.
+
+| Class | Caught | On-point rule |
+|---|---|---|
+| broken reference | 13/15 | error-value (2 misses: error cells in label columns the reader does not elect) |
+| overwritten formula | 9/13 | typed-over (misses: singleton formulas with no series witness) |
+| incorrect assumption | 8/11 | hardcode (1 miss: the planted literal lands in selector position — the grammar principle excuses it) |
+| skipped total | 5/7 | skipped-cell |
+| bad reference (row shift) | 5/15 | **inconsistent-row — 1/15 before the mutation detector** |
+| operator flip | 1/5 | inconsistent-row — 0/8 before |
+| **Overall** | **41/66 = 62%** | |
+
+Collateral under damage: 5 findings across three hosts, of which
+two are the mutation detector reacting to a neighbouring plant
+breaking a family — the report stays essentially stable.
+
+The honest blind spots, all structural and all named: a mutation in
+a **singleton formula** has no family to witness it (a static
+engine's hard limit — the one class that likely needs the labels'
+semantics); growing-product rows where no two shapes match; INDEX
+table bounds displaced by one; error values in label columns; and
+totals narrowed at the head of their own range (deferred — a
+badly-gated head check would flood, and it needs designed corpus
+evidence).

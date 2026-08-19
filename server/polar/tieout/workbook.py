@@ -268,6 +268,11 @@ class Workbook:
     #: the formulas it documents). The audit reads it to honour
     #: numbers the sheet's own words already state.
     row_words: dict[str, dict[int, str]] = field(default_factory=dict)
+    #: Cells whose formula the tokenizer rejected. One malformed
+    #: formula must cost one finding, never the whole workbook —
+    #: Round 4's planting run found the reader dying on a
+    #: partial-range #REF! and taking the file with it.
+    unparseable: list[str] = field(default_factory=list)
 
     def get(self, ref: str) -> Cell | None:
         return self.cells.get(ref)
@@ -530,6 +535,10 @@ def _read_sheet(
             read = references_of(formula, name, names) if formula else Precedents()
             references = read.refs
             ref = f"{name}!{get_column_letter(column)}{row}"
+            if any(
+                why == "the formula could not be parsed" for _, why in read.unresolved
+            ):
+                book.unparseable.append(ref)
             book.cells[ref] = Cell(
                 sheet=name,
                 ref=ref,
@@ -666,7 +675,15 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
                 return frame
         return None
 
-    for token in Tokenizer(formula).items:
+    try:
+        tokens = Tokenizer(formula).items
+    except Exception:
+        #: The grammar rejected the whole formula. Report the fact and
+        #: keep reading the rest of the workbook.
+        give_up(formula[:80], "the formula could not be parsed")
+        return Precedents(unresolved=tuple(missing))
+
+    for token in tokens:
         for frame in frames:
             frame["call"].append(token.value)
         if token.type == "FUNC" and token.subtype == "OPEN":
