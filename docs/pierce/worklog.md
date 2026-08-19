@@ -3393,3 +3393,37 @@ limitation, no new fix named. Hardcode owes shape normalisation for
 the fold key, number-words documentation, and a header walk-up.
 That short list is Round 3's engine spec; the round itself is
 Elevate — materiality, severity tiers, finding families, evidence.
+
+## 19 August, late night — Round 3: Elevate
+
+The four fixes the third measurement named, each as a general
+principle: number words document their constants; a block's nearest
+header documents it however tall the block runs (the gate's trace
+caught my first version capping the walk at twelve rows — one
+Italgas beta row read differently from its five siblings, so the cap
+went); literal-arithmetic shapes are one spelling family in the
+sibling fold; and four or more adjacent columns typed over in one
+row are one gesture, with a block pass reuniting a two-dimensional
+paste into one finding naming the whole rectangle — which corrects
+the old five-findings-for-one-paste reading of the Yorkshire case.
+
+Then the elevation itself. Every finding now carries a tier
+(1 defect / 2 assumption at risk / 3 hygiene), a 0–1 weight
+(structural risk × confidence, raised only by real money the engine
+itself computed), a basis sentence arguing the rank, and — on every
+fold — the roster of cells it stands for. Tier-1 floors above
+tier-2 ceilings above tier-3: a torn check can never sit below an
+OFFSET carpet. Wired through the deal audit, the solo check, and
+the sweep, so the corpus now says how the attention splits:
+**632 findings — 51 defects, 251 assumptions, 330 hygiene.**
+
+The gate: 669 → 632, every line traced to a named fix (five ED2
+versions fold their pool-balance spellings, both H7 files fold the
+stress-cargo row and lose the half-year false positive, the equity
+file's beta block is documented by its own header). Two sweeps —
+before and after elevation — differ only by the cap fix, proving
+the elevation layer changed no finding's content. 488 tests.
+Known gap, recorded: the statement checks (analytics) do not carry
+tiers yet — they join the elevation layer when their findings move
+through the same pipeline. Next: the fourth measurement, seed
+20260821 as registered, judging tier alongside class.
