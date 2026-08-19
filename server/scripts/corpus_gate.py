@@ -58,6 +58,9 @@ def sweep(root: Path, out: Path) -> None:
                             "ref": f.ref,
                             "figure": f.figure,
                             "detail": f.detail,
+                            "tier": f.tier,
+                            "weight": f.weight,
+                            "cells": f.cells,
                         }
                         for f in result.findings
                     ],
@@ -78,11 +81,14 @@ def sweep(root: Path, out: Path) -> None:
 
 
 def _reports(rows: list[dict[str, Any]]) -> dict[str, list[tuple[Any, ...]]]:
+    #: Sorted: a finding's identity is what it says, not where the
+    #: report happened to put it — the elevation layer orders by
+    #: weight, and a reordering is not an engine change.
     return {
-        row["file"]: [
+        row["file"]: sorted(
             (f["rule"], f["severity"], f["ref"], f["figure"], f["detail"])
             for f in row.get("findings", [])
-        ]
+        )
         for row in rows
     }
 

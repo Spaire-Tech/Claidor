@@ -214,3 +214,23 @@ Honestly read, the residue is concentrated and named:
   two C name two small fixes: number-words documentation (a label
   saying « half » documents 0.5) and walking the block-header search
   up to the nearest header instead of a fixed three rows.
+
+## The fourth measurement (registered 19 August, before any draw)
+
+Round 3 (Elevate) implements the four fixes above and adds the
+elevation layer — every finding carries a tier (1 defect /
+2 assumption at risk / 3 hygiene), a 0–1 weight, a basis sentence,
+and a cell roster on folds. The population changes again, so the
+fourth draw is registered here first:
+
+- Same classes, same judge-from-the-cells procedure, same
+  per-detector stratification and floor (25) as the third
+  measurement. The tally is again published per detector.
+- One addition, per the mentor's step 8: alongside A/B/C/D, each
+  judged finding's *tier* is recorded, so the measurement can say
+  whether tier 1 is clean of C — a false positive in « defect » is
+  worse than one in « hygiene », and the tiers are only real if the
+  measurement can fail them.
+- Seed for the fourth draw: **20260821**. Sample:
+  `findings-usefulness-sample-4.json`; verdicts:
+  `findings-usefulness-verdicts-4.json`.

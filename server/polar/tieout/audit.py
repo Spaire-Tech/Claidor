@@ -35,6 +35,7 @@ A **smell** is a departure from the standards that is often deliberate,
 and the two are never added into one number.
 """
 
+import math
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -187,6 +188,19 @@ class Finding:
     #: What the cell holds now, exactly as the reader recorded it — the
     #: writer refuses unless this is still there when it arrives.
     fix_before: str = ""
+    #: Elevation — how much of an auditor's attention this deserves,
+    #: computed once every fold has settled. `tier` is the attention
+    #: class (1 defect / 2 assumption / 3 hygiene); `weight` orders
+    #: findings inside and across tiers, 0–1; `basis` says in one
+    #: sentence why the engine ranked it here, so the ranking is never
+    #: an unexplained number.
+    tier: int = 0
+    weight: float = 0.0
+    basis: str = ""
+    #: Every cell a folded finding stands for, so « one finding » never
+    #: hides its members: a family is the sentence, this is the roster.
+    #: Empty on a finding that is its own single cell.
+    cells: str = ""
 
 
 @dataclass
@@ -353,10 +367,102 @@ def _quantified(book: Workbook, result: Audit, axes: "PeriodAxes | None") -> Non
     result.findings = replaced
 
 
-def replace_finding(finding: Finding, **changes: str) -> Finding:
+def replace_finding(finding: Finding, **changes: Any) -> Finding:
     from dataclasses import replace
 
     return replace(finding, **changes)
+
+
+#: The tier names as a screen says them, in one place like RULE_NAMES.
+TIER_NAMES: dict[int, str] = {
+    1: "Defect",
+    2: "Assumption at risk",
+    3: "Hygiene",
+}
+
+
+def _elevated(book: Workbook, result: Audit) -> None:
+    """Round 3 — Elevate. Rank every finding, and say why.
+
+    The mentor's formula, adopted whole: attention = structural risk ×
+    financial magnitude × confidence. Structural risk is the tier —
+    a defect is wrong however the model is used, an assumption moves
+    numbers when it is wrong, hygiene is a standards departure that is
+    often deliberate. Confidence is how directly the engine observed
+    the problem: a displayed error is certain; a structural read can
+    misjudge a designed layout; an override can be deliberate.
+    Magnitude only ever *raises* a finding, and only when the engine
+    computed real money for it — a worth left out of a total, a delta
+    against what the row would calculate. Nothing is guessed, and the
+    `basis` sentence carries all three factors so the ranking is an
+    argument, not a number.
+    """
+    seen_by_rule: dict[str, tuple[float, str]] = {
+        "error-value": (1.0, "the file displays the error itself"),
+        "skipped-cell": (
+            0.9,
+            "the gap is in the formula's own range arithmetic, though a "
+            "designed layout can excuse one",
+        ),
+        "inconsistent-row": (0.9, "the row's own pattern shows the break"),
+        "inconsistent-anchoring": (0.9, "the row's own anchoring shows the break"),
+        "typed-over-formula": (
+            0.8,
+            "a typed value sits where the series calculates — overrides "
+            "are sometimes deliberate",
+        ),
+        "circular": (
+            0.9,
+            "the loop is in the dependency graph and the workbook does "
+            "not declare iteration",
+        ),
+    }
+    #: Rules whose figure is money rather than a count or a constant —
+    #: the only findings magnitude may promote.
+    money_figures = {"skipped-cell", "typed-over-formula"}
+
+    replaced: list[Finding] = []
+    for finding in result.findings:
+        if finding.severity == "error":
+            tier, risk = 1, 1.0
+            confidence, seen = seen_by_rule.get(
+                finding.rule, (0.9, "the defect is structural")
+            )
+        elif finding.rule == "hardcode-in-formula":
+            tier, risk = 2, 0.6
+            confidence, seen = (
+                0.8,
+                ("an assumption typed where nobody will find it to change it"),
+            )
+        elif finding.rule == "external-link":
+            tier, risk = 2, 0.6
+            confidence, seen = (
+                0.8,
+                ("a value from a workbook that is not here, so it cannot be checked"),
+            )
+        else:
+            tier, risk = 3, 0.3
+            confidence, seen = 0.7, ("a departure from the standards, often deliberate")
+
+        bonus = 0.0
+        if finding.rule in money_figures and finding.figure:
+            first = finding.figure.split(", ")[0].replace(",", "")
+            scale = {"bn": 1e9, "m": 1e6}.get(first[-2:].lstrip("0123456789."), 1.0)
+            try:
+                magnitude = abs(float(first.rstrip("bnm"))) * scale
+            except ValueError:
+                magnitude = 0.0
+            if magnitude:
+                bonus = min(0.1, 0.03 * math.log10(1 + magnitude))
+
+        weight = round(min(1.0, risk * confidence + bonus), 2)
+        basis = f"{TIER_NAMES[tier].lower()}: {seen}"
+        if bonus:
+            basis += f"; carries real money ({finding.figure})"
+        if finding.flow:
+            basis += f"; feeds {finding.flow}"
+        replaced.append(replace_finding(finding, tier=tier, weight=weight, basis=basis))
+    result.findings = replaced
 
 
 def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
@@ -389,6 +495,22 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             return (
                 f"{lead} {finding.detail} — one paste. Check whether "
                 "the override is intentional."
+            )
+        if " different values typed across " in finding.detail:
+            #: The run fold: adjacent columns typed over in one gesture,
+            #: each holding its own number.
+            lead = f"{label} has" if label else "One row has"
+            return (
+                f"{lead} {finding.detail} — one paste, each cell holding "
+                "its own number. Check whether the overrides are "
+                "intentional."
+            )
+        if finding.detail.startswith("typed over a block"):
+            #: The block fold: a two-dimensional paste, one rectangle.
+            return (
+                f"« {finding.sheet} » is {finding.detail} — one paste "
+                "over the block's formulas. Check whether the override "
+                "is intentional."
             )
         if finding.detail.startswith("typed over in "):
             #: The block collapse: one decision, made once per repeated
@@ -587,7 +709,12 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _quantified(book, result, axes)
     result.findings = _collapsed(book, result.findings, axes)
     _flows(book, result)
-    result.findings.sort(key=lambda f: (f.severity != "error", f.sheet, f.rule, f.ref))
+    _elevated(book, result)
+    #: Weight first — a defect leads, hygiene closes — with the old
+    #: severity/sheet order breaking ties so equal weights stay stable.
+    result.findings.sort(
+        key=lambda f: (-f.weight, f.severity != "error", f.sheet, f.rule, f.ref)
+    )
     return result
 
 
@@ -696,6 +823,12 @@ def _collapsed(
     return _cross_folds(book, _typed_blocks(book, keep))
 
 
+def _roster(coords: list[str]) -> str:
+    """A folded finding's full membership, bounded so a thousand-cell
+    fold cannot turn the roster into the flood it exists to end."""
+    return ", ".join(coords[:40]) + (", …" if len(coords) > 40 else "")
+
+
 def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
     """A value typed over the same line of a repeating block is one
     decision, not one finding per block.
@@ -730,45 +863,85 @@ def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
     #: cells across one row holding a single value are one paste
     #: decision, folded to one sentence. Eight or more holding
     #: *varying* values are an input series laid across the sheet —
-    #: data, not damage — and are dropped. Short runs stay per cell:
-    #: the confirmed Yorkshire paste is five columns wide, and it must
-    #: keep reporting exactly as the regulator's queries document
-    #: confirms it.
+    #: data, not damage — and are dropped. Between those, a run of
+    #: four or more *adjacent* columns typed over in one row is one
+    #: gesture even when every column holds its own number — the H7
+    #: stress-cargo row is one authoring decision, reported once with
+    #: every cell named, not five sentences. Shorter or scattered runs
+    #: stay per cell: two or three is coincidence, and scatter is not
+    #: a gesture. A run with typed company directly above or below is
+    #: the top of a two-dimensional paste — the Yorkshire block — and
+    #: is left for the column pass, whose folds the block pass below
+    #: reunites into one finding naming the whole rectangle.
     by_row: dict[tuple[str, int], list[Finding]] = {}
     for finding in typed:
         by_row.setdefault((finding.sheet, _at(finding)[1]), []).append(finding)
     survivors: list[Finding] = []
-    for group in by_row.values():
-        if len(group) < 6:
-            survivors.extend(group)
-            continue
+
+    def _column_index(letters: str) -> int:
+        index = 0
+        for letter in letters:
+            index = index * 26 + (ord(letter) - 64)
+        return index
+
+    spots = {(one.sheet, _column_index(_at(one)[0]), _at(one)[1]) for one in typed}
+
+    def _alone_in_its_column(finding: Finding) -> bool:
+        column, row = _at(finding)
+        index = _column_index(column)
+        return (finding.sheet, index, row - 1) not in spots and (
+            finding.sheet,
+            index,
+            row + 1,
+        ) not in spots
+
+    def _row_fold(run: list[Finding]) -> Finding:
+        first = run[0]
+        coords = [one.ref.rsplit("!", 1)[-1] for one in run]
         held = {
             str(cell.value) if (cell := book.cells.get(one.ref)) else one.ref
-            for one in group
+            for one in run
         }
+        what = (
+            f"the same value typed across {len(run)} cells "
+            if len(held) == 1
+            else f"{len(held)} different values typed across {len(run)} cells "
+        ) + f"of one row ({coords[0]} to {coords[-1]})"
+        return Finding(
+            rule=first.rule,
+            severity=first.severity,
+            ref=first.ref,
+            sheet=first.sheet,
+            name=first.name,
+            detail=what,
+            source=first.source,
+            figure_unit=f"typed across {len(run)} cells",
+            cells=_roster(coords),
+        )
+
+    for group in by_row.values():
         group.sort(key=lambda one: (len(_at(one)[0]), _at(one)[0]))
-        if len(held) == 1:
-            first = group[0]
-            coords = [one.ref.rsplit("!", 1)[-1] for one in group]
-            survivors.append(
-                Finding(
-                    rule=first.rule,
-                    severity=first.severity,
-                    ref=first.ref,
-                    sheet=first.sheet,
-                    name=first.name,
-                    detail=(
-                        f"the same value typed across {len(group)} cells "
-                        f"of one row ({coords[0]} to {coords[-1]})"
-                    ),
-                    source=first.source,
-                    figure_unit=f"typed across {len(group)} cells",
-                )
-            )
-        elif len(group) >= TYPED_BLOCK:
-            continue
-        else:
-            survivors.extend(group)
+        if len(group) >= 6:
+            held = {
+                str(cell.value) if (cell := book.cells.get(one.ref)) else one.ref
+                for one in group
+            }
+            if len(held) == 1:
+                survivors.append(_row_fold(group))
+                continue
+            if len(group) >= TYPED_BLOCK:
+                continue
+        runs: list[list[Finding]] = [[group[0]]]
+        for one in group[1:]:
+            if _column_index(_at(one)[0]) == _column_index(_at(runs[-1][-1])[0]) + 1:
+                runs[-1].append(one)
+            else:
+                runs.append([one])
+        for run in runs:
+            if len(run) >= 4 and all(_alone_in_its_column(one) for one in run):
+                survivors.append(_row_fold(run))
+            else:
+                survivors.extend(run)
     typed = survivors
 
     by_column: dict[tuple[str, str], list[Finding]] = {}
@@ -800,9 +973,17 @@ def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
             ),
             source=first.source,
             figure_unit=f"typed over in {len(group)} places",
+            cells=_roster(coords),
         )
 
-    for group in by_column.values():
+    column_folds: list[tuple[Finding, str, tuple[int, ...]]] = []
+
+    def _folded(members: list[Finding]) -> None:
+        rows = tuple(sorted(_row(one) for one in members))
+        column = _at(members[0])[0]
+        column_folds.append((_fold(members), column, rows))
+
+    for (_, column), group in by_column.items():
         #: The same named line typed over twice is already a pattern.
         named: dict[str, list[Finding]] = {}
         rest: list[Finding] = []
@@ -813,7 +994,7 @@ def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 rest.append(finding)
         for same in named.values():
             if len(same) > 1:
-                keep.append(_fold(same))
+                _folded(same)
             else:
                 rest.extend(same)
         #: What remains — labelled differently or not at all — folds on
@@ -828,9 +1009,50 @@ def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
             for before, after in zip(rest, rest[1:], strict=False)
         }
         if len(rest) >= 3 and max(deltas) - min(deltas) <= 1:
-            keep.append(_fold(rest))
+            _folded(rest)
         else:
             keep.extend(rest)
+
+    #: The block pass. A two-dimensional paste — Yorkshire's FM02
+    #: types five year-columns over four adjacent rows — reaches here
+    #: as one column fold per column, five copies of the same news.
+    #: Column folds covering the *same contiguous rows* in *adjacent
+    #: columns* are one gesture: one finding naming the rectangle.
+    #: Same-name beats over scattered rows never merge — their rows
+    #: are not a rectangle, and the sentence would lie.
+    by_span: dict[tuple[str, tuple[int, ...]], list[tuple[Finding, str]]] = {}
+    for fold, column, rows in column_folds:
+        if rows[-1] - rows[0] == len(rows) - 1:
+            by_span.setdefault((fold.sheet, rows), []).append((fold, column))
+        else:
+            keep.append(fold)
+    for (_, rows), members in by_span.items():
+        members.sort(key=lambda one: (len(one[1]), one[1]))
+        stretches: list[list[tuple[Finding, str]]] = [[members[0]]]
+        for member in members[1:]:
+            if _column_index(member[1]) == _column_index(stretches[-1][-1][1]) + 1:
+                stretches[-1].append(member)
+            else:
+                stretches.append([member])
+        for stretch in stretches:
+            if len(stretch) == 1:
+                keep.append(stretch[0][0])
+                continue
+            first = stretch[0][0]
+            corner = f"{stretch[-1][1]}{rows[-1]}"
+            roster = [f"{column}{row}" for _, column in stretch for row in rows]
+            keep.append(
+                replace_finding(
+                    first,
+                    detail=(
+                        f"typed over a block {len(stretch)} columns wide and "
+                        f"{len(rows)} rows deep "
+                        f"({first.ref.rsplit('!', 1)[-1]} to {corner})"
+                    ),
+                    figure_unit=f"typed over {len(stretch) * len(rows)} cells",
+                    cells=_roster(roster),
+                )
+            )
     return keep
 
 
@@ -903,6 +1125,7 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 detail=f"{base_detail(first)}, in {len(line)} cells of one row",
                 source=first.source,
                 figure_unit=f"in {len(line)} cells of one row",
+                cells=_roster(sorted(one.ref for one in line)),
             )
         )
     folded_away = {
@@ -918,13 +1141,20 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
     #: every DNO sheet, and fourteen different numbers are still one
     #: layout decision. An unlabelled cell keeps the stricter
     #: numbers-bearing key, because without the label the numbers are
-    #: the only evidence the cells mean the same thing.
+    #: the only evidence the cells mean the same thing. Shapes made of
+    #: literals alone — `=52.07`, `=876.7+21.46`, `=1354.5+-4.3E-12` —
+    #: are one spelling family: every one of them is a typed number,
+    #: however its author chose to write the arithmetic, so they key
+    #: alike and the sheet that spells its balance without a `+`
+    #: still joins its sisters.
     by_address: dict[tuple[str, str, str, str], list[Finding]] = {}
     for finding in pool:
         coordinate = finding.ref.rsplit("!", 1)[-1]
         if finding.rule == "hardcode-in-formula" and finding.name:
             cell = book.cells.get(finding.ref)
             identity = _shape(cell) if cell is not None else base_detail(finding)
+            if re.fullmatch(r"[=#+\-() ]+", identity):
+                identity = "=#"
         else:
             identity = base_detail(finding)
         by_address.setdefault(
@@ -964,6 +1194,7 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 source=first.source,
                 figure=first.figure,
                 figure_unit=unit,
+                cells=_roster(sorted(one.ref for one in group)),
             )
         )
     keep.extend(one for one in solo if one.rule == "error-value")
@@ -1012,6 +1243,7 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 detail=what,
                 source=first.source,
                 figure_unit=f"in {len(group)} places",
+                cells=_roster(sorted(one.ref for one in group)),
             )
         )
     solo_hardcodes = [one for one in solo if one.rule == "hardcode-in-formula"]
@@ -1047,6 +1279,7 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                 source=first.source,
                 figure=first.figure,
                 figure_unit=f"in {len(group)} formulas on one sheet",
+                cells=_roster(sorted(one.ref for one in group)),
             )
         )
 
@@ -1074,6 +1307,7 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                     ),
                     source=first.source,
                     figure_unit=f"in {len(group)} places on one sheet",
+                    cells=_roster(sorted(one.ref for one in group)),
                 )
             )
             continue
@@ -1095,6 +1329,7 @@ def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
                     detail=f"{base_detail(first)} in {len(line)} cells of one row",
                     source=first.source,
                     figure_unit=f"in {len(line)} cells of one row",
+                    cells=_roster(sorted(one.ref for one in line)),
                 )
             )
 
@@ -1498,18 +1733,26 @@ def _literals(book: Workbook, result: Audit) -> None:
         #: Judged per number: the documented ones drop out, any
         #: undocumented ones still report. A header is a row with
         #: words and no numbers of its own — a sibling data row's
-        #: label documents only itself.
+        #: label documents only itself. The block runs upward through
+        #: its data rows to wherever the header actually sits — a
+        #: fixed window read a four-row block as headerless — so the
+        #: search climbs to the nearest header and any header lines
+        #: stacked directly above it, and stops there: past the
+        #: header is the previous block, whose words prove nothing
+        #: about this one.
         heads = book.row_words.get(cell.sheet, {})
-        context = " ".join(
-            filter(
-                None,
-                (
-                    heads.get(cell.row - step, "")
-                    for step in range(1, 4)
-                    if (cell.sheet, cell.row - step) not in occupied
-                ),
-            )
-        )
+        header_rows: list[int] = []
+        at = cell.row - 1
+        while at >= 1 and cell.row - at <= 12:
+            if (cell.sheet, at) in occupied:
+                if header_rows:
+                    break
+            elif heads.get(at):
+                header_rows.append(at)
+            elif header_rows:
+                break
+            at -= 1
+        context = " ".join(heads.get(row, "") for row in header_rows)
         buried = tuple(
             value
             for value in _buried(cell.formula)
@@ -1682,6 +1925,19 @@ def _buried(formula: str) -> tuple[str, ...]:
     return _literal_scan(formula)[0]
 
 
+#: The fraction words a financial label actually uses. Whole numbers
+#: stay out — « one » and « two » appear in too many labels that are
+#: not stating the constant.
+NUMBER_WORDS = {
+    "half": 0.5,
+    "halves": 0.5,
+    "quarter": 0.25,
+    "quarters": 0.25,
+    "third": 1 / 3,
+    "thirds": 1 / 3,
+}
+
+
 def _documented(value: str, cell: Cell, context: str = "") -> bool:
     """True when the sheet's own words state the number.
 
@@ -1713,6 +1969,14 @@ def _documented(value: str, cell: Cell, context: str = "") -> bool:
     forms.add(f"{number * 100:g}%")
     if any(
         re.search(rf"(?<![\w.]){re.escape(form)}(?![\w.])", words) for form in forms
+    ):
+        return True
+    #: English states numbers in words as surely as in digits: a row
+    #: named « Half year discount factor » has said everything about
+    #: its `^0.5`.
+    if any(
+        abs(number - spoken) < 1e-9 and re.search(rf"\b{word}\b", words, re.IGNORECASE)
+        for word, spoken in NUMBER_WORDS.items()
     ):
         return True
     bps = f"{number * 10000:g}"

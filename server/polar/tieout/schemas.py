@@ -934,6 +934,15 @@ class OneOffDefect(Schema):
     #: The finding as a person hears it — shown first, with `detail`
     #: as the evidence beneath.
     plain: str = ""
+    #: Elevation: the attention tier (1 defect / 2 assumption at risk /
+    #: 3 hygiene), the 0–1 weight that orders the report, and the
+    #: sentence saying why the engine ranked it here. Zero and empty on
+    #: results stored before the elevation layer existed.
+    tier: int = 0
+    weight: float = 0.0
+    basis: str = ""
+    #: Every cell a folded finding stands for — the family's roster.
+    cells: str = ""
     #: The design's little Excel grid: the cell with its neighbours,
     #: composed at check time. None where the coordinate is not a cell.
     grid: dict[str, Any] | None = None

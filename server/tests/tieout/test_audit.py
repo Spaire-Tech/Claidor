@@ -174,17 +174,13 @@ def test_a_block_pasted_over_several_columns_is_caught_down_the_columns() -> Non
 
     result = _tmp_book(build)
     typed = [f for f in result.findings if f.rule == "typed-over-formula"]
-    #: Every column of the paste is seen, and each column's run reports
-    #: once — five findings for a five-column paste, not twenty.
-    assert {f.ref for f in typed} == {
-        "Sheet!F3",
-        "Sheet!G3",
-        "Sheet!H3",
-        "Sheet!I3",
-        "Sheet!J3",
-    }
-    last = next(f for f in typed if f.ref == "Sheet!J3")
-    assert "J6" in last.detail
+    #: Every column of the paste is seen, and the five adjacent column
+    #: folds reunite into one sentence naming the whole rectangle —
+    #: one gesture, one finding, not five copies of the same news.
+    assert len(typed) == 1, [(f.ref, f.detail) for f in typed]
+    assert typed[0].ref == "Sheet!F3"
+    assert "5 columns wide and 4 rows deep" in typed[0].detail
+    assert "F3 to J6" in typed[0].detail
 
 
 def test_designed_error_tails_fold_and_interior_breaks_are_loud() -> None:
@@ -1052,9 +1048,7 @@ def test_a_constant_between_disagreeing_neighbours_is_not_typed_over() -> None:
 
     result = _tmp_book(series_row)
     typed = [f for f in result.findings if f.rule == "typed-over-formula"]
-    assert any(f.ref == "Sheet!D5" for f in typed), [
-        (f.ref, f.detail) for f in typed
-    ]
+    assert any(f.ref == "Sheet!D5" for f in typed), [(f.ref, f.detail) for f in typed]
 
 
 def test_an_unread_today_is_a_stamp_and_a_read_one_is_a_finding() -> None:
@@ -1106,3 +1100,177 @@ def test_a_partition_sibling_just_below_the_total_covers_its_rows() -> None:
     assert any(f.ref == "Sheet!B12" for f in skipped), [
         (f.ref, f.detail) for f in skipped
     ]
+
+
+def test_number_words_document_their_constants() -> None:
+    """A row named « Half year discount factor » has said everything
+    about its `^0.5` — English states numbers in words as surely as
+    in digits. The same power under a label that does not speak it
+    still reports."""
+
+    def build(sheet) -> None:
+        sheet["A2"] = "Half year discount factor"
+        sheet["B2"] = "=Z2^0.5"
+        sheet["A4"] = "Discount factor"
+        sheet["B4"] = "=Z4^0.5"
+
+    result = _tmp_book(build)
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert [f.ref for f in hardcodes] == ["Sheet!B4"], [
+        (f.ref, f.detail) for f in hardcodes
+    ]
+
+
+def test_the_header_search_walks_up_to_the_blocks_header() -> None:
+    """A block's header documents its constants wherever the block
+    starts — a fixed three-row window read a four-row block as
+    headerless. The walk stops at the nearest header: past it is the
+    previous block, whose words prove nothing about this one."""
+
+    def build(sheet) -> None:
+        sheet["A2"] = "Beta block: asset beta at 0.075 debt beta"
+        for row in range(3, 7):
+            sheet[f"A{row}"] = f"Company {row}"
+            sheet[f"B{row}"] = row * 1.0
+        sheet["A7"] = "GDT"
+        sheet["B7"] = "=Z7+(0.075*Y7)"
+        sheet["A10"] = "Adjustment factors"
+        for row in range(11, 15):
+            sheet[f"A{row}"] = f"Series {row}"
+            sheet[f"B{row}"] = row * 1.0
+        sheet["A15"] = "NGN"
+        sheet["B15"] = "=Z15+(0.075*Y15)"
+
+    result = _tmp_book(build)
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert [f.ref for f in hardcodes] == ["Sheet!B15"], [
+        (f.ref, f.detail) for f in hardcodes
+    ]
+
+
+def test_literal_spellings_fold_with_their_sibling_sheets() -> None:
+    """`=52.07`, `=876.7+21.46`, `=1354.5+-4.3E-12` are one spelling
+    family — every one is a typed number, however its author wrote the
+    arithmetic — so the sheet that spells its balance without a `+`
+    still joins its sisters in the sibling fold."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+
+    book = Book()
+    spellings = (("DNOa", "=769.27"), ("DNOb", "=52.07+0"), ("DNOc", "=113.9+-0.0001"))
+    for name, formula in spellings:
+        sheet = book.create_sheet(name)
+        sheet["A2"] = "Special rates pool opening balance brought forward"
+        sheet["B2"] = formula
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert len(hardcodes) == 1, [(f.ref, f.detail) for f in hardcodes]
+    assert "each sheet holding its own number" in hardcodes[0].detail
+
+
+def test_a_short_typed_row_run_is_one_gesture() -> None:
+    """Five adjacent columns typed over in one row — the H7 stress
+    cargo row, the Yorkshire paste — are one authoring decision even
+    when every column holds its own number: one finding naming the
+    span. Three adjacent stay per cell — that could yet be
+    coincidence."""
+
+    def five_wide(sheet) -> None:
+        for row in range(2, 10):
+            for column in range(2, 11):
+                at = sheet.cell(row=row, column=column)
+                if column >= 6 and row == 4:
+                    at.value = 0.5 + column
+                else:
+                    at.value = f"=B{row}+{column}"
+
+    result = _tmp_book(five_wide)
+    typed = [f for f in result.findings if f.rule == "typed-over-formula"]
+    assert len(typed) == 1, [(f.ref, f.detail) for f in typed]
+    assert "5 different values" in typed[0].detail
+    assert "F4 to J4" in typed[0].detail
+
+    def three_wide(sheet) -> None:
+        for row in range(2, 10):
+            for column in range(2, 11):
+                at = sheet.cell(row=row, column=column)
+                if column in (6, 7, 8) and row == 4:
+                    at.value = 0.5 + column
+                else:
+                    at.value = f"=B{row}+{column}"
+
+    result = _tmp_book(three_wide)
+    typed = [f for f in result.findings if f.rule == "typed-over-formula"]
+    assert {f.ref for f in typed} == {"Sheet!F4", "Sheet!G4", "Sheet!H4"}, [
+        (f.ref, f.detail) for f in typed
+    ]
+
+
+def test_every_finding_carries_its_tier_and_why() -> None:
+    """Round 3 — Elevate. Every finding says how much attention it
+    deserves and why: errors are tier-1 defects, hardcoded assumptions
+    tier 2, standards hygiene tier 3 — and the basis sentence carries
+    the argument, so the ranking is never an unexplained number."""
+    result = audit(read_workbook(str(CASCADE / "audit_fixture.xlsx")))
+    assert result.findings
+    for finding in result.findings:
+        assert finding.tier in (1, 2, 3), (finding.rule, finding.tier)
+        assert finding.weight > 0
+        assert finding.basis
+    for finding in result.findings:
+        if finding.severity == "error":
+            assert finding.tier == 1, (finding.rule, finding.ref)
+        elif finding.rule == "hardcode-in-formula":
+            assert finding.tier == 2
+        elif finding.rule in ("volatile", "long-formula"):
+            assert finding.tier == 3
+
+
+def test_defects_outrank_assumptions_outrank_hygiene() -> None:
+    """The weight order the mentor asked for: every tier-1 finding
+    outweighs every tier-2, and every tier-2 every tier-3 — a torn
+    check can never sit below an OFFSET carpet. The report is sorted
+    by that weight."""
+    result = audit(read_workbook(str(CASCADE / "audit_fixture.xlsx")))
+    floors = {
+        tier: min(f.weight for f in result.findings if f.tier == tier)
+        for tier in {f.tier for f in result.findings}
+    }
+    ceilings = {
+        tier: max(f.weight for f in result.findings if f.tier == tier)
+        for tier in {f.tier for f in result.findings}
+    }
+    if 1 in floors and 2 in ceilings:
+        assert floors[1] > ceilings[2]
+    if 2 in floors and 3 in ceilings:
+        assert floors[2] > ceilings[3]
+    weights = [f.weight for f in result.findings]
+    assert weights == sorted(weights, reverse=True)
+
+
+def test_a_folded_finding_names_every_cell_it_stands_for() -> None:
+    """Family → affected cells: the fold is the sentence, the roster
+    is the evidence. The Yorkshire block names all twenty cells."""
+
+    def build(sheet) -> None:
+        for row in range(2, 10):
+            for column in range(2, 11):
+                at = sheet.cell(row=row, column=column)
+                if column >= 6 and row in (3, 4, 5, 6):
+                    at.value = 0.52
+                else:
+                    at.value = f"=B{row}+{column}"
+
+    result = _tmp_book(build)
+    typed = [f for f in result.findings if f.rule == "typed-over-formula"]
+    assert len(typed) == 1
+    members = typed[0].cells.split(", ")
+    assert len(members) == 20
+    assert "F3" in members
+    assert "J6" in members
+    assert "H4" in members
