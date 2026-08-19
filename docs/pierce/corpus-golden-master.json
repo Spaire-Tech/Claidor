@@ -3,10 +3,10 @@
   "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
   "sheets": 3,
   "cells": 5443,
-  "errors": 4,
+  "errors": 3,
   "smells": 2,
   "by_rule": {
-   "typed-over-formula": 4,
+   "typed-over-formula": 3,
    "hardcode-in-formula": 2
   },
   "findings": [
@@ -30,13 +30,6 @@
     "ref": "H7 Cost of debt indexation!I59",
     "figure": "0.0165336",
     "detail": "0.0165336 typed into a series that is otherwise calculated: = ( 1 + J58 ) / ( 1 + J34 ) - 1 + $G$11"
-   },
-   {
-    "rule": "typed-over-formula",
-    "severity": "error",
-    "ref": "H7 Cost of debt indexation!I60",
-    "figure": "",
-    "detail": "0.0165336 typed into a series that is otherwise calculated: = AVERAGE( I60:M60 )"
    },
    {
     "rule": "hardcode-in-formula",
@@ -80,20 +73,20 @@
     "detail": "0.5 written into 15 different formulas on this sheet \u2014 a convention typed everywhere rather than held in one cell"
    }
   ],
-  "seconds": 0.8
+  "seconds": 0.7
  },
  {
   "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
   "sheets": 62,
   "cells": 340413,
   "errors": 9,
-  "smells": 24,
+  "smells": 21,
   "by_rule": {
    "skipped-cell": 3,
    "typed-over-formula": 6,
-   "volatile": 4,
+   "volatile": 2,
    "hardcode-in-formula": 16,
-   "error-value": 2,
+   "error-value": 1,
    "long-formula": 2
   },
   "findings": [
@@ -283,15 +276,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "I_Series!H352",
-    "figure": "5",
-    "detail": "5 inside =5%*C_Fin_Summ!AL$191"
-   },
-   {
-    "rule": "volatile",
-    "severity": "smell",
-    "ref": "O_FinStats!G3",
-    "figure": "",
-    "detail": "uses NOW"
+    "figure": "5%",
+    "detail": "5% inside =5%*C_Fin_Summ!AL$191"
    },
    {
     "rule": "error-value",
@@ -313,36 +299,22 @@
     "ref": "ScenDelta!Y17",
     "figure": "",
     "detail": "273 characters \u2014 one formula filled across 6422 cells (ScenDelta!AA100 to ScenDelta!Y61)"
-   },
-   {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "ScenGraphData!AA20",
-    "figure": "5,616",
-    "detail": "carries #N/A in 900 routine gaps in its series and past its data's edge \u2014 5,616 cells across 36 columns"
-   },
-   {
-    "rule": "volatile",
-    "severity": "smell",
-    "ref": "Version log!F10",
-    "figure": "",
-    "detail": "uses TODAY"
    }
   ],
-  "seconds": 46.9
+  "seconds": 45.4
  },
  {
   "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
   "sheets": 62,
   "cells": 340415,
   "errors": 9,
-  "smells": 24,
+  "smells": 21,
   "by_rule": {
    "skipped-cell": 3,
    "typed-over-formula": 6,
-   "volatile": 4,
+   "volatile": 2,
    "hardcode-in-formula": 16,
-   "error-value": 2,
+   "error-value": 1,
    "long-formula": 2
   },
   "findings": [
@@ -532,15 +504,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "I_Series!H352",
-    "figure": "5",
-    "detail": "5 inside =5%*C_Fin_Summ!AL$191"
-   },
-   {
-    "rule": "volatile",
-    "severity": "smell",
-    "ref": "O_FinStats!G3",
-    "figure": "",
-    "detail": "uses NOW"
+    "figure": "5%",
+    "detail": "5% inside =5%*C_Fin_Summ!AL$191"
    },
    {
     "rule": "error-value",
@@ -562,23 +527,9 @@
     "ref": "ScenDelta!Y17",
     "figure": "",
     "detail": "273 characters \u2014 one formula filled across 6422 cells (ScenDelta!AA100 to ScenDelta!Y61)"
-   },
-   {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "ScenGraphData!AA20",
-    "figure": "5,616",
-    "detail": "carries #N/A in 900 routine gaps in its series and past its data's edge \u2014 5,616 cells across 36 columns"
-   },
-   {
-    "rule": "volatile",
-    "severity": "smell",
-    "ref": "Version log!F10",
-    "figure": "",
-    "detail": "uses TODAY"
    }
   ],
-  "seconds": 48.5
+  "seconds": 46.1
  },
  {
   "file": "ofgem_ed2/v1_2023-02.xlsx",
@@ -697,7 +648,7 @@
     "detail": "1099.46567302972 inside =1099.46567302972"
    }
   ],
-  "seconds": 24.7
+  "seconds": 23.0
  },
  {
   "file": "ofgem_ed2/v2_2023-07-14.xlsx",
@@ -816,7 +767,7 @@
     "detail": "1099.46567302972 inside =1099.46567302972"
    }
   ],
-  "seconds": 24.7
+  "seconds": 24.1
  },
  {
   "file": "ofgem_ed2/v2_2023-07-31.xlsx",
@@ -935,7 +886,7 @@
     "detail": "1099.46567302972 inside =1099.46567302972"
    }
   ],
-  "seconds": 24.3
+  "seconds": 23.4
  },
  {
   "file": "ofgem_ed2/v3_2023-10.xlsx",
@@ -1054,7 +1005,7 @@
     "detail": "1099.46567302972 inside =1099.46567302972"
    }
   ],
-  "seconds": 24.8
+  "seconds": 23.3
  },
  {
   "file": "ofgem_ed2/v3_2023-11.xlsx",
@@ -1173,7 +1124,7 @@
     "detail": "1099.46567302972 inside =1099.46567302972"
    }
   ],
-  "seconds": 24.1
+  "seconds": 23.4
  },
  {
   "file": "ofgem_ed2/v3_2024-01.xlsm",
@@ -1236,7 +1187,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.6
+  "seconds": 23.7
  },
  {
   "file": "ofgem_ed2/v4_2024-07.xlsx",
@@ -1299,7 +1250,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.0
+  "seconds": 23.6
  },
  {
   "file": "ofgem_ed2/v4_2025-01.xlsx",
@@ -1362,7 +1313,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.0
+  "seconds": 23.5
  },
  {
   "file": "ofgem_ed2/v4_2025-07.xlsx",
@@ -1433,7 +1384,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.2
+  "seconds": 24.3
  },
  {
   "file": "ofgem_ed2/v4_2026-01.xlsx",
@@ -1504,7 +1455,7 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 24.1
+  "seconds": 24.0
  },
  {
   "file": "ofgem_ed2/v5_2026-06.xlsx",
@@ -1567,16 +1518,16 @@
     "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
    }
   ],
-  "seconds": 23.8
+  "seconds": 23.7
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
   "sheets": 14,
   "cells": 27493,
-  "errors": 5,
+  "errors": 4,
   "smells": 6,
   "by_rule": {
-   "skipped-cell": 5,
+   "skipped-cell": 4,
    "long-formula": 3,
    "hardcode-in-formula": 1,
    "volatile": 2
@@ -1602,13 +1553,6 @@
     "ref": "RAVBalances!AH75",
     "figure": "226",
     "detail": "=SUM(AH14:AH15) leaves out RAVBalances!AH17, RAVBalances!AH18 above it \u2014 worth 226 together \u2014 one formula filled across 18 cells (FY2014\u2013FY2031)"
-   },
-   {
-    "rule": "skipped-cell",
-    "severity": "error",
-    "ref": "TIM!AU48",
-    "figure": "-193.859",
-    "detail": "=SUM(AU11:AU16,AU44) leaves out TIM!AU45 above it \u2014 worth -193.859 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    },
    {
     "rule": "skipped-cell",
@@ -1660,7 +1604,7 @@
     "detail": "340 characters \u2014 one formula filled across 30 cells (Totex!D10 to Totex!D43)"
    }
   ],
-  "seconds": 4.0
+  "seconds": 4.2
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
@@ -1678,8 +1622,8 @@
     "rule": "skipped-cell",
     "severity": "error",
     "ref": "TIM!AU47",
-    "figure": "-318.698",
-    "detail": "=SUM(AU12:AU15,AU42) leaves out TIM!AU43, TIM!AU44 above it \u2014 worth -318.698 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+    "figure": "-209.407",
+    "detail": "=SUM(AU12:AU15,AU42) leaves out TIM!AU44 above it \u2014 worth -209.407 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    },
    {
     "rule": "skipped-cell",
@@ -1717,16 +1661,16 @@
     "detail": "202 characters \u2014 one formula filled across 40 cells (FY2031\u2013FY2031)"
    }
   ],
-  "seconds": 2.5
+  "seconds": 2.4
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
   "sheets": 18,
   "cells": 27555,
-  "errors": 5,
+  "errors": 4,
   "smells": 4,
   "by_rule": {
-   "skipped-cell": 4,
+   "skipped-cell": 3,
    "error-value": 1,
    "long-formula": 2,
    "hardcode-in-formula": 2
@@ -1745,13 +1689,6 @@
     "ref": "SO_Calculations!AU127",
     "figure": "2.7922",
     "detail": "=SUM(AU95:AU96) leaves out SO_Calculations!AU98, SO_Calculations!AU99, SO_Calculations!AU100 above it \u2014 worth 2.7922 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "skipped-cell",
-    "severity": "error",
-    "ref": "TIM!AU48",
-    "figure": "39.5",
-    "detail": "=SUM(AU11:AU16,AU44) leaves out TIM!AU45 above it \u2014 worth 39.5 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    },
    {
     "rule": "error-value",
@@ -1796,19 +1733,19 @@
     "detail": "202 characters \u2014 one formula filled across 33 cells (FY2031\u2013FY2031)"
    }
   ],
-  "seconds": 3.7
+  "seconds": 3.6
  },
  {
   "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
   "sheets": 40,
   "cells": 601758,
   "errors": 4,
-  "smells": 63,
+  "smells": 61,
   "by_rule": {
    "skipped-cell": 1,
    "error-value": 5,
    "inconsistent-row": 1,
-   "hardcode-in-formula": 19,
+   "hardcode-in-formula": 17,
    "volatile": 6,
    "long-formula": 35
   },
@@ -2111,15 +2048,15 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP255",
-    "figure": "50",
-    "detail": "50 inside =(IF(AP245 >= 0, MIN(AP245, -AP251-AP253-AP254), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "50%",
+    "detail": "50% inside =(IF(AP245 >= 0, MIN(AP245, -AP251-AP253-AP254), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP298",
-    "figure": "50",
-    "detail": "50 inside =(IF(AP290 >= 0, MIN(AP290, -AP294-AP296-AP297), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "50%",
+    "detail": "50% inside =(IF(AP290 >= 0, MIN(AP290, -AP294-AP296-AP297), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "long-formula",
@@ -2181,15 +2118,15 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "RatingSimulator!F348",
-    "figure": "30",
-    "detail": "30 inside =IF(Scenarios!F105=TRUE,100%,30%)"
+    "figure": "30%",
+    "detail": "30% inside =IF(Scenarios!F105=TRUE,100%,30%)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "RatingSimulator!F86",
-    "figure": "30",
-    "detail": "30 inside =IF(Scenarios!F79=TRUE,100%,30%)"
+    "figure": "30%",
+    "detail": "30% inside =IF(Scenarios!F79=TRUE,100%,30%)"
    },
    {
     "rule": "volatile",
@@ -2209,8 +2146,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "RoRE Table!AU17",
-    "figure": "25",
-    "detail": "25 inside =25% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+    "figure": "25%",
+    "detail": "25% inside =25% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    },
    {
     "rule": "long-formula",
@@ -2250,23 +2187,9 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Scenarios!AU149",
-    "figure": "0.1",
-    "detail": "0.1 inside =AU146+0.1% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "Scenarios!AV131",
     "figure": "2032, 2027",
     "detail": "2032, 2027 inside =IF($F$321=1,IF(AV5>=$F$320,$F$131,1)) + IF($F$321=2,_xlfn.I \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Scenarios!G15",
-    "figure": "2001, 2000",
-    "detail": "2001, 2000 inside =\"\u00a3m \"&F15-2001&\"/\"&F15-2000&\" prices\""
    },
    {
     "rule": "long-formula",
@@ -2283,20 +2206,19 @@
     "detail": "260 characters \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)"
    }
   ],
-  "seconds": 357.8
+  "seconds": 325.7
  },
  {
   "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
   "sheets": 46,
   "cells": 652141,
-  "errors": 6,
-  "smells": 80,
+  "errors": 5,
+  "smells": 74,
   "by_rule": {
    "inconsistent-row": 1,
    "skipped-cell": 1,
    "error-value": 7,
-   "typed-over-formula": 1,
-   "hardcode-in-formula": 34,
+   "hardcode-in-formula": 28,
    "volatile": 6,
    "long-formula": 36
   },
@@ -2321,13 +2243,6 @@
     "ref": "Finance&Tax(actual)!I238",
     "figure": "",
     "detail": "#DIV/0! at I238 inside an otherwise live column \u2014 values resume at I239"
-   },
-   {
-    "rule": "typed-over-formula",
-    "severity": "error",
-    "ref": "MainInputs!H293",
-    "figure": "",
-    "detail": "typed over in 3 places down one column: H293, H294, H295"
    },
    {
     "rule": "error-value",
@@ -2363,20 +2278,6 @@
     "ref": "Depn!AU5",
     "figure": "5",
     "detail": "5 written into 3 different formulas on this sheet \u2014 a convention typed everywhere rather than held in one cell"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Depn!I20",
-    "figure": "9999",
-    "detail": "9999 inside =IF(I18=\"Terminate\",Scenarios!F32,9999)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Depn!I23",
-    "figure": "9999",
-    "detail": "9999 inside =IF(OR(I21=\"Terminate\",I21=\"RIIO3 reset\"),Scenarios!F35,9999"
    },
    {
     "rule": "long-formula",
@@ -2634,15 +2535,15 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP247",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =(IF(AP237 >= 0, MIN(AP237, -AP243-AP245-AP246), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =(IF(AP237 >= 0, MIN(AP237, -AP243-AP245-AP246), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP289",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =(IF(AP281 >= 0, MIN(AP281, -AP285-AP287-AP288), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =(IF(AP281 >= 0, MIN(AP281, -AP285-AP287-AP288), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "long-formula",
@@ -2671,13 +2572,6 @@
     "ref": "FinancialRatios!AP19",
     "figure": "0.5",
     "detail": "0.5 inside =('Finance&Tax'!AP53 - 'Finance&Tax'!AP48) * 'Finance&Tax'!A \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "FuelPoor!I17",
-    "figure": "9999",
-    "detail": "9999 inside =IF(I15=\"Terminate\",Scenarios!F35,9999)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2738,23 +2632,16 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Scenarios!AP266",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 9 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8,9},0),0),0,_xl \u2014 one formula filled across 2 cells (FY2022\u2013FY2022)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "Scenarios!AP288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 9 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8,9},0),0),0,_xl \u2014 one formula filled across 3 cells (FY2022\u2013FY2024)"
+    "figure": "0.06",
+    "detail": "0.06 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8,9},0),0),0,_xl \u2014 one formula filled across 3 cells (FY2022\u2013FY2024)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AQ267",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 0.65 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x \u2014 one formula filled across 2 cells (FY2023\u2013FY2024)"
+    "figure": "0.65, 0.62",
+    "detail": "0.65, 0.62 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x \u2014 one formula filled across 2 cells (FY2023\u2013FY2024)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2774,29 +2661,29 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AS267",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 0.65 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x"
+    "figure": "0.65, 0.62",
+    "detail": "0.65, 0.62, 0.578253762737409 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AS288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0353867462217288",
+    "detail": "0.06, 0.0353867462217288 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AT267",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 0.65 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x"
+    "figure": "0.65, 0.62",
+    "detail": "0.65, 0.62, 0.583085039551156 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AT288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0354088834727659",
+    "detail": "0.06, 0.0354088834727659 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2808,23 +2695,16 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Scenarios!AU148",
-    "figure": "0.1",
-    "detail": "0.1 inside =AU145+0.1% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "Scenarios!AU267",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 0.65 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+    "figure": "0.65, 0.62",
+    "detail": "0.65, 0.62, 0.6 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AU288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0735682578487549",
+    "detail": "0.06, 0.0735682578487549 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2837,36 +2717,29 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AV288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0251519157268215",
+    "detail": "0.06, 0.0251519157268215 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AW288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0306135534364823",
+    "detail": "0.06, 0.0306135534364823 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AX288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0336847342208366",
+    "detail": "0.06, 0.0336847342208366 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AY288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Scenarios!G15",
-    "figure": "2001, 2000",
-    "detail": "2001, 2000 inside =\"\u00a3m \"&F15-2001&\"/\"&F15-2000&\" prices\""
+    "figure": "0.06, 0.0420344928016705",
+    "detail": "0.06, 0.0420344928016705 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "long-formula",
@@ -2904,24 +2777,24 @@
     "detail": "186 characters \u2014 one formula filled across 50 cells (FY2022\u2013FY2031)"
    }
   ],
-  "seconds": 384.4
+  "seconds": 381.6
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
   "sheets": 6,
   "cells": 497,
   "errors": 0,
-  "smells": 4,
+  "smells": 8,
   "by_rule": {
-   "hardcode-in-formula": 4
+   "hardcode-in-formula": 8
   },
   "findings": [
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Beta Estimates !C46",
+    "ref": "Beta Estimates !C48",
     "figure": "0.075",
-    "detail": "0.075 inside =C32+(0.075*C4) \u2014 one formula filled across 9 cells (Beta Estimates !C46 to Beta Estimates !E48)"
+    "detail": "0.075 inside =C34+(0.075*C6) \u2014 one formula filled across 3 cells (Beta Estimates !C48 to Beta Estimates !E48)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2934,8 +2807,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Beta Estimates !C62",
-    "figure": "0.075, 60",
-    "detail": "0.075, 60 inside =(C46-(0.075*60%))/(1-60%) \u2014 one formula filled across 26 cells (Beta Estimates !C62 to Beta Estimates !E72)"
+    "figure": "0.075",
+    "detail": "0.075 inside =(C46-(0.075*60%))/(1-60%) \u2014 one formula filled across 26 cells (Beta Estimates !C62 to Beta Estimates !E72)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -2943,35 +2816,70 @@
     "ref": "One-Off Wedge!E14",
     "figure": "22",
     "detail": "22 inside =IF(A14=2030, 22/24, IF(A14=2031, 10/24,0)) \u2014 one formula filled across 23 cells (One-Off Wedge!E14 to One-Off Wedge!E36)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!Q23",
+    "figure": "2%",
+    "detail": "2% inside =Q22*(1 + 2%)^(1/12) \u2014 one formula filled across 48 cells (One-Off Wedge!Q23 to One-Off Wedge!Q70)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R23",
+    "figure": "3%",
+    "detail": "3% inside =R22*(1 + 3%)^(1/12) \u2014 one formula filled across 11 cells (One-Off Wedge!R23 to One-Off Wedge!R33)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R34",
+    "figure": "3%",
+    "detail": "3% inside =R33*(1 +3%)^(1/12) \u2014 one formula filled across 10 cells (One-Off Wedge!R34 to One-Off Wedge!R43)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R44",
+    "figure": "2%",
+    "detail": "2% inside =R43*(1 +2%)^(1/12) \u2014 one formula filled across 27 cells (One-Off Wedge!R44 to One-Off Wedge!R70)"
    }
   ],
-  "seconds": 1.7
+  "seconds": 1.8
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
   "sheets": 17,
   "cells": 527279,
   "errors": 0,
-  "smells": 8,
+  "smells": 12,
   "by_rule": {
    "error-value": 2,
-   "hardcode-in-formula": 3,
+   "hardcode-in-formula": 7,
    "long-formula": 3
   },
   "findings": [
    {
     "rule": "error-value",
     "severity": "smell",
-    "ref": "Daily Data!E3",
-    "figure": "61,412",
-    "detail": "carries #N/A in 29,860 routine gaps in its series \u2014 61,412 cells across 16 columns"
+    "ref": "Daily Data!I3",
+    "figure": "38,129",
+    "detail": "carries #N/A in 18,667 routine gaps in its series \u2014 38,129 cells across 10 columns"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Daily Data!C2",
-    "figure": "6",
-    "detail": "6 inside =AND(WEEKDAY(A2,2)<6,ISNA(MATCH($A2,Holidays!$A:$A,0))) \u2014 one formula filled across 12873 cells (Daily Data!C10 to Daily Data!C9999)"
+    "ref": "Daily Data!N2",
+    "figure": "2%",
+    "detail": "2% inside =IF(DailyDataTable[[#This Row],[DATE]]>UserInterface!$C$29,U \u2014 one formula filled across 12873 cells (Daily Data!N10 to Daily Data!N9999)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "Daily Data!P2",
+    "figure": "3%",
+    "detail": "3% inside =IF(DailyDataTable[[#This Row],[DATE]]>UserInterface!$C$30,U \u2014 one formula filled across 12873 cells (Daily Data!P10 to Daily Data!P9999)"
    },
    {
     "rule": "long-formula",
@@ -3002,33 +2910,53 @@
     "detail": "22 inside =IF(A16=2030, 22/24, IF(A16=2031, 10/24,0)) \u2014 one formula filled across 23 cells (One-Off Wedge!E16 to One-Off Wedge!E38)"
    },
    {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!Q25",
+    "figure": "2%",
+    "detail": "2% inside =Q24*(1 + 2%)^(1/12) \u2014 one formula filled across 48 cells (One-Off Wedge!Q25 to One-Off Wedge!Q72)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R25",
+    "figure": "3%",
+    "detail": "3% inside =R24*(1 + 3%)^(1/12) \u2014 one formula filled across 11 cells (One-Off Wedge!R25 to One-Off Wedge!R35)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R36",
+    "figure": "3%",
+    "detail": "3% inside =R35*(1 +3%)^(1/12) \u2014 one formula filled across 10 cells (One-Off Wedge!R36 to One-Off Wedge!R45)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R46",
+    "figure": "2%",
+    "detail": "2% inside =R45*(1 +2%)^(1/12) \u2014 one formula filled across 27 cells (One-Off Wedge!R46 to One-Off Wedge!R72)"
+   },
+   {
     "rule": "error-value",
     "severity": "smell",
     "ref": "SONIA Forecast Interpolation!B3",
     "figure": "4,265",
     "detail": "carries #N/A in 22 routine gaps in its series and past its data's edge \u2014 4,265 cells across 5 columns"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SONIA_Fwd_Curve!E2",
-    "figure": "365.2425",
-    "detail": "365.2425 inside =ROUND(SONIA_Fwd_Curve[[#This Row],[Date]]+(365.2425*SONIA_F \u2014 one formula filled across 29700 cells (SONIA_Fwd_Curve!E10 to SONIA_Fwd_Curve!E9999)"
    }
   ],
-  "seconds": 120.1
+  "seconds": 116.6
  },
  {
   "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
   "sheets": 40,
   "cells": 597372,
-  "errors": 5,
-  "smells": 63,
+  "errors": 4,
+  "smells": 59,
   "by_rule": {
    "skipped-cell": 2,
    "error-value": 5,
-   "typed-over-formula": 1,
-   "hardcode-in-formula": 20,
+   "hardcode-in-formula": 16,
    "volatile": 6,
    "long-formula": 34
   },
@@ -3062,13 +2990,6 @@
     "detail": "#N/A at AI17 inside an otherwise live column \u2014 values resume at AI18"
    },
    {
-    "rule": "typed-over-formula",
-    "severity": "error",
-    "ref": "SystemOperator!H44",
-    "figure": "",
-    "detail": "typed over in 3 places down one column: H44, H45, H46"
-   },
-   {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Annual Inflation!AN58",
@@ -3088,20 +3009,6 @@
     "ref": "Depn!AU5",
     "figure": "5",
     "detail": "5 written into 3 different formulas on this sheet \u2014 a convention typed everywhere rather than held in one cell"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Depn!I20",
-    "figure": "9999",
-    "detail": "9999 inside =IF(I18=\"Terminate\",Scenarios!F32,9999)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Depn!I23",
-    "figure": "9999",
-    "detail": "9999 inside =IF(OR(I21=\"Terminate\",I21=\"RIIO3 reset\"),Scenarios!F35,9999"
    },
    {
     "rule": "long-formula",
@@ -3359,15 +3266,15 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP281",
-    "figure": "50",
-    "detail": "50 inside =(IF(AP271 >= 0, MIN(AP271, -AP277-AP279-AP280), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "50%",
+    "detail": "50% inside =(IF(AP271 >= 0, MIN(AP271, -AP277-AP279-AP280), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP323",
-    "figure": "50",
-    "detail": "50 inside =(IF(AP315 >= 0, MIN(AP315, -AP319-AP321-AP322), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "50%",
+    "detail": "50% inside =(IF(AP315 >= 0, MIN(AP315, -AP319-AP321-AP322), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "long-formula",
@@ -3463,23 +3370,9 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Scenarios!AU148",
-    "figure": "0.1",
-    "detail": "0.1 inside =AU145+0.1% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "Scenarios!AV130",
     "figure": "2032, 2027",
     "detail": "2032, 2027 inside =IF($F$332=1,IF(AV5>=$F$331,$F$130,1)) + IF($F$332=2,_xlfn.I \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Scenarios!G15",
-    "figure": "2001, 2000",
-    "detail": "2001, 2000 inside =\"\u00a3m \"&F15-2001&\"/\"&F15-2000&\" prices\""
    },
    {
     "rule": "long-formula",
@@ -3510,21 +3403,21 @@
     "detail": "5 inside =IF($I$275=1,($AU$273+$AU$274)/5,AT10*($AU$273+$AU$274)) \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    }
   ],
-  "seconds": 331.9
+  "seconds": 332.7
  },
  {
   "file": "ofgem_riio3/final_et3_bpfm.xlsm",
   "sheets": 43,
   "cells": 624026,
   "errors": 5,
-  "smells": 66,
+  "smells": 64,
   "by_rule": {
    "skipped-cell": 1,
    "error-value": 7,
    "inconsistent-row": 1,
    "typed-over-formula": 1,
    "volatile": 8,
-   "hardcode-in-formula": 20,
+   "hardcode-in-formula": 18,
    "long-formula": 33
   },
   "findings": [
@@ -3847,8 +3740,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP259",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =AP258*(5+(AP343-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =AP258*(5+(AP343-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -3861,8 +3754,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP308",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =AP307*(5+(AP301-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =AP307*(5+(AP301-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -3924,15 +3817,15 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "RatingSimulator!F348",
-    "figure": "30",
-    "detail": "30 inside =IF(Scenarios!F104=TRUE,100%,30%)"
+    "figure": "30%",
+    "detail": "30% inside =IF(Scenarios!F104=TRUE,100%,30%)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "RatingSimulator!F86",
-    "figure": "30",
-    "detail": "30 inside =IF(Scenarios!F78=TRUE,100%,30%)"
+    "figure": "30%",
+    "detail": "30% inside =IF(Scenarios!F78=TRUE,100%,30%)"
    },
    {
     "rule": "volatile",
@@ -3952,8 +3845,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "RoRE Table!AU17",
-    "figure": "17.5",
-    "detail": "17.5 inside =17.5% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+    "figure": "17.5%",
+    "detail": "17.5% inside =17.5% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    },
    {
     "rule": "long-formula",
@@ -3979,23 +3872,9 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Scenarios!AU155",
-    "figure": "0.1",
-    "detail": "0.1 inside =AU152+0.1% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "Scenarios!AV130",
     "figure": "2032, 2027",
     "detail": "2032, 2027 inside =IF($F$327=1,IF(AV5>=$F$326,$F$130,1)) + IF($F$327=2,_xlfn.I \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Scenarios!G14",
-    "figure": "2001, 2000",
-    "detail": "2001, 2000 inside =\"\u00a3m \"&F14-2001&\"/\"&F14-2000&\" prices\""
    },
    {
     "rule": "long-formula",
@@ -4026,21 +3905,21 @@
     "detail": "uses OFFSET in 10 cells of one row"
    }
   ],
-  "seconds": 340.7
+  "seconds": 343.5
  },
  {
   "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
   "sheets": 49,
   "cells": 693716,
-  "errors": 7,
-  "smells": 79,
+  "errors": 5,
+  "smells": 73,
   "by_rule": {
    "error-value": 7,
    "inconsistent-row": 1,
    "skipped-cell": 1,
-   "typed-over-formula": 3,
+   "typed-over-formula": 1,
    "volatile": 7,
-   "hardcode-in-formula": 33,
+   "hardcode-in-formula": 27,
    "long-formula": 34
   },
   "findings": [
@@ -4075,20 +3954,6 @@
    {
     "rule": "typed-over-formula",
     "severity": "error",
-    "ref": "MainInputs!H294",
-    "figure": "",
-    "detail": "0 typed into a series that is otherwise calculated: =price_label"
-   },
-   {
-    "rule": "typed-over-formula",
-    "severity": "error",
-    "ref": "MainInputs!H295",
-    "figure": "",
-    "detail": "0 typed into a series that is otherwise calculated: =price_label"
-   },
-   {
-    "rule": "typed-over-formula",
-    "severity": "error",
     "ref": "Revenue!AP16",
     "figure": "",
     "detail": "the same value typed across 10 cells of one row (AP16 to AY16)"
@@ -4113,20 +3978,6 @@
     "ref": "Depn!AU5",
     "figure": "5",
     "detail": "5 written into 3 different formulas on this sheet \u2014 a convention typed everywhere rather than held in one cell"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Depn!I20",
-    "figure": "9999",
-    "detail": "9999 inside =IF(I18=\"Terminate\",Scenarios!F31,9999)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Depn!I23",
-    "figure": "9999",
-    "detail": "9999 inside =IF(OR(I21=\"Terminate\",I21=\"RIIO3 reset\"),Scenarios!F34,9999"
    },
    {
     "rule": "long-formula",
@@ -4398,8 +4249,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP251",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =AP250*(5+(AP333-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =AP250*(5+(AP333-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -4412,8 +4263,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP299",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =AP298*(5+(AP292-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =AP298*(5+(AP292-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -4428,13 +4279,6 @@
     "ref": "FinancialRatios!AP19",
     "figure": "0.5",
     "detail": "0.5 inside =('Finance&Tax'!AP59 - 'Finance&Tax'!AP54) * 'Finance&Tax'!A \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "FuelPoor!I17",
-    "figure": "9999",
-    "detail": "9999 inside =IF(I15=\"Terminate\",Scenarios!F34,9999)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -4495,51 +4339,44 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Scenarios!AP266",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 9 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8,9},0),0),0,_xl \u2014 one formula filled across 2 cells (FY2022\u2013FY2022)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "Scenarios!AP288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 9 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8,9},0),0),0,_xl \u2014 one formula filled across 3 cells (FY2022\u2013FY2024)"
+    "figure": "0.06",
+    "detail": "0.06 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8,9},0),0),0,_xl \u2014 one formula filled across 3 cells (FY2022\u2013FY2024)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AQ267",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 0.65 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x \u2014 one formula filled across 2 cells (FY2023\u2013FY2024)"
+    "figure": "0.65, 0.62",
+    "detail": "0.65, 0.62 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x \u2014 one formula filled across 2 cells (FY2023\u2013FY2024)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AS267",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 0.65 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x"
+    "figure": "0.65, 0.62",
+    "detail": "0.65, 0.62, 0.578253762737409 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AS288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0353867462217288",
+    "detail": "0.06, 0.0353867462217288 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AT267",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 0.65 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x"
+    "figure": "0.65, 0.62",
+    "detail": "0.65, 0.62, 0.583085039551156 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AT288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0354088834727659",
+    "detail": "0.06, 0.0354088834727659 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
@@ -4551,23 +4388,16 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Scenarios!AU148",
-    "figure": "0.1",
-    "detail": "0.1 inside =AU145+0.1% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "Scenarios!AU267",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 0.65 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+    "figure": "0.65, 0.62",
+    "detail": "0.65, 0.62, 0.6 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AU288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0735682578487549",
+    "detail": "0.06, 0.0735682578487549 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
@@ -4580,36 +4410,29 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AV288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0251519157268215",
+    "detail": "0.06, 0.0251519157268215 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AW288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0306135534364823",
+    "detail": "0.06, 0.0306135534364823 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AX288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+    "figure": "0.06, 0.0336847342208366",
+    "detail": "0.06, 0.0336847342208366 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Scenarios!AY288",
-    "figure": "6, 7",
-    "detail": "6, 7, 8, 5 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Scenarios!G14",
-    "figure": "2001, 2000",
-    "detail": "2001, 2000 inside =\"\u00a3m \"&F14-2001&\"/\"&F14-2000&\" prices\""
+    "figure": "0.06, 0.0420344928016705",
+    "detail": "0.06, 0.0420344928016705 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
    },
    {
     "rule": "long-formula",
@@ -4647,20 +4470,20 @@
     "detail": "189 characters \u2014 one formula filled across 50 cells (FY2022\u2013FY2031)"
    }
   ],
-  "seconds": 380.5
+  "seconds": 379.6
  },
  {
   "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
   "sheets": 44,
   "cells": 604371,
-  "errors": 6,
-  "smells": 70,
+  "errors": 4,
+  "smells": 66,
   "by_rule": {
    "skipped-cell": 2,
-   "typed-over-formula": 4,
+   "typed-over-formula": 2,
    "volatile": 10,
    "error-value": 7,
-   "hardcode-in-formula": 21,
+   "hardcode-in-formula": 17,
    "long-formula": 32
   },
   "findings": [
@@ -4693,20 +4516,6 @@
     "detail": "the same value typed across 10 cells of one row (AP16 to AY16)"
    },
    {
-    "rule": "typed-over-formula",
-    "severity": "error",
-    "ref": "SystemOperator!H45",
-    "figure": "",
-    "detail": "0 typed into a series that is otherwise calculated: =price_label"
-   },
-   {
-    "rule": "typed-over-formula",
-    "severity": "error",
-    "ref": "SystemOperator!H46",
-    "figure": "",
-    "detail": "0 typed into a series that is otherwise calculated: =price_label"
-   },
-   {
     "rule": "volatile",
     "severity": "smell",
     "ref": "Checks!AP66",
@@ -4726,20 +4535,6 @@
     "ref": "Depn!AU5",
     "figure": "5",
     "detail": "5 written into 3 different formulas on this sheet \u2014 a convention typed everywhere rather than held in one cell"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Depn!I20",
-    "figure": "9999",
-    "detail": "9999 inside =IF(I18=\"Terminate\",Scenarios!F31,9999)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Depn!I23",
-    "figure": "9999",
-    "detail": "9999 inside =IF(OR(I21=\"Terminate\",I21=\"RIIO3 reset\"),Scenarios!F34,9999"
    },
    {
     "rule": "long-formula",
@@ -5011,8 +4806,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP285",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =AP284*(5+(AP367-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =AP284*(5+(AP367-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -5025,8 +4820,8 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "Finance&Tax!AP333",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =AP332*(5+(AP326-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =AP332*(5+(AP326-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -5108,23 +4903,9 @@
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Scenarios!AU148",
-    "figure": "0.1",
-    "detail": "0.1 inside =AU145+0.1% \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
     "ref": "Scenarios!AV130",
     "figure": "2032, 2027",
     "detail": "2032, 2027 inside =IF($F$332=1,IF(AV5>=$F$331,$F$130,1)) + IF($F$332=2,_xlfn.I \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Scenarios!G14",
-    "figure": "2001, 2000",
-    "detail": "2001, 2000 inside =\"\u00a3m \"&F14-2001&\"/\"&F14-2000&\" prices\""
    },
    {
     "rule": "long-formula",
@@ -5151,15 +4932,15 @@
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "SystemOperator!AP931",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =AP930*(5+(AP1014-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =AP930*(5+(AP1014-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "SystemOperator!AP979",
-    "figure": "5, 50",
-    "detail": "5, 50 inside =AP978*(5+(AP972-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+    "figure": "5, 50%",
+    "detail": "5, 50% inside =AP978*(5+(AP972-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
    },
    {
     "rule": "hardcode-in-formula",
@@ -5197,33 +4978,40 @@
     "detail": "uses OFFSET in 10 cells of one row"
    }
   ],
-  "seconds": 344.8
+  "seconds": 350.7
  },
  {
   "file": "ofgem_riio3/final_wacc.xlsx",
   "sheets": 16,
   "cells": 500502,
   "errors": 0,
-  "smells": 11,
+  "smells": 15,
   "by_rule": {
    "error-value": 2,
-   "hardcode-in-formula": 3,
+   "hardcode-in-formula": 7,
    "long-formula": 6
   },
   "findings": [
    {
     "rule": "error-value",
     "severity": "smell",
-    "ref": "Daily Data!E3",
-    "figure": "61,328",
-    "detail": "carries #N/A in 29,860 routine gaps in its series \u2014 61,328 cells across 16 columns"
+    "ref": "Daily Data!I3",
+    "figure": "38,066",
+    "detail": "carries #N/A in 18,667 routine gaps in its series \u2014 38,066 cells across 10 columns"
    },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
-    "ref": "Daily Data!C2",
-    "figure": "6",
-    "detail": "6 inside =AND(WEEKDAY(A2,2)<6,ISNA(MATCH($A2,Holidays!$A:$A,0))) \u2014 one formula filled across 12873 cells (Daily Data!C10 to Daily Data!C9999)"
+    "ref": "Daily Data!N2",
+    "figure": "2%",
+    "detail": "2% inside =IF(DailyDataTable[[#This Row],[DATE]]>UserInterface!$C$29,U \u2014 one formula filled across 12873 cells (Daily Data!N10 to Daily Data!N9999)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "Daily Data!P2",
+    "figure": "3%",
+    "detail": "3% inside =IF(DailyDataTable[[#This Row],[DATE]]>UserInterface!$C$30,U \u2014 one formula filled across 12873 cells (Daily Data!P10 to Daily Data!P9999)"
    },
    {
     "rule": "long-formula",
@@ -5275,20 +5063,41 @@
     "detail": "22 inside =IF(A16=2030, 22/24, IF(A16=2031, 10/24,0)) \u2014 one formula filled across 23 cells (One-Off Wedge!E16 to One-Off Wedge!E38)"
    },
    {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!Q25",
+    "figure": "2%",
+    "detail": "2% inside =Q24*(1 + 2%)^(1/12) \u2014 one formula filled across 48 cells (One-Off Wedge!Q25 to One-Off Wedge!Q72)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R25",
+    "figure": "3%",
+    "detail": "3% inside =R24*(1 + 3%)^(1/12) \u2014 one formula filled across 11 cells (One-Off Wedge!R25 to One-Off Wedge!R35)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R36",
+    "figure": "3%",
+    "detail": "3% inside =R35*(1 +3%)^(1/12) \u2014 one formula filled across 10 cells (One-Off Wedge!R36 to One-Off Wedge!R45)"
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R46",
+    "figure": "2%",
+    "detail": "2% inside =R45*(1 +2%)^(1/12) \u2014 one formula filled across 27 cells (One-Off Wedge!R46 to One-Off Wedge!R72)"
+   },
+   {
     "rule": "error-value",
     "severity": "smell",
     "ref": "SONIA Forecast Interpolation!B3",
     "figure": "4,265",
     "detail": "carries #N/A in 22 routine gaps in its series and past its data's edge \u2014 4,265 cells across 5 columns"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "SONIA_Fwd_Curve!E2",
-    "figure": "365.2425",
-    "detail": "365.2425 inside =ROUND(SONIA_Fwd_Curve[[#This Row],[Date]]+(365.2425*SONIA_F \u2014 one formula filled across 26350 cells (SONIA_Fwd_Curve!E10 to SONIA_Fwd_Curve!E9999)"
    }
   ],
-  "seconds": 130.5
+  "seconds": 131.5
  }
 ]

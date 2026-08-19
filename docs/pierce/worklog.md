@@ -3348,3 +3348,25 @@ grouped representatives added, every line traced. ED2 files 39 → 15.
 The shape-keyed rule also collapsed a family nobody named — the GD3
 network sheets' per-network innovation allowances — which is what a
 general rule is for. Baseline regenerated and committed; 476 tests.
+
+## 19 August, evening — Round 2: Purify, and the gate earns its keep again
+
+Nine judged noise causes became nine semantic principles (the commit
+carries each as a sentence about spreadsheets); three stayed as
+recorded limitations. The percent fix cut deeper than its cause: a
+postfix % is part of the number, so `2%` stopped hiding behind the
+innocence of the integer two — and the WACC and equity files gained
+twelve genuine inflation-rate hardcodes the engine had been blessing.
+Correctness up, count up, exactly the round's rule.
+
+The gate caught the round's one over-reach before it shipped: the
+first draft of « neighbours must agree » silently deleted two judged
+A findings (the H7 typed first-year rates, flanked by the row's own
+AVERAGE column). The principle's correct form — at least one flank's
+shape must repeat in the run — restored them; one unjudged sibling
+seed falls below the bar, recorded as a trade.
+
+The corpus: **696 → 669**, every line traced (respellings, the nine
+principles, twelve honest additions, three restorations). 481 tests.
+Next: the third measurement, per-detector, seed 20260820 as
+registered.
