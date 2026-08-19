@@ -262,6 +262,12 @@ class Workbook:
     #: empty » must be answered from the file, not from what survived
     #: labelling. Absent on hand-built books.
     populated: dict[str, int] = field(default_factory=dict)
+    #: Every row's label text, per sheet — including rows that carry
+    #: no numeric cell of their own, which is exactly where a block
+    #: header lives (« Asset beta at 0.075 debt beta » two rows above
+    #: the formulas it documents). The audit reads it to honour
+    #: numbers the sheet's own words already state.
+    row_words: dict[str, dict[int, str]] = field(default_factory=dict)
 
     def get(self, ref: str) -> Cell | None:
         return self.cells.get(ref)
@@ -459,6 +465,8 @@ def _read_sheet(
         else:
             subject = text
             labels[row] = text
+
+    book.row_words[name] = labels
 
     #: The short descriptors printed beside the name, per row. Long text is
     #: left out: columns C and D of a regulator's model carry whole

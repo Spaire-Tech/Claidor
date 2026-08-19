@@ -982,3 +982,127 @@ def test_the_same_template_formula_across_sheets_is_one_finding() -> None:
     lengthy = [f for f in result.findings if f.rule == "long-formula"]
     assert len(lengthy) == 1, [(f.ref, f.detail) for f in lengthy]
     assert "across 3 sheets" in lengthy[0].detail
+
+
+def test_purify_notation_principles_leave_real_assumptions_standing() -> None:
+    """Round 2's semantic principles, one row each: a number stated in
+    basis points by its label, a number built into a text label, a
+    MATCH case list, the 9999 never-sentinel, the year-length
+    constants, a calendar-part comparison — none is an assumption.
+    The genuine assumption beside them still reports."""
+
+    def build(sheet) -> None:
+        sheet["A2"] = "10 Bps Inc"
+        sheet["B2"] = "=Z2+0.1%"
+        sheet["B3"] = '="£m "&Z3-2001&"/"&Z3-2000&" prices"'
+        sheet["B4"] = "=IFNA(MATCH(Z4,{6,7,8},0),0)"
+        sheet["B5"] = '=IF(Z5="Terminate",Y5,9999)'
+        sheet["B6"] = "=Z6*365.2425"
+        sheet["B7"] = "=AND(WEEKDAY(Z7,2)<6,Y7)"
+        sheet["B9"] = "=Z9*1.2345"
+
+    result = _tmp_book(build)
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert [f.ref for f in hardcodes] == ["Sheet!B9"], [
+        (f.ref, f.detail) for f in hardcodes
+    ]
+
+
+def test_a_block_header_documents_the_numbers_beneath_it() -> None:
+    """« Asset beta at 0.075 debt beta » two rows above a block
+    documents every 0.075 in it; the same constant under a header
+    that does not state it still reports."""
+
+    def build(sheet) -> None:
+        sheet["A2"] = "Asset beta at 0.075 debt beta"
+        sheet["A4"] = "UU"
+        sheet["B4"] = "=Z4+(0.075*Y4)"
+        sheet["A8"] = "Adjusted beta"
+        sheet["A10"] = "SVT"
+        sheet["B10"] = "=Z10+(0.075*Y10)"
+
+    result = _tmp_book(build)
+    hardcodes = [f for f in result.findings if f.rule == "hardcode-in-formula"]
+    assert [f.ref for f in hardcodes] == ["Sheet!B10"], [
+        (f.ref, f.detail) for f in hardcodes
+    ]
+
+
+def test_a_constant_between_disagreeing_neighbours_is_not_typed_over() -> None:
+    """A value is typed over a series only where the series
+    demonstrably continues around it: the flanking formulas must agree
+    with each other. A metadata row whose columns each say their own
+    thing keeps its typed spare-line zeros."""
+
+    def metadata_row(sheet) -> None:
+        sheet["C5"] = "=Z5*2"
+        sheet["D5"] = 0
+        sheet["E5"] = "=Y5+1"
+
+    result = _tmp_book(metadata_row)
+    typed = [f for f in result.findings if f.rule == "typed-over-formula"]
+    assert not any(f.ref == "Sheet!D5" for f in typed), [
+        (f.ref, f.detail) for f in typed
+    ]
+
+    def series_row(sheet) -> None:
+        sheet["C5"] = "=C4*2"
+        sheet["D5"] = 0
+        sheet["E5"] = "=E4*2"
+
+    result = _tmp_book(series_row)
+    typed = [f for f in result.findings if f.rule == "typed-over-formula"]
+    assert any(f.ref == "Sheet!D5" for f in typed), [
+        (f.ref, f.detail) for f in typed
+    ]
+
+
+def test_an_unread_today_is_a_stamp_and_a_read_one_is_a_finding() -> None:
+    """A TODAY() nothing reads is a « data valid from » stamp. The
+    moment a formula reads it, its restlessness flows into the model
+    and the finding returns."""
+
+    def unread(sheet) -> None:
+        sheet["A2"] = "Data valid from"
+        sheet["B2"] = "=TODAY()"
+
+    result = _tmp_book(unread)
+    assert not any(f.rule == "volatile" for f in result.findings)
+
+    def read(sheet) -> None:
+        sheet["A2"] = "Data valid from"
+        sheet["B2"] = "=TODAY()"
+        sheet["B3"] = "=B2+30"
+
+    result = _tmp_book(read)
+    noisy = [f for f in result.findings if f.rule == "volatile"]
+    assert [f.ref for f in noisy] == ["Sheet!B2"]
+
+
+def test_a_partition_sibling_just_below_the_total_covers_its_rows() -> None:
+    """The TIM sheet stacks its cap-rate totals on adjacent rows, each
+    picking its own slice — the sibling below covers what this total
+    skips. A grand total far below excuses nothing."""
+
+    def stacked(sheet) -> None:
+        for row in range(2, 10):
+            sheet.cell(row=row, column=2).value = row * 10
+        sheet["B12"] = "=SUM(B2:B5)"
+        sheet["B13"] = "=SUM(B6:B9)"
+
+    result = _tmp_book(stacked)
+    assert not any(f.rule == "skipped-cell" for f in result.findings), [
+        f.detail for f in result.findings if f.rule == "skipped-cell"
+    ]
+
+    def faraway(sheet) -> None:
+        for row in range(2, 10):
+            sheet.cell(row=row, column=2).value = row * 10
+        sheet["B12"] = "=SUM(B2:B5)"
+        sheet["B30"] = "=SUM(B2:B9)"
+
+    result = _tmp_book(faraway)
+    skipped = [f for f in result.findings if f.rule == "skipped-cell"]
+    assert any(f.ref == "Sheet!B12" for f in skipped), [
+        (f.ref, f.detail) for f in skipped
+    ]

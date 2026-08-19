@@ -64,7 +64,24 @@ VOLATILE = frozenset({"OFFSET", "INDIRECT", "NOW", "TODAY", "RAND", "RANDBETWEEN
 #: Numbers that carry no assumption. A sign flip, a percentage conversion,
 #: a count of months or days, the two in a mean. Flagging these is how a
 #: hardcode check earns a reputation for noise and stops being read.
-INNOCENT = frozenset({0, 1, 2, -1, 10, 12, 24, 52, 100, 360, 365, 1000, 1000000})
+#: 9999 is the conventional « never happens » sentinel year, and
+#: 365.25 / 365.2425 are the Julian and Gregorian year lengths — date
+#: arithmetic, not assumptions, wherever they appear.
+INNOCENT = frozenset(
+    {0, 1, 2, -1, 10, 12, 24, 52, 100, 360, 365, 1000, 1000000}
+    | {9999, 365.25, 365.2425}
+)
+
+#: Functions that answer « which part of the calendar is this? ». A
+#: literal compared against their result — `WEEKDAY(A2,2)<6` is the
+#: business-day test — is calendar logic, not a model assumption.
+CALENDAR_PARTS = frozenset({"WEEKDAY", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"})
+
+#: A formula writing the not-available value on purpose. The error it
+#: produces is by construction — `IF(toggle, data, NA())` is chart
+#: scaffolding saying « this series is off » — and an error the author
+#: wrote is not an error finding.
+NA_LITERAL = re.compile(r"\bNA\s*\(\s*\)", re.IGNORECASE)
 
 #: Functions whose numeric arguments *are* the notation, not buried
 #: assumptions. `DATE(2025,4,1)` is how a date is written in a formula —
@@ -1274,6 +1291,17 @@ def _error_values(book: Workbook, result: Audit) -> None:
             else:
                 calendar = routine_column
             if tail or calendar:
+                #: An error the author wrote on purpose is not an
+                #: error finding: `IF(toggle, data, NA())` scaffolding
+                #: says « this series is off », and reporting it —
+                #: however quietly — tells a competent reader nothing.
+                first_cell = book.cells.get(f"{sheet}!{column}{start}")
+                if (
+                    first_cell is not None
+                    and first_cell.formula
+                    and NA_LITERAL.search(first_cell.formula)
+                ):
+                    continue
                 fold = quiet.setdefault(
                     sheet,
                     {
@@ -1364,6 +1392,11 @@ def _external_links(book: Workbook, result: Audit) -> None:
 
 
 def _volatile(book: Workbook, result: Audit) -> None:
+    #: Everything any formula reads, once — so a timestamp can know
+    #: whether its value flows anywhere.
+    read: set[str] = set()
+    for cell in book.cells.values():
+        read.update(cell.precedents or ())
     for cell in book.cells.values():
         if not cell.formula:
             continue
@@ -1372,6 +1405,12 @@ def _volatile(book: Workbook, result: Audit) -> None:
             for token in Tokenizer(cell.formula).items
             if token.type == "FUNC"
         } & VOLATILE
+        #: A TODAY() nothing reads is a « data valid from » stamp —
+        #: documentation, not a value that never sits still. The
+        #: structural volatiles (OFFSET, INDIRECT) stay findings even
+        #: unread: they are about how the model is built.
+        if used and used <= {"NOW", "TODAY"} and cell.ref not in read:
+            continue
         if used:
             result.findings.append(
                 Finding(
@@ -1446,16 +1485,35 @@ def _literals(book: Workbook, result: Audit) -> None:
     rate, a tax rate, a margin — so a number that could not be an
     assumption is not a finding.
     """
+    occupied = {(cell.sheet, cell.row) for cell in book.cells.values()}
     for cell in book.cells.values():
         if not cell.formula:
             continue
         #: A number the row's own words state — « 70% Grid / 30% Water »
         #: over a `*0.7`, « must be 1 or 5 » over a `*5` — is documented
         #: where the reader is already looking, which is the entire
-        #: complaint the hardcode rule makes. Judged per number: the
-        #: documented ones drop out, any undocumented ones still report.
+        #: complaint the hardcode rule makes. The block header above
+        #: counts as the row's words too: a section titled « Asset beta
+        #: at 0.075 debt beta » documents every 0.075 beneath it.
+        #: Judged per number: the documented ones drop out, any
+        #: undocumented ones still report. A header is a row with
+        #: words and no numbers of its own — a sibling data row's
+        #: label documents only itself.
+        heads = book.row_words.get(cell.sheet, {})
+        context = " ".join(
+            filter(
+                None,
+                (
+                    heads.get(cell.row - step, "")
+                    for step in range(1, 4)
+                    if (cell.sheet, cell.row - step) not in occupied
+                ),
+            )
+        )
         buried = tuple(
-            value for value in _buried(cell.formula) if not _documented(value, cell)
+            value
+            for value in _buried(cell.formula)
+            if not _documented(value, cell, context)
         )
         if buried:
             #: Shown once each — « 20, 20 » for a bound tested twice
@@ -1503,10 +1561,27 @@ def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
     ]
     found: list[str] = []
     selectors: list[str] = []
-    #: One frame per open call or parenthesis: [function name, argument
-    #: index] — the same walk `references_of` does in the reader.
+    #: One frame per open call, parenthesis or array constant:
+    #: [function name, argument index] — the same walk `references_of`
+    #: does in the reader. An array constant's frame is named « { ».
     frames: list[list[Any]] = []
+    #: Which function each CLOSE token ended, so a literal can know
+    #: what it is being compared against: in `WEEKDAY(A2,2)<6` the
+    #: token before the `<` closed WEEKDAY, and the 6 is a day of the
+    #: week, not an assumption.
+    closed_at: dict[int, str] = {}
     tolerant = "ABS(" in formula.upper()
+
+    #: A formula that joins text with `&` at its top level *is* a
+    #: label — « £m 23/24 prices » built from a year cell — and every
+    #: number in it is part of the wording, not of the model.
+    depth = 0
+    text_builder = False
+    for token in tokens:
+        if token.type in ("FUNC", "PAREN", "ARRAY"):
+            depth += 1 if token.subtype == "OPEN" else -1
+        elif token.type.startswith("OPERATOR") and token.value == "&" and depth == 0:
+            text_builder = True
 
     def _operator(token: Any, values: tuple[str, ...]) -> bool:
         return (
@@ -1519,12 +1594,15 @@ def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
         if token.type == "FUNC" and token.subtype == "OPEN":
             frames.append([token.value.rstrip("(").upper(), 0])
             continue
+        if token.type == "ARRAY" and token.subtype == "OPEN":
+            frames.append(["{", 0])
+            continue
         if token.type == "PAREN" and token.subtype == "OPEN":
             frames.append(["", 0])
             continue
-        if token.type in ("FUNC", "PAREN") and token.subtype == "CLOSE":
+        if token.type in ("FUNC", "PAREN", "ARRAY") and token.subtype == "CLOSE":
             if frames:
-                frames.pop()
+                closed_at[index] = frames.pop()[0]
             continue
         if token.type == "SEP" and token.subtype == "ARG" and frames:
             frames[-1][1] += 1
@@ -1535,10 +1613,43 @@ def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
             number = float(token.value)
         except ValueError:
             continue
+        spelled = token.value
+        #: A trailing percent sign is part of the number: `+0.1%` is
+        #: one-thousandth, and the innocence test, the selector key and
+        #: the label documentation must all see it that way. The
+        #: percent spelling also reads better in every sentence.
+        if (
+            index + 1 < len(tokens)
+            and tokens[index + 1].type == "OPERATOR-POSTFIX"
+            and tokens[index + 1].value == "%"
+        ):
+            number /= 100
+            spelled = token.value + "%"
+        if text_builder:
+            continue
         prev = tokens[index - 1] if index else None
         after = tokens[index + 1] if index + 1 < len(tokens) else None
         if _operator(prev, ("=", "<>")) or _operator(after, ("=", "<>")):
-            selectors.append(token.value)
+            selectors.append(spelled)
+            continue
+        #: An array constant enumerating the cases a MATCH picks from
+        #: — `MATCH(m_identity,{6,7,8},0)` — is a list of case labels,
+        #: switch settings like any equality selector. An array
+        #: constant anywhere else (SUMPRODUCT weights) stays a number.
+        if any(name == "{" for name, _ in frames):
+            at = max(i for i, (name, _) in enumerate(frames) if name == "{")
+            owner = next(
+                ((name, arg) for name, arg in reversed(frames[:at]) if name), None
+            )
+            if owner is not None and owner[0] == "MATCH" and owner[1] == 1:
+                selectors.append(spelled)
+                continue
+        #: Compared against a calendar part: `WEEKDAY(A2,2)<6` asks
+        #: « is it a weekday », and the 6 belongs to the calendar.
+        if (
+            _operator(prev, ("<", "<=", ">", ">=", "=", "<>"))
+            and closed_at.get(index - 2) in CALENDAR_PARTS
+        ):
             continue
         if any(name in DATE_FUNCS or name in TEXT_FUNCS for name, _ in frames):
             continue
@@ -1560,7 +1671,7 @@ def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
             continue
         if number in INNOCENT or (number.is_integer() and abs(number) <= 4):
             continue
-        found.append(token.value)
+        found.append(spelled)
     return tuple(found), tuple(selectors)
 
 
@@ -1571,26 +1682,46 @@ def _buried(formula: str) -> tuple[str, ...]:
     return _literal_scan(formula)[0]
 
 
-def _documented(value: str, cell: Cell) -> bool:
-    """True when the cell's own labels state the number.
+def _documented(value: str, cell: Cell, context: str = "") -> bool:
+    """True when the sheet's own words state the number.
 
-    Checked in the number's own spelling, as a bare integer, and as the
+    Checked in the number's own spelling, as a bare integer, as the
     percentage it would print as — `0.7` is documented by a label that
-    says « 70% ». Word-bounded, so a 70 in « 1970 » proves nothing.
+    says « 70% » — and as basis points, because a row named « 10 Bps
+    Inc » has said everything about its `+0.1%`. Word-bounded, so a 70
+    in « 1970 » proves nothing. `context` carries the block header's
+    words: « Asset beta at 0.075 debt beta » two rows above the block
+    documents the 0.075 as surely as the row's own label would.
     """
-    words = " ".join(filter(None, (cell.name, cell.row_label, cell.column_label)))
+    words = " ".join(
+        filter(None, (cell.name, cell.row_label, cell.column_label, context))
+    )
     if not words:
         return False
     try:
         number = float(value)
     except ValueError:
-        return False
+        if not value.endswith("%"):
+            return False
+        try:
+            number = float(value[:-1]) / 100
+        except ValueError:
+            return False
     forms = {value}
     if number.is_integer():
         forms.add(f"{int(number)}")
     forms.add(f"{number * 100:g}%")
-    return any(
+    if any(
         re.search(rf"(?<![\w.]){re.escape(form)}(?![\w.])", words) for form in forms
+    ):
+        return True
+    bps = f"{number * 10000:g}"
+    return bool(
+        re.search(
+            rf"(?<![\w.]){re.escape(bps)}\s*(?:bps|bp|basis\s+points?)\b",
+            words,
+            re.IGNORECASE,
+        )
     )
 
 
@@ -1662,6 +1793,15 @@ def _rows(book: Workbook, result: Audit) -> None:
                 # a formula on both sides took that model from 99 findings
                 # to none, and cost the fixture nothing.
                 if run[index - 1].formula is None or run[index + 1].formula is None:
+                    continue
+                #: And the neighbours must agree with each other: a
+                #: value is typed *over* a series only where the series
+                #: demonstrably continues around it. A metadata row —
+                #: `=price_label` on one side, a cross-sheet pick on the
+                #: other, a typed 0 for a spare line between — is not a
+                #: calculation interrupted; its columns each say their
+                #: own thing.
+                if _shape(run[index - 1]) != _shape(run[index + 1]):
                     continue
                 # And lone down the column too. A value pasted over a
                 # formula is surrounded by formulas on all four sides; a
@@ -2572,9 +2712,15 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                 #: A row covered by another bare SUM's range in this
                 #: block is a detail row inside a partition: the
                 #: total adds the subtotals, and reaching around them
-                #: to the detail would double count.
+                #: to the detail would double count. A partition lists
+                #: its members side by side, so the covering sibling
+                #: may sit just *below* the total too — the TIM sheet
+                #: stacks its three cap-rate totals on adjacent rows,
+                #: each picking its own slice — but no further than
+                #: the spacer allowance, because a grand total twenty
+                #: rows down excuses nothing.
                 if any(
-                    top <= at < cell.row and row in reads
+                    top <= at <= cell.row + 3 and at != cell.row and row in reads
                     for at, reads in partitions.get((cell.sheet, column), ())
                 ):
                     continue
