@@ -899,3 +899,23 @@ def test_a_row_of_near_identical_long_formulas_is_one_finding() -> None:
     lengthy = [f for f in result.findings if f.rule == "long-formula"]
     assert len(lengthy) == 1, [(f.ref, f.detail) for f in lengthy]
     assert "4 cells of one row" in lengthy[0].detail
+
+
+def test_an_index_table_including_its_own_cell_is_not_a_loop() -> None:
+    """Excel resolves INDEX's pick before hunting circular references —
+    `=INDEX(B1:B10,3)` written inside its own table calculates, and
+    modellers use exactly this to break a deliberate cycle without
+    OFFSET's volatility. Two shipped regulator models carry chains
+    that close only through INDEX tables; neither warns in Excel."""
+
+    def build(sheet) -> None:
+        for row in range(1, 11):
+            if row == 5:
+                sheet.cell(row=row, column=2).value = "=INDEX(B1:B10,3)"
+            else:
+                sheet.cell(row=row, column=2).value = row
+
+    result = _tmp_book(build)
+    assert not any(f.rule == "circular" for f in result.findings), [
+        f.detail for f in result.findings if f.rule == "circular"
+    ]

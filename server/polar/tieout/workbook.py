@@ -128,6 +128,11 @@ class Cell:
     number_format: str | None = None
     #: The cells this one is computed from, in the order they appear.
     precedents: tuple[str, ...] = ()
+    #: The subset of `precedents` read only through a lookup table —
+    #: INDEX's first argument. Excel resolves the pick before hunting
+    #: circular references, so the cycle hunter must not walk these;
+    #: everything else about a precedent still applies to them.
+    lookup_reads: tuple[str, ...] = ()
     #: What this cell reads that could not be resolved to a cell, each with
     #: a sentence saying why — an external workbook, a defined name left
     #: pointing at `#REF!`, a table reference. Kept because a chain missing
@@ -225,6 +230,11 @@ class Precedents:
     refs: tuple[str, ...] = ()
     #: (what it said, why it could not be resolved). Phrased for a reader.
     unresolved: tuple[tuple[str, str], ...] = ()
+    #: The subset of `refs` read *only* through a lookup table — INDEX's
+    #: first argument — where Excel resolves the pick before hunting
+    #: circular references. Real precedents for flows and coverage;
+    #: edges the cycle hunter must not walk.
+    via_lookup: tuple[str, ...] = ()
 
     def __bool__(self) -> bool:
         return bool(self.refs or self.unresolved)
@@ -527,6 +537,7 @@ def _read_sheet(
                 # its cells at all, which is why this may be absent.
                 number_format=grid.formats.get((row, column)),
                 precedents=references,
+                lookup_reads=read.via_lookup,
                 unresolved=read.unresolved,
                 alias_of=_alias(formula, references),
             )
@@ -581,6 +592,20 @@ RUNTIME_TARGET = {
     "OFFSET": "a range measured out at run time from the anchor it names",
 }
 
+# INDEX's first argument is a table the function picks *one* cell out
+# of at run time, and Excel resolves the pick before it hunts circular
+# references — which is why `=INDEX(A1:A10,5)` written inside its own
+# table calculates instead of warning, and why modellers reach for
+# INDEX instead of OFFSET to break a deliberate cycle without
+# volatility. The whole table stays a precedent — changing any cell of
+# it can change the answer, and flows and coverage are right to say so
+# — but the cycle hunter must not walk it: two shipped regulator
+# models (CAA's H7 final determination, Ofgem's GT3 business-plan
+# model) carry chains that close *only* through INDEX tables, both
+# with iterative calculation off, and both calculate cleanly in Excel.
+# A loop invented from edges Excel does not walk is not a finding.
+LOOKUP_TABLE = frozenset({"INDEX"})
+
 
 def references_of(formula: str, sheet: str, names: Names | None = None) -> Precedents:
     """Everything a formula reads, and everything it reads that we cannot.
@@ -605,8 +630,13 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
     seen: set[str] = set()
     missing: list[tuple[str, str]] = []
     said: set[str] = set()
+    #: Which side of the lookup line each reference was met on. A cell
+    #: read both inside an INDEX table and plainly is a plain read.
+    table_reads: set[str] = set()
+    plain_reads: set[str] = set()
 
-    def keep(refs: list[str]) -> None:
+    def keep(refs: list[str], in_table: bool = False) -> None:
+        (table_reads if in_table else plain_reads).update(refs)
         for ref in refs:
             if ref not in seen:
                 seen.add(ref)
@@ -671,9 +701,20 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
         text = token.value.strip()
         refs = _expand(text, sheet, names, give_up)
         if refs:
-            keep(refs)
+            keep(
+                refs,
+                in_table=owner is not None
+                and owner["name"] in LOOKUP_TABLE
+                and owner["arg"] == 0,
+            )
 
-    return Precedents(refs=tuple(found), unresolved=tuple(missing))
+    return Precedents(
+        refs=tuple(found),
+        unresolved=tuple(missing),
+        via_lookup=tuple(
+            ref for ref in found if ref in table_reads and ref not in plain_reads
+        ),
+    )
 
 
 def _expand(

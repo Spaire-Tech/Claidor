@@ -2253,8 +2253,17 @@ def _loops(book: Workbook) -> list[list[str]]:
     recursion limit — over the in-book precedent edges. A component of
     one cell counts only when the cell reads itself.
     """
+    #: Edges the cycle hunter walks. A precedent read only through a
+    #: lookup table (INDEX's first argument) is excluded here and only
+    #: here: Excel resolves the pick before hunting circular
+    #: references, and two shipped regulator models carry chains that
+    #: close solely through such tables while calculating cleanly.
     edges: dict[str, tuple[str, ...]] = {
-        ref: tuple(one for one in (cell.precedents or ()) if one in book.cells)
+        ref: tuple(
+            one
+            for one in (cell.precedents or ())
+            if one in book.cells and one not in (cell.lookup_reads or ())
+        )
         for ref, cell in book.cells.items()
     }
     order: dict[str, int] = {}
