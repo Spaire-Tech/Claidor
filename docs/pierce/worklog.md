@@ -3490,3 +3490,44 @@ engine as Round 3 left it — and wrote the Round 5 agenda: the
 external-link fold, seven noise principles, four fold families,
 two recall gaps, reader error-tolerance, and the Thames FM02
 under-reach investigation.
+
+## 20 August, continued — Round 5: Generalize, measured where it counts
+
+The mentor reset the objective: don't win the original corpus back,
+make the engine generalize. Six workstreams, all landed:
+
+**External links became the event they always were.** One finding
+per source workbook — « reads workbook [1] in 602 cells of Inputs »,
+roster attached — instead of 1,496 per-cell copies. **The seven
+grammar patterns** from the unseen corpus each became principle →
+implementation → regression test: lookup indexes, power-of-ten
+sentinels, roots written as powers, diagnostic thresholds,
+self-labelling counters, written-out means, self-documenting
+windows. **The mutation detector** implements the semantic-shape
+idea: a family identical token-for-token except one cell, differing
+in exactly one position, is the same calculation with one changed
+token. Its first draft sprayed 34 findings over real files in three
+recognisable patterns (row seeds, column chains, crossing families);
+those became three exemptions, and the survivor count on the unseen
+corpus is one — an ACT-grade displaced window the skipped-cell lens
+had mis-diagnosed a round earlier. **The reader** now survives a
+malformed formula at the cost of one loud finding instead of the
+whole workbook. **The planter** was corrected (XML double-escaping;
+one plant per line) and the Round 4 recall figures amended in the
+protocol. **Thames** is explained: 413k formulas, median 18
+characters, no cached errors — discipline, not blindness.
+
+The number that decides the round, the fifth measurement, judged
+whole: **the unseen corpus went from A+B 5.8% to 80.1%** (C 2.9%,
+ACT 8 · NOTE 101 · IGNORE 27), with the residual D being three
+still-unbuilt folds, all named. Recall on honest plants: 62%
+overall — broken references 13/15, overwrites 9/13, wrong
+assumptions 8/11, displaced references 5/15 (from 1), flips 1/5
+(from 0) — with the blind spots named and structural: singleton
+formulas have no family to witness them, which is where a static
+engine ends and label semantics begin.
+
+The original 27 are regression now, per the mentor: the v2 gate
+diff is traced below its own sweep, and the judged corpus keeps its
+verdicts. What the next unseen batch owes: 10–20 genuinely new
+models, and the same three questions.
