@@ -1794,14 +1794,19 @@ def _rows(book: Workbook, result: Audit) -> None:
                 # to none, and cost the fixture nothing.
                 if run[index - 1].formula is None or run[index + 1].formula is None:
                     continue
-                #: And the neighbours must agree with each other: a
-                #: value is typed *over* a series only where the series
-                #: demonstrably continues around it. A metadata row —
-                #: `=price_label` on one side, a cross-sheet pick on the
-                #: other, a typed 0 for a spare line between — is not a
-                #: calculation interrupted; its columns each say their
-                #: own thing.
-                if _shape(run[index - 1]) != _shape(run[index + 1]):
+                #: And there must be a series to be typed over: at
+                #: least one flanking formula's shape must repeat in
+                #: the run. A metadata row — `=price_label` on one
+                #: side, a cross-sheet pick on the other, a typed 0
+                #: for a spare line between — has no two cells alike,
+                #: and is not a calculation interrupted. But the H7
+                #: debt model's typed first-year rates sit between the
+                #: row's own AVERAGE column and a live series, and the
+                #: series flank testifies: the gate caught this rule's
+                #: first draft (neighbours must agree with each other)
+                #: silently deleting those two judged findings.
+                flanks = (_shape(run[index - 1]), _shape(run[index + 1]))
+                if all(shapes.get(flank, 0) < 2 for flank in flanks):
                     continue
                 # And lone down the column too. A value pasted over a
                 # formula is surrounded by formulas on all four sides; a
