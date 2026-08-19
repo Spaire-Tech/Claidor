@@ -86,3 +86,28 @@ named rule fixes (one reader gap — array formulas read as typed
 values — accounts for the largest slice) and the D mass to four
 collapse patterns; both lists are in the worklog entry for this
 round, each verdict naming its fix.
+
+## The re-measure (19 August)
+
+The fix round implemented every named fix, gated by the golden
+master (each corpus diff traced to a named fix; the gate also caught
+one regression — an ED2 long-formula flood — and two engine truths
+the first sample never touched: a multi-area SUM misread and a
+false circular-reference class closed only through INDEX tables,
+which Excel does not walk). The population is the regenerated
+baseline; this section is the protocol for the second measurement,
+registered before any verdict.
+
+- Same classes, same procedure, same allocation formula, same
+  judge-from-the-cells rule as above. Nothing re-defined.
+- Fresh draw, seed **20260819** — a new seed, because the population
+  changed and the old draw must stay reproducible against the old
+  baseline. The sampler takes the seed as an argument now; both
+  seeds are recorded here.
+- Sample: `findings-usefulness-sample-2.json`; verdicts:
+  `findings-usefulness-verdicts-2.json`.
+- One reading note registered in advance: the fix round *collapses*
+  duplicates and *deletes* noise, so the surviving population is
+  smaller and each surviving finding stands for more cells. D now
+  means a duplicate the collapse layer still misses within one
+  file's report, judged exactly as before.

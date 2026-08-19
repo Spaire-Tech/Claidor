@@ -2,11 +2,14 @@
 
 Protocol: docs/pierce/findings-usefulness-audit.md. Strata are
 (file-family x rule); allocation min(size, max(2, round(size * 120 /
-population))); seed 20260818. Run from the repo root:
+population))); the seed is the third argument (the first round drew
+with 20260818, the post-fix re-measure with 20260819 — each draw's
+seed is recorded in the protocol document). Run from the repo root:
 
     python server/scripts/usefulness_sample.py \
         docs/pierce/corpus-golden-master.json \
-        docs/pierce/findings-usefulness-sample.json
+        docs/pierce/findings-usefulness-sample.json \
+        20260818
 """
 
 import json
@@ -32,7 +35,7 @@ def family_of(name: str) -> str:
     return "riio3_other"
 
 
-def main(baseline: Path, out: Path) -> None:
+def main(baseline: Path, out: Path, seed: int = 20260818) -> None:
     rows = json.loads(baseline.read_text())
     strata: dict[tuple[str, str], list[dict]] = defaultdict(list)
     population = 0
@@ -42,7 +45,7 @@ def main(baseline: Path, out: Path) -> None:
             strata[(fam, finding["rule"])].append({"file": row["file"], **finding})
             population += 1
 
-    rng = random.Random(20260818)
+    rng = random.Random(seed)
     sample = []
     for (fam, rule), members in sorted(strata.items()):
         want = min(len(members), max(2, round(len(members) * 120 / population)))
@@ -55,4 +58,8 @@ def main(baseline: Path, out: Path) -> None:
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]), Path(sys.argv[2]))
+    main(
+        Path(sys.argv[1]),
+        Path(sys.argv[2]),
+        int(sys.argv[3]) if len(sys.argv) > 3 else 20260818,
+    )
