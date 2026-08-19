@@ -1720,39 +1720,46 @@ def _literals(book: Workbook, result: Audit) -> None:
     rate, a tax rate, a margin — so a number that could not be an
     assumption is not a finding.
     """
+    #: A number the row's own words state — « 70% Grid / 30% Water »
+    #: over a `*0.7`, « must be 1 or 5 » over a `*5` — is documented
+    #: where the reader is already looking, which is the entire
+    #: complaint the hardcode rule makes. The block header above
+    #: counts as the row's words too: a section titled « Asset beta
+    #: at 0.075 debt beta » documents every 0.075 beneath it.
+    #: Judged per number: the documented ones drop out, any
+    #: undocumented ones still report. A header is a row with words
+    #: and no numbers of its own — a sibling data row's label
+    #: documents only itself. A block runs from its header to the
+    #: next header, however many rows that is — a fixed window read a
+    #: four-row block as headerless, and a capped walk read one row
+    #: of a block differently from its five siblings — so each row's
+    #: context is the nearest header run above it, computed in one
+    #: top-down pass per sheet: a run of header lines becomes the
+    #: standing context, and the next run replaces it, because past
+    #: a header is the previous block, whose words prove nothing
+    #: about this one.
     occupied = {(cell.sheet, cell.row) for cell in book.cells.values()}
+    context_above: dict[str, dict[int, str]] = {}
+    for sheet, labels in book.row_words.items():
+        data_rows = {row for (name, row) in occupied if name == sheet}
+        top = max(data_rows | set(labels), default=0)
+        standing, run = "", []
+        at_rows: dict[int, str] = {}
+        for row in range(1, top + 1):
+            if row not in data_rows and labels.get(row):
+                at_rows[row] = standing
+                run.append(labels[row])
+                continue
+            if run:
+                standing = " ".join(run)
+                run = []
+            at_rows[row] = standing
+        context_above[sheet] = at_rows
+
     for cell in book.cells.values():
         if not cell.formula:
             continue
-        #: A number the row's own words state — « 70% Grid / 30% Water »
-        #: over a `*0.7`, « must be 1 or 5 » over a `*5` — is documented
-        #: where the reader is already looking, which is the entire
-        #: complaint the hardcode rule makes. The block header above
-        #: counts as the row's words too: a section titled « Asset beta
-        #: at 0.075 debt beta » documents every 0.075 beneath it.
-        #: Judged per number: the documented ones drop out, any
-        #: undocumented ones still report. A header is a row with
-        #: words and no numbers of its own — a sibling data row's
-        #: label documents only itself. The block runs upward through
-        #: its data rows to wherever the header actually sits — a
-        #: fixed window read a four-row block as headerless — so the
-        #: search climbs to the nearest header and any header lines
-        #: stacked directly above it, and stops there: past the
-        #: header is the previous block, whose words prove nothing
-        #: about this one.
-        heads = book.row_words.get(cell.sheet, {})
-        header_rows: list[int] = []
-        at = cell.row - 1
-        while at >= 1 and cell.row - at <= 12:
-            if (cell.sheet, at) in occupied:
-                if header_rows:
-                    break
-            elif heads.get(at):
-                header_rows.append(at)
-            elif header_rows:
-                break
-            at -= 1
-        context = " ".join(heads.get(row, "") for row in header_rows)
+        context = context_above.get(cell.sheet, {}).get(cell.row, "")
         buried = tuple(
             value
             for value in _buried(cell.formula)
