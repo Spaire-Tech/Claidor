@@ -1695,9 +1695,12 @@ def _selector_drift(book: Workbook, result: Audit) -> None:
     exception nobody wrote down, and the judged sample carried exactly
     this (a 2022 among 2025s in a live RIIO-3 model). Selectors come
     from :func:`_literal_scan`; the shape must repeat at least three
-    times beside exactly one dissenter, and rows whose columns name
-    quantities rather than periods are left alone — their selectors
-    are supposed to differ.
+    times beside exactly one dissenter. No period-label test guards
+    this pass — the corpus case that taught it sits under « RIIO-GD2 /
+    RIIO-GD3 » band headers that name no period, and the structure
+    itself (one dissenter against three or more identically shaped
+    sisters, exactly two settings in play) is the signature; a row
+    whose columns legitimately differ shows many settings, not two.
     """
     groups: dict[tuple[str, int, str], list[tuple[Cell, tuple[str, ...]]]] = {}
     for cell in book.cells.values():
@@ -1711,11 +1714,6 @@ def _selector_drift(book: Workbook, result: Audit) -> None:
 
     for (sheet, _, _), members in groups.items():
         if len(members) < MIN_SERIES + 1:
-            continue
-        labelled = [cell.column_label for cell, _ in members if cell.column_label]
-        if labelled and sum(1 for one in labelled if PERIOD.match(one)) < (
-            len(labelled) - 1
-        ):
             continue
         variants: dict[tuple[str, ...], list[Cell]] = {}
         for cell, selectors in members:
