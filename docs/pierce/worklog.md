@@ -3264,3 +3264,65 @@ rows, circularity with iteration off, typed-over with drift, broken
 references — plus parameter-grade hardcodes. Severity tiers plus
 figure worth plus those shapes IS the attention ordering the mentor
 asked for; the engine already carries every ingredient.
+
+## 19 August — the fix round, gated and re-measured: the bar is met
+
+**The order.** The founder: « go ahead. run the fix round. » Implement
+every fix the usefulness audit named — fourteen noise causes, four
+duplicate collapses — behind the golden-master gate, then re-draw and
+re-judge.
+
+**What was built.** The reader now sees array formulas (the single
+largest noise cause — array-entered cells registered as typed values).
+The hardcode rule reads literals in context: date-constructor
+arguments, text-function counts, rounding precisions, powers of ten
+and ABS tolerances are notation; equality-compared literals are
+selectors, watched by a new selector-drift pass that reports the one
+cell testing a different switch value than its identically-shaped
+sisters; label-documented constants stop reporting. A bare SUM across
+its own row is the totals column. A plain enumeration is long because
+its list is long. The skipped-cell rule judges a multi-area SUM's
+areas together (fixing the bug the audit caught in its own sample),
+exempts bare-aggregate rows and partition-covered detail rows, and
+stops its walk at a section break. Mnemonic defined-name columns are
+scaffolding. One value pasted across a row folds to one finding; a
+varying typed row is an input series and drops; the same finding on
+three or more sibling sheets folds to one for every smell rule; a
+sheet's volatile idiom folds to one; a convention constant across
+many different formulas folds to one; a row of near-identical long
+formulas folds to one.
+
+**What the gate caught.** Three things the sample never showed.
+(1) The array-formula fix surfaced ED2's long array formulas 112
+times per file — the same duplicate layout the audit named for
+hardcodes; the sibling-sheet fold was extended and 112 became 2.
+(2) Three « new » circular loops in the GT3 models — traced cell by
+cell, every one closes only through INDEX's first argument, and so
+does the 21,365-cell chain reported on both H7 models since the
+corpus round. Excel resolves INDEX's pick before hunting circularity
+(that is why all four shipped models calculate cleanly with iteration
+off); the cycle hunter now declines to walk lookup-table edges, and
+two false findings left the baseline. (3) The selector-drift pass's
+period-label guard vetoed the exact judged card it was built to keep
+— the drifted row sits under « RIIO-GD2/GD3 » band headers; the guard
+is gone, the structure is the signature.
+
+**The corpus.** 1,259 → 852 findings across the 27 files, every diff
+line traced to a named fix, three sweeps with surgical deltas.
+H7: 88→33. ED2: 41→39. Final GT3 BPFM: 182→79. The suite: 473 tests,
+eighteen new, one per fix family.
+
+**The re-measure.** Fresh draw of 143 (seed 20260819, registered
+first), neighbourhoods harvested, every verdict from the cells.
+Raw: A 13 · B 77 · C 19 · D 34. Stratified over the 852:
+**A ≈ 6% · B ≈ 55% · C ≈ 11% · D ≈ 28% — A+B ≈ 61%**, against 26%
+before the round. The mentor's bar — a majority of remaining findings
+definitely or probably useful — **is met.**
+
+**What remains, named.** D is three-quarters one family: ED2's typed
+pool balances repeat one layout decision per DNO sheet with different
+numbers, and the sibling fold keys on identical numbers — a one-key
+fix (shape, not numbers) plus a column-beat fold for repeated check
+rows and a same-file template fold cover 30 of 34 raw D verdicts.
+C reduces to nine small named skips recorded on the verdicts. Both
+lists are the next round's spec, exactly as last time.

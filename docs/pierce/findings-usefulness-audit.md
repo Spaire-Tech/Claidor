@@ -111,3 +111,43 @@ registered before any verdict.
   smaller and each surviving finding stands for more cells. D now
   means a duplicate the collapse layer still misses within one
   file's report, judged exactly as before.
+
+### Amendments (second pass)
+
+- Three verdicts first marked B were revised to D during the pass,
+  before any tally was computed: #90 and #92 when the per-debt-block
+  «Check» rows of the BPFM F1 sheets showed the same 326-character
+  formula repeating at a row beat (the group only became visible
+  across cards), and #129 when #131/#132 showed the same
+  import-source template on sheet after sheet. Recorded here per
+  protocol, as in round one.
+
+### Result (19 August)
+
+Raw sample of 143: **A 13 · B 77 · C 19 · D 34.**
+Stratified over the 852: **A ≈ 6% · B ≈ 55% · C ≈ 11% · D ≈ 28%.**
+The pre-registered bar — a majority of remaining findings A/B — is
+**met**: A+B ≈ 61%, against 26% before the fix round. Per-finding
+verdicts with reasons: `findings-usefulness-verdicts-2.json`.
+
+What remains, honestly read:
+
+- The D mass (≈28%) is dominated by a single family the fix round's
+  sibling-sheet fold missed by one key choice: Ofgem ED2's typed pool
+  opening balances repeat the same layout decision on every DNO sheet
+  with *different numbers*, and the fold keys on identical numbers.
+  Three named fixes (shape-keyed sibling fold, a column-beat fold for
+  repeated check rows, a same-file template fold) cover 30 of the 34
+  raw D verdicts.
+- The C mass (≈11%) reduces to nine small named skips (basis-point
+  label vocabulary, string-concatenation literals, MATCH array
+  constants, sentinel 9999, block-header documentation, the mnemonic
+  gate in the row pass, unread TODAY cells, below-the-total partition
+  coverage, calendar notation), each recorded on its verdict.
+- The A mass is small in share (≈6%) but no longer buried: thirteen
+  raw A verdicts — torn check rows, displayed errors in shipped
+  models, totals stepping over live money, typed-over switch cells,
+  one-cell breaks in filled rows — now sit among ~850 findings
+  instead of 1,259, and the B mass around them is dominated by real
+  formulas the reader could not even see before (array-entered
+  blocks), folded to one line each.
