@@ -174,3 +174,43 @@ direction, and it is registered here first:
 - Seed for the third draw: **20260820**. Sample:
   `findings-usefulness-sample-3.json`; verdicts:
   `findings-usefulness-verdicts-3.json`.
+
+### Result (19 August, third measurement)
+
+Raw sample of 191: **A 33 · B 131 · C 13 · D 14.**
+Stratified over the 669: **A ≈ 8% · B ≈ 83% · C ≈ 4% · D ≈ 5% —
+A+B ≈ 91%**, against 61% after the fix round and 26% at the start.
+No amendments this pass. Per-finding verdicts with reasons:
+`findings-usefulness-verdicts-3.json`.
+
+The per-detector table (raw counts; stratified A+B beside it):
+
+| Detector | n | A | B | C | D | A+B raw | A+B stratified |
+|---|---|---|---|---|---|---|---|
+| hardcode-in-formula | 50 | 4 | 40 | 2 | 4 | 88% | 87% |
+| long-formula | 44 | 0 | 44 | 0 | 0 | 100% | 100% |
+| error-value | 25 | 6 | 16 | 3 | 0 | 88% | 87% |
+| volatile | 25 | 0 | 25 | 0 | 0 | 100% | 100% |
+| skipped-cell | 24 | 14 | 2 | 8 | 0 | 67% | 67% |
+| typed-over-formula | 19 | 5 | 4 | 0 | 10 | 47% | 47% |
+| inconsistent-row | 4 | 4 | 0 | 0 | 0 | 100% | 100% |
+
+Honestly read, the residue is concentrated and named:
+
+- **typed-over-formula** carries over half the D mass in one family:
+  I_Series row 218 has five adjacent columns typed over `=X212` in
+  one gesture, in both H7 PCM files, reported cell by cell. Fix:
+  fold varying-value typed runs of 4–7 into one finding (today the
+  engine folds identical values and singles, not short varying runs).
+- **skipped-cell**'s C mass is entirely the documented index-factor
+  limitation (the omitted row is the multiplicative factor the block
+  reads); the eight C verdicts name no new fix — a general skip was
+  weighed and rejected in Round 2 because it pins judged-A totals.
+- **error-value**'s three C are the two documented limitations
+  (end-of-sheet marker tails, market-calendar gaps in daily series).
+- **hardcode**'s four D are one ED2 pool-balance family whose
+  members escape the sibling fold only by literal shape (`#`,
+  `#+#`, `#+-#`); fix: normalise shapes before keying the fold. Its
+  two C name two small fixes: number-words documentation (a label
+  saying « half » documents 0.5) and walking the block-header search
+  up to the nearest header instead of a fixed three rows.

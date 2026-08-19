@@ -3370,3 +3370,26 @@ The corpus: **696 → 669**, every line traced (respellings, the nine
 principles, twelve honest additions, three restorations). 481 tests.
 Next: the third measurement, per-detector, seed 20260820 as
 registered.
+
+## 19 August, night — The third measurement: per-detector, and the 90% bar
+
+Fresh draw of 191 (seed 20260820, registered first; every rule
+guaranteed up to 25 picks so the four inconsistent-row findings are
+judged whole), neighbourhoods harvested, every verdict from the
+cells. Raw: A 33 · B 131 · C 13 · D 14. Stratified over the 669:
+**A ≈ 8% · B ≈ 83% · C ≈ 4% · D ≈ 5% — A+B ≈ 91%**, against 61%
+after the fix round and 26% at the start. False positives are under
+the mentor's 5% line.
+
+The question graduated, as directed: not « is the report useful »
+but « which detector is excellent and which still needs work ». Four
+detectors judge clean (long-formula, volatile, inconsistent-row at
+100%; error-value's only noise is the two documented limitations).
+Two carry named debts: typed-over-formula's D mass is one family
+(five columns typed over in one gesture on I_Series row 218,
+reported per cell — fix: fold varying typed runs of 4–7);
+skipped-cell's C mass is entirely the accepted index-factor
+limitation, no new fix named. Hardcode owes shape normalisation for
+the fold key, number-words documentation, and a header walk-up.
+That short list is Round 3's engine spec; the round itself is
+Elevate — materiality, severity tiers, finding families, evidence.

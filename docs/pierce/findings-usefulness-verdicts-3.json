@@ -1,0 +1,1912 @@
+[
+ {
+  "index": 0,
+  "file": "ofgem_ed2/v4_2026-01.xlsx",
+  "family": "ed2",
+  "rule": "error-value",
+  "ref": "Cover!G4",
+  "stratum": 2,
+  "class": "B",
+  "reason": "the CELL('filename') version banner shows #VALUE! until saved under Excel \u2014 cosmetic, but a shipped model displaying an error text; appendix line"
+ },
+ {
+  "index": 1,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "error-value",
+  "ref": "Scen 8!C280",
+  "stratum": 2,
+  "class": "C",
+  "reason": "the #N/A run sits under the REPT('END OF SHEET') banner \u2014 end-of-sheet marker tail, the documented limitation; tells a reader nothing"
+ },
+ {
+  "index": 2,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F1 - Debt for BPFM!A1",
+  "stratum": 38,
+  "class": "B",
+  "reason": "F1 debt sheet carries ~900 #DIV/0!/#VALUE! cells through routine gaps and past the data edge \u2014 IFERROR hygiene worth an appendix line, folded to one finding"
+ },
+ {
+  "index": 3,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "ScenarioRun_AllOutputData!AH17",
+  "stratum": 38,
+  "class": "B",
+  "reason": "MATCH over the empty scenario window returns #N/A on the run-control block \u2014 worth seeing next to the run buttons, needs context to rank"
+ },
+ {
+  "index": 4,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F2b - Financial Summary (YE)!A1",
+  "stratum": 38,
+  "class": "B",
+  "reason": "same CELL('filename') banner folded across 4 sheets \u2014 one authoring habit, one line, appendix material"
+ },
+ {
+  "index": 5,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "Checks!I2",
+  "stratum": 38,
+  "class": "A",
+  "reason": "Checks!I2 array formula evaluates to #REF! \u2014 a broken check on the checks sheet itself; investigate before signing"
+ },
+ {
+  "index": 6,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F2a - Financial Summary (TWA)!A1",
+  "stratum": 38,
+  "class": "B",
+  "reason": "financial-summary sheet carries a #DIV/0! carpet through its gap rows \u2014 hygiene the standards name, folded"
+ },
+ {
+  "index": 7,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F3 - Fixed Rate Debt!M12",
+  "stratum": 38,
+  "class": "B",
+  "reason": "F3 fixed-rate-debt column carries ~450 #DIV/0! cells past the data edge \u2014 unguarded division hygiene, folded"
+ },
+ {
+  "index": 8,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "Cover!G4",
+  "stratum": 38,
+  "class": "B",
+  "reason": "the CELL('filename') version banner shows #VALUE! until saved under Excel \u2014 cosmetic, but a shipped model displaying an error text; appendix line"
+ },
+ {
+  "index": 9,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F3 - Fixed Rate Debt!A1",
+  "stratum": 38,
+  "class": "B",
+  "reason": "F3 fixed-rate-debt column carries ~450 #DIV/0! cells past the data edge \u2014 unguarded division hygiene, folded"
+ },
+ {
+  "index": 10,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "Checks!I88",
+  "stratum": 38,
+  "class": "A",
+  "reason": "`=#REF!` pasted over Checks!I88:I89 \u2014 a torn check formula shipped in the final model"
+ },
+ {
+  "index": 11,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F1 - Debt for BPFM!A1",
+  "stratum": 38,
+  "class": "B",
+  "reason": "F1 debt sheet carries ~900 #DIV/0!/#VALUE! cells through routine gaps and past the data edge \u2014 IFERROR hygiene worth an appendix line, folded to one finding"
+ },
+ {
+  "index": 12,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F2b - Financial Summary (YE)!A1",
+  "stratum": 38,
+  "class": "B",
+  "reason": "same CELL('filename') banner folded across 4 sheets \u2014 one authoring habit, one line, appendix material"
+ },
+ {
+  "index": 13,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F2a - Financial Summary (TWA)!A1",
+  "stratum": 38,
+  "class": "B",
+  "reason": "financial-summary sheet carries a #DIV/0! carpet through its gap rows \u2014 hygiene the standards name, folded"
+ },
+ {
+  "index": 14,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "OutputSummary!E209",
+  "stratum": 38,
+  "class": "A",
+  "reason": "#REF! pasted over 8 OutputSummary cells \u2014 displayed broken references on an output sheet"
+ },
+ {
+  "index": 15,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "Finance&Tax(actual)!I264",
+  "stratum": 38,
+  "class": "A",
+  "reason": "#DIV/0! at I264 inside an otherwise live actuals column, values resume at I265 \u2014 a one-cell break in a filled series"
+ },
+ {
+  "index": 16,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "ScenarioRun_AllOutputData!K65",
+  "stratum": 38,
+  "class": "A",
+  "reason": "=CHOOSE(m_identity,#REF!,#REF!,#REF!) over 276 scenario-output cells \u2014 every branch of the pick is torn"
+ },
+ {
+  "index": 17,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F3 - Fixed Rate Debt!M12",
+  "stratum": 38,
+  "class": "B",
+  "reason": "F3 fixed-rate-debt column carries ~450 #DIV/0! cells past the data edge \u2014 unguarded division hygiene, folded"
+ },
+ {
+  "index": 18,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F2a - Financial Summary (TWA)!K252",
+  "stratum": 38,
+  "class": "B",
+  "reason": "financial-summary sheet carries a #DIV/0! carpet through its gap rows \u2014 hygiene the standards name, folded"
+ },
+ {
+  "index": 19,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "ScenarioRun_AllOutputData!AI17",
+  "stratum": 38,
+  "class": "B",
+  "reason": "MATCH over the empty scenario window returns #N/A on the run-control block \u2014 worth seeing next to the run buttons, needs context to rank"
+ },
+ {
+  "index": 20,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F1 - Debt for BPFM!O15",
+  "stratum": 38,
+  "class": "B",
+  "reason": "F1 debt sheet carries ~900 #DIV/0!/#VALUE! cells through routine gaps and past the data edge \u2014 IFERROR hygiene worth an appendix line, folded to one finding"
+ },
+ {
+  "index": 21,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "error-value",
+  "ref": "F3 - Fixed Rate Debt!M12",
+  "stratum": 38,
+  "class": "B",
+  "reason": "F3 fixed-rate-debt column carries ~450 #DIV/0! cells past the data edge \u2014 unguarded division hygiene, folded"
+ },
+ {
+  "index": 22,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "error-value",
+  "ref": "TO_MainInputs!BF726",
+  "stratum": 1,
+  "class": "A",
+  "reason": "TO_MainInputs!BF726 shows #REF! \u2014 a broken reference displayed in the shipped PCFM input sheet"
+ },
+ {
+  "index": 23,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "family": "riio3_wacc",
+  "rule": "error-value",
+  "ref": "SONIA Forecast Interpolation!B3",
+  "stratum": 4,
+  "class": "C",
+  "reason": "SONIA daily series: #N/A on non-trading days \u2014 routine market-calendar gaps without a literal NA(), the documented limitation"
+ },
+ {
+  "index": 24,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "family": "riio3_wacc",
+  "rule": "error-value",
+  "ref": "Daily Data!I3",
+  "stratum": 4,
+  "class": "C",
+  "reason": "Daily Data: 18,667 routine gaps are weekends/holidays in a daily rate history \u2014 same market-calendar limitation as the SONIA sheet"
+ },
+ {
+  "index": 25,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "EMID!AR347",
+  "stratum": 95,
+  "class": "D",
+  "reason": "EMID!AR347 =1354.5...+-4.3E-12 \u2014 same one pool-balance authoring decision as the AR345/AR346 sibling folds on this sheet, left out only because its epsilon shape differs; fix: normalise #+#/#+-#/# shapes in the sibling fold"
+ },
+ {
+  "index": 26,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "EMID!AR345",
+  "stratum": 95,
+  "class": "B",
+  "reason": "typed closing-balance adjustment =X+-Y folded across 6 DNO sheets, each holding its own number \u2014 a real typed assumption an auditor lists, one line"
+ },
+ {
+  "index": 27,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AJ41",
+  "stratum": 95,
+  "class": "B",
+  "reason": "1.06/0.94 collar thresholds typed in the IF \u2014 plausible named constants in a labelled row, worth ranking not flagging on the front page"
+ },
+ {
+  "index": 28,
+  "file": "ofgem_ed2/v4_2024-07.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "Monthly Inflation!N5",
+  "stratum": 95,
+  "class": "B",
+  "reason": "0.5 month-weight in the inflation-switch fill \u2014 a convention constant, appendix material"
+ },
+ {
+  "index": 29,
+  "file": "ofgem_ed2/v3_2023-10.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "Annual Inflation!AN51",
+  "stratum": 95,
+  "class": "B",
+  "reason": "0.75/0.25 inflation blend weights typed in the fill \u2014 plausible constants, worth seeing"
+ },
+ {
+  "index": 30,
+  "file": "ofgem_ed2/v4_2026-01.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AJ42",
+  "stratum": 95,
+  "class": "A",
+  "reason": "a 1.5 (% wedge) typed inside the Legacy indexation chain =AH$38*((1+((AH$39+AH$41)/100))*(1+((AI$39+1.5)/100))) where every neighbouring term is a reference \u2014 an assumption buried where the row calculates, and it moves allowed revenue"
+ },
+ {
+  "index": 31,
+  "file": "ofgem_ed2/v4_2025-07.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AJ42",
+  "stratum": 95,
+  "class": "A",
+  "reason": "a 1.5 (% wedge) typed inside the Legacy indexation chain =AH$38*((1+((AH$39+AH$41)/100))*(1+((AI$39+1.5)/100))) where every neighbouring term is a reference \u2014 an assumption buried where the row calculates, and it moves allowed revenue"
+ },
+ {
+  "index": 32,
+  "file": "ofgem_ed2/v3_2024-01.xlsm",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AJ42",
+  "stratum": 95,
+  "class": "A",
+  "reason": "a 1.5 (% wedge) typed inside the Legacy indexation chain =AH$38*((1+((AH$39+AH$41)/100))*(1+((AI$39+1.5)/100))) where every neighbouring term is a reference \u2014 an assumption buried where the row calculates, and it moves allowed revenue"
+ },
+ {
+  "index": 33,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "EMID!AR346",
+  "stratum": 95,
+  "class": "B",
+  "reason": "typed balance =X+Y folded across 10 DNO sheets \u2014 same class, folded to one line"
+ },
+ {
+  "index": 34,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "SPN!AR345",
+  "stratum": 95,
+  "class": "D",
+  "reason": "SPN!AR345 =52.072185026487 bare literal \u2014 the same pool-balance decision its sheet-siblings fold, missed because the bare shape differs from #+#; same shape-normalisation fix"
+ },
+ {
+  "index": 35,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AJ42",
+  "stratum": 95,
+  "class": "A",
+  "reason": "a 1.5 (% wedge) typed inside the Legacy indexation chain =AH$38*((1+((AH$39+AH$41)/100))*(1+((AI$39+1.5)/100))) where every neighbouring term is a reference \u2014 an assumption buried where the row calculates, and it moves allowed revenue"
+ },
+ {
+  "index": 36,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "SPD!AR342",
+  "stratum": 95,
+  "class": "B",
+  "reason": "=53.189...+0 folded across 4 DNO sheets \u2014 typed balance with a vestigial +0, appendix material"
+ },
+ {
+  "index": 37,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "SPN!AR346",
+  "stratum": 95,
+  "class": "D",
+  "reason": "SPN!AR346 bare literal =599.385... \u2014 same pool-balance family and same shape-normalisation fix"
+ },
+ {
+  "index": 38,
+  "file": "ofgem_ed2/v4_2025-01.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AR22",
+  "stratum": 95,
+  "class": "B",
+  "reason": "/5 straight-line spread over five years \u2014 convention constant in a labelled row"
+ },
+ {
+  "index": 39,
+  "file": "ofgem_ed2/v3_2023-10.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "EMID!AR345",
+  "stratum": 95,
+  "class": "B",
+  "reason": "typed closing-balance adjustment =X+-Y folded across 6 DNO sheets, each holding its own number \u2014 a real typed assumption an auditor lists, one line"
+ },
+ {
+  "index": 40,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "Monthly Inflation!N5",
+  "stratum": 95,
+  "class": "B",
+  "reason": "0.5 month-weight in the inflation-switch fill \u2014 a convention constant, appendix material"
+ },
+ {
+  "index": 41,
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "family": "ed2",
+  "rule": "hardcode-in-formula",
+  "ref": "SPN!AR345",
+  "stratum": 95,
+  "class": "D",
+  "reason": "v2_2023-07-14 SPN!AR345 bare literal \u2014 same pool-balance family and same shape-normalisation fix"
+ },
+ {
+  "index": 42,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "family": "h7_debt",
+  "rule": "hardcode-in-formula",
+  "ref": "H7 Cost of debt indexation!I80",
+  "stratum": 4,
+  "class": "B",
+  "reason": "0.5 written into 15 different formulas on one sheet \u2014 the half-year convention typed everywhere rather than held in a cell; exactly the hygiene B names"
+ },
+ {
+  "index": 43,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_InputSets!AA436",
+  "stratum": 32,
+  "class": "B",
+  "reason": "30.19 target typed inside a revenue back-solve \u2014 a real assumption worth listing"
+ },
+ {
+  "index": 44,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_Actuals!AE50",
+  "stratum": 32,
+  "class": "B",
+  "reason": "=108+25 typed sum in the actuals block \u2014 typed arithmetic worth an appendix line"
+ },
+ {
+  "index": 45,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_Actuals!AA40",
+  "stratum": 32,
+  "class": "B",
+  "reason": "=827+693 typed sum filled across 5 years \u2014 same class"
+ },
+ {
+  "index": 46,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "hardcode-in-formula",
+  "ref": "C_Revenue!AA182",
+  "stratum": 32,
+  "class": "C",
+  "reason": "=AA180^0.5 under the label 'Half year discount factor' \u2014 the 0.5 IS the word 'half' in the row label; fix: number-words documentation (half\u21920.5, third\u21921/3)"
+ },
+ {
+  "index": 47,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_Series!AI282",
+  "stratum": 32,
+  "class": "B",
+  "reason": "=0.2960127 bare literal in an input series \u2014 a typed input wearing a formula's clothes; worth seeing"
+ },
+ {
+  "index": 48,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_Actuals!AE35",
+  "stratum": 32,
+  "class": "B",
+  "reason": "0.6/0.3 weights typed in the actuals derivation \u2014 plausible constants, needs ranking"
+ },
+ {
+  "index": 49,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AU288",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.06 floor plus a per-column scenario rate typed in the IFS switch \u2014 scenario constants an auditor lists once"
+ },
+ {
+  "index": 50,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "RatingSimulator!F86",
+  "stratum": 123,
+  "class": "B",
+  "reason": "100%/30% haircut switch in the rating simulator \u2014 deliberate toggle constants, worth seeing in context"
+ },
+ {
+  "index": 51,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AP288",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.06 in the IFS scenario switch, filled across 3 years \u2014 same class"
+ },
+ {
+  "index": 52,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Depn!AU5",
+  "stratum": 123,
+  "class": "B",
+  "reason": "5 written into 3 different formulas on Depn \u2014 the 5-year convention typed rather than held in one cell"
+ },
+ {
+  "index": 53,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "MainInputs!AP272",
+  "stratum": 123,
+  "class": "B",
+  "reason": "/9 spread typed in the MainInputs fill \u2014 convention constant, appendix material"
+ },
+ {
+  "index": 54,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AU131",
+  "stratum": 123,
+  "class": "B",
+  "reason": "2032/2027 horizon years typed in the scenario switch \u2014 named year constants worth listing"
+ },
+ {
+  "index": 55,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Finance&Tax!AP323",
+  "stratum": 123,
+  "class": "B",
+  "reason": "50% sharing factor typed in the Finance&Tax fill \u2014 plausible constant in a labelled row"
+ },
+ {
+  "index": 56,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AW288",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.06 floor plus a per-column scenario rate typed in the IFS switch \u2014 scenario constants an auditor lists once"
+ },
+ {
+  "index": 57,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Depn!AU5",
+  "stratum": 123,
+  "class": "B",
+  "reason": "ROUNDUP(...)/5 convention in the Depn fill \u2014 same 5-year convention"
+ },
+ {
+  "index": 58,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "RatingSimulator!F348",
+  "stratum": 123,
+  "class": "B",
+  "reason": "100%/30% haircut switch in the rating simulator \u2014 deliberate toggle constants, worth seeing in context"
+ },
+ {
+  "index": 59,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Monthly Inflation!L2",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.5 month-weight in the monthly-inflation switch fill \u2014 convention constant"
+ },
+ {
+  "index": 60,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AV130",
+  "stratum": 123,
+  "class": "B",
+  "reason": "2032/2027 horizon years typed in the scenario switch \u2014 named year constants worth listing"
+ },
+ {
+  "index": 61,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Finance&Tax!AP333",
+  "stratum": 123,
+  "class": "B",
+  "reason": "=AP332*(5+(AP326-5)*50%) \u2014 5 and 50% typed in a blend; assumption worth listing"
+ },
+ {
+  "index": 62,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "FinancialRatios!AP18",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.5 half-period timing weight in the FinancialRatios fill \u2014 the standard timing convention, appendix material"
+ },
+ {
+  "index": 63,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Finance&Tax!AP332",
+  "stratum": 123,
+  "class": "B",
+  "reason": ">5 threshold typed in the gate row \u2014 convention constant"
+ },
+ {
+  "index": 64,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "FinancialRatios!AP18",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.5 half-period timing weight in the FinancialRatios fill \u2014 the standard timing convention, appendix material"
+ },
+ {
+  "index": 65,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "FinancialRatios!AP19",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.5 half-period timing weight in the FinancialRatios fill \u2014 the standard timing convention, appendix material"
+ },
+ {
+  "index": 66,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AT288",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.06 floor plus a per-column scenario rate typed in the IFS switch \u2014 scenario constants an auditor lists once"
+ },
+ {
+  "index": 67,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "FinancialRatios!AP17",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.5 half-period timing weight in the FinancialRatios fill \u2014 the standard timing convention, appendix material"
+ },
+ {
+  "index": 68,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Finance&Tax!AP258",
+  "stratum": 123,
+  "class": "B",
+  "reason": ">5 threshold typed in the gate row \u2014 convention constant"
+ },
+ {
+  "index": 69,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AQ267",
+  "stratum": 123,
+  "class": "B",
+  "reason": "0.65/0.62 typed in the IFS scenario switch \u2014 same class"
+ },
+ {
+  "index": 70,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "hardcode-in-formula",
+  "ref": "MainInputs!AP272",
+  "stratum": 123,
+  "class": "B",
+  "reason": "/9 spread typed in the MainInputs fill \u2014 convention constant, appendix material"
+ },
+ {
+  "index": 71,
+  "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+  "family": "riio3_other",
+  "rule": "hardcode-in-formula",
+  "ref": "Beta Estimates !C48",
+  "stratum": 8,
+  "class": "C",
+  "reason": "0.075 is documented by the block header four rows up, one row beyond the 3-row window \u2014 fix: walk the header search up to the nearest header row instead of a fixed 3"
+ },
+ {
+  "index": 72,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "hardcode-in-formula",
+  "ref": "TO_MainInputs!AY75",
+  "stratum": 4,
+  "class": "B",
+  "reason": "1.5/2.5 CapRate constants typed in the TO_MainInputs switch \u2014 named constants worth listing"
+ },
+ {
+  "index": 73,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "family": "riio3_wacc",
+  "rule": "hardcode-in-formula",
+  "ref": "One-Off Wedge!R25",
+  "stratum": 14,
+  "class": "B",
+  "reason": "=R24*(1+3%)^(1/12) \u2014 the 3% one-off wedge typed in the fill; a real rate assumption (one of the percent-postfix findings the purify round made visible)"
+ },
+ {
+  "index": 74,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "family": "riio3_wacc",
+  "rule": "hardcode-in-formula",
+  "ref": "One-Off Wedge!R46",
+  "stratum": 14,
+  "class": "B",
+  "reason": "=R45*(1+2%)^(1/12) \u2014 the 2% wedge, same class"
+ },
+ {
+  "index": 75,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "inconsistent-row",
+  "ref": "MainInputs!AP2524",
+  "stratum": 4,
+  "class": "A",
+  "reason": "the row's last column adds a second product term (+InputSummary!AP1545*$I$14*AP11) where six sisters do a single product \u2014 a structural break in a filled input row"
+ },
+ {
+  "index": 76,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "inconsistent-row",
+  "ref": "MainInputs!AP1947",
+  "stratum": 4,
+  "class": "A",
+  "reason": "same break in the draft-determinations file: last column carries an extra term its sisters lack"
+ },
+ {
+  "index": 77,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "inconsistent-row",
+  "ref": "F2a - Financial Summary (TWA)!N164",
+  "stratum": 4,
+  "class": "A",
+  "reason": "N164 tests N$5=2025 where six sister cells test 2022 \u2014 a year test out of step with its row"
+ },
+ {
+  "index": 78,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "inconsistent-row",
+  "ref": "F2a - Financial Summary (TWA)!N164",
+  "stratum": 4,
+  "class": "A",
+  "reason": "same out-of-step year test in the draft GD3 file"
+ },
+ {
+  "index": 79,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "family": "ed2",
+  "rule": "long-formula",
+  "ref": "EMID!AO75",
+  "stratum": 22,
+  "class": "B",
+  "reason": "450-character DNO revenue formula, folded to one line across the 14 sheets that repeat it \u2014 overlong-formula hygiene the standards name, ranked not front-page"
+ },
+ {
+  "index": 80,
+  "file": "ofgem_ed2/v3_2024-01.xlsm",
+  "family": "ed2",
+  "rule": "long-formula",
+  "ref": "EMID!AO75",
+  "stratum": 22,
+  "class": "B",
+  "reason": "450-character DNO revenue formula, folded to one line across the 14 sheets that repeat it \u2014 overlong-formula hygiene the standards name, ranked not front-page"
+ },
+ {
+  "index": 81,
+  "file": "ofgem_ed2/v5_2026-06.xlsx",
+  "family": "ed2",
+  "rule": "long-formula",
+  "ref": "EMID!AO74",
+  "stratum": 22,
+  "class": "B",
+  "reason": "450-character DNO revenue formula, folded to one line across the 14 sheets that repeat it \u2014 overlong-formula hygiene the standards name, ranked not front-page"
+ },
+ {
+  "index": 82,
+  "file": "ofgem_ed2/v4_2025-07.xlsx",
+  "family": "ed2",
+  "rule": "long-formula",
+  "ref": "EMID!AO75",
+  "stratum": 22,
+  "class": "B",
+  "reason": "450-character DNO revenue formula, folded to one line across the 14 sheets that repeat it \u2014 overlong-formula hygiene the standards name, ranked not front-page"
+ },
+ {
+  "index": 83,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "long-formula",
+  "ref": "ScenDelta!Y17",
+  "stratum": 4,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 84,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F6 - Debt Dataset!GI3",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 85,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N72",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 86,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!EX12",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 87,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N27",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 88,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!AM12",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 89,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "Return&RAV!AY68",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 90,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F2a - Financial Summary (TWA)!K132",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 91,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "Return&RAV!AY64",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 92,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F5 - Inflation Linked Debt!MD12",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 93,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K57",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 94,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K78",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 95,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N87",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 96,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K131",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 97,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K64",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 98,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N42",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 99,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N87",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 100,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "Depn!J87",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 101,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "Finance&Tax!AP289",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 102,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 103,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 104,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K131",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 105,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "Scenarios!AV130",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 106,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F5 - Inflation Linked Debt!BT12",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 107,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "Finance&Tax!AP247",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 108,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K64",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 109,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "Scenarios!AU130",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 110,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K50",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 111,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 112,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!EX12",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 113,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N87",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 114,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "Scenarios!AU130",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 115,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F2a - Financial Summary (TWA)!K133",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 116,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!EX12",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 117,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F6 - Debt Dataset!HL3",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 118,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "Scenarios!AU130",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 119,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N72",
+  "stratum": 204,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 120,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "long-formula",
+  "ref": "TO_MainInputs!AY75",
+  "stratum": 7,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 121,
+  "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+  "family": "riio3_wacc",
+  "rule": "long-formula",
+  "ref": "Daily Data!E10",
+  "stratum": 9,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 122,
+  "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+  "family": "riio3_wacc",
+  "rule": "long-formula",
+  "ref": "Daily Data!G2",
+  "stratum": 9,
+  "class": "B",
+  "reason": "an overlong formula (180-540 characters), folded to one line per fill or template \u2014 hygiene the audit standards name; worth an appendix entry, none misread"
+ },
+ {
+  "index": 123,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "skipped-cell",
+  "ref": "C_Fin_Summ!Y220",
+  "stratum": 6,
+  "class": "A",
+  "reason": "=SUM(Y217:Y218) leaves out Y219 directly above \u2014 worth -943 \u2014 a financial-summary total stepping over live money"
+ },
+ {
+  "index": 124,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "skipped-cell",
+  "ref": "C_RAB!AA101",
+  "stratum": 6,
+  "class": "C",
+  "reason": "the omitted AA100 is the index-factor row the block reads multiplicatively \u2014 the documented index-factor limitation; a general skip risks pinning judged-A totals"
+ },
+ {
+  "index": 125,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "skipped-cell",
+  "ref": "CAAchartdata!AA200",
+  "stratum": 6,
+  "class": "B",
+  "reason": "chart-data SUM omits two helper rows above it \u2014 the omitted rows feed the chart elsewhere; worth seeing but the neighbourhood suggests intent"
+ },
+ {
+  "index": 126,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "skipped-cell",
+  "ref": "C_RAB!AA101",
+  "stratum": 6,
+  "class": "C",
+  "reason": "the omitted AA100 is the index-factor row the block reads multiplicatively \u2014 the documented index-factor limitation; a general skip risks pinning judged-A totals"
+ },
+ {
+  "index": 127,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "skipped-cell",
+  "ref": "C_Fin_Summ!Y220",
+  "stratum": 6,
+  "class": "A",
+  "reason": "the same summary total skips Y219 in the final-determination file \u2014 worth -830"
+ },
+ {
+  "index": 128,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "skipped-cell",
+  "ref": "CAAchartdata!AA200",
+  "stratum": 6,
+  "class": "B",
+  "reason": "chart-data SUM omits two helper rows above it \u2014 the omitted rows feed the chart elsewhere; worth seeing but the neighbourhood suggests intent"
+ },
+ {
+  "index": 129,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "skipped-cell",
+  "ref": "Finance&Tax!AP43",
+  "stratum": 8,
+  "class": "A",
+  "reason": "=SUM(AP41:AP41) leaves out AP42 \u2014 a one-cell range with a live neighbour outside it, filled across 10 years"
+ },
+ {
+  "index": 130,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "skipped-cell",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "stratum": 8,
+  "class": "A",
+  "reason": "=SUM(N182:N187) leaves out N194 above the total, in every BPFM variant \u2014 a summary total skipping a live row, filled across 7 columns"
+ },
+ {
+  "index": 131,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "skipped-cell",
+  "ref": "Finance&Tax!AP37",
+  "stratum": 8,
+  "class": "A",
+  "reason": "=SUM(AP35:AP35) leaves out AP36 \u2014 same one-cell-range class"
+ },
+ {
+  "index": 132,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "skipped-cell",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "stratum": 8,
+  "class": "A",
+  "reason": "=SUM(N182:N187) leaves out N194 above the total, in every BPFM variant \u2014 a summary total skipping a live row, filled across 7 columns"
+ },
+ {
+  "index": 133,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "skipped-cell",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "stratum": 8,
+  "class": "A",
+  "reason": "=SUM(N182:N187) leaves out N194 above the total, in every BPFM variant \u2014 a summary total skipping a live row, filled across 7 columns"
+ },
+ {
+  "index": 134,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "skipped-cell",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "stratum": 8,
+  "class": "A",
+  "reason": "=SUM(N182:N187) leaves out N194 above the total, in every BPFM variant \u2014 a summary total skipping a live row, filled across 7 columns"
+ },
+ {
+  "index": 135,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "skipped-cell",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "stratum": 8,
+  "class": "A",
+  "reason": "=SUM(N182:N187) leaves out N194 above the total, in every BPFM variant \u2014 a summary total skipping a live row, filled across 7 columns"
+ },
+ {
+  "index": 136,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "skipped-cell",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "stratum": 8,
+  "class": "A",
+  "reason": "=SUM(N182:N187) leaves out N194 above the total, in every BPFM variant \u2014 a summary total skipping a live row, filled across 7 columns"
+ },
+ {
+  "index": 137,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "NonCore!AJ205",
+  "stratum": 10,
+  "class": "A",
+  "reason": "=SUM(AJ201:AJ203) leaves out AJ204 above it \u2014 a NonCore total skipping a live row across 16 years"
+ },
+ {
+  "index": 138,
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "TaxPools!AU42",
+  "stratum": 10,
+  "class": "C",
+  "reason": "the omitted TaxPools AU10:AU12 are the multiplicative index-factor block \u2014 same documented limitation"
+ },
+ {
+  "index": 139,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "TaxPools!AU43",
+  "stratum": 10,
+  "class": "C",
+  "reason": "the omitted TaxPools AU10:AU12 are the multiplicative index-factor block \u2014 same documented limitation"
+ },
+ {
+  "index": 140,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "RAVBalances!Y42",
+  "stratum": 10,
+  "class": "A",
+  "reason": "=SUM(Y10:Y11) leaves out Y13 \u2014 worth 45 \u2014 a RAV balance total skipping a live row"
+ },
+ {
+  "index": 141,
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "TIM!AU48",
+  "stratum": 10,
+  "class": "C",
+  "reason": "the omitted TIM AU44 is the index-factor row its block multiplies by \u2014 same documented limitation"
+ },
+ {
+  "index": 142,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "SO_Calculations!AU127",
+  "stratum": 10,
+  "class": "C",
+  "reason": "the omitted SO_Calculations rows are the index-factor block \u2014 same documented limitation"
+ },
+ {
+  "index": 143,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "RAVBalances!AH75",
+  "stratum": 10,
+  "class": "A",
+  "reason": "=SUM(AH14:AH15) leaves out AH17:AH18 \u2014 worth 226 \u2014 same class, real money outside the range"
+ },
+ {
+  "index": 144,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "TaxPools!AU43",
+  "stratum": 10,
+  "class": "C",
+  "reason": "the omitted TaxPools AU10:AU12 are the multiplicative index-factor block \u2014 same documented limitation"
+ },
+ {
+  "index": 145,
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "TIM!AU47",
+  "stratum": 10,
+  "class": "C",
+  "reason": "the omitted TIM AU44 is the index-factor row its block multiplies by \u2014 same documented limitation"
+ },
+ {
+  "index": 146,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "skipped-cell",
+  "ref": "NonCore!AJ209",
+  "stratum": 10,
+  "class": "A",
+  "reason": "=SUM(AJ202:AJ203) also leaves out AJ204 \u2014 a second total over the same block skipping the same live row"
+ },
+ {
+  "index": 147,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "family": "h7_debt",
+  "rule": "typed-over-formula",
+  "ref": "H7 Cost of debt indexation!I58",
+  "stratum": 3,
+  "class": "A",
+  "reason": "0.0424 typed at I58 into the same calculated series \u2014 same defect, its own year"
+ },
+ {
+  "index": 148,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "family": "h7_debt",
+  "rule": "typed-over-formula",
+  "ref": "H7 Cost of debt indexation!I59",
+  "stratum": 3,
+  "class": "A",
+  "reason": "0.0165336 typed at I59 where the series computes a real-rate bridge \u2014 same defect"
+ },
+ {
+  "index": 149,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "family": "h7_debt",
+  "rule": "typed-over-formula",
+  "ref": "H7 Cost of debt indexation!I52",
+  "stratum": 3,
+  "class": "A",
+  "reason": "0.0438605 typed at I52 into a series otherwise =SUM(J37,$G$12) \u2014 a hand-typed value inside a calculated cost-of-debt series"
+ },
+ {
+  "index": 150,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "C_Ratios!AE99",
+  "stratum": 12,
+  "class": "A",
+  "reason": "a literal 1 typed at C_Ratios!AE99 over a series that is otherwise =C_Time!F$37 \u2014 a switch cell typed over in both released versions"
+ },
+ {
+  "index": 151,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AL218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 152,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AH218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 153,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AH218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 154,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AK218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 155,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "C_Ratios!AE99",
+  "stratum": 12,
+  "class": "A",
+  "reason": "a literal 1 typed at C_Ratios!AE99 over a series that is otherwise =C_Time!F$37 \u2014 a switch cell typed over in both released versions"
+ },
+ {
+  "index": 156,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AI218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 157,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AL218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 158,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AI218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 159,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AK218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 160,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AJ218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 161,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AJ218",
+  "stratum": 12,
+  "class": "D",
+  "reason": "I_Series row 218: five adjacent columns AH-AL typed over `=X212` in one gesture, reported cell by cell in both files \u2014 one authoring decision per file; fix: fold varying-value typed runs of 4-7 into one finding instead of per-cell"
+ },
+ {
+  "index": 162,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "typed-over-formula",
+  "ref": "FinRatios RoRE decomposition!AP29",
+  "stratum": 4,
+  "class": "B",
+  "reason": "the same value typed across 10 cells of one row (AP29:AY29) \u2014 looks deliberate; hygiene worth listing, needs context to rank"
+ },
+ {
+  "index": 163,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "typed-over-formula",
+  "ref": "Revenue!AP16",
+  "stratum": 4,
+  "class": "B",
+  "reason": "Revenue!AP16:AY16 typed flat across all three BPFM variants \u2014 a deliberate-looking flat input row, appendix material"
+ },
+ {
+  "index": 164,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "typed-over-formula",
+  "ref": "Revenue!AP16",
+  "stratum": 4,
+  "class": "B",
+  "reason": "Revenue!AP16:AY16 typed flat across all three BPFM variants \u2014 a deliberate-looking flat input row, appendix material"
+ },
+ {
+  "index": 165,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "typed-over-formula",
+  "ref": "Revenue!AP16",
+  "stratum": 4,
+  "class": "B",
+  "reason": "Revenue!AP16:AY16 typed flat across all three BPFM variants \u2014 a deliberate-looking flat input row, appendix material"
+ },
+ {
+  "index": 166,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "family": "h7_pcm",
+  "rule": "volatile",
+  "ref": "C_TRS!AA81",
+  "stratum": 4,
+  "class": "B",
+  "reason": "OFFSET in a 36-cell calc fill \u2014 volatile-function hygiene the standards name, folded to one line"
+ },
+ {
+  "index": 167,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "family": "h7_pcm",
+  "rule": "volatile",
+  "ref": "C_Fin_Summ!AA245",
+  "stratum": 4,
+  "class": "B",
+  "reason": "OFFSET in a 36-cell calc fill \u2014 volatile-function hygiene the standards name, folded to one line"
+ },
+ {
+  "index": 168,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in a 7,200-cell debt-schedule fill \u2014 a volatile carpet that recalculates on every edit; exactly the appendix hygiene B names, folded per fill"
+ },
+ {
+  "index": 169,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "ScenarioRun_AllOutputData!G27",
+  "stratum": 43,
+  "class": "B",
+  "reason": "TODAY read downstream ('data valid from' logic) \u2014 the model's numbers depend on the clock; worth listing (unread stamps are already skipped)"
+ },
+ {
+  "index": 170,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "FinInput!AP137",
+  "stratum": 43,
+  "class": "B",
+  "reason": "FinInput is built on OFFSET in 5 places across 5 rows \u2014 the sheet's idiom, folded to one finding"
+ },
+ {
+  "index": 171,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "SystemOperator!AP742",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in 10 cells of one SystemOperator row \u2014 volatile hygiene, folded"
+ },
+ {
+  "index": 172,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in a 7,200-cell debt-schedule fill \u2014 a volatile carpet that recalculates on every edit; exactly the appendix hygiene B names, folded per fill"
+ },
+ {
+  "index": 173,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "ScenarioRun_AllOutputData!G27",
+  "stratum": 43,
+  "class": "B",
+  "reason": "TODAY read downstream ('data valid from' logic) \u2014 the model's numbers depend on the clock; worth listing (unread stamps are already skipped)"
+ },
+ {
+  "index": 174,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in a 7,200-cell debt-schedule fill \u2014 a volatile carpet that recalculates on every edit; exactly the appendix hygiene B names, folded per fill"
+ },
+ {
+  "index": 175,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in a 7,200-cell debt-schedule fill \u2014 a volatile carpet that recalculates on every edit; exactly the appendix hygiene B names, folded per fill"
+ },
+ {
+  "index": 176,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "RatingSimulator!AU21",
+  "stratum": 43,
+  "class": "B",
+  "reason": "RatingSimulator built on OFFSET across 4 rows \u2014 same idiom fold"
+ },
+ {
+  "index": 177,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "TaxPools!AP118",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in 10 cells of one TaxPools row \u2014 volatile hygiene, folded"
+ },
+ {
+  "index": 178,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in a 7,200-cell debt-schedule fill \u2014 a volatile carpet that recalculates on every edit; exactly the appendix hygiene B names, folded per fill"
+ },
+ {
+  "index": 179,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in a 7,200-cell debt-schedule fill \u2014 a volatile carpet that recalculates on every edit; exactly the appendix hygiene B names, folded per fill"
+ },
+ {
+  "index": 180,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in a 7,200-cell debt-schedule fill \u2014 a volatile carpet that recalculates on every edit; exactly the appendix hygiene B names, folded per fill"
+ },
+ {
+  "index": 181,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "RatingSimulator!AU21",
+  "stratum": 43,
+  "class": "B",
+  "reason": "RatingSimulator built on OFFSET across 4 rows \u2014 same idiom fold"
+ },
+ {
+  "index": 182,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "FinInput!AP137",
+  "stratum": 43,
+  "class": "B",
+  "reason": "FinInput is built on OFFSET in 5 places across 5 rows \u2014 the sheet's idiom, folded to one finding"
+ },
+ {
+  "index": 183,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "ScenarioRun_AllOutputData!G27",
+  "stratum": 43,
+  "class": "B",
+  "reason": "TODAY read downstream ('data valid from' logic) \u2014 the model's numbers depend on the clock; worth listing (unread stamps are already skipped)"
+ },
+ {
+  "index": 184,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "FinInput!AP137",
+  "stratum": 43,
+  "class": "B",
+  "reason": "FinInput is built on OFFSET in 5 places across 5 rows \u2014 the sheet's idiom, folded to one finding"
+ },
+ {
+  "index": 185,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in a 7,200-cell debt-schedule fill \u2014 a volatile carpet that recalculates on every edit; exactly the appendix hygiene B names, folded per fill"
+ },
+ {
+  "index": 186,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "ScenarioRun_AllOutputData!G27",
+  "stratum": 43,
+  "class": "B",
+  "reason": "TODAY read downstream ('data valid from' logic) \u2014 the model's numbers depend on the clock; worth listing (unread stamps are already skipped)"
+ },
+ {
+  "index": 187,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "Checks!AP50",
+  "stratum": 43,
+  "class": "B",
+  "reason": "INDIRECT in the Checks fill \u2014 reference-by-string in a shipped model; worth an appendix line"
+ },
+ {
+  "index": 188,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in a 7,200-cell debt-schedule fill \u2014 a volatile carpet that recalculates on every edit; exactly the appendix hygiene B names, folded per fill"
+ },
+ {
+  "index": 189,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "family": "riio3_bpfm",
+  "rule": "volatile",
+  "ref": "FinInput!AP137",
+  "stratum": 43,
+  "class": "B",
+  "reason": "FinInput is built on OFFSET in 5 places across 5 rows \u2014 the sheet's idiom, folded to one finding"
+ },
+ {
+  "index": 190,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "family": "riio3_pcfm",
+  "rule": "volatile",
+  "ref": "MainInputs!AH985",
+  "stratum": 2,
+  "class": "B",
+  "reason": "OFFSET in an 18-cell MainInputs fill \u2014 volatile hygiene, folded"
+ }
+]
