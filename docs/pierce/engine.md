@@ -157,6 +157,13 @@ manifests are in the protocol docs.
 
 ## The frontier — where to start next time
 
+> **Reordered 20 Aug 2026** by the platform direction (`platform.md`):
+> the company is now « Cursor for financial projects », and the build
+> ladder puts Compare Workbooks, Trace, and the project-finance
+> semantic layer (DSCR, sculpting, DSRA, waterfalls) ahead of the
+> grammar residue below. The items here remain real and judged — they
+> feed Review v2 — but they are no longer the front of the queue.
+
 Named, judged, and waiting. In rough order of value:
 
 1. **Three unbuilt folds** (all of the unseen corpus's remaining D
