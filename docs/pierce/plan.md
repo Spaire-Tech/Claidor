@@ -2,7 +2,10 @@
 
 Written 20 August 2026. Simple words, full detail. The direction is
 in `platform.md`, the engine's state is in `engine.md`; this is the
-to-do list that connects today to « done ». Steps are numbered
+to-do list that connects today to « done ». It replaces the 10 August
+Pierce plan, preserved as `plan-pierce-2026-08-10.md` — its tie-out
+measurements and its « link confirmed once, re-checked
+deterministically » design carry forward into Part F here. Steps are numbered
 straight through. Each step says what to do, who does it (Founder /
 Engine / Both), and what « done » looks like.
 
