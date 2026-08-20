@@ -3579,3 +3579,25 @@ unseen diff: four factual `broken-name` events (CA101 carries 7,817
 dead names), `capstru B53` kept as a real anchoring hazard, and
 `OBXValues!M689` kept and logged marginal. The exam file goes 7 → 12
 findings, all pinned by the fixture test. 79 audit tests green.
+
+**The Round-6 lab gate on the 27**, traced line for line. Population
+632 → 674. The additions: **(a)** the names-table events — ED2
+carries 606 dead defined names in every one of its eleven versions,
+RIIO-3 carries ~581–591, one folded finding per file; **(b)** the
+mutation detector's new reach — and its biggest find yet: in both
+published CAA H7 PCM files, **C_Tax's first forecast column reads
+pinned input rows whose labels match its own rows (« Category 3 % in
+main pool » = I_InputSets!$323) while all eight filled years read
+three rows higher into an empty « allocation check » row and evaluate
+to zero** — 24 rows in block rhythm, folded to one finding per file
+by the new same-column fold; likewise `O_FinStats!Y19` (« Total non
+aero revenues », where 14 siblings read « Airport charges revenue » —
+the values differ by a third); **(c)** BPFM singles, sampled and
+judged from cells: `Depn!X500` pins row 4 where 77 siblings read it
+relative (the anchoring class), `Revenue!AY25` reads its neighbour's
+column and the next row from MainInputs (a mis-drag), two
+Finance&Tax own-column displaced windows (the judged-A class). The
+one removal: `ScenDelta!AA9`'s long-formula fold re-anchors to AA8 —
+the header-row fix admitted the family's true first cell (144 → 180
+member cells, same finding). Baseline regenerated at 674; 502 tieout
+tests green.

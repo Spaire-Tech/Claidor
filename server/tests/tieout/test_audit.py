@@ -1640,3 +1640,28 @@ def test_a_window_grown_over_its_own_extra_row_stays_quiet() -> None:
     assert not any(
         f.rule == "inconsistent-row" and f.ref == "Sheet!B10" for f in result.findings
     ), [(f.ref, f.detail) for f in result.findings]
+
+
+def test_one_column_breaking_many_rows_folds_to_one_finding() -> None:
+    """H7's C_Tax: one forecast column disagreeing with its rows'
+    families in twenty-four rows is one authoring event, not
+    twenty-four findings. Three or more same-column breaks fold."""
+
+    def build(sheet) -> None:
+        sheet["Z1"] = 5
+        sheet["Y1"] = 8
+        #: Every deviant pins a different input row, as H7's do — a
+        #: column of identical shapes would be the crossing-family
+        #: design instead.
+        for row in (5, 7, 9):
+            sheet[f"A{row}"] = f"Rate {row}"
+            sheet[f"C{row}"] = f"=C25*$Y${row - 4}"
+            for column in "DEFGH":
+                sheet[f"{column}{row}"] = f"={column}25*$Z$1"
+
+    result = _tmp_book(build)
+    breaks = [f for f in result.findings if f.rule == "inconsistent-row"]
+    assert len(breaks) == 1, [(f.ref, f.detail) for f in breaks]
+    assert "3 rows" in breaks[0].detail
+    assert "C5" in breaks[0].cells
+    assert "C9" in breaks[0].cells

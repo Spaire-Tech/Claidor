@@ -61,7 +61,7 @@
     "cells": "H7 Cost of debt indexation!I80, H7 Cost of debt indexation!J80, H7 Cost of debt indexation!J81, H7 Cost of debt indexation!K80, H7 Cost of debt indexation!K81, H7 Cost of debt indexation!K82, H7 Cost of debt indexation!L80, H7 Cost of debt indexation!L81, H7 Cost of debt indexation!L82, H7 Cost of debt indexation!L83, H7 Cost of debt indexation!M80, H7 Cost of debt indexation!M81, H7 Cost of debt indexation!M82, H7 Cost of debt indexation!M83, H7 Cost of debt indexation!M84"
    }
   ],
-  "seconds": 1.1
+  "seconds": 0.9
  },
  {
   "file": "caa_h7/h7_new_debt_indexation_fp.xlsx",
@@ -94,17 +94,17 @@
     "cells": "H7 Cost of debt indexation!I80, H7 Cost of debt indexation!J80, H7 Cost of debt indexation!J81, H7 Cost of debt indexation!K80, H7 Cost of debt indexation!K81, H7 Cost of debt indexation!K82, H7 Cost of debt indexation!L80, H7 Cost of debt indexation!L81, H7 Cost of debt indexation!L82, H7 Cost of debt indexation!L83, H7 Cost of debt indexation!M80, H7 Cost of debt indexation!M81, H7 Cost of debt indexation!M82, H7 Cost of debt indexation!M83, H7 Cost of debt indexation!M84"
    }
   ],
-  "seconds": 1.3
+  "seconds": 1.1
  },
  {
   "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
   "sheets": 62,
-  "cells": 340413,
-  "errors": 6,
+  "cells": 340487,
+  "errors": 10,
   "smells": 19,
   "by_rule": {
    "skipped-cell": 3,
-   "inconsistent-row": 1,
+   "inconsistent-row": 5,
    "typed-over-formula": 2,
    "hardcode-in-formula": 14,
    "volatile": 2,
@@ -145,9 +145,49 @@
    {
     "rule": "inconsistent-row",
     "severity": "error",
+    "ref": "C_Index!F93",
+    "figure": "",
+    "detail": "the same formula as its 5 siblings with one reference displaced \u2014 where they read I_InputSets!R95C[+0], it reads I_InputSets!R96C[+0]: = I_InputSets!F$96",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "C_RABDepr!K81",
+    "figure": "",
+    "detail": "the same formula as its 5 siblings with one reference displaced \u2014 where they read I_InputSets!R410C[+0], it reads I_InputSets!R387C[+0]: = I_InputSets!K$387",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
     "ref": "C_Ratios!Y290",
     "figure": "",
     "detail": "the same formula as its 19 siblings with one reference displaced \u2014 where they read R228C[+0], it reads R[-62]C[+0]: = Y228",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "C_Tax!K42",
+    "figure": "",
+    "detail": "column K breaks its rows' families in 24 rows \u2014 each row's fill reads one place and its K cell another; the first: the same formula as its 8 siblings with one reference displaced \u2014 where they read I_InputSets!R[+278]C[+0], it reads I_InputSets!R323C[+0]: = I_InputSets!K$323",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": "K42, K43, K44, K52, K53, K54, K62, K63, K64, K72, K73, K74, K82, K83, K84, K92, K93, K94, K102, K103, K104, K112, K113, K114"
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "O_FinStats!Y19",
+    "figure": "63,347",
+    "detail": "the same formula as its 14 siblings with one reference displaced \u2014 where they read C_Revenue!R449C[+0], it reads C_NonAeroRev!R338C[+0]: = C_NonAeroRev!Y$338",
     "tier": 1,
     "weight": 0.9,
     "cells": ""
@@ -345,9 +385,9 @@
    {
     "rule": "long-formula",
     "severity": "smell",
-    "ref": "ScenDelta!AA9",
+    "ref": "ScenDelta!AA8",
     "figure": "",
-    "detail": "445 characters \u2014 one formula filled across 144 cells (FY2015\u2013FY2050)",
+    "detail": "445 characters \u2014 one formula filled across 180 cells (FY2015\u2013FY2050)",
     "tier": 3,
     "weight": 0.21,
     "cells": ""
@@ -363,17 +403,17 @@
     "cells": ""
    }
   ],
-  "seconds": 80.5
+  "seconds": 69.6
  },
  {
   "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
   "sheets": 62,
-  "cells": 340415,
-  "errors": 6,
+  "cells": 340489,
+  "errors": 10,
   "smells": 19,
   "by_rule": {
    "skipped-cell": 3,
-   "inconsistent-row": 1,
+   "inconsistent-row": 5,
    "typed-over-formula": 2,
    "hardcode-in-formula": 14,
    "volatile": 2,
@@ -414,9 +454,49 @@
    {
     "rule": "inconsistent-row",
     "severity": "error",
+    "ref": "C_Index!F93",
+    "figure": "",
+    "detail": "the same formula as its 5 siblings with one reference displaced \u2014 where they read I_InputSets!R95C[+0], it reads I_InputSets!R96C[+0]: = I_InputSets!F$96",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "C_RABDepr!K81",
+    "figure": "",
+    "detail": "the same formula as its 5 siblings with one reference displaced \u2014 where they read I_InputSets!R410C[+0], it reads I_InputSets!R387C[+0]: = I_InputSets!K$387",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
     "ref": "C_Ratios!Y290",
     "figure": "",
     "detail": "the same formula as its 19 siblings with one reference displaced \u2014 where they read R228C[+0], it reads R[-62]C[+0]: = Y228",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "C_Tax!K42",
+    "figure": "",
+    "detail": "column K breaks its rows' families in 24 rows \u2014 each row's fill reads one place and its K cell another; the first: the same formula as its 8 siblings with one reference displaced \u2014 where they read I_InputSets!R[+278]C[+0], it reads I_InputSets!R323C[+0]: = I_InputSets!K$323",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": "K42, K43, K44, K52, K53, K54, K62, K63, K64, K72, K73, K74, K82, K83, K84, K92, K93, K94, K102, K103, K104, K112, K113, K114"
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "O_FinStats!Y19",
+    "figure": "63,872",
+    "detail": "the same formula as its 14 siblings with one reference displaced \u2014 where they read C_Revenue!R457C[+0], it reads C_NonAeroRev!R338C[+0]: = C_NonAeroRev!Y$338",
     "tier": 1,
     "weight": 0.9,
     "cells": ""
@@ -614,9 +694,9 @@
    {
     "rule": "long-formula",
     "severity": "smell",
-    "ref": "ScenDelta!AA9",
+    "ref": "ScenDelta!AA8",
     "figure": "",
-    "detail": "445 characters \u2014 one formula filled across 144 cells (FY2015\u2013FY2050)",
+    "detail": "445 characters \u2014 one formula filled across 180 cells (FY2015\u2013FY2050)",
     "tier": 3,
     "weight": 0.21,
     "cells": ""
@@ -632,16 +712,17 @@
     "cells": ""
    }
   ],
-  "seconds": 81.4
+  "seconds": 65.3
  },
  {
   "file": "ofgem_ed2/v1_2023-02.xlsx",
   "sheets": 31,
-  "cells": 41153,
+  "cells": 41154,
   "errors": 0,
-  "smells": 10,
+  "smells": 12,
   "by_rule": {
    "hardcode-in-formula": 8,
+   "broken-name": 2,
    "long-formula": 2
   },
   "findings": [
@@ -726,6 +807,26 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "599 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 593 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "25 defined names point into other workbooks that are not here (ACwvu.CapersView., BLPH1, BLPH2, BLPH21, BLPH22, BLPH23 and 19 more) \u2014 ACwvu.CapersView. reads [1]Sheet1!#REF!. They raise update prompts on open and cannot be checked.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "EMID!AO74",
@@ -746,16 +847,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 38.0
+  "seconds": 29.7
  },
  {
   "file": "ofgem_ed2/v2_2023-07-14.xlsx",
   "sheets": 31,
-  "cells": 41024,
+  "cells": 41025,
   "errors": 0,
-  "smells": 10,
+  "smells": 11,
   "by_rule": {
    "hardcode-in-formula": 8,
+   "broken-name": 1,
    "long-formula": 2
   },
   "findings": [
@@ -840,6 +942,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "EMID!AO74",
@@ -860,16 +972,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 36.8
+  "seconds": 28.7
  },
  {
   "file": "ofgem_ed2/v2_2023-07-31.xlsx",
   "sheets": 31,
-  "cells": 41048,
+  "cells": 41049,
   "errors": 0,
-  "smells": 10,
+  "smells": 11,
   "by_rule": {
    "hardcode-in-formula": 8,
+   "broken-name": 1,
    "long-formula": 2
   },
   "findings": [
@@ -954,6 +1067,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "EMID!AO74",
@@ -974,16 +1097,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 37.4
+  "seconds": 28.7
  },
  {
   "file": "ofgem_ed2/v3_2023-10.xlsx",
   "sheets": 31,
-  "cells": 40947,
+  "cells": 40948,
   "errors": 0,
-  "smells": 10,
+  "smells": 11,
   "by_rule": {
    "hardcode-in-formula": 8,
+   "broken-name": 1,
    "long-formula": 2
   },
   "findings": [
@@ -1068,6 +1192,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "EMID!AO74",
@@ -1088,16 +1222,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 38.0
+  "seconds": 28.9
  },
  {
   "file": "ofgem_ed2/v3_2023-11.xlsx",
   "sheets": 31,
-  "cells": 40947,
+  "cells": 40948,
   "errors": 0,
-  "smells": 10,
+  "smells": 11,
   "by_rule": {
    "hardcode-in-formula": 8,
+   "broken-name": 1,
    "long-formula": 2
   },
   "findings": [
@@ -1182,6 +1317,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "EMID!AO74",
@@ -1202,16 +1347,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 37.0
+  "seconds": 28.2
  },
  {
   "file": "ofgem_ed2/v3_2024-01.xlsm",
   "sheets": 31,
-  "cells": 42601,
+  "cells": 42602,
   "errors": 0,
-  "smells": 7,
+  "smells": 8,
   "by_rule": {
    "hardcode-in-formula": 5,
+   "broken-name": 1,
    "long-formula": 2
   },
   "findings": [
@@ -1266,6 +1412,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "EMID!AO74",
@@ -1286,16 +1442,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 38.3
+  "seconds": 28.0
  },
  {
   "file": "ofgem_ed2/v4_2024-07.xlsx",
   "sheets": 31,
-  "cells": 42615,
+  "cells": 42616,
   "errors": 0,
-  "smells": 7,
+  "smells": 8,
   "by_rule": {
    "hardcode-in-formula": 5,
+   "broken-name": 1,
    "long-formula": 2
   },
   "findings": [
@@ -1350,6 +1507,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "EMID!AO74",
@@ -1370,16 +1537,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 37.6
+  "seconds": 28.6
  },
  {
   "file": "ofgem_ed2/v4_2025-01.xlsx",
   "sheets": 31,
-  "cells": 43100,
+  "cells": 43101,
   "errors": 0,
-  "smells": 7,
+  "smells": 8,
   "by_rule": {
    "hardcode-in-formula": 5,
+   "broken-name": 1,
    "long-formula": 2
   },
   "findings": [
@@ -1434,6 +1602,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "EMID!AO74",
@@ -1454,16 +1632,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 38.6
+  "seconds": 29.8
  },
  {
   "file": "ofgem_ed2/v4_2025-07.xlsx",
   "sheets": 31,
-  "cells": 43124,
+  "cells": 43125,
   "errors": 0,
-  "smells": 8,
+  "smells": 9,
   "by_rule": {
    "hardcode-in-formula": 5,
+   "broken-name": 1,
    "error-value": 1,
    "long-formula": 2
   },
@@ -1519,6 +1698,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "error-value",
     "severity": "smell",
     "ref": "Cover!G4",
@@ -1549,16 +1738,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 37.8
+  "seconds": 29.3
  },
  {
   "file": "ofgem_ed2/v4_2026-01.xlsx",
   "sheets": 31,
-  "cells": 43127,
+  "cells": 43128,
   "errors": 0,
-  "smells": 8,
+  "smells": 9,
   "by_rule": {
    "hardcode-in-formula": 5,
+   "broken-name": 1,
    "error-value": 1,
    "long-formula": 2
   },
@@ -1614,6 +1804,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "error-value",
     "severity": "smell",
     "ref": "Cover!G4",
@@ -1644,16 +1844,17 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 38.3
+  "seconds": 29.3
  },
  {
   "file": "ofgem_ed2/v5_2026-06.xlsx",
   "sheets": 31,
-  "cells": 43177,
+  "cells": 43178,
   "errors": 0,
-  "smells": 7,
+  "smells": 8,
   "by_rule": {
    "hardcode-in-formula": 5,
+   "broken-name": 1,
    "long-formula": 2
   },
   "findings": [
@@ -1708,6 +1909,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "606 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., ActualDebtAdjCalc, ActualDebtAdjFlags, ActualDebtAdjGoal and 600 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "EMID!AO74",
@@ -1728,17 +1939,18 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 37.7
+  "seconds": 29.0
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
   "sheets": 14,
   "cells": 27493,
   "errors": 4,
-  "smells": 6,
+  "smells": 7,
   "by_rule": {
    "skipped-cell": 4,
    "hardcode-in-formula": 1,
+   "broken-name": 1,
    "long-formula": 3,
    "volatile": 2
   },
@@ -1794,6 +2006,16 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "581 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., BLPH1, BLPH10, BLPH100 and 575 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "Finance!D7",
@@ -1844,17 +2066,19 @@
     "cells": ""
    }
   ],
-  "seconds": 7.1
+  "seconds": 5.6
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
   "sheets": 14,
   "cells": 16656,
-  "errors": 3,
-  "smells": 3,
+  "errors": 4,
+  "smells": 4,
   "by_rule": {
    "skipped-cell": 3,
+   "inconsistent-row": 1,
    "hardcode-in-formula": 1,
+   "broken-name": 1,
    "long-formula": 2
   },
   "findings": [
@@ -1889,6 +2113,16 @@
     "cells": ""
    },
    {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "TaxPools!AU98",
+    "figure": "",
+    "detail": "the same formula as its 4 siblings with one pinned reference out of step \u2014 they read $AT$31, it reads R31C[-1]: =-(SUM(AT$31,$AT96:AT96))*AU26",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
     "rule": "hardcode-in-formula",
     "severity": "smell",
     "ref": "MainInputs!AY76",
@@ -1896,6 +2130,16 @@
     "detail": "1.5, 2.5 inside =IF(AND(AW76=\"CapRate 1\",AV76=\"RPEs Apply\"),1,IF(AND(AW76=\"C \u2014 one formula filled across 40 cells (FY2031\u2013FY2031)",
     "tier": 2,
     "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "581 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., BLPH1, BLPH10, BLPH100 and 575 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
     "cells": ""
    },
    {
@@ -1919,18 +2163,19 @@
     "cells": ""
    }
   ],
-  "seconds": 4.4
+  "seconds": 3.4
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
   "sheets": 18,
   "cells": 27555,
   "errors": 4,
-  "smells": 4,
+  "smells": 6,
   "by_rule": {
    "error-value": 1,
    "skipped-cell": 3,
    "hardcode-in-formula": 2,
+   "broken-name": 2,
    "long-formula": 2
   },
   "findings": [
@@ -1995,6 +2240,26 @@
     "cells": ""
    },
    {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "581 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., BLPH1, BLPH10, BLPH100 and 575 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "1 defined names point into other workbooks that are not here (RIIO) \u2014 RIIO reads [1]Extension!$E$51:$E$60. They raise update prompts on open and cannot be checked.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
     "rule": "long-formula",
     "severity": "smell",
     "ref": "Finance!D7",
@@ -2015,19 +2280,20 @@
     "cells": ""
    }
   ],
-  "seconds": 6.6
+  "seconds": 5.2
  },
  {
   "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
   "sheets": 40,
-  "cells": 601758,
-  "errors": 4,
-  "smells": 61,
+  "cells": 601786,
+  "errors": 6,
+  "smells": 62,
   "by_rule": {
    "error-value": 5,
    "skipped-cell": 1,
-   "inconsistent-row": 1,
+   "inconsistent-row": 3,
    "hardcode-in-formula": 17,
+   "broken-name": 1,
    "volatile": 6,
    "long-formula": 35
   },
@@ -2058,6 +2324,26 @@
     "ref": "F2a - Financial Summary (TWA)!N195",
     "figure": "",
     "detail": "=SUM(N182:N187) leaves out F2a - Financial Summary (TWA)!N194 above it \u2014 one formula filled across 7 cells (F2a - Financial Summary (TWA)!N195 to F2a - Financial Summary (TWA)!T195)",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "Finance&Tax!AP67",
+    "figure": "-1,953.8",
+    "detail": "the same formula as its 9 siblings with one reference displaced \u2014 where they read R[-9]C[+0], it reads R[-7]C[+0]: =AP35 + AP60",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "Finance&Tax!AQ59",
+    "figure": "246.278",
+    "detail": "the same formula as its 8 siblings with one reference displaced \u2014 where they read NonCore!R[-22]C[+0], it reads NonCore!R[-35]C[+0]: =NonCore!AQ24",
     "tier": 1,
     "weight": 0.9,
     "cells": ""
@@ -2240,6 +2526,16 @@
     "detail": "2032, 2027 inside =IF($F$321=1,IF(AV5>=$F$320,$F$131,1)) + IF($F$321=2,_xlfn.I \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)",
     "tier": 2,
     "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "582 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., BLPH1, BLPH10, BLPH100 and 576 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
     "cells": ""
    },
    {
@@ -2683,19 +2979,20 @@
     "cells": ""
    }
   ],
-  "seconds": 642.5
+  "seconds": 474.3
  },
  {
   "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
   "sheets": 46,
-  "cells": 652141,
-  "errors": 5,
-  "smells": 74,
+  "cells": 652176,
+  "errors": 6,
+  "smells": 75,
   "by_rule": {
    "error-value": 7,
-   "inconsistent-row": 1,
+   "inconsistent-row": 2,
    "skipped-cell": 1,
    "hardcode-in-formula": 28,
+   "broken-name": 1,
    "volatile": 6,
    "long-formula": 36
   },
@@ -2728,6 +3025,16 @@
     "detail": "shows #REF! across 15 cells, OutputSummary!G209 to H307 \u2014 one broken formula, `=AR!#REF!` repeated over the block",
     "tier": 1,
     "weight": 1.0,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "Depn!X500",
+    "figure": "",
+    "detail": "the same formula as its 77 siblings with one reference displaced \u2014 where they read R[-496]C[+0], it reads R4C[+0]: =X$4<$I590",
+    "tier": 1,
+    "weight": 0.9,
     "cells": ""
    },
    {
@@ -3029,6 +3336,16 @@
     "tier": 2,
     "weight": 0.48,
     "cells": "Scotland!AU817, Southern!AU817, Wales & West!AU817"
+   },
+   {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "582 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., BLPH1, BLPH10, BLPH100 and 576 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
    },
    {
     "rule": "volatile",
@@ -3491,7 +3808,7 @@
     "cells": ""
    }
   ],
-  "seconds": 674.5
+  "seconds": 514.2
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
@@ -3564,7 +3881,7 @@
     "cells": ""
    }
   ],
-  "seconds": 2.0
+  "seconds": 1.7
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
@@ -3699,18 +4016,20 @@
     "cells": ""
    }
   ],
-  "seconds": 226.8
+  "seconds": 177.0
  },
  {
   "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
   "sheets": 40,
-  "cells": 597372,
-  "errors": 4,
-  "smells": 59,
+  "cells": 597400,
+  "errors": 5,
+  "smells": 60,
   "by_rule": {
    "error-value": 5,
    "skipped-cell": 2,
+   "inconsistent-row": 1,
    "hardcode-in-formula": 16,
+   "broken-name": 1,
    "volatile": 6,
    "long-formula": 34
   },
@@ -3751,6 +4070,16 @@
     "ref": "Finance&Tax!AP37",
     "figure": "",
     "detail": "=SUM(AP35:AP35) leaves out Finance&Tax!AP36 above it \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "MainInputs!AH1556",
+    "figure": "-0.0126864",
+    "detail": "the same formula as its 7 siblings with one reference displaced \u2014 where they read 'NGGT TO'!R[-103]C[+0], it reads 'NGGT TO'!R[-106]C[+0]: ='NGGT TO'!AH1450*$I$13",
     "tier": 1,
     "weight": 0.9,
     "cells": ""
@@ -3913,6 +4242,16 @@
     "detail": "5 inside =IF($I$275=1,($AU$273+$AU$274)/5,AT10*($AU$273+$AU$274)) \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)",
     "tier": 2,
     "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "591 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., BLPH1, BLPH10, BLPH100 and 585 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
     "cells": ""
    },
    {
@@ -4346,20 +4685,21 @@
     "cells": ""
    }
   ],
-  "seconds": 612.0
+  "seconds": 457.4
  },
  {
   "file": "ofgem_riio3/final_et3_bpfm.xlsm",
   "sheets": 43,
-  "cells": 624026,
-  "errors": 5,
-  "smells": 64,
+  "cells": 624056,
+  "errors": 8,
+  "smells": 65,
   "by_rule": {
    "error-value": 7,
    "skipped-cell": 1,
-   "inconsistent-row": 1,
+   "inconsistent-row": 4,
    "typed-over-formula": 1,
    "hardcode-in-formula": 18,
+   "broken-name": 1,
    "volatile": 8,
    "long-formula": 33
   },
@@ -4397,9 +4737,39 @@
    {
     "rule": "inconsistent-row",
     "severity": "error",
+    "ref": "Finance&Tax!AP73",
+    "figure": "-1,953.8",
+    "detail": "the same formula as its 9 siblings with one reference displaced \u2014 where they read R[-9]C[+0], it reads R[-7]C[+0]: =AP41 + AP66",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "Finance&Tax!AQ65",
+    "figure": "246.278",
+    "detail": "the same formula as its 8 siblings with one reference displaced \u2014 where they read NonCore!R[-28]C[+0], it reads NonCore!R[-41]C[+0]: =NonCore!AQ24",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
     "ref": "MainInputs!AP2524",
     "figure": "",
     "detail": "=InputSummary!AP2248*$I$13*AP10 + InputSummary!AP1545*$I$14*AP11 where the series does =InputSummary!AH2248*$I$13",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "Revenue!AY25",
+    "figure": "",
+    "detail": "the same formula as its 9 siblings with one reference displaced \u2014 where they read MainInputs!R[+435]C[+0], it reads MainInputs!R[+436]C[+1]: =MainInputs!AZ461",
     "tier": 1,
     "weight": 0.9,
     "cells": ""
@@ -4592,6 +4962,16 @@
     "detail": "2032, 2027 inside =IF($F$327=1,IF(AV5>=$F$326,$F$130,1)) + IF($F$327=2,_xlfn.I \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)",
     "tier": 2,
     "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "586 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., BLPH1, BLPH10, BLPH100 and 580 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
     "cells": ""
    },
    {
@@ -5055,20 +5435,21 @@
     "cells": "TaxPools!AP118, TaxPools!AQ118, TaxPools!AR118, TaxPools!AS118, TaxPools!AT118, TaxPools!AU118, TaxPools!AV118, TaxPools!AW118, TaxPools!AX118, TaxPools!AY118"
    }
   ],
-  "seconds": 617.8
+  "seconds": 470.7
  },
  {
   "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
   "sheets": 49,
-  "cells": 693716,
-  "errors": 5,
-  "smells": 73,
+  "cells": 693753,
+  "errors": 7,
+  "smells": 74,
   "by_rule": {
    "error-value": 7,
-   "inconsistent-row": 1,
+   "inconsistent-row": 3,
    "skipped-cell": 1,
    "typed-over-formula": 1,
    "hardcode-in-formula": 27,
+   "broken-name": 1,
    "volatile": 7,
    "long-formula": 34
   },
@@ -5096,6 +5477,16 @@
    {
     "rule": "inconsistent-row",
     "severity": "error",
+    "ref": "Depn!X500",
+    "figure": "",
+    "detail": "the same formula as its 77 siblings with one reference displaced \u2014 where they read R[-496]C[+0], it reads R4C[+0]: =X$4<$I590",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
     "ref": "F2a - Financial Summary (TWA)!N164",
     "figure": "",
     "detail": "tests 0, 2025 where 6 sister cells test 0, 2022: =IF(N163=0,0,IF(N$5=2025,(N159*N160*N$32)/N163,(SUMPRODUCT($J159:M159,",
@@ -5109,6 +5500,16 @@
     "ref": "F2a - Financial Summary (TWA)!N195",
     "figure": "",
     "detail": "=SUM(N182:N187) leaves out F2a - Financial Summary (TWA)!N194 above it \u2014 one formula filled across 7 cells (F2a - Financial Summary (TWA)!N195 to F2a - Financial Summary (TWA)!T195)",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "Revenue!AY26",
+    "figure": "39.4423",
+    "detail": "the same formula as its 9 siblings with one reference displaced \u2014 where they read MainInputs!R[+317]C[+0], it reads MainInputs!R[+318]C[+1]: =MainInputs!AZ344",
     "tier": 1,
     "weight": 0.9,
     "cells": ""
@@ -5392,6 +5793,16 @@
     "tier": 2,
     "weight": 0.48,
     "cells": "Scotland!AU818, Southern!AU818, Wales & West!AU818"
+   },
+   {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "591 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., BLPH1, BLPH10, BLPH100 and 585 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
    },
    {
     "rule": "volatile",
@@ -5854,18 +6265,20 @@
     "cells": ""
    }
   ],
-  "seconds": 683.2
+  "seconds": 518.4
  },
  {
   "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
   "sheets": 44,
-  "cells": 604371,
-  "errors": 4,
-  "smells": 66,
+  "cells": 604401,
+  "errors": 6,
+  "smells": 67,
   "by_rule": {
    "skipped-cell": 2,
+   "inconsistent-row": 2,
    "typed-over-formula": 2,
    "hardcode-in-formula": 17,
+   "broken-name": 1,
    "volatile": 10,
    "error-value": 7,
    "long-formula": 32
@@ -5887,6 +6300,26 @@
     "ref": "Finance&Tax!AP43",
     "figure": "",
     "detail": "=SUM(AP41:AP41) leaves out Finance&Tax!AP42 above it \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "MainInputs!AH1566",
+    "figure": "-0.0126864",
+    "detail": "the same formula as its 7 siblings with one reference displaced \u2014 where they read 'NGGT TO'!R[-109]C[+0], it reads 'NGGT TO'!R[-112]C[+0]: ='NGGT TO'!AH1454*$I$13",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "Revenue!AY25",
+    "figure": "47.4543",
+    "detail": "the same formula as its 9 siblings with one reference displaced \u2014 where they read MainInputs!R[+289]C[+0], it reads MainInputs!R[+290]C[+1]: =MainInputs!AZ315",
     "tier": 1,
     "weight": 0.9,
     "cells": ""
@@ -6080,6 +6513,16 @@
     "tier": 2,
     "weight": 0.48,
     "cells": "SystemOperator!AP930, SystemOperator!AP978, SystemOperator!AU275"
+   },
+   {
+    "rule": "broken-name",
+    "severity": "smell",
+    "ref": "",
+    "figure": "",
+    "detail": "591 defined names point at deleted cells \u2014 Excel stores #REF! where their targets used to be (ACwvu.CapersView., ACwvu.Japan_Capers_Ed_Pub., ACwvu.KJP_CC., BLPH1, BLPH10, BLPH100 and 585 more). Any new formula written against one breaks on arrival; worth clearing from the name manager.",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
    },
    {
     "rule": "volatile",
@@ -6572,7 +7015,7 @@
     "cells": "TaxPools!AP118, TaxPools!AQ118, TaxPools!AR118, TaxPools!AS118, TaxPools!AT118, TaxPools!AU118, TaxPools!AV118, TaxPools!AW118, TaxPools!AX118, TaxPools!AY118"
    }
   ],
-  "seconds": 630.5
+  "seconds": 476.7
  },
  {
   "file": "ofgem_riio3/final_wacc.xlsx",
@@ -6737,6 +7180,6 @@
     "cells": ""
    }
   ],
-  "seconds": 173.3
+  "seconds": 192.7
  }
 ]

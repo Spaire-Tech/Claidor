@@ -147,8 +147,8 @@ had blessed, and a real displaced window on an unseen model.
 | `scripts/usefulness_sample.py` | seeded stratified draws — by family×rule, or per-detector with a floor |
 | `scripts/plant_defects.py` | plant six defect classes into a host by XML surgery (cached values preserved), ground truth first, one plant per row/column |
 | scratchpad `harvest_neighborhoods.py` | cell neighbourhoods for judging cards |
-| `docs/pierce/corpus-golden-master.json` | the committed 27-model baseline (632 findings, tiered) |
-| `tests/tieout/` | 494 tests; every judged principle has a regression test |
+| `docs/pierce/corpus-golden-master.json` | the committed 27-model baseline (674 findings, tiered) |
+| `tests/tieout/` | 502 tests; every judged principle has a regression test |
 
 The corpora themselves (lab 27: Ofgem ED2/RIIO-3, CAA H7, AER;
 unseen 11: Ofwat PR24 via the UK Government Web Archive, NZ Commerce

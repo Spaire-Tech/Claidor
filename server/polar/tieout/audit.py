@@ -2517,6 +2517,7 @@ def _mutations(book: Workbook, result: Audit) -> None:
         for finding in result.findings
         if finding.rule in ("inconsistent-row", "inconsistent-anchoring")
     }
+    caught: list[tuple[Cell, str]] = []
 
     for (axis, _, _), cells in sorted(lines.items()):
         cells.sort(key=lambda one: one.column if axis == "row" else one.row)
@@ -2632,17 +2633,53 @@ def _mutations(book: Workbook, result: Audit) -> None:
             else:
                 continue
             already.add(deviant.ref)
+            caught.append((deviant, what))
+
+    #: One column breaking many rows' families is one authoring event —
+    #: H7's C_Tax reads pinned input rows in its first forecast column
+    #: while every filled year reads three rows higher, twenty-four
+    #: times in block rhythm. Twenty-four findings would bury the one
+    #: decision; the fold says it once, with the roster.
+    grouped: dict[tuple[str, int], list[tuple[Cell, str]]] = {}
+    for deviant, what in caught:
+        grouped.setdefault((deviant.sheet, deviant.column), []).append(
+            (deviant, what)
+        )
+    for (sheet, _), members in sorted(grouped.items()):
+        if len(members) >= 3:
+            first, lead = members[0]
+            column = get_column_letter(first.column)
+            roster = ", ".join(one.ref.rsplit("!", 1)[-1] for one, _ in members)
             result.findings.append(
                 Finding(
                     rule="inconsistent-row",
                     severity="error",
-                    ref=deviant.ref,
-                    sheet=deviant.sheet,
-                    name=deviant.name,
-                    detail=what,
+                    ref=first.ref,
+                    sheet=sheet,
+                    name=first.name,
+                    detail=(
+                        f"column {column} breaks its rows' families in "
+                        f"{len(members)} rows — each row's fill reads one "
+                        f"place and its {column} cell another; the first: "
+                        f"{lead}"
+                    ),
                     source="EuSpRIG, ICAEW P11",
+                    cells=roster[:400],
                 )
             )
+        else:
+            for deviant, what in members:
+                result.findings.append(
+                    Finding(
+                        rule="inconsistent-row",
+                        severity="error",
+                        ref=deviant.ref,
+                        sheet=deviant.sheet,
+                        name=deviant.name,
+                        detail=what,
+                        source="EuSpRIG, ICAEW P11",
+                    )
+                )
 
 
 def _selector_drift(book: Workbook, result: Audit) -> None:
