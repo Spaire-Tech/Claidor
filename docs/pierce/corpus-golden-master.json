@@ -6573,5 +6573,170 @@
    }
   ],
   "seconds": 630.5
+ },
+ {
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "sheets": 16,
+  "cells": 500502,
+  "errors": 0,
+  "smells": 15,
+  "by_rule": {
+   "hardcode-in-formula": 7,
+   "error-value": 2,
+   "long-formula": 6
+  },
+  "findings": [
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "Daily Data!N2",
+    "figure": "2%",
+    "detail": "2% inside =IF(DailyDataTable[[#This Row],[DATE]]>UserInterface!$C$29,U \u2014 one formula filled across 12873 cells (Daily Data!N10 to Daily Data!N9999)",
+    "tier": 2,
+    "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "Daily Data!P2",
+    "figure": "3%",
+    "detail": "3% inside =IF(DailyDataTable[[#This Row],[DATE]]>UserInterface!$C$30,U \u2014 one formula filled across 12873 cells (Daily Data!P10 to Daily Data!P9999)",
+    "tier": 2,
+    "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!E16",
+    "figure": "22",
+    "detail": "22 inside =IF(A16=2030, 22/24, IF(A16=2031, 10/24,0)) \u2014 one formula filled across 23 cells (One-Off Wedge!E16 to One-Off Wedge!E38)",
+    "tier": 2,
+    "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!Q25",
+    "figure": "2%",
+    "detail": "2% inside =Q24*(1 + 2%)^(1/12) \u2014 one formula filled across 48 cells (One-Off Wedge!Q25 to One-Off Wedge!Q72)",
+    "tier": 2,
+    "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R25",
+    "figure": "3%",
+    "detail": "3% inside =R24*(1 + 3%)^(1/12) \u2014 one formula filled across 11 cells (One-Off Wedge!R25 to One-Off Wedge!R35)",
+    "tier": 2,
+    "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R36",
+    "figure": "3%",
+    "detail": "3% inside =R35*(1 +3%)^(1/12) \u2014 one formula filled across 10 cells (One-Off Wedge!R36 to One-Off Wedge!R45)",
+    "tier": 2,
+    "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "hardcode-in-formula",
+    "severity": "smell",
+    "ref": "One-Off Wedge!R46",
+    "figure": "2%",
+    "detail": "2% inside =R45*(1 +2%)^(1/12) \u2014 one formula filled across 27 cells (One-Off Wedge!R46 to One-Off Wedge!R72)",
+    "tier": 2,
+    "weight": 0.48,
+    "cells": ""
+   },
+   {
+    "rule": "error-value",
+    "severity": "smell",
+    "ref": "Daily Data!I3",
+    "figure": "38,066",
+    "detail": "carries #N/A in 18,667 routine gaps in its series \u2014 38,066 cells across 10 columns",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
+    "rule": "long-formula",
+    "severity": "smell",
+    "ref": "Daily Data!E10",
+    "figure": "",
+    "detail": "181 characters \u2014 one formula filled across 12865 cells (Daily Data!E10 to Daily Data!E9999)",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
+    "rule": "long-formula",
+    "severity": "smell",
+    "ref": "Daily Data!F10",
+    "figure": "",
+    "detail": "181 characters \u2014 one formula filled across 12865 cells (Daily Data!F10 to Daily Data!F9999)",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
+    "rule": "long-formula",
+    "severity": "smell",
+    "ref": "Daily Data!G2",
+    "figure": "",
+    "detail": "274 characters \u2014 one formula filled across 12873 cells (Daily Data!G10 to Daily Data!G9999)",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
+    "rule": "long-formula",
+    "severity": "smell",
+    "ref": "Daily Data!N2",
+    "figure": "",
+    "detail": "268 characters \u2014 one formula filled across 12873 cells (Daily Data!N10 to Daily Data!N9999)",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
+    "rule": "long-formula",
+    "severity": "smell",
+    "ref": "Key Outputs!E53",
+    "figure": "",
+    "detail": "199 characters \u2014 one formula filled across 5 cells (Key Outputs!E53 to Key Outputs!E57)",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
+    "rule": "long-formula",
+    "severity": "smell",
+    "ref": "Key Outputs!F53",
+    "figure": "",
+    "detail": "191 characters \u2014 one formula filled across 5 cells (Key Outputs!F53 to Key Outputs!F57)",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   },
+   {
+    "rule": "error-value",
+    "severity": "smell",
+    "ref": "SONIA Forecast Interpolation!B3",
+    "figure": "4,265",
+    "detail": "carries #N/A in 22 routine gaps in its series and past its data's edge \u2014 4,265 cells across 5 columns",
+    "tier": 3,
+    "weight": 0.21,
+    "cells": ""
+   }
+  ],
+  "seconds": 173.3
  }
 ]
