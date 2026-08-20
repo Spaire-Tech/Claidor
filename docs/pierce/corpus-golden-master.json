@@ -94,18 +94,19 @@
     "cells": "H7 Cost of debt indexation!I80, H7 Cost of debt indexation!J80, H7 Cost of debt indexation!J81, H7 Cost of debt indexation!K80, H7 Cost of debt indexation!K81, H7 Cost of debt indexation!K82, H7 Cost of debt indexation!L80, H7 Cost of debt indexation!L81, H7 Cost of debt indexation!L82, H7 Cost of debt indexation!L83, H7 Cost of debt indexation!M80, H7 Cost of debt indexation!M81, H7 Cost of debt indexation!M82, H7 Cost of debt indexation!M83, H7 Cost of debt indexation!M84"
    }
   ],
-  "seconds": 1.2
+  "seconds": 1.3
  },
  {
   "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
   "sheets": 62,
   "cells": 340413,
-  "errors": 5,
-  "smells": 20,
+  "errors": 6,
+  "smells": 19,
   "by_rule": {
    "skipped-cell": 3,
+   "inconsistent-row": 1,
    "typed-over-formula": 2,
-   "hardcode-in-formula": 15,
+   "hardcode-in-formula": 14,
    "volatile": 2,
    "error-value": 1,
    "long-formula": 2
@@ -142,6 +143,16 @@
     "cells": ""
    },
    {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "C_Ratios!Y290",
+    "figure": "",
+    "detail": "the same formula as its 19 siblings with one reference displaced \u2014 where they read R228C[+0], it reads R[-62]C[+0]: = Y228",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
     "rule": "typed-over-formula",
     "severity": "error",
     "ref": "C_Ratios!AE99",
@@ -160,16 +171,6 @@
     "tier": 1,
     "weight": 0.8,
     "cells": "AH218, AI218, AJ218, AK218, AL218"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "C_Revenue!AA61",
-    "figure": "0.5",
-    "detail": "0.5 inside = MAX(AA60^0.5*Z60, AA60^0.5) \u2014 one formula filled across 288 cells (FY2015\u2013FY2050)",
-    "tier": 2,
-    "weight": 0.48,
-    "cells": ""
    },
    {
     "rule": "hardcode-in-formula",
@@ -362,18 +363,19 @@
     "cells": ""
    }
   ],
-  "seconds": 71.7
+  "seconds": 80.5
  },
  {
   "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
   "sheets": 62,
   "cells": 340415,
-  "errors": 5,
-  "smells": 20,
+  "errors": 6,
+  "smells": 19,
   "by_rule": {
    "skipped-cell": 3,
+   "inconsistent-row": 1,
    "typed-over-formula": 2,
-   "hardcode-in-formula": 15,
+   "hardcode-in-formula": 14,
    "volatile": 2,
    "error-value": 1,
    "long-formula": 2
@@ -410,6 +412,16 @@
     "cells": ""
    },
    {
+    "rule": "inconsistent-row",
+    "severity": "error",
+    "ref": "C_Ratios!Y290",
+    "figure": "",
+    "detail": "the same formula as its 19 siblings with one reference displaced \u2014 where they read R228C[+0], it reads R[-62]C[+0]: = Y228",
+    "tier": 1,
+    "weight": 0.9,
+    "cells": ""
+   },
+   {
     "rule": "typed-over-formula",
     "severity": "error",
     "ref": "C_Ratios!AE99",
@@ -428,16 +440,6 @@
     "tier": 1,
     "weight": 0.8,
     "cells": "AH218, AI218, AJ218, AK218, AL218"
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "C_Revenue!AA61",
-    "figure": "0.5",
-    "detail": "0.5 inside = MAX(AA60^0.5*Z60, AA60^0.5) \u2014 one formula filled across 288 cells (FY2015\u2013FY2050)",
-    "tier": 2,
-    "weight": 0.48,
-    "cells": ""
    },
    {
     "rule": "hardcode-in-formula",
@@ -630,7 +632,7 @@
     "cells": ""
    }
   ],
-  "seconds": 77.2
+  "seconds": 81.4
  },
  {
   "file": "ofgem_ed2/v1_2023-02.xlsx",
@@ -744,7 +746,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 38.1
+  "seconds": 38.0
  },
  {
   "file": "ofgem_ed2/v2_2023-07-14.xlsx",
@@ -858,7 +860,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 38.1
+  "seconds": 36.8
  },
  {
   "file": "ofgem_ed2/v2_2023-07-31.xlsx",
@@ -972,7 +974,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 36.5
+  "seconds": 37.4
  },
  {
   "file": "ofgem_ed2/v3_2023-10.xlsx",
@@ -1086,7 +1088,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 36.4
+  "seconds": 38.0
  },
  {
   "file": "ofgem_ed2/v3_2023-11.xlsx",
@@ -1200,7 +1202,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 36.9
+  "seconds": 37.0
  },
  {
   "file": "ofgem_ed2/v3_2024-01.xlsm",
@@ -1284,7 +1286,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 37.1
+  "seconds": 38.3
  },
  {
   "file": "ofgem_ed2/v4_2024-07.xlsx",
@@ -1368,7 +1370,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 36.8
+  "seconds": 37.6
  },
  {
   "file": "ofgem_ed2/v4_2025-01.xlsx",
@@ -1452,7 +1454,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 36.1
+  "seconds": 38.6
  },
  {
   "file": "ofgem_ed2/v4_2025-07.xlsx",
@@ -1547,7 +1549,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 36.3
+  "seconds": 37.8
  },
  {
   "file": "ofgem_ed2/v4_2026-01.xlsx",
@@ -1642,7 +1644,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 36.3
+  "seconds": 38.3
  },
  {
   "file": "ofgem_ed2/v5_2026-06.xlsx",
@@ -1726,7 +1728,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 36.7
+  "seconds": 37.7
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
@@ -1842,7 +1844,7 @@
     "cells": ""
    }
   ],
-  "seconds": 6.6
+  "seconds": 7.1
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
@@ -1917,7 +1919,7 @@
     "cells": ""
    }
   ],
-  "seconds": 3.9
+  "seconds": 4.4
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
@@ -2013,7 +2015,7 @@
     "cells": ""
    }
   ],
-  "seconds": 6.2
+  "seconds": 6.6
  },
  {
   "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -2085,7 +2087,7 @@
     "severity": "smell",
     "ref": "Depn!AU5",
     "figure": "5",
-    "detail": "5 inside =ROUNDUP(SUM($AU11:AU11)/5,0)+2 \u2014 one formula filled across 106 cells (Depn!AU5 to Depn!EV5)",
+    "detail": "5 inside =ROUNDUP(SUM($AU11:AU11)/5,0)+2 \u2014 one formula filled across 105 cells (Depn!AU5 to Depn!EV5)",
     "tier": 2,
     "weight": 0.48,
     "cells": ""
@@ -2681,7 +2683,7 @@
     "cells": ""
    }
   ],
-  "seconds": 559.4
+  "seconds": 642.5
  },
  {
   "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -3489,7 +3491,7 @@
     "cells": ""
    }
   ],
-  "seconds": 627.6
+  "seconds": 674.5
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
@@ -3562,7 +3564,7 @@
     "cells": ""
    }
   ],
-  "seconds": 2.5
+  "seconds": 2.0
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
@@ -3697,7 +3699,7 @@
     "cells": ""
    }
   ],
-  "seconds": 192.0
+  "seconds": 226.8
  },
  {
   "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -4344,7 +4346,7 @@
     "cells": ""
    }
   ],
-  "seconds": 554.5
+  "seconds": 612.0
  },
  {
   "file": "ofgem_riio3/final_et3_bpfm.xlsm",
@@ -4417,7 +4419,7 @@
     "severity": "smell",
     "ref": "Depn!AU5",
     "figure": "5",
-    "detail": "5 inside =ROUNDUP(SUM($AU11:AU11)/5,0)+2 \u2014 one formula filled across 106 cells (Depn!AU5 to Depn!EV5)",
+    "detail": "5 inside =ROUNDUP(SUM($AU11:AU11)/5,0)+2 \u2014 one formula filled across 105 cells (Depn!AU5 to Depn!EV5)",
     "tier": 2,
     "weight": 0.48,
     "cells": ""
@@ -5053,7 +5055,7 @@
     "cells": "TaxPools!AP118, TaxPools!AQ118, TaxPools!AR118, TaxPools!AS118, TaxPools!AT118, TaxPools!AU118, TaxPools!AV118, TaxPools!AW118, TaxPools!AX118, TaxPools!AY118"
    }
   ],
-  "seconds": 574.8
+  "seconds": 617.8
  },
  {
   "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
@@ -5852,7 +5854,7 @@
     "cells": ""
    }
   ],
-  "seconds": 628.4
+  "seconds": 683.2
  },
  {
   "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
@@ -6570,171 +6572,6 @@
     "cells": "TaxPools!AP118, TaxPools!AQ118, TaxPools!AR118, TaxPools!AS118, TaxPools!AT118, TaxPools!AU118, TaxPools!AV118, TaxPools!AW118, TaxPools!AX118, TaxPools!AY118"
    }
   ],
-  "seconds": 577.4
- },
- {
-  "file": "ofgem_riio3/final_wacc.xlsx",
-  "sheets": 16,
-  "cells": 500502,
-  "errors": 0,
-  "smells": 15,
-  "by_rule": {
-   "hardcode-in-formula": 7,
-   "error-value": 2,
-   "long-formula": 6
-  },
-  "findings": [
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Daily Data!N2",
-    "figure": "2%",
-    "detail": "2% inside =IF(DailyDataTable[[#This Row],[DATE]]>UserInterface!$C$29,U \u2014 one formula filled across 12873 cells (Daily Data!N10 to Daily Data!N9999)",
-    "tier": 2,
-    "weight": 0.48,
-    "cells": ""
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "Daily Data!P2",
-    "figure": "3%",
-    "detail": "3% inside =IF(DailyDataTable[[#This Row],[DATE]]>UserInterface!$C$30,U \u2014 one formula filled across 12873 cells (Daily Data!P10 to Daily Data!P9999)",
-    "tier": 2,
-    "weight": 0.48,
-    "cells": ""
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "One-Off Wedge!E16",
-    "figure": "22",
-    "detail": "22 inside =IF(A16=2030, 22/24, IF(A16=2031, 10/24,0)) \u2014 one formula filled across 23 cells (One-Off Wedge!E16 to One-Off Wedge!E38)",
-    "tier": 2,
-    "weight": 0.48,
-    "cells": ""
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "One-Off Wedge!Q25",
-    "figure": "2%",
-    "detail": "2% inside =Q24*(1 + 2%)^(1/12) \u2014 one formula filled across 48 cells (One-Off Wedge!Q25 to One-Off Wedge!Q72)",
-    "tier": 2,
-    "weight": 0.48,
-    "cells": ""
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "One-Off Wedge!R25",
-    "figure": "3%",
-    "detail": "3% inside =R24*(1 + 3%)^(1/12) \u2014 one formula filled across 11 cells (One-Off Wedge!R25 to One-Off Wedge!R35)",
-    "tier": 2,
-    "weight": 0.48,
-    "cells": ""
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "One-Off Wedge!R36",
-    "figure": "3%",
-    "detail": "3% inside =R35*(1 +3%)^(1/12) \u2014 one formula filled across 10 cells (One-Off Wedge!R36 to One-Off Wedge!R45)",
-    "tier": 2,
-    "weight": 0.48,
-    "cells": ""
-   },
-   {
-    "rule": "hardcode-in-formula",
-    "severity": "smell",
-    "ref": "One-Off Wedge!R46",
-    "figure": "2%",
-    "detail": "2% inside =R45*(1 +2%)^(1/12) \u2014 one formula filled across 27 cells (One-Off Wedge!R46 to One-Off Wedge!R72)",
-    "tier": 2,
-    "weight": 0.48,
-    "cells": ""
-   },
-   {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "Daily Data!I3",
-    "figure": "38,066",
-    "detail": "carries #N/A in 18,667 routine gaps in its series \u2014 38,066 cells across 10 columns",
-    "tier": 3,
-    "weight": 0.21,
-    "cells": ""
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Daily Data!E10",
-    "figure": "",
-    "detail": "181 characters \u2014 one formula filled across 12865 cells (Daily Data!E10 to Daily Data!E9999)",
-    "tier": 3,
-    "weight": 0.21,
-    "cells": ""
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Daily Data!F10",
-    "figure": "",
-    "detail": "181 characters \u2014 one formula filled across 12865 cells (Daily Data!F10 to Daily Data!F9999)",
-    "tier": 3,
-    "weight": 0.21,
-    "cells": ""
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Daily Data!G2",
-    "figure": "",
-    "detail": "274 characters \u2014 one formula filled across 12873 cells (Daily Data!G10 to Daily Data!G9999)",
-    "tier": 3,
-    "weight": 0.21,
-    "cells": ""
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Daily Data!N2",
-    "figure": "",
-    "detail": "268 characters \u2014 one formula filled across 12873 cells (Daily Data!N10 to Daily Data!N9999)",
-    "tier": 3,
-    "weight": 0.21,
-    "cells": ""
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Key Outputs!E53",
-    "figure": "",
-    "detail": "199 characters \u2014 one formula filled across 5 cells (Key Outputs!E53 to Key Outputs!E57)",
-    "tier": 3,
-    "weight": 0.21,
-    "cells": ""
-   },
-   {
-    "rule": "long-formula",
-    "severity": "smell",
-    "ref": "Key Outputs!F53",
-    "figure": "",
-    "detail": "191 characters \u2014 one formula filled across 5 cells (Key Outputs!F53 to Key Outputs!F57)",
-    "tier": 3,
-    "weight": 0.21,
-    "cells": ""
-   },
-   {
-    "rule": "error-value",
-    "severity": "smell",
-    "ref": "SONIA Forecast Interpolation!B3",
-    "figure": "4,265",
-    "detail": "carries #N/A in 22 routine gaps in its series and past its data's edge \u2014 4,265 cells across 5 columns",
-    "tier": 3,
-    "weight": 0.21,
-    "cells": ""
-   }
-  ],
-  "seconds": 203.2
+  "seconds": 630.5
  }
 ]

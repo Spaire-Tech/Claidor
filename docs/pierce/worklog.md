@@ -3531,3 +3531,13 @@ The original 27 are regression now, per the mentor: the v2 gate
 diff is traced below its own sweep, and the judged corpus keeps its
 verdicts. What the next unseen batch owes: 10–20 genuinely new
 models, and the same three questions.
+
+**The Round-5 regression gate on the 27**, traced line for line:
+four files changed of twenty-seven. The square-root principle
+retired the H7 `^0.5` MAX-formula hardcode (the recorded trade); the
+mean-divisor principle excused one member of ET3's Depn fill; and
+the mutation detector added exactly two findings to the lab corpus —
+`C_Ratios!Y290` in both H7 files, writing `=Y228` where nineteen
+siblings write `=Y$228`: the same cell with broken anchoring, a
+refill hazard five measurements had blessed. Population 632 → 632.
+Baseline regenerated and committed; 494 tieout tests green.
