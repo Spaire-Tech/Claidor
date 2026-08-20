@@ -3541,3 +3541,41 @@ the mutation detector added exactly two findings to the lab corpus —
 siblings write `=Y$228`: the same cell with broken anchoring, a
 refill hazard five measurements had blessed. Population 632 → 632.
 Baseline regenerated and committed; 494 tieout tests green.
+
+## 20 Aug 2026 — Round 6, opened by a rival's report
+
+The founder ran Tracelight over our own judged fixture (the
+semiconductor-fab example model) and handed us the output. Verified
+claim by claim against the raw cells: four real defects we missed —
+in a file that was *in-sample* — one fabricated finding (a quoted
+formula that is not in the file), three duplicates in their list.
+Full record: `round6-tracelight-exam.md`.
+
+The four misses reduced to named causes, each now a general fix with
+a regression test: **(1)** the mutation detector never classified
+sheet-qualified tokens as references (`'Control Panel'!R51CC` fails
+`startswith("R")` — which `ROUND(` passes); shapes now mark reference
+operands with `@`. **(2)** The seed exemption became the **edge
+rule**: first and last positions of a run are designs (chain seeds,
+totals columns) unless the evidence is strong — both variants pinned,
+a family walking into empty cells, a relative edge cell resolving to
+the family's own pin, or an own-column window displaced within its
+own column; windows grown/shrunk to exactly their own live data are
+design. **(3)** The reader no longer skips the whole header row — a
+formula there that reaches other rows is content (the negative-cash
+banner lived on one), and the new `gapped-test` names the live cells
+a walking test jumps over (the walk must be one repeated comparison —
+arithmetic composition is exempt, judged on NZCC's BBAR). **(4)** The
+names table is audited: `#REF!` names and foreign-workbook names are
+folded `broken-name` findings.
+
+The unseen gate demanded four sweeps: the first cut sprayed 26 lines,
+and every spray became one of the refinements (Thames' twelve
+totals-column flags, BBAR's five arithmetic walks, Financeability's
+three pinned anchors, the depreciation model's grown window). The
+gate also caught the blunt edge rule deleting `Outputs!R86` — judged
+A/ACT in Round 5 — which is what forced the own-line keep. Final
+unseen diff: four factual `broken-name` events (CA101 carries 7,817
+dead names), `capstru B53` kept as a real anchoring hazard, and
+`OBXValues!M689` kept and logged marginal. The exam file goes 7 → 12
+findings, all pinned by the fixture test. 79 audit tests green.

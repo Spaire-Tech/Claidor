@@ -459,6 +459,18 @@ def test_the_example_preapp_model_reports_the_defensible_seven() -> None:
     total (debt service missing its interest — 12.5m, not the 512.5m a
     balance row inflated it to), two buried assumptions, three
     unreadable formulas, and an empty very-hidden sheet said plainly.
+
+    Round 6 added five, every one verified against the raw cells after
+    a rival's report named them on this same file: the subordinated
+    rate row dragged with the senior rate's anchor (E50, `$C$51` where
+    the seed reads `$D$51`); the inventory-days driver walking off its
+    pinned column (Balance Sheet D13); the negative-cash banner on the
+    header row the reader used to skip, whose test walks twelve cash
+    cells and jumps over seven live ones (D7); and the names table —
+    fifty names storing #REF!, thirty-nine reading other workbooks.
+    In-sample misses, all four: this file had been judged before and
+    the engine still could not see them. The general fixes are what
+    this test now pins.
     """
     from polar.tieout.structure import read_structure
 
@@ -466,14 +478,29 @@ def test_the_example_preapp_model_reports_the_defensible_seven() -> None:
     result = audit(book, read_structure(book).axes)
 
     assert sorted((f.rule, f.ref) for f in result.findings) == [
+        ("broken-name", ""),
+        ("broken-name", ""),
+        ("gapped-test", "Balance Sheet!D7"),
         ("hardcode-in-formula", "Assumptions Processing!E17"),
         ("hardcode-in-formula", "Control Panel!E56"),
         ("hidden-sheet", "Module1!A1"),
+        ("inconsistent-row", "Assumptions Processing!E50"),
+        ("inconsistent-row", "Balance Sheet!D13"),
         ("long-formula", "Assumptions Processing!E23"),
         ("long-formula", "Assumptions Processing!E37"),
         ("long-formula", "Assumptions Processing!E47"),
         ("skipped-cell", "Assumptions Processing!E41"),
     ]
+
+    #: The dragged anchor: nineteen siblings on the senior rate, the
+    #: seed on the subordinated rate it is labelled for.
+    rate = next(f for f in result.findings if f.ref == "Assumptions Processing!E50")
+    assert "$C$51" in rate.detail
+    assert "$D$51" in rate.detail
+
+    #: The banner's own coverage gap, in its own words.
+    banner = next(f for f in result.findings if f.rule == "gapped-test")
+    assert "P10 to V10" in banner.detail
 
     #: The real miss is the interest row; the outstanding-balance row
     #: between the components does not belong in a service total.
@@ -1405,3 +1432,211 @@ def test_a_deliberate_alternating_row_is_not_a_mutation() -> None:
 
     result = _tmp_book(build)
     assert not any(f.rule == "inconsistent-row" for f in result.findings)
+
+
+def test_a_pinned_reference_out_of_step_is_seen() -> None:
+    """The Tracelight exam's sharpest miss: a rate row dragged with the
+    wrong anchor. The seed correctly read the subordinated rate
+    (`$D$51`); nineteen siblings read the senior rate (`$C$51`). A fill
+    preserves pinned references, so a pinned difference can never be
+    the seed-of-a-chain story — the old seed exemption read the one
+    correct cell as the acceptable oddity and stayed silent."""
+
+    def build(sheet) -> None:
+        sheet["A5"] = "Sub debt interest"
+        sheet["Y1"] = 0.08
+        sheet["Z1"] = 0.05
+        sheet["C5"] = "=C3*$Y$1"
+        for column in "DEFGH":
+            sheet[f"{column}5"] = f"={column}3*$Z$1"
+
+    result = _tmp_book(build)
+    breaks = [f for f in result.findings if f.rule == "inconsistent-row"]
+    assert [f.ref for f in breaks] == ["Sheet!C5"], [(f.ref, f.detail) for f in breaks]
+    assert "pinned" in breaks[0].detail
+
+
+def test_a_pinned_seed_beside_a_walking_family_is_seen() -> None:
+    """The inventory-days shape: the seed pins its driver (`$B$9`) and
+    the dragged family walks across empty columns (`C9`, `D9`, …). A
+    pinned seed against a walking family is a family disagreeing about
+    what it reads, not a chain seed — one side of the drag is wrong."""
+
+    def build(sheet) -> None:
+        sheet["A5"] = "Inventory"
+        sheet["B9"] = 45
+        sheet["C5"] = "=C3*$B$9"
+        for column in "DEFGH":
+            before = chr(ord(column) - 1)
+            sheet[f"{column}5"] = f"={column}3*{before}9"
+
+    result = _tmp_book(build)
+    breaks = [
+        f
+        for f in result.findings
+        if f.rule in ("inconsistent-row", "inconsistent-anchoring")
+        and f.ref == "Sheet!C5"
+    ]
+    assert breaks, [(f.rule, f.ref, f.detail) for f in result.findings]
+
+
+def test_the_relative_seed_exemption_still_holds() -> None:
+    """A row whose first cell reads the anchor its chain hangs from is
+    a seed, not a mutation — the judged principle from the unseen
+    corpus survives the pinned-reference fix because both variants
+    move with the fill."""
+
+    def build(sheet) -> None:
+        sheet["J5"] = 100
+        sheet["C5"] = "=J5"
+        sheet["D5"] = "=C5"
+        sheet["E5"] = "=D5"
+        sheet["F5"] = "=E5"
+
+    result = _tmp_book(build)
+    assert not any(
+        f.rule == "inconsistent-row" and f.ref == "Sheet!C5" for f in result.findings
+    ), [(f.ref, f.detail) for f in result.findings]
+
+
+def test_a_walking_test_that_skips_live_cells_is_seen() -> None:
+    """The negative-cash banner that walks twelve cash cells one by one
+    and then jumps, leaving seven forecast years untested. The walk
+    says the author meant to cover the line; the jump breaks the
+    author's own pattern. And the banner lived on the sheet's header
+    row, which the reader used to skip whole — a formula on the header
+    row that reads other rows is content, not a header."""
+
+    def build(sheet) -> None:
+        for at, text in zip("BCDEFGHIJK", range(2019, 2029), strict=False):
+            sheet[f"{at}2"] = f"FY{text}"
+        sheet["A5"] = "Cash"
+        for column in "BCDEFGHIJK":
+            sheet[f"{column}5"] = 10
+        sheet["M2"] = '=IF(OR(B5<0,C5<0,D5<0,E5<0,F5<0,G5<0,K5<0),"WARNING","")'
+
+    result = _tmp_book(build)
+    gaps = [f for f in result.findings if f.rule == "gapped-test"]
+    assert [f.ref for f in gaps] == ["Sheet!M2"], [(f.ref, f.detail) for f in gaps]
+    assert "H5 to J5" in gaps[0].detail, gaps[0].detail
+
+    def spacer(sheet) -> None:
+        #: The same walk, but the skipped columns are empty — a hop
+        #: over spacer columns is layout, not a gap.
+        sheet["A5"] = "Cash"
+        for column in "BCDEFG":
+            sheet[f"{column}5"] = 10
+        sheet["K5"] = 10
+        sheet["A1"] = '=IF(OR(B5<0,C5<0,D5<0,E5<0,F5<0,G5<0,K5<0),"WARNING","")'
+
+    result = _tmp_book(spacer)
+    assert not any(f.rule == "gapped-test" for f in result.findings), [
+        f.detail for f in result.findings if f.rule == "gapped-test"
+    ]
+
+
+def test_the_names_table_is_audited() -> None:
+    """Names whose targets were deleted (#REF!) and names pointing into
+    other workbooks are findings even when no live formula reads them
+    — they raise update prompts, and a new formula written against a
+    broken name breaks on arrival."""
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+    from openpyxl.workbook.defined_name import DefinedName
+
+    book = Book()
+    sheet = book.active
+    sheet["A1"] = 1
+    sheet["B1"] = 2
+    book.defined_names["Torn"] = DefinedName("Torn", attr_text="Sheet!#REF!")
+    book.defined_names["Elsewhere"] = DefinedName(
+        "Elsewhere", attr_text="'[2]Control Panel'!$D$144"
+    )
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    names = [f for f in result.findings if f.rule == "broken-name"]
+    assert len(names) == 2, [(f.rule, f.detail) for f in names]
+    assert any("Torn" in f.detail and "#REF!" in f.detail for f in names)
+    assert any("Elsewhere" in f.detail for f in names)
+
+
+def test_a_displaced_window_at_the_runs_edge_is_still_seen() -> None:
+    """The gate's own catch: a family of own-column windows whose last
+    cell sums a displaced window (`SUM(F3:F5)` closing four
+    `SUM(..8:..10)` siblings) — judged A in Round 5 — must survive the
+    edge exemptions. Own-column work is the family's grammar; breaking
+    it at the edge is still breaking it."""
+
+    def build(sheet) -> None:
+        sheet["A12"] = "Sum of MAR"
+        for column in "BCDEF":
+            for row in (8, 9, 10):
+                sheet[f"{column}{row}"] = 5
+            sheet[f"{column}3"] = 1
+            sheet[f"{column}4"] = 1
+            sheet[f"{column}5"] = 1
+        for column in "BCDE":
+            sheet[f"{column}12"] = f"=SUM({column}8:{column}10)"
+        sheet["F12"] = "=SUM(F3:F5)"
+
+    result = _tmp_book(build)
+    breaks = [f for f in result.findings if f.rule == "inconsistent-row"]
+    assert [f.ref for f in breaks] == ["Sheet!F12"], [(f.ref, f.detail) for f in breaks]
+
+
+def test_a_totals_column_closing_a_mapping_row_stays_quiet() -> None:
+    """Thames' output rows walk five year-columns of the source sheet
+    and end on the source's totals column — twelve judged parallels of
+    one design. A run's last cell reading elsewhere in the family's
+    source is an edge design, not a mutation."""
+
+    def build(sheet) -> None:
+        sheet["A5"] = "Revenue"
+        for column, source in zip("BCDEF", "NOPQR", strict=False):
+            sheet[f"{column}5"] = f"=Data!{source}15"
+        sheet["G5"] = "=Data!F2"
+
+    import tempfile
+    from pathlib import Path
+
+    from openpyxl import Workbook as Book
+
+    book = Book()
+    build(book.active)
+    data = book.create_sheet("Data")
+    for column in "NOPQR":
+        data[f"{column}15"] = 10
+    data["F2"] = 50
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "built.xlsx"
+        book.save(path)
+        result = audit(read_workbook(str(path)))
+    assert not any(
+        f.rule == "inconsistent-row" and f.ref == "Sheet!G5" for f in result.findings
+    ), [(f.ref, f.detail) for f in result.findings]
+
+
+def test_a_window_grown_over_its_own_extra_row_stays_quiet() -> None:
+    """A first-column total that includes one more row — an item that
+    exists in year one alone — is sized to its data, not displaced
+    (judged on a depreciation model's closing-RAB row, where the
+    acquisition line is live only in the first forecast year)."""
+
+    def build(sheet) -> None:
+        sheet["A10"] = "Closing balance"
+        for column in "BCDEF":
+            for row in (5, 6, 7, 8):
+                sheet[f"{column}{row}"] = 3
+        sheet["B9"] = 7
+        sheet["B10"] = "=SUM(B5:B9)"
+        for column in "CDEF":
+            sheet[f"{column}10"] = f"=SUM({column}5:{column}8)"
+
+    result = _tmp_book(build)
+    assert not any(
+        f.rule == "inconsistent-row" and f.ref == "Sheet!B10" for f in result.findings
+    ), [(f.ref, f.detail) for f in result.findings]

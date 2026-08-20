@@ -280,3 +280,15 @@ table bounds displaced by one; error values in label columns; and
 totals narrowed at the head of their own range (deferred — a
 badly-gated head check would flood, and it needs designed corpus
 evidence).
+
+## Recall v3 — 20 Aug 2026, after the Round-6 fixes
+
+Same plants, same truth files, same reading rules as v2; only the
+engine changed (Round 6: reference-token classifier, edge rule,
+header-row reader, gapped-test, names table). Overall **44/66 = 67%**
+(v2: 41/66 = 62%). By class: broken references 13/15 (=), overwritten
+9/13 (=), incorrect assumptions 8/11 (=), skipped totals 5/7 (=),
+**bad references 8/15 (was 5/15)** — the sheet-qualified classifier
+fix — operator flips 1/5 (=, the known singleton blind spot). No
+class regressed. The four remaining flip misses are formulas with no
+family witness or families too short to vote; still the frontier.

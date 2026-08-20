@@ -727,7 +727,9 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _typed_islands(book, result)
     _circularity(book, result)
     _skipped_cells(book, result)
+    _gapped_tests(book, result)
     _hidden_sheets(book, result)
+    _names_table(book, result)
 
     _quantified(book, result, axes)
     result.findings = _collapsed(book, result.findings, axes)
@@ -2436,13 +2438,19 @@ def _rows(book: Workbook, result: Audit) -> None:
 
 
 def _shape_list(cell: Cell) -> list[str]:
-    """The cell's shape as a token list, for position-level comparison."""
+    """The cell's shape as a token list, for position-level comparison.
+
+    Reference tokens carry an `@` mark. Without it a reference is
+    recognised by « starts with R », which `ROUND(` also satisfies and
+    `'Control Panel'!R51CC` does not — the sheet-qualified miss let a
+    rate pinned to the wrong column pass unexamined in a judged model.
+    """
     if cell.formula is None:
         return []
     out = []
     for token in _tokens(cell.formula):
         if token.type == "OPERAND" and token.subtype == "RANGE":
-            out.append(_offset(token.value, cell.row, cell.column))
+            out.append("@" + _offset(token.value, cell.row, cell.column))
         elif token.type == "OPERAND" and token.subtype == "NUMBER":
             out.append("#")
         elif token.type == "OPERAND" and token.subtype == "TEXT":
@@ -2494,9 +2502,9 @@ def _mutations(book: Workbook, result: Audit) -> None:
     by_column_shape: dict[tuple[str, int], Counter[tuple[str, ...]]] = {}
     for cell in book.cells.values():
         if cell.formula:
-            by_column_shape.setdefault(
-                (cell.sheet, cell.column), Counter()
-            )[shaped[cell.ref]] += 1
+            by_column_shape.setdefault((cell.sheet, cell.column), Counter())[
+                shaped[cell.ref]
+            ] += 1
 
     lines: dict[tuple[str, str, int], list[Cell]] = {}
     for cell in book.cells.values():
@@ -2544,11 +2552,54 @@ def _mutations(book: Workbook, result: Audit) -> None:
             at = changed[0]
             was, now = usual[at], theirs[at]
             n = len(run) - 1
-            displaced = was.startswith("R") and now.startswith("R")
+            displaced = was.startswith("@") and now.startswith("@")
             if displaced:
-                #: The row's first cell reading elsewhere is the seed.
-                if deviant is run[0]:
-                    continue
+                #: A run's edges are where designs live: the first cell
+                #: reads the anchor its chain hangs from, the last cell
+                #: reads the totals column (Thames' output rows walk
+                #: five year-columns and end on the source's total —
+                #: twelve judged parallels of one layout). An edge
+                #: deviation stands only on strong evidence, and both
+                #: kinds came from judged models. Both variants pinned
+                #: (`$C$51` against `$D$51`) is a family disagreeing
+                #: about the one cell it reads — a fill preserves
+                #: pinned references, so no seed story explains it: a
+                #: rate row dragged with the wrong anchor hid there.
+                #: And a family whose walking reference lands on empty
+                #: cells reads nothing — a pinned seed beside it is the
+                #: one cell doing the row's job (the inventory-days
+                #: drag). A family walking into live cells beside a
+                #: pinned edge cell is a design, and stays quiet.
+                if deviant is run[0] or deviant is run[-1]:
+                    both_pinned = "[" not in was and "[" not in now
+                    #: Fourth keep, from the gate itself: a family of
+                    #: own-column windows whose edge cell reads its own
+                    #: column through a displaced window (`SUM(R34:R38)`
+                    #: closing fifteen `SUM(…78:…82)` siblings — judged
+                    #: A in Round 5) is the family's own grammar broken,
+                    #: not an edge design. Own-line means every column
+                    #: offset is zero and no other sheet is involved.
+                    own_line = _own_line(was) and _own_line(now)
+                    if own_line and _window_grew(was, now, deviant, run, book):
+                        continue
+                    if not both_pinned and not own_line:
+                        family = [one for one in run if one is not deviant]
+                        walked = [
+                            _token_target(usual[at], one)
+                            for one in family
+                            if "[" in usual[at]
+                        ]
+                        live = sum(
+                            1
+                            for target in walked
+                            if target is None or target in book.cells
+                        )
+                        into_nothing = walked and live * 2 <= len(walked)
+                        same_cell = "[" not in was and _token_target(
+                            now, deviant
+                        ) == _token_target(was, deviant)
+                        if not into_nothing and not same_cell:
+                            continue
                 #: A shape that repeats down the deviant's own column
                 #: is the crossing family — a column total crossing a
                 #: row of row totals is two designs meeting, not a
@@ -2566,11 +2617,17 @@ def _mutations(book: Workbook, result: Audit) -> None:
                     f"operator changed — {was} became {now}: "
                     f"{(deviant.formula or '')[:60]}"
                 )
-            elif was.startswith("R") and now.startswith("R"):
+            elif displaced and not ("[" in was and "[" in now):
+                what = (
+                    f"the same formula as its {n} siblings with one pinned "
+                    f"reference out of step — they read {_unshaped(was)}, it "
+                    f"reads {_unshaped(now)}: {(deviant.formula or '')[:60]}"
+                )
+            elif displaced:
                 what = (
                     f"the same formula as its {n} siblings with one "
-                    f"reference displaced — where they read {was}, it "
-                    f"reads {now}: {(deviant.formula or '')[:60]}"
+                    f"reference displaced — where they read {_unshaped(was)}, "
+                    f"it reads {_unshaped(now)}: {(deviant.formula or '')[:60]}"
                 )
             else:
                 continue
@@ -2990,6 +3047,123 @@ def _offset(reference: str, row: int, column: int, anchoring: bool = True) -> st
         )
         parts.append(f"{sheet}{text_row}{text_column}")
     return ":".join(parts)
+
+
+def _unshaped(token: str) -> str:
+    """A shape token back in the reader's words, for finding text.
+
+    `@'Control Panel'!R51CC` reads as `'Control Panel'!$C$51`; a
+    relative piece keeps its offset form, which is honest — the family
+    shares the offset, not any one address.
+    """
+    text = token.lstrip("@")
+
+    def piece(m: re.Match[str]) -> str:
+        row, column = m.group(1), m.group(2)
+        out_column = f"${column}" if not column.startswith("[") else f"C{column}"
+        out_row = f"${row}" if not row.startswith("[") else f"R{row}"
+        if "[" in row or "[" in column:
+            return f"{out_column}{out_row}" if "[" not in column else f"R{row}C{column}"
+        return f"{out_column}{out_row}"
+
+    return re.sub(r"R(\[[+-]?\d+\]|\d+)C(\[[+-]?\d+\]|[A-Z]{1,3})", piece, text)
+
+
+def _own_line(token: str) -> bool:
+    """True when a shape token reads its cell's own column — every
+    column offset zero, no other sheet — the perpendicular work a
+    totals row does. A displaced window there breaks the family's own
+    grammar; a reference elsewhere at a run's edge is usually design."""
+    text = token.lstrip("@")
+    if "!" in text:
+        return False
+    piece = r"R(?:\[[+-]?\d+\]|\d+)C\[\+?0\]"
+    return bool(re.fullmatch(f"{piece}(?::{piece})?", text))
+
+
+def _window_grew(
+    was: str, now: str, deviant: Cell, run: list[Cell], book: Workbook
+) -> bool:
+    """An edge window sized to the data only it has.
+
+    The first column's extra line item — an acquisition that exists in
+    year one alone — widens its own-column window by exactly that row;
+    the siblings' windows skip a row that is empty for them (judged on
+    a depreciation model's closing-RAB row). The mirror also holds: an
+    edge window narrowed past rows that are empty in its own column.
+    Either way the data explains the deviation, so it is design. A
+    window displaced onto a different section entirely never passes
+    here — its rows are not a superset or subset of the family's.
+    """
+
+    def rows_of(token: str) -> set[int] | None:
+        pieces = token.lstrip("@").split(":")
+        if len(pieces) != 2:
+            return None
+        ends = []
+        for piece in pieces:
+            target = _token_target("@" + piece, deviant)
+            digits = re.search(r"(\d+)$", target) if target else None
+            if digits is None:
+                return None
+            ends.append(int(digits.group(1)))
+        return set(range(min(ends), max(ends) + 1))
+
+    family_rows, deviant_rows = rows_of(was), rows_of(now)
+    if family_rows is None or deviant_rows is None:
+        return False
+    family = [one for one in run if one is not deviant]
+
+    def present(cell: Cell, rows: set[int]) -> list[bool]:
+        return [
+            f"{cell.sheet}!{get_column_letter(cell.column)}{row}" in book.cells
+            for row in rows
+        ]
+
+    if deviant_rows > family_rows:
+        extra = deviant_rows - family_rows
+        return all(present(deviant, extra)) and not any(
+            flag for one in family for flag in present(one, extra)
+        )
+    if family_rows > deviant_rows:
+        dropped = family_rows - deviant_rows
+        return not any(present(deviant, dropped)) and all(
+            flag for one in family for flag in present(one, dropped)
+        )
+    return False
+
+
+def _token_target(token: str, cell: Cell) -> str | None:
+    """The actual cell a shape token reads, resolved from `cell`.
+
+    None for ranges and anything past the simple grammar — callers
+    treat None as « cannot show it is empty », which errs quiet.
+    """
+    text = token.lstrip("@")
+    if ":" in text:
+        return None
+    sheet = cell.sheet
+    if "!" in text:
+        sheet, text = text.rsplit("!", 1)
+        sheet = sheet.strip("'")
+    m = re.fullmatch(r"R(\[[+-]?\d+\]|\d+)C(\[[+-]?\d+\]|[A-Z]{1,3})", text)
+    if m is None:
+        return None
+    row_part, column_part = m.group(1), m.group(2)
+    row = (
+        cell.row + int(row_part.strip("[]"))
+        if row_part.startswith("[")
+        else int(row_part)
+    )
+    if column_part.startswith("["):
+        column = cell.column + int(column_part.strip("[]"))
+    else:
+        column = 0
+        for letter in column_part:
+            column = column * 26 + ord(letter) - 64
+    if row < 1 or column < 1:
+        return None
+    return f"{sheet}!{get_column_letter(column)}{row}"
 
 
 def _twin(calculated: list[Cell], usual: str) -> Cell | None:
@@ -3499,6 +3673,159 @@ def _hidden_sheets(book: Workbook, result: Audit) -> None:
                 name=sheet,
                 detail=detail,
                 source="EuSpRIG",
+            )
+        )
+
+
+#: A plain same-sheet reference, outside any `:` range — the pieces an
+#: enumeration walks. The lookbehind bars sheet-qualified and defined
+#: names; the lookahead bars range endpoints and function names.
+BARE_REF = re.compile(r"(?<![A-Za-z0-9_$!.:])\$?([A-Z]{1,3})\$?(\d+)(?![0-9(:])")
+RANGE_SPAN = re.compile(r"\$?[A-Z]{1,3}\$?\d+\s*:\s*\$?[A-Z]{1,3}\$?\d+")
+
+
+def _gapped_tests(book: Workbook, result: Audit) -> None:
+    """A formula that walks a line cell by cell and skips a stretch.
+
+    `OR(D10<0,…,O10<0,W10<0)` names twelve consecutive cash cells and
+    one more — P10:V10 are live cells the warning never reads, seven
+    forecast years a negative balance could hide in, worn by a judged
+    model's own alarm banner. The walk is the witness: five or more
+    single steps along one line say the author meant to cover the
+    line; the jump breaks the author's own pattern. Only populated
+    skipped cells count — a hop over empty spacer columns is layout,
+    not a gap.
+    """
+    for cell in book.cells.values():
+        if not cell.formula:
+            continue
+        text = RANGE_SPAN.sub(" ", cell.formula)
+        by_row: dict[int, dict[int, str | None]] = {}
+        by_column: dict[int, dict[int, str | None]] = {}
+        for m in BARE_REF.finditer(text):
+            column = 0
+            for letter in m.group(1):
+                column = column * 26 + ord(letter) - 64
+            #: The walk must be a *test* — every walked cell put to the
+            #: same comparison (`D10<0`, `E10<0`, …). Adjacent line
+            #: items in plain arithmetic walk too (a tax formula reads
+            #: F18 through F22 and then F75), and skipping between
+            #: them is composition, not coverage — a judged model's
+            #: allowance row taught exactly that.
+            test = re.match(
+                r"\s*(<=|>=|<>|=|<|>)\s*(\"[^\"]*\"|[-+]?[\w.$]+)",
+                text[m.end() :],
+            )
+            comparison = test.group(0).replace(" ", "") if test else None
+            by_row.setdefault(int(m.group(2)), {})[column] = comparison
+            by_column.setdefault(column, {})[int(m.group(2))] = comparison
+        for across, lines in (("row", by_row), ("column", by_column)):
+            for line, spots in lines.items():
+                ordered = sorted(spots)
+                if len(ordered) < 6:
+                    continue
+                run = 1
+                for last, this in zip(ordered, ordered[1:], strict=False):
+                    if this - last == 1:
+                        run += 1
+                        continue
+                    skipped = list(range(last + 1, this))
+                    walked = [spots[at] for at in ordered if last - run < at <= last]
+                    same_test = (
+                        len(set(walked)) == 1
+                        and walked[0] is not None
+                        and spots[this] == walked[0]
+                    )
+                    if run >= 5 and len(skipped) >= 2 and same_test:
+                        if across == "row":
+                            refs = [
+                                f"{cell.sheet}!{get_column_letter(at)}{line}"
+                                for at in skipped
+                            ]
+                        else:
+                            refs = [
+                                f"{cell.sheet}!{get_column_letter(line)}{at}"
+                                for at in skipped
+                            ]
+                        live = [at for at in refs if at in book.cells]
+                        if len(live) >= 2:
+                            first, final = refs[0], refs[-1]
+                            result.findings.append(
+                                Finding(
+                                    rule="gapped-test",
+                                    severity="error",
+                                    ref=cell.ref,
+                                    sheet=cell.sheet,
+                                    name=cell.name,
+                                    detail=(
+                                        f"the formula walks {run} cells one "
+                                        f"by one, then jumps — it never reads "
+                                        f"{first.rsplit('!', 1)[-1]} to "
+                                        f"{final.rsplit('!', 1)[-1]}, "
+                                        f"{len(live)} live cells a failure "
+                                        f"could hide in: "
+                                        f"{(cell.formula or '')[:60]}"
+                                    ),
+                                    source="EuSpRIG, ICAEW P11",
+                                )
+                            )
+                            break
+                    run = 1
+                else:
+                    continue
+                break
+
+
+def _names_table(book: Workbook, result: Audit) -> None:
+    """The names table, audited — the cells are not the whole file.
+
+    Both findings come from a judged model that carried them: dozens
+    of names storing `#REF!` where their targets used to be, and
+    names pointing into workbooks on someone's OneDrive. No live
+    formula has to read them — they still raise update prompts on
+    open, and a new formula written against one breaks on arrival.
+    """
+    if book.broken_names:
+        shown = ", ".join(book.broken_names[:6])
+        more = len(book.broken_names) - 6
+        result.findings.append(
+            Finding(
+                rule="broken-name",
+                severity="smell",
+                ref="",
+                sheet="",
+                name="defined names",
+                detail=(
+                    f"{len(book.broken_names)} defined names point at "
+                    f"deleted cells — Excel stores #REF! where their "
+                    f"targets used to be ({shown}"
+                    f"{f' and {more} more' if more > 0 else ''}). Any new "
+                    f"formula written against one breaks on arrival; worth "
+                    f"clearing from the name manager."
+                ),
+                source="EuSpRIG",
+            )
+        )
+    if book.foreign_names:
+        names_only = [name for name, _ in book.foreign_names]
+        shown = ", ".join(names_only[:6])
+        more = len(names_only) - 6
+        example, target = book.foreign_names[0]
+        result.findings.append(
+            Finding(
+                rule="broken-name",
+                severity="smell",
+                ref="",
+                sheet="",
+                name="defined names",
+                detail=(
+                    f"{len(names_only)} defined names point into other "
+                    f"workbooks that are not here ({shown}"
+                    f"{f' and {more} more' if more > 0 else ''}) — "
+                    f"{example} reads {target[:50]}. They raise update "
+                    f"prompts on open and cannot be checked."
+                ),
+                source="EuSpRIG, ICAEW P16",
             )
         )
 

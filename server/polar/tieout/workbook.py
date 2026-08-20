@@ -273,6 +273,13 @@ class Workbook:
     #: Round 4's planting run found the reader dying on a
     #: partial-range #REF! and taking the file with it.
     unparseable: list[str] = field(default_factory=list)
+    #: Defined names whose target was deleted (`#REF!`) and names that
+    #: point into other workbooks (`'[2]Control Panel'!$D$144`). No
+    #: live formula needs to use them: they still raise Excel's update
+    #: prompts, and a new formula written against a broken name breaks
+    #: on arrival — a judged model carried dozens of both.
+    broken_names: list[str] = field(default_factory=list)
+    foreign_names: list[tuple[str, str]] = field(default_factory=list)
 
     def get(self, ref: str) -> Cell | None:
         return self.cells.get(ref)
@@ -403,6 +410,19 @@ def read_workbook(path: str) -> Workbook:
             grids[name] = _grid_of(sheet, values[name])
             book.populated[name] = len(grids[name].written)
         names = _names_of(formulas, grids)
+        every_name = list(names.book.items()) + [
+            (scoped, target) for (_, scoped), target in names.sheet.items()
+        ]
+        book.broken_names = sorted(
+            {name for name, target in every_name if "#REF!" in target}
+        )
+        book.foreign_names = sorted(
+            {
+                (name, target)
+                for name, target in every_name
+                if re.search(r"\[\d+\]", target)
+            }
+        )
         for name, grid in grids.items():
             _read_sheet(book, name, grid, names)
         return book
@@ -509,8 +529,6 @@ def _read_sheet(
             book.errors[at] = shown.strip()
 
     for row in sorted(grid.by_row):
-        if row == header_row:
-            continue
         columns = grid.by_row[row]
         numeric = [
             column
@@ -521,6 +539,25 @@ def _read_sheet(
                 or _formula(grid.written.get((row, column))) is not None
             )
         ]
+        if row == header_row:
+            #: The header row names periods, and its cells are words the
+            #: audit must not read as content — except a formula that
+            #: reaches other rows. A year walker (`=C7+1`) is part of
+            #: the header; a warning banner testing the cash row lives
+            #: wherever its author parked it, and a judged model parked
+            #: one on the header row, where the old whole-row skip made
+            #: the engine blind to a coverage gap the banner carried.
+            def _reaches_out(column: int) -> bool:
+                formula = _formula(grid.written.get((row, column)))
+                if formula is None:
+                    return False
+                for target in references_of(formula, name, names).refs:
+                    digits = re.search(r"\d+", target.rsplit("!", 1)[-1])
+                    if digits and int(digits.group(0)) != row:
+                        return True
+                return False
+
+            numeric = [column for column in numeric if _reaches_out(column)]
         # A row carrying one number is a label and a value — « Enterprise
         # value | 489.5 » in a valuation bridge. A row carrying several is
         # a series, and only then does the header above a column name
