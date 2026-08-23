@@ -152,3 +152,33 @@ on financial models become new checks through the normal loop. Their
 *thresholds* are not adopted to score better on their corpus: we do
 not sell into messy general spreadsheets, and the quietness is the
 product.
+
+---
+
+## Head-to-head registration (23 Aug, before any score is computed)
+
+The authors' `smell_detection_result.xls` is one table: 291 rows
+(one per sheet), a **Ground truth** column, and per-tool detected
+cells for **CUSTODES, AmCheck, UCheck, Dimension, and Excel's own
+checking**. Conventions, fixed now:
+
+1. **Truth for this comparison** is the results file's own Ground
+   truth column — the same artifact for every tool, ours included.
+   It is cross-checked against our comment extraction and the
+   discrepancy count is reported.
+2. **Every tool is scored cell-level**: its flag set F is the cells
+   it lists (for us: the union of in-scope findings' cell sets under
+   the expansion rules above; out-of-scope rules excluded as
+   already registered).
+3. **The two axes, both published or nothing**:
+   coverage = |F ∩ truth| / |truth|;
+   rightness-when-flagging = |F ∩ truth| / |F|.
+4. Sheet names are whitespace-stripped on both sides; workbook keys
+   are the results file's spreadsheet names minus extension.
+5. The published tools' flags are taken from the authors' file
+   as-is (their 2016 runs); we do not re-run their tools here.
+   ExceLint, which post-dates the file, still requires its own run
+   and is not in this table.
+6. The frame from the addendum above travels with any use of this
+   table: this corpus is not our market; the table measures design
+   philosophies on foreign ground, ours strict, theirs loose.
