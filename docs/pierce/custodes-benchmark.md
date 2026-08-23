@@ -182,3 +182,50 @@ checking**. Conventions, fixed now:
 6. The frame from the addendum above travels with any use of this
    table: this corpus is not our market; the table measures design
    philosophies on foreign ground, ours strict, theirs loose.
+
+## Head-to-head results (computed after the registration above)
+
+Truth cross-check: the results file carries exactly the paper's
+1,974 cells; 7 appear only there and 6 only in our comment
+extraction — conversion drift at the margin, both sources agree on
+99.7% of cells. The file's own column is the truth below, as
+registered.
+
+| Tool | Cells flagged | Hits | Coverage | Rightness-when-flagging |
+|---|---|---|---|---|
+| CUSTODES | 2,443 | 1,583 | **80.2%** | **64.8%** |
+| AmCheck | 2,163 | 1,231 | 62.4% | 56.9% |
+| UCheck | 204 | 1 | 0.1% | 0.5% |
+| Dimension | 1,697 | 11 | 0.6% | 0.6% |
+| Excel built-in | 4,981 | 143 | 7.2% | 2.9% |
+| **Ambre (this engine)** | 3,941 | 283 | 14.3% | 7.2% |
+
+Sanity check that the scorer is fair: CUSTODES's rightness here
+(64.8%) reproduces the magnitude their paper reports for their own
+precision — our conventions recover their published result.
+
+## Reading, honestly — including the prediction that failed
+
+1. **The registered expectation was half wrong, and the data wins.**
+   The addendum predicted « they find more of their marked cells; we
+   are right more often when we speak. » The first half held. The
+   second did not: at cell level our rightness (7.2%) is far below
+   CUSTODES's (64.8%). Reported as-is.
+2. **Two causes, stated plainly.** First, the truth was authored by
+   the CUSTODES team under the CUSTODES philosophy — the rightness
+   axis rewards agreement with their own annotators, a advantage on
+   their home ground that ExceLint's authors also documented when
+   they re-audited this corpus. Second, our registered cell-set
+   expansion (fold rosters and fill-span rectangles) flags 3,941
+   cells from 1,166 findings; a single folded hardcode family
+   contributes a whole rectangle, mostly outside their truth. At
+   finding level our agreement is 20.5% (68.5% for the shared
+   typed-over class) — reported above; the cell-level number is the
+   symmetric convention and stands as the table's figure.
+3. **What the table is for.** It is not a sales table — the frame
+   travels with it: foreign dialect, their labels, their philosophy.
+   It is a calibration table, and it validated the scorer against
+   their published numbers, which is what makes the *next* run —
+   ExceLint, and eventually any tool, on corpora that ARE our
+   market with truth that is seeded rather than opined — worth
+   trusting.
