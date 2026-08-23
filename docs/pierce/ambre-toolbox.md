@@ -8,21 +8,24 @@ onto Ambre's components. Verdicts: **OURS** (built here, measured),
 
 The headline: for Ambre's two newest promises — shift-aware version
 diff and automated behavioural (metamorphic) testing of workbooks —
-**no open implementation exists anywhere**. The literature names the
-methods; nobody shipped them. Those are ours to take.
+**we found no open implementation**. The literature names the
+methods; no code we could find ships them. Those are ours to take.
 
 ---
 
 ## 1. The Engine (static reading and checks)
 
-**OURS, and ahead of the published field.** The best published
-numbers on our finding classes: CACheck 86.8% precision / 71.0%
-recall on curated samples; ExceLint better precision than CUSTODES
-(F 0.72) on the 70-workbook benchmark. Our unseen-corpus measurement
-(80.1% A+B, 2.9% false positives, on real 100k+-cell financial
-models rather than EUSES teaching sheets) stands next to those
-comfortably — and none of them fold findings, rank by materiality,
-or state coverage.
+**OURS.** The best published numbers on our finding classes: CACheck
+86.8% precision / 71.0% recall on curated samples; ExceLint better
+precision than CUSTODES (F 0.72) on the 70-workbook benchmark. Our
+own measurement (80.1% A+B, 2.9% false positives) was taken on real
+100k+-cell financial models — **a different measure on different
+files, so the figures are not comparable and must not be quoted side
+by side.** The comparison only becomes credible when both tools run
+on the same corpus, which is exactly why archiving the CUSTODES
+benchmark is this document's first action. What is fair to say
+today: none of the published tools fold findings, rank by
+materiality, or state coverage.
 
 - **ExceLint** (OOPSLA'18, Apache-2.0, live TypeScript at
   github.com/ExceLint/ExceLint-core) — **LEARN-FROM + BENCHMARK.**
@@ -40,9 +43,11 @@ or state coverage.
   patent (US 11,080,475) for an IP glance before any neural version.
 - **CUSTODES annotated benchmark** (1,974 labelled defect cells — the
   only cell-level ground truth in existence) + **Enron corpus**
-  (figshare, alive, CC) — **BENCHMARK.** ⚠ The HKUST server is
-  returning 503; **archive our own copy via the Wayback Machine as
-  the first action from this document.** Note: corpora are `.xls` —
+  (figshare, alive, CC) — **BENCHMARK.** The primary HKUST server
+  was returning 503; **archived — our copy lives in
+  `docs/pierce/custodes/` (subjects, ground truth, results, hashed),
+  saved from the group's `castle.cse.ust.hk` mirror the day this
+  document was written.** Note: corpora are `.xls` —
   convert once through LibreOffice headless (which also unlocks the
   old accuracy-backlog blocker that stalled on `.xls` reading).
 - SpreadsheetLLM's SheetCompressor encoding (2024) — **LEARN-FROM**
@@ -101,8 +106,8 @@ Python `formulas` library as an optional third leg.**
   only commercial engine with genuine Excel-style iterative calc.
 - **Metamorphic testing** (volume→0, price×2, currency rescale) —
   relations taxonomy exists in the literature (Poon et al. 2014,
-  2017, human-executed); **automated metamorphic testing over xlsx
-  does not exist anywhere. We build it and own it.**
+  2017, human-executed); **we found no automated metamorphic
+  testing over xlsx. We build it and own it.**
 
 ## 3. The Watch (versions, and proving what did not change)
 
@@ -111,7 +116,7 @@ Python `formulas` library as an optional third leg.**
   implementable, and its follow-up paper's **planted-edit evaluation
   method is literally our planter discipline applied to diff** —
   measure shift-detection recall on edits we planted ourselves.
-  **No open-source shift-aware spreadsheet diff exists.** The
+  **We found no open-source shift-aware spreadsheet diff.** The
   incumbent (Microsoft Spreadsheet Compare, Office Pro only,
   Windows-only, no API) is purely positional — its weakness is our
   feature.
@@ -199,5 +204,6 @@ manifests.
    planted edits.
 5. **Units starts from Williams 2020**, as a measurement protocol
    first.
-6. **Benchmark run against ExceLint** on the CUSTODES corpus once
-   archived — the publishable head-to-head.
+6. **Benchmark run against ExceLint on the archived CUSTODES
+   corpus** — same files, same ground truth, both tools. Only then
+   does a head-to-head number exist at all.
