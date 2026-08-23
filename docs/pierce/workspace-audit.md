@@ -6,6 +6,16 @@ the dock, `s.project` / `s.deal` / `s.pjTab` beneath it. 106 wired
 click handlers, **no dead buttons** — every handler resolves. The
 craft is high; what follows is what a second pair of eyes finds.
 
+> **Built (23 Aug).** Everything below that could be fixed in the
+> export has been, and the result is `workspace-build.md`. Items 3,
+> 4, 6, 7 and 12 in section A are closed; so are the Watch, the
+> refusals screen, the report's coverage statement, and most of
+> section C's undrawn states. Two things this audit missed and the
+> build found: the project tabs sat at three different nesting
+> depths, and the Ask panel had no markup for an answer at all —
+> every question that did not trigger a workflow was swallowed.
+> What is still open is listed in `workspace-build.md` §4.
+
 > **Correction (23 Aug, from the founder).** The build is a rough
 > draft with **placeholder data**. Items 1, 9, 10 and 11 below are
 > mock-number artifacts, not design defects — struck through in

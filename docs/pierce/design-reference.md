@@ -80,6 +80,34 @@ grid with the offending cell highlighted and a hover tooltip.
 - Placeholder data is placeholder. Report structure, missing states,
   contradictions in *design*; never mock arithmetic.
 
-## 3. Design information from the founder
+## 3. What has been built in this language
+
+`workspace-build.md` is the record: the founder's export, rebuilt so
+that every number on screen comes from a run that happened. New
+surfaces added in this language, and the tokens they reuse:
+
+- **Documents, Versions, the comparison result, the refusal screen** —
+  all built on the same frame: a 23px/600 title with a coloured note
+  beside it, a 14px/#86868b sentence under it, then gradient section
+  headings over hairline-ruled rows. `screens.py` holds them.
+- **Empty states** — a `.5px #f0eff1` box on `#fbfbfc`, a 14.5px
+  headline, a 13px/#8f96a0 reason, and where there is one, a single
+  blue link. Never a spinner, never a fake row.
+- **Modals** — `position:fixed; inset:0; z-index:70` with
+  `rgba(16,20,28,.3)` and a 3px backdrop blur, a 24px-radius white
+  panel. One lesson: a modal must hang off the root. Put inside the
+  dock, which carries a backdrop-filter, `position:fixed` stops
+  meaning the viewport and the sheet gets pinned to the bottom bar.
+- **The chat's answer** — the serif « A » mark, an 18px gap, one
+  column: the answer at 16px/1.7, then findings, evidence chain or
+  rows, then « Show the work », then follow-up chips.
+
+Two rules the build follows without being asked, both from §2:
+nothing crosses the independence line, and anything the engine cannot
+do yet is visibly a placeholder rather than mocked to look live. That
+second rule is why four buttons open a sheet saying what they would
+have done, rather than doing nothing.
+
+## 4. Design information from the founder
 
 *(to be filled as it arrives — screens, states, copy, layouts)*

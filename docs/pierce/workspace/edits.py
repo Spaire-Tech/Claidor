@@ -1433,6 +1433,218 @@ def the_chat_answers(build, audit) -> None:
     )
 
 
+#: Every button with nothing behind it, and where it now goes. Four
+#: of the six are for things that are not built; a sentence saying so
+#: is a better answer than a click that does nothing. Two had a real
+#: destination in the design already and simply were not wired to it.
+NOT_YET = {
+    "search": (
+        "Nothing to search yet",
+        "No chats have been had in this project, so there is nothing to search. "
+        "Ask something and it becomes searchable from here.",
+    ),
+    "share": (
+        "Sharing a chat is not built yet",
+        "When it is, a shared chat will carry the findings it cites so the person "
+        "reading it can check them against the cells. It will not carry the workbook.",
+    ),
+    "install": (
+        "The Excel panel does not install from here yet",
+        "The panel itself is built and runs against a real workbook, but the install "
+        "path through Microsoft 365 is not wired into this screen. Today it is "
+        "sideloaded from the runbook in the repository.",
+    ),
+    "mailbox": (
+        "Choosing a mailbox is not built yet",
+        "Reading a mailbox is how a forwarded document — a term sheet from counsel, a "
+        "determination from the regulator — would reach a project without anyone saving "
+        "it by hand. Nothing reads mail today, so choosing one would change nothing.",
+    ),
+    "manifest": (
+        "There is no manifest link to copy yet",
+        "An administrator pushes the panel to a team from a hosted manifest URL. The "
+        "manifest exists; it is not hosted anywhere an admin could point at, so this "
+        "would copy nothing.",
+    ),
+}
+
+
+def no_button_does_nothing(build, audit) -> None:
+    """Six buttons did nothing on click: Search chats, Share,
+    Disconnect, Change, Install and Copy link.
+
+    Two of them had a destination the design had already built and
+    were simply not wired to it — Disconnect to the not-connected
+    state, Change to the folder browser. The other four are for
+    things that do not exist yet, and each now says which and why.
+    """
+    build.swap(
+        '      <sc-if value="{{ coverageOpen }}"',
+        screens.not_yet_sheet() + '      <sc-if value="{{ coverageOpen }}"',
+        why="one sheet for the things that are not built",
+    )
+    openers = "\n".join(
+        f"      soon{key.capitalize()}: () => this.setState({{ soonOpen: true, "
+        f"soonTitle: {title!r}, soonWhy: {why!r} }}),".replace("'", "'")
+        for key, (title, why) in NOT_YET.items()
+    )
+    build.swap(
+        "      coverageOpen: !!s.coverageOpen,",
+        "      soonOpen: !!s.soonOpen,\n"
+        "      soonTitle: s.soonTitle,\n"
+        "      soonWhy: s.soonWhy,\n"
+        "      closeSoon: () => this.setState({ soonOpen: false }),\n"
+        + openers
+        + "\n      coverageOpen: !!s.coverageOpen,",
+        why="each not-built button knows what it would have done",
+    )
+    #: Disconnect needs somewhere to land. The design's `conn` state
+    #: drove only the first-run screen, so flipping it left this card
+    #: still saying « Connected 14 July » — a button that appears to
+    #: do nothing. The card now has both halves, and reconnecting
+    #: brings it back.
+    build.swap(
+        '                <img src="92b9423e-60a0-4c08-9603-8aa94c951020" alt="" '
+        'style="flex:0 0 20px; width:20px; height:20px; object-fit:contain">\n'
+        '                <span style="flex:1; min-width:0">\n'
+        '                  <span style="display:block; font-size:16.5px; font-weight:400; '
+        'letter-spacing:-.012em">e.whitmore@harbourline.com</span>\n'
+        '                  <span style="display:block; font-size:14px; color:#8f96a0; '
+        'margin-top:2px">Connected 14 July</span>\n'
+        "                </span>\n"
+        '                <button style="flex:0 0 auto; border:0; background:transparent; '
+        "font:inherit; font-size:14px; color:#e0322d; cursor:pointer; padding:4px 6px\">"
+        "Disconnect</button>",
+        '                <img src="92b9423e-60a0-4c08-9603-8aa94c951020" alt="" '
+        'style="flex:0 0 20px; width:20px; height:20px; object-fit:contain">\n'
+        '                <sc-if value="{{ msOn }}" hint-placeholder-val="{{ true }}">\n'
+        '                <span style="flex:1; min-width:0">\n'
+        '                  <span style="display:block; font-size:16.5px; font-weight:400; '
+        'letter-spacing:-.012em">e.whitmore@harbourline.com</span>\n'
+        '                  <span style="display:block; font-size:14px; color:#8f96a0; '
+        'margin-top:2px">Connected 14 July</span>\n'
+        "                </span>\n"
+        '                <button sc-camel-on-click="{{ disconnectMs }}" style="flex:0 0 auto; '
+        "border:0; background:transparent; font:inherit; font-size:14px; color:#e0322d; "
+        'cursor:pointer; padding:4px 6px">Disconnect</button>\n'
+        "                </sc-if>\n"
+        '                <sc-if value="{{ msOff }}" hint-placeholder-val="{{ false }}">\n'
+        '                <span style="flex:1; min-width:0">\n'
+        '                  <span style="display:block; font-size:16.5px; font-weight:400; '
+        'letter-spacing:-.012em; color:#8f96a0">No account connected</span>\n'
+        '                  <span style="display:block; font-size:14px; color:#8f96a0; '
+        'margin-top:2px">No folder is watched and nothing syncs. Files can still be '
+        "dropped in by hand.</span>\n"
+        "                </span>\n"
+        '                <button sc-camel-on-click="{{ connectMs }}" style="flex:0 0 auto; '
+        "border:0; background:transparent; font:inherit; font-size:14px; color:#0060d0; "
+        'cursor:pointer; padding:4px 6px">Connect</button>\n'
+        "                </sc-if>",
+        why="Disconnect leaves the card disconnected, and Connect brings it back",
+    )
+    build.swap(
+        "      soonOpen: !!s.soonOpen,",
+        "      msOn: !s.msGone,\n"
+        "      msOff: !!s.msGone,\n"
+        "      disconnectMs: () => this.setState({ msGone: true }),\n"
+        "      connectMs: () => this.setState({ msGone: false }),\n"
+        "      soonOpen: !!s.soonOpen,",
+        why="the connection card knows whether it is connected",
+    )
+    #: Two leftovers in the opening state: a folder path into the
+    #: invented firm's SharePoint, and an invitation pre-ticked for a
+    #: project that does not exist.
+    build.swap(
+        "ndPath: ['Investment Banking', 'Deals'], ndPicks: []",
+        "ndPath: [], ndPicks: []",
+        why="the browser's opening path is the top of what can be seen",
+    )
+    build.swap(
+        "invitePicks: ['Project Falcon']",
+        "invitePicks: []",
+        why="an invitation starts with nothing ticked",
+    )
+    #: There are two identical « Change » buttons; the anchor carries
+    #: the label above it so the right one is wired.
+    build.swap(
+        'Folders Ances watches</span>\n                '
+        '<button style="flex:0 0 auto; border:0; background:transparent; font:inherit; '
+        'font-size:14px; color:#2b6cf5; cursor:pointer; padding:4px 6px">Change</button>',
+        'Folders Ances watches</span>\n                '
+        '<button sc-camel-on-click="{{ openNew }}" style="flex:0 0 auto; border:0; '
+        "background:transparent; font:inherit; font-size:14px; color:#2b6cf5; "
+        'cursor:pointer; padding:4px 6px">Change</button>',
+        why="Change opens the folder browser it is asking about",
+    )
+    build.swap(
+        'Mailbox Ances can read</span>\n                '
+        '<button style="flex:0 0 auto; border:0; background:transparent; font:inherit; '
+        'font-size:14px; color:#2b6cf5; cursor:pointer; padding:4px 6px">Change</button>',
+        'Mailbox Ances can read</span>\n                '
+        '<button sc-camel-on-click="{{ soonMailbox }}" style="flex:0 0 auto; border:0; '
+        "background:transparent; font:inherit; font-size:14px; color:#2b6cf5; "
+        'cursor:pointer; padding:4px 6px">Change</button>',
+        why="the mailbox Change says nothing reads mail yet",
+    )
+    build.swap(
+        '<button style="flex:0 0 auto; border:0; background:#1f2937; color:#fff; '
+        "border-radius:10px; height:38px; padding:0 18px; font:inherit; font-size:14px; "
+        'font-weight:500; cursor:pointer" style-hover="background:#2f3b4c">Install</button>',
+        '<button sc-camel-on-click="{{ soonInstall }}" style="flex:0 0 auto; border:0; '
+        "background:#1f2937; color:#fff; border-radius:10px; height:38px; padding:0 18px; "
+        'font:inherit; font-size:14px; font-weight:500; cursor:pointer" '
+        'style-hover="background:#2f3b4c">Install</button>',
+        why="Install says why it cannot",
+    )
+    build.swap(
+        '<button style="flex:0 0 auto; border:0; background:transparent; font:inherit; '
+        'font-size:14px; color:#2b6cf5; cursor:pointer; padding:4px 6px">Copy link</button>',
+        '<button sc-camel-on-click="{{ soonManifest }}" style="flex:0 0 auto; border:0; '
+        "background:transparent; font:inherit; font-size:14px; color:#2b6cf5; "
+        'cursor:pointer; padding:4px 6px">Copy link</button>',
+        why="Copy link says there is nothing to copy",
+    )
+    build.swap(
+        '<button title="Share" style="flex:0 0 auto; pointer-events:auto;',
+        '<button sc-camel-on-click="{{ soonShare }}" title="Share" '
+        'style="flex:0 0 auto; pointer-events:auto;',
+        why="Share says it is not built",
+    )
+    build.swap(
+        '            <button style="flex:0 0 auto; display:flex; align-items:center; '
+        "gap:13px; width:100%; text-align:left; border:0; background:transparent; "
+        "border-radius:10px; font:inherit; font-size:15px; letter-spacing:-.008em; "
+        'color:#9aa1ab; cursor:pointer; padding:11px 10px; margin-bottom:8px"',
+        '            <button sc-camel-on-click="{{ soonSearch }}" '
+        'style="flex:0 0 auto; display:flex; align-items:center; '
+        "gap:13px; width:100%; text-align:left; border:0; background:transparent; "
+        "border-radius:10px; font:inherit; font-size:15px; letter-spacing:-.008em; "
+        'color:#9aa1ab; cursor:pointer; padding:11px 10px; margin-bottom:8px"',
+        why="Search chats says there is nothing to search",
+    )
+
+    #: There is nothing to change about folders and mailboxes while
+    #: no account is connected, so those two rows go with it.
+    folders = (
+        '              <div style="border-top:.5px solid #f4f3f5; display:flex; '
+        'align-items:center; gap:14px; padding:18px 22px">\n'
+        '                <span style="flex:1; min-width:0; font-size:16.5px; '
+        'font-weight:400; letter-spacing:-.012em">Folders Ances watches</span>'
+    )
+    mailbox_end = (
+        '                <button sc-camel-on-click="{{ soonMailbox }}" style="flex:0 0 auto; '
+        "border:0; background:transparent; font:inherit; font-size:14px; color:#2b6cf5; "
+        'cursor:pointer; padding:4px 6px">Change</button>\n              </div>'
+    )
+    build.swap(
+        folders,
+        '              <sc-if value="{{ msOn }}" hint-placeholder-val="{{ true }}">\n' + folders,
+        why="the folder and mailbox rows belong to a connected account",
+    )
+    build.swap(mailbox_end, mailbox_end + "\n              </sc-if>",
+               why="and close with it")
+
+
 def team_of_one(build, audit) -> None:
     """Three colleagues who do not exist, each assigned to models
     that do not exist. One workspace, one person in it."""
@@ -1515,6 +1727,7 @@ ALL = [
     the_last_stale_numbers,
     one_model_everywhere_else,
     the_chat_answers,
+    no_button_does_nothing,
     compare_has_a_result,
     team_of_one,
 ]

@@ -446,6 +446,27 @@ ANSWER = """
 """
 
 
+def not_yet_sheet() -> str:
+    """One sheet for every button that had nothing behind it.
+
+    Six buttons in the build did nothing on click. Four of them are
+    for things that genuinely are not built; a button that silently
+    does nothing is a worse answer than a sentence saying so. The
+    fifth and sixth had a real destination and now go to it.
+    """
+    return f"""
+      <sc-if value="{{{{ soonOpen }}}}" hint-placeholder-val="{{{{ false }}}}">
+      <div sc-camel-on-click="{{{{ closeSoon }}}}" style="position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; background:rgba(16,20,28,.3); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px)">
+        <div style="width:min(520px,92vw); background:#fff; border-radius:24px; box-shadow:0 1px 2px rgba(16,22,35,.05), 0 24px 60px rgba(16,22,35,.18); padding:30px 34px 30px">
+          <div style="font-size:17.5px; font-weight:600; letter-spacing:-.014em">{{{{ soonTitle }}}}</div>
+          <div style="font-size:14px; color:#86868b; line-height:1.6; margin-top:10px; text-wrap:pretty">{{{{ soonWhy }}}}</div>
+          <div sc-camel-on-click="{{{{ closeSoon }}}}" style="margin-top:22px"><span style="{PILL}">Close</span></div>
+        </div>
+      </div>
+      </sc-if>
+"""
+
+
 def coverage_sheet(items: list[dict]) -> str:
     """What could not be checked, and why — each refusal naming what
     would resolve it, per the Ambre document."""
