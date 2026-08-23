@@ -52,3 +52,30 @@ be refused behavioural checking rather than judged against numbers
 we cannot reproduce. Named for v2: our-reader differ, volatile-cell
 exclusion list, function-gap prescan, LibreOffice ≥ 25.8, then the
 re-run — and the WACC divergence investigated to its root.
+
+## Addendum (same day): the WACC divergence, solved
+
+The reviewer's hypothesis — a lookup-family function difference, not
+floating-point drift — was right, with a mechanism worth keeping:
+the Daily Data cells compute
+`IFERROR(XLOOKUP(date, OBR[Effective From], OBR[CPI], , -1, 1), 2%)`.
+LibreOffice 24.2 has no XLOOKUP, the lookup errors, and **IFERROR
+swallows the incapability and returns the 2% fallback** — a
+plausible, exactly-round wrong number instead of a visible error.
+Excel looked up the real CPI series (0.02075…).
+
+Two consequences, both now rules:
+1. **The prescan must flag unsupported functions even inside IFERROR
+   / IFNA wrappers.** An error-scan of recalculated output would
+   have shown nothing wrong; only the cached-value diff caught it.
+   Fallback-masking upgrades the function gap from « loud failure »
+   to « silent wrong number », which is the worst class there is.
+2. The PCFM drafts' `#VALUE!`/`#NAME?` cells are the same family
+   without the camouflage. All of it resolves with the ≥ 25.8
+   upgrade — and stays covered by the prescan for whatever the
+   *next* unsupported function is.
+
+**And the refusal is the product.** Two files the engine could not
+faithfully reproduce were refused behavioural judgement, with the
+reason named. In a demo, that is said exactly so: « here is a file
+we refused, and why » — the trust promise executing in code.

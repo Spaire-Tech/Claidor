@@ -229,3 +229,32 @@ precision — our conventions recover their published result.
    ExceLint, and eventually any tool, on corpora that ARE our
    market with truth that is seeded rather than opined — worth
    trusting.
+
+---
+
+## Status of the head-to-head table (23 Aug, after review)
+
+**The table does not leave the building as a result about Ambre.**
+It is the calibration of the measuring instrument: our scorer
+reproduces CUSTODES's published precision (64.8%) on their own
+corpus and truth, which is what makes the next number — seeded
+defects on financial models — defensible. If the table is ever
+published, it lives in a methodology appendix underneath the
+financial-model number, never standalone. A table lost twice with
+explanatory footnotes is an own goal; nobody reads the footnote.
+
+## Registration for the seeded financial-model run (fixed now,
+## before that run exists)
+
+**Change, stated with its reason:** cell-level scoring structurally
+punishes the fold — one authoring situation, one finding, then
+graded as four hundred misses. That is not a fair instrument for
+what was built. The seeded run will therefore score at the
+**authoring-situation level for every tool** (a planted defect is
+caught if any finding's cell set touches its site; a tool's flag
+counts once per contiguous flagged group), **and the cell-level
+scoring is computed and reported alongside** so the change is
+visible, not a substitution. This is registered today, before any
+seeded corpus exists, precisely so it cannot be read as a reaction
+to a bad number — and the bad number that prompted the thinking is
+kept above, unedited.

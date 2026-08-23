@@ -63,9 +63,12 @@ Owner is Engine unless marked. Every step has a DONE test.
   truth, same conventions. Then run ExceLint's open core on the same
   corpus and score it identically. **Both axes published or nothing
   is** — coverage of their truth AND rightness-when-flagging, per
-  tool; one axis alone is a story, both are a result. DONE: a
-  three-way, two-axis table under one scoring convention,
-  publishable with the frame from custodes-benchmark.md attached.
+  tool; one axis alone is a story, both are a result. The table is
+  **instrument calibration, not a result about Ambre** — internal,
+  and publishable only as a methodology appendix beneath the
+  seeded financial-model number (see the status note in
+  custodes-benchmark.md). DONE: the two-axis table exists and the
+  scorer is validated against published figures.
 - **A3. Mine their labels for missed patterns — not their
   thresholds.** Go through the CUSTODES labels for defect patterns
   we genuinely miss and genuinely care about on financial models;
@@ -192,9 +195,18 @@ Owner is Engine unless marked. Every step has a DONE test.
   showed most real cells live in shared groups. DONE: the writer can
   touch any cell the corrections need, round-trip verified.
 - **F2. The changeset.** Every correction recorded (before, after,
-  why, who accepted), applied atomically, invertible. DONE:
-  apply → undo is byte-identical; the founder's Changes UI has its
-  contract.
+  why, who accepted), applied atomically, invertible — and **every
+  write is followed by a full re-read and re-audit as a hard gate:
+  any unexpected structural change aborts and rolls back.** Not a
+  check that runs; a gate that blocks. (The self-closing-XML bug is
+  the standing argument: a construct the writer cannot see will
+  exist again, and the re-audit is what catches it.) The changeset
+  also carries **« incomplete repair » as a first-class state** —
+  not success, not failure — for fixes that leave siblings wrong,
+  exactly as the E41 repair did; the Changes UI designs for it now.
+  DONE: apply → undo is byte-identical; a sabotaged write is caught
+  by its own gate; the founder's Changes UI has its contract
+  including the incomplete state.
 - **F3. The determined-fix classes**, each with the « determined,
   not inferred » test written first: restore the formula the block
   declares; widen the sum the structure defines; replace the deck
