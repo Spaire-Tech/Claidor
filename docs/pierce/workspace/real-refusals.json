@@ -1,0 +1,32 @@
+[
+ {
+  "case": "wrong kind of file",
+  "file": "assumptions.csv",
+  "refused": true,
+  "reason": "a model has to be one of .xlsx, .xlsm, .xls, .xlt; this is a .csv file"
+ },
+ {
+  "case": "empty file",
+  "file": "model.xlsx",
+  "refused": true,
+  "reason": "the file is empty"
+ },
+ {
+  "case": "named .xlsx but is not a workbook",
+  "file": "model.xlsx",
+  "refused": true,
+  "reason": "this workbook could not be opened (BadZipFile). If it opens in Excel, saving it again as .xlsx usually fixes it."
+ },
+ {
+  "case": "a zip that is not an Office package",
+  "file": "model.xlsx",
+  "refused": true,
+  "reason": "this workbook could not be opened (KeyError). If it opens in Excel, saving it again as .xlsx usually fixes it."
+ },
+ {
+  "case": "an old .xls",
+  "file": "model.xls",
+  "refused": true,
+  "reason": "this .xls could not be read. Files older than Excel 97 are not supported \u2014 opening it once in Excel and saving as .xlsx fixes it."
+ }
+]

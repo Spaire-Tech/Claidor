@@ -64,6 +64,37 @@ class Build:
     def has(self, text: str) -> bool:
         return text in self.page
 
+    #: --- checks -----------------------------------------------------
+
+    def depths(self, marks: dict[str, str], *, after: str) -> dict[str, int]:
+        """How deep the tree is at each named anchor.
+
+        A screen can render and still be in the wrong place: close one
+        container too many and the block that follows paints happily
+        outside the scroller, looking correct until its content grows
+        past the window and cannot be scrolled to. Nothing about the
+        page's appearance catches that, so the nesting is measured.
+        """
+        token = re.compile(r"<(/?)(div|sc-if|sc-for)\b[^>]*?(/?)>")
+        start = self.page.index(after)
+        depth, seen = 0, []
+        for hit in token.finditer(self.page, start):
+            closing, _tag, selfclosing = hit.groups()
+            if selfclosing:
+                continue
+            depth += -1 if closing else 1
+            seen.append((hit.start(), depth))
+
+        def at(pos: int) -> int:
+            level = 0
+            for where, value in seen:
+                if where >= pos:
+                    break
+                level = value
+            return level
+
+        return {name: at(self.page.index(anchor)) for name, anchor in marks.items()}
+
     #: --- output -----------------------------------------------------
 
     def write(self, out: Path) -> Path:
@@ -89,6 +120,20 @@ def main() -> None:
 
     for edit in ALL:
         edit(build, data())
+
+    #: Every project tab must sit at the same depth, inside the
+    #: scrolling column. Different numbers here mean a tab escaped it.
+    tabs = build.depths(
+        {
+            name: f'<sc-if value="{{{{ pjTab{name} }}}}"'
+            for name in ("Overview", "Findings", "Versions", "Sources")
+        },
+        after='<sc-if value="{{ pjChosen }}"',
+    )
+    if len(set(tabs.values())) != 1:
+        raise EditFailed(f"project tabs sit at different depths: {tabs}")
+    print(f"tab nesting: all four at depth {next(iter(tabs.values()))}")
+
     build.write(out)
     print(f"{out} — {len(build.log)} edits")
     for line in build.log:

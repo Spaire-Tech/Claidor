@@ -15,7 +15,23 @@ await page.waitForTimeout(2500);
 const seen = [];
 const shot = async (name) => {
   await page.waitForTimeout(600);
-  await page.screenshot({ path: `${dir}/${name}.png`, fullPage: false });
+  // The app scrolls inside a container, so `fullPage` alone captures
+  // only the first screen. Grow the scroller to its content for the
+  // shot, then put it back.
+  const grew = await page.evaluate(() => {
+    const el = [...document.querySelectorAll('*')].find(e => e.scrollHeight > e.clientHeight + 50 && e.clientHeight > 300);
+    if (!el) return null;
+    const prev = { h: el.style.height, mh: el.style.maxHeight, o: el.style.overflow };
+    el.style.height = el.scrollHeight + 'px'; el.style.maxHeight = 'none'; el.style.overflow = 'visible';
+    el.setAttribute('data-grown', '1');
+    return prev;
+  });
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${dir}/${name}.png`, fullPage: true });
+  if (grew) await page.evaluate((prev) => {
+    const el = document.querySelector('[data-grown="1"]');
+    if (el) { el.style.height = prev.h; el.style.maxHeight = prev.mh; el.style.overflow = prev.o; el.removeAttribute('data-grown'); }
+  }, grew);
   const text = await page.evaluate(() => document.body.innerText.replace(/\n+/g, ' | '));
   seen.push({ name, chars: text.length, text: text.slice(0, 240) });
   console.log(`[${name}] ${text.slice(0, 150)}`);
@@ -30,7 +46,12 @@ const click = async (label, exact = true) => {
 await shot('01-ask');
 if (await click('Project')) {
   await shot('02-projects');
-  if (await click('Northbank', false)) {
+  // Click whatever the first project row is, not a name we assume.
+  const opened = await (async () => {
+    try { await page.getByText('price control', { exact: false }).first().click({ timeout: 5000 }); return true; }
+    catch { try { await page.getByText('Northbank', { exact: false }).first().click({ timeout: 4000 }); return true; } catch { return false; } }
+  })();
+  if (opened) {
     await shot('03-overview');
     for (const tab of ['Findings', 'Versions', 'Documents', 'Sources', 'Deliverables', 'Record']) {
       if (await page.getByText(tab, { exact: true }).count()) {
