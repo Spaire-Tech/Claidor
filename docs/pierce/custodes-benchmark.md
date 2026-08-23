@@ -116,3 +116,39 @@ cells — their dissimilar-formula/reference classes; we cover 70
   training signal for looser missing-formula witnesses that only
   arm on this kind of sheet, measured here for recall and on our
   own corpora for the false-positive price before anything ships.
+
+---
+
+## Addendum (23 Aug, after review) — what the 14% is and is not
+
+Logged as an added frame, not a change to any number above.
+
+**The 14% measures** how this engine behaves on messy general
+spreadsheets, judged by someone else's labels, drawn from someone
+else's detection philosophy. All three are outside our market. It
+establishes three things — the engine reads foreign files, it does
+not crash, it is fast — plus one honest calibration point about
+strictness.
+
+**It does not measure our catch rate on financial models.** That
+number is still owed, and it comes from seeding known defects into
+real models (the Round-4 method, extended per class), not from this
+corpus. The two must never appear in the same sentence without this
+frame; a bare « 14% » reaching a partner or investor does damage no
+explanation can undo afterwards.
+
+**The head-to-head rule (fixed now, before it is run):** when the
+authors' detections and ExceLint are scored with this scorer, **both
+axes are published or nothing is** — how much of their truth each
+tool finds, and how often each tool is right when it flags. The
+expected shape (they find more of their marked cells; we are right
+more often when we speak) is itself the result: a deliberate design
+choice with its price measured. Showing one axis would be
+optimising the story instead of reporting it.
+
+**The widening plan, narrowed:** their labels are mined as free
+ideas — defect patterns we genuinely miss and genuinely care about
+on financial models become new checks through the normal loop. Their
+*thresholds* are not adopted to score better on their corpus: we do
+not sell into messy general spreadsheets, and the quietness is the
+product.

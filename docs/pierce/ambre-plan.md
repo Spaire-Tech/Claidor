@@ -61,13 +61,20 @@ Owner is Engine unless marked. Every step has a DONE test.
 - **A2. The cheap head-to-head.** Score the CUSTODES authors' own
   shipped detections with our registered scorer — same files, same
   truth, same conventions. Then run ExceLint's open core on the same
-  corpus and score it identically. DONE: a three-way table (us,
-  CUSTODES, ExceLint) under one scoring convention, publishable.
-- **A3. Dialect witness-widening.** Their truth as the signal for
-  looser missing-formula witnesses that arm only on non-model
-  dialects; measured there for recall and on our corpora for the
-  false-positive price. DONE: both numbers move the right way or the
-  widening is rejected on the record.
+  corpus and score it identically. **Both axes published or nothing
+  is** — coverage of their truth AND rightness-when-flagging, per
+  tool; one axis alone is a story, both are a result. DONE: a
+  three-way, two-axis table under one scoring convention,
+  publishable with the frame from custodes-benchmark.md attached.
+- **A3. Mine their labels for missed patterns — not their
+  thresholds.** Go through the CUSTODES labels for defect patterns
+  we genuinely miss and genuinely care about on financial models;
+  each becomes a check through the normal loop, measured on our own
+  corpora. Explicitly not done: adopting their looser thresholds to
+  score better on their corpus — that optimises for the exam instead
+  of the job, and the quietness is the product. DONE: any adopted
+  pattern is justified by financial-model value, never by the
+  benchmark score.
 - **A4. Coverage on the face of the report.** Every audit states
   what was checked, what was not, and why (« 102 checked, 26 not »).
   The structure map already knows; the report must say it. DONE:
