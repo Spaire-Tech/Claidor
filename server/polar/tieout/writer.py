@@ -8,9 +8,10 @@ surgery on the xlsx zip instead, the discipline the defect planter
 proved: replace one cell's XML element, copy every other archive
 member through untouched.
 
-A1 scope: replace the formula and/or cached value of a cell that
-already exists. Creation of new cells and rows is A2; shared-formula
-groups are refused until A3 teaches the writer to unshare them.
+Scope so far: replace the formula and/or cached value of a cell
+that already exists (A1), including members of shared-formula groups,
+which are safely expanded to plain per-cell formulas first (A3).
+Creation of new cells and rows is A2; array formulas are refused.
 """
 
 import re
@@ -28,7 +29,9 @@ ATTR = {
     key: re.compile(rf'{key}="([^"]*)"') for key in ("name", "r:id", "Id", "Target")
 }
 CELL = re.compile(r'<c r="([A-Z]+\d+)"[^>]*?(?:/>|>.*?</c>)', re.DOTALL)
-FORMULA = re.compile(r"<f(?:\s([^>]*))?>(.*?)</f>", re.DOTALL)
+#: Both forms: a paired <f ...>text</f> and the self-closing
+#: <f t="shared" si="0"/> a shared member carries.
+FORMULA = re.compile(r"<f(?:\s([^>]*?))?\s*(?:/>|>(.*?)</f>)", re.DOTALL)
 VALUE = re.compile(r"<v>(.*?)</v>", re.DOTALL)
 HEAD = re.compile(r'<c r="[A-Z]+\d+"[^>]*?(?=/>|>)')
 TYPE = re.compile(r'\st="[^"]*"')
@@ -115,10 +118,28 @@ class WorkbookWriter:
         old = cells[ref]
         found = FORMULA.search(old)
         if found and "t=" in (found.group(1) or ""):
-            raise WriteRefused(
-                f"{sheet}!{ref} belongs to a shared or array formula group — "
-                f"editing it would corrupt its siblings (unsharing is A3)"
-            )
+            attrs = found.group(1) or ""
+            kind = re.search(r't="(\w+)"', attrs)
+            if kind and kind.group(1) == "shared":
+                #: A shared member cannot be edited in place, but the
+                #: group can be expanded to plain formulas first — each
+                #: member gets the master's formula translated to its
+                #: own position. After that the edit is ordinary.
+                si = re.search(r'si="(\d+)"', attrs)
+                if si is None:
+                    raise WriteRefused(
+                        f"{sheet}!{ref}: shared formula with no group id"
+                    )
+                self._unshare(sheet, si.group(1))
+                member, xml = self._sheet_xml(sheet)
+                cells = {m.group(1): m.group(0) for m in CELL.finditer(xml)}
+                old = cells[ref]
+                found = FORMULA.search(old)
+            else:
+                raise WriteRefused(
+                    f"{sheet}!{ref} belongs to an array formula group — "
+                    f"editing it would corrupt its siblings"
+                )
         head = HEAD.match(old).group(0)  # type: ignore[union-attr]
         kept_type = TYPE.search(head)
         head = TYPE.sub("", head)
@@ -139,11 +160,63 @@ class WorkbookWriter:
             ref=ref,
             formula=formula,
             value=value,
-            before_formula="=" + unescape(found.group(2)) if found else None,
+            before_formula=(
+                "=" + unescape(found.group(2)) if found and found.group(2) else None
+            ),
             before_value=(unescape(m.group(1)) if (m := VALUE.search(old)) else None),
         )
         self.edits.append(edit)
         return edit
+
+    def _unshare(self, sheet: str, si: str) -> None:
+        """Expand one shared-formula group into plain formulas.
+
+        Excel stores the group once: the master cell carries
+        `<f t="shared" ref="..." si="N">formula</f>` and every other
+        member just `<f t="shared" si="N"/>`. Editing any member in
+        place corrupts the rest, so the group is dissolved first —
+        openpyxl's Translator shifts the master's relative references
+        to each member's own position, exactly as Excel would have
+        filled them. Cached values are untouched.
+        """
+        from openpyxl.formula.translate import Translator
+
+        member, xml = self._sheet_xml(sheet)
+        master_formula = None
+        master_ref = None
+        group = []
+        for match in CELL.finditer(xml):
+            cell_xml = match.group(0)
+            f = FORMULA.search(cell_xml)
+            if not f:
+                continue
+            attrs = f.group(1) or ""
+            if "shared" not in attrs:
+                continue
+            got = re.search(r'si="(\d+)"', attrs)
+            if got is None or got.group(1) != si:
+                continue
+            group.append((match.group(1), cell_xml, f))
+            if f.group(2):
+                master_formula = unescape(f.group(2))
+                master_ref = match.group(1)
+        if master_formula is None or master_ref is None:
+            raise WriteRefused(
+                f"shared group {si} on « {sheet} » has no master formula"
+            )
+        for ref, cell_xml, f in group:
+            translated = (
+                master_formula
+                if ref == master_ref
+                else Translator("=" + master_formula, origin=master_ref)
+                .translate_formula(ref)
+                .removeprefix("=")
+            )
+            plain = f"<f>{escape(translated)}</f>"
+            new_cell = cell_xml.replace(f.group(0), plain, 1)
+            xml = xml.replace(cell_xml, new_cell, 1)
+        self.members[member] = xml.encode("utf-8")
+        self.touched.add(member)
 
     def save(self, out: Path | str) -> Path:
         """Write the workbook; untouched members keep their bytes.

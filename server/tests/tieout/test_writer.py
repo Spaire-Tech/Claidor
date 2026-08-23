@@ -101,3 +101,72 @@ def test_a_edits_record_before_and_after_for_the_changeset() -> None:
         assert edit.before_formula == "=B2*(1+B1)"
         assert edit.formula == "=B2*2"
         assert [e.ref for e in writer.edits] == ["B3"]
+
+
+def _share_row(path: Path) -> Path:
+    """Rewrite B3:D3 of a generated workbook as one shared group —
+    the layout Excel itself produces when a formula is filled right."""
+    import re
+
+    with zipfile.ZipFile(path) as archive:
+        members = {i.filename: archive.read(i.filename) for i in archive.infolist()}
+        order = archive.infolist()
+    xml = members["xl/worksheets/sheet1.xml"].decode("utf-8")
+    xml = re.sub(
+        r'(<c r="B3"[^>]*>)<f>[^<]*</f>',
+        r'\1<f t="shared" ref="B3:D3" si="0">B2*(1+B1)</f>',
+        xml,
+    )
+    for ref in ("C3", "D3"):
+        xml = re.sub(
+            rf'(<c r="{ref}"[^>]*>)<f>[^<]*</f>',
+            r'\1<f t="shared" si="0"/>',
+            xml,
+        )
+    members["xl/worksheets/sheet1.xml"] = xml.encode("utf-8")
+    out = path.with_name("shared.xlsx")
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as archive:
+        for item in order:
+            archive.writestr(item, members[item.filename])
+    return out
+
+
+def _shared_host(folder: str) -> Path:
+    book = Book()
+    sheet = book.active
+    sheet.title = "Model"
+    sheet["B1"], sheet["C1"], sheet["D1"] = 0.05, 0.06, 0.07
+    sheet["B2"], sheet["C2"], sheet["D2"] = 100, 200, 300
+    sheet["B3"] = "=B2*(1+B1)"
+    sheet["C3"] = "=C2*(1+C1)"
+    sheet["D3"] = "=D2*(1+D1)"
+    path = Path(folder) / "host.xlsx"
+    book.save(path)
+    return _share_row(path)
+
+
+def test_a3_editing_a_shared_member_unshares_the_whole_group() -> None:
+    with tempfile.TemporaryDirectory() as folder:
+        host = _shared_host(folder)
+        writer = WorkbookWriter(host)
+        writer.set_cell("Model", "C3", formula="=C2*2", value="400")
+        out = writer.save(Path(folder) / "out.xlsx")
+
+        seen = load_workbook(out)
+        assert seen["Model"]["C3"].value == "=C2*2"
+        #: The siblings keep computing what the master declared,
+        #: translated to their own positions.
+        assert seen["Model"]["B3"].value == "=B2*(1+B1)"
+        assert seen["Model"]["D3"].value == "=D2*(1+D1)"
+
+
+def test_a3_the_master_itself_can_be_edited() -> None:
+    with tempfile.TemporaryDirectory() as folder:
+        host = _shared_host(folder)
+        writer = WorkbookWriter(host)
+        writer.set_cell("Model", "B3", formula="=B2", value="100")
+        out = writer.save(Path(folder) / "out.xlsx")
+        seen = load_workbook(out)
+        assert seen["Model"]["B3"].value == "=B2"
+        assert seen["Model"]["C3"].value == "=C2*(1+C1)"
+        assert seen["Model"]["D3"].value == "=D2*(1+D1)"
