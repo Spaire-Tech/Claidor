@@ -6,13 +6,21 @@ the dock, `s.project` / `s.deal` / `s.pjTab` beneath it. 106 wired
 click handlers, **no dead buttons** — every handler resolves. The
 craft is high; what follows is what a second pair of eyes finds.
 
+> **Correction (23 Aug, from the founder).** The build is a rough
+> draft with **placeholder data**. Items 1, 9, 10 and 11 below are
+> mock-number artifacts, not design defects — struck through in
+> place rather than deleted, so the correction is on the record.
+> Item 2 is resolved: the newer finding design (`fdGroups`) is the
+> one to keep. The design language extracted from this build now
+> lives in `design-reference.md`.
+
 ## A. Broken — things that are wrong today
 
-1. **The Findings tab's chips contradict its own list.** It renders
+~~1. **The Findings tab's chips contradict its own list.~~ *(placeholder data — not a defect)* ** It renders
    `ovChips` (All 14 · Material 5 · Significant 5 · Observation 4)
    above `fnGroups`, which holds 11 findings (5 / 5 / 1). The
    *correct* chips exist — `fdChips`, All 11 — and are never used.
-2. **A whole second Findings implementation is dead code.**
+2. **RESOLVED — keep the newer Findings design.**
    `fdGroups` / `fdChips` / `fdCols` (with `was` → `should`, a `why`
    sentence, per-row actions, and a Figure column) render nowhere.
    Two designs for the same screen, one live, one better.
@@ -41,13 +49,13 @@ craft is high; what follows is what a second pair of eyes finds.
    (`SEVFG`): Significant = blue, Observation = purple. Dot colours
    (`HDOT`, chips): Significant = amber, Observation = blue. The
    same word is two colours depending on the shape it's in.
-9. **Four severity vocabularies.** Material / Significant /
+~~9. **Four severity vocabularies.~~ *(placeholder data — not a defect)* ** Material / Significant /
    Observation (findings) · "3 errors, 5 warnings" (project list) ·
    "two High" (hall) · "11 checks fail" (deals list).
-10. **The arithmetic doesn't reconcile.** Deals list: 36 pass + 11
+~~10. **The arithmetic doesn't reconcile.~~ *(placeholder data — not a defect)* ** Deals list: 36 pass + 11
     fail + 5 not run = 52. Check-a-model: "Forty-one checks ran."
     `PASSES` lists 11 rows. Pick one and derive the rest.
-11. **Two speed claims, neither matched to the engine.**
+~~11. **Two speed claims, neither matched to the engine.~~ *(placeholder data — not a defect)* **
     `FRONT_FACTS` says 3m 41s for a 214k-formula model; the Ambre
     doc promises 600k cells in under a minute. Today's engine does
     neither reliably (perf round is Track A1).
