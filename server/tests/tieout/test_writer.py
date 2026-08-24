@@ -204,7 +204,8 @@ def test_f1_creating_a_cell_appends_to_its_existing_row() -> None:
         out = writer.save(Path(folder) / "out.xlsx")
 
         assert edit.created is True
-        assert edit.before_formula is None and edit.before_value is None
+        assert edit.before_formula is None
+        assert edit.before_value is None
         before, after = _member_bytes(host), _member_bytes(out)
         changed = {name for name in before if before[name] != after.get(name)}
         assert changed == {"xl/worksheets/sheet1.xml"}
@@ -274,9 +275,7 @@ def test_f1_created_formula_reads_back_in_both_readers() -> None:
     with tempfile.TemporaryDirectory() as folder:
         host = _gapped_host(folder)
         writer = WorkbookWriter(host)
-        writer.set_cell(
-            "Model", "B6", formula="=B2*2", value="200", create=True
-        )
+        writer.set_cell("Model", "B6", formula="=B2*2", value="200", create=True)
         out = writer.save(Path(folder) / "out.xlsx")
 
         seen = load_workbook(out)
@@ -302,7 +301,8 @@ def test_f1_creation_expands_the_dimension_and_row_spans() -> None:
         import re as _re
 
         dimension = _re.search(r'<dimension ref="([^"]+)"', xml)
-        assert dimension is not None and dimension.group(1) == "A1:E5"
+        assert dimension is not None
+        assert dimension.group(1) == "A1:E5"
         seen = load_workbook(out)
         assert seen["Model"]["E1"].value == 9
 
@@ -332,7 +332,8 @@ def test_f1_creation_updates_the_rows_spans_when_excel_wrote_them() -> None:
         with zipfile.ZipFile(out) as archive:
             written = archive.read("xl/worksheets/sheet1.xml").decode("utf-8")
         row_one = re.search(r'<row r="1"[^>]*spans="([^"]+)"', written)
-        assert row_one is not None and row_one.group(1) == "1:5"
+        assert row_one is not None
+        assert row_one.group(1) == "1:5"
         seen = load_workbook(out)
         assert seen["Model"]["E1"].value == 9
         assert seen["Model"]["A1"].value == "Rate"
@@ -344,3 +345,37 @@ def test_f1_without_create_the_writer_still_refuses() -> None:
         writer = WorkbookWriter(host)
         with pytest.raises(WriteRefused, match="create=True"):
             writer.set_cell("Model", "B4", formula=None, value="41")
+
+
+def test_a_replacing_a_constant_with_text_reads_back_as_text() -> None:
+    with tempfile.TemporaryDirectory() as folder:
+        host = _host(folder)
+        writer = WorkbookWriter(host)
+        writer.set_cell("Model", "B2", formula=None, value="tbc")
+        out = writer.save(Path(folder) / "out.xlsx")
+        seen = load_workbook(out)
+        assert seen["Model"]["B2"].value == "tbc"
+
+
+def test_a_replacing_a_text_constant_with_a_formula_types_cleanly() -> None:
+    """The old type attribute never survives: a text constant's
+    inlineStr would corrupt the formula written over it."""
+    with tempfile.TemporaryDirectory() as folder:
+        host = _host(folder)
+        writer = WorkbookWriter(host)
+        writer.set_cell("Model", "A3", formula="=B1*100", value="8")
+        out = writer.save(Path(folder) / "out.xlsx")
+
+        with zipfile.ZipFile(out) as archive:
+            xml = archive.read("xl/worksheets/sheet1.xml").decode("utf-8")
+        cell = xml[xml.index('<c r="A3"') : xml.index("</c>", xml.index('<c r="A3"'))]
+        assert "inlineStr" not in cell
+
+        seen = load_workbook(out)
+        assert seen["Model"]["A3"].value == "=B1*100"
+        #: The engine reader keeps only labelled numeric cells, and A3
+        #: sits in the label column — so the reader's check here is
+        #: simply that the written file still reads clean.
+        book = read_workbook(str(out))
+        assert "Model!A3" not in book.unparseable
+        assert str(book.cells["Model!B2"].value) == "100"

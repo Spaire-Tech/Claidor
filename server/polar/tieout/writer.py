@@ -1,4 +1,4 @@
-"""Write cells into an xlsx without breaking anything — Track A.
+"""Write cells into an xlsx without breaking anything — Track F.
 
 The write path. The rule it lives by: everything the edit does not touch keeps its exact bytes.
 Resaving through a spreadsheet library rewrites the entire file —
@@ -69,6 +69,27 @@ def _numeric(value: str) -> bool:
     return True
 
 
+def _cell_content(formula: str | None, value: str) -> tuple[str, str]:
+    """The type attribute and body a cell needs for this content.
+
+    A formula's cached value is plain when numeric and `t="str"` when
+    text. A typed constant is plain when numeric; text becomes an
+    inline string, so the shared-strings member — untouched bytes —
+    stays untouched.
+    """
+    if formula is not None:
+        head_type = "" if _numeric(value) else ' t="str"'
+        body = f"<f>{escape(formula.removeprefix('='))}</f><v>{escape(value)}</v>"
+    elif _numeric(value):
+        head_type = ""
+        body = f"<v>{escape(value)}</v>"
+    else:
+        head_type = ' t="inlineStr"'
+        space = ' xml:space="preserve"' if value != value.strip() else ""
+        body = f"<is><t{space}>{escape(value)}</t></is>"
+    return head_type, body
+
+
 def _into_row(row_xml: str, cell_xml: str, column: int) -> str:
     """The row with the new cell in column order, spans kept honest."""
     if row_xml.endswith("/>"):
@@ -125,7 +146,7 @@ class WorkbookWriter:
 
     Every archive member the edits do not touch is copied through with
     its exact bytes. `edits` records before and after for each cell —
-    the raw material of Track A's changeset.
+    the raw material of the changeset (F2, `changeset.py`).
     """
 
     path: Path
@@ -223,18 +244,15 @@ class WorkbookWriter:
                     f"editing it would corrupt its siblings"
                 )
         head = HEAD.match(old).group(0)  # type: ignore[union-attr]
-        kept_type = TYPE.search(head)
+        #: The old type attribute never survives: it described the old
+        #: content (a text constant's `t="inlineStr"` would corrupt a
+        #: formula written into the same cell), so the new type is
+        #: derived from the new content instead. The sheet XML stores
+        #: formulas without their leading « = »; the writer speaks the
+        #: reader's dialect (with it) and translates at the boundary.
         head = TYPE.sub("", head)
-        if formula is not None and kept_type:
-            head += kept_type.group(0)
-        #: The sheet XML stores formulas without their leading « = »;
-        #: the writer speaks the reader's dialect (with it) and
-        #: translates at the boundary, both directions.
-        body = ""
-        if formula is not None:
-            body += f"<f>{escape(formula.removeprefix('='))}</f>"
-        body += f"<v>{escape(value)}</v>"
-        new = f"{head}>{body}</c>"
+        head_type, body = _cell_content(formula, value)
+        new = f"{head}{head_type}>{body}</c>"
         self.members[member] = xml.replace(old, new, 1).encode("utf-8")
         self.touched.add(member)
         edit = Edit(
@@ -265,20 +283,7 @@ class WorkbookWriter:
         if parsed is None:
             raise WriteRefused(f"{sheet}!{ref} is not a cell reference")
         column, row_number = _column_index(parsed.group(1)), int(parsed.group(2))
-
-        body = ""
-        head_type = ""
-        if formula is not None:
-            body += f"<f>{escape(formula.removeprefix('='))}</f>"
-            if not _numeric(value):
-                head_type = ' t="str"'
-            body += f"<v>{escape(value)}</v>"
-        elif _numeric(value):
-            body += f"<v>{escape(value)}</v>"
-        else:
-            head_type = ' t="inlineStr"'
-            space = ' xml:space="preserve"' if value != value.strip() else ""
-            body += f"<is><t{space}>{escape(value)}</t></is>"
+        head_type, body = _cell_content(formula, value)
         cell_xml = f'<c r="{ref}"{head_type}>{body}</c>'
 
         member, xml = self._sheet_xml(sheet)
@@ -291,7 +296,9 @@ class WorkbookWriter:
             fresh = f'<row r="{row_number}">{cell_xml}</row>'
             later = [r for r in sorted(rows) if r > row_number]
             if later:
-                xml = xml.replace(rows[later[0]].group(0), fresh + rows[later[0]].group(0), 1)
+                xml = xml.replace(
+                    rows[later[0]].group(0), fresh + rows[later[0]].group(0), 1
+                )
             elif "<sheetData/>" in xml:
                 xml = xml.replace("<sheetData/>", f"<sheetData>{fresh}</sheetData>", 1)
             else:
@@ -300,9 +307,7 @@ class WorkbookWriter:
 
         self.members[member] = xml.encode("utf-8")
         self.touched.add(member)
-        edit = Edit(
-            sheet=sheet, ref=ref, formula=formula, value=value, created=True
-        )
+        edit = Edit(sheet=sheet, ref=ref, formula=formula, value=value, created=True)
         self.edits.append(edit)
         return edit
 

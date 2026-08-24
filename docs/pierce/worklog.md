@@ -3603,3 +3603,60 @@ one removal: `ScenDelta!AA9`'s long-formula fold re-anchors to AA8 —
 the header-row fix admitted the family's true first cell (144 → 180
 member cells, same finding). Baseline regenerated at 674; 502 tieout
 tests green.
+
+---
+
+## 24 August — the plan crisis, then Track F opens
+
+**The plan went wrong twice, and was put right.** Asked « remind me
+the plan? », I recited `clone-plan.md` from memory; told to find the
+right plan and make sure it's the only one, I crowned `plan.md` and
+deleted `ambre-plan.md` — the plan the founder had commissioned and
+approved. The founder pasted the thread proving it. Restored as
+`swens-plan.md` (only the names updated, per swens.md's supersession
+of name and framing, never tracks or method); `plan.md` deleted; every
+pointer re-patched; and `notes.md` created at the founder's request —
+the canon table (product = swens.md, plan = swens-plan.md, design =
+design-swens/, history = this file) with the rule that questions of
+record are answered from the record, never from memory. CLAUDE.md now
+points at it, so every session starts there.
+
+**Four plan amendments, founder-approved,** from an external research
+gap map checked against our own code first: C2 becomes DP alignment
+on label + formula-shape signatures (not SheetDiff's greedy
+algorithm); C4 gains verifying-trace fingerprints as the cheap
+no-change proof; B4 gains ddmin attribution; A7 added — shape-hash
+commutativity + constant folding as a measured micro-round (`_shape`
+verifiably lacks both today).
+
+**F1 — creation.** `set_cell(create=True)` materializes a missing
+cell: column order held in its row, the row element built and placed
+in ascending order when absent, dimension stretched, Excel's row
+spans updated when present (openpyxl writes none — probed — so that
+path is tested on an injected Excel-style layout). Text goes in as an
+inline string; replacement stays strict without the flag. Found and
+fixed on the way: replacing a text constant with a formula used to
+keep `t="inlineStr"` on a cell now carrying `<f>` — corrupt typing;
+the type attribute is now always derived from the new content.
+
+**F2 — the changeset** (`changeset.py`). `apply_corrections` is
+atomic: all corrections or none. Three walls: the cell-exact compare
+(both files, every sheet, openpyxl — anything unasked-for changed, or
+a target not holding exactly what was asked, refuses the set and
+releases nothing; proven by a sabotage test that monkeypatches the
+writer to corrupt a bystander cell); the re-audit (a defect class
+appearing on a sheet where it did not exist before is damage the
+write created — refused); and « incomplete » as a first-class state —
+a correction names its motivating rule, and when that rule still
+fires on the sheet after the fix, the changeset applies but says so
+and names the cells still wrong. `undo()` rebuilds the original
+member-for-member (calcChain and content-types restoration exercised
+on an injected chain). `record()` is the Changes UI's plain-JSON
+contract.
+
+**Honest state.** 45 write-path tests green (writer 17, changeset 8,
+older write modules 20 — all run with `--noconftest`; this container
+has no database or Minio, and the corpus files are not on disk).
+What F1/F2's DONE tests still owe: the round-trip re-verification on
+the 27 real corpus files, which needs a machine with the corpus. Not
+claimed done.
