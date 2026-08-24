@@ -102,6 +102,18 @@ export interface Finding {
   /** What is wrong, in two or three words — « Incomplete total »,
    *  « Unexpected hardcode ». The line a reader scans first. */
   headline: string
+  /** The finding as a person hears it — the row's sentence. The
+   *  evidence beneath it travels as `context`. */
+  plain: string
+  /** The attention tier: 1 defect, 2 assumption at risk, 3 hygiene.
+   *  Zero on findings stored before the elevation layer. */
+  tier: number
+  weight: number
+  basis: string
+  /** Every cell a folded finding stands for — the family's roster. */
+  cells: string
+  /** The typed value the fix replaces — the was of « was → should ». */
+  fix_before: string
   /** The little Excel grid, when the check composed one. */
   grid: FindingGrid | null
 }

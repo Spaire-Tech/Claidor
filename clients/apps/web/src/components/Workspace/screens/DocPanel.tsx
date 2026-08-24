@@ -27,6 +27,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
+import { ago } from '../files'
 import {
   Artifact,
   Finding,
@@ -44,7 +45,6 @@ import {
   inputGlow,
   well,
 } from './../design'
-import { ago } from './DealPage'
 
 const OPEN_LABEL: Record<string, string> = {
   deck: 'Open in PowerPoint',

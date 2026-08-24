@@ -52,7 +52,7 @@ import {
   sectionHead,
   well,
 } from '../design'
-import { avatarOf, initialsOf } from './DealPage'
+import { avatarOf, initialsOf } from '../files'
 
 //: The design's Install button — blue, one size smaller than the
 //: toolbar's.
@@ -111,6 +111,7 @@ export const Settings = ({
   organizationId,
   deals,
   problem = null,
+  onChangeFolders,
 }: {
   api: TieOutApi
   organizationId: string
@@ -118,6 +119,8 @@ export const Settings = ({
   deals: DealListItem[] | null
   /** A connector failure the shell caught landing (popup-blocked path). */
   problem?: string | null
+  /** « Folders Swens watches » → Change — the shell's folder browser. */
+  onChangeFolders?: () => void
 }) => {
   const [tab, setTab] = useState<Tab>('conn')
   const [connector, setConnector] = useState<ConnectorState | null>(null)
@@ -504,6 +507,46 @@ export const Settings = ({
                         Connect Microsoft
                       </button>
                     )}
+                  </div>
+                )}
+                {/* The drawn second row of the account card — restored
+                  per the Swens export; only meaningful once a
+                  connection exists to watch through. */}
+                {connector?.connection?.status === 'active' && (
+                  <div
+                    style={{
+                      borderTop: '.5px solid #f4f3f5',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      padding: '15px 16px 15px 20px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontSize: 16,
+                        letterSpacing: '-.012em',
+                      }}
+                    >
+                      Folders Swens watches
+                    </span>
+                    <button
+                      onClick={() => onChangeFolders?.()}
+                      style={{
+                        flex: '0 0 auto',
+                        border: 0,
+                        background: 'transparent',
+                        font: 'inherit',
+                        fontSize: 14,
+                        color: '#2b6cf5',
+                        cursor: 'pointer',
+                        padding: '4px 6px',
+                      }}
+                    >
+                      Change
+                    </button>
                   </div>
                 )}
               </div>

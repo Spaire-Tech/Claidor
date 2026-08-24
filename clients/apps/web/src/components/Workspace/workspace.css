@@ -61,6 +61,17 @@
   font-style: normal;
 }
 
+/* The app's root layout stamps Tailwind's `antialiased` on <html>,
+   which on macOS thins every stroke — the founder saw it first on
+   the wordmark, whose serif contrast makes it obvious. The design
+   file sets no smoothing, so the workspace renders at the browser
+   default, and only the workspace: the rest of the app keeps its
+   setting. */
+.pc-workspace {
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
 .pc-workspace,
 .pc-workspace * {
   box-sizing: border-box;

@@ -355,6 +355,12 @@ def _finding(
         flow=str(evidence.get("flow") or ""),
         fix=str(evidence.get("fix") or ""),
         headline=str(evidence.get("headline") or ""),
+        plain=str(evidence.get("plain") or ""),
+        tier=int(evidence.get("tier") or 0),
+        weight=float(evidence.get("weight") or 0.0),
+        basis=str(evidence.get("basis") or ""),
+        cells=str(evidence.get("cells") or ""),
+        fix_before=str(evidence.get("fix_before") or ""),
         grid=evidence.get("grid") or None,
     )
 

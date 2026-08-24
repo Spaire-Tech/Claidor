@@ -37,79 +37,7 @@ import {
   sharepointLogo,
   well,
 } from './../design'
-import { DealPage } from './DealPage'
-
-/**
- * « Checked 09:15 today » / « Checked Tuesday 11:52 » / « Checked
- * 1 August » — the design's own time phrasing, read off its demo
- * rows. Stale rows lead with « Last checked », as the design's stale row
- * does: the check is no longer *the* check, only the last one.
- */
-export const checkedLine = (at: string | null, stale = false): string => {
-  if (!at) return 'Not checked yet'
-  const lead = stale ? 'Last checked' : 'Checked'
-  const then = new Date(at)
-  const now = new Date()
-  const time = then.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
-  if (then.toDateString() === now.toDateString()) return `${lead} ${time} today`
-  const yesterday = new Date(now)
-  yesterday.setDate(now.getDate() - 1)
-  if (then.toDateString() === yesterday.toDateString())
-    return `${lead} yesterday ${time}`
-  const days = Math.floor((now.getTime() - then.getTime()) / 86_400_000)
-  if (days < 7)
-    return `${lead} ${then.toLocaleDateString([], { weekday: 'long' })} ${time}`
-  return `${lead} ${then.toLocaleDateString([], { day: 'numeric', month: 'long' })}`
-}
-
-/** « The model changed at 11:40 today. » — the stale row's own sentence. */
-export const staleNote = (kind: string | null, at: string | null): string => {
-  const what =
-    kind === 'model'
-      ? 'The model'
-      : kind === 'deck'
-        ? 'The deck'
-        : kind === 'memo'
-          ? 'The memo'
-          : kind === 'message'
-            ? 'A message'
-            : 'A source'
-  if (!at) return `${what} changed after the last check.`
-  const then = new Date(at)
-  const now = new Date()
-  const time = then.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
-  if (then.toDateString() === now.toDateString())
-    return `${what} changed at ${time} today.`
-  const yesterday = new Date(now)
-  yesterday.setDate(now.getDate() - 1)
-  if (then.toDateString() === yesterday.toDateString())
-    return `${what} changed yesterday.`
-  return `${what} changed on ${then.toLocaleDateString([], { day: 'numeric', month: 'long' })}.`
-}
-
-const chevron = (
-  <svg
-    width="9"
-    height="15"
-    viewBox="0 0 9 15"
-    fill="none"
-    stroke="#c7c7cc"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ flex: '0 0 9px' }}
-  >
-    <polyline points="1.5,1.5 7.5,7.5 1.5,13.5" />
-  </svg>
-)
+import { ProjectPage } from './ProjectPage'
 
 export interface DealsProps {
   api: TieOutApi
@@ -119,10 +47,6 @@ export interface DealsProps {
   deal: DealListItem | null
   onOpen: (deal: DealListItem) => void
   onChanged: () => void
-  /** The shell's « Check now », forwarded to the open deal. */
-  checkNonce: number
-  reportNonce?: number
-  onChecking: (running: boolean) => void
   openDocId: string | null
   onOpenDoc: (
     doc: import('./../api').Artifact,
@@ -130,10 +54,8 @@ export interface DealsProps {
   ) => void
   /** Opens the New-deal browser — the connected empty state's button. */
   onNewDeal: () => void
-  /** The open model was removed — the shell closes it and refreshes. */
+  /** Leave the open project — the shell closes it and refreshes. */
   onRemoved: () => void
-  /** The Ask sheet is open — the model page hides its rail. */
-  railHidden?: boolean
 }
 
 export const Deals = ({
@@ -142,14 +64,11 @@ export const Deals = ({
   deals,
   deal,
   onOpen,
-  checkNonce,
-  reportNonce,
-  onChecking,
+  onChanged,
   openDocId,
   onOpenDoc,
   onNewDeal,
   onRemoved,
-  railHidden,
 }: DealsProps) => {
   //: The connector, for the empty state's three faces. Asked only once
   //: the list has answered and come back empty — the list screen never
@@ -222,16 +141,12 @@ export const Deals = ({
 
   if (deal !== null) {
     return (
-      <DealPage
+      <ProjectPage
         api={api}
-        dealId={deal.id}
-        checkNonce={checkNonce}
-        reportNonce={reportNonce}
-        onChecking={onChecking}
-        openDocId={openDocId}
+        deal={deal}
+        onBack={onRemoved}
         onOpenDoc={onOpenDoc}
-        onRemoved={onRemoved}
-        railHidden={railHidden}
+        onChanged={onChanged}
       />
     )
   }

@@ -566,11 +566,24 @@ class TieOutService:
                     merged["clean"] += tally["clean"]
 
         await repository.replace_findings(dossier_id, CheckKind.audit, findings)
+
+        # The attention tiers, tallied per run so the trend over versions
+        # can be drawn from run history — errors and smells alone cannot
+        # separate a defect from hygiene. Same fallback as the deal list:
+        # a finding without a carried tier reads by its severity.
+        tiers = {"1": 0, "2": 0, "3": 0}
+        for one in findings:
+            carried = int((one.evidence or {}).get("tier") or 0)
+            if not carried:
+                carried = 1 if one.severity is FindingSeverity.error else 3
+            tiers[str(min(max(carried, 1), 3))] += 1
+
         return await repository.finish_run(
             run,
             summary={
                 "errors": errors,
                 "smells": smells,
+                "tiers": tiers,
                 "models": len(models),
                 "cells": sum(int(one.counts.get("cells", 0)) for one in models),
                 "rules_off": sorted(rules_off),

@@ -1,27 +1,36 @@
 'use client'
 
 /**
- * The Assistant — the workspace's first tab, from the founder's
- * Workspace 3 design (`docs/pierce/design-antford/workspace3.html`,
- * the `vAssist` section).
+ * Ask — the Swens chat screen.
  *
- * A different job from the review chat. The review chat answers « why
- * did you flag this »; this one answers « what is this model » — for
- * someone who did not build it. The three design decisions, treated as
- * law: the model is picked at the top and stays picked, with the scope
- * visible; every answer shows its cells — the tools' own rows, drawn
- * from the server verbatim, never re-typed by the language model; and
- * the answer's last line names where the chain ends and what the file
- * cannot show.
+ * Source of truth: `docs/pierce/design-swens/Swens_Workspace.html`,
+ * the `vAssist` block: the collapsible history rail (search, ⌘K, New
+ * chat, the project/all scope switch, dated groups), the Newsreader
+ * greeting, the composer card with the dark send circle, the project
+ * chip beneath it, and answers under the serif « S » mark.
  *
- * Never shown empty: the suggested questions are composed from the
- * model's own content — its real sheet names, its real version count —
- * so clicking one always produces a real answer about this file.
+ * What is real, named:
+ * - Answers come from the assist endpoint: grounded in the model,
+ *   with the tool's own rows drawn verbatim and the boundary line in
+ *   grey. Nothing here invents a number.
+ * - The history rail's rows are this machine's own past
+ *   conversations (localStorage, most recent forty) — real titles,
+ *   real order, reopenable. Server-side history is later work.
+ * - The scope switch filters those chats by the picked project; the
+ *   search filters by title and project name and says which shelf it
+ *   looked on when nothing matches.
+ * - The project chip under the composer is the real picker.
+ *
+ * Deferred with the chat-mechanism discussion, by the founder's
+ * decision — not built rather than built dead: the composer's « + »
+ * menu (attach, mention, Excel selection), the skill chip, and the
+ * designed workflow answers (the double-question flow). The answer
+ * *style* — S mark, one column, evidence rows — is this file's.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Asked, AskedRow, AskTurn, DealListItem, TieOutApi } from './../api'
-import { cellRefInk, excelLogo, font, ink } from './../design'
+import { font, ink } from './../design'
 
 interface Message {
   role: 'you' | 'working' | 'answer'
@@ -33,7 +42,7 @@ interface Message {
   trace?: string
 }
 
-/** A finished conversation, kept on this machine — the drawer's rows
+/** A finished conversation, kept on this machine — the rail's rows
  *  are the person's own past chats, never invented. */
 interface PastChat {
   id: string
@@ -44,11 +53,16 @@ interface PastChat {
   messages: Message[]
 }
 
-const HISTORY_KEY = 'ances-assistant-history'
+const HISTORY_KEY = 'swens-assistant-history'
+//: The key the Ances build wrote under — read once so nobody's
+//: history vanishes with the rename.
+const OLD_HISTORY_KEY = 'ances-assistant-history'
 
 const loadHistory = (): PastChat[] => {
   try {
-    const raw = window.localStorage.getItem(HISTORY_KEY)
+    const raw =
+      window.localStorage.getItem(HISTORY_KEY) ??
+      window.localStorage.getItem(OLD_HISTORY_KEY)
     const list = raw ? (JSON.parse(raw) as PastChat[]) : []
     return Array.isArray(list) ? list : []
   } catch {
@@ -67,13 +81,22 @@ const saveHistory = (list: PastChat[]) => {
 const freshId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
-export interface AssistantProps {
-  api: TieOutApi
-  /** Null while loading. The picker lists every model this person is on. */
-  deals: DealListItem[] | null
-  /** Clicking a row's cell lands in the model reader. */
-  onOpenModel?: (deal: DealListItem) => void
-}
+/** The serif S — the design's mark on everything Swens says. */
+const Mark = ({ top = 0 }: { top?: number }) => (
+  <span
+    style={{
+      flex: '0 0 18px',
+      width: 18,
+      fontFamily: font.brand,
+      fontSize: 16,
+      lineHeight: 1,
+      color: '#15171b',
+      marginTop: top,
+    }}
+  >
+    S
+  </span>
+)
 
 /** The answer split for the design: prose, then the grey ends-line. */
 const split = (answer: string): { text: string; ends: string } => {
@@ -88,27 +111,52 @@ const split = (answer: string): { text: string; ends: string } => {
   }
 }
 
+export interface AssistantProps {
+  api: TieOutApi
+  /** Null while loading. The chip lists every project this person is on. */
+  deals: DealListItem[] | null
+  /** Clicking a row's cell lands in the model reader. */
+  onOpenModel?: (deal: DealListItem) => void
+}
+
 export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
   const models = deals ?? []
   const [pickedId, setPickedId] = useState<string | null>(null)
   const picked = models.find((one) => one.id === pickedId) ?? models[0] ?? null
 
-  const [pickOpen, setPickOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [prompt, setPrompt] = useState('')
   const [busy, setBusy] = useState(false)
-  const [meta, setMeta] = useState('')
+  const [pjMenu, setPjMenu] = useState(false)
   const scroll = useRef<HTMLDivElement | null>(null)
 
-  //: The 18 August design's history drawer. Its rows are this
-  //: machine's own past conversations — real titles, real order,
-  //: grouped by recency; empty says so rather than inventing rows.
-  const [histOpen, setHistOpen] = useState(false)
+  //: The rail: open by default as drawn, collapsible from the header.
+  const [histOpen, setHistOpen] = useState(true)
+  const [histFind, setHistFind] = useState(false)
+  const [histQ, setHistQ] = useState('')
+  const [histScope, setHistScope] = useState<'project' | 'all'>('project')
+  const findRef = useRef<HTMLInputElement | null>(null)
   const [past, setPast] = useState<PastChat[]>([])
   const chatId = useRef<string>(freshId())
   useEffect(() => {
     setPast(loadHistory())
   }, [])
+
+  //: ⌘K — the chip on the search row is a promise. Opens the rail
+  //: first if it is shut; does nothing while another screen shows.
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'k' || !(e.metaKey || e.ctrlKey)) return
+      e.preventDefault()
+      setHistOpen(true)
+      setHistFind(true)
+      setTimeout(() => findRef.current?.focus(), 60)
+    }
+    document.addEventListener('keydown', key)
+    return () => document.removeEventListener('keydown', key)
+  }, [])
+
+  //: A finished exchange is saved as this chat's record.
   useEffect(() => {
     if (picked === null) return
     const asked = messages.filter((one) => one.role === 'you')
@@ -131,41 +179,6 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages])
 
-  //: The visible scope line: the model's own counts, asked once per
-  //: pick. Absent while unknown — never invented.
-  useEffect(() => {
-    if (picked === null) return
-    let live = true
-    setMeta('')
-    api
-      .deal(picked.id)
-      .then((page) => {
-        if (!live) return
-        const model = page.documents.find((one) => one.kind === 'model')
-        if (!model) {
-          setMeta('No model in this folder yet.')
-          return
-        }
-        const sheets = Number(model.counts['sheets'] ?? 0)
-        const cells = Number(model.counts['cells'] ?? 0)
-        const formulas = Number(model.counts['formulas'] ?? 0)
-        setMeta(
-          [
-            sheets ? `${sheets} sheets` : '',
-            cells ? `${cells.toLocaleString()} cells` : '',
-            formulas ? `${formulas.toLocaleString()} formulas` : '',
-            `version ${model.version}`,
-          ]
-            .filter(Boolean)
-            .join(' · '),
-        )
-      })
-      .catch(() => undefined)
-    return () => {
-      live = false
-    }
-  }, [api, picked])
-
   useEffect(() => {
     if (scroll.current) scroll.current.scrollTop = scroll.current.scrollHeight
   }, [messages])
@@ -186,7 +199,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
     setMessages((was) => [
       ...was,
       { role: 'you', text: q },
-      { role: 'working', text: 'Reading the graph' },
+      { role: 'working', text: 'Reading the model' },
     ])
     api
       .assist(picked.id, q, { history })
@@ -210,7 +223,7 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
           ...was.slice(0, -1),
           {
             role: 'answer',
-            text: String(problem.message ?? 'The assistant could not answer.'),
+            text: String(problem.message ?? 'Swens could not answer.'),
             rows: [],
             ends: '',
           },
@@ -219,22 +232,62 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
       .finally(() => setBusy(false))
   }
 
-  //: Suggested questions, composed from this model's real content —
-  //: one per family the assistant actually answers.
-  const suggestions = useMemo(() => {
-    const rows: { cat: string; text: string }[] = [
-      { cat: 'Structure', text: 'How is this model laid out?' },
-      {
-        cat: 'Inventory',
-        text: 'Show me every typed input in the model.',
-      },
-      { cat: 'Inventory', text: 'Any external links or hardcodes?' },
-    ]
-    return rows
-  }, [])
+  const newChat = () => {
+    chatId.current = freshId()
+    setMessages([])
+    setPrompt('')
+  }
+  const openPast = (record: PastChat) => {
+    chatId.current = record.id
+    setMessages(record.messages)
+    const deal = models.find((one) => one.id === record.dealId)
+    if (deal) setPickedId(deal.id)
+    setHistFind(false)
+    setHistQ('')
+  }
+
+  //: The rail's data: search over title and project, scope over the
+  //: picked project. Dated groups, empty groups hidden — the
+  //: design's own filter.
+  const q = histQ.trim().toLowerCase()
+  const hit = (one: PastChat) =>
+    (!q || `${one.title} ${one.dealName}`.toLowerCase().includes(q)) &&
+    (histScope === 'all' || (picked !== null && one.dealId === picked.id))
+  const shown = past.filter(hit)
+  const groups = useMemo(() => {
+    const now = Date.now()
+    const today: PastChat[] = []
+    const week: PastChat[] = []
+    const older: PastChat[] = []
+    for (const one of shown) {
+      const age = now - one.at
+      if (new Date(one.at).toDateString() === new Date().toDateString())
+        today.push(one)
+      else if (age < 7 * 86_400_000) week.push(one)
+      else older.push(one)
+    }
+    return [
+      { label: 'Today', items: today },
+      { label: 'Previous 7 days', items: week },
+      { label: 'Older', items: older },
+    ].filter((g) => g.items.length > 0)
+  }, [shown])
+
+  const [shareSaid, setShareSaid] = useState(false)
+  const share = () => {
+    const url = `${window.location.href.split('#')[0]}#chat=${chatId.current}`
+    const done = () => {
+      setShareSaid(true)
+      setTimeout(() => setShareSaid(false), 1800)
+    }
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, done)
+    else done()
+  }
 
   const empty = messages.length === 0
 
+  //: No projects yet: Ask has nothing to be about. The design's
+  //: empty-state pattern, pointing at the place that fixes it.
   if (models.length === 0) {
     return (
       <div
@@ -248,62 +301,37 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
           padding: 40,
         }}
       >
-        <div style={{ maxWidth: 380, textAlign: 'center' }}>
-          <div
-            style={{
-              fontFamily: "'Bodoni Moda',Didot,Georgia,serif",
-              fontSize: 38,
-              lineHeight: 1,
-            }}
-          >
-            A
+        <div style={{ maxWidth: 420, textAlign: 'center' }}>
+          <div style={{ fontFamily: font.brand, fontSize: 38, lineHeight: 1 }}>
+            S
           </div>
           <div
             style={{
-              fontSize: 23,
-              letterSpacing: '-.02em',
+              fontFamily: font.serif,
+              fontSize: 26,
+              letterSpacing: '-.012em',
               marginTop: 18,
-              textWrap: 'balance',
+              color: '#1c1f23',
             }}
           >
-            Add a model and ask it anything.
+            Ask me about your models.
           </div>
           <div
             style={{
-              fontSize: 14.5,
-              color: '#86868b',
-              lineHeight: 1.55,
-              marginTop: 8,
-              textWrap: 'pretty',
+              fontSize: 14,
+              color: ink.secondary,
+              marginTop: 10,
+              lineHeight: 1.6,
             }}
           >
-            The assistant answers where a number comes from, what moves if it
-            changes, and how the model is laid out — from the model's own
-            dependency graph.
+            {deals === null
+              ? ''
+              : 'Connect a project first — Ask answers from your own files, and there are none yet.'}
           </div>
         </div>
       </div>
     )
   }
-
-  const dayMs = 24 * 60 * 60 * 1000
-  const startOfToday = new Date().setHours(0, 0, 0, 0)
-  const histGroups = [
-    {
-      label: 'Today',
-      items: past.filter((one) => one.at >= startOfToday),
-    },
-    {
-      label: 'Previous 7 days',
-      items: past.filter(
-        (one) => one.at < startOfToday && one.at >= startOfToday - 7 * dayMs,
-      ),
-    },
-    {
-      label: 'Older',
-      items: past.filter((one) => one.at < startOfToday - 7 * dayMs),
-    },
-  ].filter((group) => group.items.length > 0)
 
   return (
     <div
@@ -314,710 +342,901 @@ export const Assistant = ({ api, deals, onOpenModel }: AssistantProps) => {
         background: '#fff',
       }}
     >
-      {/* The history drawer — the person's own past conversations. */}
+      {/* The history rail — a clipping shell the design animates. */}
       <div
         style={{
-          flex: `0 0 ${histOpen ? 244 : 0}px`,
-          width: histOpen ? 244 : 0,
+          flex: `0 0 ${histOpen ? '298px' : '0px'}`,
+          width: histOpen ? 298 : 0,
           alignSelf: 'stretch',
           overflow: 'hidden',
-          background: '#f7f7f5',
-          borderRight: histOpen ? '.5px solid #eceae8' : 0,
-          transition: 'flex-basis .18s ease, width .18s ease',
+          background: '#fdfdfd',
+          borderRight: '.5px solid #f0eff1',
+          transition: 'flex-basis .2s ease, width .2s ease',
         }}
       >
         <div
           style={{
-            width: 244,
+            width: 298,
             height: '100%',
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
-            padding: '13px 11px',
+            padding: '16px 14px 18px',
           }}
         >
+          {histFind ? (
+            <div
+              style={{
+                flex: '0 0 auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 13,
+                width: '100%',
+                background: 'rgba(16,20,28,.05)',
+                borderRadius: 10,
+                padding: '11px 10px',
+                marginBottom: 8,
+              }}
+            >
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#9aa1ab"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ flex: '0 0 17px' }}
+              >
+                <circle cx="11" cy="11" r="6.6" />
+                <line x1="16" y1="16" x2="20.5" y2="20.5" />
+              </svg>
+              <input
+                ref={findRef}
+                autoFocus
+                value={histQ}
+                onChange={(e) => setHistQ(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setHistFind(false)
+                    setHistQ('')
+                  }
+                }}
+                placeholder="Search chats"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  border: 0,
+                  background: 'transparent',
+                  padding: 0,
+                  font: 'inherit',
+                  fontSize: 15,
+                  letterSpacing: '-.008em',
+                  color: '#1c1f23',
+                  outline: 'none',
+                }}
+              />
+              <button
+                onClick={() => {
+                  setHistFind(false)
+                  setHistQ('')
+                }}
+                title="Clear"
+                style={{
+                  flex: '0 0 auto',
+                  display: 'flex',
+                  border: 0,
+                  background: 'transparent',
+                  borderRadius: 5,
+                  padding: 2,
+                  color: '#a2a29c',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                >
+                  <line x1="6.5" y1="6.5" x2="17.5" y2="17.5" />
+                  <line x1="17.5" y1="6.5" x2="6.5" y2="17.5" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setHistFind(true)
+                setTimeout(() => findRef.current?.focus(), 60)
+              }}
+              style={{
+                flex: '0 0 auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 13,
+                width: '100%',
+                textAlign: 'left',
+                border: 0,
+                background: 'transparent',
+                borderRadius: 10,
+                font: 'inherit',
+                fontSize: 15,
+                letterSpacing: '-.008em',
+                color: '#9aa1ab',
+                cursor: 'pointer',
+                padding: '11px 10px',
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ display: 'flex', color: '#9aa1ab' }}>
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ flex: '0 0 17px' }}
+                >
+                  <circle cx="11" cy="11" r="6.6" />
+                  <line x1="16" y1="16" x2="20.5" y2="20.5" />
+                </svg>
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>Search chats</span>
+              <span
+                style={{
+                  flex: '0 0 auto',
+                  fontFamily: font.mono,
+                  fontSize: 11,
+                  letterSpacing: 0,
+                  color: '#a2a29c',
+                  background: '#f2f2f0',
+                  borderRadius: 5,
+                  padding: '2px 5px',
+                }}
+              >
+                ⌘K
+              </span>
+            </button>
+          )}
           <button
-            onClick={() => {
-              chatId.current = freshId()
-              setMessages([])
-              setPrompt('')
-            }}
+            onClick={newChat}
             style={{
+              flex: '0 0 auto',
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
+              gap: 13,
               width: '100%',
               textAlign: 'left',
               border: 0,
               background: 'transparent',
-              borderRadius: 9,
+              borderRadius: 10,
               font: 'inherit',
-              fontSize: 14,
-              color: '#15171b',
+              fontSize: 15,
+              letterSpacing: '-.008em',
+              color: '#1c1f23',
               cursor: 'pointer',
-              padding: '8px 10px',
-              marginBottom: 12,
+              padding: '11px 10px',
+              marginBottom: 2,
             }}
           >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-              style={{ flex: '0 0 15px' }}
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>New chat</span>
+            <span style={{ display: 'flex', color: '#6b7280' }}>
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ flex: '0 0 17px' }}
+              >
+                <path d="M20 12.5a7.5 7.5 0 0 1-7.5 7.5 8.2 8.2 0 0 1-3.2-.6L4.5 21l1.3-4A7.4 7.4 0 0 1 4.9 12.5 7.5 7.5 0 0 1 12.4 5 7.5 7.5 0 0 1 20 12.5z" />
+              </svg>
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>New chat</span>
           </button>
           <div
             style={{
-              flex: 1,
+              flex: '1 1 auto',
               minHeight: 0,
               overflow: 'auto',
+              scrollbarWidth: 'none',
               display: 'flex',
               flexDirection: 'column',
+              paddingTop: 6,
             }}
           >
-            {histGroups.length === 0 && (
-              <div
-                style={{
-                  fontSize: 13,
-                  color: '#a4a49e',
-                  lineHeight: 1.5,
-                  padding: '6px 10px',
-                  textWrap: 'pretty',
-                }}
-              >
-                Past conversations land here.
-              </div>
-            )}
-            {histGroups.map((group) => (
-              <div
-                key={group.label}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  paddingBottom: 12,
-                }}
-              >
-                <div
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                margin: '20px 10px 0',
+              }}
+            >
+              {(
+                [
+                  { key: 'project', label: 'This project' },
+                  { key: 'all', label: 'All chats' },
+                ] as const
+              ).map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setHistScope(s.key)}
                   style={{
-                    fontSize: 11.5,
-                    color: '#a4a49e',
-                    letterSpacing: '.02em',
-                    padding: '6px 10px 4px',
+                    border: 0,
+                    background: 'transparent',
+                    padding: 0,
+                    font: 'inherit',
+                    fontSize: 13,
+                    fontWeight: histScope === s.key ? 500 : 400,
+                    color: histScope === s.key ? '#1c1f23' : '#a2a29c',
+                    cursor: 'pointer',
                   }}
                 >
-                  {group.label}
-                </div>
-                {group.items.map((one) => {
-                  const current = one.id === chatId.current
-                  return (
-                    <button
-                      key={one.id}
-                      onClick={() => {
-                        chatId.current = one.id
-                        setPickedId(one.dealId)
-                        setMessages(one.messages)
-                        setPrompt('')
-                        setHistOpen(false)
-                      }}
-                      title={`${one.title} — ${one.dealName}`}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        textAlign: 'left',
-                        border: 0,
-                        background: current
-                          ? 'rgba(16,20,28,.07)'
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            {groups.map((g) => (
+              <span
+                key={g.label}
+                style={{ display: 'flex', flexDirection: 'column' }}
+              >
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: '#a2a29c',
+                    padding: '22px 10px 6px',
+                  }}
+                >
+                  {g.label}
+                </span>
+                {g.items.map((one) => (
+                  <button
+                    key={one.id}
+                    onClick={() => openPast(one)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      width: '100%',
+                      textAlign: 'left',
+                      border: 0,
+                      background:
+                        one.id === chatId.current
+                          ? 'rgba(16,20,28,.06)'
                           : 'transparent',
-                        borderRadius: 9,
-                        font: 'inherit',
-                        fontSize: 13.5,
-                        color: current ? '#15171b' : '#5b6068',
-                        cursor: 'pointer',
-                        padding: '7px 10px',
-                        whiteSpace: 'nowrap',
+                      borderRadius: 10,
+                      font: 'inherit',
+                      cursor: 'pointer',
+                      padding: '9px 10px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        maxWidth: '100%',
+                        fontSize: 15,
+                        letterSpacing: '-.008em',
+                        color:
+                          one.id === chatId.current ? '#15171b' : '#4a4f57',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {one.title}
-                    </button>
-                  )
-                })}
-              </div>
+                    </span>
+                  </button>
+                ))}
+              </span>
             ))}
+            {q !== '' && shown.length === 0 && (
+              <>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 14.5,
+                    letterSpacing: '-.008em',
+                    color: '#4a4f57',
+                    padding: '26px 10px 0',
+                  }}
+                >
+                  No chats match “{histQ}”
+                </span>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    lineHeight: 1.55,
+                    color: '#8f96a0',
+                    padding: '6px 10px 0',
+                    textWrap: 'pretty',
+                  }}
+                >
+                  {histScope === 'project'
+                    ? 'Only this project’s chats are being searched. Switch to All to look across every project.'
+                    : 'Nothing in any project matches.'}
+                </span>
+              </>
+            )}
+            {q === '' && shown.length === 0 && (
+              <span
+                style={{
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  color: '#8f96a0',
+                  padding: '26px 10px 0',
+                  textWrap: 'pretty',
+                }}
+              >
+                {histScope === 'project'
+                  ? 'No chats in this project yet.'
+                  : 'No chats yet. They appear here as you ask.'}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
+      {/* The main column. */}
       <div
         style={{
+          position: 'relative',
           flex: 1,
           minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
         }}
       >
-      {/* The scope bar: the model, picked and staying picked. */}
-      <div
-        style={{
-          flex: '0 0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '13px 22px 12px',
-          borderBottom: '.5px solid #f0eff1',
-        }}
-      >
-        <button
-          onClick={() => setHistOpen((was) => !was)}
-          title="Chat history"
-          style={{
-            flex: '0 0 auto',
-            border: 0,
-            background: 'transparent',
-            borderRadius: 9,
-            padding: 6,
-            cursor: 'pointer',
-            display: 'flex',
-            color: '#8e8e93',
-          }}
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
-            <line x1="9.5" y1="4.5" x2="9.5" y2="19.5" />
-          </svg>
-        </button>
-        <div
-          style={{ position: 'relative', display: 'flex', flex: '0 0 auto' }}
-        >
-          <button
-            onClick={() => setPickOpen((was) => !was)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 9,
-              border: 0,
-              background: '#f5f5f7',
-              borderRadius: 11,
-              padding: '8px 12px 8px 11px',
-              font: 'inherit',
-              fontSize: 14,
-              color: ink.primary,
-              cursor: 'pointer',
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={excelLogo}
-              alt=""
-              width={16}
-              height={16}
-              style={{ display: 'block' }}
-            />
-            <span style={{ fontWeight: 500, letterSpacing: '-.01em' }}>
-              {picked?.name ?? 'Pick a model'}
-            </span>
-            <svg
-              width="11"
-              height="11"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#86868b"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="5,9 12,16 19,9" />
-            </svg>
-          </button>
-          {pickOpen && (
-            <>
-              <div
-                onClick={() => setPickOpen(false)}
-                style={{ position: 'fixed', inset: 0, zIndex: 39 }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 8px)',
-                  left: 0,
-                  zIndex: 40,
-                  width: 340,
-                  background: '#fff',
-                  borderRadius: 14,
-                  boxShadow:
-                    '0 18px 44px rgba(0,0,0,.2), 0 0 0 .5px rgba(0,0,0,.08)',
-                  overflow: 'hidden',
-                  padding: 6,
-                }}
-              >
-                {models.map((one) => (
-                  <button
-                    key={one.id}
-                    onClick={() => {
-                      chatId.current = freshId()
-                      setPickedId(one.id)
-                      setPickOpen(false)
-                      setMessages([])
-                      setPrompt('')
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 11,
-                      width: '100%',
-                      textAlign: 'left',
-                      border: 0,
-                      background:
-                        picked?.id === one.id
-                          ? 'rgba(0,96,208,.06)'
-                          : 'transparent',
-                      borderRadius: 9,
-                      padding: '9px 11px',
-                      font: 'inherit',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span
-                        style={{
-                          display: 'block',
-                          fontSize: 14.5,
-                          letterSpacing: '-.01em',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {one.name}
-                      </span>
-                    </span>
-                    {picked?.id === one.id && (
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke={ink.accent}
-                        strokeWidth="2.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{ flex: '0 0 14px' }}
-                      >
-                        <polyline points="5,12.5 10,17.5 19,6.5" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-        <span
-          style={{
-            flex: 1,
-            minWidth: 0,
-            fontSize: 13,
-            color: '#a1a1a6',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {meta}
-        </span>
-        <button
-          onClick={() => {
-            chatId.current = freshId()
-            setMessages([])
-          }}
-          title="New chat"
-          style={{
-            flex: '0 0 auto',
-            border: 0,
-            background: 'transparent',
-            borderRadius: 9,
-            padding: 6,
-            cursor: 'pointer',
-            display: 'flex',
-            color: '#8e8e93',
-          }}
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
-      </div>
-
-      {/* The conversation. */}
-      <div
-        ref={scroll}
-        style={{
-          flex: '1 1 0',
-          minHeight: 0,
-          overflow: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '26px 22px 8px',
-        }}
-      >
         <div
           style={{
-            width: '100%',
-            maxWidth: 720,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 26,
-          }}
-        >
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              style={{ display: 'flex', flexDirection: 'column' }}
-            >
-              {message.role === 'you' && (
-                <div
-                  style={{
-                    alignSelf: 'flex-end',
-                    background: '#f5f5f7',
-                    borderRadius: 15,
-                    padding: '11px 15px',
-                    maxWidth: '86%',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {message.text}
-                </div>
-              )}
-              {message.role === 'working' && (
-                <div
-                  style={{ color: '#7c828c', animation: 'pcDim 1.4s infinite' }}
-                >
-                  {message.text}
-                </div>
-              )}
-              {message.role === 'answer' && (
-                <>
-                  {message.trace && (
-                    <div
-                      style={{
-                        fontSize: 13,
-                        color: '#a1a1a6',
-                        marginBottom: 8,
-                      }}
-                    >
-                      {message.trace}
-                    </div>
-                  )}
-                  <div
-                    style={{
-                      fontSize: 16,
-                      lineHeight: 1.6,
-                      letterSpacing: '-.008em',
-                      maxWidth: '64ch',
-                      textWrap: 'pretty',
-                      whiteSpace: 'pre-wrap',
-                    }}
-                  >
-                    {message.text}
-                  </div>
-                  {(message.rows?.length ?? 0) > 0 && (
-                    <div
-                      style={{
-                        marginTop: 16,
-                        background: '#fff',
-                        borderRadius: 13,
-                        boxShadow: '0 0 0 .5px rgba(30,32,38,.1)',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {message.rows!.map((row, at) => (
-                        <button
-                          key={`${row.ref}-${at}`}
-                          title="Open the model"
-                          onClick={() =>
-                            picked && onOpenModel && onOpenModel(picked)
-                          }
-                          style={{
-                            display: 'flex',
-                            alignItems: 'baseline',
-                            gap: 16,
-                            width: '100%',
-                            textAlign: 'left',
-                            border: 0,
-                            borderTop: at === 0 ? 0 : '.5px solid #f0eff1',
-                            background: 'transparent',
-                            font: 'inherit',
-                            cursor: onOpenModel ? 'pointer' : 'default',
-                            padding: '12px 16px',
-                          }}
-                        >
-                          <span
-                            style={{
-                              flex: '0 0 138px',
-                              fontFamily: font.mono,
-                              fontSize: 11.5,
-                              color: cellRefInk,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {row.ref}
-                          </span>
-                          <span
-                            style={{
-                              flex: 1,
-                              minWidth: 0,
-                              fontSize: 14.5,
-                              lineHeight: 1.45,
-                              textWrap: 'pretty',
-                            }}
-                          >
-                            {row.what}
-                          </span>
-                          <span
-                            style={{
-                              flex: '0 0 auto',
-                              fontSize: 14,
-                              color: ink.accent,
-                              fontVariantNumeric: 'tabular-nums lining-nums',
-                            }}
-                          >
-                            {row.value}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {message.ends && (
-                    <div
-                      style={{
-                        marginTop: 15,
-                        fontSize: 14,
-                        color: '#86868b',
-                        lineHeight: 1.6,
-                        maxWidth: '70ch',
-                        textWrap: 'pretty',
-                      }}
-                    >
-                      {message.ends}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* The empty face: the mark, the question, then the composer. */}
-      {empty && (
-        <div
-          style={{
-            flex: '0 0 auto',
-            padding: '0 22px 22px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 16,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "'Bodoni Moda',Didot,Georgia,serif",
-              fontSize: 38,
-              fontWeight: 400,
-              lineHeight: 1,
-            }}
-          >
-            A
-          </span>
-          <span
-            style={{
-              fontSize: 23,
-              letterSpacing: '-.02em',
-              textAlign: 'center',
-              textWrap: 'pretty',
-            }}
-          >
-            What would you like to know about this model?
-          </span>
-        </div>
-      )}
-
-      {/* The composer. */}
-      <div
-        style={{
-          flex: '0 0 auto',
-          padding: '10px 22px 8px',
-          display: 'flex',
-          justifyContent: 'center',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: 720,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 20,
             display: 'flex',
             alignItems: 'center',
-            gap: 10,
-            border: '1px solid #d7d7d3',
-            background: '#fff',
-            borderRadius: 999,
-            padding: '9px 9px 9px 16px',
-            boxShadow: '0 6px 22px rgba(16,20,28,.13)',
+            gap: 12,
+            padding: '13px 22px 12px',
+            pointerEvents: 'none',
           }}
         >
-          <textarea
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault()
-                ask(prompt)
-              }
-            }}
-            placeholder="Ask about this model"
-            rows={1}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              border: 0,
-              outline: 'none',
-              resize: 'none',
-              font: 'inherit',
-              fontSize: 15,
-              lineHeight: 1.5,
-              color: '#15171b',
-              background: 'transparent',
-              padding: '6px 0',
-            }}
-          />
           <button
-            onClick={() => ask(prompt)}
-            title="Send"
+            onClick={() => setHistOpen((was) => !was)}
+            title="Chat history"
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: '50%',
-              border: 0,
-              background:
-                'linear-gradient(180deg,#1d7de6 0%,#0b62c4 55%,#0a51a5 100%)',
-              boxShadow:
-                '0 1px 2px rgba(0,60,140,.28), 0 0 0 .5px rgba(0,80,180,.35) inset, 0 1px 0 rgba(255,255,255,.45) inset',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
               flex: '0 0 auto',
-              opacity: busy ? 0.55 : 1,
+              pointerEvents: 'auto',
+              border: 0,
+              background: 'transparent',
+              borderRadius: 9,
+              padding: 6,
+              cursor: 'pointer',
+              display: 'flex',
+              color: '#8e8e93',
             }}
           >
             <svg
-              width="16"
-              height="16"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <line x1="12" y1="19" x2="12" y2="5" />
-              <polyline points="5,12 12,5 19,12" />
+              <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+              <line x1="9.5" y1="4.5" x2="9.5" y2="19.5" />
+            </svg>
+          </button>
+          <span style={{ flex: 1, minWidth: 0 }} />
+          {shareSaid && (
+            <span
+              style={{
+                flex: '0 0 auto',
+                pointerEvents: 'auto',
+                fontSize: 12.5,
+                letterSpacing: '-.01em',
+                color: '#6b7280',
+                background: '#fff',
+                borderRadius: 999,
+                boxShadow:
+                  '0 0 0 .5px rgba(30,32,38,.07), 0 6px 18px rgba(16,22,35,.05)',
+                padding: '5px 11px',
+                animation: 'pcIn .24s ease both',
+              }}
+            >
+              Link copied
+            </span>
+          )}
+          <button
+            onClick={share}
+            title="Share"
+            style={{
+              flex: '0 0 auto',
+              pointerEvents: 'auto',
+              border: 0,
+              background: 'transparent',
+              borderRadius: 9,
+              padding: 6,
+              cursor: 'pointer',
+              display: 'flex',
+              color: '#8e8e93',
+            }}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 15V4" />
+              <polyline points="8,7.5 12,3.5 16,7.5" />
+              <path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13" />
             </svg>
           </button>
         </div>
-      </div>
 
-      {/* Suggested questions — people click, they don't compose. */}
-      {empty && (
+        {/* Messages. */}
         <div
+          ref={scroll}
           style={{
-            flex: '0 0 auto',
-            padding: '6px 22px 20px',
+            flex: empty ? '0 1 auto' : 1,
+            minHeight: 0,
+            overflow: 'auto',
             display: 'flex',
-            justifyContent: 'center',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '0 clamp(18px,5vw,40px) 14px',
           }}
         >
           <div
             style={{
               width: '100%',
-              maxWidth: 720,
+              maxWidth: 760,
               display: 'flex',
               flexDirection: 'column',
+              gap: 'clamp(34px,6vh,54px)',
+              padding: `${empty ? 0 : 64}px 0 8px`,
             }}
           >
-            {suggestions.map((one, index) => (
-              <button
-                key={one.text}
-                onClick={() => ask(one.text)}
+            {messages.map((m, i) => (
+              <div
+                key={i}
                 style={{
                   display: 'flex',
-                  alignItems: 'baseline',
-                  gap: 16,
-                  width: '100%',
-                  textAlign: 'left',
-                  border: 0,
-                  borderTop: index === 0 ? 0 : '.5px solid #f0eff1',
-                  background: 'transparent',
-                  font: 'inherit',
-                  cursor: 'pointer',
-                  padding: '12px 4px',
+                  flexDirection: 'column',
+                  animation: 'pcIn .24s ease both',
                 }}
               >
-                <span
-                  style={{
-                    flex: '0 0 92px',
-                    fontSize: 12.5,
-                    color: '#a1a1a6',
-                  }}
-                >
-                  {one.cat}
-                </span>
-                <span
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    fontSize: 15,
-                    letterSpacing: '-.01em',
-                  }}
-                >
-                  {one.text}
-                </span>
-              </button>
+                {m.role === 'you' && (
+                  <div
+                    style={{
+                      alignSelf: 'flex-end',
+                      background: '#f4f4f2',
+                      borderRadius: '16px 16px 5px 16px',
+                      padding: '11px 15px',
+                      maxWidth: 'min(86%,52ch)',
+                      fontSize: 15.5,
+                      lineHeight: 1.55,
+                      letterSpacing: '-.006em',
+                      textWrap: 'pretty',
+                    }}
+                  >
+                    {m.text}
+                  </div>
+                )}
+                {m.role === 'working' && (
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: 18 }}
+                  >
+                    <Mark />
+                    <span
+                      style={{
+                        fontSize: 15,
+                        letterSpacing: '-.006em',
+                        background:
+                          'linear-gradient(100deg,#c9ccd2 20%,#6b7280 42%,#c9ccd2 64%)',
+                        backgroundSize: '220% 100%',
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        color: 'transparent',
+                        animation: 'aShimmer 1.8s linear infinite',
+                      }}
+                    >
+                      {m.text}
+                    </span>
+                  </div>
+                )}
+                {m.role === 'answer' && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 18,
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <Mark top={6} />
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 18,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 16,
+                          lineHeight: 1.7,
+                          color: '#1d1d1f',
+                          whiteSpace: 'pre-wrap',
+                          textWrap: 'pretty',
+                        }}
+                      >
+                        {m.text}
+                      </span>
+                      {m.rows !== undefined && m.rows.length > 0 && (
+                        //: The tool's own rows, verbatim — the cells
+                        //: behind the answer, never re-typed by the
+                        //: language model.
+                        <div
+                          style={{
+                            background: '#fbfbfc',
+                            border: '.5px solid #f0eff1',
+                            borderRadius: 14,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {m.rows.slice(0, 12).map((row, ri) => (
+                            <div
+                              key={ri}
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '110px 1fr auto',
+                                gap: 12,
+                                alignItems: 'center',
+                                borderTop: ri === 0 ? 0 : '.5px solid #f0eff1',
+                                padding: '10px 14px',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontFamily: font.mono,
+                                  fontSize: 12,
+                                  color: '#0060d0',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {row.ref}
+                              </span>
+                              <span
+                                style={{
+                                  minWidth: 0,
+                                  fontSize: 13.5,
+                                  color: '#4a4f57',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {row.what}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: font.mono,
+                                  fontSize: 12.5,
+                                  color: '#1c1f23',
+                                  fontVariantNumeric: 'tabular-nums',
+                                }}
+                              >
+                                {row.value}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!!m.ends && (
+                        <span
+                          style={{
+                            fontSize: 14,
+                            lineHeight: 1.6,
+                            color: '#8f96a0',
+                            textWrap: 'pretty',
+                          }}
+                        >
+                          {m.ends}
+                        </span>
+                      )}
+                      {!!m.trace && (
+                        <span style={{ fontSize: 12.5, color: '#b6bac1' }}>
+                          {m.trace}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
-      )}
-      {empty && <div style={{ flex: '1 1 0' }} />}
+
+        {/* Greeting + composer. */}
+        <div
+          style={{
+            flex: empty ? 1 : '0 0 auto',
+            minHeight: 0,
+            padding: '14px clamp(18px,5vw,40px) 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: empty ? 'center' : 'flex-end',
+            gap: 10,
+          }}
+        >
+          {empty && (
+            <div
+              style={{
+                flex: '0 0 auto',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                paddingBottom: 'clamp(10px,2.4vh,26px)',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: font.serif,
+                  fontSize: 'clamp(28px,4.4vw,42px)',
+                  fontWeight: 400,
+                  lineHeight: 1.15,
+                  letterSpacing: '-.012em',
+                  color: '#1c1f23',
+                  textAlign: 'center',
+                  textWrap: 'pretty',
+                }}
+              >
+                What can I help you with today?
+              </span>
+            </div>
+          )}
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 800,
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              columnGap: 8,
+              rowGap: 12,
+              border: '1px solid rgba(16,22,35,.07)',
+              background: '#fff',
+              borderRadius: 24,
+              padding: '16px 14px 13px 20px',
+              boxShadow:
+                '0 1px 2px rgba(16,22,35,.05), 0 12px 32px rgba(16,22,35,.09), inset 0 1px 0 rgba(255,255,255,.7)',
+            }}
+          >
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  ask(prompt)
+                }
+              }}
+              placeholder="Ask anything"
+              rows={1}
+              style={{
+                order: 1,
+                flex: '1 1 100%',
+                minWidth: 0,
+                alignSelf: 'center',
+                border: 0,
+                outline: 'none',
+                resize: 'none',
+                font: 'inherit',
+                fontSize: 15,
+                lineHeight: '22px',
+                color: '#15171b',
+                background: 'transparent',
+                padding: 0,
+                margin: 0,
+                height: 22,
+                overflow: 'hidden',
+              }}
+            />
+            <button
+              onClick={() => ask(prompt)}
+              title="Send"
+              style={{
+                order: 5,
+                marginLeft: 'auto',
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                border: 0,
+                background: '#16181c',
+                boxShadow: '0 1px 2px rgba(16,22,35,.22)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flex: '0 0 auto',
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="12" y1="19" x2="12" y2="5" />
+                <polyline points="5,12 12,5 19,12" />
+              </svg>
+            </button>
+          </div>
+          {empty && picked !== null && (
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 800,
+                display: 'flex',
+                justifyContent: 'center',
+                paddingTop: 16,
+              }}
+            >
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}
+              >
+                <button
+                  onClick={() => setPjMenu((was) => !was)}
+                  title="Choose the project this chat works in"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    border: '1px solid #e2e1de',
+                    background: '#fbfbfa',
+                    borderRadius: 999,
+                    height: 34,
+                    padding: '0 12px 0 11px',
+                    font: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#0060d0"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ flex: '0 0 15px' }}
+                  >
+                    <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h9A1.5 1.5 0 0 1 21 10v7.5A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
+                  </svg>
+                  <span
+                    style={{
+                      fontSize: 13.5,
+                      letterSpacing: '-.006em',
+                      color: '#0060d0',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {picked.name}
+                  </span>
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#a2a29c"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ flex: '0 0 11px' }}
+                  >
+                    <polyline points="5,9 12,16 19,9" />
+                  </svg>
+                </button>
+                {pjMenu && (
+                  <>
+                    <span
+                      onClick={() => setPjMenu(false)}
+                      style={{ position: 'fixed', inset: 0, zIndex: 49 }}
+                    />
+                    <span
+                      style={{
+                        position: 'absolute',
+                        bottom: 'calc(100% + 10px)',
+                        zIndex: 50,
+                        width: 300,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        background: 'rgba(255,255,255,.96)',
+                        backdropFilter: 'blur(30px) saturate(1.8)',
+                        WebkitBackdropFilter: 'blur(30px) saturate(1.8)',
+                        borderRadius: 13,
+                        boxShadow:
+                          '0 18px 44px rgba(0,0,0,.19), 0 0 0 .5px rgba(0,0,0,.08)',
+                        padding: 6,
+                        animation: 'pcIn .14s ease both',
+                      }}
+                    >
+                      {models.map((one) => (
+                        <button
+                          key={one.id}
+                          onClick={() => {
+                            setPickedId(one.id)
+                            setPjMenu(false)
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            width: '100%',
+                            textAlign: 'left',
+                            border: 0,
+                            background:
+                              one.id === picked.id
+                                ? 'rgba(16,20,28,.05)'
+                                : 'transparent',
+                            borderRadius: 8,
+                            font: 'inherit',
+                            fontSize: 14.5,
+                            color: '#15171b',
+                            cursor: 'pointer',
+                            padding: '9px 11px',
+                          }}
+                        >
+                          <span
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {one.name}
+                          </span>
+                        </button>
+                      ))}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
