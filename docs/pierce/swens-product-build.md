@@ -64,10 +64,10 @@ three series are real going forward.
   than two runs → the honest sentence, not a shape.
 - The version dropdown's rows are facts (v, who, when); picking one
   does not yet re-scope the page, so rows are not buttons.
-- « Download the marked-up model » is present as drawn, disabled,
-  and says what it will hand over (the §4 spec in the plan — the
-  workbook copy with problem cells coloured and noted, nothing
-  altered). No substitute file.
+- « Download the marked-up model » was present as drawn, disabled,
+  saying what it would hand over. **Since built (24 August):** the
+  server generates the §4 file on request and the card is live; the
+  record is in `worklog.md` under that date.
 - The report's narrative prose is a later phase; the sheet carries
   no generated text.
 
@@ -141,7 +141,8 @@ screens.
 
 ## What is not in the product yet, in one place
 
-1. The marked-up workbook (Track A engine work; the button says so).
+1. ~~The marked-up workbook~~ — built 24 August (engine + endpoint +
+   live card; see `worklog.md`).
 2. The narrative report writer (the sheet is deterministic).
 3. Server-side chat history and the workflow-answer mechanism (the
    founder's chat discussion decides these).

@@ -29,9 +29,10 @@
  *   material findings written out, the rest one line each, the
  *   abstentions — and no generated prose. The narrative writer is a
  *   later phase, by the founder's decision.
- * - « Download the marked-up model » is present as drawn and
- *   disabled, saying what it will hand over — the workbook copy with
- *   problem cells coloured and noted. No substitute file.
+ * - « Download the marked-up model » is live: the server builds the
+ *   workbook copy on request — problem cells coloured and noted,
+ *   nothing altered — and refusals surface as the server's own
+ *   sentence in the card.
  * - Version rows in the dropdown are facts (who, when); picking one
  *   does not yet re-scope the page, so the rows do not pretend to be
  *   buttons.
