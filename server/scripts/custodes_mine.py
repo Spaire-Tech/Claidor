@@ -91,7 +91,12 @@ def main() -> None:
     def sheet_of(book: str, name: str):
         if book not in books:
             path = WORK / "xlsx" / f"{book}.xlsx"
-            books[book] = load_workbook(path) if path.exists() else None
+            try:
+                books[book] = load_workbook(path) if path.exists() else None
+            except Exception:
+                #: The registration's « workbook unreadable » case —
+                #: some conversions carry XML openpyxl rejects.
+                books[book] = None
         wb = books[book]
         if wb is None:
             return None
