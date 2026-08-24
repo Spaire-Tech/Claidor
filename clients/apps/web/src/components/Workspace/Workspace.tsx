@@ -326,14 +326,8 @@ export const Workspace = ({
                 </button>
               </>
             )}
-            {view === 'deals' && deal === null && (deals?.length ?? 0) > 0 && (
-              <button
-                onClick={() => setNewOpen(true)}
-                style={{ ...blueButton, marginRight: 4 }}
-              >
-                Add models
-              </button>
-            )}
+            {/* The project list's « New project » lives in the page
+                heading, as drawn — the header adds nothing here. */}
           </div>
 
           {/* Content. */}

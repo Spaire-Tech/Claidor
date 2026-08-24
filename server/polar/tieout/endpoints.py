@@ -41,6 +41,7 @@ from polar.models import (
     FigureLink,
     Finding,
     FindingKind,
+    FindingSeverity,
     FindingState,
     HouseRules,
     LinkState,
@@ -610,6 +611,23 @@ async def list_deals(
         # them, which is right: they are all the same check failing.
         failing_checks = len({finding.rule for finding in open_findings})
 
+        # The row's model column: the latest ready workbook, by name and
+        # version. Null when there is none — the screen says so.
+        model = next(
+            (one for one in current if one.kind is ArtifactKind.model), None
+        )
+
+        # The row's dot: the worst attention tier among what is open.
+        # Audit findings carry their tier in evidence; anything stored
+        # before the elevation layer falls back on severity.
+        def tier_of(finding: Finding) -> int:
+            carried = int((finding.evidence or {}).get("tier") or 0)
+            if carried:
+                return carried
+            return 1 if finding.severity is FindingSeverity.error else 3
+
+        worst_tier = min((tier_of(one) for one in open_findings), default=0)
+
         items.append(
             DealListItem(
                 id=deal.id,
@@ -627,6 +645,9 @@ async def list_deals(
                 visited_at=visited_at,
                 arrived_since_visit=arrived_since,
                 findings_since_visit=findings_since,
+                model_name=model.filename if model else None,
+                model_version=model.version if model else None,
+                worst_tier=worst_tier,
             )
         )
     return items

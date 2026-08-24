@@ -570,6 +570,16 @@ class DealListItem(Schema):
     #: leads with this over any number, because the numbers are what went
     #: stale.
     stale: bool = False
+    #: The current model, named for the row: filename and version of the
+    #: latest ready workbook. Null when the deal has no model yet — the
+    #: row says so instead of guessing.
+    model_name: str | None = None
+    model_version: int | None = None
+    #: The worst attention tier among the open findings — 1 defect,
+    #: 2 assumption at risk, 3 hygiene, 0 none open. Audit findings carry
+    #: their tier; a finding stored before the elevation layer falls back
+    #: on its severity (an error reads as a defect, a smell as hygiene).
+    worst_tier: int = 0
     #: What arrived — an :class:`ArtifactKind` value — and when. The
     #: sentence (« The model changed at 11:40 today ») is the client's to
     #: build, because only the reader's browser knows their clock.

@@ -190,6 +190,13 @@ export interface DealListItem {
    *  reader's clock lives. */
   stale_kind: string | null
   stale_at: string | null
+  /** The current model, named for the row: filename and version of the
+   *  latest ready workbook. Null when the deal has no model yet. */
+  model_name: string | null
+  model_version: number | null
+  /** The worst attention tier among open findings — 1 defect,
+   *  2 assumption at risk, 3 hygiene, 0 none open. */
+  worst_tier: number
 }
 
 export interface Link {
