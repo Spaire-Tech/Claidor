@@ -104,6 +104,14 @@ Owner is Engine unless marked. Every step has a DONE test.
   LibreOffice conversion pass, with the one-at-a-time fallback the
   CUSTODES run taught us. DONE: the whole EUSES-era world is
   readable.
+- **A7. Shape-hash normalization polish.** Two upgrades to the
+  formula-shape hash, verified missing from `_shape` today: sort the
+  arguments of order-independent operators (`+`, `*`, `SUM`) so
+  `A1+B1` and `B1+A1` collapse to one shape, and fold constant-only
+  arithmetic so `A1*2*3` and `A1*6` do. Both change fold groups, so
+  this is a measured micro-round against the golden master, not a
+  quiet edit. DONE: the before/after finding counts are recorded and
+  every standing gate is green.
 
 ## Track B — the recalculator and behavioural checks
 
@@ -127,27 +135,44 @@ Owner is Engine unless marked. Every step has a DONE test.
   scale invariance (cents for pounds ⇒ ratios unchanged),
   consolidation (segments sum to the total). Each: planted defects
   first, then the check, then the measured catch rate per class.
+  A violated law is a symptom, not a finding: delta debugging
+  (ddmin) over the dependency slice between the perturbed input and
+  the broken output narrows it to the one responsible cell — one
+  authoring decision, one finding, same as everywhere else.
   DONE: the hardcode-in-the-tail class — invisible to static
-  reading — is caught and measured.
+  reading — is caught and measured, and each catch names its cell.
 
 ## Track C — the Watch
 
 - **C1. The raw version diff** (cells added/removed/changed, by
   formula and by value). DONE: an adjacent ED2 pair diffs completely
   against hand-check.
-- **C2. Shift detection.** SheetDiff's row/column hypothesis
-  algorithm; evaluated by planted edits (our planter discipline
-  applied to diff). DONE: one inserted row reads as one structural
-  change; planted-edit recovery measured.
+- **C2. Shift detection.** Dynamic-programming row/column alignment
+  in the RowColAlign shape (SheetDiff's successor — the greedy
+  hypothesis algorithm misaligns and can loop; the DP version is a
+  2-D extension of longest-common-subsequence), run on row/column
+  signatures of label hash + formula-shape hash rather than raw
+  values, so matches survive a full re-forecast. Its O(n⁴) cost is
+  measured on the biggest corpus file before anything depends on it.
+  Evaluated by planted edits (our planter discipline applied to
+  diff) — the paper's zero-error claim is its authors' number, not
+  ours, until our harness reproduces it. DONE: one inserted row
+  reads as one structural change; planted-edit recovery measured.
 - **C3. The delta report in review language.** New defects, repaired
   defects, moved assumptions, methodology changes, materially
   different outputs — folded and ranked like findings. Includes the
   class-change case (repaired cell, hardcoded tail). DONE: the
   PR24 revision pair reproduces its 84 introduced defects through
   this report.
-- **C4. What did not change — the three tiers.** Tier 2 first:
-  randomized differential evaluation over the changed cells' cone
-  of influence (needs B1/B2 and the dependency graph). Tier 1
+- **C4. What did not change — the three tiers.** Before any tier,
+  the cheap proof: verifying-trace fingerprints — a hash of each
+  cell's formula shape and its inputs' values, stored at ingestion
+  (Build Systems à la Carte's reading of Excel as a build system).
+  Matching fingerprints prove a cell could not have changed, at hash
+  cost, no evaluation — shrinking the suspect set the tiers work on
+  and keeping the solver the crown, not the foundation. Then tier 2
+  first: randomized differential evaluation over the changed cells'
+  cone of influence (needs B1/B2 and the dependency graph). Tier 1
   after: Z3 proof for the arithmetic/IF/SUM fragment. Tier 3
   always: named unsupported constructs, honest refusal. Tiers never
   blurred. DONE: planted stealth edits (a change hidden outside the
@@ -322,3 +347,16 @@ what makes every deal after that cheaper than the last.
   refuses, what its number is). The plan bends at the checkpoints —
   the head-to-head, the fidelity report, the first design-partner
   feedback — in writing, never silently.
+
+# Amendments
+
+- **24 August 2026** (founder-approved, from the external research
+  gap map, each claim checked against our own code and records
+  first): C2 names the dynamic-programming alignment on
+  label + formula-shape signatures instead of SheetDiff's greedy
+  algorithm; C4 gains verifying-trace fingerprints as the cheap
+  proof ahead of the tiers; B4 gains ddmin attribution so a broken
+  law names its one responsible cell; A7 added — commutativity and
+  constant-folding polish to the shape hash, as a measured
+  micro-round. The tracks, the method, and every DONE test are
+  otherwise unchanged.
