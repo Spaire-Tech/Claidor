@@ -7,10 +7,12 @@ surgery on the xlsx zip instead, the discipline the defect planter
 proved: replace one cell's XML element, copy every other archive
 member through untouched.
 
-Scope so far: replace the formula and/or cached value of a cell
-that already exists (A1), including members of shared-formula groups,
-which are safely expanded to plain per-cell formulas first (A3).
-Creation of new cells and rows is A2; array formulas are refused.
+Scope (swens-plan Track F, F1): replace the formula and/or cached
+value of a cell that already exists, including members of
+shared-formula groups, which are safely expanded to plain per-cell
+formulas first; and create a cell that does not exist yet —
+materializing its row if the row itself is missing — when the caller
+says `create=True`. Array formulas are refused.
 """
 
 import re
@@ -28,6 +30,10 @@ ATTR = {
     key: re.compile(rf'{key}="([^"]*)"') for key in ("name", "r:id", "Id", "Target")
 }
 CELL = re.compile(r'<c r="([A-Z]+\d+)"[^>]*?(?:/>|>.*?</c>)', re.DOTALL)
+ROW = re.compile(r'<row r="(\d+)"[^>]*?(?:/>|>.*?</row>)', re.DOTALL)
+REF = re.compile(r"([A-Z]{1,3})(\d+)")
+DIMENSION = re.compile(r'<dimension ref="([^"]+)"\s*/>')
+SPANS = re.compile(r'spans="(\d+):(\d+)"')
 #: Both forms: a paired <f ...>text</f> and the self-closing
 #: <f t="shared" si="0"/> a shared member carries.
 FORMULA = re.compile(r"<f(?:\s([^>]*?))?\s*(?:/>|>(.*?)</f>)", re.DOTALL)
@@ -40,6 +46,66 @@ class WriteRefused(Exception):
     """The writer will not perform an edit it cannot do safely."""
 
 
+def _column_index(letters: str) -> int:
+    index = 0
+    for letter in letters:
+        index = index * 26 + (ord(letter) - 64)
+    return index
+
+
+def _column_letters(index: int) -> str:
+    letters = ""
+    while index:
+        index, remainder = divmod(index - 1, 26)
+        letters = chr(65 + remainder) + letters
+    return letters
+
+
+def _numeric(value: str) -> bool:
+    try:
+        float(value)
+    except ValueError:
+        return False
+    return True
+
+
+def _into_row(row_xml: str, cell_xml: str, column: int) -> str:
+    """The row with the new cell in column order, spans kept honest."""
+    if row_xml.endswith("/>"):
+        row_xml = row_xml[:-2] + f">{cell_xml}</row>"
+    else:
+        spot = len(row_xml) - len("</row>")
+        for match in re.finditer(r'<c r="([A-Z]{1,3})\d+"', row_xml):
+            if _column_index(match.group(1)) > column:
+                spot = match.start()
+                break
+        row_xml = row_xml[:spot] + cell_xml + row_xml[spot:]
+    spans = SPANS.search(row_xml)
+    if spans:
+        low = min(int(spans.group(1)), column)
+        high = max(int(spans.group(2)), column)
+        row_xml = row_xml.replace(spans.group(0), f'spans="{low}:{high}"', 1)
+    return row_xml
+
+
+def _widen_dimension(xml: str, column: int, row_number: int) -> str:
+    """`<dimension ref="A1:C5"/>` stretched to cover the new cell."""
+    found = DIMENSION.search(xml)
+    if found is None:
+        return xml
+    corners = found.group(1).split(":")
+    cells = [REF.fullmatch(corner) for corner in corners]
+    if not all(cells):
+        return xml
+    columns = [_column_index(cell.group(1)) for cell in cells if cell] + [column]
+    rows = [int(cell.group(2)) for cell in cells if cell] + [row_number]
+    ref = (
+        f"{_column_letters(min(columns))}{min(rows)}"
+        f":{_column_letters(max(columns))}{max(rows)}"
+    )
+    return xml.replace(found.group(0), f'<dimension ref="{ref}"/>', 1)
+
+
 @dataclass
 class Edit:
     sheet: str
@@ -48,6 +114,9 @@ class Edit:
     value: str
     before_formula: str | None = None
     before_value: str | None = None
+    #: True when the cell did not exist before this edit — the
+    #: changeset's undo for a created cell is removal, not restoration.
+    created: bool = False
 
 
 @dataclass
@@ -102,18 +171,32 @@ class WorkbookWriter:
         return member, self.members[member].decode("utf-8")
 
     def set_cell(
-        self, sheet: str, ref: str, *, formula: str | None, value: str
+        self,
+        sheet: str,
+        ref: str,
+        *,
+        formula: str | None,
+        value: str,
+        create: bool = False,
     ) -> Edit:
         """Replace an existing cell's formula and cached value.
 
         `formula=None` makes the cell a typed constant. The cell's
         style index and — for formulas — its cached-value type are
         preserved, so a formula whose result is text stays `t="str"`.
+
+        A cell that does not exist is refused unless `create=True` —
+        replacement stays strict so a typo in a correction's address
+        can never quietly become a new cell.
         """
         member, xml = self._sheet_xml(sheet)
         cells = {m.group(1): m.group(0) for m in CELL.finditer(xml)}
         if ref not in cells:
-            raise WriteRefused(f"{sheet}!{ref} does not exist — creating cells is A2")
+            if not create:
+                raise WriteRefused(
+                    f"{sheet}!{ref} does not exist — pass create=True to create it"
+                )
+            return self._create_cell(sheet, ref, formula=formula, value=value)
         old = cells[ref]
         found = FORMULA.search(old)
         if found and "t=" in (found.group(1) or ""):
@@ -163,6 +246,62 @@ class WorkbookWriter:
                 "=" + unescape(found.group(2)) if found and found.group(2) else None
             ),
             before_value=(unescape(m.group(1)) if (m := VALUE.search(old)) else None),
+        )
+        self.edits.append(edit)
+        return edit
+
+    def _create_cell(
+        self, sheet: str, ref: str, *, formula: str | None, value: str
+    ) -> Edit:
+        """Materialize a cell that does not exist, in its proper place.
+
+        Excel keeps rows ascending and, within a row, cells in column
+        order; the surgery honours both, and materializes the row
+        element itself when the whole row is absent. A numeric value
+        is written plain; text becomes an inline string, so the shared
+        strings table — untouched bytes — stays untouched.
+        """
+        parsed = REF.fullmatch(ref)
+        if parsed is None:
+            raise WriteRefused(f"{sheet}!{ref} is not a cell reference")
+        column, row_number = _column_index(parsed.group(1)), int(parsed.group(2))
+
+        body = ""
+        head_type = ""
+        if formula is not None:
+            body += f"<f>{escape(formula.removeprefix('='))}</f>"
+            if not _numeric(value):
+                head_type = ' t="str"'
+            body += f"<v>{escape(value)}</v>"
+        elif _numeric(value):
+            body += f"<v>{escape(value)}</v>"
+        else:
+            head_type = ' t="inlineStr"'
+            space = ' xml:space="preserve"' if value != value.strip() else ""
+            body += f"<is><t{space}>{escape(value)}</t></is>"
+        cell_xml = f'<c r="{ref}"{head_type}>{body}</c>'
+
+        member, xml = self._sheet_xml(sheet)
+        rows = {int(m.group(1)): m for m in ROW.finditer(xml)}
+        if row_number in rows:
+            old_row = rows[row_number].group(0)
+            new_row = _into_row(old_row, cell_xml, column)
+            xml = xml.replace(old_row, new_row, 1)
+        else:
+            fresh = f'<row r="{row_number}">{cell_xml}</row>'
+            later = [r for r in sorted(rows) if r > row_number]
+            if later:
+                xml = xml.replace(rows[later[0]].group(0), fresh + rows[later[0]].group(0), 1)
+            elif "<sheetData/>" in xml:
+                xml = xml.replace("<sheetData/>", f"<sheetData>{fresh}</sheetData>", 1)
+            else:
+                xml = xml.replace("</sheetData>", f"{fresh}</sheetData>", 1)
+        xml = _widen_dimension(xml, column, row_number)
+
+        self.members[member] = xml.encode("utf-8")
+        self.touched.add(member)
+        edit = Edit(
+            sheet=sheet, ref=ref, formula=formula, value=value, created=True
         )
         self.edits.append(edit)
         return edit
