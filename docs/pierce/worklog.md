@@ -3725,3 +3725,25 @@ conventions are registered in custodes-benchmark.md before the code
 is obtained: shipped defaults only, same truth column, both axes or
 nothing, refusals counted, the schema-to-cell-set sentence appended
 on inspection and before any score.
+
+---
+
+## 24 August, later still — A3: their labels mined, five candidates named
+
+The registered mining round over the 1,690 CUSTODES truth cells our
+findings do not cover (`custodes-mining.md`; classifier
+`scripts/custodes_mine.py`; buckets and the first-twelve hand-read
+sample fixed before anything was computed). What the misses actually
+are: ~62% is their loose-cluster philosophy — typed data tables,
+zero templates, values-pasted statements — which is our flood, not
+our miss. The rest yielded five candidate checks, adopted for
+financial-model value and none for the benchmark score: totals-row
+sibling disagreement (plugs like `=SUM(E10:E22)-1000` beside clean
+siblings, range off-by-ones, cross-column bleed, mis-dragged terms —
+the round's strongest), family-edge typed cells, beat families,
+column-direction typed-over, and aggregation-range-vs-block-extent.
+Four patterns rejected in writing: loose-cluster missing-formula,
+typed-actuals boundaries, value-magnitude outliers, idiom
+dissimilarity (that one feeds A7 as a normalization guard). No check
+shipped, no threshold moved — the candidates owe the loop on our own
+corpora, tracked as engine work.
