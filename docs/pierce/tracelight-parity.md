@@ -21,12 +21,16 @@ have. Build these two and the rest becomes assembly:
    the same container format discipline.
 2. **Recalculation.** Running the model after a change, without a
    human opening Excel. Their apps « calculate live » — they built or
-   bought a spreadsheet calc engine. Our decision (in `plan.md`)
-   stands: orchestrate **real Excel headless** instead of building a
-   calc engine — it gives the agent's verify step, Compare's
-   « computed changes », the scenario lattice, and Tracelight-style
-   behavioural checking (flex an input, see what responds), all with
-   numbers Excel itself computed.
+   bought a spreadsheet calc engine. Our decision at the time (in
+   `plan.md`, since deleted — git history keeps it) was: orchestrate
+   **real Excel headless** instead of building a calc engine — it
+   gives the agent's verify step, Compare's « computed changes », the
+   scenario lattice, and Tracelight-style behavioural checking (flex
+   an input, see what responds), all with numbers Excel itself
+   computed. *(Superseded: the standing recalculator decision is
+   `ambre-toolbox.md`'s — LibreOffice workers behind a fidelity
+   gate, with real Excel via the Graph API as the arbiter — carried
+   into `swens-plan.md` Track B.)*
 
 ## Their guide, part by part
 

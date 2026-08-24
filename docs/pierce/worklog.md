@@ -1,7 +1,7 @@
 # Worklog
 
 What actually happened, in enough detail to pick this up cold. `roadmap.md`
-(since deleted — the plan is `plan.md`; git history keeps the old file)
+(since deleted — the plan is `swens-plan.md`; git history keeps the old file)
 is what was intended; this is what occurred, including the things that went
 wrong and what they cost.
 
@@ -467,7 +467,8 @@ query.
 ## 10 August — the agent, and the chat that answers
 
 **The instruction changed.** Accuracy is parked at 83 %; the job is a
-complete product. The standing note is at the top of `roadmap.md`.
+complete product. The standing note is at the top of `roadmap.md`
+(since deleted; git history keeps it).
 
 **Checked before building, and it paid.** There was already an agent in
 the tree — written for the legal product, with a trace, a step budget, an

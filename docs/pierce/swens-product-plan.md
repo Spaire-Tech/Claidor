@@ -1,5 +1,9 @@
 # Swens in the product: the plan
 
+**Scope note.** This is the plan for one job — the workspace rebuild —
+now executed (`swens-product-build.md` is its record). The platform
+plan, from today to « complete », is `swens-plan.md`.
+
 **What this is.** The workspace at `dashboard/[organization]` rebuilt
 to the founder's Swens design — the design as drawn, fed by real runs,
 placeholders gone. The mock work (`docs/pierce/swens/`) was the

@@ -368,9 +368,10 @@ precision is X ».
 The phase list above described the route to a working product. Two
 documents now carry it forward with measurements attached:
 
-- **`complete-product.md`** — what the whole product is, layer by layer,
-  what exists of each, the order, and what « complete » means stated as
-  tests rather than as a feeling.
+- **`complete-product.md`** (since deleted — the plan is
+  `swens-plan.md`; git history keeps the old file) — what the whole
+  product is, layer by layer, what exists of each, the order, and what
+  « complete » means stated as tests rather than as a feeling.
 - **`accuracy-backlog.md`** — the engine's measured recall and precision,
   where the misses come from, and the two ideas that should move them.
   Parked deliberately, with the numbers written down.
