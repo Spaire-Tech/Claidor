@@ -345,7 +345,17 @@ clicking.
    (`BadZipFile`, `KeyError`) from `ingest.py`. Unrelated to this
    file; still open.
 
-7. **Placeholder arithmetic does not reconcile.** "Open the 4
+7. **The nine chat-history rows do not open their chat.** Their
+   handler is the founder's own — `open: () => this.setState({
+   histOpen: false })` — which closes the rail and nothing else. So
+   the pinned chats and the seven under Today / Previous 7 days are
+   listed, are searchable, and lead nowhere.
+
+   Not fixed, deliberately. The mock stores no conversation content,
+   so opening one means deciding what a restored conversation shows —
+   a design question, not a wiring one. Flagged rather than invented.
+
+8. **Placeholder arithmetic does not reconcile.** "Open the 4
    material ones" lands on a Findings tab showing five Material. Per
    the standing arrangement, mock numbers that do not add up are not
    defects and were not touched.
@@ -360,17 +370,40 @@ clicking.
 | `swens/edits.py` | eleven edits, each named for what it fixes and documented with why it exists (48 individual swaps) |
 | `swens/screens.py` | markup added to the design, in the design's own tokens |
 
-Two things about verification, recorded so nobody re-chases them:
+### The click audit, in full
 
-- **The click audit flags the House rules toggles, and they work.**
-  It compares `document.body.innerHTML.length` and `innerText` before
-  and after each click; a toggle whose whole effect is repainting one
-  chip changes neither enough to register. Measured directly, all
-  five pairs flip:
+The last check clicks every visible button on every reachable screen,
+reloading the page between clicks so nothing leaks:
+
+```
+clicked 108 buttons across 8 screens
+DID NOTHING (34)
+no page errors
+```
+
+Thirty-four is not thirty-four defects. Every one was run down:
+
+- **Twelve are a tab navigating to itself** — Settings while in
+  Settings, Overview while on Overview. Correct behaviour.
+- **Ten are the House rules toggles, and they work.** The audit
+  compares `document.body.innerHTML.length` and `innerText`; a toggle
+  whose whole effect is repainting one chip moves neither. Measured
+  directly, every pair flips:
   `rgb(255,255,255) / rgb(28,31,35) / lifted` ⇄
   `rgba(0,0,0,0) / rgb(143,150,160) / flat`.
-- **It also flags a tab that navigates to itself** — Settings while
-  in Settings, People while on People. Correct behaviour, not a stub.
+- **Three are the already-selected half of a two-way control** —
+  "This project" on the chat scope, "All 14" on the severity filter,
+  "Map" on Sources. The audit does not flag their opposite halves,
+  which is the proof they switch. Verified anyway:
+  `Map (default) → after Documents → back to Map`, all three
+  distinct.
+- **"Send" was clicked on an empty composer.** With a question typed
+  it sends: *Can I trust the DSCR numbers?* → Targeted Check.
+- **"New chat" was clicked on an empty chat.** `asNew` clears
+  `asMsgs`; there was nothing to clear.
+- **Nine are the chat-history rows, and this one is real.** See §3.8.
+
+Two encoding rules the build cannot forget:
 
 Two encoding rules the build cannot forget:
 
