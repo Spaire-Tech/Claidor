@@ -1,0 +1,1362 @@
+[
+ {
+  "index": 0,
+  "file": "damodaran/capstru.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Country ERP !E214",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 1.52 lambda multiplier in the regional CRP fill \u2014 a real assumption, one line per file"
+ },
+ {
+  "index": 1,
+  "file": "damodaran/capstru.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Inputs!B19",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "=183230/B20 \u2014 market cap typed to derive share count"
+ },
+ {
+  "index": 2,
+  "file": "damodaran/capstru.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Operating leases!C32",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 5-year lease conversion convention typed in the formulas"
+ },
+ {
+  "index": 3,
+  "file": "damodaran/capstru.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Operating leases!F36",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 5-year lease conversion convention typed in the formulas"
+ },
+ {
+  "index": 4,
+  "file": "damodaran/capstru.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Operating leases!F38",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 5-year lease conversion convention typed in the formulas"
+ },
+ {
+  "index": 5,
+  "file": "damodaran/capstru.xlsx",
+  "rule": "long-formula",
+  "ref": "Optimal CS Worksheet!B58",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 6,
+  "file": "damodaran/capstru.xlsx",
+  "rule": "long-formula",
+  "ref": "Optimal CS Worksheet!B67",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 7,
+  "file": "damodaran/capstru.xlsx",
+  "rule": "long-formula",
+  "ref": "Optimal CS Worksheet!B78",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 8,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Cost of capital worksheet!H22",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 9,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Cost of capital worksheet!H52",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 10,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Country ERP!E214",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 1.52 lambda multiplier in the regional CRP fill \u2014 a real assumption, one line per file"
+ },
+ {
+  "index": 11,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Master Inputs Start here!B12",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 12,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Master Inputs Start here!B16",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 13,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Master Inputs Start here!B19",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 14,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Master Inputs Start here!B20",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 15,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Master Inputs Start here!B21",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 16,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Master Inputs Start here!B24",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 17,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Master Inputs Start here!B62",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "=7% typed debt-ratio input"
+ },
+ {
+  "index": 18,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Master Inputs Start here!C21",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 19,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Master Inputs Start here!C24",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 20,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Operating lease converter!C29",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 5-year lease conversion convention typed in the formulas"
+ },
+ {
+  "index": 21,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Operating lease converter!F33",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 5-year lease conversion convention typed in the formulas"
+ },
+ {
+  "index": 22,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Trailing 12-month numbers!B14",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 23,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Trailing 12-month numbers!B9",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 24,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Trailing 12-month numbers!C14",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 25,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Trailing 12-month numbers!D14",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 26,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Trailing 12-month numbers!D7",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 27,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Trailing 12-month numbers!D9",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 28,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Valuation Model!F20",
+  "tier": 2,
+  "class": "C",
+  "action": "IGNORE",
+  "reason": "the 0.03/0.05 are diagnostic bounds inside warning-text formulas \u2014 the Round-5 principle only sees comparator-adjacent literals, and these sit one arithmetic step inside the compared expression; residual fix named"
+ },
+ {
+  "index": 29,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Valuation Model!F23",
+  "tier": 2,
+  "class": "C",
+  "action": "IGNORE",
+  "reason": "the 0.03/0.05 are diagnostic bounds inside warning-text formulas \u2014 the Round-5 principle only sees comparator-adjacent literals, and these sit one arithmetic step inside the compared expression; residual fix named"
+ },
+ {
+  "index": 30,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Master Inputs Start here!B61",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 31,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Master Inputs Start here!B69",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 32,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Master Inputs Start here!B70",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 33,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "error-value",
+  "ref": "US Industry averages!F18",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "#DIV/0! gaps in the industry-average reference tables"
+ },
+ {
+  "index": 34,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation Model!D10",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 35,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation Model!D3",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 36,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation Model!D34",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 37,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation Model!D38",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 38,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation Model!D5",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 39,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation Model!D6",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 40,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation Model!F16",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 41,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation Model!F23",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 42,
+  "file": "damodaran/damodaran_fcffginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation Model!F66",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 43,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "typed-over-formula",
+  "ref": "Cost of capital worksheet!I30",
+  "tier": 1,
+  "class": "A",
+  "action": "ACT",
+  "reason": "0.0587/0.055 typed into the regional-ERP column that otherwise reads the premiums sheet \u2014 investigate before using the cost of capital"
+ },
+ {
+  "index": 44,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "typed-over-formula",
+  "ref": "Cost of capital worksheet!I31",
+  "tier": 1,
+  "class": "A",
+  "action": "ACT",
+  "reason": "0.0587/0.055 typed into the regional-ERP column that otherwise reads the premiums sheet \u2014 investigate before using the cost of capital"
+ },
+ {
+  "index": 45,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Cost of capital worksheet!B67",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "4.58% riskfree adjustment typed beside a lookup"
+ },
+ {
+  "index": 46,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Country equity risk premiums!E214",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 1.52 lambda multiplier in the regional CRP fill \u2014 a real assumption, one line per file"
+ },
+ {
+  "index": 47,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Input sheet!B62",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 48,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Operating lease converter!C27",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 5-year lease conversion convention typed in the formulas"
+ },
+ {
+  "index": 49,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Operating lease converter!F31",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 5-year lease conversion convention typed in the formulas"
+ },
+ {
+  "index": 50,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Operating lease converter!F34",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 5-year lease conversion convention typed in the formulas"
+ },
+ {
+  "index": 51,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Trailing 12 month Worskheet!B19",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 52,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Trailing 12 month Worskheet!C19",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 53,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Trailing 12 month Worskheet!D19",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "typed 10-K arithmetic in labelled input rows \u2014 typed inputs with visible provenance, consistent with the lab precedent"
+ },
+ {
+  "index": 54,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Valuation output!H2",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the 5-year convention written into 7 formulas, one line"
+ },
+ {
+  "index": 55,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Cost of capital worksheet!B23",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 56,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Cost of capital worksheet!B27",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 57,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Cost of capital worksheet!B67",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 58,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Diagnostics!B21",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 59,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "error-value",
+  "ref": "Industry Averages(US)!F18",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "#DIV/0! gaps in the industry-average reference tables"
+ },
+ {
+  "index": 60,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Input sheet!I28",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 61,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation output!B39",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 62,
+  "file": "damodaran/fcffsimpleginzu.xlsx",
+  "rule": "long-formula",
+  "ref": "Valuation output!B5",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "187-471 character valuation IF-chains \u2014 hygiene the standards name"
+ },
+ {
+  "index": 63,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "external-link",
+  "ref": "Main!D27",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 64,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "external-link",
+  "ref": "Main!D6",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 65,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Main!A20",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "9/7/21 branch constants keyed on entity type \u2014 unexplained layout constants worth seeing"
+ },
+ {
+  "index": 66,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Main!A23",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "9/7/21 branch constants keyed on entity type \u2014 unexplained layout constants worth seeing"
+ },
+ {
+  "index": 67,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "ean!B8",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the rolling five-year average seeded with five typed years \u2014 worth listing once"
+ },
+ {
+  "index": 68,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "ean!C8",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "the same rolling-average seed decision one cell later in the roll \u2014 one gesture; the varying-run fold's rolling variant is still owed"
+ },
+ {
+  "index": 69,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "ean!D8",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "the same rolling-average seed decision one cell later in the roll \u2014 one gesture; the varying-run fold's rolling variant is still owed"
+ },
+ {
+  "index": 70,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "ean!E8",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "the same rolling-average seed decision one cell later in the roll \u2014 one gesture; the varying-run fold's rolling variant is still owed"
+ },
+ {
+  "index": 71,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "ean!F8",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "the same rolling-average seed decision one cell later in the roll \u2014 one gesture; the varying-run fold's rolling variant is still owed"
+ },
+ {
+  "index": 72,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "inv!B8",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "2% growth factor typed in the fill"
+ },
+ {
+  "index": 73,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "ojv!B8",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "2% growth factor typed in the fill"
+ },
+ {
+  "index": 74,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "uni!B7",
+  "tier": 2,
+  "class": "B",
+  "action": "ACT",
+  "reason": "the unexplained 0.999 asset haircut, recurring across three sheets of the suite \u2014 I would stop and ask what the 0.1% is"
+ },
+ {
+  "index": 75,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "wel!B7",
+  "tier": 2,
+  "class": "B",
+  "action": "ACT",
+  "reason": "the unexplained 0.999 asset haircut, recurring across three sheets of the suite \u2014 I would stop and ask what the 0.1% is"
+ },
+ {
+  "index": 76,
+  "file": "nzcc/Existing-asset-depreciation-model_EDB-DPP4-draft-determination_29-May-2024.xlsm",
+  "rule": "volatile",
+  "ref": "Main!D18",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "INDIRECT in 3 places \u2014 reference-by-string hygiene"
+ },
+ {
+  "index": 77,
+  "file": "nzcc/Financeability-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!B10",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 78,
+  "file": "nzcc/Financeability-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!B105",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 79,
+  "file": "nzcc/Financeability-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!B117",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 80,
+  "file": "nzcc/Financeability-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!B56",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 81,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "error-value",
+  "ref": "BBAR!F127",
+  "tier": 1,
+  "class": "A",
+  "action": "ACT",
+  "reason": "the 'Check to existing BBAR calc' row computes =#REF!-F125 \u2014 a torn check row shipped in the draft determination"
+ },
+ {
+  "index": 82,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "error-value",
+  "ref": "BBAR!G127",
+  "tier": 1,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "four more cells of the same torn check row \u2014 the #REF!-row fold is still owed"
+ },
+ {
+  "index": 83,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "error-value",
+  "ref": "BBAR!H127",
+  "tier": 1,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "four more cells of the same torn check row \u2014 the #REF!-row fold is still owed"
+ },
+ {
+  "index": 84,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "error-value",
+  "ref": "BBAR!I127",
+  "tier": 1,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "four more cells of the same torn check row \u2014 the #REF!-row fold is still owed"
+ },
+ {
+  "index": 85,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "error-value",
+  "ref": "BBAR!J127",
+  "tier": 1,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "four more cells of the same torn check row \u2014 the #REF!-row fold is still owed"
+ },
+ {
+  "index": 86,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "skipped-cell",
+  "ref": "Outputs!C71",
+  "tier": 1,
+  "class": "C",
+  "action": "IGNORE",
+  "reason": "the total's range is the five-year DPP window but its label does not say the count \u2014 the count-window principle needs the words; documented limitation"
+ },
+ {
+  "index": 87,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "skipped-cell",
+  "ref": "Outputs!R86",
+  "tier": 1,
+  "class": "C",
+  "action": "IGNORE",
+  "reason": "the total's range is the five-year DPP window but its label does not say the count \u2014 the count-window principle needs the words; documented limitation"
+ },
+ {
+  "index": 88,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "inconsistent-row",
+  "ref": "Outputs!R86",
+  "tier": 1,
+  "class": "A",
+  "action": "ACT",
+  "reason": "the row's last column sums rows 34:38 where its fifteen siblings sum their own 78:82 block \u2014 a displaced window reading another section, found by the Round-5 mutation detector; investigate"
+ },
+ {
+  "index": 89,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!B16",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 90,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!B40",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 91,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!B46",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 92,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!B54",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 93,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!B62",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 94,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Inputs!C9",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 95,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "RAB!D22",
+  "tier": 2,
+  "class": "B",
+  "action": "ACT",
+  "reason": "the unexplained 0.999 asset haircut, recurring across three sheets of the suite \u2014 I would stop and ask what the 0.1% is"
+ },
+ {
+  "index": 96,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "external-link",
+  "ref": "TAX!D154",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 97,
+  "file": "nzcc/Financial-model_EDB-DPP4-draft-determination_29-May-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "TIMING!D31",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "EOMONTH(...)+20 \u2014 the 20th-of-month payment convention"
+ },
+ {
+  "index": 98,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Calculations-Chartbook!D15",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "23 and 1104 typed multipliers in the chartbook calc"
+ },
+ {
+  "index": 99,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Calculations-Chartbook!E15",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "23 and 1104 typed multipliers in the chartbook calc"
+ },
+ {
+  "index": 100,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "external-link",
+  "ref": "Other Inputs!D77",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "one import event per source workbook, with count, sheets and roster \u2014 \u00ab reads workbook [1] in 602 cells of Inputs \u00bb is exactly what the auditor needs to know once"
+ },
+ {
+  "index": 101,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!C138",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "/5 spread convention in the fill"
+ },
+ {
+  "index": 102,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F34",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "per-company values typed as =N/1000 down a labelled block \u2014 the paste decision, worth one line"
+ },
+ {
+  "index": 103,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F35",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 104,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F36",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 105,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F37",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 106,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F38",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 107,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F39",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 108,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F40",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 109,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F41",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 110,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F42",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 111,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F43",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 112,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F44",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 113,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F45",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 114,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F46",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 115,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F47",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 116,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F48",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 117,
+  "file": "nzcc/Reliability-standards-and-incentives-model-EDB-DPP4-Final-Decision-20-November-2024.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Other Inputs!F49",
+  "tier": 2,
+  "class": "D",
+  "action": "IGNORE",
+  "reason": "fifteen more rows of the same =N/1000 company paste \u2014 the same-column literal-family fold is still owed"
+ },
+ {
+  "index": 118,
+  "file": "ofwat/DDCM-model-v1g.xlsx",
+  "rule": "error-value",
+  "ref": "Contents!A1",
+  "tier": 1,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the CELL('filename') banner erroring outside Excel, graded tier 1 because a live column resumes below \u2014 a tier miss the elevation layer still owes"
+ },
+ {
+  "index": 119,
+  "file": "ofwat/DDCM-model-v1g.xlsx",
+  "rule": "error-value",
+  "ref": "Cover!C6",
+  "tier": 1,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the CELL('filename') banner erroring outside Excel, graded tier 1 because a live column resumes below \u2014 a tier miss the elevation layer still owes"
+ },
+ {
+  "index": 120,
+  "file": "ofwat/DDCM-model-v1g.xlsx",
+  "rule": "hidden-sheet",
+  "ref": "CLEAR_SHEET!A1",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "a hidden CLEAR_SHEET carrying an internal system URL \u2014 one right-click from visible"
+ },
+ {
+  "index": 121,
+  "file": "ofwat/DDCM-model-v1g.xlsx",
+  "rule": "error-value",
+  "ref": "Cover!A1",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "filename banners erroring outside Excel \u2014 appendix lines, one folded across 7 sheets with its roster"
+ },
+ {
+  "index": 122,
+  "file": "ofwat/DDCM-model-v1g.xlsx",
+  "rule": "error-value",
+  "ref": "Output!H21",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "filename banners erroring outside Excel \u2014 appendix lines, one folded across 7 sheets with its roster"
+ },
+ {
+  "index": 123,
+  "file": "ofwat/PR24-FD-CA101-Energy-cost-adjustment-model.xlsx",
+  "rule": "error-value",
+  "ref": "Cover!C7",
+  "tier": 1,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the CELL('filename') banner erroring outside Excel, graded tier 1 because a live column resumes below \u2014 a tier miss the elevation layer still owes"
+ },
+ {
+  "index": 124,
+  "file": "ofwat/PR24-FD-CA101-Energy-cost-adjustment-model.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Cost shares (BR)!G31",
+  "tier": 2,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the <23 year boundary in the subsidies switch \u2014 a regime year, consistent with the lab precedent"
+ },
+ {
+  "index": 125,
+  "file": "ofwat/PR24-FD-CA101-Energy-cost-adjustment-model.xlsx",
+  "rule": "long-formula",
+  "ref": "Aggregated inputs (W)!E6",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "205-346 character formulas over big input grids \u2014 hygiene, folded per fill"
+ },
+ {
+  "index": 126,
+  "file": "ofwat/PR24-FD-CA101-Energy-cost-adjustment-model.xlsx",
+  "rule": "long-formula",
+  "ref": "Aggregated inputs (W)!K6",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "205-346 character formulas over big input grids \u2014 hygiene, folded per fill"
+ },
+ {
+  "index": 127,
+  "file": "ofwat/PR24-FD-CA101-Energy-cost-adjustment-model.xlsx",
+  "rule": "long-formula",
+  "ref": "Aggregated inputs (WW)!E6",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "205-346 character formulas over big input grids \u2014 hygiene, folded per fill"
+ },
+ {
+  "index": 128,
+  "file": "ofwat/PR24-FD-CA101-Energy-cost-adjustment-model.xlsx",
+  "rule": "long-formula",
+  "ref": "Aggregated inputs (WW)!M6",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "205-346 character formulas over big input grids \u2014 hygiene, folded per fill"
+ },
+ {
+  "index": 129,
+  "file": "ofwat/PR24-FD-CA101-Energy-cost-adjustment-model.xlsx",
+  "rule": "error-value",
+  "ref": "Conceptual model!A1",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "filename banners erroring outside Excel \u2014 appendix lines, one folded across 7 sheets with its roster"
+ },
+ {
+  "index": 130,
+  "file": "ofwat/PR24-FD-CA101-Energy-cost-adjustment-model.xlsx",
+  "rule": "long-formula",
+  "ref": "Cost shares (BR)!G31",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "205-346 character formulas over big input grids \u2014 hygiene, folded per fill"
+ },
+ {
+  "index": 131,
+  "file": "ofwat/PR24-FD-CA101-Energy-cost-adjustment-model.xlsx",
+  "rule": "error-value",
+  "ref": "Cover!A1",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "filename banners erroring outside Excel \u2014 appendix lines, one folded across 7 sheets with its roster"
+ },
+ {
+  "index": 132,
+  "file": "ofwat/PR24-FD-FM02-Financial-model-Thames-Water.xlsx",
+  "rule": "skipped-cell",
+  "ref": "OBXValues!M689",
+  "tier": 1,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "the M column's total sums different rows than its sisters \u2014 deliberate first-year structure, the omitted rows hold zero"
+ },
+ {
+  "index": 133,
+  "file": "ofwat/PR24-FD-FM02-Financial-model-Thames-Water.xlsx",
+  "rule": "typed-over-formula",
+  "ref": "InpS!M2024",
+  "tier": 1,
+  "class": "A",
+  "action": "ACT",
+  "reason": "four values typed down the 2024-25 revenue column where every other year is calculated \u2014 the hard-keyed block in the shipped final determination"
+ },
+ {
+  "index": 134,
+  "file": "ofwat/PR24-FD-FM02-Financial-model-Thames-Water.xlsx",
+  "rule": "long-formula",
+  "ref": "RCV!F1259",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "205-346 character formulas over big input grids \u2014 hygiene, folded per fill"
+ },
+ {
+  "index": 135,
+  "file": "ofwat/PR24-FD-FM02-Financial-model-Thames-Water.xlsx",
+  "rule": "long-formula",
+  "ref": "RCV!F1313",
+  "tier": 3,
+  "class": "B",
+  "action": "NOTE",
+  "reason": "205-346 character formulas over big input grids \u2014 hygiene, folded per fill"
+ }
+]

@@ -1,0 +1,260 @@
+# The CUSTODES benchmark — registration, before any score is computed
+
+23 August 2026. The engine meets the field's only cell-level ground
+truth. This section is written and committed **before** the score is
+computed; results are appended below it afterwards, and any
+amendment is logged, never rewritten.
+
+## What is frozen
+
+- **Engine output:** `custodes/sweep-cold-run.json` — the cold sweep
+  of the 70 converted subjects (1,187 findings), produced and
+  reported *before* the ground-truth annotations were opened. The
+  engine is not modified between that sweep and the scoring.
+- **Ground truth:** the comment-bearing cells of the authors' 291
+  annotated sheet files (their site's legend: clusters as background
+  colours, « smelly cells marked with a red triangle » — i.e. cell
+  comments; every sampled comment reads « True smell »). Extracted
+  from the LibreOffice-converted copies: **1,973 cells** against the
+  paper's 1,974 — one cell lost somewhere in conversion or
+  distribution; accepted and noted, not hunted.
+
+## Mapping rules (fixed now)
+
+1. A ground-truth file is named `<workbook>_<sheet>`; workbook names
+   themselves contain underscores, so the mapping is by **longest
+   prefix match** against the 70 known subject basenames; the
+   remainder after the joining underscore is the sheet name.
+2. A truth cell is keyed `(workbook, sheet, cell)`.
+3. A finding's **cell set** is: its anchor `ref`, plus every cell in
+   its `cells` roster, plus — when its detail says « one formula
+   filled across N cells (A to B) » — the full rectangle A:B. All on
+   the finding's sheet unless a roster entry names another.
+
+## Metrics (fixed now)
+
+- **Coverage:** the share of the 1,973 truth cells that fall inside
+  any finding's cell set — overall, and broken down by which of our
+  rules covers them. This is the recall-flavoured number.
+- **Agreement:** the share of our findings whose cell set touches at
+  least one truth cell — overall and per rule. **This is not
+  precision**: the authors call their annotations « an approximation
+  of ground truth » for *their* smell classes, and a finding outside
+  them is not thereby false. It is reported as agreement and nothing
+  stronger.
+- **Out of scope, reported separately and excluded from agreement:**
+  `hidden-sheet`, `broken-name`, `external-link` — file-level
+  findings their cell-level truth cannot encode.
+
+## What is deliberately not claimed
+
+No precision claim. No side-by-side with CUSTODES's or ExceLint's
+published figures — their scoring conventions differ (ExceLint
+scores region decisions, not cells); a true head-to-head requires
+running their tools on these same files, which is future work this
+registration enables. The engine was tuned on financial models; this
+corpus is a different dialect, and the number will be read with that
+in mind either way.
+
+---
+
+## Results (computed after the registration above; scorer implements
+## it as written, no amendments)
+
+**Truth mapping:** all 1,973 cells mapped to (workbook, sheet, cell);
+no ground-truth file failed the prefix mapping.
+
+**Coverage: 283 / 1,973 = 14.3%** of their smelly cells fall inside
+one of our findings' cell sets. By covering rule: typed-over-formula
+202, skipped-cell 45, hardcode-in-formula 29, inconsistent-row 9,
+error-value 2.
+
+**Agreement: 239 / 1,166 = 20.5%** of our in-scope findings touch at
+least one truth cell. Per rule: typed-over-formula **202/295 =
+68.5%**, skipped-cell 9/20 = 45.0%, inconsistent-row 8/17 = 47.1%,
+error-value 2/25 = 8.0%, hardcode-in-formula 18/805 = 2.2%,
+long-formula 0/4. Out of scope, reported unscored: broken-name 7,
+hidden-sheet 8, external-link 6.
+
+**What the truth contains** (descriptive, computed after scoring):
+1,687 of 1,973 cells (85.5%) are **value cells** — the « missing
+formula » smell, a constant where their clustering says a formula
+belongs; we cover 212 of them (12.6%). 264 (13.4%) are formula
+cells — their dissimilar-formula/reference classes; we cover 70
+(26.5%). 22 are empty or unresolvable in the converted subjects.
+
+## Reading, honestly
+
+1. **The shared class behaves as hoped.** Where their taxonomy and
+   ours genuinely overlap — a value typed over a computing block —
+   our findings agree with their labels 68.5% of the time, and that
+   rule alone accounts for 71% of everything we cover.
+2. **The hardcode number is a taxonomy mismatch, not a verdict.**
+   805 of our findings flag literals *inside* formulas; their truth
+   marks whole cells. 2.2% agreement was predictable from the class
+   definitions, and the registration's refusal to call agreement
+   « precision » exists for exactly this line.
+3. **The real information is the coverage gap, and it has a name.**
+   Their dominant smell is missing-formula detected by loose
+   cluster witnesses (layout, labels, formats). Our engine demands
+   strong witnesses — a row family, a fill pattern — because on
+   financial models that discipline is what bought 2.9% false
+   positives. This corpus prices the other side of that trade: on a
+   dialect of small, irregular sheets, quiet-by-design costs
+   roughly 85% of their labelled recall. Whether that price is
+   right for Ambre depends on the population Ambre points at — but
+   now it is a measured price, not a guess.
+
+## What this enables next (named, not yet done)
+
+- **The cheap head-to-head:** the archive includes the authors' own
+  per-tool detection results (`smell_detection_result.xls`). Scoring
+  *their* detections with *this same scorer* on *this same truth*
+  gives the first same-convention comparison — no reimplementation
+  needed. ExceLint's runnable core comes after.
+- **A witness-widening round**, dialect-gated: their truth as the
+  training signal for looser missing-formula witnesses that only
+  arm on this kind of sheet, measured here for recall and on our
+  own corpora for the false-positive price before anything ships.
+
+---
+
+## Addendum (23 Aug, after review) — what the 14% is and is not
+
+Logged as an added frame, not a change to any number above.
+
+**The 14% measures** how this engine behaves on messy general
+spreadsheets, judged by someone else's labels, drawn from someone
+else's detection philosophy. All three are outside our market. It
+establishes three things — the engine reads foreign files, it does
+not crash, it is fast — plus one honest calibration point about
+strictness.
+
+**It does not measure our catch rate on financial models.** That
+number is still owed, and it comes from seeding known defects into
+real models (the Round-4 method, extended per class), not from this
+corpus. The two must never appear in the same sentence without this
+frame; a bare « 14% » reaching a partner or investor does damage no
+explanation can undo afterwards.
+
+**The head-to-head rule (fixed now, before it is run):** when the
+authors' detections and ExceLint are scored with this scorer, **both
+axes are published or nothing is** — how much of their truth each
+tool finds, and how often each tool is right when it flags. The
+expected shape (they find more of their marked cells; we are right
+more often when we speak) is itself the result: a deliberate design
+choice with its price measured. Showing one axis would be
+optimising the story instead of reporting it.
+
+**The widening plan, narrowed:** their labels are mined as free
+ideas — defect patterns we genuinely miss and genuinely care about
+on financial models become new checks through the normal loop. Their
+*thresholds* are not adopted to score better on their corpus: we do
+not sell into messy general spreadsheets, and the quietness is the
+product.
+
+---
+
+## Head-to-head registration (23 Aug, before any score is computed)
+
+The authors' `smell_detection_result.xls` is one table: 291 rows
+(one per sheet), a **Ground truth** column, and per-tool detected
+cells for **CUSTODES, AmCheck, UCheck, Dimension, and Excel's own
+checking**. Conventions, fixed now:
+
+1. **Truth for this comparison** is the results file's own Ground
+   truth column — the same artifact for every tool, ours included.
+   It is cross-checked against our comment extraction and the
+   discrepancy count is reported.
+2. **Every tool is scored cell-level**: its flag set F is the cells
+   it lists (for us: the union of in-scope findings' cell sets under
+   the expansion rules above; out-of-scope rules excluded as
+   already registered).
+3. **The two axes, both published or nothing**:
+   coverage = |F ∩ truth| / |truth|;
+   rightness-when-flagging = |F ∩ truth| / |F|.
+4. Sheet names are whitespace-stripped on both sides; workbook keys
+   are the results file's spreadsheet names minus extension.
+5. The published tools' flags are taken from the authors' file
+   as-is (their 2016 runs); we do not re-run their tools here.
+   ExceLint, which post-dates the file, still requires its own run
+   and is not in this table.
+6. The frame from the addendum above travels with any use of this
+   table: this corpus is not our market; the table measures design
+   philosophies on foreign ground, ours strict, theirs loose.
+
+## Head-to-head results (computed after the registration above)
+
+Truth cross-check: the results file carries exactly the paper's
+1,974 cells; 7 appear only there and 6 only in our comment
+extraction — conversion drift at the margin, both sources agree on
+99.7% of cells. The file's own column is the truth below, as
+registered.
+
+| Tool | Cells flagged | Hits | Coverage | Rightness-when-flagging |
+|---|---|---|---|---|
+| CUSTODES | 2,443 | 1,583 | **80.2%** | **64.8%** |
+| AmCheck | 2,163 | 1,231 | 62.4% | 56.9% |
+| UCheck | 204 | 1 | 0.1% | 0.5% |
+| Dimension | 1,697 | 11 | 0.6% | 0.6% |
+| Excel built-in | 4,981 | 143 | 7.2% | 2.9% |
+| **Ambre (this engine)** | 3,941 | 283 | 14.3% | 7.2% |
+
+Sanity check that the scorer is fair: CUSTODES's rightness here
+(64.8%) reproduces the magnitude their paper reports for their own
+precision — our conventions recover their published result.
+
+## Reading, honestly — including the prediction that failed
+
+1. **The registered expectation was half wrong, and the data wins.**
+   The addendum predicted « they find more of their marked cells; we
+   are right more often when we speak. » The first half held. The
+   second did not: at cell level our rightness (7.2%) is far below
+   CUSTODES's (64.8%). Reported as-is.
+2. **Two causes, stated plainly.** First, the truth was authored by
+   the CUSTODES team under the CUSTODES philosophy — the rightness
+   axis rewards agreement with their own annotators, a advantage on
+   their home ground that ExceLint's authors also documented when
+   they re-audited this corpus. Second, our registered cell-set
+   expansion (fold rosters and fill-span rectangles) flags 3,941
+   cells from 1,166 findings; a single folded hardcode family
+   contributes a whole rectangle, mostly outside their truth. At
+   finding level our agreement is 20.5% (68.5% for the shared
+   typed-over class) — reported above; the cell-level number is the
+   symmetric convention and stands as the table's figure.
+3. **What the table is for.** It is not a sales table — the frame
+   travels with it: foreign dialect, their labels, their philosophy.
+   It is a calibration table, and it validated the scorer against
+   their published numbers, which is what makes the *next* run —
+   ExceLint, and eventually any tool, on corpora that ARE our
+   market with truth that is seeded rather than opined — worth
+   trusting.
+
+---
+
+## Status of the head-to-head table (23 Aug, after review)
+
+**The table does not leave the building as a result about Ambre.**
+It is the calibration of the measuring instrument: our scorer
+reproduces CUSTODES's published precision (64.8%) on their own
+corpus and truth, which is what makes the next number — seeded
+defects on financial models — defensible. If the table is ever
+published, it lives in a methodology appendix underneath the
+financial-model number, never standalone. A table lost twice with
+explanatory footnotes is an own goal; nobody reads the footnote.
+
+## Registration for the seeded financial-model run (fixed now,
+## before that run exists)
+
+**Change, stated with its reason:** cell-level scoring structurally
+punishes the fold — one authoring situation, one finding, then
+graded as four hundred misses. That is not a fair instrument for
+what was built. The seeded run will therefore score at the
+**authoring-situation level for every tool** (a planted defect is
+caught if any finding's cell set touches its site; a tool's flag
+counts once per contiguous flagged group), **and the cell-level
+scoring is computed and reported alongside** so the change is
+visible, not a substitution. This is registered today, before any
+seeded corpus exists, precisely so it cannot be read as a reaction
+to a bad number — and the bad number that prompted the thinking is
+kept above, unedited.

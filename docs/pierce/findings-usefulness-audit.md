@@ -86,3 +86,196 @@ named rule fixes (one reader gap — array formulas read as typed
 values — accounts for the largest slice) and the D mass to four
 collapse patterns; both lists are in the worklog entry for this
 round, each verdict naming its fix.
+
+## The re-measure (19 August)
+
+The fix round implemented every named fix, gated by the golden
+master (each corpus diff traced to a named fix; the gate also caught
+one regression — an ED2 long-formula flood — and two engine truths
+the first sample never touched: a multi-area SUM misread and a
+false circular-reference class closed only through INDEX tables,
+which Excel does not walk). The population is the regenerated
+baseline; this section is the protocol for the second measurement,
+registered before any verdict.
+
+- Same classes, same procedure, same allocation formula, same
+  judge-from-the-cells rule as above. Nothing re-defined.
+- Fresh draw, seed **20260819** — a new seed, because the population
+  changed and the old draw must stay reproducible against the old
+  baseline. The sampler takes the seed as an argument now; both
+  seeds are recorded here.
+- Sample: `findings-usefulness-sample-2.json`; verdicts:
+  `findings-usefulness-verdicts-2.json`.
+- One reading note registered in advance: the fix round *collapses*
+  duplicates and *deletes* noise, so the surviving population is
+  smaller and each surviving finding stands for more cells. D now
+  means a duplicate the collapse layer still misses within one
+  file's report, judged exactly as before.
+
+### Amendments (second pass)
+
+- Three verdicts first marked B were revised to D during the pass,
+  before any tally was computed: #90 and #92 when the per-debt-block
+  «Check» rows of the BPFM F1 sheets showed the same 326-character
+  formula repeating at a row beat (the group only became visible
+  across cards), and #129 when #131/#132 showed the same
+  import-source template on sheet after sheet. Recorded here per
+  protocol, as in round one.
+
+### Result (19 August)
+
+Raw sample of 143: **A 13 · B 77 · C 19 · D 34.**
+Stratified over the 852: **A ≈ 6% · B ≈ 55% · C ≈ 11% · D ≈ 28%.**
+The pre-registered bar — a majority of remaining findings A/B — is
+**met**: A+B ≈ 61%, against 26% before the fix round. Per-finding
+verdicts with reasons: `findings-usefulness-verdicts-2.json`.
+
+What remains, honestly read:
+
+- The D mass (≈28%) is dominated by a single family the fix round's
+  sibling-sheet fold missed by one key choice: Ofgem ED2's typed pool
+  opening balances repeat the same layout decision on every DNO sheet
+  with *different numbers*, and the fold keys on identical numbers.
+  Three named fixes (shape-keyed sibling fold, a column-beat fold for
+  repeated check rows, a same-file template fold) cover 30 of the 34
+  raw D verdicts.
+- The C mass (≈11%) reduces to nine small named skips (basis-point
+  label vocabulary, string-concatenation literals, MATCH array
+  constants, sentinel 9999, block-header documentation, the mnemonic
+  gate in the row pass, unread TODAY cells, below-the-total partition
+  coverage, calendar notation), each recorded on its verdict.
+- The A mass is small in share (≈6%) but no longer buried: thirteen
+  raw A verdicts — torn check rows, displayed errors in shipped
+  models, totals stepping over live money, typed-over switch cells,
+  one-cell breaks in filled rows — now sit among ~850 findings
+  instead of 1,259, and the B mass around them is dominated by real
+  formulas the reader could not even see before (array-entered
+  blocks), folded to one line each.
+
+## The third measurement (registered 19 August, before any draw)
+
+After the collapse and purify rounds settle the population, the
+third measurement changes one thing about the draw, on the mentor's
+direction, and it is registered here first:
+
+- **Stratified by detector.** Each rule is guaranteed
+  min(rule size, 25) picks, distributed over its family strata
+  proportionally with every non-empty stratum contributing at least
+  one — so the four inconsistent-row findings are judged whole and
+  the hardcode mass cannot crowd out the skipped-cell detector. The
+  sampler takes the floor as its fourth argument; a floor of zero
+  reproduces the earlier draws exactly.
+- **Reported per detector.** The tally is published as a
+  useful/noise/duplicate table *per rule*, alongside the stratified
+  whole-population estimate. The question graduates from « is the
+  report useful » to « which detector is excellent and which still
+  needs work ».
+- Classes, judging procedure, and amendment discipline are unchanged.
+- Seed for the third draw: **20260820**. Sample:
+  `findings-usefulness-sample-3.json`; verdicts:
+  `findings-usefulness-verdicts-3.json`.
+
+### Result (19 August, third measurement)
+
+Raw sample of 191: **A 33 · B 131 · C 13 · D 14.**
+Stratified over the 669: **A ≈ 8% · B ≈ 83% · C ≈ 4% · D ≈ 5% —
+A+B ≈ 91%**, against 61% after the fix round and 26% at the start.
+No amendments this pass. Per-finding verdicts with reasons:
+`findings-usefulness-verdicts-3.json`.
+
+The per-detector table (raw counts; stratified A+B beside it):
+
+| Detector | n | A | B | C | D | A+B raw | A+B stratified |
+|---|---|---|---|---|---|---|---|
+| hardcode-in-formula | 50 | 4 | 40 | 2 | 4 | 88% | 87% |
+| long-formula | 44 | 0 | 44 | 0 | 0 | 100% | 100% |
+| error-value | 25 | 6 | 16 | 3 | 0 | 88% | 87% |
+| volatile | 25 | 0 | 25 | 0 | 0 | 100% | 100% |
+| skipped-cell | 24 | 14 | 2 | 8 | 0 | 67% | 67% |
+| typed-over-formula | 19 | 5 | 4 | 0 | 10 | 47% | 47% |
+| inconsistent-row | 4 | 4 | 0 | 0 | 0 | 100% | 100% |
+
+Honestly read, the residue is concentrated and named:
+
+- **typed-over-formula** carries over half the D mass in one family:
+  I_Series row 218 has five adjacent columns typed over `=X212` in
+  one gesture, in both H7 PCM files, reported cell by cell. Fix:
+  fold varying-value typed runs of 4–7 into one finding (today the
+  engine folds identical values and singles, not short varying runs).
+- **skipped-cell**'s C mass is entirely the documented index-factor
+  limitation (the omitted row is the multiplicative factor the block
+  reads); the eight C verdicts name no new fix — a general skip was
+  weighed and rejected in Round 2 because it pins judged-A totals.
+- **error-value**'s three C are the two documented limitations
+  (end-of-sheet marker tails, market-calendar gaps in daily series).
+- **hardcode**'s four D are one ED2 pool-balance family whose
+  members escape the sibling fold only by literal shape (`#`,
+  `#+#`, `#+-#`); fix: normalise shapes before keying the fold. Its
+  two C name two small fixes: number-words documentation (a label
+  saying « half » documents 0.5) and walking the block-header search
+  up to the nearest header instead of a fixed three rows.
+
+## The fourth measurement (registered 19 August, before any draw)
+
+Round 3 (Elevate) implements the four fixes above and adds the
+elevation layer — every finding carries a tier (1 defect /
+2 assumption at risk / 3 hygiene), a 0–1 weight, a basis sentence,
+and a cell roster on folds. The population changes again, so the
+fourth draw is registered here first:
+
+- Same classes, same judge-from-the-cells procedure, same
+  per-detector stratification and floor (25) as the third
+  measurement. The tally is again published per detector.
+- One addition, per the mentor's step 8: alongside A/B/C/D, each
+  judged finding's *tier* is recorded, so the measurement can say
+  whether tier 1 is clean of C — a false positive in « defect » is
+  worse than one in « hygiene », and the tiers are only real if the
+  measurement can fail them.
+- Seed for the fourth draw: **20260821**. Sample:
+  `findings-usefulness-sample-4.json`; verdicts:
+  `findings-usefulness-verdicts-4.json`.
+
+### Result (19 August, fourth measurement)
+
+Raw sample of 185: **A 31 · B 143 · C 11 · D 0.**
+Stratified over the 632: **A ≈ 8% · B ≈ 90% · C ≈ 2% · D = 0 —
+A+B ≈ 98%**, against 91% after Round 2, 61% after the fix round,
+26% at the start. No amendments this pass. False positives are at
+2.2%, under the mentor's 5% line; duplicates are gone from the
+sample entirely.
+
+Per detector (raw counts; stratified A+B beside it):
+
+| Detector | n | A | B | C | D | A+B raw | A+B stratified |
+|---|---|---|---|---|---|---|---|
+| hardcode-in-formula | 49 | 3 | 46 | 0 | 0 | 100% | 100% |
+| long-formula | 47 | 0 | 47 | 0 | 0 | 100% | 100% |
+| error-value | 25 | 5 | 17 | 3 | 0 | 88% | 87% |
+| volatile | 25 | 0 | 25 | 0 | 0 | 100% | 100% |
+| skipped-cell | 24 | 14 | 2 | 8 | 0 | 67% | 67% |
+| typed-over-formula | 11 | 5 | 6 | 0 | 0 | 100% | 100% |
+| inconsistent-row | 4 | 4 | 0 | 0 | 0 | 100% | 100% |
+
+Round 3's fixes read directly in the deltas: typed-over-formula
+47% → 100% (the varying-run fold turned ten duplicate verdicts into
+two folded findings judged worth seeing); hardcode 88% → 100% (the
+spelling-family fold, number words, and the header walk each
+removed their judged cause and nothing else).
+
+Per tier, as registered — the tiers judged for the first time:
+
+| Tier | n | A | B | C | A+B | C rate |
+|---|---|---|---|---|---|---|
+| 1 — Defect | 45 | 28 | 9 | 8 | 82% | 17.8% |
+| 2 — Assumption at risk | 49 | 3 | 46 | 0 | 100% | 0% |
+| 3 — Hygiene | 91 | 0 | 88 | 3 | 97% | 3.3% |
+
+Honestly read: **every remaining C is a documented limitation** —
+the eight tier-1 C are all the index-factor pattern (the omitted
+row is the multiplicative factor the block reads; a general skip
+was weighed and rejected because it pins judged-A totals), and the
+three tier-3 C are the end-of-sheet-marker and market-calendar
+patterns in error-value. The concentration of noise in tier 1 is
+the measurement doing its job: the one remaining engine debt sits
+exactly where a false positive costs the most, and it has one
+name. Nothing else in the corpus is unexplained.

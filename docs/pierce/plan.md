@@ -1,374 +1,463 @@
-# Pierce — the plan
+# The plan — every step from today until the product is complete
 
-Written 10 August 2026, on the decision to move from law to investment
-banking. « Claidor » stays as the codename until there is a reason to
-change it; nothing in the code needs renaming for that.
+Written 20 August 2026. Simple words, full detail. The direction is
+in `platform.md`, the engine's state is in `engine.md`; this is the
+to-do list that connects today to « done ». It replaces the 10 August
+Pierce plan, preserved as `plan-pierce-2026-08-10.md` — its tie-out
+measurements and its « link confirmed once, re-checked
+deterministically » design carry forward into Part F here. Steps are numbered
+straight through. Each step says what to do, who does it (Founder /
+Engine / Both), and what « done » looks like.
 
-Estimates are **[estimate]** unless marked. The further down, the wider.
+**« Complete » means:** one real paying customer runs the entire
+journey — uploads a model, gets a review, opens a project, compares
+versions, traces numbers to documents, gets project-finance checks,
+shares a scenario app with their lender, generates their deliverables,
+lets the agent restructure debt in plan mode, and receives their
+quarterly compliance certificate from us. When one customer does all
+of that and pays for it, the product is complete. Everything after
+that is growth.
 
----
+## Rules that never change (they apply to every step below)
 
-## The one-sentence version
-
-A pitchbook is assembled from many places under a deadline, and the one
-thing it has to be is right. Pierce holds the chain from source document to
-model to deliverable and shows where it has broken.
-
-Everything else in the product — the four Office surfaces, the workspace,
-the drafting — is table stakes that several companies can build. **The
-chain is the product.**
-
----
-
-## What the legal build leaves behind
-
-Not a restart. The Vesence clone was, underneath, document infrastructure
-with about fifty lines of law in it.
-
-| | State | Fits Pierce as |
-|---|---|---|
-| Word add-in (forked, Apache 2.0) | Built, unverified in Word | The Word surface, whole |
-| Redline engine — 10 checks, 3,400 lines | Built, measured 43.6 → 20.3 findings/doc | Word's « defined terms, cross-references, house style » |
-| `.docx` OOXML engine | Core built, round-trip verified | Same approach extends to `.xlsx` and `.pptx` — same container |
-| Cross-document check | Built, measured against a real model | « The teaser, the CIM and the management presentation carrying the same figure differently » |
-| Agent + four tools + persisted trace | Built, measured 3/3 on a real model | The deal agent, unchanged |
-| Matter workspace, members, documents | Built | The deal workspace, renamed |
-| Playbooks | Built | The house standards and brand book |
-| Auth, tokens, tracked-change discipline | Built | Unchanged |
-
-**Roughly 30–40% of everything in Pierce that is not the reconciliation
-engine already exists.**
-
-What is genuinely retired: the OHADA corpus and the librarian, which
-belonged to the business before this one and were already outside the
-Vesence build.
-
-What needs re-tuning rather than rebuilding: the redline engine's
-false-positive work was done against contracts. Banking documents — CIMs,
-IC papers, engagement letters — will need the same treatment. It took days
-the first time; it will be faster because the method and the harness exist.
+- **We never mislead anyone** — each other, customers, or investors.
+  Placeholder features are labelled as placeholders everywhere,
+  including demos.
+- **Numbers are only real when measured** — with criteria written down
+  before judging. Every engine change passes the corpus gate. Every
+  new capability gets a registered measurement before we claim it
+  works.
+- **Every rung ships two things:** the feature, and a piece of public
+  writing about it that brings the next customer in.
+- **Plan mode is the entry condition** for anything that changes a
+  cell in someone's model. No silent edits, ever.
 
 ---
 
-## The chain, and how it gets built
+## Part A — Open the door (weeks 1–3)
 
-This is the part that does not exist, and the part worth being precise
-about, because the obvious design fails.
+*Goal: the world can find us, and the shell exists to build into.*
 
-The obvious design is: ask a model whether the deck matches the model.
-That produces confident prose about numbers, which is the worst possible
-output for this product.
+**1. (Engine) Write the teardown article.** Take our PR24 measurement
+(« sixteen published regulator models; one revision cycle introduced
+84 new mechanical defects ») and write it for humans: what we found,
+in which public files, with screenshots of real broken cells. No
+product pitch except one line at the bottom: « check your own model,
+free. » Done when: the founder reads it and would share it.
 
-### Five stages
+**2. (Founder) Stand up the public site.** One page: the article, the
+free upload, and an email capture. Done when: a stranger can upload a
+model and get findings back.
 
-**1. Extract figures from the deliverable.** Every number in a `.pptx` —
-text runs, tables, chart series — with where it sits and what label is near
-it. Then normalised: `$42.6m` becomes 42,600,000 USD. Scales, currencies,
-negatives in parentheses, percentages, ranges, basis-point conventions.
-This is fiddly, entirely deterministic, and testable to death.
+**3. (Engine) Wire the free upload to the engine.** The upload runs
+`audit()`, returns the ranked findings (tier, weight, basis, cell
+roster) in a clean report page. Cap file size, queue long files, email
+the result if it takes more than a minute. Done when: a 50MB stranger
+file returns a readable report with zero setup.
 
-**2. Extract candidates from the model.** Cells, cached values, formulas,
-named ranges, sheet names, row and column labels. Excel stores its last
-computed values in the file, which is what makes this possible without a
-calculation engine.
+**4. (Both) Decide what the free tier shows.** Show every finding but
+the full detail (cell rosters, trace) only after signup. The report
+must be genuinely useful free — it is the wedge, not a teaser. Done
+when: written down in the pricing notes.
 
-**3. Propose links.** Match a figure to a cell. Exact value first, then
-transformations — a sum over a range, a margin, a growth rate, a unit
-conversion. Ambiguity is the normal case: many cells hold 42.6. Narrow it
-with the label beside the figure and the label beside the cell.
+**5. (Founder) Start the platform shell.** All five surfaces —
+Projects, Review, Compare, Trace, Apps, Deliverables — with
+placeholders and empty states, following the five shell rules in
+`platform.md` (real vs placeholder labelled; Review real from day one;
+the shell follows the project graph; placeholders replaced the week a
+rung lands; empty states written as product copy). Done when: you can
+click through the whole product and every empty state says what will
+live there.
 
-**4. A human confirms, once.** And this is the design decision the whole
-product rests on.
+**6. (Engine) Start the PF corpus hunt — runs in the background from
+now until Part D.** Collect real project-finance models and their
+contracts: UK PFI/PPP disclosures, public-authority models,
+Dumfries-family documents, World Bank/IFC published models, renewable
+tariff models. Log each file: source, industry, what it contains.
+Target: 15–25 real PF models before Part D starts. Done when: the
+manifest exists in `docs/pierce/` and keeps growing.
 
-> The link is proposed by a model and **confirmed by a banker**. After
-> that it is *data*, not a guess. Re-checking is arithmetic: fetch the
-> cell, apply the recorded transformation, compare. No model is involved,
-> the answer is the same every time, and it is right or it is a bug.
-
-That converts the product from « an AI that reviews your deck » — which
-nobody should trust with a fairness opinion — into « a spreadsheet of
-verified links that is checked deterministically ». The model's job is
-proposal and disambiguation. It never gets to assert that two numbers
-agree.
-
-**5. Record the basis.** Pro forma, normalised, run-rate, pre-IFRS 16, and
-the period. Held against the link, so a legitimate adjustment reads as an
-adjustment and only an unexplained difference is raised. This is the detail
-that decides whether bankers keep the product past week two.
-
-### Where the false-positive war will be
-
-Stages 1 and 3. Same shape as the defined-terms work: the first version
-will flag everything, and the value is in the rules that stop it. Budget
-for it explicitly rather than being surprised.
+**7. (Both) Publish the article. Watch what happens.** Every upload is
+a lead. Reply to every single person who uploads. Done when: live.
 
 ---
 
-## Two problems in the spec, to settle before they are promised
+## Part B — Compare Workbooks (weeks 2–6, overlaps Part A)
 
-**PowerPoint and Excel have no tracked changes.** Word has revision marks.
-Excel's track-changes is a deprecated shared-workbook feature. PowerPoint
-has never had one. So « everything is a tracked change, across Excel,
-PowerPoint, Word and Outlook » is not a feature of Office and cannot be
-turned on.
+*Goal: « here is what changed between v12 and v13, and here is what
+those changes broke. » Nearest new product; reuses the reader.*
 
-It is buildable — a proposal layer that shows before and after, applies on
-accept, and is reversible — but it is a *build*, several weeks, and it is
-load-bearing: it is the answer to « nothing leaves the firm without a
-banker accepting it ». Costed in Phase 2 below.
+**8. (Engine) Build the cell-level diff.** Read two versions of a
+workbook with the existing reader. Report: cells added, removed,
+changed — split into formula changes, value changes, and structural
+changes (rows/columns/sheets inserted or deleted). Handle the hard
+part honestly: when a row is inserted, every cell below it « changes »
+— detect shifts so we report « row inserted at 14 » instead of 4,000
+fake changes. This shift-detection is the actual product; the naive
+diff is a weekend. Done when: two real regulator revisions produce a
+diff a human calls fair.
 
-**« Not retained » and « the chain becomes the record » cannot both be
-true as written.** You cannot answer « what was this number in March and
-why did it change » having retained nothing.
+**9. (Engine) Build « what the change broke ».** Run the audit on both
+versions, diff the findings (this is `corpus_gate.py` repurposed).
+Report new defects introduced by the revision, defects fixed, defects
+unchanged. Done when: the PR24 pair (the revision that introduced 84
+defects) reproduces as a customer-readable report.
 
-The reconcilable position, and it is a good one: **retain the chain, not
-the documents.** Figures, sources, transformations, versions and bases are
-kept; the deck and the model are processed and dropped. That is defensible
-to a bank and it is also, usefully, a smaller attack surface than holding
-the files. It needs saying explicitly, because a security review will find
-that sentence.
+**10. (Engine) Fold and rank the diff like we fold findings.** One
+authoring event = one diff entry (a row copied across 40 columns is
+one change, not 40). Rank by what matters: formula logic changes
+first, then values, then formatting-level noise last or hidden. Done
+when: a 400-change diff reads in one screen.
 
----
+**11. (Engine) Registered measurement for Compare.** Before we claim
+it works: take 10 version pairs of public models, pre-register the
+questions (does the diff miss real changes? does it invent changes?
+does shift-detection hold?), judge from the cells, write the numbers
+down. Done when: the measurement doc exists with honest numbers.
 
-## Phases
+**12. (Founder) Replace the Compare placeholder with the real thing.**
+Upload two files → diff report. Done when: live in the shell.
 
-### Phase 0 — The tie-out  *(3–4 weeks)*
+**13. (Both) Publish piece #2:** « we diffed two published revisions
+of a regulator's model — here is what the revision broke. » Done when:
+live, with the free Compare behind it.
 
-One deck, one model, the links between them, and the drift.
-
-No Office integration, no add-in, no workspace. A route that takes a
-`.pptx` and an `.xlsx` and returns: every figure found, every proposed
-link, every confirmed link that no longer matches.
-
-**This is the whole value proposition on one screen** and it is the thing
-that makes a banker lean forward. It also front-loads all the risk: if
-figure extraction and linking do not work, nothing downstream matters.
-
-Ends with a graded eval on a real deck and a real model, the way the
-redline engine and the agent were measured. Recall, precision, and what it
-invented.
-
-### Phase 1 — The model audit  *(2–3 weeks)*
-
-Hardcoded values in formula rows, broken and stale external links,
-circular references, rows that break their own pattern, formulas that skip
-a cell, balance checks that no longer balance.
-
-Entirely deterministic — no model call anywhere in it. Cheap, high
-signal, and it is the check a banker will run first because it finds real
-errors in their own work.
-
-### Phase 2 — PowerPoint  *(4–5 weeks)*
-
-The panel, the findings, and the proposal layer that stands in for tracked
-changes. Includes the `.pptx` splice engine, built the way `.docx` was:
-byte-level, nothing re-serialised.
-
-### Phase 3 — Word  *(1–2 weeks)*
-
-Largely built. Re-tune the engine against banking documents, point the
-panel at the deal workspace, adjust the vocabulary.
-
-### Phase 4 — The deal workspace  *(2 weeks)*
-
-Largely built. Rename matter to deal, add the model and deck as
-first-class objects beside the documents, surface the chain.
-
-### Phase 5 — Excel  *(3 weeks)*
-
-The panel inside Excel: explain a model, run the audit in place, jump to
-the cell behind a figure.
-
-### Phase 6 — Outlook  *(3 weeks)*
-
-House-style drafting and the pre-send check.
-
-### Phase 7 — Connectors  *(3–5 weeks)*
-
-SharePoint, OneDrive, Teams, the DMS, the data room. Slow for political
-reasons rather than technical ones.
-
-### Totals
-
-| | |
-|---|---|
-| **Something that makes a banker lean forward** | **3–4 weeks** (Phase 0) |
-| A usable product on two surfaces | ~3 months |
-| All five surfaces | ~6 months |
-
-The demo number is much shorter than the legal build's was, for one
-reason: Phase 0 needs no Office integration at all, and Office integration
-is what could not be verified for the whole of the last project.
+**14. (Both) First money conversation.** Review free; Compare needs an
+account; somewhere here we pick the first price (a monthly seat).
+Charge early and small rather than late and big — a paying stranger
+teaches more than a hundred free ones. Done when: a price is on the
+site.
 
 ---
 
-## What is needed from you
+## Part C — Trace and the project container (weeks 5–12)
 
-| | When | Why |
-|---|---|---|
-| **A real deck and the model behind it** | Now | Phase 0 is unbuildable without one. Anonymised is fine; the numbers can be nonsense as long as the structure is real |
-| **A banker, for one hour** | After Phase 0 | Same question as the lawyer, and it never got answered: is this useful or is it noise |
-| **Which is worse: a missed drift or a false one** | Before Phase 0 ends | It sets every threshold in the matcher, and the answer is not obvious — a missed one embarrasses you in front of a client, a false one gets the product ignored |
+*Goal: « where did this number come from? » — model → formula →
+assumption → source document. The project quietly becomes real here.*
 
-The first is the blocker. Everything else can wait.
+**15. (Engine) Build the precedent walk.** From any cell, walk
+backwards through its references (we have `references_of`) to the
+inputs it depends on, with the labels from `structure.py` naming each
+step: DSCR ← CFADS ← revenue ← P50 yield input. Cap depth sensibly;
+fold parallel paths. Done when: clicking a DSCR cell in a real model
+shows a readable chain to its inputs.
 
----
+**16. (Engine) Build the dependency graph as a real object.** Today
+references are computed per formula; make the whole-workbook graph a
+thing we store per version: every cell, its precedents, its
+dependents. This is the « project graph » foundation — trace, the PF
+brain, scenarios, and the agent all read it. Done when: the graph for
+a 400k-formula model builds in acceptable time and answers « what
+depends on this cell » instantly.
 
-## Risks, ranked
+**17. (Engine) Build document ingestion.** PDFs into the project: term
+sheet, PPA, EPC contract, yield report. Extract the numbers and terms
+with page references. We built contract-to-model grounding for
+Dumfries; this generalizes it into an input pipeline. Done when: a
+yield report yields « P50 = X, page 22 » as structured data.
 
-**Figure extraction and linking do not work well enough.** First, by a
-distance, and Phase 0 exists to find out inside a month rather than inside
-a quarter. The mitigation is structural rather than hopeful: a human
-confirms each link once, so the product degrades to « a bit more manual »
-rather than to « wrong ».
+**18. (Engine) Build the grounding map.** Match model inputs to
+document numbers: this margin ties to term sheet page 4; this
+availability to EPC schedule 3; this input matches nothing. The
+unmatched inputs are a new finding class: « a number no document
+supports. » Done when: a real model + its documents produce a
+grounding report, measured (registered, judged from cells) before we
+claim precision.
 
-**Bankers will not confirm links.** The design asks for a few minutes of
-setup per deal. If that is refused, the whole model collapses back to
-guessing. Worth testing in the same hour as the demo.
+**19. (Founder) Make the project real in the shell.** A project =
+model versions + documents + the grounding map. Upload slots, version
+list, document list. This is the platform arriving — quietly, as a
+container Trace needs, not as a launch. Done when: the Acme setup
+step (create project, drop in model + 6 documents) works end to end.
 
-**PowerPoint's missing tracked changes.** Costed, and a real build.
+**20. (Both) Publish piece #3:** trace as theatre — « click the DSCR,
+land on page 22 of the yield report. » Short video. Done when: live.
 
-**Nothing has run in Office.** Carried over from the legal build,
-unchanged, and now partly sidestepped: Phase 0 does not touch Office.
-
-**Scope by imitation.** Five surfaces, a workspace, connectors, ops and
-invoicing is a large product. The phase order above is deliberately a
-sequence of things useful on their own, and Phase 0 and Phase 1 are both
-useful with no Office integration at all.
-
----
-
-# Phase 0 — built and measured, 10 August 2026
-
-`server/polar/tieout/` reconciles a PowerPoint deck against the model
-behind it. Measured against Project Cascade: **zero findings on the clean
-deck, every injected error on the broken one, nothing invented.**
-
-| | Clean | Broken |
-|---|---|---|
-| Figures read | 100 | 100 |
-| Reconciled | 34 | 34 |
-| Findings | **0** | **6** |
-| Output rows reached | 23 / 23 | — |
-| Recall / precision | — | 100% / 100% |
-
-Five modules, each one decision:
-
-| | What it decides |
-|---|---|
-| `figures.py` | What counts as a figure, and at what precision its claim is made |
-| `deck.py` | Which words name which number — tiles, table cells, clauses |
-| `model.py` | The Outputs tab, one row per published figure, with its basis |
-| `link.py` | Whether a figure and an output row are the same thing at all |
-| `check.py` | Whether the linked pair agrees, at the precision the deck chose |
-
-## The design decision the rest hangs on
-
-**Never link on a value.** Slide 6's peer table prints `10.4x` for Kestrel
-Valve Group and `9.9x` for the median; slide 2 prints $41.2mm reported and
-$48.9mm adjusted. Any checker that matches numbers reconciles the first of
-each pair against the second's cell and reports a drift on a deck that is
-correct. Linking on words means those figures are never candidates for one
-another.
-
-The consequence is that **an unmatched figure is never a finding.** 66 of
-the 100 figures on the clean deck are reconciled against nothing — peer
-multiples, a sensitivity grid, timetable weeks — and the checker says
-nothing about any of them. Silence is the correct output for a number the
-model does not publish.
-
-## What this does not yet do
-
-- **No surface.** No endpoint, no persistence, no panel. It is a library.
-- **Assumes an Outputs tab.** Cascade has one because it was built well.
-  Most models in the wild do not, and inferring the interface rather than
-  reading it is a larger problem than everything above.
-- **Charts are read and not linked.** Their numbers live in embedded
-  workbook parts and usually restate the table beside them; linking both
-  would report every drift twice.
-- **One deck, one model.** Nothing yet reconciles two decks against each
-  other, or a deck against last week's version of itself.
-
-## The open question, still open
-
-*Which is worse: a missed drift or a false one?* Phase 0 answered it by
-assumption — a false positive is much worse, and every gate is set that
-way. On Cascade that cost nothing, because all 23 output rows were reached
-anyway. On a deck whose model names things differently it will cost
-recall, and how much is tolerable is a banker's judgement, not mine.
+**21. (Both) Take stock — first real users checkpoint.** By here we
+have review + compare + trace + projects. Somewhere in Parts A–C the
+first demo calls happened (the demo IS the product on their file — no
+deck). Honest question, answered in writing: are strangers uploading?
+Did anyone pay? What do they ask for that we did not expect? The plan
+after this line bends to what we learn. Done when: written down.
 
 ---
 
-# Phase 1 — the model audit, built and measured, 10 August 2026
+## Part D — The project-finance brain (months 3–6)
 
-`server/polar/tieout/audit.py`. Checks a model against itself: no deck, no
-linking, no judgement about what a figure is called. The check a banker
-runs first, because it finds errors in their own work.
+*Goal: Antford understands project finance economics, not just Excel.
+Built the way the grammar was built: from real models, judged, gated,
+measured — never from a textbook list.*
 
-Nine rules, each drawn from at least two of the FAST Standard, the ICAEW
-*Twenty Principles*, SMART and Operis, and each finding cites its source.
+**22. (Engine) Freeze the PF corpus for round one.** From the hunt
+(step 6): pick the 15–25 models, split them — a lab half we learn
+from, an unseen half we measure on. Same discipline as ever. Done
+when: manifest committed, split registered.
 
-| Rule | Grade | What it catches |
-|---|---|---|
-| `inconsistent-row` | error | One cell in a series unlike the rest |
-| `typed-over-formula` | error | A constant typed over a calculation |
-| `skipped-cell` | error | A total that leaves out the row above it |
-| `circular` | error | A loop, when iteration is not switched on |
-| `external-link` | error | A reference into a workbook that is not here |
-| `error-value` | error / smell | `#REF!` and `#NAME?` / `#N/A` and `#DIV/0!` |
-| `hardcode-in-formula` | smell | An assumption buried where nobody will change it |
-| `inconsistent-anchoring` | smell | Right answer today, wrong the moment it is copied |
-| `volatile`, `long-formula` | smell | `OFFSET`, `INDIRECT`; formulas nobody can read |
+**23. (Engine) Teach the engine to find the PF skeleton.** In any PF
+model, locate: the timeline (construction/operations, the COD switch),
+CFADS, the debt schedule(s), DSCR row, the DSRA, the waterfall, equity
+returns. This is structure-finding, like `structure.py` but for
+meaning: labels + formula shapes + graph position. Done when: on the
+lab half, the engine names these parts and we judge how often it is
+right (registered measurement).
 
-**Measured: 9 of 9 planted defects, 0 false positives**, against a fixture
-whose defects are at known addresses and whose eight *innocent* structures
-were each a false positive on a real model first.
+**24. (Engine) Build the PF checks, one at a time, each gated.** In
+value order: (a) DSCR actually equals CFADS ÷ debt service — recompute
+it independently and compare; (b) sculpting consistency — if
+repayments are sculpted to a target, does every period hit it; (c)
+DSRA logic — funded from the right source, sized to the stated months,
+released at the right time (this is the Maya finding); (d) waterfall
+order — cash flows through the priority order the docs state; (e)
+circularity health — IDC and fee circularities converge and are
+flagged where hand-broken; (f) covenant headroom — computed ratios vs
+the covenant levels from the term sheet (needs Part C grounding).
+Each check: principle → implementation → regression test → corpus
+gate → registered measurement on the unseen half. Done when: each
+check's honest numbers are written down.
 
-On four real Damodaran valuation models — 2,000 to 9,200 cells each — 0 to
-3 errors per model, under half a per cent of formulas. **Precision there is
-not measured.** They carry no labelled ground truth, and the code says so
-rather than quoting a number it cannot support.
+**25. (Engine) Plant PF defects and measure recall.** Extend
+`plant_defects.py` with PF classes: DSRA released early, DSCR formula
+skipping a debt tranche, sculpt target drifting, waterfall line out of
+order. Plant into clean PF models, measure what we catch. Done when:
+recall numbers per class exist, including the zeros.
 
-## What would change the picture
-
-The only hand-labelled corpus is CUSTODES: seventy sheets from EUSES,
-marked by its authors, and the place the published baselines live —
-CUSTODES at 20.3% mean per-workbook precision, ExceLint at a median of 1.0
-on the same data. It is outside this environment's egress allowlist and
-is legacy binary `.xls` besides, which nothing here can read.
-
-Two things unblock it, and they are the highest-value hour available:
-**allowlist `sccpu2.cse.ust.hk`**, and **a legacy `.xls` reader** — which
-also unlocks the other sixty-nine Damodaran models, all of EUSES, and the
-Enron corpus. That is the difference between « the rate is low » and « the
-precision is X ».
-
-## Still not built
-
-- **Cross-foot and three-statement articulation.** Does the balance sheet
-  balance, do the flows tie. Needs the statement structure recognised, not
-  just the grid.
-- **Deliverable-to-source.** The corpus for it exists and is free: 8-K
-  Exhibit 99.1 investor decks against the 10-K or 10-Q whose figures they
-  quote. Those decks are PDFs, so it needs a PDF figure extractor before
-  it needs anything else.
+**26. (Both) Publish piece #4:** « we checked N public project-finance
+models — here is what is broken in them. » This is the piece that
+makes PF people take us seriously. Done when: live.
 
 ---
 
-# Superseded for scope — 10 August 2026
+## Part E — Review v2 and the second exam (month 6–7)
 
-The phase list above described the route to a working product. Two
-documents now carry it forward with measurements attached:
+*Goal: the world's best project-finance model reviewer — structural
+grammar + PF semantics in one ranked report.*
 
-- **`complete-product.md`** — what the whole product is, layer by layer,
-  what exists of each, the order, and what « complete » means stated as
-  tests rather than as a feeling.
-- **`accuracy-backlog.md`** — the engine's measured recall and precision,
-  where the misses come from, and the two ideas that should move them.
-  Parked deliberately, with the numbers written down.
+**27. (Engine) Merge the PF checks into Review.** One report: tier 1
+defects (structural + PF-semantic), tier 2 assumptions at risk
+(including ungrounded numbers from step 18), tier 3 hygiene. Re-rank
+weights so a DSRA error outranks a hardcode. Done when: one real PF
+model produces the merged report and it reads like a senior
+reviewer's memo.
 
-The plan's central design decision survives intact and is now load-bearing
-for a reason it was not written for: the engine finds 56% of what it is
-shown. That rules out promising to catch errors, and it makes « a link is
-confirmed once, then re-checked deterministically » the only honest
-promise — and one that holds at 100%.
+**28. (Engine) The second exam.** 10–20 genuinely new models — new
+industries, new modelling cultures (project finance, corporate
+three-statement, LBO), clean models included, defects planted. The
+mentor's bars: >80% unseen precision (must hold), <5% false positives
+(holding), >90% recall on broken/overwrites/structural (not met yet:
+87%/69%/—), mutations substantially up, and no catastrophic blind
+spots — we must always know exactly what the engine cannot see. Done
+when: the registered measurement is run and the numbers are written
+down, whatever they are.
+
+**29. (Engine) Fix what the exam teaches, gate everything.** Same loop
+as Round 5: every false positive names its general fix, every miss
+names its detector. Done when: the loop closes — the fixes move the
+*next* unseen number, not just the lab.
+
+**30. (Founder) Update the free door to Review v2.** The upload now
+finds DSRA errors, not just torn references. The Maya story stops
+being the destination and becomes the demo. Done when: live.
+
+---
+
+## Part F — Deliverables, starting with the one that recurs
+(month 7–9)
+
+*Goal: documents generated from the model, tied to it. First the one
+that is contractually mandatory every quarter for twenty years.*
+
+**31. (Engine) Build the quarterly compliance certificate.** From the
+model: the DSCR calculation for the period, laid out the way the
+credit agreement requires, every number linked to its cell. Word
+output first (banks live in Word). Done when: a certificate generated
+from a real model matches one a human would produce.
+
+**32. (Engine) Build the auditor response schedule.** Input: a list of
+findings (the model auditor's, or ours). Output: finding → cell →
+what changed → in which version — pulled from Compare's history. Done
+when: generated from a real project's version history.
+
+**33. (Engine) Build « the deck is stale » checking before deck
+generation.** Cheaper and more trusted than generating slides: point
+at an existing lender presentation / credit paper, and flag every
+number that no longer matches the model (« you changed the sculpt
+Thursday; these six numbers are stale »). Full document *generation*
+comes after checking works, because checking is measurable and
+generation is taste. Done when: a real deck + model pair produces a
+stale-number report.
+
+**34. (Founder) Deliverables surface in the shell** — generate,
+preview, download, regenerate when the model changes. Done when:
+live.
+
+---
+
+## Part G — Scenario apps (month 8–11)
+
+*Goal: the sponsor shares a working scenario tool; the model file
+never leaves the building.*
+
+**35. (Engine) Build the lattice runner.** The sponsor picks sliders
+(construction delay, price curve, P50/P90, capex, base rate) and
+ranges. Real Excel — headless, offline, ours — recalculates the
+actual model at every grid point and stores the outputs (DSCR min/avg,
+gearing, equity IRR, whatever the sponsor selects). No home-built
+calculation engine; every number in the app was computed by Excel
+from the real model. Done when: a 5-slider lattice on a real PF model
+computes in hours, unattended.
+
+**36. (Engine) Build the app viewer.** A shareable page: sliders move,
+numbers and charts update instantly from the lattice, every number
+clicks through to its source cell name (not the file). Access
+controlled by the sponsor. Done when: a lender-side user can flex
+scenarios with Excel closed and the model file inaccessible.
+
+**37. (Both) Handle the lattice's edges honestly.** In-between slider
+values are interpolated — label them as such, and offer « compute this
+exact point » as a queued job. Done when: the app never shows an
+interpolated number as an exact one.
+
+**38. (Both) Publish piece #5:** « stop emailing the model. » Done
+when: live, with a public demo app on a public model.
+
+---
+
+## Part H — The Excel agent (month 10–14)
+
+*Goal: « change the sculpt to 1.35x » — planned, shown, approved,
+executed, verified. Last because everything else is what makes it
+safe.*
+
+**39. (Engine) Build the write path.** Write cells into a real
+workbook without corrupting anything: formulas, cached values, types,
+styles preserved (the planter's XML surgery grows up into this).
+Verified by reading the file back and by opening in real Excel. Done
+when: a 1,000-edit write survives round-trip byte-comparison of
+everything untouched.
+
+**40. (Engine) Build plan mode.** For a requested change: the plan in
+plain words (« resize debt, recalc sculpting, update DSRA funding,
+propagate to waterfall — 6 sheets, 84 cells »), the exact cell list,
+before/after for each. Nothing executes until approved. Done when: a
+real restructure produces a plan a human approves or rejects in
+minutes.
+
+**41. (Engine) Build execute + verify.** Apply the plan, recalculate
+(real Excel, headless), then run our own machinery on our own work:
+Compare (did we change exactly what the plan said?) and Review (did
+we introduce any defect?). The agent's edit is not done until the
+audit of its own edit is clean. Done when: the verify loop runs
+automatically after every execution.
+
+**42. (Engine) Teach the first five tasks, one at a time, each
+measured.** (a) size debt to a DSCR or gearing constraint, whichever
+binds; (b) sculpt to a target DSCR; (c) add a tranche; (d) fund and
+release a DSRA correctly; (e) switch timeline granularity at COD.
+Each task: built, then run against models where we know the right
+answer, recall/precision written down. « Substantially harder tasks
+the agent refuses » is a feature — the agent says what it cannot do.
+Done when: five tasks with honest numbers.
+
+**43. (Engine) Skills — the customer's house method.** A customer's
+conventions (sculpting method, check-row layout, naming) captured so
+the agent builds *their* model. Start as structured config, not
+free text. Done when: the same task run under two different skills
+produces two convention-correct results.
+
+**44. (Both) Agent measurement published.** Nobody else publishes
+agent-edit safety numbers, because nobody else has the gate. « N
+edits, zero introduced defects, verified by the same engine that
+found 48,000 errors » — that is the trust story. Done when: live.
+
+---
+
+## Part I — After close: the twenty-year loop (month 12–15)
+
+*Goal: the reason project finance beats every other vertical — the
+product keeps working after the deal closes.*
+
+**45. (Both) Base case lock.** At financial close, the agreed model
+version is locked in the project as the signed base case — a
+contractual object we hold. Done when: a version can be locked,
+labelled, and never silently changed.
+
+**46. (Engine) Pre/post-adjustment comparison.** A variation (change
+order, curtailment settlement, new offtake) = a new version compared
+against the locked base case, in the contract's own language:
+pre-adjustment model, post-adjustment model, what moved. This is
+Compare wearing the contract's vocabulary. Done when: generated on a
+real variation.
+
+**47. (Engine) Actuals against model.** Period actuals in (CSV or
+typed), tracked against the model's projections, drift reported.
+Done when: a year of actuals against a real model produces a variance
+report.
+
+**48. (Both) The quarterly loop runs itself.** Each quarter: actuals
+in → DSCR computed → compliance certificate generated → sent. The
+standing-order deliverable, standing. Done when: it has run for one
+real customer for two consecutive quarters without us touching it.
+
+---
+
+## Part J — Call it complete (month 15+, whenever the bar is met)
+
+**49. (Both) Security and trust table-stakes.** Before real lender
+data lives with us: access control per project and per party (the
+lender sees the app, never the model), encryption, audit log of who
+saw what, and the SOC 2 process started (it takes months — start it
+around Part F, finish it here). Done when: we would let a bank's
+security team read our answers.
+
+**50. (Both) Pricing, finalized.** Seats for the working team,
+projects as the second axis (a project with locked base case +
+quarterly certificates is priced per project per year), scenario-app
+sharing included with the project. The audit-cost argument closes
+sales: a model audit runs $25–50k with ~$5k per extra round; every
+round we remove pays for a year. Done when: on the site, and at least
+three customers pay it without a bespoke discount.
+
+**51. (Both) The completeness test.** One real customer, all ten
+steps of the journey: upload → review → project → compare → trace →
+PF checks → scenario app → deliverables → agent in plan mode →
+quarterly certificate. Each step used in anger, not demoed. Done
+when: it happened, and we wrote down where it creaked.
+
+**52. (Both) Say it out loud.** The product is complete. Everything
+after this line is growth: more verticals of project finance
+(transport PPP, transmission, storage), more house-method skills,
+more deliverable types, the live-recalculation engine if the lattice
+ever stops being enough, and the bank-side product — the lenders who
+received our output every quarter become the customers we never had
+to call.
+
+---
+
+## What we deliberately do NOT build (so the plan stays finishable)
+
+- **A spreadsheet calculation engine** — real Excel computes; we
+  orchestrate. Revisit only if the lattice provably blocks sales.
+- **Chat-with-Excel** — general questions are a commodity; our agent
+  does the named PF tasks with a plan, or declines.
+- **Pitchbook generation** — we check documents against the model
+  first (step 33); we generate only the documents that recur by
+  contract.
+- **A general-purpose file manager** — the project holds what the
+  model draws from, nothing else.
+- **Integrations before customers ask** — no data-room, ERP, or BI
+  connectors until a paying customer names one.
+
+## Standing risks, named
+
+- **Two people, seven rungs.** The order is designed so any stopping
+  point is a working business: A–C alone is a sellable review/compare/
+  trace tool. If time or money runs short, we stop at a rung, not in
+  the middle of one.
+- **The PF corpus may be slow to gather.** That is why the hunt starts
+  at step 6, months before Part D needs it.
+- **Tracelight or another funded team moves into PF.** Our defence is
+  the ladder's bottom: the measured engine, the corpus discipline, and
+  the published numbers no one else can honestly claim.
+- **The plan will be wrong somewhere.** Step 21 exists for that: what
+  real users do in Parts A–C bends everything after it. Amend the
+  plan in writing when it bends — never silently.

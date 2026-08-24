@@ -3264,3 +3264,340 @@ rows, circularity with iteration off, typed-over with drift, broken
 references — plus parameter-grade hardcodes. Severity tiers plus
 figure worth plus those shapes IS the attention ordering the mentor
 asked for; the engine already carries every ingredient.
+
+## 19 August — the fix round, gated and re-measured: the bar is met
+
+**The order.** The founder: « go ahead. run the fix round. » Implement
+every fix the usefulness audit named — fourteen noise causes, four
+duplicate collapses — behind the golden-master gate, then re-draw and
+re-judge.
+
+**What was built.** The reader now sees array formulas (the single
+largest noise cause — array-entered cells registered as typed values).
+The hardcode rule reads literals in context: date-constructor
+arguments, text-function counts, rounding precisions, powers of ten
+and ABS tolerances are notation; equality-compared literals are
+selectors, watched by a new selector-drift pass that reports the one
+cell testing a different switch value than its identically-shaped
+sisters; label-documented constants stop reporting. A bare SUM across
+its own row is the totals column. A plain enumeration is long because
+its list is long. The skipped-cell rule judges a multi-area SUM's
+areas together (fixing the bug the audit caught in its own sample),
+exempts bare-aggregate rows and partition-covered detail rows, and
+stops its walk at a section break. Mnemonic defined-name columns are
+scaffolding. One value pasted across a row folds to one finding; a
+varying typed row is an input series and drops; the same finding on
+three or more sibling sheets folds to one for every smell rule; a
+sheet's volatile idiom folds to one; a convention constant across
+many different formulas folds to one; a row of near-identical long
+formulas folds to one.
+
+**What the gate caught.** Three things the sample never showed.
+(1) The array-formula fix surfaced ED2's long array formulas 112
+times per file — the same duplicate layout the audit named for
+hardcodes; the sibling-sheet fold was extended and 112 became 2.
+(2) Three « new » circular loops in the GT3 models — traced cell by
+cell, every one closes only through INDEX's first argument, and so
+does the 21,365-cell chain reported on both H7 models since the
+corpus round. Excel resolves INDEX's pick before hunting circularity
+(that is why all four shipped models calculate cleanly with iteration
+off); the cycle hunter now declines to walk lookup-table edges, and
+two false findings left the baseline. (3) The selector-drift pass's
+period-label guard vetoed the exact judged card it was built to keep
+— the drifted row sits under « RIIO-GD2/GD3 » band headers; the guard
+is gone, the structure is the signature.
+
+**The corpus.** 1,259 → 852 findings across the 27 files, every diff
+line traced to a named fix, three sweeps with surgical deltas.
+H7: 88→33. ED2: 41→39. Final GT3 BPFM: 182→79. The suite: 473 tests,
+eighteen new, one per fix family.
+
+**The re-measure.** Fresh draw of 143 (seed 20260819, registered
+first), neighbourhoods harvested, every verdict from the cells.
+Raw: A 13 · B 77 · C 19 · D 34. Stratified over the 852:
+**A ≈ 6% · B ≈ 55% · C ≈ 11% · D ≈ 28% — A+B ≈ 61%**, against 26%
+before the round. The mentor's bar — a majority of remaining findings
+definitely or probably useful — **is met.**
+
+**What remains, named.** D is three-quarters one family: ED2's typed
+pool balances repeat one layout decision per DNO sheet with different
+numbers, and the sibling fold keys on identical numbers — a one-key
+fix (shape, not numbers) plus a column-beat fold for repeated check
+rows and a same-file template fold cover 30 of 34 raw D verdicts.
+C reduces to nine small named skips recorded on the verdicts. Both
+lists are the next round's spec, exactly as last time.
+
+## 19 August, later — Round 1 of the mentor's four: Collapse
+
+The mentor's direction, adopted whole as the next four rounds
+(collapse → purify → elevate → stress test), with the standing rule:
+every finding earns its place, nothing detected is deleted — the
+folds change what the report says, not what the engine sees.
+
+Round 1 shipped: the sibling-sheet fold keys a labelled hardcode by
+shape and label rather than numbers (fourteen company balances are
+one layout decision); a long formula surviving the address fold
+folds as a template when the same column carries the same length
+three or more times in one file (the F1 check row repeating down
+the sheet, the PCFM import formula stamped across sheets); designed
+error tails join the sibling fold (the F-sheet title formula, once).
+
+The corpus: **852 → 696**, no sample drawn — the population had to
+settle first, per the round's design. The diff: 185 removed, 29
+grouped representatives added, every line traced. ED2 files 39 → 15.
+The shape-keyed rule also collapsed a family nobody named — the GD3
+network sheets' per-network innovation allowances — which is what a
+general rule is for. Baseline regenerated and committed; 476 tests.
+
+## 19 August, evening — Round 2: Purify, and the gate earns its keep again
+
+Nine judged noise causes became nine semantic principles (the commit
+carries each as a sentence about spreadsheets); three stayed as
+recorded limitations. The percent fix cut deeper than its cause: a
+postfix % is part of the number, so `2%` stopped hiding behind the
+innocence of the integer two — and the WACC and equity files gained
+twelve genuine inflation-rate hardcodes the engine had been blessing.
+Correctness up, count up, exactly the round's rule.
+
+The gate caught the round's one over-reach before it shipped: the
+first draft of « neighbours must agree » silently deleted two judged
+A findings (the H7 typed first-year rates, flanked by the row's own
+AVERAGE column). The principle's correct form — at least one flank's
+shape must repeat in the run — restored them; one unjudged sibling
+seed falls below the bar, recorded as a trade.
+
+The corpus: **696 → 669**, every line traced (respellings, the nine
+principles, twelve honest additions, three restorations). 481 tests.
+Next: the third measurement, per-detector, seed 20260820 as
+registered.
+
+## 19 August, night — The third measurement: per-detector, and the 90% bar
+
+Fresh draw of 191 (seed 20260820, registered first; every rule
+guaranteed up to 25 picks so the four inconsistent-row findings are
+judged whole), neighbourhoods harvested, every verdict from the
+cells. Raw: A 33 · B 131 · C 13 · D 14. Stratified over the 669:
+**A ≈ 8% · B ≈ 83% · C ≈ 4% · D ≈ 5% — A+B ≈ 91%**, against 61%
+after the fix round and 26% at the start. False positives are under
+the mentor's 5% line.
+
+The question graduated, as directed: not « is the report useful »
+but « which detector is excellent and which still needs work ». Four
+detectors judge clean (long-formula, volatile, inconsistent-row at
+100%; error-value's only noise is the two documented limitations).
+Two carry named debts: typed-over-formula's D mass is one family
+(five columns typed over in one gesture on I_Series row 218,
+reported per cell — fix: fold varying typed runs of 4–7);
+skipped-cell's C mass is entirely the accepted index-factor
+limitation, no new fix named. Hardcode owes shape normalisation for
+the fold key, number-words documentation, and a header walk-up.
+That short list is Round 3's engine spec; the round itself is
+Elevate — materiality, severity tiers, finding families, evidence.
+
+## 19 August, late night — Round 3: Elevate
+
+The four fixes the third measurement named, each as a general
+principle: number words document their constants; a block's nearest
+header documents it however tall the block runs (the gate's trace
+caught my first version capping the walk at twelve rows — one
+Italgas beta row read differently from its five siblings, so the cap
+went); literal-arithmetic shapes are one spelling family in the
+sibling fold; and four or more adjacent columns typed over in one
+row are one gesture, with a block pass reuniting a two-dimensional
+paste into one finding naming the whole rectangle — which corrects
+the old five-findings-for-one-paste reading of the Yorkshire case.
+
+Then the elevation itself. Every finding now carries a tier
+(1 defect / 2 assumption at risk / 3 hygiene), a 0–1 weight
+(structural risk × confidence, raised only by real money the engine
+itself computed), a basis sentence arguing the rank, and — on every
+fold — the roster of cells it stands for. Tier-1 floors above
+tier-2 ceilings above tier-3: a torn check can never sit below an
+OFFSET carpet. Wired through the deal audit, the solo check, and
+the sweep, so the corpus now says how the attention splits:
+**632 findings — 51 defects, 251 assumptions, 330 hygiene.**
+
+The gate: 669 → 632, every line traced to a named fix (five ED2
+versions fold their pool-balance spellings, both H7 files fold the
+stress-cargo row and lose the half-year false positive, the equity
+file's beta block is documented by its own header). Two sweeps —
+before and after elevation — differ only by the cap fix, proving
+the elevation layer changed no finding's content. 488 tests.
+Known gap, recorded: the statement checks (analytics) do not carry
+tiers yet — they join the elevation layer when their findings move
+through the same pipeline. Next: the fourth measurement, seed
+20260821 as registered, judging tier alongside class.
+
+## 20 August, small hours — The fourth measurement: 98%, and zero duplicates
+
+Fresh draw of 185 (seed 20260821, registered first), neighbourhoods
+harvested, every verdict from the cells, tier judged alongside for
+the first time. Raw: A 31 · B 143 · C 11 · D 0. Stratified over the
+632: **A ≈ 8% · B ≈ 90% · C ≈ 2% · D = 0 — A+B ≈ 98%**, against
+91%, 61%, 26% on the three measurements before it. The mentor's
+lines — 90%+ worth attention, under 5% false positives — are both
+cleared, and the duplicate class is empty for the first time.
+
+Per detector: hardcode, long-formula, volatile, typed-over, and
+inconsistent-row all judge 100% A+B; typed-over rose from 47% on
+the strength of one fold. Per tier: tier 2 carries no noise at
+all, tier 3 almost none — and tier 1 carries 17.8% C, all of it
+the one documented index-factor limitation. Every C in the corpus
+now has a name and a written reason; nothing is unexplained.
+
+What the next rounds owe: the index-factor limitation is now the
+whole of the noise and it sits in the costliest tier — Round 4's
+corpus growth should include files that settle whether a general
+multiplicative-block rule can clear it without pinning real
+skipped-money totals. The statement checks still ride outside the
+elevation layer. And 98% on 27 familiar models is not 98% on the
+next model a customer uploads — which is exactly what Round 4's
+stress test exists to find out.
+
+## 20 August — Round 4: the stress test, and the honest number
+
+The engine left the laboratory: eleven unseen models (Ofwat PR24,
+NZ Commerce Commission DPP4, Damodaran), protocol and seeds
+registered before any finding was read, engine run as shipped.
+
+**Generalization: the lab's 98% became 5.8%.** One convention the
+AU/UK corpus never exercised — a determination built as workbooks
+that read each other — flooded two files with 1,496 per-cell
+external-link findings that are one import decision per source.
+Excluding the floods, 54%: the unseen files taught seven noise
+principles (lookup column indexes alone account for most of the C
+mass) and four fold families the engine does not have. The signal
+did generalize: seven ACT-grade findings on files never seen —
+typed-over ERPs, a torn check row in a shipped draft determination,
+four values hand-keyed down Thames Water's 2024-25 revenue column,
+a recurring unexplained 0.999 haircut across the NZCC suite.
+
+**Quiet on clean: clean.** No believed-clean file produced an
+A-grade defect claim; one was perfectly silent. The engine chatters
+on unfamiliar styles but does not invent defects.
+
+**Recall: 68% registered, 60% on-point** over 72 planted defects in
+three hosts (collateral: one finding). Broken references 100%,
+overwritten formulas 86%, wrong assumptions 80%, skipped totals
+70% — and two honest zeros: single-cell reference shifts and
+operator flips in short rows are nearly invisible to the row pass,
+and totals narrowed at the head of their own range slip past a rule
+that only looks above the total. The planting harness
+(scripts/plant_defects.py) is now permanent equipment.
+
+The round changed no engine code — the measurements are of the
+engine as Round 3 left it — and wrote the Round 5 agenda: the
+external-link fold, seven noise principles, four fold families,
+two recall gaps, reader error-tolerance, and the Thames FM02
+under-reach investigation.
+
+## 20 August, continued — Round 5: Generalize, measured where it counts
+
+The mentor reset the objective: don't win the original corpus back,
+make the engine generalize. Six workstreams, all landed:
+
+**External links became the event they always were.** One finding
+per source workbook — « reads workbook [1] in 602 cells of Inputs »,
+roster attached — instead of 1,496 per-cell copies. **The seven
+grammar patterns** from the unseen corpus each became principle →
+implementation → regression test: lookup indexes, power-of-ten
+sentinels, roots written as powers, diagnostic thresholds,
+self-labelling counters, written-out means, self-documenting
+windows. **The mutation detector** implements the semantic-shape
+idea: a family identical token-for-token except one cell, differing
+in exactly one position, is the same calculation with one changed
+token. Its first draft sprayed 34 findings over real files in three
+recognisable patterns (row seeds, column chains, crossing families);
+those became three exemptions, and the survivor count on the unseen
+corpus is one — an ACT-grade displaced window the skipped-cell lens
+had mis-diagnosed a round earlier. **The reader** now survives a
+malformed formula at the cost of one loud finding instead of the
+whole workbook. **The planter** was corrected (XML double-escaping;
+one plant per line) and the Round 4 recall figures amended in the
+protocol. **Thames** is explained: 413k formulas, median 18
+characters, no cached errors — discipline, not blindness.
+
+The number that decides the round, the fifth measurement, judged
+whole: **the unseen corpus went from A+B 5.8% to 80.1%** (C 2.9%,
+ACT 8 · NOTE 101 · IGNORE 27), with the residual D being three
+still-unbuilt folds, all named. Recall on honest plants: 62%
+overall — broken references 13/15, overwrites 9/13, wrong
+assumptions 8/11, displaced references 5/15 (from 1), flips 1/5
+(from 0) — with the blind spots named and structural: singleton
+formulas have no family to witness them, which is where a static
+engine ends and label semantics begin.
+
+The original 27 are regression now, per the mentor: the v2 gate
+diff is traced below its own sweep, and the judged corpus keeps its
+verdicts. What the next unseen batch owes: 10–20 genuinely new
+models, and the same three questions.
+
+**The Round-5 regression gate on the 27**, traced line for line:
+four files changed of twenty-seven. The square-root principle
+retired the H7 `^0.5` MAX-formula hardcode (the recorded trade); the
+mean-divisor principle excused one member of ET3's Depn fill; and
+the mutation detector added exactly two findings to the lab corpus —
+`C_Ratios!Y290` in both H7 files, writing `=Y228` where nineteen
+siblings write `=Y$228`: the same cell with broken anchoring, a
+refill hazard five measurements had blessed. Population 632 → 632.
+Baseline regenerated and committed; 494 tieout tests green.
+
+## 20 Aug 2026 — Round 6, opened by a rival's report
+
+The founder ran Tracelight over our own judged fixture (the
+semiconductor-fab example model) and handed us the output. Verified
+claim by claim against the raw cells: four real defects we missed —
+in a file that was *in-sample* — one fabricated finding (a quoted
+formula that is not in the file), three duplicates in their list.
+Full record: `round6-tracelight-exam.md`.
+
+The four misses reduced to named causes, each now a general fix with
+a regression test: **(1)** the mutation detector never classified
+sheet-qualified tokens as references (`'Control Panel'!R51CC` fails
+`startswith("R")` — which `ROUND(` passes); shapes now mark reference
+operands with `@`. **(2)** The seed exemption became the **edge
+rule**: first and last positions of a run are designs (chain seeds,
+totals columns) unless the evidence is strong — both variants pinned,
+a family walking into empty cells, a relative edge cell resolving to
+the family's own pin, or an own-column window displaced within its
+own column; windows grown/shrunk to exactly their own live data are
+design. **(3)** The reader no longer skips the whole header row — a
+formula there that reaches other rows is content (the negative-cash
+banner lived on one), and the new `gapped-test` names the live cells
+a walking test jumps over (the walk must be one repeated comparison —
+arithmetic composition is exempt, judged on NZCC's BBAR). **(4)** The
+names table is audited: `#REF!` names and foreign-workbook names are
+folded `broken-name` findings.
+
+The unseen gate demanded four sweeps: the first cut sprayed 26 lines,
+and every spray became one of the refinements (Thames' twelve
+totals-column flags, BBAR's five arithmetic walks, Financeability's
+three pinned anchors, the depreciation model's grown window). The
+gate also caught the blunt edge rule deleting `Outputs!R86` — judged
+A/ACT in Round 5 — which is what forced the own-line keep. Final
+unseen diff: four factual `broken-name` events (CA101 carries 7,817
+dead names), `capstru B53` kept as a real anchoring hazard, and
+`OBXValues!M689` kept and logged marginal. The exam file goes 7 → 12
+findings, all pinned by the fixture test. 79 audit tests green.
+
+**The Round-6 lab gate on the 27**, traced line for line. Population
+632 → 674. The additions: **(a)** the names-table events — ED2
+carries 606 dead defined names in every one of its eleven versions,
+RIIO-3 carries ~581–591, one folded finding per file; **(b)** the
+mutation detector's new reach — and its biggest find yet: in both
+published CAA H7 PCM files, **C_Tax's first forecast column reads
+pinned input rows whose labels match its own rows (« Category 3 % in
+main pool » = I_InputSets!$323) while all eight filled years read
+three rows higher into an empty « allocation check » row and evaluate
+to zero** — 24 rows in block rhythm, folded to one finding per file
+by the new same-column fold; likewise `O_FinStats!Y19` (« Total non
+aero revenues », where 14 siblings read « Airport charges revenue » —
+the values differ by a third); **(c)** BPFM singles, sampled and
+judged from cells: `Depn!X500` pins row 4 where 77 siblings read it
+relative (the anchoring class), `Revenue!AY25` reads its neighbour's
+column and the next row from MainInputs (a mis-drag), two
+Finance&Tax own-column displaced windows (the judged-A class). The
+one removal: `ScenDelta!AA9`'s long-formula fold re-anchors to AA8 —
+the header-row fix admitted the family's true first cell (144 → 180
+member cells, same finding). Baseline regenerated at 674; 502 tieout
+tests green.

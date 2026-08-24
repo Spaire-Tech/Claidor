@@ -1,0 +1,1912 @@
+[
+ {
+  "family": "ed2",
+  "stratum": 2,
+  "file": "ofgem_ed2/v4_2026-01.xlsx",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "Cover!G4",
+  "figure": "1",
+  "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 2,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "Scen 8!C280",
+  "figure": "56",
+  "detail": "carries #N/A in 2 routine gaps in its series and past its data's edge \u2014 56 cells across 2 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!A1",
+  "figure": "899",
+  "detail": "carries #DIV/0!, #VALUE! in 253 routine gaps in its series and past its data's edge \u2014 899 cells across 8 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "ScenarioRun_AllOutputData!AH17",
+  "figure": "2",
+  "detail": "carries #N/A in 2 routine gaps in its series \u2014 2 cells across 2 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F2b - Financial Summary (YE)!A1",
+  "figure": "1",
+  "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns \u2014 the same formula at A1 on 4 sheets (F2b - Financial Summary (YE), F4 - Floating Rate Debt, F5 - Inflation Linked Debt, PCFMInterface)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "error",
+  "ref": "Checks!I2",
+  "figure": "",
+  "detail": "shows #REF!"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F2a - Financial Summary (TWA)!A1",
+  "figure": "141",
+  "detail": "carries #DIV/0!, #VALUE! in 50 routine gaps in its series and past its data's edge \u2014 141 cells across 11 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!M12",
+  "figure": "450",
+  "detail": "carries #DIV/0! past its data's edge \u2014 450 cells across 1 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "Cover!G4",
+  "figure": "1",
+  "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!A1",
+  "figure": "451",
+  "detail": "carries #DIV/0!, #VALUE! past its data's edge \u2014 451 cells across 2 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "error",
+  "ref": "Checks!I88",
+  "figure": "2",
+  "detail": "shows #REF! across 2 cells, Checks!I88 to I89 \u2014 one broken formula, `=#REF!` repeated over the block"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!A1",
+  "figure": "899",
+  "detail": "carries #DIV/0!, #VALUE! in 253 routine gaps in its series and past its data's edge \u2014 899 cells across 8 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F2b - Financial Summary (YE)!A1",
+  "figure": "1",
+  "detail": "carries #VALUE! past its data's edge \u2014 1 cells across 1 columns \u2014 the same formula at A1 on 4 sheets (F2b - Financial Summary (YE), F4 - Floating Rate Debt, F5 - Inflation Linked Debt, PCFMInterface)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F2a - Financial Summary (TWA)!A1",
+  "figure": "141",
+  "detail": "carries #DIV/0!, #VALUE! in 50 routine gaps in its series and past its data's edge \u2014 141 cells across 11 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "error-value",
+  "severity": "error",
+  "ref": "OutputSummary!E209",
+  "figure": "8",
+  "detail": "shows #REF! across 8 cells, OutputSummary!E209 to E307 \u2014 one broken formula, the same value pasted over the block"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "error-value",
+  "severity": "error",
+  "ref": "Finance&Tax(actual)!I264",
+  "figure": "",
+  "detail": "#DIV/0! at I264 inside an otherwise live column \u2014 values resume at I265"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "error-value",
+  "severity": "error",
+  "ref": "ScenarioRun_AllOutputData!K65",
+  "figure": "276",
+  "detail": "shows #REF! across 276 cells, ScenarioRun_AllOutputData!K65 to AG76 \u2014 one broken formula, `= CHOOSE(m_identity,#REF!,#REF!,#REF!)` repeated over the block"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!M12",
+  "figure": "450",
+  "detail": "carries #DIV/0! past its data's edge \u2014 450 cells across 1 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F2a - Financial Summary (TWA)!K252",
+  "figure": "140",
+  "detail": "carries #DIV/0! in 50 routine gaps in its series \u2014 140 cells across 10 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "error-value",
+  "severity": "error",
+  "ref": "ScenarioRun_AllOutputData!AI17",
+  "figure": "",
+  "detail": "#N/A at AI17 inside an otherwise live column \u2014 values resume at AI18"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!O15",
+  "figure": "898",
+  "detail": "carries #DIV/0! in 253 routine gaps in its series and past its data's edge \u2014 898 cells across 7 columns"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 38,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!M12",
+  "figure": "450",
+  "detail": "carries #DIV/0! past its data's edge \u2014 450 cells across 1 columns"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 1,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "error-value",
+  "severity": "error",
+  "ref": "TO_MainInputs!BF726",
+  "figure": "",
+  "detail": "shows #REF!"
+ },
+ {
+  "family": "riio3_wacc",
+  "stratum": 4,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "SONIA Forecast Interpolation!B3",
+  "figure": "4,265",
+  "detail": "carries #N/A in 22 routine gaps in its series and past its data's edge \u2014 4,265 cells across 5 columns"
+ },
+ {
+  "family": "riio3_wacc",
+  "stratum": 4,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "rule": "error-value",
+  "severity": "smell",
+  "ref": "Daily Data!I3",
+  "figure": "38,066",
+  "detail": "carries #N/A in 18,667 routine gaps in its series \u2014 38,066 cells across 10 columns"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "EMID!AR347",
+  "figure": "1354.52821206626, 4.32009983342141E-12",
+  "detail": "1354.52821206626, 4.32009983342141E-12 inside =1354.52821206626+-4.32009983342141E-12"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "EMID!AR345",
+  "figure": "113.925671333617, 37.8311076869707",
+  "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707 \u2014 the same decision at AR345 on 6 sheets (EMID, NPgN, NPgY, SWALES, \u2026), each sheet holding its own number"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Legacy!AJ41",
+  "figure": "1.06, 0.94",
+  "detail": "1.06, 0.94, 1.5 inside =IF(AJ$40=0,IF(AJ$36>(1.06*AJ$37),3,IF(AJ$36<(0.94*AJ$37),0, \u2014 one formula filled across 8 cells (FY2016\u2013FY2023)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v4_2024-07.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Monthly Inflation!N5",
+  "figure": "0.5",
+  "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v3_2023-10.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Annual Inflation!AN51",
+  "figure": "0.75, 0.25",
+  "detail": "0.75, 0.25 inside =0.75*(AM50/100)+0.25*(AN50/100) \u2014 one formula filled across 18 cells (FY2020\u2013FY2028)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v4_2026-01.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Legacy!AJ42",
+  "figure": "1.5",
+  "detail": "1.5 inside =AH$38*((1+((AH$39+AH$41)/100))*(1+((AI$39+1.5)/100))) \u2014 one formula filled across 9 cells (FY2016\u2013FY2024)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v4_2025-07.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Legacy!AJ42",
+  "figure": "1.5",
+  "detail": "1.5 inside =AH$38*((1+((AH$39+AH$41)/100))*(1+((AI$39+1.5)/100))) \u2014 one formula filled across 9 cells (FY2016\u2013FY2024)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v3_2024-01.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Legacy!AJ42",
+  "figure": "1.5",
+  "detail": "1.5 inside =AH$38*((1+((AH$39+AH$41)/100))*(1+((AI$39+1.5)/100))) \u2014 one formula filled across 9 cells (FY2016\u2013FY2024)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "EMID!AR346",
+  "figure": "876.721958362195, 21.464269053998",
+  "detail": "876.721958362195, 21.464269053998 inside =876.721958362195+21.464269053998 \u2014 the same decision at AR346 on 10 sheets (EMID, NPgN, NPgY, SPD, \u2026), each sheet holding its own number"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "SPN!AR345",
+  "figure": "52.072185026487",
+  "detail": "52.072185026487 inside =52.072185026487"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Legacy!AJ42",
+  "figure": "1.5",
+  "detail": "1.5 inside =AH$38*((1+((AH$39+AH$41)/100))*(1+((AI$39+1.5)/100))) \u2014 one formula filled across 9 cells (FY2016\u2013FY2024)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "SPD!AR342",
+  "figure": "53.189004167367",
+  "detail": "53.189004167367 inside =53.189004167367+0 \u2014 the same decision at AR342 on 4 sheets (SPD, SPMW, SSEH, SSES), each sheet holding its own number"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "SPN!AR346",
+  "figure": "599.385137425026",
+  "detail": "599.385137425026 inside =599.385137425026"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v4_2025-01.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Legacy!AR22",
+  "figure": "5",
+  "detail": "5 inside =$AR20/5 \u2014 one formula filled across 5 cells (FY2024\u2013FY2028)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v3_2023-10.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "EMID!AR345",
+  "figure": "113.925671333617, 37.8311076869707",
+  "detail": "113.925671333617, 37.8311076869707 inside =113.925671333617+-37.8311076869707 \u2014 the same decision at AR345 on 6 sheets (EMID, NPgN, NPgY, SWALES, \u2026), each sheet holding its own number"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Monthly Inflation!N5",
+  "figure": "0.5",
+  "detail": "0.5 inside =IF($E5 < DATE(2023,4,1),  M5,  IF($E5 = DATE(2023,4,1), N4  \u2014 one formula filled across 348 cells (Monthly Inflation!N10 to Monthly Inflation!N99)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 95,
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "SPN!AR345",
+  "figure": "52.072185026487",
+  "detail": "52.072185026487 inside =52.072185026487"
+ },
+ {
+  "family": "h7_debt",
+  "stratum": 4,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "H7 Cost of debt indexation!I80",
+  "figure": "0.5",
+  "detail": "0.5 written into 15 different formulas on this sheet \u2014 a convention typed everywhere rather than held in one cell"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 32,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "I_InputSets!AA436",
+  "figure": "30.19",
+  "detail": "30.19 inside =(30.19/(1+C_Revenue!AH201-C_Revenue!F198))-C_Revenue!F194"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 32,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "I_Actuals!AE50",
+  "figure": "108, 25",
+  "detail": "108, 25 inside =108+25"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 32,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "I_Actuals!AA40",
+  "figure": "827, 693",
+  "detail": "827, 693 inside =827+693 \u2014 one formula filled across 5 cells (FY2015\u2013FY2019)"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 32,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "C_Revenue!AA182",
+  "figure": "0.5",
+  "detail": "0.5 inside =AA180 ^ 0.5 \u2014 one formula filled across 36 cells (FY2015\u2013FY2050)"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 32,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "I_Series!AI282",
+  "figure": "0.2960127",
+  "detail": "0.2960127 inside =0.2960127"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 32,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "I_Actuals!AE35",
+  "figure": "0.6, 0.3",
+  "detail": "0.6, 0.3 inside =((I_InputSets!$AA$382)*0.6+$AE$25)*0.3"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AU288",
+  "figure": "0.06, 0.0735682578487549",
+  "detail": "0.06, 0.0735682578487549 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "RatingSimulator!F86",
+  "figure": "30%",
+  "detail": "30% inside =IF(Scenarios!F78=TRUE,100%,30%)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AP288",
+  "figure": "0.06",
+  "detail": "0.06 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8,9},0),0),0,_xl \u2014 one formula filled across 3 cells (FY2022\u2013FY2024)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Depn!AU5",
+  "figure": "5",
+  "detail": "5 written into 3 different formulas on this sheet \u2014 a convention typed everywhere rather than held in one cell"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "MainInputs!AP272",
+  "figure": "9",
+  "detail": "9 inside =(($I$272/9)*(1+$AH$344)*(1+$AI$344)*(1+$AJ$344)*(1+$AK$344) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AU131",
+  "figure": "2032, 2027",
+  "detail": "2032, 2027 inside =IF($F$321=1,IF(AU5>=$F$320,$F$131,1)) + IF($F$321=2,_xlfn.I"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Finance&Tax!AP323",
+  "figure": "50%",
+  "detail": "50% inside =(IF(AP315 >= 0, MIN(AP315, -AP319-AP321-AP322), 0) * AP10)  \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AW288",
+  "figure": "0.06, 0.0306135534364823",
+  "detail": "0.06, 0.0306135534364823 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Depn!AU5",
+  "figure": "5",
+  "detail": "5 inside =ROUNDUP(SUM($AU11:AU11)/5,0)+2 \u2014 one formula filled across 106 cells (Depn!AU5 to Depn!EV5)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "RatingSimulator!F348",
+  "figure": "30%",
+  "detail": "30% inside =IF(Scenarios!F105=TRUE,100%,30%)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Monthly Inflation!L2",
+  "figure": "0.5",
+  "detail": "0.5 inside =IF($A2 < DATE(2021, 4, 1), K2, IF($A2 = DATE(2021, 4, 1), L \u2014 one formula filled across 384 cells (Monthly Inflation!L10 to Monthly Inflation!L99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AV130",
+  "figure": "2032, 2027",
+  "detail": "2032, 2027 inside =IF($F$337=1,IF(AV5>=$F$336,$F$130,1)) + IF($F$337=2,_xlfn.I \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Finance&Tax!AP333",
+  "figure": "5, 50%",
+  "detail": "5, 50% inside =AP332*(5+(AP326-5)*50%) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "FinancialRatios!AP18",
+  "figure": "0.5",
+  "detail": "0.5 inside =('Finance&Tax'!AP53 - 'Finance&Tax'!AP48) * 'Finance&Tax'!A \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Finance&Tax!AP332",
+  "figure": "5",
+  "detail": "5 inside =AP326>5 \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "FinancialRatios!AP18",
+  "figure": "0.5",
+  "detail": "0.5 inside =('Finance&Tax'!AP59 - 'Finance&Tax'!AP52) * 'Finance&Tax'!A \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "FinancialRatios!AP19",
+  "figure": "0.5",
+  "detail": "0.5 inside =('Finance&Tax'!AP59 - 'Finance&Tax'!AP54) * 'Finance&Tax'!A \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AT288",
+  "figure": "0.06, 0.0354088834727659",
+  "detail": "0.06, 0.0354088834727659 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0,_xlfn"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "FinancialRatios!AP17",
+  "figure": "0.5",
+  "detail": "0.5 inside =('Finance&Tax'!AP53 - 'Finance&Tax'!AP48) * 'Finance&Tax'!A \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Finance&Tax!AP258",
+  "figure": "5",
+  "detail": "5 inside =AP343>5 \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AQ267",
+  "figure": "0.65, 0.62",
+  "detail": "0.65, 0.62 inside =_xlfn.IFS(_xlfn.IFNA(MATCH(m_identity,{6,7,8},0),0),0.65,_x \u2014 one formula filled across 2 cells (FY2023\u2013FY2024)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 123,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "MainInputs!AP272",
+  "figure": "9",
+  "detail": "9 inside =(($I$272/9)*(1+$AH$354)*(1+$AI$354)*(1+$AJ$354)*(1+$AK$354) \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_other",
+  "stratum": 8,
+  "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "Beta Estimates !C48",
+  "figure": "0.075",
+  "detail": "0.075 inside =C34+(0.075*C6) \u2014 one formula filled across 3 cells (Beta Estimates !C48 to Beta Estimates !E48)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 4,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "TO_MainInputs!AY75",
+  "figure": "1.5, 2.5",
+  "detail": "1.5, 2.5 inside =IF(AND(AW75=\"CapRate 1\",AV75=\"RPEs Apply\"),1,IF(AND(AW75=\"C \u2014 one formula filled across 33 cells (FY2031\u2013FY2031)"
+ },
+ {
+  "family": "riio3_wacc",
+  "stratum": 14,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "One-Off Wedge!R25",
+  "figure": "3%",
+  "detail": "3% inside =R24*(1 + 3%)^(1/12) \u2014 one formula filled across 11 cells (One-Off Wedge!R25 to One-Off Wedge!R35)"
+ },
+ {
+  "family": "riio3_wacc",
+  "stratum": 14,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "rule": "hardcode-in-formula",
+  "severity": "smell",
+  "ref": "One-Off Wedge!R46",
+  "figure": "2%",
+  "detail": "2% inside =R45*(1 +2%)^(1/12) \u2014 one formula filled across 27 cells (One-Off Wedge!R46 to One-Off Wedge!R72)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "inconsistent-row",
+  "severity": "error",
+  "ref": "MainInputs!AP2524",
+  "figure": "",
+  "detail": "=InputSummary!AP2248*$I$13*AP10 + InputSummary!AP1545*$I$14*AP11 where the series does =InputSummary!AH2248*$I$13"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "inconsistent-row",
+  "severity": "error",
+  "ref": "MainInputs!AP1947",
+  "figure": "",
+  "detail": "=InputSummary!AP1906*$I$13*AP10 + InputSummary!AP1217*$I$14*AP11 where the series does =InputSummary!AH1906*$I$13"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "inconsistent-row",
+  "severity": "error",
+  "ref": "F2a - Financial Summary (TWA)!N164",
+  "figure": "",
+  "detail": "tests 0, 2025 where 6 sister cells test 0, 2022: =IF(N163=0,0,IF(N$5=2025,(N159*N160*N$32)/N163,(SUMPRODUCT($J159:M159,"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "inconsistent-row",
+  "severity": "error",
+  "ref": "F2a - Financial Summary (TWA)!N164",
+  "figure": "",
+  "detail": "tests 0, 2025 where 6 sister cells test 0, 2022: =IF(N163=0,0,IF(N$5=2025,(N159*N160*N$32)/N163,(SUMPRODUCT($J159:M159,"
+ },
+ {
+  "family": "ed2",
+  "stratum": 22,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "EMID!AO75",
+  "figure": "",
+  "detail": "452 characters \u2014 the same formula at AO75 on 14 sheets (EMID, ENWL, EPN, LPN, \u2026)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 22,
+  "file": "ofgem_ed2/v3_2024-01.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "EMID!AO75",
+  "figure": "",
+  "detail": "452 characters \u2014 the same formula at AO75 on 14 sheets (EMID, ENWL, EPN, LPN, \u2026)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 22,
+  "file": "ofgem_ed2/v5_2026-06.xlsx",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "EMID!AO74",
+  "figure": "",
+  "detail": "343 characters, in 7 cells of one row \u2014 the same formula at AO74 on 14 sheets (EMID, ENWL, EPN, LPN, \u2026)"
+ },
+ {
+  "family": "ed2",
+  "stratum": 22,
+  "file": "ofgem_ed2/v4_2025-07.xlsx",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "EMID!AO75",
+  "figure": "",
+  "detail": "452 characters \u2014 the same formula at AO75 on 14 sheets (EMID, ENWL, EPN, LPN, \u2026)"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 4,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "ScenDelta!Y17",
+  "figure": "",
+  "detail": "273 characters \u2014 one formula filled across 6422 cells (ScenDelta!AA100 to ScenDelta!Y61)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F6 - Debt Dataset!GI3",
+  "figure": "",
+  "detail": "381 characters \u2014 one formula filled across 1200 cells (F6 - Debt Dataset!GI10 to F6 - Debt Dataset!GI999)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!N72",
+  "figure": "",
+  "detail": "327 characters \u2014 one formula filled across 7 cells (F1 - Debt for BPFM!N72 to F1 - Debt for BPFM!T72)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F4 - Floating Rate Debt!EX12",
+  "figure": "",
+  "detail": "196 characters \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!EX100 to F4 - Floating Rate Debt!FM99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!N27",
+  "figure": "",
+  "detail": "243 characters \u2014 one formula filled across 7 cells (F1 - Debt for BPFM!N27 to F1 - Debt for BPFM!T27)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F4 - Floating Rate Debt!AM12",
+  "figure": "",
+  "detail": "211 characters \u2014 one formula filled across 128 cells (F4 - Floating Rate Debt!AM12 to F4 - Floating Rate Debt!BB78)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Return&RAV!AY68",
+  "figure": "",
+  "detail": "205 characters"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F2a - Financial Summary (TWA)!K132",
+  "figure": "",
+  "detail": "347 characters \u2014 one formula filled across 10 cells (F2a - Financial Summary (TWA)!K132 to F2a - Financial Summary (TWA)!T132)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Return&RAV!AY64",
+  "figure": "",
+  "detail": "288 characters"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F5 - Inflation Linked Debt!MD12",
+  "figure": "",
+  "detail": "221 characters \u2014 one formula filled across 7200 cells (F5 - Inflation Linked Debt!MD100 to F5 - Inflation Linked Debt!MS99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F2b - Financial Summary (YE)!K57",
+  "figure": "",
+  "detail": "261 characters \u2014 one formula filled across 30 cells (F2b - Financial Summary (YE)!K57 to F2b - Financial Summary (YE)!T59)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F2b - Financial Summary (YE)!K78",
+  "figure": "",
+  "detail": "265 characters \u2014 one formula filled across 30 cells (F2b - Financial Summary (YE)!K78 to F2b - Financial Summary (YE)!T80)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!N87",
+  "figure": "",
+  "detail": "342 characters \u2014 one formula filled across 7 cells (F1 - Debt for BPFM!N87 to F1 - Debt for BPFM!T87)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F2b - Financial Summary (YE)!K131",
+  "figure": "",
+  "detail": "485 characters \u2014 one formula filled across 10 cells (F2b - Financial Summary (YE)!K131 to F2b - Financial Summary (YE)!T131)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F2b - Financial Summary (YE)!K64",
+  "figure": "",
+  "detail": "265 characters \u2014 one formula filled across 30 cells (F2b - Financial Summary (YE)!K64 to F2b - Financial Summary (YE)!T66)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!N42",
+  "figure": "",
+  "detail": "326 characters \u2014 one formula filled across 7 cells (F1 - Debt for BPFM!N42 to F1 - Debt for BPFM!T42)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!N87",
+  "figure": "",
+  "detail": "342 characters \u2014 one formula filled across 7 cells (F1 - Debt for BPFM!N87 to F1 - Debt for BPFM!T87)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Depn!J87",
+  "figure": "",
+  "detail": "198 characters \u2014 one formula filled across 79 cells (Depn!J100 to Depn!J99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Finance&Tax!AP289",
+  "figure": "",
+  "detail": "182 characters \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "figure": "",
+  "detail": "531 characters \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!GH100 to F4 - Floating Rate Debt!GW99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "figure": "",
+  "detail": "531 characters \u2014 one formula filled across 7200 cells (F3 - Fixed Rate Debt!HT100 to F3 - Fixed Rate Debt!II99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F2b - Financial Summary (YE)!K131",
+  "figure": "",
+  "detail": "485 characters \u2014 one formula filled across 10 cells (F2b - Financial Summary (YE)!K131 to F2b - Financial Summary (YE)!T131)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AV130",
+  "figure": "",
+  "detail": "260 characters \u2014 one formula filled across 4 cells (FY2028\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F5 - Inflation Linked Debt!BT12",
+  "figure": "",
+  "detail": "210 characters \u2014 one formula filled across 7650 cells (F5 - Inflation Linked Debt!BT100 to F5 - Inflation Linked Debt!CJ99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Finance&Tax!AP247",
+  "figure": "",
+  "detail": "182 characters \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F2b - Financial Summary (YE)!K64",
+  "figure": "",
+  "detail": "265 characters \u2014 one formula filled across 30 cells (F2b - Financial Summary (YE)!K64 to F2b - Financial Summary (YE)!T66)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AU130",
+  "figure": "",
+  "detail": "260 characters"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F2b - Financial Summary (YE)!K50",
+  "figure": "",
+  "detail": "372 characters \u2014 one formula filled across 10 cells (F2b - Financial Summary (YE)!K50 to F2b - Financial Summary (YE)!T50)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "figure": "",
+  "detail": "539 characters \u2014 one formula filled across 7200 cells (FY2015\u2013FY2030)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F4 - Floating Rate Debt!EX12",
+  "figure": "",
+  "detail": "196 characters \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!EX100 to F4 - Floating Rate Debt!FM99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!N87",
+  "figure": "",
+  "detail": "342 characters \u2014 one formula filled across 7 cells (F1 - Debt for BPFM!N87 to F1 - Debt for BPFM!T87)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AU130",
+  "figure": "",
+  "detail": "260 characters"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F2a - Financial Summary (TWA)!K133",
+  "figure": "",
+  "detail": "211 characters \u2014 one formula filled across 10 cells (F2a - Financial Summary (TWA)!K133 to F2a - Financial Summary (TWA)!T133)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F4 - Floating Rate Debt!EX12",
+  "figure": "",
+  "detail": "190 characters \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!EX100 to F4 - Floating Rate Debt!FM99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F6 - Debt Dataset!HL3",
+  "figure": "",
+  "detail": "367 characters \u2014 one formula filled across 1978 cells (F6 - Debt Dataset!HL10 to F6 - Debt Dataset!HL999)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Scenarios!AU130",
+  "figure": "",
+  "detail": "260 characters"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "F1 - Debt for BPFM!N72",
+  "figure": "",
+  "detail": "327 characters \u2014 one formula filled across 7 cells (F1 - Debt for BPFM!N72 to F1 - Debt for BPFM!T72)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 7,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "TO_MainInputs!AY75",
+  "figure": "",
+  "detail": "202 characters \u2014 one formula filled across 33 cells (FY2031\u2013FY2031)"
+ },
+ {
+  "family": "riio3_wacc",
+  "stratum": 9,
+  "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Daily Data!E10",
+  "figure": "",
+  "detail": "181 characters \u2014 one formula filled across 12865 cells (Daily Data!E10 to Daily Data!E9999)"
+ },
+ {
+  "family": "riio3_wacc",
+  "stratum": 9,
+  "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+  "rule": "long-formula",
+  "severity": "smell",
+  "ref": "Daily Data!G2",
+  "figure": "",
+  "detail": "274 characters \u2014 one formula filled across 12873 cells (Daily Data!G10 to Daily Data!G9999)"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 6,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "C_Fin_Summ!Y220",
+  "figure": "-943.092",
+  "detail": "= SUM( Y217:Y218 ) leaves out C_Fin_Summ!Y219 above it \u2014 worth -943.092 together"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 6,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "C_RAB!AA101",
+  "figure": "0.918171",
+  "detail": "=SUM(AA95:AA97) leaves out C_RAB!AA100 above it \u2014 worth 0.918171 together \u2014 one formula filled across 36 cells (FY2015\u2013FY2050)"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 6,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "CAAchartdata!AA200",
+  "figure": "",
+  "detail": "=SUM(AA193:AA197) leaves out CAAchartdata!AA198, CAAchartdata!AA199 above it \u2014 one formula filled across 36 cells (FY2015\u2013FY2050)"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 6,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "C_RAB!AA101",
+  "figure": "0.918171",
+  "detail": "=SUM(AA95:AA97) leaves out C_RAB!AA100 above it \u2014 worth 0.918171 together \u2014 one formula filled across 36 cells (FY2015\u2013FY2050)"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 6,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "C_Fin_Summ!Y220",
+  "figure": "-829.948",
+  "detail": "= SUM( Y217:Y218 ) leaves out C_Fin_Summ!Y219 above it \u2014 worth -829.948 together"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 6,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "CAAchartdata!AA200",
+  "figure": "",
+  "detail": "=SUM(AA193:AA197) leaves out CAAchartdata!AA198, CAAchartdata!AA199 above it \u2014 one formula filled across 36 cells (FY2015\u2013FY2050)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "Finance&Tax!AP43",
+  "figure": "",
+  "detail": "=SUM(AP41:AP41) leaves out Finance&Tax!AP42 above it \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "figure": "",
+  "detail": "=SUM(N182:N187) leaves out F2a - Financial Summary (TWA)!N194 above it \u2014 one formula filled across 7 cells (F2a - Financial Summary (TWA)!N195 to F2a - Financial Summary (TWA)!T195)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "Finance&Tax!AP37",
+  "figure": "",
+  "detail": "=SUM(AP35:AP35) leaves out Finance&Tax!AP36 above it \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "figure": "",
+  "detail": "=SUM(N182:N187) leaves out F2a - Financial Summary (TWA)!N194 above it \u2014 one formula filled across 7 cells (F2a - Financial Summary (TWA)!N195 to F2a - Financial Summary (TWA)!T195)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "figure": "",
+  "detail": "=SUM(N182:N187) leaves out F2a - Financial Summary (TWA)!N194 above it \u2014 one formula filled across 7 cells (F2a - Financial Summary (TWA)!N195 to F2a - Financial Summary (TWA)!T195)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "figure": "",
+  "detail": "=SUM(N182:N187) leaves out F2a - Financial Summary (TWA)!N194 above it \u2014 one formula filled across 7 cells (F2a - Financial Summary (TWA)!N195 to F2a - Financial Summary (TWA)!T195)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "figure": "",
+  "detail": "=SUM(N182:N187) leaves out F2a - Financial Summary (TWA)!N194 above it \u2014 one formula filled across 7 cells (F2a - Financial Summary (TWA)!N195 to F2a - Financial Summary (TWA)!T195)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "figure": "",
+  "detail": "=SUM(N182:N187) leaves out F2a - Financial Summary (TWA)!N194 above it \u2014 one formula filled across 7 cells (F2a - Financial Summary (TWA)!N195 to F2a - Financial Summary (TWA)!T195)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "NonCore!AJ205",
+  "figure": "",
+  "detail": "=SUM(AJ201:AJ203) leaves out NonCore!AJ204 above it \u2014 one formula filled across 16 cells (FY2016\u2013FY2031)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "TaxPools!AU42",
+  "figure": "4.7922",
+  "detail": "=SUM(AU7:AU8) leaves out TaxPools!AU10, TaxPools!AU11, TaxPools!AU12 above it \u2014 worth 4.7922 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "TaxPools!AU43",
+  "figure": "4.7922",
+  "detail": "=SUM(AU7:AU8) leaves out TaxPools!AU10, TaxPools!AU11, TaxPools!AU12 above it \u2014 worth 4.7922 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "RAVBalances!Y42",
+  "figure": "45",
+  "detail": "=SUM(Y10:Y11) leaves out RAVBalances!Y13 above it \u2014 worth 45 together \u2014 one formula filled across 27 cells (FY2007\u2013FY2006)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "TIM!AU48",
+  "figure": "-209.407",
+  "detail": "=SUM(AU18:AU21,AU43) leaves out TIM!AU44 above it \u2014 worth -209.407 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "SO_Calculations!AU127",
+  "figure": "2.7922",
+  "detail": "=SUM(AU95:AU96) leaves out SO_Calculations!AU98, SO_Calculations!AU99, SO_Calculations!AU100 above it \u2014 worth 2.7922 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "RAVBalances!AH75",
+  "figure": "226",
+  "detail": "=SUM(AH14:AH15) leaves out RAVBalances!AH17, RAVBalances!AH18 above it \u2014 worth 226 together \u2014 one formula filled across 18 cells (FY2014\u2013FY2031)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "TaxPools!AU43",
+  "figure": "4.7922",
+  "detail": "=SUM(AU7:AU8) leaves out TaxPools!AU10, TaxPools!AU11, TaxPools!AU12 above it \u2014 worth 4.7922 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "TIM!AU47",
+  "figure": "-209.407",
+  "detail": "=SUM(AU12:AU15,AU42) leaves out TIM!AU44 above it \u2014 worth -209.407 together \u2014 one formula filled across 5 cells (FY2027\u2013FY2031)"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 10,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "severity": "error",
+  "ref": "NonCore!AJ209",
+  "figure": "",
+  "detail": "=SUM(AJ202:AJ203) leaves out NonCore!AJ204 above it \u2014 one formula filled across 16 cells (FY2016\u2013FY2031)"
+ },
+ {
+  "family": "h7_debt",
+  "stratum": 3,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "H7 Cost of debt indexation!I58",
+  "figure": "0.0424",
+  "detail": "0.0424 typed into a series that is otherwise calculated: = SUM( J37, $G$12 )"
+ },
+ {
+  "family": "h7_debt",
+  "stratum": 3,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "H7 Cost of debt indexation!I59",
+  "figure": "0.0165336",
+  "detail": "0.0165336 typed into a series that is otherwise calculated: = ( 1 + J58 ) / ( 1 + J34 ) - 1 + $G$11"
+ },
+ {
+  "family": "h7_debt",
+  "stratum": 3,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "H7 Cost of debt indexation!I52",
+  "figure": "0.0438605",
+  "detail": "0.0438605 typed into a series that is otherwise calculated: = SUM( J37, $G$12 )"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "C_Ratios!AE99",
+  "figure": "1",
+  "detail": "1 typed into a series that is otherwise calculated: = C_Time!F$37"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AL218",
+  "figure": "18.3409",
+  "detail": "18.3409 typed into a column that is otherwise calculated: =AL212"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AH218",
+  "figure": "41.9695",
+  "detail": "41.9695 typed into a column that is otherwise calculated: =AH212"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AH218",
+  "figure": "41.9695",
+  "detail": "41.9695 typed into a column that is otherwise calculated: =AH212"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AK218",
+  "figure": "19.1767",
+  "detail": "19.1767 typed into a column that is otherwise calculated: =AK212"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "C_Ratios!AE99",
+  "figure": "1",
+  "detail": "1 typed into a series that is otherwise calculated: = C_Time!F$37"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AI218",
+  "figure": "34.371",
+  "detail": "34.371 typed into a column that is otherwise calculated: =AI212"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AL218",
+  "figure": "18.3409",
+  "detail": "18.3409 typed into a column that is otherwise calculated: =AL212"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AI218",
+  "figure": "34.371",
+  "detail": "34.371 typed into a column that is otherwise calculated: =AI212"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AK218",
+  "figure": "19.1767",
+  "detail": "19.1767 typed into a column that is otherwise calculated: =AK212"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AJ218",
+  "figure": "25.1077",
+  "detail": "25.1077 typed into a column that is otherwise calculated: =AJ212"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 12,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "I_Series!AJ218",
+  "figure": "25.1077",
+  "detail": "25.1077 typed into a column that is otherwise calculated: =AJ212"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "FinRatios RoRE decomposition!AP29",
+  "figure": "",
+  "detail": "the same value typed across 10 cells of one row (AP29 to AY29)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "Revenue!AP16",
+  "figure": "",
+  "detail": "the same value typed across 10 cells of one row (AP16 to AY16)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "Revenue!AP16",
+  "figure": "",
+  "detail": "the same value typed across 10 cells of one row (AP16 to AY16)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "typed-over-formula",
+  "severity": "error",
+  "ref": "Revenue!AP16",
+  "figure": "",
+  "detail": "the same value typed across 10 cells of one row (AP16 to AY16)"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 4,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "C_TRS!AA81",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 36 cells (FY2015\u2013FY2050)"
+ },
+ {
+  "family": "h7_pcm",
+  "stratum": 4,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "C_Fin_Summ!AA245",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 36 cells (FY2015\u2013FY2050)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!GH100 to F4 - Floating Rate Debt!GW99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "ScenarioRun_AllOutputData!G27",
+  "figure": "",
+  "detail": "uses TODAY"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "FinInput!AP137",
+  "figure": "",
+  "detail": "uses OFFSET in 5 places across 5 rows \u2014 the sheet is built on it"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "SystemOperator!AP742",
+  "figure": "",
+  "detail": "uses OFFSET in 10 cells of one row"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F3 - Fixed Rate Debt!HT100 to F3 - Fixed Rate Debt!II99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "ScenarioRun_AllOutputData!G27",
+  "figure": "",
+  "detail": "uses TODAY"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!GH100 to F4 - Floating Rate Debt!GW99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F3 - Fixed Rate Debt!HT100 to F3 - Fixed Rate Debt!II99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "RatingSimulator!AU21",
+  "figure": "",
+  "detail": "uses OFFSET in 5 places across 4 rows \u2014 the sheet is built on it"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "TaxPools!AP118",
+  "figure": "",
+  "detail": "uses OFFSET in 10 cells of one row"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F3 - Fixed Rate Debt!HT100 to F3 - Fixed Rate Debt!II99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!GH100 to F4 - Floating Rate Debt!GW99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (FY2015\u2013FY2030)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "RatingSimulator!AU21",
+  "figure": "",
+  "detail": "uses OFFSET in 5 places across 4 rows \u2014 the sheet is built on it"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "FinInput!AP137",
+  "figure": "",
+  "detail": "uses OFFSET in 5 places across 5 rows \u2014 the sheet is built on it"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "ScenarioRun_AllOutputData!G27",
+  "figure": "",
+  "detail": "uses TODAY"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "FinInput!AP137",
+  "figure": "",
+  "detail": "uses OFFSET in 5 places across 5 rows \u2014 the sheet is built on it"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (F4 - Floating Rate Debt!GH100 to F4 - Floating Rate Debt!GW99)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "ScenarioRun_AllOutputData!G27",
+  "figure": "",
+  "detail": "uses TODAY"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "Checks!AP50",
+  "figure": "",
+  "detail": "uses INDIRECT \u2014 one formula filled across 10 cells (FY2022\u2013FY2031)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 7200 cells (FY2015\u2013FY2030)"
+ },
+ {
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "FinInput!AP137",
+  "figure": "",
+  "detail": "uses OFFSET in 5 places across 5 rows \u2014 the sheet is built on it"
+ },
+ {
+  "family": "riio3_pcfm",
+  "stratum": 2,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "rule": "volatile",
+  "severity": "smell",
+  "ref": "MainInputs!AH985",
+  "figure": "",
+  "detail": "uses OFFSET \u2014 one formula filled across 18 cells (FY2014\u2013FY2031)"
+ }
+]

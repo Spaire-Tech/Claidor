@@ -1,0 +1,1432 @@
+[
+ {
+  "index": 0,
+  "file": "ofgem_ed2/v4_2026-01.xlsx",
+  "rule": "error-value",
+  "ref": "Cover!G4",
+  "family": "ed2",
+  "stratum": 2,
+  "class": "B",
+  "reason": "Cover version cell =MID(CELL(\"filename\")...) cached #VALUE! - the shipped file displays an error on its cover; cosmetic, appendix-grade"
+ },
+ {
+  "index": 1,
+  "file": "ofgem_ed2/v4_2025-07.xlsx",
+  "rule": "error-value",
+  "ref": "Cover!G4",
+  "family": "ed2",
+  "stratum": 2,
+  "class": "B",
+  "reason": "Cover version cell =MID(CELL(\"filename\")...) cached #VALUE! - the shipped file displays an error on its cover; cosmetic, appendix-grade"
+ },
+ {
+  "index": 2,
+  "file": "ofgem_ed2/v3_2023-10.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SSES!AR346",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 3,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "NPgN!AR346",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 4,
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Annual Inflation!AN51",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "B",
+  "reason": "0.75/0.25 financial-year RPI weighting typed in formula - a real convention constant, labelled row, one finding per fill"
+ },
+ {
+  "index": 5,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AJ42",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "A",
+  "reason": "Correction factor hardcodes 1.5 where the adjacent computed adjustment row (0/1.5/3 by rule) exists - if they diverge the correction is silently wrong"
+ },
+ {
+  "index": 6,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SSEH!AR347",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 7,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SWALES!AR347",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 8,
+  "file": "ofgem_ed2/v4_2025-07.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AJ41",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "B",
+  "reason": "1.06/0.94 dead-band thresholds and 1.5 rate typed in the licence-adjustment formula - deliberate but standards say hold in cells; appendix"
+ },
+ {
+  "index": 9,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SWALES!AR347",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 10,
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AR22",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "B",
+  "reason": "/5 five-year phasing divisor in a labelled Phasing row - a real spreading assumption, one finding per fill"
+ },
+ {
+  "index": 11,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SSEH!AR345",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 12,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SPN!AR342",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 13,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AR22",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "B",
+  "reason": "/5 five-year phasing divisor in a labelled Phasing row - a real spreading assumption, one finding per fill"
+ },
+ {
+  "index": 14,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SWALES!AR343",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 15,
+  "file": "ofgem_ed2/v3_2024-01.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Annual Inflation!AN51",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "B",
+  "reason": "0.75/0.25 financial-year RPI weighting typed in formula - a real convention constant, labelled row, one finding per fill"
+ },
+ {
+  "index": 16,
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "ENWL!AR347",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 17,
+  "file": "ofgem_ed2/v3_2023-10.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SWALES!AR346",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 18,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "EMID!AR346",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 19,
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SWEST!AR347",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 20,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "NPgN!AR343",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 21,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AJ41",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "B",
+  "reason": "1.06/0.94 dead-band thresholds and 1.5 rate typed in the licence-adjustment formula - deliberate but standards say hold in cells; appendix"
+ },
+ {
+  "index": 22,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "EMID!AR347",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 23,
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "NPgY!AR346",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 24,
+  "file": "ofgem_ed2/v3_2023-10.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "WMID!AR346",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 25,
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "WMID!AR345",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 26,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SPMW!AR343",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 27,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SWEST!AR347",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 28,
+  "file": "ofgem_ed2/v3_2023-10.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SSEH!AR345",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 29,
+  "file": "ofgem_ed2/v4_2024-07.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Legacy!AR22",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "B",
+  "reason": "/5 five-year phasing divisor in a labelled Phasing row - a real spreading assumption, one finding per fill"
+ },
+ {
+  "index": 30,
+  "file": "ofgem_ed2/v2_2023-07-31.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "NPgN!AR347",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 31,
+  "file": "ofgem_ed2/v1_2023-02.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "EMID!AR342",
+  "family": "ed2",
+  "stratum": 215,
+  "class": "D",
+  "reason": "Typed pool opening balance (=N+M formula of bare literals) on every DNO sheet - one layout decision (~42 rows/file) reported per row; fix: widen the sibling-sheet fold key from identical numbers to identical shape+label"
+ },
+ {
+  "index": 32,
+  "file": "ofgem_ed2/v2_2023-07-14.xlsx",
+  "rule": "long-formula",
+  "ref": "EMID!AO75",
+  "family": "ed2",
+  "stratum": 22,
+  "class": "B",
+  "reason": "The folded 452-char array formula, one line for 14 sheets - real complexity, said once; the fold is working"
+ },
+ {
+  "index": 33,
+  "file": "ofgem_ed2/v3_2023-11.xlsx",
+  "rule": "long-formula",
+  "ref": "EMID!AO75",
+  "family": "ed2",
+  "stratum": 22,
+  "class": "B",
+  "reason": "The folded 452-char array formula, one line for 14 sheets - real complexity, said once; the fold is working"
+ },
+ {
+  "index": 34,
+  "file": "ofgem_ed2/v4_2025-07.xlsx",
+  "rule": "long-formula",
+  "ref": "EMID!AO75",
+  "family": "ed2",
+  "stratum": 22,
+  "class": "B",
+  "reason": "The folded 452-char array formula, one line for 14 sheets - real complexity, said once; the fold is working"
+ },
+ {
+  "index": 35,
+  "file": "caa_h7/h7_new_debt_indexation_fp.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "H7 Cost of debt indexation!G47",
+  "family": "h7_debt",
+  "stratum": 4,
+  "class": "B",
+  "reason": "Year-bound weights ((2014-2008)*G31+(2022-2014)*G32)/(2022-2008) - documented CAA assumption but the window bounds are typed where nobody will find them"
+ },
+ {
+  "index": 36,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "H7 Cost of debt indexation!I80",
+  "family": "h7_debt",
+  "stratum": 4,
+  "class": "B",
+  "reason": "The convention fold: 0.5 half-year indexation in 15 formulas said once - working as intended"
+ },
+ {
+  "index": 37,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "rule": "typed-over-formula",
+  "ref": "H7 Cost of debt indexation!I59",
+  "family": "h7_debt",
+  "stratum": 4,
+  "class": "A",
+  "reason": "Value typed over the first cell of a calculated rate series and feeding the AVERAGE above it - must be traced before signing"
+ },
+ {
+  "index": 38,
+  "file": "caa_h7/h7_new_debt_indexation_fds.xlsx",
+  "rule": "typed-over-formula",
+  "ref": "H7 Cost of debt indexation!I52",
+  "family": "h7_debt",
+  "stratum": 4,
+  "class": "A",
+  "reason": "Value typed over the first cell of a calculated rate series and feeding the AVERAGE above it - must be traced before signing"
+ },
+ {
+  "index": 39,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "error-value",
+  "ref": "Scen 8!C282",
+  "family": "h7_pcm",
+  "stratum": 4,
+  "class": "C",
+  "reason": "Designed #N/A tail below an explicit END OF SHEET marker - no action possible; fix: a tail under an end-of-sheet marker moves to coverage, not findings"
+ },
+ {
+  "index": 40,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "error-value",
+  "ref": "ScenGraphData!AA20",
+  "family": "h7_pcm",
+  "stratum": 4,
+  "class": "C",
+  "reason": "IF(toggle,data,NA()) chart scaffolding - the formula writes NA() on purpose; fix: a formula containing NA() is designed, suppress its error-value finding"
+ },
+ {
+  "index": 41,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_Actuals!AE21",
+  "family": "h7_pcm",
+  "stratum": 32,
+  "class": "B",
+  "reason": "0.4*0.5 split factors in actuals rows reading an input set - real allocation assumptions worth an appendix line"
+ },
+ {
+  "index": 42,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_Series!AF315",
+  "family": "h7_pcm",
+  "stratum": 32,
+  "class": "B",
+  "reason": "5% straight-line repayment profile convention, one finding per fill"
+ },
+ {
+  "index": 43,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_Series!H352",
+  "family": "h7_pcm",
+  "stratum": 32,
+  "class": "B",
+  "reason": "5% equity issuance cost allowance in a labelled row - real parameter"
+ },
+ {
+  "index": 44,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_Actuals!AE33",
+  "family": "h7_pcm",
+  "stratum": 32,
+  "class": "B",
+  "reason": "0.6/0.7 embedded-debt split factors (complement 0.3 on the next row) - real allocation assumptions"
+ },
+ {
+  "index": 45,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "I_Actuals!AE23",
+  "family": "h7_pcm",
+  "stratum": 32,
+  "class": "B",
+  "reason": "0.4*0.5 split factors in actuals rows reading an input set - real allocation assumptions worth an appendix line"
+ },
+ {
+  "index": 46,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "long-formula",
+  "ref": "ScenDelta!Y17",
+  "family": "h7_pcm",
+  "stratum": 4,
+  "class": "B",
+  "reason": "Scenario-picker CHOOSE across nine sheets, 273-445 chars, one finding per fill - hygiene, appendix"
+ },
+ {
+  "index": 47,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "long-formula",
+  "ref": "ScenDelta!AA9",
+  "family": "h7_pcm",
+  "stratum": 4,
+  "class": "B",
+  "reason": "Scenario-picker CHOOSE across nine sheets, 273-445 chars, one finding per fill - hygiene, appendix"
+ },
+ {
+  "index": 48,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "skipped-cell",
+  "ref": "C_Fin_Summ!Y220",
+  "family": "h7_pcm",
+  "stratum": 6,
+  "class": "A",
+  "reason": "Y220=SUM(Y217:Y218) while sister columns sum three rows (AA220=SUM(AA217:AA219)) and Y219 holds -829.9 - a genuinely inconsistent total skipping live money"
+ },
+ {
+  "index": 49,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "skipped-cell",
+  "ref": "C_RAB!AA101",
+  "family": "h7_pcm",
+  "stratum": 6,
+  "class": "C",
+  "reason": "SUM excludes an index-factor row the block reads as a multiplier (AA102=AA101*(AA100-1)) - a factor is not an addend; fix: exempt candidates read multiplicatively by the summed block"
+ },
+ {
+  "index": 50,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "typed-over-formula",
+  "ref": "C_Ratios!AE99",
+  "family": "h7_pcm",
+  "stratum": 12,
+  "class": "A",
+  "reason": "1 typed over the =C_Time! flag series and the IF below keys on it - overrides the charging-year switch, must ask"
+ },
+ {
+  "index": 51,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "typed-over-formula",
+  "ref": "I_Series!AH218",
+  "family": "h7_pcm",
+  "stratum": 12,
+  "class": "B",
+  "reason": "Typed stress-case values among calculated stress rows - plausible deliberate overrides, needs context"
+ },
+ {
+  "index": 52,
+  "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
+  "rule": "volatile",
+  "ref": "C_TRS!AA81",
+  "family": "h7_pcm",
+  "stratum": 8,
+  "class": "B",
+  "reason": "OFFSET lag row, one finding per fill - volatile hygiene"
+ },
+ {
+  "index": 53,
+  "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
+  "rule": "volatile",
+  "ref": "C_TRS!AA81",
+  "family": "h7_pcm",
+  "stratum": 8,
+  "class": "B",
+  "reason": "OFFSET lag row, one finding per fill - volatile hygiene"
+ },
+ {
+  "index": 54,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "error-value",
+  "ref": "F4 - Floating Rate Debt!A1",
+  "family": "riio3_bpfm",
+  "stratum": 47,
+  "class": "D",
+  "reason": "The same =MID(CELL(\"filename\")...) sheet-title formula erroring on every F-sheet, reported per sheet - one pasted decision; fix: extend the sibling-sheet fold to error-value tails keyed on formula"
+ },
+ {
+  "index": 55,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "error-value",
+  "ref": "Finance&Tax(actual)!I256",
+  "family": "riio3_bpfm",
+  "stratum": 47,
+  "class": "A",
+  "reason": "AVERAGEIF over an all-zero range shows #DIV/0! in a live dividend row of the shipped draft - real displayed error, needs IFERROR"
+ },
+ {
+  "index": 56,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "error-value",
+  "ref": "F3 - Fixed Rate Debt!A1",
+  "family": "riio3_bpfm",
+  "stratum": 47,
+  "class": "D",
+  "reason": "The same =MID(CELL(\"filename\")...) sheet-title formula erroring on every F-sheet, reported per sheet - one pasted decision; fix: extend the sibling-sheet fold to error-value tails keyed on formula"
+ },
+ {
+  "index": 57,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "error-value",
+  "ref": "F5 - Inflation Linked Debt!A1",
+  "family": "riio3_bpfm",
+  "stratum": 47,
+  "class": "D",
+  "reason": "The same =MID(CELL(\"filename\")...) sheet-title formula erroring on every F-sheet, reported per sheet - one pasted decision; fix: extend the sibling-sheet fold to error-value tails keyed on formula"
+ },
+ {
+  "index": 58,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "error-value",
+  "ref": "F2b - Financial Summary (YE)!A1",
+  "family": "riio3_bpfm",
+  "stratum": 47,
+  "class": "D",
+  "reason": "The same =MID(CELL(\"filename\")...) sheet-title formula erroring on every F-sheet, reported per sheet - one pasted decision; fix: extend the sibling-sheet fold to error-value tails keyed on formula"
+ },
+ {
+  "index": 59,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "error-value",
+  "ref": "Checks!I88",
+  "family": "riio3_bpfm",
+  "stratum": 47,
+  "class": "A",
+  "reason": "The Checks sheet itself carries =#REF! in two check rows - the model's own controls are torn"
+ },
+ {
+  "index": 60,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "error-value",
+  "ref": "F2a - Financial Summary (TWA)!A1",
+  "family": "riio3_bpfm",
+  "stratum": 47,
+  "class": "D",
+  "reason": "The same =MID(CELL(\"filename\")...) sheet-title formula erroring on every F-sheet, reported per sheet - one pasted decision; fix: extend the sibling-sheet fold to error-value tails keyed on formula"
+ },
+ {
+  "index": 61,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AU148",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "C",
+  "reason": "The 0.1% in a row labelled \"10 Bps Inc\" IS the row's meaning - fix: extend label documentation to basis-point vocabulary"
+ },
+ {
+  "index": 62,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!G14",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "C",
+  "reason": "Year arithmetic inside a text label concatenation (\"\u00a3m \"&F14-2001&...) - fix: literals feeding a string concatenation are notation, skip like TEXT_FUNCS"
+ },
+ {
+  "index": 63,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Monthly Inflation!L2",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "The 0.5 RPI/CPIH blend weight in the PIm transition formula - the famous regulatory convention, one finding per fill"
+ },
+ {
+  "index": 64,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AU130",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "Scenario-machinery year bounds typed in the user-multiplier formula - worth an appendix line"
+ },
+ {
+  "index": 65,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "FinancialRatios!AP18",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "The 0.5 half-period interest adjustment in ratio adjustments - real convention, per fill"
+ },
+ {
+  "index": 66,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AW288",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "C",
+  "reason": "Company-identity array constant {6,7,8} as MATCH lookup table - selector scaffolding; fix: literals inside array constants in MATCH/LOOKUP table arguments are selectors"
+ },
+ {
+  "index": 67,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Finance&Tax!AP307",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "The >5 restriction threshold and 50% taper - real regulatory parameters in formulas"
+ },
+ {
+  "index": 68,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Monthly Inflation!L2",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "The 0.5 RPI/CPIH blend weight in the PIm transition formula - the famous regulatory convention, one finding per fill"
+ },
+ {
+  "index": 69,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "RatingSimulator!F348",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "30% capex-to-RAV threshold beside its typed sibling thresholds - real rating-grid parameter"
+ },
+ {
+  "index": 70,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Depn!I23",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "C",
+  "reason": "9999 as a \"never\" sentinel year in labelled IF arms - a competent reader sees infinity; fix: treat 9999 as an innocent sentinel"
+ },
+ {
+  "index": 71,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AR153",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "0.25/0.75 quarterly interpolation weights in the RPI forecast selector - real convention"
+ },
+ {
+  "index": 72,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AP288",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "C",
+  "reason": "Company-identity array constant {6,7,8} as MATCH lookup table - selector scaffolding; fix: literals inside array constants in MATCH/LOOKUP table arguments are selectors"
+ },
+ {
+  "index": 73,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AS267",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "The 0.65 rate inside identity-gated IFS is a real parameter even though the {6,7,8} gate is scaffolding"
+ },
+ {
+  "index": 74,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Depn!I23",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "C",
+  "reason": "9999 as a \"never\" sentinel year in labelled IF arms - a competent reader sees infinity; fix: treat 9999 as an innocent sentinel"
+ },
+ {
+  "index": 75,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "SystemOperator!AP134",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "/9 nine-year pension true-up spread - real assumption, per fill"
+ },
+ {
+  "index": 76,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Wales & West!AU815",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "11.8/5 innovation allowance typed in formula with its licence reference - the allowance value lives in no input cell"
+ },
+ {
+  "index": 77,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AT267",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "The 0.65 rate inside identity-gated IFS is a real parameter even though the {6,7,8} gate is scaffolding"
+ },
+ {
+  "index": 78,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AU155",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "C",
+  "reason": "The 0.1% in a row labelled \"10 Bps Inc\" IS the row's meaning - fix: extend label documentation to basis-point vocabulary"
+ },
+ {
+  "index": 79,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "MainInputs!AP272",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "/9 pension true-up spread, GT3 twin"
+ },
+ {
+  "index": 80,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Finance&Tax!AP289",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "Restriction thresholds 5/50% in tax-loss formulas - real parameters"
+ },
+ {
+  "index": 81,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "FinancialRatios!AP19",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "B",
+  "reason": "The 0.5 half-period interest adjustment in ratio adjustments - real convention, per fill"
+ },
+ {
+  "index": 82,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "hardcode-in-formula",
+  "ref": "Scenarios!AU148",
+  "family": "riio3_bpfm",
+  "stratum": 153,
+  "class": "C",
+  "reason": "The 0.1% in a row labelled \"10 Bps Inc\" IS the row's meaning - fix: extend label documentation to basis-point vocabulary"
+ },
+ {
+  "index": 83,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "inconsistent-row",
+  "ref": "MainInputs!AP1947",
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "class": "A",
+  "reason": "One cell of a filled input-mapping row switches to the two-company weighted form while every sister stays simple - a genuine one-cell break, must ask"
+ },
+ {
+  "index": 84,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "inconsistent-row",
+  "ref": "MainInputs!AP2524",
+  "family": "riio3_bpfm",
+  "stratum": 4,
+  "class": "A",
+  "reason": "One cell of a filled input-mapping row switches to the two-company weighted form while every sister stays simple - a genuine one-cell break, must ask"
+ },
+ {
+  "index": 85,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!EF12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 86,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K131",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "485-char array check row, one per fill - the model's own check, complexity noted once"
+ },
+ {
+  "index": 87,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "531-539 char CHECK on closing balance, one per fill"
+ },
+ {
+  "index": 88,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F3 - Fixed Rate Debt!FR12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 89,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F2a - Financial Summary (TWA)!K133",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "211-char cross-sheet check row, one per fill"
+ },
+ {
+  "index": 90,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N57",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "D",
+  "reason": "The same per-debt-block Check row (326/342 chars) repeated at a row beat down F1, reported per block - one authoring decision; fix: extend the near-twin row fold to a column beat (same sheet, same length, regular spacing)"
+ },
+ {
+  "index": 91,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!EF12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 92,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N57",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "D",
+  "reason": "The same per-debt-block Check row (326/342 chars) repeated at a row beat down F1, reported per block - one authoring decision; fix: extend the near-twin row fold to a column beat (same sheet, same length, regular spacing)"
+ },
+ {
+  "index": 93,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F2a - Financial Summary (TWA)!K133",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "211-char cross-sheet check row, one per fill"
+ },
+ {
+  "index": 94,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F5 - Inflation Linked Debt!BT12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 95,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F5 - Inflation Linked Debt!KB12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 96,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F5 - Inflation Linked Debt!Q100",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "184-char accretion formula down a 362-row column, one per fill"
+ },
+ {
+  "index": 97,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!AM12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 98,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F5 - Inflation Linked Debt!Q100",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "184-char accretion formula down a 362-row column, one per fill"
+ },
+ {
+  "index": 99,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K57",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "261-char derivatives block formula, one per fill"
+ },
+ {
+  "index": 100,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K131",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "485-char array check row, one per fill - the model's own check, complexity noted once"
+ },
+ {
+  "index": 101,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F5 - Inflation Linked Debt!KT12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 102,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "Finance&Tax!AP247",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "182-char tax-loss offset formula, per fill - real complexity"
+ },
+ {
+  "index": 103,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K57",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "261-char derivatives block formula, one per fill"
+ },
+ {
+  "index": 104,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "Totex!AP25",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "186-char totex array formula, per fill"
+ },
+ {
+  "index": 105,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N87",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "D",
+  "reason": "The same per-debt-block Check row (326/342 chars) repeated at a row beat down F1, reported per block - one authoring decision; fix: extend the near-twin row fold to a column beat (same sheet, same length, regular spacing)"
+ },
+ {
+  "index": 106,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!EF12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 107,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "ScenarioRun_AllOutputData!AS241",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "299-char extended-depreciation formula, per fill"
+ },
+ {
+  "index": 108,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "531-539 char CHECK on closing balance, one per fill"
+ },
+ {
+  "index": 109,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K131",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "485-char array check row, one per fill - the model's own check, complexity noted once"
+ },
+ {
+  "index": 110,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "long-formula",
+  "ref": "F1 - Debt for BPFM!N42",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "D",
+  "reason": "The same per-debt-block Check row (326/342 chars) repeated at a row beat down F1, reported per block - one authoring decision; fix: extend the near-twin row fold to a column beat (same sheet, same length, regular spacing)"
+ },
+ {
+  "index": 111,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!EF12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 112,
+  "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F2b - Financial Summary (YE)!K78",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "272-char derivatives repayment formula, per fill"
+ },
+ {
+  "index": 113,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "long-formula",
+  "ref": "F4 - Floating Rate Debt!AM12",
+  "family": "riio3_bpfm",
+  "stratum": 204,
+  "class": "B",
+  "reason": "Array-entered debt-block formula (188-539 chars) revealed by the reader fix, folded to one per fill - real complexity, appendix"
+ },
+ {
+  "index": 114,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "skipped-cell",
+  "ref": "Finance&Tax!AP37",
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "class": "A",
+  "reason": "SUM(AP35:AP35) - a one-cell range total that steps over the live adjustment row AP36 (=-AP72) directly beneath it - must ask why 36 is outside"
+ },
+ {
+  "index": 115,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "skipped-cell",
+  "ref": "F2a - Financial Summary (TWA)!N195",
+  "family": "riio3_bpfm",
+  "stratum": 8,
+  "class": "A",
+  "reason": "Calculated New Debt Interest total excludes the input row directly above it (MainInputs pick) - the round-one A case, still standing"
+ },
+ {
+  "index": 116,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "typed-over-formula",
+  "ref": "Revenue!AP16",
+  "family": "riio3_bpfm",
+  "stratum": 10,
+  "class": "B",
+  "reason": "The row fold: one line for ten zeros typed across the Return adjustment row - plausibly deliberate zeroing, worth one look"
+ },
+ {
+  "index": 117,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "typed-over-formula",
+  "ref": "SystemOperator!H46",
+  "family": "riio3_bpfm",
+  "stratum": 10,
+  "class": "C",
+  "reason": "0 typed in a mnemonic column for Spare rows, caught by the row pass - fix: extend the mnemonic-column gate to the row pass"
+ },
+ {
+  "index": 118,
+  "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
+  "rule": "volatile",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET in the F4 check block, one per fill"
+ },
+ {
+  "index": 119,
+  "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "ref": "ScenarioRun_AllOutputData!G27",
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "class": "C",
+  "reason": "=TODAY() in a \"Data valid from\" label cell - the protocol's own example of volatile noise; fix: a volatile cell nothing reads is documentation, demote"
+ },
+ {
+  "index": 120,
+  "file": "ofgem_riio3/final_et3_bpfm.xlsm",
+  "rule": "volatile",
+  "ref": "FinInput!AP137",
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "class": "B",
+  "reason": "The idiom fold: OFFSET in 5 rows said once - working as intended"
+ },
+ {
+  "index": 121,
+  "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+  "rule": "volatile",
+  "ref": "F3 - Fixed Rate Debt!HT12",
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET check blocks, one per fill per file"
+ },
+ {
+  "index": 122,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "volatile",
+  "ref": "F4 - Floating Rate Debt!GH12",
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "class": "B",
+  "reason": "OFFSET check blocks, one per fill per file"
+ },
+ {
+  "index": 123,
+  "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
+  "rule": "volatile",
+  "ref": "Checks!AP66",
+  "family": "riio3_bpfm",
+  "stratum": 43,
+  "class": "B",
+  "reason": "INDIRECT in a Checks row, one per fill - traceability hygiene on the checks sheet"
+ },
+ {
+  "index": 124,
+  "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "One-Off Wedge!E14",
+  "family": "riio3_other",
+  "stratum": 4,
+  "class": "B",
+  "reason": "22/24 and 10/24 month-weight fractions in the one-off wedge - real assumptions in a labelled table"
+ },
+ {
+  "index": 125,
+  "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Beta Estimates !C46",
+  "family": "riio3_other",
+  "stratum": 4,
+  "class": "C",
+  "reason": "The 0.075 debt beta is stated in the section header two rows above (\"Asset beta at 0.075 debt beta\") - fix: extend label documentation to block headers"
+ },
+ {
+  "index": 126,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "error-value",
+  "ref": "TO_MainInputs!BF726",
+  "family": "riio3_pcfm",
+  "stratum": 1,
+  "class": "A",
+  "reason": "=TO_Input!#REF! in Legacy RAV additions - broken reference in the shipped draft"
+ },
+ {
+  "index": 127,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "MainInputs!AY97",
+  "family": "riio3_pcfm",
+  "stratum": 4,
+  "class": "B",
+  "reason": "TIM rate table (1/1.5/2/2.5 by category) encoded in nested IFs - real parameters that belong in cells"
+ },
+ {
+  "index": 128,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SO_MainInputs!AY35",
+  "family": "riio3_pcfm",
+  "stratum": 4,
+  "class": "B",
+  "reason": "TIM rate table (1/1.5/2/2.5 by category) encoded in nested IFs - real parameters that belong in cells"
+ },
+ {
+  "index": 129,
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "rule": "long-formula",
+  "ref": "TIM!D7",
+  "family": "riio3_pcfm",
+  "stratum": 28,
+  "class": "D",
+  "reason": "The same 325-char import-source array formula on every import sheet of the file, reported per sheet - one template decision; fix: fold same-file same-length long formulas across sheets at the same column"
+ },
+ {
+  "index": 130,
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "rule": "long-formula",
+  "ref": "MainInputs!AY76",
+  "family": "riio3_pcfm",
+  "stratum": 28,
+  "class": "B",
+  "reason": "TIM rate table (1/1.5/2/2.5 by category) encoded in nested IFs - real parameters that belong in cells"
+ },
+ {
+  "index": 131,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "long-formula",
+  "ref": "NonCore!D8",
+  "family": "riio3_pcfm",
+  "stratum": 28,
+  "class": "D",
+  "reason": "Same import-source template as 129, per sheet - same fix"
+ },
+ {
+  "index": 132,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "rule": "long-formula",
+  "ref": "Tax!D7",
+  "family": "riio3_pcfm",
+  "stratum": 28,
+  "class": "D",
+  "reason": "Same import-source template as 129, per sheet - same fix"
+ },
+ {
+  "index": 133,
+  "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "ref": "TIM!AU47",
+  "family": "riio3_pcfm",
+  "stratum": 12,
+  "class": "C",
+  "reason": "Partitioned caprate totals: AU48/AU49 directly below cover the \"missed\" rows - fix: partition coverage should also look below the total within its block"
+ },
+ {
+  "index": 134,
+  "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
+  "rule": "skipped-cell",
+  "ref": "RAVBalances!Y42",
+  "family": "riio3_pcfm",
+  "stratum": 12,
+  "class": "A",
+  "reason": "Net additions total skips the live asset-life pick Y13 (worth 45) - the round-one A case, still standing"
+ },
+ {
+  "index": 135,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "rule": "volatile",
+  "ref": "MainInputs!AU990",
+  "family": "riio3_pcfm",
+  "stratum": 2,
+  "class": "B",
+  "reason": "OFFSET lag machinery, folded per row/fill - hygiene"
+ },
+ {
+  "index": 136,
+  "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
+  "rule": "volatile",
+  "ref": "MainInputs!AH985",
+  "family": "riio3_pcfm",
+  "stratum": 2,
+  "class": "B",
+  "reason": "OFFSET lag machinery, folded per row/fill - hygiene"
+ },
+ {
+  "index": 137,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "rule": "error-value",
+  "ref": "Daily Data!E3",
+  "family": "riio3_wacc",
+  "stratum": 4,
+  "class": "C",
+  "reason": "Daily gilt #N/A on non-business days, folded to one line - the sheet computes BUSINESS DAY itself; designed, no action; fix: routine-gap-only folds with a matching gap predicate column move to coverage"
+ },
+ {
+  "index": 138,
+  "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+  "rule": "error-value",
+  "ref": "Daily Data!E3",
+  "family": "riio3_wacc",
+  "stratum": 4,
+  "class": "C",
+  "reason": "Daily gilt #N/A on non-business days, folded to one line - the sheet computes BUSINESS DAY itself; designed, no action; fix: routine-gap-only folds with a matching gap predicate column move to coverage"
+ },
+ {
+  "index": 139,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "SONIA_Fwd_Curve!E2",
+  "family": "riio3_wacc",
+  "stratum": 6,
+  "class": "C",
+  "reason": "365.2425 is the Gregorian year length in date arithmetic - notation; fix: add the days-per-year family to INNOCENT"
+ },
+ {
+  "index": 140,
+  "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+  "rule": "hardcode-in-formula",
+  "ref": "Daily Data!C2",
+  "family": "riio3_wacc",
+  "stratum": 6,
+  "class": "C",
+  "reason": "WEEKDAY()<6 business-day test - calendar notation; fix: literals compared against WEEKDAY results are notation"
+ },
+ {
+  "index": 141,
+  "file": "ofgem_riio3/final_wacc.xlsx",
+  "rule": "long-formula",
+  "ref": "Daily Data!G2",
+  "family": "riio3_wacc",
+  "stratum": 9,
+  "class": "B",
+  "reason": "Daily VLOOKUP chain 181-274 chars, one per fill - hygiene"
+ },
+ {
+  "index": 142,
+  "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+  "rule": "long-formula",
+  "ref": "Daily Data!F10",
+  "family": "riio3_wacc",
+  "stratum": 9,
+  "class": "B",
+  "reason": "Daily VLOOKUP chain 181-274 chars, one per fill - hygiene"
+ }
+]

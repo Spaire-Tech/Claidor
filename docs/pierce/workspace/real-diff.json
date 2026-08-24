@@ -1,0 +1,3013 @@
+{
+ "old": "h7_pcm_v2-10_final_proposals.xlsm",
+ "new": "h7_pcm_v2-11_final_determination.xlsm",
+ "sheets": 62,
+ "compared": 370570,
+ "changed": 28805,
+ "by_kind": {
+  "typed value changed": 10719,
+  "added": 5501,
+  "removed": 5222,
+  "formula rewritten": 7289,
+  "typed value replaced by a formula": 27,
+  "formula replaced by a typed value": 47
+ },
+ "moved": 52189,
+ "per_sheet": {
+  "Intro": {
+   "changed": 1,
+   "moved": 0
+  },
+  "Version log": {
+   "changed": 470,
+   "moved": 0
+  },
+  "Guide": {
+   "changed": 5,
+   "moved": 0
+  },
+  "Checks": {
+   "changed": 100,
+   "moved": 0
+  },
+  "Macros": {
+   "changed": 793,
+   "moved": 166
+  },
+  "I_Global": {
+   "changed": 2,
+   "moved": 0
+  },
+  "I_Actuals": {
+   "changed": 3,
+   "moved": 0
+  },
+  "I_Ratios": {
+   "changed": 1,
+   "moved": 0
+  },
+  "I_Series": {
+   "changed": 210,
+   "moved": 395
+  },
+  "I_InputSets": {
+   "changed": 540,
+   "moved": 23
+  },
+  "I_Scenarios": {
+   "changed": 10,
+   "moved": 0
+  },
+  "C_Time": {
+   "changed": 75,
+   "moved": 0
+  },
+  "C_Index": {
+   "changed": 0,
+   "moved": 825
+  },
+  "C_Opex": {
+   "changed": 193,
+   "moved": 1195
+  },
+  "C_TRS": {
+   "changed": 55,
+   "moved": 491
+  },
+  "C_NonAeroRev": {
+   "changed": 105,
+   "moved": 694
+  },
+  "C_ASrisk": {
+   "changed": 2,
+   "moved": 17
+  },
+  "C_CargoRev": {
+   "changed": 0,
+   "moved": 213
+  },
+  "C_Capex": {
+   "changed": 5,
+   "moved": 699
+  },
+  "C_AccDepr": {
+   "changed": 0,
+   "moved": 338
+  },
+  "C_Performance": {
+   "changed": 0,
+   "moved": 200
+  },
+  "C_RAB": {
+   "changed": 63,
+   "moved": 1071
+  },
+  "C_RABDepr": {
+   "changed": 1,
+   "moved": 564
+  },
+  "C_WACC": {
+   "changed": 9,
+   "moved": 124
+  },
+  "C_LookForward": {
+   "changed": 0,
+   "moved": 2421
+  },
+  "C_Fin_Fixed": {
+   "changed": 2,
+   "moved": 2171
+  },
+  "C_Fin_Ind": {
+   "changed": 2,
+   "moved": 2701
+  },
+  "C_Fin_Synth": {
+   "changed": 2,
+   "moved": 131
+  },
+  "C_Fin_SynthAccretion": {
+   "changed": 2,
+   "moved": 64
+  },
+  "C_Fin_Summ": {
+   "changed": 0,
+   "moved": 4194
+  },
+  "C_Tax": {
+   "changed": 3,
+   "moved": 2454
+  },
+  "C_Revenue": {
+   "changed": 15461,
+   "moved": 3351
+  },
+  "C_Ratios": {
+   "changed": 57,
+   "moved": 4121
+  },
+  "O_FinStats": {
+   "changed": 163,
+   "moved": 2371
+  },
+  "O_FinStats - Vals": {
+   "changed": 2831,
+   "moved": 2712
+  },
+  "O_FinStats - Deltas": {
+   "changed": 5,
+   "moved": 2637
+  },
+  "O_Dashboards": {
+   "changed": 10,
+   "moved": 16
+  },
+  "O_Comparison": {
+   "changed": 0,
+   "moved": 5
+  },
+  "ScenDelta": {
+   "changed": 0,
+   "moved": 2296
+  },
+  "ScenAgg": {
+   "changed": 0,
+   "moved": 2187
+  },
+  "ScenGraphData": {
+   "changed": 0,
+   "moved": 1469
+  },
+  "ScenMetricCheck": {
+   "changed": 2,
+   "moved": 68
+  },
+  "CAAchartdata": {
+   "changed": 56,
+   "moved": 2379
+  },
+  "CAAgraphs": {
+   "changed": 0,
+   "moved": 221
+  },
+  "Scen 1": {
+   "changed": 2513,
+   "moved": 2372
+  },
+  "Scen 2": {
+   "changed": 2600,
+   "moved": 2509
+  },
+  "Scen 4": {
+   "changed": 2424,
+   "moved": 2324
+  },
+  "Scen 8": {
+   "changed": 29,
+   "moved": 0
+  }
+ },
+ "examples": [
+  {
+   "sheet": "Intro",
+   "ref": "C10",
+   "kind": "typed value changed",
+   "before": "The Civil Aviation Authority (CAA) provides this Price Control Model (PCM). It is prepared in relation to setting price controls over Heathrow Airport for the H7 period.\n\nThe purpo",
+   "after": "The Civil Aviation Authority (CAA) provides this Price Control Model (PCM). It is prepared in relation to setting price controls over Heathrow Airport for the H7 period.\n\nThe purpo"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E54",
+   "kind": "added",
+   "before": "None",
+   "after": "1.33"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G34",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.15_03072020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E34",
+   "kind": "added",
+   "before": "None",
+   "after": "1.15"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L67",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I25",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J61",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I59",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F42",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-09-30 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J53",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H25",
+   "kind": "added",
+   "before": "None",
+   "after": "Adjusting macro to take into account new scenario manager listing"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J26",
+   "kind": "added",
+   "before": "None",
+   "after": "formatting"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G41",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.22.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H34",
+   "kind": "added",
+   "before": "None",
+   "after": "Add 3 additional passenger input scenarios "
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I19",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G32",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.13_03072020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L57",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G59",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.37.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L51",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L14",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G46",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.27 TRS.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E26",
+   "kind": "added",
+   "before": "None",
+   "after": "1.07"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E28",
+   "kind": "added",
+   "before": "None",
+   "after": "1.09"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L29",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E30",
+   "kind": "added",
+   "before": "None",
+   "after": "1.11"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H57",
+   "kind": "added",
+   "before": "None",
+   "after": "Address issue from CEPA issue log on index match formula in C_RABDepr!205:205"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I15",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J20",
+   "kind": "added",
+   "before": "None",
+   "after": "Input approach"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H40",
+   "kind": "added",
+   "before": "None",
+   "after": "Adjustment to RAB indexation calculations on C_RAB"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L39",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H13",
+   "kind": "removed",
+   "before": "Final Proposal PCM for sharing externally",
+   "after": "None"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K29",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H43",
+   "kind": "added",
+   "before": "None",
+   "after": "Add traffic risk sharing mechanism, setting model forecast to start in 2020."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E68",
+   "kind": "added",
+   "before": "None",
+   "after": "2.07"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G72",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.11 7Mar FDs.xlsm"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F28",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-06-11 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J42",
+   "kind": "added",
+   "before": "None",
+   "after": "inputs"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H56",
+   "kind": "added",
+   "before": "None",
+   "after": "Update net debt to RAB to include profiling adjustment."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G37",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.18_21072020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G68",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.07 Mid pax FP.xlsm"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F51",
+   "kind": "added",
+   "before": "None",
+   "after": "2021-04-10 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F22",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-05-06 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E13",
+   "kind": "removed",
+   "before": "2.1",
+   "after": "None"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E19",
+   "kind": "added",
+   "before": "None",
+   "after": "1.02"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H22",
+   "kind": "added",
+   "before": "None",
+   "after": "Correction for the discount factor used in the profiling calculations."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I42",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F44",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-10-20 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K57",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F71",
+   "kind": "added",
+   "before": "None",
+   "after": "2022-06-10 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L72",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/DR"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J37",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F21",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-04-27 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G57",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.35.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I53",
+   "kind": "added",
+   "before": "None",
+   "after": "CEPA/ CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K39",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "A16",
+   "kind": "removed",
+   "before": "End of spreadsheet",
+   "after": "None"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L19",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J44",
+   "kind": "added",
+   "before": "None",
+   "after": "Formula"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K68",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F26",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-05-29 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H14",
+   "kind": "added",
+   "before": "None",
+   "after": "RAB indexation - Changes incorporated in the attached in rows 60, 76, 92 and 108 of C_RAB to accommodate in-year indexation from average to end of year"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G21",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.03_27042020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K70",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F43",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-10-09 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L15",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L41",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H23",
+   "kind": "added",
+   "before": "None",
+   "after": "Restored the missing links between Capital allowance allocations on I_Scenarios Cell F310-F313 to C_Tax Cell F32-F35"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H48",
+   "kind": "added",
+   "before": "None",
+   "after": "Add cargo revenue, Add profiling adjustment calcs, Amend accretion related to embedded debt"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E20",
+   "kind": "added",
+   "before": "None",
+   "after": "1.02"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G45",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.26 TRS.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I43",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K55",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G56",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.34.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H47",
+   "kind": "added",
+   "before": "None",
+   "after": "Add accretion related to embedded debt to model, Redo modelling of embedded debt so it is calculated"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L56",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/DR"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H20",
+   "kind": "added",
+   "before": "None",
+   "after": "Combine Reference Rate and Premium for High, Medium and Low scenarios"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H35",
+   "kind": "added",
+   "before": "None",
+   "after": "Update macro code to reorder the looping order"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F24",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-05-22 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K61",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G23",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.04_06052020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I52",
+   "kind": "added",
+   "before": "None",
+   "after": "CEPA/ CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L65",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K27",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H63",
+   "kind": "added",
+   "before": "None",
+   "after": "Revise TRS calcs"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L49",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J64",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F31",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-07-02 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K26",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F16",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-02-26 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E46",
+   "kind": "added",
+   "before": "None",
+   "after": "1.27"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I60",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G15",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.01_28012020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G29",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.10_16062020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J18",
+   "kind": "added",
+   "before": "None",
+   "after": "Updating scenario manager, WACC inputs method"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G39",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.20.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F52",
+   "kind": "added",
+   "before": "None",
+   "after": "2021-05-10 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J69",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I47",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J22",
+   "kind": "added",
+   "before": "None",
+   "after": "Formula"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H39",
+   "kind": "added",
+   "before": "None",
+   "after": "Addressing iH7 input values"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E51",
+   "kind": "added",
+   "before": "None",
+   "after": "1.32"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F63",
+   "kind": "added",
+   "before": "None",
+   "after": "2022-01-05 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I28",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F57",
+   "kind": "added",
+   "before": "None",
+   "after": "2021-06-15 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H69",
+   "kind": "added",
+   "before": "None",
+   "after": "Reverting change on the calculation of Nominal WACC"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L42",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J24",
+   "kind": "added",
+   "before": "None",
+   "after": "Input sheet"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J36",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G25",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.06_28052020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I39",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K28",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K18",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I34",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E40",
+   "kind": "added",
+   "before": "None",
+   "after": "1.21"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F18",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-03-18 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J25",
+   "kind": "added",
+   "before": "None",
+   "after": "Macro"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G63",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.02.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "A76",
+   "kind": "added",
+   "before": "None",
+   "after": "End of spreadsheet"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K37",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I38",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G47",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.28 TRS.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K34",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H37",
+   "kind": "added",
+   "before": "None",
+   "after": "Adding direct feeds for all scenarios aero charge calculated via the macro to the C_revenue sheet."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L37",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I29",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H65",
+   "kind": "added",
+   "before": "None",
+   "after": "Addressing comments from model review"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G24",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.05_06052020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J38",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L18",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I20",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G28",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.09_11062020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E56",
+   "kind": "added",
+   "before": "None",
+   "after": "1.34"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K36",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G70",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.09 Mid pax profiled FP.xlsm"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F29",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-06-16 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H49",
+   "kind": "added",
+   "before": "None",
+   "after": "Add RRS calcs"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K69",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F39",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-09-01 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F59",
+   "kind": "added",
+   "before": "None",
+   "after": "2021-06-30 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G62",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.01.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H33",
+   "kind": "added",
+   "before": "None",
+   "after": "Amend SCEN sheet structure to include at the top the sets of inputs used in each scenario"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F72",
+   "kind": "added",
+   "before": "None",
+   "after": "2022-03-07 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H38",
+   "kind": "added",
+   "before": "None",
+   "after": "Adding scenario selections (high,medium,low) for allowed capex, RAB 1 adjustment and profiled depreciation for RAB 1-3."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I48",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F54",
+   "kind": "added",
+   "before": "None",
+   "after": "2021-05-10 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F30",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-07-02 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L35",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F41",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-09-16 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G22",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.04_06052020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L25",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E49",
+   "kind": "added",
+   "before": "None",
+   "after": "1.3"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F19",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-03-25 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H59",
+   "kind": "added",
+   "before": "None",
+   "after": "Adding CAA charts and tables"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F33",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-07-03 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H31",
+   "kind": "added",
+   "before": "None",
+   "after": "Add functionality to incoporate outturn pax to the model's FS via copy paste macro of Allowed airport charges per passenger (nominal) (profiled)."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L46",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K53",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H15",
+   "kind": "added",
+   "before": "None",
+   "after": "Implement a version log sheet. Removed External links from file Copy of CAA H7 Pricing Control Model 251119_with inputs v3 gtuk v2_CS"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E38",
+   "kind": "added",
+   "before": "None",
+   "after": "1.19"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I26",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K40",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E48",
+   "kind": "added",
+   "before": "None",
+   "after": "1.29"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E63",
+   "kind": "added",
+   "before": "None",
+   "after": "2.02"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K38",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E55",
+   "kind": "added",
+   "before": "None",
+   "after": "1.34"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F47",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-11-17 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I44",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F20",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-04-02 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F45",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-10-20 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G16",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.01_28012020 A-notional.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E17",
+   "kind": "added",
+   "before": "None",
+   "after": "1.01"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L60",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H30",
+   "kind": "added",
+   "before": "None",
+   "after": "Renaming collection of inputs to sets of inputs in the I_scenario sheet. Making the Allowed passenger numbers to be variable by high,medium,low."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G71",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.10 Mid pax profiled FP.xlsm"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J51",
+   "kind": "added",
+   "before": "None",
+   "after": "Inputs"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J47",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J46",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I54",
+   "kind": "added",
+   "before": "None",
+   "after": "CEPA/ CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L48",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L26",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E21",
+   "kind": "added",
+   "before": "None",
+   "after": "1.03"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L52",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L13",
+   "kind": "removed",
+   "before": "CAA",
+   "after": "None"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K51",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J17",
+   "kind": "added",
+   "before": "None",
+   "after": "Updating outputs"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L17",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K44",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F50",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-12-08 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J50",
+   "kind": "added",
+   "before": "None",
+   "after": "Formula"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E41",
+   "kind": "added",
+   "before": "None",
+   "after": "1.22"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I21",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H68",
+   "kind": "added",
+   "before": "None",
+   "after": "Addressing JE comments on WACC"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G20",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.02_02042020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G50",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.31 TRS.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E71",
+   "kind": "added",
+   "before": "None",
+   "after": "2.1"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E25",
+   "kind": "added",
+   "before": "None",
+   "after": "1.06"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E44",
+   "kind": "added",
+   "before": "None",
+   "after": "1.25"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H50",
+   "kind": "added",
+   "before": "None",
+   "after": "Amend formulas requiring IL embedded debt in ratios. Rename RAB to basic RAB, link up RAB including profiling adjustment to relevant calculations."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K50",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K19",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F60",
+   "kind": "added",
+   "before": "None",
+   "after": "2021-07-30 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I55",
+   "kind": "added",
+   "before": "None",
+   "after": "CEPA/ CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I50",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J56",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I30",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J67",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F13",
+   "kind": "removed",
+   "before": "2022-06-27 00:00:00",
+   "after": "None"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G49",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.30 TRS.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I41",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J28",
+   "kind": "added",
+   "before": "None",
+   "after": "Input sheet"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H62",
+   "kind": "added",
+   "before": "None",
+   "after": "2.\tUpdate to handle cargo in stress tests\n3.\tMake cumulative RAB adjustment from TRS go directly into reported RAB within H7 (but not affect prices until H8)\n4.\tPut in inputs for c"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K64",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E43",
+   "kind": "added",
+   "before": "None",
+   "after": "1.24"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E60",
+   "kind": "added",
+   "before": "None",
+   "after": "1.38"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G69",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.08 Mid pax profiled FP.xlsm"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E62",
+   "kind": "added",
+   "before": "None",
+   "after": "2.01"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E16",
+   "kind": "added",
+   "before": "None",
+   "after": "1.01"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H46",
+   "kind": "added",
+   "before": "None",
+   "after": "Incorporate depreciation related to TRS into RAB 2"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L36",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L68",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G19",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.02_24032020 A-notional.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G52",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.33.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F53",
+   "kind": "added",
+   "before": "None",
+   "after": "2021-05-10 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F55",
+   "kind": "added",
+   "before": "None",
+   "after": "2021-05-11 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E53",
+   "kind": "added",
+   "before": "None",
+   "after": "1.33"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G55",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.34.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L28",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K22",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J14",
+   "kind": "added",
+   "before": "None",
+   "after": "Formula"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L30",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E42",
+   "kind": "added",
+   "before": "None",
+   "after": "1.23"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F61",
+   "kind": "added",
+   "before": "None",
+   "after": "2021-09-17 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J62",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L31",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H66",
+   "kind": "added",
+   "before": "None",
+   "after": "Remodelling TRS calcs for FP"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H60",
+   "kind": "added",
+   "before": "None",
+   "after": "Tax losses for offset amended start claculating only from H7"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G33",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.14_03072020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E29",
+   "kind": "added",
+   "before": "None",
+   "after": "1.1"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L54",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H55",
+   "kind": "added",
+   "before": "None",
+   "after": "Remove circular reference related to intra period profiling by relinking formulas to RAB without profiling adjustment,"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I67",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K35",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F67",
+   "kind": "added",
+   "before": "None",
+   "after": "2022-04-27 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L22",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I32",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L66",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L34",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H52",
+   "kind": "added",
+   "before": "None",
+   "after": "1.C_Tax row 252/343 - tax loss offset calculation updated to match calc in row 343\n2.Tax allowance - tax losses for offset calculation made to start in H7.\n3.Readded Embedded debt "
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K25",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F17",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-03-09 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F37",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-07-21 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F38",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-08-11 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J15",
+   "kind": "added",
+   "before": "None",
+   "after": "Additional guidance notes"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H26",
+   "kind": "added",
+   "before": "None",
+   "after": "Addressing minor issues on formatting from issue log."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J41",
+   "kind": "added",
+   "before": "None",
+   "after": "Formula"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J71",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H24",
+   "kind": "added",
+   "before": "None",
+   "after": "Adapting the scenario sheet into 2 separate input sheets."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G27",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.08_28052020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K31",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L33",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I36",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E22",
+   "kind": "added",
+   "before": "None",
+   "after": "1.04"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K47",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E65",
+   "kind": "added",
+   "before": "None",
+   "after": "2.04"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H18",
+   "kind": "added",
+   "before": "None",
+   "after": "Updating scenario manager to remove model mode, WACC inputs adjusted to allow selection between high,medium and low for Cost of Equity and Cost of Debt."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H45",
+   "kind": "added",
+   "before": "None",
+   "after": "Relink amended calculations in C_TRS following adjustment to indexation"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F69",
+   "kind": "added",
+   "before": "None",
+   "after": "2022-06-01 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I66",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J27",
+   "kind": "added",
+   "before": "None",
+   "after": "Macro"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L50",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K32",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H21",
+   "kind": "added",
+   "before": "None",
+   "after": "Amendment of the formula in C_Tax row 371 to take into account scenario where Pretax WACC and WACC uplift are selected together. Removes previously incorrect double count of tax al"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G48",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.29 TRS.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G54",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.33.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G64",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.03.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I56",
+   "kind": "added",
+   "before": "None",
+   "after": "HAL"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I31",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H53",
+   "kind": "added",
+   "before": "None",
+   "after": "1. [Formula] Updated all formulae in C_Ratios, C_Fin_Summ and O_FinStats refer to inputs from raw sources where possible (no daisy chains)\n2. [Structure] Renamed I_Scenarios to I_I"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K15",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E50",
+   "kind": "added",
+   "before": "None",
+   "after": "1.31"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F49",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-12-01 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E31",
+   "kind": "added",
+   "before": "None",
+   "after": "1.12"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L32",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I37",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L61",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K42",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I69",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G17",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.01_04032020 A-notional.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K33",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E39",
+   "kind": "added",
+   "before": "None",
+   "after": "1.2"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K20",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K30",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G67",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.06.xlsm"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F36",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-07-09 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J65",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G44",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.25 TRS.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F66",
+   "kind": "added",
+   "before": "None",
+   "after": "2022-04-27 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E72",
+   "kind": "added",
+   "before": "None",
+   "after": "2.11"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E37",
+   "kind": "added",
+   "before": "None",
+   "after": "1.18"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F23",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-05-19 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E45",
+   "kind": "added",
+   "before": "None",
+   "after": "1.26"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F27",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-06-04 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E27",
+   "kind": "added",
+   "before": "None",
+   "after": "1.08"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L23",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I35",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E35",
+   "kind": "added",
+   "before": "None",
+   "after": "1.16"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J40",
+   "kind": "added",
+   "before": "None",
+   "after": "Formula"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E59",
+   "kind": "added",
+   "before": "None",
+   "after": "1.37"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F65",
+   "kind": "added",
+   "before": "None",
+   "after": "2022-04-04 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G36",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.17_03072020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G18",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.01_18032020 A-notional.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F32",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-07-03 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I62",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L63",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E69",
+   "kind": "added",
+   "before": "None",
+   "after": "2.08"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H42",
+   "kind": "added",
+   "before": "None",
+   "after": "Add BBU no RAB adjustment inputs to model"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J59",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L47",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K41",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E67",
+   "kind": "added",
+   "before": "None",
+   "after": "2.06"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H72",
+   "kind": "added",
+   "before": "None",
+   "after": "Updated inputs (pax, opex, CRs, cargo, WACC) to reflect FDs. Fixed errors identified in response to FPs"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H71",
+   "kind": "added",
+   "before": "None",
+   "after": "Completing TRS modelling, revised inputs on Commercial revs, Depn"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I17",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H32",
+   "kind": "added",
+   "before": "None",
+   "after": "Adjustment to run all scenarios macro to take account of additional copy paste functionality of Allowed airport charges per passenger (nominal) (profiled)."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G51",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.32.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K65",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H36",
+   "kind": "added",
+   "before": "None",
+   "after": "Update revenue profiling macro to include copy paste of aero yield charges"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K14",
+   "kind": "added",
+   "before": "None",
+   "after": "HAL IBP submission includes an edit to the RAB indexation which should result in the same amendment to the RAB indexation as performed by GT."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J48",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I65",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L70",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H28",
+   "kind": "added",
+   "before": "None",
+   "after": "Addressing issues from issue log. Moved input % accretion to sceario sheet."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K66",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G66",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.05.xlsm"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L59",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K62",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J54",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F48",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-11-19 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J55",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I23",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E33",
+   "kind": "added",
+   "before": "None",
+   "after": "1.14"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E15",
+   "kind": "added",
+   "before": "None",
+   "after": "1.01"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I22",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I46",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I70",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K16",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K45",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I40",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K52",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J32",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J66",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K67",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J72",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I45",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J43",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L38",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F14",
+   "kind": "added",
+   "before": "None",
+   "after": "2019-11-25 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L71",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/SM"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G14",
+   "kind": "added",
+   "before": "None",
+   "after": "Copy of CAA H7 Pricing Control Model 251119_with inputs v3 gtuk v2_CS"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L53",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA/MK"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J60",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K72",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G30",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.11_02072020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I33",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E64",
+   "kind": "added",
+   "before": "None",
+   "after": "2.03"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H19",
+   "kind": "added",
+   "before": "None",
+   "after": "Add the High Medium low input for the Fixed debt/Indexed Linked reference rate, Fixed interest/Indexed linked debt premium over reference rate. Adjust the corresponding calcs in th"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J52",
+   "kind": "added",
+   "before": "None",
+   "after": "Various"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I72",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I51",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L27",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G35",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 Pricing Control Model v1.16_03072020.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K23",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H67",
+   "kind": "added",
+   "before": "None",
+   "after": "Remodelling TRS calcs for FP"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E24",
+   "kind": "added",
+   "before": "None",
+   "after": "1.05"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J35",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K56",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F15",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-01-28 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H70",
+   "kind": "added",
+   "before": "None",
+   "after": "Addressing QA issues"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E66",
+   "kind": "added",
+   "before": "None",
+   "after": "2.05"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K46",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J49",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J63",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K21",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L24",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I71",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F34",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-07-06 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "F46",
+   "kind": "added",
+   "before": "None",
+   "after": "2020-11-10 00:00:00"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "I18",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "L21",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G40",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v1.21.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K60",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "J39",
+   "kind": "added",
+   "before": "None",
+   "after": "Structure"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "G65",
+   "kind": "added",
+   "before": "None",
+   "after": "CAA H7 PCM v2.04.xlsb"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E70",
+   "kind": "added",
+   "before": "None",
+   "after": "2.09"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "E14",
+   "kind": "added",
+   "before": "None",
+   "after": "1"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H27",
+   "kind": "added",
+   "before": "None",
+   "after": "Reinstate model mode functionality"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H51",
+   "kind": "added",
+   "before": "None",
+   "after": "Addressing items in issue log raised by CEPA."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "H29",
+   "kind": "added",
+   "before": "None",
+   "after": "Addressing Issues 8, 10, 16, 17, 24, 28, 39, 65, 123, 124, 125, 134, 135, 136 from issue log."
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K49",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  },
+  {
+   "sheet": "Version log",
+   "ref": "K48",
+   "kind": "added",
+   "before": "None",
+   "after": "-"
+  }
+ ],
+ "seconds": 32.8
+}

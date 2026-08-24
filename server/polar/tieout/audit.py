@@ -35,6 +35,7 @@ A **smell** is a departure from the standards that is often deliberate,
 and the two are never added into one number.
 """
 
+import math
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -64,7 +65,55 @@ VOLATILE = frozenset({"OFFSET", "INDIRECT", "NOW", "TODAY", "RAND", "RANDBETWEEN
 #: Numbers that carry no assumption. A sign flip, a percentage conversion,
 #: a count of months or days, the two in a mean. Flagging these is how a
 #: hardcode check earns a reputation for noise and stops being read.
-INNOCENT = frozenset({0, 1, 2, -1, 10, 12, 24, 52, 100, 360, 365, 1000, 1000000})
+#: 9999 is the conventional « never happens » sentinel year, and
+#: 365.25 / 365.2425 are the Julian and Gregorian year lengths — date
+#: arithmetic, not assumptions, wherever they appear.
+INNOCENT = frozenset(
+    {0, 1, 2, -1, 10, 12, 24, 52, 100, 360, 365, 1000, 1000000}
+    | {9999, 365.25, 365.2425}
+)
+
+#: Functions that answer « which part of the calendar is this? ». A
+#: literal compared against their result — `WEEKDAY(A2,2)<6` is the
+#: business-day test — is calendar logic, not a model assumption.
+CALENDAR_PARTS = frozenset({"WEEKDAY", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"})
+
+#: A formula writing the not-available value on purpose. The error it
+#: produces is by construction — `IF(toggle, data, NA())` is chart
+#: scaffolding saying « this series is off » — and an error the author
+#: wrote is not an error finding.
+NA_LITERAL = re.compile(r"\bNA\s*\(\s*\)", re.IGNORECASE)
+
+#: Functions whose numeric arguments *are* the notation, not buried
+#: assumptions. `DATE(2025,4,1)` is how a date is written in a formula —
+#: there is no cell it could live in that would make it clearer — and
+#: the usefulness audit found a fifth of all hardcode noise was exactly
+#: this: date literals read as buried assumptions.
+DATE_FUNCS = frozenset({"DATE", "EDATE", "EOMONTH"})
+
+#: Functions that work on text. A count of characters in MID, a repeat
+#: count in REPT, a position in FIND — none of these is a modelling
+#: assumption, and every one read as a hardcode annoyed the reader.
+TEXT_FUNCS = frozenset(
+    {
+        "REPT",
+        "LEFT",
+        "RIGHT",
+        "MID",
+        "FIND",
+        "SEARCH",
+        "SUBSTITUTE",
+        "TEXT",
+        "CHAR",
+        "CONCATENATE",
+        "CONCAT",
+        "TEXTJOIN",
+    }
+)
+
+#: Functions whose *last* argument is a precision, not an assumption.
+#: `ROUND(x,8)=ROUND(y,8)` is a check row's tolerance idiom.
+ROUND_FUNCS = frozenset({"ROUND", "ROUNDUP", "ROUNDDOWN", "MROUND", "FLOOR", "CEILING"})
 
 #: How many rows must agree before a column counts as the boundary between
 #: a model's typed history and its calculated forecast.
@@ -139,6 +188,19 @@ class Finding:
     #: What the cell holds now, exactly as the reader recorded it — the
     #: writer refuses unless this is still there when it arrives.
     fix_before: str = ""
+    #: Elevation — how much of an auditor's attention this deserves,
+    #: computed once every fold has settled. `tier` is the attention
+    #: class (1 defect / 2 assumption / 3 hygiene); `weight` orders
+    #: findings inside and across tiers, 0–1; `basis` says in one
+    #: sentence why the engine ranked it here, so the ranking is never
+    #: an unexplained number.
+    tier: int = 0
+    weight: float = 0.0
+    basis: str = ""
+    #: Every cell a folded finding stands for, so « one finding » never
+    #: hides its members: a family is the sentence, this is the roster.
+    #: Empty on a finding that is its own single cell.
+    cells: str = ""
 
 
 @dataclass
@@ -200,6 +262,17 @@ HEADLINES: dict[str, str] = {
     "skipped-cell": "Incomplete total",
     "hidden-sheet": "Hidden sheet",
 }
+
+
+def _tokens(formula: str) -> list[Any]:
+    """The formula's tokens, or nothing when the grammar rejects it.
+
+    The reader already records rejected formulas on the workbook and
+    the audit reports each once — every other pass just skips them."""
+    try:
+        return list(Tokenizer(formula).items)
+    except Exception:
+        return []
 
 
 def shown_number(value: float) -> str:
@@ -305,10 +378,102 @@ def _quantified(book: Workbook, result: Audit, axes: "PeriodAxes | None") -> Non
     result.findings = replaced
 
 
-def replace_finding(finding: Finding, **changes: str) -> Finding:
+def replace_finding(finding: Finding, **changes: Any) -> Finding:
     from dataclasses import replace
 
     return replace(finding, **changes)
+
+
+#: The tier names as a screen says them, in one place like RULE_NAMES.
+TIER_NAMES: dict[int, str] = {
+    1: "Defect",
+    2: "Assumption at risk",
+    3: "Hygiene",
+}
+
+
+def _elevated(book: Workbook, result: Audit) -> None:
+    """Round 3 — Elevate. Rank every finding, and say why.
+
+    The mentor's formula, adopted whole: attention = structural risk ×
+    financial magnitude × confidence. Structural risk is the tier —
+    a defect is wrong however the model is used, an assumption moves
+    numbers when it is wrong, hygiene is a standards departure that is
+    often deliberate. Confidence is how directly the engine observed
+    the problem: a displayed error is certain; a structural read can
+    misjudge a designed layout; an override can be deliberate.
+    Magnitude only ever *raises* a finding, and only when the engine
+    computed real money for it — a worth left out of a total, a delta
+    against what the row would calculate. Nothing is guessed, and the
+    `basis` sentence carries all three factors so the ranking is an
+    argument, not a number.
+    """
+    seen_by_rule: dict[str, tuple[float, str]] = {
+        "error-value": (1.0, "the file displays the error itself"),
+        "skipped-cell": (
+            0.9,
+            "the gap is in the formula's own range arithmetic, though a "
+            "designed layout can excuse one",
+        ),
+        "inconsistent-row": (0.9, "the row's own pattern shows the break"),
+        "inconsistent-anchoring": (0.9, "the row's own anchoring shows the break"),
+        "typed-over-formula": (
+            0.8,
+            "a typed value sits where the series calculates — overrides "
+            "are sometimes deliberate",
+        ),
+        "circular": (
+            0.9,
+            "the loop is in the dependency graph and the workbook does "
+            "not declare iteration",
+        ),
+    }
+    #: Rules whose figure is money rather than a count or a constant —
+    #: the only findings magnitude may promote.
+    money_figures = {"skipped-cell", "typed-over-formula"}
+
+    replaced: list[Finding] = []
+    for finding in result.findings:
+        if finding.severity == "error":
+            tier, risk = 1, 1.0
+            confidence, seen = seen_by_rule.get(
+                finding.rule, (0.9, "the defect is structural")
+            )
+        elif finding.rule == "hardcode-in-formula":
+            tier, risk = 2, 0.6
+            confidence, seen = (
+                0.8,
+                ("an assumption typed where nobody will find it to change it"),
+            )
+        elif finding.rule == "external-link":
+            tier, risk = 2, 0.6
+            confidence, seen = (
+                0.8,
+                ("a value from a workbook that is not here, so it cannot be checked"),
+            )
+        else:
+            tier, risk = 3, 0.3
+            confidence, seen = 0.7, ("a departure from the standards, often deliberate")
+
+        bonus = 0.0
+        if finding.rule in money_figures and finding.figure:
+            first = finding.figure.split(", ")[0].replace(",", "")
+            scale = {"bn": 1e9, "m": 1e6}.get(first[-2:].lstrip("0123456789."), 1.0)
+            try:
+                magnitude = abs(float(first.rstrip("bnm"))) * scale
+            except ValueError:
+                magnitude = 0.0
+            if magnitude:
+                bonus = min(0.1, 0.03 * math.log10(1 + magnitude))
+
+        weight = round(min(1.0, risk * confidence + bonus), 2)
+        basis = f"{TIER_NAMES[tier].lower()}: {seen}"
+        if bonus:
+            basis += f"; carries real money ({finding.figure})"
+        if finding.flow:
+            basis += f"; feeds {finding.flow}"
+        replaced.append(replace_finding(finding, tier=tier, weight=weight, basis=basis))
+    result.findings = replaced
 
 
 def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
@@ -335,6 +500,29 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
     subject = f"{label} {period}".strip() if label else at
 
     if finding.rule == "typed-over-formula":
+        if finding.detail.startswith("the same value typed across"):
+            #: The row fold: one value pasted across one row's columns.
+            lead = f"{label} has" if label else "One row has"
+            return (
+                f"{lead} {finding.detail} — one paste. Check whether "
+                "the override is intentional."
+            )
+        if " different values typed across " in finding.detail:
+            #: The run fold: adjacent columns typed over in one gesture,
+            #: each holding its own number.
+            lead = f"{label} has" if label else "One row has"
+            return (
+                f"{lead} {finding.detail} — one paste, each cell holding "
+                "its own number. Check whether the overrides are "
+                "intentional."
+            )
+        if finding.detail.startswith("typed over a block"):
+            #: The block fold: a two-dimensional paste, one rectangle.
+            return (
+                f"« {finding.sheet} » is {finding.detail} — one paste "
+                "over the block's formulas. Check whether the override "
+                "is intentional."
+            )
         if finding.detail.startswith("typed over in "):
             #: The block collapse: one decision, made once per repeated
             #: block or once per row of a paste — said once, with every
@@ -351,6 +539,23 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             "is calculated. Check whether this is an intentional override."
         )
     if finding.rule == "inconsistent-row":
+        if finding.detail.startswith("the same calculation as"):
+            return (
+                f"{subject} computes {finding.detail}. A flipped sign "
+                "changes the answer everywhere this cell flows."
+            )
+        if finding.detail.startswith("the same formula as"):
+            return (
+                f"{subject} is {finding.detail}. Check which row it should be reading."
+            )
+        if finding.detail.startswith("tests "):
+            #: The selector drift: same formula, different switch value.
+            what = finding.detail.split(":", 1)[0]
+            return (
+                f"{subject} {what} — the same formula with a different "
+                "switch setting. Check whether the exception is deliberate "
+                "or a stale copy."
+            )
         return (
             f"{subject} does not follow the formula the rest of the row "
             "uses. Check whether the departure is deliberate."
@@ -366,6 +571,33 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         )
         return f"{opening} excludes rows immediately above it{leaving}."
     if finding.rule == "hardcode-in-formula":
+        if finding.figure_unit.endswith("each with its own number"):
+            #: The sibling-sheet fold over differing numbers: one
+            #: layout decision, one value typed per company sheet.
+            sheets = finding.figure_unit.removeprefix("repeated on ").split(" sheets")[
+                0
+            ]
+            return (
+                f"Each of {sheets} sheets has its own value typed into the "
+                f"formula at {at} — one layout decision, and none of the "
+                "values can be traced to an input."
+            )
+        if finding.figure_unit.startswith("repeated on"):
+            #: The sibling-sheet fold: one decision, one sheet per company.
+            return (
+                f"The formula at {at} has {finding.figure or 'a number'} "
+                f"typed into it, {finding.figure_unit} of this workbook. "
+                "If the assumption moves, every sheet must be found by hand."
+            )
+        if finding.figure_unit.endswith("formulas on one sheet"):
+            #: The convention fold: one constant, many different formulas.
+            return (
+                f"{finding.figure or 'A number'} is typed into "
+                f"{finding.figure_unit.removeprefix('in ').removesuffix(' on one sheet')} "
+                f"on « {finding.sheet} » instead of being held in one "
+                "cell. If the convention changes, each one must be found "
+                "by hand."
+            )
         span = (
             f" across {finding.figure_unit.removeprefix('filled across ')}"
             if finding.figure_unit.startswith("filled")
@@ -380,6 +612,13 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         )
 
     if finding.rule == "error-value":
+        if finding.figure_unit.startswith("repeated on"):
+            #: The sibling-sheet fold for designed tails: one pasted
+            #: formula erroring identically on every copy.
+            return (
+                f"{finding.detail}. One pasted formula — fix it once "
+                "and refill the sheets."
+            )
         if finding.figure_unit == "cells past the data's edge":
             #: The designed tail: the data ends and the lookups say so.
             return (
@@ -416,10 +655,30 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             "the workbook does not declare iterative calculation."
         )
 
+    if finding.rule == "volatile" and (
+        finding.figure_unit.startswith("in ")
+        or finding.figure_unit.startswith("repeated on")
+    ):
+        #: The idiom and sibling-sheet folds: one habit, said once.
+        return (
+            f"« {finding.sheet} » {finding.detail}. It recalculates on "
+            "every change, and its targets cannot be traced by eye."
+        )
+    if finding.rule == "long-formula" and (
+        finding.figure_unit.startswith("in ")
+        or finding.figure_unit.startswith("repeated on")
+    ):
+        #: The row and sibling-sheet folds for long formulas.
+        return (
+            f"An unusually complex formula, {finding.detail}. Its logic "
+            "is difficult to trace and verify by hand."
+        )
+
     sentence = {
         "external-link": (
-            f"{at} pulls its value from another workbook that is not "
-            "here, so nothing about it can be traced or checked."
+            f"This workbook {finding.detail.split(' — ')[0].removeprefix('reads')} "
+            f"— {finding.figure or 'its'} cells pull values from it, and "
+            "none of them can be traced or checked here."
         ),
         "volatile": (
             f"{at} recalculates every time anything in the workbook "
@@ -456,21 +715,31 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     """
     result = Audit(examined=len(book.cells))
 
+    _unreadable_formulas(book, result)
     _error_values(book, result)
     _external_links(book, result)
     _volatile(book, result)
     _long_formulas(book, result)
     _literals(book, result)
     _rows(book, result)
+    _selector_drift(book, result)
+    _mutations(book, result)
     _typed_islands(book, result)
     _circularity(book, result)
     _skipped_cells(book, result)
+    _gapped_tests(book, result)
     _hidden_sheets(book, result)
+    _names_table(book, result)
 
     _quantified(book, result, axes)
     result.findings = _collapsed(book, result.findings, axes)
     _flows(book, result)
-    result.findings.sort(key=lambda f: (f.severity != "error", f.sheet, f.rule, f.ref))
+    _elevated(book, result)
+    #: Weight first — a defect leads, hygiene closes — with the old
+    #: severity/sheet order breaking ties so equal weights stay stable.
+    result.findings.sort(
+        key=lambda f: (-f.weight, f.severity != "error", f.sheet, f.rule, f.ref)
+    )
     return result
 
 
@@ -576,10 +845,16 @@ def _collapsed(
                 figure_unit=f"filled across {span}",
             )
         )
-    return _typed_blocks(keep)
+    return _cross_folds(book, _typed_blocks(book, keep))
 
 
-def _typed_blocks(findings: list[Finding]) -> list[Finding]:
+def _roster(coords: list[str]) -> str:
+    """A folded finding's full membership, bounded so a thousand-cell
+    fold cannot turn the roster into the flood it exists to end."""
+    return ", ".join(coords[:40]) + (", …" if len(coords) > 40 else "")
+
+
+def _typed_blocks(book: Workbook, findings: list[Finding]) -> list[Finding]:
     """A value typed over the same line of a repeating block is one
     decision, not one finding per block.
 
@@ -600,6 +875,99 @@ def _typed_blocks(findings: list[Finding]) -> list[Finding]:
     """
     keep = [one for one in findings if one.rule != "typed-over-formula"]
     typed = [one for one in findings if one.rule == "typed-over-formula"]
+
+    def _at(finding: Finding) -> tuple[str, int]:
+        coordinate = finding.ref.rsplit("!", 1)[-1]
+        column = "".join(ch for ch in coordinate if ch.isalpha())
+        row = int("".join(ch for ch in coordinate if ch.isdigit()) or 0)
+        return column, row
+
+    #: Row-wise first. The column pass sees a typed *row* crossing many
+    #: calculated columns as one island per column — the judged sample
+    #: had single input rows reported eight ways. Six or more typed
+    #: cells across one row holding a single value are one paste
+    #: decision, folded to one sentence. Eight or more holding
+    #: *varying* values are an input series laid across the sheet —
+    #: data, not damage — and are dropped. Between those, a run of
+    #: four or more *adjacent* columns typed over in one row is one
+    #: gesture even when every column holds its own number — the H7
+    #: stress-cargo row is one authoring decision, reported once with
+    #: every cell named, not five sentences. Shorter or scattered runs
+    #: stay per cell: two or three is coincidence, and scatter is not
+    #: a gesture. A run with typed company directly above or below is
+    #: the top of a two-dimensional paste — the Yorkshire block — and
+    #: is left for the column pass, whose folds the block pass below
+    #: reunites into one finding naming the whole rectangle.
+    by_row: dict[tuple[str, int], list[Finding]] = {}
+    for finding in typed:
+        by_row.setdefault((finding.sheet, _at(finding)[1]), []).append(finding)
+    survivors: list[Finding] = []
+
+    def _column_index(letters: str) -> int:
+        index = 0
+        for letter in letters:
+            index = index * 26 + (ord(letter) - 64)
+        return index
+
+    spots = {(one.sheet, _column_index(_at(one)[0]), _at(one)[1]) for one in typed}
+
+    def _alone_in_its_column(finding: Finding) -> bool:
+        column, row = _at(finding)
+        index = _column_index(column)
+        return (finding.sheet, index, row - 1) not in spots and (
+            finding.sheet,
+            index,
+            row + 1,
+        ) not in spots
+
+    def _row_fold(run: list[Finding]) -> Finding:
+        first = run[0]
+        coords = [one.ref.rsplit("!", 1)[-1] for one in run]
+        held = {
+            str(cell.value) if (cell := book.cells.get(one.ref)) else one.ref
+            for one in run
+        }
+        what = (
+            f"the same value typed across {len(run)} cells "
+            if len(held) == 1
+            else f"{len(held)} different values typed across {len(run)} cells "
+        ) + f"of one row ({coords[0]} to {coords[-1]})"
+        return Finding(
+            rule=first.rule,
+            severity=first.severity,
+            ref=first.ref,
+            sheet=first.sheet,
+            name=first.name,
+            detail=what,
+            source=first.source,
+            figure_unit=f"typed across {len(run)} cells",
+            cells=_roster(coords),
+        )
+
+    for group in by_row.values():
+        group.sort(key=lambda one: (len(_at(one)[0]), _at(one)[0]))
+        if len(group) >= 6:
+            held = {
+                str(cell.value) if (cell := book.cells.get(one.ref)) else one.ref
+                for one in group
+            }
+            if len(held) == 1:
+                survivors.append(_row_fold(group))
+                continue
+            if len(group) >= TYPED_BLOCK:
+                continue
+        runs: list[list[Finding]] = [[group[0]]]
+        for one in group[1:]:
+            if _column_index(_at(one)[0]) == _column_index(_at(runs[-1][-1])[0]) + 1:
+                runs[-1].append(one)
+            else:
+                runs.append([one])
+        for run in runs:
+            if len(run) >= 4 and all(_alone_in_its_column(one) for one in run):
+                survivors.append(_row_fold(run))
+            else:
+                survivors.extend(run)
+    typed = survivors
 
     by_column: dict[tuple[str, str], list[Finding]] = {}
     for finding in typed:
@@ -630,9 +998,17 @@ def _typed_blocks(findings: list[Finding]) -> list[Finding]:
             ),
             source=first.source,
             figure_unit=f"typed over in {len(group)} places",
+            cells=_roster(coords),
         )
 
-    for group in by_column.values():
+    column_folds: list[tuple[Finding, str, tuple[int, ...]]] = []
+
+    def _folded(members: list[Finding]) -> None:
+        rows = tuple(sorted(_row(one) for one in members))
+        column = _at(members[0])[0]
+        column_folds.append((_fold(members), column, rows))
+
+    for (_, column), group in by_column.items():
         #: The same named line typed over twice is already a pattern.
         named: dict[str, list[Finding]] = {}
         rest: list[Finding] = []
@@ -643,7 +1019,7 @@ def _typed_blocks(findings: list[Finding]) -> list[Finding]:
                 rest.append(finding)
         for same in named.values():
             if len(same) > 1:
-                keep.append(_fold(same))
+                _folded(same)
             else:
                 rest.extend(same)
         #: What remains — labelled differently or not at all — folds on
@@ -658,10 +1034,355 @@ def _typed_blocks(findings: list[Finding]) -> list[Finding]:
             for before, after in zip(rest, rest[1:], strict=False)
         }
         if len(rest) >= 3 and max(deltas) - min(deltas) <= 1:
-            keep.append(_fold(rest))
+            _folded(rest)
         else:
             keep.extend(rest)
+
+    #: The block pass. A two-dimensional paste — Yorkshire's FM02
+    #: types five year-columns over four adjacent rows — reaches here
+    #: as one column fold per column, five copies of the same news.
+    #: Column folds covering the *same contiguous rows* in *adjacent
+    #: columns* are one gesture: one finding naming the rectangle.
+    #: Same-name beats over scattered rows never merge — their rows
+    #: are not a rectangle, and the sentence would lie.
+    by_span: dict[tuple[str, tuple[int, ...]], list[tuple[Finding, str]]] = {}
+    for fold, column, rows in column_folds:
+        if rows[-1] - rows[0] == len(rows) - 1:
+            by_span.setdefault((fold.sheet, rows), []).append((fold, column))
+        else:
+            keep.append(fold)
+    for (_, rows), members in by_span.items():
+        members.sort(key=lambda one: (len(one[1]), one[1]))
+        stretches: list[list[tuple[Finding, str]]] = [[members[0]]]
+        for member in members[1:]:
+            if _column_index(member[1]) == _column_index(stretches[-1][-1][1]) + 1:
+                stretches[-1].append(member)
+            else:
+                stretches.append([member])
+        for stretch in stretches:
+            if len(stretch) == 1:
+                keep.append(stretch[0][0])
+                continue
+            first = stretch[0][0]
+            corner = f"{stretch[-1][1]}{rows[-1]}"
+            roster = [f"{column}{row}" for _, column in stretch for row in rows]
+            keep.append(
+                replace_finding(
+                    first,
+                    detail=(
+                        f"typed over a block {len(stretch)} columns wide and "
+                        f"{len(rows)} rows deep "
+                        f"({first.ref.rsplit('!', 1)[-1]} to {corner})"
+                    ),
+                    figure_unit=f"typed over {len(stretch) * len(rows)} cells",
+                    cells=_roster(roster),
+                )
+            )
     return keep
+
+
+def _cross_folds(book: Workbook, findings: list[Finding]) -> list[Finding]:
+    """Folds that reach across rows and across sheets.
+
+    The fill collapse folds one dragged formula; the usefulness audit
+    measured a third of the report as duplicates it cannot see, in
+    three layouts. A workbook built as one sheet per company carries
+    the same authoring decision at the same address on every sheet —
+    Ofgem's ED2 model types the same pool balance into fourteen DNO
+    sheets — and fourteen copies of one sentence is one finding.
+    A sheet whose idiom is OFFSET carries it in row after row with
+    the arguments varying, so the shapes differ and the fill collapse
+    keeps them apart — but « this sheet is built on OFFSET » is one
+    fact about one sheet. And a convention constant — the 0.5 of a
+    half-period adjustment — appears in many rows' otherwise different
+    formulas: one convention, one finding, whatever each row does
+    around it.
+
+    Every fold needs at least three members: two of anything is
+    coincidence.
+    """
+    SIBLING_RULES = ("hardcode-in-formula", "long-formula", "volatile")
+
+    def sibling_pool(one: Finding) -> bool:
+        #: Designed error tails join the smells here: the BPFM files
+        #: paste one filename-title formula into A1 of every F-sheet,
+        #: and its cached error reports once per sheet. Loud errors
+        #: (#REF!, a break in a live column) never enter a fold.
+        return one.rule in SIBLING_RULES or (
+            one.rule == "error-value" and one.severity == "smell"
+        )
+
+    keep = [one for one in findings if not sibling_pool(one)]
+    pool = [one for one in findings if sibling_pool(one)]
+
+    def base_detail(finding: Finding) -> str:
+        return finding.detail.split(" — one formula filled")[0]
+
+    def row_of(finding: Finding) -> int:
+        return int(
+            "".join(ch for ch in finding.ref.rsplit("!", 1)[-1] if ch.isdigit()) or 0
+        )
+
+    #: A row of near-identical long formulas first — ED2's transpose
+    #: rows array-enter the same 343-character formula seven times with
+    #: one anchored index hand-walked per column, so no two shapes
+    #: match and the fill collapse cannot see the fill. Same row, same
+    #: length, three or more times is one authoring pattern.
+    folded_rows: list[Finding] = []
+    by_line_key: dict[tuple[str, int, str], list[Finding]] = {}
+    for finding in pool:
+        if finding.rule != "long-formula":
+            continue
+        by_line_key.setdefault(
+            (finding.sheet, row_of(finding), base_detail(finding)), []
+        ).append(finding)
+    for line in by_line_key.values():
+        if len(line) < 3:
+            continue
+        first = min(line, key=lambda one: one.ref)
+        folded_rows.append(
+            Finding(
+                rule=first.rule,
+                severity=first.severity,
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=f"{base_detail(first)}, in {len(line)} cells of one row",
+                source=first.source,
+                figure_unit=f"in {len(line)} cells of one row",
+                cells=_roster(sorted(one.ref for one in line)),
+            )
+        )
+    folded_away = {
+        id(one) for line in by_line_key.values() if len(line) >= 3 for one in line
+    }
+    pool = [one for one in pool if id(one) not in folded_away] + folded_rows
+
+    #: The same finding at the same address under the same label on
+    #: three or more sheets: a per-company workbook's repeated
+    #: decision, whichever smell rule saw it. For a *labelled* hardcode
+    #: the identity is the shape and the label, not the numbers — ED2
+    #: types each company's own opening balance into the same row of
+    #: every DNO sheet, and fourteen different numbers are still one
+    #: layout decision. An unlabelled cell keeps the stricter
+    #: numbers-bearing key, because without the label the numbers are
+    #: the only evidence the cells mean the same thing. Shapes made of
+    #: literals alone — `=52.07`, `=876.7+21.46`, `=1354.5+-4.3E-12` —
+    #: are one spelling family: every one of them is a typed number,
+    #: however its author chose to write the arithmetic, so they key
+    #: alike and the sheet that spells its balance without a `+`
+    #: still joins its sisters.
+    by_address: dict[tuple[str, str, str, str], list[Finding]] = {}
+    for finding in pool:
+        coordinate = finding.ref.rsplit("!", 1)[-1]
+        if finding.rule == "hardcode-in-formula" and finding.name:
+            cell = book.cells.get(finding.ref)
+            identity = _shape(cell) if cell is not None else base_detail(finding)
+            if re.fullmatch(r"[=#+\-() ]+", identity):
+                identity = "=#"
+        else:
+            identity = base_detail(finding)
+        by_address.setdefault(
+            (finding.rule, coordinate, finding.name, identity), []
+        ).append(finding)
+    solo: list[Finding] = []
+    for group in by_address.values():
+        sheets = sorted({one.sheet for one in group})
+        if len(sheets) < 3 or len(sheets) != len(group):
+            solo.extend(group)
+            continue
+        first = min(group, key=lambda one: one.sheet)
+        shown = ", ".join(sheets[:4]) + (", …" if len(sheets) > 4 else "")
+        details = {base_detail(one) for one in group}
+        if len(details) == 1:
+            what = (
+                f"{base_detail(first)} — the same formula at "
+                f"{first.ref.rsplit('!', 1)[-1]} on {len(sheets)} sheets "
+                f"({shown})"
+            )
+            unit = f"repeated on {len(sheets)} sheets"
+        else:
+            what = (
+                f"{base_detail(first)} — the same decision at "
+                f"{first.ref.rsplit('!', 1)[-1]} on {len(sheets)} sheets "
+                f"({shown}), each sheet holding its own number"
+            )
+            unit = f"repeated on {len(sheets)} sheets, each with its own number"
+        keep.append(
+            Finding(
+                rule=first.rule,
+                severity=first.severity,
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=what,
+                source=first.source,
+                figure=first.figure,
+                figure_unit=unit,
+                cells=_roster(sorted(one.ref for one in group)),
+            )
+        )
+    keep.extend(one for one in solo if one.rule == "error-value")
+
+    #: What survives the address fold and is still a long formula may
+    #: yet be one template: the BPFM F1 sheet repeats its per-block
+    #: 326-character check row every fifteen rows, and the PCFM files
+    #: stamp one 325-character import-source formula into column D of
+    #: sheet after sheet. Same column, same length, three or more
+    #: times in one file is one authoring decision, wherever its
+    #: copies sit.
+    lengthy = [one for one in solo if one.rule == "long-formula"]
+    by_template: dict[tuple[str, str], list[Finding]] = {}
+    for finding in lengthy:
+        coordinate = finding.ref.rsplit("!", 1)[-1]
+        column = "".join(ch for ch in coordinate if ch.isalpha())
+        by_template.setdefault((column, base_detail(finding)), []).append(finding)
+    for (column, base), group in by_template.items():
+        if len(group) < 3:
+            keep.extend(group)
+            continue
+        sheets = sorted({one.sheet for one in group})
+        first = min(group, key=lambda one: (one.sheet, row_of(one)))
+        if len(sheets) > 1:
+            shown = ", ".join(sheets[:4]) + (", …" if len(sheets) > 4 else "")
+            what = (
+                f"{base} — the same formula in {len(group)} places "
+                f"across {len(sheets)} sheets ({shown})"
+            )
+        else:
+            at_rows = sorted(row_of(one) for one in group)
+            spots = ", ".join(f"{column}{row}" for row in at_rows[:5]) + (
+                ", …" if len(at_rows) > 5 else ""
+            )
+            what = (
+                f"{base} — the same formula in {len(group)} places "
+                f"down column {column} ({spots})"
+            )
+        keep.append(
+            Finding(
+                rule=first.rule,
+                severity=first.severity,
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=what,
+                source=first.source,
+                figure_unit=f"in {len(group)} places",
+                cells=_roster(sorted(one.ref for one in group)),
+            )
+        )
+    solo_hardcodes = [one for one in solo if one.rule == "hardcode-in-formula"]
+
+    #: The same numbers in three or more rows' otherwise different
+    #: formulas on one sheet: a convention typed everywhere rather
+    #: than held in one named cell. Same-shape repeats were already
+    #: folded by the fill collapse, so what reaches here differs in
+    #: shape and agrees only on the constant — which is the decision.
+    by_convention: dict[tuple[str, tuple[str, ...]], list[Finding]] = {}
+    for finding in solo_hardcodes:
+        cell = book.cells.get(finding.ref)
+        numbers = tuple(sorted(set(_buried(cell.formula or "")))) if cell else ()
+        by_convention.setdefault((finding.sheet, numbers), []).append(finding)
+    for (_, numbers), group in by_convention.items():
+        rows = {row_of(one) for one in group}
+        if not numbers or len(rows) < 3:
+            keep.extend(group)
+            continue
+        first = min(group, key=row_of)
+        keep.append(
+            Finding(
+                rule=first.rule,
+                severity=first.severity,
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=(
+                    f"{', '.join(numbers)} written into {len(group)} "
+                    f"different formulas on this sheet — a convention typed "
+                    f"everywhere rather than held in one cell"
+                ),
+                source=first.source,
+                figure=first.figure,
+                figure_unit=f"in {len(group)} formulas on one sheet",
+                cells=_roster(sorted(one.ref for one in group)),
+            )
+        )
+
+    #: A sheet's function idiom: the same volatile function in three
+    #: or more rows is how the sheet is built, said once — and short
+    #: of that, twice in one row is one authoring decision.
+    volatile = [one for one in solo if one.rule == "volatile"]
+    by_idiom: dict[tuple[str, str], list[Finding]] = {}
+    for finding in volatile:
+        by_idiom.setdefault((finding.sheet, base_detail(finding)), []).append(finding)
+    for (_, what), group in by_idiom.items():
+        rows = {row_of(one) for one in group}
+        if len(rows) >= 3:
+            first = min(group, key=row_of)
+            keep.append(
+                Finding(
+                    rule=first.rule,
+                    severity=first.severity,
+                    ref=first.ref,
+                    sheet=first.sheet,
+                    name=first.name,
+                    detail=(
+                        f"{what} in {len(group)} places across {len(rows)} "
+                        f"rows — the sheet is built on it"
+                    ),
+                    source=first.source,
+                    figure_unit=f"in {len(group)} places on one sheet",
+                    cells=_roster(sorted(one.ref for one in group)),
+                )
+            )
+            continue
+        by_line: dict[int, list[Finding]] = {}
+        for finding in group:
+            by_line.setdefault(row_of(finding), []).append(finding)
+        for line in by_line.values():
+            if len(line) == 1:
+                keep.extend(line)
+                continue
+            first = min(line, key=lambda one: one.ref)
+            keep.append(
+                Finding(
+                    rule=first.rule,
+                    severity=first.severity,
+                    ref=first.ref,
+                    sheet=first.sheet,
+                    name=first.name,
+                    detail=f"{base_detail(first)} in {len(line)} cells of one row",
+                    source=first.source,
+                    figure_unit=f"in {len(line)} cells of one row",
+                    cells=_roster(sorted(one.ref for one in line)),
+                )
+            )
+
+    return keep
+
+
+def _unreadable_formulas(book: Workbook, result: Audit) -> None:
+    """One malformed formula is one finding, never a dead workbook.
+
+    Round 4's planting run watched the reader die on a partial-range
+    `#REF!` and take the whole file with it. The reader now records
+    what the grammar rejected and moves on; this reports each rejected
+    cell once, loud — a formula Excel's own grammar cannot parse is
+    damage by definition."""
+    for ref in book.unparseable:
+        cell = book.cells.get(ref)
+        shown = (cell.formula or "")[:60] if cell else ""
+        result.findings.append(
+            Finding(
+                rule="error-value",
+                severity="error",
+                ref=ref,
+                sheet=ref.rsplit("!", 1)[0],
+                name=cell.name if cell else "",
+                detail=f"its formula could not be parsed: {shown}",
+                source="ISO/IEC 29500 formula grammar",
+            )
+        )
 
 
 def _error_values(book: Workbook, result: Audit) -> None:
@@ -854,6 +1575,17 @@ def _error_values(book: Workbook, result: Audit) -> None:
             else:
                 calendar = routine_column
             if tail or calendar:
+                #: An error the author wrote on purpose is not an
+                #: error finding: `IF(toggle, data, NA())` scaffolding
+                #: says « this series is off », and reporting it —
+                #: however quietly — tells a competent reader nothing.
+                first_cell = book.cells.get(f"{sheet}!{column}{start}")
+                if (
+                    first_cell is not None
+                    and first_cell.formula
+                    and NA_LITERAL.search(first_cell.formula)
+                ):
+                    continue
                 fold = quiet.setdefault(
                     sheet,
                     {
@@ -928,30 +1660,76 @@ def _error_values(book: Workbook, result: Audit) -> None:
 
 
 def _external_links(book: Workbook, result: Audit) -> None:
+    """One import decision per source workbook, however many cells ride on it.
+
+    Round 4's exam: the NZ Commerce Commission builds a determination
+    as a suite of workbooks that read each other, and per-cell
+    reporting flooded two files with ~1,500 findings that a human
+    reads as « this workbook imports from its six siblings ». The
+    event is the *source*: workbook [2] → the import family → every
+    cell that reads it as the roster. Excel numbers the sources
+    (`[1]`, `[2]`, …) per file, so the number is the identity even
+    when the path is not stored in the formula text.
+
+    Severity: a smell, not an error — a link is provenance that
+    cannot be checked here, which is an assumption at risk, not
+    damage the model displays.
+    """
+    by_source: dict[str, list[Cell]] = {}
     for cell in book.cells.values():
-        if cell.formula and EXTERNAL.search(cell.formula):
-            result.findings.append(
-                Finding(
-                    rule="external-link",
-                    severity="error",
-                    ref=cell.ref,
-                    sheet=cell.sheet,
-                    name=cell.name,
-                    detail=f"reads another workbook: {cell.formula[:70]}",
-                    source="ICAEW P19",
-                )
+        if cell.formula and (m := EXTERNAL.search(cell.formula)):
+            by_source.setdefault(m.group(0), []).append(cell)
+    for source, cells in sorted(by_source.items()):
+        cells.sort(key=lambda one: one.ref)
+        first = cells[0]
+        sheets = sorted({one.sheet for one in cells})
+        shown = ", ".join(sheets[:4]) + (", …" if len(sheets) > 4 else "")
+        where = (
+            f"in {len(cells)} cells across {len(sheets)} sheets ({shown})"
+            if len(sheets) > 1
+            else f"in {len(cells)} cells of « {sheets[0]} »"
+            if len(cells) > 1
+            else f"at {first.ref}"
+        )
+        result.findings.append(
+            Finding(
+                rule="external-link",
+                severity="smell",
+                ref=first.ref,
+                sheet=first.sheet,
+                name=first.name,
+                detail=(
+                    f"reads another workbook, {source} — {where} — for "
+                    f"example {(first.formula or '')[:60]}"
+                ),
+                source="ICAEW P19",
+                figure=str(len(cells)),
+                figure_unit=f"cells reading {source}",
+                cells=_roster([one.ref for one in cells]),
             )
+        )
 
 
 def _volatile(book: Workbook, result: Audit) -> None:
+    #: Everything any formula reads, once — so a timestamp can know
+    #: whether its value flows anywhere.
+    read: set[str] = set()
+    for cell in book.cells.values():
+        read.update(cell.precedents or ())
     for cell in book.cells.values():
         if not cell.formula:
             continue
         used = {
             token.value.rstrip("(").upper()
-            for token in Tokenizer(cell.formula).items
+            for token in _tokens(cell.formula)
             if token.type == "FUNC"
         } & VOLATILE
+        #: A TODAY() nothing reads is a « data valid from » stamp —
+        #: documentation, not a value that never sits still. The
+        #: structural volatiles (OFFSET, INDIRECT) stay findings even
+        #: unread: they are about how the model is built.
+        if used and used <= {"NOW", "TODAY"} and cell.ref not in read:
+            continue
         if used:
             result.findings.append(
                 Finding(
@@ -966,9 +1744,44 @@ def _volatile(book: Workbook, result: Audit) -> None:
             )
 
 
+def _enumeration(formula: str) -> bool:
+    """True when a formula is long only because its list is long.
+
+    `=C5+C9+C13+…` forty terms deep, or one SUM over a comma list of
+    references: nothing is nested, nothing branches, and splitting it
+    would not make it clearer — the length *is* the content. The long
+    formula rule is about formulas a reader cannot hold in their head,
+    and a plain enumeration is not one.
+    """
+    depth = 0
+    deepest = 0
+    for token in _tokens(formula):
+        if token.type in ("FUNC", "PAREN"):
+            if token.subtype == "OPEN":
+                depth += 1
+                deepest = max(deepest, depth)
+            else:
+                depth -= 1
+            continue
+        if token.type == "SEP" or token.type in ("WHITE-SPACE", "WHITESPACE"):
+            continue
+        if token.type == "OPERAND":
+            if token.subtype == "RANGE":
+                continue
+            return False
+        if token.type.startswith("OPERATOR") and token.value in ("+", "-"):
+            continue
+        return False
+    return deepest <= 1
+
+
 def _long_formulas(book: Workbook, result: Audit) -> None:
     for cell in book.cells.values():
-        if cell.formula and len(cell.formula) > LONG_FORMULA:
+        if (
+            cell.formula
+            and len(cell.formula) > LONG_FORMULA
+            and not _enumeration(cell.formula)
+        ):
             result.findings.append(
                 Finding(
                     rule="long-formula",
@@ -991,10 +1804,51 @@ def _literals(book: Workbook, result: Audit) -> None:
     rate, a tax rate, a margin — so a number that could not be an
     assumption is not a finding.
     """
+    #: A number the row's own words state — « 70% Grid / 30% Water »
+    #: over a `*0.7`, « must be 1 or 5 » over a `*5` — is documented
+    #: where the reader is already looking, which is the entire
+    #: complaint the hardcode rule makes. The block header above
+    #: counts as the row's words too: a section titled « Asset beta
+    #: at 0.075 debt beta » documents every 0.075 beneath it.
+    #: Judged per number: the documented ones drop out, any
+    #: undocumented ones still report. A header is a row with words
+    #: and no numbers of its own — a sibling data row's label
+    #: documents only itself. A block runs from its header to the
+    #: next header, however many rows that is — a fixed window read a
+    #: four-row block as headerless, and a capped walk read one row
+    #: of a block differently from its five siblings — so each row's
+    #: context is the nearest header run above it, computed in one
+    #: top-down pass per sheet: a run of header lines becomes the
+    #: standing context, and the next run replaces it, because past
+    #: a header is the previous block, whose words prove nothing
+    #: about this one.
+    occupied = {(cell.sheet, cell.row) for cell in book.cells.values()}
+    context_above: dict[str, dict[int, str]] = {}
+    for sheet, labels in book.row_words.items():
+        data_rows = {row for (name, row) in occupied if name == sheet}
+        top = max(data_rows | set(labels), default=0)
+        standing, run = "", []
+        at_rows: dict[int, str] = {}
+        for row in range(1, top + 1):
+            if row not in data_rows and labels.get(row):
+                at_rows[row] = standing
+                run.append(labels[row])
+                continue
+            if run:
+                standing = " ".join(run)
+                run = []
+            at_rows[row] = standing
+        context_above[sheet] = at_rows
+
     for cell in book.cells.values():
         if not cell.formula:
             continue
-        buried = _buried(cell.formula)
+        context = context_above.get(cell.sheet, {}).get(cell.row, "")
+        buried = tuple(
+            value
+            for value in _buried(cell.formula)
+            if not _documented(value, cell, context)
+        )
         if buried:
             #: Shown once each — « 20, 20 » for a bound tested twice
             #: read like a machine. The collapse still keys on the full
@@ -1015,22 +1869,371 @@ def _literals(book: Workbook, result: Audit) -> None:
             )
 
 
-def _buried(formula: str) -> tuple[str, ...]:
-    """The assumption-shaped numbers typed inside a formula — the
-    decision the hardcode rule is about, and therefore the identity the
-    collapse groups by."""
+def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Every number typed in a formula, sorted into what it is doing.
+
+    The first tuple is the buried assumptions — the hardcode rule's
+    subject. The second is the *selectors*: numbers a formula compares
+    against with `=` or `<>` — `IF(N$5=2025,…)`, `$L130=6` — which are
+    not assumptions buried in arithmetic but the formula's own switch
+    settings, legitimate to vary and worth watching for drift instead
+    (see :func:`_selector_drift`).
+
+    What does not count as an assumption, each learned from a judged
+    false positive on the corpus: arguments of the date constructors
+    (`DATE(2025,4,1)` is how a date is written); anything inside a
+    text function (a REPT count, a MID position); the precision
+    argument of the rounding family (`ROUND(x,8)=ROUND(y,8)` is a
+    check row's tolerance); the exponent of a power of ten (`10^6` is
+    a unit conversion); and a tolerance beside an ABS comparison
+    (`ABS(a-b)<0.001` is the model checking itself).
+
+    Round 4's unseen corpus taught six more pieces of the grammar,
+    each from judged noise: a lookup's index argument is a selector
+    (`VLOOKUP(x,table,15)` picks column fifteen, it does not assume
+    fifteen); a round power of ten standing bare in a branch is an
+    infinity sentinel (`IF(F4>0,F3/F4,10000000)`); `^0.5` is the
+    square root written as a power; a literal in a formula whose
+    outputs are sentences is a diagnostic's threshold, not a number
+    that moves the model; a literal both compared against and echoed
+    bare (`IF(D14<5," ",5)`) is the cell's own index; and a divisor
+    equal to the operand count of what it divides is the arithmetic
+    mean written out (`(a+b+c+d+e)/5`, `SUM(B8:F8)/5`).
+    """
+    tokens = [
+        token
+        for token in _tokens(formula)
+        if token.type not in ("WHITE-SPACE", "WHITESPACE")
+    ]
     found: list[str] = []
-    for token in Tokenizer(formula).items:
+    selectors: list[str] = []
+    #: One frame per open call, parenthesis or array constant:
+    #: [function name, argument index, top-level plus terms, range
+    #: span] — the same walk `references_of` does in the reader. An
+    #: array constant's frame is named « { ».
+    frames: list[list[Any]] = []
+    #: What each CLOSE token's group counted as addends — the mean's
+    #: divisor check reads it: `(a+b+c)/3` and `SUM(B8:F8)/5`.
+    closed_terms: dict[int, float] = {}
+    #: Which function each CLOSE token ended, so a literal can know
+    #: what it is being compared against: in `WEEKDAY(A2,2)<6` the
+    #: token before the `<` closed WEEKDAY, and the 6 is a day of the
+    #: week, not an assumption.
+    closed_at: dict[int, str] = {}
+    tolerant = "ABS(" in formula.upper()
+    #: A formula that speaks sentences is a diagnostic — its numbers
+    #: are the message's thresholds, not the model's.
+    diagnostic = any(
+        token.type == "OPERAND"
+        and token.subtype == "TEXT"
+        and " " in token.value.strip('"').strip()
+        for token in tokens
+    )
+    #: Every literal that stands next to a comparison anywhere in the
+    #: formula — the echo check reads it: a number compared against
+    #: and then returned bare is the cell's own label.
+    compared: set[str] = set()
+    echoed: set[str] = set()
+    for index, token in enumerate(tokens):
+        if token.type == "OPERAND" and token.subtype == "NUMBER":
+            before = tokens[index - 1] if index else None
+            behind = tokens[index + 1] if index + 1 < len(tokens) else None
+            if any(
+                one is not None
+                and one.type.startswith("OPERATOR")
+                and one.value in ("<", "<=", ">", ">=", "=", "<>")
+                for one in (before, behind)
+            ):
+                compared.add(token.value)
+            elif (
+                before is None
+                or before.type == "SEP"
+                or (before.type in ("FUNC", "PAREN") and before.subtype == "OPEN")
+            ) and (
+                behind is None
+                or behind.type == "SEP"
+                or (behind.type in ("FUNC", "PAREN") and behind.subtype == "CLOSE")
+            ):
+                echoed.add(token.value)
+
+    #: A formula that joins text with `&` at its top level *is* a
+    #: label — « £m 23/24 prices » built from a year cell — and every
+    #: number in it is part of the wording, not of the model.
+    depth = 0
+    text_builder = False
+    for token in tokens:
+        if token.type in ("FUNC", "PAREN", "ARRAY"):
+            depth += 1 if token.subtype == "OPEN" else -1
+        elif token.type.startswith("OPERATOR") and token.value == "&" and depth == 0:
+            text_builder = True
+
+    def _operator(token: Any, values: tuple[str, ...]) -> bool:
+        return (
+            token is not None
+            and token.type.startswith("OPERATOR")
+            and token.value in values
+        )
+
+    for index, token in enumerate(tokens):
+        if token.type == "FUNC" and token.subtype == "OPEN":
+            frames.append([token.value.rstrip("(").upper(), 0, 0, 0.0])
+            continue
+        if token.type == "ARRAY" and token.subtype == "OPEN":
+            frames.append(["{", 0, 0, 0.0])
+            continue
+        if token.type == "PAREN" and token.subtype == "OPEN":
+            frames.append(["", 0, 0, 0.0])
+            continue
+        if token.type in ("FUNC", "PAREN", "ARRAY") and token.subtype == "CLOSE":
+            if frames:
+                name, _, plus, span = frames.pop()
+                closed_at[index] = name
+                #: What the group would count as addends: a run of
+                #: `+` terms, or a SUM/AVERAGE over one plain range.
+                closed_terms[index] = span if span else plus + 1 if plus else 0.0
+            continue
+        if token.type == "SEP" and token.subtype == "ARG" and frames:
+            frames[-1][1] += 1
+            continue
+        if token.type.startswith("OPERATOR") and token.value == "+" and frames:
+            frames[-1][2] += 1
+            continue
+        if token.type == "OPERAND" and token.subtype == "RANGE" and frames:
+            span_match = re.fullmatch(
+                r"\$?([A-Z]{1,3})\$?(\d+):\$?([A-Z]{1,3})\$?(\d+)",
+                token.value.strip(),
+            )
+            if span_match:
+                c1, r1, c2, r2 = span_match.groups()
+                if c1 == c2:
+                    frames[-1][3] = abs(int(r2) - int(r1)) + 1
+                elif r1 == r2:
+                    wide = [0, 0]
+                    for at, letters in enumerate((c1, c2)):
+                        for ch in letters:
+                            wide[at] = wide[at] * 26 + ord(ch) - 64
+                    frames[-1][3] = abs(wide[1] - wide[0]) + 1
+            continue
         if token.type != "OPERAND" or token.subtype != "NUMBER":
             continue
         try:
             number = float(token.value)
         except ValueError:
             continue
+        spelled = token.value
+        #: A trailing percent sign is part of the number: `+0.1%` is
+        #: one-thousandth, and the innocence test, the selector key and
+        #: the label documentation must all see it that way. The
+        #: percent spelling also reads better in every sentence.
+        if (
+            index + 1 < len(tokens)
+            and tokens[index + 1].type == "OPERATOR-POSTFIX"
+            and tokens[index + 1].value == "%"
+        ):
+            number /= 100
+            spelled = token.value + "%"
+        if text_builder:
+            continue
+        prev = tokens[index - 1] if index else None
+        after = tokens[index + 1] if index + 1 < len(tokens) else None
+        if _operator(prev, ("=", "<>")) or _operator(after, ("=", "<>")):
+            selectors.append(spelled)
+            continue
+        #: An array constant enumerating the cases a MATCH picks from
+        #: — `MATCH(m_identity,{6,7,8},0)` — is a list of case labels,
+        #: switch settings like any equality selector. An array
+        #: constant anywhere else (SUMPRODUCT weights) stays a number.
+        if any(frame[0] == "{" for frame in frames):
+            at = max(i for i, frame in enumerate(frames) if frame[0] == "{")
+            owner = next(
+                ((frame[0], frame[1]) for frame in reversed(frames[:at]) if frame[0]),
+                None,
+            )
+            if owner is not None and owner[0] == "MATCH" and owner[1] == 1:
+                selectors.append(spelled)
+                continue
+        #: Compared against a calendar part: `WEEKDAY(A2,2)<6` asks
+        #: « is it a weekday », and the 6 belongs to the calendar.
+        if (
+            _operator(prev, ("<", "<=", ">", ">=", "=", "<>"))
+            and closed_at.get(index - 2) in CALENDAR_PARTS
+        ):
+            continue
+        if any(frame[0] in DATE_FUNCS or frame[0] in TEXT_FUNCS for frame in frames):
+            continue
+        if frames and frames[-1][0] in ROUND_FUNCS and frames[-1][1] >= 1:
+            continue
+        #: The exponent of a power of ten, allowing `10^-6`.
+        back = index - 1
+        if back >= 0 and tokens[back].type == "OPERATOR-PREFIX":
+            back -= 1
+        if (
+            back >= 1
+            and _operator(tokens[back], ("^",))
+            and tokens[back - 1].type == "OPERAND"
+            and tokens[back - 1].subtype == "NUMBER"
+            and tokens[back - 1].value in ("10", "10.")
+        ):
+            continue
+        if tolerant and (_operator(prev, ("<", "<=")) or _operator(after, (">", ">="))):
+            continue
+        #: A lookup's index argument picks a column or a case — it is
+        #: a selector, never an assumption. `VLOOKUP(x, table, 15)`
+        #: reads column fifteen; conditionals wrapping the argument
+        #: (`…IF(mode="US",2,3)…`) pass the position through.
+        owner = next(
+            (
+                (name, arg)
+                for name, arg, _, _ in reversed(frames)
+                if name and name not in ("{", "IF", "IFS", "IFERROR", "IFNA")
+            ),
+            None,
+        )
+        if owner in SELECTOR_ARGS:
+            selectors.append(spelled)
+            continue
+        comparator = _operator(prev, ("<", "<=", ">", ">=", "=", "<>")) or _operator(
+            after, ("<", "<=", ">", ">=", "=", "<>")
+        )
+        bare = (
+            prev is None
+            or prev.type == "SEP"
+            or (prev.type in ("FUNC", "PAREN") and prev.subtype == "OPEN")
+            or prev.type == "OPERATOR-PREFIX"
+        ) and (
+            after is None
+            or after.type == "SEP"
+            or (after.type in ("FUNC", "PAREN") and after.subtype == "CLOSE")
+        )
+        #: A round power of ten standing bare in a branch is an
+        #: infinity sentinel — `IF(F4>0,F3/F4,10000000)` says « no
+        #: interest expense, coverage unbounded », not ten million.
+        if bare and abs(number) >= 1e5 and math.log10(abs(number)).is_integer():
+            continue
+        #: In a formula that speaks sentences, a compared literal is
+        #: the diagnostic's threshold — the message's bound, not the
+        #: model's number.
+        if diagnostic and comparator:
+            continue
+        #: Compared against somewhere in the formula and echoed bare
+        #: elsewhere (or here): the cell's own index — `IF(D14<5," ",5)`
+        #: is a year counter labelling itself, and both fives are the
+        #: label.
+        if token.value in compared and (bare or token.value in echoed):
+            continue
+        #: `^0.5` is the square root written as a power. `^(0.5)` too.
+        if number == 0.5 and (
+            _operator(prev, ("^",))
+            or (
+                prev is not None
+                and prev.type == "PAREN"
+                and prev.subtype == "OPEN"
+                and index >= 2
+                and _operator(tokens[index - 2], ("^",))
+            )
+        ):
+            continue
+        #: A divisor equal to the operand count of what it divides is
+        #: the arithmetic mean written out — `(a+b+c+d+e)/5`,
+        #: `SUM(B8:F8)/5`.
+        if (
+            _operator(prev, ("/",))
+            and index >= 2
+            and closed_terms.get(index - 2) == number
+        ):
+            continue
         if number in INNOCENT or (number.is_integer() and abs(number) <= 4):
             continue
-        found.append(token.value)
-    return tuple(found)
+        found.append(spelled)
+    return tuple(found), tuple(selectors)
+
+
+#: The argument positions (zero-based) that pick rather than assume:
+#: a lookup's column or row index, a CHOOSE or SUBTOTAL case, MATCH's
+#: match type. Learned whole from Round 4's unseen corpus, where they
+#: were most of the judged noise.
+SELECTOR_ARGS = frozenset(
+    {
+        ("VLOOKUP", 2),
+        ("HLOOKUP", 2),
+        ("MATCH", 2),
+        ("INDEX", 1),
+        ("INDEX", 2),
+        ("CHOOSE", 0),
+        ("SUBTOTAL", 0),
+    }
+)
+
+
+def _buried(formula: str) -> tuple[str, ...]:
+    """The assumption-shaped numbers typed inside a formula — the
+    decision the hardcode rule is about, and therefore the identity the
+    collapse groups by."""
+    return _literal_scan(formula)[0]
+
+
+#: The fraction words a financial label actually uses. Whole numbers
+#: stay out — « one » and « two » appear in too many labels that are
+#: not stating the constant.
+NUMBER_WORDS = {
+    "half": 0.5,
+    "halves": 0.5,
+    "quarter": 0.25,
+    "quarters": 0.25,
+    "third": 1 / 3,
+    "thirds": 1 / 3,
+}
+
+
+def _documented(value: str, cell: Cell, context: str = "") -> bool:
+    """True when the sheet's own words state the number.
+
+    Checked in the number's own spelling, as a bare integer, as the
+    percentage it would print as — `0.7` is documented by a label that
+    says « 70% » — and as basis points, because a row named « 10 Bps
+    Inc » has said everything about its `+0.1%`. Word-bounded, so a 70
+    in « 1970 » proves nothing. `context` carries the block header's
+    words: « Asset beta at 0.075 debt beta » two rows above the block
+    documents the 0.075 as surely as the row's own label would.
+    """
+    words = " ".join(
+        filter(None, (cell.name, cell.row_label, cell.column_label, context))
+    )
+    if not words:
+        return False
+    try:
+        number = float(value)
+    except ValueError:
+        if not value.endswith("%"):
+            return False
+        try:
+            number = float(value[:-1]) / 100
+        except ValueError:
+            return False
+    forms = {value}
+    if number.is_integer():
+        forms.add(f"{int(number)}")
+    forms.add(f"{number * 100:g}%")
+    if any(
+        re.search(rf"(?<![\w.]){re.escape(form)}(?![\w.])", words) for form in forms
+    ):
+        return True
+    #: English states numbers in words as surely as in digits: a row
+    #: named « Half year discount factor » has said everything about
+    #: its `^0.5`.
+    if any(
+        abs(number - spoken) < 1e-9 and re.search(rf"\b{word}\b", words, re.IGNORECASE)
+        for word, spoken in NUMBER_WORDS.items()
+    ):
+        return True
+    bps = f"{number * 10000:g}"
+    return bool(
+        re.search(
+            rf"(?<![\w.]){re.escape(bps)}\s*(?:bps|bp|basis\s+points?)\b",
+            words,
+            re.IGNORECASE,
+        )
+    )
 
 
 def _rows(book: Workbook, result: Audit) -> None:
@@ -1102,12 +2305,47 @@ def _rows(book: Workbook, result: Audit) -> None:
                 # to none, and cost the fixture nothing.
                 if run[index - 1].formula is None or run[index + 1].formula is None:
                     continue
+                #: And there must be a series to be typed over: at
+                #: least one flanking formula's shape must repeat in
+                #: the run. A metadata row — `=price_label` on one
+                #: side, a cross-sheet pick on the other, a typed 0
+                #: for a spare line between — has no two cells alike,
+                #: and is not a calculation interrupted. But the H7
+                #: debt model's typed first-year rates sit between the
+                #: row's own AVERAGE column and a live series, and the
+                #: series flank testifies: the gate caught this rule's
+                #: first draft (neighbours must agree with each other)
+                #: silently deleting those two judged findings.
+                flanks = (_shape(run[index - 1]), _shape(run[index + 1]))
+                if all(shapes.get(flank, 0) < 2 for flank in flanks):
+                    continue
                 # And lone down the column too. A value pasted over a
                 # formula is surrounded by formulas on all four sides; a
                 # constant with another constant directly above or below
                 # it belongs to a column of typed parameters, which is
                 # what `CollarsAnalysisv3-1.XLS` has three of.
                 if _stacked(book, cell):
+                    continue
+                #: The seed exemption the column pass has always had,
+                #: needed here since the reader learned to see array
+                #: formulas: the founder's counter seeds (`1` over
+                #: `=Z23+1`) sit beside a TRANSPOSE block that used to
+                #: read as typed values, and the moment it read as the
+                #: formulas it is, the seeds became « lone constants
+                #: between formulas » to this pass too.
+                #: Narrower than the island pass's use of `_seed`: the
+                #: formula below must not merely *read* the typed cell —
+                #: `=F11/F6` under a paste does that — it must continue
+                #: a vertical series from it, which is what a counter
+                #: does and a paste never has under it.
+                below = book.get(
+                    f"{sheet}!{get_column_letter(cell.column)}{cell.row + 1}"
+                )
+                if (
+                    below is not None
+                    and _seed([cell], below)
+                    and _column_series(book, below)
+                ):
                     continue
                 result.findings.append(
                     Finding(
@@ -1176,6 +2414,12 @@ def _rows(book: Workbook, result: Audit) -> None:
                     #: founder's file: `=Z23+1` flagged against a row
                     #: whose real series runs sideways.
                     and not _column_series(book, cell)
+                    #: A bare SUM across its own row is the row's total
+                    #: column — `Y64=SUM(AA64:BJ64)` beside the series it
+                    #: adds up. It departs from the pattern because it is
+                    #: *about* the pattern, and calling the total an
+                    #: inconsistency annoyed every judge who saw it.
+                    and not _row_total(cell)
                 ):
                     result.findings.append(
                         Finding(
@@ -1191,6 +2435,309 @@ def _rows(book: Workbook, result: Audit) -> None:
                             source="FAST, ICAEW P12",
                         )
                     )
+
+
+def _shape_list(cell: Cell) -> list[str]:
+    """The cell's shape as a token list, for position-level comparison.
+
+    Reference tokens carry an `@` mark. Without it a reference is
+    recognised by « starts with R », which `ROUND(` also satisfies and
+    `'Control Panel'!R51CC` does not — the sheet-qualified miss let a
+    rate pinned to the wrong column pass unexamined in a judged model.
+    """
+    if cell.formula is None:
+        return []
+    out = []
+    for token in _tokens(cell.formula):
+        if token.type == "OPERAND" and token.subtype == "RANGE":
+            out.append("@" + _offset(token.value, cell.row, cell.column))
+        elif token.type == "OPERAND" and token.subtype == "NUMBER":
+            out.append("#")
+        elif token.type == "OPERAND" and token.subtype == "TEXT":
+            out.append('"..."')
+        elif token.type in ("WHITE-SPACE", "WHITESPACE"):
+            continue
+        else:
+            out.append(token.value)
+    return out
+
+
+ARITHMETIC = ("+", "-", "*", "/")
+
+
+def _mutations(book: Workbook, result: Audit) -> None:
+    """One changed token inside an otherwise identical family.
+
+    Round 4's planted mutations went unseen where the row pass's
+    evidence gates never opened: an operator flipped in a short row,
+    a reference shifted one row in a three-cell run. But a run whose
+    members are token-for-token identical except one cell, where that
+    cell differs in exactly one position, is not « a different
+    formula » — it is the same calculation structure with one token
+    changed, and a single changed token against a uniform family is
+    the strongest witness a static reader gets. `=A1-B1` beside two
+    `=A1+B1` siblings is a flipped sign; `=SUM(B11:B21)` beside
+    `=SUM(B10:B20)` twins is a displaced window.
+
+    Rows only: a row shares one label, so its cells are one family by
+    the sheet's own words. Column runs cross differently-labelled line
+    items, where a uniform shape is usually a chain and the deviant is
+    a section seed — the unseen corpus judged every column deviation a
+    structure, not a mutation. Three more exemptions from the same
+    judging: the run's first cell displacing a reference is the row's
+    seed (it reads the anchor the chain hangs from); a deviant whose
+    shape repeats in its own column belongs to the crossing vertical
+    family (a column total crossing a row of row totals); and both
+    exemptions apply only to displaced references — a flipped operator
+    is suspect wherever it sits.
+    """
+    #: One shape per cell, computed once — this pass walks every
+    #: formula twice (column census, then runs), and the big BPFM
+    #: files hold two hundred thousand of them.
+    shaped: dict[str, tuple[str, ...]] = {
+        cell.ref: tuple(_shape_list(cell))
+        for cell in book.cells.values()
+        if cell.formula
+    }
+    by_column_shape: dict[tuple[str, int], Counter[tuple[str, ...]]] = {}
+    for cell in book.cells.values():
+        if cell.formula:
+            by_column_shape.setdefault((cell.sheet, cell.column), Counter())[
+                shaped[cell.ref]
+            ] += 1
+
+    lines: dict[tuple[str, str, int], list[Cell]] = {}
+    for cell in book.cells.values():
+        if not cell.formula:
+            continue
+        lines.setdefault(("row", cell.sheet, cell.row), []).append(cell)
+
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule in ("inconsistent-row", "inconsistent-anchoring")
+    }
+    caught: list[tuple[Cell, str]] = []
+
+    for (axis, _, _), cells in sorted(lines.items()):
+        cells.sort(key=lambda one: one.column if axis == "row" else one.row)
+        #: Contiguous runs only — a gap is a block boundary.
+        runs: list[list[Cell]] = [[cells[0]]]
+        for one in cells[1:]:
+            step = (
+                one.column - runs[-1][-1].column
+                if axis == "row"
+                else one.row - runs[-1][-1].row
+            )
+            if step == 1:
+                runs[-1].append(one)
+            else:
+                runs.append([one])
+        for run in runs:
+            if len(run) < 3:
+                continue
+            shapes = [shaped[one.ref] for one in run]
+            counts = Counter(shapes)
+            usual, votes = counts.most_common(1)[0]
+            if votes != len(run) - 1 or not usual:
+                continue
+            deviant = run[shapes.index(next(s for s in shapes if s != usual))]
+            if deviant.ref in already:
+                continue
+            theirs = shaped[deviant.ref]
+            if len(theirs) != len(usual):
+                continue
+            changed = [at for at in range(len(usual)) if usual[at] != theirs[at]]
+            if len(changed) != 1:
+                continue
+            at = changed[0]
+            was, now = usual[at], theirs[at]
+            n = len(run) - 1
+            displaced = was.startswith("@") and now.startswith("@")
+            if displaced:
+                #: A run's edges are where designs live: the first cell
+                #: reads the anchor its chain hangs from, the last cell
+                #: reads the totals column (Thames' output rows walk
+                #: five year-columns and end on the source's total —
+                #: twelve judged parallels of one layout). An edge
+                #: deviation stands only on strong evidence, and both
+                #: kinds came from judged models. Both variants pinned
+                #: (`$C$51` against `$D$51`) is a family disagreeing
+                #: about the one cell it reads — a fill preserves
+                #: pinned references, so no seed story explains it: a
+                #: rate row dragged with the wrong anchor hid there.
+                #: And a family whose walking reference lands on empty
+                #: cells reads nothing — a pinned seed beside it is the
+                #: one cell doing the row's job (the inventory-days
+                #: drag). A family walking into live cells beside a
+                #: pinned edge cell is a design, and stays quiet.
+                if deviant is run[0] or deviant is run[-1]:
+                    both_pinned = "[" not in was and "[" not in now
+                    #: Fourth keep, from the gate itself: a family of
+                    #: own-column windows whose edge cell reads its own
+                    #: column through a displaced window (`SUM(R34:R38)`
+                    #: closing fifteen `SUM(…78:…82)` siblings — judged
+                    #: A in Round 5) is the family's own grammar broken,
+                    #: not an edge design. Own-line means every column
+                    #: offset is zero and no other sheet is involved.
+                    own_line = _own_line(was) and _own_line(now)
+                    if own_line and _window_grew(was, now, deviant, run, book):
+                        continue
+                    if not both_pinned and not own_line:
+                        family = [one for one in run if one is not deviant]
+                        walked = [
+                            _token_target(usual[at], one)
+                            for one in family
+                            if "[" in usual[at]
+                        ]
+                        live = sum(
+                            1
+                            for target in walked
+                            if target is None or target in book.cells
+                        )
+                        into_nothing = walked and live * 2 <= len(walked)
+                        same_cell = "[" not in was and _token_target(
+                            now, deviant
+                        ) == _token_target(was, deviant)
+                        if not into_nothing and not same_cell:
+                            continue
+                #: A shape that repeats down the deviant's own column
+                #: is the crossing family — a column total crossing a
+                #: row of row totals is two designs meeting, not a
+                #: mutation.
+                if (
+                    by_column_shape.get((deviant.sheet, deviant.column), Counter())[
+                        theirs
+                    ]
+                    >= 2
+                ):
+                    continue
+            if was in ARITHMETIC and now in ARITHMETIC:
+                what = (
+                    f"the same calculation as its {n} siblings with one "
+                    f"operator changed — {was} became {now}: "
+                    f"{(deviant.formula or '')[:60]}"
+                )
+            elif displaced and not ("[" in was and "[" in now):
+                what = (
+                    f"the same formula as its {n} siblings with one pinned "
+                    f"reference out of step — they read {_unshaped(was)}, it "
+                    f"reads {_unshaped(now)}: {(deviant.formula or '')[:60]}"
+                )
+            elif displaced:
+                what = (
+                    f"the same formula as its {n} siblings with one "
+                    f"reference displaced — where they read {_unshaped(was)}, "
+                    f"it reads {_unshaped(now)}: {(deviant.formula or '')[:60]}"
+                )
+            else:
+                continue
+            already.add(deviant.ref)
+            caught.append((deviant, what))
+
+    #: One column breaking many rows' families is one authoring event —
+    #: H7's C_Tax reads pinned input rows in its first forecast column
+    #: while every filled year reads three rows higher, twenty-four
+    #: times in block rhythm. Twenty-four findings would bury the one
+    #: decision; the fold says it once, with the roster.
+    grouped: dict[tuple[str, int], list[tuple[Cell, str]]] = {}
+    for deviant, what in caught:
+        grouped.setdefault((deviant.sheet, deviant.column), []).append(
+            (deviant, what)
+        )
+    for (sheet, _), members in sorted(grouped.items()):
+        if len(members) >= 3:
+            first, lead = members[0]
+            column = get_column_letter(first.column)
+            roster = ", ".join(one.ref.rsplit("!", 1)[-1] for one, _ in members)
+            result.findings.append(
+                Finding(
+                    rule="inconsistent-row",
+                    severity="error",
+                    ref=first.ref,
+                    sheet=sheet,
+                    name=first.name,
+                    detail=(
+                        f"column {column} breaks its rows' families in "
+                        f"{len(members)} rows — each row's fill reads one "
+                        f"place and its {column} cell another; the first: "
+                        f"{lead}"
+                    ),
+                    source="EuSpRIG, ICAEW P11",
+                    cells=roster[:400],
+                )
+            )
+        else:
+            for deviant, what in members:
+                result.findings.append(
+                    Finding(
+                        rule="inconsistent-row",
+                        severity="error",
+                        ref=deviant.ref,
+                        sheet=deviant.sheet,
+                        name=deviant.name,
+                        detail=what,
+                        source="EuSpRIG, ICAEW P11",
+                    )
+                )
+
+
+def _selector_drift(book: Workbook, result: Audit) -> None:
+    """A filled row whose switch setting drifted.
+
+    `IF(N$5=2025,…)` filled across a row keeps its shape when the 2025
+    becomes 2022 in one cell — shapes erase numbers — so the row check
+    reads the drifted cell as identical to its sisters. The literal is
+    the whole point there: a fill that tests one year in fourteen
+    columns and a different year in one is either a stale copy or an
+    exception nobody wrote down, and the judged sample carried exactly
+    this (a 2022 among 2025s in a live RIIO-3 model). Selectors come
+    from :func:`_literal_scan`; the shape must repeat at least three
+    times beside exactly one dissenter. No period-label test guards
+    this pass — the corpus case that taught it sits under « RIIO-GD2 /
+    RIIO-GD3 » band headers that name no period, and the structure
+    itself (one dissenter against three or more identically shaped
+    sisters, exactly two settings in play) is the signature; a row
+    whose columns legitimately differ shows many settings, not two.
+    """
+    groups: dict[tuple[str, int, str], list[tuple[Cell, tuple[str, ...]]]] = {}
+    for cell in book.cells.values():
+        if not cell.formula:
+            continue
+        _, selectors = _literal_scan(cell.formula)
+        if not selectors:
+            continue
+        key = (cell.sheet, cell.row, _shape(cell))
+        groups.setdefault(key, []).append((cell, selectors))
+
+    for (sheet, _, _), members in groups.items():
+        if len(members) < MIN_SERIES + 1:
+            continue
+        variants: dict[tuple[str, ...], list[Cell]] = {}
+        for cell, selectors in members:
+            variants.setdefault(selectors, []).append(cell)
+        if len(variants) != 2:
+            continue
+        (few_key, few), (many_key, many) = sorted(
+            variants.items(), key=lambda pair: len(pair[1])
+        )
+        if len(few) != 1 or len(many) < MIN_SERIES:
+            continue
+        odd = few[0]
+        result.findings.append(
+            Finding(
+                rule="inconsistent-row",
+                severity="error",
+                ref=odd.ref,
+                sheet=sheet,
+                name=odd.name,
+                detail=(
+                    f"tests {', '.join(few_key)} where {len(many)} sister "
+                    f"cells test {', '.join(many_key)}: {(odd.formula or '')[:70]}"
+                ),
+                source="FAST, ICAEW P12",
+            )
+        )
 
 
 def _column_series(book: Workbook, cell: Cell) -> bool:
@@ -1212,6 +2759,26 @@ def _column_series(book: Workbook, cell: Cell) -> bool:
         if neighbour is not None and neighbour.formula and _shape(neighbour) == mine:
             matching += 1
     return matching >= 2
+
+
+def _row_total(cell: Cell) -> bool:
+    """True when a cell is a bare SUM over cells of its own row."""
+    if not cell.formula or not BARE_SUM.match(cell.formula):
+        return False
+    ranges = [
+        REFERENCE.fullmatch(token.value.strip())
+        for token in _tokens(cell.formula)
+        if token.type == "OPERAND" and token.subtype == "RANGE"
+    ]
+    if not ranges or any(match is None for match in ranges):
+        return False
+    return all(
+        match is not None
+        and match.group("sheet") is None
+        and int(match.group("row")) == cell.row
+        and int(match.group("row2") or match.group("row")) == cell.row
+        for match in ranges
+    )
 
 
 def _over_time(run: list[Cell]) -> bool:
@@ -1387,6 +2954,11 @@ def _island_findings(
             len(island) <= TYPED_BLOCK
             and len(island) < len(run)
             and any(_shape(edge) == usual for edge in edges)
+            #: A column whose repeating formula is one bare defined name
+            #: — `=price_label` down a mnemonic column — is the sheet's
+            #: text scaffolding, and a value typed between its rows is
+            #: a heading, not a paste over a calculation.
+            and not _mnemonic(usual)
             and all(
                 leftmost.get((sheet, cell.row), 1 << 20) < cell.column
                 for cell in island
@@ -1412,6 +2984,18 @@ def _island_findings(
                     )
                 )
         index = end
+
+
+#: One bare name and nothing else — what a defined-name mnemonic column
+#: reduces to after :func:`_shape` (which leaves names it cannot offset
+#: verbatim). A cell reference never fits: shapes render those in
+#: R/C form, which the second test excludes.
+MNEMONIC = re.compile(r"[A-Za-z_\\][A-Za-z0-9_.\\]*")
+
+
+def _mnemonic(usual: str) -> bool:
+    """True when a column's usual shape is a single defined name."""
+    return bool(MNEMONIC.fullmatch(usual)) and re.match(r"R(\d|\[)", usual) is None
 
 
 def _boundaries(rows: dict[tuple[str, int], list[Cell]]) -> dict[str, int]:
@@ -1457,7 +3041,11 @@ def _shape(cell: Cell, anchoring: bool = True) -> str:
     if cell.formula is None:
         return ""
     out = []
-    for token in Tokenizer(cell.formula).items:
+    try:
+        tokens = _tokens(cell.formula)
+    except Exception:
+        return ""
+    for token in tokens:
         if token.type == "OPERAND" and token.subtype == "RANGE":
             out.append(_offset(token.value, cell.row, cell.column, anchoring))
         elif token.type == "OPERAND" and token.subtype == "NUMBER":
@@ -1498,6 +3086,123 @@ def _offset(reference: str, row: int, column: int, anchoring: bool = True) -> st
     return ":".join(parts)
 
 
+def _unshaped(token: str) -> str:
+    """A shape token back in the reader's words, for finding text.
+
+    `@'Control Panel'!R51CC` reads as `'Control Panel'!$C$51`; a
+    relative piece keeps its offset form, which is honest — the family
+    shares the offset, not any one address.
+    """
+    text = token.lstrip("@")
+
+    def piece(m: re.Match[str]) -> str:
+        row, column = m.group(1), m.group(2)
+        out_column = f"${column}" if not column.startswith("[") else f"C{column}"
+        out_row = f"${row}" if not row.startswith("[") else f"R{row}"
+        if "[" in row or "[" in column:
+            return f"{out_column}{out_row}" if "[" not in column else f"R{row}C{column}"
+        return f"{out_column}{out_row}"
+
+    return re.sub(r"R(\[[+-]?\d+\]|\d+)C(\[[+-]?\d+\]|[A-Z]{1,3})", piece, text)
+
+
+def _own_line(token: str) -> bool:
+    """True when a shape token reads its cell's own column — every
+    column offset zero, no other sheet — the perpendicular work a
+    totals row does. A displaced window there breaks the family's own
+    grammar; a reference elsewhere at a run's edge is usually design."""
+    text = token.lstrip("@")
+    if "!" in text:
+        return False
+    piece = r"R(?:\[[+-]?\d+\]|\d+)C\[\+?0\]"
+    return bool(re.fullmatch(f"{piece}(?::{piece})?", text))
+
+
+def _window_grew(
+    was: str, now: str, deviant: Cell, run: list[Cell], book: Workbook
+) -> bool:
+    """An edge window sized to the data only it has.
+
+    The first column's extra line item — an acquisition that exists in
+    year one alone — widens its own-column window by exactly that row;
+    the siblings' windows skip a row that is empty for them (judged on
+    a depreciation model's closing-RAB row). The mirror also holds: an
+    edge window narrowed past rows that are empty in its own column.
+    Either way the data explains the deviation, so it is design. A
+    window displaced onto a different section entirely never passes
+    here — its rows are not a superset or subset of the family's.
+    """
+
+    def rows_of(token: str) -> set[int] | None:
+        pieces = token.lstrip("@").split(":")
+        if len(pieces) != 2:
+            return None
+        ends = []
+        for piece in pieces:
+            target = _token_target("@" + piece, deviant)
+            digits = re.search(r"(\d+)$", target) if target else None
+            if digits is None:
+                return None
+            ends.append(int(digits.group(1)))
+        return set(range(min(ends), max(ends) + 1))
+
+    family_rows, deviant_rows = rows_of(was), rows_of(now)
+    if family_rows is None or deviant_rows is None:
+        return False
+    family = [one for one in run if one is not deviant]
+
+    def present(cell: Cell, rows: set[int]) -> list[bool]:
+        return [
+            f"{cell.sheet}!{get_column_letter(cell.column)}{row}" in book.cells
+            for row in rows
+        ]
+
+    if deviant_rows > family_rows:
+        extra = deviant_rows - family_rows
+        return all(present(deviant, extra)) and not any(
+            flag for one in family for flag in present(one, extra)
+        )
+    if family_rows > deviant_rows:
+        dropped = family_rows - deviant_rows
+        return not any(present(deviant, dropped)) and all(
+            flag for one in family for flag in present(one, dropped)
+        )
+    return False
+
+
+def _token_target(token: str, cell: Cell) -> str | None:
+    """The actual cell a shape token reads, resolved from `cell`.
+
+    None for ranges and anything past the simple grammar — callers
+    treat None as « cannot show it is empty », which errs quiet.
+    """
+    text = token.lstrip("@")
+    if ":" in text:
+        return None
+    sheet = cell.sheet
+    if "!" in text:
+        sheet, text = text.rsplit("!", 1)
+        sheet = sheet.strip("'")
+    m = re.fullmatch(r"R(\[[+-]?\d+\]|\d+)C(\[[+-]?\d+\]|[A-Z]{1,3})", text)
+    if m is None:
+        return None
+    row_part, column_part = m.group(1), m.group(2)
+    row = (
+        cell.row + int(row_part.strip("[]"))
+        if row_part.startswith("[")
+        else int(row_part)
+    )
+    if column_part.startswith("["):
+        column = cell.column + int(column_part.strip("[]"))
+    else:
+        column = 0
+        for letter in column_part:
+            column = column * 26 + ord(letter) - 64
+    if row < 1 or column < 1:
+        return None
+    return f"{sheet}!{get_column_letter(column)}{row}"
+
+
 def _twin(calculated: list[Cell], usual: str) -> Cell | None:
     for cell in calculated:
         if _shape(cell) == usual:
@@ -1523,8 +3228,8 @@ def _same_calculation(cell: Cell, twin: Cell | None) -> bool:
     """
     if twin is None or cell.formula is None or twin.formula is None:
         return False
-    mine = list(Tokenizer(cell.formula).items)
-    theirs = list(Tokenizer(twin.formula).items)
+    mine = list(_tokens(cell.formula))
+    theirs = list(_tokens(twin.formula))
     if len(mine) != len(theirs):
         return False
 
@@ -1665,8 +3370,17 @@ def _loops(book: Workbook) -> list[list[str]]:
     recursion limit — over the in-book precedent edges. A component of
     one cell counts only when the cell reads itself.
     """
+    #: Edges the cycle hunter walks. A precedent read only through a
+    #: lookup table (INDEX's first argument) is excluded here and only
+    #: here: Excel resolves the pick before hunting circular
+    #: references, and two shipped regulator models carry chains that
+    #: close solely through such tables while calculating cleanly.
     edges: dict[str, tuple[str, ...]] = {
-        ref: tuple(one for one in (cell.precedents or ()) if one in book.cells)
+        ref: tuple(
+            one
+            for one in (cell.precedents or ())
+            if one in book.cells and one not in (cell.lookup_reads or ())
+        )
         for ref, cell in book.cells.items()
     }
     order: dict[str, int] = {}
@@ -1738,6 +3452,33 @@ BALANCE_LABEL = re.compile(
 )
 
 
+def _sum_spans(cell: Cell) -> tuple[dict[str, set[int]], set[str]]:
+    """The same-sheet rows a bare SUM reads, per column — and which
+    columns it reads through a real range rather than a lone cell."""
+    spans: dict[str, set[int]] = {}
+    multi: set[str] = set()
+    for token in _tokens(cell.formula or ""):
+        if token.type != "OPERAND" or token.subtype != "RANGE":
+            continue
+        match = REFERENCE.fullmatch(token.value.strip())
+        if match is None:
+            continue
+        sheet = (match.group("sheet") or cell.sheet).strip("'")
+        if sheet != cell.sheet:
+            continue
+        column = match.group("column")
+        if match.group("row2") is not None:
+            if match.group("column2") != column:
+                continue
+            multi.add(column)
+        first = int(match.group("row"))
+        last = int(match.group("row2") or first)
+        spans.setdefault(column, set()).update(
+            range(min(first, last), max(first, last) + 1)
+        )
+    return spans, multi
+
+
 def _skipped_cells(book: Workbook, result: Audit) -> None:
     """A total that leaves a row out.
 
@@ -1747,61 +3488,92 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
     summed range and asking whether the cell immediately above it holds a
     number that the range does not reach.
 
-    Four exemptions, each learned from a real false alarm:
-    only a formula that *is* a sum is judged as a total; a skipped row
-    already counted through an included subtotal is not skipped —
-    « Total Revenue = Net Sales + Other Income » rightly excludes the
-    two detail rows inside Other Income, and adding them again would
-    double count; a running balance between the components is stepped
-    over by every correct total ever written; and a row that itself
-    *reads the summed range* is a sibling view of the same inputs, not
-    a forgotten one — hand-verified on the sum that survived eleven
-    versions of Ofgem's ED2 model, where « impacting tax allowance »
-    `=SUM(AR146:AR147)` sits under two neighbours each derived from
-    the very same pair, and adding them in would double count.
+    Exemptions, each learned from a real false alarm — the first four
+    from live models, the last three from the usefulness audit's judged
+    sample: only a formula that *is* a sum is judged as a total; a
+    skipped row already counted through an included subtotal is not
+    skipped — « Total Revenue = Net Sales + Other Income » rightly
+    excludes the two detail rows inside Other Income, and adding them
+    again would double count; a running balance between the components
+    is stepped over by every correct total ever written; a row that
+    itself *reads the summed range* is a sibling view of the same
+    inputs, not a forgotten one — hand-verified on the sum that
+    survived eleven versions of Ofgem's ED2 model; a row that is
+    itself a bare aggregate of this column is another view of rows
+    the total already has — EBITDA above a decomposition excludes
+    D&A by definition, it does not forget it; a row some *other*
+    bare SUM's range in the block covers is a detail row inside a
+    partition, and reaching around its subtotal would double count;
+    and the walk up from the range stops at a section break — more
+    than one blank row, the same spacer rule the row runs use —
+    because a total's claim ends with its own block, and Ofgem's RoRE
+    chart tables re-slice a data block from twenty-six rows below it.
+
+    The SUM's same-column areas are judged *together*:
+    `SUM(AA223:AA232,AA220:AA221,AA222)` is one total over one column
+    in three pieces, and judging each piece alone accused the formula
+    of leaving out rows its other pieces include — a bug the
+    usefulness audit itself caught, because the sampled finding's
+    sentence contradicted the formula it quoted.
     """
+    totals: list[tuple[Cell, dict[str, set[int]], set[str]]] = []
+    #: Every bare SUM's own-column range coverage, for the partition
+    #: exemption: (sheet, column) → [(sum's row, rows its ranges read)].
+    partitions: dict[tuple[str, str], list[tuple[int, set[int]]]] = {}
     for cell in book.cells.values():
         if not cell.formula or not BARE_SUM.match(cell.formula):
             continue
-        for token in Tokenizer(cell.formula).items:
-            if token.type != "OPERAND" or token.subtype != "RANGE":
+        spans, multi = _sum_spans(cell)
+        totals.append((cell, spans, multi))
+        for column in multi:
+            partitions.setdefault((cell.sheet, column), []).append(
+                (cell.row, spans[column])
+            )
+
+    for cell, spans, multi in totals:
+        #: A column contributes a total only through a real range; a
+        #: lone extra cell tacked onto a SUM claims nothing about the
+        #: rows above it.
+        for column in sorted(multi):
+            rows_summed = spans[column]
+            top, bottom = min(rows_summed), max(rows_summed)
+            if not (top <= cell.row and bottom < cell.row):
                 continue
-            match = REFERENCE.fullmatch(token.value.strip())
-            if match is None or match.group("row2") is None:
-                continue
-            if match.group("column") != match.group("column2"):
-                continue
-            sheet = (match.group("sheet") or cell.sheet).strip("'")
-            top = min(int(match.group("row")), int(match.group("row2")))
-            bottom = max(int(match.group("row")), int(match.group("row2")))
-            if not (top <= cell.row and bottom < cell.row and sheet == cell.sheet):
-                continue
-            column = match.group("column")
             #: Rows the included cells already count: an included row
             #: whose own formula reads a same-column range or cell is a
             #: subtotal, and everything it reads is covered.
             covered: set[int] = set()
-            for row in range(top, bottom + 1):
-                inside = book.cells.get(f"{sheet}!{column}{row}")
+            for row in sorted(rows_summed):
+                inside = book.cells.get(f"{cell.sheet}!{column}{row}")
                 if inside is None or not inside.formula:
                     continue
-                for part in Tokenizer(inside.formula).items:
+                for part in _tokens(inside.formula):
                     if part.type != "OPERAND" or part.subtype != "RANGE":
                         continue
                     span = REFERENCE.fullmatch(part.value.strip())
                     if span is None:
                         continue
-                    span_sheet = (span.group("sheet") or sheet).strip("'")
-                    if span_sheet != sheet or span.group("column") != column:
+                    span_sheet = (span.group("sheet") or cell.sheet).strip("'")
+                    if span_sheet != cell.sheet or span.group("column") != column:
                         continue
                     first = int(span.group("row"))
                     last = int(span.group("row2") or first)
                     covered.update(range(min(first, last), max(first, last) + 1))
-            summed = {f"{sheet}!{column}{row}" for row in range(top, bottom + 1)}
+            summed = {f"{cell.sheet}!{column}{row}" for row in rows_summed}
             missed: list[Cell] = []
+            blanks = 0
             for row in range(bottom + 1, cell.row):
-                above = book.cells.get(f"{sheet}!{column}{row}")
-                if above is None or row in covered:
+                above = book.cells.get(f"{cell.sheet}!{column}{row}")
+                if above is None:
+                    blanks += 1
+                    if blanks > GAP:
+                        #: A section break: the block this total is
+                        #: about has ended, and whatever sits beyond
+                        #: it belongs to other tables.
+                        break
+                    continue
+                blanks = 0
+                if row in covered:
                     continue
                 if above.row_label and BALANCE_LABEL.search(above.row_label):
                     continue
@@ -1810,7 +3582,42 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                 #: total is right to step over it.
                 if summed & set(above.precedents):
                     continue
+                #: A row that is itself a bare aggregate of this
+                #: column summarises rows the total already reads —
+                #: excluded by definition, not forgotten.
+                if (
+                    above.formula
+                    and BARE_SUM.match(above.formula)
+                    and column in _sum_spans(above)[0]
+                ):
+                    continue
+                #: A row covered by another bare SUM's range in this
+                #: block is a detail row inside a partition: the
+                #: total adds the subtotals, and reaching around them
+                #: to the detail would double count. A partition lists
+                #: its members side by side, so the covering sibling
+                #: may sit just *below* the total too — the TIM sheet
+                #: stacks its three cap-rate totals on adjacent rows,
+                #: each picking its own slice — but no further than
+                #: the spacer allowance, because a grand total twenty
+                #: rows down excuses nothing.
+                if any(
+                    top <= at <= cell.row + 3 and at != cell.row and row in reads
+                    for at, reads in partitions.get((cell.sheet, column), ())
+                ):
+                    continue
                 missed.append(above)
+            #: A total whose own words state its window — « Total MAR,
+            #: 5 years of DPP4 » summing exactly five year-rows — has
+            #: declared what it excludes. The count must match the
+            #: range and be tied to a period word; a bare number in a
+            #: label proves nothing. Round 4, NZCC.
+            if missed and re.search(
+                rf"\b{len(rows_summed)}\s*(?:year|month|quarter|week|day)s?\b",
+                f"{cell.name} {cell.row_label}",
+                re.IGNORECASE,
+            ):
+                continue
             if missed:
                 #: What the misses are worth, straight from the cells —
                 #: the number the founder's design leads the card with.
@@ -1903,6 +3710,159 @@ def _hidden_sheets(book: Workbook, result: Audit) -> None:
                 name=sheet,
                 detail=detail,
                 source="EuSpRIG",
+            )
+        )
+
+
+#: A plain same-sheet reference, outside any `:` range — the pieces an
+#: enumeration walks. The lookbehind bars sheet-qualified and defined
+#: names; the lookahead bars range endpoints and function names.
+BARE_REF = re.compile(r"(?<![A-Za-z0-9_$!.:])\$?([A-Z]{1,3})\$?(\d+)(?![0-9(:])")
+RANGE_SPAN = re.compile(r"\$?[A-Z]{1,3}\$?\d+\s*:\s*\$?[A-Z]{1,3}\$?\d+")
+
+
+def _gapped_tests(book: Workbook, result: Audit) -> None:
+    """A formula that walks a line cell by cell and skips a stretch.
+
+    `OR(D10<0,…,O10<0,W10<0)` names twelve consecutive cash cells and
+    one more — P10:V10 are live cells the warning never reads, seven
+    forecast years a negative balance could hide in, worn by a judged
+    model's own alarm banner. The walk is the witness: five or more
+    single steps along one line say the author meant to cover the
+    line; the jump breaks the author's own pattern. Only populated
+    skipped cells count — a hop over empty spacer columns is layout,
+    not a gap.
+    """
+    for cell in book.cells.values():
+        if not cell.formula:
+            continue
+        text = RANGE_SPAN.sub(" ", cell.formula)
+        by_row: dict[int, dict[int, str | None]] = {}
+        by_column: dict[int, dict[int, str | None]] = {}
+        for m in BARE_REF.finditer(text):
+            column = 0
+            for letter in m.group(1):
+                column = column * 26 + ord(letter) - 64
+            #: The walk must be a *test* — every walked cell put to the
+            #: same comparison (`D10<0`, `E10<0`, …). Adjacent line
+            #: items in plain arithmetic walk too (a tax formula reads
+            #: F18 through F22 and then F75), and skipping between
+            #: them is composition, not coverage — a judged model's
+            #: allowance row taught exactly that.
+            test = re.match(
+                r"\s*(<=|>=|<>|=|<|>)\s*(\"[^\"]*\"|[-+]?[\w.$]+)",
+                text[m.end() :],
+            )
+            comparison = test.group(0).replace(" ", "") if test else None
+            by_row.setdefault(int(m.group(2)), {})[column] = comparison
+            by_column.setdefault(column, {})[int(m.group(2))] = comparison
+        for across, lines in (("row", by_row), ("column", by_column)):
+            for line, spots in lines.items():
+                ordered = sorted(spots)
+                if len(ordered) < 6:
+                    continue
+                run = 1
+                for last, this in zip(ordered, ordered[1:], strict=False):
+                    if this - last == 1:
+                        run += 1
+                        continue
+                    skipped = list(range(last + 1, this))
+                    walked = [spots[at] for at in ordered if last - run < at <= last]
+                    same_test = (
+                        len(set(walked)) == 1
+                        and walked[0] is not None
+                        and spots[this] == walked[0]
+                    )
+                    if run >= 5 and len(skipped) >= 2 and same_test:
+                        if across == "row":
+                            refs = [
+                                f"{cell.sheet}!{get_column_letter(at)}{line}"
+                                for at in skipped
+                            ]
+                        else:
+                            refs = [
+                                f"{cell.sheet}!{get_column_letter(line)}{at}"
+                                for at in skipped
+                            ]
+                        live = [at for at in refs if at in book.cells]
+                        if len(live) >= 2:
+                            first, final = refs[0], refs[-1]
+                            result.findings.append(
+                                Finding(
+                                    rule="gapped-test",
+                                    severity="error",
+                                    ref=cell.ref,
+                                    sheet=cell.sheet,
+                                    name=cell.name,
+                                    detail=(
+                                        f"the formula walks {run} cells one "
+                                        f"by one, then jumps — it never reads "
+                                        f"{first.rsplit('!', 1)[-1]} to "
+                                        f"{final.rsplit('!', 1)[-1]}, "
+                                        f"{len(live)} live cells a failure "
+                                        f"could hide in: "
+                                        f"{(cell.formula or '')[:60]}"
+                                    ),
+                                    source="EuSpRIG, ICAEW P11",
+                                )
+                            )
+                            break
+                    run = 1
+                else:
+                    continue
+                break
+
+
+def _names_table(book: Workbook, result: Audit) -> None:
+    """The names table, audited — the cells are not the whole file.
+
+    Both findings come from a judged model that carried them: dozens
+    of names storing `#REF!` where their targets used to be, and
+    names pointing into workbooks on someone's OneDrive. No live
+    formula has to read them — they still raise update prompts on
+    open, and a new formula written against one breaks on arrival.
+    """
+    if book.broken_names:
+        shown = ", ".join(book.broken_names[:6])
+        more = len(book.broken_names) - 6
+        result.findings.append(
+            Finding(
+                rule="broken-name",
+                severity="smell",
+                ref="",
+                sheet="",
+                name="defined names",
+                detail=(
+                    f"{len(book.broken_names)} defined names point at "
+                    f"deleted cells — Excel stores #REF! where their "
+                    f"targets used to be ({shown}"
+                    f"{f' and {more} more' if more > 0 else ''}). Any new "
+                    f"formula written against one breaks on arrival; worth "
+                    f"clearing from the name manager."
+                ),
+                source="EuSpRIG",
+            )
+        )
+    if book.foreign_names:
+        names_only = [name for name, _ in book.foreign_names]
+        shown = ", ".join(names_only[:6])
+        more = len(names_only) - 6
+        example, target = book.foreign_names[0]
+        result.findings.append(
+            Finding(
+                rule="broken-name",
+                severity="smell",
+                ref="",
+                sheet="",
+                name="defined names",
+                detail=(
+                    f"{len(names_only)} defined names point into other "
+                    f"workbooks that are not here ({shown}"
+                    f"{f' and {more} more' if more > 0 else ''}) — "
+                    f"{example} reads {target[:50]}. They raise update "
+                    f"prompts on open and cannot be checked."
+                ),
+                source="EuSpRIG, ICAEW P16",
             )
         )
 

@@ -40,6 +40,7 @@ from typing import Any
 from openpyxl import load_workbook
 from openpyxl.formula.tokenizer import Tokenizer
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.formula import ArrayFormula
 
 from .legacy import read_legacy
 
@@ -127,6 +128,11 @@ class Cell:
     number_format: str | None = None
     #: The cells this one is computed from, in the order they appear.
     precedents: tuple[str, ...] = ()
+    #: The subset of `precedents` read only through a lookup table —
+    #: INDEX's first argument. Excel resolves the pick before hunting
+    #: circular references, so the cycle hunter must not walk these;
+    #: everything else about a precedent still applies to them.
+    lookup_reads: tuple[str, ...] = ()
     #: What this cell reads that could not be resolved to a cell, each with
     #: a sentence saying why — an external workbook, a defined name left
     #: pointing at `#REF!`, a table reference. Kept because a chain missing
@@ -224,6 +230,11 @@ class Precedents:
     refs: tuple[str, ...] = ()
     #: (what it said, why it could not be resolved). Phrased for a reader.
     unresolved: tuple[tuple[str, str], ...] = ()
+    #: The subset of `refs` read *only* through a lookup table — INDEX's
+    #: first argument — where Excel resolves the pick before hunting
+    #: circular references. Real precedents for flows and coverage;
+    #: edges the cycle hunter must not walk.
+    via_lookup: tuple[str, ...] = ()
 
     def __bool__(self) -> bool:
         return bool(self.refs or self.unresolved)
@@ -251,6 +262,24 @@ class Workbook:
     #: empty » must be answered from the file, not from what survived
     #: labelling. Absent on hand-built books.
     populated: dict[str, int] = field(default_factory=dict)
+    #: Every row's label text, per sheet — including rows that carry
+    #: no numeric cell of their own, which is exactly where a block
+    #: header lives (« Asset beta at 0.075 debt beta » two rows above
+    #: the formulas it documents). The audit reads it to honour
+    #: numbers the sheet's own words already state.
+    row_words: dict[str, dict[int, str]] = field(default_factory=dict)
+    #: Cells whose formula the tokenizer rejected. One malformed
+    #: formula must cost one finding, never the whole workbook —
+    #: Round 4's planting run found the reader dying on a
+    #: partial-range #REF! and taking the file with it.
+    unparseable: list[str] = field(default_factory=list)
+    #: Defined names whose target was deleted (`#REF!`) and names that
+    #: point into other workbooks (`'[2]Control Panel'!$D$144`). No
+    #: live formula needs to use them: they still raise Excel's update
+    #: prompts, and a new formula written against a broken name breaks
+    #: on arrival — a judged model carried dozens of both.
+    broken_names: list[str] = field(default_factory=list)
+    foreign_names: list[tuple[str, str]] = field(default_factory=list)
 
     def get(self, ref: str) -> Cell | None:
         return self.cells.get(ref)
@@ -381,6 +410,19 @@ def read_workbook(path: str) -> Workbook:
             grids[name] = _grid_of(sheet, values[name])
             book.populated[name] = len(grids[name].written)
         names = _names_of(formulas, grids)
+        every_name = list(names.book.items()) + [
+            (scoped, target) for (_, scoped), target in names.sheet.items()
+        ]
+        book.broken_names = sorted(
+            {name for name, target in every_name if "#REF!" in target}
+        )
+        book.foreign_names = sorted(
+            {
+                (name, target)
+                for name, target in every_name
+                if re.search(r"\[\d+\]", target)
+            }
+        )
         for name, grid in grids.items():
             _read_sheet(book, name, grid, names)
         return book
@@ -449,6 +491,8 @@ def _read_sheet(
             subject = text
             labels[row] = text
 
+    book.row_words[name] = labels
+
     #: The short descriptors printed beside the name, per row. Long text is
     #: left out: columns C and D of a regulator's model carry whole
     #: paragraphs beginning « Note: », and a paragraph is commentary rather
@@ -485,8 +529,6 @@ def _read_sheet(
             book.errors[at] = shown.strip()
 
     for row in sorted(grid.by_row):
-        if row == header_row:
-            continue
         columns = grid.by_row[row]
         numeric = [
             column
@@ -497,6 +539,25 @@ def _read_sheet(
                 or _formula(grid.written.get((row, column))) is not None
             )
         ]
+        if row == header_row:
+            #: The header row names periods, and its cells are words the
+            #: audit must not read as content — except a formula that
+            #: reaches other rows. A year walker (`=C7+1`) is part of
+            #: the header; a warning banner testing the cash row lives
+            #: wherever its author parked it, and a judged model parked
+            #: one on the header row, where the old whole-row skip made
+            #: the engine blind to a coverage gap the banner carried.
+            def _reaches_out(column: int) -> bool:
+                formula = _formula(grid.written.get((row, column)))
+                if formula is None:
+                    return False
+                for target in references_of(formula, name, names).refs:
+                    digits = re.search(r"\d+", target.rsplit("!", 1)[-1])
+                    if digits and int(digits.group(0)) != row:
+                        return True
+                return False
+
+            numeric = [column for column in numeric if _reaches_out(column)]
         # A row carrying one number is a label and a value — « Enterprise
         # value | 489.5 » in a valuation bridge. A row carrying several is
         # a series, and only then does the header above a column name
@@ -511,6 +572,10 @@ def _read_sheet(
             read = references_of(formula, name, names) if formula else Precedents()
             references = read.refs
             ref = f"{name}!{get_column_letter(column)}{row}"
+            if any(
+                why == "the formula could not be parsed" for _, why in read.unresolved
+            ):
+                book.unparseable.append(ref)
             book.cells[ref] = Cell(
                 sheet=name,
                 ref=ref,
@@ -526,6 +591,7 @@ def _read_sheet(
                 # its cells at all, which is why this may be absent.
                 number_format=grid.formats.get((row, column)),
                 precedents=references,
+                lookup_reads=read.via_lookup,
                 unresolved=read.unresolved,
                 alias_of=_alias(formula, references),
             )
@@ -580,6 +646,20 @@ RUNTIME_TARGET = {
     "OFFSET": "a range measured out at run time from the anchor it names",
 }
 
+# INDEX's first argument is a table the function picks *one* cell out
+# of at run time, and Excel resolves the pick before it hunts circular
+# references — which is why `=INDEX(A1:A10,5)` written inside its own
+# table calculates instead of warning, and why modellers reach for
+# INDEX instead of OFFSET to break a deliberate cycle without
+# volatility. The whole table stays a precedent — changing any cell of
+# it can change the answer, and flows and coverage are right to say so
+# — but the cycle hunter must not walk it: two shipped regulator
+# models (CAA's H7 final determination, Ofgem's GT3 business-plan
+# model) carry chains that close *only* through INDEX tables, both
+# with iterative calculation off, and both calculate cleanly in Excel.
+# A loop invented from edges Excel does not walk is not a finding.
+LOOKUP_TABLE = frozenset({"INDEX"})
+
 
 def references_of(formula: str, sheet: str, names: Names | None = None) -> Precedents:
     """Everything a formula reads, and everything it reads that we cannot.
@@ -604,8 +684,13 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
     seen: set[str] = set()
     missing: list[tuple[str, str]] = []
     said: set[str] = set()
+    #: Which side of the lookup line each reference was met on. A cell
+    #: read both inside an INDEX table and plainly is a plain read.
+    table_reads: set[str] = set()
+    plain_reads: set[str] = set()
 
-    def keep(refs: list[str]) -> None:
+    def keep(refs: list[str], in_table: bool = False) -> None:
+        (table_reads if in_table else plain_reads).update(refs)
         for ref in refs:
             if ref not in seen:
                 seen.add(ref)
@@ -627,7 +712,15 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
                 return frame
         return None
 
-    for token in Tokenizer(formula).items:
+    try:
+        tokens = Tokenizer(formula).items
+    except Exception:
+        #: The grammar rejected the whole formula. Report the fact and
+        #: keep reading the rest of the workbook.
+        give_up(formula[:80], "the formula could not be parsed")
+        return Precedents(unresolved=tuple(missing))
+
+    for token in tokens:
         for frame in frames:
             frame["call"].append(token.value)
         if token.type == "FUNC" and token.subtype == "OPEN":
@@ -670,9 +763,20 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
         text = token.value.strip()
         refs = _expand(text, sheet, names, give_up)
         if refs:
-            keep(refs)
+            keep(
+                refs,
+                in_table=owner is not None
+                and owner["name"] in LOOKUP_TABLE
+                and owner["arg"] == 0,
+            )
 
-    return Precedents(refs=tuple(found), unresolved=tuple(missing))
+    return Precedents(
+        refs=tuple(found),
+        unresolved=tuple(missing),
+        via_lookup=tuple(
+            ref for ref in found if ref in table_reads and ref not in plain_reads
+        ),
+    )
 
 
 def _expand(
@@ -981,6 +1085,15 @@ def _label_column(grid: _Grid, last_row: int, last_column: int) -> int:
 
 
 def _formula(value: Any) -> str | None:
+    #: Array formulas arrive as objects, not strings, and dropping them
+    #: registered every array-calculated cell as a typed value — the
+    #: single largest source of false typed-over findings in the
+    #: usefulness audit (the RIIO-3 models array-enter whole blocks).
+    if isinstance(value, ArrayFormula):
+        text = value.text or ""
+        if not text:
+            return None
+        return text if text.startswith("=") else f"={text}"
     return value if isinstance(value, str) and value.startswith("=") else None
 
 

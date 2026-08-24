@@ -1,0 +1,224 @@
+{
+ "CAA/H7 price control": [
+  {
+   "name": "h7_new_debt_indexation_fds.xlsx",
+   "mb": 0.1,
+   "sheets": 3,
+   "cells": 5443,
+   "findings": 5,
+   "seconds": 0.9
+  },
+  {
+   "name": "h7_new_debt_indexation_fp.xlsx",
+   "mb": 0.1,
+   "sheets": 3,
+   "cells": 6750,
+   "findings": 2,
+   "seconds": 1.1
+  },
+  {
+   "name": "h7_pcm_v2-10_final_proposals.xlsm",
+   "mb": 6.4,
+   "sheets": 62,
+   "cells": 340487,
+   "findings": 29,
+   "seconds": 69.6
+  },
+  {
+   "name": "h7_pcm_v2-11_final_determination.xlsm",
+   "mb": 6.4,
+   "sheets": 62,
+   "cells": 340489,
+   "findings": 29,
+   "seconds": 65.3
+  }
+ ],
+ "Ofgem/RIIO-ED2": [
+  {
+   "name": "v1_2023-02.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 41154,
+   "findings": 12,
+   "seconds": 29.7
+  },
+  {
+   "name": "v2_2023-07-14.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 41025,
+   "findings": 11,
+   "seconds": 28.7
+  },
+  {
+   "name": "v2_2023-07-31.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 41049,
+   "findings": 11,
+   "seconds": 28.7
+  },
+  {
+   "name": "v3_2023-10.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 40948,
+   "findings": 11,
+   "seconds": 28.9
+  },
+  {
+   "name": "v3_2023-11.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 40948,
+   "findings": 11,
+   "seconds": 28.2
+  },
+  {
+   "name": "v3_2024-01.xlsm",
+   "mb": 4.4,
+   "sheets": 31,
+   "cells": 42602,
+   "findings": 8,
+   "seconds": 28.0
+  },
+  {
+   "name": "v4_2024-07.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 42616,
+   "findings": 8,
+   "seconds": 28.6
+  },
+  {
+   "name": "v4_2025-01.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 43101,
+   "findings": 8,
+   "seconds": 29.8
+  },
+  {
+   "name": "v4_2025-07.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 43125,
+   "findings": 9,
+   "seconds": 29.3
+  },
+  {
+   "name": "v4_2026-01.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 43128,
+   "findings": 9,
+   "seconds": 29.3
+  },
+  {
+   "name": "v5_2026-06.xlsx",
+   "mb": 4.3,
+   "sheets": 31,
+   "cells": 43178,
+   "findings": 8,
+   "seconds": 29.0
+  }
+ ],
+ "Ofgem/RIIO-3": [
+  {
+   "name": "DRAFT_ET3 PCFM_Jun25.xlsx",
+   "mb": 0.5,
+   "sheets": 14,
+   "cells": 27493,
+   "findings": 11,
+   "seconds": 5.6
+  },
+  {
+   "name": "DRAFT_GD3 PCFM_Jun25.xlsx",
+   "mb": 0.4,
+   "sheets": 14,
+   "cells": 16656,
+   "findings": 8,
+   "seconds": 3.4
+  },
+  {
+   "name": "DRAFT_GT3 PCFM_Jun25.xlsx",
+   "mb": 0.6,
+   "sheets": 18,
+   "cells": 27555,
+   "findings": 10,
+   "seconds": 5.2
+  },
+  {
+   "name": "RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
+   "mb": 13.1,
+   "sheets": 40,
+   "cells": 601786,
+   "findings": 68,
+   "seconds": 474.3
+  },
+  {
+   "name": "RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
+   "mb": 15.1,
+   "sheets": 46,
+   "cells": 652176,
+   "findings": 81,
+   "seconds": 514.2
+  },
+  {
+   "name": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+   "mb": 0.1,
+   "sheets": 6,
+   "cells": 497,
+   "findings": 6,
+   "seconds": 1.7
+  },
+  {
+   "name": "RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
+   "mb": 8.2,
+   "sheets": 17,
+   "cells": 527279,
+   "findings": 12,
+   "seconds": 177.0
+  },
+  {
+   "name": "RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
+   "mb": 13.5,
+   "sheets": 40,
+   "cells": 597400,
+   "findings": 65,
+   "seconds": 457.4
+  },
+  {
+   "name": "final_et3_bpfm.xlsm",
+   "mb": 14.4,
+   "sheets": 43,
+   "cells": 624056,
+   "findings": 73,
+   "seconds": 470.7
+  },
+  {
+   "name": "final_gd3_bpfm.xlsm",
+   "mb": 17.5,
+   "sheets": 49,
+   "cells": 693753,
+   "findings": 81,
+   "seconds": 518.4
+  },
+  {
+   "name": "final_gt3_bpfm.xlsm",
+   "mb": 14.3,
+   "sheets": 44,
+   "cells": 604401,
+   "findings": 73,
+   "seconds": 476.7
+  },
+  {
+   "name": "final_wacc.xlsx",
+   "mb": 8.0,
+   "sheets": 16,
+   "cells": 500502,
+   "findings": 15,
+   "seconds": 192.7
+  }
+ ]
+}
