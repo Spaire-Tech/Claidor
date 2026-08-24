@@ -104,8 +104,37 @@ The answer style is in place for them.
 ## Phase 6 — the sweep
 
 Every visible button on every reachable screen clicked in Chromium
-against API-shaped fixtures, page reloaded between clicks; the result
-is recorded in the phase-6 commit message. DealPage and CheckFile are
+against API-shaped fixtures, the page reloaded between clicks:
+
+```
+clicked 121 buttons across 11 screens
+DID NOTHING (22)
+```
+
+Twenty-two is not twenty-two defects; each was run down:
+
+- **15 are self-navigation** — a dock pill, tab, or sub-toggle
+  clicked while already active (Ask on Ask, Overview on Overview,
+  Map as the selected half, the report card re-clicked behind its
+  own open modal). Correct behaviour.
+- **5 are already-selected or empty no-ops** — the selected scope
+  and severity chips, New chat on an empty chat, Send with an empty
+  composer.
+- **2 are the text matcher missing icon-only buttons** (the rail
+  toggle and Share carry a title, no text). Both verified directly:
+  the rail collapses 298px → 0 and reopens; Share shows « Link
+  copied » and the clipboard carries the chat's link.
+- **0 dead controls.**
+
+The two page errors the sweep logged came from the fixture's own
+shapes (`TeamMember.deals` fed a number where the product's
+interface says `string[]`), not from product code.
+
+The sweep's own first two runs were wrong before they were right —
+the click helper compared raw multi-line text against collapsed
+labels, so it reported buttons dead that it had never clicked. The
+matcher now collapses whitespace on both sides; the numbers above
+are from the corrected run. DealPage and CheckFile are
 gone; their shared helpers (`ago`, `avatarOf`, `initialsOf`,
 `categoryOfKey`) live in `files.ts`; nothing imports the removed
 screens.
