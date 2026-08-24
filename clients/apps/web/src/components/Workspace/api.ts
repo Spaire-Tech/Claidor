@@ -857,6 +857,41 @@ export class TieOutApi {
     return this.call(`/artifacts/${artifactId}/download`)
   }
 
+  /**
+   * The marked-up model — generated on request, never stored. The
+   * response is the file itself, so this returns a blob for the browser
+   * to save; the filename is the server's (« … — marked up.xlsx »). A
+   * 404 carries the server's own sentence — no model yet, or nothing
+   * open to mark up — and is shown to the person as it stands.
+   */
+  async markedUpModel(
+    dealId: string,
+  ): Promise<{ blob: Blob; filename: string }> {
+    const token = this.options.token?.() ?? null
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/deals/${dealId}/markup`,
+      {
+        credentials: 'include',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      },
+    )
+    if (!response.ok) {
+      const problem = (await response.json().catch(() => null)) as {
+        detail?: string
+      } | null
+      throw new ApiError(
+        response.status,
+        problem?.detail ?? 'something went wrong',
+      )
+    }
+    const disposition = response.headers.get('content-disposition') ?? ''
+    const match = /filename\*=UTF-8''([^;]+)/.exec(disposition)
+    const filename = match
+      ? decodeURIComponent(match[1])
+      : 'model — marked up.xlsx'
+    return { blob: await response.blob(), filename }
+  }
+
   chain(findingId: string): Promise<Chain> {
     return this.call(`/findings/${findingId}/chain`)
   }

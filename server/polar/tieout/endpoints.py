@@ -21,7 +21,7 @@ from datetime import timedelta
 from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import Depends, File, HTTPException, Query, UploadFile
+from fastapi import Depends, File, HTTPException, Query, Response, UploadFile
 
 from polar.auth.dependencies import WebUserWrite
 from polar.auth.scope import Scope
@@ -59,6 +59,7 @@ from .agent import service as agent
 from .analytics import ANALYTIC_PASS_NAMES, ANALYTIC_RULE_NAMES
 from .audit import RULE_NAMES
 from .ingest import Unreadable, kind_for
+from .markup import MarkupFinding, MarkupRefused, marked_up_copy, marked_up_name
 from .repository import TieOutRepository
 from .schemas import (
     AcceptCheck,
@@ -619,9 +620,7 @@ async def list_deals(
 
         # The row's model column: the latest ready workbook, by name and
         # version. Null when there is none — the screen says so.
-        model = next(
-            (one for one in current if one.kind is ArtifactKind.model), None
-        )
+        model = next((one for one in current if one.kind is ArtifactKind.model), None)
 
         # The row's dot: the worst attention tier among what is open.
         # Audit findings carry their tier in evidence; anything stored
@@ -1865,6 +1864,74 @@ async def download_artifact(
         return {"url": download_url(artifact), "filename": artifact.filename}
     except FileNotKept as problem:
         raise HTTPException(status_code=404, detail=str(problem)) from problem
+
+
+@router.get("/deals/{dossier_id}/markup", response_model=None)
+async def marked_up_model(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> Response:
+    """The model back, with every problem marked in place.
+
+    The founder's § 4 file: a first sheet listing the open findings so
+    they can be sorted and ticked off, and the model itself — unchanged,
+    not one formula, not one number — with the problem cells coloured by
+    severity and the finding's own sentence stuck on each as a note.
+
+    Generated fresh from the stored model and the open findings on it,
+    and never persisted: it is colour and notes on the caller's own
+    file, verified unaltered before it is released, with a different
+    filename so the original is never at risk.
+    """
+    deal = await _deal(session, dossier_id, auth_subject.subject.id)
+    repository = TieOutRepository.from_session(session)
+    current = await repository.current_artifacts(deal.id)
+    model = next((one for one in current if one.kind is ArtifactKind.model), None)
+    if model is None:
+        raise HTTPException(status_code=404, detail="this deal has no model yet")
+
+    marks: list[MarkupFinding] = []
+    for finding in await repository.findings_of(deal.id, state=FindingState.open):
+        anchor = finding.anchor or {}
+        if anchor.get("kind") != "cell" or finding.artifact_id != model.id:
+            continue
+        sheet = str(anchor.get("sheet") or "")
+        ref = str(anchor.get("ref") or "").rsplit("!", 1)[-1]
+        if not sheet or not ref:
+            continue
+        marks.append(
+            MarkupFinding(
+                severity=finding.severity.value,
+                sheet=sheet,
+                ref=ref,
+                text=finding.title or finding.detail,
+            )
+        )
+    if not marks:
+        raise HTTPException(
+            status_code=404,
+            detail="no open findings sit on the model — nothing to mark up",
+        )
+    try:
+        payload = fetch(model)
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    try:
+        copy = marked_up_copy(payload, marks)
+    except MarkupRefused as problem:
+        raise HTTPException(status_code=422, detail=str(problem)) from problem
+
+    filename = marked_up_name(model.filename or "model.xlsx")
+    return Response(
+        content=copy,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
+        headers={
+            "content-disposition": f"attachment; filename*=UTF-8''{quote(filename)}"
+        },
+    )
 
 
 __all__ = ["router"]

@@ -3660,3 +3660,39 @@ has no database or Minio, and the corpus files are not on disk).
 What F1/F2's DONE tests still owe: the round-trip re-verification on
 the 27 real corpus files, which needs a machine with the corpus. Not
 claimed done.
+
+---
+
+## 24 August, later — the marked-up model ships end to end
+
+**The engine half** (`markup.py`): `marked_up_copy` builds the § 4
+file — Findings sheet first (Severity · Sheet · Cell · What's wrong ·
+blank Notes/Done, autofiltered so it sorts and ticks), every problem
+cell coloured by severity in Excel's own review red and amber with
+the finding's sentence as a note authored Swens. Zip surgery in the
+writer's discipline (per-style xf clones so fonts and number formats
+survive; legacy comments + VML per touched sheet; scoped defined
+names' localSheetId re-pointed for the new first sheet), verified the
+changeset's way: the copy re-read beside the original, every formula
+and value compared, or the markup refuses itself. A finding on an
+absent cell gets an empty styled cell; a sheet already carrying
+comments is refused in words. Proven past openpyxl: **LibreOffice
+Calc round-trips the copy** — sheets in order, formulas live (Calc
+recalculates B3 to 108), fills exact, notes intact. Namespace lesson,
+twice: openpyxl declares xmlns:r per element, Excel on the root, so
+inserted r:id elements carry their own declaration.
+
+**The product half:** `GET /deals/{id}/markup` builds the copy fresh
+from the stored model and the open cell-anchored findings on it —
+never persisted, refusals as sentences (no model; nothing open;
+markup refused). The Overview card « Download the marked-up model »
+is live: the drawn card, opacity restored, downloads the server's
+file under the server's filename (« … — marked up.xlsx »); a refusal
+sentence appears in the card's subtitle in the design's danger ink.
+tsc clean; 54 write-path tests green; mypy adds no errors in the
+touched files.
+
+**Owed, named:** the endpoint has no automated test in this container
+(it needs the database fixtures); its verification here is the
+engine tests plus import + typecheck. Corpus round-trip for the whole
+write path still owed with the corpus machine.
