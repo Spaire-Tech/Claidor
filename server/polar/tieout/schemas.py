@@ -327,6 +327,18 @@ class FindingRead(Schema):
     #: What is wrong, in two or three words — « Incomplete total »,
     #: « Unexpected hardcode ». The line a reader scans first.
     headline: str = ""
+    #: The finding as a person hears it — the row's sentence.
+    plain: str = ""
+    #: The attention tier: 1 defect, 2 assumption at risk, 3 hygiene.
+    #: Zero on findings stored before the elevation layer — the screen
+    #: falls back on severity, the same rule as the deal list.
+    tier: int = 0
+    weight: float = 0.0
+    basis: str = ""
+    #: Every cell a folded finding stands for — the family's roster.
+    cells: str = ""
+    #: The typed value the fix replaces — the was of « was → should ».
+    fix_before: str = ""
     #: The design's little Excel grid — the finding's cell with its
     #: neighbours, composed when the check ran. None on findings that
     #: predate it or that do not sit at a cell.

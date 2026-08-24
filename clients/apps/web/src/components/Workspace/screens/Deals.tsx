@@ -37,7 +37,7 @@ import {
   sharepointLogo,
   well,
 } from './../design'
-import { DealPage } from './DealPage'
+import { ProjectPage } from './ProjectPage'
 
 /**
  * « Checked 09:15 today » / « Checked Tuesday 11:52 » / « Checked
@@ -119,10 +119,6 @@ export interface DealsProps {
   deal: DealListItem | null
   onOpen: (deal: DealListItem) => void
   onChanged: () => void
-  /** The shell's « Check now », forwarded to the open deal. */
-  checkNonce: number
-  reportNonce?: number
-  onChecking: (running: boolean) => void
   openDocId: string | null
   onOpenDoc: (
     doc: import('./../api').Artifact,
@@ -130,10 +126,8 @@ export interface DealsProps {
   ) => void
   /** Opens the New-deal browser — the connected empty state's button. */
   onNewDeal: () => void
-  /** The open model was removed — the shell closes it and refreshes. */
+  /** Leave the open project — the shell closes it and refreshes. */
   onRemoved: () => void
-  /** The Ask sheet is open — the model page hides its rail. */
-  railHidden?: boolean
 }
 
 export const Deals = ({
@@ -142,14 +136,11 @@ export const Deals = ({
   deals,
   deal,
   onOpen,
-  checkNonce,
-  reportNonce,
-  onChecking,
+  onChanged,
   openDocId,
   onOpenDoc,
   onNewDeal,
   onRemoved,
-  railHidden,
 }: DealsProps) => {
   //: The connector, for the empty state's three faces. Asked only once
   //: the list has answered and come back empty — the list screen never
@@ -222,16 +213,12 @@ export const Deals = ({
 
   if (deal !== null) {
     return (
-      <DealPage
+      <ProjectPage
         api={api}
-        dealId={deal.id}
-        checkNonce={checkNonce}
-        reportNonce={reportNonce}
-        onChecking={onChecking}
-        openDocId={openDocId}
+        deal={deal}
+        onBack={onRemoved}
         onOpenDoc={onOpenDoc}
-        onRemoved={onRemoved}
-        railHidden={railHidden}
+        onChanged={onChanged}
       />
     )
   }

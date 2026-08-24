@@ -19,7 +19,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Artifact, DealListItem, TieOutApi } from './api'
 import { Chat, ChatContext, chatKeyOf } from './Chat'
-import { blueButton, font, ground, ink, shell, wordmark } from './design'
+import { font, ground, ink, shell, wordmark } from './design'
 import { Assistant } from './screens/Assistant'
 import { Deals } from './screens/Deals'
 import { DocPanel } from './screens/DocPanel'
@@ -75,17 +75,10 @@ export const Workspace = ({
   //: What the chat is about. The document panel reports its finding
   //: context; the deal scope is derived below.
   const [docChat, setDocChat] = useState<ChatContext | null>(null)
-  //: The design opens the deal's chat from the header's « Ask »
-  //: — the pane never rides along uninvited.
-  const [askOpen, setAskOpen] = useState(false)
 
   //: Every deal this person is on. Null while loading — the screens tell
   //: « still asking » apart from « asked, and there are none », because
   //: the second one is the Connect Microsoft screen and the first is not.
-  const [checkNonce, setCheckNonce] = useState(0)
-  const [reportNonce, setReportNonce] = useState(0)
-  const [checking, setChecking] = useState(false)
-
   const [deals, setDeals] = useState<DealListItem[] | null>(null)
   const [dealsAt, setDealsAt] = useState(0)
   useEffect(() => {
@@ -136,7 +129,6 @@ export const Workspace = ({
     setDeal(null)
     setDoc(null)
     setDocChat(null)
-    setAskOpen(false)
     setAcctOpen(false)
   }
 
@@ -147,17 +139,10 @@ export const Workspace = ({
     setDocChat(null)
   }
 
-  //: The design's rule: the chat rides beside an open finding; beside
-  //: a project page it appears only when « Ask » was pressed — never
-  //: uninvited.
+  //: The design's rule: the chat rides beside an open finding, and
+  //: nowhere uninvited. Project-wide questions belong to Ask.
   const chatContext: ChatContext | null =
-    view === 'deals' && deal !== null
-      ? doc !== null
-        ? docChat
-        : askOpen
-          ? { scope: 'deal', dealId: deal.id, dealName: deal.name }
-          : null
-      : null
+    view === 'deals' && deal !== null && doc !== null ? docChat : null
 
   const hasDeal = view === 'deals' && deal !== null
   //: The dock pill: a soft dark wash and the accent when active,
@@ -229,103 +214,8 @@ export const Workspace = ({
               borderBottom: shell.headerHairline,
             }}
           >
-            {!hasDeal && (
-              <span style={{ ...wordmark, margin: '0 6px 0 10px' }}>Swens</span>
-            )}
-            {hasDeal && (
-              <>
-                <button
-                  onClick={() => {
-                    setDeal(null)
-                    openDoc(null)
-                    setAskOpen(false)
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 7,
-                    background: 'rgba(255,255,255,.75)',
-                    border: '1px solid rgba(255,255,255,.7)',
-                    boxShadow: '0 1px 2px rgba(18,24,40,.08)',
-                    borderRadius: 11,
-                    padding: '8px 14px 8px 11px',
-                    font: 'inherit',
-                    fontWeight: 500,
-                    color: ink.accent,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <svg
-                    width="9"
-                    height="15"
-                    viewBox="0 0 9 15"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="7.5,1.5 1.5,7.5 7.5,13.5" />
-                  </svg>
-                  <span>Project</span>
-                </button>
-                {/* The 18 August design drops the name and client from
-                    the header — the page's own title carries them. */}
-              </>
-            )}
+            <span style={{ ...wordmark, margin: '0 6px 0 10px' }}>Swens</span>
             <div style={{ flex: 1 }} />
-            {hasDeal && (
-              <>
-                {/* « Export report » sits beside Ask in the design; it
-                    opens the report sheet, which is the next phase —
-                    the button arrives with the thing it opens. */}
-                <button
-                  onClick={() => setAskOpen((was) => !was)}
-                  style={{
-                    border: 0,
-                    background: askOpen ? '#e7e7ea' : '#f0f0f2',
-                    color: ink.primary,
-                    borderRadius: 11,
-                    padding: '9px 15px',
-                    font: 'inherit',
-                    fontSize: 13.5,
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Ask
-                </button>
-                <button
-                  onClick={() => setReportNonce((was) => was + 1)}
-                  style={{
-                    border: 0,
-                    background: '#f0f0f2',
-                    color: ink.primary,
-                    borderRadius: 11,
-                    padding: '9px 15px',
-                    font: 'inherit',
-                    fontSize: 13.5,
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Export report
-                </button>
-                <button
-                  onClick={() => !checking && setCheckNonce((was) => was + 1)}
-                  style={{
-                    ...blueButton,
-                    marginRight: 4,
-                    opacity: checking ? 0.55 : 1,
-                    cursor: checking ? 'default' : 'pointer',
-                  }}
-                >
-                  {checking ? 'Checking' : 'Recheck now'}
-                </button>
-              </>
-            )}
             {/* The project list's « New project » lives in the page
                 heading, as drawn — the header adds nothing here. */}
           </div>
@@ -338,7 +228,6 @@ export const Workspace = ({
               onOpenModel={(one) => {
                 setView('deals')
                 setDeal(one)
-                setAskOpen(false)
               }}
             />
           ) : view === 'deals' ? (
@@ -349,24 +238,15 @@ export const Workspace = ({
               deal={deal}
               onOpen={(one) => {
                 setDeal(one)
-                setAskOpen(false)
                 // Opening is the seen-event: « since you looked » clears
                 // for this person, and only for them. Fire-and-forget —
                 // a failed mark must never block the page.
                 void api.visit(one.id).catch(() => undefined)
               }}
               onChanged={() => setDealsAt((was) => was + 1)}
-              checkNonce={checkNonce}
-              reportNonce={reportNonce}
-              onChecking={(running) => {
-                setChecking(running)
-                //: A finished check changes the list's counts too.
-                if (!running) setDealsAt((was) => was + 1)
-              }}
               openDocId={doc?.id ?? null}
               onOpenDoc={openDoc}
               onNewDeal={() => setNewOpen(true)}
-              railHidden={askOpen}
               onRemoved={() => {
                 setDeal(null)
                 setDealsAt((was) => was + 1)
@@ -405,10 +285,7 @@ export const Workspace = ({
             key={chatKeyOf(chatContext)}
             api={api}
             context={chatContext}
-            onClose={() => {
-              setAskOpen(false)
-              setDocChat(null)
-            }}
+            onClose={() => setDocChat(null)}
           />
         )}
       </div>
