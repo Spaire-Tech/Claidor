@@ -57,7 +57,7 @@ import {
   Version,
 } from '../api'
 import { fileIcon, font, ink } from '../design'
-import { categoryOfKey } from './DealPage'
+import { categoryOfKey } from '../files'
 
 /** Material · Significant · Observation, from the attention tier. */
 export const sevOf = (f: Finding): 1 | 2 | 3 => {

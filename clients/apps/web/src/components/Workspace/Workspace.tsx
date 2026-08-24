@@ -258,6 +258,7 @@ export const Workspace = ({
               organizationId={organizationId}
               deals={deals}
               problem={connectorProblem}
+              onChangeFolders={() => setNewOpen(true)}
             />
           )}
         </div>

@@ -36,8 +36,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ApiError, Drive, DriveItem, TieOutApi } from '../api'
 import { ink } from '../design'
-import { iconOf, kindFor } from '../files'
-import { ago } from './DealPage'
+import { ago, iconOf, kindFor } from '../files'
 
 interface Crumb {
   name: string
