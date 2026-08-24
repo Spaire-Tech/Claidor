@@ -1,7 +1,6 @@
 """Write cells into an xlsx without breaking anything — Track A.
 
-The write path (clone-plan.md, Track A). The rule the whole track
-lives by: everything the edit does not touch keeps its exact bytes.
+The write path. The rule it lives by: everything the edit does not touch keeps its exact bytes.
 Resaving through a spreadsheet library rewrites the entire file —
 cached values, styles, quirks and all — so this writer performs
 surgery on the xlsx zip instead, the discipline the defect planter
@@ -223,7 +222,7 @@ class WorkbookWriter:
 
         Excel's cached calculation chain describes the file before the
         edit, so any formula write drops it — Excel and LibreOffice
-        rebuild it on open (clone-plan A6).
+        rebuild it on open.
         """
         out = Path(out)
         drop_chain = any(edit.formula is not None for edit in self.edits)

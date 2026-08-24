@@ -1,6 +1,7 @@
 # Worklog
 
 What actually happened, in enough detail to pick this up cold. `roadmap.md`
+(since deleted — the plan is `plan.md`; git history keeps the old file)
 is what was intended; this is what occurred, including the things that went
 wrong and what they cost.
 
