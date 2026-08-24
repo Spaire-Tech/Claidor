@@ -31,9 +31,11 @@
 /** The face. Loaded by `workspace.css` from the design's own binaries. */
 export const font = {
   ui: "'Instrument Sans', -apple-system, system-ui, sans-serif",
-  mono: "'IBM Plex Mono', ui-monospace, monospace",
-  /** The Ances wordmark, and only the wordmark. */
+  mono: "'JetBrains Mono', ui-monospace, monospace",
+  /** The Swens wordmark and the chat's serif S mark. */
   brand: "'Bodoni Moda', Didot, Georgia, serif",
+  /** The reading serif — the chat greeting and the answer lead. */
+  serif: 'Newsreader, Georgia, serif',
 } as const
 
 export const ink = {
@@ -55,7 +57,7 @@ export const ink = {
   stale: '#c8790a',
   /** Stale dot and the model grid's highlight. */
   staleDot: '#ff9f0a',
-  /** The failing check's dot — the Ances design's amber. */
+  /** The failing check's dot — the design's amber. */
   failDot: '#e8a33d',
   /** Clean state text and dot. */
   clean: '#34c759',

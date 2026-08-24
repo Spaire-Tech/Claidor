@@ -21,16 +21,16 @@
   font-style: normal;
 }
 @font-face {
-  font-family: 'IBM Plex Mono';
-  src: url('/fonts/plexmono-400.woff2') format('woff2');
-  font-weight: 400;
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono-var.woff2') format('woff2');
+  font-weight: 400 500;
   font-display: swap;
   font-style: normal;
 }
 @font-face {
-  font-family: 'IBM Plex Mono';
-  src: url('/fonts/plexmono-500.woff2') format('woff2');
-  font-weight: 500;
+  font-family: 'Newsreader';
+  src: url('/fonts/newsreader-var.woff2') format('woff2');
+  font-weight: 400 500;
   font-display: swap;
   font-style: normal;
 }
@@ -51,7 +51,7 @@ textarea {
   box-shadow: none;
 }
 
-/* The Ances panel design's own keyframes and scrollbar. */
+/* The Swens panel design's own keyframes and scrollbar. */
 @keyframes antford-spin {
   to {
     transform: rotate(360deg);

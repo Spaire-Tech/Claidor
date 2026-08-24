@@ -1,16 +1,15 @@
 /**
  * The design's values, named.
  *
- * Source of truth: `docs/pierce/design-ances/markup.html` (the
- * founder's Ances workspace, 18 August — the rename to Ances, the
- * left rail, the gradient summary heading, the plum Observation and
- * the assistant's history drawer), with
- * `docs/pierce/design-antford/workspace3.html` behind it for the
- * screens the revision left untouched. Every constant here is a value
- * that appears verbatim in those files; if a value here disagrees
- * with the file, the file is right. Nothing here is invented — where a
- * screen needs something the design does not draw, the component says
- * which pattern it borrowed, not this file.
+ * Source of truth: `docs/pierce/design-swens/Swens_Workspace.html` —
+ * the founder's Swens workspace (the rename to Swens, the Ask ·
+ * Project · Settings dock, JetBrains Mono, the Newsreader reading
+ * serif) — with `docs/pierce/design-ances/markup.html` behind it for
+ * screens whose Swens revision has not landed yet. Every constant
+ * here is a value that appears verbatim in those files; if a value
+ * here disagrees with the file, the file is right. Nothing here is
+ * invented — where a screen needs something the design does not draw,
+ * the component says which pattern it borrowed, not this file.
  */
 
 // --- shared with the Office panel: keep byte-identical --------------------
@@ -25,9 +24,11 @@
 /** The face. Loaded by `workspace.css` from the design's own binaries. */
 export const font = {
   ui: "'Instrument Sans', -apple-system, system-ui, sans-serif",
-  mono: "'IBM Plex Mono', ui-monospace, monospace",
-  /** The Ances wordmark, and only the wordmark. */
+  mono: "'JetBrains Mono', ui-monospace, monospace",
+  /** The Swens wordmark and the chat's serif S mark. */
   brand: "'Bodoni Moda', Didot, Georgia, serif",
+  /** The reading serif — the chat greeting and the answer lead. */
+  serif: 'Newsreader, Georgia, serif',
 } as const
 
 export const ink = {
@@ -49,7 +50,7 @@ export const ink = {
   stale: '#c8790a',
   /** Stale dot and the model grid's highlight. */
   staleDot: '#ff9f0a',
-  /** The failing check's dot — the Ances design's amber. */
+  /** The failing check's dot — the design's amber. */
   failDot: '#e8a33d',
   /** Clean state text and dot. */
   clean: '#34c759',
@@ -98,7 +99,7 @@ export const cellRefInk = '#2a9d4f'
 /** Hairline between rows — always via border-top, never on the first. */
 export const hairline = '.5px solid #eceaec'
 
-/** Section heading over a list card. The Ances design sets it 500. */
+/** Section heading over a list card. The design sets it 500. */
 export const sectionHead = {
   fontSize: 12,
   fontWeight: 500,
@@ -108,7 +109,7 @@ export const sectionHead = {
 } as const
 
 /**
- * The Ances shell: a full-bleed white pane under a 54px header bar,
+ * The shell: a full-bleed white pane under a 54px header bar,
  * panes separated by a 1px seam, the dock a translucent bar along the
  * bottom. The floating-card frame of the first workspace is retired
  * with it.

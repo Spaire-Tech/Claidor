@@ -1071,7 +1071,7 @@ export class TieOutApi {
     return this.call(`/deals/${dealId}/visit`, { method: 'POST' })
   }
 
-  /** Remove a model from Ances. Soft on the server — findings and
+  /** Remove a model from Swens. Soft on the server — findings and
    *  notes are kept, nothing a team wrote is destroyed by a cleanup. */
   removeDeal(dealId: string): Promise<void> {
     return this.call(`/deals/${dealId}`, { method: 'DELETE' })
