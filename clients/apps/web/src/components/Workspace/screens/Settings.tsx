@@ -520,7 +520,7 @@ export const Settings = ({
                   textOverflow: 'ellipsis',
                 }}
               >
-                Ances reads. It never writes to your files or your mailbox. It
+                Swens reads. It never writes to your files or your mailbox. It
                 can only see what you can already open.
               </div>
 
@@ -731,8 +731,8 @@ export const Settings = ({
                   lineHeight: 1.5,
                 }}
               >
-                Used whenever Ances proposes a correction. Enforced only if
-                the House style check is on below.
+                Used whenever Swens proposes a correction. Enforced only if the
+                House style check is on below.
               </div>
               <div style={{ ...listCard, overflow: 'hidden' }}>
                 {WRITING.map((row, index) => (

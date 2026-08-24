@@ -1,13 +1,15 @@
 'use client'
 
 /**
- * The workspace shell — the founder's design, 12 August, wired.
+ * The workspace shell — the founder's Swens design, wired.
  *
- * Source of truth: `docs/pierce/design/markup.html`. Every style value
- * here appears verbatim in that file; where a real data state has no
- * drawn equivalent, the component says which pattern it borrowed. The
- * design is one floating card over a radial ground, a glassy pill dock at
- * the bottom centre, and side panels that join the row as they open.
+ * Source of truth: `docs/pierce/design-swens/Swens_Workspace.html`
+ * (`source.txt` beside it is the readable extraction). Every style
+ * value here appears verbatim in that file; where a real data state
+ * has no drawn equivalent, the component says which pattern it
+ * borrowed. The frame: a full-bleed white pane under a 54px header,
+ * the serif wordmark, and the translucent dock along the bottom —
+ * Ask · Project · Settings.
  *
  * This file is the frame, the header, the dock and the account popover.
  * The screens live beside it and receive real data — nothing in the
@@ -19,7 +21,6 @@ import { Artifact, DealListItem, TieOutApi } from './api'
 import { Chat, ChatContext, chatKeyOf } from './Chat'
 import { blueButton, font, ground, ink, shell, wordmark } from './design'
 import { Assistant } from './screens/Assistant'
-import { CheckFile } from './screens/CheckFile'
 import { Deals } from './screens/Deals'
 import { DocPanel } from './screens/DocPanel'
 import { NewDeal } from './screens/NewDeal'
@@ -34,14 +35,10 @@ import './workspace.css'
  */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
-type View = 'assist' | 'deals' | 'check' | 'settings'
-
-const LABELS: Record<View, string> = {
-  assist: 'Assistant',
-  deals: 'Models',
-  check: 'Check a model',
-  settings: 'Settings',
-}
+//: The Swens dock: Ask · Project · Settings. The private bench
+//: (« Check a model ») is off the dock and out of the product — the
+//: founder cut it from the design.
+type View = 'assist' | 'deals' | 'settings'
 
 export interface WorkspaceProps {
   /** The signed-in person, for the dock avatar and the popover. */
@@ -75,19 +72,12 @@ export const Workspace = ({
   const [docAt, setDocAt] = useState<string | null>(null)
   const [acctOpen, setAcctOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
-  //: What the chat is about. The document panel and the check screen
-  //: report their finding contexts; the deal scope is derived below.
+  //: What the chat is about. The document panel reports its finding
+  //: context; the deal scope is derived below.
   const [docChat, setDocChat] = useState<ChatContext | null>(null)
-  const [checkChat, setCheckChat] = useState<ChatContext | null>(null)
-  //: The Ances design opens the deal's chat from the header's « Ask »
-  //: — the pane no longer rides along uninvited.
+  //: The design opens the deal's chat from the header's « Ask »
+  //: — the pane never rides along uninvited.
   const [askOpen, setAskOpen] = useState(false)
-  //: The check screen's phase, reported up so the header can grow
-  //: « Check another » beside a finished check.
-  const [checkPhase, setCheckPhase] = useState<'idle' | 'running' | 'done'>(
-    'idle',
-  )
-  const [checkResetNonce, setCheckResetNonce] = useState(0)
 
   //: Every deal this person is on. Null while loading — the screens tell
   //: « still asking » apart from « asked, and there are none », because
@@ -146,7 +136,6 @@ export const Workspace = ({
     setDeal(null)
     setDoc(null)
     setDocChat(null)
-    setCheckChat(null)
     setAskOpen(false)
     setAcctOpen(false)
   }
@@ -158,9 +147,9 @@ export const Workspace = ({
     setDocChat(null)
   }
 
-  //: The design's rule: the chat rides beside an open finding and
-  //: beside a finished check; beside a deal page it appears only when
-  //: « Ask » was pressed — never uninvited.
+  //: The design's rule: the chat rides beside an open finding; beside
+  //: a project page it appears only when « Ask » was pressed — never
+  //: uninvited.
   const chatContext: ChatContext | null =
     view === 'deals' && deal !== null
       ? doc !== null
@@ -168,14 +157,10 @@ export const Workspace = ({
         : askOpen
           ? { scope: 'deal', dealId: deal.id, dealName: deal.name }
           : null
-      : view === 'check'
-        ? askOpen
-          ? checkChat
-          : null
-        : null
+      : null
 
   const hasDeal = view === 'deals' && deal !== null
-  //: The Ances dock pill: a soft dark wash and the accent when active,
+  //: The dock pill: a soft dark wash and the accent when active,
   //: quiet grey otherwise. No shadow — the bar itself carries the depth.
   const dock = (k: View) => ({
     border: 0,
@@ -209,8 +194,7 @@ export const Workspace = ({
         background: ground,
       }}
     >
-      {/* Panes sit edge to edge with a 1px seam — the Ances design
-          retires the first workspace's floating cards. */}
+      {/* Panes sit edge to edge with a 1px seam. */}
       <div
         style={{
           flex: 1,
@@ -246,9 +230,7 @@ export const Workspace = ({
             }}
           >
             {!hasDeal && (
-              <span style={{ ...wordmark, margin: '0 6px 0 10px' }}>
-                Ances
-              </span>
+              <span style={{ ...wordmark, margin: '0 6px 0 10px' }}>Swens</span>
             )}
             {hasDeal && (
               <>
@@ -285,7 +267,7 @@ export const Workspace = ({
                   >
                     <polyline points="7.5,1.5 1.5,7.5 7.5,13.5" />
                   </svg>
-                  <span>Models</span>
+                  <span>Project</span>
                 </button>
                 {/* The 18 August design drops the name and client from
                     the header — the page's own title carries them. */}
@@ -344,47 +326,8 @@ export const Workspace = ({
                 </button>
               </>
             )}
-            {view === 'check' && checkPhase === 'done' && (
-              //: The design's `cDoneBar`: Ask beside « Check another ».
-              //: « Export report » joins them with the report sheet it
-              //: opens, next phase.
-              <>
-                <button
-                  onClick={() => setAskOpen((was) => !was)}
-                  style={{
-                    border: 0,
-                    background: askOpen ? '#e7e7ea' : '#f0f0f2',
-                    color: ink.primary,
-                    borderRadius: 11,
-                    padding: '9px 15px',
-                    font: 'inherit',
-                    fontSize: 13.5,
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Ask
-                </button>
-                <button
-                  onClick={() => {
-                    setAskOpen(false)
-                    setCheckResetNonce((was) => was + 1)
-                  }}
-                  style={{ ...blueButton, marginRight: 4 }}
-                >
-                  Check another
-                </button>
-              </>
-            )}
-            {view === 'deals' && deal === null && (deals?.length ?? 0) > 0 && (
-              <button
-                onClick={() => setNewOpen(true)}
-                style={{ ...blueButton, marginRight: 4 }}
-              >
-                Add models
-              </button>
-            )}
+            {/* The project list's « New project » lives in the page
+                heading, as drawn — the header adds nothing here. */}
           </div>
 
           {/* Content. */}
@@ -428,14 +371,6 @@ export const Workspace = ({
                 setDeal(null)
                 setDealsAt((was) => was + 1)
               }}
-            />
-          ) : view === 'check' ? (
-            <CheckFile
-              api={api}
-              organizationId={organizationId}
-              onChat={setCheckChat}
-              onPhase={setCheckPhase}
-              resetNonce={checkResetNonce}
             />
           ) : (
             <Settings
@@ -487,8 +422,8 @@ export const Workspace = ({
         />
       )}
 
-      {/* The dock — the Ances design's translucent bar along the
-          bottom, pills resting directly on it. */}
+      {/* The dock — the design's translucent bar along the bottom,
+          pills resting directly on it. */}
       <div
         style={{
           flex: '0 0 auto',
@@ -512,13 +447,10 @@ export const Workspace = ({
           }}
         >
           <button onClick={go('assist')} style={dock('assist')}>
-            Assistant
+            Ask
           </button>
           <button onClick={go('deals')} style={dock('deals')}>
-            Models
-          </button>
-          <button onClick={go('check')} style={dock('check')}>
-            Check a model
+            Project
           </button>
           <button onClick={go('settings')} style={dock('settings')}>
             Settings

@@ -2128,7 +2128,7 @@ export const DealPage = ({
                       color: ink.faint,
                     }}
                   >
-                    Remove this model from Ances
+                    Remove this model from Swens
                   </button>
                 ) : (
                   <>
@@ -2183,124 +2183,124 @@ export const DealPage = ({
               it to the left on its own soft ground, and hides it
               while the Ask sheet is open. */}
           {!railHidden && (
-          <div
-            style={{
-              flex: '0 0 288px',
-              order: -1,
-              alignSelf: 'stretch',
-              background: '#fafaf9',
-              borderRight: '1px solid #eceaea',
-              padding: '34px 28px 44px',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            {railItems.map((item) => (
-              <span
-                key={item.k}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 4,
-                  paddingBottom: 22,
-                }}
-              >
+            <div
+              style={{
+                flex: '0 0 288px',
+                order: -1,
+                alignSelf: 'stretch',
+                background: '#fafaf9',
+                borderRight: '1px solid #eceaea',
+                padding: '34px 28px 44px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              {railItems.map((item) => (
                 <span
+                  key={item.k}
                   style={{
-                    fontSize: 13,
-                    fontWeight: 500,
-                    letterSpacing: '-.004em',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                    paddingBottom: 22,
                   }}
                 >
-                  {item.k}
-                </span>
-                <span
-                  style={{
-                    fontSize: 13,
-                    color: '#86868b',
-                    lineHeight: 1.5,
-                    textWrap: 'pretty',
-                  }}
-                >
-                  {item.v}
-                </span>
-              </span>
-            ))}
-            {trendCounts.length > 1 && (
-              <>
-                <span
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 500,
-                    letterSpacing: '-.004em',
-                    padding: '2px 0 13px',
-                  }}
-                >
-                  Open findings by version
-                </span>
-                <span
-                  style={{ display: 'flex', alignItems: 'flex-end', gap: 14 }}
-                >
-                  {trendCounts.map((bar, index) => (
-                    <span
-                      key={bar.v}
-                      style={{
-                        flex: '1 1 0',
-                        minWidth: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        gap: 8,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 12.5,
-                          color:
-                            index === trendCounts.length - 1
-                              ? ink.accent
-                              : '#b6b6bc',
-                          fontVariantNumeric: 'tabular-nums',
-                        }}
-                      >
-                        {bar.n}
-                      </span>
-                      <span
-                        style={{
-                          width: '100%',
-                          height: Math.max(
-                            6,
-                            Math.round((bar.n / trendMax) * 78),
-                          ),
-                          borderRadius: 3,
-                          background:
-                            index === trendCounts.length - 1
-                              ? ink.accent
-                              : '#e4ebf5',
-                        }}
-                      />
-                      <span style={{ fontSize: 11.5, color: '#b6b6bc' }}>
-                        {bar.v}
-                      </span>
-                    </span>
-                  ))}
-                </span>
-                {trendNote && (
                   <span
                     style={{
-                      fontSize: 12.5,
-                      color: '#a8a8ad',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      letterSpacing: '-.004em',
+                    }}
+                  >
+                    {item.k}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: '#86868b',
                       lineHeight: 1.5,
-                      paddingTop: 13,
                       textWrap: 'pretty',
                     }}
                   >
-                    {trendNote}
+                    {item.v}
                   </span>
-                )}
-              </>
-            )}
-          </div>
+                </span>
+              ))}
+              {trendCounts.length > 1 && (
+                <>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 500,
+                      letterSpacing: '-.004em',
+                      padding: '2px 0 13px',
+                    }}
+                  >
+                    Open findings by version
+                  </span>
+                  <span
+                    style={{ display: 'flex', alignItems: 'flex-end', gap: 14 }}
+                  >
+                    {trendCounts.map((bar, index) => (
+                      <span
+                        key={bar.v}
+                        style={{
+                          flex: '1 1 0',
+                          minWidth: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 12.5,
+                            color:
+                              index === trendCounts.length - 1
+                                ? ink.accent
+                                : '#b6b6bc',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {bar.n}
+                        </span>
+                        <span
+                          style={{
+                            width: '100%',
+                            height: Math.max(
+                              6,
+                              Math.round((bar.n / trendMax) * 78),
+                            ),
+                            borderRadius: 3,
+                            background:
+                              index === trendCounts.length - 1
+                                ? ink.accent
+                                : '#e4ebf5',
+                          }}
+                        />
+                        <span style={{ fontSize: 11.5, color: '#b6b6bc' }}>
+                          {bar.v}
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                  {trendNote && (
+                    <span
+                      style={{
+                        fontSize: 12.5,
+                        color: '#a8a8ad',
+                        lineHeight: 1.5,
+                        paddingTop: 13,
+                        textWrap: 'pretty',
+                      }}
+                    >
+                      {trendNote}
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -2614,7 +2614,9 @@ export const DealPage = ({
                 >
                   <button
                     onClick={() =>
-                      noteReady && !saving && acceptFinding(shownFinding, noteText)
+                      noteReady &&
+                      !saving &&
+                      acceptFinding(shownFinding, noteText)
                     }
                     style={{
                       border: 0,
@@ -2803,8 +2805,8 @@ export const DealPage = ({
                   textWrap: 'pretty',
                 }}
               >
-                Every finding carries its cell reference. Nothing is
-                summarised away.
+                Every finding carries its cell reference. Nothing is summarised
+                away.
               </div>
             </div>
             <div
@@ -2891,7 +2893,7 @@ td{border-top:1px solid #eee;padding:8px 10px 8px 0;vertical-align:top}
 .sub{color:#6b6b70;font-size:12px}
 @media print{body{margin:0 auto}}</style></head><body>
 <h1>${esc(page.name)}${model ? `, version ${model.version}` : ''}</h1>
-<div class="meta">Readiness report · prepared ${new Date().toLocaleString('en-GB')} · Ances</div>
+<div class="meta">Readiness report · prepared ${new Date().toLocaleString('en-GB')} · Swens</div>
 <div class="verdict">${passRows.length} checks pass. ${fails.length} don't. ${notRunRows.length} did not run.</div>
 ${wantFindings && rows ? `<h2>Findings</h2><table>${rows}</table>` : ''}
 ${wantPasses && passes ? `<h2>Checks that pass</h2><table>${passes}</table>` : ''}

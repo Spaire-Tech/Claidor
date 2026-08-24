@@ -16,9 +16,9 @@
  * and are prefixed instead.
  */
 
-/* Instrument Sans — the Ances design's face, self-hosted from the
-   design file's own binary. A variable font: one file carries the 400
-   and 500 the markup uses. Switzer (the first workspace's face) is
+/* Instrument Sans — the design's face, self-hosted from the design
+   file's own binary. A variable font: one file carries the 400 and
+   500 the markup uses. Switzer (the first workspace's face) is
    retired with its design; its files stay on disk for git history. */
 @font-face {
   font-family: 'Instrument Sans';
@@ -28,7 +28,7 @@
   font-style: normal;
 }
 
-/* Bodoni Moda — the Ances wordmark, and only the wordmark. */
+/* Bodoni Moda — the Swens wordmark and the chat's serif S mark. */
 @font-face {
   font-family: 'Bodoni Moda';
   src: url('/workspace/bodoni-moda-400.woff2') format('woff2');
@@ -37,20 +37,26 @@
   font-style: normal;
 }
 
-/* IBM Plex Mono — the model grid's face. Self-hosted from the design's
-   own binaries (latin subset), because an external font host is a
-   dependency the product does not need and this container cannot reach. */
+/* JetBrains Mono — the Swens design's mono: the ⌘K chip, cell
+   references, meta chips. Extracted from the Swens export's own
+   resource map (latin subset, variable 400–500), because an external
+   font host is a dependency the product does not need. IBM Plex Mono
+   (the Ances mono) is retired with its design; its files stay on disk
+   for git history. */
 @font-face {
-  font-family: 'IBM Plex Mono';
-  src: url('/workspace/plexmono-400.woff2') format('woff2');
-  font-weight: 400;
+  font-family: 'JetBrains Mono';
+  src: url('/workspace/jetbrains-mono-var.woff2') format('woff2');
+  font-weight: 400 500;
   font-display: swap;
   font-style: normal;
 }
+
+/* Newsreader — the reading serif: the chat greeting and the answer
+   lead. Same provenance as the mono. */
 @font-face {
-  font-family: 'IBM Plex Mono';
-  src: url('/workspace/plexmono-500.woff2') format('woff2');
-  font-weight: 500;
+  font-family: 'Newsreader';
+  src: url('/workspace/newsreader-var.woff2') format('woff2');
+  font-weight: 400 500;
   font-display: swap;
   font-style: normal;
 }

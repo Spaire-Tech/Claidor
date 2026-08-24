@@ -54,7 +54,7 @@ export interface WordAnchor extends Anchor {
  *
  * **Word attributes the change to the signed-in user**, because Office.js
  * cannot set a revision's author. The server's own writer stamps
- * « Ances » instead; both are true statements about who made the edit,
+ * « Swens » instead; both are true statements about who made the edit,
  * and neither is a guess.
  */
 async function writeInto(

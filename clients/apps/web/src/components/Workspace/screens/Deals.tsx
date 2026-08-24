@@ -1,37 +1,39 @@
 'use client'
 
 /**
- * Models — the list, and the first-run empty state.
+ * Project — the list, and the first-run empty state.
  *
- * Source of truth: `docs/pierce/design-antford/workspace.html`, the
- * `vDealsList` and `vDealsEmpty` sections. The rows are the design's
- * rows; the data is the server's. Where a real data state has no drawn
- * equivalent, the borrowed pattern is named at the site.
+ * Source of truth: `docs/pierce/design-swens/Swens_Workspace.html`,
+ * the `vDealsList` block: a Newsreader question for a heading, a
+ * « New project » pill, and one table in a grey frame — Project ·
+ * Model · Last checked · Open findings. One flat list, no grouping:
+ * the design draws clean and failing projects in the same card and
+ * tells them apart by the dot and the ink.
  *
- * The Ances row is a sentence, not a dashboard: name on the left,
- * verdict on the right — « 6 checks fail » amber, « Changed since
- * check » blue, « All checks pass » green — over a quiet « Checked
- * Tuesday 11:52 ». No dot, no subtitle; the first design's since-notes
- * and document counts have no home here and are not drawn.
- *
- * The groups are « Needs attention » and « Clear » — the design's own
- * words. One addition its demo data never shows: a deal that has
- * **never been checked** cannot sit under « Clear » — no findings on a
- * deal nobody checked reads exactly like no findings on a deal checked
- * this morning, and the API docstring forbids those two ever sharing a
- * word. Never-checked deals join the attention group, in the open row's
- * own shape, and their state says « Not checked yet » (a state the
- * design does not draw; secondary ink, borrowed from its meta text).
+ * Real mappings, named:
+ * - the model column is the latest ready workbook, by filename (shown
+ *   without its extension, as the design prints it) and version;
+ * - the dot is the worst attention tier among open findings —
+ *   defect red, assumption amber, hygiene blue — the design's three
+ *   severity colours;
+ * - « Nothing failing » is only said when a check has run; a deal
+ *   nobody checked says « Not checked yet » in the same muted ink,
+ *   because no-findings-on-an-unchecked-deal must never read like
+ *   no-findings-on-a-checked-one (a state the design's demo data
+ *   does not draw; muted ink borrowed from its own « Nothing
+ *   failing »);
+ * - a stale row's checked cell appends « · files changed since »,
+ *   in the drawn column — the count on that row was made against a
+ *   model that has since moved.
  */
 
 import { useEffect, useRef, useState } from 'react'
 import { ConnectorState, DealListItem, TieOutApi } from './../api'
 import {
-  hairline,
+  fileIcon,
+  font,
   ink,
-  listCard,
   microsoftLogo,
-  sectionHead,
   sharepointLogo,
   well,
 } from './../design'
@@ -39,7 +41,7 @@ import { DealPage } from './DealPage'
 
 /**
  * « Checked 09:15 today » / « Checked Tuesday 11:52 » / « Checked
- * 1 August » — the Ances design's own time phrasing, read off its demo
+ * 1 August » — the design's own time phrasing, read off its demo
  * rows. Stale rows lead with « Last checked », as the design's stale row
  * does: the check is no longer *the* check, only the last one.
  */
@@ -236,8 +238,9 @@ export const Deals = ({
 
   if (deals === null) {
     //: Still asking. The design has no loading face for this screen —
-    //: the honest render is the empty well, which resolves in one paint.
-    return <div style={{ flex: 1, minHeight: 0, background: well }} />
+    //: the honest render is the empty white pane, which resolves in one
+    //: paint.
+    return <div style={{ flex: 1, minHeight: 0, background: '#fff' }} />
   }
 
   if (empty) {
@@ -272,150 +275,325 @@ export const Deals = ({
     )
   }
 
-  //: The design's grouping, from its own logic — plus never-checked
-  //: deals in the attention group, which its demo data never shows.
-  const open = deals.filter(
-    (d) => d.failing_checks > 0 || d.stale || d.checked_at === null,
-  )
-  const clean = deals.filter((d) => !open.includes(d))
-
-  const row = (d: DealListItem, first: boolean, group: 'open' | 'clean') => {
-    const stale = !!d.stale
-    const never = d.checked_at === null
-    //: Stale outranks the count — stale means the numbers on this very
-    //: row were made against a model that no longer exists.
-    const state =
-      group === 'clean'
-        ? 'All checks pass'
-        : stale
-          ? 'Changed since check'
-          : never
-            ? 'Not checked yet'
-            : `${d.failing_checks} ${d.failing_checks === 1 ? 'check fails' : 'checks fail'}`
-    const stateFg =
-      group === 'clean'
-        ? ink.clean
-        : stale
-          ? ink.accent
-          : never
-            ? //: A state the design does not draw; secondary ink,
-              //: borrowed from its own meta text.
-              ink.secondary
-            : ink.stale
-    return (
-      <button
-        key={d.id}
-        onClick={() => onOpen(d)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          width: '100%',
-          textAlign: 'left',
-          border: 0,
-          borderTop: first ? 0 : hairline,
-          background: 'transparent',
-          font: 'inherit',
-          cursor: 'pointer',
-          padding:
-            group === 'open' ? '17px 16px 17px 20px' : '15px 16px 15px 20px',
-        }}
-      >
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span
-            style={{
-              display: 'block',
-              fontSize: 16,
-              fontWeight: 500,
-              letterSpacing: '-.015em',
-            }}
-          >
-            {d.name}
-          </span>
-        </span>
-        <span style={{ flex: '0 0 auto', textAlign: 'right' }}>
-          <span
-            style={{
-              display: 'block',
-              fontSize: 14.5,
-              fontWeight: 500,
-              color: stateFg,
-              letterSpacing: '-.01em',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {state}
-          </span>
-          {!never && (
-            <span
-              style={{
-                display: 'block',
-                fontSize: 12.5,
-                color: ink.faint,
-                marginTop: 2,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {checkedLine(d.checked_at, stale)}
-            </span>
-          )}
-        </span>
-        {chevron}
-      </button>
-    )
+  //: « Today 11:40 » / « Yesterday 16:05 » / « Tuesday 09:12 » /
+  //: « 14 August » — the design's own phrasing for the checked column,
+  //: read off its demo rows.
+  const checkedCell = (d: DealListItem): { text: string; muted: boolean } => {
+    if (!d.checked_at) return { text: 'Not checked yet', muted: true }
+    const then = new Date(d.checked_at)
+    const now = new Date()
+    const time = then.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+    const yesterday = new Date(now)
+    yesterday.setDate(now.getDate() - 1)
+    const when =
+      then.toDateString() === now.toDateString()
+        ? `Today ${time}`
+        : then.toDateString() === yesterday.toDateString()
+          ? `Yesterday ${time}`
+          : (now.getTime() - then.getTime()) / 86_400_000 < 7
+            ? `${then.toLocaleDateString('en-GB', { weekday: 'long' })} ${time}`
+            : then.toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'long',
+              })
+    //: Stale, said in the drawn column: the counts on this row were
+    //: made against files that have since moved.
+    return {
+      text: d.stale ? `${when} · files changed since` : when,
+      muted: false,
+    }
   }
+
+  //: The design's severity colours, keyed by the worst open tier.
+  const dotOf = (tier: number): string =>
+    tier === 1 ? '#e0322d' : tier === 2 ? '#e8a300' : '#2b6cf5'
+
+  const grid = 'minmax(200px,1.2fr) minmax(215px,1.15fr) 140px 175px 38px'
+  const columns = ['Project', 'Model', 'Last checked', 'Open findings', '']
 
   return (
     <div
       style={{
         flex: 1,
         minHeight: 0,
+        overflow: 'auto',
+        background: '#fff',
+        padding: 'clamp(24px,5vh,52px) clamp(20px,4vw,48px) 48px',
         display: 'flex',
         flexDirection: 'column',
-        background: well,
+        alignItems: 'center',
       }}
     >
       <div
         style={{
-          flex: 1,
-          minHeight: 0,
-          overflow: 'auto',
-          padding: '28px 34px 34px',
+          width: '100%',
+          maxWidth: 1000,
           display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-start',
+          flexDirection: 'column',
         }}
       >
         <div
           style={{
-            width: '100%',
-            maxWidth: 620,
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 20,
+            padding: '0 4px 26px',
           }}
         >
-          {open.length > 0 && (
-            <>
-              <div style={{ ...sectionHead, padding: '4px 4px 9px' }}>
-                Needs attention
-              </div>
-              <div
-                style={{ ...listCard, overflow: 'hidden', marginBottom: 26 }}
+          <span
+            style={{
+              flex: 1,
+              minWidth: 0,
+              fontFamily: font.serif,
+              fontSize: 'clamp(23px,2.6vw,28px)',
+              lineHeight: 1.25,
+              letterSpacing: '-.01em',
+              color: '#1c1f23',
+            }}
+          >
+            Which project are you working in?
+          </span>
+          <button
+            onClick={onNewDeal}
+            style={{
+              flex: '0 0 auto',
+              border: '1px solid rgba(16,22,35,.08)',
+              background: '#fff',
+              boxShadow: '0 1px 2px rgba(16,22,35,.05)',
+              borderRadius: 999,
+              height: 40,
+              padding: '0 18px',
+              font: 'inherit',
+              fontSize: 14.5,
+              color: '#1c1f23',
+              cursor: 'pointer',
+            }}
+          >
+            New project
+          </button>
+        </div>
+
+        <div
+          style={{
+            background: '#f6f7f9',
+            border: '1px solid rgba(16,22,35,.05)',
+            borderRadius: 22,
+            boxShadow:
+              '0 1px 2px rgba(16,22,35,.04), 0 12px 32px rgba(16,22,35,.06)',
+            padding: 12,
+          }}
+        >
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: grid,
+              gap: 10,
+              padding: '2px 0 12px',
+            }}
+          >
+            {columns.map((label, i) => (
+              <span
+                key={i}
+                style={{
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: label ? '#fff' : 'transparent',
+                  borderRadius: 999,
+                  padding: '9px 16px 9px 18px',
+                  fontSize: 14.5,
+                  color: '#8f96a0',
+                  overflow: 'hidden',
+                }}
               >
-                {open.map((d, i) => row(d, i === 0, 'open'))}
-              </div>
-            </>
-          )}
-          {clean.length > 0 && (
-            <>
-              <div style={{ ...sectionHead, padding: '4px 4px 9px' }}>
-                Clear
-              </div>
-              <div style={{ ...listCard, overflow: 'hidden' }}>
-                {clean.map((d, i) => row(d, i === 0, 'clean'))}
-              </div>
-            </>
-          )}
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {label}
+                </span>
+              </span>
+            ))}
+          </div>
+
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              boxShadow: '0 1px 2px rgba(16,22,35,.04)',
+              overflow: 'hidden',
+            }}
+          >
+            {deals.map((d, i) => {
+              const checked = checkedCell(d)
+              const hasFindings = d.open_findings > 0
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => onOpen(d)}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: grid,
+                    gap: 10,
+                    alignItems: 'center',
+                    width: '100%',
+                    textAlign: 'left',
+                    border: 0,
+                    borderTop: i === 0 ? 0 : '.5px solid rgba(16,22,35,.06)',
+                    background: 'transparent',
+                    font: 'inherit',
+                    cursor: 'pointer',
+                    padding: 0,
+                    height: 64,
+                  }}
+                >
+                  <span
+                    style={{
+                      minWidth: 0,
+                      padding: '0 16px 0 18px',
+                      fontSize: 16.5,
+                      letterSpacing: '-.012em',
+                      color: '#1c1f23',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {d.name}
+                  </span>
+                  <span
+                    style={{
+                      minWidth: 0,
+                      padding: '0 16px 0 18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    {d.model_name !== null ? (
+                      <>
+                        <span
+                          style={{
+                            flex: '0 0 19px',
+                            width: 19,
+                            height: 19,
+                            backgroundImage: `url(${fileIcon.xls})`,
+                            backgroundSize: 'contain',
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'center',
+                          }}
+                        />
+                        <span
+                          style={{
+                            flex: '0 1 auto',
+                            minWidth: 0,
+                            fontSize: 15,
+                            color: '#4a4f57',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {d.model_name.replace(/\.[a-z0-9]+$/i, '')}
+                        </span>
+                        <span
+                          style={{
+                            flex: '0 0 auto',
+                            fontFamily: font.mono,
+                            fontSize: 12.5,
+                            letterSpacing: 0,
+                            color: '#0060d0',
+                          }}
+                        >
+                          v{d.model_version}
+                        </span>
+                      </>
+                    ) : (
+                      //: A deal with no workbook yet — a state the demo
+                      //: data does not draw; the muted ink is the
+                      //: findings column's own « Nothing failing ».
+                      <span style={{ fontSize: 15, color: '#9aa1ab' }}>
+                        No model yet
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    style={{
+                      minWidth: 0,
+                      padding: '0 16px 0 18px',
+                      fontSize: 14.5,
+                      color: checked.muted ? '#9aa1ab' : '#6b7280',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {checked.text}
+                  </span>
+                  <span
+                    style={{
+                      minWidth: 0,
+                      padding: '0 16px 0 18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 9,
+                    }}
+                  >
+                    {hasFindings && (
+                      <span
+                        style={{
+                          flex: '0 0 8px',
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: dotOf(d.worst_tier),
+                        }}
+                      />
+                    )}
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontSize: 14.5,
+                        color: hasFindings ? '#3d4048' : '#9aa1ab',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {hasFindings
+                        ? `${d.open_findings} ${d.open_findings === 1 ? 'finding' : 'findings'}`
+                        : d.checked_at
+                          ? 'Nothing failing'
+                          : 'Not checked yet'}
+                    </span>
+                  </span>
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#c4c8ce"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ justifySelf: 'end', marginRight: 18 }}
+                  >
+                    <polyline points="9,5 16,12 9,19" />
+                  </svg>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -509,7 +687,7 @@ const EmptyState = ({
                 textWrap: 'pretty',
               }}
             >
-              Ances reads your models and decks from SharePoint.
+              Swens reads your models and decks from SharePoint.
             </span>
             {problem && (
               //: The refusal verbatim — an AADSTS sentence names its own
@@ -581,7 +759,7 @@ const EmptyState = ({
                 <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
               </svg>
               <span style={{ fontSize: 13, lineHeight: 1.5 }}>
-                Read-only. Ances never writes to your files.
+                Read-only. Swens never writes to your files.
               </span>
             </span>
           </span>
