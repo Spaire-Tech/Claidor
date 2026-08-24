@@ -46,6 +46,33 @@ class WriteRefused(Exception):
     """The writer will not perform an edit it cannot do safely."""
 
 
+def sheet_map(members: dict[str, bytes]) -> dict[str, str]:
+    """Sheet name → archive member path, from the workbook's own rels."""
+    book = members["xl/workbook.xml"].decode("utf-8")
+    rels = members["xl/_rels/workbook.xml.rels"].decode("utf-8")
+    targets: dict[str, str] = {}
+    for element in REL_ELEMENT.findall(rels):
+        rel_id = ATTR["Id"].search(element)
+        rel_target = ATTR["Target"].search(element)
+        if rel_id and rel_target:
+            targets[rel_id.group(1)] = rel_target.group(1)
+    paths: dict[str, str] = {}
+    for element in SHEET_ELEMENT.findall(book):
+        name = ATTR["name"].search(element)
+        rid = ATTR["r:id"].search(element)
+        if not name or not rid:
+            continue
+        target = targets.get(rid.group(1), "")
+        if not target:
+            continue
+        if target.startswith("/"):
+            target = target[1:]
+        elif not target.startswith("xl/"):
+            target = "xl/" + target
+        paths[name.group(1).replace("&amp;", "&")] = target
+    return paths
+
+
 def _column_index(letters: str) -> int:
     index = 0
     for letter in letters:
@@ -109,6 +136,23 @@ def _into_row(row_xml: str, cell_xml: str, column: int) -> str:
     return row_xml
 
 
+def place_cell(xml: str, cell_xml: str, column: int, row_number: int) -> str:
+    """The sheet with the new cell element in its proper place —
+    column order held inside its row, the row element itself built
+    and inserted in ascending order when absent."""
+    rows = {int(m.group(1)): m for m in ROW.finditer(xml)}
+    if row_number in rows:
+        old_row = rows[row_number].group(0)
+        return xml.replace(old_row, _into_row(old_row, cell_xml, column), 1)
+    fresh = f'<row r="{row_number}">{cell_xml}</row>'
+    later = [r for r in sorted(rows) if r > row_number]
+    if later:
+        return xml.replace(rows[later[0]].group(0), fresh + rows[later[0]].group(0), 1)
+    if "<sheetData/>" in xml:
+        return xml.replace("<sheetData/>", f"<sheetData>{fresh}</sheetData>", 1)
+    return xml.replace("</sheetData>", f"{fresh}</sheetData>", 1)
+
+
 def _widen_dimension(xml: str, column: int, row_number: int) -> str:
     """`<dimension ref="A1:C5"/>` stretched to cover the new cell."""
     found = DIMENSION.search(xml)
@@ -163,27 +207,7 @@ class WorkbookWriter:
             self.members = {
                 item.filename: archive.read(item.filename) for item in self.order
             }
-        book = self.members["xl/workbook.xml"].decode("utf-8")
-        rels = self.members["xl/_rels/workbook.xml.rels"].decode("utf-8")
-        targets: dict[str, str] = {}
-        for element in REL_ELEMENT.findall(rels):
-            rel_id = ATTR["Id"].search(element)
-            rel_target = ATTR["Target"].search(element)
-            if rel_id and rel_target:
-                targets[rel_id.group(1)] = rel_target.group(1)
-        for element in SHEET_ELEMENT.findall(book):
-            name = ATTR["name"].search(element)
-            rid = ATTR["r:id"].search(element)
-            if not name or not rid:
-                continue
-            target = targets.get(rid.group(1), "")
-            if not target:
-                continue
-            if target.startswith("/"):
-                target = target[1:]
-            elif not target.startswith("xl/"):
-                target = "xl/" + target
-            self.sheet_paths[name.group(1).replace("&amp;", "&")] = target
+        self.sheet_paths = sheet_map(self.members)
 
     def _sheet_xml(self, sheet: str) -> tuple[str, str]:
         if sheet not in self.sheet_paths:
@@ -287,22 +311,7 @@ class WorkbookWriter:
         cell_xml = f'<c r="{ref}"{head_type}>{body}</c>'
 
         member, xml = self._sheet_xml(sheet)
-        rows = {int(m.group(1)): m for m in ROW.finditer(xml)}
-        if row_number in rows:
-            old_row = rows[row_number].group(0)
-            new_row = _into_row(old_row, cell_xml, column)
-            xml = xml.replace(old_row, new_row, 1)
-        else:
-            fresh = f'<row r="{row_number}">{cell_xml}</row>'
-            later = [r for r in sorted(rows) if r > row_number]
-            if later:
-                xml = xml.replace(
-                    rows[later[0]].group(0), fresh + rows[later[0]].group(0), 1
-                )
-            elif "<sheetData/>" in xml:
-                xml = xml.replace("<sheetData/>", f"<sheetData>{fresh}</sheetData>", 1)
-            else:
-                xml = xml.replace("</sheetData>", f"{fresh}</sheetData>", 1)
+        xml = place_cell(xml, cell_xml, column, row_number)
         xml = _widen_dimension(xml, column, row_number)
 
         self.members[member] = xml.encode("utf-8")
