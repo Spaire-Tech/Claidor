@@ -3696,3 +3696,32 @@ touched files.
 (it needs the database fixtures); its verification here is the
 engine tests plus import + typecheck. Corpus round-trip for the whole
 write path still owed with the corpus machine.
+
+---
+
+## 24 August, night — A2: the instrument committed, the record replicated
+
+Opening A2, the record showed more done than remembered: the
+six-tool two-axis head-to-head was already registered, run and
+framed on 23 August — what A2 still owed was ExceLint, and what
+nobody had noticed was that **the scorer itself lived only in a
+session scratchpad**, one container recycle from gone, the exact
+exposure the archive README records for the data.
+
+So: `server/scripts/custodes_score.py` — the 23 August scoring
+logic verbatim, plus unpack/convert stages, sha256-checking the
+tarballs against the README before trusting them. Run end-to-end on
+this fresh machine (LibreOffice 24.2.7, 361 fresh conversions):
+**every number identical** — truth 1,973/0 unmapped, coverage
+283/1,973 = 14.3% with the identical per-rule split, agreement
+239/1,166 = 20.5% per-rule identical, the six-row table digit for
+digit. The benchmark record is now reproducible from the repository
+alone, and the replication is logged in custodes-benchmark.md.
+
+**ExceLint: blocked here, registered anyway.** The network policy
+blocks fetching the tool (npm 403, codeload 403, git prompt); the
+repository-approval request is with the founder. The run's
+conventions are registered in custodes-benchmark.md before the code
+is obtained: shipped defaults only, same truth column, both axes or
+nothing, refusals counted, the schema-to-cell-set sentence appended
+on inspection and before any score.
