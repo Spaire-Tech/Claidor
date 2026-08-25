@@ -4002,3 +4002,28 @@ unplanted corpus and the gate's after-sweep with the regenerated
 baseline in the same push. The hold holds — not for doubt, but
 because the answer sheet and the detector must land together.
 No merge this sweep; the integration tip is unchanged.
+
+---
+
+## 26 August — the machine stops being a founder problem
+
+The founder read « provide a small cloud VM » and answered, fairly:
+« i genuinely have no idea what this even means. cant you do it? »
+They were right — it was mine to solve. Checked rather than assumed:
+TDF's LibreOffice 25.8.7 bundle downloads and installs cleanly into
+these session containers (204MB, ~2 minutes), and the whole B1
+mechanism was then proven end to end right here: headless soffice
+listening on a UNO socket, the bundled Python's uno bridge, a
+workbook written by openpyxl with a formula and **no stored answer**,
+`calculateAll()`, and the correct computed value read back. That is
+a real recalculation by the exact architecture Dynamo designed —
+out-of-process driver under the LibreOffice-matched interpreter.
+
+Committed `dev/setup-libreoffice`: idempotent, self-verifying, one
+command per fresh container. Dynamo is unblocked the moment it pulls
+the tip. What this does *not* change: timings on this shared box
+remain noise, and the machine that serves customers in production is
+a later deployment decision — but every fidelity match rate and
+behavioural-law catch rate in Track B is now measurable without
+anyone buying anything. One founder decision remains open: the team
+screen's deal names.

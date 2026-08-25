@@ -162,6 +162,21 @@ tests still run on every merged tip either way.
 - **25 Aug — Dynamo's machine question** (LibreOffice 25.8 install
   target) is with the founder; Dynamo continues its blocked-state
   charter work meanwhile.
+- **26 Aug — the machine question is RESOLVED by the lead**, at the
+  founder's « can't you do it? »: TDF's LibreOffice **25.8.7** deb
+  bundle installs cleanly into `/opt/libreoffice25.8` in these
+  containers, and the full B1 mechanism was proven here end to end —
+  headless soffice on a UNO socket, `calculateAll()`, an *uncached*
+  formula written by openpyxl read back correctly computed (50.0
+  from `=SUM(A1:A2)*10` over 2 and 3). `dev/setup-libreoffice`
+  (shared ground, lead's) makes the install one idempotent,
+  self-verifying command per fresh container. **Dynamo is unblocked**:
+  pull the integration tip, run the script, wire the real UNO
+  adapter behind the `Calculator` interface, and B2's fidelity
+  numbers become measurable. Caveats that stand: this box is the
+  shared noisy 15GB class (timings are noise; match rates are not),
+  and the production machine for customer-facing recalculation is a
+  deployment decision that comes later, on the plan's schedule.
 - **25 Aug, second sweep — ownership amendment**: Atelier's row
   gains `server/tests/tieout/test_routes*` — its charter already
   assigned the endpoint-level tests, the table just hadn't said so.
