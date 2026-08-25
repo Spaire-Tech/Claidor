@@ -3797,3 +3797,27 @@ stash). The change sits stashed while the precondition runs: the
 gate must be green on the unmodified engine on this machine before
 the after-sweep decides adoption. Results land in the next entry,
 whatever they are.
+
+---
+
+## 25 August, later — A7 lands: two refusals, one adoption, three
+## true findings the old code was lucky about
+
+The full record is `a7-normalization-protocol.md`; the shape of it:
+round 1 refused itself when a typed-over finding vanished (the
+island detector's witness demanded the single crowned majority and
+lost a tie to Counter's insertion order — the old finding had
+survived on luck, not evidence). Round 2 aligned the witness to the
+detector's own docstring — any repeating family — and its decisive
+sweep came back with the predicted merges, GT3's finding restored,
+and **two unpredicted gains**: the same ten-zeros paste in the
+sibling ET3 and GD3 BPFMs, byte-for-byte the same template row,
+which the baseline had missed by the same tie-luck pointing the
+other way. Refused by the letter, examined against the cells,
+adopted with the examination on record. Net: four normalizations in
+the shape hash (commutative chains, constant folding, unary plus,
+whitespace), one witness alignment, findings 4 → 2 in three files
+by honest merging, +1 true finding in two files, baseline
+regenerated — its git diff is the review. 452 conftest-free tieout
+tests green throughout; 12 new shape unit tests pin the
+normalizations, including the A3 mining round's own idiom pair.

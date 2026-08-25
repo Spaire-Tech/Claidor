@@ -125,3 +125,35 @@ normalizations, so the implementation stays while round 2 — the
 one-line alignment — is measured immediately; if round 2 fails, both
 revert together. Written here precisely so it is a decision on the
 record, not a promise quietly dropped.
+
+---
+
+## Round-2 verdict (25 Aug): refused by the letter, adopted after
+## examination — with both surprises verified true
+
+The decisive sweep differed from the baseline in five files. Three
+are the predicted One-Off Wedge merges. `final_gt3_bpfm` is absent —
+AP29 restored, identical to baseline, as predicted. Two lines the
+prediction did not name: `final_et3_bpfm` 73 → 74 and
+`final_gd3_bpfm` 81 → 82, each **gaining** a typed-over finding.
+
+By the registration's letter those two lines refuse round 2, and the
+examination they demand was run against the files themselves: ET3's
+row 29 and GD3's row 31 are byte-for-byte the same template row as
+GT3's baseline-endorsed finding — ten typed zeros between
+`=Revenue!·*AP$9` above and `=FinancialStatements!·*AP$10` below,
+the same « FinRatios RoRE decomposition » sheet in the same Ofgem
+template. **The baseline was the inconsistent artifact**: it caught
+the paste in one of three sibling models and missed the other two by
+the same `== usual` tie-break luck, pointing the other way. The
+aligned witness finds all three.
+
+**Adopted**, with the decision in the open: the two gains are not
+drift to be explained away — they are the detector doing its
+documented job consistently, verified by hand against the cells. The
+baseline is regenerated in this commit; its git diff is the review
+artifact, file by file, finding by finding, and the founder can
+reverse it. Final tally of the whole A7 round: 4 normalizations in
+the shape hash, one detector witness aligned to its own docstring,
+findings 4 → 2 in three files (merges), +1 in two files (true
+findings recovered), every line hand-read.
