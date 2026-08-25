@@ -38,6 +38,8 @@ import re
 import sys
 import tempfile
 import time
+import xml.etree.ElementTree as ET
+import zipfile
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -53,7 +55,14 @@ from polar.tieout.watch import (
     structural_changes,
 )
 from polar.tieout.workbook import read_workbook, tokens_of
-from scripts.watch_handcheck import _column_letters, _column_number, translate
+from scripts.watch_handcheck import (
+    MAIN,
+    _column_letters,
+    _column_number,
+    _sheet_parts,
+    split_ref,
+    translate,
+)
 
 _REF = re.compile(
     r"(?P<sheet>(?:'[^']+'|[A-Za-z0-9_.]+)!)?"
@@ -244,7 +253,79 @@ def _plant(
                     done = True
 
     book.save(out)
+    _reinject_values(base, out, sheet_name, planted)
     return planted
+
+
+def _preimage(row: int, column: int, planted: Planted) -> tuple[int, int] | None:
+    """Which original cell a planted cell descends from — None for a
+    line that did not exist before the edit."""
+    if planted.delta == 0:
+        return row, column
+    index = row if planted.axis == "rows" else column
+    if planted.delta > 0:
+        if index > planted.at:
+            index -= 1
+        elif index == planted.at:
+            #: The copied line takes its source's cached values; a
+            #: blank insert has no cells to serve anyway.
+            index = planted.at
+    else:
+        if index >= planted.at:
+            index += 1
+    return (index, column) if planted.axis == "rows" else (row, index)
+
+
+def _reinject_values(base: Path, out: Path, sheet_name: str, planted: Planted) -> None:
+    """Round 2's instrument fix (registered in the lane log): openpyxl's
+    save drops every cached value, and with them the labels the engine
+    derives from formula results — so the planted file stops being the
+    file Excel would have saved. This puts the original cached values
+    back into the edited sheet, pre-image mapped through the edit."""
+    values: dict[tuple[int, int], tuple[str, str | None]] = {}
+    with zipfile.ZipFile(base) as archive:
+        member = dict(_sheet_parts(archive))[sheet_name]
+        root = ET.fromstring(archive.read(member))
+        for cell in root.iter(f"{MAIN}c"):
+            ref = cell.get("r")
+            value_node = cell.find(f"{MAIN}v")
+            if not ref or value_node is None or value_node.text is None:
+                continue
+            row, column = split_ref(ref)
+            values[(row, column)] = (value_node.text, cell.get("t"))
+
+    ET.register_namespace("", MAIN.strip("{}"))
+    ET.register_namespace(
+        "r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    )
+    with zipfile.ZipFile(out) as archive:
+        member = dict(_sheet_parts(archive))[sheet_name]
+        payload = {name: archive.read(name) for name in archive.namelist()}
+    root = ET.fromstring(payload[member])
+    for cell in root.iter(f"{MAIN}c"):
+        ref = cell.get("r")
+        if not ref or cell.find(f"{MAIN}f") is None:
+            continue
+        value_node = cell.find(f"{MAIN}v")
+        #: openpyxl writes formula cells with an *empty* <v/> — treat
+        #: that the same as no cached value at all.
+        if value_node is not None and value_node.text:
+            continue
+        row, column = split_ref(ref)
+        source = _preimage(row, column, planted)
+        stored = values.get(source) if source else None
+        if stored is None:
+            continue
+        text, kind = stored
+        if kind:
+            cell.set("t", kind)
+        if value_node is None:
+            value_node = ET.SubElement(cell, f"{MAIN}v")
+        value_node.text = text
+    payload[member] = ET.tostring(root, xml_declaration=True, encoding="UTF-8")
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as archive:
+        for name, data in payload.items():
+            archive.writestr(name, data)
 
 
 def _truth_variants(
