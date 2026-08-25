@@ -3821,3 +3821,23 @@ by honest merging, +1 true finding in two files, baseline
 regenerated — its git diff is the review. 452 conftest-free tieout
 tests green throughout; 12 new shape unit tests pin the
 normalizations, including the A3 mining round's own idiom pair.
+
+---
+
+## 25 August, evening — the team stands up
+
+Five lanes are live as their own sessions, each on its own branch
+and container: **Sentinel** (engine findings — the only hand allowed
+on the baseline), **Dynamo** (recalculator; part-blocked on the
+Track B machine, first deliverable is the founder's shopping list),
+**Prism** (the Watch), **Scribe** (the Chain), **Atelier** (product
+and delivery). Their constitution is `lanes.md` — path ownership,
+frozen interfaces, the one hard rule — committed before any of them
+existed; their paste-ready charters are `lane-prompts.md`, because
+the in-session spawning tool refused five approvals in a row and the
+founder stood the sessions up by hand, which is recorded rather than
+smoothed over. This session becomes the lead: integration one lane
+at a time, tests plus the full gate at every merge, the plan and
+this worklog as the single record. Earlier today, and the reason the
+lanes start from a clean base: A1 rounds 1–2 certified gate-clean
+across all 27 corpus files.

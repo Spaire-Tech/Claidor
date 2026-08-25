@@ -115,3 +115,23 @@ are asked); the sales demo kit (task #18); the endpoint-level test
 for the marked-up model download (document honestly if the container
 cannot run the database fixtures); then the version dropdown's
 re-scoping, listed in `swens-product-build.md` as undone.
+
+## The lead's integration loop (operational, per merge)
+
+1. Fetch the lane branch; read its `docs/pierce/logs/<name>.md` tail
+   and diff against the integration tip — every touched path must be
+   inside the lane's ownership row above. A path outside it stops the
+   merge and goes back with a sentence.
+2. Run the conftest-free tieout tests on the merged candidate.
+3. Run the full golden-master gate. Only a Sentinel merge may show a
+   diff, and only with its registered round and regenerated baseline
+   in the same commits.
+4. Merge to the integration branch alone — never two lanes in one
+   pass — then tell the founder in plain words what landed and what
+   it proved.
+5. Announce the new tip; lanes rebase only on that word.
+
+Lanes are separate cloud containers — peer messaging does not reach
+them from here, so coordination is through git (their branches and
+logs) and through the founder. The lead pulls `swens/*` branches to
+check on progress; silence in a log is a question, not a comfort.
