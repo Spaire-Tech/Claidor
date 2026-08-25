@@ -9,7 +9,11 @@ arbiter or refusal — and never gated by LibreOffice; « we did not
 check this » is on the report, a silently wrong number never is.
 **No behavioural check ever runs on a file that failed its gate.**
 
-    cd server && uv run python -m scripts.recalc_gate CORPUS_DIR OUT.json
+    cd server && uv run python -m scripts.recalc_gate CORPUS_DIR OUT.json [TIMEOUT_S]
+
+`CORPUS_DIR` may also be a single spreadsheet, for a registered
+re-run of one file; `TIMEOUT_S` overrides the per-document calculator
+timeout (default 1800) for the corpus's slowest monsters.
 
 Discipline encoded here, from the lane rules and the toolbox:
 
@@ -46,7 +50,7 @@ SPREADSHEETS = (".xlsx", ".xlsm")
 MISMATCH_SAMPLE = 25
 
 
-def sweep_file(path: Path) -> dict[str, Any]:
+def sweep_file(path: Path, document_timeout: float = 1800.0) -> dict[str, Any]:
     record: dict[str, Any] = {"file": path.name}
     started = time.monotonic()
     try:
@@ -68,7 +72,7 @@ def sweep_file(path: Path) -> dict[str, Any]:
         record["denylist_cells"] = len(hits)
         return record
 
-    calculator = UnoCalculator()
+    calculator = UnoCalculator(document_timeout=document_timeout)
     try:
         calculator.start()
         result = calculator.recalculate(str(path))
@@ -105,14 +109,18 @@ def sweep_file(path: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         print(__doc__)
         return 2
     corpus, out = Path(sys.argv[1]), Path(sys.argv[2])
+    document_timeout = float(sys.argv[3]) if len(sys.argv) == 4 else 1800.0
     if find_install() is None:
         print("no LibreOffice >= 25.8 here — run dev/setup-libreoffice; refusing")
         return 1
-    files = sorted(p for p in corpus.rglob("*") if p.suffix.lower() in SPREADSHEETS)
+    if corpus.is_file():
+        files = [corpus]
+    else:
+        files = sorted(p for p in corpus.rglob("*") if p.suffix.lower() in SPREADSHEETS)
     if not files:
         print(f"no spreadsheets under {corpus}; nothing to claim")
         return 1
@@ -122,7 +130,7 @@ def main() -> int:
     with partial.open("w") as journal:
         for i, path in enumerate(files, 1):
             print(f"[{i}/{len(files)}] {path.name}", flush=True)
-            record = sweep_file(path)
+            record = sweep_file(path, document_timeout)
             records.append(record)
             journal.write(json.dumps(record) + "\n")
             journal.flush()

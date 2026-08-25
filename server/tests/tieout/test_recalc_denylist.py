@@ -55,6 +55,21 @@ def test_words_in_strings_and_sheet_names_do_not_trip() -> None:
     assert categories("='RTD data'!A1+'Lambda Corp'!B2") == set()
 
 
+def test_range_combinator_index_is_not_a_udf() -> None:
+    # `AA116:INDEX(...)` — a range whose end INDEX computes; the
+    # tokenizer hands over `AA116:INDEX(` as one function token. The
+    # H7 PCM files carry 504 such cells; refusing them was this
+    # scan's first real-corpus false positive (lane log, 26 Aug).
+    assert categories("=SUM(AA116:INDEX($B:$B,MATCH(9.99E+307,$B:$B)))") == set()
+
+
+def test_implicit_intersection_single_is_known() -> None:
+    # `@` in modern Excel, stored as _xlfn.SINGLE — Excel's own
+    # wrapper, found in Ofgem's GT3 draft PCFM.
+    assert categories("=SINGLE(A1:A10)*2") == set()
+    assert categories("=_xlfn.SINGLE(A1:A10)*2") == set()
+
+
 def test_ordinary_model_arithmetic_is_clean() -> None:
     assert categories("=SUM(B2:B14)*VLOOKUP($A2,Rates!$A:$C,3,FALSE)") == set()
     assert categories("=XLOOKUP($A2,Names!A:A,Values!B:B)/LET(x,B4,x+1)") == set()

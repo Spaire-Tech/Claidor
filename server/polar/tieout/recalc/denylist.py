@@ -79,8 +79,17 @@ EXTERNAL_REF = re.compile(r"\[(\d+|[^\]]*\.xl\w*)\]", re.IGNORECASE)
 
 
 def _canonical(name: str) -> str:
-    """Uppercase, stripped of the future-function prefix Excel stores."""
+    """Uppercase, stripped of the future-function prefix Excel stores.
+
+    A function can stand as the end of a range — `AA116:INDEX(...)`
+    is Excel's range-combinator form, and the tokenizer hands over the
+    whole `AA116:INDEX(` as the function token (the H7 PCM files are
+    built on it, 504 cells each). The function being called is what
+    follows the last range colon; the prefix is a cell, not a name.
+    """
     name = name.rstrip("(").strip()
+    if ":" in name:
+        name = name.rsplit(":", 1)[1]
     upper = name.upper()
     if upper.startswith("_XLFN."):
         return upper[len("_XLFN.") :]
@@ -237,6 +246,10 @@ KNOWN_FUNCTIONS = frozenset(
         "TAN",
         "TANH",
         "TRUNC",
+        # Excel's implicit-intersection wrapper (`@`, stored as
+        # _xlfn.SINGLE) — Excel's own, not a user function; found in
+        # the wild in Ofgem's GT3 draft PCFM (this lane's log, 26 Aug).
+        "SINGLE",
         # Logical
         "AND",
         "FALSE",

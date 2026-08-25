@@ -249,3 +249,36 @@ The harness is `scripts/recalc_gate.py`, committed with this entry
   is the round *after* this one; this sweep only measures.
 - The raw JSON stays uncommitted (like the corpus); the per-file
   table lands in this log.
+
+## 26 August 2026 — amendment to the denylist, registered before round 2
+
+Round 1 (running as this is written; 19 of 27 files recorded when the
+amendment was drafted) exposed two defects in **the scan, not the
+engine**, and one timeout. The round-1 records stand as taken; this
+amendment is committed before the affected files are re-run, and the
+re-run is round 2, reported separately.
+
+1. **Range-combinator false positive.** `AA116:INDEX(...)` — a range
+   whose end is computed by INDEX — is tokenized as one function
+   token `AA116:INDEX(`, which the scan read as an unknown function
+   and refused as a UDF (both H7 PCM files, 504 cells each, every
+   hit of this shape). The canonicalizer now takes the name after
+   the last range colon. Regression test committed.
+2. **Catalogue growth, evidenced:** `SINGLE` — Excel's own implicit-
+   intersection wrapper (`@`, stored `_xlfn.SINGLE`), met in Ofgem's
+   GT3 draft PCFM — added to the known catalogue per this log's
+   stated procedure. If LibreOffice cannot in fact compute it, the
+   gate will say so as mismatches or `#ERR` cells in round 2 — the
+   addition cannot hide a failure, only route the file to a
+   measurement.
+3. **Timeout, not a verdict:** the RIIO ET3 draft BPFM produced no
+   answer in 1800 s. The harness now takes a per-document timeout
+   argument and accepts a single file; round 2 re-runs the BPFMs at
+   7200 s. If it still produces nothing, that is recorded as its
+   outcome. Reader-side: the BPFM files also take the engine reader
+   tens of minutes — Sentinel's A1 territory (the range-expansion
+   storm), noted here for the lead, engine untouched.
+
+Round 2 scope, fixed now: the two H7 PCM files, the GT3 draft PCFM,
+and any BPFM whose round-1 outcome was `recalc-failed`, at 7200 s.
+Nothing else is re-run; round 1's numbers are not revised.
