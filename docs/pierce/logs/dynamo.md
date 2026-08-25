@@ -412,3 +412,45 @@ stale), plus one class the registration did not anticipate:
 **Round 3, registered before it runs:** the three draft BPFMs only,
 same harness, same rules, 7200 s, with the interaction-handler
 driver. Anything still failing is recorded as its outcome.
+
+## 26 August 2026 — B2 round 3, and the corpus fidelity report is whole
+
+The interaction handler was the whole story: all three draft BPFMs
+loaded, calculated, and gated.
+
+| File | Compared | Match rate | Sample classes |
+|---|---|---|---|
+| RIIO ET3 BPFM draft | 432,940 | 0.998725 | `#ERR:502` + a little numeric |
+| RIIO GD3 BPFM draft | 436,275 | 0.998735 | same |
+| RIIO GT3 BPFM draft | 448,233 | 0.998842 | same |
+
+**The B2 fidelity report now covers every file of the golden-master
+corpus — 27 of 27 gated.** Across the three rounds:
+**3,862,412 stored-vs-recalculated cell comparisons; 3,857,715
+matched — 99.88% overall.** Eighteen files match at exactly 1.0
+(zero mismatching cells, ~723k comparisons); the other nine sit
+between 0.9357 and 0.9999 with **every mismatch in a named class**:
+the SINGLE `#NAME?` cone (GT3 draft PCFM and the three finals —
+arbiter files until B3), the unidentified `#ERR:502` construct on
+all six BPFMs (next diagnostic), TODAY/NOW volatiles (a registered
+rules gap, not a fidelity loss), near-floor dust (~1.8e-12 vs 0),
+and a residue of ~1e-8-relative real differences.
+
+What this does and does not claim, per the plan's B2 sentence:
+
+- It **does**: the fidelity report exists for the golden-master
+  corpus and gates everything downstream — the 18 clean-pass files
+  are eligible for B4's behavioural laws; the nine others are not,
+  until the arbiter (B3) or the named engine gaps resolve them.
+- It does **not**: cover the model corpus (`scripts.model_corpus`)
+  or the archived CUSTODES `.xls` — each is its own later,
+  separately-registered round, as the round-1 registration said.
+- Timings stayed noise throughout (shared box); the coarse context:
+  a draft BPFM runs ~35–45 min end to end, dominated by the engine
+  reader (Sentinel's A1 storm, noted for the lead) and LibreOffice's
+  own load of a ~40MB xlsm.
+
+Next in the lane, in order: name the `#ERR:502` construct from the
+erroring cells' formulas; the volatile-functions rules round
+(registered before any number moves); then B4's laws on the 18
+gated files — planted defects first, per the standing registration.
