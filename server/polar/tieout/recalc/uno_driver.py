@@ -42,7 +42,27 @@ import sys
 import traceback
 
 import uno
+import unohelper
 from com.sun.star.beans import PropertyValue
+from com.sun.star.task import XInteractionHandler
+
+
+class QuietInteraction(unohelper.Base, XInteractionHandler):
+    """Swallow load-time interaction requests instead of aborting.
+
+    Headless, nobody answers dialogs. Without a handler, a document
+    that raises one (macro warnings on big .xlsm — the three draft
+    BPFMs, measured 26 Aug) makes `loadComponentFromURL` return None,
+    while the CLI convert path — which loads the same files fine —
+    supplies its own handler. Ignoring a request means « no » to
+    every optional prompt; it can never enable anything (macros stay
+    NEVER_EXECUTE, links stay un-updated, repair is never accepted —
+    a repaired file would not be the file the gate certifies).
+    """
+
+    def handle(self, request):
+        pass
+
 
 #: com.sun.star.sheet.CellFlags.FORMULA — the query for formula cells.
 FORMULA = 16
@@ -88,6 +108,7 @@ def open_document(desktop, path):
         _prop("Hidden", True),
         _prop("MacroExecutionMode", 0),  # NEVER_EXECUTE
         _prop("UpdateDocMode", 0),  # NO_UPDATE: external links stay stale
+        _prop("InteractionHandler", QuietInteraction()),
     )
     document = desktop.loadComponentFromURL(url, "_blank", 0, props)
     if document is None:

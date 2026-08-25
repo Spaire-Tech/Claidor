@@ -363,3 +363,52 @@ BPFMs are *arbiter files* until B3 exists — their fidelity is real
 Excel's to certify, and LibreOffice's verdict on them is recorded as
 « engine gap », not as a model defect. The gate's discipline held:
 no behavioural check will run on them here.
+
+## 26 August 2026 — B2 round 2 recorded, and what the mismatches are
+
+Nine files, amended scan, 7200 s per document. Totals: 6 gated (all
+fail, as measurement — see classes below), 3 recalc-failed;
+**1,821,772 further cells compared, 1,818,698 matched (99.83%)**.
+
+| File | Outcome | Compared | Match rate | The mismatches are |
+|---|---|---|---|---|
+| DRAFT GT3 PCFM | fail | 15,182 | 0.935713 | 976 × `#ERR:525` — the SINGLE gap and its downstream cone |
+| RIIO ET3 BPFM draft | recalc-failed | — | — | UNO load returned nothing (see below — the file itself loads) |
+| RIIO GD3 BPFM draft | recalc-failed | — | — | ditto |
+| RIIO GT3 BPFM draft | recalc-failed | — | — | ditto |
+| final_et3_bpfm.xlsm | fail | 444,530 | 0.998396 | sample: `#ERR:502` (invalid argument — a construct to identify) + near-zero dust (stored ~1.8e-12 vs computed 0, just over the registered 1e-12 floor) |
+| final_gd3_bpfm.xlsm | fail | 454,281 | 0.998508 | sample: all `#ERR:502` |
+| final_gt3_bpfm.xlsm | fail | 453,007 | 0.998616 | sample: all `#ERR:502` |
+| h7_pcm_v2-10 (range-INDEX fix proved: it gates now) | fail | 227,367 | 0.999784 | 49 cells, all numeric: `TODAY()`-class volatiles (stored date serial 44741 vs today's 46259) + a few ~1e-8-relative real differences |
+| h7_pcm_v2-11 | fail | 227,405 | 0.999864 | 31 cells, same two classes |
+
+Readings, in the registered order (reader wrong / engine gap / file
+stale), plus one class the registration did not anticipate:
+
+- **Volatile functions are a fourth reading.** A stored `TODAY()`
+  result is the authoring day's; a recalculation's is today's. Both
+  are right. The H7 « Version log » cells are this class, and
+  counting them as mismatches is a rules gap: the next registered
+  rules round should prescan volatiles (TODAY, NOW, RAND,
+  RANDBETWEEN, RANDARRAY) and report their downstream cone
+  separately, not as fidelity loss. Not changed now — round 2's
+  numbers stand under round 2's rules.
+- **`#ERR:502` on the final BPFMs** is an unidentified engine gap
+  (LibreOffice computes an argument invalid where Excel stored a
+  number). Naming the construct (pull the erroring cells' formulas)
+  is the next diagnostic; those files stay arbiter-bound meanwhile.
+- **The near-zero dust** (|stored| ≈ 1.8e-12 against computed 0) sits
+  just over the registered absolute floor of 1e-12. Whether the floor
+  should widen for near-zero residue is a tolerance-registration
+  question for the lead/founder — flagged, not changed.
+- **The three draft BPFMs load fine through the CLI convert path**
+  (measured: ET3 draft converts in minutes) — so « could not load »
+  indicts the UNO load call, not the files. Cause consistent with an
+  unanswered load-time interaction request; the driver now passes a
+  do-nothing `InteractionHandler` (it can only decline prompts:
+  macros stay off, links stay stale, repair is never accepted). The
+  four UNO integration tests still pass with it.
+
+**Round 3, registered before it runs:** the three draft BPFMs only,
+same harness, same rules, 7200 s, with the interaction-handler
+driver. Anything still failing is recorded as its outcome.
