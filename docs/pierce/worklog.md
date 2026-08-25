@@ -4027,3 +4027,25 @@ a later deployment decision — but every fidelity match rate and
 behavioural-law catch rate in Track B is now measurable without
 anyone buying anything. One founder decision remains open: the team
 screen's deal names.
+
+---
+
+## 26 August — the sixth sweep: Sentinel refuses its own round 1
+
+Only Sentinel moved, and what it pushed is the discipline at full
+stretch: the after-sweep put 20 new `inconsistent-total` findings
+into two GT3 files — over the registered flood line — and the hand
+reading judged all 20 noise: a depreciation *triangle* whose totals
+row legitimately carries two range spellings, every populated cell
+inside its own column's range. **Round 1 REFUSED by its own
+criteria.** Round 2 registered before measurement: a consequence
+guard (report a range disagreement only when the deviant misses a
+*live* cell the consensus covers — over-reach stays silent and is
+named as a limitation), and an identical-deviant fold (one authoring
+decision, one finding). Both implemented behind new unit tests;
+round 2's corpus verdict is the next push. The third planted miss
+(`C_Capex!AL463`) was run to ground meanwhile: the row pass caught
+it and the collapse layer's fill fold buried it — a missing
+adjacency test in the fold, named as engine work for its own future
+registered round rather than patched quietly inside this one.
+No merge; the hold holds until verdict and baseline land together.
