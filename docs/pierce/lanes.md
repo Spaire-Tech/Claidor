@@ -178,6 +178,18 @@ tests still run on every merged tip either way.
   (`'inconsistent-total'` into the web category map's
   « Probable formula defects » family) is routed **when adoption
   lands**, not before.
+- **25 Aug, third sweep — ownership note**: Atelier's remit covers
+  `docs/pierce/swens-product-build.md` (the product build record it
+  was already charged with keeping honest); its update there at this
+  sweep is in-lane.
+- **25 Aug, third sweep — a dev-environment defect Atelier reported,
+  fixed by the lead in shared ground**: `dev/setup-environment`
+  wrote the dev JWK with kid `polar_dev` while `config.py` defaults
+  `CURRENT_JWK_KID` to `claidor_dev`, so a fresh environment's API
+  refuses to boot until one moves. The generator now writes
+  `claidor_dev`. (Atelier's second note — a fresh database needs
+  `claidor_read` granted SELECT — is recorded as an open dev-setup
+  gap, not yet addressed.)
 - **25 Aug, second sweep — a shared-environment fix by the lead** (
   `pyproject`, its owner): locust's bundled pytest plugin defines a
   global `session` fixture; under `--noconftest` it can capture the

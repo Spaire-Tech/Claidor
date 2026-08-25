@@ -3924,3 +3924,36 @@ import lock — disabled with `-p no:locust`, suite back to 24 seconds.
 548 tieout tests pass at the new tip; the 103 collection errors are
 the one known environmental class (pydantic vs this container's
 Python 3.14rc), proven passing where the fixtures run.
+
+---
+
+## 26 August — the third sweep: Prism's self-refusing rounds, Atelier finishes its charter
+
+Two lanes moved. **Prism** ran the C2 planted-edit harness the way
+the discipline demands: round 1 scored 3/24 and the lane refused its
+own number — the planting instrument, not the aligner, was the
+defect (openpyxl's save drops every cached value, destroying the
+formula-produced labels that rescue real files). Round 2, values
+re-injected, re-registered, re-run: every planted change now found
+exactly, with one honest phenomenon remaining — cross-sheet
+references encoded relative to their cell make pull-through rows
+change shape under row shifts, which Excel's own semantics say they
+should not. Round 3 registered and implemented in the Watch's own
+signature layer (engine untouched): cross-sheet pieces rewritten to
+absolute targets; its numbers are the lane's next push. **Atelier**
+closed the last of its four charter tasks — the version dropdown now
+re-scopes the page: any stored version checked on demand through one
+shared audit path that persists nothing (route tests prove looking
+changes no stored byte), the page saying plainly what stays on the
+current version, all proven by driving the real product in a real
+browser on the seeded demo deal. It also reported two dev-environment
+defects; the lead fixed the JWK-kid mismatch in `dev/setup-environment`
+(`polar_dev` vs config's `claidor_dev`) and recorded the
+database-grant gap as open.
+
+Both merges: paths in-lane, engine modules byte-identical, 552
+conftest-free tieout tests green at the tip (the four new
+route tests join the environment-blocked file here and pass where a
+database exists — 559 on Atelier's repaired box). Sentinel, Dynamo,
+Scribe: no new pushes; Sentinel's corpus verdict remains the next
+expected merge.
