@@ -74,4 +74,10 @@ for rounds 1–2 is recorded below.
 
 ## Gate certification (appended when the run lands)
 
-{GATE}
+**Certified, 25 Aug:** the full 27-file sweep on the rounds-1-and-2
+configuration is **gate clean** — every file reports identically to
+the adopted baseline, finding for finding. The speed work changed
+nothing the engine says. Sweep wall time 3,634s for the 27 files on
+the noisy box (per-file times in the run log); the stopwatch claim
+for the spec's sentence stays owed to a quiet machine, as stated
+above.
