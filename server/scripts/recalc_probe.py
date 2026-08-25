@@ -1,11 +1,13 @@
 """Probe a machine for B1's prerequisites, and say exactly what is missing.
 
 The recalculator (Track B) needs LibreOffice ≥ 25.8 with Calc and a
-python-uno the driver can import. This container has none of that —
-`docs/pierce/logs/dynamo.md` records the audit — so the probe exists
-to make that audit repeatable: run it on any machine and it prints,
-line by line, what B1 has and lacks there. Exit 0 means every
-prerequisite is met; anything else names the gaps.
+python-uno the driver can import. `dev/setup-libreoffice` installs
+TDF's bundle into `/opt/libreoffice25.8` (the distro's apt tops out at
+24.2 on Ubuntu 24.04); the probe looks there first, then at PATH, and
+verifies the *chosen* install: its version, that its Calc actually
+loads a spreadsheet, and that an interpreter matched to it imports
+uno. Exit 0 means every prerequisite is met; anything else names the
+gaps, line by line.
 
     cd server && uv run python -m scripts.recalc_probe
 
@@ -24,37 +26,58 @@ from pathlib import Path
 REQUIRED = (25, 8)
 
 
-def probe_soffice() -> tuple[bool, str]:
-    binary = shutil.which("soffice")
-    if binary is None:
-        return False, "soffice: not on PATH"
+def _version_of(binary: str) -> tuple[int, int] | None:
     try:
         out = subprocess.run(
             [binary, "--version"], capture_output=True, text=True, timeout=60
-        ).stdout.strip()
-    except Exception as error:
-        return False, f"soffice: found but `--version` failed ({error})"
+        ).stdout
+    except Exception:
+        return None
     match = re.search(r"LibreOffice (\d+)\.(\d+)", out)
     if match is None:
-        return False, f"soffice: unrecognized version line « {out} »"
-    version = (int(match.group(1)), int(match.group(2)))
-    line = f"soffice: LibreOffice {match.group(1)}.{match.group(2)} at {binary}"
+        return None
+    return (int(match.group(1)), int(match.group(2)))
+
+
+def find_soffice() -> tuple[str | None, tuple[int, int] | None, str]:
+    """The best soffice on this machine: newest first, PATH last.
+
+    A distro LibreOffice on PATH shadows a TDF bundle in `/opt`, so
+    the opt installs are inspected first and the best version wins.
+    """
+    candidates = sorted(
+        str(p) for p in Path("/opt").glob("libreoffice*/program/soffice")
+    )
+    on_path = shutil.which("soffice")
+    if on_path:
+        candidates.append(on_path)
+    best: tuple[tuple[int, int], str] | None = None
+    for binary in candidates:
+        version = _version_of(binary)
+        if version is not None and (best is None or version > best[0]):
+            best = (version, binary)
+    if best is None:
+        return None, None, "soffice: none found (checked /opt/libreoffice*, PATH)"
+    version, binary = best
+    line = f"soffice: LibreOffice {version[0]}.{version[1]} at {binary}"
     if version < REQUIRED:
-        return False, f"{line} — below the required {REQUIRED[0]}.{REQUIRED[1]}"
-    return True, line
+        return (
+            binary,
+            version,
+            (f"{line} — below the required {REQUIRED[0]}.{REQUIRED[1]}"),
+        )
+    return binary, version, line
 
 
-def probe_calc() -> tuple[bool, str]:
-    """Prove Calc opens a spreadsheet at all: convert a two-cell CSV."""
-    if shutil.which("soffice") is None:
-        return False, "calc: unprovable, no soffice"
+def probe_calc(soffice: str) -> tuple[bool, str]:
+    """Prove the chosen install's Calc opens a spreadsheet: convert a CSV."""
     with tempfile.TemporaryDirectory(prefix="recalc-probe-") as tmp:
         seed = Path(tmp) / "probe.csv"
         seed.write_text("a,b\n1,2\n")
         try:
             subprocess.run(
                 [
-                    "soffice",
+                    soffice,
                     "--headless",
                     "--convert-to",
                     "xlsx",
@@ -72,21 +95,25 @@ def probe_calc() -> tuple[bool, str]:
         return False, "calc: soffice cannot load a spreadsheet (Calc not installed?)"
 
 
-def probe_uno() -> tuple[bool, str]:
-    """Find an interpreter that imports uno.
+def probe_uno(soffice: str | None) -> tuple[bool, str]:
+    """Find an interpreter matched to the chosen install that imports uno.
 
-    Ours first, then the system python (a venv's `python3` shadows it
-    on PATH, so it is named outright), then the pythons LibreOffice
-    builds bundle. Any hit is enough: the driver runs out-of-process
-    under whichever interpreter matches the installed LibreOffice.
+    The install's own bundled python first — a TDF bundle in `/opt`
+    ships one, and only a matched interpreter is trustworthy against
+    it. The system python (which a venv's `python3` shadows on PATH,
+    so it is named outright) only vouches for a distro LibreOffice.
     """
-    if _imports_uno(sys.executable):
-        return True, f"uno: importable by this interpreter ({sys.executable})"
-    candidates = [shutil.which("python3"), shutil.which("python"), "/usr/bin/python3"]
+    candidates: list[str] = []
+    if soffice is not None:
+        candidates.append(str(Path(soffice).parent / "python"))
     candidates += [str(p) for p in Path("/opt").glob("libreoffice*/program/python")]
-    candidates.append("/usr/lib/libreoffice/program/python")
+    candidates += ["/usr/bin/python3", shutil.which("python3") or "", sys.executable]
+    seen: set[str] = set()
     for binary in candidates:
-        if binary and binary != sys.executable and _imports_uno(binary):
+        if not binary or binary in seen:
+            continue
+        seen.add(binary)
+        if _imports_uno(binary):
             return (
                 True,
                 f"uno: importable by {binary} — the driver runs there, "
@@ -110,7 +137,15 @@ def _imports_uno(interpreter: str) -> bool:
 
 
 def main() -> int:
-    checks = [probe_soffice(), probe_calc(), probe_uno()]
+    soffice, version, soffice_line = find_soffice()
+    version_ok = version is not None and version >= REQUIRED
+    checks = [(version_ok, soffice_line)]
+    if soffice is not None:
+        checks.append(probe_calc(soffice))
+        checks.append(probe_uno(soffice))
+    else:
+        checks.append((False, "calc: unprovable, no soffice"))
+        checks.append(probe_uno(None))
     for ok, line in checks:
         print(("  ok  " if ok else " LACK ") + line)
     if all(ok for ok, _ in checks):

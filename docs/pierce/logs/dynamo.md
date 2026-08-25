@@ -176,3 +176,76 @@ law is a symptom, and the narrowing to one responsible cell (delta
 debugging over the dependency slice) is registered as future work —
 its absence today is a recorded gap. **No catch rate exists yet, and
 none is claimed.**
+
+## 26 August 2026 — the machine, and the real adapter
+
+The lead resolved the machine question (`lanes.md`, lead decisions):
+`dev/setup-libreoffice` puts TDF's 25.8.7 in `/opt` per fresh
+container. Ran it here; `scripts.recalc_probe` (now taught to look in
+`/opt` past the distro 24.2 that shadows it on PATH, and to prefer
+the interpreter *matched* to the chosen install) reports three oks
+and exit 0 on this container.
+
+The UNO wiring landed exactly as designed — one adapter class, one
+driver script, nothing above the `Calculator` interface changed:
+
+- `recalc/uno_driver.py` — stdlib + uno only, runs under
+  `/opt/libreoffice25.8/program/python`, JSON lines over pipes. The
+  toolbox's hard-won rules encoded: the file's own `calcPr` pushed
+  explicitly, `calculateAll()` on the socket (never the convert
+  path), macros never execute, links never update. Cell errors come
+  back as `#ERR:<code>` — a different kind, as the gate treats them.
+- `recalc/uno_calc.py` — `UnoCalculator`: per instance one headless
+  soffice on its own named pipe with its own user profile, plus one
+  driver process. Timeouts kill the pair and raise; the pool
+  replaces and retries once, per its registered discipline.
+
+**Machine results now exist, and these are the first:** the four
+integration tests in `tests/tieout/test_recalc_uno.py` passed on this
+container (skipped honestly anywhere without the machine):
+
+1. an openpyxl-written workbook with **no stored answers** came back
+   computed (`SUM(2,3)*10 = 50`, an error cell as `#ERR:`, a string
+   result as itself) — reproducing the lead's proof inside the suite;
+2. a circular pair converged to 4/3 and 2/3 **only because** the
+   file's own iteration settings were pushed — LibreOffice's default
+   would have errored both cells;
+3. the full B2 round trip: recalculate-and-store gave a file with
+   stored values, the gate passed it at match rate 1.0 against a
+   fresh recalculation, then a one-cell lie planted in the stored
+   values (formula intact) was caught and named (`M!B4`), verdict
+   fail;
+4. B1's DONE sentence verbatim — a changed input produced changed
+   downstream values through the worker pool, unattended (price 2 →
+   50, price 5 → 80).
+
+## 26 August 2026 — B2 sweep registration, committed before the numbers
+
+The harness is `scripts/recalc_gate.py`, committed with this entry
+**before any corpus number has been looked at**. Registered:
+
+- **Scope, this round:** the golden-master corpus — the 27 files
+  `scripts.corpus_au_uk` rebuilds (fetched fresh here today; 27/27
+  present). The model corpus (`scripts.model_corpus`) and the
+  archived CUSTODES `.xls` (which need one-time conversion) are
+  later, separately registered rounds.
+- **Procedure, per file, strictly one at a time (the heavy-job
+  rule):** engine reader for cells → denylist prescan (a routed file
+  is never gated by LibreOffice; its hits and route are the record)
+  → fresh `UnoCalculator` per file (recycle at its most
+  conservative, N=1) → registered tolerance rules with the file's
+  own `calcPr`.
+- **What will be claimed:** per file — verdict (`pass` / `fail` /
+  `refused` / `nothing-compared` / `reader-failed` /
+  `recalc-failed`), formula cells compared, matched, match rate,
+  mismatching refs with both values and the allowed tolerance,
+  uncached and unreturned counts. Timings are noise on this shared
+  box and are recorded only as coarse context.
+- **What a `fail` means:** a symptom, not a verdict on anyone. The
+  registered reading order for mismatches: (1) our reader mis-read
+  the stored value, (2) LibreOffice computed differently than Excel
+  (engine gap → arbiter's jurisdiction, B3), (3) the file's stored
+  values were genuinely stale in Excel itself. Deciding among them
+  is the round *after* this one; this sweep only measures.
+- The raw JSON stays uncommitted (like the corpus); the per-file
+  table lands in this log.
