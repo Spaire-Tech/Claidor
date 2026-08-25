@@ -212,3 +212,15 @@ tests still run on every merged tip either way.
   full suite run here for ten minutes. `addopts = "-p no:locust"`
   disables the plugin for this repo — no lane test should ever
   resolve `session` to an HTTP load-testing client silently.
+
+- **26 Aug, seventh sweep — Dynamo's two open rules questions are
+  parked for the next registered B2 rules round**, per its log: (1)
+  a volatile prescan (TODAY/NOW/RAND family) reporting the volatile
+  cone separately rather than as fidelity loss; (2) whether the
+  absolute near-zero floor (1e-12) should widen for stored residue
+  ~1.8e-12 against computed 0. Round-2 numbers stand as recorded
+  under round-2 rules; neither changes without its own registration.
+  The founder will be shown the tolerance question in plain words
+  when that round is registered. **B3 (the arbiter) rises in
+  priority**: four corpus files are now measured engine-gap files
+  (SINGLE, `#ERR:502`) that only real Excel can certify.

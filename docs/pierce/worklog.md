@@ -4049,3 +4049,41 @@ it and the collapse layer's fill fold buried it — a missing
 adjacency test in the fold, named as engine work for its own future
 registered round rather than patched quietly inside this one.
 No merge; the hold holds until verdict and baseline land together.
+
+---
+
+## 26 August — the seventh sweep: the recalculator is real
+
+Dynamo took the machine green-light and, in one day, made Track B's
+keystone exist. The real UNO adapter and driver landed exactly as
+the blocked-state design promised — one class, one script, nothing
+above the `Calculator` interface changed — with four integration
+tests proving the whole mechanism on this container class: uncached
+formulas computed, a circular pair converging only because the
+file's own iteration settings were pushed, a planted one-cell lie in
+stored values caught and named, and B1's DONE sentence verbatim (a
+changed input changed downstream values, unattended).
+
+Then the first fidelity numbers in Swens' life, registered before
+looked at: **B2 round 1 — 723,192 formula cells compared across 18
+gated corpus files, 723,192 matched. Zero mismatches.** Round 2, on
+the nine deferred files with the amended scan: **1.82M further cells
+compared, 99.83% matched**, and every mismatch class run to ground
+rather than averaged away: SINGLE (Excel's implicit-intersection
+wrapper) is a *measured* LibreOffice gap — proven by a 976-cell fail
+plus a five-cell probe, given its own `engine-gap` denylist category
+and routed to the future arbiter, never a silent pass; `#ERR:502` on
+the final BPFMs is an unidentified engine gap, those files
+arbiter-bound; `TODAY()`-class volatiles are a fourth reading the
+registration didn't anticipate, named for the next rules round;
+near-zero dust sits just over the registered floor and the floor
+question is parked, not quietly widened. Three draft BPFMs still
+refuse to load over UNO (the files themselves load by CLI — the
+driver gained a decline-everything interaction handler, round 3
+registered). The gate's discipline held throughout: no behavioural
+check touches an ungated file.
+
+Merged clean: paths in-lane, engine byte-identical, 558 tieout tests
+green at the tip (Dynamo's UNO tests run for real here, since the
+lead's install script provisions this container too). B3 rises in
+priority — four files now wait on real Excel's word.
