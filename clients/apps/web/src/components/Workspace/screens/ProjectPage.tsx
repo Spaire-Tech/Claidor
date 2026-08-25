@@ -33,9 +33,13 @@
  *   workbook copy on request — problem cells coloured and noted,
  *   nothing altered — and refusals surface as the server's own
  *   sentence in the card.
- * - Version rows in the dropdown are facts (who, when); picking one
- *   does not yet re-scope the page, so the rows do not pretend to be
- *   buttons.
+ * - Version rows in the dropdown are buttons, as drawn: picking an
+ *   older upload re-scopes Overview and Findings to *that* version —
+ *   the audit re-run on its stored cells, computed on request and
+ *   persisted nowhere. Those findings carry no durable identity, so
+ *   the row actions (fix, dismiss, open) give way to the sentence
+ *   saying rulings live on the current version; the report sheet and
+ *   the marked-up download stay the current version's and say so.
  */
 
 import {
@@ -56,6 +60,7 @@ import {
   Link,
   TieOutApi,
   Version,
+  VersionAudit,
 } from '../api'
 import { fileIcon, font, ink } from '../design'
 import { categoryOfKey } from '../files'
@@ -162,6 +167,14 @@ export const ProjectPage = ({
   const [sev, setSev] = useState<0 | 1 | 2 | 3>(0)
   const [openId, setOpenId] = useState<string | null>(null)
   const [verOpen, setVerOpen] = useState(false)
+  //: The picked version, when it is not the current one. Null means
+  //: the page speaks about the current version, as it always did.
+  const [pastVer, setPastVer] = useState<number | null>(null)
+  //: Version audits by artifact id — computed server-side on request,
+  //: cached here so re-picking a version does not re-run it.
+  const [pastAudits, setPastAudits] = useState<
+    Record<string, VersionAudit | 'loading' | 'failed'>
+  >({})
   const [checking, setChecking] = useState(false)
   const [repOpen, setRepOpen] = useState(false)
   const [markingUp, setMarkingUp] = useState(false)
@@ -240,11 +253,34 @@ export const ProjectPage = ({
       .finally(() => setMarkingUp(false))
   }
 
+  //: Picking a version. The current one returns the page to its
+  //: ordinary self; an older one fetches that version's audit — the
+  //: server computes it from the version's stored cells and persists
+  //: nothing — once, and re-scopes Overview and Findings to it.
+  const pickVersion = (v: Version) => {
+    setVerOpen(false)
+    if (!model || v.version === model.version) {
+      setPastVer(null)
+      return
+    }
+    setPastVer(v.version)
+    const held = pastAudits[v.id]
+    if (!held || held === 'failed') {
+      setPastAudits((s) => ({ ...s, [v.id]: 'loading' }))
+      api
+        .versionAudit(v.id)
+        .then((got) => setPastAudits((s) => ({ ...s, [v.id]: got })))
+        .catch(() => setPastAudits((s) => ({ ...s, [v.id]: 'failed' })))
+    }
+  }
+
   //: Re-check: the real run, polled until it lands. The button reads
-  //: « Checking » while it does — the chip carries the state.
+  //: « Checking » while it does — the chip carries the state. A check
+  //: is an act on the current version, so the page returns to it.
   const poll = useRef<ReturnType<typeof setInterval> | null>(null)
   const reCheck = () => {
     if (checking) return
+    setPastVer(null)
     setChecking(true)
     api
       .check(deal.id)
@@ -275,9 +311,30 @@ export const ProjectPage = ({
     [],
   )
 
-  const open = useMemo(
+  //: The picked version's artifact and its computed audit. `null`
+  //: everywhere while the page speaks about the current version.
+  const pastArtifact = useMemo(
+    () =>
+      pastVer !== null && model && pastVer !== model.version
+        ? ((versions ?? []).find((one) => one.version === pastVer) ?? null)
+        : null,
+    [pastVer, model, versions],
+  )
+  const past = pastArtifact ? (pastAudits[pastArtifact.id] ?? null) : null
+  const viewingPast = pastArtifact !== null
+  const pastData = typeof past === 'object' && past !== null ? past : null
+  const pastReady = pastData !== null
+
+  const openCurrent = useMemo(
     () => (findings ?? []).filter((one) => one.state === 'open'),
     [findings],
+  )
+  //: What the page speaks about — the current findings, or the picked
+  //: version's freshly computed ones. Every count, chip and family
+  //: group downstream reads this and re-scopes with it.
+  const open = useMemo(
+    () => (viewingPast ? (pastData ? pastData.findings : []) : openCurrent),
+    [viewingPast, pastData, openCurrent],
   )
   const counts = useMemo(() => {
     const c = { 1: 0, 2: 0, 3: 0 }
@@ -292,41 +349,51 @@ export const ProjectPage = ({
     done.sort((a, b) => (a.finished_at! < b.finished_at! ? -1 : 1))
     return done[done.length - 1] ?? null
   }, [runs])
-  const checkedAt = lastRun?.finished_at ?? deal.checked_at
+  const checkedAt = viewingPast
+    ? (pastData?.checked_at ?? null)
+    : (lastRun?.finished_at ?? deal.checked_at)
 
   //: The verdict chip. « Not ready to send » is the drawn state; the
   //: others are real states the demo data never shows, in the page's
   //: own inks — never-checked muted, clean green.
-  const verdict = checking
-    ? { text: 'Checking', fg: '#6b7280' }
-    : !checkedAt
-      ? { text: 'Not checked yet', fg: '#9aa1ab' }
-      : counts[1] > 0
-        ? { text: 'Not ready to send', fg: '#c8790a' }
-        : open.length > 0
-          ? { text: 'Findings open', fg: '#c8790a' }
-          : { text: 'Nothing failing', fg: '#1f8a4c' }
+  const verdict =
+    viewingPast && past === 'failed'
+      ? { text: 'Could not check this version', fg: '#9aa1ab' }
+      : checking || (viewingPast && !pastReady)
+        ? { text: 'Checking', fg: '#6b7280' }
+        : !checkedAt
+          ? { text: 'Not checked yet', fg: '#9aa1ab' }
+          : counts[1] > 0
+            ? { text: 'Not ready to send', fg: '#c8790a' }
+            : open.length > 0
+              ? { text: 'Findings open', fg: '#c8790a' }
+              : { text: 'Nothing failing', fg: '#1f8a4c' }
 
   //: « Five material, five significant, one observation. » — the
   //: sentence under the title, from the real counts.
-  const sevSentence = !checkedAt
-    ? 'This model has not been checked. Re-check reads every sheet and reports what it finds.'
-    : open.length === 0
-      ? `Nothing failing as of ${when(checkedAt).toLowerCase()}.`
-      : `${[
-          counts[1] ? `${word(counts[1]).toLowerCase()} material` : '',
-          counts[2] ? `${word(counts[2]).toLowerCase()} significant` : '',
-          counts[3]
-            ? `${word(counts[3]).toLowerCase()} observation${counts[3] === 1 ? '' : 's'}`
-            : '',
-        ]
-          .filter(Boolean)
-          .join(', ')
-          .replace(/^./, (c) => c.toUpperCase())}.${
-          counts[1] > 0
-            ? ' Material findings should clear before the model leaves the deal team.'
-            : ''
-        }`
+  const sevSentence =
+    viewingPast && past === 'failed'
+      ? 'This version could not be checked — its stored cells did not answer. The current version is unaffected.'
+      : viewingPast && !pastReady
+        ? `Checking version ${pastVer} on the cells stored at its upload.`
+        : !checkedAt
+          ? 'This model has not been checked. Re-check reads every sheet and reports what it finds.'
+          : open.length === 0
+            ? `Nothing failing as of ${when(checkedAt).toLowerCase()}.`
+            : `${[
+                counts[1] ? `${word(counts[1]).toLowerCase()} material` : '',
+                counts[2] ? `${word(counts[2]).toLowerCase()} significant` : '',
+                counts[3]
+                  ? `${word(counts[3]).toLowerCase()} observation${counts[3] === 1 ? '' : 's'}`
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(', ')
+                .replace(/^./, (c) => c.toUpperCase())}.${
+                counts[1] > 0
+                  ? ' Material findings should clear before the model leaves the deal team.'
+                  : ''
+              }`
 
   //: The three summary bullets — deterministic, from the findings and
   //: the latest run. No generated prose.
@@ -357,26 +424,49 @@ export const ProjectPage = ({
           : 'No open finding is material.',
       )
     }
-    if (model)
+    if (viewingPast && pastArtifact)
+      out.push(
+        `This is version ${pastArtifact.version}, uploaded ${when(pastArtifact.uploaded_at).toLowerCase()}${
+          pastArtifact.uploaded_by ? ` by ${pastArtifact.uploaded_by.name}` : ''
+        }, checked just now on the cells stored at its upload.` +
+          (model
+            ? ` Rulings and corrections are recorded on the current version (v${model.version}).`
+            : ''),
+      )
+    else if (model)
       out.push(
         `The current model is version ${model.version}, uploaded ${when(model.uploaded_at).toLowerCase()}.${
           deal.stale ? ' Files changed after the last check.' : ''
         }`,
       )
-    const record = lastRun ? auditRecord(lastRun) : null
-    if (record && record.abstentions.length > 0)
+    const abstentions = viewingPast
+      ? (pastData?.summary.abstentions ?? null)
+      : lastRun
+        ? auditRecord(lastRun).abstentions
+        : null
+    if (abstentions && abstentions.length > 0)
       out.push(
-        `${word(record.abstentions.length)} check${
-          record.abstentions.length === 1 ? '' : 's'
-        } could not run: ${record.abstentions
+        `${word(abstentions.length)} check${
+          abstentions.length === 1 ? '' : 's'
+        } could not run: ${abstentions
           .slice(0, 2)
           .map((one) => one.why)
-          .join('; ')}${record.abstentions.length > 2 ? '; and more' : ''}.`,
+          .join('; ')}${abstentions.length > 2 ? '; and more' : ''}.`,
       )
-    else if (record)
+    else if (abstentions)
       out.push('Every check that applies to this model ran to the end.')
     return out
-  }, [checkedAt, counts, open, model, deal.stale, lastRun])
+  }, [
+    checkedAt,
+    counts,
+    open,
+    model,
+    deal.stale,
+    lastRun,
+    viewingPast,
+    pastArtifact,
+    pastData,
+  ])
 
   //: The chart: tier tallies per finished audit run, oldest first.
   //: Runs recorded before tallies fall back on errors/smells.
@@ -787,7 +877,7 @@ export const ProjectPage = ({
                         cursor: 'pointer',
                       }}
                     >
-                      <span>Version {model.version}</span>
+                      <span>Version {pastVer ?? model.version}</span>
                       <svg
                         width="11"
                         height="11"
@@ -871,11 +961,13 @@ export const ProjectPage = ({
                               .sort((a, b) => b.version - a.version)
                               .slice(0, 6)
                               .map((v, i) => (
-                                //: Facts, not controls: picking a version
-                                //: does not yet re-scope the page, so the
-                                //: rows do not pretend to be buttons.
-                                <span
+                                //: Buttons, as drawn: picking a version
+                                //: re-scopes Overview and Findings to it —
+                                //: the audit re-run on its stored cells,
+                                //: persisted nowhere.
+                                <button
                                   key={v.id}
+                                  onClick={() => pickVersion(v)}
                                   style={{
                                     display: 'grid',
                                     gridTemplateColumns: '44px 1fr auto',
@@ -883,14 +975,17 @@ export const ProjectPage = ({
                                     alignItems: 'center',
                                     width: '100%',
                                     textAlign: 'left',
+                                    border: 0,
                                     borderTop:
                                       i === 0
                                         ? 0
                                         : '.5px solid rgba(16,22,35,.06)',
                                     background:
-                                      v.version === model.version
-                                        ? '#fbfbfc'
+                                      v.version === (pastVer ?? model.version)
+                                        ? 'rgba(0,96,208,.045)'
                                         : 'transparent',
+                                    font: 'inherit',
+                                    cursor: 'pointer',
                                     padding: '0 18px',
                                     minHeight: 58,
                                   }}
@@ -900,7 +995,7 @@ export const ProjectPage = ({
                                       fontFamily: font.mono,
                                       fontSize: 12.5,
                                       color:
-                                        v.version === model.version
+                                        v.version === (pastVer ?? model.version)
                                           ? '#0060d0'
                                           : '#9aa1ab',
                                     }}
@@ -932,7 +1027,7 @@ export const ProjectPage = ({
                                   >
                                     {when(v.uploaded_at)}
                                   </span>
-                                </span>
+                                </button>
                               ))}
                           </span>
                         </span>
@@ -1077,7 +1172,9 @@ export const ProjectPage = ({
                         textWrap: 'pretty',
                       }}
                     >
-                      Every finding written out in plain English.
+                      {viewingPast && model
+                        ? `Every finding written out in plain English. On the current version (v${model.version}).`
+                        : 'Every finding written out in plain English.'}
                     </span>
                   </span>
                   <svg
@@ -1411,7 +1508,10 @@ export const ProjectPage = ({
                     {markupWord ??
                       (markingUp
                         ? 'Building the copy…'
-                        : 'Your model back, with every problem cell ' +
+                        : (viewingPast && model
+                            ? `On the current version (v${model.version}). `
+                            : '') +
+                          'Your model back, with every problem cell ' +
                           'coloured and noted. A copy — the original is ' +
                           'never at risk.')}
                   </span>
@@ -1434,6 +1534,26 @@ export const ProjectPage = ({
               </button>
             </div>
 
+            {/* The version-scoped state, said on this tab too: a list
+                shorter than the current one must never read as the
+                deck agreeing — only the model audit is re-computed for
+                a past version. */}
+            {viewingPast && model && (
+              <div
+                style={{
+                  fontSize: 13.5,
+                  color: '#8f96a0',
+                  lineHeight: 1.5,
+                  margin: '-8px 4px 16px',
+                  textWrap: 'pretty',
+                }}
+              >
+                Version {pastArtifact?.version}&apos;s model audit, checked just
+                now on its stored cells. The deck reconciliation and every
+                ruling live on the current version (v{model.version}).
+              </div>
+            )}
+
             <div style={{ ...frameCard, padding: 14 }}>
               <div
                 style={{
@@ -1448,7 +1568,7 @@ export const ProjectPage = ({
                 <span style={pillHead}>Severity</span>
                 <span />
               </div>
-              {findings === null ? (
+              {findings === null || (viewingPast && past === 'loading') ? (
                 <div style={{ minHeight: 80 }} />
               ) : groups.length === 0 ? (
                 <div
@@ -1464,13 +1584,15 @@ export const ProjectPage = ({
                   }}
                 >
                   <span style={{ fontSize: 14.5, color: '#4a4f57' }}>
-                    {checkedAt
-                      ? sev === 0
-                        ? 'Nothing failing.'
-                        : `No ${SEV_WORD[sev as 1 | 2 | 3].toLowerCase()} findings open.`
-                      : 'This model has not been checked yet.'}
+                    {viewingPast && past === 'failed'
+                      ? 'This version could not be checked — its stored cells did not answer.'
+                      : checkedAt
+                        ? sev === 0
+                          ? 'Nothing failing.'
+                          : `No ${SEV_WORD[sev as 1 | 2 | 3].toLowerCase()} findings open.`
+                        : 'This model has not been checked yet.'}
                   </span>
-                  {!checkedAt && (
+                  {!checkedAt && !viewingPast && (
                     <span style={{ fontSize: 13, color: '#8f96a0' }}>
                       Re-check on the Overview tab reads every sheet.
                     </span>
@@ -2110,7 +2232,25 @@ export const ProjectPage = ({
                                           minWidth: 12,
                                         }}
                                       />
-                                      {noteFor === f.id ? (
+                                      {viewingPast ? (
+                                        //: A past version's findings have
+                                        //: no durable identity — nothing
+                                        //: here can be ruled on, and the
+                                        //: sentence says so instead of
+                                        //: offering dead buttons.
+                                        <span
+                                          style={{
+                                            fontSize: 14,
+                                            lineHeight: 1.5,
+                                            color: '#8f96a0',
+                                          }}
+                                        >
+                                          Checked just now on version{' '}
+                                          {pastArtifact?.version}. Rulings and
+                                          fixes are recorded on the current
+                                          version.
+                                        </span>
+                                      ) : noteFor === f.id ? (
                                         //: The dismissal reason — the save
                                         //: gates on more than two
                                         //: characters, the design's own
@@ -2816,7 +2956,7 @@ export const ProjectPage = ({
           version={model?.version ?? deal.model_version ?? null}
           checkedAt={checkedAt}
           counts={counts}
-          open={open}
+          open={openCurrent}
           lastRun={lastRun}
           versions={versions ?? []}
           onClose={() => setRepOpen(false)}

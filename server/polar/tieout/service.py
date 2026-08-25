@@ -15,9 +15,10 @@ both the offline scripts and the running product.
 import hashlib
 import re
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import structlog
 
@@ -32,6 +33,7 @@ from polar.models import (
     Dossier,
     FindingKind,
     FindingSeverity,
+    FindingState,
     LinkState,
     OneOffCheck,
 )
@@ -380,6 +382,258 @@ class TieOutService:
         }
         return await repository.finish_run(run, summary=summary)
 
+    def _audit_one(
+        self,
+        model: Artifact,
+        cells: Sequence[CellRow],
+        *,
+        dossier_id: UUID,
+        check_run_id: UUID | None,
+        rules_off: set[str],
+    ) -> tuple[list[FindingRow], dict[str, Any]]:
+        """One model's audit, computed from its stored cells.
+
+        Everything a run keeps per model — the findings and the record
+        (errors, smells, values-only, abstentions, tallies) — computed
+        here and **persisted nowhere**, so that :meth:`run_audit` and
+        the version-scoped read (:meth:`audit_of_version`) are one
+        computation with two callers, never two computations that can
+        drift apart.
+        """
+        from .analytics import (
+            ANALYTIC_RULE_NAMES,
+            ANALYTIC_STANDARD_SENTENCES,
+            ANALYTIC_STANDARDS,
+            run_analytics,
+        )
+        from .audit import HEADLINES, plain_words
+        from .audit import audit as run_rules
+        from .structure import read_structure
+
+        statement_keys = set(ANALYTIC_RULE_NAMES) - rules_off
+        findings: list[FindingRow] = []
+        errors = smells = 0
+        abstentions: list[dict[str, str]] = []
+        tallies: dict[str, dict[str, int]] = {}
+
+        book = _workbook_of(cells)
+        #: The cells cannot say what the workbook hides — that fact
+        #: was kept on the artifact at ingest, and the audit needs
+        #: it back before it runs.
+        book.hidden_sheets = tuple(model.counts.get("hidden_sheets", []))
+        book.very_hidden_sheets = tuple(model.counts.get("very_hidden_sheets", []))
+        structure = read_structure(book)
+        result = run_rules(book, axes=structure.axes)
+        result.findings = [one for one in result.findings if one.rule not in rules_off]
+        errors += len(result.errors)
+        smells += len(result.smells)
+        for defect in result.findings:
+            findings.append(
+                FindingRow(
+                    dossier_id=dossier_id,
+                    check_run_id=check_run_id,
+                    artifact_id=model.id,
+                    kind=FindingKind.audit,
+                    severity=FindingSeverity(defect.severity),
+                    fingerprint=_fingerprint(
+                        "audit", model.lineage_id, defect.ref, defect.rule
+                    ),
+                    rule=defect.rule,
+                    standard=defect.source,
+                    printed=defect.ref,
+                    #: The plain sentence is the title — what a
+                    #: person reads first; the formula stays in the
+                    #: detail as evidence beneath it.
+                    title=plain_words(defect, structure.axes),
+                    detail=defect.detail,
+                    location=defect.ref,
+                    # An audit finding already sits at a cell, which
+                    # is a coordinate Excel selects as it stands.
+                    anchor={
+                        "kind": "cell",
+                        "ref": defect.ref,
+                        "sheet": defect.sheet,
+                    },
+                    evidence={
+                        "sheet": defect.sheet,
+                        "name": defect.name,
+                        "headline": HEADLINES.get(defect.rule, ""),
+                        "tier": defect.tier,
+                        "weight": defect.weight,
+                        "basis": defect.basis,
+                        "cells": defect.cells,
+                        "chain": render_chain(book, defect.ref),
+                        "figure": defect.figure,
+                        "figure_unit": defect.figure_unit,
+                        "flow": defect.flow,
+                        "fix": defect.fix,
+                        "fix_before": defect.fix_before,
+                        "grid": _neighbourhood(
+                            book,
+                            defect.sheet,
+                            defect.ref,
+                            axes=structure.axes,
+                        ),
+                    },
+                )
+            )
+
+        #: The statement checks, on the same workbook. They read
+        #: values, not formulas, so a values-pasted close copy —
+        #: where the rules above are nearly blind — is exactly
+        #: where they earn their keep.
+        if statement_keys:
+            told = run_analytics(book, structure)
+            for claim in told.findings:
+                if claim.rule not in statement_keys:
+                    continue
+                if claim.severity == "smell":
+                    smells += 1
+                else:
+                    errors += 1
+                findings.append(
+                    FindingRow(
+                        dossier_id=dossier_id,
+                        check_run_id=check_run_id,
+                        artifact_id=model.id,
+                        kind=FindingKind.audit,
+                        severity=FindingSeverity(claim.severity),
+                        fingerprint=_fingerprint(
+                            "audit", model.lineage_id, claim.ref, claim.rule
+                        ),
+                        rule=claim.rule,
+                        standard=ANALYTIC_STANDARDS.get(claim.rule, ""),
+                        printed=claim.figure,
+                        title=(f"{ANALYTIC_RULE_NAMES[claim.rule]} at {claim.ref}"),
+                        detail=claim.detail,
+                        location=claim.ref,
+                        anchor={
+                            "kind": "cell",
+                            "ref": claim.ref,
+                            "sheet": claim.sheet,
+                        },
+                        evidence={
+                            "sheet": claim.sheet,
+                            "name": claim.row_label,
+                            "headline": ANALYTIC_RULE_NAMES[claim.rule],
+                            "period": claim.period,
+                            "value": claim.value,
+                            "figure": claim.figure,
+                            "figure_unit": claim.figure_unit,
+                            "grid": _neighbourhood(
+                                book,
+                                claim.sheet,
+                                claim.ref,
+                                axes=structure.axes,
+                            ),
+                            "standard_sentence": (
+                                ANALYTIC_STANDARD_SENTENCES.get(claim.rule, "")
+                            ),
+                        },
+                    )
+                )
+            abstentions.extend(
+                {"rule": one.rule, "why": one.why}
+                for one in told.abstentions
+                if one.rule in statement_keys
+            )
+            for rule, tally in told.tallies.items():
+                if rule not in statement_keys:
+                    continue
+                merged = tallies.setdefault(rule, {"total": 0, "clean": 0})
+                merged["total"] += tally["total"]
+                merged["clean"] += tally["clean"]
+
+        return findings, {
+            "errors": errors,
+            "smells": smells,
+            "values_only": structure.values_pasted,
+            "abstentions": abstentions,
+            "tallies": tallies,
+        }
+
+    @staticmethod
+    def _tiers_of(findings: Sequence[FindingRow]) -> dict[str, int]:
+        """The attention-tier tally. Same fallback as the deal list: a
+        finding without a carried tier reads by its severity."""
+        tiers = {"1": 0, "2": 0, "3": 0}
+        for one in findings:
+            carried = int((one.evidence or {}).get("tier") or 0)
+            if not carried:
+                carried = 1 if one.severity is FindingSeverity.error else 3
+            tiers[str(min(max(carried, 1), 3))] += 1
+        return tiers
+
+    async def audit_of_version(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+    ) -> dict[str, Any] | None:
+        """The audit, re-run on one stored version and written nowhere.
+
+        The version dropdown's re-scoping: picking an older version
+        shows what the audit says about *that* upload — computed now,
+        from the cells stored at its ingest, with the firm's house
+        rules applied exactly as a real run applies them. Nothing is
+        persisted: the deal's findings, runs and rulings all belong to
+        the current version, and a look at history must never move
+        them. That is also why the findings here carry no durable
+        identity — they cannot be accepted, dismissed or corrected,
+        and the screen says so instead of offering dead buttons.
+
+        `None` when the artifact is not this deal's, not a model, or
+        not readable — the caller turns that into the same 404 as
+        everywhere else.
+        """
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.get_artifact(artifact_id)
+        if (
+            artifact is None
+            or artifact.dossier_id != dossier_id
+            or artifact.kind is not ArtifactKind.model
+            or artifact.status is not ArtifactStatus.ready
+        ):
+            return None
+        rules_off = await self._rules_off(repository, dossier_id)
+        cells = await repository.cells_of(artifact.id)
+        findings, record = self._audit_one(
+            artifact,
+            cells,
+            dossier_id=dossier_id,
+            check_run_id=None,
+            rules_off=rules_off,
+        )
+        #: In-memory rows, never flushed — the column defaults that
+        #: would land at flush are supplied here so the renderer can
+        #: read them.
+        now = datetime.now(UTC)
+        for one in findings:
+            one.id = uuid4()
+            one.created_at = now
+            one.state = FindingState.open
+            one.note = ""
+            one.one_tick = False
+            one.page = 0
+            one.printed = one.printed or ""
+            one.expected = one.expected or ""
+        return {
+            "artifact": artifact,
+            "checked_at": now,
+            "findings": findings,
+            "summary": {
+                "errors": int(record["errors"]),
+                "smells": int(record["smells"]),
+                "tiers": self._tiers_of(findings),
+                "cells": int(artifact.counts.get("cells", 0)),
+                "rules_off": sorted(rules_off),
+                "values_only": bool(record["values_only"]),
+                "abstentions": record["abstentions"],
+                "tallies": record["tallies"],
+            },
+        }
+
     async def run_audit(
         self, session: AsyncSession, *, dossier_id: UUID, user_id: UUID | None
     ) -> CheckRun:
@@ -398,16 +652,6 @@ class TieOutService:
         summary says when a model is such a copy, what each check
         examined, and where one abstained rather than guess.
         """
-        from .analytics import (
-            ANALYTIC_RULE_NAMES,
-            ANALYTIC_STANDARD_SENTENCES,
-            ANALYTIC_STANDARDS,
-            run_analytics,
-        )
-        from .audit import HEADLINES, plain_words
-        from .audit import audit as run_rules
-        from .structure import read_structure
-
         repository = TieOutRepository.from_session(session)
         rules_off = await self._rules_off(repository, dossier_id)
         models = [
@@ -431,152 +675,31 @@ class TieOutService:
         values_only = False
         abstentions: list[dict[str, str]] = []
         tallies: dict[str, dict[str, int]] = {}
-        statement_keys = set(ANALYTIC_RULE_NAMES) - rules_off
         for model in models:
             cells = await repository.cells_of(model.id)
-            book = _workbook_of(cells)
-            #: The cells cannot say what the workbook hides — that fact
-            #: was kept on the artifact at ingest, and the audit needs
-            #: it back before it runs.
-            book.hidden_sheets = tuple(model.counts.get("hidden_sheets", []))
-            book.very_hidden_sheets = tuple(model.counts.get("very_hidden_sheets", []))
-            structure = read_structure(book)
-            result = run_rules(book, axes=structure.axes)
-            result.findings = [
-                one for one in result.findings if one.rule not in rules_off
-            ]
-            errors += len(result.errors)
-            smells += len(result.smells)
-            for defect in result.findings:
-                findings.append(
-                    FindingRow(
-                        dossier_id=dossier_id,
-                        check_run_id=run.id,
-                        artifact_id=model.id,
-                        kind=FindingKind.audit,
-                        severity=FindingSeverity(defect.severity),
-                        fingerprint=_fingerprint(
-                            "audit", model.lineage_id, defect.ref, defect.rule
-                        ),
-                        rule=defect.rule,
-                        standard=defect.source,
-                        printed=defect.ref,
-                        #: The plain sentence is the title — what a
-                        #: person reads first; the formula stays in the
-                        #: detail as evidence beneath it.
-                        title=plain_words(defect, structure.axes),
-                        detail=defect.detail,
-                        location=defect.ref,
-                        # An audit finding already sits at a cell, which
-                        # is a coordinate Excel selects as it stands.
-                        anchor={
-                            "kind": "cell",
-                            "ref": defect.ref,
-                            "sheet": defect.sheet,
-                        },
-                        evidence={
-                            "sheet": defect.sheet,
-                            "name": defect.name,
-                            "headline": HEADLINES.get(defect.rule, ""),
-                            "tier": defect.tier,
-                            "weight": defect.weight,
-                            "basis": defect.basis,
-                            "cells": defect.cells,
-                            "chain": render_chain(book, defect.ref),
-                            "figure": defect.figure,
-                            "figure_unit": defect.figure_unit,
-                            "flow": defect.flow,
-                            "fix": defect.fix,
-                            "fix_before": defect.fix_before,
-                            "grid": _neighbourhood(
-                                book,
-                                defect.sheet,
-                                defect.ref,
-                                axes=structure.axes,
-                            ),
-                        },
-                    )
-                )
-
-            #: The statement checks, on the same workbook. They read
-            #: values, not formulas, so a values-pasted close copy —
-            #: where the rules above are nearly blind — is exactly
-            #: where they earn their keep.
-            values_only = values_only or structure.values_pasted
-            if statement_keys:
-                told = run_analytics(book, structure)
-                for claim in told.findings:
-                    if claim.rule not in statement_keys:
-                        continue
-                    if claim.severity == "smell":
-                        smells += 1
-                    else:
-                        errors += 1
-                    findings.append(
-                        FindingRow(
-                            dossier_id=dossier_id,
-                            check_run_id=run.id,
-                            artifact_id=model.id,
-                            kind=FindingKind.audit,
-                            severity=FindingSeverity(claim.severity),
-                            fingerprint=_fingerprint(
-                                "audit", model.lineage_id, claim.ref, claim.rule
-                            ),
-                            rule=claim.rule,
-                            standard=ANALYTIC_STANDARDS.get(claim.rule, ""),
-                            printed=claim.figure,
-                            title=(f"{ANALYTIC_RULE_NAMES[claim.rule]} at {claim.ref}"),
-                            detail=claim.detail,
-                            location=claim.ref,
-                            anchor={
-                                "kind": "cell",
-                                "ref": claim.ref,
-                                "sheet": claim.sheet,
-                            },
-                            evidence={
-                                "sheet": claim.sheet,
-                                "name": claim.row_label,
-                                "headline": ANALYTIC_RULE_NAMES[claim.rule],
-                                "period": claim.period,
-                                "value": claim.value,
-                                "figure": claim.figure,
-                                "figure_unit": claim.figure_unit,
-                                "grid": _neighbourhood(
-                                    book,
-                                    claim.sheet,
-                                    claim.ref,
-                                    axes=structure.axes,
-                                ),
-                                "standard_sentence": (
-                                    ANALYTIC_STANDARD_SENTENCES.get(claim.rule, "")
-                                ),
-                            },
-                        )
-                    )
-                abstentions.extend(
-                    {"rule": one.rule, "why": one.why}
-                    for one in told.abstentions
-                    if one.rule in statement_keys
-                )
-                for rule, tally in told.tallies.items():
-                    if rule not in statement_keys:
-                        continue
-                    merged = tallies.setdefault(rule, {"total": 0, "clean": 0})
-                    merged["total"] += tally["total"]
-                    merged["clean"] += tally["clean"]
+            found, record = self._audit_one(
+                model,
+                cells,
+                dossier_id=dossier_id,
+                check_run_id=run.id,
+                rules_off=rules_off,
+            )
+            findings.extend(found)
+            errors += int(record["errors"])
+            smells += int(record["smells"])
+            values_only = values_only or bool(record["values_only"])
+            abstentions.extend(record["abstentions"])
+            for rule, tally in record["tallies"].items():
+                merged = tallies.setdefault(rule, {"total": 0, "clean": 0})
+                merged["total"] += tally["total"]
+                merged["clean"] += tally["clean"]
 
         await repository.replace_findings(dossier_id, CheckKind.audit, findings)
 
         # The attention tiers, tallied per run so the trend over versions
         # can be drawn from run history — errors and smells alone cannot
-        # separate a defect from hygiene. Same fallback as the deal list:
-        # a finding without a carried tier reads by its severity.
-        tiers = {"1": 0, "2": 0, "3": 0}
-        for one in findings:
-            carried = int((one.evidence or {}).get("tier") or 0)
-            if not carried:
-                carried = 1 if one.severity is FindingSeverity.error else 3
-            tiers[str(min(max(carried, 1), 3))] += 1
+        # separate a defect from hygiene.
+        tiers = self._tiers_of(findings)
 
         return await repository.finish_run(
             run,

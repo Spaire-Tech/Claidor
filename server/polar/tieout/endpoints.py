@@ -111,6 +111,8 @@ from .schemas import (
     TeamMember,
     TeamRead,
     Uploader,
+    VersionAudit,
+    VersionAuditSummary,
     VersionRead,
 )
 from .service import tieout
@@ -1068,6 +1070,54 @@ async def get_model_diff(
         session, dossier_id=artifact.dossier_id, artifact_id=artifact_id
     )
     return ModelDiff(**diff) if diff else None
+
+
+@router.get("/artifacts/{artifact_id}/audit", response_model=VersionAudit)
+async def version_audit(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> VersionAudit:
+    """The audit, re-run on this stored version and persisted nowhere.
+
+    The version dropdown's re-scoping: pick an older upload and the
+    page shows what the audit says about *that* one — computed on
+    request from the cells stored at its ingest, house rules applied
+    exactly as a real run applies them. Nothing lands in the findings
+    table: rulings, corrections and the report belong to the current
+    version, so these findings carry no durable identity and the
+    response's own docstring-on-the-screen is « checked just now ».
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    result = await tieout.audit_of_version(
+        session, dossier_id=artifact.dossier_id, artifact_id=artifact_id
+    )
+    if result is None:
+        raise ResourceNotFound("This version has no model audit to show.")
+
+    uploader = await UserRepository.from_session(session).get_by_id(
+        artifact.uploaded_by_id
+    )
+    filenames = {artifact.id: artifact.filename}
+    summary = result["summary"]
+    return VersionAudit(
+        artifact_id=artifact.id,
+        version=artifact.version,
+        filename=artifact.filename,
+        uploaded_by=_uploader(uploader),
+        uploaded_at=artifact.created_at,
+        checked_at=result["checked_at"],
+        summary=VersionAuditSummary(
+            errors=summary["errors"],
+            smells=summary["smells"],
+            tiers=summary["tiers"],
+            cells=summary["cells"],
+            rules_off=summary["rules_off"],
+            values_only=summary["values_only"],
+            abstentions=summary["abstentions"],
+        ),
+        findings=[_finding(one, filenames) for one in result["findings"]],
+    )
 
 
 # --- checks --------------------------------------------------------------

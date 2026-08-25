@@ -62,8 +62,15 @@ three series are real going forward.
   not record which version it read, so the ticks are run dates and
   the axis label reads « Check » until runs carry the version. Fewer
   than two runs → the honest sentence, not a shape.
-- The version dropdown's rows are facts (v, who, when); picking one
-  does not yet re-scope the page, so rows are not buttons.
+- ~~The version dropdown's rows are facts (v, who, when); picking one
+  does not yet re-scope the page, so rows are not buttons.~~ **Since
+  built (25 August, Atelier lane):** rows are buttons; picking an
+  older version re-scopes Overview and Findings to that version's own
+  audit — computed on request from its stored cells
+  (`GET /artifacts/{id}/audit`), persisted nowhere. The page says
+  plainly that rulings, the deck reconciliation, the report and the
+  downloads live on the current version; a past version's findings
+  carry no durable identity and offer no dead buttons.
 - « Download the marked-up model » was present as drawn, disabled,
   saying what it would hand over. **Since built (24 August):** the
   server generates the §4 file on request and the card is live; the
@@ -146,5 +153,9 @@ screens.
 2. The narrative report writer (the sheet is deterministic).
 3. Server-side chat history and the workflow-answer mechanism (the
    founder's chat discussion decides these).
-4. Version-scoped re-checking (the dropdown shows facts only).
+4. ~~Version-scoped re-checking (the dropdown shows facts only)~~ —
+   built 25 August (Atelier lane): the model audit re-runs on any
+   stored version, read-only. Still not version-scoped: the deck
+   reconciliation and the grounding pass, which need more than the
+   model's own cells.
 5. `rounding`/`writing` house rules persist with no engine consumer.

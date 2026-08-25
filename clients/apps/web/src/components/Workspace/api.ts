@@ -566,6 +566,34 @@ export interface Version {
   counts: Record<string, unknown>
 }
 
+/**
+ * The audit re-run on one stored version, persisted nowhere.
+ *
+ * What the version dropdown re-scopes the page to. The findings carry
+ * no durable identity — they cannot be accepted, dismissed or
+ * corrected, because rulings belong to the current version — and
+ * `checked_at` is the moment the answer was computed, not a stored
+ * run's date.
+ */
+export interface VersionAudit {
+  artifact_id: string
+  version: number
+  filename: string
+  uploaded_by: { id: string; name: string; avatar_url: string | null } | null
+  uploaded_at: string
+  checked_at: string
+  summary: {
+    errors: number
+    smells: number
+    tiers: Record<string, number>
+    cells: number
+    rules_off: string[]
+    values_only: boolean
+    abstentions: { rule: string; why: string }[]
+  }
+  findings: Finding[]
+}
+
 /** One place a file states a figure, for the check-a-file card. */
 export interface SoloStatement {
   printed: string
@@ -1075,6 +1103,12 @@ export class TieOutApi {
   /** Every figure in a document, by page, and what became of each. */
   versions(artifactId: string): Promise<Version[]> {
     return this.call(`/artifacts/${artifactId}/versions`)
+  }
+
+  /** The audit re-run on one stored version — computed on request,
+   *  persisted nowhere. What picking a version re-scopes the page to. */
+  versionAudit(artifactId: string): Promise<VersionAudit> {
+    return this.call(`/artifacts/${artifactId}/audit`)
   }
 
   /** What travels with this file that is not on its screen. */

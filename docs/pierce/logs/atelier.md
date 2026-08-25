@@ -114,3 +114,57 @@ pass** (61 existing + these 4), lint and format clean. One
 pre-existing lint error in the same file (a compound assert in the
 check-file tests, PT018) was split into two asserts — the only line
 touched outside the new class.
+
+## 25 August 2026 — the version dropdown re-scopes the page
+
+The last first-task: `swens-product-build.md`'s named deviation
+(« picking one does not yet re-scope the page, so rows are not
+buttons ») and not-yet item 4 (« version-scoped re-checking »).
+
+**Server.** `run_audit`'s per-model computation was factored into one
+helper (`_audit_one`) with two callers, so the stored run and the new
+read are one computation that cannot drift. `audit_of_version` runs
+it over any stored version's cells and **persists nothing** — house
+rules applied exactly as a real run applies them, findings carrying
+no durable identity. Endpoint: `GET /artifacts/{id}/audit`
+(membership-gated like everything; a deck or a stranger's model gets
+the same 404). Four new route tests, including « nothing is persisted
+by looking » — the response's finding ids answer 404 to PATCH and the
+stored findings are byte-for-byte what they were. Full tieout suite:
+**559 passed, 4 skipped.**
+
+**Client.** The dropdown rows are buttons, as the founder's own
+component draws them (`verList[].pick`). Picking an older version
+re-scopes Overview and Findings: verdict, counts sentence, bullets,
+chips and family groups all read the picked version's audit; the
+bullet and a line on the Findings tab say what does *not* re-scope —
+the deck reconciliation, rulings, the report and the downloads live
+on the current version, and the report/markup cards say « On the
+current version (vN) » rather than disappearing. A past finding's
+row actions are replaced by the sentence, not disabled into dead
+buttons. Re-check returns the page to the current version, because a
+check is an act on it.
+
+**Proven in the real product, not only in tests.** This container now
+runs the whole stack: the dev API on the seeded demo deal (cascade v1
++ the writer-made v2 with the typed-over F16 + the broken deck), the
+Next dev server, and Chromium driving the real screens. The drive
+asserts, all green, zero page errors: picking v1 re-labels the
+trigger, shows v1's own audit (one significant, no material — F16
+absent, because v1 doesn't have that defect), states « checked just
+now on the cells stored at its upload » and « rulings … recorded on
+the current version (v2) »; picking v2 back restores the full page
+with F16 present. Screenshots in the session record.
+
+**Two environment notes for the lead, not repo changes:** (1)
+`dev/setup-environment` writes `.jwks.json` with kid `polar_dev`
+while `config.py`'s `CURRENT_JWK_KID` defaults to `claidor_dev` — the
+API refuses to boot until one of them moves; worked around locally
+with `CLAIDOR_CURRENT_JWK_KID=polar_dev`. (2) The generated dev env
+plus a fresh database needs `claidor_read` granted SELECT before any
+read-session route works.
+
+All four charter tasks are done. Remaining Atelier-adjacent items in
+the build record's not-yet list (narrative report writer, server-side
+chat history, `rounding`/`writing` house-rule consumers) await the
+founder's decisions named there.
