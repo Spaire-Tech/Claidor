@@ -210,6 +210,78 @@ engine also reported. The three misses, run to ground:
   registration's own boundary, not a detector bug: a two-row total
   narrowed by one is invisible to this round's rule. Named for a
   future round rather than patched mid-measurement.
-- `C_Capex!AL463` (both H7 twins, off-by-one, deterministic):
-  examination owed once the sweep frees the machine; recorded below
-  when run to ground.
+- `C_Capex!AL463` (both H7 twins, off-by-one, deterministic): run to
+  ground against the planted file. The row pass **did** catch it —
+  `inconsistent-row` at AL463, pre-collapse — and the sibling check
+  correctly deferred per the no-double-claim guard. The collapse
+  layer then buried it: the fill fold groups findings by (sheet,
+  rule, shape) with no adjacency test, so the two planted deviants
+  at AN315 and AL463 — same relative shape `SUM` of the two rows
+  above, 148 rows apart — folded into one finding anchored at AN315
+  reading « filled across 2 cells », with no roster carrying AL463.
+  Scored MISS by the registered criterion, honestly; the defect the
+  score points at is the fold's missing adjacency, which is engine
+  work for its own registered round, not a quiet patch inside this
+  one.
+
+---
+
+## Round-1 verdict (25 Aug): REFUSED, by the registration's own criteria
+
+The after-sweep differs from the baseline in two files, both gaining
+**10** `inconsistent-total` findings — over the registered flood line
+of 5 — and the hand reading judges all 20 noise. The cells: the
+« Depreciation of additions from year end » block of the GT3 BPFM's
+SystemOperator sheet (draft row 816, final row 817) is a
+depreciation **triangle** — each addition-year row's entries begin
+at that year's diagonal column — and the totals row carries two
+spellings: columns L–AO sum rows 788–811, columns AP–AY sum
+788–816. Verified against the cells: every populated cell in every
+column lies inside its own column's summed range; the later columns
+*need* the wider range (rows 812–816 hold entries only from AV on),
+and the earlier columns' narrower range skips only empty rows. Two
+range spellings, one correct staircase, no live cell missed — and
+the check reported the design ten times per file.
+
+Two lessons, each becoming a registered change:
+
+1. The disagreement that matters is the one with a consequence. A
+   deviant whose range differs only over cells that are *empty in
+   its own line* computes the same total its siblings' spelling
+   would; the triangle is exactly that.
+2. Ten identical deviants are one authoring decision, and reporting
+   a decision once is the collapse discipline this engine already
+   lives by.
+
+## Round 2, registered now, before it is measured
+
+Two changes to the detector, nothing else:
+
+1. **The consequence guard**, on the range-disagreement class only:
+   translate the consensus range to the deviant's own line; report
+   only when the deviant **misses a live cell that the consensus
+   spelling covers** (a cell present in the book, in the deviant's
+   own line — occupancy, not values). A deviant that only
+   *over-reaches* — covers live cells the consensus does not — stays
+   silent this round: the triangle proves over-reach is how designed
+   staircases spell their totals, and a static check cannot tell
+   that from a double-count without structure this round does not
+   have. Named as a limitation, in the open. Plug, mis-drag and
+   bleed classes are untouched — arithmetic outside the SUM and a
+   reach into a neighbouring line carry their consequence in the
+   formula text itself.
+2. **The identical-deviant fold**: deviants of one family sharing
+   one signature are one authoring decision — one finding, anchored
+   on the first, every cell in the roster, the count in the
+   sentence.
+
+**Prediction (written before running):** the 20 triangle findings
+vanish and the gate diff against the baseline is empty — the check
+ships quiet on this corpus, which is the product's own discipline;
+its value is proven by the planted recall, not by chatter. Planted
+recall re-measured on the same planted files: plug, mis-drag and
+bleed unchanged; an off-by-one plant whose excluded head row is
+empty in its column would now be silenced by its own guard — any
+off-by-one drop is read by hand and reported. The adoption criteria
+are unchanged from the registration. Any other corpus difference
+refuses round 2 the same way round 1 was refused.
