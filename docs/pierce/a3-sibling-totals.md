@@ -173,3 +173,43 @@ detector was implemented behind its unit tests while this sweep ran
 (the sweep process had already imported the unmodified engine, so
 the measurement is of the engine the baseline describes); the
 after-sweep with the detector live comes next.
+
+**Hosts, by the registered rule (25 Aug):** the scan ranked
+`caa_h7/h7_pcm_v2-10_final_proposals.xlsm` (201 eligible families),
+`caa_h7/h7_pcm_v2-11_final_determination.xlsm` (201) and
+`ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx` (140). Two hosts are
+near-twin versions of one CAA model — less diverse than a free
+choice would pick, but the selection rule was registered first and
+it stands, said openly rather than re-rolled.
+
+**Planted recall (25 Aug):** 49 defects planted of 60 drawn (11
+draws refused by the harness's shared-master/array guard — a plant
+there would have changed more cells than the one planted). Caught
+means ref or roster, per the registration.
+
+| class | planted | caught (any rule) | by inconsistent-total |
+|---|---|---|---|
+| plug | 11 | 11 | 9 |
+| mis-drag | 12 | 12 | 11 |
+| bleed | 15 | 15 | 3 |
+| off-by-one | 11 | 8 | 3 |
+| **overall** | **49** | **46 (94%)** | **26** |
+
+The adoption criterion on plugs is met by the new rule alone (9/11).
+Where another rule's name appears, the registered no-double-claim
+dedup is working as written: in these templates many totals rows are
+also contiguous runs, so the row passes (`inconsistent-row`, mostly
+the mutation witness) claim the deviant first, and several bleeds
+into a dependent column surfaced as genuine planted circularity the
+engine also reported. The three misses, run to ground:
+
+- `NonCore!AO86` (GT3, off-by-one): the plant collapsed
+  `=SUM(AO84:AO85)` to `=SUM(AO85:AO85)` — a single-row range, which
+  the registered membership excludes (no multi-row own-column
+  range), so the deviant fell out of the family entirely. The
+  registration's own boundary, not a detector bug: a two-row total
+  narrowed by one is invisible to this round's rule. Named for a
+  future round rather than patched mid-measurement.
+- `C_Capex!AL463` (both H7 twins, off-by-one, deterministic):
+  examination owed once the sweep frees the machine; recorded below
+  when run to ground.
