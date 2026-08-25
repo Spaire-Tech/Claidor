@@ -224,3 +224,11 @@ tests still run on every merged tip either way.
   when that round is registered. **B3 (the arbiter) rises in
   priority**: four corpus files are now measured engine-gap files
   (SINGLE, `#ERR:502`) that only real Excel can certify.
+
+- **26 Aug — the founder decided the team-screen question: HIDE.**
+  Deal names come off the team screen — colleagues are listed
+  without naming the deals they are on, closing the posture doc's
+  § 3 metadata exception so « being at the firm grants nothing »
+  holds without an asterisk. Routed to **Atelier** (its paths, its
+  posture doc to update in the same change). The founder relays the
+  word; this entry is the record.
