@@ -214,3 +214,73 @@ honesty, not a pass mark: the numbers decide how the harness may
 afford to run (whole-file planting vs single-sheet extracts) and
 are written here before the harness is registered. Heavy jobs run
 alone in the container, sequentially, per the lanes discipline.
+
+## C2 cost results — the O(n⁴) term, measured before anything depends on it
+
+Run under the part-1 registration, rules unchanged. Both jobs ran
+alone in the container.
+
+**The worst case — `final_gd3_bpfm.xlsm` (17.5 MB, 48 sheets),
+self-aligned:** read 179 s, signatures 173 s, alignment 265 s, peak
+RSS **8.1 GB**, and — correctly — zero structural changes on the
+identical pair. The alignment time lives exactly where the theory
+says: the debt sheets whose rows carry few usable labels, where the
+similarity falls back to sequence LCS —
+`F5 - Inflation Linked Debt` (454×343) 93 s,
+`F3 - Fixed Rate Debt` (455×347) 70 s,
+`F6 - Debt Dataset` (1,978×61) 40 s. Well-labelled sheets of the
+same size cost well under a second, because a differing label pair
+is decided without any LCS at all.
+
+**The honest case — the biggest adjacent ED2 pair, v4_2026-01 →
+v5_2026-06:** read 21 s per file, signatures 2.1 s, **full-model
+alignment 2.6 s**, peak RSS 460 MB, 64 structural changes across 30
+sheets. And the first real result before any planting: v5 inserts
+one row at 157 on every licensee sheet (SPN, SSES, SSEH, ENWL,
+SPD, SWEST, …) and the aligner reads each as **one inserted row**
+with every other row matched — on a real revision, unprompted.
+
+**What the numbers decide.** (1) The O(n⁴) term is real but
+confined to label-poor sheets; on the well-labelled regulator
+models the Watch's target runs at seconds per pair. Fine for C2;
+if a label-poor giant ever needs to be fast, that is a registered
+round of its own (candidate: band the DP as SheetDiff's successors
+do), not a quiet tweak. (2) The 8.1 GB peak on the BPFM
+self-align re-teaches the paid-for lesson: heavy workbook jobs run
+alone, always. (3) Planting can afford whole real files: an ED2
+read is ~21 s, so the harness plants into the full v5 model rather
+than single-sheet extracts.
+
+## C2 registration, part 2 — the planted-edit harness (REGISTERED BEFORE RESULTS)
+
+Committed, with the harness itself (`scripts/watch_plant.py`,
+commit `74b250a`), before any recovery number was looked at.
+
+**Base file and sheets, chosen mechanically:** the newest ED2
+version, `ofgem_ed2/v5_2026-06.xlsx`; the sheet with the most
+populated content rows (`InputSummary`, 353) and the median sheet
+by that count (`SWEST`, 308). No other selection.
+
+**Classes** (planted with Excel's reference semantics — the
+harness's rewriter shifts references on insert and delete and is
+pinned by its own thirteen tests): `insert_blank_row`,
+`insert_copied_row`, `delete_row`, `insert_copied_column`,
+`delete_column`, `retype_literals` (five literals +7; must report
+no structure), `rewrite_formula` (one formula wrapped in SUM(…,0);
+must report no structure), `insert_row_and_retype`. Positions: the
+quartile indices of the sheet's populated lines, deterministic.
+
+**Judgement per instance, fixed:** the structural report must be
+exactly the planted change and nothing else; the row and column
+mappings must be right for every surviving line; **exact recovery**
+is both at once. A *copied* insert accepts either twin as the new
+line — the one genuinely undecidable ambiguity. The registered
+approximations (same-sheet references only; whole-row ranges not
+shifted; delete's range-endpoint convention) are in the harness
+docstring.
+
+**What will be reported, whatever it is:** instances and exact
+recoveries per class, the misses named one by one with their
+failure mode, and the comparison the amendment demands: the
+paper's zero-error claim is its authors' number; ours is whatever
+this table says.
