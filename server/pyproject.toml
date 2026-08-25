@@ -71,6 +71,7 @@ dependencies = [
   # part by part, and a direct import on a transitive dependency breaks
   # the day the dependency that carried it changes its mind.
   "lxml>=5.0",
+  "pdfplumber>=0.11",
 ]
 
 [dependency-groups]

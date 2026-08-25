@@ -135,3 +135,26 @@ Lanes are separate cloud containers — peer messaging does not reach
 them from here, so coordination is through git (their branches and
 logs) and through the founder. The lead pulls `swens/*` branches to
 check on progress; silence in a log is a question, not a comfort.
+
+**Docs-only merges** (amendment, 25 Aug, first sweep): when a lane's
+diff against the integration tip touches no path under `server/` or
+`clients/`, the golden-master gate is not re-run for that merge — the
+engine's bytes are identical, so its answers are identical by
+construction. The conftest-free tests still run on the merged tip.
+Any code path in the diff, and the full loop applies unchanged.
+
+## Lead decisions (the record lanes rebase onto)
+
+- **25 Aug — Scribe's dependency proposal**: `pdfplumber>=0.11` is
+  approved and installed in `server/pyproject.toml` (lock updated;
+  the only transitive movement was Pillow 12.1→12.3, tieout tests
+  identical before and after). `docling` is **deferred as proposed**:
+  the D1 core must not require it; if and when the chain needs table
+  structure, it comes in as an optional extra on the CPU-only torch
+  index, by a fresh proposal here.
+- **25 Aug — Atelier's § 3 finding** (team screen shows deal *names*
+  org-wide) is a founder decision, raised in the sweep report — no
+  lane acts on it until the founder answers.
+- **25 Aug — Dynamo's machine question** (LibreOffice 25.8 install
+  target) is with the founder; Dynamo continues its blocked-state
+  charter work meanwhile.

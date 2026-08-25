@@ -3841,3 +3841,41 @@ at a time, tests plus the full gate at every merge, the plan and
 this worklog as the single record. Earlier today, and the reason the
 lanes start from a clean base: A1 rounds 1–2 certified gate-clean
 across all 27 corpus files.
+
+---
+
+## 25 August, night — the first sweep: three lanes report, three merges
+
+Hours after standing up, three of the five lanes pushed their first
+work, and every one of it passed the ownership check clean —
+`swens/atelier`, `swens/dynamo`, `swens/scribe` merged one at a
+time. All three diffs were docs-only, which produced the loop's
+first amendment (recorded in `lanes.md`): no code path touched means
+no gate re-run — the engine's answers are identical by construction
+— while the conftest-free tests still run on every merged tip (452
+passed, unchanged, before and after).
+
+What landed: **Atelier** wrote the H2 security posture doc with
+every « enforced » claim checked against the code that day — all 41
+tieout routes audited for the membership gate — and surfaced two
+honest findings instead of smoothing them (deal *names* visible
+org-wide on the team screen; the « configurable client » of
+`swens.md` § 7 is a configurable key, not endpoint — the doc says
+« planned, not shipped »). **Dynamo** measured the container against
+B1's needs: LibreOffice here is 24.2 without Calc, the venv's
+Python 3.14 can never import uno (it ships with LibreOffice, not
+PyPI), so the UNO client is out-of-process by construction — a
+driver under the LibreOffice-matched interpreter talking to the venv
+over pipes; the TDF 25.8 bundle is reachable and is the founder's
+decision. **Scribe** proved the network serves the Chain end to end
+— pdfplumber instantly, docling with its HF model cache, a real
+38-page gov.uk PDF converted with page + bounding-box on every
+item — and registered D1's measurement contract (seed 271828 for the
+spot-check draw) before looking at any number.
+
+Lead decisions, recorded in `lanes.md`: pdfplumber approved into the
+server env (lock updated, tests identical); docling deferred as the
+lane itself proposed; Atelier's § 3 finding and Dynamo's machine
+question go to the founder. Sentinel and Prism have not pushed yet —
+they started latest; silence in a log is a question, and the next
+sweep asks it.
