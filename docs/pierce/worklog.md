@@ -4087,3 +4087,29 @@ Merged clean: paths in-lane, engine byte-identical, 558 tieout tests
 green at the tip (Dynamo's UNO tests run for real here, since the
 lead's install script provisions this container too). B3 rises in
 priority — four files now wait on real Excel's word.
+
+---
+
+## 26 August — the eighth sweep: B2 is whole; a posture claim waits for its code
+
+**Dynamo finished the fidelity report.** Round 3's interaction
+handler was the whole story for the stubborn draft BPFMs — all three
+loaded, calculated and gated. The corpus fidelity report now covers
+**27 of 27 files: 3,862,412 stored-vs-recalculated comparisons,
+99.88% matched**, eighteen files at exactly 1.0, and every mismatch
+in a named class (the SINGLE cone and `#ERR:502` for the arbiter,
+volatiles for a rules round, near-floor dust flagged). The plan's B2
+sentence is true for this corpus: the report exists and gates
+everything downstream — 18 files eligible for B4's laws, nine
+waiting on the arbiter or named diagnostics. Merged; engine
+untouched; 558 tests green.
+
+**Atelier's part 1 of the deal-names change is held, not merged**:
+the posture doc edit claims the hiding as enforced while its own
+commit message says code and tests follow. The doc's covenant — every
+enforced claim checked against the code — is the reason the founder
+can trust it; it holds even when the claim is about to become true.
+Parts 1 and 2 merge together when the code arrives. (Mechanical
+notes: the resumed Atelier container lost git auth and pushed via
+the GitHub API under the founder's GitHub identity, citing a log
+entry not present in the push — both to regularize in part 2.)

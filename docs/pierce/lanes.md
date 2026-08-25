@@ -232,3 +232,16 @@ tests still run on every merged tip either way.
   holds without an asterisk. Routed to **Atelier** (its paths, its
   posture doc to update in the same change). The founder relays the
   word; this entry is the record.
+
+- **26 Aug, eighth sweep — Atelier's deal-names part 1 is HELD**, on
+  the posture doc's own covenant: the pushed doc change asserts the
+  hidden-names behaviour as enforced (« reduces each membership list
+  to a count before anything is sent », « the endpoint test
+  asserts... ») while its commit message says the code and tests
+  *follow*. A posture claim merges only beside the code that makes
+  it true — part 2 lands, both merge together. Two mechanical notes
+  of record: the commit was pushed through the GitHub API (the
+  resumed container lost authenticated git), so it carries the
+  founder's GitHub identity as author instead of the lane's usual
+  authorship, and it cites a lane-log entry that is not in the push
+  — both to be regularized in part 2.
