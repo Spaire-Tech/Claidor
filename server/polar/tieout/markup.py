@@ -41,6 +41,7 @@ from xml.sax.saxutils import escape
 
 from openpyxl import load_workbook
 
+from .changeset import comparable
 from .writer import (
     CELL,
     REF,
@@ -477,13 +478,13 @@ def _verify_unaltered(original: bytes, copy: bytes, listing_name: str) -> None:
         )
     for name in a.sheetnames:
         held = {
-            cell.coordinate: cell.value
+            cell.coordinate: comparable(cell.value)
             for row in a[name].iter_rows()
             for cell in row
             if cell.value is not None
         }
         now = {
-            cell.coordinate: cell.value
+            cell.coordinate: comparable(cell.value)
             for row in b[name].iter_rows()
             for cell in row
             if cell.value is not None

@@ -208,6 +208,24 @@ def apply_corrections(
         )
 
 
+def comparable(value: Any) -> Any:
+    """A cell value that means equality when it is equal.
+
+    openpyxl returns a fresh `ArrayFormula` (or table-formula) object
+    on every load, and those compare by identity — so a workbook
+    containing one would fail any cell-exact compare forever, which
+    is how the gate refused a real RIIO-3 file it had not touched.
+    Objects from openpyxl normalize to their type and fields; plain
+    values pass through.
+    """
+    if value.__class__.__module__.startswith("openpyxl"):
+        return (
+            value.__class__.__name__,
+            tuple(sorted((k, str(v)) for k, v in vars(value).items())),
+        )
+    return value
+
+
 def _unexpected_change(
     before_path: Path, after_path: Path, corrections: list[Correction]
 ) -> str:
@@ -219,13 +237,13 @@ def _unexpected_change(
         return "the write changed the sheet list itself — rolled back"
     for name in a.sheetnames:
         held = {
-            cell.coordinate: cell.value
+            cell.coordinate: comparable(cell.value)
             for row in a[name].iter_rows()
             for cell in row
             if cell.value is not None
         }
         now = {
-            cell.coordinate: cell.value
+            cell.coordinate: comparable(cell.value)
             for row in b[name].iter_rows()
             for cell in row
             if cell.value is not None

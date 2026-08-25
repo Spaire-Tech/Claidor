@@ -250,3 +250,27 @@ def test_the_copy_gets_a_different_filename() -> None:
         "Project Alpha v14 — marked up.xlsx"
     )
     assert marked_up_name("model") == "model — marked up.xlsx"
+
+
+def test_an_array_formula_elsewhere_does_not_refuse_the_markup() -> None:
+    """The same identity-compare false alarm the changeset gate had —
+    the marked-up copy's verifier compares by content too."""
+    from openpyxl.worksheet.formula import ArrayFormula
+
+    with tempfile.TemporaryDirectory() as folder:
+        book = Book()
+        sheet = book.active
+        sheet.title = "Model"
+        sheet["A1"] = 1
+        sheet["A2"] = 2
+        sheet["B1"] = ArrayFormula("B1", "=SUM(A1:A2*1)")
+        sheet["C1"] = 150
+        path = Path(folder) / "host.xlsx"
+        book.save(path)
+
+        copy = marked_up_copy(
+            path.read_bytes(),
+            [MarkupFinding(severity="error", sheet="Model", ref="C1", text="x")],
+        )
+        marked = load_workbook(io.BytesIO(copy))
+        assert marked["Model"]["C1"].fill.fgColor.rgb == "FFFFC7CE"

@@ -312,3 +312,37 @@ def test_f2_undo_restores_the_dropped_calc_chain() -> None:
         corrected_members, _ = _members(result.payload or b"")
         assert "xl/calcChain.xml" not in corrected_members
         assert _members(result.undo()) == _members(payload)
+
+
+def test_f2_an_array_formula_elsewhere_does_not_refuse_the_gate() -> None:
+    """openpyxl hands back a fresh ArrayFormula object on every load;
+    compared by identity it looks changed forever — the false alarm a
+    real RIIO-3 file exposed. The gate compares by content."""
+    from openpyxl.worksheet.formula import ArrayFormula
+
+    with tempfile.TemporaryDirectory() as folder:
+        book = Book()
+        sheet = book.active
+        sheet.title = "Model"
+        sheet["A1"] = 1
+        sheet["A2"] = 2
+        sheet["B1"] = ArrayFormula("B1", "=SUM(A1:A2*1)")
+        sheet["C1"] = 150
+        path = Path(folder) / "host.xlsx"
+        book.save(path)
+
+        result = apply_corrections(
+            path.read_bytes(),
+            [
+                Correction(
+                    sheet="Model",
+                    ref="C1",
+                    formula=None,
+                    value="151",
+                    why="the confirmed source moved",
+                )
+            ],
+            who="founder",
+        )
+        assert result.state == "applied"
+        assert _members(result.undo()) == _members(path.read_bytes())

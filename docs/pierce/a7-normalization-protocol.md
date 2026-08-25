@@ -29,6 +29,14 @@ reference-relativization and number-erasure:
    `=+C26+C31` and `=F26+F31` translated to the same cell are the
    same calculation; today they carry different shapes.
 
+4. **Whitespace erasure** — added by amendment before any
+   measurement: the implementation re-renders the shape from a parse
+   of the token stream, and the re-render carries no whitespace, so
+   `=A1 + B1` and `=A1+B1` become one shape. A consequence of the
+   mechanism, registered as its own normalization rather than
+   slipped in. Formulas the mini-parser cannot parse fall back to
+   the old token join, whitespace and all — never an error.
+
 **Explicitly out of scope,** noted from the mining round:
 `SUM(A1:A3)` vs `(A1+A2+A3)` equivalence — expanding ranges needs
 cell knowledge the tokenizer does not have; it stays a distinct
