@@ -3747,3 +3747,53 @@ typed-actuals boundaries, value-magnitude outliers, idiom
 dissimilarity (that one feeds A7 as a normalization guard). No check
 shipped, no threshold moved — the candidates owe the loop on our own
 corpora, tracked as engine work.
+
+---
+
+## 25 August — the corpus unlocked, the write path proven on it,
+## and the gate's first real catch
+
+**A wrong claim corrected first.** Yesterday's entries said this
+container had no corpus. False — a depth-limited `find` missed
+470MB of regulator files sitting on disk, and a probe showed
+ofgem.gov.uk reachable through the proxy. The claims are corrected
+here rather than edited away.
+
+**The corpus rebuilds itself now.** `scripts/corpus_au_uk.py` turns
+the manifest into one command: the golden master's 27 files, named
+exactly as the baseline expects, RIIO-3 drafts pulled from Ofgem's
+own zip. Fetched fresh on this machine in minutes.
+
+**F1/F2's owed round trip ran, 27 real files** —
+`scripts/writer_roundtrip.py`: no-op saves member-identical
+everywhere; a real formula cell rewritten as itself with only its
+own sheet allowed to change; creation probes beyond the dimension
+reading back clean. 27/27 at the writer level. The full changeset
+gate ran on the smallest files and **refused one** — and the
+diagnosis was the day's best find: nothing had changed; the file
+carries an ArrayFormula, openpyxl returns a fresh object each load,
+objects compare by identity, and so any workbook containing an
+array formula would have failed every cell-exact compare forever —
+every changeset, every marked-up copy. The gate and the markup
+verifier now compare openpyxl formula objects by content;
+regression tests pin it; the refused file applies with
+member-identical undo. The bug was caught by the gate the plan
+insisted on, on a file the synthetic hosts could never have
+supplied. That is what the corpus is for.
+
+**An operational lesson, paid for in 40 minutes:** the golden-master
+sweep and the round-trip harness were run concurrently on a 15GB
+box; the sweep was OOM-killed at file 20. Heavy workbook jobs run
+alone now.
+
+**A7 in flight, protocol first.** The three registered
+normalizations (commutative chains, constant-shape folding, unary
+plus) plus the amendment (whitespace erasure, named before
+measurement) are implemented behind twelve unit tests — including
+the mining round's own idiom pair `=+C26+C31` ≡ `=F26+F31` — with
+zero regressions across the 450 conftest-free tieout tests (the 99
+fixture errors reproduce on the unmodified engine, checked by
+stash). The change sits stashed while the precondition runs: the
+gate must be green on the unmodified engine on this machine before
+the after-sweep decides adoption. Results land in the next entry,
+whatever they are.
