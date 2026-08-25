@@ -10,6 +10,7 @@ Registered in `docs/pierce/logs/prism.md` (« C2 registration,
 part 1 ») before any corpus number existed.
 """
 
+import re
 from collections import Counter
 from dataclasses import dataclass
 
@@ -20,6 +21,53 @@ from polar.tieout.workbook import Workbook
 #: point is that every literal looks the same, so a retyped input
 #: cannot break a row match.
 LITERAL = "•"
+
+#: A sheet-qualified piece of a shape, with an optional range tail —
+#: `SelectedInputs!R[-307]C[+0]` or `'Annual Inflation'!R[-1]C[+0]:R[+5]C[+0]`.
+_QUALIFIED = re.compile(
+    r"(?P<sheet>'[^']+'|[A-Za-z0-9_.]+)!"
+    r"(?P<piece>R(?:\[[+-]?\d+\]|\d+)C(?:\[[+-]?\d+\]|[A-Z]{1,3})"
+    r"(?::R(?:\[[+-]?\d+\]|\d+)C(?:\[[+-]?\d+\]|[A-Z]{1,3}))?)"
+)
+_RELATIVE = re.compile(r"(?P<kind>[RC])\[(?P<offset>[+-]?\d+)\]")
+
+
+def _column_letters(number: int) -> str:
+    letters = ""
+    while number > 0:
+        number, remainder = divmod(number - 1, 26)
+        letters = chr(65 + remainder) + letters
+    return letters
+
+
+def _absolute(shape: str, sheet: str, row: int, column: int) -> str:
+    """Round 3's amendment (registered in the lane log): a shape piece
+    qualified with a *different* sheet's name gets its relative
+    offsets rewritten to the absolute target, range tails included —
+    because `=SelectedInputs!E64` does not move when its cell does,
+    and encoding it relative to the cell made every pull-through row
+    change shape under a plain row shift. Same-sheet and unqualified
+    pieces stay relative: those really do shift with their cells
+    under Excel's reference updating."""
+    if "!" not in shape:
+        return shape
+
+    def fix_piece(match: re.Match[str]) -> str:
+        name = match.group("sheet")
+        if name.strip("'") == sheet:
+            return match.group(0)
+
+        def fix_ref(ref: re.Match[str]) -> str:
+            offset = int(ref.group("offset"))
+            if ref.group("kind") == "R":
+                target = row + offset
+                return f"R{target}" if target > 0 else ref.group(0)
+            target = column + offset
+            return f"C{_column_letters(target)}" if target > 0 else ref.group(0)
+
+        return name + "!" + _RELATIVE.sub(fix_ref, match.group("piece"))
+
+    return _QUALIFIED.sub(fix_piece, shape)
 
 
 def _normal(text: str) -> str:
@@ -49,14 +97,19 @@ class SheetGrid:
     columns: tuple[Line, ...]
 
 
-def cell_signature(formula: str | None, shape: str) -> str:
+def cell_signature(
+    formula: str | None, shape: str, sheet: str = "", row: int = 0, column: int = 0
+) -> str:
     """A cell's signature from its formula and its engine shape: the
-    literal marker, the shape, or — when the shape machinery returns
-    empty for an unparseable formula — the raw formula text, which is
-    still deterministic and still position-blind enough to compare."""
+    literal marker, the shape with its cross-sheet pieces made
+    absolute, or — when the shape machinery returns empty for an
+    unparseable formula — the raw formula text, which is still
+    deterministic and still position-blind enough to compare."""
     if formula is None:
         return LITERAL
-    return shape or formula
+    if not shape:
+        return formula
+    return _absolute(shape, sheet, row, column)
 
 
 def sheet_grids(book: Workbook) -> dict[str, SheetGrid]:
@@ -74,7 +127,9 @@ def sheet_grids(book: Workbook) -> dict[str, SheetGrid]:
     column_votes: dict[str, dict[int, Counter[str]]] = {}
 
     for cell in book.cells.values():
-        signature = cell_signature(cell.formula, _shape(cell))
+        signature = cell_signature(
+            cell.formula, _shape(cell), cell.sheet, cell.row, cell.column
+        )
         per_sheet.setdefault(cell.sheet, {}).setdefault(cell.row, {})[cell.column] = (
             signature
         )

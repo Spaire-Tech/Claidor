@@ -214,3 +214,145 @@ honesty, not a pass mark: the numbers decide how the harness may
 afford to run (whole-file planting vs single-sheet extracts) and
 are written here before the harness is registered. Heavy jobs run
 alone in the container, sequentially, per the lanes discipline.
+
+## C2 cost results — the O(n⁴) term, measured before anything depends on it
+
+Run under the part-1 registration, rules unchanged. Both jobs ran
+alone in the container.
+
+**The worst case — `final_gd3_bpfm.xlsm` (17.5 MB, 48 sheets),
+self-aligned:** read 179 s, signatures 173 s, alignment 265 s, peak
+RSS **8.1 GB**, and — correctly — zero structural changes on the
+identical pair. The alignment time lives exactly where the theory
+says: the debt sheets whose rows carry few usable labels, where the
+similarity falls back to sequence LCS —
+`F5 - Inflation Linked Debt` (454×343) 93 s,
+`F3 - Fixed Rate Debt` (455×347) 70 s,
+`F6 - Debt Dataset` (1,978×61) 40 s. Well-labelled sheets of the
+same size cost well under a second, because a differing label pair
+is decided without any LCS at all.
+
+**The honest case — the biggest adjacent ED2 pair, v4_2026-01 →
+v5_2026-06:** read 21 s per file, signatures 2.1 s, **full-model
+alignment 2.6 s**, peak RSS 460 MB, 64 structural changes across 30
+sheets. And the first real result before any planting: v5 inserts
+one row at 157 on every licensee sheet (SPN, SSES, SSEH, ENWL,
+SPD, SWEST, …) and the aligner reads each as **one inserted row**
+with every other row matched — on a real revision, unprompted.
+
+**What the numbers decide.** (1) The O(n⁴) term is real but
+confined to label-poor sheets; on the well-labelled regulator
+models the Watch's target runs at seconds per pair. Fine for C2;
+if a label-poor giant ever needs to be fast, that is a registered
+round of its own (candidate: band the DP as SheetDiff's successors
+do), not a quiet tweak. (2) The 8.1 GB peak on the BPFM
+self-align re-teaches the paid-for lesson: heavy workbook jobs run
+alone, always. (3) Planting can afford whole real files: an ED2
+read is ~21 s, so the harness plants into the full v5 model rather
+than single-sheet extracts.
+
+## C2 registration, part 2 — the planted-edit harness (REGISTERED BEFORE RESULTS)
+
+Committed, with the harness itself (`scripts/watch_plant.py`,
+commit `74b250a`), before any recovery number was looked at.
+
+**Base file and sheets, chosen mechanically:** the newest ED2
+version, `ofgem_ed2/v5_2026-06.xlsx`; the sheet with the most
+populated content rows (`InputSummary`, 353) and the median sheet
+by that count (`SWEST`, 308). No other selection.
+
+**Classes** (planted with Excel's reference semantics — the
+harness's rewriter shifts references on insert and delete and is
+pinned by its own thirteen tests): `insert_blank_row`,
+`insert_copied_row`, `delete_row`, `insert_copied_column`,
+`delete_column`, `retype_literals` (five literals +7; must report
+no structure), `rewrite_formula` (one formula wrapped in SUM(…,0);
+must report no structure), `insert_row_and_retype`. Positions: the
+quartile indices of the sheet's populated lines, deterministic.
+
+**Judgement per instance, fixed:** the structural report must be
+exactly the planted change and nothing else; the row and column
+mappings must be right for every surviving line; **exact recovery**
+is both at once. A *copied* insert accepts either twin as the new
+line — the one genuinely undecidable ambiguity. The registered
+approximations (same-sheet references only; whole-row ranges not
+shifted; delete's range-endpoint convention) are in the harness
+docstring.
+
+**What will be reported, whatever it is:** instances and exact
+recoveries per class, the misses named one by one with their
+failure mode, and the comparison the amendment demands: the
+paper's zero-error claim is its authors' number; ours is whatever
+this table says.
+
+## C2 harness round 1 — instrument defect found; results recorded, not claimed
+
+The round-1 numbers, recorded honestly: 3/24 exact on
+`InputSummary` (the three `retype_literals` instances; every
+structural class missed). **These are not the aligner's numbers.**
+Diagnosis, in order:
+
+1. Every miss, whatever the planted edit, reported the same two
+   phantom blocks — rows 331–378 and 384–431 deleted *and*
+   re-inserted — even for column-only edits. The planted change
+   itself was reported correctly beside them (e.g.
+   `delete_column @ 18` found exactly `deleted_columns 18`).
+2. A null plant (load + save with **no edit**) showed openpyxl's
+   save drops every cached value: 27,488 refs differ on re-save.
+3. The phantom rows are pull-through rows (`=SelectedInputs!H24` …)
+   whose labels are **formula-produced**: with the cached text
+   gone, the engine's labeller finds no label. Their every
+   reference is cross-sheet, so a row shift genuinely changes
+   every shape (Excel-real, registered as a known limitation) —
+   and the label that would have rescued the match, and does
+   rescue it on real Excel-saved files (see the v4→v5 result:
+   row 157 clean on all fourteen licensee sheets), was destroyed
+   by the instrument, not by the edit.
+
+**Round 2, registered now, before any round-2 result:** the
+planter re-injects the original cached values into the edited
+sheet of the planted file (pre-image mapped through the edit; the
+copied row takes its source's values) — reconstructing what Excel
+itself would have saved, which is the file the harness claims to
+simulate. Nothing else changes: same base, same sheets, same
+classes, same positions, same judge. Round 1's
+`rewrite_formula` misses may be genuine (the first-formula rule
+landed on a label-less row 1, wholly rewritten → delete+insert);
+round 2 will say. All 24 instances re-run from scratch.
+
+## C2 harness round 2 — the instrument fixed; the misses now the aligner's
+
+Round 2 (values re-injected): 3/24 exact, but the picture changed —
+**the planted change itself is now reported correctly in every
+instance** (e.g. `insert_copied_row @ 131` reports exactly
+`inserted_rows 131`), and every remaining miss is one phenomenon
+beside it: rows 371–378 and 424–431, and column 8, report as
+deleted + re-inserted on every structural edit.
+
+Diagnosed at signature level, these are the aligner's, with one
+root cause: **a cross-sheet reference is encoded relative to the
+referencing cell** (`SelectedInputs!R[-307]C[+0]`), so a row shift
+changes every pull-through cell's shape — while in Excel's own
+semantics `=SelectedInputs!E64` does not move when its cell does.
+Rows whose labels exist survive this (the label carries the match);
+these particular rows are spare allowance rows whose label
+formulas *compute zero*, so they are genuinely label-less, lean on
+shapes alone, and fall below threshold. Column 8 is the same story
+on the other axis. The `rewrite_formula` misses are separate and
+small: the first-formula rule lands on label-less row 1, whose
+only formula is wholly rewritten — delete + insert is arguably the
+truth there; under the registered judge it is a miss and stays
+recorded as one.
+
+**Round 3, registered now, before its results — a signature
+amendment in writing:** in the Watch's signature layer (the engine
+untouched), a shape piece qualified with a *different* sheet's
+name has its relative offsets rewritten to the absolute target
+(`SelectedInputs!R[-307]C[+0]` from row 371 → `SelectedInputs!R64C[E]`),
+range tails included; same-sheet and unqualified pieces stay
+relative, because those do shift with their cells under Excel's
+reference updating. This encodes exactly Excel's own movement
+semantics, no more. Threshold, weights, judge, classes, positions:
+unchanged. All 24 InputSummary instances re-run from scratch, then
+SWEST, then the v4→v5 real pair re-run so every reported number
+sits on the same signature definition.
