@@ -83,3 +83,96 @@ script, and nothing above the interface changes.
 **No fidelity number, match rate, or catch rate in this log is a
 machine result until a LibreOffice ≥ 25.8 with Calc has actually run.
 None exists yet.**
+
+## 25 August 2026 — the while-blocked build
+
+New package `server/polar/tieout/recalc/` (gate, denylist, pool,
+laws), tests in `server/tests/tieout/test_recalc_*.py`, and
+`server/scripts/recalc_probe.py`. No new Python dependency was added —
+openpyxl's tokenizer is already the engine's, and everything else is
+the standard library. Everything reads the frozen surfaces only
+(`Workbook.cells`, `Cell.formula/.value/.precedents`); no engine file
+was touched.
+
+- **`gate.py` (B2's rules).** Stored-vs-recalculated comparison,
+  formula cells only: relative 1e-9 on plain chains with an absolute
+  floor of 1e-12 at zero; inside iterative cycles, the file's own
+  `calcPr` delta (Excel's default 0.001 when the file iterates
+  silently) — the bound is the file's declared convergence threshold,
+  never our invention. Cycle membership by strongly-connected
+  components over the cells' own precedents. Verdicts: `refused` /
+  `pass` / `fail` / `nothing-compared` (a generator-written file with
+  no stored values cannot be certified). A formula cell the engine
+  returned nothing for fails the gate — a gate cannot pass around a
+  hole.
+- **`denylist.py` (B2's routing).** Tokenized prescan (never
+  substring — a sheet named « RTD data » must not trip it): LAMBDA
+  and its helper family → arbiter; CUBE* → arbiter; RTD, UDFs,
+  external references → refusal. Routing policy is data, movable by
+  the lead. UDFs are detected by `_xludf.` stubs and by absence from
+  a curated function catalogue, which errs the honest way: an
+  unknown genuine function refuses rather than passing silently, and
+  the catalogue grows through this log when real corpus files name
+  the gaps.
+- **`pool.py` (B1's mechanics, no machine).** `WorkerPool` behind a
+  `Calculator` protocol: one document per worker, workers recycled
+  after N documents (soffice leaks), a dead calculator replaced and
+  its document retried exactly once on a fresh one. Proven against
+  fakes only — every fake result carries an `engine` label naming it
+  fake, so nothing can be mistaken for a recalculation. The real UNO
+  adapter is one class plus one driver script under the
+  LibreOffice-matched interpreter, per the audit above.
+- **`scripts/recalc_probe.py`.** The audit, repeatable: run on any
+  machine, it prints ok/LACK per prerequisite and exits 0 only when
+  B1 could be wired there. On this container today:
+  `LACK soffice (24.2 < 25.8)`, `LACK calc`,
+  `ok uno via /usr/bin/python3` — exit 1, as expected.
+
+Validation, run here: the 38 new tests pass; the standing tieout
+suite still passes beside them (`uv run pytest tests/tieout/
+--noconftest`: 447 passed, 4 skipped, excluding five files —
+test_agent_tools, test_corrections, test_routes, test_source,
+test_spine — whose *collection* fails identically with and without
+this lane's changes; a pre-existing pydantic-vs-Python-3.14.0rc2
+issue in this container, reported here, not fixed, not mine to fix).
+Ruff format/check and mypy are clean on every lane file; mypy also
+reports two pre-existing errors in `polar/tieout/audit.py` (lines
+2367, 2993) — Sentinel's file, noted for the lead, untouched.
+
+## 25 August 2026 — B4 registrations, before any result
+
+Registered now, while no machine can produce a number, so the rules
+cannot bend to results. The laws' arithmetic is `recalc/laws.py`,
+pinned by hand-worked tests; the selectors (which cells are volume,
+price, revenue, ratio, segment) will come from the engine's labelled
+reading plus per-model configuration, and are argued separately from
+the rules below, which are frozen by this entry.
+
+1. **Zero input.** Perturbation: every volume-class input set to 0.
+   Pass rule: every revenue-class output reads **exactly** 0 — the
+   plan's word, no tolerance. Predicted catch: the
+   hardcode-in-the-tail class (a constant pasted into a chain),
+   invisible to static reading.
+2. **Proportionality.** Perturbation: every price-class input ×2.
+   Pass rule: every revenue-class output ×2 within same-engine
+   tolerance (relative 1e-9, floor 1e-12 — both runs come from the
+   same calculator, only float dust is forgiven). Predicted catch:
+   the same hardcode class, plus caps/overrides wired into revenue
+   lines without being declared inputs.
+3. **Scale invariance.** Perturbation: every monetary input ×100
+   (cents for pounds). Pass rule: every ratio-class output unchanged
+   within same-engine tolerance. Predicted catch: a hardcoded leg
+   inside a ratio (a pasted denominator), and mixed-unit chains.
+4. **Consolidation.** No perturbation: one run; each declared total
+   equals the sum of its declared segments within same-engine
+   tolerance. Predicted catch: the omitted or double-counted segment.
+
+Measurement protocol, fixed now: laws run **only** on files that
+passed their fidelity gate (a violated law on an ungated file indicts
+the engine, not the model). Defects are planted per class on gated
+corpus files before any check runs; catch rate and false-positive
+price are measured per class against the planted truth; a violated
+law is a symptom, and the narrowing to one responsible cell (delta
+debugging over the dependency slice) is registered as future work —
+its absence today is a recorded gap. **No catch rate exists yet, and
+none is claimed.**
