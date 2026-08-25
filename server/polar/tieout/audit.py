@@ -2642,9 +2642,7 @@ def _mutations(book: Workbook, result: Audit) -> None:
     #: decision; the fold says it once, with the roster.
     grouped: dict[tuple[str, int], list[tuple[Cell, str]]] = {}
     for deviant, what in caught:
-        grouped.setdefault((deviant.sheet, deviant.column), []).append(
-            (deviant, what)
-        )
+        grouped.setdefault((deviant.sheet, deviant.column), []).append((deviant, what))
     for (sheet, _), members in sorted(grouped.items()):
         if len(members) >= 3:
             first, lead = members[0]
@@ -3037,6 +3035,15 @@ def _shape(cell: Cell, anchoring: bool = True) -> str:
     calculation, and the point of the check is to notice when one of them
     is not. Numbers become `#` so that a buried assumption is reported once,
     by the rule that is about buried assumptions, rather than twice.
+
+    On top of that, the A7 normalizations (registered in
+    `docs/pierce/a7-normalization-protocol.md`): all-plus and
+    all-times chains and symmetric-function arguments sort, constant
+    shapes fold (`#*#` is `#`), the Lotus-era unary plus is erased,
+    and the structural re-render carries no whitespace — so
+    `=+C26+C31`, `=C31+C26` and `= C26 + C31` are one authoring
+    decision with one shape. A formula the mini-parser cannot parse
+    falls back to the plain token join, never to an error.
     """
     if cell.formula is None:
         return ""
@@ -3045,16 +3052,171 @@ def _shape(cell: Cell, anchoring: bool = True) -> str:
         tokens = _tokens(cell.formula)
     except Exception:
         return ""
+    pieces: list[tuple[str, str]] = []
     for token in tokens:
         if token.type == "OPERAND" and token.subtype == "RANGE":
-            out.append(_offset(token.value, cell.row, cell.column, anchoring))
+            text = _offset(token.value, cell.row, cell.column, anchoring)
+            out.append(text)
+            pieces.append(("atom", text))
         elif token.type == "OPERAND" and token.subtype == "NUMBER":
             out.append("#")
+            pieces.append(("atom", "#"))
         elif token.type == "OPERAND" and token.subtype == "TEXT":
             out.append('"..."')
+            pieces.append(("atom", '"..."'))
         else:
             out.append(token.value)
-    return "".join(out)
+            if token.type == "OPERAND":
+                pieces.append(("atom", token.value))
+            elif token.type == "FUNC" and token.subtype == "OPEN":
+                pieces.append(("func", token.value))
+            elif token.type == "PAREN" and token.subtype == "OPEN":
+                pieces.append(("open", token.value))
+            elif token.subtype == "CLOSE":
+                pieces.append(("close", token.value))
+            elif token.type == "SEP" and token.subtype == "ARG":
+                pieces.append(("sep", token.value))
+            elif token.type == "OPERATOR-PREFIX":
+                pieces.append(("pre", token.value))
+            elif token.type == "OPERATOR-INFIX":
+                pieces.append(("op", token.value))
+            elif token.type == "OPERATOR-POSTFIX":
+                pieces.append(("post", token.value))
+            elif token.type == "WHITE-SPACE":
+                continue
+            else:
+                pieces.append(("other", token.value))
+    normalized = _normal_form(pieces)
+    return normalized if normalized is not None else "".join(out)
+
+
+#: Functions whose arguments carry no order — the only calls whose
+#: argument lists the shape may sort.
+_SYMMETRIC = frozenset({"SUM", "MIN", "MAX", "AVERAGE", "COUNT", "COUNTA", "PRODUCT"})
+
+
+def _normal_form(pieces: list[tuple[str, str]]) -> str | None:
+    """The shape re-rendered from a structural parse, or None.
+
+    A tiny recursive-descent pass over the normalized tokens: sorts
+    all-plus and all-times chains and symmetric-function arguments,
+    folds constant shapes, drops unary plus. Anything the grammar
+    does not expect — array literals, stray tokens — returns None and
+    the caller keeps the plain join.
+    """
+    position = 0
+
+    def peek() -> tuple[str, str] | None:
+        return pieces[position] if position < len(pieces) else None
+
+    def take() -> tuple[str, str]:
+        nonlocal position
+        piece = pieces[position]
+        position += 1
+        return piece
+
+    def compare() -> str:
+        parts = [chain()]
+        joins = []
+        while (
+            (p := peek())
+            and p[0] == "op"
+            and p[1] in {"=", "<", ">", "<=", ">=", "<>", "&"}
+        ):
+            joins.append(take()[1])
+            parts.append(chain())
+        return _interleave(parts, joins)
+
+    def chain() -> str:
+        parts = [term()]
+        joins = []
+        while (p := peek()) and p[0] == "op" and p[1] in {"+", "-"}:
+            joins.append(take()[1])
+            parts.append(term())
+        if joins and all(j == "+" for j in joins):
+            return "+".join(_folded(parts))
+        return _interleave(parts, joins)
+
+    def term() -> str:
+        parts = [unary()]
+        joins = []
+        while (p := peek()) and p[0] == "op" and p[1] in {"*", "/"}:
+            joins.append(take()[1])
+            parts.append(unary())
+        if joins and all(j == "*" for j in joins):
+            return "*".join(_folded(parts))
+        return _interleave(parts, joins)
+
+    def unary() -> str:
+        signs = ""
+        while (p := peek()) and p[0] == "pre":
+            sign = take()[1]
+            if sign == "-":
+                signs += "-"
+            elif sign != "+":
+                raise ValueError(sign)
+        rendered = power()
+        while (p := peek()) and p[0] == "post":
+            rendered += take()[1]
+        return signs + rendered
+
+    def power() -> str:
+        rendered = primary()
+        while (p := peek()) and p[0] == "op" and p[1] == "^":
+            take()
+            rendered += "^" + primary()
+        return rendered
+
+    def primary() -> str:
+        p = peek()
+        if p is None:
+            raise ValueError("end")
+        kind, text = take()
+        if kind == "atom":
+            return text
+        if kind == "open":
+            inner = compare()
+            if not (peek() and take() == ("close", ")")):
+                raise ValueError("paren")
+            return inner if inner == "#" else f"({inner})"
+        if kind == "func":
+            arguments = []
+            if (q := peek()) and q[0] == "close":
+                take()
+                return f"{text})"
+            arguments.append(compare())
+            while (q := peek()) and q[0] == "sep":
+                if take()[1] != ",":
+                    raise ValueError("sep")
+                arguments.append(compare())
+            if not (peek() and take()[0] == "close"):
+                raise ValueError("call")
+            name = text[:-1].upper()
+            if name in _SYMMETRIC:
+                arguments = sorted(arguments)
+            return f"{text}{','.join(arguments)})"
+        raise ValueError(kind)
+
+    try:
+        rendered = compare()
+    except (ValueError, IndexError):
+        return None
+    if position != len(pieces):
+        return None
+    return rendered
+
+
+def _interleave(parts: list[str], joins: list[str]) -> str:
+    rendered = parts[0]
+    for join, part in zip(joins, parts[1:]):
+        rendered += join + part
+    return rendered
+
+
+def _folded(parts: list[str]) -> list[str]:
+    """Sorted chain operands with the constant shapes folded into one `#`."""
+    kept = sorted(p for p in parts if p != "#")
+    return (["#"] if len(kept) < len(parts) else []) + kept
 
 
 def _offset(reference: str, row: int, column: int, anchoring: bool = True) -> str:
