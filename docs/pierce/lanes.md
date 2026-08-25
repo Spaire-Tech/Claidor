@@ -27,7 +27,7 @@ to Sentinel as a registered round. No exceptions, including
 | **Prism** — the Watch (Track C) | new package `server/polar/tieout/watch/`, `server/tests/tieout/test_watch*`, `server/scripts/watch_*` | everything else |
 | **Scribe** — the Chain (Track D) | new package `server/polar/tieout/chain/` (incl. its own router file, mounted at integration by the lead), `server/tests/tieout/test_chain*`, `server/scripts/{corpus_documents,corpus_extract_pdfs}*` | everything else |
 | **Atelier** — product & delivery (G + H) | `clients/**`, `server/polar/tieout/{endpoints,schemas,service}.py`, `server/scripts/demo_*`, the posture doc | engine modules, other lanes' packages |
-| **Lead** (this session) | `swens-plan.md`, `notes.md`, `worklog.md`, this file; merges; cross-lane arbitration | — |
+| **Ledger** — the lead (this session) | `swens-plan.md`, `notes.md`, `worklog.md`, this file; merges; cross-lane arbitration | — |
 
 Each lane writes its own running log at `docs/pierce/logs/<name>.md`
 — never the shared worklog, which the lead maintains at integration.
