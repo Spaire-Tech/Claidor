@@ -25,9 +25,13 @@ import shutil
 import sys
 import zipfile
 from pathlib import Path
+from typing import Any
 from xml.sax.saxutils import escape
 
 from openpyxl.utils import column_index_from_string, get_column_letter
+
+#: One family member: (ref, column, formula, own-column rows, signature).
+Member = tuple[str, int, str, tuple[int, ...], frozenset[tuple[int, int]]]
 
 #: The registration's numbers, in one place.
 SEED_CLASSES = ("plug", "off-by-one", "bleed", "mis-drag")
@@ -51,7 +55,9 @@ ARG = re.compile(
 )
 
 
-def _coverage(cell_sheet, cell_col, cell_row, formula):
+def _coverage(
+    cell_sheet: str, cell_col: int, cell_row: int, formula: str
+) -> tuple[set[tuple[int, int]], bool] | None:
     """(covered {(dc, row)}, own-column multi-row?) — or None when the
     formula is not a clean own-column total entirely above its cell."""
     m = BARE.match(formula)
@@ -87,11 +93,11 @@ def _coverage(cell_sheet, cell_col, cell_row, formula):
     return (covered, multi) if multi else None
 
 
-def families(book):
+def families(book: Any) -> dict[tuple[str, int], list[Member]]:
     """Eligible row-direction families: (sheet, row) → members, where
     4+ clean own-column totals share one coverage signature. Members
     are (ref, column, formula, own-column rows sorted)."""
-    by_row: dict[tuple[str, int], list] = {}
+    by_row: dict[tuple[str, int], list[Member]] = {}
     for cell in book.cells.values():
         if not cell.formula:
             continue
@@ -104,9 +110,9 @@ def families(book):
         by_row.setdefault((cell.sheet, cell.row), []).append(
             (cell.ref, cell.column, cell.formula, rows0, signature)
         )
-    out = {}
+    out: dict[tuple[str, int], list[Member]] = {}
     for key, members in by_row.items():
-        tally: dict[frozenset, list] = {}
+        tally: dict[frozenset[tuple[int, int]], list[Member]] = {}
         for member in members:
             tally.setdefault(member[4], []).append(member)
         best = max(tally.values(), key=len)
@@ -150,9 +156,9 @@ def sheet_files(zf: zipfile.ZipFile) -> dict[str, str]:
             target = target[1:]
         elif not target.startswith("xl/"):
             target = "xl/" + target
-        out[name.replace("&amp;", "&").replace("&quot;", '"').replace("&apos;", "'")] = (
-            target
-        )
+        out[
+            name.replace("&amp;", "&").replace("&quot;", '"').replace("&apos;", "'")
+        ] = target
     return out
 
 
@@ -163,9 +169,7 @@ def rewrite_formula(sheet_xml: str, ref: str, new_formula: str) -> str | None:
     formula — mutating either would change more cells than the one
     planted — or when the cell or its <f> cannot be found.
     """
-    cell_pattern = re.compile(
-        rf'(<c r="{re.escape(ref)}"[^>]*>)(.*?)(</c>)', re.DOTALL
-    )
+    cell_pattern = re.compile(rf'(<c r="{re.escape(ref)}"[^>]*>)(.*?)(</c>)', re.DOTALL)
     m = cell_pattern.search(sheet_xml)
     if m is None:
         return None
@@ -179,22 +183,22 @@ def rewrite_formula(sheet_xml: str, ref: str, new_formula: str) -> str | None:
         return None  # shared master or array: the plant would spread
     plain = f"<f>{escape(new_formula.lstrip('='))}</f>"
     new_body = body[: f.start()] + plain + body[f.end() :]
-    return sheet_xml[: m.start()] + m.group(1) + new_body + m.group(3) + sheet_xml[m.end():]
+    return (
+        sheet_xml[: m.start()]
+        + m.group(1)
+        + new_body
+        + m.group(3)
+        + sheet_xml[m.end() :]
+    )
 
 
 def _shift_start(formula: str) -> str | None:
     """The first own-column range's start row moved down one."""
 
     def bump(m: re.Match[str]) -> str:
-        return (
-            m.group(1)
-            + str(int(m.group(2)) + 1)
-            + m.group(3)
-        )
+        return m.group(1) + str(int(m.group(2)) + 1) + m.group(3)
 
-    new, n = re.subn(
-        r"(\(\s*\$?[A-Z]{1,3}\$?)(\d+)(\s*:)", bump, formula, count=1
-    )
+    new, n = re.subn(r"(\(\s*\$?[A-Z]{1,3}\$?)(\d+)(\s*:)", bump, formula, count=1)
     return new if n else None
 
 
@@ -206,7 +210,12 @@ def _widen(formula: str, own_col: int, toward: int) -> str | None:
     )
     if m is None:
         return None
-    start, end_dollar, end_col, end_rest = m.group(1), m.group(3), m.group(4), m.group(5)
+    start, end_dollar, end_col, end_rest = (
+        m.group(1),
+        m.group(3),
+        m.group(4),
+        m.group(5),
+    )
     if toward > own_col:
         new_end_col = get_column_letter(own_col + 1)
         replaced = f"({start}:{end_dollar}{new_end_col}{end_rest})"
@@ -225,7 +234,7 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
     rng = random.Random(seed)
     used_rows: set[tuple[str, int]] = set()
     used_cols: set[tuple[str, int]] = set()
-    plants: list[dict] = []
+    plants: list[dict[str, Any]] = []
 
     ordered = sorted(eligible.items())
     for defect in SEED_CLASSES:
@@ -235,9 +244,7 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
         for (sheet, row), members in shuffled:
             if made >= SITES_PER_CLASS or (sheet, row) in used_rows:
                 continue
-            candidates = [
-                m for m in members if (sheet, m[1]) not in used_cols
-            ]
+            candidates = [m for m in members if (sheet, m[1]) not in used_cols]
             if len(candidates) < 1 or len(members) - 1 < MIN_FAMILY - 1:
                 continue
             ref, col, formula, rows0, signature = rng.choice(candidates)
@@ -248,11 +255,7 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
                 after = _shift_start(formula)
             elif defect == "bleed":
                 sibling_cols = [m[1] for m in members if m[0] != ref]
-                toward = (
-                    col + 1
-                    if any(c > col for c in sibling_cols)
-                    else col - 1
-                )
+                toward = col + 1 if any(c > col for c in sibling_cols) else col - 1
                 if toward >= 1:
                     after = _widen(formula, col, toward)
             elif defect == "mis-drag":
@@ -288,7 +291,7 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
     with zipfile.ZipFile(host) as zf:
         targets = sheet_files(zf)
         contents = {name: zf.read(name) for name in zf.namelist()}
-    planted_ok: list[dict] = []
+    planted_ok: list[dict[str, Any]] = []
     for one in plants:
         target = targets.get(one["sheet"])
         if target is None:

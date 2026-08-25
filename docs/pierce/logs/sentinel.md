@@ -27,3 +27,32 @@ golden-master gate and regenerates the baseline in the same commit.
   Registration written and committed before any result is computed:
   `a3-sibling-totals.md`, with the planting harness under
   `server/scripts/planting/`.
+
+## 25 August 2026 — candidate 1 implemented behind its tests
+
+- The detector (`_sibling_totals` in `audit.py`, rule
+  `inconsistent-total`) implemented exactly as registered: SUM-only
+  membership, coverage + surround signature, consensus of 3, deviants
+  a strict minority, the four guards. Ten unit tests
+  (`test_audit_sibling_totals.py`) cover the four planted shapes and
+  the five silence cases; all pass. The corpus verdict — planted
+  recall, false-positive price, gate diff — is still owed and comes
+  next; nothing is claimed for the check yet.
+- Tests, honestly: the tieout suite runs conftest-free here (the
+  repo's root conftest cannot load on this container's Python 3.14
+  release candidate — a pydantic `_eval_type` incompatibility). Six
+  test files that import the API schemas fail at *collection* for
+  the same environmental reason, unmodified tree and modified tree
+  alike (verified by stashing my change and re-running). The 409
+  engine-side tests that do collect — audit, shapes, structure,
+  workbook, writer among them — pass with my change, plus the 10 new
+  ones. `ruff` clean; `mypy` adds no new error over the two that
+  pre-exist in `audit.py`.
+- One case for another lane, parked here per the charter: the web
+  workspace's category map (`clients/apps/web/src/components/
+  Workspace/files.ts`, Atelier's) buckets rules into families and
+  falls back to « Other findings » for unknown keys. If candidate 1
+  is adopted, `'inconsistent-total': 'Probable formula defects'`
+  belongs in that map — same family as `inconsistent-row` and
+  `skipped-cell`. Nothing breaks without it; the finding just files
+  under the fallback. For the lead to route when adoption lands.
