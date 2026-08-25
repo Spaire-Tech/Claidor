@@ -53,6 +53,9 @@ class Category(StrEnum):
     RTD = "rtd"
     UDF = "udf"
     EXTERNAL = "external-link"
+    #: A genuine Excel function LibreOffice measurably cannot compute
+    #: — real Excel settles it, so the route is the arbiter.
+    ENGINE_GAP = "engine-gap"
 
 
 #: The routing policy. Data, not code, so the lead can move a category
@@ -63,7 +66,15 @@ ROUTES: dict[Category, Route] = {
     Category.RTD: Route.REFUSE,
     Category.UDF: Route.REFUSE,
     Category.EXTERNAL: Route.REFUSE,
+    Category.ENGINE_GAP: Route.ARBITER,
 }
+
+#: Excel functions LibreOffice returns #NAME? (error 525) for,
+#: measured on this machine — not guessed. SINGLE (`@`, stored
+#: `_xlfn.SINGLE`): probed 26 Aug 2026, both spellings error on
+#: LibreOffice 25.8 (lane log; the GT3 draft PCFM's 976-cell fail is
+#: the corpus-scale evidence).
+ENGINE_GAP_FUNCTIONS = frozenset({"SINGLE"})
 
 #: Functions that imply a LAMBDA even when the word LAMBDA never
 #: appears — they take one as an argument.
@@ -79,8 +90,17 @@ EXTERNAL_REF = re.compile(r"\[(\d+|[^\]]*\.xl\w*)\]", re.IGNORECASE)
 
 
 def _canonical(name: str) -> str:
-    """Uppercase, stripped of the future-function prefix Excel stores."""
+    """Uppercase, stripped of the future-function prefix Excel stores.
+
+    A function can stand as the end of a range — `AA116:INDEX(...)`
+    is Excel's range-combinator form, and the tokenizer hands over the
+    whole `AA116:INDEX(` as the function token (the H7 PCM files are
+    built on it, 504 cells each). The function being called is what
+    follows the last range colon; the prefix is a cell, not a name.
+    """
     name = name.rstrip("(").strip()
+    if ":" in name:
+        name = name.rsplit(":", 1)[1]
     upper = name.upper()
     if upper.startswith("_XLFN."):
         return upper[len("_XLFN.") :]
@@ -114,6 +134,10 @@ def scan_formula(ref: str, formula: str) -> list[DenylistHit]:
             name = _canonical(token.value)
             if name in LAMBDA_FAMILY:
                 hits.append(DenylistHit(ref=ref, category=Category.LAMBDA, target=name))
+            elif name in ENGINE_GAP_FUNCTIONS:
+                hits.append(
+                    DenylistHit(ref=ref, category=Category.ENGINE_GAP, target=name)
+                )
             elif name.startswith("CUBE"):
                 hits.append(DenylistHit(ref=ref, category=Category.CUBE, target=name))
             elif name in RTD_FUNCTIONS:
