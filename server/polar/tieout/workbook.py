@@ -35,6 +35,7 @@ import datetime
 import re
 from dataclasses import dataclass, field
 from decimal import Decimal
+from functools import cache
 from typing import Any
 
 from openpyxl import load_workbook
@@ -661,6 +662,21 @@ RUNTIME_TARGET = {
 LOOKUP_TABLE = frozenset({"INDEX"})
 
 
+@cache
+def tokens_of(formula: str) -> list[Any]:
+    """One parse per formula text, shared by the reader and the audit.
+
+    The A1 profile showed the reader tokenizing every formula and the
+    audit tokenizing the same texts again — two full passes over the
+    grammar for one file. The list is shared and never mutated by any
+    caller (checked in both modules); grammar rejections raise exactly
+    as `Tokenizer` does, uncached, so unparseable formulas keep their
+    per-call behaviour. The audit clears this cache when it finishes,
+    which keeps a corpus sweep's memory flat; the key is the formula
+    text alone, so there is nothing to go stale."""
+    return list(Tokenizer(formula).items)
+
+
 def references_of(formula: str, sheet: str, names: Names | None = None) -> Precedents:
     """Everything a formula reads, and everything it reads that we cannot.
 
@@ -713,7 +729,13 @@ def references_of(formula: str, sheet: str, names: Names | None = None) -> Prece
         return None
 
     try:
-        tokens = Tokenizer(formula).items
+        #: Deliberately NOT the shared cache: the A1 round measured
+        #: sharing and rejected it — the reader passes each formula
+        #: once, so it gains almost nothing from caching, and storing
+        #: 640k token lists mid-read cost ~80-100s of allocation
+        #: pressure on the biggest model, more than the audit saved.
+        #: The audit caches for itself; the reader parses and moves on.
+        tokens = list(Tokenizer(formula).items)
     except Exception:
         #: The grammar rejected the whole formula. Report the fact and
         #: keep reading the rest of the workbook.

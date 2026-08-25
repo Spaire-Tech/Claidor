@@ -42,10 +42,9 @@ from dataclasses import dataclass, field
 from functools import cache
 from typing import Any
 
-from openpyxl.formula.tokenizer import Tokenizer
 from openpyxl.utils import get_column_letter
 
-from .workbook import REFERENCE, Cell, Workbook
+from .workbook import REFERENCE, Cell, Workbook, tokens_of
 
 #: Error values that are always a defect: a deleted row, a mistyped
 #: function name, a reference into a range that no longer exists.
@@ -265,22 +264,15 @@ HEADLINES: dict[str, str] = {
 }
 
 
-@cache
 def _tokens(formula: str) -> list[Any]:
     """The formula's tokens, or nothing when the grammar rejects it.
 
     The reader already records rejected formulas on the workbook and
     the audit reports each once — every other pass just skips them.
-
-    Cached, because the A1 profile showed the audit tokenizing 4.4
-    million times for a few hundred thousand distinct formulas — every
-    detector re-parsing the same cells. The returned list is shared
-    and never mutated by any caller (checked); the cache is cleared at
-    the end of each audit so a corpus sweep's memory stays flat. The
-    key is the formula text alone, which fully determines the output —
-    there is no staleness to guard against."""
+    Delegates to the reader's shared `tokens_of` cache, so a formula
+    the reader already parsed is never parsed again by the audit."""
     try:
-        return list(Tokenizer(formula).items)
+        return tokens_of(formula)
     except Exception:
         return []
 
@@ -753,8 +745,9 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     #: The caches exist for the passes above; dropping them here keeps
     #: a corpus sweep's memory flat file after file. Content-keyed, so
     #: clearing is about memory only, never correctness.
-    _tokens.cache_clear()
+    tokens_of.cache_clear()
     _shape_of.cache_clear()
+    _literal_scan.cache_clear()
     return result
 
 
@@ -1884,6 +1877,7 @@ def _literals(book: Workbook, result: Audit) -> None:
             )
 
 
+@cache
 def _literal_scan(formula: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
     """Every number typed in a formula, sorted into what it is doing.
 
