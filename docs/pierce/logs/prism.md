@@ -319,3 +319,40 @@ classes, same positions, same judge. Round 1's
 `rewrite_formula` misses may be genuine (the first-formula rule
 landed on a label-less row 1, wholly rewritten → delete+insert);
 round 2 will say. All 24 instances re-run from scratch.
+
+## C2 harness round 2 — the instrument fixed; the misses now the aligner's
+
+Round 2 (values re-injected): 3/24 exact, but the picture changed —
+**the planted change itself is now reported correctly in every
+instance** (e.g. `insert_copied_row @ 131` reports exactly
+`inserted_rows 131`), and every remaining miss is one phenomenon
+beside it: rows 371–378 and 424–431, and column 8, report as
+deleted + re-inserted on every structural edit.
+
+Diagnosed at signature level, these are the aligner's, with one
+root cause: **a cross-sheet reference is encoded relative to the
+referencing cell** (`SelectedInputs!R[-307]C[+0]`), so a row shift
+changes every pull-through cell's shape — while in Excel's own
+semantics `=SelectedInputs!E64` does not move when its cell does.
+Rows whose labels exist survive this (the label carries the match);
+these particular rows are spare allowance rows whose label
+formulas *compute zero*, so they are genuinely label-less, lean on
+shapes alone, and fall below threshold. Column 8 is the same story
+on the other axis. The `rewrite_formula` misses are separate and
+small: the first-formula rule lands on label-less row 1, whose
+only formula is wholly rewritten — delete + insert is arguably the
+truth there; under the registered judge it is a miss and stays
+recorded as one.
+
+**Round 3, registered now, before its results — a signature
+amendment in writing:** in the Watch's signature layer (the engine
+untouched), a shape piece qualified with a *different* sheet's
+name has its relative offsets rewritten to the absolute target
+(`SelectedInputs!R[-307]C[+0]` from row 371 → `SelectedInputs!R64C[E]`),
+range tails included; same-sheet and unqualified pieces stay
+relative, because those do shift with their cells under Excel's
+reference updating. This encodes exactly Excel's own movement
+semantics, no more. Threshold, weights, judge, classes, positions:
+unchanged. All 24 InputSummary instances re-run from scratch, then
+SWEST, then the v4→v5 real pair re-run so every reported number
+sits on the same signature definition.
