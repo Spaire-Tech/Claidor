@@ -39,6 +39,7 @@ import math
 import re
 from collections import Counter
 from dataclasses import dataclass, field
+from functools import cache
 from typing import Any
 
 from openpyxl.formula.tokenizer import Tokenizer
@@ -264,11 +265,20 @@ HEADLINES: dict[str, str] = {
 }
 
 
+@cache
 def _tokens(formula: str) -> list[Any]:
     """The formula's tokens, or nothing when the grammar rejects it.
 
     The reader already records rejected formulas on the workbook and
-    the audit reports each once — every other pass just skips them."""
+    the audit reports each once — every other pass just skips them.
+
+    Cached, because the A1 profile showed the audit tokenizing 4.4
+    million times for a few hundred thousand distinct formulas — every
+    detector re-parsing the same cells. The returned list is shared
+    and never mutated by any caller (checked); the cache is cleared at
+    the end of each audit so a corpus sweep's memory stays flat. The
+    key is the formula text alone, which fully determines the output —
+    there is no staleness to guard against."""
     try:
         return list(Tokenizer(formula).items)
     except Exception:
@@ -740,6 +750,11 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     result.findings.sort(
         key=lambda f: (-f.weight, f.severity != "error", f.sheet, f.rule, f.ref)
     )
+    #: The caches exist for the passes above; dropping them here keeps
+    #: a corpus sweep's memory flat file after file. Content-keyed, so
+    #: clearing is about memory only, never correctness.
+    _tokens.cache_clear()
+    _shape_of.cache_clear()
     return result
 
 
@@ -3051,18 +3066,29 @@ def _shape(cell: Cell, anchoring: bool = True) -> str:
     `=+C26+C31`, `=C31+C26` and `= C26 + C31` are one authoring
     decision with one shape. A formula the mini-parser cannot parse
     falls back to the plain token join, never to an error.
+
+    Cached by (formula, row, column, anchoring) — the four inputs that
+    fully determine the shape — because the A1 profile showed 1.7
+    million calls per big-model audit for a few hundred thousand
+    distinct cells. Cleared with the token cache at the end of each
+    audit, for memory alone.
     """
     if cell.formula is None:
         return ""
+    return _shape_of(cell.formula, cell.row, cell.column, anchoring)
+
+
+@cache
+def _shape_of(formula: str, row: int, column: int, anchoring: bool) -> str:
     out = []
     try:
-        tokens = _tokens(cell.formula)
+        tokens = _tokens(formula)
     except Exception:
         return ""
     pieces: list[tuple[str, str]] = []
     for token in tokens:
         if token.type == "OPERAND" and token.subtype == "RANGE":
-            text = _offset(token.value, cell.row, cell.column, anchoring)
+            text = _offset(token.value, row, column, anchoring)
             out.append(text)
             pieces.append(("atom", text))
         elif token.type == "OPERAND" and token.subtype == "NUMBER":
