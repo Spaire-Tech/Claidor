@@ -138,3 +138,57 @@ class TestEndToEnd:
         assert alignment.rows.mapping == {2: 2, 3: 3, 4: 5, 5: 6}
         assert alignment.columns.inserted == ()
         assert alignment.columns.deleted == ()
+
+
+class TestCrossSheetAbsolute:
+    """Round 3's amendment: a piece on another sheet does not move
+    with the cell, so its signature must not either."""
+
+    def test_a_pull_through_survives_its_cells_shift(self) -> None:
+        from polar.tieout.watch.signature import cell_signature
+
+        old = cell_signature(
+            "=SelectedInputs!E64", "SelectedInputs!R[-307]C[+0]", "InputSummary", 371, 5
+        )
+        new = cell_signature(
+            "=SelectedInputs!E64", "SelectedInputs!R[-308]C[+0]", "InputSummary", 372, 5
+        )
+        assert old == new == "SelectedInputs!R64CE"
+
+    def test_a_same_sheet_piece_stays_relative(self) -> None:
+        from polar.tieout.watch.signature import cell_signature
+
+        assert (
+            cell_signature("=AM424", "R[+53]C[-1]", "InputSummary", 371, 40)
+            == "R[+53]C[-1]"
+        )
+        assert (
+            cell_signature(
+                "=InputSummary!A1",
+                "InputSummary!R[-370]C[-39]",
+                "InputSummary",
+                371,
+                40,
+            )
+            == "InputSummary!R[-370]C[-39]"
+        )
+
+    def test_a_cross_sheet_range_tail_goes_absolute_too(self) -> None:
+        from polar.tieout.watch.signature import cell_signature
+
+        got = cell_signature(
+            "=SUM('Annual Inflation'!A1:A5)",
+            "SUM('Annual Inflation'!R[-1]C[+0]:R[+3]C[+0])",
+            "Model",
+            2,
+            1,
+        )
+        assert got == "SUM('Annual Inflation'!R1CA:R5CA)"
+
+    def test_anchored_pieces_pass_untouched(self) -> None:
+        from polar.tieout.watch.signature import cell_signature
+
+        assert (
+            cell_signature("=Other!$B$19", "Other!R19CB", "Model", 7, 3)
+            == "Other!R19CB"
+        )
