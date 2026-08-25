@@ -63,11 +63,15 @@ def test_range_combinator_index_is_not_a_udf() -> None:
     assert categories("=SUM(AA116:INDEX($B:$B,MATCH(9.99E+307,$B:$B)))") == set()
 
 
-def test_implicit_intersection_single_is_known() -> None:
+def test_implicit_intersection_single_is_a_measured_engine_gap() -> None:
     # `@` in modern Excel, stored as _xlfn.SINGLE — Excel's own
-    # wrapper, found in Ofgem's GT3 draft PCFM.
-    assert categories("=SINGLE(A1:A10)*2") == set()
-    assert categories("=_xlfn.SINGLE(A1:A10)*2") == set()
+    # wrapper, but LibreOffice 25.8 measurably returns #NAME? for it
+    # (probed 26 Aug, both spellings; the GT3 draft PCFM's 976-cell
+    # fail was the corpus-scale evidence). Real Excel computes it, so
+    # the route is the arbiter, not a refusal.
+    assert categories("=SINGLE(A1:A10)*2") == {Category.ENGINE_GAP}
+    assert categories("=_xlfn.SINGLE(A1:A10)*2") == {Category.ENGINE_GAP}
+    assert route_for(scan_formula("M!B2", "=SINGLE(A1:A10)")) is Route.ARBITER
 
 
 def test_ordinary_model_arithmetic_is_clean() -> None:

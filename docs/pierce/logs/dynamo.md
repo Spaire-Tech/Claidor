@@ -342,3 +342,24 @@ scan — the two H7 PCMs, the GT3 draft PCFM, the three final BPFMs
 (refused solely on SINGLE), and the three draft BPFMs
 (`recalc-failed` at 1800 s). Round 1's numbers stand as recorded
 above.
+
+## 26 August 2026 — SINGLE is a measured engine gap, not a catalogue entry
+
+Round 2's first record answered the SINGLE question exactly as the
+amendment said it would: the GT3 draft PCFM **failed** its gate with
+976 mismatches, every one `#ERR:525` — LibreOffice's #NAME?. A
+five-cell probe then settled it beyond the corpus: LibreOffice 25.8
+returns #NAME? for `SINGLE(...)` and `_xlfn.SINGLE(...)` alike. So
+the toolbox's « no LAMBDA » gap has a sibling: **no implicit
+intersection**. The catalogue addition is reverted; SINGLE now has
+its own denylist category, `engine-gap` — a genuine Excel function
+LibreOffice measurably cannot compute — routed to the **arbiter**
+(real Excel settles it), never a silent fail. Regression test
+updated; the probe and the 976-cell fail are the evidence, both on
+this machine, today.
+
+Consequence for the corpus: the GT3 draft PCFM and the three final
+BPFMs are *arbiter files* until B3 exists — their fidelity is real
+Excel's to certify, and LibreOffice's verdict on them is recorded as
+« engine gap », not as a model defect. The gate's discipline held:
+no behavioural check will run on them here.

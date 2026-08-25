@@ -53,6 +53,9 @@ class Category(StrEnum):
     RTD = "rtd"
     UDF = "udf"
     EXTERNAL = "external-link"
+    #: A genuine Excel function LibreOffice measurably cannot compute
+    #: — real Excel settles it, so the route is the arbiter.
+    ENGINE_GAP = "engine-gap"
 
 
 #: The routing policy. Data, not code, so the lead can move a category
@@ -63,7 +66,15 @@ ROUTES: dict[Category, Route] = {
     Category.RTD: Route.REFUSE,
     Category.UDF: Route.REFUSE,
     Category.EXTERNAL: Route.REFUSE,
+    Category.ENGINE_GAP: Route.ARBITER,
 }
+
+#: Excel functions LibreOffice returns #NAME? (error 525) for,
+#: measured on this machine — not guessed. SINGLE (`@`, stored
+#: `_xlfn.SINGLE`): probed 26 Aug 2026, both spellings error on
+#: LibreOffice 25.8 (lane log; the GT3 draft PCFM's 976-cell fail is
+#: the corpus-scale evidence).
+ENGINE_GAP_FUNCTIONS = frozenset({"SINGLE"})
 
 #: Functions that imply a LAMBDA even when the word LAMBDA never
 #: appears — they take one as an argument.
@@ -123,6 +134,10 @@ def scan_formula(ref: str, formula: str) -> list[DenylistHit]:
             name = _canonical(token.value)
             if name in LAMBDA_FAMILY:
                 hits.append(DenylistHit(ref=ref, category=Category.LAMBDA, target=name))
+            elif name in ENGINE_GAP_FUNCTIONS:
+                hits.append(
+                    DenylistHit(ref=ref, category=Category.ENGINE_GAP, target=name)
+                )
             elif name.startswith("CUBE"):
                 hits.append(DenylistHit(ref=ref, category=Category.CUBE, target=name))
             elif name in RTD_FUNCTIONS:
@@ -246,10 +261,6 @@ KNOWN_FUNCTIONS = frozenset(
         "TAN",
         "TANH",
         "TRUNC",
-        # Excel's implicit-intersection wrapper (`@`, stored as
-        # _xlfn.SINGLE) — Excel's own, not a user function; found in
-        # the wild in Ofgem's GT3 draft PCFM (this lane's log, 26 Aug).
-        "SINGLE",
         # Logical
         "AND",
         "FALSE",
