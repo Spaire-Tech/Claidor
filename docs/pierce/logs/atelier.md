@@ -168,3 +168,47 @@ All four charter tasks are done. Remaining Atelier-adjacent items in
 the build record's not-yet list (narrative report writer, server-side
 chat history, `rounding`/`writing` house-rule consumers) await the
 founder's decisions named there.
+
+## 26 August 2026 — deal names off the team screen (founder: HIDE)
+
+The founder's decision, recorded in `lanes.md` (26 Aug entry) and
+relayed here: deal names come off the team screen; the posture doc's
+§ 3 exception closes in the same change.
+
+**What changed.** `/tieout/team` now reduces each colleague's
+membership list to a **count** before anything is sent — the names
+never leave the server (`get_team` in `endpoints.py`; `TeamMember`
+loses `deals: list[str]`, gains `deal_count: int`). The repository
+query is untouched (not my path, and the server may know what it does
+not say). Settings' people rows say « On 2 deals » / « All 3 deals » /
+« No deals yet » — the drawn sub-line's shape, without a name. The
+endpoint test now asserts the payload carries **no deal name
+anywhere**, and the posture doc § 3 states the closure with the
+founder's date, so « being at the firm grants nothing » holds without
+an asterisk. Route suite: **69 passed**; frontend typecheck, eslint
+and prettier clean.
+
+**The base this was built on, honestly.** The lead's word was to pull
+the integration tip (`claude/pierce-phase-6-writing-mjkaj6` @
+`76eb2a2`). This resumed container cannot run authenticated git at
+all — the environment manager's own log shows the git proxy sidecar
+skipped on resume (« boot-clone mount is on ») with no credential
+written to the remote URL, so every fetch/push dies at
+« could not read Username ». Worked around, not ignored: I verified
+via the GitHub API that **every file this change touches is
+byte-identical between my branch head and the integration tip**
+(endpoints, schemas, test_routes, api.ts, Settings.tsx, the posture
+doc, this log — blob SHAs compared), so building on my local checkout
+is building on the tip for this change's footprint. The branch itself
+is *not* rebased onto the tip — no writable git — and these commits
+reach `swens/atelier` through the GitHub API rather than a push. The
+lead's merge of `swens/atelier` will land cleanly for the same
+reason the SHAs match; the rebase can happen when a container with
+working git exists, or the lead can simply merge.
+
+One consequence noted for the next Atelier session: the local
+checkout still lacks the other lanes' merged code (recalc, watch,
+chain, the JWK-kid fix in `dev/setup-environment`), so local test
+runs here still need `CLAIDOR_CURRENT_JWK_KID=polar_dev` — the tip
+already fixed the generator; the stale `.jwks.json` is this
+container's, not the repo's.
