@@ -26,7 +26,7 @@ to Sentinel as a registered round. No exceptions, including
 | **Dynamo** — recalculator (Track B) | new package `server/polar/tieout/recalc/`, `server/tests/tieout/test_recalc*`, `server/scripts/recalc_*` | everything else |
 | **Prism** — the Watch (Track C) | new package `server/polar/tieout/watch/`, `server/tests/tieout/test_watch*`, `server/scripts/watch_*` | everything else |
 | **Scribe** — the Chain (Track D) | new package `server/polar/tieout/chain/` (incl. its own router file, mounted at integration by the lead), `server/tests/tieout/test_chain*`, `server/scripts/{corpus_documents,corpus_extract_pdfs}*` | everything else |
-| **Atelier** — product & delivery (G + H) | `clients/**`, `server/polar/tieout/{endpoints,schemas,service}.py`, `server/scripts/demo_*`, the posture doc | engine modules, other lanes' packages |
+| **Atelier** — product & delivery (G + H) | `clients/**`, `server/polar/tieout/{endpoints,schemas,service}.py`, `server/tests/tieout/test_routes*`, `server/scripts/demo_*`, the posture doc | engine modules, other lanes' packages |
 | **Ledger** — the lead (this session) | `swens-plan.md`, `notes.md`, `worklog.md`, this file; merges; cross-lane arbitration | — |
 
 Each lane writes its own running log at `docs/pierce/logs/<name>.md`
@@ -136,12 +136,16 @@ them from here, so coordination is through git (their branches and
 logs) and through the founder. The lead pulls `swens/*` branches to
 check on progress; silence in a log is a question, not a comfort.
 
-**Docs-only merges** (amendment, 25 Aug, first sweep): when a lane's
-diff against the integration tip touches no path under `server/` or
-`clients/`, the golden-master gate is not re-run for that merge — the
-engine's bytes are identical, so its answers are identical by
-construction. The conftest-free tests still run on the merged tip.
-Any code path in the diff, and the full loop applies unchanged.
+**When the gate re-runs** (amendment, 25 Aug, refined at the second
+sweep): the golden-master gate certifies what `audit()` reports, so
+it re-runs when a merge touches any module the engine imports at
+audit time — the tieout engine files in Sentinel's ownership row,
+`ingest.py`, or anything they import. For any other merge (docs, new
+packages like `recalc/`/`watch/`/`chain/`, scripts, tests, product
+code), the certification is byte-identity: the lead diffs the engine
+modules against the pre-merge tip and records that the diff is
+empty — identical bytes cannot report differently. The conftest-free
+tests still run on every merged tip either way.
 
 ## Lead decisions (the record lanes rebase onto)
 
@@ -158,3 +162,26 @@ Any code path in the diff, and the full loop applies unchanged.
 - **25 Aug — Dynamo's machine question** (LibreOffice 25.8 install
   target) is with the founder; Dynamo continues its blocked-state
   charter work meanwhile.
+- **25 Aug, second sweep — ownership amendment**: Atelier's row
+  gains `server/tests/tieout/test_routes*` — its charter already
+  assigned the endpoint-level tests, the table just hadn't said so.
+- **25 Aug, second sweep — Scribe's D2 contract**: the fact-store
+  schema (log entry of that date) is **approved as proposed**,
+  including the deliberate absence of a `label` field; D2 serving
+  routes may proceed. The chain router is now mounted in
+  `polar/api.py` by the lead, as the table always said it would be.
+- **25 Aug, second sweep — Sentinel's merge is HELD**, at no fault:
+  its A3 candidate 1 is implemented behind unit tests with the
+  corpus verdict still owed. A findings change merges only with its
+  verdict and regenerated baseline in the same push — exactly what
+  Sentinel's own log says comes next. Its parked note for Atelier
+  (`'inconsistent-total'` into the web category map's
+  « Probable formula defects » family) is routed **when adoption
+  lands**, not before.
+- **25 Aug, second sweep — a shared-environment fix by the lead** (
+  `pyproject`, its owner): locust's bundled pytest plugin defines a
+  global `session` fixture; under `--noconftest` it can capture the
+  DB-session fixture name and its lazy gevent import deadlocked a
+  full suite run here for ten minutes. `addopts = "-p no:locust"`
+  disables the plugin for this repo — no lane test should ever
+  resolve `session` to an HTTP load-testing client silently.

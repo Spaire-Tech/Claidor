@@ -131,6 +131,10 @@ extend_platform_trial = { cmd = "python -m scripts.extend_platform_trial", help 
 pre_deploy = { cmd = "task db_migrate && task seed_platform_products", help = "Pre-deploy command run by Render. Migrates DB then re-seeds platform tier products so the startup check passes against any new code." }
 
 [tool.pytest.ini_options]
+# locust's bundled pytest plugin defines a global `session` fixture; under
+# --noconftest it can shadow the app's DB-session fixture and its lazy gevent
+# import deadlocks the run. This suite never drives locust through pytest.
+addopts = "-p no:locust"
 markers = ["auth"]
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"

@@ -3879,3 +3879,48 @@ lane itself proposed; Atelier's § 3 finding and Dynamo's machine
 question go to the founder. Sentinel and Prism have not pushed yet —
 they started latest; silence in a log is a question, and the next
 sweep asks it.
+
+---
+
+## 25 August, late night — the second sweep: all five lanes alive, four merged, one held
+
+Every lane has now pushed, and this round carried real code — about
+six thousand lines across four lanes, every path inside its owner's
+row. Merged one at a time, conftest-free tests after each, engine
+modules verified byte-identical across the lot (the gate rule got its
+honest refinement in `lanes.md`: the gate re-runs when audit-time
+modules change; for everything else, an empty diff on the engine
+files *is* the certification).
+
+**Dynamo** built the recalculator's whole shore-side: the fidelity
+gate's comparison rules (the file's own convergence delta inside
+cycles, never our invention), the tokenized denylist that routes
+LAMBDA/CUBE to the arbiter and refuses RTD/UDFs by catalogue-absence
+— erring toward refusal — the worker pool proven against fakes that
+label themselves fake, and `recalc_probe.py`, which prints exactly
+what any machine lacks (this one: LibreOffice 24.2 < 25.8, no Calc).
+B4's four laws are registered with no machine to bend them. **Prism**
+closed C1 on a real adjacent ED2 pair — 1,279 differences, hand-check
+zero disagreements, and the finding that formula equality must be in
+translated-shape terms or sixty thousand shared-formula falses drown
+everything — then registered C2's signatures, DP alignment,
+thresholds and cost measurement before any recovery number exists.
+**Scribe** shipped D1: every number with page and box, scans refused
+in words, 30 tests; the D2 fact-store contract proposed and now
+approved; its router mounted in `api.py` by the lead at this sweep.
+**Atelier** built and *ran* the demo kit (#18) end to end — repairing
+its container to run the full backend, cascade v1/v2 through the
+product's own writer, the planted defect found and named, 113 deck
+figures reconciled — and put four route tests on the marked-up
+download; all 65 route tests pass where a database exists.
+
+**Sentinel merges next sweep, not this one** — held by the one hard
+rule, in exactly the state its own log promises: candidate 1
+implemented behind ten unit tests, corpus verdict and baseline still
+owed. And one defect the sweep caught in the shared ground, fixed by
+the lead as pyproject owner: locust's pytest plugin smuggles a global
+`session` fixture that deadlocked a conftest-free run via gevent's
+import lock — disabled with `-p no:locust`, suite back to 24 seconds.
+548 tieout tests pass at the new tip; the 103 collection errors are
+the one known environmental class (pydantic vs this container's
+Python 3.14rc), proven passing where the fixtures run.
