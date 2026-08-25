@@ -3957,3 +3957,29 @@ route tests join the environment-blocked file here and pass where a
 database exists — 559 on Atelier's repaired box). Sentinel, Dynamo,
 Scribe: no new pushes; Sentinel's corpus verdict remains the next
 expected merge.
+
+---
+
+## 26 August — the fourth sweep: C2 closes
+
+**Prism closed C2.** On the round-3 signature definition, run from
+scratch on both registered sheets: 42/42 exact on every structural
+and value-only class — one planted row reads as one structural
+change, at every position, on both sheets — with the single missing
+class named and kept (whole-row single-formula rewrites on a
+label-less row read as delete+insert; arguably the truth, recorded
+as a miss under the registered judge, carried as a registered
+limitation). The real v4→v5 pair, re-run under the final signatures:
+64 structural changes telling one checkable story — ten licensee
+sheets gain a row at 157, the two long sheets show it changed in
+place, two show nothing — and the log corrects its own earlier
+« fourteen sheets » recollection against the JSON, which is the
+kind of correction the record exists for. The plan's C2 DONE line is
+met; C3's delta report has its inputs.
+
+**Sentinel** recorded its precondition — the unmodified engine's
+fresh sweep reports identically to the committed baseline on its
+machine — which is the required opening move; the after-sweep with
+the detector live, the verdict, and the regenerated baseline remain
+the next push, and its merge stays held until they arrive together.
+Docs-only merge; engine untouched; 552 tieout tests green at the tip.
