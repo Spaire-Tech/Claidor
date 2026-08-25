@@ -3983,3 +3983,22 @@ machine — which is the required opening move; the after-sweep with
 the detector live, the verdict, and the regenerated baseline remain
 the next push, and its merge stays held until they arrive together.
 Docs-only merge; engine untouched; 552 tieout tests green at the tip.
+
+---
+
+## 26 August — the fifth sweep: Sentinel's recall lands, its merge still waits
+
+Only Sentinel moved, and its numbers arrived in the registered
+order: hosts picked by the pre-committed rule (kept even though two
+are near-twins — said openly rather than re-rolled), then planted
+recall — **46 of 49 planted defects caught (94%)**, the plug class
+carried by the new `inconsistent-total` rule alone (9/11, the
+adoption criterion met), and each of the three misses run to ground
+in writing: one is the registration's own stated boundary (a two-row
+total narrowed to a single-row range falls out of the family by
+definition), two await examination when the sweep frees its machine.
+Still owed before anything merges: the false-positive price on the
+unplanted corpus and the gate's after-sweep with the regenerated
+baseline in the same push. The hold holds — not for doubt, but
+because the answer sheet and the detector must land together.
+No merge this sweep; the integration tip is unchanged.
