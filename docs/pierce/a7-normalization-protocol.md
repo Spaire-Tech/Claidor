@@ -83,3 +83,45 @@ was OOM-killed by a concurrent heavy run; the clean run had the
 machine to itself. Heavy workbook jobs run alone now.) The
 after-sweep with the four normalizations live runs next; its diff
 and the hand reading land below.
+
+---
+
+## Round-1 verdict (25 Aug): REFUSED, by the registration's own clause
+
+The after-sweep differed from the baseline in four files. Three are
+the intended whitespace-merge, textbook: the One-Off Wedge sheets'
+`(1 + 2%)` and `(1 +2%)` hardcode families — one authoring decision
+split by a space — merged (48+27 → 75 cells, 11+10 → 21), findings
+4 → 2 per file. The fourth is the refusing line: in
+`final_gt3_bpfm`, the typed-over finding « the same value typed
+across 10 cells of one row (AP29 to AY29) » vanished with no
+absorber.
+
+**The examination, run to ground.** The island detector requires the
+island's edge formula to carry the column's *single most-common*
+shape (`== usual`). In the AP run (rows 16–40) the old families
+counted [4, 3, 3, 2, 2, …] — the edge's family was the unique
+maximum. Normalization merged a whitespace-split variant pair into
+another family: [4, 4, 3, …] — **a tie**, which `Counter.most_common`
+breaks by insertion order, crowning the other family. The edge still
+repeats four times; the code demands it be *the* majority, which is
+narrower than this detector's own docstring (« the cell at the
+island's edge carries that repeating shape »). The old finding
+survived on tie-break luck, not on its witness.
+
+**Round 2, registered now, before it is measured:** the edge test is
+aligned with its documented intent — the edge's shape must belong to
+a *repeating family* (count ≥ 2), not equal the single crowned
+majority — and the finding's example sentence names the calculation
+the island actually interrupts (the edge's family), not the global
+majority. Prediction: the AP29 finding returns under the new shapes,
+the One-Off Wedge merges stand, and nothing else in the corpus
+moves. Any other difference refuses round 2 the same way.
+
+**On the promised revert:** the A7 implementation commit said a
+refusal would revert it. Recorded instead, in the open: the refusal
+was caused by a tie-break artifact in the detector, not by the
+normalizations, so the implementation stays while round 2 — the
+one-line alignment — is measured immediately; if round 2 fails, both
+revert together. Written here precisely so it is a decision on the
+record, not a promise quietly dropped.
