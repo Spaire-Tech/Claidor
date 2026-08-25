@@ -282,3 +282,63 @@ re-run is round 2, reported separately.
 Round 2 scope, fixed now: the two H7 PCM files, the GT3 draft PCFM,
 and any BPFM whose round-1 outcome was `recalc-failed`, at 7200 s.
 Nothing else is re-run; round 1's numbers are not revised.
+
+## 26 August 2026 — B2 round 1: the fidelity report, golden-master corpus
+
+Sweep of all 27 files, machine: LibreOffice 25.8 (UNO) on this
+container, rules exactly as registered. **Zero mismatching cells.**
+
+**Summary: 18 pass · 0 fail · 6 refused · 3 recalc-failed —
+723,192 formula cells compared, 723,192 matched (100%, relative
+1e-9).** No file that was gated showed even one cell LibreOffice
+could not reproduce.
+
+| File | Outcome | Compared | Match rate |
+|---|---|---|---|
+| h7_new_debt_indexation_fds.xlsx | pass | 2,233 | 1.000000 |
+| h7_new_debt_indexation_fp.xlsx | pass | 2,772 | 1.000000 |
+| h7_pcm_v2-10_final_proposals.xlsm | refused (504 range-INDEX hits — scan artifact, amendment above) | — | — |
+| h7_pcm_v2-11_final_determination.xlsm | refused (ditto) | — | — |
+| ofgem_ed2 v1 2023-02 | pass | 19,513 | 1.000000 |
+| ofgem_ed2 v2 2023-07-14 | pass | 19,398 | 1.000000 |
+| ofgem_ed2 v2 2023-07-31 | pass | 19,398 | 1.000000 |
+| ofgem_ed2 v3 2023-10 | pass | 19,298 | 1.000000 |
+| ofgem_ed2 v3 2023-11 | pass | 19,298 | 1.000000 |
+| ofgem_ed2 v3 2024-01 (.xlsm) | pass | 19,264 | 1.000000 |
+| ofgem_ed2 v4 2024-07 | pass | 19,261 | 1.000000 |
+| ofgem_ed2 v4 2025-01 | pass | 19,261 | 1.000000 |
+| ofgem_ed2 v4 2025-07 | pass | 19,261 | 1.000000 |
+| ofgem_ed2 v4 2026-01 | pass | 19,261 | 1.000000 |
+| ofgem_ed2 v5 2026-06 | pass | 19,261 | 1.000000 |
+| DRAFT ET3 PCFM Jun25 | pass | 13,878 | 1.000000 |
+| DRAFT GD3 PCFM Jun25 | pass | 8,185 | 1.000000 |
+| DRAFT GT3 PCFM Jun25 | refused (29 SINGLE hits — catalogue gap, amendment above) | — | — |
+| RIIO ET3 BPFM draft (.xlsm) | recalc-failed (no answer in 1800 s) | — | — |
+| RIIO GD3 BPFM draft (.xlsm) | recalc-failed (no answer in 1800 s) | — | — |
+| RIIO GDT3 RoE Summary | pass | 304 | 1.000000 |
+| RIIO GDT3 WACC Rates Model | pass | **243,285** | 1.000000 |
+| RIIO GT3 BPFM draft (.xlsm) | recalc-failed (no answer in 1800 s) | — | — |
+| final_et3_bpfm.xlsm | refused (10 SINGLE hits) | — | — |
+| final_gd3_bpfm.xlsm | refused (10 SINGLE hits) | — | — |
+| final_gt3_bpfm.xlsm | refused (10 SINGLE hits) | — | — |
+| final_wacc.xlsx | pass | 240,061 | 1.000000 |
+
+Honest margins on the claim: uncached formula cells (present in the
+file with no stored value — a generator or a saved-without-recalc
+tab) are counted per file in the raw record and were not comparable
+(ED2 carries ~1,224 per version; the PCFM drafts 6–10k); the two
+quarter-million-cell WACC models each took ~19 coarse minutes
+end-to-end on this shared box (timings are noise; the match rates
+are the result). The refusals and timeouts are exactly the amendment's
+three cases; every one of the six refusals' recorded hits is a scan
+artifact shape (the H7 lists are truncated at 25 in the record, so
+round 2's re-prescan under the fixed scan is the decider — anything
+genuine will refuse again and be recorded as such).
+
+**Round 2 scope addendum, registered before it runs** (extending the
+amendment's scope line, since four more files finished after it was
+written): round 2 re-runs, at 7200 s per document, with the amended
+scan — the two H7 PCMs, the GT3 draft PCFM, the three final BPFMs
+(refused solely on SINGLE), and the three draft BPFMs
+(`recalc-failed` at 1800 s). Round 1's numbers stand as recorded
+above.
