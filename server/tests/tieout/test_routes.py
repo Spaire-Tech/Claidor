@@ -1430,13 +1430,19 @@ class TestHouseRules:
 @pytest.mark.asyncio
 class TestTheTeam:
     @pytest.mark.auth
-    async def test_everyone_appears_with_their_deals_only(
+    async def test_everyone_appears_and_no_deal_is_named(
         self,
         client: AsyncClient,
         session: AsyncSession,
         save_fixture: SaveFixture,
         user: User,
     ) -> None:
+        """The founder's decision (26 August): counts, never names.
+
+        A colleague not on the deal must not learn what it is called
+        from the team screen — the response carries no deal name
+        anywhere, only how many deals each person is on.
+        """
         deal = await _deal_for(session, save_fixture, user)
         colleague = await create_user(save_fixture)
         session.add(
@@ -1453,12 +1459,16 @@ class TestTheTeam:
         by_id = {one["id"]: one for one in body["members"]}
         mine = by_id[str(user.id)]
         assert mine["you"] is True
-        assert mine["deals"] == ["Project Cascade"]
+        assert mine["deal_count"] == 1
         theirs = by_id[str(colleague.id)]
         assert theirs["you"] is False
-        # The colleague is in the organization and on no deal — an empty
-        # list, never a borrowed one.
-        assert theirs["deals"] == []
+        # In the organization and on no deal — zero, never a borrowed
+        # count.
+        assert theirs["deal_count"] == 0
+        # And the name itself appears nowhere in the payload: the
+        # count is the most this screen may say.
+        assert "Project Cascade" not in response.text
+        assert "deals" not in mine
 
 
 @pytest.mark.asyncio
