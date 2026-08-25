@@ -284,3 +284,38 @@ recoveries per class, the misses named one by one with their
 failure mode, and the comparison the amendment demands: the
 paper's zero-error claim is its authors' number; ours is whatever
 this table says.
+
+## C2 harness round 1 — instrument defect found; results recorded, not claimed
+
+The round-1 numbers, recorded honestly: 3/24 exact on
+`InputSummary` (the three `retype_literals` instances; every
+structural class missed). **These are not the aligner's numbers.**
+Diagnosis, in order:
+
+1. Every miss, whatever the planted edit, reported the same two
+   phantom blocks — rows 331–378 and 384–431 deleted *and*
+   re-inserted — even for column-only edits. The planted change
+   itself was reported correctly beside them (e.g.
+   `delete_column @ 18` found exactly `deleted_columns 18`).
+2. A null plant (load + save with **no edit**) showed openpyxl's
+   save drops every cached value: 27,488 refs differ on re-save.
+3. The phantom rows are pull-through rows (`=SelectedInputs!H24` …)
+   whose labels are **formula-produced**: with the cached text
+   gone, the engine's labeller finds no label. Their every
+   reference is cross-sheet, so a row shift genuinely changes
+   every shape (Excel-real, registered as a known limitation) —
+   and the label that would have rescued the match, and does
+   rescue it on real Excel-saved files (see the v4→v5 result:
+   row 157 clean on all fourteen licensee sheets), was destroyed
+   by the instrument, not by the edit.
+
+**Round 2, registered now, before any round-2 result:** the
+planter re-injects the original cached values into the edited
+sheet of the planted file (pre-image mapped through the edit; the
+copied row takes its source's values) — reconstructing what Excel
+itself would have saved, which is the file the harness claims to
+simulate. Nothing else changes: same base, same sheets, same
+classes, same positions, same judge. Round 1's
+`rewrite_formula` misses may be genuine (the first-formula rule
+landed on a label-less row 1, wholly rewritten → delete+insert);
+round 2 will say. All 24 instances re-run from scratch.
