@@ -43,3 +43,74 @@ doc rather than smoothed over:**
    it.
 
 Next, in charter order: the sales demo kit (#18).
+
+## 25 August 2026 — the demo kit (#18), built and run end to end
+
+`server/scripts/demo_deal.py`. What « demo kit » means was
+reconstructed from the record, since #18's original task text lives in
+a session tracker that is gone: `swens.md` § 7 (« the demo is the
+product » — a prospect's own model, ideally two versions, flagship
+findings first, the delta between their own versions, routine findings
+never the opening) and H1's DONE test (« a stranger's two versions
+produce the demo — findings + delta — within a day, hands off »). The
+kit is that operation as one command:
+
+    uv run python -m scripts.demo_deal --name "Project Falcon" \
+        v1.xlsx v2.xlsx [--deck deck.pptx] [--memo memo.docx] [--brief out.md]
+
+It builds the deal through the product's own ingest and checks — the
+workspace, report sheet and marked-up download are live against it the
+moment it finishes — and prints the demo brief in § 7's order. Honesty
+rules in the script's docstring: every number is read back from the
+stored rows; the version delta is findings-by-fingerprint between the
+runs the kit itself performed plus the product's own cell diff, and it
+is *not* called the Watch.
+
+**Run for real, not just written.** This container had no working
+backend at first: Python was 3.14.0rc2 (pydantic fails on it —
+`typing._eval_type` changed between rc2 and final) and there was no
+Docker, so no Postgres/Redis/Minio. Fixed locally: uv upgraded
+(0.8.17 → 0.12.5) to install CPython 3.14.0 final, and the three
+services installed natively (PostgreSQL 16, Redis, Minio with the
+committed dev credentials from `.env.testing`). None of that is a repo
+change. With services up, the full endpoint suite passes here —
+`tests/tieout/test_routes.py`: **61 passed** — so the « container
+cannot run the database fixtures » caveat in my charter turned out to
+be avoidable, and no test is being documented instead of run.
+
+The end-to-end proof, against a scratch database: cascade model as v1;
+v2 made with the product's own writer (a constant typed over
+`Model!F16`, replacing `=F10+F13+F14`); the broken deck alongside.
+The kit's brief: the introduced defect found and named (« Reported
+EBITDA FY2027E contains a fixed value while the rest of the row is
+calculated » — Model!F16), the cell diff (56.556 → 59.056, 1 changed,
+0 added, 0 removed), 113 deck figures reconciled with the four planted
+drifts among the 14 drifting, and the statement checks *abstaining* on
+the cascade model (no balance sheet, no debt schedule — said in
+words, not skipped). The « open with these » section correctly does
+not appear when no statement-check error exists: leads are printed
+only when they are real.
+
+## 25 August 2026 — the marked-up download, tested at the endpoint
+
+`tests/tieout/test_routes.py::TestTheMarkedUpModel`, four tests, in
+the file's own idiom. What `test_markup.py` already proves (the
+surgery: colour and notes only, verified unaltered) is not re-proved;
+what was untested was the route — and the route is where the deal
+posture lives:
+
+1. the download is the marked copy: 200, xlsx, a filename that is not
+   the original's, « Findings » sheet first, every model sheet behind
+   it in order, bytes ≠ the upload;
+2. a stranger gets the same 404 as everywhere;
+3. a deal with no model says « no model » rather than 500ing;
+4. every model finding ruled on ⇒ 404 « nothing to mark up » — never
+   an untouched copy handed over as though vouched for.
+
+The charter's « document honestly if the container can't run the
+database fixtures » clause was not needed: after the environment
+repair recorded above, the fixtures run here. **All 65 route tests
+pass** (61 existing + these 4), lint and format clean. One
+pre-existing lint error in the same file (a compound assert in the
+check-file tests, PT018) was split into two asserts — the only line
+touched outside the new class.
