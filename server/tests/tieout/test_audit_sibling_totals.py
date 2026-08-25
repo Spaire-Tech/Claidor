@@ -132,6 +132,67 @@ def test_a_total_about_a_different_block_is_not_comparable() -> None:
     assert not _totals(_audit(build))
 
 
+def test_a_staircase_triangle_is_silent() -> None:
+    """Round 2's consequence guard, from the GT3 BPFM's depreciation
+    triangle: a deviant whose range only over-reaches — empty rows, or
+    live rows its own wider spelling must cover — misses nothing the
+    consensus spelling covers, and stays silent."""
+
+    def build(sheet) -> None:
+        _family(sheet)
+        #: The deviant reads five rows further down; they are empty in
+        #: its column.
+        sheet["I15"] = "=SUM(I6:I18)"
+
+    assert not _totals(_audit(build))
+
+
+def test_over_reach_into_live_rows_is_a_named_limitation() -> None:
+    """The registered limitation, pinned so a change to it is loud: a
+    deviant covering *more* live rows than the consensus is how a
+    designed triangle's later columns spell their totals, and this
+    round cannot tell that from a double-count. Silent."""
+
+    def build(sheet) -> None:
+        _family(sheet)
+        for row in range(14, 17):
+            sheet[f"I{row}"] = 2.0
+        sheet["I15"] = "=SUM(I6:I18)"
+
+    assert not _totals(_audit(build))
+
+
+def test_an_off_by_one_over_an_empty_head_is_silent() -> None:
+    """The guard cuts both ways: a narrowed range that skips only an
+    empty cell computes the same total, and the round stays quiet."""
+
+    def build(sheet) -> None:
+        for at in COLUMNS:
+            for row in range(6, 14):
+                if not (at == "I" and row == 6):
+                    sheet[f"{at}{row}"] = 1.0
+            sheet[f"{at}15"] = "=SUM(I7:I13)" if at == "I" else f"=SUM({at}6:{at}13)"
+
+    assert not _totals(_audit(build))
+
+
+def test_identical_deviants_fold_into_one_finding() -> None:
+    def build(sheet) -> None:
+        for at in ("C", "F", "I", "L", "O", "R"):
+            for row in range(6, 14):
+                sheet[f"{at}{row}"] = 1.0
+            top = 7 if at in ("I", "L") else 6
+            sheet[f"{at}15"] = f"=SUM({at}{top}:{at}13)"
+
+    result = _audit(build)
+    found = _totals(result)
+    assert len(found) == 1
+    assert found[0].ref == "Sheet!I15"
+    assert "the same disagreement in 2 cells" in found[0].detail
+    assert "I15" in found[0].cells
+    assert "L15" in found[0].cells
+
+
 def test_the_column_direction_sees_row_totals() -> None:
     def build(sheet) -> None:
         for row in (3, 5, 7, 9, 11):

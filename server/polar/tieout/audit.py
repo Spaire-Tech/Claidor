@@ -4009,15 +4009,58 @@ def _sibling_totals(book: Workbook, result: Audit) -> None:
                 (lambda one: one.column) if across == "row" else (lambda one: one.row)
             )
             family_axis = {axis_of(m[0]) for m in family}
+            #: Round 2's fold: deviants sharing one signature are one
+            #: authoring decision, reported once with the roster.
+            grouped: dict[tuple[frozenset[tuple[int, int]], str], list[Cell]] = {}
             for cell, coverage, surround in deviants:
-                if cell.ref in already:
-                    continue
+                grouped.setdefault((coverage, surround), []).append(cell)
+            for (coverage, surround), group in sorted(
+                grouped.items(), key=lambda kv: min(axis_of(one) for one in kv[1])
+            ):
                 own = {at for off, at in coverage if off == 0}
-                if len(own & usual_own) * 2 < len(usual_own):
+                survivors: list[Cell] = []
+                for cell in sorted(group, key=axis_of):
+                    if cell.ref in already:
+                        continue
+                    if len(own & usual_own) * 2 < len(usual_own):
+                        continue
+                    reach = {axis_of(cell) + off for off, _ in coverage if off != 0}
+                    if len(reach & family_axis) >= 2:
+                        continue
+                    if (
+                        coverage != usual_cov
+                        and surround == usual_sur
+                        and not {off for off, _ in coverage}
+                        - {off for off, _ in usual_cov}
+                    ):
+                        #: Round 2's consequence guard: a range
+                        #: disagreement is reported only when the
+                        #: deviant misses a live cell the consensus
+                        #: spelling covers, in the deviant's own line.
+                        #: A staircase total that merely over-reaches
+                        #: empty rows — or covers *more* live rows, as
+                        #: a designed depreciation triangle's later
+                        #: columns must — computes what its siblings'
+                        #: spelling would, and stays silent. Occupancy,
+                        #: never values.
+                        if across == "row":
+                            missed_live = any(
+                                f"{cell.sheet}!{get_column_letter(cell.column)}{at}"
+                                in book.cells
+                                for at in usual_own - own
+                            )
+                        else:
+                            missed_live = any(
+                                f"{cell.sheet}!{get_column_letter(at)}{cell.row}"
+                                in book.cells
+                                for at in usual_own - own
+                            )
+                        if not missed_live:
+                            continue
+                    survivors.append(cell)
+                if not survivors:
                     continue
-                reach = {axis_of(cell) + off for off, _ in coverage if off != 0}
-                if len(reach & family_axis) >= 2:
-                    continue
+                first = survivors[0]
                 n = votes
                 where = witness.ref.rsplit("!", 1)[-1]
                 figure = ""
@@ -4054,23 +4097,34 @@ def _sibling_totals(book: Workbook, result: Audit) -> None:
                     clause = f"it reads {reads} where they read {theirs}"
                 else:
                     clause = "both its range and its arithmetic depart from theirs"
+                roster = ""
+                if len(survivors) > 1:
+                    locals_ = [one.ref.rsplit("!", 1)[-1] for one in survivors]
+                    clause += (
+                        f" — the same disagreement in {len(survivors)} cells "
+                        f"({', '.join(locals_[:6])}"
+                        + (", …" if len(locals_) > 6 else "")
+                        + ")"
+                    )
+                    roster = _roster([one.ref.rsplit("!", 1)[-1] for one in survivors])
                 result.findings.append(
                     Finding(
                         rule="inconsistent-total",
                         severity="error",
-                        ref=cell.ref,
-                        sheet=cell.sheet,
-                        name=cell.name,
+                        ref=first.ref,
+                        sheet=first.sheet,
+                        name=first.name,
                         detail=(
-                            f"{cell.formula} beside {n} sibling totals like "
+                            f"{first.formula} beside {n} sibling totals like "
                             f"{witness.formula} at {where} — {clause}"
                         ),
                         source="FAST, ICAEW P12",
                         figure=figure,
                         figure_unit=figure_unit,
+                        cells=roster,
                     )
                 )
-                already.add(cell.ref)
+                already.update(one.ref for one in survivors)
 
 
 def _hidden_sheets(book: Workbook, result: Audit) -> None:
