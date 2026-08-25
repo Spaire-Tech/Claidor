@@ -1065,7 +1065,8 @@ class TestCheckAFile:
         # allowed to come back empty.
         assert body["drifts"]
         one = body["drifts"][0]
-        assert one["printed"] and one["expected"]
+        assert one["printed"]
+        assert one["expected"]
         assert one["model_artifact_id"] == body["models"][0]["artifact_id"]
         # And the file still disagrees with itself, deal or no deal.
         assert len(body["disagreements"]) == 2
@@ -1694,3 +1695,132 @@ class TestSinceYouLooked:
 
         refused = await client.post(f"/v1/tieout/deals/{theirs.id}/visit")
         assert refused.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestTheMarkedUpModel:
+    """« Download the marked-up model », through HTTP.
+
+    ``test_markup.py`` proves the surgery — colour and notes only,
+    nothing altered, verified before release. What is left to prove is
+    the route: that the download is closed exactly as the deal is, that
+    a deal with nothing to mark says so instead of handing over an
+    untouched copy, and that what comes back is the workbook the
+    founder's card promises — a Findings sheet in front, the model's
+    own sheets behind it, under a filename that is not the original's.
+    """
+
+    @pytest.mark.auth
+    async def test_the_download_is_the_marked_copy(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        import io
+        import zipfile
+
+        from openpyxl import load_workbook
+
+        deal = await _loaded(session, save_fixture, user)
+
+        response = await client.get(f"/v1/tieout/deals/{deal.id}/markup")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        # A different filename, so the original is never at risk.
+        disposition = response.headers["content-disposition"]
+        assert "attachment" in disposition
+        assert "marked" in disposition
+        assert "cascade_model.xlsx" not in disposition
+
+        copy = load_workbook(io.BytesIO(response.content))
+        # The findings list rides in front; the model rides behind it,
+        # whole — every original sheet, in its order.
+        assert copy.sheetnames[0] == "Findings"
+        assert copy.sheetnames[1:] == [
+            "Assumptions",
+            "Model",
+            "DCF",
+            "Comps",
+            "Outputs",
+        ]
+        # The listing carries one row per marked finding, under a header.
+        listing = copy["Findings"]
+        assert listing.max_row >= 2
+
+        # And it is genuinely a different file from the one uploaded —
+        # never the original handed back under a new name.
+        original = MODEL.read_bytes()
+        assert response.content != original
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            assert archive.testzip() is None
+
+    @pytest.mark.auth
+    async def test_a_stranger_gets_the_same_404_as_everywhere(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        theirs = await _loaded(session, save_fixture, stranger)
+
+        response = await client.get(f"/v1/tieout/deals/{theirs.id}/markup")
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_a_deal_with_no_model_says_so(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        await session.flush()
+
+        response = await client.get(f"/v1/tieout/deals/{deal.id}/markup")
+        assert response.status_code == 404
+        assert "no model" in response.json()["detail"]
+
+    @pytest.mark.auth
+    async def test_nothing_open_means_nothing_to_hand_over(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """Every model finding ruled on ⇒ 404, not an unmarked copy.
+
+        The card exists to hand over marked problems; a clean handover
+        of an untouched file would look like the product vouching for
+        the model, which it is not doing.
+        """
+        deal = await _loaded(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+        model = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.model
+        )
+        listed = (
+            await client.get(
+                f"/v1/tieout/deals/{deal.id}/findings",
+                params={"artifact_id": str(model.id)},
+            )
+        ).json()
+        assert listed  # the model has findings, or this test proves nothing
+        for finding in listed:
+            ruled = await client.patch(
+                f"/v1/tieout/findings/{finding['id']}",
+                json={"state": "dismissed", "note": "ruled on for this test"},
+            )
+            assert ruled.status_code == 200
+
+        response = await client.get(f"/v1/tieout/deals/{deal.id}/markup")
+        assert response.status_code == 404
+        assert "nothing to mark up" in response.json()["detail"]

@@ -90,3 +90,27 @@ the cascade model (no balance sheet, no debt schedule — said in
 words, not skipped). The « open with these » section correctly does
 not appear when no statement-check error exists: leads are printed
 only when they are real.
+
+## 25 August 2026 — the marked-up download, tested at the endpoint
+
+`tests/tieout/test_routes.py::TestTheMarkedUpModel`, four tests, in
+the file's own idiom. What `test_markup.py` already proves (the
+surgery: colour and notes only, verified unaltered) is not re-proved;
+what was untested was the route — and the route is where the deal
+posture lives:
+
+1. the download is the marked copy: 200, xlsx, a filename that is not
+   the original's, « Findings » sheet first, every model sheet behind
+   it in order, bytes ≠ the upload;
+2. a stranger gets the same 404 as everywhere;
+3. a deal with no model says « no model » rather than 500ing;
+4. every model finding ruled on ⇒ 404 « nothing to mark up » — never
+   an untouched copy handed over as though vouched for.
+
+The charter's « document honestly if the container can't run the
+database fixtures » clause was not needed: after the environment
+repair recorded above, the fixtures run here. **All 65 route tests
+pass** (61 existing + these 4), lint and format clean. One
+pre-existing lint error in the same file (a compound assert in the
+check-file tests, PT018) was split into two asserts — the only line
+touched outside the new class.
