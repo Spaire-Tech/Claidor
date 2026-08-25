@@ -71,3 +71,15 @@ typed-over family whose formula flank was split by an idiom variant.
 If a *new* finding appears anywhere, the normalization widened a
 family until a deviant became visible — that is not automatically
 wrong, but it refuses this round and gets its own examination.
+
+---
+
+## Precondition result (25 Aug, before the after-sweep)
+
+The unmodified engine's fresh sweep of the rebuilt 27-file corpus is
+**gate clean** against the committed baseline — every file reports
+identically, finding for finding, on this machine. (First attempt
+was OOM-killed by a concurrent heavy run; the clean run had the
+machine to itself. Heavy workbook jobs run alone now.) The
+after-sweep with the four normalizations live runs next; its diff
+and the hand reading land below.
