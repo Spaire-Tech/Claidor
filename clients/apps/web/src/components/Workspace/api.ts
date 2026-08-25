@@ -750,7 +750,11 @@ export interface TeamMember {
   email: string
   avatar_url: string | null
   you: boolean
-  deals: string[]
+  /** How many of this organization's deals they are on — a number,
+   *  never a name. Deal names left this payload by the founder's
+   *  decision (26 August): which deals a colleague is on is the
+   *  deal's business, not the organization's. */
+  deal_count: number
 }
 
 export interface Team {
