@@ -1698,6 +1698,122 @@ class TestSinceYouLooked:
 
 
 @pytest.mark.asyncio
+class TestTheVersionAudit:
+    """The version dropdown's re-scoping: one stored version, checked now.
+
+    The route computes the audit from the picked version's stored cells
+    and persists nothing — the deal's findings, runs and rulings belong
+    to the current version, and looking at history must never move them.
+    """
+
+    @pytest.mark.auth
+    async def test_an_old_version_answers_with_its_own_findings(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _loaded(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+        first = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.model
+        )
+        # A second version of the same lineage — different bytes, same
+        # filename, which is how a banker re-uploads « the model ».
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=(CASCADE / "audit_fixture.xlsx").read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+
+        response = await client.get(f"/v1/tieout/artifacts/{first.id}/audit")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["version"] == 1
+        assert body["filename"] == "cascade_model.xlsx"
+        # The summary carries the same record a stored run keeps, and the
+        # findings are the audit's own shapes — rule, cell, evidence.
+        assert body["summary"]["cells"] > 0
+        for finding in body["findings"]:
+            assert finding["kind"] == "audit"
+            assert finding["state"] == "open"
+            assert finding["where"]["anchor"]["kind"] == "cell"
+
+    @pytest.mark.auth
+    async def test_nothing_is_persisted_by_looking(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _loaded(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+        model = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.model
+        )
+        before = {one.id for one in await repository.findings_of(deal.id)}
+
+        response = await client.get(f"/v1/tieout/artifacts/{model.id}/audit")
+        assert response.status_code == 200
+        # The response's finding ids exist nowhere: they cannot be ruled
+        # on, and the stored findings are exactly what they were.
+        after = {one.id for one in await repository.findings_of(deal.id)}
+        assert after == before
+        for finding in response.json()["findings"]:
+            ruled = await client.patch(
+                f"/v1/tieout/findings/{finding['id']}",
+                json={"state": "dismissed", "note": "should not exist"},
+            )
+            assert ruled.status_code == 404
+
+    @pytest.mark.auth
+    async def test_a_deck_has_no_version_audit(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _loaded(session, save_fixture, user)
+        repository = TieOutRepository.from_session(session)
+        deck = next(
+            one
+            for one in await repository.current_artifacts(deal.id)
+            if one.kind is ArtifactKind.deck
+        )
+        response = await client.get(f"/v1/tieout/artifacts/{deck.id}/audit")
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_a_strangers_version_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        theirs = await _loaded(session, save_fixture, stranger)
+        repository = TieOutRepository.from_session(session)
+        model = next(
+            one
+            for one in await repository.current_artifacts(theirs.id)
+            if one.kind is ArtifactKind.model
+        )
+        response = await client.get(f"/v1/tieout/artifacts/{model.id}/audit")
+        assert response.status_code == 404
+
+
+@pytest.mark.asyncio
 class TestTheMarkedUpModel:
     """« Download the marked-up model », through HTTP.
 

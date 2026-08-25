@@ -781,6 +781,41 @@ class VersionRead(Schema):
     counts: dict[str, Any]
 
 
+class VersionAuditSummary(Schema):
+    """One version's audit record — the same shape a stored run keeps."""
+
+    errors: int
+    smells: int
+    #: Attention tiers, « 1 » · « 2 » · « 3 », same fold as run history.
+    tiers: dict[str, int]
+    cells: int
+    #: Rules the firm switched off, applied here exactly as in a real
+    #: run — a decision on the record, never a silence.
+    rules_off: list[str]
+    values_only: bool
+    abstentions: list[dict[str, str]]
+
+
+class VersionAudit(Schema):
+    """The audit re-run on one stored version, persisted nowhere.
+
+    What the version dropdown re-scopes the page to. The findings carry
+    no durable identity — nothing here can be accepted, dismissed or
+    corrected, because rulings belong to the current version — and
+    `checked_at` is the moment this answer was computed, not a stored
+    run's date.
+    """
+
+    artifact_id: UUID
+    version: int
+    filename: str
+    uploaded_by: Uploader | None
+    uploaded_at: datetime
+    checked_at: datetime
+    summary: VersionAuditSummary
+    findings: list[FindingRead]
+
+
 class ModelGrid(Schema):
     """A model as it is laid out, rather than as a search box.
 
