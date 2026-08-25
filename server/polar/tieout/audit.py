@@ -2946,17 +2946,24 @@ def _island_findings(
             end += 1
         island = run[index:end]
         # Maximal by construction, so any neighbour inside the run is a
-        # formula; it must carry the column's repeating shape.
+        # formula; it must carry a shape the column *repeats* — any
+        # repeating family, not the single crowned majority, which the
+        # A7 round showed can flip on a tie and lose the finding to
+        # insertion order.
         edges = [run[at] for at in (index - 1, end) if 0 <= at < len(run)]
+        witness = next(
+            (shape for edge in edges if shapes.get(shape := _shape(edge), 0) >= 2),
+            None,
+        )
         if (
             len(island) <= TYPED_BLOCK
             and len(island) < len(run)
-            and any(_shape(edge) == usual for edge in edges)
+            and witness is not None
             #: A column whose repeating formula is one bare defined name
             #: — `=price_label` down a mnemonic column — is the sheet's
             #: text scaffolding, and a value typed between its rows is
             #: a heading, not a paste over a calculation.
-            and not _mnemonic(usual)
+            and not _mnemonic(witness)
             and all(
                 leftmost.get((sheet, cell.row), 1 << 20) < cell.column
                 for cell in island
@@ -2976,7 +2983,7 @@ def _island_findings(
                         detail=(
                             f"{shown_number(float(cell.value))} typed into "
                             "a column that is otherwise calculated: "
-                            f"{_example(calculated, usual)}"
+                            f"{_example(calculated, witness)}"
                         ),
                         source="ICAEW P14, FAST",
                     )
