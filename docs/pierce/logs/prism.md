@@ -153,3 +153,64 @@ recached values — that claim needs Track B's recalculation.
 
 **C1 stands: an adjacent ED2 pair diffs completely against
 hand-check.** The plan's DONE line is met on this pair. Next: C2.
+
+## C2 registration, part 1 — signatures, algorithm, and the cost measurement (REGISTERED BEFORE RESULTS)
+
+Fixed before the aligner produces any number on any corpus file.
+The planted-edit harness gets its own registration (part 2) before
+its results; this part fixes what the harness will be testing.
+
+**Cell signature.** For a formula cell,
+`polar.tieout.audit._shape(cell, anchoring=True)` — the frozen
+interface, used, never reimplemented and never changed. For a
+hardcoded literal, the fixed marker `•`. Cached values appear
+nowhere in any signature, so matches survive a full re-forecast —
+that is the amendment's point.
+
+**Row signature** for row *r* of a sheet: the row's label (the
+engine's `row_words` text for *r*, else the first non-empty
+`row_label` among its cells, lowercased and whitespace-collapsed)
+plus the sequence, in column order, of the row's cell signatures.
+Column signature is the mirror: the most common non-empty
+`column_label`, plus the column's cell signatures in row order.
+Rows and columns with no populated cells are invisible to the
+aligner (nothing to align); their effect is the index gap they
+leave, which the alignment reports as a shift.
+
+**Similarity** between two rows (or two columns), fixed now:
+`shape_sim` = 2·LCS(a, b)/(|a|+|b|) over the two signature
+sequences (position-blind, order-aware — an inserted column must
+not destroy every row match). If both labels are non-empty:
+`sim = 0.5·label_eq + 0.5·shape_sim` (label_eq ∈ {0,1}, exact match
+on the normalized text). Otherwise `sim = shape_sim`. Two identical
+signature tuples short-circuit to 1 without the LCS.
+
+**Alignment** (the RowColAlign shape; SheetDiff's greedy hypothesis
+algorithm is what the amendment removed): order-preserving DP —
+`score(i,j) = max(skip-old, skip-new, score(i-1,j-1) + sim(i,j)
+if sim(i,j) ≥ 0.5)` — maximizing summed similarity; traceback gives
+matched pairs, unmatched-old (deleted), unmatched-new (inserted).
+Rows and columns aligned by the same code with roles swapped. The
+threshold 0.5 and the 0.5/0.5 label/shape weights are registered
+here; if the harness shows them wrong they change in a written
+round, never by quiet tuning. Known limitations, stated now:
+order-preserving DP reads a *reordered* row as delete + insert, and
+a row whose formulas reference across an insertion point changes
+shape under Excel's own reference updating, so such rows lean on
+their labels and remaining sequence to stay matched — both are
+facts the harness will measure, not surprises.
+
+**Complexity and the cost measurement.** Row alignment computes up
+to R² pair similarities, each an O(C²) LCS in the worst case —
+O(R²C²) = O(n⁴) — and column alignment the mirror. Before anything
+depends on the aligner, it runs on every sheet of the biggest
+corpus file, `ofgem_riio3/final_gd3_bpfm.xlsm` (17.5 MB, the
+largest of the 27 by bytes), self-aligned (the worst honest case
+for the identity shortcut is a *changed* pair, so the measurement
+also runs the biggest ED2 adjacent pair, v4_2026-01 → v5_2026-06).
+Recorded: wall time for `read_workbook`, signature build, row and
+column alignment per sheet, and peak RSS. The verdict criterion is
+honesty, not a pass mark: the numbers decide how the harness may
+afford to run (whole-file planting vs single-sheet extracts) and
+are written here before the harness is registered. Heavy jobs run
+alone in the container, sequentially, per the lanes discipline.
