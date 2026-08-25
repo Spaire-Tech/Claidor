@@ -356,3 +356,68 @@ semantics, no more. Threshold, weights, judge, classes, positions:
 unchanged. All 24 InputSummary instances re-run from scratch, then
 SWEST, then the v4→v5 real pair re-run so every reported number
 sits on the same signature definition.
+
+## C2 results — round 3 closed; the DONE line is met, with one named miss
+
+All numbers below sit on the round-3 signature definition; the
+harness ran from scratch on both registered sheets, and the real
+pair was re-run so nothing reported here mixes signature versions.
+
+**Planted-edit recovery, `ofgem_ed2/v5_2026-06.xlsx`:**
+
+| class | InputSummary | SWEST |
+|---|---|---|
+| insert_blank_row | 3/3 | 3/3 |
+| insert_copied_row | 3/3 | 3/3 |
+| delete_row | 3/3 | 3/3 |
+| insert_copied_column | 3/3 | 3/3 |
+| delete_column | 3/3 | 3/3 |
+| retype_literals | 3/3 | 3/3 |
+| rewrite_formula | **0/3** | **0/3** |
+| insert_row_and_retype | 3/3 | 3/3 |
+| **total exact** | **21/24** | **21/24** |
+
+Exact means: the structural report is exactly the planted change
+and nothing else, and every surviving row and column maps to its
+true counterpart. Every structural edit at every position on both
+sheets recovers exactly: one planted row reads as one structural
+change, one planted column likewise, deletes are named at their
+line, and value-only edits report no structure at all.
+
+**The named miss.** `rewrite_formula` — and two honest facts about
+it. First, the harness wart: the class's target rule (« the first
+formula in reading order ») ignores the position parameter, so its
+three instances per sheet are one distinct edit run three times,
+not three edits; the table's 0/3 is really 0/1 per sheet. Second,
+the failure mode: the rule lands on row 1 — a label-less row whose
+*only* formula is wholly rewritten — and the aligner reports
+delete-row-1 + insert-row-1 instead of a change. A total rewrite
+of a row's entire content arguably *is* a delete-and-insert; under
+the registered judge it is a miss, and it stays recorded as one.
+A future registered round may give this class positioned targets
+and a labelled-row case; nothing is claimed for it today.
+
+**The paper's number.** The zero-error claim behind the DP
+alignment is its authors'; ours is this table: 42/48 exact
+overall, 42/42 on structural and value-only edits, 0/6 (really
+0/2) on whole-row single-formula rewrites.
+
+**The real pair, under the final signatures** (v4_2026-01 →
+v5_2026-06, 30 sheets, 2.6 s alignment after two ~20 s reads):
+64 structural changes, among them a consistent, checkable story:
+ten licensee sheets (EMID, ENWL, SPD, SPMW, SPN, SSEH, SSES,
+SWALES, SWEST, WMID) gain **one inserted row at 157**; EPN and LPN,
+which already carried 321 rows, show row 157 **changed in place**
+(matched through its label at 0.5); NPgN and NPgY show no
+structural change. A correction to this log's own round-2 entry,
+which said « all fourteen licensee sheets » from memory of the
+round-1 skim: the number is ten, as above — the record is the JSON,
+not my recollection.
+
+**Where C2 stands.** The plan's DONE line — « one inserted row
+reads as one structural change; planted-edit recovery measured » —
+is met on both registered sheets and visible on the real pair. The
+O(n⁴) cost is measured and lives where predicted. Ready for C3's
+delta report to consume `SheetAlignment` + `structural_changes`,
+with the row-1 rewrite case and label-poor giant sheets carried
+forward as named, registered limitations.
