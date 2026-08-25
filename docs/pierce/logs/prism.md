@@ -88,3 +88,68 @@ other lanes own those). Cached-value comparison is on the stored
 lexical value (numbers compared as decimal text, not as re-parsed
 floats, so no round-trip opinion enters). A formula stored with a
 cached error value is compared like any other stored text.
+
+## C1 results — the hand-check closed, zero disagreements
+
+Run after the registration commit (`75e97d3`), rules unchanged.
+
+**The verdict: PASS.** Both instruments, on the registered pair:
+
+| | count |
+|---|---|
+| populated cells, old / new | 60,585 / 60,609 |
+| added | 24 |
+| removed | 0 |
+| changed | 1,255 |
+| — of which formula/content changed | 14 |
+| — of which cached value changed | 1,255 |
+| unchanged | 59,330 |
+| sheets added / removed | 0 / 0 |
+
+- **Step 2, complete comparison:** every status list identical, both
+  directions, and the full populated-ref universes are set-equal —
+  not just equal in count. Zero disagreements, so zero
+  adjudications.
+- **Step 3, seeded eyes-on sample** (`random.Random(20260825)`; 20
+  changed, 10 added, 10 unchanged — no removed cells exist): all 40
+  read in the raw XML of both files, all 40 confirm both
+  instruments. Two things the sample showed worth recording: the
+  « added » cells are `<c r=".." s="503"/>` in the old file — a
+  style-only stub, correctly not populated under the registered
+  definition — and nearly every cell's style index shifted between
+  versions (`s="444"` → `s="441"`), which the registered scope
+  rightly excludes; a diff that counted styles would have drowned
+  the 1,279 real differences in sixty thousand false ones.
+
+**What the pair actually says**, in review language ahead of C3: the
+31 July file is the 14 July file with twelve months of monthly
+inflation actuals typed into two columns (all 24 added cells are
+`Monthly Inflation!H284:I295`), the annual assumption rows retyped
+(all 14 content changes are literals on `Annual Inflation` rows
+50/53 — no formula in the model was rewritten between these
+versions), and 1,255 cached values downstream re-computed by Excel.
+The raw diff cannot and does not say the retyped inputs *caused* the
+recached values — that claim needs Track B's recalculation.
+
+**Honesty notes.**
+- Two post-registration edits to the committed instrument, both
+  cosmetic (an ElementTree deprecation fix; `ruff format`
+  whitespace). The instrument was re-run after each; output
+  byte-identical both times.
+- The differ takes ~40 s on the pair (openpyxl reads each file
+  twice); the stdlib instrument takes ~2 s. Not a problem at C1's
+  cadence; noted for when the Watch runs at product speed.
+- `uv run mypy` on the watch package and both scripts is clean
+  except two pre-existing errors inside the engine's `audit.py`,
+  which is not mine to touch; recorded here for the lead.
+- Nine unit tests pin the semantics on synthetic files (every kind
+  in its bucket; TRUE ≠ 1 ≠ « 1 »; the two instruments agree on a
+  synthetic pair where truth is known by construction; the
+  shared-formula translator's anchors, strings and off-grid #REF!).
+  They run conftest-free: `uv run pytest tests/tieout/test_watch_diff.py
+  --noconftest` (the repo-level conftest needs the app stack, which
+  this container's Python 3.14.0rc2 + pydantic cannot import — same
+  workaround the tieout suite already uses).
+
+**C1 stands: an adjacent ED2 pair diffs completely against
+hand-check.** The plan's DONE line is met on this pair. Next: C2.

@@ -70,7 +70,8 @@ def _sheet_parts(archive: zipfile.ZipFile) -> list[tuple[str, str]]:
             target = "xl/" + target
         target_of[rel.get("Id")] = target
     out = []
-    for sheet in book.find(f"{MAIN}sheets") or []:
+    sheets = book.find(f"{MAIN}sheets")
+    for sheet in [] if sheets is None else sheets:
         member = target_of.get(sheet.get(REL))
         if member and member in archive.namelist():
             out.append((sheet.get("name", ""), member))
@@ -149,9 +150,7 @@ def translate(formula: str, drow: int, dcol: int) -> str:
             if column < 1 or row < 1:
                 out.append("#REF!")
             else:
-                out.append(
-                    f"{dollar_col}{_column_letters(column)}{dollar_row}{row}"
-                )
+                out.append(f"{dollar_col}{_column_letters(column)}{dollar_row}{row}")
             position = match.end()
             continue
         out.append(char)
@@ -244,9 +243,7 @@ def main() -> int:
     result = statuses(old, new)
     summary = {name: len(refs) for name, refs in result.items()}
     summary["populated_old"], summary["populated_new"] = len(old), len(new)
-    Path(out_path).write_text(
-        json.dumps({"summary": summary, **result}, indent=1)
-    )
+    Path(out_path).write_text(json.dumps({"summary": summary, **result}, indent=1))
     print(json.dumps(summary, indent=1))
     return 0
 
