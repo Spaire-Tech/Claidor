@@ -12,6 +12,31 @@ it, reading the files through its own openpyxl path so that a cell
 the engine's labeller skips is still a cell the Watch reports.
 """
 
+from .align import (
+    LineAlignment,
+    Match,
+    SheetAlignment,
+    align_lines,
+    align_sheet,
+    structural_changes,
+)
 from .diff import CellDelta, VersionDiff, diff_paths, diff_raw, read_raw
+from .signature import LITERAL, Line, SheetGrid, sheet_grids
 
-__all__ = ["CellDelta", "VersionDiff", "diff_paths", "diff_raw", "read_raw"]
+__all__ = [
+    "LITERAL",
+    "CellDelta",
+    "Line",
+    "LineAlignment",
+    "Match",
+    "SheetAlignment",
+    "SheetGrid",
+    "VersionDiff",
+    "align_lines",
+    "align_sheet",
+    "diff_paths",
+    "diff_raw",
+    "read_raw",
+    "sheet_grids",
+    "structural_changes",
+]
