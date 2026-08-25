@@ -165,3 +165,11 @@ per the criteria, not per the hope.
 ---
 
 ## Results (appended after the registration, never edited into it)
+
+**Precondition (25 Aug): gate clean.** The unmodified engine's fresh
+sweep of the rebuilt 27-file corpus reports identically to the
+committed baseline, finding for finding, on this machine. The
+detector was implemented behind its unit tests while this sweep ran
+(the sweep process had already imported the unmodified engine, so
+the measurement is of the engine the baseline describes); the
+after-sweep with the detector live comes next.
