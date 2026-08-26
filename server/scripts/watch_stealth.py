@@ -248,10 +248,6 @@ def main() -> int:
     raise SystemExit(f"unknown mode {mode!r}")
 
 
-if __name__ == "__main__":
-    sys.exit(main())
-
-
 # --- C4 tier 2: randomized differential evaluation (registered in the
 # --- lane log, « C4 tier 2 ») -----------------------------------------
 
@@ -455,3 +451,7 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
     Path(out_path).write_text(json.dumps(payload, indent=1))
     print(json.dumps({k: v for k, v in payload.items() if k != "instances"}, indent=1))
     return 0 if not false_positives else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
