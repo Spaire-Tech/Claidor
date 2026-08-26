@@ -3072,13 +3072,28 @@ def _typed_edges(book: Workbook, result: Audit) -> None:
         rows.setdefault((cell.sheet, cell.row), []).append(cell)
     boundaries = _boundaries(rows)
 
-    def disqualified(sheet: str, cell: Cell) -> bool:
+    def disqualified(sheet: str, cell: Cell, stretch: list[Cell]) -> bool:
         if cell.ref in already:
             return True
         try:
-            if cell.value is None or float(cell.value) == 0:
+            #: Round 2's identity guard: 0 is template scaffolding and
+            #: ±1 is how an index row spells its base period — ten of
+            #: ten corpus findings in round 1 were typed 1s heading
+            #: cumulative-index series, verified at the cells.
+            if (
+                cell.value is None
+                or float(cell.value) == 0
+                or abs(float(cell.value)) == 1
+            ):
                 return True
         except (TypeError, ValueError):
+            return True
+        #: Round 2's horizontal seed guard: a series whose adjacent
+        #: formula *reads* the typed cell is continuing from its own
+        #: starting value, whatever the number — the vertical
+        #: counter-seed exemption, turned 90° (the deflator chain
+        #: `=AU466/(1+AU530)` walking right from its typed base).
+        if cell.ref in stretch[0].precedents:
             return True
         if _stacked(book, cell):
             return True
@@ -3114,7 +3129,7 @@ def _typed_edges(book: Workbook, result: Audit) -> None:
                     boundary is None or any(c.column < boundary for c in typed)
                 ):
                     continue
-                if any(disqualified(sheet, cell) for cell in typed):
+                if any(disqualified(sheet, cell, list(stretch)) for cell in typed):
                     continue
                 usual = next(iter(shapes))
                 where = "start" if side == "head" else "end"

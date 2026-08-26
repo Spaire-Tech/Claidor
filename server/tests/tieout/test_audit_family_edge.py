@@ -79,25 +79,56 @@ def test_a_head_without_a_boundary_is_silent() -> None:
     assert not _edges(_audit(build))
 
 
+def _boundary_sheet(sheet) -> None:
+    """Three rows of typed history in B-C then formulas D-G give the
+    sheet a boundary at column D."""
+    for row in (2, 3, 4):
+        sheet[f"B{row}"] = 1.0
+        sheet[f"C{row}"] = 2.0
+        for at in "DEFG":
+            sheet[f"{at}{row}"] = f"=C{row}+1"
+
+
 def test_a_head_right_of_the_boundary_is_caught() -> None:
     def build(sheet) -> None:
-        #: Three rows of typed history in B-C then formulas D-G give
-        #: the sheet a boundary at column D.
-        for row in (2, 3, 4):
-            sheet[f"B{row}"] = 1.0
-            sheet[f"C{row}"] = 2.0
-            for at in "DEFG":
-                sheet[f"{at}{row}"] = f"=C{row}+1"
+        _boundary_sheet(sheet)
         #: The test row starts at the boundary itself: a typed cell
-        #: at D with the calculated series to its right.
+        #: at D with a calculated series to its right that computes
+        #: on its own, reading nothing from the typed cell.
         sheet["D6"] = 9.5
         for at in "EFG":
-            sheet[f"{at}6"] = f"=D{6}+1" if at == "E" else f"={chr(ord(at) - 1)}6+1"
+            sheet[f"{at}6"] = f"={at}2*2"
 
     result = _audit(build)
     found = _edges(result)
     assert [f.ref for f in found] == ["Sheet!D6"]
     assert "typed at the start of a series" in found[0].detail
+
+
+def test_a_series_reading_its_typed_head_is_a_seed() -> None:
+    """Round 2's horizontal seed guard, from the deflator chain that
+    walks right from its typed base: a stretch whose first formula
+    reads the typed cell is continuing from its own starting value."""
+
+    def build(sheet) -> None:
+        _boundary_sheet(sheet)
+        sheet["D6"] = 9.5
+        for at in "EFG":
+            sheet[f"{at}6"] = f"={chr(ord(at) - 1)}6+1"
+
+    assert not _edges(_audit(build))
+
+
+def test_a_typed_one_is_an_index_base() -> None:
+    """Round 2's identity guard: ten of ten corpus findings were typed
+    1s heading cumulative-index series — the base period, not a
+    defect."""
+
+    def build(sheet) -> None:
+        _series(sheet)
+        sheet["G15"] = 1.0
+
+    assert not _edges(_audit(build))
 
 
 def test_typed_history_left_of_the_boundary_is_silent() -> None:
