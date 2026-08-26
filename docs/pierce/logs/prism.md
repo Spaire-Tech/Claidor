@@ -421,3 +421,79 @@ O(n⁴) cost is measured and lives where predicted. Ready for C3's
 delta report to consume `SheetAlignment` + `structural_changes`,
 with the row-1 rewrite case and label-poor giant sheets carried
 forward as named, registered limitations.
+
+## C3 registration — the delta report in review language (REGISTERED BEFORE RESULTS)
+
+Fixed before the report produces any number on any real pair. The
+prior record it stands on: `revision-defect-protocol.md`
+(pre-registered `a2159ca`) and `revision-defect-results.md` — the
+PR24 draft→final study whose sixteen pairs produced **84 new
+mechanical defects** under the key `rule + sheet + name`, with
+`scripts/revision_diff.py` as its committed matcher.
+
+**Inputs and machinery.** Two versions of one model. The engine
+audits both sides through the same ingest path the study used
+(identical configuration both sides — the engine stays a read-only
+library); C2's alignment maps rows and columns; C1's raw diff
+supplies content and cached-value changes. Cell-level changes are
+mapped through the alignment, so a row insert does not turn one
+edit into a hundred.
+
+**The delta classes, fixed now.**
+
+1. **New defects** — audit findings present at the new version
+   under a key absent at the old, matched exactly as the study
+   registered: `(rule, sheet, name)`, empty names to an UNMATCHED
+   bucket, multisets matched by count. Never the address.
+2. **Repaired defects** — the inverse.
+3. **Class changes** — a matched position where the cell's class
+   flipped (formula → typed constant, or typed constant →
+   formula). When a repaired finding and a new finding land on the
+   same aligned position, the report joins them into one
+   class-change event — the « repaired cell, hardcoded tail » case
+   the study called its most valuable technical result: the
+   checklist scores it fixed; reading inside the formula does not.
+4. **Moved assumptions** — a hardcoded input at a matched position
+   whose typed value changed. No tolerance: a changed assumption
+   is a changed assumption.
+5. **Methodology changes** — a matched position holding formulas
+   on both sides whose signatures differ, folded per row.
+6. **Materially different outputs** — a matched position, formula
+   both sides, same signature, whose cached value moved by ≥ 1%
+   relative (scale = max(|old|,|new|); both values present).
+   The 1% is registered here and moves only by written round.
+
+**Fold and rank.** Per class and sheet, per-cell events fold to
+rows (one row, its changed columns listed) and contiguous rows to
+blocks — one authoring decision, one item, same as the engine's
+findings discipline. Order: new defects (by engine weight), class
+changes, methodology changes, moved assumptions, materially
+different outputs, then C2's structural blocks; repaired defects
+close the report (they are the good news, and they are still
+churn).
+
+**Verification, in order, each before the next is claimed.**
+
+- **V1 — instrument parity.** On every pair it is run on, the
+  report's defect-delta numbers (NEW / FIXED / PERSISTENT /
+  UNMATCHED) must agree **exactly** with `scripts.revision_diff`
+  run on the same files the same day. Any disagreement is
+  adjudicated and the loser fixed, full re-run.
+- **V2 — synthetic truth.** Unit tests where the right answer is
+  by construction: a planted typed-over formula is a new defect
+  and a class change; a retyped input is a moved assumption and
+  nothing else; a rewritten formula is a methodology change; a
+  recached value is a material output change only past the
+  threshold.
+- **V3 — the DONE test.** The sixteen PR24 pairs. The corpus is
+  not on this container: finals return 403 to a plain client
+  (tried through this container's proxy before giving a verdict),
+  drafts live on the UK Government Web Archive mirror. If the
+  network serves the files: the report runs on all sixteen, V1
+  parity holds on each, and the study-key NEW totals stand next
+  to the recorded 84 (Yorkshire 40) — with any difference
+  attributed in writing: matcher disagreement must be zero, and
+  engine drift since the study (the A7/A3/A1 rounds regenerated
+  the baseline) is measured and named, not hidden. If the network
+  refuses, the refusal is recorded and V3 is blocked — reported,
+  not fought.
