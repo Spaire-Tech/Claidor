@@ -421,3 +421,174 @@ O(n⁴) cost is measured and lives where predicted. Ready for C3's
 delta report to consume `SheetAlignment` + `structural_changes`,
 with the row-1 rewrite case and label-poor giant sheets carried
 forward as named, registered limitations.
+
+## C3 registration — the delta report in review language (REGISTERED BEFORE RESULTS)
+
+Fixed before the report produces any number on any real pair. The
+prior record it stands on: `revision-defect-protocol.md`
+(pre-registered `a2159ca`) and `revision-defect-results.md` — the
+PR24 draft→final study whose sixteen pairs produced **84 new
+mechanical defects** under the key `rule + sheet + name`, with
+`scripts/revision_diff.py` as its committed matcher.
+
+**Inputs and machinery.** Two versions of one model. The engine
+audits both sides through the same ingest path the study used
+(identical configuration both sides — the engine stays a read-only
+library); C2's alignment maps rows and columns; C1's raw diff
+supplies content and cached-value changes. Cell-level changes are
+mapped through the alignment, so a row insert does not turn one
+edit into a hundred.
+
+**The delta classes, fixed now.**
+
+1. **New defects** — audit findings present at the new version
+   under a key absent at the old, matched exactly as the study
+   registered: `(rule, sheet, name)`, empty names to an UNMATCHED
+   bucket, multisets matched by count. Never the address.
+2. **Repaired defects** — the inverse.
+3. **Class changes** — a matched position where the cell's class
+   flipped (formula → typed constant, or typed constant →
+   formula). When a repaired finding and a new finding land on the
+   same aligned position, the report joins them into one
+   class-change event — the « repaired cell, hardcoded tail » case
+   the study called its most valuable technical result: the
+   checklist scores it fixed; reading inside the formula does not.
+4. **Moved assumptions** — a hardcoded input at a matched position
+   whose typed value changed. No tolerance: a changed assumption
+   is a changed assumption.
+5. **Methodology changes** — a matched position holding formulas
+   on both sides whose signatures differ, folded per row.
+6. **Materially different outputs** — a matched position, formula
+   both sides, same signature, whose cached value moved by ≥ 1%
+   relative (scale = max(|old|,|new|); both values present).
+   The 1% is registered here and moves only by written round.
+
+**Fold and rank.** Per class and sheet, per-cell events fold to
+rows (one row, its changed columns listed) and contiguous rows to
+blocks — one authoring decision, one item, same as the engine's
+findings discipline. Order: new defects (by engine weight), class
+changes, methodology changes, moved assumptions, materially
+different outputs, then C2's structural blocks; repaired defects
+close the report (they are the good news, and they are still
+churn).
+
+**Verification, in order, each before the next is claimed.**
+
+- **V1 — instrument parity.** On every pair it is run on, the
+  report's defect-delta numbers (NEW / FIXED / PERSISTENT /
+  UNMATCHED) must agree **exactly** with `scripts.revision_diff`
+  run on the same files the same day. Any disagreement is
+  adjudicated and the loser fixed, full re-run.
+- **V2 — synthetic truth.** Unit tests where the right answer is
+  by construction: a planted typed-over formula is a new defect
+  and a class change; a retyped input is a moved assumption and
+  nothing else; a rewritten formula is a methodology change; a
+  recached value is a material output change only past the
+  threshold.
+- **V3 — the DONE test.** The sixteen PR24 pairs. The corpus is
+  not on this container: finals return 403 to a plain client
+  (tried through this container's proxy before giving a verdict),
+  drafts live on the UK Government Web Archive mirror. If the
+  network serves the files: the report runs on all sixteen, V1
+  parity holds on each, and the study-key NEW totals stand next
+  to the recorded 84 (Yorkshire 40) — with any difference
+  attributed in writing: matcher disagreement must be zero, and
+  engine drift since the study (the A7/A3/A1 rounds regenerated
+  the baseline) is measured and named, not hidden. If the network
+  refuses, the refusal is recorded and V3 is blocked — reported,
+  not fought.
+
+## C3 first pair results, and a written amendment: the relabelled line
+
+**V1 parity: EXACT on both pairs run so far** (the C1 v2 pair and
+the C2 v4→v5 pair) — with one container honesty note first. The
+study's matcher `scripts.revision_diff` cannot even be *imported*
+here: its read chain (`regulator_eval` → `polar.tieout.ingest`)
+trips the known Python 3.14.0rc2 + pydantic breakage at import
+time. So V1 splits in two, both recorded: read-path equivalence
+established in the source (ingest's findings are exactly
+`read_workbook` + `audit(book, period_axes(book))`;
+`repair_outputs` builds new objects and never mutates the book),
+and matcher parity by execution — the study's `keyed()` logic kept
+verbatim in `watch_delta.py --parity`, run on an independently
+re-read, re-audited pair. Numbers, both pairs, all five fields
+equal: v2 pair 0 new / 0 fixed / 11 persistent / 0+0 unmatched;
+v4→v5 0 new / 0 fixed / 8 persistent / 1+0 unmatched.
+
+**The v2 pair in review language** (C1's story, retold by C3
+without being asked): two moved-assumption blocks — `Annual
+Inflation` rows 50 and 53 across columns AP–AV, exactly C1's
+fourteen retyped literals — and 94 materially-moved output blocks
+downstream. Zero defect churn, zero structure. **The v4→v5 pair:**
+zero defect churn (8 persistent), the ten inserted-row structure
+items, 292 materially-moved output blocks led by `SelectedInputs`
+and `TIM` at 40–140% moves.
+
+**What the pair exposed, and the amendment.** C2 matched EPN and
+LPN's row 157 at similarity 0.5 — and the delta report said
+nothing about it. Read in the cells: v4's row is `Spare`, five
+typed zeros; v5's row is `Connections Reform Costs`, same zeros.
+v5 added that line to every licensee sheet — by insertion where no
+spare row existed (the ten structure items), by **renaming a spare
+row** where one did (EPN, LPN). A pure relabel fits none of the
+six registered classes, so the report dropped exactly the change a
+reviewer should see. Amendment, in writing, before any re-run:
+**class 7, `relabelled_line`** — a matched row or column whose
+normalized label changed; ranked after class changes, before
+methodology changes. One registered gap alongside it, named for a
+future round rather than smuggled in now: cells added or removed
+*within* matched structure (a new actual typed into an existing
+row) appear in C1's raw diff but in no C3 class; deferred, in
+writing. Both pairs re-run after the amendment lands.
+
+## C3 results — the report stands on both pairs; V3 blocked on network, said plainly
+
+**Class 7's first run paid for itself.** Re-run of both pairs under
+the amendment, parity still EXACT on every field: the v2 pair is
+unchanged (no relabels in seventeen days — correct), and the v4→v5
+pair reports **four** relabelled lines: `EPN!157`, `LPN!157` — and
+`SelectedInputs!157` and `InputSummary!95`, which no earlier view
+had surfaced at all. The full v5 story, assembled by the report:
+one new line, « Connections Reform Costs », arrives everywhere —
+inserted on the ten licensee sheets that had no spare row,
+commandeered from a « Spare » row on the two that did, and named
+into the input sheets — with zero defect churn, ten structural
+blocks, four renames, and 292 materially-moved output blocks.
+
+**V2:** nine synthetic tests, each class held to its one edit,
+identical books reporting nothing. **V1:** exact, twice, as
+recorded above.
+
+**V3 — the verdict on this container: blocked on network access,
+not on code.** The refusals, each tried and recorded:
+- `ofwat.gov.uk` finals: HTTP 403 (Cloudflare block page) — the
+  same refusal `model_corpus.py` records from the study's era.
+- The UK Government Web Archive (the route the study successfully
+  used on 13 August 2026): now HTTP 405 with
+  `x-amzn-waf-action: captcha` on every deep URL — an interactive
+  AWS WAF challenge this environment cannot and should not solve.
+- The pre-installed Chromium through the container proxy:
+  `ERR_CONNECTION_RESET` on every site including `example.com` —
+  browser egress is closed here entirely.
+
+So the DONE line — « the PR24 revision pair reproduces its 84
+introduced defects through this report » — **is not claimed.** What
+stands ready for the machine that can reach the corpus: the report,
+`--parity` against the study's matcher on every pair, and the
+registered attribution discipline (matcher disagreement must be
+zero; engine drift since the study is measured and named — the
+A7/A3/A1 rounds have moved the engine, so today's number may
+legitimately differ from 84, and the comparison is exactly what V3
+is for). A note for the lead: if any machine in reach can fetch
+`scripts/corpus_regulator/` per `corpus-sources.md`, V3 is one
+command per pair from done.
+
+**Where the Watch stands after this session.** C1 done and
+hand-checked to zero disagreements; C2 done — 42/42 exact on
+structural and value-only planted edits, the one rewrite miss
+named, the O(n⁴) cost measured and confined; C3 built, verified V1
++ V2, exercised on two real pairs, V3 blocked on corpus access and
+said so. Next in the plan's order: C4's verifying-trace
+fingerprints and equivalence tiers (needs B1/B2 for tier 2), and
+C3's named deferrals (added-cells-within-matched-structure; a
+labelled-target round for the rewrite_formula class).
