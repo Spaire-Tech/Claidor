@@ -3012,9 +3012,22 @@ def _island_findings(
             #: text scaffolding, and a value typed between its rows is
             #: a heading, not a paste over a calculation.
             and not _mnemonic(witness)
-            and all(
-                leftmost.get((sheet, cell.row), 1 << 20) < cell.column
-                for cell in island
+            #: The left-formula history test, waived for *interior*
+            #: islands by the column-orientation round
+            #: (docs/pierce/a3-column-typed.md): a typed cell with the
+            #: run's formulas above and below it is vertically
+            #: sandwiched by the calculation it interrupts, which is
+            #: not how typed history is laid out in any orientation —
+            #: the sandwich is the anti-history evidence. The run's
+            #: edges keep the guard: column-major models genuinely put
+            #: typed history at the top of a column, and waiving it
+            #: there is the flood the guard exists to prevent.
+            and (
+                (index > 0 and end < len(run))
+                or all(
+                    leftmost.get((sheet, cell.row), 1 << 20) < cell.column
+                    for cell in island
+                )
             )
             and not _seed(island, run[end] if end < len(run) else None)
         ):
