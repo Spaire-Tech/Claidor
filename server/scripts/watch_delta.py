@@ -2,22 +2,75 @@
 
     uv run python -m scripts.watch_delta OLD.xlsx NEW.xlsx OUT.json [--parity]
 
-`--parity` is V1 of the C3 registration: the same pair is also run
-through `scripts.revision_diff` — the revision-defect study's own
-committed matcher — and the defect-delta numbers must agree exactly.
-It reads and audits everything twice on purpose: two code paths,
-one file, mechanical comparison.
+`--parity` is V1 of the C3 registration: the same pair is run again,
+independently, under the revision-defect study's own matching logic,
+and the defect-delta numbers must agree exactly.
+
+An honesty note on what parity can mean on this container.
+`scripts.revision_diff` cannot even be *imported* here: it reads
+findings through `scripts.regulator_eval` → `polar.tieout.ingest`,
+and importing the ingest module trips the container's known
+Python 3.14.0rc2 + pydantic breakage (the same one that forces
+`--noconftest` on the tieout tests). So V1 splits into two halves:
+
+- **Read-path equivalence, by source:** ingest's `_read_model`
+  computes findings as exactly `read_workbook(path)` then
+  `audit(book, axes=period_axes(book))` — the chain this script
+  uses — and its only other book-touching step, `repair_outputs`,
+  builds new Output objects and never mutates the workbook. Checked
+  in the source and recorded in the lane log.
+- **Matcher parity, by execution:** `_study_keyed` below is the
+  study matcher's `keyed()` logic, kept verbatim (from
+  `scripts.revision_diff`, its docstring cited), applied to a
+  freshly re-read, re-audited pair — so a defect in how the delta
+  report collects or counts findings cannot hide.
 """
 
 import json
 import sys
 import time
+from collections import Counter
 from dataclasses import asdict
 from pathlib import Path
 
-from polar.tieout.audit import _shape_of
+from polar.tieout.audit import _shape_of, audit
+from polar.tieout.structure import period_axes
 from polar.tieout.watch import delta_report
-from polar.tieout.workbook import tokens_of
+from polar.tieout.workbook import read_workbook, tokens_of
+
+
+def _study_keyed(defects: list) -> tuple[Counter, int]:
+    """Verbatim from `scripts.revision_diff.keyed` (unimportable here —
+    see the module docstring): « Multiset of matchable keys, and the
+    count that could not be keyed. »"""
+    keys: Counter = Counter()
+    unmatched = 0
+    for finding in defects:
+        name = (finding.name or "").strip()
+        if not name:
+            unmatched += 1
+            continue
+        keys[(finding.rule, finding.sheet, name)] += 1
+    return keys, unmatched
+
+
+def _study_diff(old_path: str, new_path: str) -> dict:
+    """The study's diff semantics on a freshly re-read, re-audited
+    pair — the findings chain ingest's `_read_model` uses, minus the
+    outputs step that never touches findings."""
+    draft_book = read_workbook(old_path)
+    draft = audit(draft_book, axes=period_axes(draft_book)).findings
+    final_book = read_workbook(new_path)
+    final = audit(final_book, axes=period_axes(final_book)).findings
+    draft_keys, draft_unmatched = _study_keyed(draft)
+    final_keys, final_unmatched = _study_keyed(final)
+    return {
+        "new": sum((final_keys - draft_keys).values()),
+        "fixed": sum((draft_keys - final_keys).values()),
+        "persistent": sum((draft_keys & final_keys).values()),
+        "unmatched_draft": draft_unmatched,
+        "unmatched_final": final_unmatched,
+    }
 
 
 def main() -> int:
@@ -47,9 +100,7 @@ def main() -> int:
         print(f"  {item.kind}: {item.sheet}{rows}{columns}  {item.detail[:80]}")
 
     if parity:
-        from scripts.revision_diff import diff as study_diff
-
-        theirs = study_diff(old_path, new_path)
+        theirs = _study_diff(old_path, new_path)
         comparison = {
             "new": (report.new_defects, theirs["new"]),
             "fixed": (report.repaired_defects, theirs["fixed"]),
