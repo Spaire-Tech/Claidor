@@ -35,6 +35,7 @@ import {
   Finding,
   HiddenReport,
   ModelGrid,
+  RecalcMark,
   TieOutApi,
   Version,
 } from './../api'
@@ -54,6 +55,26 @@ const OPEN_LABEL: Record<string, string> = {
   model: 'Open in Excel',
   message: 'Open in Outlook',
   source: 'Open',
+}
+
+//: The denylist's categories, said in words a person can act on. The
+//: category names are the engine's own (`polar.tieout.recalc.denylist`).
+const REFUSAL_WORDS: Record<string, string> = {
+  rtd: 'a real-time feed — its value was gone the moment the file was saved',
+  udf: 'a macro or add-in function — the code is not in the cells',
+  'external-link': 'a reference reaching outside this file',
+  lambda: 'a LAMBDA — a construct our free engine does not have',
+  cube: 'an OLAP cube connection a headless engine does not have',
+  'engine-gap': 'a function our engine measurably cannot compute',
+}
+
+//: The mark's ink, one colour per verdict — the same palette the rest
+//: of the workspace speaks.
+const VERDICT_INK: Record<string, string> = {
+  pass: '#1f8a4c',
+  fail: '#e0322d',
+  refused: '#e8a300',
+  'nothing-compared': '#8f96a0',
 }
 
 const panelHead = {
@@ -113,6 +134,15 @@ export const DocPanel = ({
   const [chain, setChain] = useState<DocumentFacts | null>(null)
   const [chainWord, setChainWord] = useState<string | null>(null)
   const [reading, setReading] = useState(false)
+  //: The recalculation mark (ready models only): the stored verdict
+  //: arrives on the artifact's own counts; running the gate replaces
+  //: it live and the server keeps it for every later read.
+  const isModel = doc.kind === 'model' && doc.status === 'ready'
+  const [mark, setMark] = useState<RecalcMark | null>(
+    (doc.counts['recalc'] as RecalcMark | undefined) ?? null,
+  )
+  const [recalcing, setRecalcing] = useState(false)
+  const [recalcWord, setRecalcWord] = useState<string | null>(null)
   const [activeFact, setActiveFact] = useState<string | null>(null)
   const [pageShown, setPageShown] = useState<number | null>(null)
   const [pageUrl, setPageUrl] = useState<string | null>(null)
@@ -188,6 +218,36 @@ export const DocPanel = ({
       cache.clear()
     }
   }, [api, doc.id, isSourcePdf])
+
+  //: The mark travels with the artifact, so a panel opened on a marked
+  //: version starts from the stored verdict rather than a blank.
+  useEffect(() => {
+    setMark((doc.counts['recalc'] as RecalcMark | undefined) ?? null)
+    setRecalcing(false)
+    setRecalcWord(null)
+  }, [doc.id, doc.counts])
+
+  //: « Run the recalculation » — deliberate and heavy: the whole model
+  //: goes through the engine. The failure sentence is the server's own
+  //: (no adequate LibreOffice, a file the engine died on) and is shown
+  //: as it stands; nothing is stored on failure.
+  const runRecalc = () => {
+    if (recalcing) return
+    setRecalcing(true)
+    setRecalcWord(null)
+    api
+      .recalculate(doc.id)
+      .then((got) => {
+        setMark(got)
+        onChanged()
+      })
+      .catch((problem: unknown) =>
+        setRecalcWord(
+          problem instanceof Error ? problem.message : 'something went wrong',
+        ),
+      )
+      .finally(() => setRecalcing(false))
+  }
 
   //: Click a number, see the page: fetch (or reuse) that page's
   //: pixels and put the fact's box on top. A refusal is the server's
@@ -429,6 +489,314 @@ export const DocPanel = ({
             Download
           </button>
         </div>
+
+        {/* The recalculation mark — agent-designed (no founder drawing
+            covers it). The gate's four verdicts, each with its honest
+            face: validated names the engine and the count; a failure
+            names the differing cells; a refusal says, in words, which
+            constructs no engine of ours may honestly compute and where
+            that routes the file. Never run is a state too, with the
+            deliberate button — recalculation is heavy and is never
+            done behind anyone's back. */}
+        {isModel && (
+          <>
+            <div style={panelHead}>Validated by recalculation</div>
+            <div style={{ ...panelCard, padding: '14px 16px' }}>
+              {mark === null ? (
+                <>
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      color: ink.secondary,
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    This version has not been recalculated. The engine re-runs
+                    every formula from the file&rsquo;s own inputs and compares
+                    what Excel left behind, cell by cell — or refuses, in
+                    words, a file it may not honestly compute.
+                  </div>
+                  {recalcWord !== null && (
+                    <div
+                      style={{
+                        paddingTop: 10,
+                        fontSize: 13,
+                        color: '#c9302c',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {recalcWord}
+                    </div>
+                  )}
+                  <button
+                    onClick={runRecalc}
+                    disabled={recalcing}
+                    style={{
+                      marginTop: 12,
+                      border: 0,
+                      background: recalcing ? '#eceef1' : ink.accent,
+                      color: recalcing ? ink.secondary : '#fff',
+                      borderRadius: 9,
+                      padding: '9px 14px',
+                      font: 'inherit',
+                      fontSize: 13.5,
+                      fontWeight: 500,
+                      cursor: recalcing ? 'default' : 'pointer',
+                    }}
+                  >
+                    {recalcing
+                      ? 'Recalculating — the whole model is going through the engine…'
+                      : 'Run the recalculation'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: 9 }}
+                  >
+                    <span
+                      style={{
+                        flex: '0 0 auto',
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: VERDICT_INK[mark.verdict] ?? '#8f96a0',
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        letterSpacing: '-.01em',
+                        color: ink.primary,
+                      }}
+                    >
+                      {mark.verdict === 'pass'
+                        ? 'Validated by recalculation'
+                        : mark.verdict === 'fail'
+                          ? 'The engine could not reproduce this file'
+                          : mark.verdict === 'refused'
+                            ? 'Not recalculated — refused, in words'
+                            : 'Nothing to compare'}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      paddingTop: 8,
+                      fontSize: 13.5,
+                      color: ink.secondary,
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    {mark.verdict === 'pass' && (
+                      <>
+                        The engine re-ran the file&rsquo;s formulas from their
+                        own inputs and reproduced all {mark.matched} compared
+                        cells exactly.
+                        {mark.volatile_cone > 0 &&
+                          ` ${mark.volatile_cone} live cells (TODAY, NOW, RAND and their dependents) were set aside — their stored values belong to the moment the file was saved.`}
+                      </>
+                    )}
+                    {mark.verdict === 'fail' && (
+                      <>
+                        {mark.mismatch_count > 0 &&
+                          `${mark.mismatch_count} of ${mark.compared} compared cells came back different. `}
+                        {mark.engine_error_count > 0 &&
+                          `${mark.engine_error_count} cells returned engine errors against stored numbers — the engine's measured inability on those constructs, not the model's defect. `}
+                        {mark.not_computed > 0 &&
+                          `${mark.not_computed} formula cells came back with nothing.`}
+                      </>
+                    )}
+                    {mark.verdict === 'refused' && (
+                      <>
+                        The prescan found constructs no engine of ours may
+                        honestly compute, so no number is claimed:
+                      </>
+                    )}
+                    {mark.verdict === 'nothing-compared' && (
+                      <>
+                        The file&rsquo;s formula cells carry no stored values —
+                        a generator wrote it and Excel never computed it — so
+                        there was nothing to compare and nothing is certified.
+                      </>
+                    )}
+                  </div>
+                  {mark.verdict === 'fail' &&
+                    [...mark.mismatches, ...mark.engine_errors].length > 0 && (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          borderTop: hairline,
+                          paddingTop: 4,
+                        }}
+                      >
+                        {[...mark.mismatches, ...mark.engine_errors]
+                          .slice(0, 12)
+                          .map((diff) => (
+                            <div
+                              key={diff.ref}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'baseline',
+                                gap: 10,
+                                padding: '6px 0',
+                                fontFamily: font.mono,
+                                fontSize: 12,
+                              }}
+                            >
+                              <span style={{ color: ink.primary }}>
+                                {diff.ref}
+                              </span>
+                              <span
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                  textAlign: 'right',
+                                  color: ink.secondary,
+                                }}
+                              >
+                                {diff.stored ?? '—'} stored
+                              </span>
+                              <span
+                                style={{ color: '#c9302c', textAlign: 'right' }}
+                              >
+                                {diff.computed ?? 'nothing'} recalculated
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  {mark.verdict === 'refused' && (
+                    <>
+                      <div
+                        style={{
+                          marginTop: 10,
+                          borderTop: hairline,
+                          paddingTop: 4,
+                        }}
+                      >
+                        {mark.refusals.map((refusal) => (
+                          <div
+                            key={`${refusal.ref}-${refusal.target}`}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'baseline',
+                              gap: 10,
+                              padding: '6px 0',
+                            }}
+                          >
+                            <span
+                              style={{
+                                flex: '0 0 auto',
+                                fontFamily: font.mono,
+                                fontSize: 12,
+                                color: ink.primary,
+                              }}
+                            >
+                              {refusal.ref}
+                            </span>
+                            <span
+                              style={{
+                                flex: 1,
+                                minWidth: 0,
+                                fontSize: 12.5,
+                                color: ink.secondary,
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {refusal.target} —{' '}
+                              {REFUSAL_WORDS[refusal.category] ??
+                                refusal.category}
+                            </span>
+                          </div>
+                        ))}
+                        {mark.refusal_count > mark.refusals.length && (
+                          <div
+                            style={{
+                              padding: '6px 0',
+                              fontSize: 12.5,
+                              color: ink.faint,
+                            }}
+                          >
+                            …and {mark.refusal_count - mark.refusals.length}{' '}
+                            more.
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          paddingTop: 8,
+                          fontSize: 13,
+                          color: ink.secondary,
+                          lineHeight: 1.55,
+                        }}
+                      >
+                        {mark.route === 'arbiter'
+                          ? 'Real Excel could settle this file. Until an arbiter run exists, the honest answer is « we did not check this ».'
+                          : 'Nothing we could run recomputes these, so the honest answer is « we did not check this ».'}
+                      </div>
+                    </>
+                  )}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 10,
+                      marginTop: 12,
+                      borderTop: hairline,
+                      paddingTop: 10,
+                    }}
+                  >
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontFamily: font.mono,
+                        fontSize: 11,
+                        color: ink.faint,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      run {ago(mark.computed_at)}
+                      {mark.engine ? ` · ${mark.engine}` : ''}
+                    </span>
+                    <button
+                      onClick={runRecalc}
+                      disabled={recalcing}
+                      style={{
+                        flex: '0 0 auto',
+                        border: 0,
+                        background: 'transparent',
+                        padding: 0,
+                        font: 'inherit',
+                        fontSize: 12.5,
+                        fontWeight: 500,
+                        color: recalcing ? ink.faint : ink.accent,
+                        cursor: recalcing ? 'default' : 'pointer',
+                      }}
+                    >
+                      {recalcing ? 'Recalculating…' : 'Run again'}
+                    </button>
+                  </div>
+                  {recalcWord !== null && (
+                    <div
+                      style={{
+                        paddingTop: 8,
+                        fontSize: 13,
+                        color: '#c9302c',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {recalcWord}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
 
         {/* The source viewer — agent-designed (no founder drawing
             covers it). The click-a-number, see-the-highlighted-page

@@ -106,6 +106,7 @@ from .schemas import (
     OneOffDrift,
     OneOffResult,
     PanelToken,
+    RecalcMarkRead,
     RecentCheck,
     SlideFigures,
     SoloFindingRead,
@@ -1236,6 +1237,43 @@ async def source_page(
         # keep them for the session; a new upload is a new artifact id.
         headers={"cache-control": "private, max-age=3600"},
     )
+
+
+@router.post("/artifacts/{artifact_id}/recalculate", response_model=RecalcMarkRead)
+async def recalculate_artifact(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> RecalcMarkRead:
+    """Run the fidelity gate on this version and keep its mark.
+
+    Deliberate, and heavy: the file's formulas are prescanned for
+    constructs no engine of ours may honestly compute, and a clean file
+    is then recalculated whole through LibreOffice and compared cell by
+    cell against the values Excel left in it. The resulting mark —
+    validated, failed with the differing cells named, refused in words,
+    or nothing to compare — is stored on this version and served with
+    the artifact from then on. A machine without an adequate engine
+    answers 503 with the sentence saying so; it never stores a guess.
+    """
+    from .recalc import CalculatorError
+
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    if artifact.kind is not ArtifactKind.model:
+        raise ResourceNotFound("Only a model can be recalculated.")
+    try:
+        mark = await tieout.recalculate(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+        )
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    except CalculatorError as problem:
+        raise HTTPException(status_code=503, detail=str(problem)) from problem
+    if mark is None:
+        raise ResourceNotFound("Only a ready model can be recalculated.")
+    return RecalcMarkRead(**mark)
 
 
 # --- checks --------------------------------------------------------------

@@ -52,13 +52,21 @@ Three screens, in order, one shipped whole before the next:
    unread store, refusals in words. 4 route tests
    (`TestTheSourcePage`); suite 77 green; screenshots in
    `logs/atelier/source-viewer-*.png`.
-3. **Recalculation mark — NEXT**: « validated by recalculation » on
-   report and model page, with its honest refusal face.
-   `polar.tieout.recalc.gate.gate_file` renders the verdict; no
-   endpoint yet. Nothing started. NOTE: the gate needs LibreOffice
-   (`dev/setup-libreoffice` exists, lead's) — install it in the
-   container before wiring, and remember heavy recalc jobs run
-   alone (OOM lesson).
+3. **Recalculation mark — SHIPPED in this push** (agent-designed):
+   `POST /artifacts/{id}/recalculate` (service `recalculate`:
+   stored bytes → prescan → UnoCalculator in a worker thread →
+   `gate_file`; mark persisted in `artifact.counts["recalc"]`,
+   refused files never touch the engine, engine-less machine → 503
+   sentence, nothing stored). Model page gains the
+   « Validated by recalculation » card (never-run + four verdict
+   faces, deliberate Run button); the report speaks the mark in
+   prose and lists a missing mark under « What could not be
+   checked ». Five route tests (`TestTheRecalculation`, the
+   real-engine one skips honestly without LibreOffice); suite 82
+   green; screenshots in `logs/atelier/recalc-*.png`.
+
+**The queue is empty** — all three design-unlock screens shipped
+whole. Holding for the next sweep's orders.
 
 Mark every agent-designed screen in the log; the founder reviews.
 
@@ -74,6 +82,12 @@ Mark every agent-designed screen in the log; the founder reviews.
   minio server /var/minio-data --address :9000`), then wait for
   `http://127.0.0.1:9000/minio/health/live` = 200. Minio takes a
   few seconds to answer.
+- LibreOffice 25.8.7 is installed in this container
+  (`dev/setup-libreoffice`, lead's, idempotent — retry on a
+  transient download reset). The demo DB now also holds the
+  repaired cascade v3 (validated), the doctored v2's honest fail
+  mark, and « Project Live Feed Demo » (an RTD model, the standing
+  refusal-face subject).
 - Dev-stack proof rig: API
   `CLAIDOR_CURRENT_JWK_KID=polar_dev uv run uvicorn polar.app:app
   --port 8000`, web `pnpm dev`, Chromium at `/opt/pw-browsers/

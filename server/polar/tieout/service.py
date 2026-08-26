@@ -773,6 +773,129 @@ class TieOutService:
             image.save(buffer, format="PNG")
             return buffer.getvalue()
 
+    #: How many differing or refused cells the mark names outright; the
+    #: rest are counted. A screen that lists ten thousand refs answers
+    #: nothing — the counts stay exact and the worst are named.
+    RECALC_NAMED = 12
+
+    async def recalculate(
+        self,
+        session: AsyncSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+    ) -> dict[str, Any] | None:
+        """Run the fidelity gate on one stored model and keep its mark.
+
+        The gate's question (`polar.tieout.recalc`, a read-only library
+        here per lanes.md): given this exact file, unchanged, does our
+        engine reproduce the values Excel left in it? The denylist
+        prescan runs first — a file carrying constructs no engine of
+        ours may honestly compute is **refused before any comparison**,
+        with each construct named and where it routes (real Excel via
+        the arbiter, or an honest no). Only a clean file is recalculated
+        through LibreOffice and diffed cell by cell.
+
+        Unlike the version delta this one is *persisted* — into the
+        artifact's own loose ``counts`` under ``recalc`` — because the
+        mark is a fact about a version that every screen must repeat
+        without re-running a calculation engine. A new upload is a new
+        artifact with no mark: the mark can never describe bytes other
+        than the ones it was computed from.
+
+        The engine work runs in a worker thread: one document at a time,
+        one soffice pair per call, torn down before returning — the
+        registered discipline for heavy workbook jobs on shared boxes.
+        Raises :class:`polar.tieout.recalc.CalculatorError` when no
+        adequate LibreOffice exists or the engine dies on the file; the
+        caller says that sentence rather than storing a guess. Returns
+        None when the artifact is not this deal's ready model.
+        """
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.get_artifact(artifact_id)
+        if (
+            artifact is None
+            or artifact.dossier_id != dossier_id
+            or artifact.kind is not ArtifactKind.model
+            or artifact.status is not ArtifactStatus.ready
+        ):
+            return None
+        payload = storage.fetch(artifact)
+        suffix = Path(artifact.filename).suffix or ".xlsx"
+
+        import asyncio
+
+        fidelity, engine = await asyncio.to_thread(
+            self._gate_stored_model, payload, suffix
+        )
+
+        named = self.RECALC_NAMED
+        mark: dict[str, Any] = {
+            "verdict": fidelity.verdict,
+            "engine": engine,
+            "computed_at": datetime.now(UTC).isoformat(),
+            "compared": fidelity.compared,
+            "matched": fidelity.matched,
+            "match_rate": fidelity.match_rate,
+            "mismatches": [_diff_fact(one) for one in fidelity.mismatches[:named]],
+            "mismatch_count": len(fidelity.mismatches),
+            "engine_errors": [
+                _diff_fact(one) for one in fidelity.engine_errors[:named]
+            ],
+            "engine_error_count": len(fidelity.engine_errors),
+            "not_computed": len(fidelity.not_computed),
+            "no_stored_value": len(fidelity.no_stored_value),
+            "refusals": [
+                {
+                    "ref": hit.ref,
+                    "category": str(hit.category),
+                    "target": hit.target,
+                    "route": str(hit.route),
+                }
+                for hit in fidelity.refusals[:named]
+            ],
+            "refusal_count": len(fidelity.refusals),
+            "route": str(fidelity.route) if fidelity.route is not None else None,
+            "volatile_roots": len(fidelity.volatile_roots),
+            "volatile_cone": fidelity.volatile_cone,
+        }
+        artifact.counts = {**artifact.counts, "recalc": mark}
+        return mark
+
+    @staticmethod
+    def _gate_stored_model(payload: bytes, suffix: str) -> tuple[Any, str | None]:
+        """Prescan, recalculate and gate one file's bytes. Blocking; threaded."""
+        from .recalc import gate_file, prescan
+        from .recalc.denylist import route_for
+        from .recalc.gate import read_calc_settings
+        from .recalc.uno_calc import UnoCalculator
+        from .workbook import read_workbook
+
+        path = ""
+        try:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                f.write(payload)
+                path = f.name
+            cells = read_workbook(path).cells
+            hits = prescan(cells)
+            route = route_for(hits)
+            if route is not None:
+                #: Refused before comparison: no engine runs, and the
+                #: mark carries the constructs and the route in words.
+                return gate_file(cells, {}, refusals=hits, route=route), None
+            settings = read_calc_settings(path)
+            calculator = UnoCalculator()
+            calculator.start()
+            try:
+                result = calculator.recalculate(path)
+            finally:
+                calculator.stop()
+            fidelity = gate_file(cells, result.values, settings=settings)
+            return fidelity, result.engine
+        finally:
+            if path:
+                Path(path).unlink(missing_ok=True)
+
     async def run_audit(
         self, session: AsyncSession, *, dossier_id: UUID, user_id: UUID | None
     ) -> CheckRun:
@@ -1827,6 +1950,17 @@ class _Candidates:
         #: with no Outputs tab, which is most of them.
         self.workbook = workbook
         self.cells = cells
+
+
+def _diff_fact(diff: Any) -> dict[str, Any]:
+    """One gate `CellDiff` as JSON facts — stored, computed, tolerance."""
+    stored = diff.stored
+    return {
+        "ref": diff.ref,
+        "stored": float(stored) if stored is not None else None,
+        "computed": diff.computed,
+        "tolerance": diff.tolerance,
+    }
 
 
 def _statement_json(statement: Statement) -> dict[str, Any]:

@@ -877,6 +877,47 @@ export interface RecentCheck {
   counts: Record<string, number>
 }
 
+/** One cell the recalculation engine did not reproduce — both numbers. */
+export interface RecalcDiff {
+  ref: string
+  stored: number | null
+  computed: number | string | null
+  tolerance: number | null
+}
+
+/** One construct the engine may not honestly compute, in words. */
+export interface RecalcRefusal {
+  ref: string
+  category: string
+  target: string
+  route: 'arbiter' | 'refuse' | string
+}
+
+/** The fidelity gate's answer for one stored version — the mark.
+ *  `verdict` is the gate's own: `pass` is the only one that reads
+ *  « validated by recalculation »; `refused` carries its reasons in
+ *  `refusals`; `fail` names the differing cells; `nothing-compared`
+ *  means the formula cells carry no stored values to certify. */
+export interface RecalcMark {
+  verdict: 'pass' | 'fail' | 'refused' | 'nothing-compared' | string
+  engine: string | null
+  computed_at: string
+  compared: number
+  matched: number
+  match_rate: number | null
+  mismatches: RecalcDiff[]
+  mismatch_count: number
+  engine_errors: RecalcDiff[]
+  engine_error_count: number
+  not_computed: number
+  no_stored_value: number
+  refusals: RecalcRefusal[]
+  refusal_count: number
+  route: string | null
+  volatile_roots: number
+  volatile_cone: number
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -1267,6 +1308,18 @@ export class TieOutApi {
       )
     }
     return URL.createObjectURL(await response.blob())
+  }
+
+  /** Run the fidelity gate on this version and keep its mark —
+   *  deliberate and heavy: the whole model is recalculated through the
+   *  engine and compared cell by cell, unless the prescan refuses it
+   *  first. The stored mark then travels on the artifact's `counts`
+   *  under `recalc`. A machine without an adequate engine answers 503
+   *  with the sentence saying so. */
+  recalculate(artifactId: string): Promise<RecalcMark> {
+    return this.call(`/artifacts/${artifactId}/recalculate`, {
+      method: 'POST',
+    })
   }
 
   /** What travels with this file that is not on its screen. */

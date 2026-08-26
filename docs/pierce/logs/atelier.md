@@ -420,3 +420,80 @@ date's day belongs in the fact store is the Chain's call, not a
 screen's.
 
 Next per orders: the recalculation mark.
+
+## 27 August 2026 — the recalculation mark, shipped whole (agent-designed)
+
+Design-unlock item 3, the last of the founder's three: the
+« validated by recalculation » state on the report and the model
+page, **including its honest refusal face** — designed at full
+effort in the existing style, per the orders' own words.
+
+**The ground.** This container never had the engine: LibreOffice
+was 24.2, below the recalculator's 25.8 floor. The lead's
+`dev/setup-libreoffice` installed 25.8.7 (one transient network
+reset, retried); its own verification passed (uno imports in the
+bundled python, headless Calc converts). First real run: the gate
+reproduced the cascade fixture's 228 formula cells exactly through
+UNO — the whole of Dynamo's pipeline (prescan → UnoCalculator →
+gate_file) works end to end on this box, first try.
+
+**The endpoint (mine).** `POST /artifacts/{id}/recalculate`
+(TieOutWrite, service `recalculate`): the artifact's stored bytes →
+denylist prescan → a clean file goes whole through LibreOffice via
+`UnoCalculator` (one soffice pair per call, torn down after, run in
+a worker thread — heavy jobs run alone) → `gate_file` cell by cell.
+The mark is **persisted** on the artifact's own loose `counts`
+under `recalc` — unlike the delta this answer must be repeated by
+every screen without re-running an engine, and a new upload is a
+new artifact with no mark, so the mark can never describe other
+bytes. Refused files never touch the engine and store the
+constructs in words (`RecalcMarkRead`: verdict, engine named,
+counts exact, worst twelve diffs/refusals named, the rest counted).
+A machine without the engine answers 503 with the sentence; nothing
+stored. Five route tests (`TestTheRecalculation`), one skipped
+honestly where no adequate LibreOffice exists; **route suite 82
+passed**. Backend lint, format and mypy clean on my files.
+
+**The screens.** On the model page (the founder's `docOpen` panel),
+a new section, agent-designed: « Validated by recalculation ». Four
+verdict faces plus never-run: never-run says what the engine would
+do and offers the deliberate « Run the recalculation » button —
+recalculation is heavy and never happens behind anyone's back; pass
+(green) names the engine and the count; fail (red) counts the
+disagreements and names the worst cells mono, stored beside
+recalculated; refused (amber) lists each construct in words
+(« RTD — a real-time feed — its value was gone the moment the file
+was saved ») and claims « we did not check this » rather than a
+number; nothing-compared explains the generator-written case. On
+the report sheet, the mark becomes prose between « What was
+checked » and « What could not be checked »: validated names the
+engine and count; a missing mark is **listed as a fact under what
+could not be checked**, never passed over.
+
+**Proven on the real stack, screenshots beside this log.** The
+doctored demo v2 (typed-over `Model!F16`) **failed its
+recalculation for real**: 19 of 227 compared cells differ, and the
+named cells are exactly the downstream damage — `Model!F17`, `F26`,
+`F27`, the DCF rows (`recalc-failed.png`; the mark re-shown from
+storage on a fresh load, no re-run). A repaired v3 (the clean bytes
+back on the lineage) earns the green face — « reproduced all 228
+compared cells exactly », engine named
+(`recalc-never-run.png`, `recalc-validated.png`) — and the report
+speaks it (`recalc-report-validated.png`); the report's
+never-run line is `recalc-report-notrun.png`. The refusal face
+lives in its own small demo deal (« Project Live Feed Demo »,
+`market_feed_model.xlsx` with a real `=RTD(...)`) so the cascade
+demo's report keeps its subject: `recalc-refused.png`. Every drive
+assertion green, zero page errors.
+
+Two demo-data notes on the record: the doctored v2's honest fail
+means the cascade deal's *current* model no longer reads
+« validated » — that is the truth the mark exists to tell, and the
+repaired v3 completes the story (v1 clean → v2 doctored, caught by
+the Watch and the gate → v3 repaired, validated). And the report
+follows the deal's newest model, which is why the refused model got
+its own deal — a second model lineage in one deal changes the
+report's subject; worth a word with the lead someday.
+
+Next per orders: nothing further queued — the three design-unlock
+screens are shipped whole. Holding for the next sweep.

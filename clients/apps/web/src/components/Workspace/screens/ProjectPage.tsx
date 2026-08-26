@@ -58,6 +58,7 @@ import {
   DealPage as DealPageData,
   Finding,
   Link,
+  RecalcMark,
   TieOutApi,
   Version,
   VersionAudit,
@@ -3503,6 +3504,7 @@ export const ProjectPage = ({
           open={openCurrent}
           lastRun={lastRun}
           versions={versions ?? []}
+          recalc={(model?.counts['recalc'] as RecalcMark | undefined) ?? null}
           onClose={() => setRepOpen(false)}
         />
       )}
@@ -3525,6 +3527,7 @@ const Report = ({
   open,
   lastRun,
   versions,
+  recalc,
   onClose,
 }: {
   modelName: string
@@ -3534,6 +3537,8 @@ const Report = ({
   open: Finding[]
   lastRun: CheckRun | null
   versions: Version[]
+  /** The current version's stored recalculation mark, when it has one. */
+  recalc: RecalcMark | null
   onClose: () => void
 }) => {
   const total = open.length
@@ -3583,6 +3588,68 @@ const Report = ({
   notChecked.push(
     'Model inputs that are judgement calls are not checked — only their sourcing is.',
   )
+
+  //: The recalculation mark, spoken in report prose. Four verdicts,
+  //: four faces — and no mark is a fact too, listed with everything
+  //: else that was not checked rather than passed over in silence.
+  const REFUSAL_SHORT: Record<string, string> = {
+    rtd: 'a real-time feed',
+    udf: 'a macro or add-in function',
+    'external-link': 'a reference outside the file',
+    lambda: 'a LAMBDA',
+    cube: 'a cube connection',
+    'engine-gap': 'a function the engine measurably cannot compute',
+  }
+  let recalcHead: string | null = null
+  let recalcBody = ''
+  if (recalc === null) {
+    notChecked.push(
+      'The arithmetic has not been re-run through the recalculation engine — the mark can be earned from the model’s own page.',
+    )
+  } else if (recalc.verdict === 'pass') {
+    recalcHead = 'Validated by recalculation'
+    recalcBody =
+      `Beyond reading the model, its arithmetic was re-run: ${recalc.engine ?? 'the engine'} ` +
+      `recomputed every formula from the file’s own inputs and reproduced all ` +
+      `${recalc.matched} compared cells exactly.` +
+      (recalc.volatile_cone > 0
+        ? ` ${recalc.volatile_cone} live cells (TODAY, NOW, RAND and their dependents) were set aside — their stored values belong to the moment the file was saved.`
+        : '')
+  } else if (recalc.verdict === 'fail') {
+    recalcHead = 'The recalculation disagreed'
+    recalcBody =
+      (recalc.mismatch_count > 0
+        ? `${recalc.mismatch_count} of ${recalc.compared} compared cells came back different when the file’s formulas were re-run. `
+        : '') +
+      (recalc.engine_error_count > 0
+        ? `${recalc.engine_error_count} cells returned engine errors against stored numbers — the engine’s measured inability on those constructs, not the model’s defect. `
+        : '') +
+      (recalc.not_computed > 0
+        ? `${recalc.not_computed} formula cells came back with nothing. `
+        : '') +
+      'The differing cells are named on the model’s own page.'
+  } else if (recalc.verdict === 'refused') {
+    const kinds = [
+      ...new Set(
+        recalc.refusals.map(
+          (one) => REFUSAL_SHORT[one.category] ?? one.category,
+        ),
+      ),
+    ]
+    recalcHead = 'Not recalculated — refused, in words'
+    recalcBody =
+      `The file carries ${recalc.refusal_count === 1 ? 'a construct' : `${recalc.refusal_count} constructs`} ` +
+      `no engine of ours may honestly compute` +
+      (kinds.length > 0 ? ` (${kinds.join(', ')})` : '') +
+      `, so its arithmetic was not re-run and no verdict is claimed. ` +
+      (recalc.route === 'arbiter'
+        ? 'Real Excel could settle this file; until an arbiter run exists, the honest answer is « we did not check this ».'
+        : 'Nothing we could run recomputes these, so the honest answer is « we did not check this ».')
+  } else if (recalc.verdict === 'nothing-compared') {
+    recalcHead = 'Recalculated, with nothing to compare'
+    recalcBody =
+      'The file’s formula cells carry no stored values — a generator wrote it and Excel never computed it — so a recalculation had nothing to compare against and nothing is certified.'
+  }
 
   const families = new Map<string, Finding[]>()
   for (const one of rest) {
@@ -3912,6 +3979,12 @@ const Report = ({
                   </span>
                 ))}
               </div>
+              {recalcHead !== null && (
+                <>
+                  {heading(recalcHead, 34)}
+                  {serif(recalcBody)}
+                </>
+              )}
               {heading('What could not be checked', 34)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {notChecked.map((text, i) => (

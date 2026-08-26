@@ -877,6 +877,79 @@ class VersionDeltaRead(Schema):
     items: list[DeltaItemRead] = []
 
 
+class RecalcDiff(Schema):
+    """One cell the engine did not reproduce — both numbers, on the record."""
+
+    ref: str
+    #: The value Excel left in the file; None when the mismatch is of
+    #: kind (a stored number against an engine error, say).
+    stored: float | None
+    #: What our engine computed — a number, an error string, or None.
+    computed: float | str | None
+    #: The absolute difference that *would* have been allowed, when
+    #: both sides were numbers.
+    tolerance: float | None
+
+
+class RecalcRefusal(Schema):
+    """One construct the engine may not honestly compute, in words."""
+
+    ref: str
+    #: The denylist's category: `lambda`, `cube`, `rtd`, `udf`,
+    #: `external-link`, `engine-gap`.
+    category: str
+    #: The function or reference that tripped the scan, as written.
+    target: str
+    #: Where this construct routes the file: `arbiter` (real Excel
+    #: could settle it) or `refuse` (nothing we run honestly could).
+    route: str
+
+
+class RecalcMarkRead(Schema):
+    """The fidelity gate's answer for one stored version — the mark.
+
+    `verdict` is the gate's own, one of four: **pass** (the engine
+    reproduced every compared cell — the only verdict that reads
+    « validated by recalculation »), **fail** (differing cells, named
+    below), **refused** (denylisted constructs; no comparison ran, and
+    `refusals` says why in words), **nothing-compared** (the formula
+    cells carry no stored values, so there was nothing to certify).
+    Persisted on the artifact, so the mark always describes exactly the
+    bytes of the version it sits on; a new upload starts unmarked.
+    """
+
+    verdict: str
+    #: Which engine produced the numbers — named so a fake can never be
+    #: mistaken for a machine result. None when the file was refused
+    #: before any engine ran.
+    engine: str | None
+    computed_at: datetime
+    #: Formula cells with a stored value the engine also computed.
+    compared: int
+    matched: int
+    match_rate: float | None
+    #: The worst differing cells, named; `mismatch_count` is the whole
+    #: truth when the list is capped.
+    mismatches: list[RecalcDiff] = []
+    mismatch_count: int = 0
+    #: Cells where the engine produced an error against a stored number
+    #: — the engine's measured inability, never the model's defect.
+    engine_errors: list[RecalcDiff] = []
+    engine_error_count: int = 0
+    #: Formula cells the engine returned nothing for.
+    not_computed: int = 0
+    #: Formula cells with no stored value to compare against.
+    no_stored_value: int = 0
+    refusals: list[RecalcRefusal] = []
+    refusal_count: int = 0
+    #: The refused file's route: `arbiter` or `refuse`; None otherwise.
+    route: str | None = None
+    #: TODAY/NOW/RAND-class cells and everything downstream of one —
+    #: set aside, reported, never counted as compared.
+    volatile_roots: int = 0
+    volatile_cone: int = 0
+
+
 class ModelGrid(Schema):
     """A model as it is laid out, rather than as a search box.
 
