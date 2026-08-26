@@ -20,12 +20,15 @@ from .align import (
     align_sheet,
     structural_changes,
 )
+from .delta import DeltaItem, DeltaReport, delta_of, delta_report
 from .diff import CellDelta, VersionDiff, diff_paths, diff_raw, read_raw
 from .signature import LITERAL, Line, SheetGrid, sheet_grids
 
 __all__ = [
     "LITERAL",
     "CellDelta",
+    "DeltaItem",
+    "DeltaReport",
     "Line",
     "LineAlignment",
     "Match",
@@ -34,6 +37,8 @@ __all__ = [
     "VersionDiff",
     "align_lines",
     "align_sheet",
+    "delta_of",
+    "delta_report",
     "diff_paths",
     "diff_raw",
     "read_raw",
