@@ -1040,3 +1040,49 @@ its seeded zero.
   changing them now, knowing the draws, would be tuning. The drawn
   factors for its input are printed per trial so the measured rate
   explains itself against the analytic ~41%.
+
+## Tier 2 round 3 — the control passes; the first measured round, with its mechanics
+
+58 minutes, 45 recalculations, the environment cone rooted in the
+raw grid found exactly `Cover!G4`, and **the false-positive
+control passes: `equivalent_rewrite` 0/10 trials divergent.**
+
+**The catch table (the DONE number, first measurement):**
+
+| class | caught (per instance) | mechanics, read in the cells |
+|---|---|---|
+| tail_hardcode | **5/5, 5/5** | the edited cell's own recalculated output carries the −0.49 tail every trial |
+| conditional_divergence | 0/5, 0/5 | the printed factors (max 1.276, 1.238) never crossed the registered 1.4× threshold — the seed's arithmetic, now visible per trial |
+| equivalent_rewrite | 0/5, 0/5 | **correct silence** — the control |
+| stealth_literal | 0/5, 0/5 | see below — the model's own semantics |
+
+**Two findings about the model, not the method, both read in the
+cells and both material for tier 2's future:**
+
+1. **ED2 is a selector model.** Every licensee sheet feeds the live
+   calculation only through
+   `SelectedInputs!X = CHOOSE($B$3, ENWL!X, …)` — and v5 is saved
+   with SSES selected, so **SWEST is a dead branch**: an edit there
+   genuinely does not change current outputs, and will the moment
+   the selector moves. Differential evaluation under the saved
+   selector state cannot see dead-branch edits; a
+   selector-sweeping round (evaluate under each licensee) is the
+   named follow-up, for the lead to sequence.
+2. **Perturbing flag literals deadens flag paths symmetrically.**
+   `SWEST!AM102` is a categorical flag read as `=1` in
+   SUMPRODUCTs; scaling it by U(0.5,1.5) breaks the comparison in
+   *both* files, so the stealth's +7 had no remaining live path.
+   Input randomization needs to distinguish magnitude inputs from
+   categorical ones — a registered refinement for the same
+   follow-up round.
+
+**Where tier 2 stands.** The machinery is real end to end —
+LibreOffice 25.8 under UNO through Dynamo's calculator, prescan,
+volatile and environment cones, seeded trials, and a control that
+now stays silent. The measured sentence the round earns: *a
+behaviourally-demonstrable edit in the live cone is caught every
+trial; an edit the model's own selector makes dead, or the seed's
+draws never activate, is not — and the table says which is which,
+mechanically.* The dead-branch and categorical-input rounds are
+what stands between this and a catch-rate on arbitrary stealth
+edits.
