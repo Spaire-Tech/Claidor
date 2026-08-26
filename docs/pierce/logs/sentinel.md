@@ -28,6 +28,31 @@ golden-master gate and regenerates the baseline in the same commit.
   `a3-sibling-totals.md`, with the planting harness under
   `server/scripts/planting/`.
 
+## 26 August 2026 — candidate 3: unmeasurable on this corpus, not shipped
+
+Beat families, the mining round's stride-lattice candidate. The
+detector was registered, implemented and pinned by six unit tests —
+and then the planting harness found **zero eligible lattices in all
+27 corpus files**, on the registered hosts and, under a committed
+amendment, corpus-wide. The value/% and split-year beat layouts the
+CUSTODES corpus is full of simply do not occur in these regulator
+templates; they lay every series dense. Per the amendment's own
+clause the round stopped: a catch rate this corpus cannot measure
+is never satisfied vacuously, so `_typed_beats` stays in the
+codebase behind its tests but is **not wired into the audit** — an
+unmeasured check reports to nobody. The engine's reports are
+unchanged from the candidate-2 adoption by construction (the diff
+against that certified commit is purely additive, uncalled code —
+verified, zero removed lines). Full record in `a3-beat-families.md`.
+
+**For the lead:** the check becomes measurable when the corpus
+grows strided layouts — the round-4 unseen corpus's general
+spreadsheets, or a pilot's deal models. Wiring it then is one line
+plus the full loop. Also honestly said: candidates 4 and 5 of the
+mining round (column-direction typed-over, range-vs-block) remain;
+the orders name candidate 3 then A4, so A4 is next unless the
+orders re-order.
+
 ## 26 August 2026 — candidate 2 adopted; the round in one paragraph
 
 Family-edge typed cells (`typed-over-edge`), two rounds. Round 1:
