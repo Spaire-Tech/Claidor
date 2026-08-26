@@ -212,3 +212,75 @@ chain, the JWK-kid fix in `dev/setup-environment`), so local test
 runs here still need `CLAIDOR_CURRENT_JWK_KID=polar_dev` — the tip
 already fixed the generator; the stale `.jwks.json` is this
 container's, not the repo's.
+
+## 26 August 2026 — standing orders acknowledged; first orders done
+
+**The arrangement, confirmed as instructed:** at the start of every
+working turn this lane fetches
+`origin/claude/pierce-phase-6-writing-mjkaj6`, reads
+`docs/pierce/orders/atelier.md`, does what it says, pushes to
+`swens/atelier`, and stops. The founder's whole message will be
+« go ». This entry is the confirmation the arrangement asked for.
+
+Housekeeping first: git works again in this container (the resume
+after the outage recorded above restored credentials), so the branch
+is properly rebased — `swens/atelier` restarted from the integration
+tip (`e37e3e1`, which contains every commit of the deal-names series;
+verified with `merge-base --is-ancestor` before the force-with-lease
+push). The seven-commit API workaround is history, not a live state.
+
+**Orders #1 — the Watch into the demo kit: done, run for real.**
+`scripts/demo_deal.py`'s delta section is now the Watch's own delta
+report (`polar.tieout.watch.delta_report`, read-only import as
+lanes.md allows): the study-comparable counts, then the items in
+C3's registered rank — broke, changed class, relabelled, method,
+assumptions, outputs, structure, repairs — with the nameless-finding
+counts printed when nonzero rather than blurred in. The
+« not called the Watch » honesty note is retired and replaced with
+the Watch's own honesty (match by rule+sheet+name, never address).
+The product's cell-level diff line is gone from the section — the
+delta section *is* the Watch now, and stranded deck figures already
+surface as drifts in the tie-out section. Proven end to end against
+a fresh deal on this container's stack: the planted
+formula-to-constant edit comes back as **« changed class: Model
+row 16 — a live formula became a typed constant (folds: new:
+typed-over-formula) »** — the class-change join doing exactly what
+C3 registered, and a better demo sentence than the old
+fingerprint diff ever produced. Multiple uploads fold into one
+first-to-newest delta and the brief says so.
+
+**Orders #2 — `inconsistent-total` mapping: checked, correctly not
+done.** The tip's lead-decisions record still holds Sentinel's merge
+(« routed when adoption lands, not before ») and the rule name
+appears nowhere in `server/polar/tieout/` on the tip. The mapping
+waits for the adoption; this lane will re-check each orders turn.
+
+**Orders #3 — engine capability with no screen, the inventory**
+(findings only; every screen is the founder's):
+
+1. **The Watch's delta report (C3)** — `polar.tieout.watch` produces
+   the review-language delta between any two versions: new and
+   repaired defects, class changes (« repaired cell, hardcoded
+   tail »), relabelled lines, methodology changes, moved assumptions,
+   materially different outputs at the registered 1% line, structure.
+   As of today it reaches the demo kit's printed brief — but **no
+   endpoint serves it and no screen draws it**. The product's
+   existing `/artifacts/{id}/diff` is a value-level diff only; the
+   design's Watch delta view (`swens.md` § 3c) has the engine ready
+   behind it.
+2. **The Chain's citation-grade extraction (D1/D2)** —
+   `POST /v1/chain/extract` is live and mounted: every number with
+   its page and highlight box, refusals in words. **No screen** — the
+   source viewer (« page 187 of the credit agreement, one click
+   away », `swens.md` § 3b) has a serving route and nothing drawn
+   against it.
+3. **The recalculator's fidelity gate (B2)** —
+   `polar.tieout.recalc.gate` renders a per-file verdict (« this
+   model reproduces its own stored values » / a named refusal).
+   **No endpoint, no screen** — the report face could one day carry
+   « validated by recalculation », and nothing serves that fact yet.
+
+Explicitly not in the inventory: B4's behavioural checks (registered,
+no claimed results yet — a registration is not a capability) and the
+reverse case (`rounding`/`writing` house rules: screen without
+engine), which the build record already lists.

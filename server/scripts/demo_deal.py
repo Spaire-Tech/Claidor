@@ -27,13 +27,16 @@ Two honesty rules, because a demo that overstates once is a prospect
 lost twice:
 
 - **Every number in the brief is read back from the stored rows and
-  runs** — the same rows the screens read. Nothing is computed here
-  that the product would not show.
-- **The version delta is findings-by-fingerprint between the runs this
-  script itself performed** (a fingerprint survives re-runs; a new one
-  is a defect the revision introduced, a vanished one is a defect it
-  repaired), plus the product's own cell-level diff. It is not the
-  Watch (Track C) and the brief never calls it that.
+  runs** — the same rows the screens read — except the delta section,
+  which is the Watch's own delta report (C3, merged): computed on the
+  prospect's files by the same registered code the product runs, in
+  review language — what broke, what changed class, where the method
+  moved, which assumptions moved, which outputs moved materially, the
+  structure, then the repairs.
+- **The Watch's honesty travels with it**: findings are matched by
+  rule, sheet and name — never the address — and the ones that carry
+  no name are counted apart rather than guessed at; the brief prints
+  that count when it is not zero.
 
 Versions: every model file after the first is ingested as the next
 version of the first one's lineage — under the first file's name,
@@ -70,19 +73,37 @@ from polar.tieout.analytics import ANALYTIC_RULE_NAMES
 from polar.tieout.repository import TieOutRepository
 from polar.tieout.service import tieout
 
+# The Watch, as lanes.md allows: a read-only library. The delta section
+# of the brief is its report, verbatim in structure.
+from polar.tieout.watch import DeltaItem, DeltaReport, delta_report
 
-def _snapshot(findings: Any) -> dict[str, dict[str, str]]:
-    """Open findings by fingerprint — the delta's raw material."""
-    return {
-        one.fingerprint: {
-            "title": one.title,
-            "severity": one.severity.value,
-            "rule": one.rule,
-            "where": one.location,
-        }
-        for one in findings
-        if one.state is FindingState.open
-    }
+#: The Watch's item kinds, in its own rank order, as the brief speaks
+#: them.
+KIND_WORDS = {
+    "new_defect": "new defect",
+    "class_change": "changed class",
+    "relabelled_line": "relabelled line",
+    "methodology_change": "methodology change",
+    "moved_assumption": "assumption moved",
+    "material_output": "output materially different",
+    "structure": "structural change",
+    "repaired_defect": "repaired",
+}
+
+
+def _item_line(item: DeltaItem) -> str:
+    """One reviewed change, one line — the Watch's own words."""
+    where = item.sheet
+    if item.first_row:
+        rows = (
+            f"row {item.first_row}"
+            if item.first_row == item.last_row
+            else f"rows {item.first_row}–{item.last_row}"
+        )
+        where = f"{item.sheet} {rows}"
+    detail = f" — {item.detail}" if item.detail else ""
+    joined = f" (folds: {', '.join(item.findings)})" if item.findings else ""
+    return f"{KIND_WORDS.get(item.kind, item.kind)}: {where}{detail}{joined}"
 
 
 def _lead_lines(findings: Any) -> list[str]:
@@ -196,12 +217,10 @@ async def demo(
             return
 
         await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
-        before = _snapshot(await repository.findings_of(deal.id))
 
         # --- the revision, and what it did -------------------------------
 
-        delta: dict[str, Any] | None = None
-        cell_diff: dict[str, Any] | None = None
+        delta: DeltaReport | None = None
         current_model = first
         for later in model_paths[1:]:
             if later.name != model_name:
@@ -225,17 +244,10 @@ async def demo(
 
         if current_model.version > first.version:
             await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
-            after = _snapshot(await repository.findings_of(deal.id))
-            delta = {
-                "from": first.version,
-                "to": current_model.version,
-                "introduced": [after[fp] for fp in after.keys() - before.keys()],
-                "repaired": [before[fp] for fp in before.keys() - after.keys()],
-                "standing": len(after.keys() & before.keys()),
-            }
-            cell_diff = await tieout.model_diff(
-                session, dossier_id=deal.id, artifact_id=current_model.id
-            )
+            # The Watch, on the prospect's own files: first upload
+            # against the newest one. Reads the files directly — the
+            # deal's rows are untouched by it.
+            delta = delta_report(str(model_paths[0]), str(model_paths[-1]))
 
         # --- the deliverables, reconciled --------------------------------
 
@@ -284,36 +296,42 @@ async def demo(
             say()
 
         if delta is not None:
-            say(f"## Their own revision, v{delta['from']} → v{delta['to']}")
-            say(
-                f"- introduced {len(delta['introduced'])} finding(s), "
-                f"repaired {len(delta['repaired'])}, "
-                f"{delta['standing']} standing"
+            span = (
+                f"v{first.version} → v{current_model.version}"
+                if len(model_paths) == 2
+                else f"v{first.version} → v{current_model.version} "
+                f"({len(model_paths)} uploads folded into one delta)"
             )
-            for one in delta["introduced"][:6]:
-                say(f"  - new: {one['title']} — {one['where']}")
-            for one in delta["repaired"][:4]:
-                say(f"  - repaired: {one['title']} — {one['where']}")
-            if cell_diff is not None:
+            say(f"## Their own revision, {span} — the Watch's delta report")
+            say(
+                f"- {delta.new_defects} defect(s) introduced, "
+                f"{delta.repaired_defects} repaired, "
+                f"{delta.persistent_defects} standing"
+            )
+            if delta.unmatched_old or delta.unmatched_new:
                 say(
-                    f"- cells changed {len(cell_diff['changed'])}, "
-                    f"added {cell_diff['added']}, removed {cell_diff['removed']}"
-                    + (
-                        "; changes that strand deck figures listed first"
-                        if any(one["stale_figures"] for one in cell_diff["changed"])
-                        else ""
+                    f"- counted apart, never guessed at: "
+                    f"{delta.unmatched_old} old and {delta.unmatched_new} new "
+                    "finding(s) carry no name to match by"
+                )
+            if delta.sheets_added or delta.sheets_removed:
+                say(
+                    "- sheets: "
+                    + ", ".join(
+                        [f"+{one}" for one in delta.sheets_added]
+                        + [f"−{one}" for one in delta.sheets_removed]
                     )
                 )
-                for one in cell_diff["changed"][:5]:
-                    stale = (
-                        f"  ({one['stale_figures']} deck figure(s) now stale)"
-                        if one["stale_figures"]
-                        else ""
-                    )
-                    say(
-                        f"  - {one['name'] or one['ref']}: {one['was']} → "
-                        f"{one['now']}{stale}"
-                    )
+            #: Already in the Watch's own rank: broke → changed class →
+            #: relabelled → method → assumptions → outputs → structure →
+            #: repairs. The brief keeps that order and says when it cut.
+            for item in delta.items[:10]:
+                say(f"  - {_item_line(item)}")
+            if len(delta.items) > 10:
+                say(
+                    f"  - … and {len(delta.items) - 10} more reviewed "
+                    "change(s) in the full report"
+                )
             say()
 
         if tie is not None:
