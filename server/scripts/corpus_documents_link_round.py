@@ -142,7 +142,7 @@ def score(truth_path: str) -> int:
     cells = _typed_cells()
     drawn = random.Random(SEED).sample(cells, SAMPLE)
     facts = _facts()
-    candidates = [(key, number.line) for key, number in facts]
+    candidates = [(key, number.line, number.text) for key, number in facts]
 
     verdicts = []
     for cell in drawn:
@@ -197,9 +197,120 @@ def score(truth_path: str) -> int:
     return 0
 
 
+def sourced_sheet() -> int:
+    """Run B's judging sheet: seeded order, value-prefiltered, 60 max.
+
+    Sampling by value is legitimate exactly where scoring by value is
+    not: the prefilter only decides which cells are worth a judge's
+    time, never what the matcher sees or scores.
+    """
+    cells = _typed_cells()
+    rng = random.Random(2718281)
+    order = list(range(len(cells)))
+    rng.shuffle(order)
+    facts = _facts()
+    record = []
+    for position in order:
+        if len(record) >= 60:
+            break
+        cell = cells[position]
+        wanted = _variants(cell.value)
+        hits = [
+            {"key": key, "text": number.text, "line": number.line[:160]}
+            for key, number in facts
+            if number.text.strip("£$€%(),.").replace(",", "") in wanted
+            or number.text in wanted
+        ]
+        if not hits:
+            continue
+        record.append(
+            {
+                "n": len(record) + 1,
+                "ref": cell.ref,
+                "labels": f"{cell.row_label} {cell.column_label}".strip(),
+                "value": str(cell.value),
+                "value_hits": hits[:25],
+                "truth": None,
+                "ambiguous": False,
+            }
+        )
+    out = DOCUMENTS / "link-round2-sourced-sheet.json"
+    out.write_text(json.dumps(record, indent=1))
+    print(
+        f"{len(record)} value-prefiltered candidates written to {out} — "
+        "judge in order until 10 sourced found, then run sourced-score",
+        file=sys.stderr,
+    )
+    return 0
+
+
+def sourced_score(truth_path: str) -> int:
+    """Score the sourced cells found under the registered stopping rule."""
+    entries = json.loads(Path(truth_path).read_text())
+    judged = [entry for entry in entries if entry["truth"] is not None]
+    sourced = [entry for entry in judged if entry["truth"]]
+    print(
+        f"judged {len(judged)} candidates in registered order; "
+        f"{len(sourced)} sourced cells found",
+    )
+    facts = _facts()
+    candidates = [(key, number.line, number.text) for key, number in facts]
+    cells = {cell.ref: cell for cell in _typed_cells()}
+
+    verdicts = []
+    for entry in sourced:
+        cell = cells[entry["ref"]]
+        labels = f"{cell.row_label} {cell.column_label}".strip()
+        stated = entry["truth"] or []
+        answer = propose.propose(labels, candidates)
+        if isinstance(answer, propose.Proposed):
+            picked = answer.candidate.fact_id
+            verdict = "true proposal" if picked in stated else "false proposal"
+        else:
+            verdict = (
+                "true abstention" if not stated or entry.get("ambiguous") else "missed"
+            )
+            picked = None
+        verdicts.append(
+            {
+                "ref": cell.ref,
+                "labels": labels,
+                "value": str(cell.value),
+                "stated": stated,
+                "proposed": picked,
+                "verdict": verdict,
+                "reason": answer.reason
+                if isinstance(answer, propose.Abstained)
+                else None,
+            }
+        )
+        print(f"{cell.ref:24} {verdict:16} proposed={picked}")
+
+    counts = {}
+    for verdict in verdicts:
+        counts[verdict["verdict"]] = counts.get(verdict["verdict"], 0) + 1
+    proposals = counts.get("true proposal", 0) + counts.get("false proposal", 0)
+    print("\n--- run B, the registered table (sourced cells only) ---")
+    for name in ("true proposal", "false proposal", "true abstention", "missed"):
+        print(f"{name}: {counts.get(name, 0)}")
+    if proposals:
+        print(
+            f"proposal precision: {counts.get('true proposal', 0)}/{proposals} "
+            f"= {counts.get('true proposal', 0) / proposals:.0%}"
+        )
+    out = DOCUMENTS / "link-round2-sourced-verdicts.json"
+    out.write_text(json.dumps(verdicts, indent=1))
+    print(f"verdicts written: {out}", file=sys.stderr)
+    return 0
+
+
 if __name__ == "__main__":
     if len(sys.argv) >= 2 and sys.argv[1] == "sheet":
         raise SystemExit(sheet())
+    if len(sys.argv) >= 2 and sys.argv[1] == "sourced-sheet":
+        raise SystemExit(sourced_sheet())
+    if len(sys.argv) >= 3 and sys.argv[1] == "sourced-score":
+        raise SystemExit(sourced_score(sys.argv[2]))
     if len(sys.argv) >= 3 and sys.argv[1] == "score":
         raise SystemExit(score(sys.argv[2]))
     print(__doc__)

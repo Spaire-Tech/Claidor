@@ -536,6 +536,8 @@ product may present its proposals as trustworthy until a round
 clears.
 
 **What round 2 must contain, to be registered before its results:**
+*(superseded by the full round 2 registration below, written under the
+eleventh-sweep orders)*
 (1) a defense against definitional lines that does not touch values —
 candidates: treating a number token immediately following
 reference words (« SpC », « Section », « para », « Table », « page »)
@@ -549,3 +551,144 @@ Annex's WACC and allowed-revenue tables are stated-by-construction),
 found by value search *for sampling only* — sampling by value is
 legitimate exactly where scoring by value is not. (3) The PR24 round
 stays owed on a machine that reaches Ofwat.
+
+## 26 August 2026, fourth « go » — eleventh-sweep orders; round 2 registered before anything runs
+
+Orders read from the tip: D2 is merged (the migration and model
+registration now recorded as mine in `lanes.md` — thank you), and
+round 2 is ordered exactly as this log outlined. The lane
+fast-forwarded onto the integrated tip. Everything below in this
+section was written and committed **before matcher v2 existed and
+before any round-2 number was looked at.**
+
+**Order 2 first — the confirmation, made true in code, not just
+claimed.** As of round 1, `GET /chain/cells/{id}/proposals` returned
+a proposal with a score and no health warning. After this turn's
+change, every response from that route carries a `standing` sentence
+stating the measured record in-band — currently that round 1 measured
+0 of 8 proposals correct and no round has cleared, so a proposal is a
+candidate for a person to check, never a link. No other route serves
+D3 output; nothing in `clients/**` consumes it (Atelier's ground, and
+nothing has been requested). The confirmation the order asks for:
+**no route presents D3 proposals as trustworthy, and the payload
+itself now says so.** The sentence changes only when a registered
+round's measured number changes.
+
+## D3 round 2 — registration, frozen before results
+
+**The defense, chosen: the reference-word rule.** A candidate fact is
+**ineligible for proposal** when its printed token appears in its
+line immediately preceded by a reference word — the shape of « SpC
+3.2 », « Section 1: », « Table 14 », « para 2.47 » — because such a
+number names a place in a document, not a quantity. The frozen
+vocabulary, case-insensitive:
+
+    spc, crc, section, sections, sec, para, paragraph, paragraphs,
+    table, tables, figure, figures, fig, page, pages, appendix,
+    appendices, annex, chapter, condition, conditions, footnote,
+    footnotes, box, volume, part, step, fq, question, clause,
+    schedule, article, no
+
+« Immediately preceded » means: the last word token before an
+occurrence of the fact's exact printed token in its line. If any
+occurrence in the line is reference-preceded, the fact is ineligible
+— over-exclusion when the same token appears twice on a line, once as
+a reference and once as a value, is possible, rare, and accepted as a
+registered limit. Ineligible candidates stay visible in the ranking,
+marked, so a reviewer sees what was set aside. One clarification,
+frozen with the rest before anything runs: the floor and the tie rule
+apply **among eligible candidates only** — a reference number can
+neither be proposed nor block a proposal by tying with one. **Numeric-density is
+rejected** as the defense, with the reason on the record: it would
+kill legitimate prose statements (« the cost of debt allowance is
+2.4% »), which are exactly how the Finance Annex states quantities.
+Everything else in the matcher — the tokenizer, FLOOR = 0.5, exact
+tie ⇒ abstain, never-by-value — is unchanged from `a546087`.
+
+**Run A — the unsourced case, before/after.** The round-1 sample (30
+cells, seed 314159) rescored with matcher v2 against the truth
+already recorded in `scribe-d3-round1-verdicts.json`. Round 1's
+number stands as v1's record; run A is v2's number on the identical
+sample, directly comparable.
+
+**Run B — the sourced case.** Population: typed cells of the same
+paired workbook. Seeded order (seed 2718281), prefiltered to cells
+with at least one value-variant hit in the documents — sampling by
+value, legitimate exactly where scoring by value is not. In that
+order, each candidate cell is judged blind (ground truth recorded
+before any matcher output, same aids, same limits as round 1) until
+**10 cells with nonempty truth are found or 60 candidates have been
+judged**, whichever comes first; the yield is reported either way.
+Matcher v2 then scores the sourced cells found, same verdict table.
+
+**No target number is promised for either run.** If v2 still
+proposes falsely, that is the record and nothing ships, same as
+round 1.
+
+## D3 round 2 — measured. Fewer wrong proposals, still none right; and the pair itself is the wrong direction for the hit-rate case
+
+Matcher v2 froze at `7055150`, after the registration and before any
+result. Both runs then ran as registered.
+
+**Run A — the round-1 sample, v1 vs v2, identical truth:**
+
+| | v1 (round 1) | v2 (run A) |
+|---|---|---|
+| true proposal | 0 | 0 |
+| false proposal | 8 | **2** |
+| true abstention | 22 | **28** |
+| missed | 0 | 0 |
+
+The reference-word rule killed **all eight** of round 1's false
+proposals — and unmasked two new ones of a second reference shape it
+does not cover: **the leading paragraph number.** Both survivors are
+numbered-paragraph prose (« *10.246* Ofgem's decision is that Valid
+Bad Debt Claims are allowable… », « *2.6* The licensee will update
+outturn data… CPIHm… »): the paragraph number opens the line, so no
+reference word precedes it, and in round 1 these candidates were
+masked behind ties with the definition-table lines v2 now sets
+aside. Precision is still **0 of 2**. Nothing ships; the standing
+sentence on the route remains exactly true. The leading-paragraph
+defense (a numeric token that *opens* a line whose remaining text is
+prose is a paragraph label, not a quantity) is the obvious round-3
+candidate — registered then, not patched now. Verdicts:
+`scribe-d3-round2-runA-verdicts.json`.
+
+**Run B — the sourced draw found nothing to score, and that is the
+finding.** All 60 value-prefiltered candidates (seed 2718281,
+registered stopping rule) were judged in order: **0 of 60 are
+genuinely stated by the documents.** Every hit was furniture, a
+threshold or yield from a different quantity, or a near-miss in
+someone else's table — the closest (« Net additions 207.9 ») turned
+out on the rendered page to be SPD's FY2026 row against EPN's FY2022
+cell. Combined with round 1: **90 seeded draws from 22,693 typed
+cells, zero stated by the paired documents.**
+
+**Why, structurally — worth the lead's attention.** This pair runs
+the wrong direction. The Finance Annex is *derived from* the model:
+what it states are outputs — RAV, allowed revenue, WACC — which in
+the PCFM are **computed** cells, exactly the cells D3's typed-only
+task excludes (rightly: a computed cell's provenance is its
+formula). The PCFM's *typed* cells are per-licensee machine inputs
+no narrative document restates. The Chain's product case is the
+opposite direction — a term sheet feeding typed cells of a deal
+model — and measuring the hit-rate side therefore needs a
+document-fed pair: Ofwat's business-plan-tables-to-financial-model
+mapping tool and inbound-queries document (the pairing
+`corpus-sources.md` recommended first, unreachable from this
+container), a company business-plan submission with its BPFM, or a
+real deal set. On this corpus, the honest claim is limited to: the
+matcher's false-proposal rate on unsourced typed cells fell from
+8/30 to 2/30 under the frozen defense, at zero cost in missed
+sources (there were none to miss).
+
+**Also reported for the lead:** the integrated tip carries one red
+test that is not this lane's — `test_routes.py::TestHouseRules::`
+`test_defaults_before_anybody_decided` asserts 17 audit rules and
+the catalogue now has 19 (Sentinel's adoptions; the test is
+Atelier's file). Reproduces with my changes stashed.
+
+**Round 3, when ordered:** the leading-paragraph defense registered
+and frozen; the hit-rate case on a document-fed pair (PR24 on a
+machine that reaches it, or a submission pair reachable here); same
+judge, same discipline.
