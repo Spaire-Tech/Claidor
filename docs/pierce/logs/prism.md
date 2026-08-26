@@ -1011,3 +1011,32 @@ one clean result:
   results would be tuning; the conditional class's drawn factors
   are printed so its rate explains itself. The full grid re-runs
   from scratch.
+
+## Tier 2 round 2 — the cone looked in the wrong universe; round 3 registered
+
+Round 2 recorded honestly: the control failed again with the same
+single cell, and `environment_cone: 0` is the tell — `Cover!G4`
+is **not in the engine's cell universe** (the Cover sheet
+contributes zero labelled numeric cells), so a cone computed over
+`book.cells` could never see it. Second finding: both
+`stealth_literal` targets were dead inputs (spare-row zeros
+feeding no formula), so their +7 moved nothing the driver reads —
+`tail_hardcode` remains the one cleanly-demonstrated class (5/5
+at both positions, real), and `conditional_divergence` repeats
+its seeded zero.
+
+**Round 3, registered before its results:**
+- The environment cone's **roots come from the raw grid** (the C1
+  reader holds every stored formula), closed over the engine's
+  precedent edges; root and cone counts land in the report, and a
+  run whose raw grid contains a `CELL(`/`INFO(` formula but whose
+  cone is empty aborts as an instrument error rather than
+  producing a polluted table.
+- The **stealth literal must feed something**: eligible targets
+  are literals whose ref appears in at least one engine cell's
+  precedents — first such at/after the mark, wrapping, same
+  fallback family as before.
+- `conditional_divergence` keeps its threshold, k and seed —
+  changing them now, knowing the draws, would be tuning. The drawn
+  factors for its input are printed per trial so the measured rate
+  explains itself against the analytic ~41%.
