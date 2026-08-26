@@ -232,10 +232,12 @@ RULE_NAMES: dict[str, str] = {
     "long-formula": "Formulas too long to follow",
     "hardcode-in-formula": "Hardcoded values inside formulas",
     "typed-over-formula": "Values typed over formulas",
+    "typed-over-edge": "Values typed over a series' edge",
     "inconsistent-anchoring": "Anchoring that changes along a row",
     "inconsistent-row": "Formulas inconsistent across a row",
     "circular": "Circular references",
     "skipped-cell": "Sum ranges that miss a cell",
+    "inconsistent-total": "Totals that disagree with their siblings",
     "hidden-sheet": "Hidden sheets",
 }
 
@@ -256,10 +258,12 @@ HEADLINES: dict[str, str] = {
     "long-formula": "Complex formula",
     "hardcode-in-formula": "Hardcoded assumption",
     "typed-over-formula": "Unexpected hardcode",
+    "typed-over-edge": "Typed series edge",
     "inconsistent-anchoring": "Inconsistent anchoring",
     "inconsistent-row": "Inconsistent formula",
     "circular": "Circular reference",
     "skipped-cell": "Incomplete total",
+    "inconsistent-total": "Disagreeing totals",
     "hidden-sheet": "Hidden sheet",
 }
 
@@ -418,11 +422,21 @@ def _elevated(book: Workbook, result: Audit) -> None:
             "designed layout can excuse one",
         ),
         "inconsistent-row": (0.9, "the row's own pattern shows the break"),
+        "inconsistent-total": (
+            0.9,
+            "the family's own agreement shows the break — a family can "
+            "be wrong together",
+        ),
         "inconsistent-anchoring": (0.9, "the row's own anchoring shows the break"),
         "typed-over-formula": (
             0.8,
             "a typed value sits where the series calculates — overrides "
             "are sometimes deliberate",
+        ),
+        "typed-over-edge": (
+            0.7,
+            "the series ends in a typed value — a one-sided witness, "
+            "and overrides are sometimes deliberate",
         ),
         "circular": (
             0.9,
@@ -561,6 +575,23 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         return (
             f"{subject} does not follow the formula the rest of the row "
             "uses. Check whether the departure is deliberate."
+        )
+    if finding.rule == "typed-over-edge":
+        lead = f"{label} is" if label else f"The cell at {at} is"
+        return (
+            f"{lead} a typed value at the edge of a row that otherwise "
+            "calculates — the series runs out in a typed number. Check "
+            "whether the late adjustment is intentional."
+        )
+    if finding.rule == "inconsistent-total":
+        lead = (
+            f"{label} disagrees with the sibling totals beside it"
+            if label
+            else f"The total at {at} disagrees with the sibling totals beside it"
+        )
+        return (
+            f"{lead} — a line of totals is one formula dragged across, "
+            "and this cell departs from it. Check which one is right."
         )
     if finding.rule == "skipped-cell":
         leaving = (
@@ -727,8 +758,10 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _selector_drift(book, result)
     _mutations(book, result)
     _typed_islands(book, result)
+    _typed_edges(book, result)
     _circularity(book, result)
     _skipped_cells(book, result)
+    _sibling_totals(book, result)
     _gapped_tests(book, result)
     _hidden_sheets(book, result)
     _names_table(book, result)
@@ -3007,6 +3040,124 @@ def _island_findings(
 MNEMONIC = re.compile(r"[A-Za-z_\\][A-Za-z0-9_.\\]*")
 
 
+def _typed_edges(book: Workbook, result: Audit) -> None:
+    """A series that runs out in a typed number.
+
+    The interior typed-over pass demands a formula on both sides, so
+    a constant at a run's head or tail — the A3 mining round's
+    family-edge class, the typed last period over a computed row — is
+    invisible to it by construction. Here the witness is one-sided: a
+    lone constant (or the evidence class's own pair) at the edge of a
+    stretch of at least three same-shape formulas, with nothing
+    beyond it.
+
+    The guards, registered in docs/pierce/a3-family-edge.md before
+    any measurement: head-side cells are flagged only on a sheet with
+    a detected historical/forecast boundary and only at or right of
+    it — typed actuals lead rows from the left, and flagging the
+    typed-meets-computed boundary is the mining round's own rejected
+    class; the run must read as over-time; a typed 0 is template
+    scaffolding; the stacked and counter-seed exemptions apply as in
+    the interior pass; and a cell the interior or island pass already
+    reported keeps that finding. Runs after the island pass for
+    exactly that dedup.
+    """
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule in ("typed-over-formula", "typed-over-edge")
+    }
+    rows: dict[tuple[str, int], list[Cell]] = {}
+    for cell in book.cells.values():
+        rows.setdefault((cell.sheet, cell.row), []).append(cell)
+    boundaries = _boundaries(rows)
+
+    def disqualified(sheet: str, cell: Cell, stretch: list[Cell]) -> bool:
+        if cell.ref in already:
+            return True
+        try:
+            #: Round 2's identity guard: 0 is template scaffolding and
+            #: ±1 is how an index row spells its base period — ten of
+            #: ten corpus findings in round 1 were typed 1s heading
+            #: cumulative-index series, verified at the cells.
+            if (
+                cell.value is None
+                or float(cell.value) == 0
+                or abs(float(cell.value)) == 1
+            ):
+                return True
+        except (TypeError, ValueError):
+            return True
+        #: Round 2's horizontal seed guard: a series whose adjacent
+        #: formula *reads* the typed cell is continuing from its own
+        #: starting value, whatever the number — the vertical
+        #: counter-seed exemption, turned 90° (the deflator chain
+        #: `=AU466/(1+AU530)` walking right from its typed base).
+        if cell.ref in stretch[0].precedents:
+            return True
+        if _stacked(book, cell):
+            return True
+        below = book.get(f"{sheet}!{get_column_letter(cell.column)}{cell.row + 1}")
+        return (
+            below is not None and _seed([cell], below) and _column_series(book, below)
+        )
+
+    for (sheet, row), cells in sorted(rows.items()):
+        cells.sort(key=lambda c: c.column)
+        boundary = boundaries.get(sheet)
+        for run in _runs(cells):
+            if len(run) < MIN_SERIES + 1 or not _over_time(run):
+                continue
+            for side in ("head", "tail"):
+                ordered = run if side == "head" else run[::-1]
+                typed: list[Cell] = []
+                for cell in ordered:
+                    if cell.formula is not None:
+                        break
+                    typed.append(cell)
+                #: One or two typed cells are an edge; three or more
+                #: are a region of data meeting a calculation.
+                if not 1 <= len(typed) <= 2:
+                    continue
+                stretch = ordered[len(typed) : len(typed) + 3]
+                if len(stretch) < 3 or any(c.formula is None for c in stretch):
+                    continue
+                shapes = {_shape(c) for c in stretch}
+                if len(shapes) != 1:
+                    continue
+                if side == "head" and (
+                    boundary is None or any(c.column < boundary for c in typed)
+                ):
+                    continue
+                if any(disqualified(sheet, cell, list(stretch)) for cell in typed):
+                    continue
+                usual = next(iter(shapes))
+                where = "start" if side == "head" else "end"
+                pair = sorted(typed, key=lambda c: c.column)
+                values = " and ".join(
+                    shown_number(float(one.value or 0)) for one in pair
+                )
+                result.findings.append(
+                    Finding(
+                        rule="typed-over-edge",
+                        severity="error",
+                        ref=typed[0].ref,
+                        sheet=sheet,
+                        name=typed[0].name,
+                        detail=(
+                            f"{values} typed at the {where} of a series "
+                            "that is otherwise calculated: "
+                            f"{_example(stretch, usual)}"
+                        ),
+                        source="ICAEW P14, FAST",
+                        cells=_roster([one.ref.rsplit("!", 1)[-1] for one in pair])
+                        if len(pair) > 1
+                        else "",
+                    )
+                )
+                already.update(one.ref for one in typed)
+
+
 def _mnemonic(usual: str) -> bool:
     """True when a column's usual shape is a single defined name."""
     return bool(MNEMONIC.fullmatch(usual)) and re.match(r"R(\d|\[)", usual) is None
@@ -3832,6 +3983,281 @@ def _skipped_cells(book: Workbook, result: Audit) -> None:
                         figure_unit="left out of the total below it",
                     )
                 )
+
+
+#: How many sibling totals must agree before their consensus can accuse
+#: a deviant. Two agreeing cells are a coincidence; three are a dragged
+#: design. Registered in docs/pierce/a3-sibling-totals.md.
+TOTAL_CONSENSUS = 3
+
+#: A totals cell the sibling check can compare: an optional sign, one
+#: SUM call whose arguments are references, and an optional paren-free
+#: surround — nothing else. A tail with its own call is a different
+#: calculation and stays out of the family.
+SIBLING_TOTAL = re.compile(
+    r"^=\s*(?P<prefix>[+-]?)\s*SUM\((?P<args>[^()]+)\)(?P<tail>[^()]*)$",
+    re.IGNORECASE,
+)
+
+#: A bare A1 reference inside a surround, for offset rewriting.
+SURROUND_REF = re.compile(r"(?<![A-Za-z0-9_$!])(\$?)([A-Z]{1,3})(\$?)(\d+)(?![0-9(])")
+
+
+def _surround_shape(prefix: str, tail: str, row: int, column: int) -> str:
+    """The formula outside the SUM call, comparable across siblings:
+    uppercased, whitespace gone, the Lotus-era leading `+` dropped,
+    relative references rewritten to offsets from the holding cell,
+    absolute parts and numbers kept literal — a plug's value is the
+    evidence, not noise to erase."""
+
+    def rewrite(m: re.Match[str]) -> str:
+        c_dollar, letters, r_dollar, digits = m.groups()
+        c = 0
+        for letter in letters:
+            c = c * 26 + ord(letter) - 64
+        c_part = f"${letters}" if c_dollar else f"C[{c - column}]"
+        r_part = f"${digits}" if r_dollar else f"R[{int(digits) - row}]"
+        return c_part + r_part
+
+    text = SURROUND_REF.sub(rewrite, tail.upper())
+    head = "" if prefix == "+" else prefix
+    return "".join((head + "Σ" + text).split())
+
+
+def _total_coverage(
+    cell: Cell, across: str
+) -> tuple[frozenset[tuple[int, int]], str] | None:
+    """The cells a sibling total covers, as (own-axis offset, cross-axis
+    position) pairs, plus its surround shape — or None when the formula
+    is not a clean own-line total entirely before its cell."""
+    m = SIBLING_TOTAL.match(cell.formula or "")
+    if m is None:
+        return None
+    covered: set[tuple[int, int]] = set()
+    multi = False
+    for arg in m.group("args").split(","):
+        span = REFERENCE.fullmatch(arg.strip())
+        if span is None:
+            return None
+        sheet = (span.group("sheet") or cell.sheet).strip("'")
+        if sheet != cell.sheet:
+            return None
+        c1 = 0
+        for letter in span.group("column"):
+            c1 = c1 * 26 + ord(letter) - 64
+        c2 = c1
+        if span.group("column2"):
+            c2 = 0
+            for letter in span.group("column2"):
+                c2 = c2 * 26 + ord(letter) - 64
+        r1 = int(span.group("row"))
+        r2 = int(span.group("row2") or r1)
+        c1, c2 = min(c1, c2), max(c1, c2)
+        r1, r2 = min(r1, r2), max(r1, r2)
+        if across == "row":
+            #: A column total in a row of column totals: the argument
+            #: columns include the cell's own, every row is above.
+            if not (c1 <= cell.column <= c2) or r2 >= cell.row:
+                return None
+            if c1 <= cell.column <= c2 and r2 > r1:
+                multi = True
+            covered.update(
+                (c - cell.column, r)
+                for c in range(c1, c2 + 1)
+                for r in range(r1, r2 + 1)
+            )
+        else:
+            if not (r1 <= cell.row <= r2) or c2 >= cell.column:
+                return None
+            if r1 <= cell.row <= r2 and c2 > c1:
+                multi = True
+            covered.update(
+                (r - cell.row, c) for r in range(r1, r2 + 1) for c in range(c1, c2 + 1)
+            )
+    if not multi:
+        return None
+    return frozenset(covered), _surround_shape(
+        m.group("prefix"), m.group("tail"), cell.row, cell.column
+    )
+
+
+def _sibling_totals(book: Workbook, result: Audit) -> None:
+    """A total that disagrees with the sibling totals beside it.
+
+    A row of column totals is one authoring decision dragged across,
+    and the siblings should agree with each other after translation.
+    The A3 mining round's richest defect bucket is exactly the
+    disagreements: an arithmetic plug (`=SUM(E10:E22)-1000` beside
+    clean siblings), a range off-by-one (`=SUM(L8:L29)` beside
+    `=SUM(I7:I29)`), a cross-column bleed (`=SUM(C6:D13)` beside
+    `=SUM(E6:E13)`), a mis-dragged extra term. Within-column analysis
+    structurally cannot see any of them — the witness is the family's
+    own agreement, which is why the consensus must be wide (three
+    siblings sharing one signature) and the deviants a strict
+    minority. The same claim, turned 90°, for a column of row totals.
+
+    Guards, registered before any measurement
+    (docs/pierce/a3-sibling-totals.md): a deviant must overlap at
+    least half the consensus's own-line range, or it is a total about
+    a different block and stays silent; a deviant covering two or more
+    sibling columns is a block total summarising the family, not a
+    member disagreeing; a deviant already reported by the row passes
+    or the skipped-cell check keeps that finding; and nothing here
+    reads a cell's value — the only number quoted is a constant in
+    the deviant's own formula text.
+    """
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule
+        in ("inconsistent-row", "inconsistent-anchoring", "skipped-cell")
+    }
+    for across in ("row", "column"):
+        lines: dict[
+            tuple[str, int], list[tuple[Cell, frozenset[tuple[int, int]], str]]
+        ] = {}
+        for cell in book.cells.values():
+            if not cell.formula:
+                continue
+            got = _total_coverage(cell, across)
+            if got is None:
+                continue
+            key = (cell.sheet, cell.row if across == "row" else cell.column)
+            lines.setdefault(key, []).append((cell, got[0], got[1]))
+        for _, members in sorted(lines.items()):
+            if len(members) <= TOTAL_CONSENSUS:
+                continue
+            tally = Counter((coverage, surround) for _, coverage, surround in members)
+            (usual_cov, usual_sur), votes = tally.most_common(1)[0]
+            if votes < TOTAL_CONSENSUS:
+                continue
+            family = [m for m in members if (m[1], m[2]) == (usual_cov, usual_sur)]
+            deviants = [m for m in members if (m[1], m[2]) != (usual_cov, usual_sur)]
+            if not deviants or len(deviants) >= votes:
+                continue
+            family.sort(key=lambda m: m[0].column if across == "row" else m[0].row)
+            witness = family[0][0]
+            usual_own = {at for off, at in usual_cov if off == 0}
+            axis_of = (
+                (lambda one: one.column) if across == "row" else (lambda one: one.row)
+            )
+            family_axis = {axis_of(m[0]) for m in family}
+            #: Round 2's fold: deviants sharing one signature are one
+            #: authoring decision, reported once with the roster.
+            grouped: dict[tuple[frozenset[tuple[int, int]], str], list[Cell]] = {}
+            for cell, coverage, surround in deviants:
+                grouped.setdefault((coverage, surround), []).append(cell)
+            for (coverage, surround), group in sorted(
+                grouped.items(), key=lambda kv: min(axis_of(one) for one in kv[1])
+            ):
+                own = {at for off, at in coverage if off == 0}
+                survivors: list[Cell] = []
+                for cell in sorted(group, key=axis_of):
+                    if cell.ref in already:
+                        continue
+                    if len(own & usual_own) * 2 < len(usual_own):
+                        continue
+                    reach = {axis_of(cell) + off for off, _ in coverage if off != 0}
+                    if len(reach & family_axis) >= 2:
+                        continue
+                    if (
+                        coverage != usual_cov
+                        and surround == usual_sur
+                        and not {off for off, _ in coverage}
+                        - {off for off, _ in usual_cov}
+                    ):
+                        #: Round 2's consequence guard: a range
+                        #: disagreement is reported only when the
+                        #: deviant misses a live cell the consensus
+                        #: spelling covers, in the deviant's own line.
+                        #: A staircase total that merely over-reaches
+                        #: empty rows — or covers *more* live rows, as
+                        #: a designed depreciation triangle's later
+                        #: columns must — computes what its siblings'
+                        #: spelling would, and stays silent. Occupancy,
+                        #: never values.
+                        if across == "row":
+                            missed_live = any(
+                                f"{cell.sheet}!{get_column_letter(cell.column)}{at}"
+                                in book.cells
+                                for at in usual_own - own
+                            )
+                        else:
+                            missed_live = any(
+                                f"{cell.sheet}!{get_column_letter(at)}{cell.row}"
+                                in book.cells
+                                for at in usual_own - own
+                            )
+                        if not missed_live:
+                            continue
+                    survivors.append(cell)
+                if not survivors:
+                    continue
+                first = survivors[0]
+                n = votes
+                where = witness.ref.rsplit("!", 1)[-1]
+                figure = ""
+                figure_unit = ""
+                if coverage == usual_cov:
+                    clause = (
+                        "the arithmetic outside the shared SUM is this cell's alone"
+                    )
+                    plug = re.fullmatch(r"Σ([+-]\d+(?:\.\d+)?)", surround)
+                    if plug and usual_sur == "Σ":
+                        figure = shown_number(float(plug.group(1)))
+                        figure_unit = "outside the family's shared range"
+                elif surround == usual_sur and {off for off, _ in coverage} - {
+                    off for off, _ in usual_cov
+                }:
+                    clause = (
+                        "its range reaches a neighbouring "
+                        + ("column" if across == "row" else "row")
+                        + " where theirs each stay in their own"
+                    )
+                elif surround == usual_sur:
+                    if across == "row":
+                        reads = f"rows {min(own)}–{max(own)}"
+                        theirs = f"{min(usual_own)}–{max(usual_own)}"
+                    else:
+                        reads = (
+                            f"columns {get_column_letter(min(own))}–"
+                            f"{get_column_letter(max(own))}"
+                        )
+                        theirs = (
+                            f"{get_column_letter(min(usual_own))}–"
+                            f"{get_column_letter(max(usual_own))}"
+                        )
+                    clause = f"it reads {reads} where they read {theirs}"
+                else:
+                    clause = "both its range and its arithmetic depart from theirs"
+                roster = ""
+                if len(survivors) > 1:
+                    locals_ = [one.ref.rsplit("!", 1)[-1] for one in survivors]
+                    clause += (
+                        f" — the same disagreement in {len(survivors)} cells "
+                        f"({', '.join(locals_[:6])}"
+                        + (", …" if len(locals_) > 6 else "")
+                        + ")"
+                    )
+                    roster = _roster([one.ref.rsplit("!", 1)[-1] for one in survivors])
+                result.findings.append(
+                    Finding(
+                        rule="inconsistent-total",
+                        severity="error",
+                        ref=first.ref,
+                        sheet=first.sheet,
+                        name=first.name,
+                        detail=(
+                            f"{first.formula} beside {n} sibling totals like "
+                            f"{witness.formula} at {where} — {clause}"
+                        ),
+                        source="FAST, ICAEW P12",
+                        figure=figure,
+                        figure_unit=figure_unit,
+                        cells=roster,
+                    )
+                )
+                already.update(one.ref for one in survivors)
 
 
 def _hidden_sheets(book: Workbook, result: Audit) -> None:
