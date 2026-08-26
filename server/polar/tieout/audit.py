@@ -233,6 +233,7 @@ RULE_NAMES: dict[str, str] = {
     "hardcode-in-formula": "Hardcoded values inside formulas",
     "typed-over-formula": "Values typed over formulas",
     "typed-over-edge": "Values typed over a series' edge",
+    "typed-over-beat": "Values typed into a strided series",
     "inconsistent-anchoring": "Anchoring that changes along a row",
     "inconsistent-row": "Formulas inconsistent across a row",
     "circular": "Circular references",
@@ -259,6 +260,7 @@ HEADLINES: dict[str, str] = {
     "hardcode-in-formula": "Hardcoded assumption",
     "typed-over-formula": "Unexpected hardcode",
     "typed-over-edge": "Typed series edge",
+    "typed-over-beat": "Typed beat",
     "inconsistent-anchoring": "Inconsistent anchoring",
     "inconsistent-row": "Inconsistent formula",
     "circular": "Circular reference",
@@ -438,6 +440,11 @@ def _elevated(book: Workbook, result: Audit) -> None:
             "the series ends in a typed value — a one-sided witness, "
             "and overrides are sometimes deliberate",
         ),
+        "typed-over-beat": (
+            0.7,
+            "the stride's own pattern shows the break — a lattice is "
+            "inferred layout, one grade below a dense run",
+        ),
         "circular": (
             0.9,
             "the loop is in the dependency graph and the workbook does "
@@ -582,6 +589,13 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             f"{lead} a typed value at the edge of a row that otherwise "
             "calculates — the series runs out in a typed number. Check "
             "whether the late adjustment is intentional."
+        )
+    if finding.rule == "typed-over-beat":
+        lead = f"{label} is" if label else f"The cell at {at} is"
+        return (
+            f"{lead} a typed value inside a row that calculates on a "
+            "stride — every few columns, the same formula, except here. "
+            "Check whether the override is intentional."
         )
     if finding.rule == "inconsistent-total":
         lead = (
@@ -759,6 +773,7 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _mutations(book, result)
     _typed_islands(book, result)
     _typed_edges(book, result)
+    _typed_beats(book, result)
     _circularity(book, result)
     _skipped_cells(book, result)
     _sibling_totals(book, result)
@@ -3156,6 +3171,122 @@ def _typed_edges(book: Workbook, result: Audit) -> None:
                     )
                 )
                 already.update(one.ref for one in typed)
+
+
+def _typed_beats(book: Workbook, result: Audit) -> None:
+    """A value typed into a series that computes on a stride.
+
+    Financial models lay one calculation out every second or third
+    column — value/% pairs, split-year layouts — and the row pass's
+    runs bridge one spacer column and no more, so a stride-3 family
+    is invisible to it and a stride-2 family over data columns is
+    too. Here the lattice is the run: the columns of one residue
+    class, each holding a cell, judged by the interior typed-over
+    discipline transposed whole — calculated majority, a formula on
+    both stride-neighbours, a flanking shape that repeats, the
+    over-time test.
+
+    Guards, registered in docs/pierce/a3-beat-families.md before any
+    measurement: the lattice must be real (no formula of a flanking
+    shape in the columns between the stride-neighbours — a dense run
+    wearing a stride belongs to the plain row pass); nothing left of
+    a detected historical/forecast boundary; a typed 0 or ±1 is
+    scaffolding or a base value; the stacked and counter-seed
+    exemptions apply as in the interior pass; and a cell any
+    typed-over rule already reported keeps that finding — this pass
+    runs after all three.
+    """
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule in ("typed-over-formula", "typed-over-edge", "typed-over-beat")
+    }
+    rows: dict[tuple[str, int], dict[int, Cell]] = {}
+    for cell in book.cells.values():
+        rows.setdefault((cell.sheet, cell.row), {})[cell.column] = cell
+    listed = {
+        key: sorted(cells.values(), key=lambda one: one.column)
+        for key, cells in rows.items()
+    }
+    boundaries = _boundaries(listed)
+
+    for (sheet, row), by_column in sorted(rows.items()):
+        columns = sorted(by_column)
+        boundary = boundaries.get(sheet)
+        for stride in (2, 3):
+            taken: set[int] = set()
+            for start in columns:
+                if start in taken:
+                    continue
+                chain = [start]
+                while chain[-1] + stride in by_column:
+                    chain.append(chain[-1] + stride)
+                taken.update(chain)
+                if len(chain) < MIN_SERIES + 1:
+                    continue
+                run = [by_column[c] for c in chain]
+                calculated = [one for one in run if one.formula]
+                if len(calculated) < len(run) - len(calculated) + 1:
+                    continue
+                if not _over_time(run):
+                    continue
+                shapes = Counter(_shape(one) for one in calculated)
+                for index in range(1, len(run) - 1):
+                    cell = run[index]
+                    if cell.formula is not None or cell.ref in already:
+                        continue
+                    if boundary is not None and cell.column < boundary:
+                        continue
+                    left, right = run[index - 1], run[index + 1]
+                    if left.formula is None or right.formula is None:
+                        continue
+                    flanks = (_shape(left), _shape(right))
+                    if all(shapes.get(flank, 0) < 2 for flank in flanks):
+                        continue
+                    between = [
+                        by_column.get(at)
+                        for at in range(left.column + 1, right.column)
+                        if at != cell.column
+                    ]
+                    if any(
+                        one is not None and one.formula and _shape(one) in flanks
+                        for one in between
+                    ):
+                        continue
+                    try:
+                        value = float(cell.value) if cell.value is not None else None
+                    except (TypeError, ValueError):
+                        value = None
+                    if value is None or value == 0 or abs(value) == 1:
+                        continue
+                    if _stacked(book, cell):
+                        continue
+                    below = book.get(
+                        f"{sheet}!{get_column_letter(cell.column)}{cell.row + 1}"
+                    )
+                    if (
+                        below is not None
+                        and _seed([cell], below)
+                        and _column_series(book, below)
+                    ):
+                        continue
+                    usual = flanks[0] if shapes.get(flanks[0], 0) >= 2 else flanks[1]
+                    result.findings.append(
+                        Finding(
+                            rule="typed-over-beat",
+                            severity="error",
+                            ref=cell.ref,
+                            sheet=sheet,
+                            name=cell.name,
+                            detail=(
+                                f"{shown_number(value)} typed into a series "
+                                f"that computes every {stride} columns: "
+                                f"{_example(calculated, usual)}"
+                            ),
+                            source="ICAEW P14, FAST",
+                        )
+                    )
+                    already.add(cell.ref)
 
 
 def _mnemonic(usual: str) -> bool:
