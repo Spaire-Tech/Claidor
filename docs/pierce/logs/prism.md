@@ -970,3 +970,44 @@ sentence and a stop, per the orders.
 Sequencing note: the tier-2 grid is running on this container as
 this registration is written; heavy jobs run alone, so the timing
 measurement starts only after the grid returns.
+
+## Tier 2 round 1 — the control failed for the instrument's reasons; round 2 registered
+
+The grid ran: 45 recalculations, 63 minutes, LibreOffice 25.8
+under UNO, 1,547 literals perturbed per trial. Recorded, not
+claimed: **every class reported 5/5 trials divergent — including
+`equivalent_rewrite`, so the round fails its own false-positive
+control.** Decomposed, the picture is two instrument defects and
+one clean result:
+
+1. **`Cover!G4` diverges in every comparison of every class.** Read
+   in the cells: `=MID(CELL("filename"),…)` — the model prints its
+   own filename on the cover, and the harness's scratch files all
+   have different names. An environment-reading formula is neither
+   volatile (Dynamo's set is time/randomness) nor behaviour, and
+   both false positives are exactly this one cell.
+2. **`stealth_literal` erased itself.** The trial assignment
+   rewrites every literal on the sheet — including the stealth
+   cell, whose +7 it overwrites. Those instances tested nothing;
+   their « catches » were `Cover!G4` again.
+3. **The clean result underneath:** `tail_hardcode` caught 5/5 at
+   the edited cell itself, both positions — the study's
+   Severn-Trent shape demonstrated behaviourally. And
+   `conditional_divergence` scored **zero real catches in ten
+   trials** against an analytic ~41% per instance: with k=5 and
+   the seed fixed, the drawn factors for that input simply never
+   crossed 1.4 — deterministic, not unlucky, and reported as such.
+
+**Round 2, registered before its results:**
+- An **environment cone** joins the exclusions: roots are formula
+  cells calling `CELL` or `INFO` (tokenized, the same discipline
+  as Dynamo's volatile scan), closed over the reader's precedent
+  lists; excluded from divergence comparison and counted in the
+  report. Implemented in the harness — `recalc/` stays Dynamo's.
+- **Build order flips**: the trial assignment lands first, the
+  edit second, so a stealth retype adds its 7 to the perturbed
+  value and survives.
+- k stays 5 and the seed stays — changing them after seeing
+  results would be tuning; the conditional class's drawn factors
+  are printed so its rate explains itself. The full grid re-runs
+  from scratch.
