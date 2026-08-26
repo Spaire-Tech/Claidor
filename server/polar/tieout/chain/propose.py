@@ -54,16 +54,38 @@ REFERENCE_WORDS = frozenset(
 
 _WORD = re.compile(r"[a-z0-9]+")
 
+#: Round 3's frozen addition: the bare paragraph-number shape. Digits
+#: and dots only, optionally ending « . » or « : » — « 10.246 »,
+#: « 2.6 », « 1: » match; « £48.9mm », « 45% », « (2,340) » never do.
+_PARAGRAPH = re.compile(r"^\d+(?:\.\d+)*[.:]?$")
+
 
 def is_reference(token: str, line: str) -> bool:
     """True when the token appears in the line as a document reference.
 
-    Any occurrence of the exact printed token immediately preceded by
-    a reference word marks it. Over-exclusion when one line prints the
-    same token both as a reference and as a value is possible, rare,
-    and an accepted registered limit.
+    Two frozen shapes, each registered in the Scribe log before its
+    code and each bought with a measured round:
+
+    - **Reference-worded** (round 2): any occurrence of the exact
+      printed token immediately preceded by a reference word
+      (« SpC 3.2 », « Table 14 »). Over-exclusion when one line prints
+      the same token both as a reference and as a value is possible,
+      rare, and an accepted registered limit.
+    - **Leading paragraph number** (round 3): the token opens the
+      line, has the bare paragraph shape, and prose follows —
+      « 10.246 Ofgem's decision is… » numbers the paragraph, not a
+      quantity. A line of numbers keeps its leading value eligible;
+      a table that prints a bare value *before* its label is
+      over-excluded, the registered cost.
     """
     words = line.split()
+    if (
+        len(words) >= 2
+        and words[0] == token
+        and _PARAGRAPH.match(token)
+        and words[1][:1].isalpha()
+    ):
+        return True
     for position, word in enumerate(words[1:], start=1):
         if word != token:
             continue
