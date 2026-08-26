@@ -189,6 +189,12 @@ class FileFidelity:
     #: Formula cells the engine returned nothing for. The engine's
     #: failure, not the file's — a gate cannot pass around a hole.
     not_computed: list[str] = field(default_factory=list)
+    #: Cells where the engine produced an error against a stored
+    #: number — the engine's measured inability on this construct
+    #: (e.g. OFFSET with negative width, probed 26 Aug), never the
+    #: model's defect. Counted in `compared`, fails the gate, and
+    #: marks the file an arbiter candidate.
+    engine_errors: list[CellDiff] = field(default_factory=list)
     #: Denylist hits that refused the file before any comparison.
     refusals: list[DenylistHit] = field(default_factory=list)
     #: Where a refused file goes: the arbiter, or an honest no.
@@ -205,7 +211,7 @@ class FileFidelity:
     def verdict(self) -> str:
         if self.refusals:
             return "refused"
-        if self.mismatches or self.not_computed:
+        if self.mismatches or self.engine_errors or self.not_computed:
             return "fail"
         if self.compared == 0:
             return "nothing-compared"
@@ -284,6 +290,16 @@ def gate_file(
             # equality of kind and spelling is the only honest test.
             if str(stored) == str(result):
                 report.matched += 1
+            elif (
+                stored_n is not None
+                and isinstance(result, str)
+                and result.startswith("#ERR")
+            ):
+                # The engine erred where Excel stored a number: the
+                # engine's inability, its own bucket, arbiter's case.
+                report.engine_errors.append(
+                    CellDiff(ref=ref, stored=stored, computed=result, tolerance=None)
+                )
             else:
                 report.mismatches.append(
                     CellDiff(ref=ref, stored=stored, computed=result, tolerance=None)

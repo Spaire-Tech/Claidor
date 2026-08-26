@@ -101,6 +101,11 @@ def sweep_file(path: Path, document_timeout: float = 1800.0) -> dict[str, Any]:
         }
         for diff in report.mismatches[:MISMATCH_SAMPLE]
     ]
+    record["engine_errors"] = len(report.engine_errors)
+    record["engine_errors_sample"] = [
+        {"ref": diff.ref, "stored": str(diff.stored), "computed": diff.computed}
+        for diff in report.engine_errors[:MISMATCH_SAMPLE]
+    ]
     record["volatile_roots"] = report.volatile_roots[:25]
     record["volatile_roots_count"] = len(report.volatile_roots)
     record["volatile_cone"] = report.volatile_cone

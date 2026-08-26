@@ -121,6 +121,68 @@ class DenylistHit:
         return ROUTES[self.category]
 
 
+def _offset_negative_literal(tokens: list[Token]) -> bool:
+    """OFFSET(...) whose height/width argument is a negative literal.
+
+    Excel reads a negative height/width as extending backward from
+    the anchor; LibreOffice 25.8 returns Err:502 for it (probed
+    26 Aug, this lane's log). Only the *literal* case is statically
+    knowable — a computed width that goes negative (the BPFMs'
+    `MAX(..., -$G$55)`) is caught by measurement instead: the gate's
+    engine-error bucket. Detection walks OFFSET's top-level argument
+    list; args 4 and 5 (1-based) consisting of `-<number>` alone are
+    the hit.
+    """
+    for i, token in enumerate(tokens):
+        if not (
+            token.type == Token.FUNC
+            and token.subtype == Token.OPEN
+            and _canonical(token.value) == "OFFSET"
+        ):
+            continue
+        depth = 1
+        arg_index = 0
+        arg_tokens: list[Token] = []
+        for inner in tokens[i + 1 :]:
+            if (
+                inner.type in (Token.FUNC, Token.PAREN, Token.ARRAY)
+                and inner.subtype == Token.OPEN
+            ):
+                depth += 1
+            elif (
+                inner.type in (Token.FUNC, Token.PAREN, Token.ARRAY)
+                and inner.subtype == Token.CLOSE
+            ):
+                depth -= 1
+                if depth == 0:
+                    arg_tokens_done = arg_tokens
+                    if arg_index >= 3 and _is_negative_literal(arg_tokens_done):
+                        return True
+                    break
+            elif inner.type == Token.SEP and depth == 1:
+                if arg_index >= 3 and _is_negative_literal(arg_tokens):
+                    return True
+                arg_index += 1
+                arg_tokens = []
+                continue
+            if depth >= 1:
+                arg_tokens.append(inner)
+    return False
+
+
+def _is_negative_literal(arg_tokens: list[Token]) -> bool:
+    meaningful = [
+        t for t in arg_tokens if not (t.type == Token.WSPACE or t.value.strip() == "")
+    ]
+    return (
+        len(meaningful) == 2
+        and meaningful[0].type == Token.OP_PRE
+        and meaningful[0].value == "-"
+        and meaningful[1].type == Token.OPERAND
+        and meaningful[1].subtype == Token.NUMBER
+    )
+
+
 def scan_formula(ref: str, formula: str) -> list[DenylistHit]:
     """Every denylist hit in one formula. Tokenized, never substring-matched."""
     hits: list[DenylistHit] = []
@@ -129,6 +191,12 @@ def scan_formula(ref: str, formula: str) -> list[DenylistHit]:
     except Exception:
         # A formula the tokenizer cannot read cannot be certified either.
         return [DenylistHit(ref=ref, category=Category.UDF, target=formula[:80])]
+    if _offset_negative_literal(tokens):
+        hits.append(
+            DenylistHit(
+                ref=ref, category=Category.ENGINE_GAP, target="OFFSET(negative-extent)"
+            )
+        )
     for token in tokens:
         if token.type == Token.FUNC and token.subtype == Token.OPEN:
             name = _canonical(token.value)

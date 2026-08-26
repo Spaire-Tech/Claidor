@@ -492,6 +492,47 @@ number is looked at:
   TODAY-class mismatches move to the volatile bucket; whatever
   numeric residue remains is the honest open question.
 
+## 26 August 2026 — the `#ERR:502` construct named: OFFSET with a negative extent
+
+Orders item 1, done with the SINGLE discipline — trace, then probe,
+then category. The trace: a diagnostic recalc of `final_et3_bpfm`
+dumped every error cell (2,423; codes 532/502/524/525/32767 — most
+match stored errors and are not mismatches); the 502 cone roots — 60
+cells whose own precedents are clean — are all one shape, in
+`RatingSimulator`:
+
+    =AVERAGE( OFFSET(AP64, 0, 0, 1, MAX((YEAR($AP$4)-1) - YEAR(AP$4), -$G$55)))
+
+The width argument goes **negative**. Excel reads a negative
+height/width as extending backward from the anchor; LibreOffice
+returns Err:502. The probe (five cells, this machine):
+`OFFSET(A10,0,0,-3,1)` and `OFFSET(E10,0,0,1,-3)` → `#ERR:502`,
+computed-negative `MAX(-1,-3)` width → `#ERR:502`, positive control →
+computes. Everything else 502-flagged in the BPFMs is this cone
+propagating (plain references through `OutputSummary` and
+`ScenarioRun_AllOutputData`).
+
+The mechanism, in two honest halves:
+
+1. **Statically knowable** — a negative *literal* height/width — is
+   now a denylist `engine-gap` hit (`OFFSET(negative-extent)`,
+   arbiter route), exactly detected by walking OFFSET's argument
+   list; a computed extent or a negative *row/column offset* (which
+   both engines accept) never trips it. Regression tests committed.
+2. **Only measurable** — a computed extent that goes negative, like
+   the BPFMs' `MAX(..., -$G$55)` — cannot be statically denied
+   without refusing dynamic-OFFSET files that measurably pass at
+   1.0. So the gate grew an **engine-errors bucket**: a computed
+   `#ERR:*` against a stored number is recorded per cell as the
+   engine's inability, still fails the file, and marks it an
+   arbiter candidate. The six BPFMs' 502 mismatches are exactly
+   this bucket under the new reporting.
+
+So the toolbox's LibreOffice gap list, measured on this corpus, now
+reads: no LAMBDA (documented), no implicit intersection (SINGLE,
+probed), no negative OFFSET extents (probed). All three route to the
+arbiter; none can silently pass.
+
 ## 26 August 2026 — B3, the arbiter: a design for the lead (orders item 4)
 
 Four corpus files wait on real Excel (the SINGLE cone), and every
