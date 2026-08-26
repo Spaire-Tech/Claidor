@@ -28,6 +28,32 @@ golden-master gate and regenerates the baseline in the same commit.
   `a3-sibling-totals.md`, with the planting harness under
   `server/scripts/planting/`.
 
+## 26 August 2026 — candidate 2 adopted; the round in one paragraph
+
+Family-edge typed cells (`typed-over-edge`), two rounds. Round 1:
+every planted tail caught engine-wide (15/15 — mostly by the island
+pass seeing the cell from the column direction, which is the
+registered dedup working), but the corpus price was ten findings
+and all ten were typed 1s heading index series — correct base-period
+authoring, hand-read at the cells — so the round refused itself, on
+noise and on a criterion whose denominator its own dedup guard
+contradicted (recorded as written, not argued away). Round 2,
+registered first: the identity guard (0 or ±1 at an edge is
+scaffolding or an index base), the horizontal seed guard (a stretch
+that reads its typed cell is continuing from its own start), and
+criterion 3 restated over the marginal denominator — the tails no
+other rule catches, which is this rule's actual territory. Verdict:
+gate clean, marginal recall 5 of 5, adopted. Baseline untouched —
+no corpus report changed. Full record in `a3-family-edge.md`.
+Atelier's category map owes `'typed-over-edge'` the same
+« Probable formula defects » family as `typed-over-formula`, noted
+here for the lead to route with the `inconsistent-total` entry.
+
+Next per orders: A4, the coverage denominator on every report.
+(Candidates 3–5 of the mining round — beat families, column
+typed-over, range-vs-block — wait behind it unless the orders say
+otherwise.)
+
 ## 26 August 2026 — standing arrangement confirmed: orders from the lead
 
 The founder set the arrangement: at the start of every working turn

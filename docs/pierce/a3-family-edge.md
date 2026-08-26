@@ -207,3 +207,36 @@ vanish and the gate diff is empty. Planted marginal recall holds at
 (`C_Index!BJ49`) is silenced by the identity guard, and it was
 never in the marginal set (the island pass catches it). Any other
 corpus difference, or any marginal-recall drop, refuses round 2.
+
+---
+
+## Round-2 verdict (26 Aug): ADOPTED — the prediction held exactly
+
+**The decisive sweep: gate clean.** All 27 files report identically
+to the committed baseline, finding for finding — the ten index-base
+findings are gone, nothing else moved, no new finding appeared.
+
+**Planted recall, re-measured:** identical to round 1 in every
+cell — tails 15 of 15 caught engine-wide, heads 4 of 8 with every
+miss the boundary guard's registered suppression, and the
+re-registered criterion 3 met at its measured maximum: **5 of 5**
+tails that no other rule catches are caught by `typed-over-edge`.
+
+Against the criteria: (1) the diff is empty; (2) zero new corpus
+findings; (3) marginal edge-tail majority — 100%; (4) the
+conftest-free tieout tests green (424 passing, 11 of them this
+check's). **Adopted.** Like candidate 1, the check ships quiet on
+this corpus and earns its keep where a model's series genuinely
+runs out in a typed number with no column to testify — the cells
+every other pass is structurally blind to.
+
+**On the baseline:** untouched — no corpus report changed, so there
+is nothing to regenerate; the same-commit rule binds the day one
+does.
+
+**Carried forward, named:** the identity guard's stated cost (a
+genuinely typed-over 1 or 0 goes unreported); heads on
+boundary-less sheets are invisible by design; the harness could not
+plant into shared-formula masters, so master-edge recall is
+unmeasured; row direction only — the column analogue is candidate
+4's question.
