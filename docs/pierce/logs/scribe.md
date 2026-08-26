@@ -442,3 +442,43 @@ is assembling the paired deal set and running the draw with seed
 with the turn's processes and restart in seconds from their surviving
 data directories. First run of the day: restart them before blaming
 a test.
+
+## 26 August 2026, third « go » — registration amended before results: the round runs on Ofgem ED2, because Ofwat is unreachable here
+
+Orders unchanged at the tip; lane still unmerged. This turn is the
+registered D3 measurement round — and its sample source has to
+change **before any result exists**, named here, with the evidence:
+
+- The registration named the Ofwat PR24 pairs. From this container,
+  measured today: `ofwat.gov.uk` answers **403 Forbidden** to the
+  committed fetcher (as `model_corpus.py` already records), and the
+  UK Government Web Archive route that `regulator_eval.py` documents
+  serves a CloudFront **« Human Verification » page (405)** to every
+  request from here — a bot gate this lane will not try to defeat.
+  Report, don't fight: the PR24 round belongs on a machine that can
+  reach the files (the lead's container holds the resident PR24
+  corpus; the harness below will run there unchanged).
+- **The amendment:** the paired set for this round is **Ofgem
+  RIIO-ED2** — reachable, measured today, and named in
+  `corpus-sources.md` as the adjacent seam. The workbook is
+  `ED2-PCFM-V5.xlsx` (fetched by the committed
+  `scripts.model_corpus`, 3 of 5 sources fetched, Ofwat and AER
+  failing exactly as documented). The documents are three Ofgem PDFs
+  that quote the model's values (fetched into
+  `scripts/corpus_documents/ed2/`, git-ignored, re-fetchable): the
+  RIIO-ED2 Final Determinations **Finance Annex**, the ED2 **Price
+  Control Financial Handbook**, and the **PCFM Guidance v1.1**.
+- **Everything else is unchanged and already frozen:** seed 314159,
+  30 typed cells, the judging table, blind judging (truth recorded
+  before any matcher output is looked at), the matcher exactly as
+  committed at `a546087`. The population is re-anchored only in its
+  source: typed cells (no formula, a value present) of the paired
+  workbook.
+- **One honest limit of the judging method, registered now:** « the
+  document does not state this number » is established by searching
+  the documents' extracted lines for the value in its plausible
+  printed forms (raw, thousands-separated, rounded to 1–2 places,
+  percent-scaled) plus the cell's label words, and reading the hits.
+  A number the documents state in a form outside those variants
+  (rescaled to £m and rounded, say) could be missed, which would
+  over-credit abstentions. Counted as a limit, not hidden.
