@@ -571,6 +571,32 @@ until the lead approves:
   Every arbiter result names real Excel as its engine; none exists
   until the scopes and account exist.
 
+## 26 August 2026 — the H7 rates re-derived under the volatile rules (orders item 2)
+
+The registered prediction held exactly. Beside the round-2 numbers
+(which stand):
+
+| File | Round 2 (old rules) | Under volatile rules | Volatile bucket |
+|---|---|---|---|
+| h7_pcm_v2-10 | 227,318/227,367 = 0.999784, mm 49 | 227,318/227,365 = **0.999793**, mm 47 | roots 2, cone 2 |
+| h7_pcm_v2-11 | 227,374/227,405 = 0.999864, mm 29* | 227,374/227,403 = **0.999872**, mm 29 | roots 2, cone 2 |
+
+*Round 2 recorded 31 for v2-11; two were the volatile roots. The
+roots are the same pair in both files — `Version log!F10` (TODAY)
+and `O_FinStats!G3` (NOW-class) — and they feed nothing (cone =
+roots), so exactly two comparisons moved per file, as predicted.
+
+What honestly remains, all of it now visible:
+
+- **Near-floor dust**: `O_FinStats!*186` cells, |stored| ≈ 5e-12
+  against computed 0 (or −1.8e-11) — the standing tolerance-floor
+  question, unchanged, still flagged for the lead/founder.
+- **A small genuine cluster**: `Macros!Y98` / `C_Revenue!Y369` /
+  `C_Fin_Summ!F253` differ at ~2e-8–5e-8 relative — a real
+  engine-difference residue above the 1e-9 line, a handful of cells
+  per file, honest and open. Adjudication is the arbiter's (B3).
+- Engine errors: none in either file under the new bucket.
+
 ## 26 August 2026 — B4 measurement protocol, registered (orders item 3)
 
 The laws are registered (25 Aug); this registers **how they will be
