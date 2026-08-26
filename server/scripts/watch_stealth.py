@@ -48,16 +48,20 @@ def _clear_caches() -> None:
 def _stealth_retype(
     sheet: openpyxl.worksheet.worksheet.Worksheet, from_row: int
 ) -> str:
-    """Retype the first numeric literal at or below `from_row`, +7;
-    return its coordinate (in the file's final geometry)."""
-    for row in sheet.iter_rows(min_row=from_row):
-        for cell in row:
-            if isinstance(cell.value, (int, float)) and not isinstance(
-                cell.value, bool
-            ):
-                cell.value = cell.value + 7
-                return str(cell.coordinate)
-    raise SystemExit(f"no numeric literal at or below row {from_row}")
+    """Retype the first numeric literal at or below `from_row` — or,
+    when the sheet keeps its typed inputs above that point (an
+    InputSummary is pull-through formulas nearly everywhere), the
+    first one from the top — +7; return its coordinate in the file's
+    final geometry."""
+    for start in (from_row, 1):
+        for row in sheet.iter_rows(min_row=start):
+            for cell in row:
+                if isinstance(cell.value, (int, float)) and not isinstance(
+                    cell.value, bool
+                ):
+                    cell.value = cell.value + 7
+                    return str(cell.coordinate)
+    raise SystemExit("no numeric literal anywhere on the sheet")
 
 
 def _soundness(
