@@ -8,6 +8,7 @@ lattice, no two plants sharing a row or a column on one sheet,
 sites drawn with the registered seed; the truth is written before
 the engine sees the planted file. One planting run per host.
 
+    uv run python -m scripts.planting.beat_families --scan CORPUS_DIR
     uv run python -m scripts.planting.beat_families HOST.xlsx OUT.xlsx TRUTH.json 20260827
 
 Site eligibility deliberately avoids cached values of 0 or ±1 — the
@@ -90,6 +91,33 @@ def eligible_beats(book: Any) -> list[dict[str, Any]]:
     return sites
 
 
+def scan(corpus: Path) -> None:
+    """Eligible sites per corpus file — the amendment's host scan; it
+    counts sites and reads no finding."""
+    from polar.tieout.workbook import read_workbook
+
+    ranked = []
+    for path in sorted(corpus.rglob("*.xls[xm]")):
+        name = str(path.relative_to(corpus))
+        try:
+            book = read_workbook(str(path))
+        except Exception as problem:
+            print(f"unreadable {name}: {problem}")
+            continue
+        sites = eligible_beats(book)
+        by_class = {s["class"] for s in sites}
+        print(
+            f"{name}: {len(sites)} eligible sites ({', '.join(sorted(by_class)) or 'none'})",
+            flush=True,
+        )
+        if sites:
+            ranked.append((-len(sites), name))
+    ranked.sort()
+    print("\nhosts (top 3 by eligible sites, ties by name):")
+    for minus_n, name in ranked[:3]:
+        print(f"  {name}  ({-minus_n} sites)")
+
+
 def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
     from polar.tieout.workbook import read_workbook
 
@@ -161,7 +189,9 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 5:
+    if len(sys.argv) == 3 and sys.argv[1] == "--scan":
+        scan(Path(sys.argv[2]))
+    elif len(sys.argv) == 5:
         plant(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), int(sys.argv[4]))
     else:
         print(__doc__)

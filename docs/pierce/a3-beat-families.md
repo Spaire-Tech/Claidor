@@ -122,4 +122,23 @@ moves.
 
 ---
 
+## Amendment (26 Aug, before any scan result is looked at)
+
+The three registered hosts are **unplantable for both classes** —
+the harness found zero eligible lattices in all three; recorded,
+not padded, per the registration. Amended before measuring
+anything further: the harness gains a `--scan` mode (the same
+mechanic as candidate 1's host scan — it counts eligible sites and
+reads no finding), the scan runs over the whole 27-file corpus, and
+the hosts become the up-to-three files with the most eligible
+sites, ties by name. If the whole corpus is unplantable, the round
+stops there: a recall this corpus cannot measure is not vacuously
+satisfied, and the verdict is written as unmeasurable — with the
+detector's fate decided in the open, not defaulted.
+
 ## Results (appended after the registration, never edited into it)
+
+**Planting on the registered hosts (26 Aug):** zero eligible sites
+in all three — beat-2 and beat-3 alike. The CAA and Ofgem templates
+lay their series dense; the corpus-wide scan under the amendment
+runs next.
