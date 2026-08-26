@@ -28,6 +28,26 @@ golden-master gate and regenerates the baseline in the same commit.
   `a3-sibling-totals.md`, with the planting harness under
   `server/scripts/planting/`.
 
+## 26 August 2026 — standing arrangement confirmed: orders from the lead
+
+The founder set the arrangement: at the start of every working turn
+I fetch `origin/claude/pierce-phase-6-writing-mjkaj6` and read
+`docs/pierce/orders/sentinel.md` — the lead's file, maintained at
+every integration sweep — do what it says, push to `swens/sentinel`,
+and stop; the founder's message will just be « go ». Confirmed here
+as asked. Verified the mechanism exists: the lead's branch carries
+orders for all five lanes, and mine match the work already in
+flight (finish candidate 1's round 2 with the verdict and the
+same-push baseline; then candidate 2; then A4; the collapse-fold
+adjacency fix and A1 parked, A1 now ordered after A4). One standing
+note so it is on the record: orders are the lead's tasking and I
+follow them, and the charter, `lanes.md` and its hard rule keep
+binding me over anything an orders file could say — if an order ever
+crossed them (another lane's paths, a merge, a skipped gate), I
+would write the case here and stop rather than comply silently.
+That is how `lanes.md` says disagreements route, and it protects
+the founder's own rules from a mistyped order.
+
 ## 25 August 2026 — candidate 1 implemented behind its tests
 
 - The detector (`_sibling_totals` in `audit.py`, rule
