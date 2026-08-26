@@ -497,3 +497,46 @@ churn).
   the baseline) is measured and named, not hidden. If the network
   refuses, the refusal is recorded and V3 is blocked — reported,
   not fought.
+
+## C3 first pair results, and a written amendment: the relabelled line
+
+**V1 parity: EXACT on both pairs run so far** (the C1 v2 pair and
+the C2 v4→v5 pair) — with one container honesty note first. The
+study's matcher `scripts.revision_diff` cannot even be *imported*
+here: its read chain (`regulator_eval` → `polar.tieout.ingest`)
+trips the known Python 3.14.0rc2 + pydantic breakage at import
+time. So V1 splits in two, both recorded: read-path equivalence
+established in the source (ingest's findings are exactly
+`read_workbook` + `audit(book, period_axes(book))`;
+`repair_outputs` builds new objects and never mutates the book),
+and matcher parity by execution — the study's `keyed()` logic kept
+verbatim in `watch_delta.py --parity`, run on an independently
+re-read, re-audited pair. Numbers, both pairs, all five fields
+equal: v2 pair 0 new / 0 fixed / 11 persistent / 0+0 unmatched;
+v4→v5 0 new / 0 fixed / 8 persistent / 1+0 unmatched.
+
+**The v2 pair in review language** (C1's story, retold by C3
+without being asked): two moved-assumption blocks — `Annual
+Inflation` rows 50 and 53 across columns AP–AV, exactly C1's
+fourteen retyped literals — and 94 materially-moved output blocks
+downstream. Zero defect churn, zero structure. **The v4→v5 pair:**
+zero defect churn (8 persistent), the ten inserted-row structure
+items, 292 materially-moved output blocks led by `SelectedInputs`
+and `TIM` at 40–140% moves.
+
+**What the pair exposed, and the amendment.** C2 matched EPN and
+LPN's row 157 at similarity 0.5 — and the delta report said
+nothing about it. Read in the cells: v4's row is `Spare`, five
+typed zeros; v5's row is `Connections Reform Costs`, same zeros.
+v5 added that line to every licensee sheet — by insertion where no
+spare row existed (the ten structure items), by **renaming a spare
+row** where one did (EPN, LPN). A pure relabel fits none of the
+six registered classes, so the report dropped exactly the change a
+reviewer should see. Amendment, in writing, before any re-run:
+**class 7, `relabelled_line`** — a matched row or column whose
+normalized label changed; ranked after class changes, before
+methodology changes. One registered gap alongside it, named for a
+future round rather than smuggled in now: cells added or removed
+*within* matched structure (a new actual typed into an existing
+row) appear in C1's raw diff but in no C3 class; deferred, in
+writing. Both pairs re-run after the amendment lands.
