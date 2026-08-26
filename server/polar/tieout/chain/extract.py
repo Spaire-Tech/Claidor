@@ -37,8 +37,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
-from typing import IO, Any
+from typing import Any
 
 #: A token qualifies as a number when, after shedding an optional
 #: currency symbol, sign or accounting parentheses, and an optional
@@ -59,8 +60,17 @@ _NUMBER = re.compile(
     re.VERBOSE | re.IGNORECASE,
 )
 
+#: The extraction code's own version, carried on every persisted fact so
+#: a fidelity question is answerable years later. Bumped whenever the
+#: token pattern, the line grouping, or the refusal rule changes.
+EXTRACTOR_NAME = "polar.tieout.chain.extract"
+EXTRACTOR_VERSION = "2"
+
 #: Below this many text characters a page has no usable text layer.
 _SCANT_TEXT = 20
+
+#: Words whose tops are within this many points sit on one printed line.
+_LINE_TOLERANCE = 3.0
 
 #: Images covering more than this share of the page mark it as a scan.
 _IMAGE_SHARE = 0.5
@@ -83,13 +93,16 @@ class ExtractedNumber:
     ``text`` is the token exactly as printed — currency symbol, commas,
     percent and all — and is the authoritative record. ``value`` is the
     parsed magnitude with its sign, for matching; it carries no unit and
-    no scale.
+    no scale. ``line`` is the whole printed line the token sits in — the
+    label neighborhood the fact store keeps for anchoring, with no
+    opinion about which of its words are the label.
     """
 
     page: int  # 1-based
     text: str
     value: float
     box: Box
+    line: str
 
 
 @dataclass(frozen=True)
@@ -136,7 +149,7 @@ def parse_number(token: str) -> float | None:
     return value
 
 
-def extract_pdf(source: str | Path | IO[bytes]) -> Extraction:
+def extract_pdf(source: str | Path | BytesIO) -> Extraction:
     """Every number in a PDF, each with its page and highlight box.
 
     Raises whatever pdfplumber raises on a file that is not a PDF; a
@@ -157,7 +170,8 @@ def extract_pdf(source: str | Path | IO[bytes]) -> Extraction:
             if refusal is not None:
                 refusals.append(refusal)
                 continue
-            for word in words:
+            lines = _lines(words)
+            for position, word in enumerate(words):
                 value = parse_number(word["text"])
                 if value is None:
                     continue
@@ -172,10 +186,38 @@ def extract_pdf(source: str | Path | IO[bytes]) -> Extraction:
                             x1=float(word["x1"]),
                             bottom=float(word["bottom"]),
                         ),
+                        line=lines[position],
                     )
                 )
 
     return Extraction(tuple(numbers), tuple(refusals), tuple(sizes))
+
+
+def _lines(words: list[dict[str, Any]]) -> list[str]:
+    """For each word, the text of the printed line it sits on.
+
+    Words whose tops are within :data:`_LINE_TOLERANCE` points of the
+    line's first word share a line; each line reads left to right. This
+    is layout, not meaning — a table row is one « line » here, and that
+    is deliberate: the row's label is in it.
+    """
+    order = sorted(range(len(words)), key=lambda i: float(words[i]["top"]))
+    line_of = [0] * len(words)
+    groups: list[list[int]] = []
+    for position in order:
+        top = float(words[position]["top"])
+        if groups and top - float(words[groups[-1][0]]["top"]) <= _LINE_TOLERANCE:
+            groups[-1].append(position)
+        else:
+            groups.append([position])
+    texts: list[str] = []
+    for group in groups:
+        group.sort(key=lambda i: float(words[i]["x0"]))
+        text = " ".join(words[i]["text"] for i in group)
+        for position in group:
+            line_of[position] = len(texts)
+        texts.append(text)
+    return [texts[line_of[position]] for position in range(len(words))]
 
 
 def _scan_refusal(
