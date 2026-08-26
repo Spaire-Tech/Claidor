@@ -1334,12 +1334,21 @@ class TestHouseRules:
         assert body["rounding"] == "together"
         assert body["grounding"] is True
         # The audit's own catalogue, all on — never a list a screen
-        # invented. Both families: the eleven construction rules and the
-        # six statement checks, the latter flagged so the screens can
-        # group them.
-        assert len(body["rules"]) == 17
+        # invented, and never a count this file pins by hand: a pinned
+        # 17 went red the day Sentinel's adoptions made it 19, telling
+        # nobody anything true. The invariant is that the endpoint
+        # serves exactly the engine's catalogue — both families — with
+        # every rule on by default, the newly adopted ones included.
+        from polar.tieout.analytics import ANALYTIC_RULE_NAMES
+        from polar.tieout.audit import RULE_NAMES
+
+        assert {rule["key"] for rule in body["rules"]} == (
+            set(RULE_NAMES) | set(ANALYTIC_RULE_NAMES)
+        )
         assert all(rule["on"] for rule in body["rules"])
-        assert sum(1 for rule in body["rules"] if rule["analytical"]) == 6
+        assert {rule["key"] for rule in body["rules"] if rule["analytical"]} == set(
+            ANALYTIC_RULE_NAMES
+        )
 
     @pytest.mark.auth
     async def test_a_stranger_finds_no_organization(
