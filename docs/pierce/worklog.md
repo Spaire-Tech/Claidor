@@ -4226,3 +4226,37 @@ baseline, finding for finding**, on the integrated tip with both
 adoptions live. The first engine-findings merge of the team era is
 certified. Next on this machine: the V3 re-run on the
 memory-fixed aligner.
+
+---
+
+## 26 August — the twelfth sweep: five more, and the loop's edges show their worth
+
+All five lanes again. **Sentinel** took candidate 3 (beat families)
+through the loop and reached the rarest verdict: **unmeasurable on
+this corpus** — zero plantable sites in all 27 files, so the
+detector stays implemented, unit-tested, and deliberately *unwired*:
+« an unmeasured check does not report to anyone. » **Dynamo** closed
+the H7 debt-pair round — proportionality and scale invariance
+measured at last on a model that promises them: 4/4 catches naming
+their cells, zero false positives; all four B4 laws now have real
+catches. **Prism** registered and implemented tier 2 (randomized
+differential evaluation in the stealth harness). **Scribe** ran D3
+round 2: the reference-word defense killed all eight round-1 false
+proposals (two new ones of a second shape appeared — round 3 is
+registered for the leading-paragraph case), and run B delivered a
+structural finding worth the whole round: 90 seeded draws, zero
+typed cells stated by these documents, because *this corpus runs
+the wrong direction* — the Finance Annex derives from the model;
+the product case (term sheet feeding a model) needs a document-fed
+pair, now a founder question. **Atelier** put the adopted rules in
+the category map. Scribe also reported a cross-lane break the sweep
+routed: an Atelier test asserts 17 rules where the catalogue is now
+19 — Atelier's orders lead with it.
+
+Integration: engine change this round is additive, uncalled code
+plus candidate 3's unwiring (verified in the diff) — reports
+unchanged by construction; the formal gate certification rides the
+next Sentinel round's precondition sweep because this machine is
+inside the multi-day V3 run (pair 3 of 16 at this writing, ~90
+min/pair on the memory-fixed aligner — the time cost routed to
+Prism as a registered question). 631 conftest-free tests green.
