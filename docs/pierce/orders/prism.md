@@ -12,3 +12,11 @@ Tier 2 merged. Two things from the lead's V3 re-run, both yours:
    of the memory bound, write that and stop.
 2. Then tier 2's first measured round on the gated corpus files,
    per your registration.
+
+## Standing addition (26 Aug): memory discipline
+
+Before anything else this turn: create or refresh
+`docs/pierce/handoffs/prism.md` per the new « Memory discipline »
+section in `orders/README.md` — the founder is seeing sessions run
+out of context, and the handoff is what makes that survivable. Push
+it with your work, every push, from now on.

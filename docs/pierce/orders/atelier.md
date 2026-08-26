@@ -12,3 +12,11 @@ Category map merged.
 2. Your screenless-capabilities inventory is still owed if not yet
    delivered (check your own log).
 3. Then hold for founder designs.
+
+## Standing addition (26 Aug): memory discipline
+
+Before anything else this turn: create or refresh
+`docs/pierce/handoffs/atelier.md` per the new « Memory discipline »
+section in `orders/README.md` — the founder is seeing sessions run
+out of context, and the handoff is what makes that survivable. Push
+it with your work, every push, from now on.

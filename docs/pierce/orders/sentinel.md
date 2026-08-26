@@ -23,3 +23,11 @@ third-party models, mcc.gov reachable). When you reach the plan's
 unseen-corpus work: this is the named candidate — and general
 spreadsheets may finally make candidate 3 (beat families)
 measurable, per your own future-round clause.
+
+## Standing addition (26 Aug): memory discipline
+
+Before anything else this turn: create or refresh
+`docs/pierce/handoffs/sentinel.md` per the new « Memory discipline »
+section in `orders/README.md` — the founder is seeing sessions run
+out of context, and the handoff is what makes that survivable. Push
+it with your work, every push, from now on.

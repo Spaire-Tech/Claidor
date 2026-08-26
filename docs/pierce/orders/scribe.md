@@ -27,3 +27,11 @@ In order:
    against it. Rows pointing at unpublished loan agreements are
    counted unreachable, not failed.
 4. D5's registration continues in parallel as before.
+
+## Standing addition (26 Aug): memory discipline
+
+Before anything else this turn: create or refresh
+`docs/pierce/handoffs/scribe.md` per the new « Memory discipline »
+section in `orders/README.md` — the founder is seeing sessions run
+out of context, and the handoff is what makes that survivable. Push
+it with your work, every push, from now on.
