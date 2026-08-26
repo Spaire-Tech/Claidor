@@ -268,3 +268,124 @@ that is a schema bump proposed here, not a silent addition.
 
 Next, once the lead has seen this: D2's serving routes against the
 engine's storage, then D3.
+
+## 26 August 2026 — standing orders acknowledged; D2 served
+
+**The lead's channel, confirmed.** Per the founder's instruction and
+`orders/README.md`: at the start of every working turn this lane
+fetches `origin/claude/pierce-phase-6-writing-mjkaj6`, reads
+`docs/pierce/orders/scribe.md`, does what it says, pushes to
+`swens/scribe`, and stops. « Go » means exactly that. The lane branch
+was fast-forwarded onto the integrated tip (`e37e3e1`) — the lead's
+merge notes said the tip moved, and my four commits are all ancestors
+of it. The orders' three claims were verified against the branch, not
+taken on faith: pdfplumber is in `pyproject.toml`, the chain router
+is mounted in `api.py`, and D2 stands approved in the orders file.
+
+**The container is repaired — other lanes should hear this.** Every
+`import fastapi` failed here with a pydantic `AssertionError`, which
+is why my router could not be exercised over HTTP yesterday and why
+Atelier was told to document if database fixtures cannot run. The
+root cause was measured, not guessed: the container ships **Python
+3.14.0rc2**, whose `ForwardRef` predates the final 3.14 that pydantic
+2.12.5 expects. The fix, all local to the container, none of it
+committed: a current `uv` (0.12.5, the bundled 0.8.17's manifest
+stops at rc2), `uv python install 3.14` (3.14.7), the venv rebuilt on
+it — plus native PostgreSQL 16, Redis, and a downloaded MinIO started
+by hand with the `.env.testing` credentials. On that stack the whole
+tieout suite runs: **680 passed, 8 skipped**, route-level tests
+included. Route tests are possible in these containers; the recipe is
+this paragraph.
+
+**D2 is built and served, tests at the route level.**
+
+- `chain/store.py`: `tieout_chain_facts` and `tieout_chain_refusals`,
+  the approved contract as rows (box flattened into columns — the
+  engine's everything-works-off-rows rule). Mapping, recorded:
+  `document_version_id` = `tieout_artifacts.id`, `document_id` = that
+  artifact's `lineage_id`.
+- **Fact ids are deterministic** — UUID5 over (version, extractor
+  version, page, ordinal, printed text) — honoring the approved
+  schema's « never changes across re-extraction of the same document
+  version »: extract twice, get byte-identical rows. A bumped
+  extractor is new ids on purpose: different code, different claims.
+- `chain/router.py` grew the serving routes:
+  `POST /chain/documents/{id}/extract` (facts persisted at
+  extraction, from the bytes the engine's storage kept),
+  `GET /chain/facts/{id}` (the D2 one-liner), and
+  `GET /chain/documents/{id}/facts` (the whole record, refusals
+  alongside, so coverage is one call). Access is the workspace rule:
+  deal membership on every route, 404 never 403 — a stranger holding
+  a real fact id learns nothing a made-up id wouldn't teach.
+- `extract.py` now records each number's printed **line** (the
+  approved schema's label neighborhood) and stamps
+  `EXTRACTOR_VERSION = "2"`.
+- Tests: `test_chain_store.py`, 9 route-level cases through the real
+  path — upload via the engine's artifacts route, extract, serve,
+  re-extract idempotently, refuse a deck in words, refuse strangers
+  with 404. All green; extraction tests now 31; tieout suite 680.
+
+**Two touches outside my listed paths, named, not silent.** A fact
+store cannot exist inside the package alone: (1) one import line in
+`polar/models/__init__.py`, so the tables register in the metadata
+that alembic and the test harness build from; (2) one new migration
+file, `2026-08-26-0330_chain_facts.py`, revising the current head.
+Both are new-file-or-one-line, neither touches another lane's files,
+and both exist only because the orders command a persisted fact
+store. If the lead wants either cut differently at integration, say
+the word. (`alembic check` on this container reports a pile of
+pre-existing drift across unrelated tables — none of it mentions the
+chain tables, which match their migration exactly.)
+
+## D3 registration — written before any matcher code exists
+
+The order asks for the registered sample and judging protocol first.
+Registered here, before a line of matcher exists:
+
+**The task.** A typed model number (a `tieout_cells` row whose value
+is typed, not computed) in a deal that also holds extracted
+documents. The matcher proposes candidate facts from the store, or
+abstains.
+
+**The rule, from the plan verbatim:** matched **by labels near
+both — never by value.** The cell brings its row and column labels;
+the fact brings its printed line. Scoring is label affinity only.
+The numeric value never enters scoring in any form — not as a
+feature, not as a tiebreak, not as a filter. (Value-matching would
+make every measurement circular and every link dishonest: the whole
+point of a confirmed link is that the values may later *disagree*.)
+**Abstention when candidates tie:** if the top two scores are within
+the tie margin, the matcher proposes nothing, and that is recorded as
+an abstention, not a failure.
+
+**The sample.** The paired set is Ofwat PR24: real price-review
+models and the published documents that quote them
+(`corpus-sources.md` names this pairing as the reason PR24 exists in
+our corpus; the lead's tenth-sweep note says the PR24 corpus is
+resident). From the deal set, **30 typed model numbers drawn with
+seed 314159** from the population of typed cells whose workbooks
+pair with at least one extracted document. Draw registered now;
+drawn only after the matcher is frozen for the round.
+
+**The judging protocol.** For each of the 30, a person (me, judging
+from the documents, blind to the matcher's score — candidates shown
+in shuffled order without scores) reads the document pages and
+records the ground truth first: « the document states this number at
+page/box X », or « the document does not state this number ». Then
+the matcher's output is compared:
+
+| matcher says | truth says | verdict |
+|---|---|---|
+| proposes fact F | F is the stated place | true proposal |
+| proposes fact F | stated elsewhere / not stated | false proposal |
+| abstains | not stated, or genuinely ambiguous | true abstention |
+| abstains | stated, unambiguous | missed |
+
+**Reported numbers:** proposal precision (true proposals / all
+proposals), abstention rate, miss rate — each with its denominator
+printed. **No target is promised in advance**; the numbers are
+whatever they are, and D3 ships to the product only when the founder
+has seen them. Failures are counted in this log, not narrated away.
+
+Next turn, unless the orders change: the matcher behind these
+registered criteria, in the chain package, tests first.
