@@ -735,3 +735,29 @@ ref-for-ref (verified); one map serves both, committed in
   downstream are possible and are noted, not scored; the unplanted
   control is clean on both laws in both files. **No result exists
   as this is written.**
+
+## 26 August 2026 — H7 debt-pair result: 4/4, both files, zero noise
+
+Run on this machine (~2 coarse minutes per file), against the
+registered predictions, exactly:
+
+| File | Control | Money hardcode (`J73 + 0.5`) | Contaminated ratio (`J69 + J72/20000`) |
+|---|---|---|---|
+| fds | both laws clean | proportionality flags **J73, F86** | scale invariance flags **J69** (0.0294 → 2.9874 under cents) |
+| fp | both laws clean | proportionality flags **J73, F86** (6.6243 expected vs 6.1243 — the 0.5, exactly) | scale invariance flags **J69** (0.0243 → 1.4796) |
+
+**Catches 4/4 (each naming its planted cell), false positives 0**
+across four control law-runs. The cross-law flags on plant 2's own
+downstream (`J73`/`F86` under proportionality) appeared exactly as
+the registration noted and are not scored. Scale invariance stayed
+correctly silent on the money hardcode — the laws separate the
+classes, not just detect them.
+
+With this round, **all four registered laws have caught their
+planted class on real corpus files**: zero-input and consolidation
+on ED2 v5, proportionality and scale invariance on the H7 pair —
+seven catches, seven named cells, zero false positives in total.
+Still mechanism proofs, not catch-rate estimates. Next (orders item
+2): widen file-by-file across the remaining gated files, N plants
+per class registered before each run, toward the plan's B4 DONE —
+the hardcode-in-the-tail class measured across hosts.
