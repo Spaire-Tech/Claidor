@@ -37,7 +37,40 @@ from uuid import UUID
 #: found in the candidate's line. Below it, the matcher abstains.
 FLOOR = 0.5
 
+#: Round 2's frozen defense (registered in the Scribe log before this
+#: code existed). A number immediately preceded on its line by one of
+#: these words names a *place* — « SpC 3.2 », « Table 14 », « para
+#: 2.47 » — not a quantity, and round 1 measured what happens without
+#: this rule: seven of eight false proposals were exactly that shape.
+#: Such a candidate is ineligible for proposal and cannot block one by
+#: tying; it stays in the ranking, marked, so a reviewer sees what was
+#: set aside.
+REFERENCE_WORDS = frozenset(
+    """spc crc section sections sec para paragraph paragraphs table
+    tables figure figures fig page pages appendix appendices annex
+    chapter condition conditions footnote footnotes box volume part
+    step fq question clause schedule article no""".split()
+)
+
 _WORD = re.compile(r"[a-z0-9]+")
+
+
+def is_reference(token: str, line: str) -> bool:
+    """True when the token appears in the line as a document reference.
+
+    Any occurrence of the exact printed token immediately preceded by
+    a reference word marks it. Over-exclusion when one line prints the
+    same token both as a reference and as a value is possible, rare,
+    and an accepted registered limit.
+    """
+    words = line.split()
+    for position, word in enumerate(words[1:], start=1):
+        if word != token:
+            continue
+        before = _WORD.findall(words[position - 1].lower())
+        if before and before[-1] in REFERENCE_WORDS:
+            return True
+    return False
 
 
 def label_tokens(text: str) -> frozenset[str]:
@@ -59,6 +92,9 @@ class Candidate:
     fact_id: UUID
     score: float
     shared: tuple[str, ...]
+    #: The token reads as a document reference (« SpC 3.2 »): visible
+    #: in the ranking, never proposed, never blocking a proposal.
+    reference: bool = False
 
 
 @dataclass(frozen=True)
@@ -78,15 +114,16 @@ class Abstained:
 
 
 def propose(
-    cell_labels: str, candidates: Sequence[tuple[UUID, str]]
+    cell_labels: str, candidates: Sequence[tuple[UUID, str, str]]
 ) -> Proposed | Abstained:
     """One cell's label text against every candidate fact's line.
 
     ``cell_labels`` is the label text the workbook gives the cell (its
     name — row and column labels joined). ``candidates`` are
-    ``(fact id, printed line)`` pairs. Returns either the single
-    proposed candidate with the full ranking behind it, or an
-    abstention that says why in words.
+    ``(fact id, printed line, printed token)`` triples. Returns either
+    the single proposed candidate with the full ranking behind it, or
+    an abstention that says why in words. The floor and the tie rule
+    apply among eligible (non-reference) candidates only.
     """
     wanted = label_tokens(cell_labels)
     if not wanted:
@@ -105,27 +142,41 @@ def propose(
                 fact_id=fact_id,
                 score=len(shared) / len(wanted),
                 shared=tuple(sorted(shared)),
+                reference=is_reference(token, line),
             )
-            for fact_id, line in candidates
+            for fact_id, line, token in candidates
             for shared in [wanted & label_tokens(line)]
         ),
         key=lambda candidate: (-candidate.score, str(candidate.fact_id)),
     )
     ranked = tuple(scored)
+    eligible = [candidate for candidate in ranked if not candidate.reference]
 
-    if not ranked or ranked[0].score < FLOOR:
-        found = f"{ranked[0].score:.0%}" if ranked else "none"
+    if not eligible or eligible[0].score < FLOOR:
+        found = f"{eligible[0].score:.0%}" if eligible else "none"
+        set_aside = sum(
+            1
+            for candidate in ranked
+            if candidate.reference and candidate.score >= FLOOR
+        )
+        aside = (
+            f" ({set_aside} candidate(s) covering the labels were set "
+            "aside because their number is a document reference — a "
+            "section, table or page pointer, not a quantity)"
+            if set_aside
+            else ""
+        )
         return Abstained(
             reason=(
                 f"No candidate line covers at least half of the cell's "
-                f"label words (best coverage: {found}), so nothing is "
-                "proposed. The cell may simply have no source in the "
-                "documents — that is a finding, not a failure."
+                f"label words (best eligible coverage: {found}){aside}, so "
+                "nothing is proposed. The cell may simply have no source "
+                "in the documents — that is a finding, not a failure."
             ),
             ranked=ranked,
         )
 
-    if len(ranked) > 1 and ranked[1].score == ranked[0].score:
+    if len(eligible) > 1 and eligible[1].score == eligible[0].score:
         return Abstained(
             reason=(
                 "Two or more candidates tie at the top score — the labels "
@@ -135,4 +186,4 @@ def propose(
             ranked=ranked,
         )
 
-    return Proposed(candidate=ranked[0], ranked=ranked)
+    return Proposed(candidate=eligible[0], ranked=ranked)

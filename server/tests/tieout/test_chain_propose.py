@@ -52,8 +52,8 @@ def test_labels_single_out_the_right_fact() -> None:
     answer = propose(
         "FY2025A Adjusted EBITDA",
         [
-            (A, "Adjusted EBITDA for FY2025A was £48.9mm"),
-            (B, "Total revenue grew in the period"),
+            (A, "Adjusted EBITDA for FY2025A was £48.9mm", "£48.9mm"),
+            (B, "Total revenue grew in the period", "0"),
         ],
     )
     assert isinstance(answer, Proposed)
@@ -71,7 +71,7 @@ def test_a_matching_value_alone_proposes_nothing() -> None:
     """
     answer = propose(
         "Net leverage ratio",
-        [(A, "48.9 appears here, and 48.9 again, labelled nothing")],
+        [(A, "48.9 appears here, and 48.9 again, labelled nothing", "48.9")],
     )
     assert isinstance(answer, Abstained)
     assert answer.ranked[0].score == 0.0
@@ -82,8 +82,8 @@ def test_labels_beat_a_value_coincidence() -> None:
     answer = propose(
         "Net leverage ratio",
         [
-            (A, "48.9 printed with no words the cell knows"),
-            (B, "Net leverage ratio of 4.5x at close"),
+            (A, "48.9 printed with no words the cell knows", "48.9"),
+            (B, "Net leverage ratio of 4.5x at close", "4.5x"),
         ],
     )
     assert isinstance(answer, Proposed)
@@ -93,7 +93,10 @@ def test_labels_beat_a_value_coincidence() -> None:
 def test_a_tie_abstains_in_words() -> None:
     answer = propose(
         "Margin",
-        [(A, "Margin 45% up 3 points"), (B, "Margin 45% up 3 points")],
+        [
+            (A, "Margin 45% up 3 points", "45%"),
+            (B, "Margin 45% up 3 points", "3"),
+        ],
     )
     assert isinstance(answer, Abstained)
     assert "tie" in answer.reason
@@ -103,7 +106,7 @@ def test_a_tie_abstains_in_words() -> None:
 def test_weak_coverage_abstains_below_the_floor() -> None:
     answer = propose(
         "Adjusted EBITDA margin percentage",
-        [(A, "The margin narrowed slightly")],
+        [(A, "The margin narrowed slightly", "1")],
     )
     assert isinstance(answer, Abstained)
     assert answer.ranked[0].score == 0.25 < FLOOR
@@ -111,18 +114,94 @@ def test_weak_coverage_abstains_below_the_floor() -> None:
 
 
 def test_numeric_only_labels_abstain_rather_than_guess() -> None:
-    answer = propose("2025", [(A, "2025 was a good year")])
+    answer = propose("2025", [(A, "2025 was a good year", "2025")])
     assert isinstance(answer, Abstained)
     assert "purely numeric" in answer.reason
     assert answer.ranked == ()
 
 
 def test_the_ranking_is_deterministic() -> None:
-    first = propose("Adjusted EBITDA", [(A, "Adjusted only"), (B, "Adjusted EBITDA")])
-    second = propose("Adjusted EBITDA", [(B, "Adjusted EBITDA"), (A, "Adjusted only")])
+    first = propose(
+        "Adjusted EBITDA",
+        [(A, "Adjusted only 1", "1"), (B, "Adjusted EBITDA 2", "2")],
+    )
+    second = propose(
+        "Adjusted EBITDA",
+        [(B, "Adjusted EBITDA 2", "2"), (A, "Adjusted only 1", "1")],
+    )
     assert first == second
     assert isinstance(first, Proposed)
     assert [c.fact_id for c in first.ranked] == [B, A]
+
+
+# --- round 2's defense: reference numbers are not quantities -------------
+
+
+def test_a_definitional_line_is_set_aside_in_words() -> None:
+    """Round 1's diagnosed failure, planted: « CROTREt … SpC 3.2 ».
+
+    Perfect label coverage, but the only number is a licence-condition
+    pointer. v1 proposed it (0/8 precision); v2 must abstain and say
+    what was set aside.
+    """
+    answer = propose(
+        "Cyber Resilience OT Re-opener FY2025",
+        [(A, "CROTREt Cyber Resilience OT Re-opener SpC 3.2", "3.2")],
+    )
+    assert isinstance(answer, Abstained)
+    assert "set aside" in answer.reason
+    assert "reference" in answer.reason
+    assert answer.ranked[0].reference is True
+
+
+def test_a_prose_statement_beats_its_own_definition() -> None:
+    answer = propose(
+        "Cyber Resilience OT Re-opener FY2025",
+        [
+            (A, "CROTREt Cyber Resilience OT Re-opener SpC 3.2", "3.2"),
+            (
+                B,
+                "the Cyber Resilience OT Re-opener allowance for FY2025 is 0.46",
+                "0.46",
+            ),
+        ],
+    )
+    assert isinstance(answer, Proposed)
+    assert answer.candidate.fact_id == B
+    assert answer.candidate.reference is False
+
+
+def test_a_reference_cannot_block_a_proposal_by_tying() -> None:
+    """The frozen clarification: ties are judged among eligible only."""
+    answer = propose(
+        "Margin",
+        [
+            (A, "Margin stated at 45% for the year", "45%"),
+            (B, "see Margin analysis in Table 12", "12"),
+        ],
+    )
+    assert isinstance(answer, Proposed)
+    assert answer.candidate.fact_id == A
+
+
+@pytest.mark.parametrize(
+    ("line", "token", "expected"),
+    [
+        ("PCBt PCB Interventions SpC 3.5", "3.5", True),
+        ("Section 1: ED1 Load Related Re-opener", "1:", True),
+        ("summarised in Table 14, and reflects", "14,", True),
+        ("para 2.47 of the Finance Annex", "2.47", True),
+        ("the allowance is 2.4% for the year", "2.4%", False),
+        ("Fast pot expenditure 86.4 89.6 84.6", "84.6", False),
+        ("3.5 leads the line, nothing precedes it", "3.5", False),
+    ],
+)
+def test_the_reference_rule_reads_lines_right(
+    line: str, token: str, expected: bool
+) -> None:
+    from polar.tieout.chain.propose import is_reference
+
+    assert is_reference(token, line) is expected
 
 
 # --- the route, over the stored path -------------------------------------
@@ -193,6 +272,7 @@ class TestProposalRoute:
         assert body["proposed"]["line"] == "Revenue 1,234.5"
         assert body["score"] == 1.0
         assert body["shared"] == ["revenue"]
+        assert "never a link" in body["standing"]
 
     @pytest.mark.auth
     async def test_two_facts_on_one_line_tie_and_abstain(

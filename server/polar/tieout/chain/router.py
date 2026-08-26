@@ -53,6 +53,16 @@ NOT_FOUND = "Fact not found."
 #: worth catching before pdfminer chews on it.
 MAX_UPLOAD_BYTES = 64 * 1024 * 1024
 
+#: What measurement says about link proposals today. This sentence
+#: travels with every proposal response; it is updated only from a
+#: registered round's result recorded in the Scribe log.
+PROPOSAL_STANDING = (
+    "Unmeasured for trust: no registered round has cleared this "
+    "matcher (round 1 measured 0 of 8 proposals correct). A proposal "
+    "is a candidate for a person to check against the cited page — "
+    "never a link."
+)
+
 
 # --- access --------------------------------------------------------------
 
@@ -343,6 +353,9 @@ class RankedCandidateRead(Schema):
     fact_id: UUID
     score: float
     shared: list[str]
+    #: The candidate's number is a document reference (a section, table
+    #: or page pointer) — shown, never proposed.
+    reference: bool
 
 
 class ProposalRead(Schema):
@@ -361,6 +374,10 @@ class ProposalRead(Schema):
     shared: list[str]
     reason: str | None
     candidates: list[RankedCandidateRead]
+    #: The measured record, in-band, so no consumer can present a
+    #: proposal as more than it is. Changes only when a registered
+    #: round's measured number changes.
+    standing: str
 
 
 @router.get("/cells/{cell_id}/proposals", response_model=ProposalRead)
@@ -408,13 +425,14 @@ async def propose_for_cell(
     by_id = {fact.id: (fact, artifact) for fact, artifact in pool}
 
     labels = cell.name or f"{cell.row_label} {cell.column_label}".strip()
-    answer = propose(labels, [(fact.id, fact.line) for fact, _ in pool])
+    answer = propose(labels, [(fact.id, fact.line, fact.text) for fact, _ in pool])
 
     ranked = [
         RankedCandidateRead(
             fact_id=candidate.fact_id,
             score=candidate.score,
             shared=list(candidate.shared),
+            reference=candidate.reference,
         )
         for candidate in answer.ranked[:5]
     ]
@@ -427,6 +445,7 @@ async def propose_for_cell(
             shared=[],
             reason=answer.reason,
             candidates=ranked,
+            standing=PROPOSAL_STANDING,
         )
     fact, artifact = by_id[answer.candidate.fact_id]
     return ProposalRead(
@@ -437,6 +456,7 @@ async def propose_for_cell(
         shared=list(answer.candidate.shared),
         reason=None,
         candidates=ranked,
+        standing=PROPOSAL_STANDING,
     )
 
 

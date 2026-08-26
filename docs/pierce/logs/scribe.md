@@ -595,7 +595,10 @@ occurrence in the line is reference-preceded, the fact is ineligible
 — over-exclusion when the same token appears twice on a line, once as
 a reference and once as a value, is possible, rare, and accepted as a
 registered limit. Ineligible candidates stay visible in the ranking,
-marked, so a reviewer sees what was set aside. **Numeric-density is
+marked, so a reviewer sees what was set aside. One clarification,
+frozen with the rest before anything runs: the floor and the tie rule
+apply **among eligible candidates only** — a reference number can
+neither be proposed nor block a proposal by tying with one. **Numeric-density is
 rejected** as the defense, with the reason on the record: it would
 kill legitimate prose statements (« the cost of debt allowance is
 2.4% »), which are exactly how the Finance Annex states quantities.
