@@ -3,8 +3,14 @@
 Registered in `docs/pierce/logs/prism.md` (« C4 registration,
 round 1 ») before this code existed. Two modes:
 
-    uv run python -m scripts.watch_stealth planted BASE.xlsx SHEET OUT.json
+    uv run python -m scripts.watch_stealth planted BASE.xlsx SHEET OUT.json [STEALTH_SHEET]
     uv run python -m scripts.watch_stealth pair OLD.xlsx NEW.xlsx OUT.json
+
+Per the round-1 amendment: a sheet with no typed numeric literal
+cannot host a stealth edit — its stealth-only instances are
+recorded as refusals, and its declared+stealth instances put the
+stealth on STEALTH_SHEET (the other registered sheet), hiding the
+change outside the declared sheet entirely.
 
 `planted` runs the registered instances on one sheet: stealth-only
 (one literal retyped at each quartile position, no declared edit)
@@ -84,7 +90,9 @@ def _soundness(
     return violations
 
 
-def run_planted(base_path: str, sheet_name: str, out_path: str) -> int:
+def run_planted(
+    base_path: str, sheet_name: str, out_path: str, stealth_fallback: str = ""
+) -> int:
     base = Path(base_path)
     base_book = read_workbook(base_path)
     base_raw, _ = read_raw(base_path)
@@ -103,9 +111,34 @@ def run_planted(base_path: str, sheet_name: str, out_path: str) -> int:
     median_column = columns[len(columns) // 2]
     farthest = max(quartiles, key=lambda q: abs(q - median_row))
 
-    instances: list[tuple[str | None, int]] = [
-        (None, position) for position in quartiles
-    ]
+    #: A literal the planter can retype is a raw numeric cell with no
+    #: formula — content tag « n: » in the C1 reader's terms.
+    def has_literal(sheet: str) -> bool:
+        prefix = f"{sheet}!"
+        return any(
+            ref.startswith(prefix) and content.startswith("n:")
+            for ref, (content, _) in base_raw.items()
+        )
+
+    stealth_sheet = sheet_name if has_literal(sheet_name) else stealth_fallback
+    refusals = []
+    instances: list[tuple[str | None, int]] = []
+    if stealth_sheet == sheet_name:
+        instances += [(None, position) for position in quartiles]
+    else:
+        refusals = [
+            {
+                "declared": "none",
+                "position": position,
+                "refused": f"{sheet_name} holds no typed numeric literal",
+            }
+            for position in quartiles
+        ]
+        if not stealth_sheet:
+            raise SystemExit(
+                f"{sheet_name} holds no typed numeric literal and no "
+                "stealth fallback sheet was given"
+            )
     instances += [
         (kind, farthest if "row" in kind else quartiles[-1]) for kind in STRUCTURAL
     ]
@@ -122,7 +155,7 @@ def run_planted(base_path: str, sheet_name: str, out_path: str) -> int:
                 planted = _apply(book, sheet_name, kind, rows[0], median_column)
             else:
                 planted = _apply(book, sheet_name, kind, median_row, columns[0])
-            stealth_ref = _stealth_retype(book[sheet_name], stealth_row)
+            stealth_ref = _stealth_retype(book[stealth_sheet], stealth_row)
             book.save(target)
             _reinject_values(base, target, sheet_name, planted)
 
@@ -130,14 +163,11 @@ def run_planted(base_path: str, sheet_name: str, out_path: str) -> int:
             new_raw, _ = read_raw(str(target))
             proof = proved_unchanged(base_book, new_book)
             violations = _soundness(proof, base_raw, new_raw)
-            stealth_full = f"{sheet_name}!{stealth_ref}"
+            stealth_full = f"{stealth_sheet}!{stealth_ref}"
             stealth_suspect = stealth_full not in proof.proved
-            #: The whole-file fraction is diluted by an instrument
-            #: artifact — value re-injection restores cached values on
-            #: the edited sheet only, so other sheets' formula cells
-            #: are suspects for the planter's reasons, not the
-            #: proof's. The edited sheet's own fraction is the number
-            #: that means something; both are reported.
+            #: Re-injection covers every sheet (round-1 amendment),
+            #: so the whole-file fraction is real; the declared
+            #: sheet's own fraction is reported beside it.
             sheet_proved, sheet_cells = proof.per_sheet.get(sheet_name, (0, 0))
             verdict = {
                 "declared": kind or "none",
@@ -166,9 +196,11 @@ def run_planted(base_path: str, sheet_name: str, out_path: str) -> int:
     payload = {
         "base": base_path,
         "sheet": sheet_name,
+        "stealth_sheet": stealth_sheet,
         "seconds": round(time.monotonic() - started, 1),
         "sound_total": sum(1 for r in results if r["sound"]),
         "instances_total": len(results),
+        "refusals": refusals,
         "instances": results,
     }
     Path(out_path).write_text(json.dumps(payload, indent=1))
@@ -208,7 +240,7 @@ def run_pair(old_path: str, new_path: str, out_path: str) -> int:
 def main() -> int:
     mode = sys.argv[1]
     if mode == "planted":
-        return run_planted(*sys.argv[2:5])
+        return run_planted(*sys.argv[2:6])
     if mode == "pair":
         return run_pair(*sys.argv[2:5])
     raise SystemExit(f"unknown mode {mode!r}")
