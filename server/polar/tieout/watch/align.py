@@ -18,6 +18,7 @@ columns); the measured cost on the biggest corpus file is in the
 lane log, taken before anything depended on this module.
 """
 
+from array import array
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -118,12 +119,22 @@ def align_lines(
 ) -> LineAlignment:
     """Order-preserving DP: score(i,j) = max(skip old, skip new,
     diagonal + sim) with the diagonal allowed only at sim ≥ threshold;
-    traceback prefers the diagonal, then skip-old."""
+    traceback prefers the diagonal, then skip-old.
+
+    Memory (the registered aligner memory round): the recurrence only
+    ever reads the previous score row, so scores live in two
+    `array('d')` rows — the full matrix of Python object pointers was
+    the term that OOM-killed V3 on the PR24 models, ~8 bytes per cell
+    across R×N cells. The move matrix stays whole for the traceback,
+    at exactly one byte per cell.
+    """
     height, width = len(old), len(new)
-    scores = [[0.0] * (width + 1) for _ in range(height + 1)]
+    above = array("d", bytes(8 * (width + 1)))
+    row_scores = array("d", bytes(8 * (width + 1)))
     moves = [bytearray(width + 1) for _ in range(height + 1)]  # 1 diag 2 up 3 left
     for i in range(1, height + 1):
-        row_scores, above = scores[i], scores[i - 1]
+        above, row_scores = row_scores, above
+        row_scores[0] = 0.0
         row_moves = moves[i]
         line = old[i - 1]
         for j in range(1, width + 1):

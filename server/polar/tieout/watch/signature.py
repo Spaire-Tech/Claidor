@@ -84,10 +84,16 @@ class Line:
     label: str
     #: (position across the line, cell signature), in order.
     cells: tuple[tuple[int, str], ...]
+    #: The signature sequence, materialized once at construction —
+    #: the aligner reads it R×N times per sheet, and rebuilding the
+    #: tuple per read was measurable churn in the memory round.
+    signatures: tuple[str, ...] = ()
 
-    @property
-    def signatures(self) -> tuple[str, ...]:
-        return tuple(signature for _, signature in self.cells)
+    def __post_init__(self) -> None:
+        if not self.signatures and self.cells:
+            object.__setattr__(
+                self, "signatures", tuple(signature for _, signature in self.cells)
+            )
 
 
 @dataclass(frozen=True)
