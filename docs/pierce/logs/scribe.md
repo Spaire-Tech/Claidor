@@ -692,3 +692,63 @@ Atelier's file). Reproduces with my changes stashed.
 and frozen; the hit-rate case on a document-fed pair (PR24 on a
 machine that reaches it, or a submission pair reachable here); same
 judge, same discipline.
+
+## 26 August 2026, fifth « go » — twelfth-sweep orders; two registrations before anything runs
+
+Orders read from the tip (round 2 merged; five lanes in). Three
+items: round 3 registered first; **the hit-rate measurement is held**
+until the lead's real deal set exists — acknowledged, nothing will be
+forced onto this corpus; and D5's registration with flood measured
+before anything reports. Both registrations follow, written and
+committed before matcher v3 existed and before any flood number was
+looked at.
+
+## D3 round 3 — registration, frozen before results
+
+**The leading-paragraph defense, joining the reference rule.** Run
+A's two survivors were numbered-paragraph prose: « *10.246* Ofgem's
+decision is that Valid Bad Debt Claims… ». The added rule, frozen: a
+candidate's token is also a reference when **it opens its line** (the
+first whitespace token), **matches the bare paragraph-number shape**
+(digits and dots only, optionally ending «.» or «:» — so « 10.246 »,
+« 2.6 », « 1: » match; « £48.9mm », « 45% », « (2,340) » never do),
+**and the next token starts with a letter** (prose follows). A line
+of numbers (« 86.4 89.6 84.6 … ») keeps its leading value eligible —
+the next token is numeric. **Registered limit:** a table line that
+prints a bare value *before* its label (« 84.2 Fast pot expenditure
+… ») will be over-excluded; on this corpus the tables put labels
+first, and the cost is counted, not hidden. Everything else stays as
+v2 froze it.
+
+**The run:** run A once more — the same 30-cell sample, the same
+recorded truth, matcher v3. The hit-rate side stays held per the
+orders. v1 → v2 → v3 on identical ground is the record the founder
+can read as one line.
+
+## D5 — registration: the unsourced-number finding, flood measured first
+
+The plan's D5 in one sentence: a typed number with no confirmable
+source, flagged as its own class — *measured for flood on real
+models first*. Registered here before any number is looked at:
+
+- **The naive candidate** is every typed numeric cell: no formula, a
+  value present. (In the product, « no confirmable source » will
+  mean no D4-confirmed link and no surviving proposal; today, with
+  zero confirmed links anywhere, the naive class is the whole typed
+  population — the honest upper bound of the flood.)
+- **The flood metric, per real model:** naive candidates, absolute;
+  as a share of all numeric cells; and the concentration — the top
+  sheets by candidate count and the share the top five sheets carry.
+  Concentration is the number that decides the finding's *shape*: a
+  class that fires tens of thousands of times per model cannot ship
+  as per-cell findings, and whether the honest unit is the cell, the
+  block, or the sheet is exactly what these numbers determine. **No
+  shape is chosen before the numbers exist.**
+- **The models:** the three real regulator models the committed
+  fetcher serves from here (ED2 PCFM V5, ED2 PCFM V3, RIIO-ET1
+  PCFM) and the two committed fixture models (the Cascade deal model
+  and the pre-app example) — the deal-shaped ones being closest to
+  the product case.
+- **The harness:** `scripts.corpus_documents_unsourced` (new, this
+  lane), read-only over the frozen reader surface; prints every
+  registered number and nothing else.
