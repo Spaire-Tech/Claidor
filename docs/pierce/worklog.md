@@ -4155,3 +4155,24 @@ rule. Results land in this log when the run completes; per the
 registration, matcher disagreement must be zero and any difference
 from the recorded 84 is attributed to measured engine drift by
 name, or the run refuses.
+
+---
+
+## 26 August — the lead takes the wheel: standing orders
+
+The founder asked to stop composing instructions (« i dont know
+what to tell them, i'd rather you make all the calls »). The direct
+path — messaging the lane sessions from here — remains broken (the
+tool-approval gate refuses before the founder can even click;
+retried today, recorded). So the calls move into the repository:
+`docs/pierce/orders/<name>.md`, one per lane, written by the lead,
+updated at every sweep. Each lane's turn begins by reading its
+orders; the founder's only word to any lane is « go ». First orders
+issued: Sentinel finishes round 2 and regenerates the baseline in
+the same push; Dynamo names `#ERR:502`, registers the volatile
+rules round, then B4 on the 18 gated files, and drafts B3's design;
+Prism registers C4's verifying-trace fingerprints (V3 is running on
+the lead's container, which holds the PR24 corpus); Scribe builds
+D2's serving routes and registers D3; Atelier wires the real Watch
+into the demo kit's delta section and inventories screenless
+capabilities for the founder.

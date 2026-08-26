@@ -245,3 +245,13 @@ tests still run on every merged tip either way.
   founder's GitHub identity as author instead of the lane's usual
   authorship, and it cites a lane-log entry that is not in the push
   — both to be regularized in part 2.
+
+- **26 Aug — standing orders become the channel** (founder: « i'd
+  rather you make all the calls »): the lead now maintains
+  `docs/pierce/orders/<name>.md` on the integration branch — each
+  lane's current orders, updated at every sweep. A lane's working
+  turn starts by fetching the integration branch and reading its
+  orders file; the founder's whole message to any lane is « go ».
+  The in-session messaging tools remain approval-blocked (retried
+  today, refused before a prompt could render), so the founder
+  stays the wake signal and nothing else.
