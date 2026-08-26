@@ -135,3 +135,75 @@ existing finding moves.
 ---
 
 ## Results (appended after the registration, never edited into it)
+
+**Planting (26 Aug):** 23 planted of 30 drawn — the harness refused
+shared masters and cells without a cached value, recorded per site
+in the truth files.
+
+**Planted recall (26 Aug):**
+
+| class | planted | caught (any rule) | by typed-over-edge |
+|---|---|---|---|
+| edge-tail | 15 | 15 | 5 |
+| edge-head | 8 | 4 | 0 |
+| **overall** | **23** | **19** | **5** |
+
+Run to ground, catch by catch: the ten tails and four heads caught
+under `typed-over-formula` are the **island pass** seeing the same
+cell from the orthogonal direction (« typed into a column that is
+otherwise calculated ») plus one interior catch across a bridged
+gap — and the registered no-double-claim dedup then rightly kept
+this rule silent there. All four head misses verified at the cells:
+`boundary: None` on every one — the asymmetric boundary guard's
+registered suppression, the predicted price, no bug. The new rule's
+own territory is the cells no other pass can see, and there it went
+**5 for 5**: every tail with no column witness was caught by
+`typed-over-edge` and nothing else.
+
+**False-positive price (26 Aug):** ten new findings across six BPFM
+files (1–3 per file, under the flood line), every one hand-read at
+the cells, and every one the same authoring pattern: **a typed 1 at
+the head of an index series**. `MainInputs` rows head cumulative
+`PRODUCT(1+…)` indices with their typed base-period 1; one deflator
+chain (`=AU466/(1+AU530)` walking right) *reads* its typed 1 — the
+horizontal seed, literally; the Cadent pair heads a DNO-average
+index row whose base periods are 1 by construction. Ten of ten are
+correct index-base authoring. Noise.
+
+## Round-1 verdict (26 Aug): REFUSED, twice over, by the registration's own criteria
+
+Criterion 2 fails: zero of ten corpus findings are worth showing.
+Criterion 3's letter also fails — 5 of 15 tails by the new rule —
+and the examination shows the letter measured the wrong
+denominator: the registration's own no-double-claim guard hands any
+cell the island or interior pass sees to that stronger witness, so
+« majority of all tails » counts exactly the cells this rule is
+built to leave alone. The two clauses of one registration pull
+against each other; recorded as written, not argued away.
+
+## Round 2, registered now, before it is measured
+
+Three changes, nothing else:
+
+1. **The identity guard**: the zero exemption widens to a typed
+   value of 0 or ±1 at either edge — the multiplicative identity is
+   how an index row spells its base period, witnessed ten of ten on
+   this corpus. A genuinely typed-over 1 goes unreported; the
+   quietness is the product, and the cost is stated.
+2. **The horizontal seed guard**: a typed edge cell that the
+   adjacent stretch formula *reads* (the typed cell among its
+   precedents) is the series' own starting value whatever its
+   number — the vertical counter-seed exemption, turned 90°, the
+   `AU466` deflator witnessed live.
+3. **Criterion 3, re-registered with the denominator the dedup
+   implies**: the edge-tail class must be caught in the majority by
+   `typed-over-edge` **among tails no other rule catches** — the
+   marginal recall, which is this rule's actual territory. This
+   round's measurement of that number: 5 of 5.
+
+**Prediction (written before running):** the ten corpus findings
+vanish and the gate diff is empty. Planted marginal recall holds at
+5 of 5 — the one planted tail whose kept value is exactly 1
+(`C_Index!BJ49`) is silenced by the identity guard, and it was
+never in the marginal set (the island pass catches it). Any other
+corpus difference, or any marginal-recall drop, refuses round 2.
