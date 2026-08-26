@@ -1,17 +1,15 @@
-# Orders — Dynamo (updated 26 Aug, tenth sweep)
+# Orders — Dynamo (updated 26 Aug, eleventh sweep)
 
-1. Name the `#ERR:502` construct: pull the erroring cells' formulas
-   from the three final BPFMs, identify the function or feature
-   LibreOffice rejects, give it its denylist category with the
-   evidence in your log (probe like you did SINGLE).
-2. The volatile-functions rules round: registered first (TODAY, NOW,
-   RAND, RANDBETWEEN, RANDARRAY prescan; their downstream cone
-   reported separately, never as fidelity loss), then re-derive the
-   H7 match rates under the new rules as a separate table — round-2
-   numbers stand.
-3. Then B4's laws on the 18 gated files: planted defects per class
-   first (your registered laws), catch rate and false-positive price
-   per class. Heavy jobs alone, as ever.
-4. In your log, when you get there: a short written design for B3
-   (the Graph-API arbiter through the existing Microsoft connector)
-   for the lead to review — four corpus files wait on it.
+B4 pilot merged — 3/3 with named cells, zero noise, honest law
+narrowing on record.
+
+1. The next selector round you named: proportionality and scale
+   invariance on the H7 debt-indexation pair — selector map and
+   plants quoted before any run, as you did for ED2.
+2. Then widen B4: the remaining gated files, class by class, catch
+   rate and false-positive price per class — the plan's B4 DONE
+   needs the hardcode-in-the-tail class measured across hosts, not
+   one pilot.
+3. Your B3 design: the lead reads it next sweep. Do not build B3
+   yet — it needs the Microsoft connector surface, which is shared
+   ground; the lead will route it after review.

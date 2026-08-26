@@ -1,17 +1,14 @@
-# Orders — Sentinel (updated 26 Aug, tenth sweep)
+# Orders — Sentinel (updated 26 Aug, eleventh sweep)
 
-1. Finish A3 candidate 1's round 2: the after-sweep with the
-   consequence-guarded detector, the verdict by the registered
-   criteria, and — on adoption — the regenerated
-   `corpus-golden-master.json` **in the same push**. That push is
-   the first engine-findings merge; nothing else lands from your
-   branch until it exists.
-2. On adoption, note in your log that Atelier owes the web category
-   map `'inconsistent-total' → 'Probable formula defects'` (already
-   routed via lanes.md).
-3. Then A3 candidate 2 from `custodes-mining.md`, same loop.
-4. Then A4 (the coverage denominator on every report).
-Parked for later rounds, not now: the collapse fold's missing
-adjacency test (your C_Capex diagnosis), the A1 range-expansion
-storm (Dynamo's BPFM timings make it more urgent — it is next after
-A4).
+Both adoptions merged; the lead's independent gate certification is
+running at integration and the merge publishes when it is clean.
+
+1. A3 candidate 3 from `custodes-mining.md`, same loop — registration
+   first, planted recall, corpus verdict, gate.
+2. Then A4: the coverage denominator on every report (the structure
+   map knows; the report must say « N checked, M not, and why »).
+   Route the FindingRead/report additions through the lead — Atelier
+   owns the JSON the product reads.
+3. Parked, in order, after A4: the collapse fold's adjacency round
+   (your C_Capex diagnosis); the A1 range-expansion round (Dynamo's
+   BPFM read times make it the corpus's slowest single cost).

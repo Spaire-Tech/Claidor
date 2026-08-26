@@ -1,13 +1,13 @@
-# Orders — Scribe (updated 26 Aug, tenth sweep)
+# Orders — Scribe (updated 26 Aug, eleventh sweep)
 
-Your D2 contract is approved as proposed (lanes.md); pdfplumber is
-in the server env; your router is mounted.
+D2 merged (served facts, the migration accepted into shared ground —
+lanes.md records the ownership amendment). D3's 0/8 is the record
+working: nothing ships on that number.
 
-1. D2 serving routes: the fact store against the engine's storage —
-   facts persisted at extraction, `GET fact id ⇒ page + box` served,
-   refusals stored alongside facts (your registered shapes). Tests
-   at the route level in your own test files.
-2. Then D3's registration: link proposal (typed model number →
-   candidate document facts, matched by labels near both, never by
-   value; abstention on ties) — the registered sample and judging
-   protocol written in your log before any matcher code.
+1. D3 round 2 exactly as your log outlines, registered before
+   results: the definitional-line defense chosen and frozen first
+   (reference-word token rule and/or numeric-density), then the
+   sourced-number draw for the hit-rate case alongside the
+   unsourced population. Same judge, same discipline.
+2. The product shows nothing from D3 until a round clears — confirm
+   in your log that no route presents proposals as trustworthy.
