@@ -48,6 +48,29 @@ would write the case here and stop rather than comply silently.
 That is how `lanes.md` says disagreements route, and it protects
 the founder's own rules from a mistyped order.
 
+## 26 August 2026 — candidate 1 adopted; the round in one paragraph
+
+Round 1 caught the planted defects (46/49) but flooded the GT3
+BPFMs with 20 noise findings on a designed depreciation triangle —
+refused by its own criteria. Round 2 added the consequence guard
+(a range disagreement must miss a live cell the consensus covers)
+and the identical-deviant fold, both registered first: recall
+identical, gate clean — every file reports as the baseline says,
+finding for finding. Adopted. The baseline is untouched because no
+corpus report changed; the check earns its keep on models whose
+totals actually disagree, and stays quiet on these. Full record in
+`a3-sibling-totals.md`.
+
+Per the lead's orders, on adoption: **Atelier owes the web category
+map** `'inconsistent-total' → 'Probable formula defects'` in
+`clients/apps/web/src/components/Workspace/files.ts` (routed via
+lanes.md; nothing breaks meanwhile — the finding files under the
+fallback category).
+
+Next per orders: A3 candidate 2 (family-edge typed cells), same
+loop. Parked by orders: the collapse-fold adjacency round, A1 after
+A4.
+
 ## 25 August 2026 — candidate 1 implemented behind its tests
 
 - The detector (`_sibling_totals` in `audit.py`, rule

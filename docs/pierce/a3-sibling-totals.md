@@ -285,3 +285,40 @@ empty in its column would now be silenced by its own guard — any
 off-by-one drop is read by hand and reported. The adoption criteria
 are unchanged from the registration. Any other corpus difference
 refuses round 2 the same way round 1 was refused.
+
+---
+
+## Round-2 verdict (26 Aug): ADOPTED — the prediction held exactly
+
+**Planted recall, re-measured on the same planted files:** identical
+to round 1, finding for finding — 46 of 49 caught, plugs 9/11 by
+`inconsistent-total` alone, the same three explained misses. The
+consequence guard cost nothing on the plants.
+
+**The decisive sweep: gate clean.** All 27 files report identically
+to the committed baseline, finding for finding. The 20 triangle
+findings are gone; nothing else moved; no new finding appeared.
+
+Against the registered criteria: (1) no existing finding moved —
+the diff is empty; (2) zero new corpus findings to judge — no flood,
+nothing to hand-read; (3) the plug class is caught by the new rule
+alone, 9 of 11; (4) the conftest-free tieout tests are green (413
+passing, plus the 14 check tests). **Adopted.** The check ships
+quiet on this corpus — the quietness is the product — and its value
+is the planted recall: on a model whose totals rows genuinely
+disagree, the four mining shapes are caught, by this rule where the
+row passes cannot see them and by the row passes where they can.
+
+**On the baseline:** adoption changes no report on this corpus, so
+`corpus-golden-master.json` is untouched — there is no findings
+change to regenerate it for, and a timings-only rewrite would be
+churn pretending to be review. The same-commit rule binds the day a
+corpus report actually moves.
+
+**Carried forward, named:** the over-reach limitation (a range
+disagreement that only widens over live cells stays silent — the
+triangle's spelling); single-row deviant ranges fall out of
+membership; the collapse fold's missing adjacency test (the
+C_Capex diagnosis) is its own registered round, parked by the
+lead's orders; `SUM` only until another function earns its
+evidence.
