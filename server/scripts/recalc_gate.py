@@ -101,6 +101,9 @@ def sweep_file(path: Path, document_timeout: float = 1800.0) -> dict[str, Any]:
         }
         for diff in report.mismatches[:MISMATCH_SAMPLE]
     ]
+    record["volatile_roots"] = report.volatile_roots[:25]
+    record["volatile_roots_count"] = len(report.volatile_roots)
+    record["volatile_cone"] = report.volatile_cone
     record["no_stored_value"] = len(report.no_stored_value)
     record["not_computed"] = len(report.not_computed)
     record["not_computed_sample"] = report.not_computed[:10]

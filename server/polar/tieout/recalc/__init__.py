@@ -23,6 +23,7 @@ The pieces, in the order the plan names them:
 from .denylist import DenylistHit, Route, prescan
 from .gate import CalcSettings, CellDiff, FileFidelity, gate_file, iterative_cells
 from .pool import Calculator, CalculatorError, FakeCalculator, RecalcResult, WorkerPool
+from .volatile import volatile_cone
 
 __all__ = [
     "CalcSettings",
@@ -38,4 +39,5 @@ __all__ = [
     "gate_file",
     "iterative_cells",
     "prescan",
+    "volatile_cone",
 ]

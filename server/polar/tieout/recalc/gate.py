@@ -193,6 +193,13 @@ class FileFidelity:
     refusals: list[DenylistHit] = field(default_factory=list)
     #: Where a refused file goes: the arbiter, or an honest no.
     route: Route | None = None
+    #: Formula cells calling TODAY/NOW/RAND-class functions — their
+    #: stored value is the authoring moment's, so disagreement is not
+    #: fidelity loss (the registered volatile rules, 26 Aug).
+    volatile_roots: list[str] = field(default_factory=list)
+    #: Size of the excluded cone: the roots plus every formula cell
+    #: downstream of one. Reported, never counted as compared.
+    volatile_cone: int = 0
 
     @property
     def verdict(self) -> str:
@@ -240,6 +247,12 @@ def gate_file(
     if report.refusals:
         return report
 
+    from .volatile import volatile_cone
+
+    roots, cone = volatile_cone(cells)
+    report.volatile_roots = sorted(roots)
+    report.volatile_cone = len(cone)
+
     formula_cells = {
         ref: cell
         for ref, cell in cells.items()
@@ -253,6 +266,8 @@ def gate_file(
     )
 
     for ref, cell in formula_cells.items():
+        if ref in cone:
+            continue
         stored = getattr(cell, "value", None)
         if stored is None:
             report.no_stored_value.append(ref)

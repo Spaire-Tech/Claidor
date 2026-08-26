@@ -454,3 +454,78 @@ Next in the lane, in order: name the `#ERR:502` construct from the
 erroring cells' formulas; the volatile-functions rules round
 (registered before any number moves); then B4's laws on the 18
 gated files — planted defects first, per the standing registration.
+
+## 26 August 2026 — standing orders acknowledged
+
+The lead's standing arrangement is in force for this lane: at the
+start of every working turn, fetch the integration branch and read
+`docs/pierce/orders/dynamo.md` — the current orders, maintained at
+every sweep. Do what they say, push to `swens/dynamo`, stop. The
+founder's « go » means exactly that. This entry is the requested
+confirmation; the tenth-sweep orders (name the 502; the volatile
+rules round; then B4 on the 18; a B3 design note) are the work now
+in progress, in that order.
+
+## 26 August 2026 — the volatile rules, registered before any number moves
+
+Per orders item 2, the rules first, committed before any re-derived
+number is looked at:
+
+- **The volatile set**, exactly as ordered: TODAY, NOW, RAND,
+  RANDBETWEEN, RANDARRAY. A stored value under any of these is the
+  authoring moment's answer; a recalculation's is this moment's.
+  Both are right, so their disagreement is **not fidelity loss** and
+  must never be counted as such — nor silently dropped.
+- **The cone**: a volatile *root* is a formula cell whose own
+  formula calls a volatile function (tokenized, same scanner
+  discipline as the denylist — never substring). The *cone* is the
+  roots plus every formula cell whose precedent chain reaches a
+  root (transitive dependents over the reader's own precedents).
+- **The gate's arithmetic changes thus**: cone cells are excluded
+  from compared/matched/mismatch counts and reported in their own
+  bucket — count of roots, count of cone cells, and the roots
+  named. A mismatch outside the cone still fails the file exactly
+  as before. Verdict logic is otherwise unchanged.
+- **What gets re-derived**: the two H7 PCM match rates, as a
+  separate table beside (never replacing) the round-2 numbers.
+  Expected under the new rules: the `Version log`/`O_FinStats`
+  TODAY-class mismatches move to the volatile bucket; whatever
+  numeric residue remains is the honest open question.
+
+## 26 August 2026 — B3, the arbiter: a design for the lead (orders item 4)
+
+Four corpus files wait on real Excel (the SINGLE cone), and every
+gate fail needs an adjudicator. The design, for review — no code
+until the lead approves:
+
+- **Shape: an `ArbiterCalculator` behind the same frozen
+  `Calculator` protocol.** `start` = ensure a token (the existing
+  delegated flow in `polar/connector/graph.py` — its `GraphClient`
+  already does exchange/refresh/drives/download); `recalculate` =
+  upload the file to a dedicated arbiter folder in the connected
+  drive (resumable upload session — the BPFMs are ~40 MB),
+  `workbook/createSession` with `persistChanges: false`, POST
+  `workbook/application/calculate` with `calculationType:
+  FullRebuild` (the arbiter's whole point is Excel's own fresh
+  answer), then per worksheet read `usedRange` values+formulas in
+  row blocks (the API's ~4 MB payload cap makes chunking
+  non-optional), map to `Sheet!Ref`, close the session, delete the
+  upload. Same protocol ⇒ `gate_file` and the sweep harness run
+  unchanged with real Excel as the engine string.
+- **Two uses, kept distinct in reports:** (1) *certification* of a
+  file LibreOffice cannot honestly compute (engine-gap routes) —
+  the arbiter's stored-vs-Excel-recalc diff is that file's fidelity
+  report; (2) *adjudication* of a LibreOffice mismatch — a
+  three-way read (stored / LibreOffice / Excel-now) that names
+  whose number moved.
+- **What it needs that we lack, for the lead/founder to decide:**
+  the connector's scopes are read-only today (`Files.Read.All`);
+  the arbiter needs `Files.ReadWrite.All` (upload + workbook
+  session), which is a consent-screen change on the connected
+  account, and a designated Microsoft 365 account/drive to host the
+  arbiter folder. No new Python dependency (httpx is present).
+- **Honest limits, from the toolbox and kept:** 5-minute sessions,
+  one workbook at a time, undocumented throttling — the arbiter
+  adjudicates and certifies the few; it is never the batch engine.
+  Every arbiter result names real Excel as its engine; none exists
+  until the scopes and account exist.
