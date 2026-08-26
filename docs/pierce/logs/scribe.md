@@ -482,3 +482,70 @@ change **before any result exists**, named here, with the evidence:
   A number the documents state in a form outside those variants
   (rescaled to £m and rounded, say) could be missed, which would
   over-credit abstentions. Counted as a limit, not hidden.
+
+## D3 round 1 — measured. Proposal precision: 0 of 8. The matcher does not ship.
+
+The round ran exactly as registered: harness
+`scripts.corpus_documents_link_round` (committed), two phases, truth
+recorded before any matcher output was looked at. Population:
+**22,693 typed cells** in ED2-PCFM-V5; candidates: **7,836 numbers**
+extracted from the three paired Ofgem PDFs; 30 cells drawn with seed
+314159. Full verdicts: `docs/pierce/scribe-d3-round1-verdicts.json`.
+
+**The ground truth first**, judged from the documents with value
+search as the aid: **none of the 30 drawn numbers is stated by the
+documents** as the quantity the cell holds. Every value hit was page
+furniture, a date, a licence-condition number, or a different
+quantity under a different label. That is the population talking: a
+22,693-cell PCFM's typed cells are overwhelmingly per-licensee,
+per-year machine inputs that a narrative determination never quotes.
+So this round measured the side D5 cares about — what the matcher
+does when there is **no source to find** — and not the sourced-number
+side, which needs its own draw (below).
+
+**The registered table:**
+
+| verdict | count |
+|---|---|
+| true proposal | 0 |
+| false proposal | **8** |
+| true abstention | 22 |
+| missed | 0 |
+
+Proposal precision **0/8 = 0%**. Abstention rate 22/30. A perfect
+matcher on this sample abstains 30 times; mine proposed 8 times and
+was wrong all 8.
+
+**The failure class, named from the evidence.** Seven of the eight
+false proposals are one shape — the Financial Handbook's
+variable-definition table, lines like:
+
+    CROTREt  Cyber Resilience OT Re-opener  SpC 3.2
+    PCBt     PCB Interventions              SpC 3.5
+
+The line names the exact PCFM variable the cell feeds — label
+coverage 100%, the matcher's whole scoring signal — but the only
+number on the line is a **licence-condition cross-reference**
+(« SpC 3.2 »), not a quantity. The eighth is a section heading. The
+matcher cannot currently tell « the line that defines X » from « the
+line that states X's value », and the never-by-value rule (kept,
+rightly) means it cannot use the value to notice. **A matcher that
+links a cell to a paragraph number is worse than no matcher**, so:
+D3 does not ship on this number; the route stays, but nothing in the
+product may present its proposals as trustworthy until a round
+clears.
+
+**What round 2 must contain, to be registered before its results:**
+(1) a defense against definitional lines that does not touch values —
+candidates: treating a number token immediately following
+reference words (« SpC », « Section », « para », « Table », « page »)
+as a reference rather than a fact at extraction or scoring time;
+and/or requiring a proposed fact's line to be numeric-dense (a table
+row of quantities) — each to be chosen and frozen *first*; (2) a
+**sourced-number draw**: this round's population honestly measured
+the unsourced case; the hit-rate case needs a registered sample drawn
+from cells whose quantities the documents *do* state (the Finance
+Annex's WACC and allowed-revenue tables are stated-by-construction),
+found by value search *for sampling only* — sampling by value is
+legitimate exactly where scoring by value is not. (3) The PR24 round
+stays owed on a machine that reaches Ofwat.
