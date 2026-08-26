@@ -769,3 +769,49 @@ foundation. Next per the orders' item 2: tier 2's registration
 (randomized differential evaluation over the suspects' cone of
 influence, standing on Dynamo's `recalc/`), a new round, its own
 registration first.
+
+## Aligner memory round — registration (REGISTERED BEFORE RESULTS)
+
+Ordered by the lead after V3's first real run: all sixteen PR24
+pairs OOM-killed, localized to `scripts.watch_align` at 13.6 GB on
+the AFW pair (~1.0M populated cells, 51 sheets — a shape neither
+registered cost host produced). This container lacks the corpus;
+per the orders, the failure shape is synthesized.
+
+**Suspect, to be confirmed by profile, not guessed:** the DP in
+`align_lines` allocates full `(R+1)×(N+1)` score and move
+matrices. The score matrix is lists of Python floats — every cell
+is assigned during the recurrence, so every cell materializes a
+float object (~32 bytes with its pointer): a 30,000-row data sheet
+alone costs ~29 GB, while the recurrence only ever reads the
+previous row. Secondary suspect: `Line.signatures` is a property
+that builds a fresh tuple on every similarity call — R×N tuple
+churn.
+
+**The instrument** (`scripts/watch_membench.py`, committed with
+this registration): synthetic grids in the failure's shape — R
+rows × 60 columns, half labelled / half not, 5% edited so the
+identity shortcut cannot flatter the number — aligned in a child
+process whose peak RSS is read from `resource`; R sweeps
+{2,000, 5,000, 10,000}. The profile stands on the sweep's growth
+curve, before and after.
+
+**The fix, designed now, applied only if the profile confirms:**
+two-row `array('d')` score storage (the recurrence unchanged,
+byte-compact), the move matrix already-compact bytearrays kept
+whole for traceback (exactly R×N bytes), and `Line` storing its
+signature tuple once at construction instead of rebuilding it per
+call. Identical recurrence, identical tie-breaks — the results
+cannot move by construction, and the gate checks it anyway.
+
+**The gate, fixed:** (a) all watch unit tests green; (b) the C2
+planted-edit harness re-run on both registered sheets must
+reproduce **exactly 21/24 and 21/24** with the same per-instance
+verdicts; (c) the v4→v5 full-model alignment output must be
+identical to the current committed behaviour, timings aside. Any
+deviation fails the round. **Reported:** peak RSS per sweep point
+before and after, the growth term named, and the projected peak on
+the lead's worst FM02 sheet once its dimensions are known (or the
+measured one, once the lead re-runs V3).
+
+Tier 2's registration follows this round, per the orders.
