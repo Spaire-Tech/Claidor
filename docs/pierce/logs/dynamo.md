@@ -784,3 +784,40 @@ consolidation flags `AR!AR58`; zero-input tail hardcode →
 zero-input flags `AR!AR33`; control clean. Eleven files, 33 plants,
 22 control law-runs. **No result from this round exists as this is
 written.**
+
+## 26 August 2026 — ED2 family run 1: 33/33 catches, and a selector
+defect of my own, caught by its control
+
+The run (eleven files, ~9.5 coarse minutes each): **all 33 planted
+defects were caught at their named cells**, and all eleven
+consolidation control runs were clean. But the six v1–v3 files
+showed zero-input **control violations** — `Legacy!AR85`/`AR!AR33`
+read 1.2356 with the supposed inputs zeroed — and the trace shows
+the defect is **mine, not the models'**: the DNO-sheet licence-fee
+input rows drift by version (v1: AP382/383, v2–v3: AP385/386,
+v4–v5: AP384/385, each found by chasing `Legacy!AP83/84` through
+`SelectedInputs` per file). My anchor verification checked that
+`Legacy!AR85` computes from AP83/AP84 but assumed the input rows —
+so on v1–v3 I zeroed the wrong constants (on v2–v3, the payments
+row but not the allowance). The residual was the un-zeroed genuine
+input.
+
+Scored honestly, run 1 therefore reads:
+
+- **Valid — v4/v5 quintet**: 15/15 catches at named cells, 0 false
+  positives across 10 control law-runs.
+- **Valid — consolidation on all eleven files** (it uses no input
+  map): 22/22 catches (`AR!AR53`, `AR!AR58` per file), 11/11
+  controls clean.
+- **Invalid — zero-input on v1–v3** (6 files): the law executed
+  correctly on wrong inputs; its catches there are contaminated and
+  are not counted. This is the control doing its registered job —
+  the false-positive check caught the harness, which is exactly the
+  kind of error it exists to catch.
+
+The verification standard is upgraded in the harness: input rows
+are chased through the model's own formulas per file, never carried
+by assumption. **Corrected re-run registered now**: the six v1–v3
+files, corrected input rows (v1: 382/383; v2–v3: 385/386), same
+plants, same predictions, controls expected clean. No result from
+the re-run exists as this is written.
