@@ -179,6 +179,18 @@ def _plant(
     base: Path, sheet_name: str, kind: str, at_row: int, at_column: int, out: Path
 ) -> Planted:
     book = openpyxl.load_workbook(base)
+    planted = _apply(book, sheet_name, kind, at_row, at_column)
+    book.save(out)
+    _reinject_values(base, out, sheet_name, planted)
+    return planted
+
+
+def _apply(
+    book: openpyxl.Workbook, sheet_name: str, kind: str, at_row: int, at_column: int
+) -> Planted:
+    """One declared edit applied to an open workbook — no save, so a
+    caller (the stealth harness) can stack a second edit in the same
+    session before the one save and value re-injection."""
     sheet = book[sheet_name]
 
     if kind == "insert_blank_row":
@@ -252,8 +264,6 @@ def _plant(
                     cell.value = "=SUM(" + formula[1:] + ",0)"
                     done = True
 
-    book.save(out)
-    _reinject_values(base, out, sheet_name, planted)
     return planted
 
 
