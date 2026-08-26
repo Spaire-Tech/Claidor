@@ -43,14 +43,22 @@ Three screens, in order, one shipped whole before the next:
    « See all versions »; 4 endpoint tests
    (`TestTheVersionDelta`); screenshots beside the log in
    `logs/atelier/`. Route suite 73 green at push time.
-2. **Source viewer — NEXT**: click a typed number, see the page
-   with the highlight box. `POST /v1/chain/extract` and the fact
-   store are live (Scribe's D2, mounted at `/v1/chain`). Nothing
-   started.
-3. **Recalculation mark**: « validated by recalculation » on report
-   and model page, with its honest refusal face.
+2. **Source viewer — SHIPPED in this push** (agent-designed):
+   `GET /artifacts/{id}/page/{page}` (PNG via pdfplumber's own
+   rendering at 144dpi, fresh, honest 404s); DocPanel gains
+   « Every number, cited to its page » for source PDFs — the
+   Chain's facts as rows, click one → the page with the box ringed
+   (percent coords off page points), « Read the document » for an
+   unread store, refusals in words. 4 route tests
+   (`TestTheSourcePage`); suite 77 green; screenshots in
+   `logs/atelier/source-viewer-*.png`.
+3. **Recalculation mark — NEXT**: « validated by recalculation » on
+   report and model page, with its honest refusal face.
    `polar.tieout.recalc.gate.gate_file` renders the verdict; no
-   endpoint yet. Nothing started.
+   endpoint yet. Nothing started. NOTE: the gate needs LibreOffice
+   (`dev/setup-libreoffice` exists, lead's) — install it in the
+   container before wiring, and remember heavy recalc jobs run
+   alone (OOM lesson).
 
 Mark every agent-designed screen in the log; the founder reviews.
 

@@ -720,6 +720,59 @@ class TieOutService:
             "report": report,
         }
 
+    async def page_image(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        page: int,
+    ) -> bytes | None:
+        """One page of a stored source PDF, as pixels.
+
+        The source viewer's ground: the Chain's facts carry page
+        numbers and boxes in the PDF's own point coordinates, and this
+        renders the page those coordinates live on, at 2× for legible
+        text. Computed on request from the stored bytes, cached
+        nowhere — the same posture as every other derived answer here.
+
+        None when the artifact is not this deal's or not a PDF — the
+        caller turns that into the same 404 as everywhere. A page
+        outside the document raises :class:`ValueError` with the honest
+        range; missing bytes raise :class:`storage.FileNotKept` with
+        the upload-it-again sentence.
+        """
+        import io
+
+        #: The Chain's own approved reader (lanes.md, lead decision) —
+        #: its rendering backend included. Nothing here imports a
+        #: transitive dependency directly.
+        import pdfplumber
+
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.get_artifact(artifact_id)
+        if (
+            artifact is None
+            or artifact.dossier_id != dossier_id
+            or not artifact.filename.lower().endswith(".pdf")
+        ):
+            return None
+        payload = storage.fetch(artifact)
+
+        with pdfplumber.open(io.BytesIO(payload)) as document:
+            total = len(document.pages)
+            if page < 1 or page > total:
+                raise ValueError(
+                    f"{artifact.filename} has {total} page"
+                    f"{'' if total == 1 else 's'}; there is no page {page}."
+                )
+            #: 144dpi is 2× the PDF's own 72dpi points — the facts' box
+            #: coordinates scale onto these pixels by exactly ×2.
+            image = document.pages[page - 1].to_image(resolution=144).original
+            buffer = io.BytesIO()
+            image.save(buffer, format="PNG")
+            return buffer.getvalue()
+
     async def run_audit(
         self, session: AsyncSession, *, dossier_id: UUID, user_id: UUID | None
     ) -> CheckRun:

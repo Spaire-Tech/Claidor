@@ -1968,6 +1968,92 @@ class TestTheVersionDelta:
 
 
 @pytest.mark.asyncio
+class TestTheSourcePage:
+    """The source viewer's ground: a stored PDF's page, as pixels.
+
+    The Chain's facts cite pages and boxes; this route serves the
+    pixels those citations sit on. What matters at the route: the deal
+    posture, the honest out-of-range sentence, and that a non-PDF
+    reads as not found rather than half-rendering.
+    """
+
+    async def _source(
+        self, session: AsyncSession, save_fixture: SaveFixture, owner: User
+    ) -> tuple[Dossier, Artifact]:
+        deal = await _deal_for(session, save_fixture, owner)
+        source = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.source,
+            filename="cascade_accounts.pdf",
+            payload=(CASCADE / "cascade_accounts.pdf").read_bytes(),
+            user_id=owner.id,
+        )
+        await session.flush()
+        return deal, source
+
+    @pytest.mark.auth
+    async def test_a_page_renders_as_png(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        _, source = await self._source(session, save_fixture, user)
+        response = await client.get(f"/v1/tieout/artifacts/{source.id}/page/1")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "image/png"
+        assert response.content.startswith(b"\x89PNG")
+
+    @pytest.mark.auth
+    async def test_a_page_outside_the_document_says_the_range(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        _, source = await self._source(session, save_fixture, user)
+        response = await client.get(f"/v1/tieout/artifacts/{source.id}/page/999")
+        assert response.status_code == 404
+        assert "no page 999" in response.json()["detail"]
+
+    @pytest.mark.auth
+    async def test_a_model_is_not_a_page_source(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        model = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        response = await client.get(f"/v1/tieout/artifacts/{model.id}/page/1")
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_a_strangers_page_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        _, source = await self._source(session, save_fixture, stranger)
+        response = await client.get(f"/v1/tieout/artifacts/{source.id}/page/1")
+        assert response.status_code == 404
+
+
+@pytest.mark.asyncio
 class TestTheMarkedUpModel:
     """« Download the marked-up model », through HTTP.
 

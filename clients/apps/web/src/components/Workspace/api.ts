@@ -566,6 +566,49 @@ export interface Version {
   counts: Record<string, unknown>
 }
 
+/** Where a fact sits on its page, in the PDF's own point coordinates
+ *  — position as fractions of `page_width`/`page_height`, so a screen
+ *  scales without knowing the render resolution. */
+export interface FactBox {
+  x0: number
+  top: number
+  x1: number
+  bottom: number
+}
+
+/** One extracted number, cited to a page and a box — the Chain's D2
+ *  contract. `line` is the sentence around it, so a list can say what
+ *  the number is *of* without paraphrasing the document. */
+export interface ChainFact {
+  id: string
+  document_id: string
+  document_version_id: string
+  page: number
+  page_width: number
+  page_height: number
+  box: FactBox
+  text: string
+  value: number
+  line: string
+  extractor: { name: string; version: string }
+}
+
+/** A page the extractor refused, and why, in words — coverage said
+ *  out loud, never a silent gap. */
+export interface ChainRefusal {
+  document_version_id: string
+  page: number
+  reason: string
+}
+
+/** One document version's whole record: facts, refusals, coverage. */
+export interface DocumentFacts {
+  document_id: string
+  document_version_id: string
+  facts: ChainFact[]
+  refusals: ChainRefusal[]
+}
+
 /** One reviewed change from the Watch — one authoring decision where
  *  possible. `kind` is one of its eight classes, already ranked by
  *  the engine; the screen renders in order and never re-ranks. */
@@ -1186,6 +1229,44 @@ export class TieOutApi {
   ): Promise<VersionDelta | null> {
     const query = against ? `?against=${against}` : ''
     return this.call(`/artifacts/${artifactId}/delta${query}`)
+  }
+
+  /** A source document's stored record — every extracted number with
+   *  its page and box, refusals alongside. Both lists empty usually
+   *  means the document has not been read into the Chain yet. */
+  documentFacts(artifactId: string): Promise<DocumentFacts> {
+    return this.at(`/v1/chain/documents/${artifactId}/facts`)
+  }
+
+  /** Read a stored source PDF and write its facts down — idempotent,
+   *  so re-reading replaces the earlier extraction wholesale. */
+  extractDocument(artifactId: string): Promise<DocumentFacts> {
+    return this.at(`/v1/chain/documents/${artifactId}/extract`, {
+      method: 'POST',
+    })
+  }
+
+  /** One page of a stored source PDF as pixels, for the viewer. The
+   *  caller owns the object URL and revokes it when done. */
+  async pageImage(artifactId: string, page: number): Promise<string> {
+    const token = this.options.token?.() ?? null
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/artifacts/${artifactId}/page/${page}`,
+      {
+        credentials: 'include',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      },
+    )
+    if (!response.ok) {
+      const problem = (await response.json().catch(() => null)) as {
+        detail?: string
+      } | null
+      throw new ApiError(
+        response.status,
+        problem?.detail ?? 'something went wrong',
+      )
+    }
+    return URL.createObjectURL(await response.blob())
   }
 
   /** What travels with this file that is not on its screen. */

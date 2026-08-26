@@ -372,3 +372,51 @@ zero page errors. Frontend typecheck, eslint and prettier clean.
 map, not diary; updated with every push from now on.
 
 Next per orders: the source viewer, then the recalculation mark.
+
+## 27 August 2026 — the source viewer, shipped whole (agent-designed)
+
+The second screen of the design unlock: the click-a-number,
+see-the-highlighted-page moment, built on the Chain exactly as it is
+served — the fact store's pages and boxes, the extractor's refusals
+in words, and nothing invented above them.
+
+**The endpoint (mine).** `GET /artifacts/{id}/page/{page}`: one page
+of a stored source PDF as pixels, rendered fresh at 144dpi through
+`pdfplumber`'s own rendering (the Chain's approved reader — no
+transitive dependency imported directly), cached nowhere. A non-PDF
+answers the same 404 as a stranger's artifact; a page outside the
+document answers with the honest range (« has 2 pages; there is no
+page 999 »); dropped bytes answer the storage sentence. Four route
+tests (`TestTheSourcePage`); **route suite 77 passed.**
+
+**The screen.** Inside the founder's document panel (the `docOpen`
+design), a new section for source PDFs, agent-designed:
+« Every number, cited to its page ». The Chain's facts as rows — the
+number in mono, the document's own line beside it, the page — and
+clicking one renders that page with the cited box **ringed in the
+accent blue**, scaled by the page's own point size so the ring lands
+at any resolution. The page card says its own honesty line
+(« rendered from the stored file, the cited box ringed »). A document
+the Chain has not read yet says so and offers « Read the document »
+(the chain's idempotent extract, a deliberate button, never
+automatic); refused pages are listed in the extractor's own words
+(« p. n not read — … »). Page pixels are cached per page and revoked
+when the panel moves on.
+
+**Proven on the real stack, screenshots beside this log**
+(`logs/atelier/source-viewer-facts.png`, `source-viewer-highlight.png`):
+the cascade accounts PDF read into the Chain (24 facts), the panel
+opened from the Sources tab, a fact clicked, and the page renders
+with « 31 » ringed inside « For the year ended 31 December 2025 » —
+every drive assertion green, zero page errors. Typecheck and prettier
+clean; the one new eslint warning class matches the panel's own
+pre-existing reset idiom (two identical warnings predate this
+change).
+
+One observation for Scribe, via the lead if it matters: the
+extractor reads bare day-numbers in dates (« 31 » in a date line) as
+facts. The viewer shows the store honestly either way; whether a
+date's day belongs in the fact store is the Chain's call, not a
+screen's.
+
+Next per orders: the recalculation mark.

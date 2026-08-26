@@ -26,10 +26,12 @@
  * because the contract does.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ago } from '../files'
 import {
   Artifact,
+  ChainFact,
+  DocumentFacts,
   Finding,
   HiddenReport,
   ModelGrid,
@@ -102,6 +104,20 @@ export const DocPanel = ({
   const [traced, setTraced] = useState<{ yes: number; no: number } | null>(null)
   const [grid, setGrid] = useState<ModelGrid | null>(null)
   const [open, setOpen] = useState<string | null>(null)
+  //: The source viewer (source PDFs only): the Chain's stored facts,
+  //: the fact whose page is on screen, and that page's pixels. Page
+  //: object URLs are cached per page and revoked when the panel moves
+  //: to another document.
+  const isSourcePdf =
+    doc.kind === 'source' && doc.filename.toLowerCase().endsWith('.pdf')
+  const [chain, setChain] = useState<DocumentFacts | null>(null)
+  const [chainWord, setChainWord] = useState<string | null>(null)
+  const [reading, setReading] = useState(false)
+  const [activeFact, setActiveFact] = useState<string | null>(null)
+  const [pageShown, setPageShown] = useState<number | null>(null)
+  const [pageUrl, setPageUrl] = useState<string | null>(null)
+  const [pageWord, setPageWord] = useState<string | null>(null)
+  const pageCache = useRef<Map<number, string>>(new Map())
 
   useEffect(() => {
     let live = true
@@ -142,6 +158,79 @@ export const DocPanel = ({
       live = false
     }
   }, [api, dealId, doc.id])
+
+  //: The Chain's stored record for a source PDF, loaded with the
+  //: panel; page pixels cached per page, revoked when the document
+  //: changes.
+  useEffect(() => {
+    setChain(null)
+    setChainWord(null)
+    setActiveFact(null)
+    setPageShown(null)
+    setPageUrl(null)
+    setPageWord(null)
+    const cache = pageCache.current
+    if (!isSourcePdf) return
+    let live = true
+    api
+      .documentFacts(doc.id)
+      .then((got) => live && setChain(got))
+      .catch(
+        (problem: unknown) =>
+          live &&
+          setChainWord(
+            problem instanceof Error ? problem.message : 'something went wrong',
+          ),
+      )
+    return () => {
+      live = false
+      for (const url of cache.values()) URL.revokeObjectURL(url)
+      cache.clear()
+    }
+  }, [api, doc.id, isSourcePdf])
+
+  //: Click a number, see the page: fetch (or reuse) that page's
+  //: pixels and put the fact's box on top. A refusal is the server's
+  //: own sentence, shown where the page would be.
+  const showFact = (fact: ChainFact) => {
+    setActiveFact(fact.id)
+    setPageWord(null)
+    setPageShown(fact.page)
+    const held = pageCache.current.get(fact.page)
+    if (held) {
+      setPageUrl(held)
+      return
+    }
+    setPageUrl(null)
+    api
+      .pageImage(doc.id, fact.page)
+      .then((url) => {
+        pageCache.current.set(fact.page, url)
+        setPageUrl(url)
+      })
+      .catch((problem: unknown) =>
+        setPageWord(
+          problem instanceof Error ? problem.message : 'something went wrong',
+        ),
+      )
+  }
+
+  //: « Read the document » — the deliberate write that fills the
+  //: store. Idempotent server-side, so a re-read replaces wholesale.
+  const readDocument = () => {
+    if (reading) return
+    setReading(true)
+    setChainWord(null)
+    api
+      .extractDocument(doc.id)
+      .then((got) => setChain(got))
+      .catch((problem: unknown) =>
+        setChainWord(
+          problem instanceof Error ? problem.message : 'something went wrong',
+        ),
+      )
+      .finally(() => setReading(false))
+  }
 
   //: « Open the cell » from a finding's modal: the panel arrives with
   //: that finding open, scrolled into view — the cell and its
@@ -340,6 +429,270 @@ export const DocPanel = ({
             Download
           </button>
         </div>
+
+        {/* The source viewer — agent-designed (no founder drawing
+            covers it). The click-a-number, see-the-highlighted-page
+            moment: the Chain's stored facts, each cited to a page and
+            a box; the page rendered from the stored bytes with the
+            fact's box ringed. Coverage is part of the answer — pages
+            the extractor refused are listed in its own words. */}
+        {isSourcePdf && (
+          <>
+            <div style={panelHead}>Every number, cited to its page</div>
+            {pageShown !== null && (
+              <div style={{ ...panelCard, padding: 10 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 10,
+                    padding: '2px 6px 10px',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: font.mono,
+                      fontSize: 12,
+                      color: ink.secondary,
+                    }}
+                  >
+                    p. {pageShown}
+                  </span>
+                  <span style={{ fontSize: 12.5, color: ink.faint }}>
+                    rendered from the stored file, the cited box ringed
+                  </span>
+                </div>
+                {pageWord !== null ? (
+                  <div
+                    style={{
+                      padding: '18px 6px',
+                      fontSize: 13.5,
+                      color: ink.secondary,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {pageWord}
+                  </div>
+                ) : pageUrl === null ? (
+                  <div
+                    style={{
+                      minHeight: 220,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 13.5,
+                      color: ink.faint,
+                      background: well,
+                      borderRadius: 9,
+                    }}
+                  >
+                    Rendering page {pageShown}…
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      position: 'relative',
+                      borderRadius: 9,
+                      overflow: 'hidden',
+                      boxShadow: cardRing,
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={pageUrl}
+                      alt={`Page ${pageShown} of ${doc.filename}`}
+                      style={{ display: 'block', width: '100%' }}
+                    />
+                    {(chain?.facts ?? [])
+                      .filter(
+                        (fact) =>
+                          fact.page === pageShown && fact.id === activeFact,
+                      )
+                      .map((fact) => (
+                        //: Percent coordinates off the page's own point
+                        //: size, so the ring lands regardless of render
+                        //: resolution. Padded a hair so the glyphs
+                        //: breathe inside the ring.
+                        <span
+                          key={fact.id}
+                          style={{
+                            position: 'absolute',
+                            left: `${((fact.box.x0 - 2) / fact.page_width) * 100}%`,
+                            top: `${((fact.box.top - 2) / fact.page_height) * 100}%`,
+                            width: `${((fact.box.x1 - fact.box.x0 + 4) / fact.page_width) * 100}%`,
+                            height: `${((fact.box.bottom - fact.box.top + 4) / fact.page_height) * 100}%`,
+                            border: '2px solid #0060d0',
+                            borderRadius: 4,
+                            boxShadow:
+                              '0 0 0 3px rgba(0,96,208,.18), 0 0 18px rgba(0,96,208,.25)',
+                            pointerEvents: 'none',
+                          }}
+                        />
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <div style={panelCard}>
+              {chainWord !== null && (
+                <div
+                  style={{
+                    padding: '13px 16px',
+                    fontSize: 13.5,
+                    color: ink.secondary,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {chainWord}
+                </div>
+              )}
+              {chainWord === null && chain === null && (
+                <div
+                  style={{
+                    padding: '13px 16px',
+                    fontSize: 13.5,
+                    color: ink.faint,
+                  }}
+                >
+                  Looking up what the Chain holds…
+                </div>
+              )}
+              {chain !== null &&
+                chain.facts.length === 0 &&
+                chain.refusals.length === 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      padding: '14px 16px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 13.5,
+                        color: ink.secondary,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      This document has not been read into the Chain yet.
+                      Reading it extracts every number with its page and
+                      highlight box — nothing is sent anywhere.
+                    </span>
+                    <button
+                      onClick={readDocument}
+                      style={{
+                        alignSelf: 'flex-start',
+                        border: 0,
+                        background: ink.accent,
+                        color: '#fff',
+                        borderRadius: 11,
+                        padding: '9px 16px',
+                        font: 'inherit',
+                        fontSize: 13.5,
+                        fontWeight: 500,
+                        cursor: reading ? 'progress' : 'pointer',
+                      }}
+                    >
+                      {reading ? 'Reading…' : 'Read the document'}
+                    </button>
+                  </div>
+                )}
+              {chain !== null &&
+                chain.facts
+                  .slice()
+                  .sort((a, b) => a.page - b.page || a.box.top - b.box.top)
+                  .map((fact, index) => {
+                    const on = activeFact === fact.id
+                    return (
+                      <button
+                        key={fact.id}
+                        onClick={() => showFact(fact)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          gap: 10,
+                          width: '100%',
+                          textAlign: 'left',
+                          border: 0,
+                          borderTop: index === 0 ? 0 : hairline,
+                          background: on
+                            ? 'rgba(0,96,208,.045)'
+                            : 'transparent',
+                          font: 'inherit',
+                          cursor: 'pointer',
+                          padding: '10px 16px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            flex: '0 0 auto',
+                            fontFamily: font.mono,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: on ? '#0060d0' : ink.primary,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {fact.text}
+                        </span>
+                        <span
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            fontSize: 12.5,
+                            color: ink.secondary,
+                            lineHeight: 1.45,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {fact.line}
+                        </span>
+                        <span
+                          style={{
+                            flex: '0 0 auto',
+                            fontSize: 11.5,
+                            color: ink.faint,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          p. {fact.page}
+                        </span>
+                      </button>
+                    )
+                  })}
+              {chain !== null && chain.refusals.length > 0 && (
+                <div
+                  style={{
+                    borderTop: hairline,
+                    padding: '11px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                  }}
+                >
+                  {/* Coverage said out loud: the pages the extractor
+                      refused, each with its reason — a gap is part of
+                      the answer, never a silence. */}
+                  {chain.refusals.map((refusal) => (
+                    <span
+                      key={`${refusal.page}-${refusal.reason}`}
+                      style={{
+                        fontSize: 12.5,
+                        color: ink.faint,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      p. {refusal.page} not read — {refusal.reason}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {facts.length > 0 && (
           <>

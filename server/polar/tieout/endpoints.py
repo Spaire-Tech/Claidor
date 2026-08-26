@@ -1199,6 +1199,45 @@ async def version_delta(
     )
 
 
+@router.get("/artifacts/{artifact_id}/page/{page}", response_model=None)
+async def source_page(
+    artifact_id: UUID,
+    page: int,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> Response:
+    """One page of a stored source PDF, rendered — the viewer's ground.
+
+    The Chain's facts cite pages and boxes in the PDF's own points;
+    this serves the pixels those citations sit on, rendered fresh from
+    the stored bytes and cached nowhere. A non-PDF answers the same 404
+    as an artifact outside the caller's deals; a page outside the
+    document answers with the honest range; dropped bytes answer the
+    storage sentence.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        image = await tieout.page_image(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+            page=page,
+        )
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    except ValueError as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    if image is None:
+        raise ResourceNotFound("This document has no pages to render.")
+    return Response(
+        content=image,
+        media_type="image/png",
+        # Same bytes for the same version forever, so the browser may
+        # keep them for the session; a new upload is a new artifact id.
+        headers={"cache-control": "private, max-age=3600"},
+    )
+
+
 # --- checks --------------------------------------------------------------
 
 
