@@ -4176,3 +4176,20 @@ the lead's container, which holds the PR24 corpus); Scribe builds
 D2's serving routes and registers D3; Atelier wires the real Watch
 into the demo kit's delta section and inventories screenless
 capabilities for the founder.
+
+---
+
+## 26 August — V3's first run fails honestly: the aligner cannot afford the water models
+
+The lead's sixteen-pair V3 run: every pair OOM-killed at the
+container's memory cap (~14GB, exit 137). Localized on the AFW pair
+stage by stage: the C1 raw diff is innocent (699MB, 54s); **the C2
+alignment alone balloons to 13.6GB and is killed** — the PR24
+financial models (a million populated cells, 51 sheets) present a
+shape the aligner's registered cost measurement never met. No
+verdict number exists and none is claimed; the study's 84 stays
+uncompared for now. Prism's orders updated with the measured
+diagnosis: a registered memory round on the aligner, gated by its
+own 42/42 harness (results must not move), before C4. V3 re-runs
+after the fix merges. This is the DONE test doing its job — the
+wall was found by the exam, not by a customer.
