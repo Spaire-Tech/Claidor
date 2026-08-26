@@ -263,3 +263,17 @@ tests still run on every merged tip either way.
   models themselves live in `chain/store.py`, Scribe's package; the
   shared file only imports them (plus one alphabetization fix).
   Any further shared-file need still routes through the lead first.
+
+- **26 Aug — the design rule changes (founder's own words)**: any
+  agent that needs a screen no founder design covers **designs it
+  themselves, at full effort, in the product's existing style** —
+  the founder reviews and may redesign anything, but « i want them
+  to do their best. » This is not a licence for placeholders: a
+  lane ships the screen it would defend, matching the established
+  design system (`clients/CLAUDE.md`, the patterns in
+  `docs/pierce/design-swens/` and the built workspace), and marks
+  it in its log as agent-designed so the founder knows what to
+  review. The old absolutes stand untouched: never delete or
+  replace anything the founder drew; where a founder design
+  *exists*, it is the spec; when a founder design can't work as
+  drawn, stop and ask.

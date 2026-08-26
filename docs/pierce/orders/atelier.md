@@ -1,22 +1,25 @@
-# Orders — Atelier (updated 26 Aug, twelfth sweep)
+# Orders — Atelier (updated 26 Aug — the founder unlocked design)
 
-Category map merged.
+The founder's decision, verbatim intent: design everything the best
+you can in our existing style; they will redesign if they wish —
+« but tell them not to be lazy just because i might re-design. i
+want them to do their best. » (Recorded in `lanes.md`.) The hold is
+over.
 
-1. **A red test in your file, routed from Scribe's report**:
-   `test_routes.py::TestHouseRules::test_defaults_before_anybody_decided`
-   asserts 17 audit rules; Sentinel's adoptions make the catalogue
-   19. Decide the honest expectation (the product default for newly
-   adopted rules is presumably on, like every other rule) and fix
-   the test on your container where it runs red; say what you chose
-   in your log.
-2. Your screenless-capabilities inventory is still owed if not yet
-   delivered (check your own log).
-3. Then hold for founder designs.
-
-## Standing addition (26 Aug): memory discipline
-
-Before anything else this turn: create or refresh
-`docs/pierce/handoffs/atelier.md` per the new « Memory discipline »
-section in `orders/README.md` — the founder is seeing sessions run
-out of context, and the handoff is what makes that survivable. Push
-it with your work, every push, from now on.
+0. First, the standing memory discipline: your handoff file
+   (`docs/pierce/handoffs/atelier.md`), pushed with the work.
+1. **Design and build the Watch delta view** — the « what changed
+   between versions » page from your own inventory item 1. Your
+   design, full effort, in the established style; engine behind it
+   is merged (`polar.tieout.watch`); serve it through your own
+   endpoint per the frozen-interface rules. Mark it agent-designed
+   in your log. This is the demo's strongest missing moment — treat
+   it as such.
+2. **Then the source viewer** (inventory item 2): the click-a-number,
+   see-the-highlighted-page moment; `POST /v1/chain/extract` and the
+   fact store are live.
+3. **Then the recalculation mark** (inventory item 3): the
+   « validated by recalculation » state on report and model page,
+   including its honest refusal face.
+Work the list in order, one screen shipped whole (design, endpoint,
+tests, screenshots in your log) before the next.

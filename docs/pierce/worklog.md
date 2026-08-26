@@ -4286,3 +4286,18 @@ registered hit-rate round; the named limitations (formula-stripped
 models → declared typed-cell convention; OCR'd contracts;
 unpublished loan agreements) are in the registration's path before
 any number.
+
+---
+
+## 26 August — the founder unlocks design
+
+A standing rule changed, by the founder's own decision: agents that
+need a screen no founder design covers now design it themselves —
+full effort, existing style, marked agent-designed, founder reviews
+and may redesign. « Not be lazy just because i might re-design »
+is in the constitution now (`lanes.md`). The untouched absolutes:
+founder drawings are never deleted or replaced, an existing founder
+design is the spec, and an unworkable design stops for the founder
+rather than being improvised around. Atelier's hold is lifted; its
+orders now run the three screenless capabilities in order — the
+Watch delta view first.
