@@ -19,6 +19,7 @@ lane log, taken before anything depended on this module.
 """
 
 from array import array
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -114,6 +115,34 @@ class LineAlignment:
         return {match.old: match.new for match in self.matched}
 
 
+def _pair_similarity(
+    x: Line,
+    y: Line,
+    x_counts: "Counter[str]",
+    y_counts: "Counter[str]",
+) -> float:
+    """`similarity`, with the multiset bound served from per-line
+    Counters built once per alignment (the timing round: rebuilding
+    the counting dict per pair was 1.9 billion dict operations on a
+    5k×5k alignment — a third of the wall time — while the answer
+    only needs the counters' intersection). Same formula, same
+    threshold semantics, same verdicts."""
+    a, b = x.signatures, y.signatures
+    if x.label and y.label:
+        if x.label == y.label:
+            return LABEL_WEIGHT + (1 - LABEL_WEIGHT) * shape_similarity(a, b)
+        return LABEL_WEIGHT if a == b else 0.0
+    if a == b:
+        return 1.0
+    if not a or not b:
+        return 0.0
+    common = sum(min(count, y_counts[item]) for item, count in x_counts.items())
+    bound = 2.0 * common / (len(a) + len(b))
+    if bound < THRESHOLD:
+        return 0.0
+    return shape_similarity(a, b)
+
+
 def align_lines(
     old: Sequence[Line], new: Sequence[Line], threshold: float = THRESHOLD
 ) -> LineAlignment:
@@ -129,6 +158,8 @@ def align_lines(
     at exactly one byte per cell.
     """
     height, width = len(old), len(new)
+    old_counts = [Counter(line.signatures) for line in old]
+    new_counts = [Counter(line.signatures) for line in new]
     above = array("d", bytes(8 * (width + 1)))
     row_scores = array("d", bytes(8 * (width + 1)))
     moves = [bytearray(width + 1) for _ in range(height + 1)]  # 1 diag 2 up 3 left
@@ -137,12 +168,13 @@ def align_lines(
         row_scores[0] = 0.0
         row_moves = moves[i]
         line = old[i - 1]
+        line_counts = old_counts[i - 1]
         for j in range(1, width + 1):
             best, move = above[j], 2
             left = row_scores[j - 1]
             if left > best:
                 best, move = left, 3
-            pair = similarity(line, new[j - 1])
+            pair = _pair_similarity(line, new[j - 1], line_counts, new_counts[j - 1])
             if pair >= threshold:
                 diagonal = above[j - 1] + pair
                 if diagonal >= best:
