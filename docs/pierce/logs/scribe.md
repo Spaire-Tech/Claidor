@@ -389,3 +389,56 @@ has seen them. Failures are counted in this log, not narrated away.
 
 Next turn, unless the orders change: the matcher behind these
 registered criteria, in the chain package, tests first.
+
+## 26 August 2026, second « go » — the matcher, frozen for the round
+
+Orders re-read from the tip first: the tip moved (`40d2599`, a
+Prism-only update after their aligner hit the container's memory
+ceiling on PR24 — noted, and a reason this lane keeps running heavy
+jobs alone), my orders file is unchanged, and my lane is not yet
+merged. Item 1 and the registration half of item 2 were done last
+push; the registration being filed, the matcher itself was this
+turn's work — code strictly after criteria, as ordered.
+
+**Built: `chain/propose.py`,** the registered rule with no
+ornamentation. Score = the share of the cell's label words found in
+the candidate fact's printed line. Value-blindness is enforced in the
+tokenizer, not promised in a comment: purely numeric tokens are
+dropped from both sides before any comparison, so « 2025 » matches
+nothing and no caller can smuggle a value in as a string. Abstention
+is first-class and worded: below half coverage (« the cell may simply
+have no source in the documents — that is a finding, not a
+failure »), on a tied top score (« a person can; this matcher will
+not »), and on label-less cells. The scoring is deliberately plain,
+because plain is what the registered harness can judge; anything
+cleverer must beat it on that harness first.
+
+**Served: `GET /chain/cells/{id}/proposals`** — read-only, the
+candidate pool being every extracted fact on the cell's deal.
+Computed cells and aliases are refused in words (their provenance is
+their formula); confirming stays D4's deliberate write. The response
+carries the top five ranked candidates with their shared words, so a
+reviewer sees what the labels saw — on abstentions especially.
+
+**Tested: twelve cases, all green; suite at 692 passed, 8 skipped.**
+Seven pure planted cases — the value trap above all: a line printing
+the cell's exact number twice, against a line sharing the cell's
+words, must lose on words alone; and the same trap with no labelled
+alternative must end in abstention, not a value match. Then the
+route walked end to end: upload, extract, plant a typed cell, get
+the proposal; the fixture's own « Margin 45% up 3 points » line
+supplies a genuine two-facts-one-label tie that abstains over HTTP
+exactly as it does in the pure case.
+
+**Not claimed:** any proposal-quality number. The registered 30-draw
+over the Ofwat PR24 model-document pairs has not run. The matcher is
+now **frozen for that round** (`FLOOR = 0.5`, tie = exact top-score
+equality, the tokenizer as committed); the next step on this track
+is assembling the paired deal set and running the draw with seed
+314159, judging blind per the table above.
+
+**Container note, again for the lanes:** the hand-started services
+(postgres, redis, minio) do not survive between turns — they die
+with the turn's processes and restart in seconds from their surviving
+data directories. First run of the day: restart them before blaming
+a test.
