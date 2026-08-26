@@ -4193,3 +4193,27 @@ diagnosis: a registered memory round on the aligner, gated by its
 own 42/42 harness (results must not move), before C4. V3 re-runs
 after the fix merges. This is the DONE test doing its job — the
 wall was found by the exam, not by a customer.
+
+---
+
+## 26 August — the eleventh sweep, part 1: five lanes land
+
+All five lanes merged, one at a time, tests green after each (615
+conftest-free at the Sentinel tip). Sentinel adopted A3 candidates 1
+(inconsistent-total, after the round-1 self-refusal on the triangle)
+and 2 (typed-over-edge, round 1 refused twice over) — both ship
+quiet on the corpus, so the baseline is rightly untouched; Sentinel's
+own after-sweep was gate clean, and **the lead's independent gate
+certification is running at integration now** — its verdict is the
+next entry, and had it shown any diff the merge would have been
+reverted on the record. Dynamo's B4 pilot: three plants, three
+catches naming their cells, zero false positives, with the honest
+narrowing that ED2 promises only two of the four laws. Prism closed
+the aligner memory round (4.4× on the failure shape, 42/42 results
+unmoved) and C4's cheap proof stands after a self-refusing round.
+Scribe shipped D2 (facts served with page + box; its chain migration
+accepted into shared ground — lanes.md records the amendment) and
+reported D3 round 1 at 0/8 proposal precision — the matcher does
+not ship, the failure class is named (definitional lines), round 2
+is registered next. Atelier made the demo kit's delta section the
+real Watch. Orders round 2 issued to all five lanes.
