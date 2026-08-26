@@ -742,3 +742,30 @@ is **never proved** — suspects by refusal, the same honesty the
 tiers will owe. Nothing else changes. All fifteen planted
 instances and both real pairs re-run from scratch; the efficiency
 cost of the exclusion is reported with them.
+
+## C4 round 2 results — the gate passes everywhere; the cheap proof stands
+
+Full re-run under round 2's registered fix, nothing else changed.
+
+**Soundness: clean across the board.** All fifteen planted
+instances sound (every stealth cell suspect, zero violations), and
+**zero violations on both real pairs** — the 28 selector cells that
+failed round 1 are now suspects by refusal, exactly as an
+unobservable output should be.
+
+**The price of honesty, reported as registered:** the observability
+exclusion costs 1.5 points on the v2 pair (94.7% → **93.2%**
+proved, 38,255 of 41,049 cells) and 2.3 points on v4→v5 (79.7% →
+**77.4%**, 33,418 of 43,178). Planted-instance declared-sheet
+fractions: 85.7–91.4%.
+
+**What the tiers inherit.** On a real adjacent revision, the cheap
+proof discharges ~93% of the model at hash cost (~2 minutes
+whole-model including both reads) and hands tier 2 a suspect set
+of ~2,800 cells instead of 41,000 — with a receipt for every
+refusal: unobservable outputs, unmatched lines, changed traces.
+The plan's sequencing holds: the solver stays the crown, not the
+foundation. Next per the orders' item 2: tier 2's registration
+(randomized differential evaluation over the suspects' cone of
+influence, standing on Dynamo's `recalc/`), a new round, its own
+registration first.
