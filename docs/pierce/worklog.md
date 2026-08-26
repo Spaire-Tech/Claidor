@@ -4113,3 +4113,20 @@ Parts 1 and 2 merge together when the code arrives. (Mechanical
 notes: the resumed Atelier container lost git auth and pushed via
 the GitHub API under the founder's GitHub identity, citing a log
 entry not present in the push — both to regularize in part 2.)
+
+---
+
+## 26 August — the ninth sweep: the deal-names decision ships whole
+
+Atelier's part 2 arrived — endpoint, schema, client and test — and
+the held part 1 merged beside it, doc and code as one, exactly as
+the hold demanded. Verified at integration before merging: the
+`/tieout/team` response now carries `deal_count`, a number, and the
+names never leave the server; the route test asserts no deal name
+appears anywhere in the payload; the Settings screen shows the
+count. The posture doc's § 3 sentence is now both written and true:
+« being at the firm grants nothing » holds without an asterisk. The
+series carries the founder's GitHub identity as author (the resumed
+container pushes via the API — named in the lane log as the
+registered deviation) and the lane log entry part 1 cited is now
+present. 558 tieout tests green; engine untouched.
