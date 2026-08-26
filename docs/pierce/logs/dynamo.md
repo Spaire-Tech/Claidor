@@ -821,3 +821,36 @@ by assumption. **Corrected re-run registered now**: the six v1–v3
 files, corrected input rows (v1: 382/383; v2–v3: 385/386), same
 plants, same predictions, controls expected clean. No result from
 the re-run exists as this is written.
+
+## 26 August 2026 — corrected re-run clean, and the B4 per-class table
+
+The six corrected files: **18/18 catches at named cells, all
+controls clean, no extra flags.** The residual that run 1's controls
+caught was, as diagnosed, only my mis-mapping.
+
+**The per-class table across every valid measured round** (ED2
+pilot + family with corrections, H7 debt pair — 13 of the 18 gated
+files):
+
+| Planted class | Law that owns it | Host files | Plants | Catches | Control FPs |
+|---|---|---|---|---|---|
+| hardcode-in-the-tail, additive adjustment chain | zero-input | 11 ED2 | 11 | **11** | 0 |
+| hardcode-in-the-tail, total line | consolidation | 11 ED2 | 11 | **11** | 0 |
+| hardcode-in-the-tail, multiplicative money chain | proportionality | 2 H7 | 2 | **2** | 0 |
+| omitted segment | consolidation | 11 ED2 | 11 | **11** | 0 |
+| hardcoded ratio leg | scale invariance | 2 H7 | 2 | **2** | 0 |
+
+**Totals: 37 plants, 37 catches — every catch naming its planted
+cell — and 0 false positives across 26 valid control law-runs.**
+The hardcode-in-the-tail class, the one static reading cannot see,
+now stands at 24/24 across 13 host files and three structural
+guises — the plan's B4 DONE sentence measured in the direction it
+asks, across hosts.
+
+Honest bounds, standing: one plant per class per file (single-digit
+Ns per class per host); the five remaining gated files (the RIIO-3
+set: two draft PCFMs, the RoE summary, both WACC models) await
+their own selector curation — the WACC pair at ~19 min per
+recalculation makes theirs the expensive round. And run 1's v1–v3
+zero-input results remain recorded as invalid; nothing from them is
+counted anywhere.
