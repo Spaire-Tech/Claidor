@@ -129,12 +129,58 @@ ED2_V5_PLANTS = (
     ),
 )
 
+#: The H7 debt-indexation round (lane log, 26 Aug, quoted before any
+#: run): the pair's whole money chain hangs off one input row —
+#: `Average RAB` (I26:M26, verified inputs) feeds only
+#: `Notional new debt` (row 72) → `Variance (£)` (row 73) →
+#: compounded year variances → `Total adjustment` (F86) — so RAB ×2
+#: must double every one of those outputs exactly (proportionality),
+#: while the rate rows — `Variance (%)` (69) and `Nominal, pre-tax
+#: WACC` (77) — must not move when money is restated in cents ×100
+#: (scale invariance). Both files share the layout ref-for-ref.
+H7_SHEET = "H7 Cost of debt indexation"
+H7_YEARS = ("I", "J", "K", "L", "M")
+H7_SELECTORS = Selectors(
+    price=tuple(f"{H7_SHEET}!{col}26" for col in H7_YEARS),
+    monetary=tuple(f"{H7_SHEET}!{col}26" for col in H7_YEARS),
+    revenue=(
+        *(f"{H7_SHEET}!{col}72" for col in H7_YEARS),
+        *(f"{H7_SHEET}!{col}73" for col in H7_YEARS),
+        f"{H7_SHEET}!F86",
+    ),
+    ratios=(
+        *(f"{H7_SHEET}!{col}69" for col in H7_YEARS),
+        *(f"{H7_SHEET}!{col}77" for col in H7_YEARS),
+    ),
+)
+
+H7_PLANTS = (
+    Plant(
+        kind="hardcode-in-the-tail",
+        target=f"{H7_SHEET}!J73",
+        formula="=J69 * J72 + 0.5",
+    ),
+    Plant(
+        kind="hardcoded-ratio-leg",
+        target=f"{H7_SHEET}!J69",
+        formula="=J65 - J7 + J72/20000",  # absolute money inside a rate
+    ),
+)
+
 #: file path (relative to server/) → (selectors, plants). Committed
 #: before running; the lane log quotes each entry it measures.
 PILOTS: dict[str, tuple[Selectors, tuple[Plant, ...]]] = {
     "scripts/corpus_au_uk/ofgem_ed2/v5_2026-06.xlsx": (
         ED2_V5_SELECTORS,
         ED2_V5_PLANTS,
+    ),
+    "scripts/corpus_au_uk/caa_h7/h7_new_debt_indexation_fds.xlsx": (
+        H7_SELECTORS,
+        H7_PLANTS,
+    ),
+    "scripts/corpus_au_uk/caa_h7/h7_new_debt_indexation_fp.xlsx": (
+        H7_SELECTORS,
+        H7_PLANTS,
     ),
 }
 
@@ -239,19 +285,21 @@ def run_laws(
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         print(__doc__)
         return 2
     work, out = Path(sys.argv[1]), Path(sys.argv[2])
+    only = sys.argv[3] if len(sys.argv) == 4 else ""
     if find_install() is None:
         print("no LibreOffice >= 25.8 here — refusing")
         return 1
-    if not PILOTS:
-        print("no pilot registered in PILOTS; nothing to measure")
+    chosen = {rel_path: entry for rel_path, entry in PILOTS.items() if only in rel_path}
+    if not chosen:
+        print("no registered pilot matches; nothing to measure")
         return 1
     work.mkdir(parents=True, exist_ok=True)
     records = []
-    for rel_path, (selectors, plants) in PILOTS.items():
+    for rel_path, (selectors, plants) in chosen.items():
         source = Path(rel_path)
         calculator = UnoCalculator(document_timeout=3600)
         calculator.start()
