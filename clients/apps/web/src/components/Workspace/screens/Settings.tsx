@@ -1204,16 +1204,18 @@ export const Settings = ({
               <div style={{ ...listCard, overflow: 'hidden' }}>
                 {team.members.map((member, index) => {
                   const avatar = avatarOf(member.name)
-                  const stripped = member.deals.map((name) =>
-                    name.startsWith('Project ') ? name.slice(8) : name,
-                  )
+                  //: Counts, never names — the founder's decision (26
+                  //: August). Which deals a colleague is on is the
+                  //: deal's business; this line says how many, at most.
                   const line =
-                    member.deals.length === 0
+                    member.deal_count === 0
                       ? 'No deals yet'
                       : team.total_deals > 1 &&
-                          member.deals.length === team.total_deals
+                          member.deal_count === team.total_deals
                         ? `All ${team.total_deals} deals`
-                        : stripped.join(', ')
+                        : member.deal_count === 1
+                          ? 'On 1 deal'
+                          : `On ${member.deal_count} deals`
                   return (
                     <div
                       key={member.id}

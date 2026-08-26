@@ -1279,7 +1279,14 @@ async def get_team(
     organization_id: UUID = Query(),
     session: AsyncReadSession = Depends(get_db_read_session),
 ) -> TeamRead:
-    """Who's on the team, and which of this organization's deals each is on."""
+    """Who's on the team, and how many deals each is on — never which.
+
+    Deal names left this response by the founder's decision (26
+    August): a colleague's deals are the deal's business, not the
+    organization's, and the count is the most this screen may say.
+    The names never leave the server — the repository still knows
+    them; this route reduces to a number before anything is sent.
+    """
     await _in_organization(session, organization_id, auth_subject.subject.id)
     repository = TieOutRepository.from_session(session)
     people = await repository.team_of(organization_id)
@@ -1291,7 +1298,7 @@ async def get_team(
                 email=person.email,
                 avatar_url=person.avatar_url,
                 you=person.id == auth_subject.subject.id,
-                deals=deals,
+                deal_count=len(deals),
             )
             for person, deals in people
         ],

@@ -87,12 +87,13 @@ purpose, and this is the full list:
    (`HouseRules.audit_rules_off`; the audit summary names skipped
    rules).
 2. **The team screen** shows the organization's people and, for each,
-   the *names* of the deals they are on. It never opens those deals —
-   contents stay behind § 1 — but deal names and counts are visible to
-   the whole organization there. A firm that considers deal names
-   themselves confidential should know this before buying; it is the
-   one place the product trades a sliver of visibility for « who is
-   working on what ».
+   *how many* deals they are on — never which. Deal names used to
+   appear here; the founder closed that on 26 August 2026, and the
+   names now never leave the server (`/tieout/team` reduces each
+   membership list to a count before anything is sent —
+   `endpoints.py`, `get_team`; the endpoint test asserts no deal name
+   appears anywhere in the payload). « Being at the firm grants
+   nothing » holds without an asterisk.
 3. **The deals list** shows each caller *their own* deals only — it is
    a membership join, not an organization listing.
 

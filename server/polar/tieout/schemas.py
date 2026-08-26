@@ -880,15 +880,23 @@ class HouseRulesUpdate(Schema):
 
 
 class TeamMember(Schema):
-    """One person on the team, and where they are."""
+    """One person on the team — never which deals they are on.
+
+    The founder decided it (26 August, on the posture doc's § 3
+    finding): deal names come off the team screen, so « being at the
+    firm grants nothing » holds without an asterisk. Only the count
+    travels; which deals stays behind membership, like everything
+    else about them.
+    """
 
     id: UUID
     name: str
     email: str
     avatar_url: str | None
     you: bool
-    #: The deals they are on, in this organization only.
-    deals: list[str]
+    #: How many of this organization's deals they are on — a number,
+    #: never a name.
+    deal_count: int
 
 
 class TeamRead(Schema):
