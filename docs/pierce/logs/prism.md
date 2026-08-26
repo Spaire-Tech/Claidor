@@ -815,3 +815,46 @@ the lead's worst FM02 sheet once its dimensions are known (or the
 measured one, once the lead re-runs V3).
 
 Tier 2's registration follows this round, per the orders.
+
+## Aligner memory round — results: the term removed, every gate green
+
+**The profile confirmed the registered suspect exactly.** Synthetic
+failure-shaped grids (R × 60, half labelled, 5% edited), child
+peak RSS:
+
+| rows | before | after | before s | after s |
+|---|---|---|---|---|
+| 2,000 | 128 MB | **87 MB** | 33 | 18 |
+| 5,000 | 425 MB | **160 MB** | 219 | 114 |
+| 10,000 | 1,389 MB | **318 MB** | 900 | 477 |
+
+Before: ~8 bytes per DP cell of score-matrix pointer storage (the
+float objects themselves mostly shared as the running max
+propagates — the pointers were the weight). After: scores live in
+two `array('d')` rows, and the residual growth is the move
+matrix's one byte per cell (100 MB at 10k rows), kept whole
+because the traceback needs it. `Line` now materializes its
+signature tuple once at construction. The ~1.9× speedup is churn
+removed, reported as a side-effect, not a goal.
+
+**The gates, all green:** (a) 49/49 unit tests; (b) the C2 harness
+re-run on both sheets — 21/24 and 21/24 with **per-instance
+verdicts identical** to the committed rounds, field by field;
+(c) the v4→v5 full-model alignment identical to the committed
+output — after one honest correction *to the comparator itself*:
+`watch_align` sorts its sheet list by per-sheet timing, so the
+first comparison flagged a timing-induced ordering as a
+difference; with sheets compared by name, every field of every
+sheet is equal. The aligner's results did not move.
+
+**Projection for the lead, stated with its limits:** on this
+container the 10k-row point peaked at 318 MB against 1,389 MB
+before — a ~4.4× reduction that grows with R (the removed term
+was 8 bytes/cell, the remaining one 1 byte/cell). A 30,000-row
+FM02-class sheet projects to ~0.9 GB of move matrix plus the
+books; the 13.6 GB peak should land in the low single GB. The
+real number is the lead's V3 re-run to measure, not mine to
+claim — per the orders, that happens the sweep after this merges.
+If FM02 sheets prove taller still, the named next step is a
+Hirschberg traceback (linear space), a registered round of its
+own. Tier 2's registration follows once V3 is through.
