@@ -675,3 +675,40 @@ value-changed dependent are reported suspect — implied by (a),
 printed explicitly. (c) efficiency, reported never gated: the
 proved fraction on each harness pair and on the two real pairs
 (v2 14→31 July; v4→v5). Failures named one by one, as always.
+
+## C4 round 1 — two instrument aborts before any result, and a C2 correction
+
+**No result has been looked at**: both first runs aborted planting.
+`InputSummary` holds effectively no typed numeric literal (the
+engine names 4 cells literal; openpyxl's numeric scan finds none —
+the sheet is pull-through formulas), so there is nothing there for
+a stealth retype to retype.
+
+**The correction this forces on C2's record, stated plainly:** C2's
+`retype_literals` scan stops silently when it finds nothing, so on
+`InputSummary` its three « exact » instances (and the retype half
+of `insert_row_and_retype`) were **null edits** — they tested that
+an unedited file reports no change (a valid null test, and it
+passed) — not that retyped literals stay invisible to alignment.
+On `SWEST` (1,547 typed literals) the retypes were real and the
+claim stands. The C2 table's InputSummary `retype_literals` row
+should be read as « null edit: no false positives », nothing more.
+
+**Round-1 instrument amendments, registered now, before results:**
+1. Value re-injection extends to **every** sheet of the planted
+   file — the edited sheet through the pre-image map as before,
+   all other sheets by identity — so the planted file is what
+   Excel would have saved everywhere, the soundness gate is
+   meaningful on every sheet, and the whole-file proved fraction
+   stops being an artifact number.
+2. The stealth rule, amended mechanically: a stealth retype lands
+   on the registered sheet's first numeric literal at-or-below the
+   position; a sheet with no typed numeric literal **cannot host a
+   stealth edit** — its stealth-only instances are recorded as
+   refusals, and its declared+stealth instances put the stealth on
+   the *other* registered sheet (declared edit on `InputSummary`,
+   stealth on `SWEST`) — a change hidden outside the declared
+   sheet entirely, which is truer to « stealth » than the original
+   rule. `SWEST` runs all eight instances as registered. A planter
+   that finds nothing to retype now aborts loudly rather than
+   passing silently — the defect C2's scan carried.
