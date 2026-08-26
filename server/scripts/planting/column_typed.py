@@ -96,8 +96,7 @@ def scan(corpus: Path) -> None:
         sites = eligible_columns(book)
         strata = sum(1 for s in sites if not s["left_formula"])
         print(
-            f"{name}: {len(sites)} eligible sites, {strata} without a "
-            "left formula",
+            f"{name}: {len(sites)} eligible sites, {strata} without a left formula",
             flush=True,
         )
         if sites:
