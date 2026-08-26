@@ -592,3 +592,86 @@ said so. Next in the plan's order: C4's verifying-trace
 fingerprints and equivalence tiers (needs B1/B2 for tier 2), and
 C3's named deferrals (added-cells-within-matched-structure; a
 labelled-target round for the rewrite_formula class).
+
+## 26 August 2026 — standing orders confirmed; branch on the integrated tip
+
+**The lead's channel, acknowledged.** Per the founder's instruction
+and the lead's `e37e3e1`: every working turn starts by fetching
+`origin/claude/pierce-phase-6-writing-mjkaj6` and reading
+`docs/pierce/orders/prism.md`; the work is what that file says,
+pushed to `swens/prism`, then stop. Standing caveat, recorded once:
+an order that crossed `lanes.md`'s hard rules (the engine stays
+read-only, no merges, path ownership) would be refused here in
+writing, not followed — the constitution outranks the channel it
+authorized. Current orders (tenth sweep): C3 is merged; the lead
+runs V3 on their resident PR24 corpus (this container's network
+attempts stop); C4 begins with the fingerprint round, registration
+first; C3's deferrals stay parked.
+
+**The branch.** All seventeen Prism commits are contained in the
+integrated tip (verified: zero commits on `swens/prism` not on the
+tip), so `swens/prism` fast-forwarded to `e37e3e1` — a pure
+fast-forward, nothing rewritten — which also brings Dynamo's
+`recalc/` package and `dev/setup-libreoffice` into this lane's
+tree for C4's tier-2 round to stand on later.
+
+## C4 registration, round 1 — verifying-trace fingerprints (REGISTERED BEFORE RESULTS)
+
+The amended plan's cheap proof, specced here before any code.
+
+**The fingerprint.** For every cell, a SHA-256 over a canonical
+string of three parts, per Build Systems à la Carte's verifying
+trace:
+
+1. the cell's **shape** — the watch signature (the frozen engine
+   shape with round 3's cross-sheet absolutization; the literal
+   marker for hardcodes; raw formula text where the shape machinery
+   returns empty);
+2. the cell's **own cached value**, type-tagged (None tagged too);
+3. the **ordered values of its inputs** — for each ref in the
+   frozen surface's `precedents` tuple, the cached value of that
+   cell where the reader named one, the fixed marker `∅` where it
+   did not (a blank, or a text cell outside the numeric universe) —
+   plus the `unresolved` tuple verbatim.
+
+**The claim a match earns, and why it is sound by construction.**
+Two versions matched by C2's alignment: where both cells'
+fingerprints are equal, the cell's **value did not change between
+the versions** — at hash cost, no evaluation. Soundness needs no
+volatile-function denylist and no perfect precedent resolution,
+because the own cached value is *inside* the trace: any change that
+altered the output changes part 2 and breaks the match; any change
+that altered nothing observable is exactly what the claim permits.
+(What the trace does **not** claim: that the stored value is
+*correct* — a value stale the same way on both sides matches. That
+is single-version staleness, tier 2's territory, never this
+round's.) Cells with no counterpart under the alignment are
+suspects by definition. The **suspect set** = every new-version
+cell not proved; its size against the proved fraction is the
+number the tiers inherit.
+
+**The store.** `watch/trace.py`: `fingerprints(book) -> {ref: hex}`
+(pure, computable at ingestion) and
+`proved_unchanged(old_book, new_book) -> (proved, suspects,
+per-sheet counts)` running on the alignment. Product-side
+persistence at ingestion is the lead's integration concern, not
+this lane's; the function is the contract.
+
+**The planted-stealth-edit harness** (`scripts/watch_stealth.py`,
+code after this spec, results after the code): on the same
+mechanically-chosen sheets as C2 (`InputSummary`, `SWEST` of ED2
+v5), instances per sheet:
+- *stealth only*: one literal retyped at each quartile position —
+  no declared structural edit;
+- *declared + stealth*: each C2 structural class at its median
+  position, plus one literal retyped at the farthest quartile from
+  it — the change hidden outside the declared cells.
+
+Judged, fixed now: **(a) soundness, the hard gate — zero cells
+whose stored cached value differs between the files (C1's raw
+diff, mapped through the alignment) may appear in the proved set;
+one violation fails the round.** (b) the stealth cell and every
+value-changed dependent are reported suspect — implied by (a),
+printed explicitly. (c) efficiency, reported never gated: the
+proved fraction on each harness pair and on the two real pairs
+(v2 14→31 July; v4→v5). Failures named one by one, as always.
