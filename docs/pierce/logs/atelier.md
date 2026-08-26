@@ -284,3 +284,20 @@ Explicitly not in the inventory: B4's behavioural checks (registered,
 no claimed results yet — a registration is not a capability) and the
 reverse case (`rounding`/`writing` house rules: screen without
 engine), which the build record already lists.
+
+## 26 August 2026 — eleventh-sweep orders: the category map, then hold
+
+Sentinel's A3 adoptions are merged, so the routed mapping landed:
+`'inconsistent-total'` and `'typed-over-edge'` join « Probable
+formula defects » in the web category map (`files.ts`,
+`CATEGORY_OF`), beside their siblings; the fallback
+(`categoryOfKey`'s « Other findings ») is untouched, so any rule the
+map does not know still surfaces rather than vanishing. Verified
+against the merged engine first — both rule keys exist in
+`audit.py`'s catalogue on this tip — and prettier, eslint and the
+full typecheck are clean.
+
+The screenless-capabilities inventory (orders item 2) was already
+delivered in the previous entry and is on the integration tip with
+it. Per orders item 3, this lane now **holds for the founder's
+designs** — no invented screens.
