@@ -888,3 +888,46 @@ reachable rows only, with the unreachable counts printed beside it.
 The judge is me, same discipline. **No target number is promised.**
 The matcher is the frozen v3; any change it needs after this round
 is a round-5 registration.
+
+## The fetch, attempted every honest way — what stands between round 4 and its corpus
+
+`scripts.corpus_documents_sft` is committed and correct: origin
+first with TLS verification on, Internet Archive snapshot fallback,
+per-file completeness gates (a PDF must carry its `%%EOF`, a zip its
+central directory), retries with backoff, every step printed. What
+the network served today, all of it measured, none of it guessed:
+
+- **Origin:** every request fails TLS verification, correctly — the
+  subdomain's certificate expired 10 July 2026 and names
+  `bimportal.…`. This blocks *everyone's* automated fetching, not
+  just ours, until SFT fixes it; the founder's manual verification
+  presumably clicked through a browser warning.
+- **Archive, pages:** all three deal tag pages fetched (via the raw
+  `id_` form). They bind the agreements to document ids 45 (Kelso),
+  50 (Levenmouth), 58 (Oban & Campbeltown) — the fetcher discovers
+  these itself.
+- **Archive, documents:** every download of an agreement is cut at
+  **exactly 1 MiB** — a hard cap on this path (other hosts serve
+  this container multi-megabyte files without truncation), and the
+  truncated streams arrive with no error, which is why the fetcher
+  now refuses incomplete bytes instead of saving them. Ranged
+  requests get one 206 chunk and then resets or redirects.
+- **The models are not in the archive at all.** The Feb/April
+  snapshots of all three tag pages list only the Project Agreements;
+  the financial models the founder saw are newer than every capture.
+  So even a cooperative archive yields only half of each pair.
+
+**What would unblock round 4, for the lead and founder:** (a) SFT
+fixing their certificate — the fetcher then works as written, both
+halves; (b) the founder, from a machine whose browser they can vouch
+for, either saving the six document URLs to the Wayback Machine
+(Save Page Now on `contracts…/document/{45,50,58}/download` and the
+three models' ids from the live pages) or downloading the six files
+and placing them in `scripts/corpus_sft/` and
+`scripts/corpus_documents/sft/` on the lead's container — the
+registered round runs unchanged the moment the files exist, and
+nothing in the registration depends on who carried the bytes.
+
+**Turn's end state:** round 4 registered; the fetcher committed and
+proven against today's network; zero corpus files landed, said
+plainly; rounds 1–3 and D5 unchanged.

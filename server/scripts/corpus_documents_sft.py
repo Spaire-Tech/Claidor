@@ -23,6 +23,7 @@ is a day this prints failures, not a conclusion about the corpus.
 import json
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -61,36 +62,78 @@ def _snapshot(url: str) -> str | None:
     return f"https://web.archive.org/web/{closest['timestamp']}id_/{url}"
 
 
-def _fetch(url: str, label: str) -> bytes | None:
-    """Origin first, archive second; says which answered."""
+def _complete(payload: bytes) -> bool:
+    """A whole file, not a chopped stream.
+
+    The archive has been seen cutting a download at exactly 1 MiB with
+    no error raised — so completeness is checked from the bytes: a PDF
+    carries %%EOF near its tail, a zip its central-directory record,
+    a legacy .xls its OLE header (small enough that truncation shows
+    elsewhere). Anything else passes; the caller's own sniffing rules.
+    """
+    if payload.startswith(b"%PDF"):
+        return b"%%EOF" in payload[-2048:]
+    if payload.startswith(b"PK"):
+        return b"PK\x05\x06" in payload[-66000:]
+    return True
+
+
+def _fetch(url: str, label: str, attempts: int = 3) -> bytes | None:
+    """Origin first, archive second, retried; says which answered."""
     try:
         payload = _get(url)
-        print(f"  [origin]  {label}: {len(payload):,} bytes", file=sys.stderr)
-        return payload
+        if _complete(payload):
+            print(f"  [origin]  {label}: {len(payload):,} bytes", file=sys.stderr)
+            return payload
+        print(f"  [origin]  {label}: truncated stream, refused", file=sys.stderr)
     except (urllib.error.URLError, OSError) as problem:
         print(f"  [origin]  {label}: {str(problem)[:80]}", file=sys.stderr)
     archived = _snapshot(url)
     if archived is None:
         print(f"  [archive] {label}: no snapshot", file=sys.stderr)
         return None
-    try:
-        payload = _get(archived)
-        print(f"  [archive] {label}: {len(payload):,} bytes", file=sys.stderr)
-        return payload
-    except (urllib.error.URLError, OSError) as problem:
-        print(f"  [archive] {label}: {str(problem)[:80]}", file=sys.stderr)
-        return None
+    for attempt in range(1, attempts + 1):
+        try:
+            payload = _get(archived)
+        except (urllib.error.URLError, OSError) as problem:
+            print(
+                f"  [archive] {label} (try {attempt}): {str(problem)[:70]}",
+                file=sys.stderr,
+            )
+            time.sleep(20 * attempt)
+            continue
+        if _complete(payload):
+            print(f"  [archive] {label}: {len(payload):,} bytes", file=sys.stderr)
+            return payload
+        print(
+            f"  [archive] {label} (try {attempt}): truncated at "
+            f"{len(payload):,} bytes, refused",
+            file=sys.stderr,
+        )
+        time.sleep(20 * attempt)
+    return None
 
 
 def _documents(page: bytes) -> list[tuple[str, int]]:
-    """(title, document id) pairs from one tag page, in page order."""
+    """(title, document id) pairs from one tag page, in page order.
+
+    Titles are the panel headings (« Kelso High School - Project
+    Agreement »); each download link is bound to the nearest heading
+    above it, which survives the archive's URL rewriting untouched.
+    """
     html = page.decode("utf-8", errors="replace")
-    out = []
+    titles = [
+        (m.start(), m.group(1).strip())
+        for m in re.finditer(
+            r">([^<>]*(?:Financial Model|Project Agreement)[^<>]*)<", html
+        )
+    ]
+    out: list[tuple[str, int]] = []
     for m in re.finditer(r"/document/(\d+)/download", html):
-        before = re.sub(r"<[^>]+>", "|", html[max(0, m.start() - 700) : m.start()])
-        parts = [p.strip() for p in re.sub(r"\s+", " ", before).split("|") if p.strip()]
-        title = parts[-1] if parts else ""
-        pair = (title, int(m.group(1)))
+        above = [title for position, title in titles if position < m.start()]
+        if not above:
+            continue
+        pair = (above[-1], int(m.group(1)))
         if pair not in out:
             out.append(pair)
     return out
