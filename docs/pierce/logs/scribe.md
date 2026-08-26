@@ -624,3 +624,71 @@ Matcher v2 then scores the sourced cells found, same verdict table.
 **No target number is promised for either run.** If v2 still
 proposes falsely, that is the record and nothing ships, same as
 round 1.
+
+## D3 round 2 — measured. Fewer wrong proposals, still none right; and the pair itself is the wrong direction for the hit-rate case
+
+Matcher v2 froze at `7055150`, after the registration and before any
+result. Both runs then ran as registered.
+
+**Run A — the round-1 sample, v1 vs v2, identical truth:**
+
+| | v1 (round 1) | v2 (run A) |
+|---|---|---|
+| true proposal | 0 | 0 |
+| false proposal | 8 | **2** |
+| true abstention | 22 | **28** |
+| missed | 0 | 0 |
+
+The reference-word rule killed **all eight** of round 1's false
+proposals — and unmasked two new ones of a second reference shape it
+does not cover: **the leading paragraph number.** Both survivors are
+numbered-paragraph prose (« *10.246* Ofgem's decision is that Valid
+Bad Debt Claims are allowable… », « *2.6* The licensee will update
+outturn data… CPIHm… »): the paragraph number opens the line, so no
+reference word precedes it, and in round 1 these candidates were
+masked behind ties with the definition-table lines v2 now sets
+aside. Precision is still **0 of 2**. Nothing ships; the standing
+sentence on the route remains exactly true. The leading-paragraph
+defense (a numeric token that *opens* a line whose remaining text is
+prose is a paragraph label, not a quantity) is the obvious round-3
+candidate — registered then, not patched now. Verdicts:
+`scribe-d3-round2-runA-verdicts.json`.
+
+**Run B — the sourced draw found nothing to score, and that is the
+finding.** All 60 value-prefiltered candidates (seed 2718281,
+registered stopping rule) were judged in order: **0 of 60 are
+genuinely stated by the documents.** Every hit was furniture, a
+threshold or yield from a different quantity, or a near-miss in
+someone else's table — the closest (« Net additions 207.9 ») turned
+out on the rendered page to be SPD's FY2026 row against EPN's FY2022
+cell. Combined with round 1: **90 seeded draws from 22,693 typed
+cells, zero stated by the paired documents.**
+
+**Why, structurally — worth the lead's attention.** This pair runs
+the wrong direction. The Finance Annex is *derived from* the model:
+what it states are outputs — RAV, allowed revenue, WACC — which in
+the PCFM are **computed** cells, exactly the cells D3's typed-only
+task excludes (rightly: a computed cell's provenance is its
+formula). The PCFM's *typed* cells are per-licensee machine inputs
+no narrative document restates. The Chain's product case is the
+opposite direction — a term sheet feeding typed cells of a deal
+model — and measuring the hit-rate side therefore needs a
+document-fed pair: Ofwat's business-plan-tables-to-financial-model
+mapping tool and inbound-queries document (the pairing
+`corpus-sources.md` recommended first, unreachable from this
+container), a company business-plan submission with its BPFM, or a
+real deal set. On this corpus, the honest claim is limited to: the
+matcher's false-proposal rate on unsourced typed cells fell from
+8/30 to 2/30 under the frozen defense, at zero cost in missed
+sources (there were none to miss).
+
+**Also reported for the lead:** the integrated tip carries one red
+test that is not this lane's — `test_routes.py::TestHouseRules::`
+`test_defaults_before_anybody_decided` asserts 17 audit rules and
+the catalogue now has 19 (Sentinel's adoptions; the test is
+Atelier's file). Reproduces with my changes stashed.
+
+**Round 3, when ordered:** the leading-paragraph defense registered
+and frozen; the hit-rate case on a document-fed pair (PR24 on a
+machine that reaches it, or a submission pair reachable here); same
+judge, same discipline.
