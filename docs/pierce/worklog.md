@@ -4260,3 +4260,29 @@ next Sentinel round's precondition sweep because this machine is
 inside the multi-day V3 run (pair 3 of 16 at this writing, ~90
 min/pair on the memory-fixed aligner — the time cost routed to
 Prism as a registered question). 631 conftest-free tests green.
+
+---
+
+## 26 August — the founder's research: the corpus we said didn't exist
+
+The founder went researching and came back with the thing D3's
+measurement was missing — and with a correction to our own record.
+`closed-deal-ground-truth.md` had concluded from one deal (Dumfries &
+Galloway) that the Scottish project agreements redact every
+model-shaped figure; the founder checked fifteen and **seven leave
+the principal figure visible** — hand-verifying two end to end
+(Levenmouth's £3,741,000 ↔ « Unitary Charge » 3.741 in a millions
+sheet; Oban & Campbeltown to the penny) and finding Kelso's model
+carries a 73-row provenance tab written by the deal team itself —
+an independent marking scheme for the matcher. One deal was true;
+the generalization was ours, and it is corrected in
+`corpus-sources.md` (26 Aug addendum) along with the rest of the
+research: MCC's ~100 real models (also the named round-4 unseen
+corpus, and possibly what makes beat families measurable), EDGAR
+EX-10 agreements, the smoke-test pairs, FinWorkBench. Reachability
+verified from this container: SFT 200, MCC 200, HuggingFace 200.
+Scribe's orders now lead with the Scottish fetcher and the
+registered hit-rate round; the named limitations (formula-stripped
+models → declared typed-cell convention; OCR'd contracts;
+unpublished loan agreements) are in the registration's path before
+any number.

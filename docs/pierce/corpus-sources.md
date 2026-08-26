@@ -398,3 +398,62 @@ licences.
   model" pairing is not published as a ready dataset; extracting it
   from the PST files is possible but is work, and the result would be
   more than 20 years old.
+
+---
+
+## Addendum, 26 August 2026 — the founder's research corrects this file
+
+The record first: `closed-deal-ground-truth.md` concluded from the
+Dumfries & Galloway pair that the Scottish project agreements redact
+every model-shaped figure, and that conclusion quietly became « the
+Scottish contracts are censored ». **The founder checked fifteen
+deals; seven leave the principal money figure visible.** One deal was
+true; the generalization was ours and it was wrong. Corrected here.
+
+### The Scottish deal pairs (document-feeds-model — D3's missing direction)
+
+~30 NPD/hub deals publish both halves free, no NDA: the signed
+project agreement and the financial close model
+(scottishfuturestrust.org.uk — reachable from the containers, HTTP
+200). The founder hand-verified two end to end:
+
+- **Levenmouth Academy**: contract « £3,741,000 a year » ↔ model cell
+  `3.741` labelled « Unitary Charge » (a millions sheet — scale and
+  wording differ, the link is exactly D3's task). Contract « 22% »
+  indexation ↔ cell « Gearing of Unitary Charge to Indexation ».
+- **Oban & Campbeltown**: contract £4,912,193 ↔ model 4,912,193.07.
+- **Kelso**: the model carries a hand-written provenance tab — **73
+  rows of « clause → term → figure »** (« Schedule 1 → Base Credit
+  Facility → £21,461,602.52 », « Loan Agreement → Margin →
+  3.349% ») — a marking scheme written by the deal team at close,
+  independent of us.
+
+Named limitations, stated before any measurement: the published
+models are **formula-stripped** (every cell a value), so typed vs
+computed cannot be read from the file — a registered convention
+(e.g. « input tabs count as typed ») must be declared openly; the
+contracts are **OCR'd photocopies** (garbled letters, numbers
+survive better); some referenced loan agreements were **never
+published**, so part of Kelso's 73 rows points at unavailable
+paper.
+
+### Also from the founder's research (each verified reachable where noted)
+
+- **MCC ERR models** (mcc.gov/our-impact/err/, HTTP 200): ~100 real
+  third-party `.xls/.xlsx/.xlsm` across ~30 country programmes.
+  Narrative docs are model-derived (the Ofwat direction), but input
+  sources (feasibility studies) are often published — one road
+  project decides that. Independently valuable as round-4 unseen
+  corpus for the engine — and general spreadsheets may make A3
+  candidate 3 (beat families) measurable.
+- **EDGAR EX-10 credit agreements**: unredacted economic terms,
+  HTML, full-text search since 2001 (the tested search endpoint
+  returned 403 from here; the www.sec.gov document paths are the
+  ones to verify at fetch time).
+- **Smoke-test pairs**: ModelOff cases, A.CRE (case + solution
+  model), Bodmer's library, HBS/Ivey/Darden case+spreadsheet pairs
+  (paid, ~$10 each).
+- **FinWorkBench (Finch)** on HuggingFace (HTTP 200), CC BY 3.0:
+  172 expert-annotated workflows incl. document-grounded extraction
+  with reference outputs — the only hand-annotated ground truth of
+  this exact shape.

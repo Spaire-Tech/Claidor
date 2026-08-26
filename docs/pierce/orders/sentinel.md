@@ -15,3 +15,11 @@ already provides.
    broke an Atelier test expectation (routed to Atelier). For the
    future: when an adoption changes the rule catalogue, name that
    consequence in your log so the lead routes it the same day.
+
+## Addendum (thirteenth sweep)
+
+The founder's research found the MCC ERR corpus (~100 real
+third-party models, mcc.gov reachable). When you reach the plan's
+unseen-corpus work: this is the named candidate — and general
+spreadsheets may finally make candidate 3 (beat families)
+measurable, per your own future-round clause.
