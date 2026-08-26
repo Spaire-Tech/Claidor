@@ -188,6 +188,15 @@ def test_boxes_sit_where_the_text_was_drawn(extraction) -> None:
     assert first.box.x1 < width
 
 
+def test_each_number_knows_its_printed_line(extraction) -> None:
+    assert [n.line for n in extraction.numbers] == [
+        "Revenue 1,234.5",
+        "Loss (2,340) recorded",
+        "Margin 45% up 3 points",
+        "Margin 45% up 3 points",
+    ]
+
+
 def test_boxes_are_ordered_like_the_page(extraction) -> None:
     tops = [n.box.top for n in extraction.numbers]
     assert tops == sorted(tops)  # 700, 680, 660 from the top down

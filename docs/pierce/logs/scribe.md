@@ -268,3 +268,284 @@ that is a schema bump proposed here, not a silent addition.
 
 Next, once the lead has seen this: D2's serving routes against the
 engine's storage, then D3.
+
+## 26 August 2026 — standing orders acknowledged; D2 served
+
+**The lead's channel, confirmed.** Per the founder's instruction and
+`orders/README.md`: at the start of every working turn this lane
+fetches `origin/claude/pierce-phase-6-writing-mjkaj6`, reads
+`docs/pierce/orders/scribe.md`, does what it says, pushes to
+`swens/scribe`, and stops. « Go » means exactly that. The lane branch
+was fast-forwarded onto the integrated tip (`e37e3e1`) — the lead's
+merge notes said the tip moved, and my four commits are all ancestors
+of it. The orders' three claims were verified against the branch, not
+taken on faith: pdfplumber is in `pyproject.toml`, the chain router
+is mounted in `api.py`, and D2 stands approved in the orders file.
+
+**The container is repaired — other lanes should hear this.** Every
+`import fastapi` failed here with a pydantic `AssertionError`, which
+is why my router could not be exercised over HTTP yesterday and why
+Atelier was told to document if database fixtures cannot run. The
+root cause was measured, not guessed: the container ships **Python
+3.14.0rc2**, whose `ForwardRef` predates the final 3.14 that pydantic
+2.12.5 expects. The fix, all local to the container, none of it
+committed: a current `uv` (0.12.5, the bundled 0.8.17's manifest
+stops at rc2), `uv python install 3.14` (3.14.7), the venv rebuilt on
+it — plus native PostgreSQL 16, Redis, and a downloaded MinIO started
+by hand with the `.env.testing` credentials. On that stack the whole
+tieout suite runs: **680 passed, 8 skipped**, route-level tests
+included. Route tests are possible in these containers; the recipe is
+this paragraph.
+
+**D2 is built and served, tests at the route level.**
+
+- `chain/store.py`: `tieout_chain_facts` and `tieout_chain_refusals`,
+  the approved contract as rows (box flattened into columns — the
+  engine's everything-works-off-rows rule). Mapping, recorded:
+  `document_version_id` = `tieout_artifacts.id`, `document_id` = that
+  artifact's `lineage_id`.
+- **Fact ids are deterministic** — UUID5 over (version, extractor
+  version, page, ordinal, printed text) — honoring the approved
+  schema's « never changes across re-extraction of the same document
+  version »: extract twice, get byte-identical rows. A bumped
+  extractor is new ids on purpose: different code, different claims.
+- `chain/router.py` grew the serving routes:
+  `POST /chain/documents/{id}/extract` (facts persisted at
+  extraction, from the bytes the engine's storage kept),
+  `GET /chain/facts/{id}` (the D2 one-liner), and
+  `GET /chain/documents/{id}/facts` (the whole record, refusals
+  alongside, so coverage is one call). Access is the workspace rule:
+  deal membership on every route, 404 never 403 — a stranger holding
+  a real fact id learns nothing a made-up id wouldn't teach.
+- `extract.py` now records each number's printed **line** (the
+  approved schema's label neighborhood) and stamps
+  `EXTRACTOR_VERSION = "2"`.
+- Tests: `test_chain_store.py`, 9 route-level cases through the real
+  path — upload via the engine's artifacts route, extract, serve,
+  re-extract idempotently, refuse a deck in words, refuse strangers
+  with 404. All green; extraction tests now 31; tieout suite 680.
+
+**Two touches outside my listed paths, named, not silent.** A fact
+store cannot exist inside the package alone: (1) one import line in
+`polar/models/__init__.py`, so the tables register in the metadata
+that alembic and the test harness build from; (2) one new migration
+file, `2026-08-26-0330_chain_facts.py`, revising the current head.
+Both are new-file-or-one-line, neither touches another lane's files,
+and both exist only because the orders command a persisted fact
+store. If the lead wants either cut differently at integration, say
+the word. (`alembic check` on this container reports a pile of
+pre-existing drift across unrelated tables — none of it mentions the
+chain tables, which match their migration exactly.)
+
+## D3 registration — written before any matcher code exists
+
+The order asks for the registered sample and judging protocol first.
+Registered here, before a line of matcher exists:
+
+**The task.** A typed model number (a `tieout_cells` row whose value
+is typed, not computed) in a deal that also holds extracted
+documents. The matcher proposes candidate facts from the store, or
+abstains.
+
+**The rule, from the plan verbatim:** matched **by labels near
+both — never by value.** The cell brings its row and column labels;
+the fact brings its printed line. Scoring is label affinity only.
+The numeric value never enters scoring in any form — not as a
+feature, not as a tiebreak, not as a filter. (Value-matching would
+make every measurement circular and every link dishonest: the whole
+point of a confirmed link is that the values may later *disagree*.)
+**Abstention when candidates tie:** if the top two scores are within
+the tie margin, the matcher proposes nothing, and that is recorded as
+an abstention, not a failure.
+
+**The sample.** The paired set is Ofwat PR24: real price-review
+models and the published documents that quote them
+(`corpus-sources.md` names this pairing as the reason PR24 exists in
+our corpus; the lead's tenth-sweep note says the PR24 corpus is
+resident). From the deal set, **30 typed model numbers drawn with
+seed 314159** from the population of typed cells whose workbooks
+pair with at least one extracted document. Draw registered now;
+drawn only after the matcher is frozen for the round.
+
+**The judging protocol.** For each of the 30, a person (me, judging
+from the documents, blind to the matcher's score — candidates shown
+in shuffled order without scores) reads the document pages and
+records the ground truth first: « the document states this number at
+page/box X », or « the document does not state this number ». Then
+the matcher's output is compared:
+
+| matcher says | truth says | verdict |
+|---|---|---|
+| proposes fact F | F is the stated place | true proposal |
+| proposes fact F | stated elsewhere / not stated | false proposal |
+| abstains | not stated, or genuinely ambiguous | true abstention |
+| abstains | stated, unambiguous | missed |
+
+**Reported numbers:** proposal precision (true proposals / all
+proposals), abstention rate, miss rate — each with its denominator
+printed. **No target is promised in advance**; the numbers are
+whatever they are, and D3 ships to the product only when the founder
+has seen them. Failures are counted in this log, not narrated away.
+
+Next turn, unless the orders change: the matcher behind these
+registered criteria, in the chain package, tests first.
+
+## 26 August 2026, second « go » — the matcher, frozen for the round
+
+Orders re-read from the tip first: the tip moved (`40d2599`, a
+Prism-only update after their aligner hit the container's memory
+ceiling on PR24 — noted, and a reason this lane keeps running heavy
+jobs alone), my orders file is unchanged, and my lane is not yet
+merged. Item 1 and the registration half of item 2 were done last
+push; the registration being filed, the matcher itself was this
+turn's work — code strictly after criteria, as ordered.
+
+**Built: `chain/propose.py`,** the registered rule with no
+ornamentation. Score = the share of the cell's label words found in
+the candidate fact's printed line. Value-blindness is enforced in the
+tokenizer, not promised in a comment: purely numeric tokens are
+dropped from both sides before any comparison, so « 2025 » matches
+nothing and no caller can smuggle a value in as a string. Abstention
+is first-class and worded: below half coverage (« the cell may simply
+have no source in the documents — that is a finding, not a
+failure »), on a tied top score (« a person can; this matcher will
+not »), and on label-less cells. The scoring is deliberately plain,
+because plain is what the registered harness can judge; anything
+cleverer must beat it on that harness first.
+
+**Served: `GET /chain/cells/{id}/proposals`** — read-only, the
+candidate pool being every extracted fact on the cell's deal.
+Computed cells and aliases are refused in words (their provenance is
+their formula); confirming stays D4's deliberate write. The response
+carries the top five ranked candidates with their shared words, so a
+reviewer sees what the labels saw — on abstentions especially.
+
+**Tested: twelve cases, all green; suite at 692 passed, 8 skipped.**
+Seven pure planted cases — the value trap above all: a line printing
+the cell's exact number twice, against a line sharing the cell's
+words, must lose on words alone; and the same trap with no labelled
+alternative must end in abstention, not a value match. Then the
+route walked end to end: upload, extract, plant a typed cell, get
+the proposal; the fixture's own « Margin 45% up 3 points » line
+supplies a genuine two-facts-one-label tie that abstains over HTTP
+exactly as it does in the pure case.
+
+**Not claimed:** any proposal-quality number. The registered 30-draw
+over the Ofwat PR24 model-document pairs has not run. The matcher is
+now **frozen for that round** (`FLOOR = 0.5`, tie = exact top-score
+equality, the tokenizer as committed); the next step on this track
+is assembling the paired deal set and running the draw with seed
+314159, judging blind per the table above.
+
+**Container note, again for the lanes:** the hand-started services
+(postgres, redis, minio) do not survive between turns — they die
+with the turn's processes and restart in seconds from their surviving
+data directories. First run of the day: restart them before blaming
+a test.
+
+## 26 August 2026, third « go » — registration amended before results: the round runs on Ofgem ED2, because Ofwat is unreachable here
+
+Orders unchanged at the tip; lane still unmerged. This turn is the
+registered D3 measurement round — and its sample source has to
+change **before any result exists**, named here, with the evidence:
+
+- The registration named the Ofwat PR24 pairs. From this container,
+  measured today: `ofwat.gov.uk` answers **403 Forbidden** to the
+  committed fetcher (as `model_corpus.py` already records), and the
+  UK Government Web Archive route that `regulator_eval.py` documents
+  serves a CloudFront **« Human Verification » page (405)** to every
+  request from here — a bot gate this lane will not try to defeat.
+  Report, don't fight: the PR24 round belongs on a machine that can
+  reach the files (the lead's container holds the resident PR24
+  corpus; the harness below will run there unchanged).
+- **The amendment:** the paired set for this round is **Ofgem
+  RIIO-ED2** — reachable, measured today, and named in
+  `corpus-sources.md` as the adjacent seam. The workbook is
+  `ED2-PCFM-V5.xlsx` (fetched by the committed
+  `scripts.model_corpus`, 3 of 5 sources fetched, Ofwat and AER
+  failing exactly as documented). The documents are three Ofgem PDFs
+  that quote the model's values (fetched into
+  `scripts/corpus_documents/ed2/`, git-ignored, re-fetchable): the
+  RIIO-ED2 Final Determinations **Finance Annex**, the ED2 **Price
+  Control Financial Handbook**, and the **PCFM Guidance v1.1**.
+- **Everything else is unchanged and already frozen:** seed 314159,
+  30 typed cells, the judging table, blind judging (truth recorded
+  before any matcher output is looked at), the matcher exactly as
+  committed at `a546087`. The population is re-anchored only in its
+  source: typed cells (no formula, a value present) of the paired
+  workbook.
+- **One honest limit of the judging method, registered now:** « the
+  document does not state this number » is established by searching
+  the documents' extracted lines for the value in its plausible
+  printed forms (raw, thousands-separated, rounded to 1–2 places,
+  percent-scaled) plus the cell's label words, and reading the hits.
+  A number the documents state in a form outside those variants
+  (rescaled to £m and rounded, say) could be missed, which would
+  over-credit abstentions. Counted as a limit, not hidden.
+
+## D3 round 1 — measured. Proposal precision: 0 of 8. The matcher does not ship.
+
+The round ran exactly as registered: harness
+`scripts.corpus_documents_link_round` (committed), two phases, truth
+recorded before any matcher output was looked at. Population:
+**22,693 typed cells** in ED2-PCFM-V5; candidates: **7,836 numbers**
+extracted from the three paired Ofgem PDFs; 30 cells drawn with seed
+314159. Full verdicts: `docs/pierce/scribe-d3-round1-verdicts.json`.
+
+**The ground truth first**, judged from the documents with value
+search as the aid: **none of the 30 drawn numbers is stated by the
+documents** as the quantity the cell holds. Every value hit was page
+furniture, a date, a licence-condition number, or a different
+quantity under a different label. That is the population talking: a
+22,693-cell PCFM's typed cells are overwhelmingly per-licensee,
+per-year machine inputs that a narrative determination never quotes.
+So this round measured the side D5 cares about — what the matcher
+does when there is **no source to find** — and not the sourced-number
+side, which needs its own draw (below).
+
+**The registered table:**
+
+| verdict | count |
+|---|---|
+| true proposal | 0 |
+| false proposal | **8** |
+| true abstention | 22 |
+| missed | 0 |
+
+Proposal precision **0/8 = 0%**. Abstention rate 22/30. A perfect
+matcher on this sample abstains 30 times; mine proposed 8 times and
+was wrong all 8.
+
+**The failure class, named from the evidence.** Seven of the eight
+false proposals are one shape — the Financial Handbook's
+variable-definition table, lines like:
+
+    CROTREt  Cyber Resilience OT Re-opener  SpC 3.2
+    PCBt     PCB Interventions              SpC 3.5
+
+The line names the exact PCFM variable the cell feeds — label
+coverage 100%, the matcher's whole scoring signal — but the only
+number on the line is a **licence-condition cross-reference**
+(« SpC 3.2 »), not a quantity. The eighth is a section heading. The
+matcher cannot currently tell « the line that defines X » from « the
+line that states X's value », and the never-by-value rule (kept,
+rightly) means it cannot use the value to notice. **A matcher that
+links a cell to a paragraph number is worse than no matcher**, so:
+D3 does not ship on this number; the route stays, but nothing in the
+product may present its proposals as trustworthy until a round
+clears.
+
+**What round 2 must contain, to be registered before its results:**
+(1) a defense against definitional lines that does not touch values —
+candidates: treating a number token immediately following
+reference words (« SpC », « Section », « para », « Table », « page »)
+as a reference rather than a fact at extraction or scoring time;
+and/or requiring a proposed fact's line to be numeric-dense (a table
+row of quantities) — each to be chosen and frozen *first*; (2) a
+**sourced-number draw**: this round's population honestly measured
+the unsourced case; the hit-rate case needs a registered sample drawn
+from cells whose quantities the documents *do* state (the Finance
+Annex's WACC and allowed-revenue tables are stated-by-construction),
+found by value search *for sampling only* — sampling by value is
+legitimate exactly where scoring by value is not. (3) The PR24 round
+stays owed on a machine that reaches Ofwat.
