@@ -35,6 +35,7 @@ MATERIAL = Decimal("0.01")
 _KIND_ORDER = [
     "new_defect",
     "class_change",
+    "relabelled_line",
     "methodology_change",
     "moved_assumption",
     "material_output",
@@ -262,6 +263,41 @@ def delta_of(
                         detail=kind.replace("_", " "),
                     )
                 )
+
+        #: Class 7 (the written amendment in the lane log): a matched
+        #: line whose label changed is its own review item — v5 of the
+        #: ED2 model turned « Spare » rows into « Connections Reform
+        #: Costs » without touching a value, and that rename is
+        #: exactly what a reviewer must see.
+        for axis_name, lines, old_lines, new_lines in (
+            ("row", alignment.rows, old_grids[sheet].rows, new_grids[sheet].rows),
+            (
+                "column",
+                alignment.columns,
+                old_grids[sheet].columns,
+                new_grids[sheet].columns,
+            ),
+        ):
+            old_labels = {line.index: line.label for line in old_lines}
+            new_labels = {line.index: line.label for line in new_lines}
+            for match in lines.matched:
+                before_label = old_labels.get(match.old, "")
+                after_label = new_labels.get(match.new, "")
+                if before_label and after_label and before_label != after_label:
+                    where = match.old if axis_name == "row" else 0
+                    detail = f"« {before_label} » → « {after_label} »"
+                    if axis_name == "column":
+                        detail = f"column {_column_letters(match.old)}: {detail}"
+                    structure.append(
+                        DeltaItem(
+                            kind="relabelled_line",
+                            sheet=sheet,
+                            first_row=where,
+                            last_row=where,
+                            detail=detail[:180],
+                            weight=0.6,
+                        )
+                    )
 
         for old_row, new_row in row_map.items():
             for old_column, new_column in column_map.items():

@@ -162,3 +162,26 @@ class TestStudyKey:
         assert sum((old_keys & new_keys).values()) == 1
         assert sum((old_keys - new_keys).values()) == 1
         assert sum((new_keys - old_keys).values()) == 0
+
+
+class TestRelabelledLine:
+    """Class 7, the written amendment: EPN's « Spare » row became
+    « Connections Reform Costs » with every value untouched, and the
+    report must say so."""
+
+    def test_a_renamed_row_is_a_relabelled_line_and_nothing_else(self) -> None:
+        revised = [
+            BASE[0],
+            BASE[1],
+            BASE[2],
+            cell("B5", 5, 2, value="0.6", formula="=B4/B2", label="EBITDA margin"),
+        ]
+        report = delta_of(book(BASE), book(revised))
+        counted = kinds(report)
+        assert counted.get("relabelled_line") == 1
+        assert "moved_assumption" not in counted
+        assert "methodology_change" not in counted
+        assert "structure" not in counted
+        item = next(i for i in report.items if i.kind == "relabelled_line")
+        assert item.first_row == 5
+        assert item.detail == "« margin » → « ebitda margin »"
