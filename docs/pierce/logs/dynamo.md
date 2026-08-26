@@ -570,3 +570,44 @@ until the lead approves:
   adjudicates and certifies the few; it is never the batch engine.
   Every arbiter result names real Excel as its engine; none exists
   until the scopes and account exist.
+
+## 26 August 2026 — B4 measurement protocol, registered (orders item 3)
+
+The laws are registered (25 Aug); this registers **how they will be
+measured**, before any harness runs. Committed before any catch rate
+exists; none exists as this is written.
+
+- **Pilot first, then scale.** Selector curation (which cells are
+  volume/price/revenue/ratio/segments) is per-model, from the
+  model's own labels, and honest curation cannot be rushed across
+  eighteen files at once. Round 1 is a pilot on **one** gated file
+  — `ofgem_ed2/v5_2026-06.xlsx`, the flagship of the passing set —
+  with its selector map written into the harness config and quoted
+  in this log before any planting. Subsequent rounds extend
+  file-by-file; each file's selector map is committed before its
+  defects are planted.
+- **Planting.** Defects are planted by rewriting one formula (or
+  one input) per planted copy with openpyxl — the planted file's
+  stored values are discarded, which is irrelevant: B4 compares a
+  LibreOffice baseline against a LibreOffice perturbation of the
+  same planted file, so stored values never enter. One defect per
+  copy, class and target cell recorded at planting time.
+- **The classes, from the standing registration:**
+  hardcode-in-the-tail (constant added into a revenue chain — the
+  class static reading cannot see), the hardcoded ratio leg, the
+  omitted segment, the cap/override wired in without being a
+  declared input. Per class: N planted copies (N registered per
+  round before planting), catch = the law names the planted cell's
+  output cone; false positive = a violation reported on the
+  unplanted baseline pair.
+- **Procedure per planted copy:** baseline copy (inputs untouched)
+  and perturbed copy (the law's perturbation applied to the
+  selector-named inputs), both recalculated by `UnoCalculator`,
+  gate discipline inherited (a planted file that fails its own
+  baseline recalc is recorded, not measured), law checkers from
+  `recalc/laws.py` applied verbatim. Heavy jobs alone, one file at
+  a time, as ever.
+- **What will be claimed:** catch rate per class per law,
+  false-positive price per law, each catch naming its cell. The
+  ddmin narrowing to one responsible cell stays registered future
+  work.
