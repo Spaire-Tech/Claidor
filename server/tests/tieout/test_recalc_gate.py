@@ -174,6 +174,24 @@ def test_number_against_error_string_is_a_mismatch_of_kind() -> None:
     assert diff.tolerance is None
 
 
+def test_engine_error_against_stored_number_gets_its_own_bucket() -> None:
+    # LibreOffice erred where Excel stored a number (e.g. OFFSET with
+    # a computed negative width): the engine's inability, named per
+    # cell, still failing the gate — and marking the arbiter's case.
+    cells = {
+        "M!B2": _cell("M!B2", "8.29", "=AVERAGE(OFFSET(A1,0,0,C1,1))"),
+        "M!B3": _cell("M!B3", "5.0", "=A1+1"),
+    }
+    report = gate_file(cells, {"M!B2": "#ERR:502", "M!B3": 5.0})
+    assert report.verdict == "fail"
+    assert report.mismatches == []
+    (err,) = report.engine_errors
+    assert err.ref == "M!B2"
+    assert err.computed == "#ERR:502"
+    assert report.compared == 2
+    assert report.matched == 1
+
+
 def test_refusal_short_circuits_before_any_comparison() -> None:
     cells = {"M!B2": _cell("M!B2", "100.0", '=RTD("x",,"y")')}
     hit = DenylistHit(ref="M!B2", category=Category.RTD, target="RTD")

@@ -74,6 +74,22 @@ def test_implicit_intersection_single_is_a_measured_engine_gap() -> None:
     assert route_for(scan_formula("M!B2", "=SINGLE(A1:A10)")) is Route.ARBITER
 
 
+def test_offset_negative_literal_extent_is_a_measured_engine_gap() -> None:
+    # Excel reads OFFSET(A10,0,0,-3,1) as extending backward;
+    # LibreOffice 25.8 returns Err:502 (probed 26 Aug; the BPFMs'
+    # RatingSimulator cone is the corpus-scale case). Only the
+    # literal spelling is statically knowable.
+    assert categories("=AVERAGE(OFFSET(A10,0,0,-3,1))") == {Category.ENGINE_GAP}
+    assert categories("=AVERAGE(OFFSET(E10,0,0,1,-3))") == {Category.ENGINE_GAP}
+    # Positive extents, computed extents, and a minus elsewhere are
+    # not statically deniable — measurement (the engine-error bucket)
+    # owns those.
+    assert categories("=AVERAGE(OFFSET(A1,0,0,3,1))") == set()
+    assert categories("=AVERAGE(OFFSET(A10,0,0,MAX(-1,-$G$55),1))") == set()
+    assert categories("=SUM(OFFSET(A1,0,0),-3)") == set()
+    assert categories("=OFFSET(A1,-3,0)") == set()  # row offset may be negative
+
+
 def test_ordinary_model_arithmetic_is_clean() -> None:
     assert categories("=SUM(B2:B14)*VLOOKUP($A2,Rates!$A:$C,3,FALSE)") == set()
     assert categories("=XLOOKUP($A2,Names!A:A,Values!B:B)/LET(x,B4,x+1)") == set()

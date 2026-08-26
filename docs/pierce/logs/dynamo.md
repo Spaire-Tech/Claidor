@@ -454,3 +454,252 @@ Next in the lane, in order: name the `#ERR:502` construct from the
 erroring cells' formulas; the volatile-functions rules round
 (registered before any number moves); then B4's laws on the 18
 gated files — planted defects first, per the standing registration.
+
+## 26 August 2026 — standing orders acknowledged
+
+The lead's standing arrangement is in force for this lane: at the
+start of every working turn, fetch the integration branch and read
+`docs/pierce/orders/dynamo.md` — the current orders, maintained at
+every sweep. Do what they say, push to `swens/dynamo`, stop. The
+founder's « go » means exactly that. This entry is the requested
+confirmation; the tenth-sweep orders (name the 502; the volatile
+rules round; then B4 on the 18; a B3 design note) are the work now
+in progress, in that order.
+
+## 26 August 2026 — the volatile rules, registered before any number moves
+
+Per orders item 2, the rules first, committed before any re-derived
+number is looked at:
+
+- **The volatile set**, exactly as ordered: TODAY, NOW, RAND,
+  RANDBETWEEN, RANDARRAY. A stored value under any of these is the
+  authoring moment's answer; a recalculation's is this moment's.
+  Both are right, so their disagreement is **not fidelity loss** and
+  must never be counted as such — nor silently dropped.
+- **The cone**: a volatile *root* is a formula cell whose own
+  formula calls a volatile function (tokenized, same scanner
+  discipline as the denylist — never substring). The *cone* is the
+  roots plus every formula cell whose precedent chain reaches a
+  root (transitive dependents over the reader's own precedents).
+- **The gate's arithmetic changes thus**: cone cells are excluded
+  from compared/matched/mismatch counts and reported in their own
+  bucket — count of roots, count of cone cells, and the roots
+  named. A mismatch outside the cone still fails the file exactly
+  as before. Verdict logic is otherwise unchanged.
+- **What gets re-derived**: the two H7 PCM match rates, as a
+  separate table beside (never replacing) the round-2 numbers.
+  Expected under the new rules: the `Version log`/`O_FinStats`
+  TODAY-class mismatches move to the volatile bucket; whatever
+  numeric residue remains is the honest open question.
+
+## 26 August 2026 — the `#ERR:502` construct named: OFFSET with a negative extent
+
+Orders item 1, done with the SINGLE discipline — trace, then probe,
+then category. The trace: a diagnostic recalc of `final_et3_bpfm`
+dumped every error cell (2,423; codes 532/502/524/525/32767 — most
+match stored errors and are not mismatches); the 502 cone roots — 60
+cells whose own precedents are clean — are all one shape, in
+`RatingSimulator`:
+
+    =AVERAGE( OFFSET(AP64, 0, 0, 1, MAX((YEAR($AP$4)-1) - YEAR(AP$4), -$G$55)))
+
+The width argument goes **negative**. Excel reads a negative
+height/width as extending backward from the anchor; LibreOffice
+returns Err:502. The probe (five cells, this machine):
+`OFFSET(A10,0,0,-3,1)` and `OFFSET(E10,0,0,1,-3)` → `#ERR:502`,
+computed-negative `MAX(-1,-3)` width → `#ERR:502`, positive control →
+computes. Everything else 502-flagged in the BPFMs is this cone
+propagating (plain references through `OutputSummary` and
+`ScenarioRun_AllOutputData`).
+
+The mechanism, in two honest halves:
+
+1. **Statically knowable** — a negative *literal* height/width — is
+   now a denylist `engine-gap` hit (`OFFSET(negative-extent)`,
+   arbiter route), exactly detected by walking OFFSET's argument
+   list; a computed extent or a negative *row/column offset* (which
+   both engines accept) never trips it. Regression tests committed.
+2. **Only measurable** — a computed extent that goes negative, like
+   the BPFMs' `MAX(..., -$G$55)` — cannot be statically denied
+   without refusing dynamic-OFFSET files that measurably pass at
+   1.0. So the gate grew an **engine-errors bucket**: a computed
+   `#ERR:*` against a stored number is recorded per cell as the
+   engine's inability, still fails the file, and marks it an
+   arbiter candidate. The six BPFMs' 502 mismatches are exactly
+   this bucket under the new reporting.
+
+So the toolbox's LibreOffice gap list, measured on this corpus, now
+reads: no LAMBDA (documented), no implicit intersection (SINGLE,
+probed), no negative OFFSET extents (probed). All three route to the
+arbiter; none can silently pass.
+
+## 26 August 2026 — B3, the arbiter: a design for the lead (orders item 4)
+
+Four corpus files wait on real Excel (the SINGLE cone), and every
+gate fail needs an adjudicator. The design, for review — no code
+until the lead approves:
+
+- **Shape: an `ArbiterCalculator` behind the same frozen
+  `Calculator` protocol.** `start` = ensure a token (the existing
+  delegated flow in `polar/connector/graph.py` — its `GraphClient`
+  already does exchange/refresh/drives/download); `recalculate` =
+  upload the file to a dedicated arbiter folder in the connected
+  drive (resumable upload session — the BPFMs are ~40 MB),
+  `workbook/createSession` with `persistChanges: false`, POST
+  `workbook/application/calculate` with `calculationType:
+  FullRebuild` (the arbiter's whole point is Excel's own fresh
+  answer), then per worksheet read `usedRange` values+formulas in
+  row blocks (the API's ~4 MB payload cap makes chunking
+  non-optional), map to `Sheet!Ref`, close the session, delete the
+  upload. Same protocol ⇒ `gate_file` and the sweep harness run
+  unchanged with real Excel as the engine string.
+- **Two uses, kept distinct in reports:** (1) *certification* of a
+  file LibreOffice cannot honestly compute (engine-gap routes) —
+  the arbiter's stored-vs-Excel-recalc diff is that file's fidelity
+  report; (2) *adjudication* of a LibreOffice mismatch — a
+  three-way read (stored / LibreOffice / Excel-now) that names
+  whose number moved.
+- **What it needs that we lack, for the lead/founder to decide:**
+  the connector's scopes are read-only today (`Files.Read.All`);
+  the arbiter needs `Files.ReadWrite.All` (upload + workbook
+  session), which is a consent-screen change on the connected
+  account, and a designated Microsoft 365 account/drive to host the
+  arbiter folder. No new Python dependency (httpx is present).
+- **Honest limits, from the toolbox and kept:** 5-minute sessions,
+  one workbook at a time, undocumented throttling — the arbiter
+  adjudicates and certifies the few; it is never the batch engine.
+  Every arbiter result names real Excel as its engine; none exists
+  until the scopes and account exist.
+
+## 26 August 2026 — the H7 rates re-derived under the volatile rules (orders item 2)
+
+The registered prediction held exactly. Beside the round-2 numbers
+(which stand):
+
+| File | Round 2 (old rules) | Under volatile rules | Volatile bucket |
+|---|---|---|---|
+| h7_pcm_v2-10 | 227,318/227,367 = 0.999784, mm 49 | 227,318/227,365 = **0.999793**, mm 47 | roots 2, cone 2 |
+| h7_pcm_v2-11 | 227,374/227,405 = 0.999864, mm 29* | 227,374/227,403 = **0.999872**, mm 29 | roots 2, cone 2 |
+
+*Round 2 recorded 31 for v2-11; two were the volatile roots. The
+roots are the same pair in both files — `Version log!F10` (TODAY)
+and `O_FinStats!G3` (NOW-class) — and they feed nothing (cone =
+roots), so exactly two comparisons moved per file, as predicted.
+
+What honestly remains, all of it now visible:
+
+- **Near-floor dust**: `O_FinStats!*186` cells, |stored| ≈ 5e-12
+  against computed 0 (or −1.8e-11) — the standing tolerance-floor
+  question, unchanged, still flagged for the lead/founder.
+- **A small genuine cluster**: `Macros!Y98` / `C_Revenue!Y369` /
+  `C_Fin_Summ!F253` differ at ~2e-8–5e-8 relative — a real
+  engine-difference residue above the 1e-9 line, a handful of cells
+  per file, honest and open. Adjudication is the arbiter's (B3).
+- Engine errors: none in either file under the new bucket.
+
+## 26 August 2026 — B4 measurement protocol, registered (orders item 3)
+
+The laws are registered (25 Aug); this registers **how they will be
+measured**, before any harness runs. Committed before any catch rate
+exists; none exists as this is written.
+
+- **Pilot first, then scale.** Selector curation (which cells are
+  volume/price/revenue/ratio/segments) is per-model, from the
+  model's own labels, and honest curation cannot be rushed across
+  eighteen files at once. Round 1 is a pilot on **one** gated file
+  — `ofgem_ed2/v5_2026-06.xlsx`, the flagship of the passing set —
+  with its selector map written into the harness config and quoted
+  in this log before any planting. Subsequent rounds extend
+  file-by-file; each file's selector map is committed before its
+  defects are planted.
+- **Planting.** Defects are planted by rewriting one formula (or
+  one input) per planted copy with openpyxl — the planted file's
+  stored values are discarded, which is irrelevant: B4 compares a
+  LibreOffice baseline against a LibreOffice perturbation of the
+  same planted file, so stored values never enter. One defect per
+  copy, class and target cell recorded at planting time.
+- **The classes, from the standing registration:**
+  hardcode-in-the-tail (constant added into a revenue chain — the
+  class static reading cannot see), the hardcoded ratio leg, the
+  omitted segment, the cap/override wired in without being a
+  declared input. Per class: N planted copies (N registered per
+  round before planting), catch = the law names the planted cell's
+  output cone; false positive = a violation reported on the
+  unplanted baseline pair.
+- **Procedure per planted copy:** baseline copy (inputs untouched)
+  and perturbed copy (the law's perturbation applied to the
+  selector-named inputs), both recalculated by `UnoCalculator`,
+  gate discipline inherited (a planted file that fails its own
+  baseline recalc is recorded, not measured), law checkers from
+  `recalc/laws.py` applied verbatim. Heavy jobs alone, one file at
+  a time, as ever.
+- **What will be claimed:** catch rate per class per law,
+  false-positive price per law, each catch naming its cell. The
+  ddmin narrowing to one responsible cell stays registered future
+  work.
+
+## 26 August 2026 — the ED2 v5 selector map, quoted before planting
+
+Curated from the model's own labels (`AR`, `Legacy`,
+`SelectedInputs`, the 14 licensee sheets), and committed in
+`scripts/recalc_behave.py` before any planting run:
+
+- **An honest narrowing first**: the ED2 PCFM makes **no
+  volume-times-price promise** — it computes allowed revenue from
+  expenditure, indices and adjustments. Mapping proportionality or
+  scale invariance onto it would invent promises the model never
+  made, so the pilot measures the two laws it *does* promise;
+  proportionality and scale invariance will be measured on a model
+  whose structure carries them (the H7 debt-indexation pair is the
+  named candidate for the next selector round).
+- **Zero-input**, on the licence-fee adjustment:
+  `(AP83/AP13 − AP84) × …` (`Legacy!AR85`) is exactly 0 when both
+  licence-fee inputs are 0. Inputs: `<DNO>!AP384` (payments) and
+  `<DNO>!AP385` (allowance) across all 14 licensee sheets (the true
+  constants behind `SelectedInputs`' CHOOSE — all 28 verified
+  constants). Must-be-zero: `Legacy!AR85` and `AR!AR33` (the
+  Licence Fee adjustment line, FY2024).
+- **Consolidation**, three instances on `AR`, FY2024 column:
+  `AR!AR45 = SUM(AR22:AR44)` (Legacy AR over its 23 components),
+  `AR!AR53 = SUM(AR49:AR52)` (Allowed revenue over Calculated
+  revenue + Correction term + Forecasting penalty + Legacy AR),
+  `AR!AR58 = AR57 + AR53` (combined RIIO-1 + RIIO-2).
+- **Plants, one per copy**: omitted-segment (`AR!AR53 =
+  SUM(AR49:AR51)`, dropping Legacy AR ≈ 18.3), hardcode-in-the-tail
+  on the combined total (`AR!AR58 = AR57 + AR53 + 3.12`), and
+  hardcode-in-the-tail on the zero-input path (`AR!AR33 =
+  Legacy!AR85 + 1.2`).
+- Predictions, registered: plant 1 → consolidation flags `AR!AR53`;
+  plant 2 → consolidation flags `AR!AR58`; plant 3 → zero-input
+  flags `AR!AR33`; the unplanted control is clean on all measured
+  laws. **No result exists as this is written.**
+
+## 26 August 2026 — B4 pilot result: three plants, three catches, zero noise
+
+Run on this machine (eight LibreOffice recalculations, one at a
+time, ~10 coarse minutes end to end). Against the registered
+predictions, exactly:
+
+| Copy | Planted | Law verdicts |
+|---|---|---|
+| control | — | zero-input clean, consolidation clean |
+| plant 0 | omitted segment at `AR!AR53` | consolidation flags **`AR!AR53`**: expected 720.0939, actual 701.7959 — the dropped Legacy AR (≈18.3), to the penny |
+| plant 1 | `+3.12` in the tail of `AR!AR58` | consolidation flags **`AR!AR58`**: actual 723.2139 vs expected 720.0939 — the 3.12, exactly |
+| plant 2 | `+1.2` in the tail of `AR!AR33` | zero-input flags **`AR!AR33`**: 1.2 where exactly 0 was required |
+
+**Catch rate 3/3 (each catch naming its planted cell), false
+positives 0** on the control's two law runs, and no cross-law noise
+(every plant was flagged only by its predicted law). Plant 2 is the
+class that matters most: a constant pasted into an adjustment chain
+is invisible to static reading, and the zero-input law caught it by
+recalculating — the first measured instance of B4's founding claim,
+on a real regulator model.
+
+Honest bounds on this number: it is a **pilot** — one file, three
+plants, two laws; a 3/3 on three plants is a mechanism proof, not a
+catch-rate estimate. Next per the registered protocol: N plants per
+class registered before the next run; the H7 debt-indexation pair
+for proportionality and scale invariance (the two laws ED2 does not
+promise); then file-by-file extension across the 18 gated files,
+each selector map committed before its plants. ddmin narrowing
+stays registered future work.

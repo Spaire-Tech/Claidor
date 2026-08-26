@@ -1,3 +1,6 @@
+# mypy: ignore-errors
+# (`uno` and `com.sun.star` exist only for the LibreOffice-bundled
+# interpreter this script runs under.)
 """The UNO driver — the one file that runs inside LibreOffice's world.
 
 This script is executed by the **LibreOffice-bundled Python**
@@ -33,9 +36,6 @@ error codes, e.g. 532 for division by zero) — a different *kind* than
 a number, which is exactly how the gate treats them. A request that
 fails as a whole comes back as `{"id": n, "error": "..."}`.
 """
-
-# mypy: ignore-errors — `uno` and `com.sun.star` exist only for the
-# LibreOffice-bundled interpreter this script runs under.
 
 import json
 import sys
