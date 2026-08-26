@@ -74,9 +74,69 @@ class Plant:
     formula: str
 
 
+#: The 14 ED2 licensee sheets, in the model's own CHOOSE order —
+#: the true licence-fee inputs live at `<DNO>!AP384/AP385` (verified
+#: constants, all 28), behind `SelectedInputs`' CHOOSE.
+ED2_DNOS = (
+    "ENWL",
+    "NPgN",
+    "NPgY",
+    "WMID",
+    "EMID",
+    "SWALES",
+    "SWEST",
+    "LPN",
+    "SPN",
+    "EPN",
+    "SPD",
+    "SPMW",
+    "SSEH",
+    "SSES",
+)
+
+#: The ED2 v5 pilot (lane log, 26 Aug, quoted there before this ran).
+#: The PCFM makes no volume-times-price promise, so proportionality
+#: and scale invariance are NOT measured on it — mapping them here
+#: would invent promises the model never made. What it does promise:
+#: additive adjustments that vanish with their inputs (zero-input on
+#: the licence-fee pair), and totals that equal their components
+#: (three consolidation instances on the AR sheet, FY2024 column).
+ED2_V5_SELECTORS = Selectors(
+    volume=tuple(f"{dno}!{at}" for dno in ED2_DNOS for at in ("AP384", "AP385")),
+    revenue=("Legacy!AR85", "AR!AR33"),
+    totals={
+        "AR!AR45": tuple(f"AR!AR{row}" for row in range(22, 45)),
+        "AR!AR53": ("AR!AR49", "AR!AR50", "AR!AR51", "AR!AR52"),
+        "AR!AR58": ("AR!AR57", "AR!AR53"),
+    },
+)
+
+ED2_V5_PLANTS = (
+    Plant(
+        kind="omitted-segment",
+        target="AR!AR53",
+        formula="=SUM(AR49:AR51)",  # AR52 (Legacy AR, ~18.3) dropped
+    ),
+    Plant(
+        kind="hardcode-in-the-tail",
+        target="AR!AR58",
+        formula="=AR57 + AR53 + 3.12",
+    ),
+    Plant(
+        kind="hardcode-in-the-tail",
+        target="AR!AR33",
+        formula="=Legacy!AR85 + 1.2",
+    ),
+)
+
 #: file path (relative to server/) → (selectors, plants). Committed
 #: before running; the lane log quotes each entry it measures.
-PILOTS: dict[str, tuple[Selectors, tuple[Plant, ...]]] = {}
+PILOTS: dict[str, tuple[Selectors, tuple[Plant, ...]]] = {
+    "scripts/corpus_au_uk/ofgem_ed2/v5_2026-06.xlsx": (
+        ED2_V5_SELECTORS,
+        ED2_V5_PLANTS,
+    ),
+}
 
 
 def _split(ref: str) -> tuple[str, str]:

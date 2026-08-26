@@ -637,3 +637,39 @@ exists; none exists as this is written.
   false-positive price per law, each catch naming its cell. The
   ddmin narrowing to one responsible cell stays registered future
   work.
+
+## 26 August 2026 — the ED2 v5 selector map, quoted before planting
+
+Curated from the model's own labels (`AR`, `Legacy`,
+`SelectedInputs`, the 14 licensee sheets), and committed in
+`scripts/recalc_behave.py` before any planting run:
+
+- **An honest narrowing first**: the ED2 PCFM makes **no
+  volume-times-price promise** — it computes allowed revenue from
+  expenditure, indices and adjustments. Mapping proportionality or
+  scale invariance onto it would invent promises the model never
+  made, so the pilot measures the two laws it *does* promise;
+  proportionality and scale invariance will be measured on a model
+  whose structure carries them (the H7 debt-indexation pair is the
+  named candidate for the next selector round).
+- **Zero-input**, on the licence-fee adjustment:
+  `(AP83/AP13 − AP84) × …` (`Legacy!AR85`) is exactly 0 when both
+  licence-fee inputs are 0. Inputs: `<DNO>!AP384` (payments) and
+  `<DNO>!AP385` (allowance) across all 14 licensee sheets (the true
+  constants behind `SelectedInputs`' CHOOSE — all 28 verified
+  constants). Must-be-zero: `Legacy!AR85` and `AR!AR33` (the
+  Licence Fee adjustment line, FY2024).
+- **Consolidation**, three instances on `AR`, FY2024 column:
+  `AR!AR45 = SUM(AR22:AR44)` (Legacy AR over its 23 components),
+  `AR!AR53 = SUM(AR49:AR52)` (Allowed revenue over Calculated
+  revenue + Correction term + Forecasting penalty + Legacy AR),
+  `AR!AR58 = AR57 + AR53` (combined RIIO-1 + RIIO-2).
+- **Plants, one per copy**: omitted-segment (`AR!AR53 =
+  SUM(AR49:AR51)`, dropping Legacy AR ≈ 18.3), hardcode-in-the-tail
+  on the combined total (`AR!AR58 = AR57 + AR53 + 3.12`), and
+  hardcode-in-the-tail on the zero-input path (`AR!AR33 =
+  Legacy!AR85 + 1.2`).
+- Predictions, registered: plant 1 → consolidation flags `AR!AR53`;
+  plant 2 → consolidation flags `AR!AR58`; plant 3 → zero-input
+  flags `AR!AR33`; the unplanted control is clean on all measured
+  laws. **No result exists as this is written.**
