@@ -255,3 +255,11 @@ tests still run on every merged tip either way.
   The in-session messaging tools remain approval-blocked (retried
   today, refused before a prompt could render), so the founder
   stays the wake signal and nothing else.
+
+- **26 Aug, eleventh sweep — ownership amendment for Scribe**: D2's
+  fact store needed a database table, so Scribe's row gains its own
+  chain migrations (`server/migrations/versions/*chain*`) and the
+  two-line model registration in `polar/models/__init__.py` — the
+  models themselves live in `chain/store.py`, Scribe's package; the
+  shared file only imports them (plus one alphabetization fix).
+  Any further shared-file need still routes through the lead first.
