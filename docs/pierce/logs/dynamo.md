@@ -673,3 +673,33 @@ Curated from the model's own labels (`AR`, `Legacy`,
   plant 2 → consolidation flags `AR!AR58`; plant 3 → zero-input
   flags `AR!AR33`; the unplanted control is clean on all measured
   laws. **No result exists as this is written.**
+
+## 26 August 2026 — B4 pilot result: three plants, three catches, zero noise
+
+Run on this machine (eight LibreOffice recalculations, one at a
+time, ~10 coarse minutes end to end). Against the registered
+predictions, exactly:
+
+| Copy | Planted | Law verdicts |
+|---|---|---|
+| control | — | zero-input clean, consolidation clean |
+| plant 0 | omitted segment at `AR!AR53` | consolidation flags **`AR!AR53`**: expected 720.0939, actual 701.7959 — the dropped Legacy AR (≈18.3), to the penny |
+| plant 1 | `+3.12` in the tail of `AR!AR58` | consolidation flags **`AR!AR58`**: actual 723.2139 vs expected 720.0939 — the 3.12, exactly |
+| plant 2 | `+1.2` in the tail of `AR!AR33` | zero-input flags **`AR!AR33`**: 1.2 where exactly 0 was required |
+
+**Catch rate 3/3 (each catch naming its planted cell), false
+positives 0** on the control's two law runs, and no cross-law noise
+(every plant was flagged only by its predicted law). Plant 2 is the
+class that matters most: a constant pasted into an adjustment chain
+is invisible to static reading, and the zero-input law caught it by
+recalculating — the first measured instance of B4's founding claim,
+on a real regulator model.
+
+Honest bounds on this number: it is a **pilot** — one file, three
+plants, two laws; a 3/3 on three plants is a mechanism proof, not a
+catch-rate estimate. Next per the registered protocol: N plants per
+class registered before the next run; the H7 debt-indexation pair
+for proportionality and scale invariance (the two laws ED2 does not
+promise); then file-by-file extension across the 18 gated files,
+each selector map committed before its plants. ddmin narrowing
+stays registered future work.
