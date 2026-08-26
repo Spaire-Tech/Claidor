@@ -167,6 +167,25 @@ H7_PLANTS = (
     ),
 )
 
+#: The rest of the ED2 family: every version verified against the v5
+#: anchors before registration (lane log, 26 Aug, twelfth-sweep
+#: round) — `AR!AR33 = Legacy!AR85`, `AR45 = SUM(AR22:AR44)`,
+#: `AR53 = SUM(AR49:AR52)`, `AR58 = AR57+AR53`, `Legacy!AR85` on
+#: AP83/AP84, all 28 licence-fee inputs constants. All ten MATCH, so
+#: the v5 map and plants carry verbatim.
+ED2_FAMILY = (
+    "v1_2023-02.xlsx",
+    "v2_2023-07-14.xlsx",
+    "v2_2023-07-31.xlsx",
+    "v3_2023-10.xlsx",
+    "v3_2023-11.xlsx",
+    "v3_2024-01.xlsm",
+    "v4_2024-07.xlsx",
+    "v4_2025-01.xlsx",
+    "v4_2025-07.xlsx",
+    "v4_2026-01.xlsx",
+)
+
 #: file path (relative to server/) → (selectors, plants). Committed
 #: before running; the lane log quotes each entry it measures.
 PILOTS: dict[str, tuple[Selectors, tuple[Plant, ...]]] = {
@@ -174,6 +193,10 @@ PILOTS: dict[str, tuple[Selectors, tuple[Plant, ...]]] = {
         ED2_V5_SELECTORS,
         ED2_V5_PLANTS,
     ),
+    **{
+        f"scripts/corpus_au_uk/ofgem_ed2/{name}": (ED2_V5_SELECTORS, ED2_V5_PLANTS)
+        for name in ED2_FAMILY
+    },
     "scripts/corpus_au_uk/caa_h7/h7_new_debt_indexation_fds.xlsx": (
         H7_SELECTORS,
         H7_PLANTS,

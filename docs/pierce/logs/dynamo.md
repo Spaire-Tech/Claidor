@@ -761,3 +761,26 @@ Still mechanism proofs, not catch-rate estimates. Next (orders item
 2): widen file-by-file across the remaining gated files, N plants
 per class registered before each run, toward the plan's B4 DONE —
 the hardcode-in-the-tail class measured across hosts.
+
+## 26 August 2026 — twelfth-sweep orders: the widening round, registered
+
+Orders note first: **item 2 (the volatile rules round, H7 folded
+in) was completed under the eleventh-sweep work and is in the
+integration tip** — the registration, the implementation behind
+tests, and the H7 re-derivation table all merged; nothing is redone
+here. Item 3 complied with: B3 stays design-only.
+
+**Item 1, the widening — ED2 family round, registered before any
+run.** Every other ED2 version was verified against the v5 anchors
+by formula shape, not assumption: `AR!AR33 = Legacy!AR85`,
+`AR!AR45 = SUM(AR22:AR44)`, `AR!AR53 = SUM(AR49:AR52)`,
+`AR!AR58 = AR57+AR53`, `Legacy!AR85` on AP83/AP84, and all 28
+licence-fee inputs constants. **All ten MATCH** (v1 through
+v4_2026-01, the .xlsm included), so the v5 selector map and the
+same three plants carry verbatim to each; v5 itself re-runs as a
+repeat measurement. Predictions per file, identical to the pilot's:
+omitted segment → consolidation flags `AR!AR53`; tail hardcode →
+consolidation flags `AR!AR58`; zero-input tail hardcode →
+zero-input flags `AR!AR33`; control clean. Eleven files, 33 plants,
+22 control law-runs. **No result from this round exists as this is
+written.**
