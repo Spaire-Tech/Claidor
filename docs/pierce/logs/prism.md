@@ -540,3 +540,55 @@ future round rather than smuggled in now: cells added or removed
 *within* matched structure (a new actual typed into an existing
 row) appear in C1's raw diff but in no C3 class; deferred, in
 writing. Both pairs re-run after the amendment lands.
+
+## C3 results — the report stands on both pairs; V3 blocked on network, said plainly
+
+**Class 7's first run paid for itself.** Re-run of both pairs under
+the amendment, parity still EXACT on every field: the v2 pair is
+unchanged (no relabels in seventeen days — correct), and the v4→v5
+pair reports **four** relabelled lines: `EPN!157`, `LPN!157` — and
+`SelectedInputs!157` and `InputSummary!95`, which no earlier view
+had surfaced at all. The full v5 story, assembled by the report:
+one new line, « Connections Reform Costs », arrives everywhere —
+inserted on the ten licensee sheets that had no spare row,
+commandeered from a « Spare » row on the two that did, and named
+into the input sheets — with zero defect churn, ten structural
+blocks, four renames, and 292 materially-moved output blocks.
+
+**V2:** nine synthetic tests, each class held to its one edit,
+identical books reporting nothing. **V1:** exact, twice, as
+recorded above.
+
+**V3 — the verdict on this container: blocked on network access,
+not on code.** The refusals, each tried and recorded:
+- `ofwat.gov.uk` finals: HTTP 403 (Cloudflare block page) — the
+  same refusal `model_corpus.py` records from the study's era.
+- The UK Government Web Archive (the route the study successfully
+  used on 13 August 2026): now HTTP 405 with
+  `x-amzn-waf-action: captcha` on every deep URL — an interactive
+  AWS WAF challenge this environment cannot and should not solve.
+- The pre-installed Chromium through the container proxy:
+  `ERR_CONNECTION_RESET` on every site including `example.com` —
+  browser egress is closed here entirely.
+
+So the DONE line — « the PR24 revision pair reproduces its 84
+introduced defects through this report » — **is not claimed.** What
+stands ready for the machine that can reach the corpus: the report,
+`--parity` against the study's matcher on every pair, and the
+registered attribution discipline (matcher disagreement must be
+zero; engine drift since the study is measured and named — the
+A7/A3/A1 rounds have moved the engine, so today's number may
+legitimately differ from 84, and the comparison is exactly what V3
+is for). A note for the lead: if any machine in reach can fetch
+`scripts/corpus_regulator/` per `corpus-sources.md`, V3 is one
+command per pair from done.
+
+**Where the Watch stands after this session.** C1 done and
+hand-checked to zero disagreements; C2 done — 42/42 exact on
+structural and value-only planted edits, the one rewrite miss
+named, the O(n⁴) cost measured and confined; C3 built, verified V1
++ V2, exercised on two real pairs, V3 blocked on corpus access and
+said so. Next in the plan's order: C4's verifying-trace
+fingerprints and equivalence tiers (needs B1/B2 for tier 2), and
+C3's named deferrals (added-cells-within-matched-structure; a
+labelled-target round for the rewrite_formula class).
