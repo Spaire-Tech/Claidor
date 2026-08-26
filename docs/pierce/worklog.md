@@ -4130,3 +4130,28 @@ series carries the founder's GitHub identity as author (the resumed
 container pushes via the API — named in the lane log as the
 registered deviation) and the lane log entry part 1 cited is now
 present. 558 tieout tests green; engine untouched.
+
+---
+
+## 26 August — the tenth sweep: C3 merges, and V3 starts where the corpus lives
+
+**Prism's C3 merged**: the delta report in review language — seven
+classes (the seventh, `relabelled_line`, forced by a real pair
+mid-round and registered in writing before the re-run), the fold to
+one item per authoring decision, V1 parity EXACT with the study's
+matcher on both pairs run, V2's nine synthetic truths, and the
+`SelectedInputs!157`/`InputSummary!95` renames surfaced that no
+earlier view had seen. V3 — the sixteen PR24 pairs against the
+study's recorded 84 — was blocked on Prism's container by network
+(Ofwat 403, the web-archive route now behind a captcha, browser
+egress closed; each tried and recorded). 567 tieout tests green at
+the tip; engine untouched.
+
+**The lead is running V3 here**: this container still holds the
+study's own corpus (`corpus_pr24dd/` sixteen drafts,
+`corpus_regulator/` sixteen finals). Prism's committed harness,
+untouched, `--parity` on every pair, sequential per the heavy-job
+rule. Results land in this log when the run completes; per the
+registration, matcher disagreement must be zero and any difference
+from the recorded 84 is attributed to measured engine drift by
+name, or the run refuses.
