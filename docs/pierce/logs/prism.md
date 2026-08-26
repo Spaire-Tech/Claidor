@@ -922,3 +922,11 @@ A baseline recalc of the unedited pair under trial-free settings
 is timed first; if the machine cannot afford the full 8×5 grid,
 the cut (positions to one per class) is recorded before results
 are looked at.
+
+**Tier-2 instrument amendment, before any result** (the run aborted
+at target selection; no number was produced): SWEST's tail rows
+hold no numeric-valued formula, so both target scans
+(`formula_target`, `literal_target`) wrap to the sheet's top when
+the tail holds nothing — the same mechanical fallback the round-1
+stealth retype registered. The chosen coordinate remains the
+recorded ground truth.

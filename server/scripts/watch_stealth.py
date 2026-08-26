@@ -311,18 +311,24 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
     marks = (rows[len(rows) // 4], rows[3 * len(rows) // 4])
 
     def formula_target(mark: int) -> tuple[str, str]:
-        for cell in on_sheet:
-            if cell.row >= mark and cell.formula and cell.value is not None:
-                return _coordinate(cell), cell.formula
-        raise SystemExit(f"no numeric formula at or after row {mark}")
+        for start in (mark, 0):
+            for cell in on_sheet:
+                if cell.row >= start and cell.formula and cell.value is not None:
+                    return _coordinate(cell), cell.formula
+        raise SystemExit("no numeric formula anywhere on the sheet")
 
     def literal_target(mark: int, *, nonzero: bool) -> tuple[str, float]:
-        for cell in on_sheet:
-            if cell.row >= mark and cell.formula is None and cell.value is not None:
-                if nonzero and cell.value == 0:
-                    continue
-                return _coordinate(cell), float(cell.value)
-        raise SystemExit(f"no {'nonzero ' if nonzero else ''}literal after {mark}")
+        for start in (mark, 0):
+            for cell in on_sheet:
+                if (
+                    cell.row >= start
+                    and cell.formula is None
+                    and cell.value is not None
+                ):
+                    if nonzero and cell.value == 0:
+                        continue
+                    return _coordinate(cell), float(cell.value)
+        raise SystemExit("no eligible literal anywhere on the sheet")
 
     literals = {
         _coordinate(cell): float(cell.value)
