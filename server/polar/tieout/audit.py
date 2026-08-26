@@ -232,6 +232,7 @@ RULE_NAMES: dict[str, str] = {
     "long-formula": "Formulas too long to follow",
     "hardcode-in-formula": "Hardcoded values inside formulas",
     "typed-over-formula": "Values typed over formulas",
+    "typed-over-edge": "Values typed over a series' edge",
     "inconsistent-anchoring": "Anchoring that changes along a row",
     "inconsistent-row": "Formulas inconsistent across a row",
     "circular": "Circular references",
@@ -257,6 +258,7 @@ HEADLINES: dict[str, str] = {
     "long-formula": "Complex formula",
     "hardcode-in-formula": "Hardcoded assumption",
     "typed-over-formula": "Unexpected hardcode",
+    "typed-over-edge": "Typed series edge",
     "inconsistent-anchoring": "Inconsistent anchoring",
     "inconsistent-row": "Inconsistent formula",
     "circular": "Circular reference",
@@ -431,6 +433,11 @@ def _elevated(book: Workbook, result: Audit) -> None:
             "a typed value sits where the series calculates — overrides "
             "are sometimes deliberate",
         ),
+        "typed-over-edge": (
+            0.7,
+            "the series ends in a typed value — a one-sided witness, "
+            "and overrides are sometimes deliberate",
+        ),
         "circular": (
             0.9,
             "the loop is in the dependency graph and the workbook does "
@@ -568,6 +575,13 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
         return (
             f"{subject} does not follow the formula the rest of the row "
             "uses. Check whether the departure is deliberate."
+        )
+    if finding.rule == "typed-over-edge":
+        lead = f"{label} is" if label else f"The cell at {at} is"
+        return (
+            f"{lead} a typed value at the edge of a row that otherwise "
+            "calculates — the series runs out in a typed number. Check "
+            "whether the late adjustment is intentional."
         )
     if finding.rule == "inconsistent-total":
         lead = (
@@ -744,6 +758,7 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _selector_drift(book, result)
     _mutations(book, result)
     _typed_islands(book, result)
+    _typed_edges(book, result)
     _circularity(book, result)
     _skipped_cells(book, result)
     _sibling_totals(book, result)
@@ -3023,6 +3038,109 @@ def _island_findings(
 #: verbatim). A cell reference never fits: shapes render those in
 #: R/C form, which the second test excludes.
 MNEMONIC = re.compile(r"[A-Za-z_\\][A-Za-z0-9_.\\]*")
+
+
+def _typed_edges(book: Workbook, result: Audit) -> None:
+    """A series that runs out in a typed number.
+
+    The interior typed-over pass demands a formula on both sides, so
+    a constant at a run's head or tail — the A3 mining round's
+    family-edge class, the typed last period over a computed row — is
+    invisible to it by construction. Here the witness is one-sided: a
+    lone constant (or the evidence class's own pair) at the edge of a
+    stretch of at least three same-shape formulas, with nothing
+    beyond it.
+
+    The guards, registered in docs/pierce/a3-family-edge.md before
+    any measurement: head-side cells are flagged only on a sheet with
+    a detected historical/forecast boundary and only at or right of
+    it — typed actuals lead rows from the left, and flagging the
+    typed-meets-computed boundary is the mining round's own rejected
+    class; the run must read as over-time; a typed 0 is template
+    scaffolding; the stacked and counter-seed exemptions apply as in
+    the interior pass; and a cell the interior or island pass already
+    reported keeps that finding. Runs after the island pass for
+    exactly that dedup.
+    """
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule in ("typed-over-formula", "typed-over-edge")
+    }
+    rows: dict[tuple[str, int], list[Cell]] = {}
+    for cell in book.cells.values():
+        rows.setdefault((cell.sheet, cell.row), []).append(cell)
+    boundaries = _boundaries(rows)
+
+    def disqualified(sheet: str, cell: Cell) -> bool:
+        if cell.ref in already:
+            return True
+        try:
+            if cell.value is None or float(cell.value) == 0:
+                return True
+        except (TypeError, ValueError):
+            return True
+        if _stacked(book, cell):
+            return True
+        below = book.get(f"{sheet}!{get_column_letter(cell.column)}{cell.row + 1}")
+        return (
+            below is not None and _seed([cell], below) and _column_series(book, below)
+        )
+
+    for (sheet, row), cells in sorted(rows.items()):
+        cells.sort(key=lambda c: c.column)
+        boundary = boundaries.get(sheet)
+        for run in _runs(cells):
+            if len(run) < MIN_SERIES + 1 or not _over_time(run):
+                continue
+            for side in ("head", "tail"):
+                ordered = run if side == "head" else run[::-1]
+                typed: list[Cell] = []
+                for cell in ordered:
+                    if cell.formula is not None:
+                        break
+                    typed.append(cell)
+                #: One or two typed cells are an edge; three or more
+                #: are a region of data meeting a calculation.
+                if not 1 <= len(typed) <= 2:
+                    continue
+                stretch = ordered[len(typed) : len(typed) + 3]
+                if len(stretch) < 3 or any(c.formula is None for c in stretch):
+                    continue
+                shapes = {_shape(c) for c in stretch}
+                if len(shapes) != 1:
+                    continue
+                if side == "head" and (
+                    boundary is None or any(c.column < boundary for c in typed)
+                ):
+                    continue
+                if any(disqualified(sheet, cell) for cell in typed):
+                    continue
+                usual = next(iter(shapes))
+                where = "start" if side == "head" else "end"
+                pair = sorted(typed, key=lambda c: c.column)
+                values = " and ".join(
+                    shown_number(float(one.value or 0)) for one in pair
+                )
+                result.findings.append(
+                    Finding(
+                        rule="typed-over-edge",
+                        severity="error",
+                        ref=typed[0].ref,
+                        sheet=sheet,
+                        name=typed[0].name,
+                        detail=(
+                            f"{values} typed at the {where} of a series "
+                            "that is otherwise calculated: "
+                            f"{_example(stretch, usual)}"
+                        ),
+                        source="ICAEW P14, FAST",
+                        cells=_roster([one.ref.rsplit("!", 1)[-1] for one in pair])
+                        if len(pair) > 1
+                        else "",
+                    )
+                )
+                already.update(one.ref for one in typed)
 
 
 def _mnemonic(usual: str) -> bool:

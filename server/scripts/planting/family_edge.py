@@ -82,7 +82,10 @@ def eligible_edges(book: Any) -> list[dict[str, Any]]:
                 continue
             for side, edge in (("edge-head", run[0]), ("edge-tail", run[-1])):
                 beyond = edge.column + (1 if side == "edge-tail" else -1)
-                if beyond >= 1 and f"{sheet}!{get_column_letter(beyond)}{row}" in book.cells:
+                if (
+                    beyond >= 1
+                    and f"{sheet}!{get_column_letter(beyond)}{row}" in book.cells
+                ):
                     continue
                 if edge.value is None or float(edge.value) == 0:
                     continue
@@ -118,7 +121,11 @@ def strip_formula(sheet_xml: str, ref: str) -> str | None:
         return None
     new_body = body[: f.start()] + body[f.end() :]
     return (
-        sheet_xml[: m.start()] + m.group(1) + new_body + m.group(3) + sheet_xml[m.end() :]
+        sheet_xml[: m.start()]
+        + m.group(1)
+        + new_body
+        + m.group(3)
+        + sheet_xml[m.end() :]
     )
 
 
