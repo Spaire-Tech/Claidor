@@ -301,3 +301,23 @@ The screenless-capabilities inventory (orders item 2) was already
 delivered in the previous entry and is on the integration tip with
 it. Per orders item 3, this lane now **holds for the founder's
 designs** — no invented screens.
+
+## 26 August 2026 — twelfth-sweep orders: the red house-rules test
+
+Scribe's report was right: `TestHouseRules::
+test_defaults_before_anybody_decided` pinned the catalogue at 17 and
+went red the day Sentinel's adoptions made it 19 — reproduced red on
+this container before touching it. **The choice, as ordered to be
+named:** the honest expectation is not a new pinned number (a pinned
+19 goes red at the next adoption, telling nobody anything true) but
+the invariant the test was always about — the endpoint serves
+*exactly the engine's own catalogue*, both families, compared by rule
+key against `RULE_NAMES` and `ANALYTIC_RULE_NAMES`, with **every rule
+on by default, the newly adopted ones included** (`all(rule["on"])`
+kept as-is; the analytical flags compared against the statement
+family by key, not by count). A catalogue shrinkage still fails; a
+Sentinel adoption no longer routes churn to this file. Red → green
+verified; full route suite 69 passed.
+
+The inventory (orders item 2) remains delivered — previous entries.
+Holding for founder designs, per item 3.
