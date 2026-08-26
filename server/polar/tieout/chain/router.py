@@ -57,10 +57,11 @@ MAX_UPLOAD_BYTES = 64 * 1024 * 1024
 #: travels with every proposal response; it is updated only from a
 #: registered round's result recorded in the Scribe log.
 PROPOSAL_STANDING = (
-    "Unmeasured for trust: no registered round has cleared this "
-    "matcher (round 1 measured 0 of 8 proposals correct). A proposal "
-    "is a candidate for a person to check against the cited page — "
-    "never a link."
+    "Unmeasured for trust: no registered round has yet measured a "
+    "correct proposal. On the unsourced sample the matcher now "
+    "abstains 30 of 30 (rounds 1-3); the hit-rate case is unmeasured, "
+    "held for a document-fed deal set. A proposal is a candidate for "
+    "a person to check against the cited page - never a link."
 )
 
 

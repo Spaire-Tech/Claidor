@@ -752,3 +752,65 @@ models first*. Registered here before any number is looked at:
 - **The harness:** `scripts.corpus_documents_unsourced` (new, this
   lane), read-only over the frozen reader surface; prints every
   registered number and nothing else.
+
+## D3 round 3 — measured. The unsourced sample is clean: 30 of 30 abstentions
+
+Matcher v3 froze at `c79adcc`, after the registration and before any
+result. Run A on the identical sample and truth, third time:
+
+| | v1 | v2 | v3 |
+|---|---|---|---|
+| false proposal | 8 | 2 | **0** |
+| true abstention | 22 | 28 | **30** |
+
+The leading-paragraph rule caught both run-A survivors, and nothing
+new surfaced behind them. On the only ground measured so far — typed
+cells with no source in the documents — the matcher now does the
+right thing every time, and each of the ten proposals it ever made
+wrongly is covered by one of two named, tested reference shapes. What
+this does **not** say, kept plainly on the record: whether the
+matcher can *find* a source that exists. That is the held hit-rate
+case, waiting on the lead's real deal set, and the route's standing
+sentence was updated under its registered trigger to say exactly
+this. Verdicts: `scribe-d3-round3-runA-verdicts.json`.
+
+## D5 flood — measured. The naive class floods by orders of magnitude, and concentration says which shape survives
+
+The registered numbers, from the registered harness, on the
+registered model set:
+
+| model | numeric cells | naive candidates | share | top-5 sheets carry |
+|---|---|---|---|---|
+| ED2 PCFM V5 | 41,954 | 22,693 | 54% | 36% |
+| ED2 PCFM V3 | 39,724 | 20,426 | 51% | 35% |
+| RIIO-ET1 PCFM | 25,369 | 7,555 | 30% | 98% |
+| Cascade deal model | 313 | 85 | 27% | 100% |
+| Pre-app example | 5,028 | 230 | 5% | 100% |
+
+**Reading:** per-cell, the naive finding is unshippable everywhere —
+twenty thousand findings on a regulator model, and even the small
+deal model would carry 85. Concentration splits the corpus: the
+ED2 models spread candidates almost evenly across twenty-one
+per-licensee sheets (top five carry ~36%), while the ET1 and both
+deal-shaped models concentrate ≥98% in a handful of sheets. So no
+single roll-up unit is right by geography alone.
+
+**The shape this argues for — a proposal for the lead and founder,
+not a decision:** the honest trigger is not « typed and unsourced »
+(that is half of every model) but **« unsourced where sourcing is
+the local rule »** — a typed cell whose block neighbours have
+D4-confirmed sources while it has none. That shape starts at zero
+findings on day one, grows only as confirmations grow, is bounded by
+them (flood-proof by construction), and says something a reviewer
+actually wants to hear: « every other number in this block traces to
+the term sheet; this one traces to nothing. » It waits on D4, which
+waits on a cleared hit-rate round, which waits on the deal set —
+the dependency chain runs exactly through the thing the lead is
+already asking the founder for. Until then D5 reports nothing, per
+its own registration.
+
+**Turn's end state:** chain tests 67 passed; full tieout suite 751
+passed, 8 skipped, plus the one known cross-lane red (house-rules
+17-vs-19, reproduced on the clean tip, already routed by the lead's
+twelfth sweep). Nothing ships from D3 or D5, and both say so in
+words where a consumer would meet them.
