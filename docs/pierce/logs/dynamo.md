@@ -703,3 +703,61 @@ for proportionality and scale invariance (the two laws ED2 does not
 promise); then file-by-file extension across the 18 gated files,
 each selector map committed before its plants. ddmin narrowing
 stays registered future work.
+
+## 26 August 2026 — the H7 debt-pair selector round, quoted before any run
+
+Eleventh-sweep orders, item 1. Both files
+(`h7_new_debt_indexation_{fds,fp}.xlsx`) share the layout
+ref-for-ref (verified); one map serves both, committed in
+`scripts/recalc_behave.py` before this round runs.
+
+- **The structure, from the model's own cells**: `Average RAB`
+  (row 26, I:M — verified inputs) feeds *only*
+  `Notional new debt (in year)` (row 72 = RAB × gearing × share),
+  which feeds `Variance (£)` (row 73 = Variance(%) × notional),
+  compounded through the WACC factors into `Total adjustment`
+  (`F86`). The rate rows — `Variance (%)` (69) and `Nominal,
+  pre-tax WACC` (77) — do not reference row 26 (checked: rows 72
+  I–M are its only dependents).
+- **Proportionality**: RAB ×2 ⇒ rows 72, 73 and `F86` exactly ×2
+  (binary-exact doubling; same-engine tolerance applies).
+- **Scale invariance**: RAB ×100 (cents for pounds) ⇒ rows 69 and
+  77 unchanged. In the clean file this holds trivially — which is
+  exactly why the planted contamination is the measurement.
+- **Plants, one per copy, both files**: hardcode-in-the-tail on the
+  money chain (`J73 = J69 * J72 + 0.5`) and a hardcoded-ratio-leg
+  (`J69 = J65 - J7 + J72/20000` — absolute money pasted inside a
+  rate).
+- **Predictions, registered**: plant 1 → proportionality flags
+  `J73` and `F86` (the additive 0.5 breaks exact doubling through
+  the compound); plant 2 → scale invariance flags `J69` (the
+  money leg moves ×100); cross-law flags on a planted copy's own
+  downstream are possible and are noted, not scored; the unplanted
+  control is clean on both laws in both files. **No result exists
+  as this is written.**
+
+## 26 August 2026 — H7 debt-pair result: 4/4, both files, zero noise
+
+Run on this machine (~2 coarse minutes per file), against the
+registered predictions, exactly:
+
+| File | Control | Money hardcode (`J73 + 0.5`) | Contaminated ratio (`J69 + J72/20000`) |
+|---|---|---|---|
+| fds | both laws clean | proportionality flags **J73, F86** | scale invariance flags **J69** (0.0294 → 2.9874 under cents) |
+| fp | both laws clean | proportionality flags **J73, F86** (6.6243 expected vs 6.1243 — the 0.5, exactly) | scale invariance flags **J69** (0.0243 → 1.4796) |
+
+**Catches 4/4 (each naming its planted cell), false positives 0**
+across four control law-runs. The cross-law flags on plant 2's own
+downstream (`J73`/`F86` under proportionality) appeared exactly as
+the registration noted and are not scored. Scale invariance stayed
+correctly silent on the money hardcode — the laws separate the
+classes, not just detect them.
+
+With this round, **all four registered laws have caught their
+planted class on real corpus files**: zero-input and consolidation
+on ED2 v5, proportionality and scale invariance on the H7 pair —
+seven catches, seven named cells, zero false positives in total.
+Still mechanism proofs, not catch-rate estimates. Next (orders item
+2): widen file-by-file across the remaining gated files, N plants
+per class registered before each run, toward the plan's B4 DONE —
+the hardcode-in-the-tail class measured across hosts.
