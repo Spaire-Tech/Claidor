@@ -814,3 +814,77 @@ passed, 8 skipped, plus the one known cross-lane red (house-rules
 17-vs-19, reproduced on the clean tip, already routed by the lead's
 twelfth sweep). Nothing ships from D3 or D5, and both say so in
 words where a consumer would meet them.
+
+## 26 August 2026, sixth « go » — thirteenth sweep: the founder found the corpus
+
+The addendum read first, as ordered. The founder's fifteen-deal check
+corrects the record (« the Scottish contracts are censored » was a
+one-deal generalization, and wrong), and the Scottish NPD/hub pairs
+are exactly D3's missing direction: document feeds model. Order 1
+(round 3's leading-paragraph defense) was already finished and
+pushed last turn — this lane's round-3 commits were rebased onto the
+thirteenth-sweep tip per the lanes rule, nothing rewritten but the
+base. Order 4 (D5) stands as registered; the shape proposal is with
+the lead and founder.
+
+**The network truth about the contracts hub, measured today, before
+anything else was built on it.** `www.scottishfuturestrust.org.uk`
+answers 200, as the founder recorded. The documents, though, live on
+`contracts.scottishfuturestrust.org.uk`, and that subdomain is
+serving a certificate that is both **expired (ended 10 July 2026)
+and issued for the wrong host** (`bimportal.…`) — TLS verification
+fails correctly, this lane will not disable it, and plain HTTP
+force-redirects into the same broken TLS. An Anthropic-side fetch
+returned 503. The Internet Archive holds the index (13 A–C document
+links captured) and snapshots of the three deal tag pages —
+including a Kelso capture from **today**, so something reached the
+origin recently — but the archive is rate-limiting bulk retrieval
+from here this hour. The fetcher below is committed to work against
+origin first and the archive as fallback, and fetches what the
+network serves on the day it runs; what fetched today is recorded
+below, and what did not is a network condition, not a corpus
+conclusion.
+
+## D3 round 4 — the hit-rate registration, written before any result
+
+**The corpus:** the SFT deal pairs the founder verified — Kelso High
+School (with the provenance tab), Levenmouth Academy, Oban &
+Campbeltown High Schools — signed project agreement + financial
+close model, each fetched by `scripts.corpus_documents_sft` into
+git-ignored corpus directories.
+
+**The sample is Kelso's own marking scheme, not a draw.** The
+73-row provenance tab (« clause → term → figure ») was written by
+the deal team at close, independent of us — the only ground truth in
+this corpus nobody here influenced. Every row is scored; no seed is
+needed because the sample is exhaustive.
+
+**The typed-cell convention, declared openly (and attached wherever
+any number from this round is ever quoted):** the published models
+are formula-stripped — every cell a value — so typed-versus-computed
+cannot be read from the file. For this round the provenance tab
+itself names the document-fed figures; the « typed number » under
+test is the model cell carrying a provenance row's figure. Locating
+that cell may use the row's own pointer or value search — locating
+is sampling, and sampling by value stays legitimate where scoring by
+value is not. The matcher then sees only the cell's labels and the
+contract's extracted facts.
+
+**Blindness is structural:** the provenance sheet is excluded from
+the model side entirely — it contributes no cells, no labels, no
+candidates. It exists in this round only as the answer sheet.
+
+**Named conditions, counted as their own rows, never as failures or
+successes:**
+- *unreachable (unpublished paper)* — provenance rows pointing at
+  documents that were never published (some loan agreements);
+- *unreachable (OCR)* — rows whose contract-side statement falls on
+  pages D1's extractor refuses or where the printed number did not
+  survive the photocopy OCR; the extractor's own coverage and
+  refusals for each contract are reported with the round.
+
+**The verdict table** is the registered one from round 1, over
+reachable rows only, with the unreachable counts printed beside it.
+The judge is me, same discipline. **No target number is promised.**
+The matcher is the frozen v3; any change it needs after this round
+is a round-5 registration.
