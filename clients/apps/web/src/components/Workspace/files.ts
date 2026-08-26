@@ -82,6 +82,10 @@ const CATEGORY_OF: Record<string, string> = {
   'error-value': 'Probable formula defects',
   circular: 'Probable formula defects',
   'time-axis': 'Probable formula defects',
+  //: Sentinel's A3 adoptions (eleventh sweep), routed here by the
+  //: lead's order once they merged — same family as their siblings.
+  'inconsistent-total': 'Probable formula defects',
+  'typed-over-edge': 'Probable formula defects',
   'balance-sheet': 'Structural exceptions',
   'cash-continuity': 'Structural exceptions',
   'debt-terminal': 'Structural exceptions',
