@@ -858,3 +858,75 @@ claim — per the orders, that happens the sweep after this merges.
 If FM02 sheets prove taller still, the named next step is a
 Hirschberg traceback (linear space), a registered round of its
 own. Tier 2's registration follows once V3 is through.
+
+## C4 tier 2 — randomized differential evaluation (REGISTERED BEFORE RESULTS)
+
+Per the eleventh-sweep orders. Environment, verified before
+registering anything as fact: `dev/setup-libreoffice` provisioned
+LibreOffice 25.8.7 into `/opt` on this container (the preinstalled
+24.2 misses Dynamo's floor), the UNO bridge imports in the bundled
+interpreter, and **Dynamo's four UNO tests pass here** — the real
+calculator, not the fake.
+
+**The question tier 2 answers.** The cheap proof's suspects
+include textual changes that may or may not change behaviour — and
+the stealth case: an edit whose stored values betray nothing
+because nobody recalculated. Tier 2 decides *behaviourally*: draw
+a random assignment to the model's typed inputs, write the same
+assignment into copies of both versions, recalculate both with the
+same engine, compare on matched positions. **Divergence on any
+trial demonstrates a behavioural change** (the diverging cells
+named); equality across all trials is « probably equivalent » — a
+probabilistic verdict, said as one, never a proof.
+
+**Registered parameters.**
+- k = 5 trials, `random.Random(20260826)`. Per trial, every typed
+  numeric literal on the edited sheet is scaled by U(0.5, 1.5)
+  (a zero literal instead becomes U(−1, 1) — a scaled zero is a
+  dead input).
+- Engine: `recalc.UnoCalculator` on the provisioned 25.8.7; the
+  file's own calc settings, per Dynamo's driver. B2 discipline
+  first: `prescan` runs on the base file and a denylist hit is a
+  recorded refusal, not a workaround.
+- Comparison: matched positions (C2 alignment), both recalculated
+  values numeric, relative divergence > 1e-9 on
+  scale = max(|a|,|b|) — the same float-noise line as C1; the
+  volatile cone (`recalc.volatile_cone`) is excluded, since it
+  diverges for the engine's reasons.
+- Cost shape: the old-side file under trial t is identical across
+  instances, so it is recalculated once per trial and shared.
+
+**Instances** (planted on `SWEST`, extending `watch_stealth.py` —
+the orders' « extends rather than forks »), two positions per
+class (first eligible cell at/after the q1 and q3 row marks),
+edits planted with the cached value **left as it was** — the
+author who did not recalculate:
+1. `tail_hardcode` — a formula gains a typed tail
+   `-0.490096707821704` (the study's Severn Trent shape).
+   Expected: caught 5/5 trials.
+2. `conditional_divergence` — `F` → `IF(input > 1.4·current,
+   F·1.01, F)` on a sampled input: diverges only when a trial
+   pushes that input past 1.4×, so the analytic catch rate is
+   1 − 0.9^5 ≈ 41%. The measured rate stands next to that number.
+3. `equivalent_rewrite` — `=X*c` → `=X*2c/2`-shape rewrites:
+   behaviourally identical; **must not** be caught — the
+   false-positive control.
+4. `stealth_literal` — the retyped literal, for continuity.
+   Expected: caught 5/5.
+
+**Reported, whatever it says:** the per-class catch table (the
+DONE number), every diverging instance's trial count and top
+refs, the equivalent-rewrite false-positive count (must be 0 for
+the round to stand), recalc wall-time per file, and every refusal.
+A baseline recalc of the unedited pair under trial-free settings
+is timed first; if the machine cannot afford the full 8×5 grid,
+the cut (positions to one per class) is recorded before results
+are looked at.
+
+**Tier-2 instrument amendment, before any result** (the run aborted
+at target selection; no number was produced): SWEST's tail rows
+hold no numeric-valued formula, so both target scans
+(`formula_target`, `literal_target`) wrap to the sheet's top when
+the tail holds nothing — the same mechanical fallback the round-1
+stealth retype registered. The chosen coordinate remains the
+recorded ground truth.

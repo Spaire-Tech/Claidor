@@ -243,7 +243,220 @@ def main() -> int:
         return run_planted(*sys.argv[2:6])
     if mode == "pair":
         return run_pair(*sys.argv[2:5])
+    if mode == "tier2":
+        return run_tier2(*sys.argv[2:5])
     raise SystemExit(f"unknown mode {mode!r}")
+
+
+# --- C4 tier 2: randomized differential evaluation (registered in the
+# --- lane log, « C4 tier 2 ») -----------------------------------------
+
+TIER2_SEED = 20260826
+TIER2_TRIALS = 5
+TIER2_DIVERGENCE = 1e-9
+TIER2_CLASSES = (
+    "tail_hardcode",
+    "conditional_divergence",
+    "equivalent_rewrite",
+    "stealth_literal",
+)
+
+
+def _coordinate(cell: object) -> str:
+    from openpyxl.utils import get_column_letter
+
+    return f"{get_column_letter(cell.column)}{cell.row}"  # type: ignore[attr-defined]
+
+
+def _diverges(old: object, new: object) -> bool:
+    numbers = (int, float)
+    if (
+        isinstance(old, numbers)
+        and isinstance(new, numbers)
+        and not isinstance(old, bool)
+        and not isinstance(new, bool)
+    ):
+        if old == new:
+            return False
+        scale = max(abs(old), abs(new), 1e-300)
+        return abs(new - old) / scale > TIER2_DIVERGENCE
+    return str(old) != str(new)
+
+
+def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
+    import random
+
+    from polar.tieout.recalc import prescan, volatile_cone
+    from polar.tieout.recalc.uno_calc import UnoCalculator
+
+    base = Path(base_path)
+    book = read_workbook(base_path)
+
+    hits = prescan(book.cells)
+    if hits:
+        refusal = {
+            "refused": f"denylist: {len(hits)} hits",
+            "sample": [f"{h.ref}: {h.target}" for h in hits[:5]],
+        }
+        Path(out_path).write_text(json.dumps(refusal, indent=1))
+        print(json.dumps(refusal, indent=1))
+        return 1
+    _, cone = volatile_cone(book.cells)
+
+    on_sheet = sorted(
+        (cell for cell in book.cells.values() if cell.sheet == sheet_name),
+        key=lambda cell: (cell.row, cell.column),
+    )
+    rows = sorted({cell.row for cell in on_sheet})
+    marks = (rows[len(rows) // 4], rows[3 * len(rows) // 4])
+
+    def formula_target(mark: int) -> tuple[str, str]:
+        for start in (mark, 0):
+            for cell in on_sheet:
+                if cell.row >= start and cell.formula and cell.value is not None:
+                    return _coordinate(cell), cell.formula
+        raise SystemExit("no numeric formula anywhere on the sheet")
+
+    def literal_target(mark: int, *, nonzero: bool) -> tuple[str, float]:
+        for start in (mark, 0):
+            for cell in on_sheet:
+                if (
+                    cell.row >= start
+                    and cell.formula is None
+                    and cell.value is not None
+                ):
+                    if nonzero and cell.value == 0:
+                        continue
+                    return _coordinate(cell), float(cell.value)
+        raise SystemExit("no eligible literal anywhere on the sheet")
+
+    literals = {
+        _coordinate(cell): float(cell.value)
+        for cell in on_sheet
+        if cell.formula is None and cell.value is not None
+    }
+    rng = random.Random(TIER2_SEED)
+    trials = []
+    for _ in range(TIER2_TRIALS):
+        assignment = {}
+        for coordinate in sorted(literals):
+            current = literals[coordinate]
+            if current == 0:
+                assignment[coordinate] = rng.uniform(-1.0, 1.0)
+            else:
+                assignment[coordinate] = current * rng.uniform(0.5, 1.5)
+        trials.append(assignment)
+
+    def edited_formula(kind: str, body: str, mark: int) -> str:
+        if kind == "tail_hardcode":
+            return f"=({body})-0.490096707821704"
+        if kind == "equivalent_rewrite":
+            return f"=({body})*2/2"
+        if kind == "conditional_divergence":
+            input_coordinate, current = literal_target(mark, nonzero=True)
+            threshold = 1.4 * current
+            return f"=IF({input_coordinate}>{threshold!r},({body})*1.01,({body}))"
+        raise ValueError(kind)
+
+    def build(
+        target: Path,
+        edit: tuple[str, str | float] | None,
+        assignment: dict[str, float],
+    ) -> None:
+        working = openpyxl.load_workbook(base)
+        sheet = working[sheet_name]
+        if edit is not None:
+            coordinate, formula = edit
+            sheet[coordinate] = formula
+        for coordinate, value in assignment.items():
+            sheet[coordinate] = value
+        working.save(target)
+
+    instances: list[tuple[str, int, tuple[str, str | float]]] = []
+    for kind in TIER2_CLASSES:
+        for mark in marks:
+            if kind == "stealth_literal":
+                coordinate, current = literal_target(mark, nonzero=False)
+                instances.append((kind, mark, (coordinate, current + 7)))
+            else:
+                coordinate, formula = formula_target(mark)
+                body = formula[1:] if formula.startswith("=") else formula
+                instances.append(
+                    (kind, mark, (coordinate, edited_formula(kind, body, mark)))
+                )
+
+    started = time.monotonic()
+    results = []
+    calc = UnoCalculator()
+    calc.start()
+    try:
+        with tempfile.TemporaryDirectory() as scratch:
+            old_values = []
+            for index, assignment in enumerate(trials):
+                target = Path(scratch) / f"old_{index}.xlsx"
+                build(target, None, assignment)
+                old_values.append(calc.recalculate(str(target)).values)
+                target.unlink()
+            for kind, mark, edit in instances:
+                per_trial = []
+                sample: list[str] = []
+                for index, assignment in enumerate(trials):
+                    target = Path(scratch) / f"new_{kind}_{mark}_{index}.xlsx"
+                    build(target, edit, assignment)
+                    new_values = calc.recalculate(str(target)).values
+                    target.unlink()
+                    old_trial = old_values[index]
+                    divergent = [
+                        ref
+                        for ref in new_values.keys() & old_trial.keys()
+                        if ref not in cone
+                        and _diverges(old_trial[ref], new_values[ref])
+                    ]
+                    per_trial.append(len(divergent))
+                    if divergent and len(sample) < 6:
+                        sample.extend(sorted(divergent)[:3])
+                caught = sum(1 for n in per_trial if n)
+                verdict = {
+                    "kind": kind,
+                    "mark": mark,
+                    "edit_at": f"{sheet_name}!{edit[0]}",
+                    "trials_diverged": caught,
+                    "trials": TIER2_TRIALS,
+                    "divergent_cells_per_trial": per_trial,
+                    "caught": caught > 0,
+                    "sample": sample[:6],
+                }
+                results.append(verdict)
+                print(
+                    f"[{'CAUGHT' if verdict['caught'] else 'silent'}] "
+                    f"{kind} @ {verdict['edit_at']}  trials {caught}/{TIER2_TRIALS} "
+                    f"cells/trial {per_trial}"
+                )
+    finally:
+        calc.stop()
+
+    false_positives = [
+        r for r in results if r["kind"] == "equivalent_rewrite" and r["caught"]
+    ]
+    payload = {
+        "base": base_path,
+        "sheet": sheet_name,
+        "engine": "LibreOffice 25.8 (UNO)",
+        "seconds": round(time.monotonic() - started, 1),
+        "trials": TIER2_TRIALS,
+        "seed": TIER2_SEED,
+        "perturbed_literals": len(literals),
+        "volatile_cone": len(cone),
+        "false_positives": len(false_positives),
+        "by_class": {
+            kind: [r["trials_diverged"] for r in results if r["kind"] == kind]
+            for kind in TIER2_CLASSES
+        },
+        "instances": results,
+    }
+    Path(out_path).write_text(json.dumps(payload, indent=1))
+    print(json.dumps({k: v for k, v in payload.items() if k != "instances"}, indent=1))
+    return 0 if not false_positives else 1
 
 
 if __name__ == "__main__":
