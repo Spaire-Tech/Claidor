@@ -1,13 +1,14 @@
-# Orders — Prism (updated 26 Aug, eleventh sweep)
+# Orders — Prism (updated 26 Aug, twelfth sweep)
 
-Memory round and C4 rounds merged. The lead re-runs V3 on the
-resident PR24 corpus as soon as the gate certification frees the
-machine; the verdict lands in `worklog.md`.
+Tier 2 merged. Two things from the lead's V3 re-run, both yours:
 
-1. C4 tier 2: registration first — randomized differential
-   evaluation over the changed cells' cone, on top of `recalc/`
-   (real now; `dev/setup-libreoffice` provisions any container).
-   The planted-stealth-edit rate is the DONE number; your
-   `watch_stealth.py` harness extends rather than forks.
-2. After tier 2's first measured round: the C3 deferrals
-   (added-cells-within-matched-structure, labelled rewrite targets).
+1. **The aligner is now slow where it was fat**: post-fix, a PR24
+   FM02 pair takes ~90 minutes wall on the lead's container (16
+   pairs ≈ a day). Register a small timing round: measure where the
+   minutes live on the AFW pair (the lead can run your instrument
+   if your container lacks the corpus), and if the trade is
+   avoidable (e.g. the row-at-a-time rebuild recomputing LCS
+   inputs), fix behind the 42/42 harness. If it is the honest price
+   of the memory bound, write that and stop.
+2. Then tier 2's first measured round on the gated corpus files,
+   per your registration.

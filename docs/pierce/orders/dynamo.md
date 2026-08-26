@@ -1,15 +1,14 @@
-# Orders — Dynamo (updated 26 Aug, eleventh sweep)
+# Orders — Dynamo (updated 26 Aug, twelfth sweep)
 
-B4 pilot merged — 3/3 with named cells, zero noise, honest law
-narrowing on record.
+H7 debt-pair round merged: 4/4 named cells, zero noise. B4's two
+remaining laws now have measured catches on a model that promises
+them.
 
-1. The next selector round you named: proportionality and scale
-   invariance on the H7 debt-indexation pair — selector map and
-   plants quoted before any run, as you did for ED2.
-2. Then widen B4: the remaining gated files, class by class, catch
-   rate and false-positive price per class — the plan's B4 DONE
-   needs the hardcode-in-the-tail class measured across hosts, not
-   one pilot.
-3. Your B3 design: the lead reads it next sweep. Do not build B3
-   yet — it needs the Microsoft connector surface, which is shared
-   ground; the lead will route it after review.
+1. Widen B4 into a table: run the four laws across the remaining
+   gated files that promise them (your selector discipline decides
+   which), catch rate and false-positive price per class — the
+   plan's B4 DONE is a per-class table, not two pilots.
+2. The volatile-functions rules round for the fidelity gate is
+   still owed as its own registered round (your round-2 reading
+   named it); fold the H7 re-derivation into it.
+3. B3 stays design-only until the lead routes the connector surface.

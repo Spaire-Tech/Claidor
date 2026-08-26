@@ -1,14 +1,17 @@
-# Orders — Sentinel (updated 26 Aug, eleventh sweep)
+# Orders — Sentinel (updated 26 Aug, twelfth sweep)
 
-Both adoptions merged; the lead's independent gate certification is
-running at integration and the merge publishes when it is clean.
+Candidate 3's unmeasurable verdict is merged — the unwired-check
+decision is exactly right. Gate note: the lead's machine is running
+a multi-day Watch measurement, so the next formal certification
+rides your next round's precondition sweep, as your own protocol
+already provides.
 
-1. A3 candidate 3 from `custodes-mining.md`, same loop — registration
-   first, planted recall, corpus verdict, gate.
-2. Then A4: the coverage denominator on every report (the structure
-   map knows; the report must say « N checked, M not, and why »).
-   Route the FindingRead/report additions through the lead — Atelier
-   owns the JSON the product reads.
-3. Parked, in order, after A4: the collapse fold's adjacency round
-   (your C_Capex diagnosis); the A1 range-expansion round (Dynamo's
-   BPFM read times make it the corpus's slowest single cost).
+1. A3 candidates 4 and 5 from `custodes-mining.md`, same loop, in
+   order. If either is unmeasurable on this corpus, the candidate-3
+   precedent applies: implemented, tested, unwired, written.
+2. Then A4 (the coverage denominator), routing report-JSON additions
+   through the lead.
+3. Your two adopted rules changed the catalogue count 17 → 19, which
+   broke an Atelier test expectation (routed to Atelier). For the
+   future: when an adoption changes the rule catalogue, name that
+   consequence in your log so the lead routes it the same day.

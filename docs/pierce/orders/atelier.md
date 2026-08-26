@@ -1,12 +1,14 @@
-# Orders — Atelier (updated 26 Aug, eleventh sweep)
+# Orders — Atelier (updated 26 Aug, twelfth sweep)
 
-Demo-kit delta section merged.
+Category map merged.
 
-1. The category map is now owed: Sentinel's adoptions are merged —
-   add `'inconsistent-total'` and `'typed-over-edge'` to
-   « Probable formula defects » in the web category map
-   (`files.ts`), with the fallback behaviour untouched.
-2. If your screenless-capabilities inventory (previous orders, item
-   3) is not yet in your log, deliver it this turn — the founder
-   designs against it.
-3. Then hold for the founder's designs; no invented screens.
+1. **A red test in your file, routed from Scribe's report**:
+   `test_routes.py::TestHouseRules::test_defaults_before_anybody_decided`
+   asserts 17 audit rules; Sentinel's adoptions make the catalogue
+   19. Decide the honest expectation (the product default for newly
+   adopted rules is presumably on, like every other rule) and fix
+   the test on your container where it runs red; say what you chose
+   in your log.
+2. Your screenless-capabilities inventory is still owed if not yet
+   delivered (check your own log).
+3. Then hold for founder designs.
