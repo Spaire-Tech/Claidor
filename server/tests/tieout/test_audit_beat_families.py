@@ -1,23 +1,28 @@
 """The beat-families check, against lattices whose defects are known.
 
-Registered round: docs/pierce/a3-beat-families.md. The first half
-plants the mining round's evidence shapes — a typed value on a
-stride-2 and a stride-3 beat position, including the value/% pair
-layout where percentage formulas of another shape sit between — and
-expects exactly one finding each; the second half builds what the
-guards exist for — a dense run wearing a stride, an index-base 1, a
-lattice left of a boundary — and expects silence or the plain
-pass's rightful claim.
+Registered round: docs/pierce/a3-beat-families.md. The pass is
+implemented and tested but NOT wired into the audit: the whole
+corpus holds zero plantable beat lattices, so its catch rate is
+unmeasurable there and the registered verdict keeps it out of the
+report. These tests drive the pass directly, in the same order the
+audit would run it, so the mechanism stays proven for the round
+that can measure it.
 """
 
 import tempfile
 from pathlib import Path
 
-from polar.tieout.audit import audit
+from polar.tieout.audit import (
+    Audit,
+    _rows,
+    _typed_beats,
+    _typed_edges,
+    _typed_islands,
+)
 from polar.tieout.workbook import read_workbook
 
 
-def _audit(build):
+def _run(build):
     from openpyxl import Workbook as Book
 
     book = Book()
@@ -25,11 +30,15 @@ def _audit(build):
     with tempfile.TemporaryDirectory() as folder:
         path = Path(folder) / "built.xlsx"
         book.save(path)
-        return audit(read_workbook(str(path)))
-
-
-def _beats(result):
-    return [f for f in result.findings if f.rule == "typed-over-beat"]
+        loaded = read_workbook(str(path))
+    result = Audit(examined=len(loaded.cells))
+    #: The passes the beat pass dedups against, in the audit's order.
+    _rows(loaded, result)
+    _typed_islands(loaded, result)
+    _typed_edges(loaded, result)
+    before = len(result.findings)
+    _typed_beats(loaded, result)
+    return result, result.findings[before:]
 
 
 def _pairs(sheet, formula_columns, deviant=None, value=7.5, between_value=2.0):
@@ -46,8 +55,7 @@ def _pairs(sheet, formula_columns, deviant=None, value=7.5, between_value=2.0):
 
 
 def test_a_typed_stride_two_beat_is_caught() -> None:
-    result = _audit(lambda s: _pairs(s, "CEGIK", deviant="G"))
-    found = _beats(result)
+    _, found = _run(lambda s: _pairs(s, "CEGIK", deviant="G"))
     assert len(found) == 1
     assert found[0].ref == "Sheet!G15"
     assert "every 2 columns" in found[0].detail
@@ -55,8 +63,7 @@ def test_a_typed_stride_two_beat_is_caught() -> None:
 
 
 def test_a_typed_stride_three_beat_is_caught() -> None:
-    result = _audit(lambda s: _pairs(s, "CFILO", deviant="I"))
-    found = _beats(result)
+    _, found = _run(lambda s: _pairs(s, "CFILO", deviant="I"))
     assert len(found) == 1
     assert found[0].ref == "Sheet!I15"
     assert "every 3 columns" in found[0].detail
@@ -78,8 +85,8 @@ def test_percentage_flanks_are_the_interior_pass_and_not_a_beat() -> None:
         for col in "DFHJ":
             sheet[f"{col}15"] = f"={col}6/{col}7"
 
-    result = _audit(build)
-    assert not _beats(result)
+    result, found = _run(build)
+    assert not found
     assert any(
         f.rule == "typed-over-formula" and f.ref == "Sheet!G15" for f in result.findings
     )
@@ -96,16 +103,16 @@ def test_a_dense_run_is_the_plain_pass_and_not_a_beat() -> None:
             sheet[f"{col}6"] = 1.0
             sheet[f"{col}15"] = 7.5 if col == "E" else f"={col}6*2"
 
-    result = _audit(build)
-    assert not _beats(result)
+    result, found = _run(build)
+    assert not found
     assert any(
         f.rule == "typed-over-formula" and f.ref == "Sheet!E15" for f in result.findings
     )
 
 
 def test_a_typed_one_on_a_beat_is_a_base_value() -> None:
-    result = _audit(lambda s: _pairs(s, "CEGIK", deviant="G", value=1.0))
-    assert not _beats(result)
+    _, found = _run(lambda s: _pairs(s, "CEGIK", deviant="G", value=1.0))
+    assert not found
 
 
 def test_a_beat_left_of_the_boundary_is_history() -> None:
@@ -125,4 +132,5 @@ def test_a_beat_left_of_the_boundary_is_history() -> None:
         for col in "CEGI":
             sheet[f"{col}16"] = 2.0
 
-    assert not _beats(_audit(build))
+    _, found = _run(build)
+    assert not found

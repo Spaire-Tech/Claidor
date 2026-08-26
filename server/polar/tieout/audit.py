@@ -233,7 +233,6 @@ RULE_NAMES: dict[str, str] = {
     "hardcode-in-formula": "Hardcoded values inside formulas",
     "typed-over-formula": "Values typed over formulas",
     "typed-over-edge": "Values typed over a series' edge",
-    "typed-over-beat": "Values typed into a strided series",
     "inconsistent-anchoring": "Anchoring that changes along a row",
     "inconsistent-row": "Formulas inconsistent across a row",
     "circular": "Circular references",
@@ -260,7 +259,6 @@ HEADLINES: dict[str, str] = {
     "hardcode-in-formula": "Hardcoded assumption",
     "typed-over-formula": "Unexpected hardcode",
     "typed-over-edge": "Typed series edge",
-    "typed-over-beat": "Typed beat",
     "inconsistent-anchoring": "Inconsistent anchoring",
     "inconsistent-row": "Inconsistent formula",
     "circular": "Circular reference",
@@ -440,11 +438,6 @@ def _elevated(book: Workbook, result: Audit) -> None:
             "the series ends in a typed value — a one-sided witness, "
             "and overrides are sometimes deliberate",
         ),
-        "typed-over-beat": (
-            0.7,
-            "the stride's own pattern shows the break — a lattice is "
-            "inferred layout, one grade below a dense run",
-        ),
         "circular": (
             0.9,
             "the loop is in the dependency graph and the workbook does "
@@ -589,13 +582,6 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             f"{lead} a typed value at the edge of a row that otherwise "
             "calculates — the series runs out in a typed number. Check "
             "whether the late adjustment is intentional."
-        )
-    if finding.rule == "typed-over-beat":
-        lead = f"{label} is" if label else f"The cell at {at} is"
-        return (
-            f"{lead} a typed value inside a row that calculates on a "
-            "stride — every few columns, the same formula, except here. "
-            "Check whether the override is intentional."
         )
     if finding.rule == "inconsistent-total":
         lead = (
@@ -773,7 +759,12 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _mutations(book, result)
     _typed_islands(book, result)
     _typed_edges(book, result)
-    _typed_beats(book, result)
+    #: `_typed_beats` is implemented and unit-tested but NOT wired:
+    #: the whole 27-file corpus holds zero plantable beat lattices,
+    #: so its catch rate cannot be measured here, and an unmeasured
+    #: check does not report to anyone. The registered verdict is in
+    #: docs/pierce/a3-beat-families.md; wiring it is a new round on a
+    #: corpus that can host the measurement.
     _circularity(book, result)
     _skipped_cells(book, result)
     _sibling_totals(book, result)
