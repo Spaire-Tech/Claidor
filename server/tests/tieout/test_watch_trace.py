@@ -202,3 +202,18 @@ class TestProvedUnchanged:
         assert proof.proved["M!B5"] == "M!B4"  # shifted with its input: proved
         assert "M!B3" in proof.suspects  # the inserted line itself
         assert "M!B4" in proof.suspects  # Cost's ref crosses the insert
+
+
+class TestUnobservableOutput:
+    """Round 2: the v4→v5 gate failure, pinned. A formula whose cached
+    result is text is value=None in the numeric universe — its output
+    is not inside the hash, so it is never proved."""
+
+    def test_a_text_result_formula_is_never_proved(self) -> None:
+        selector_old = cell("B1", 1, 2, formula="=INDEX(A:A,1)", label="Selector")
+        selector_new = cell("B1", 1, 2, formula="=INDEX(A:A,1)", label="Selector")
+        proof = proved_unchanged(
+            book([selector_old, *BASE]), book([selector_new, *BASE])
+        )
+        assert "M!B1" in proof.suspects
+        assert "M!B2" in proof.proved  # the observable ones still prove

@@ -10,11 +10,14 @@ the crown rather than the foundation.
 
 Soundness needs no volatile-function denylist and no perfect
 precedent resolution, because the cell's own cached value is inside
-the trace: whatever changed the output breaks the match. What a
-match does **not** claim: that the stored value is *correct* — a
-value stale the same way on both sides matches; single-version
-staleness is tier 2's territory. The registration, the harness and
-the one-violation-fails soundness gate live in
+the trace: whatever changed the output breaks the match — **when
+the output is observable.** Round 1's gate caught the case where it
+is not: a formula whose cached result is text reads `value=None`
+in the numeric universe, so such cells are never proved (round 2,
+registered). What a match does **not** claim: that the stored value
+is *correct* — a value stale the same way on both sides matches;
+single-version staleness is tier 2's territory. The registration,
+the rounds and the one-violation-fails soundness gate live in
 `docs/pierce/logs/prism.md` (« C4 registration, round 1 »).
 """
 
@@ -92,14 +95,21 @@ def proved_unchanged(old_book: Workbook, new_book: Workbook) -> Proof:
     new_traces = fingerprints(new_book)
 
     old_by_position = {
-        (cell.sheet, cell.row, cell.column): ref
-        for ref, cell in old_book.cells.items()
+        (cell.sheet, cell.row, cell.column): ref for ref, cell in old_book.cells.items()
     }
 
     proof = Proof(suspects=set(new_book.cells.keys()))
     counts: dict[str, list[int]] = {}
     for ref, cell in new_book.cells.items():
         counts.setdefault(cell.sheet, [0, 0])[1] += 1
+
+    def observable(cell: Cell) -> bool:
+        """Round 2 (registered in the lane log): a formula cell whose
+        own cached value the reader could not observe — a text result
+        is `None` in the numeric universe — can carry no verifying
+        trace. Its output is not inside the hash, so nothing proves
+        it did not move; suspects by refusal."""
+        return cell.formula is None or cell.value is not None
 
     for sheet, new_grid in new_grids.items():
         if sheet not in old_grids:
@@ -116,6 +126,8 @@ def proved_unchanged(old_book: Workbook, new_book: Workbook) -> Proof:
                 continue
             old_ref = old_by_position.get((sheet, old_row, old_column))
             if old_ref is None:
+                continue
+            if not observable(cell) or not observable(old_book.cells[old_ref]):
                 continue
             if old_traces[old_ref] == new_traces[ref]:
                 proof.proved[ref] = old_ref
