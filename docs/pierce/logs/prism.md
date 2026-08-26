@@ -592,3 +592,269 @@ said so. Next in the plan's order: C4's verifying-trace
 fingerprints and equivalence tiers (needs B1/B2 for tier 2), and
 C3's named deferrals (added-cells-within-matched-structure; a
 labelled-target round for the rewrite_formula class).
+
+## 26 August 2026 — standing orders confirmed; branch on the integrated tip
+
+**The lead's channel, acknowledged.** Per the founder's instruction
+and the lead's `e37e3e1`: every working turn starts by fetching
+`origin/claude/pierce-phase-6-writing-mjkaj6` and reading
+`docs/pierce/orders/prism.md`; the work is what that file says,
+pushed to `swens/prism`, then stop. Standing caveat, recorded once:
+an order that crossed `lanes.md`'s hard rules (the engine stays
+read-only, no merges, path ownership) would be refused here in
+writing, not followed — the constitution outranks the channel it
+authorized. Current orders (tenth sweep): C3 is merged; the lead
+runs V3 on their resident PR24 corpus (this container's network
+attempts stop); C4 begins with the fingerprint round, registration
+first; C3's deferrals stay parked.
+
+**The branch.** All seventeen Prism commits are contained in the
+integrated tip (verified: zero commits on `swens/prism` not on the
+tip), so `swens/prism` fast-forwarded to `e37e3e1` — a pure
+fast-forward, nothing rewritten — which also brings Dynamo's
+`recalc/` package and `dev/setup-libreoffice` into this lane's
+tree for C4's tier-2 round to stand on later.
+
+## C4 registration, round 1 — verifying-trace fingerprints (REGISTERED BEFORE RESULTS)
+
+The amended plan's cheap proof, specced here before any code.
+
+**The fingerprint.** For every cell, a SHA-256 over a canonical
+string of three parts, per Build Systems à la Carte's verifying
+trace:
+
+1. the cell's **shape** — the watch signature (the frozen engine
+   shape with round 3's cross-sheet absolutization; the literal
+   marker for hardcodes; raw formula text where the shape machinery
+   returns empty);
+2. the cell's **own cached value**, type-tagged (None tagged too);
+3. the **ordered values of its inputs** — for each ref in the
+   frozen surface's `precedents` tuple, the cached value of that
+   cell where the reader named one, the fixed marker `∅` where it
+   did not (a blank, or a text cell outside the numeric universe) —
+   plus the `unresolved` tuple verbatim.
+
+**The claim a match earns, and why it is sound by construction.**
+Two versions matched by C2's alignment: where both cells'
+fingerprints are equal, the cell's **value did not change between
+the versions** — at hash cost, no evaluation. Soundness needs no
+volatile-function denylist and no perfect precedent resolution,
+because the own cached value is *inside* the trace: any change that
+altered the output changes part 2 and breaks the match; any change
+that altered nothing observable is exactly what the claim permits.
+(What the trace does **not** claim: that the stored value is
+*correct* — a value stale the same way on both sides matches. That
+is single-version staleness, tier 2's territory, never this
+round's.) Cells with no counterpart under the alignment are
+suspects by definition. The **suspect set** = every new-version
+cell not proved; its size against the proved fraction is the
+number the tiers inherit.
+
+**The store.** `watch/trace.py`: `fingerprints(book) -> {ref: hex}`
+(pure, computable at ingestion) and
+`proved_unchanged(old_book, new_book) -> (proved, suspects,
+per-sheet counts)` running on the alignment. Product-side
+persistence at ingestion is the lead's integration concern, not
+this lane's; the function is the contract.
+
+**The planted-stealth-edit harness** (`scripts/watch_stealth.py`,
+code after this spec, results after the code): on the same
+mechanically-chosen sheets as C2 (`InputSummary`, `SWEST` of ED2
+v5), instances per sheet:
+- *stealth only*: one literal retyped at each quartile position —
+  no declared structural edit;
+- *declared + stealth*: each C2 structural class at its median
+  position, plus one literal retyped at the farthest quartile from
+  it — the change hidden outside the declared cells.
+
+Judged, fixed now: **(a) soundness, the hard gate — zero cells
+whose stored cached value differs between the files (C1's raw
+diff, mapped through the alignment) may appear in the proved set;
+one violation fails the round.** (b) the stealth cell and every
+value-changed dependent are reported suspect — implied by (a),
+printed explicitly. (c) efficiency, reported never gated: the
+proved fraction on each harness pair and on the two real pairs
+(v2 14→31 July; v4→v5). Failures named one by one, as always.
+
+## C4 round 1 — two instrument aborts before any result, and a C2 correction
+
+**No result has been looked at**: both first runs aborted planting.
+`InputSummary` holds effectively no typed numeric literal (the
+engine names 4 cells literal; openpyxl's numeric scan finds none —
+the sheet is pull-through formulas), so there is nothing there for
+a stealth retype to retype.
+
+**The correction this forces on C2's record, stated plainly:** C2's
+`retype_literals` scan stops silently when it finds nothing, so on
+`InputSummary` its three « exact » instances (and the retype half
+of `insert_row_and_retype`) were **null edits** — they tested that
+an unedited file reports no change (a valid null test, and it
+passed) — not that retyped literals stay invisible to alignment.
+On `SWEST` (1,547 typed literals) the retypes were real and the
+claim stands. The C2 table's InputSummary `retype_literals` row
+should be read as « null edit: no false positives », nothing more.
+
+**Round-1 instrument amendments, registered now, before results:**
+1. Value re-injection extends to **every** sheet of the planted
+   file — the edited sheet through the pre-image map as before,
+   all other sheets by identity — so the planted file is what
+   Excel would have saved everywhere, the soundness gate is
+   meaningful on every sheet, and the whole-file proved fraction
+   stops being an artifact number.
+2. The stealth rule, amended mechanically: a stealth retype lands
+   on the registered sheet's first numeric literal at-or-below the
+   position; a sheet with no typed numeric literal **cannot host a
+   stealth edit** — its stealth-only instances are recorded as
+   refusals, and its declared+stealth instances put the stealth on
+   the *other* registered sheet (declared edit on `InputSummary`,
+   stealth on `SWEST`) — a change hidden outside the declared
+   sheet entirely, which is truer to « stealth » than the original
+   rule. `SWEST` runs all eight instances as registered. A planter
+   that finds nothing to retype now aborts loudly rather than
+   passing silently — the defect C2's scan carried.
+
+## C4 round 1 results — the gate caught a real hole; round 1 FAILS, round 2 registered
+
+**The planted instances: 15/15 sound.** Six on `InputSummary`
+(stealth on `SWEST` per the amendment; the three stealth-only
+instances refused and recorded), nine on `SWEST`. Every stealth
+cell reported suspect, zero gate violations, declared-sheet proved
+fractions 86.3–97.2% — one hidden retype among ~12,000 cells never
+slips through, and the tiers inherit a suspect set an order of
+magnitude smaller than the sheet.
+
+**The real pairs: one clean, one failing the gate.** v2 pair:
+38,872 of 41,049 cells proved (94.7%), zero violations, 121 s
+whole-model. v4→v5: 79.7% proved and **28 violations — round 1
+fails its registered gate.** All 28 are one phenomenon: `B2` on
+every sheet is the company-selector pull-through whose cached
+result is **text** (v4 saved with ENWL selected, v5 with SSES).
+A text formula result is `value=None` in the engine's numeric
+universe, so the trace's « own cached value » read None on both
+sides and matched — while the stored output moved. The soundness
+argument (« the output is inside the hash ») silently assumed the
+output is *observable*; for non-numeric results it is not.
+
+**Round 2, registered now, before its results:** a formula cell
+whose own cached value is unobservable through the reader
+(`value is None`, on either side) can carry no verifying trace and
+is **never proved** — suspects by refusal, the same honesty the
+tiers will owe. Nothing else changes. All fifteen planted
+instances and both real pairs re-run from scratch; the efficiency
+cost of the exclusion is reported with them.
+
+## C4 round 2 results — the gate passes everywhere; the cheap proof stands
+
+Full re-run under round 2's registered fix, nothing else changed.
+
+**Soundness: clean across the board.** All fifteen planted
+instances sound (every stealth cell suspect, zero violations), and
+**zero violations on both real pairs** — the 28 selector cells that
+failed round 1 are now suspects by refusal, exactly as an
+unobservable output should be.
+
+**The price of honesty, reported as registered:** the observability
+exclusion costs 1.5 points on the v2 pair (94.7% → **93.2%**
+proved, 38,255 of 41,049 cells) and 2.3 points on v4→v5 (79.7% →
+**77.4%**, 33,418 of 43,178). Planted-instance declared-sheet
+fractions: 85.7–91.4%.
+
+**What the tiers inherit.** On a real adjacent revision, the cheap
+proof discharges ~93% of the model at hash cost (~2 minutes
+whole-model including both reads) and hands tier 2 a suspect set
+of ~2,800 cells instead of 41,000 — with a receipt for every
+refusal: unobservable outputs, unmatched lines, changed traces.
+The plan's sequencing holds: the solver stays the crown, not the
+foundation. Next per the orders' item 2: tier 2's registration
+(randomized differential evaluation over the suspects' cone of
+influence, standing on Dynamo's `recalc/`), a new round, its own
+registration first.
+
+## Aligner memory round — registration (REGISTERED BEFORE RESULTS)
+
+Ordered by the lead after V3's first real run: all sixteen PR24
+pairs OOM-killed, localized to `scripts.watch_align` at 13.6 GB on
+the AFW pair (~1.0M populated cells, 51 sheets — a shape neither
+registered cost host produced). This container lacks the corpus;
+per the orders, the failure shape is synthesized.
+
+**Suspect, to be confirmed by profile, not guessed:** the DP in
+`align_lines` allocates full `(R+1)×(N+1)` score and move
+matrices. The score matrix is lists of Python floats — every cell
+is assigned during the recurrence, so every cell materializes a
+float object (~32 bytes with its pointer): a 30,000-row data sheet
+alone costs ~29 GB, while the recurrence only ever reads the
+previous row. Secondary suspect: `Line.signatures` is a property
+that builds a fresh tuple on every similarity call — R×N tuple
+churn.
+
+**The instrument** (`scripts/watch_membench.py`, committed with
+this registration): synthetic grids in the failure's shape — R
+rows × 60 columns, half labelled / half not, 5% edited so the
+identity shortcut cannot flatter the number — aligned in a child
+process whose peak RSS is read from `resource`; R sweeps
+{2,000, 5,000, 10,000}. The profile stands on the sweep's growth
+curve, before and after.
+
+**The fix, designed now, applied only if the profile confirms:**
+two-row `array('d')` score storage (the recurrence unchanged,
+byte-compact), the move matrix already-compact bytearrays kept
+whole for traceback (exactly R×N bytes), and `Line` storing its
+signature tuple once at construction instead of rebuilding it per
+call. Identical recurrence, identical tie-breaks — the results
+cannot move by construction, and the gate checks it anyway.
+
+**The gate, fixed:** (a) all watch unit tests green; (b) the C2
+planted-edit harness re-run on both registered sheets must
+reproduce **exactly 21/24 and 21/24** with the same per-instance
+verdicts; (c) the v4→v5 full-model alignment output must be
+identical to the current committed behaviour, timings aside. Any
+deviation fails the round. **Reported:** peak RSS per sweep point
+before and after, the growth term named, and the projected peak on
+the lead's worst FM02 sheet once its dimensions are known (or the
+measured one, once the lead re-runs V3).
+
+Tier 2's registration follows this round, per the orders.
+
+## Aligner memory round — results: the term removed, every gate green
+
+**The profile confirmed the registered suspect exactly.** Synthetic
+failure-shaped grids (R × 60, half labelled, 5% edited), child
+peak RSS:
+
+| rows | before | after | before s | after s |
+|---|---|---|---|---|
+| 2,000 | 128 MB | **87 MB** | 33 | 18 |
+| 5,000 | 425 MB | **160 MB** | 219 | 114 |
+| 10,000 | 1,389 MB | **318 MB** | 900 | 477 |
+
+Before: ~8 bytes per DP cell of score-matrix pointer storage (the
+float objects themselves mostly shared as the running max
+propagates — the pointers were the weight). After: scores live in
+two `array('d')` rows, and the residual growth is the move
+matrix's one byte per cell (100 MB at 10k rows), kept whole
+because the traceback needs it. `Line` now materializes its
+signature tuple once at construction. The ~1.9× speedup is churn
+removed, reported as a side-effect, not a goal.
+
+**The gates, all green:** (a) 49/49 unit tests; (b) the C2 harness
+re-run on both sheets — 21/24 and 21/24 with **per-instance
+verdicts identical** to the committed rounds, field by field;
+(c) the v4→v5 full-model alignment identical to the committed
+output — after one honest correction *to the comparator itself*:
+`watch_align` sorts its sheet list by per-sheet timing, so the
+first comparison flagged a timing-induced ordering as a
+difference; with sheets compared by name, every field of every
+sheet is equal. The aligner's results did not move.
+
+**Projection for the lead, stated with its limits:** on this
+container the 10k-row point peaked at 318 MB against 1,389 MB
+before — a ~4.4× reduction that grows with R (the removed term
+was 8 bytes/cell, the remaining one 1 byte/cell). A 30,000-row
+FM02-class sheet projects to ~0.9 GB of move matrix plus the
+books; the 13.6 GB peak should land in the low single GB. The
+real number is the lead's V3 re-run to measure, not mine to
+claim — per the orders, that happens the sweep after this merges.
+If FM02 sheets prove taller still, the named next step is a
+Hirschberg traceback (linear space), a registered round of its
+own. Tier 2's registration follows once V3 is through.

@@ -179,6 +179,18 @@ def _plant(
     base: Path, sheet_name: str, kind: str, at_row: int, at_column: int, out: Path
 ) -> Planted:
     book = openpyxl.load_workbook(base)
+    planted = _apply(book, sheet_name, kind, at_row, at_column)
+    book.save(out)
+    _reinject_values(base, out, sheet_name, planted)
+    return planted
+
+
+def _apply(
+    book: openpyxl.Workbook, sheet_name: str, kind: str, at_row: int, at_column: int
+) -> Planted:
+    """One declared edit applied to an open workbook — no save, so a
+    caller (the stealth harness) can stack a second edit in the same
+    session before the one save and value re-injection."""
     sheet = book[sheet_name]
 
     if kind == "insert_blank_row":
@@ -252,8 +264,6 @@ def _plant(
                     cell.value = "=SUM(" + formula[1:] + ",0)"
                     done = True
 
-    book.save(out)
-    _reinject_values(base, out, sheet_name, planted)
     return planted
 
 
@@ -281,48 +291,57 @@ def _reinject_values(base: Path, out: Path, sheet_name: str, planted: Planted) -
     save drops every cached value, and with them the labels the engine
     derives from formula results — so the planted file stops being the
     file Excel would have saved. This puts the original cached values
-    back into the edited sheet, pre-image mapped through the edit."""
-    values: dict[tuple[int, int], tuple[str, str | None]] = {}
+    back into **every** sheet — the edited one pre-image mapped
+    through the edit, all others by identity (the round-1 amendment
+    in the lane log: a gate that only means something on one sheet
+    is not a gate)."""
+    base_values: dict[str, dict[tuple[int, int], tuple[str, str | None]]] = {}
     with zipfile.ZipFile(base) as archive:
-        member = dict(_sheet_parts(archive))[sheet_name]
-        root = ET.fromstring(archive.read(member))
-        for cell in root.iter(f"{MAIN}c"):
-            ref = cell.get("r")
-            value_node = cell.find(f"{MAIN}v")
-            if not ref or value_node is None or value_node.text is None:
-                continue
-            row, column = split_ref(ref)
-            values[(row, column)] = (value_node.text, cell.get("t"))
+        for name, member in _sheet_parts(archive):
+            per_sheet: dict[tuple[int, int], tuple[str, str | None]] = {}
+            root = ET.fromstring(archive.read(member))
+            for cell in root.iter(f"{MAIN}c"):
+                ref = cell.get("r")
+                value_node = cell.find(f"{MAIN}v")
+                if not ref or value_node is None or value_node.text is None:
+                    continue
+                per_sheet[split_ref(ref)] = (value_node.text, cell.get("t"))
+            base_values[name] = per_sheet
 
     ET.register_namespace("", MAIN.strip("{}"))
     ET.register_namespace(
         "r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
     )
     with zipfile.ZipFile(out) as archive:
-        member = dict(_sheet_parts(archive))[sheet_name]
+        members = dict(_sheet_parts(archive))
         payload = {name: archive.read(name) for name in archive.namelist()}
-    root = ET.fromstring(payload[member])
-    for cell in root.iter(f"{MAIN}c"):
-        ref = cell.get("r")
-        if not ref or cell.find(f"{MAIN}f") is None:
+    for name, member in members.items():
+        values = base_values.get(name)
+        if not values:
             continue
-        value_node = cell.find(f"{MAIN}v")
-        #: openpyxl writes formula cells with an *empty* <v/> — treat
-        #: that the same as no cached value at all.
-        if value_node is not None and value_node.text:
-            continue
-        row, column = split_ref(ref)
-        source = _preimage(row, column, planted)
-        stored = values.get(source) if source else None
-        if stored is None:
-            continue
-        text, kind = stored
-        if kind:
-            cell.set("t", kind)
-        if value_node is None:
-            value_node = ET.SubElement(cell, f"{MAIN}v")
-        value_node.text = text
-    payload[member] = ET.tostring(root, xml_declaration=True, encoding="UTF-8")
+        root = ET.fromstring(payload[member])
+        edited = name == sheet_name
+        for cell in root.iter(f"{MAIN}c"):
+            ref = cell.get("r")
+            if not ref or cell.find(f"{MAIN}f") is None:
+                continue
+            value_node = cell.find(f"{MAIN}v")
+            #: openpyxl writes formula cells with an *empty* <v/> —
+            #: treat that the same as no cached value at all.
+            if value_node is not None and value_node.text:
+                continue
+            row, column = split_ref(ref)
+            source = _preimage(row, column, planted) if edited else (row, column)
+            stored = values.get(source) if source else None
+            if stored is None:
+                continue
+            text, kind = stored
+            if kind:
+                cell.set("t", kind)
+            if value_node is None:
+                value_node = ET.SubElement(cell, f"{MAIN}v")
+            value_node.text = text
+        payload[member] = ET.tostring(root, xml_declaration=True, encoding="UTF-8")
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as archive:
         for name, data in payload.items():
             archive.writestr(name, data)
