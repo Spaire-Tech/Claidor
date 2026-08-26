@@ -930,3 +930,43 @@ hold no numeric-valued formula, so both target scans
 the tail holds nothing — the same mechanical fallback the round-1
 stealth retype registered. The chosen coordinate remains the
 recorded ground truth.
+
+## Aligner timing round — registration (REGISTERED BEFORE RESULTS)
+
+Ordered at the twelfth sweep: post-memory-fix, a PR24 FM02 pair
+costs ~90 minutes wall on the lead's container — the fat is gone
+and the minutes remain. This round measures where they live and
+fixes only what is avoidable without moving a single result.
+
+**Baseline already on record** (the memory round's sweep, same
+instrument): the fix made the synthetic shape ~1.9× *faster*
+(900 s → 477 s at 10k rows), so the 90 minutes is the O(R×N)
+recurrence's own price on ~1M-cell models, not a regression.
+
+**The instrument:** `cProfile` over `align_lines` on the
+registered synthetic shape (5k rows × 60), attributing time among
+(a) the per-pair `similarity` calls on the common miss path —
+label-differing pairs that today pay two string compares plus an
+element-wise tuple equality; (b) real LCS work on eligible pairs;
+(c) the DP loop's own bookkeeping. The profile decides; nothing is
+fixed on a hunch.
+
+**Candidate fix, designed now, applied only where the profile
+points:** per-call interning — each `align_lines` call maps every
+signature tuple to one canonical object so equality is `is`-fast,
+and precomputes per-line (label, signature-id) so the common miss
+path answers without entering `similarity` at all. Exact same
+verdicts by construction: the values compared do not change, only
+how fast the equal ones are recognized.
+
+**The gate, identical to the memory round's:** all watch unit
+tests; the C2 harness reproducing 21/24 twice with per-instance
+verdicts identical; the v4→v5 alignment equal in every sheet
+(name-ordered). **Reported:** the profile's split, the sweep
+before/after, and the projected FM02 pair time — or, if the
+profile says the minutes are the recurrence's honest price, that
+sentence and a stop, per the orders.
+
+Sequencing note: the tier-2 grid is running on this container as
+this registration is written; heavy jobs run alone, so the timing
+measurement starts only after the grid returns.
