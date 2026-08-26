@@ -83,3 +83,87 @@ in a horizontal family too.
 ---
 
 ## Results (appended after the registration, never edited into it)
+
+**Planting (26 Aug):** 45 of 45 drawn sites planted across the
+three hosts, seed 20260828 — vertical formula families are
+everywhere in these models, unlike the beat lattices.
+
+**Round-1 verification (26 Aug):**
+
+| class | planted | caught |
+|---|---|---|
+| col-bottom | 15 | 15 |
+| col-top | 15 | 14 |
+| col-interior | 15 | 12 |
+| **overall** | **45** | **41 (91%)** |
+
+By the stratum the round exists to examine: **left-formula rows
+40 of 41 caught (98%)** — the island pass owns the column direction
+where models are row-major. **No-left-formula rows: 1 of 4** —
+missed in the majority, the sample small because these hosts *are*
+row-major (recorded, not padded). Every miss run to ground at the
+cells:
+
+- `C_Capex!F294` and `Inflation!B151` (interior) and
+  `C_Performance!F167` (top): all three suppressed by the
+  **left-formula history guard** — no formula sits left of the cell
+  in its row, so the guard reads the typed cell as history. The
+  predicted row-major bias, confirmed three of three. (F167 was
+  first misread against the wrong twin host and the plant blamed;
+  re-examined in the right file the plant took cleanly and the
+  guard is the suppressor — the error and its correction both
+  recorded.)
+- `Inflation!E211` (interior, left-formula present): suppressed by
+  the **seed exemption** — the stripped cell sits mid-chain where
+  the formula below reads it and continues, indistinguishable from
+  a rebase seed. A designed guard's stated cost, not a defect.
+
+**Verdict, by the registered decision rule:** the column direction
+is verified covered for left-formula strata (all three classes in
+strong majority); the no-left-formula stratum is missed in the
+majority and **names the extension**.
+
+## Round 2, registered now, before it is implemented or measured
+
+**The extension, scoped precisely:** for an **interior** island
+only — one with a formula above and below inside the same
+strictly-adjacent run, a repeating witness shape at its edge — the
+left-formula history test is waived: a typed cell sandwiched
+vertically between same-shape formulas is not how typed history is
+laid out in any orientation, and the sandwich itself is the
+anti-history evidence. Top and bottom islands keep the guard
+unchanged: column-major models genuinely put typed history at the
+top of columns, and waiving it there is the flood the guard exists
+to prevent — `C_Performance!F167`'s class stays a named limitation.
+All other island guards (witness, mnemonic, seed, block height)
+stand.
+
+**Measurement:** the precondition sweep of the unchanged engine
+runs now (the next formal certification rides it, per the lead's
+note). After the change: the three planted files re-audited, and
+the full 27-file sweep diffed against the baseline.
+
+**Adoption criteria (fixed now):**
+
+1. Every gate difference is one of exactly two things, hand-read
+   and verified: a new `typed-over-formula` finding at an interior
+   island a left-formula guard suppressed before, or an existing
+   typed fold absorbing such cells (island findings carry the
+   interior rule, so folds may legitimately grow). Anything else
+   refuses.
+2. No file gains more than 5 findings; at least two-thirds of new
+   findings judged worth showing from the cells.
+3. The two interior no-left-formula plants (`C_Capex!F294`,
+   `Inflation!B151`) are caught on re-audit; `E211` (seed) and
+   `F167` (top) are predicted to stay missed, and staying missed is
+   the guards working, not a failure.
+4. Tieout tests green, with new tests pinning both sides of the
+   waiver; on adoption with corpus changes the baseline regenerates
+   in the same commit.
+
+**Prediction (written before running):** both interior
+no-left-formula plants are caught; the corpus gains few or no
+findings — interior islands suppressed *solely* by the left-formula
+guard need a typed cell vertically sandwiched in a repeating
+family with no left formula, which in row-major regulator templates
+is rare; whatever appears is hand-read and the flood line decides.
