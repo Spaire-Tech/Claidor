@@ -14,9 +14,11 @@ both the offline scripts and the running product.
 
 import hashlib
 import re
+import tempfile
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -632,6 +634,90 @@ class TieOutService:
                 "abstentions": record["abstentions"],
                 "tallies": record["tallies"],
             },
+        }
+
+    async def version_delta(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        against_id: UUID | None = None,
+    ) -> dict[str, Any] | None:
+        """The Watch's delta report between two stored versions.
+
+        The Versions screen's answer to « what did this revision do »:
+        the Watch (`polar.tieout.watch`, a read-only library here per
+        lanes.md) reads both files and reports in review language —
+        what broke, what changed class, where the method moved, which
+        assumptions moved, which outputs moved materially, the
+        structure, then the repairs. Computed on request and persisted
+        nowhere, same posture as the version audit and the marked-up
+        copy.
+
+        The Watch reads *files*, not rows — that is its own design (a
+        cell the ingest labeller skipped is still a cell the Watch
+        reports) — so this needs both versions' stored bytes. A version
+        whose bytes were dropped under « keep the chain, drop the
+        documents » raises :class:`storage.FileNotKept` with the
+        sentence that says what to do; the caller shows it as it
+        stands.
+
+        `against_id` picks the old side; left out, the version before
+        the given one. Returns None when there is nothing earlier —
+        a first upload has no revision to report, which is not an
+        error. Both sides must be ready models of the same lineage in
+        this deal; anything else reads as not found to the caller.
+        """
+        from .watch import delta_report
+
+        repository = TieOutRepository.from_session(session)
+        new_side = await repository.get_artifact(artifact_id)
+        if (
+            new_side is None
+            or new_side.dossier_id != dossier_id
+            or new_side.kind is not ArtifactKind.model
+            or new_side.status is not ArtifactStatus.ready
+        ):
+            return None
+        if against_id is None:
+            old_side = await repository.previous_version(new_side)
+            if old_side is None:
+                return None
+        else:
+            old_side = await repository.get_artifact(against_id)
+            if (
+                old_side is None
+                or old_side.dossier_id != dossier_id
+                or old_side.lineage_id != new_side.lineage_id
+                or old_side.kind is not ArtifactKind.model
+                or old_side.status is not ArtifactStatus.ready
+                or old_side.id == new_side.id
+            ):
+                return None
+
+        old_bytes = storage.fetch(old_side)
+        new_bytes = storage.fetch(new_side)
+        suffix = Path(new_side.filename).suffix or ".xlsx"
+        old_path = new_path = ""
+        try:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                f.write(old_bytes)
+                old_path = f.name
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                f.write(new_bytes)
+                new_path = f.name
+            report = delta_report(old_path, new_path)
+        finally:
+            for path in (old_path, new_path):
+                if path:
+                    Path(path).unlink(missing_ok=True)
+
+        return {
+            "old": old_side,
+            "new": new_side,
+            "computed_at": datetime.now(UTC),
+            "report": report,
         }
 
     async def run_audit(

@@ -566,6 +566,67 @@ export interface Version {
   counts: Record<string, unknown>
 }
 
+/** One reviewed change from the Watch — one authoring decision where
+ *  possible. `kind` is one of its eight classes, already ranked by
+ *  the engine; the screen renders in order and never re-ranks. */
+export interface DeltaItem {
+  kind:
+    | 'new_defect'
+    | 'class_change'
+    | 'relabelled_line'
+    | 'methodology_change'
+    | 'moved_assumption'
+    | 'material_output'
+    | 'structure'
+    | 'repaired_defect'
+  sheet: string
+  /** Old-side row block for row-shaped items; 0 when not row-shaped. */
+  first_row: number
+  last_row: number
+  columns: string[]
+  /** The Watch's own sentence for the item, when it wrote one. */
+  detail: string
+  weight: number
+  /** Finding keys folded into this item — the class-change join. */
+  findings: string[]
+}
+
+/**
+ * What one revision did, in review language — the Watch, served.
+ *
+ * Computed on request from the two versions' stored bytes, persisted
+ * nowhere. Findings are matched by rule + sheet + name — never the
+ * address — and the nameless are counted apart, never guessed at; a
+ * screen shows that count when it is not zero.
+ */
+export interface VersionDelta {
+  old_artifact_id: string
+  old_version: number
+  old_uploaded_at: string
+  old_uploaded_by: {
+    id: string
+    name: string
+    avatar_url: string | null
+  } | null
+  new_artifact_id: string
+  new_version: number
+  new_uploaded_at: string
+  new_uploaded_by: {
+    id: string
+    name: string
+    avatar_url: string | null
+  } | null
+  computed_at: string
+  new_defects: number
+  repaired_defects: number
+  persistent_defects: number
+  unmatched_old: number
+  unmatched_new: number
+  sheets_added: string[]
+  sheets_removed: string[]
+  items: DeltaItem[]
+}
+
 /**
  * The audit re-run on one stored version, persisted nowhere.
  *
@@ -1113,6 +1174,18 @@ export class TieOutApi {
    *  persisted nowhere. What picking a version re-scopes the page to. */
   versionAudit(artifactId: string): Promise<VersionAudit> {
     return this.call(`/artifacts/${artifactId}/audit`)
+  }
+
+  /** What a revision did, in review language — the Watch, served.
+   *  `null` for a first version: no revision to report, not an error.
+   *  A version whose bytes were dropped answers 404 with the storage
+   *  sentence, shown to the person as it stands. */
+  versionDelta(
+    artifactId: string,
+    against?: string,
+  ): Promise<VersionDelta | null> {
+    const query = against ? `?against=${against}` : ''
+    return this.call(`/artifacts/${artifactId}/delta${query}`)
   }
 
   /** What travels with this file that is not on its screen. */

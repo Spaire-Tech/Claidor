@@ -81,6 +81,7 @@ from .schemas import (
     DealListItem,
     DealPage,
     DecisionRead,
+    DeltaItemRead,
     FigureMap,
     FigureRead,
     FindingCounts,
@@ -113,6 +114,7 @@ from .schemas import (
     Uploader,
     VersionAudit,
     VersionAuditSummary,
+    VersionDeltaRead,
     VersionRead,
 )
 from .service import tieout
@@ -1117,6 +1119,83 @@ async def version_audit(
             abstentions=summary["abstentions"],
         ),
         findings=[_finding(one, filenames) for one in result["findings"]],
+    )
+
+
+@router.get("/artifacts/{artifact_id}/delta", response_model=VersionDeltaRead | None)
+async def version_delta(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    against: UUID | None = Query(
+        default=None,
+        description="The older version to compare against. Left out, the "
+        "version before this one.",
+    ),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> VersionDeltaRead | None:
+    """What this revision did, in review language — the Watch, served.
+
+    The Versions screen's report: what broke, what changed class, where
+    the method moved, which assumptions moved, which outputs moved
+    materially, the structure, then the repairs — ranked by the engine,
+    computed on request from the two versions' stored bytes, persisted
+    nowhere.
+
+    `null` when this is the first version: there is no revision to
+    report, which is not an error — the same sentence as the raw diff.
+    A version whose bytes were dropped under « keep the chain, drop the
+    documents » is a 404 carrying the storage sentence (upload it
+    again); an `against` outside this model's own lineage reads as not
+    found.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        result = await tieout.version_delta(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+            against_id=against,
+        )
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    if result is None:
+        if against is not None or artifact.kind is not ArtifactKind.model:
+            raise ResourceNotFound("Nothing to compare against.")
+        return None
+
+    users = UserRepository.from_session(session)
+    old, new = result["old"], result["new"]
+    report = result["report"]
+    return VersionDeltaRead(
+        old_artifact_id=old.id,
+        old_version=old.version,
+        old_uploaded_at=old.created_at,
+        old_uploaded_by=_uploader(await users.get_by_id(old.uploaded_by_id)),
+        new_artifact_id=new.id,
+        new_version=new.version,
+        new_uploaded_at=new.created_at,
+        new_uploaded_by=_uploader(await users.get_by_id(new.uploaded_by_id)),
+        computed_at=result["computed_at"],
+        new_defects=report.new_defects,
+        repaired_defects=report.repaired_defects,
+        persistent_defects=report.persistent_defects,
+        unmatched_old=report.unmatched_old,
+        unmatched_new=report.unmatched_new,
+        sheets_added=list(report.sheets_added),
+        sheets_removed=list(report.sheets_removed),
+        items=[
+            DeltaItemRead(
+                kind=item.kind,
+                sheet=item.sheet,
+                first_row=item.first_row,
+                last_row=item.last_row,
+                columns=list(item.columns),
+                detail=item.detail,
+                weight=item.weight,
+                findings=list(item.findings),
+            )
+            for item in report.items
+        ],
     )
 
 

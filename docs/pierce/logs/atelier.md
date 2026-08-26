@@ -321,3 +321,54 @@ verified; full route suite 69 passed.
 
 The inventory (orders item 2) remains delivered — previous entries.
 Holding for founder designs, per item 3.
+
+## 27 August 2026 — the Watch delta view, shipped whole (agent-designed)
+
+The founder unlocked design (lanes.md, 26 Aug); orders name three
+screens in order, one shipped whole before the next. This is the
+first, **agent-designed and marked as such** — no founder drawing
+exists for it; what the founder did declare, the design export's own
+`vtCols` (« Version · What changed · Saved · By · Findings »), is
+kept verbatim as the table's columns.
+
+**The endpoint.** `GET /artifacts/{id}/delta[?against=]`
+(`version_delta` in `service.py`): the Watch's `delta_report` run
+over the two versions' stored bytes through temp files, persisted
+nowhere. First version → `null`, the raw diff's own convention; bytes
+dropped under retention → 404 carrying the storage sentence; an
+`against` outside the lineage → 404. The wire shape
+(`VersionDeltaRead`/`DeltaItemRead`) carries the study's counts —
+nameless findings counted apart, never folded away — and the items in
+the engine's own rank, never re-ranked by a screen. Four new route
+tests (`TestTheVersionDelta`), including rank-order preservation;
+**route suite 73 passed**.
+
+**The screen.** A « Versions » tab on the project page (the design's
+own `verAll` intent — the dropdown gains « See all versions », which
+opens it). The table: uploads newest first; the selected revision's
+row carries the counts sentence (« One defect introduced · none
+repaired · one standing ») and a `+n −r` findings column; the first
+upload says honestly that nothing earlier exists. Below, « What vN
+changed » in the design's gradient-heading pattern: the comparison
+line with the « computed just now, nothing here is a saved answer »
+honesty sentence, then the report card — each reviewed change as a
+row with its class dot (red defect/class-change, amber
+method/assumption, blue relabel/output, grey structure, green
+repair — the workspace's existing inks), the Watch's own sentence,
+folded finding keys in mono, and the place as a banker names it
+(« Model!F16 »). Refusals render as the server's sentence, as it
+stands.
+
+**Proven on the real stack, screenshots beside this log**
+(`logs/atelier/versions-tab.png`, `versions-first-upload.png`,
+`versions-dropdown.png`): Chromium on the dev API + web with the
+two-version demo deal — the planted formula-to-constant edit reads
+« Changed class — a live formula became a typed constant » folding
+`typed-over-formula`, at `Model!F16`; every drive assertion green,
+zero page errors. Frontend typecheck, eslint and prettier clean.
+
+**Also in this push:** the standing handoff file
+(`docs/pierce/handoffs/atelier.md`) per the new memory discipline —
+map, not diary; updated with every push from now on.
+
+Next per orders: the source viewer, then the recalculation mark.

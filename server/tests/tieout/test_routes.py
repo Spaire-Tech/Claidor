@@ -22,6 +22,7 @@ from httpx import AsyncClient
 from polar.auth.scope import Scope
 from polar.kit.db.postgres import AsyncSession
 from polar.models import (
+    Artifact,
     ArtifactKind,
     Dossier,
     DossierMember,
@@ -1829,6 +1830,140 @@ class TestTheVersionAudit:
             if one.kind is ArtifactKind.model
         )
         response = await client.get(f"/v1/tieout/artifacts/{model.id}/audit")
+        assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestTheVersionDelta:
+    """The Watch, served: what a revision did, in review language.
+
+    The engine's own semantics are proven in `test_watch*`; what is
+    tested here is the route — deal posture, the honest null for a
+    first version, and that the wire shape carries the report's counts
+    and ranked items as the engine produced them.
+    """
+
+    async def _two_versions(
+        self, session: AsyncSession, save_fixture: SaveFixture, owner: User
+    ) -> tuple[Dossier, Artifact, Artifact]:
+        deal = await _deal_for(session, save_fixture, owner)
+        first = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=owner.id,
+        )
+        second = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=(CASCADE / "audit_fixture.xlsx").read_bytes(),
+            user_id=owner.id,
+        )
+        await session.flush()
+        return deal, first, second
+
+    @pytest.mark.auth
+    async def test_a_revision_answers_in_review_language(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        _, first, second = await self._two_versions(session, save_fixture, user)
+
+        response = await client.get(f"/v1/tieout/artifacts/{second.id}/delta")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["old_version"] == 1
+        assert body["new_version"] == 2
+        # The study's counts are integers, never blurred; the nameless
+        # are counted apart rather than guessed at.
+        for key in (
+            "new_defects",
+            "repaired_defects",
+            "persistent_defects",
+            "unmatched_old",
+            "unmatched_new",
+        ):
+            assert isinstance(body[key], int)
+        # Items are the Watch's eight classes, in the engine's own rank.
+        kinds = [item["kind"] for item in body["items"]]
+        order = [
+            "new_defect",
+            "class_change",
+            "relabelled_line",
+            "methodology_change",
+            "moved_assumption",
+            "material_output",
+            "structure",
+            "repaired_defect",
+        ]
+        assert all(kind in order for kind in kinds)
+        assert kinds == sorted(kinds, key=order.index)
+        # Two entirely different workbooks under one lineage: the
+        # report must have found *something* to say.
+        assert body["items"]
+
+    @pytest.mark.auth
+    async def test_a_first_version_is_null_not_an_error(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        only = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        response = await client.get(f"/v1/tieout/artifacts/{only.id}/delta")
+        assert response.status_code == 200
+        assert response.json() is None
+
+    @pytest.mark.auth
+    async def test_against_outside_the_lineage_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal, _, second = await self._two_versions(session, save_fixture, user)
+        deck = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.deck,
+            filename="cascade_deck.pptx",
+            payload=CLEAN.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        response = await client.get(
+            f"/v1/tieout/artifacts/{second.id}/delta?against={deck.id}"
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_a_strangers_revision_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        _, _, second = await self._two_versions(session, save_fixture, stranger)
+        response = await client.get(f"/v1/tieout/artifacts/{second.id}/delta")
         assert response.status_code == 404
 
 

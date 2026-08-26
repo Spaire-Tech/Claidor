@@ -61,6 +61,7 @@ import {
   TieOutApi,
   Version,
   VersionAudit,
+  VersionDelta,
 } from '../api'
 import { fileIcon, font, ink } from '../design'
 import { categoryOfKey } from '../files'
@@ -73,6 +74,21 @@ export const sevOf = (f: Finding): 1 | 2 | 3 => {
 }
 const SEV_WORD = { 1: 'Material', 2: 'Significant', 3: 'Observation' } as const
 const SEV_DOT = { 1: '#e0322d', 2: '#e8a300', 3: '#2b6cf5' } as const
+
+/** The Watch's eight classes, in the screen's words — the same
+ *  attention inks the rest of the workspace uses: red for a defect,
+ *  amber for an assumption or method at risk, blue for information,
+ *  green for a repair, grey for structure. */
+const DELTA_KIND = {
+  new_defect: { word: 'New defect', dot: '#e0322d' },
+  class_change: { word: 'Changed class', dot: '#e0322d' },
+  relabelled_line: { word: 'Relabelled line', dot: '#2b6cf5' },
+  methodology_change: { word: 'Methodology change', dot: '#e8a300' },
+  moved_assumption: { word: 'Assumption moved', dot: '#e8a300' },
+  material_output: { word: 'Output moved', dot: '#2b6cf5' },
+  structure: { word: 'Structure', dot: '#8f96a0' },
+  repaired_defect: { word: 'Repaired', dot: '#1f8a4c' },
+} as const
 
 /** « Today 11:40 » — the checked column's phrasing, shared shape with
  *  the project list. */
@@ -160,9 +176,9 @@ export const ProjectPage = ({
   const [runs, setRuns] = useState<CheckRun[] | null>(null)
   const [versions, setVersions] = useState<Version[] | null>(null)
   const [links, setLinks] = useState<Link[] | null>(null)
-  const [tab, setTab] = useState<'Overview' | 'Findings' | 'Sources'>(
-    'Overview',
-  )
+  const [tab, setTab] = useState<
+    'Overview' | 'Findings' | 'Versions' | 'Sources'
+  >('Overview')
   const [srcView, setSrcView] = useState<'map' | 'list'>('map')
   const [sev, setSev] = useState<0 | 1 | 2 | 3>(0)
   const [openId, setOpenId] = useState<string | null>(null)
@@ -170,6 +186,15 @@ export const ProjectPage = ({
   //: The picked version, when it is not the current one. Null means
   //: the page speaks about the current version, as it always did.
   const [pastVer, setPastVer] = useState<number | null>(null)
+  //: The Versions tab: which revision's delta is open (the new side's
+  //: artifact id), and every delta computed so far — cached, because
+  //: the server computes each one fresh from the stored bytes. A
+  //: string value that is not 'loading' is the server's own refusal
+  //: sentence, shown as it stands.
+  const [deltaFor, setDeltaFor] = useState<string | null>(null)
+  const [deltas, setDeltas] = useState<
+    Record<string, VersionDelta | null | 'loading' | { refused: string }>
+  >({})
   //: Version audits by artifact id — computed server-side on request,
   //: cached here so re-picking a version does not re-run it.
   const [pastAudits, setPastAudits] = useState<
@@ -252,6 +277,48 @@ export const ProjectPage = ({
       })
       .finally(() => setMarkingUp(false))
   }
+
+  //: The Versions tab's selection: fetch a revision's delta once and
+  //: keep it. The server computes fresh from the stored bytes; a
+  //: refusal (bytes dropped under the retention policy) is its own
+  //: sentence, kept and shown as it stands.
+  const selectDelta = useCallback(
+    (artifactId: string) => {
+      setDeltaFor(artifactId)
+      setDeltas((held) => {
+        if (artifactId in held) return held
+        api
+          .versionDelta(artifactId)
+          .then((got) => setDeltas((now) => ({ ...now, [artifactId]: got })))
+          .catch((problem: unknown) =>
+            setDeltas((now) => ({
+              ...now,
+              [artifactId]: {
+                refused:
+                  problem instanceof Error
+                    ? problem.message
+                    : 'something went wrong',
+              },
+            })),
+          )
+        return { ...held, [artifactId]: 'loading' }
+      })
+    },
+    [api],
+  )
+  //: Opening the tab lands on the newest revision without a click —
+  //: « what did the last upload do » is the question the tab answers.
+  //: Deferred a tick so the selection's setState never runs
+  //: synchronously inside the effect (the cascading-render lint rule).
+  useEffect(() => {
+    if (tab !== 'Versions' || deltaFor !== null) return
+    const newest = (versions ?? [])
+      .slice()
+      .sort((a, b) => b.version - a.version)[0]
+    if (!newest) return
+    const handle = setTimeout(() => selectDelta(newest.id), 0)
+    return () => clearTimeout(handle)
+  }, [tab, versions, deltaFor, selectDelta])
 
   //: Picking a version. The current one returns the page to its
   //: ordinary self; an older one fetches that version's audit — the
@@ -751,30 +818,32 @@ export const ProjectPage = ({
             </button>
           </span>
           <span style={{ flex: '1 1 auto', minWidth: 0 }} />
-          {(['Overview', 'Findings', 'Sources'] as const).map((label) => {
-            const on = tab === label
-            return (
-              <button
-                key={label}
-                onClick={() => setTab(label)}
-                style={{
-                  border: 0,
-                  background: on ? 'rgba(21,23,27,.055)' : 'transparent',
-                  borderRadius: 22,
-                  padding: '11px 26px',
-                  font: 'inherit',
-                  fontSize: 14.5,
-                  fontWeight: on ? 500 : 400,
-                  letterSpacing: '-.01em',
-                  color: on ? '#0060d0' : '#5b6068',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {label}
-              </button>
-            )
-          })}
+          {(['Overview', 'Findings', 'Versions', 'Sources'] as const).map(
+            (label) => {
+              const on = tab === label
+              return (
+                <button
+                  key={label}
+                  onClick={() => setTab(label)}
+                  style={{
+                    border: 0,
+                    background: on ? 'rgba(21,23,27,.055)' : 'transparent',
+                    borderRadius: 22,
+                    padding: '11px 26px',
+                    font: 'inherit',
+                    fontSize: 14.5,
+                    fontWeight: on ? 500 : 400,
+                    letterSpacing: '-.01em',
+                    color: on ? '#0060d0' : '#5b6068',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            },
+          )}
           <span style={{ flex: '1 1 auto', minWidth: 0 }} />
         </div>
 
@@ -1030,6 +1099,28 @@ export const ProjectPage = ({
                                 </button>
                               ))}
                           </span>
+                          {/* The design's own verAll intent: the
+                              dropdown opens the Versions tab, where the
+                              Watch reports what each revision did. */}
+                          <button
+                            onClick={() => {
+                              setVerOpen(false)
+                              setTab('Versions')
+                            }}
+                            style={{
+                              border: 0,
+                              background: 'transparent',
+                              font: 'inherit',
+                              fontSize: 14,
+                              letterSpacing: '-.01em',
+                              color: '#0060d0',
+                              cursor: 'pointer',
+                              padding: '12px 8px 6px',
+                              textAlign: 'left',
+                            }}
+                          >
+                            See all versions
+                          </button>
                         </span>
                       </>
                     )}
@@ -2470,6 +2561,459 @@ export const ProjectPage = ({
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* The Versions tab — agent-designed (no founder drawing exists;
+            the design's own vtCols declare the table's columns, kept
+            verbatim: Version · What changed · Saved · By · Findings).
+            Rows are the uploads, newest first; selecting one shows the
+            Watch's delta report for that revision — computed by the
+            server from the two versions' stored bytes, persisted
+            nowhere, rendered in the engine's own rank. */}
+        {tab === 'Versions' && (
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 1040,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+              paddingBottom: 44,
+            }}
+          >
+            <div style={{ ...frameCard, padding: 14 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '74px 1fr 150px 170px 110px',
+                  gap: 10,
+                  padding: '2px 20px 14px',
+                }}
+              >
+                <span style={pillHead}>Version</span>
+                <span style={pillHead}>What changed</span>
+                <span style={pillHead}>Saved</span>
+                <span style={pillHead}>By</span>
+                <span style={{ ...pillHead, textAlign: 'right' }}>
+                  Findings
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: '#fff',
+                  borderRadius: 18,
+                  boxShadow: '0 1px 2px rgba(16,22,35,.04)',
+                  overflow: 'hidden',
+                }}
+              >
+                {(versions ?? [])
+                  .slice()
+                  .sort((a, b) => b.version - a.version)
+                  .map((v, index, sorted) => {
+                    const on = deltaFor === v.id
+                    const held = deltas[v.id]
+                    const isFirst = index === sorted.length - 1
+                    const changed = isFirst
+                      ? 'First upload — nothing earlier to compare'
+                      : held === 'loading'
+                        ? 'Comparing with the version before…'
+                        : held && typeof held === 'object' && 'refused' in held
+                          ? held.refused
+                          : held === null
+                            ? 'Nothing earlier was readable to compare'
+                            : held
+                              ? `${word(held.new_defects)} defect${
+                                  held.new_defects === 1 ? '' : 's'
+                                } introduced · ${
+                                  held.repaired_defects === 0
+                                    ? 'none'
+                                    : word(held.repaired_defects).toLowerCase()
+                                } repaired · ${
+                                  held.persistent_defects === 0
+                                    ? 'none'
+                                    : word(
+                                        held.persistent_defects,
+                                      ).toLowerCase()
+                                } standing`
+                              : 'Select to compare'
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => selectDelta(v.id)}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '74px 1fr 150px 170px 110px',
+                          gap: 10,
+                          alignItems: 'center',
+                          width: '100%',
+                          textAlign: 'left',
+                          border: 0,
+                          borderTop:
+                            index === 0 ? 0 : '.5px solid rgba(16,22,35,.06)',
+                          background: on
+                            ? 'rgba(0,96,208,.045)'
+                            : 'transparent',
+                          font: 'inherit',
+                          cursor: 'pointer',
+                          padding: '0 20px',
+                          minHeight: 58,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: font.mono,
+                            fontSize: 12.5,
+                            color: on ? '#0060d0' : '#9aa1ab',
+                          }}
+                        >
+                          v{v.version}
+                        </span>
+                        <span
+                          style={{
+                            minWidth: 0,
+                            fontSize: 14.5,
+                            letterSpacing: '-.01em',
+                            color:
+                              held && held !== 'loading'
+                                ? '#1c1f23'
+                                : '#8f96a0',
+                            lineHeight: 1.4,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {changed}
+                        </span>
+                        <span style={{ fontSize: 13, color: '#8f96a0' }}>
+                          {when(v.uploaded_at)}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 13.5,
+                            color: '#4a4f57',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {v.uploaded_by?.name ?? 'Uploaded'}
+                        </span>
+                        <span
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: 8,
+                            fontFamily: font.mono,
+                            fontSize: 12.5,
+                          }}
+                        >
+                          {held &&
+                          typeof held === 'object' &&
+                          'items' in held ? (
+                            <>
+                              <span
+                                style={{
+                                  color:
+                                    held.new_defects > 0
+                                      ? '#e0322d'
+                                      : '#b6bac1',
+                                }}
+                              >
+                                +{held.new_defects}
+                              </span>
+                              <span
+                                style={{
+                                  color:
+                                    held.repaired_defects > 0
+                                      ? '#1f8a4c'
+                                      : '#b6bac1',
+                                }}
+                              >
+                                −{held.repaired_defects}
+                              </span>
+                            </>
+                          ) : (
+                            <span style={{ color: '#b6bac1' }}>—</span>
+                          )}
+                        </span>
+                      </button>
+                    )
+                  })}
+                {(versions ?? []).length === 0 && (
+                  <div
+                    style={{
+                      padding: '36px 24px',
+                      textAlign: 'center',
+                      fontSize: 14.5,
+                      color: '#4a4f57',
+                    }}
+                  >
+                    {model
+                      ? 'One moment — the versions are loading.'
+                      : 'This deal has no model yet, so there are no versions to show.'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {deltaFor !== null &&
+              (() => {
+                const held = deltas[deltaFor]
+                if (held === undefined || held === 'loading')
+                  return (
+                    <div
+                      style={{
+                        fontSize: 14.5,
+                        color: '#8f96a0',
+                        padding: '8px 4px',
+                      }}
+                    >
+                      Reading both versions and comparing…
+                    </div>
+                  )
+                if (held && typeof held === 'object' && 'refused' in held)
+                  //: The server's own sentence — bytes dropped under the
+                  //: retention policy, most likely — shown as it stands.
+                  return (
+                    <div
+                      style={{
+                        fontSize: 14.5,
+                        color: '#4a4f57',
+                        lineHeight: 1.55,
+                        padding: '8px 4px',
+                        maxWidth: '82ch',
+                      }}
+                    >
+                      {held.refused}
+                    </div>
+                  )
+                if (held === null)
+                  return (
+                    <div
+                      style={{
+                        fontSize: 14.5,
+                        color: '#4a4f57',
+                        padding: '8px 4px',
+                      }}
+                    >
+                      This is the first upload — there is no revision to report.
+                    </div>
+                  )
+                const delta = held
+                return (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontSize: 16.5,
+                          fontWeight: 600,
+                          letterSpacing: '-.014em',
+                          padding: '10px 0 6px',
+                          background:
+                            'linear-gradient(96deg,#0060d0 0%,#3b6ee0 42%,#5b52e0 100%)',
+                          WebkitBackgroundClip: 'text',
+                          backgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          color: '#0060d0',
+                          width: 'fit-content',
+                        }}
+                      >
+                        What v{delta.new_version} changed
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          color: ink.secondary,
+                          lineHeight: 1.55,
+                          maxWidth: '82ch',
+                          textWrap: 'pretty',
+                        }}
+                      >
+                        Compared with v{delta.old_version}, uploaded{' '}
+                        {when(delta.old_uploaded_at).toLowerCase()}
+                        {delta.old_uploaded_by
+                          ? ` by ${delta.old_uploaded_by.name}`
+                          : ''}
+                        . Computed just now from both stored files — nothing
+                        here is a saved answer.
+                        {delta.unmatched_old + delta.unmatched_new > 0 &&
+                          ` ${word(
+                            delta.unmatched_old + delta.unmatched_new,
+                          )} finding${
+                            delta.unmatched_old + delta.unmatched_new === 1
+                              ? ' carries'
+                              : 's carry'
+                          } no name to match by and ${
+                            delta.unmatched_old + delta.unmatched_new === 1
+                              ? 'is'
+                              : 'are'
+                          } counted apart, never guessed at.`}
+                        {(delta.sheets_added.length > 0 ||
+                          delta.sheets_removed.length > 0) &&
+                          ` Sheets: ${[
+                            ...delta.sheets_added.map((one) => `+${one}`),
+                            ...delta.sheets_removed.map((one) => `−${one}`),
+                          ].join(', ')}.`}
+                      </div>
+                    </div>
+                    <div style={{ ...frameCard, padding: 14 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          background: '#fff',
+                          borderRadius: 18,
+                          boxShadow: '0 1px 2px rgba(16,22,35,.04)',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {delta.items.length === 0 && (
+                          <div
+                            style={{
+                              padding: '36px 24px',
+                              textAlign: 'center',
+                              fontSize: 14.5,
+                              color: '#4a4f57',
+                            }}
+                          >
+                            No reviewed changes — the two versions read the same
+                            to the Watch.
+                          </div>
+                        )}
+                        {delta.items.map((item, index) => {
+                          const kind = DELTA_KIND[item.kind] ?? {
+                            word: item.kind,
+                            dot: '#8f96a0',
+                          }
+                          //: The place, as a banker would name it: one
+                          //: cell reads « Model!F16 », a block reads
+                          //: « Model rows 16–24 », a keyed finding with
+                          //: no aligned position reads as its sheet.
+                          const where =
+                            item.first_row > 0 &&
+                            item.first_row === item.last_row &&
+                            item.columns.length === 1
+                              ? `${item.sheet}!${item.columns[0]}${item.first_row}`
+                              : item.first_row > 0
+                                ? `${item.sheet} rows ${item.first_row}${
+                                    item.first_row === item.last_row
+                                      ? ''
+                                      : `–${item.last_row}`
+                                  }${
+                                    item.columns.length > 0 &&
+                                    item.columns.length <= 4
+                                      ? ` · ${item.columns.join(' ')}`
+                                      : ''
+                                  }`
+                                : item.sheet
+                          return (
+                            <div
+                              key={index}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 14,
+                                borderTop:
+                                  index === 0
+                                    ? 0
+                                    : '.5px solid rgba(16,22,35,.06)',
+                                padding: '14px 20px',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  flex: '0 0 168px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  marginTop: 1,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    flex: '0 0 7px',
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: '50%',
+                                    background: kind.dot,
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    fontSize: 13.5,
+                                    fontWeight: 500,
+                                    letterSpacing: '-.01em',
+                                    color: '#1c1f23',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {kind.word}
+                                </span>
+                              </span>
+                              <span
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 3,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontSize: 14.5,
+                                    letterSpacing: '-.01em',
+                                    color: '#1c1f23',
+                                    lineHeight: 1.45,
+                                    textWrap: 'pretty',
+                                  }}
+                                >
+                                  {item.detail ||
+                                    `${kind.word} on ${item.sheet}`}
+                                </span>
+                                {item.findings.length > 0 && (
+                                  <span
+                                    style={{
+                                      fontFamily: font.mono,
+                                      fontSize: 11.5,
+                                      color: '#9aa1ab',
+                                      lineHeight: 1.5,
+                                    }}
+                                  >
+                                    {item.findings.join(' · ')}
+                                  </span>
+                                )}
+                              </span>
+                              <span
+                                style={{
+                                  flex: '0 0 auto',
+                                  fontFamily: font.mono,
+                                  fontSize: 11.5,
+                                  color: '#9aa1ab',
+                                  whiteSpace: 'nowrap',
+                                  marginTop: 3,
+                                }}
+                              >
+                                {where}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
           </div>
         )}
 

@@ -816,6 +816,67 @@ class VersionAudit(Schema):
     findings: list[FindingRead]
 
 
+class DeltaItemRead(Schema):
+    """One reviewed change — one authoring decision where possible.
+
+    The Watch's own item, on the wire: `kind` is one of its eight
+    classes (`new_defect` · `class_change` · `relabelled_line` ·
+    `methodology_change` · `moved_assumption` · `material_output` ·
+    `structure` · `repaired_defect`), already ranked by the engine.
+    A screen renders them in the order received and never re-ranks.
+    """
+
+    kind: str
+    sheet: str
+    #: Old-side row block for row-shaped items; 0 when the item is not
+    #: row-shaped (a keyed finding with no aligned position).
+    first_row: int = 0
+    last_row: int = 0
+    #: Column letters touched, old-side, in order.
+    columns: list[str] = []
+    #: The Watch's own sentence for the item, when it wrote one.
+    detail: str = ""
+    #: Orders items inside their kind; finding weight where the item is
+    #: a finding, magnitude otherwise.
+    weight: float = 0.0
+    #: Finding keys folded into this item — the class-change join's
+    #: roster (« new: typed-over-formula »).
+    findings: list[str] = []
+
+
+class VersionDeltaRead(Schema):
+    """What one revision did, in review language — the Watch, served.
+
+    Computed on request from the two versions' stored bytes and
+    persisted nowhere. The counts are the revision-defect study's own
+    semantics: findings matched on rule + sheet + name, never the
+    address, and the ones with no name to match by are **counted
+    apart, never guessed at** — a screen shows that count when it is
+    not zero rather than folding it away.
+    """
+
+    old_artifact_id: UUID
+    old_version: int
+    old_uploaded_at: datetime
+    old_uploaded_by: Uploader | None
+    new_artifact_id: UUID
+    new_version: int
+    new_uploaded_at: datetime
+    new_uploaded_by: Uploader | None
+    #: When this answer was computed — the report is always fresh,
+    #: never a stored run's date.
+    computed_at: datetime
+    new_defects: int
+    repaired_defects: int
+    persistent_defects: int
+    unmatched_old: int
+    unmatched_new: int
+    sheets_added: list[str] = []
+    sheets_removed: list[str] = []
+    #: Ranked by the engine; rendered in order.
+    items: list[DeltaItemRead] = []
+
+
 class ModelGrid(Schema):
     """A model as it is laid out, rather than as a search box.
 
