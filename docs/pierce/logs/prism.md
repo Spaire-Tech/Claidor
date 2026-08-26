@@ -1086,3 +1086,39 @@ draws never activate, is not — and the table says which is which,
 mechanically.* The dead-branch and categorical-input rounds are
 what stands between this and a catch-rate on arbitrary stealth
 edits.
+
+## Aligner timing round — results: the avoidable third removed, gates green
+
+**The profile pointed precisely:** of ~790 s on the 5k profile run,
+real LCS work was 172 s — and 1.94 billion `dict.get` calls
+(253 s, plus the churn around them) came from rebuilding a
+counting dict from scratch for every unlabelled pair at every DP
+cell, when the multiset bound only needs each line's Counter,
+buildable once per alignment.
+
+**The fix** (`_pair_similarity`): per-line Counters precomputed in
+`align_lines`, the bound served from their intersection. Same
+formula, same threshold, same verdicts; the public `similarity`
+stays untouched for the traceback and the tests.
+
+**The sweep, before → after** (memory-round baseline → this round):
+
+| rows | seconds | peak RSS |
+|---|---|---|
+| 2,000 | 18.1 → **8.7** | 87 → 88 MB |
+| 5,000 | 114.2 → **62.9** | 160 → 162 MB |
+| 10,000 | 476.7 → **265.4** | 318 → 323 MB |
+
+From the original pre-memory-round state, 10k rows has gone
+900 s / 1,389 MB → **265 s / 323 MB**. **Gates all green:** 49/49
+unit tests; the C2 harness 21/24 twice with per-instance verdicts
+identical; the v4→v5 alignment identical in every sheet.
+
+**The projection, and the honest remainder.** The lead's
+~90-minute FM02 pair should land near half that; sixteen pairs
+near half a day. What remains is the recurrence itself — the
+O(R×N) loop and the real LCS on eligible pairs — which is the
+price of the registered algorithm. If the lead needs the day back
+rather than half of it, the named next rounds are banding or a
+Hirschberg traceback, each a registered round of its own; nothing
+further is claimed here.
