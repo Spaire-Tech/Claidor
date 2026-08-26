@@ -4217,3 +4217,12 @@ reported D3 round 1 at 0/8 proposal precision — the matcher does
 not ship, the failure class is named (definitional lines), round 2
 is registered next. Atelier made the demo kit's delta section the
 real Watch. Orders round 2 issued to all five lanes.
+
+## 26 August — eleventh sweep, part 2: the gate certifies
+
+The lead's independent gate certification of the Sentinel merge is
+in: **gate clean — all 27 files report identically to the committed
+baseline, finding for finding**, on the integrated tip with both
+adoptions live. The first engine-findings merge of the team era is
+certified. Next on this machine: the V3 re-run on the
+memory-fixed aligner.
