@@ -48,6 +48,29 @@ class ChainFactRepository(RepositoryBase[ChainFact]):
         )
         return list((await self.session.execute(statement)).scalars().all())
 
+    async def list_for_dossier(
+        self, dossier_id: UUID
+    ) -> list[tuple[ChainFact, Artifact]]:
+        """Every fact in one deal, each with its document version.
+
+        The link proposal's candidate pool: a typed model number may be
+        sourced from any extracted document on the same deal, so the
+        matcher sees them all and the labels decide.
+        """
+        statement = (
+            select(ChainFact, Artifact)
+            .join(Artifact, Artifact.id == ChainFact.artifact_id)
+            .where(
+                Artifact.dossier_id == dossier_id,
+                ChainFact.deleted_at.is_(None),
+                Artifact.deleted_at.is_(None),
+            )
+            .order_by(ChainFact.artifact_id, ChainFact.page, ChainFact.top)
+        )
+        return [
+            (row[0], row[1]) for row in (await self.session.execute(statement)).all()
+        ]
+
 
 class ChainRefusalRepository(RepositoryBase[ChainRefusal]):
     model = ChainRefusal

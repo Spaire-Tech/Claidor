@@ -40,6 +40,7 @@ from polar.routing import APIRouter
 from .. import auth, storage
 from ..repository import TieOutRepository
 from .extract import EXTRACTOR_NAME, EXTRACTOR_VERSION, Extraction, extract_pdf
+from .propose import Abstained, propose
 from .repository import ChainFactRepository, ChainRefusalRepository
 from .store import ChainFact, ChainRefusal, persist_extraction
 
@@ -330,6 +331,112 @@ async def list_document_facts(
         document_version_id=artifact.id,
         facts=[FactRead.from_row(fact, artifact) for fact in facts],
         refusals=[RefusalRead.from_row(refusal) for refusal in refusals],
+    )
+
+
+# --- link proposal (D3) --------------------------------------------------
+
+
+class RankedCandidateRead(Schema):
+    """One candidate's score, for the screen that shows alternates."""
+
+    fact_id: UUID
+    score: float
+    shared: list[str]
+
+
+class ProposalRead(Schema):
+    """The matcher's answer for one typed cell: a fact, or a reason.
+
+    Exactly one of `proposed` and `reason` is set. `candidates` is the
+    ranking behind either answer (top five), so a reviewer can see what
+    the labels saw — including on an abstention, where the tie or the
+    weak coverage is visible rather than asserted.
+    """
+
+    cell_id: UUID
+    cell_labels: str
+    proposed: FactRead | None
+    score: float | None
+    shared: list[str]
+    reason: str | None
+    candidates: list[RankedCandidateRead]
+
+
+@router.get("/cells/{cell_id}/proposals", response_model=ProposalRead)
+async def propose_for_cell(
+    cell_id: UUID,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> ProposalRead:
+    """Candidate document facts for one typed model number.
+
+    Labels near both, never by value; abstention when candidates tie or
+    coverage is weak — the registered D3 rule, served. Proposing is
+    read-only: confirming a link is D4's deliberate write, not this.
+    """
+    cell = await TieOutRepository.from_session(session).get_cell(cell_id)
+    if cell is None:
+        raise ResourceNotFound("Cell not found.")
+    await _artifact_for(session, cell.artifact_id, auth_subject.subject.id)
+
+    if cell.formula is not None or cell.alias_of is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"{cell.ref} is computed from other cells, not typed, so "
+                "it has no outside source to propose — its provenance is "
+                "its formula."
+            ),
+        )
+    if cell.value is None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"{cell.ref} holds no value, so there is no number to "
+                "find a source for."
+            ),
+        )
+
+    cell_artifact = await TieOutRepository.from_session(session).get_artifact(
+        cell.artifact_id
+    )
+    assert cell_artifact is not None  # _artifact_for above already found it
+    pool = await ChainFactRepository.from_session(session).list_for_dossier(
+        cell_artifact.dossier_id
+    )
+    by_id = {fact.id: (fact, artifact) for fact, artifact in pool}
+
+    labels = cell.name or f"{cell.row_label} {cell.column_label}".strip()
+    answer = propose(labels, [(fact.id, fact.line) for fact, _ in pool])
+
+    ranked = [
+        RankedCandidateRead(
+            fact_id=candidate.fact_id,
+            score=candidate.score,
+            shared=list(candidate.shared),
+        )
+        for candidate in answer.ranked[:5]
+    ]
+    if isinstance(answer, Abstained):
+        return ProposalRead(
+            cell_id=cell.id,
+            cell_labels=labels,
+            proposed=None,
+            score=None,
+            shared=[],
+            reason=answer.reason,
+            candidates=ranked,
+        )
+    fact, artifact = by_id[answer.candidate.fact_id]
+    return ProposalRead(
+        cell_id=cell.id,
+        cell_labels=labels,
+        proposed=FactRead.from_row(fact, artifact),
+        score=answer.candidate.score,
+        shared=list(answer.candidate.shared),
+        reason=None,
+        candidates=ranked,
     )
 
 
