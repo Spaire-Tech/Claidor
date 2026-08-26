@@ -712,3 +712,33 @@ should be read as « null edit: no false positives », nothing more.
    rule. `SWEST` runs all eight instances as registered. A planter
    that finds nothing to retype now aborts loudly rather than
    passing silently — the defect C2's scan carried.
+
+## C4 round 1 results — the gate caught a real hole; round 1 FAILS, round 2 registered
+
+**The planted instances: 15/15 sound.** Six on `InputSummary`
+(stealth on `SWEST` per the amendment; the three stealth-only
+instances refused and recorded), nine on `SWEST`. Every stealth
+cell reported suspect, zero gate violations, declared-sheet proved
+fractions 86.3–97.2% — one hidden retype among ~12,000 cells never
+slips through, and the tiers inherit a suspect set an order of
+magnitude smaller than the sheet.
+
+**The real pairs: one clean, one failing the gate.** v2 pair:
+38,872 of 41,049 cells proved (94.7%), zero violations, 121 s
+whole-model. v4→v5: 79.7% proved and **28 violations — round 1
+fails its registered gate.** All 28 are one phenomenon: `B2` on
+every sheet is the company-selector pull-through whose cached
+result is **text** (v4 saved with ENWL selected, v5 with SSES).
+A text formula result is `value=None` in the engine's numeric
+universe, so the trace's « own cached value » read None on both
+sides and matched — while the stored output moved. The soundness
+argument (« the output is inside the hash ») silently assumed the
+output is *observable*; for non-numeric results it is not.
+
+**Round 2, registered now, before its results:** a formula cell
+whose own cached value is unobservable through the reader
+(`value is None`, on either side) can carry no verifying trace and
+is **never proved** — suspects by refusal, the same honesty the
+tiers will owe. Nothing else changes. All fifteen planted
+instances and both real pairs re-run from scratch; the efficiency
+cost of the exclusion is reported with them.
