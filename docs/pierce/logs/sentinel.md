@@ -66,6 +66,57 @@ amount. That does not overturn its conclusions — the label-set
 comparison never passed through the engine — but it turns the
 refusal to read fresh-vs-frozen as drift into a named mechanism.
 
+## 28 August 2026 — Proof 1A run: FAIL, on one line of code
+
+The founder's population proof, analytical half, run cold under the
+lead's frozen registration — which I did not restate or soften, per
+the orders. Engine frozen at `c6ff9a4e`. Ten of eleven models ran,
+**zero refusals**.
+
+**Five of nine value-only models were completely silent**, which is
+the registration's predicted pass. Fourteen analytical findings in
+all, every one adjudicated at the cells.
+
+**The verdict is FAIL, and all three criteria fail on one cause.**
+Eight of thirteen findings — every one Kelso and Newbattle raised —
+are false alarms of a single class: `_own_checks` collects every
+numeric cell of a check-labelled row and **has no notion of which
+columns are periods**. Kelso's `ReportRatiosSA` parks its scalars in
+column E (the time axis starts at H), so the covenant breach level
+1.15 and lockup level 1.1 were read as failing periods. The check
+rows' real series is zero from G onward — those covenants pass
+everywhere. The pass already receives the structure that knows the
+axes; it simply does not consult it.
+
+The other five findings are sound: Inverurie's four check rows
+genuinely hold −2.32 in one column while zero everywhere else, and
+SNBTS's cash brought-forward opens at 1,196.13 against a prior
+carried-forward of ~0. Inverness — reported separately as
+registered, the one model with formulas — raises one judgement call
+at its FinClose stub column.
+
+**I did not fix it.** The cold-run conditions forbid any change
+between the first file and the last, so the defect becomes a later
+registered round and these numbers stand as taken. Removing the
+eight would put the rest at 100% — and re-cutting criteria after a
+run is exactly what the registration exists to prevent.
+
+Two notes of record. The container restart had wiped the
+founder-supplied corpus half; two of three were recovered from the
+public bucket and **verify byte-identical to the registration's own
+hashes**, so they are the registered files. `hwcbsb_model.xlsm` is
+**unavailable** — founder-supplied, no deal name on record, six
+bucket keys probed and refused — reported as such, not as a refusal
+and not dropped. And I wrote the results into the lead's
+`population-proof.md`, whose Results section was an explicit
+placeholder for them; the run was assigned to me, the registration
+was not.
+
+**What it bought:** a false-alarm class the entire regulator corpus
+never surfaced, because those models do not park scalars beside
+their period grid. That is the transfer question the proof asks, and
+the answer is « not yet, and here is the reason ».
+
 ## 28 August 2026 — A4 adopted: the audit says what it walked
 
 The plan's A4 — « every audit states what was checked, what was

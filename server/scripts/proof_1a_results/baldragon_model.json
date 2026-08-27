@@ -1,0 +1,76 @@
+{
+ "file": "baldragon_model.xlsm",
+ "bytes": 3730320,
+ "cells": 387615,
+ "sheets": 28,
+ "formulas": 220,
+ "values_pasted": true,
+ "analytical": [],
+ "abstentions": [],
+ "tallies": {
+  "model-own-check": {
+   "total": 22,
+   "clean": 22
+  },
+  "balance-sheet": {
+   "total": 70,
+   "clean": 70
+  },
+  "time-axis": {
+   "total": 14,
+   "clean": 14
+  },
+  "cash-continuity": {
+   "total": 69,
+   "clean": 69
+  }
+ },
+ "structural_count": 10,
+ "audit_tallies": {
+  "long-formula": {
+   "total": 220,
+   "raised": 0
+  },
+  "volatile": {
+   "total": 220,
+   "raised": 0
+  },
+  "hardcode-in-formula": {
+   "total": 220,
+   "raised": 0
+  },
+  "inconsistent-anchoring": {
+   "total": 220,
+   "raised": 0
+  },
+  "inconsistent-row": {
+   "total": 220,
+   "raised": 0
+  },
+  "external-link": {
+   "total": 220,
+   "raised": 0
+  },
+  "error-value": {
+   "total": 387604,
+   "raised": 8
+  },
+  "typed-over-formula": {
+   "total": 387395,
+   "raised": 0
+  },
+  "typed-over-edge": {
+   "total": 387395,
+   "raised": 0
+  },
+  "circular": {
+   "total": 220,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 28,
+   "raised": 0
+  }
+ },
+ "seconds": 22.4
+}

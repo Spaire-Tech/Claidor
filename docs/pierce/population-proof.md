@@ -322,4 +322,126 @@ met**, and no summary of Swens's state may say otherwise.
 
 ## Results
 
-*(Nothing here until a corpus that can carry the claim exists.)*
+### Proof 1A — the analytical proof (run 28 August 2026)
+
+**Engine frozen at `c6ff9a4e`.** House rules at shipped defaults,
+one file per process, no change of any kind between the first model
+and the last.
+
+**Corpus, and one honest gap.** The container was restarted between
+the registration and the run, which wiped the founder-supplied half
+of `corpus_sft/`. Two of the three were recoverable from the same
+public bucket the committed fetcher uses, and both verify
+**byte-identical to the hashes in this registration** —
+`inverness_college_model.xlsm` `d2caf87b95277206` (2,265,188) and
+`snbts_model.xlsm` `c8d838938035cb2c` (1,881,902) — so they are the
+registered files, not lookalikes. **`hwcbsb_model.xlsm` could not be
+recovered**: it was founder-supplied, no deal name is on record, and
+six plausible bucket keys were probed and all refused. It is
+reported here as **unavailable**, not as a refusal (the engine never
+saw it) and not dropped. **Ten of the eleven ran.**
+
+**Refusals: none.** Every one of the ten opened and was audited.
+
+| model | formulas | analytical findings |
+|---|---|---|
+| baldragon | 220 | **0** |
+| forfar | 0 | **0** |
+| glasgow_college | 0 | **0** |
+| levenmouth | 224 | **0** |
+| oban_campbeltown | 0 | **0** |
+| inverurie_foresterhill | 3 | 4 |
+| kelso | 814 | 4 |
+| newbattle | 492 | 4 |
+| snbts | 0 | 1 |
+| *inverness_college (separate)* | 19,900 | 1 |
+
+**Five of the nine value-only models are completely silent** — the
+registration's predicted pass, and it held for them.
+
+### Every finding adjudicated against the cells
+
+**Kelso and Newbattle — 8 findings, all FALSE ALARMS, one cause.**
+Both fire on `ReportRatiosSA!E352/E353/E356/E357`, check rows whose
+labels read « Check: Minimum − forward looking ADSCR > breach
+level » and « … > distribution lockup level », reporting 1.15 and
+1.1. Read at the cells: **column E is the model's parameter column,
+not a period.** The sheet's time axis starts at **column H** (row 2:
+`G='period'`, `H='15/16: I'`, `I='15/16: II'`, …), and column E is
+where the model parks its scalars — rows 4–7 of the same column hold
+`Input checks:`, `Calc checks:`, `Output checks:`, `Accounting: IFRS
+- Financial Asset`. So 1.15 *is* the covenant breach level and 1.1
+*is* the lockup level: parameters, sitting in the parameter column.
+The check rows' actual period series is **zero from G onward** —
+these covenants pass in every period.
+
+The mechanism, named precisely: `_own_checks` collects every numeric
+cell of a check-labelled row and has **no notion of which columns are
+periods**. It receives the structure — which knows the period axes —
+and does not consult it. A threshold parked in a scalar column is
+read as a failing period.
+
+Per the cold-run conditions this is **not fixed here**. It becomes a
+later registered round, and these numbers stand as taken.
+
+**Inverurie — 4 findings, TRUE BREAKS.** `SG ASP Proforma` rows 38,
+67, 91, 121 are labelled `Check` and hold **0 in every column except
+one**, where they hold −2.3234 (rows 38/67, column BG) and −2.323 /
+−2.32 (rows 91/121, column AF). The engine's sentence is exactly
+true of the file: a check row that is zero everywhere reports −2.32
+in one period. Two column positions, four rows — plausibly one
+underlying break reported four times, which is a folding question
+rather than a correctness one.
+
+**SNBTS — 1 finding, TRUE BREAK.** `Outputs` row 74 « Cash Balance
+Carried Forward » ends the prior period at 4.5e-13 (zero), and row
+73 « Cash Balance Brought Forward » opens the next at **1,196.13**.
+The published numbers genuinely do not carry. Whether that is a real
+post-close artifact of value-only publication or was so in the
+original cannot be told from the file — but the engine is right
+about the file, which is what « false alarm » would have had to
+deny.
+
+**Inverness College — 1 finding, JUDGEMENT CALL** (reported
+separately, as registered: it is the one model with a live
+calculation layer). `PF5_SPV Running costs!C26`, a row labelled
+`Check`, holds 239,039.5 in column **C** while every period column
+D–J is zero. Column C's header is `FinClose` — the financial-close
+stub — and the nominal and real cost rows both read 0 there while
+the sheet's own inputs at C carry 223,727 and 8,750. So the model's
+own check is genuinely non-zero at close. An auditor would want to
+look; it may equally be a stub column excluded from the build by
+design. Defensible either way, and not a false alarm.
+
+### The verdict, against the criteria fixed before the run
+
+| criterion | required | measured | |
+|---|---|---|---|
+| true breaks or judgement calls | ≥ 80% | **5 of 13 = 38.5%** | ✗ |
+| false alarms | ≤ 10% | **8 of 13 = 61.5%** | ✗ |
+| a genuinely clean model produces **no** analytical findings | — | Kelso and Newbattle are clean and we spoke, four times each | ✗ |
+
+**Proof 1A: FAIL.** All three criteria fail, and they fail on one
+defect class: the own-check pass reading a parameter column as a
+period. Remove those eight and the remaining five findings are all
+true breaks or defensible — but the criteria were fixed before the
+run and are not re-cut after it, and the false alarms are exactly
+what the proof existed to detect.
+
+**What this bought.** The registration predicted silence and got it
+on five of nine models. It also found, on a real population the
+engine had never seen, a false-alarm class that the entire regulator
+corpus never surfaced — because those models do not park scalars in
+a column beside their period grid. That is precisely the transfer
+question the proof asks, and the answer is: *not yet, and here is
+the reason, on one line of code.*
+
+**Scope, restated as the registration requires:** this is **not**
+evidence about the structural checks — typed-over formulas, skipped
+rows, hardcoded tails, frozen references — which cannot be tested on
+files with no formulas. That is Proof 1B, still without a corpus.
+Structural counts were recorded incidentally and are **not scored
+here**; one of them is worth a later look on its own terms
+(newbattle raises 68 structural findings on a value-only file), but
+nothing in this section rests on them.
+
