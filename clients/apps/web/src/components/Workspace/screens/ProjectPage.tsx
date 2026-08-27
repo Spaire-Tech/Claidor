@@ -3583,7 +3583,12 @@ const Report = ({
   //: found nothing sat a page away under « what could not be
   //: checked ». A partner reads « nothing failing » as « checked and
   //: clean », which is the one conclusion this file cannot support.
-  const blind = total === 0 && record?.values_only === true
+  //: The blindness matters whether or not the checks found something
+  //: — arguably more when they did, because a reader now trusts them.
+  //: Measured on Kelso (a real corpus model): 814 formulas in 470,594
+  //: cells, seven material findings, and nothing on the verdict page
+  //: said the construction rules had seen almost none of the file.
+  const blind = record?.values_only === true
   const formulaCount =
     typeof modelCounts?.['formulas'] === 'number'
       ? (modelCounts['formulas'] as number)
@@ -3620,7 +3625,14 @@ const Report = ({
   //: both numbers — « figures … that disagree » is not the singular
   //: with an « s » on the end, and a partner reads the difference.
   const classOf = (one: Finding): { one: string; many: string } => {
-    if (one.headline) {
+    //: Some headlines are clauses, not names — « The model's own check
+    //: rows are firing ». Appending an « s » to one produced « seven
+    //: the model's own check rows are firings ». A clause is grouped
+    //: by its family instead, which is always a noun phrase; the
+    //: sentence itself is overleaf, per finding.
+    const clauseLike = (said: string) =>
+      /^(the|a|an) /i.test(said) || / (is|are|was|were|does|do) /i.test(said)
+    if (one.headline && !clauseLike(one.headline)) {
       const said = one.headline.toLowerCase()
       return { one: said, many: said.endsWith('s') ? said : `${said}s` }
     }
@@ -3654,6 +3666,11 @@ const Report = ({
     .map(
       ({ n, one, many }) => `${word(n).toLowerCase()} ${n === 1 ? one : many}`,
     )
+  const blindNumbers =
+    formulaCount !== null && cellCount !== null
+      ? ` — ${formulaCount.toLocaleString()} of ${cellCount.toLocaleString()} cells hold a formula —`
+      : ''
+
   const blindBody = blind
     ? `This copy carries values only${
         formulaCount !== null && cellCount !== null
@@ -3664,7 +3681,7 @@ const Report = ({
 
   const verdictBody =
     material.length > 0
-      ? `${
+      ? `${blind ? `This copy carries values only${blindNumbers} so the rules that read how the model is built saw almost none of it. What the value-reading checks did find: ` : ''}${
           materialClauses.length > 0
             ? `${materialClauses.slice(0, -1).join(', ')}${
                 materialClauses.length > 1 ? ', and ' : ''
@@ -3676,6 +3693,14 @@ const Report = ({
       : total > 0
         ? 'The open findings are worth reading, but none of them on its own would stop the model going out.'
         : blindBody
+
+  //: The body is its own paragraph under the lead, so it starts a
+  //: sentence — « two inconsistent formulas … » opened lowercase under
+  //: a full stop until this.
+  const verdictSaid =
+    verdictBody.length > 0
+      ? verdictBody.charAt(0).toUpperCase() + verdictBody.slice(1)
+      : verdictBody
 
   //: Every claim on this page carries where it came from: the cell
   //: when the finding sits in the model, the document and page when it
@@ -4203,8 +4228,8 @@ const Report = ({
               )}
               {heading('The verdict')}
               {serif(verdictLead, 19)}
-              {verdictBody && (
-                <div style={{ paddingTop: 14 }}>{serif(verdictBody)}</div>
+              {verdictSaid && (
+                <div style={{ paddingTop: 14 }}>{serif(verdictSaid)}</div>
               )}
               {/* Severity at a glance — the three tiers as counts, so a
                   partner sees the shape of the answer before reading a
@@ -4510,23 +4535,32 @@ const Report = ({
                         flexDirection: 'column',
                       }}
                     >
-                      {(m.headline || categoryOfKey(m.rule ?? '')) && (
-                        //: The scan line first — a partner reads the
-                        //: headlines down the page, then stops on one.
-                        //: A check with no headline of its own is named
-                        //: by its family, which is derived from the rule.
-                        <span
-                          style={{
-                            fontSize: 12.5,
-                            letterSpacing: '.02em',
-                            textTransform: 'uppercase',
-                            color: '#9aa1ab',
-                            paddingBottom: 5,
-                          }}
-                        >
-                          {m.headline || categoryOfKey(m.rule ?? '')}
-                        </span>
-                      )}
+                      {/* …unless the sentence beneath simply repeats it:
+                          « THE MODEL'S OWN CHECK ROWS ARE FIRING » over
+                          « The model's own check rows are firing at
+                          ReportRatiosSA!E356 » is the same words twice. */}
+                      {(m.headline || categoryOfKey(m.rule ?? '')) &&
+                        !saidOf(m.plain || m.title)
+                          .toLowerCase()
+                          .startsWith(
+                            (m.headline || '').toLowerCase().slice(0, 24),
+                          ) && (
+                          //: The scan line first — a partner reads the
+                          //: headlines down the page, then stops on one.
+                          //: A check with no headline of its own is named
+                          //: by its family, which is derived from the rule.
+                          <span
+                            style={{
+                              fontSize: 12.5,
+                              letterSpacing: '.02em',
+                              textTransform: 'uppercase',
+                              color: '#9aa1ab',
+                              paddingBottom: 5,
+                            }}
+                          >
+                            {m.headline || categoryOfKey(m.rule ?? '')}
+                          </span>
+                        )}
                       <span
                         style={{
                           fontSize: 16.5,
