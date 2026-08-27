@@ -14,6 +14,7 @@ import json
 import random
 import sys
 from collections import defaultdict
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -44,7 +45,7 @@ def main() -> int:
         cells = read_workbook(path).cells
         rows: dict[tuple[str, int], list[Any]] = defaultdict(list)
         for ref, cell in cells.items():
-            if cell.formula is None and isinstance(cell.value, (int, float)):
+            if cell.formula is None and isinstance(cell.value, (int, float, Decimal)):
                 rows[(cell.sheet, cell.row)].append(cell)
         keys = sorted(rows)
         rng = random.Random(f"{SEED}-{key}")
