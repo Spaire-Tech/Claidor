@@ -176,10 +176,18 @@ own tracks** and are the most consequential things it currently holds:
    that means for the proof is the lead's call, not this lane's; the
    measurement is in the log.
 
-Plus a fourth engine intake gap, routed and not acted on: openpyxl
-expands some shared formulas and not others, so ~185 computed cells in
-this corpus come back as **typed inputs** — the silent kind of wrong,
-and it feeds D5's candidate population directly.
+I also wrote up a « fourth engine intake gap » that turn and
+**retracted it the same turn, before it was pushed** — wrong cause,
+wrong harm, wrong consequence; the log carries the retraction. What
+survives is small: in two of the eight models the reader returns fewer
+formula cells than the file holds (Kelso 814 of 875, Newbattle 492 of
+616), those cells carry neither formula nor value, and on this corpus
+the discrepancy is inert. **Cause unestablished — do not guess a
+mechanism**, two collapsed under test already.
+
+And, measured rather than inferred: running the engine as the service
+runs it over all eight gives **16 rule findings and 12 analytics in
+total**, with four of the eight producing nothing at all.
 
 ## Before you publish a number: run the audit
 
