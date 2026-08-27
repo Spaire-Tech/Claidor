@@ -2648,3 +2648,69 @@ pattern rather than as three separate remarks.
    that is not a rate calculation. Fourth round running that I have
    registered this and it has happened three times; I will hunt for
    it deliberately rather than wait to be surprised.
+
+## Rate form from usage — built, and the gate did its job twice
+
+### Prediction 1 — confirmed
+
+RoE's `C6:C14` and `D6:D14` come back as rates in `percent` form,
+read from `GEOMEAN(1 + (C6:C25/100))`. **26 of 26** cells the hand
+typing perturbed are now typed automatically, from the file's own
+arithmetic and not from a list of words I happen to know.
+
+### Prediction 3 — the gate fired, and the change came out
+
+Registered: measured against E1's hundred rows, `rate_form` must not
+get worse or the change comes out. The first version made it much
+worse:
+
+| dimension | before | after the first version |
+|---|---|---|
+| `rate_form` | 80 right / 4 wrong | **71 / 14** |
+| `kind` | 97 / 0 | 97 / 1 |
+| `currency`, `scale` | 54 / 0 | 63 / 1 |
+
+Ten of E1's rows flipped, all the same shape: GD3's `Inflation`
+sheet rows — inflation **index** levels, hand-labelled `not-a-rate` —
+became « decimal rates ». The cause was that my `decimal` test
+matched a bare « 1 + » **anywhere** in a consumer formula, which is
+not evidence about any particular row. That half came out, exactly
+as registered, and was replaced by a test that requires the
+consumer to *name the cell*: `1 + <this row>`.
+
+Then it fired twice more before it was right, both regex
+backtracking, both caught by the same two measurements:
+
+- `1+(C6:C25/100)` backtracked to match `C6`, saw `:C25/100`
+  instead of `/100`, and called RoE's percent rows decimals —
+  **8 of 26**.
+- With `:` rejected it backtracked inside the digits to `C6:C2`,
+  saw `5`, and did it again — **8 of 26**.
+
+Anchored against `:`, a following digit and `/100`, all four shapes
+now read correctly, including the one the docstring had been
+promising and the code had not delivered: a row divided by 100 in
+one consumer and added to 1 in another is **an abstention**, not a
+percent. An `elif` had been letting « percent » win silently.
+
+**Final state, all three gates green:**
+
+| check | result |
+|---|---|
+| RoE cells recovered | **26 of 26** |
+| E1, every dimension | **unchanged** — 0 rows flipped |
+| H7 typing | **unchanged** — 3,203 and 3,971 rate, 7 held |
+
+### Prediction 4 — confirmed, three times over
+
+I registered that it would fire somewhere it should not, and said I
+would hunt for it rather than wait. The hunt is what found all three
+defects: E1's hundred rows caught the loose « 1 + », and the RoE
+recovery count caught both backtracking bugs. **Neither measurement
+alone would have caught both** — E1 stayed green through the two
+regex failures, and the RoE count stayed green through the loose
+« 1 + ». That is the argument for keeping a regression set and a
+target measurement pointed at every change, and it is now paid for.
+
+Prediction 2 — whether RoE's coverage finally moves — needs the
+machine, and the constrained-families runs have it.
