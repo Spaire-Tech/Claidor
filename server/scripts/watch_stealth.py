@@ -28,6 +28,7 @@ gated.
 """
 
 import json
+import re
 import sys
 import tempfile
 import time
@@ -263,6 +264,36 @@ TIER2_DIVERGENCE = 1e-9
 CATEGORICAL_LIMIT = 12
 
 
+#: `CHOOSE($B$3, ENWL!X, NPgN!X, …)` — the shape that decides which
+#: licensee branch an ED2-style model is currently about. Group 1 is
+#: the index cell, group 2 the argument list.
+_CHOOSE = re.compile(
+    r"CHOOSE\(\s*(\$?[A-Z]{1,3}\$?\d{1,7})\s*,(.+)\)\s*$",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _selector_index(cells: Mapping[str, object], sheet: str) -> tuple[str, int] | None:
+    """(index cell ref, 1-based argument position) for the sheet under
+    edit, or None when no selector names it. Round D: a dead branch is
+    an *unselected* one, and one cell says which."""
+    for ref, cell in cells.items():
+        formula = getattr(cell, "formula", None)
+        if not formula or "CHOOSE" not in formula.upper():
+            continue
+        found = _CHOOSE.search(formula)
+        if not found:
+            continue
+        arguments = [piece.strip() for piece in found.group(2).split(",")]
+        for position, argument in enumerate(arguments, start=1):
+            name = argument.split("!")[0].strip().strip("'")
+            if name == sheet:
+                index_sheet = ref.split("!")[0]
+                index_cell = found.group(1).replace("$", "")
+                return f"{index_sheet}!{index_cell}", position
+    return None
+
+
 class _NoTarget(Exception):
     """No cell on this sheet can host this instance — a refusal, in
     the report, never a silent substitution or a zero."""
@@ -466,12 +497,23 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
             return f"=IF({input_coordinate}>{threshold!r},({body})*1.01,({body}))"
         raise ValueError(kind)
 
+    selector = _selector_index(book.cells, sheet_name)
+
     def build(
         target: Path,
         edit: tuple[str, str | float] | None,
         assignment: dict[str, float],
+        force: bool = False,
     ) -> None:
         working = openpyxl.load_workbook(base)
+        #: Round D: force the model's own selector onto this sheet's
+        #: branch. A declared intervention — it overwrites the index
+        #: cell's formula with the literal — and every instance it
+        #: touches says so in the report.
+        if force and selector is not None:
+            selector_ref, selector_index = selector
+            selector_sheet, selector_cell = selector_ref.split("!")
+            working[selector_sheet][selector_cell] = selector_index
         sheet = working[sheet_name]
         for coordinate, value in assignment.items():
             sheet[coordinate] = value
@@ -528,6 +570,7 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
             probe_values = calc.recalculate(str(probe_base)).values
             probe_base.unlink()
             live: dict[str, bool] = {}
+            forced: set[str] = set()
             for _kind, _mark, edit in instances:
                 coordinate = edit[0]
                 if coordinate in live:
@@ -540,9 +583,29 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                     ref not in cone and _diverges(probe_values[ref], probed[ref])
                     for ref in probed.keys() & probe_values.keys()
                 )
+                #: Round D: a dead position gets one more chance —
+                #: with its own branch selected. Still dead then, and
+                #: it is dead for a reason that is not the selector.
+                if not live[coordinate] and selector is not None:
+                    forced_base = Path(scratch) / "probe_base_forced.xlsx"
+                    build(forced_base, None, {}, force=True)
+                    forced_values = calc.recalculate(str(forced_base)).values
+                    forced_base.unlink()
+                    target = Path(scratch) / f"probe_forced_{coordinate}.xlsx"
+                    build(target, probe_edit(coordinate), {}, force=True)
+                    probed_forced = calc.recalculate(str(target)).values
+                    target.unlink()
+                    if any(
+                        ref not in cone
+                        and _diverges(forced_values[ref], probed_forced[ref])
+                        for ref in probed_forced.keys() & forced_values.keys()
+                    ):
+                        live[coordinate] = True
+                        forced.add(coordinate)
                 print(
                     f"[probe] {sheet_name}!{coordinate}: "
                     f"{'live' if live[coordinate] else 'DEAD'}"
+                    + (" (selector forced)" if coordinate in forced else "")
                 )
             for _kind, _mark, edit in instances:
                 if not live[edit[0]]:
@@ -561,15 +624,25 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                 build(target, None, assignment)
                 old_values.append(calc.recalculate(str(target)).values)
                 target.unlink()
+            #: A forced old side is a different old side, so it gets
+            #: its own trials — computed only when forcing is in play.
+            old_forced: list[Mapping[str, float | str | None]] = []
+            if forced:
+                for index, assignment in enumerate(trials):
+                    target = Path(scratch) / f"old_forced_{index}.xlsx"
+                    build(target, None, assignment, force=True)
+                    old_forced.append(calc.recalculate(str(target)).values)
+                    target.unlink()
             for kind, mark, edit in instances:
                 per_trial = []
                 sample: list[str] = []
+                force = edit[0] in forced
                 for index, assignment in enumerate(trials):
                     target = Path(scratch) / f"new_{kind}_{mark}_{index}.xlsx"
-                    build(target, edit, assignment)
+                    build(target, edit, assignment, force=force)
                     new_values = calc.recalculate(str(target)).values
                     target.unlink()
-                    old_trial = old_values[index]
+                    old_trial = old_forced[index] if force else old_values[index]
                     divergent = [
                         ref
                         for ref in new_values.keys() & old_trial.keys()
@@ -592,6 +665,7 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                     "kind": kind,
                     "mark": mark,
                     "input_factors": factors,
+                    "selector_forced": (selector[1] if force and selector else None),
                     "edit_at": f"{sheet_name}!{edit[0]}",
                     "trials_diverged": caught,
                     "trials": TIER2_TRIALS,
@@ -622,6 +696,8 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
         "categorical_literals_left_alone": categorical,
         "refusals": refusals,
         "volatile_cone": len(volatile),
+        "selector": ({"cell": selector[0], "index": selector[1]} if selector else None),
+        "selector_forced_positions": sorted(forced),
         "environment_roots": sorted(environment_roots),
         "environment_cone": len(environment),
         "false_positives": len(false_positives),
