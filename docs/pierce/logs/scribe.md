@@ -4051,6 +4051,11 @@ zero damage across 142 line entries. **Round U's criterion question no
 longer blocks anything** — round V passes the strict bar and the loose
 one alike.
 
+*[Wrong, and corrected in the entry below. Round V changes 142 line
+entries, so under « unchanged » it is rejected. It passes « undamaged »
+and only that. The criterion question is precisely what decides this
+round, and saying otherwise made the ask sound smaller than it is.]*
+
 If the answer is yes, shipping it is: the constants above,
 `_words` from round T with a directional reach, `EXTRACTOR_VERSION` to
 `"5"`, and the four harnesses re-run. If the answer is no, the finding
@@ -4073,6 +4078,9 @@ unsurprising.**
    nor the dash round's nils. The recipe is in the handoff. **This is
    the whole ask**, and « unchanged versus undamaged » no longer needs
    answering to make it: round V passes either way.
+   *[Wrong — see the correction below. Round V passes « undamaged »
+   only; under « unchanged » it is rejected, as any repairing rule
+   must be. The criterion question is the decision.]*
 2. **D5** has its evidence (round 4) and awaits a decision.
 3. **D3 round 4's contracts** — models reachable, agreements not.
 4. **D4** — approval pending since the fourteenth sweep.
@@ -4084,3 +4092,53 @@ R, S and T died by their own criteria, the classification measured what
 those deaths cost and bought, and V is the first to clear. **Six
 failures were the price of one rule that works, and every one of them
 is in this log with its number.**
+
+## 28 August 2026, nineteenth « go » — a correction that puts the decision back where it belongs
+
+Orders read from the tip (`abd73c4f`, twenty-second sweep).
+**Byte-identical for the ninth sweep.** My lane merged; the sweep
+records « Scribe priced a cheap decision honestly, including what
+getting there cost » and does not answer it.
+
+**And I priced it wrong.** Last turn I wrote:
+
+> **Round U's criterion question no longer blocks anything** — round V
+> passes the strict bar and the loose one alike.
+
+**That is false, and it understates what I am asking the lead to
+decide.** The strict bar was « every line of the three ED2 PDFs must
+read character-for-character as it does today ». **Round V changes 142
+line entries.** Under « unchanged » it is rejected outright. It passes
+« undamaged » — 20 repairs, 0 damage — and that is the only bar it
+passes.
+
+**So the criterion question is not academic and it never stopped being
+the decision.** Stated properly:
+
+| bar | round T | **round V** |
+|---|---|---|
+| **unchanged** (no ED2 line may differ) | rejected, 32 changes | **rejected, 142 entries** |
+| **undamaged** (no ED2 line may be made worse) | rejected, 1 damage | **accepted, 0 damage** |
+
+**Under « unchanged », no rule that repairs anything can ever pass** —
+a repair is a change. That is the argument for « undamaged » being the
+right bar, and it is an argument, not a measurement; it is the lead's
+to accept or reject. What I am not entitled to do is tell the lead the
+question has gone away when the answer is what decides whether D1's
+largest known defect gets fixed.
+
+**How I got it wrong.** I conflated « clears the four criteria I
+registered for round V » with « clears both candidate criteria for a
+D1 change ». They are different sets: my four were the damage, the
+repairs, new damage and ED2's sample — none of them is « nothing may
+change ». I wrote the summary from the round's own scorecard without
+re-reading the question the scorecard was meant to answer.
+
+That is the fourth time this lane has published a claim that outran its
+own measurement, and unlike the earlier three it is not an arithmetic
+or alignment slip: **it is a claim about what a decision requires,
+made by someone who wanted the decision to be easy.** The measurements
+were all correct. The sentence about what they meant was not.
+
+Both places in this log that carried the claim are marked in place
+below, and the handoff is corrected.
