@@ -192,13 +192,20 @@ def _block_item(
         _column_letters(column) for column in sorted({c for c, _, _ in cells})
     )
     details = [d for _, d, _ in cells if d]
+    detail = details[0] if details else ""
+    #: A folded block reports its first cell's story, which reads as
+    #: one cell when it may be two dozen — twelve months of outturn
+    #: typed into a sheet came back as « a cell that was empty now
+    #: holds 121.2 ». The extent belongs in the line.
+    if detail and len(cells) > 1:
+        detail = f"{detail} ({len(cells)} cells)"
     return DeltaItem(
         kind=kind,
         sheet=sheet,
         first_row=block[0],
         last_row=block[-1],
         columns=columns,
-        detail=details[0] if details else "",
+        detail=detail,
         weight=max((w for _, _, w in cells), default=0.0),
     )
 

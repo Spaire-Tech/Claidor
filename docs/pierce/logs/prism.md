@@ -2994,3 +2994,128 @@ draws from its own stream, `Random(TIER2_SEED + 1000 * trial +
 band_index)`, so band *k* of trial *i* is always the same numbers
 whatever was tried before it. No result above depends on this; it is
 recorded so the next round is comparable to this one.
+
+## New orders (twenty-fifth sweep), and the one line that blocks half of them
+
+Tip `a6ae79dc`. **Orders reset**, and mine are to *finish* the Watch
+rather than widen it:
+
+1. C4 tier 1 per my registration, and then **the tier table as a
+   single published statement**.
+2. C6 stays gated, and I am told not to wait on it.
+3. If both stall, the parked C3 deferral
+   (added-cells-within-matched-structure) is mine.
+
+**Item 1 splits in two, and only half of it can move.**
+
+- **Tier 1's code is still blocked, and the blocker is one line.**
+  `grep -in z3 server/pyproject.toml` on the new tip returns nothing.
+  My registration binds me: no code of this lane imports z3 before
+  that line exists. Stated as plainly as I can, since the orders now
+  ask for the tier itself: **the lead adding `"z3-solver>=4.13"` to
+  `server/pyproject.toml` is the whole of what I need.** Until then
+  tier 1 decides nothing and every run prints the size of the hole
+  (1,516 cells on the registered pair).
+- **The tier table needs nothing from anyone**, and it is written:
+  `docs/pierce/tier-table.md`. What each tier claims, the exact
+  strength of the claim, its measured cost, what it refuses by name,
+  and the number it produced on the registered pair. Every figure is
+  taken from a run artifact and cross-checked against the round that
+  produced it; none is an estimate, and the two places this lane got
+  something wrong (the shape's literal blind spot, the misnamed
+  degenerate refusal) are in the document rather than tidied out of
+  it.
+
+**A note on where I put it.** `docs/pierce/` is not a path
+`lanes.md` assigns me, and the orders asked for a *published*
+statement rather than another section of my diary — so I created the
+file and am naming the deviation here instead of making it quietly.
+Move it if it belongs elsewhere.
+
+With tier 1 blocked and C6 gated, item 3 is the live work, and it is
+the right one: this turn's own findings are about a revision whose
+substance is **added cells inside matched structure** — twelve months
+of outturn typed into a sheet whose rows otherwise align perfectly.
+The next entry registers what C3 should say about that and measures
+what it does say.
+
+## Item 3 checked before it is worked on: the C3 hole is already closed
+
+The orders list « added-cells-within-matched-structure » as a real
+hole and mine. **It is not a hole — it was built at the sixteenth
+sweep** (`filled_cell` / `emptied_cell`), and this turn is the first
+time it has been run against a revision whose substance I know
+independently. C3's report on the registered ED2 pair:
+
+```
+new_defects 0 · repaired 0 · persistent 11 · unmatched 0/0
+moved_assumption  Annual Inflation row 50   11.636903442623 → 11.584699426229506
+moved_assumption  Annual Inflation row 53    9.14944682416672 → 9.066745554703903
+filled_cell       Monthly Inflation rows 284–295 [H,I]
+                     « a cell that was empty now holds 121.2 »
+material_output   94 blocks, the largest « Monthly Inflation rows
+                     284–352 [J,K,L,M,N] moved 16.7% »
+```
+
+**The `filled_cell` line is the revision**, folded to exactly the
+twelve months the frontier probe identified, on exactly the sheet and
+rows it identified — arrived at independently, by a different
+instrument, three rounds earlier. So the orders' item 3 is reported
+back to the lead as **already done**, with this as the evidence.
+
+### One thing it understates — registered, then fixed
+
+`_block_item` takes `details[0]`: a folded block reports the **first
+cell's** story and never says how many cells it covers. « A cell that
+was empty now holds 121.2 » is true of a block of twenty-four, and a
+reviewer reads one cell where twelve months were typed in.
+
+**The change**: when a block folds more than one cell, its detail
+carries the count. Uniform across every kind — a `material_output`
+block that moved 3.1% is also worth knowing the size of.
+**Predictions**: the `filled_cell` line comes back reading **24
+cells** (twelve rows across columns H and I, matching C1's count of
+added cells exactly); no item count changes; no kind changes; the
+delta tests stay green apart from any that pin a detail string
+verbatim, and those are the two single-cell cases, which by
+construction get no suffix.
+
+### Result: the prediction held, and the report now reconciles with C1 on its face
+
+```
+moved_assumption  Annual Inflation row 50  11.636903442623 → 11.584699426229506  (7 cells)
+moved_assumption  Annual Inflation row 53   9.14944682416672 → 9.066745554703903  (7 cells)
+filled_cell       Monthly Inflation rows 284–295 [H,I]
+                     « a cell that was empty now holds 121.2 »                    (24 cells)
+material_output   94 blocks, now each carrying its size
+```
+
+**24 cells**, as predicted, and no item count moved (2 / 1 / 94, as
+before). The unplanned dividend is the reconciliation: the two
+assumption lines read **7 + 7 = 14**, which is C1's count of content
+changes exactly, and the filled block reads **24**, which is C1's
+count of added cells exactly. The delta report and the raw diff now
+agree **on the face of the report**, where before a reader had to
+take it on trust.
+
+All delta and document tests green; the two that pin a detail string
+verbatim are single-cell cases and are unaffected by construction, as
+predicted.
+
+## Where Track C stands, at the end of this turn
+
+| Step | State |
+|---|---|
+| C1 raw diff | measured, hand-checked, reconciles with the ladder to one named cell |
+| C2 alignment | measured; 8,475 pairings on the registered pair, 0 suspect |
+| C3 delta report | measured on a revision whose substance is independently known; names it in one line, and now reconciles with C1 on its face |
+| C4 tier 0 | 93.19% at hash cost, gates clean |
+| C4 tier 1 | **blocked on one line in `server/pyproject.toml`** |
+| C4 tier 2 | 313 supported · 0 plain divergences · 7 latent · every refusal named |
+| C4 tier 3 | closed vocabulary, 1,203 refusals on the pair, 0 unnamed |
+| C5 deck delta | measured on a real deck |
+| C6 | gated, and the lead says not to wait |
+| The tier table | published: `docs/pierce/tier-table.md` |
+
+The only thing between this track and « complete » is tier 1, and
+the only thing between tier 1 and being built is the dependency line.
