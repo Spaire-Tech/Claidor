@@ -426,3 +426,24 @@ what makes every deal after that cheaper than the last.
   continuous/flag/rate/date classifier B5 needs is E2's unit
   inference wearing another hat — built once, consumed by both
   tracks, never twice by two lanes.
+- **28 August 2026, fourth amendment** (founder's direction, in their
+  words: « lets just keep working. Until we have a fully complete
+  product. Its the bar im setting. I'm okay with waiting… All the
+  partners testing will come later. Rn lets build the best engine we
+  can. »): **completeness is the bar, and it outranks readiness.**
+  Two consequences, binding on every lane's orders:
+  1. **Proof 4 (two design-partner firms) is deferred by the
+     founder**, not failed and not forgotten. It stays in the four
+     proofs; it is simply not on anyone's critical path until the
+     founder opens it. No lane optimises for a demo.
+  2. **Priority order for the remaining work is by *hole*, not by
+     polish**: a part of `swens.md` § 3 that does not exist outranks
+     a part that exists and could be better. The named holes, in the
+     order the lead will route them: **units (E3)** — the flagship
+     finding, absent; **intake (A6)** — one real model in three
+     cannot be opened at all; **the Chain's linking (D3/D4)** — six
+     failed rounds and no store; **chat's unanswerable questions
+     (G2)**; **the arbiter (B3)** — four corpus files wait on it;
+     **determined corrections (F3)**; **the outward checks
+     (D6–D7)**. « Best engine » is measured by how few of these
+     remain, not by how good the finished parts look.
