@@ -110,6 +110,167 @@ def type_from_units(
     return TypedInput(ref, InputType.UNTYPED, value)
 
 
+@dataclass(frozen=True)
+class Family:
+    """Inputs that sum to a constant the model never lets them leave.
+
+    « Weight on embedded debt » plus « weight on new debt » is 1.0 in
+    every year of the H7 file. Perturbed apart, one draw gave
+    1.1333 + 0.0058 — a capital structure that cannot exist — and a
+    law that holds only on the simplex is then broken in every run
+    and can never be found. So a family is drawn as **one object**.
+    """
+
+    refs: tuple[str, ...]
+    constant: float
+
+    def draw(self, base: Mapping[str, float], rng: random.Random) -> dict[str, float]:
+        """One point on the family's own simplex, its constant exact.
+
+        Shares are drawn from an exponential and normalised — the
+        standard uniform draw on a simplex — then scaled to the
+        family's constant. The last member takes the remainder so the
+        sum is exact rather than nearly exact.
+        """
+        weights = [rng.expovariate(1.0) or 1e-12 for _ in self.refs]
+        total = sum(weights)
+        drawn: dict[str, float] = {}
+        running = 0.0
+        for ref, weight in zip(self.refs[:-1], weights[:-1], strict=True):
+            share = self.constant * weight / total
+            drawn[ref] = share
+            running += share
+        drawn[self.refs[-1]] = self.constant - running
+        return drawn
+
+
+def find_families(
+    values: Mapping[str, float],
+    columns: Sequence[Mapping[int, str]],
+    *,
+    max_size: int = 3,
+    min_columns: int = 2,
+) -> list[Family]:
+    """Sets of rows that sum to the same constant in every column.
+
+    `columns` is one `{row: ref}` map per period column of the sheet.
+    A candidate is a set of **rows**, tested in every column that
+    holds all of them; it counts only if at least `min_columns`
+    columns have it and the sum is the same constant in all of them.
+    One column agreeing is a coincidence, which is the same
+    anti-coincidence rule the mining uses on rules.
+
+    A member that never moves across the columns is excluded: a
+    frozen row joins any family for free and says nothing about the
+    model, exactly as a frozen cell may not enter a rule.
+
+    Rows are the unit, not positions: the H7 sheet's columns hold
+    different row sets — `G` carries two scattered inputs, the year
+    columns carry the weights — and lining them up by position found
+    nothing at all.
+    """
+    present: dict[int, list[float]] = {}
+    for column in columns:
+        for row, ref in column.items():
+            if ref in values:
+                present.setdefault(row, []).append(values[ref])
+    # A row that holds the same number in every column can join any
+    # family without changing whether the sum is constant. Measured:
+    # the first version reported « iBoxx benchmark + the two weights
+    # = 1.041419 », which is the weights' own 1.0 plus a frozen rate,
+    # and « iBoxx + historic RPI = 0.068705 », two frozen rows added
+    # together. Both are arithmetic about constants — the same
+    # triviality `varying()` keeps out of the rules, now kept out of
+    # the families (lane log, 28 Aug).
+    candidates = sorted(
+        row
+        for row, seen in present.items()
+        if len(seen) >= min_columns
+        and (max(seen) - min(seen)) / (max(abs(v) for v in seen) or 1.0) > FROZEN_SPREAD
+    )
+    found: list[Family] = []
+    for size in range(2, max_size + 1):
+        for rows in combinations(candidates, size):
+            sums: list[float] = []
+            members: list[tuple[str, ...]] = []
+            for column in columns:
+                refs = tuple(column.get(row, "") for row in rows)
+                if any(not ref or ref not in values for ref in refs):
+                    continue
+                sums.append(sum(values[ref] for ref in refs))
+                members.append(refs)
+            if len(sums) < min_columns:
+                continue
+            constant = sums[0]
+            if abs(constant) <= FLOOR:
+                continue
+            if any(
+                abs(total - constant) > max(FLOOR, RELATIVE * abs(constant))
+                for total in sums
+            ):
+                continue
+            found.extend(Family(refs=refs, constant=constant) for refs in members)
+    return found
+
+
+def components(families: Sequence[Family]) -> list[list[Family]]:
+    """Families grouped by the cells they share.
+
+    Two families that share a cell are one constraint system: drawing
+    them one after the other would satisfy the second and break the
+    first. On `h7-fds` both `{embedded, new} = 1` and
+    `{embedded, new fixed, new index-linked} = 1` contain the
+    embedded weight, which is exactly this case.
+    """
+    parent: dict[str, str] = {}
+
+    def find(ref: str) -> str:
+        while parent.setdefault(ref, ref) != ref:
+            parent[ref] = parent[parent[ref]]
+            ref = parent[ref]
+        return ref
+
+    for family in families:
+        first = family.refs[0]
+        for ref in family.refs[1:]:
+            parent[find(ref)] = find(first)
+    grouped: dict[str, list[Family]] = {}
+    for family in families:
+        grouped.setdefault(find(family.refs[0]), []).append(family)
+    return list(grouped.values())
+
+
+def sample_with_families(
+    inputs: Sequence[TypedInput],
+    families: Sequence[Family],
+    rng: random.Random,
+) -> dict[str, float]:
+    """A draw in which every constrained family stays on its simplex.
+
+    A component holding **one** family is drawn jointly on that
+    family's simplex. A component holding several — overlapping
+    constraints — is **held at its file values entirely**: satisfying
+    one and breaking another is the failure this round exists to
+    prevent, and a polytope sampler for the general case is a later
+    round, registered when it comes. Holding costs coverage on those
+    rows and costs no legality, which is the right way round.
+
+    Everything else follows its own type's policy, exactly as before.
+    """
+    joint: list[Family] = []
+    held: set[str] = set()
+    for component in components(families):
+        if len(component) == 1:
+            joint.append(component[0])
+        else:
+            held.update(ref for family in component for ref in family.refs)
+    constrained = {ref for family in joint for ref in family.refs} | held
+    draw = sample([typed for typed in inputs if typed.ref not in constrained], rng)
+    for family in joint:
+        draw.update(family.draw(draw, rng))
+    return draw
+
+
 def sample(inputs: Sequence[TypedInput], rng: random.Random) -> dict[str, float]:
     """One perturbation draw, obeying every type's policy.
 
