@@ -71,12 +71,23 @@ def facts(task: str):
         extraction = extract.extract_pdf(pdf)
         refusals.extend(extraction.refusals)
         for number in extraction.numbers:
-            # Keyed by page and x-position, not by ordinal: an extractor
+            # Keyed by position on the page, not by ordinal: an extractor
             # change that adds facts (the dash round added a nil for
             # every printed « - ») shifts every ordinal and would
             # silently invalidate a recorded truth. Position is stable.
+            #
+            # **Both** coordinates, and part B is why. Keyed by x alone,
+            # 562 facts of this corpus shared a key with a fact on a
+            # different line — in a table, the row below prints at the
+            # same x — and four of the twenty recorded truths were
+            # addresses that named two facts at once. A key must name
+            # exactly one fact or the measurement is not a measurement.
             out.append(
-                (f"{pdf.stem}|p{number.page}|x{number.box.x0:.0f}|{number.text}", number)
+                (
+                    f"{pdf.stem}|p{number.page}|x{number.box.x0:.0f}"
+                    f"|y{number.box.top:.0f}|{number.text}",
+                    number,
+                )
             )
     return out, refusals
 
@@ -206,10 +217,153 @@ def score(truth_path: str) -> int:
     return 0
 
 
+def partb_sheet(truth_path: str) -> int:
+    """Part B's judging sheet: the indeterminate rows, with headers.
+
+    Registered in the Scribe log (round 6, amended before this ran).
+    The rows are those the round-5 judge could not honestly judge at
+    line granularity. The evidence part B adds is the **column
+    anchor** — the header standing above the figure's own x-position,
+    which D1 records — so a judge can say which occurrence of a
+    recurring value the cell was transcribed from.
+
+    Candidate lists are rebuilt from the current extractor, never read
+    from the stored sheet: extractor version 4 finds nils that version
+    2 could not, and three of these rows are nil rows.
+    """
+    entries = json.loads(Path(truth_path).read_text())
+    open_rows = [e for e in entries if (e.get("condition") or "") != "ok"]
+    pools = {task: facts(task)[0] for task in sorted({e["task"] for e in open_rows})}
+
+    record = []
+    for entry in open_rows:
+        pool = pools[entry["task"]]
+        hits = [
+            {
+                "key": key,
+                "text": n.text,
+                "page": n.page,
+                "x": round(n.box.x0, 1),
+                "column": n.column,
+                "line": n.line[:170],
+            }
+            for key, n in pool
+            if _close(n.value, float(entry["value"]))
+        ]
+        record.append(
+            {
+                **{k: entry[k] for k in ("task", "ref", "labels", "name", "value")},
+                "candidates": hits[:40],
+                "candidate_count": len(hits),
+                "truth": None,  # judge: fact keys, [] for « not stated »
+                "condition": None,  # ok | indeterminate-line-granularity
+                "note": None,  # the judge's reason, in words
+            }
+        )
+        print(f"\n=== [{entry['task']}] {entry['ref']}  value={entry['value']}")
+        print(f"    name: {entry['name'][:90]!r}")
+        if not hits:
+            print("    no document number carries this value")
+        for hit in hits[:40]:
+            print(
+                f"    ? p{hit['page']} x={hit['x']:<7} col={hit['column'][:26]!r:<28} "
+                f"{hit['text']!r}"
+            )
+            print(f"        in {hit['line'][:120]!r}")
+        if len(hits) > 40:
+            print(f"    … and {len(hits) - 40} more")
+
+    out = HERE.parent / "finch-partb-sheet.json"
+    out.write_text(json.dumps(record, indent=1))
+    print(f"\n{len(record)} rows written: {out}", file=sys.stderr)
+    return 0
+
+
+def partb_score(truth_path: str, partb_path: str) -> int:
+    """Score part A's rows and part B's newly-settled rows together.
+
+    Part B's own registration says what this can and cannot show: the
+    frozen matcher ignores the column anchor, so these rows cannot
+    raise precision. They give the round its honest denominator.
+    """
+    part_a = json.loads(Path(truth_path).read_text())
+    part_b = {(e["task"], e["ref"]): e for e in json.loads(Path(partb_path).read_text())}
+    pools = {task: facts(task)[0] for task in TASKS}
+
+    counts: dict[str, int] = {}
+    settled = 0
+    verdicts = []
+    for entry in part_a:
+        row = entry
+        origin = "A"
+        if (entry.get("condition") or "") != "ok":
+            row = part_b.get((entry["task"], entry["ref"]), entry)
+            origin = "B"
+        condition = row.get("condition") or "unjudged"
+        if condition != "ok":
+            counts[condition] = counts.get(condition, 0) + 1
+            continue
+        if origin == "B":
+            settled += 1
+        candidates = [(key, n.line, n.text, n.column) for key, n in pools[entry["task"]]]
+        stated = row.get("truth") or []
+        answer = propose.propose(entry["name"] or entry["labels"], candidates)
+        if isinstance(answer, propose.Proposed):
+            picked = answer.candidate.fact_id
+            verdict = "true proposal" if picked in stated else "false proposal"
+        else:
+            picked = None
+            verdict = "true abstention" if not stated else "missed"
+        counts[verdict] = counts.get(verdict, 0) + 1
+        verdicts.append(
+            {
+                **{k: entry[k] for k in ("task", "ref", "name", "value")},
+                "origin": origin,
+                "stated": stated,
+                "proposed": picked,
+                "verdict": verdict,
+            }
+        )
+        print(f"[{entry['task']}] {origin} {entry['ref']:32} {verdict:16} -> {picked}")
+
+    names = ("true proposal", "false proposal", "true abstention", "missed")
+    print("\n--- part A + part B, the whole drawn sample ---")
+    for name in names:
+        print(f"{name}: {counts.get(name, 0)}")
+    for name, value in sorted(counts.items()):
+        if name not in names:
+            print(f"{name}: {value}")
+    scored = sum(counts.get(name, 0) for name in names)
+    proposals = counts.get(names[0], 0) + counts.get(names[1], 0)
+    print(f"scored rows: {scored} of {len(part_a)}")
+    print(f"rows part B settled: {settled} of {len(part_b)}")
+    if proposals:
+        print(
+            f"proposal precision: {counts.get(names[0], 0)}/{proposals} "
+            f"= {counts.get(names[0], 0) / proposals:.0%}"
+        )
+    else:
+        print("proposal precision: no proposals were made")
+    stated_count = sum(1 for v in verdicts if v["stated"])
+    print(f"rows the documents state at all: {stated_count}/{scored}")
+    print(
+        "\nCC BY 3.0 — FinWorkBench/Finch, arXiv:2512.13168. This attribution "
+        "travels with these numbers."
+    )
+    out = HERE.parent / "finch-partb-verdicts.json"
+    out.write_text(json.dumps(verdicts, indent=1))
+    print(f"verdicts written: {out}", file=sys.stderr)
+    return 0
+
+
 if __name__ == "__main__":
     if len(sys.argv) >= 2 and sys.argv[1] == "sheet":
         raise SystemExit(sheet())
     if len(sys.argv) >= 3 and sys.argv[1] == "score":
         raise SystemExit(score(sys.argv[2]))
+    if len(sys.argv) >= 3 and sys.argv[1] == "partb-sheet":
+        raise SystemExit(partb_sheet(sys.argv[2]))
+    if len(sys.argv) >= 4 and sys.argv[1] == "partb-score":
+        raise SystemExit(partb_score(sys.argv[2], sys.argv[3]))
     print(__doc__)
     raise SystemExit(1)
