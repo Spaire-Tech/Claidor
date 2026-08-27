@@ -28,6 +28,7 @@ answering anything of record; register before results, always.
 | C4 tier 0 (fingerprints) | `watch/trace.py`, `scripts/watch_stealth.py` | Soundness gate clean after round 2's observability fix; **93.2% of a real adjacent revision proved at hash cost in ~2 min** |
 | C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | Two hosts, **8 of 8 eligible on both, zero refusals, control silent**; `tail_hardcode` and `stealth_literal` 5/5 everywhere; the selector sweep closed the dead-branch case |
 | C5 deck delta | `watch/document.py`, `scripts/watch_deck.py` | Measured on the Cascade deck: a planted input move breaks **8 figures, each attributed to the model change underneath it**, while the deck's **8 pre-existing drifts stay off the revision's account** |
+| C4 tier 2, why cells freeze | `scripts/watch_tiers.py` (verdict dump) | The 198 frozen disturbed cells are on live sheets, not licensee branches (**no `CHOOSE` names any of them**); **198/198 reach a held categorical literal, 0/96 supported ones do**, with a median 527 perturbed literals in cone — so reach is not the problem, the zero-holding rule is |
 | C4 tier 2, pair oracle | `scripts/watch_tiers.py oracle/control` | Control (file against itself) **0 diverged, 0 violations**. ED2 pair: **0 diverged** over 8,475 perturbed inputs, 172 supported, 1,344 `no_perturbable_input`. Coverage is the real story: of the **294** cells the revision disturbed, the trials reached **96** |
 | C4 ladder (one verdict per cell) | `watch/tiers.py`, `scripts/watch_tiers.py` | ED2 v2 14→31 July: **93.19% proved · 3.11% changed · 3.69% refused, all five gates clean**, and the count reconciles with C1's raw diff to a single named cell (`Cover!G4`) |
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
@@ -42,20 +43,30 @@ name your five files explicitly.)
 `align.THRESHOLD = 0.5`, `align.LABEL_WEIGHT = 0.5`,
 `delta.MATERIAL = 1%`, `watch_stealth.TIER2_SEED = 20260826`,
 `TIER2_TRIALS = 5`. Each is registered in the log; moving one is a
-written round, never a tuning. The ladder's two closed vocabularies
+written round, never a tuning. **`CATEGORICAL_LIMIT` has a known
+defect**: it holds zero, which in the pair oracle freezes any cone a
+zero quantity multiplies — see « the zero round ». The constant was
+imported from the planted-edit harness, where its justification was
+a different one (not deadening a plant symmetrically), and it was
+not re-derived for the pair oracle. Re-derive a constant when it
+crosses harnesses. The ladder's two closed vocabularies
 (`tiers.REFUSALS`, `tiers.CHANGE_SOURCES`) are the same kind of
 thing: a reason outside them fails gate G4 rather than appearing in
 a report.
 
 ## Open, in order
 
-1. **The forced-selector oracle round** — named by a measurement,
-   not invented: 198 of the 294 cells the ED2 revision disturbed
-   came back `no_perturbable_input`, and the two candidate reasons
-   (categorical inputs, excluded on purpose; unselected licensee
-   branches, which the pair oracle does not force) are not yet
-   separated. Re-run the pair with the model's own `CHOOSE` index
-   forced, as `watch_stealth` round D does. Registered, not run.
+1. **The zero round** — registered, not run, and it is the live
+   one. The forced-selector round answered why 198 disturbed cells
+   never moved, and the answer is a rule of mine: `_is_categorical`
+   is true of **zero** (integral, magnitude ≤ 12), so every zero
+   literal is held as though it were a flag, and a zero *quantity*
+   (« RPI index-linked debt = 0% of net debt ») pins its whole
+   branch. 198 of 198 frozen cells reach a held categorical; 0 of 96
+   supported ones do. The round: stop holding zeros, keep holding
+   non-zero small integers, and report a divergence found on a
+   branch that only wakes when a zero is woken as
+   `tier2_divergence_latent` — never as the revision's `changed`.
 2. **Tier 1 (Z3)** — the rung that would speak where the trials
    cannot (1,344 frozen cells on the ED2 pair). Registered; blocked on the lead's
    `z3-solver` pyproject approval. No code may import z3 before
