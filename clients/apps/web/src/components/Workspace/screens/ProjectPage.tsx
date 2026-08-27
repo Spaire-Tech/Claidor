@@ -3823,17 +3823,45 @@ const Report = ({
     </div>
   )
 
+  //: The report is the artifact a partner actually receives, and what
+  //: they receive is this PDF — so the print document has to be the
+  //: report, not an approximation of it. Measured on the real model:
+  //: without the three rules below the PDF came out set in Liberation
+  //: Serif and DejaVu (the product's faces are self-hosted and the
+  //: print window loaded none of them), the severity dots vanished
+  //: entirely because browsers drop background colour when printing,
+  //: and a trailing blank page followed the last sheet.
   const print = () => {
     const sheets = [...document.querySelectorAll('[data-report="sheet"]')]
     if (!sheets.length) return
     const w = window.open('', '_blank', 'width=900,height=1200')
     if (!w) return
+    const origin = window.location.origin
+    const face = (family: string, file: string, weight: string) =>
+      `@font-face{font-family:'${family}';src:url('${origin}/workspace/${file}') format('woff2');font-weight:${weight};font-display:block;font-style:normal}`
     w.document.write(
       '<!doctype html><meta charset="utf-8"><title>' +
         document.title +
         '</title>' +
-        '<style>body{margin:0;font-family:ui-sans-serif,system-ui,sans-serif}' +
-        '[data-report="sheet"]{box-shadow:none!important;border-radius:0!important;max-width:none!important;break-after:page}' +
+        '<style>' +
+        //: The report's own faces, carried over so the delivered
+        //: document is set in the typography it was designed in.
+        face('Instrument Sans', 'instrument-sans-var.woff2', '400 700') +
+        face('Newsreader', 'newsreader-var.woff2', '400 500') +
+        face('JetBrains Mono', 'jetbrains-mono-var.woff2', '400 500') +
+        "body{margin:0;font-family:'Instrument Sans',ui-sans-serif,system-ui,sans-serif}" +
+        //: Severity reads by colour, and a browser drops background
+        //: colour on print unless it is told not to.
+        '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+        //: The screen's sheet carries its own generous padding; on
+        //: paper the @page margin already provides it, and keeping
+        //: both pushed sheet one over the page — its footer orphaned
+        //: onto a page of its own, which also made « Page 1 of 3 »
+        //: false on a four-page document. Measured, not guessed.
+        '[data-report="sheet"]{box-shadow:none!important;border-radius:0!important;' +
+        'max-width:none!important;padding:0!important;break-after:page;break-inside:avoid}' +
+        //: …but not after the last one, which is a blank page.
+        '[data-report="sheet"]:last-of-type{break-after:auto}' +
         '@page{margin:16mm}</style>' +
         '<body>' +
         sheets.map((s) => s.outerHTML).join('') +
@@ -3841,10 +3869,29 @@ const Report = ({
     )
     w.document.close()
     w.focus()
-    setTimeout(() => w.print(), 250)
+    //: Print once the faces are actually in, or the document prints in
+    //: fallbacks anyway; the timeout is the backstop for a browser
+    //: whose `fonts.ready` never settles.
+    const go = () => w.print()
+    let printed = false
+    const once = () => {
+      if (printed) return
+      printed = true
+      go()
+    }
+    if (w.document.fonts?.ready) {
+      w.document.fonts.ready.then(once).catch(once)
+      setTimeout(once, 3000)
+    } else {
+      setTimeout(once, 250)
+    }
   }
 
-  const pages = 3
+  //: Four sheets since G4: the verdict page could not hold the
+  //: coverage and the refusals as well and still fit one printed
+  //: page — measured in the PDF, where its footer orphaned onto a
+  //: page of its own and « Page 1 of 3 » became false.
+  const pages = 4
   return (
     <div
       style={{
@@ -4138,12 +4185,18 @@ const Report = ({
                   {serif(recalcBody)}
                 </>
               )}
+              {foot(1, pages, 'Swens')}
+            </>,
+          )}
+
+          {sheet(
+            <>
               {/* Coverage on the report's face — G4's own requirement,
                   and the line the schema calls « what keeps the product
                   honest ». It comes from the tie-out, so a deal with no
                   deck or memo checked says that rather than printing a
                   meaningless « 0 of 0 ». Agent-designed. */}
-              {heading('How much was covered', 34)}
+              {heading('How much was covered')}
               {serif(
                 figuresSeen > 0 && coverage
                   ? `${coverage.reconciled} of ${figuresSeen} figures in the deliverables were reconciled against the model · ${coverage.unlinked} not checked.` +
@@ -4212,7 +4265,73 @@ const Report = ({
                   </span>
                 ))}
               </div>
-              {foot(1, pages, 'Swens')}
+              {versions.length > 0 && (
+                <>
+                  {heading('The versions this report covers', 34)}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      paddingTop: 2,
+                    }}
+                  >
+                    {versions
+                      .slice()
+                      .sort((a, b) => b.version - a.version)
+                      .slice(0, 4)
+                      .map((v, i) => (
+                        <span
+                          key={v.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            gap: 14,
+                            borderTop:
+                              i === 0 ? 0 : '1px solid rgba(16,22,35,.05)',
+                            padding: '11px 0',
+                          }}
+                        >
+                          <span
+                            style={{
+                              flex: '0 0 46px',
+                              fontFamily: font.mono,
+                              fontSize: 12.5,
+                              color: '#0060d0',
+                            }}
+                          >
+                            v{v.version}
+                          </span>
+                          <span
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              fontSize: 14.5,
+                              color: '#3a3a3c',
+                            }}
+                          >
+                            {v.uploaded_by
+                              ? `Uploaded by ${v.uploaded_by.name}`
+                              : 'Uploaded'}
+                          </span>
+                          <span
+                            style={{
+                              flex: '0 0 auto',
+                              fontSize: 13,
+                              color: '#9aa1ab',
+                            }}
+                          >
+                            {when(v.uploaded_at)}
+                          </span>
+                        </span>
+                      ))}
+                  </div>
+                </>
+              )}
+              {foot(
+                2,
+                pages,
+                modelName + (version ? `, version ${version}` : ''),
+              )}
             </>,
           )}
 
@@ -4368,7 +4487,7 @@ const Report = ({
                 ))}
               </div>
               {foot(
-                2,
+                3,
                 pages,
                 modelName + (version ? `, version ${version}` : ''),
               )}
@@ -4456,68 +4575,6 @@ const Report = ({
                   </div>
                 ))}
               </div>
-              {versions.length > 0 && (
-                <>
-                  {heading('The versions', 40)}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      paddingTop: 2,
-                    }}
-                  >
-                    {versions
-                      .slice()
-                      .sort((a, b) => b.version - a.version)
-                      .slice(0, 4)
-                      .map((v, i) => (
-                        <span
-                          key={v.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'baseline',
-                            gap: 14,
-                            borderTop:
-                              i === 0 ? 0 : '1px solid rgba(16,22,35,.05)',
-                            padding: '11px 0',
-                          }}
-                        >
-                          <span
-                            style={{
-                              flex: '0 0 46px',
-                              fontFamily: font.mono,
-                              fontSize: 12.5,
-                              color: '#0060d0',
-                            }}
-                          >
-                            v{v.version}
-                          </span>
-                          <span
-                            style={{
-                              flex: 1,
-                              minWidth: 0,
-                              fontSize: 14.5,
-                              color: '#3a3a3c',
-                            }}
-                          >
-                            {v.uploaded_by
-                              ? `Uploaded by ${v.uploaded_by.name}`
-                              : 'Uploaded'}
-                          </span>
-                          <span
-                            style={{
-                              flex: '0 0 auto',
-                              fontSize: 13,
-                              color: '#9aa1ab',
-                            }}
-                          >
-                            {when(v.uploaded_at)}
-                          </span>
-                        </span>
-                      ))}
-                  </div>
-                </>
-              )}
               {heading("What this doesn't tell you", 40)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {[
@@ -4539,7 +4596,7 @@ const Report = ({
                   </span>
                 ))}
               </div>
-              {foot(3, pages, 'Swens')}
+              {foot(4, pages, 'Swens')}
             </>,
           )}
         </div>

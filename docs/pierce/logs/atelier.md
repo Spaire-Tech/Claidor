@@ -767,3 +767,48 @@ both new kinds would have rendered as raw identifiers — so they now
 carry words and colour: emptying takes the amber of an assumption at
 risk (a removed input changes an answer silently), filling the blue
 of information. Suite back to **82 passed**.
+
+## 27 August 2026 — the report as a delivered artifact
+
+Orders unchanged (seventeenth sweep, and they say plainly that the
+founder not having reviewed **is not a hold**), and my four items
+were done. So I went at G4's own DONE test from the side it had not
+been tested from: « the report is the artifact a partner actually
+receives » — and what a partner receives is a **PDF**, not a screen.
+
+I had never opened one. Driving the real « Download PDF » on the
+Northgate deal and reading the file back with pdfplumber found three
+defects, all measured rather than guessed:
+
+1. **Every typeface was substituted.** The print window is a fresh
+   document that loaded **zero** font faces, so the report — set in
+   Newsreader, Instrument Sans and JetBrains Mono, all self-hosted —
+   came out embedding `LiberationSerif`, `DejaVuSans` and
+   `DejaVuSansMono`. The whole document was in the wrong faces. The
+   three `@font-face` rules now travel into the print document, and
+   printing waits on `document.fonts.ready` (with a backstop) so it
+   cannot fire before they arrive. The PDF now embeds
+   `Newsreader16pt`, `InstrumentSans` and `JetBrainsMono`.
+2. **The severity vanished.** Browsers drop background colour when
+   printing, so « Material · Significant · Observation » printed with
+   no dots at all — the severity that G4 asks to « read at a glance »
+   was invisible in the delivered artifact. `print-color-adjust:
+   exact` restores it; the coloured marks are back in the file.
+3. **The pagination lied, by my own hand.** Adding coverage and the
+   severity band pushed sheet one past a printed page, orphaning its
+   footer onto a page of its own — so a four-page document carried
+   « Page 1 of 3 ». Fixed properly rather than by shrinking type:
+   the verdict sheet now ends after the recalculation, and a second
+   sheet carries the scope — how much was covered, what could not be
+   checked, and the versions this report covers (moved off the last
+   sheet, where it sat oddly and left the scope page thin). Four
+   sheets, four printed pages, four honest footers.
+
+Before and after, page one: `logs/atelier/report-pdf-before.png`
+and `report-pdf-after.png`. Route suite **82 passed**; typecheck,
+prettier and lint clean.
+
+A note for whoever reads this next: the report *on screen* satisfied
+the order before any of this. The delivered file did not, and no
+screen test would have caught it — it took printing the thing and
+reading the bytes back.

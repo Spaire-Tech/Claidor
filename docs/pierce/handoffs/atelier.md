@@ -86,6 +86,14 @@ real model (`example_preapp_model.xlsx`, in-sample — say so) and
 seven of my own defects fixed, including a **false** « formulas
 read » count. Shots: `logs/atelier/report-face-sheet{1,2,3}.png`.
 
+**G4's deliverable, too.** A partner receives the PDF, not the
+screen: the print path now carries the product's own @font-face
+rules (it loaded none, so the file embedded Liberation/DejaVu),
+`print-color-adjust: exact` (severity dots printed as nothing), and
+four sheets so the footers stop lying. Verify a report change by
+**printing it and reading the PDF back** (pdfplumber: embedded
+fonts, page count, per-page text) — no screen test catches this.
+
 **G2 — the five questions: measurable only in part.** Chat cannot
 run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503. What was
 measured is the tool surface: 1, 2 and 4 have their material
