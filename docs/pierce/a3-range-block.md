@@ -158,3 +158,12 @@ behind a reader change, which is its own registered round and, by
 Everything else in the registration stands unchanged: the criteria,
 the seed, the hosts rule, the marginal denominator. The catalogue
 consequence is unchanged too — one rule, 19 → 20.
+
+---
+
+## Results (appended after the registration, never edited into it)
+
+**Precondition (27 Aug): gate clean.** The unmodified engine's fresh
+27-file sweep reports identically to the committed baseline, finding
+for finding. Per the lead's twelfth-sweep note, this is the formal
+certification for the round.
