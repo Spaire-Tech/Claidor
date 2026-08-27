@@ -263,6 +263,11 @@ TIER2_DIVERGENCE = 1e-9
 CATEGORICAL_LIMIT = 12
 
 
+class _NoTarget(Exception):
+    """No cell on this sheet can host this instance — a refusal, in
+    the report, never a silent substitution or a zero."""
+
+
 def _is_categorical(value: float) -> bool:
     return float(value).is_integer() and abs(value) <= CATEGORICAL_LIMIT
 
@@ -396,9 +401,14 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
     for engine_cell in book.cells.values():
         fed.update(engine_cell.precedents or ())
 
-    def literal_target(mark: int, *, nonzero: bool) -> tuple[str, float]:
+    def literal_target(
+        mark: int, *, nonzero: bool, scaled: bool = False
+    ) -> tuple[str, float]:
         """Round 3: the literal must feed at least one formula — a
-        spare-row zero that nothing reads demonstrates nothing."""
+        spare-row zero that nothing reads demonstrates nothing.
+        Round A: `scaled` additionally demands a literal the trial
+        assignment actually perturbs, because a threshold input the
+        categorical rule freezes can never activate its condition."""
         for start in (mark, 0):
             for cell in on_sheet:
                 if (
@@ -408,10 +418,16 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                 ):
                     if nonzero and cell.value == 0:
                         continue
+                    if scaled and _is_categorical(float(cell.value)):
+                        continue
                     if cell.ref not in fed:
                         continue
                     return _coordinate(cell), float(cell.value)
-        raise SystemExit("no feeding literal anywhere on the sheet")
+        raise _NoTarget(
+            "no feeding "
+            + ("scaled " if scaled else "")
+            + "literal anywhere on the sheet"
+        )
 
     all_literals = {
         _coordinate(cell): float(cell.value)
@@ -444,7 +460,7 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
         if kind == "equivalent_rewrite":
             return f"=({body})*2/2"
         if kind == "conditional_divergence":
-            input_coordinate, current = literal_target(mark, nonzero=True)
+            input_coordinate, current = literal_target(mark, nonzero=True, scaled=True)
             conditional_inputs[mark] = (input_coordinate, current)
             threshold = 1.4 * current
             return f"=IF({input_coordinate}>{threshold!r},({body})*1.01,({body}))"
@@ -473,14 +489,19 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
     instances: list[tuple[str, int, tuple[str, str | float]]] = []
     for kind in TIER2_CLASSES:
         for mark in marks:
-            if kind == "stealth_literal":
-                coordinate, current = literal_target(mark, nonzero=False)
-                instances.append((kind, mark, (coordinate, current)))
-            else:
-                coordinate, formula = formula_target(mark)
-                body = formula[1:] if formula.startswith("=") else formula
-                instances.append(
-                    (kind, mark, (coordinate, edited_formula(kind, body, mark)))
+            try:
+                if kind == "stealth_literal":
+                    coordinate, current = literal_target(mark, nonzero=False)
+                    instances.append((kind, mark, (coordinate, current)))
+                else:
+                    coordinate, formula = formula_target(mark)
+                    body = formula[1:] if formula.startswith("=") else formula
+                    instances.append(
+                        (kind, mark, (coordinate, edited_formula(kind, body, mark)))
+                    )
+            except _NoTarget as absent:
+                refusals.append(
+                    {"kind": kind, "mark": str(mark), "refused": str(absent)}
                 )
 
     def probe_edit(coordinate: str) -> tuple[str, str | float]:

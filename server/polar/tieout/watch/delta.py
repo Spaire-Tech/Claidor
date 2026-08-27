@@ -38,6 +38,8 @@ _KIND_ORDER = [
     "relabelled_line",
     "methodology_change",
     "moved_assumption",
+    "emptied_cell",
+    "filled_cell",
     "material_output",
     "structure",
     "repaired_defect",
@@ -138,6 +140,14 @@ def _signature(cell: Cell) -> str:
     if not shape:
         return cell.formula
     return _absolute(shape, cell.sheet, cell.row, cell.column)
+
+
+def _shown(cell: Cell) -> str:
+    """What a reviewer needs to see of a cell that appeared or went:
+    its formula if it has one, else its value."""
+    if cell.formula is not None:
+        return cell.formula[:80]
+    return str(cell.value)
 
 
 def _material(old: Decimal | None, new: Decimal | None) -> Decimal | None:
@@ -303,7 +313,34 @@ def delta_of(
             for old_column, new_column in column_map.items():
                 before = old_cells.get((sheet, old_row, old_column))
                 after = new_cells.get((sheet, new_row, new_column))
-                if before is None or after is None:
+                #: The C3 deferral, now due: a cell that exists on one
+                #: side only *at a matched position* — the new period's
+                #: actual typed into an existing row. The row and column
+                #: are matched by construction here, so an inserted
+                #: line's cells stay `structure` and are never counted
+                #: twice.
+                if before is None and after is None:
+                    continue
+                if before is None:
+                    assert after is not None
+                    record(
+                        "filled_cell",
+                        sheet,
+                        old_row,
+                        old_column,
+                        f"a cell that was empty now holds {_shown(after)}",
+                        0.55,
+                    )
+                    continue
+                if after is None:
+                    record(
+                        "emptied_cell",
+                        sheet,
+                        old_row,
+                        old_column,
+                        f"a cell holding {_shown(before)} is now empty",
+                        0.65,
+                    )
                     continue
                 was_formula = before.formula is not None
                 is_formula = after.formula is not None

@@ -22,6 +22,7 @@ def cell(
     value: str | None = None,
     formula: str | None = None,
     label: str = "",
+    period: str = "FY2025",
 ) -> Cell:
     return Cell(
         sheet="M",
@@ -31,7 +32,7 @@ def cell(
         value=None if value is None else Decimal(value),
         formula=formula,
         row_label=label,
-        column_label="FY2025",
+        column_label=period,
     )
 
 
@@ -185,3 +186,73 @@ class TestRelabelledLine:
         item = next(i for i in report.items if i.kind == "relabelled_line")
         assert item.first_row == 5
         assert item.detail == "« margin » → « ebitda margin »"
+
+
+class TestCellsInsideMatchedStructure:
+    """The C3 deferral, now due: a cell that appears or goes at a
+    *matched* position — the new period's actual, typed into a row
+    that already existed. An inserted row is `structure` and must
+    never be counted here twice."""
+
+    #: Two periods, so the column carrying the change is matched on
+    #: its own label rather than colliding with its neighbour.
+    GRID = [
+        cell("B2", 2, 2, value="100", label="Revenue"),
+        cell("C2", 2, 3, value="110", label="Revenue", period="FY2026"),
+        cell("B3", 3, 2, value="40", formula="=B2*0.4", label="Cost"),
+        cell("C3", 3, 3, value="44", formula="=C2*0.4", label="Cost", period="FY2026"),
+        cell("B4", 4, 2, value="60", formula="=B2-B3", label="EBITDA"),
+        cell("C4", 4, 3, value="66", formula="=C2-C3", label="EBITDA", period="FY2026"),
+        cell("B5", 5, 2, value="0.6", formula="=B4/B2", label="Margin"),
+    ]
+    LATER = cell(
+        "C5", 5, 3, value="0.6", formula="=C4/C2", label="Margin", period="FY2026"
+    )
+
+    def test_a_cell_filled_in_an_existing_row_is_its_own_item(self) -> None:
+        report = delta_of(book(self.GRID), book([*self.GRID, self.LATER]))
+        counted = kinds(report)
+        assert counted.get("filled_cell") == 1
+        assert "structure" not in counted
+        assert "emptied_cell" not in counted
+        item = next(i for i in report.items if i.kind == "filled_cell")
+        assert (item.first_row, item.columns) == (5, ("C",))
+        assert "=C4/C2" in item.detail
+
+    def test_a_cell_emptied_in_an_existing_row_is_its_own_item(self) -> None:
+        report = delta_of(book([*self.GRID, self.LATER]), book(self.GRID))
+        counted = kinds(report)
+        assert counted.get("emptied_cell") == 1
+        assert "filled_cell" not in counted
+        assert "structure" not in counted
+        assert (
+            "=C4/C2" in next(i for i in report.items if i.kind == "emptied_cell").detail
+        )
+
+    def test_an_inserted_row_stays_structure_and_is_not_counted_twice(self) -> None:
+        """The scope line: cells of a row with no counterpart are the
+        row's own story, and this class must stay silent about them."""
+        shifted = [
+            c
+            if c.row < 5
+            else cell(
+                f"{'B' if c.column == 2 else 'C'}6",
+                6,
+                c.column,
+                value=str(c.value),
+                formula=c.formula,
+                label=c.row_label,
+                period=c.column_label,
+            )
+            for c in self.GRID
+        ]
+        inserted = [
+            *shifted,
+            cell("B5", 5, 2, value="5", label="One-offs"),
+            cell("C5", 5, 3, value="5", label="One-offs", period="FY2026"),
+        ]
+        report = delta_of(book(self.GRID), book(inserted))
+        counted = kinds(report)
+        assert counted.get("structure", 0) >= 1
+        assert "filled_cell" not in counted
+        assert "emptied_cell" not in counted

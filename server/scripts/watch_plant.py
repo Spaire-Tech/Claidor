@@ -253,16 +253,36 @@ def _apply(
                     cell.value = cell.value + 7
                     retyped += 1
     if kind == "rewrite_formula":
+        #: Round B: this class used to take the first formula on the
+        #: sheet whatever the position, so its three instances were
+        #: one edit run three times, and that first formula sat on
+        #: label-less row 1 — whose wholesale rewrite reads honestly
+        #: as delete + insert. Now it takes its own mark, and a row
+        #: the labeller can name, which is what C2's round-3
+        #: diagnosis says should rescue the match.
+        labelled = {
+            cell.row
+            for row in sheet.iter_rows()
+            for cell in row
+            if isinstance(cell.value, str)
+            and cell.value.strip()
+            and not cell.value.startswith("=")
+        }
         done = False
-        for row in sheet.iter_rows():
-            for cell in row:
-                formula = _formula_of(cell.value)
-                if formula and not done:
-                    #: A genuine structural rewrite: wrap in an extra
-                    #: SUM so the shape changes under every
-                    #: normalization.
-                    cell.value = "=SUM(" + formula[1:] + ",0)"
-                    done = True
+        for start in (max(at_row, 1), 1):
+            if done:
+                break
+            for row in sheet.iter_rows(min_row=start):
+                for cell in row:
+                    formula = _formula_of(cell.value)
+                    if formula and cell.row in labelled and not done:
+                        #: A genuine structural rewrite: wrap in an
+                        #: extra SUM so the shape changes under every
+                        #: normalization.
+                        cell.value = "=SUM(" + formula[1:] + ",0)"
+                        done = True
+        if not done:
+            raise SystemExit("no formula on a labelled row anywhere on the sheet")
 
     return planted
 
