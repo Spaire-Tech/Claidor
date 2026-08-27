@@ -148,10 +148,38 @@ touches the Chain; **5 answers in raw cell moves**, not the Watch's
 review language. Two tools in `agent/model_tools.py` (not our lane)
 would close both. Full table in the log.
 
-**Two findings routed to the lead**: the gate's 1e-12 absolute floor
-fails a 4,798-cell model on two cells of 3e-07 balance dust; and
-`gapped-test` fires **material** findings while being in neither
-rule catalogue, so no firm can see or switch it off.
+**Three findings routed to the lead**: the gate's 1e-12 absolute
+floor fails a 4,798-cell model on two cells of 3e-07 balance dust;
+`gapped-test`, `typed-over-beat` and `broken-name` fire while being
+in neither rule catalogue, so no firm can see or switch them off;
+and the big one below.
+
+**The product audits a poorer workbook than the engine does.** It
+never audits a file — it rebuilds a `Workbook` from stored cells
+(`service._workbook_of`, cells + sheets and nothing else), and
+`_audit_cells` puts `hidden_sheets` back by hand from a fact ingest
+kept. Every other field the reader fills at open time is empty by the
+time a rule reads it: `errors`, `unparseable`, `broken_names`,
+`foreign_names`, `iterative`, `populated`, `row_words`. Measured over
+the nine readable corpus models: **41 of 116 findings lost**
+(`error-value` ×28, thirteen at error severity; `broken-name` ×12;
+one `hidden-sheet` downgraded error→smell), and **four models go to
+zero**. Levenmouth's report says « Nothing failing » over a file
+carrying `#N/A` across forty-eight cells of a live repayment column.
+The golden-master gate cannot see it: it certifies `audit()` against
+files, and the product never audits a file. The patch is one dict
+literal in `ingest.py` (log has it verbatim); `ingest.py` is in no
+lane's row, so the lead assigns it. **Do not weaken the report's
+prose to match** — that would hide a defect that is going to be
+fixed.
+
+**Check the category map against what the engine *emits*, never
+against the catalogues.** A rule missing from `RULE_NAMES` /
+`ANALYTIC_RULE_NAMES` is the rule most likely to be missing from the
+map, and reading the catalogues finds nothing wrong with it. That
+mistake was made twice here. `TestTheCategoryMap` (route suite) now
+reads the engine's `rule="…"` literals and the frontend's
+`CATEGORY_OF` and fails with the offending rule named.
 
 **Holding for the founder's review of the three screens.** The
 build record (`swens-product-build.md`, yours) carries them as

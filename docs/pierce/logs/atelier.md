@@ -1132,3 +1132,109 @@ reads off the audit's own record. The Overview carries the rest.
 
 Evidence: `logs/atelier/deals-list-checked.png`. ruff, mypy, tsc and
 prettier clean.
+
+## Eighteenth turn — the category map, checked the right way, and
+## what it found underneath
+
+Orders item 3: re-check the category map against the merged
+catalogue. I had done that twice and written « nothing in the
+catalogue is unmapped » over it. The sentence was true and the check
+was the wrong one.
+
+**The catalogues are not the set of rules the engine emits.** A rule
+missing from `RULE_NAMES` and `ANALYTIC_RULE_NAMES` is exactly the
+rule most likely to be missing from the map too — and reading the
+catalogues finds nothing wrong with it. So this time I read the
+`rule="…"` literals out of the engine's own source instead. Twenty-
+three rules are emitted; twenty are catalogued. The three that are
+not: `gapped-test` (already mapped, reported last sweep),
+**`typed-over-beat`** — Sentinel's column-direction extension of
+`typed-over-edge`, severity *error* — and **`broken-name`**, which
+fires on **eight of the nine readable corpus models**.
+
+All three now have a family in `files.ts`, so none of them can reach
+a partner's report headlined « Other findings ». And the check that
+would have caught this is now a test, not a habit:
+`TestTheCategoryMap` in `test_routes.py` reads both sides — the
+engine's literals and the frontend's map — and fails with the
+offending rule named. I proved it bites by deleting the `broken-name`
+line and watching it go red. Suite **89 passed**.
+
+### The thing underneath: the product audits a poorer workbook than
+### the engine does
+
+`broken-name` fires on eight corpus models and appears **nowhere** in
+the demo database. Kelso's model audits to `broken-name` +
+`hidden-sheet` from the file; Kelso's deal carries `hidden-sheet`
+alone.
+
+The reason is structural. The product never audits a file. It audits
+a `Workbook` rebuilt from stored cells (`service._workbook_of`),
+which carries `cells` and `sheets` and nothing else. `_audit_cells`
+puts `hidden_sheets` back by hand from a fact ingest kept on the
+artifact — a fix someone made once, for one field, with the comment
+« the cells cannot say what the workbook hides ». Every *other* field
+the reader fills at open time is empty by the time a rule reads it:
+`errors`, `unparseable`, `broken_names`, `foreign_names`,
+`iterative`, `populated`, `row_words`.
+
+Measured rather than asserted, over the nine readable corpus models —
+same file, audited whole and audited as the product would
+(`logs/atelier/rebuilt_gap.py`, runnable as it stands):
+
+| | findings |
+|---|---|
+| from the file | 116 |
+| from the rebuilt workbook | 75 |
+| **lost** | **41** |
+
+Lost: `error-value` ×28 (13 of them *error* severity),
+`broken-name` ×12, and one `hidden-sheet` **downgraded** from error
+to smell on newbattle — the rule reads `populated` to tell a hidden
+sheet with work on it from an empty one, and `populated` is lost too.
+Four of the nine models — baldragon, forfar, levenmouth, oban —
+go from findings to **zero**. Three of those four carry
+error-severity findings.
+
+The rebuilt side of that measurement is generous: it keeps every cell
+the reader found, where ingest stores only the ones it could name and
+number. The gap is a floor.
+
+**What it looks like on the product's face.** Levenmouth's report
+(`logs/atelier/rebuild-gap-levenmouth.png`) says « Nothing failing »
+and, because of last turn's work, adds « but little could be checked
+… the checks that read values — the statements, the model's own check
+rows — found nothing failing ». That last clause is false. The file
+carries `#N/A` across `Repayment schedules!D79:D126` — forty-eight
+cells of a live repayment column — at error severity, plus a second
+`#N/A` at D129 and three columns of `#DIV/0!`/`#VALUE!`. Error values
+are cached *values*: the values-only qualification does not excuse
+missing them. The engine found them. The product could not see them.
+
+The golden-master gate cannot catch this, because it certifies
+`audit()` against files and the product never audits a file.
+
+**I have not papered over it.** The honest patch is one dict literal
+in `ingest.py` — which already holds the whole `Workbook` when it
+writes `counts` — plus the mirror of the two lines already in
+`_audit_cells`:
+
+```python
+# ingest.py, beside "hidden_sheets": …
+"broken_names": book.broken_names,
+"foreign_names": [list(pair) for pair in book.foreign_names],
+"errors": book.errors,
+"unparseable": book.unparseable,
+"iterative": book.iterative,
+"populated": book.populated,
+```
+
+`ingest.py` belongs to no lane in `lanes.md` and `workbook.py` is
+Sentinel's, so this is the lead's to assign — it is not mine to push.
+`row_words` is the one field that is genuinely heavy and wants its
+own decision. Weakening the report's prose instead would have hidden
+a defect that is going to be fixed, so the prose stands.
+
+Evidence: `logs/atelier/rebuilt_gap.py` (the measurement),
+`logs/atelier/rebuild-gap-levenmouth.png` (the face). ruff, mypy,
+tsc and prettier clean; route suite 89 green.

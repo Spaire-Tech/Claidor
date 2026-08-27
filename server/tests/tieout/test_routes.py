@@ -2470,3 +2470,77 @@ class TestTheMarkedUpModel:
         response = await client.get(f"/v1/tieout/deals/{deal.id}/markup")
         assert response.status_code == 404
         assert "nothing to mark up" in response.json()["detail"]
+
+
+class TestTheCategoryMap:
+    """Every rule the engine emits has a family on a partner's report.
+
+    The report groups findings by family, and a rule with no family
+    falls to « Other findings » — the heading a partner reads over a
+    defect the engine called an error. The map lives in the frontend
+    (`clients/apps/web/src/components/Workspace/files.ts`), so nothing
+    on the server would notice it going stale.
+
+    It went stale twice, and both times for the same reason: the map was
+    re-checked against `RULE_NAMES` and `ANALYTIC_RULE_NAMES` rather
+    than against the rules the engine actually writes into a finding.
+    A rule missing from the catalogues is precisely the rule most likely
+    to be missing from the map, and reading the catalogues finds nothing
+    wrong with it. `broken-name` fires on eight of the nine readable
+    corpus models and was unmapped the whole time.
+
+    So this test reads the rule literals out of the engine's own source.
+    That is coarse — it cannot see a rule composed at runtime — but it
+    is the check that would have caught what the careful one missed.
+    """
+
+    ROOT = Path(__file__).resolve().parents[3]
+    ENGINE = ROOT / "server" / "polar" / "tieout"
+    FILES_TS = (
+        ROOT
+        / "clients"
+        / "apps"
+        / "web"
+        / "src"
+        / "components"
+        / "Workspace"
+        / "files.ts"
+    )
+
+    def _emitted(self) -> set[str]:
+        import re
+
+        rules: set[str] = set()
+        for source in self.ENGINE.rglob("*.py"):
+            rules |= set(re.findall(r'rule="([a-z0-9-]+)"', source.read_text()))
+        return rules
+
+    def _mapped(self) -> set[str]:
+        import re
+
+        text = self.FILES_TS.read_text()
+        start = text.index("const CATEGORY_OF")
+        body = text[start : text.index("}", start)]
+        return set(re.findall(r"^\s*'?([a-z0-9-]+)'?:", body, re.MULTILINE))
+
+    def test_the_engine_emits_rules(self) -> None:
+        """The literal scan works — a green suite over nothing proves nothing."""
+        emitted = self._emitted()
+        assert "balance-sheet" in emitted
+        assert "typed-over-formula" in emitted
+        assert len(emitted) > 15
+
+    def test_every_emitted_rule_has_a_family(self) -> None:
+        unmapped = sorted(self._emitted() - self._mapped())
+        assert unmapped == [], (
+            "these rules reach a report with no family and read as "
+            f"« Other findings »: {', '.join(unmapped)} — map them in "
+            "files.ts"
+        )
+
+    def test_the_map_invents_nothing(self) -> None:
+        """A family for a rule the engine cannot emit is dead prose."""
+        invented = sorted(self._mapped() - self._emitted())
+        assert invented == [], (
+            f"files.ts files rules the engine never emits: {', '.join(invented)}"
+        )
