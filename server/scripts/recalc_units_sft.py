@@ -25,7 +25,6 @@ from pathlib import Path
 
 from polar.tieout.units.inference import (
     DIMENSIONS,
-    Orientation,
     classify_sheet,
     orientation,
     rows_from_cells,
