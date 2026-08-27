@@ -1512,3 +1512,43 @@ a wrap. Prediction, again in advance: SWEST's two failures should
 become either recoveries or refusals — and if they become
 refusals, `rewrite_formula` on SWEST is a class this sheet cannot
 host, which is a fact about the sheet worth having.
+
+## Round D — the selector sweep (REGISTERED BEFORE RESULTS)
+
+The last of tier 2's named follow-ups, and the one that decides
+whether « dead branch » is a permanent blind spot or just a
+starting state.
+
+**What the model actually does**, read in the cells rather than
+assumed: every licensee sheet reaches the live calculation through
+`SelectedInputs!X = CHOOSE($B$3, ENWL!X, NPgN!X, NPgY!X, WMID!X,
+EMID!X, SWALES!X, SWEST!X, LPN!X, SPN!X, EPN!X, SPD!X, SPMW!X, …)`,
+and `SelectedInputs!B3` is `=m_identity`, currently **14**. SWEST
+is argument **7**. So SWEST is not unreachable — it is unselected,
+and one cell decides which of the thirteen branches the model is
+about.
+
+**The rule, fixed now.** When the liveness probe refuses a
+position as dead, the harness looks for a selector: a `CHOOSE`
+whose first argument is a single cell and whose remaining
+arguments name sheets. If the sheet under edit appears at index
+*k*, the harness re-probes with that index cell **forced to k**
+(overwriting its formula with the literal — a declared
+intervention, not a discovery). If the position becomes live, its
+instances run under the forced selector and **every one of them
+carries `selector_forced: k` in the report**. A position that is
+still dead with its own branch selected is dead for a reason that
+is not the selector, and stays a refusal.
+
+**Nothing else moves**: k, seed, threshold, classes, the
+categorical rule and the gate are all as registered, and the
+false-positive control must stay silent under forcing too — if
+forcing the selector makes the equivalent rewrite speak, the
+forcing is wrong and the round fails.
+
+**The prediction, before the run:** SWEST's refused stealth
+position should become live under `B3 = 7`, and the class table
+should look like the CAA host's — `tail_hardcode` and
+`stealth_literal` catching every trial, control silent. If instead
+the forced branch still reports nothing, the dead-branch story is
+incomplete and that is the more interesting result.
