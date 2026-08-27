@@ -142,6 +142,22 @@ Owner is Engine unless marked. Every step has a DONE test.
   DONE: the hardcode-in-the-tail class — invisible to static
   reading — is caught and measured, and each catch names its cell.
 
+- **B5. Relation mining — the model's own laws.** (Added 27 Aug,
+  founder-approved.) On top of B1/B2: discover a model's invariant
+  relations automatically — run it blind under registered input
+  perturbations and search for equations that always hold
+  (particle-swarm candidate search, SVD + Z3 cleansing, per the
+  ICSME 2019 AutoMR paper — **clean-room reimplementation from the
+  paper; the reference code's LGPL is incompatible with in-tenant
+  delivery**). Mined laws join B4's hand-written ones and are
+  checked across versions: a law that held at v8 and breaks at v12
+  is a behavioural change stated in review language. Stochastic and
+  slow by nature — the overnight pass, never the interactive path.
+  DONE: on a gated corpus model, mined laws are stable across two
+  mining runs, planted law-breaking edits are caught at a measured
+  rate with the per-class table, and zero false law-violations on
+  the unedited model.
+
 ## Track C — the Watch
 
 - **C1. The raw version diff** (cells added/removed/changed, by
@@ -360,3 +376,8 @@ what makes every deal after that cheaper than the last.
   constant-folding polish to the shape hash, as a measured
   micro-round. The tracks, the method, and every DONE test are
   otherwise unchanged.
+- **27 August 2026** (founder-approved): B5 added to Track B —
+  relation mining (the model's own laws discovered over the
+  recalculator, clean-room from the AutoMR paper), after B4's
+  measured table stood at 37/37. Registered rounds and the
+  planted-defect discipline apply unchanged.

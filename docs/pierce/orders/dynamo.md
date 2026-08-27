@@ -14,3 +14,14 @@ spine is standing.
 2. The fidelity-gate volatile rules round if still owed as its own
    registration (your round-2 reading promised it).
 3. B3 stays design-only pending the lead's routing.
+
+## Addendum (27 Aug): B5 is approved and yours
+
+The founder approved B5 — relation mining (`swens-plan.md` Track B,
+amendment of 27 Aug; background in `china-os-findings.md` §2).
+After the ddmin round: registration first (perturbation classes,
+the candidate-relation search, the cleansing rules, stability
+criterion, planted law-breaking edits), **clean-room from the ICSME
+2019 paper — never read or copy the LGPL reference code**. Z3 comes
+through the lead's pyproject approval when you reach it (coordinate
+with Prism's tier-1 proposal so the dependency lands once).
