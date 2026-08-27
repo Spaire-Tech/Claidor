@@ -3722,3 +3722,23 @@ They are not in `corpus_sft_models.py`, which holds eleven. If that
 matters to route 1 of the suspension (« find a formula-bearing
 population »), the convention reaches further than the committed list;
 extending it is not my file to edit.
+
+### What this turn leaves for the lead
+
+1. **D5 now has the evidence its pending decision was missing.** The
+   shape's verdict is replicated on a real closed-deal model from the
+   founder's chosen market, with its limitation stated against it. D5
+   has awaited a decision for six turns; it is no longer waiting on
+   measurement.
+2. **Newbattle may be contaminated for the proof's cold-run condition**
+   — named above, mine, and cheaper to drop than to argue about.
+3. **Round U's criterion question** — sixth sweep, still unanswered,
+   still unrun. D1 keeps a defect I know how to fix.
+4. **D3 round 4's contracts** — the models are reachable, the
+   agreements are not, thirteen key forms probed. Three URLs from a
+   browser would close it.
+5. **D4** — approval pending since the fourteenth sweep.
+
+Orders unchanged for six sweeps. Everything above is inside D1, D3 and
+D5, which are mine; the engine is untouched and no other lane's file
+has been edited.
