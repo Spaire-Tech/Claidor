@@ -139,3 +139,69 @@ the values-pasted one and the catch-all.
 
 Everything else stands. The measurement criteria are unchanged, and
 the gate must still be clean.
+
+---
+
+## Results (computed after the registration)
+
+**The gate: clean.** The full 27-file sweep with the coverage pass
+live reports identically to the committed baseline, finding for
+finding. Criterion 1 — the sharp one — is met: nothing the engine
+says about a model changed.
+
+**Tests: 448 green**, seven of them this round's.
+
+**The hand check, on two real corpus files** (criterion 4):
+
+| file | cells | formulas | `long-formula` tally | typed | `typed-over` tally | sheets | abstentions |
+|---|---|---|---|---|---|---|---|
+| `final_wacc.xlsx` | 500,502 | 335,717 | 335,717 ✓ | 164,785 | 164,785 ✓ | 16 ✓ | none |
+| `ofgem_ed2/v5_2026-06.xlsx` | 43,178 | 20,485 | 20,485 ✓ | 22,693 | 22,693 ✓ | 31 ✓ | none |
+
+Every tally equals the file's own count, and every rule's `raised`
+equals the findings it actually explains. **No abstentions on
+either file** — exactly as predicted for formula-rich multi-sheet
+models, and the prediction's other half (abstentions appear, if
+anywhere, on the smallest files) is untested here because neither
+hand-checked file is small; the corpus produced none at all.
+
+## Verdict (28 Aug): ADOPTED
+
+Criteria 1–4 all met. The audit can now say « of 20,485 formulas,
+2 were long » and, on a values-pasted copy, « this rule had nothing
+to look at, because the workbook holds no formulas » — which is the
+sentence A4 exists to make sayable.
+
+**On the baseline:** untouched. No finding moved, so there is
+nothing to regenerate.
+
+**Catalogue:** unchanged — no rule added, nothing for Atelier's
+count test.
+
+## Routed to the lead: the product side (Atelier's)
+
+The engine half is done and merged; the report still cannot *show*
+it. Per `lanes.md` I do not touch `schemas.py`, `service.py` or
+`endpoints.py`, so this is the request, made concrete so it is
+cheap to act on:
+
+1. **The shape already exists.** `schemas.py` carries
+   `abstentions: list[dict[str, str]]` and
+   `tallies: dict[str, dict[str, int]]` for the *analytics*
+   summary, and `service.py` merges them. The audit's new
+   `Audit.tallies` / `Audit.abstentions` are the same types with
+   the same field names — `Abstention(rule, why)` — so the product
+   change is plumbing an existing shape from a second source, not
+   designing anything.
+2. **One difference, named rather than papered over.** The
+   analytics tally's inner keys are `total` / `clean`; the audit's
+   are `total` / `raised`. I did not reuse `clean`, because a
+   folded finding can stand for many cells, so « total − raised »
+   would overstate what the engine actually verified. If the lead
+   prefers one key set across both, that is a decision for the
+   product side and I will follow it — but it should be taken
+   knowingly, not by my silently borrowing a word that means
+   something else.
+3. **Nothing is urgent.** Until the product surfaces it, the
+   coverage is available to any caller of `audit()` and costs one
+   pass over the cells already in memory.
