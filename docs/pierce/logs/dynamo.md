@@ -919,3 +919,123 @@ the per-class table was measured on. ddmin on the H7 four.
   exactly the case where one run cannot localize, and honest
   reporting is the point. **No narrowing result exists as this is
   written.**
+
+## 27 August 2026 — B5 registered: relation mining, the Monday experiment
+
+Founder-approved (`swens-plan.md` B5, 27 Aug); the binding design
+laws are `swens-aha.md`'s, adopted verbatim below. Registered
+before any mining code runs; **no mined rule and no score exists as
+this is written.**
+
+### Clean-room declaration
+
+This implementation derives from three sources and no others: the
+plan's own B5 paragraph, `swens-aha.md`, and standard published
+mathematics (integer-relation detection; least-squares residuals).
+**The ICSME 2019 reference implementation is LGPL-3.0 and has not
+been read, fetched, or consulted, and will not be** — its licence
+is incompatible with in-tenant delivery, which is the whole reason
+the plan says clean-room. Nothing in this lane is a port.
+
+### 1. The input typing policy (where the engineering lives)
+
+The AHA's first law: a confident false rule came from a model run
+in a mode it never occupies. So inputs are **typed before they are
+perturbed**, by hand for round 1 (to price the typing honestly),
+and each type has one perturbation policy:
+
+| Type | Policy |
+| --- | --- |
+| money / continuous quantity | sampled log-uniform around the file's own value (×[0.5, 2] by default), the workhorse |
+| rate / ratio / percentage | sampled within its own plausible band, never scaled by a money factor |
+| count / volume | sampled non-negative, integers kept integral |
+| flag / boolean | **held**, or stepped through both states as separate strata — never scaled |
+| selector / enum / scenario index | **held**, or stepped through its real states — never interpolated |
+| date / period | held for round 1 (period arithmetic is its own round) |
+| formula-driven | not an input; never written |
+
+A cell whose type cannot be decided is **not perturbed** and is
+recorded as untyped — an honest gap, never a guess.
+
+### 2. Run protocol
+
+- **Gate precondition (standing rule, restated)**: only files that
+  pass their fidelity gate at 1.0 are mined. A gate-refused or
+  gate-failed file is never mined, and the refusal is the report.
+- Each run: sample the typed inputs, recalculate through
+  `UnoCalculator`, capture every formula cell's value.
+- **Non-converged or errored runs are dropped, never data** — a run
+  that returns an engine error in a watched cell, or that fails to
+  converge in an iterative file, is discarded with its reason
+  counted. If drops exceed 10% of runs the round is reported as
+  unreliable rather than scored.
+- Heavy jobs alone, as ever; this is the overnight pass, never the
+  interactive path.
+
+### 3. The candidate engine, and the measurement that chooses it
+
+Round 1 mines **signed-sum relations** — Σ ±xᵢ = 0 over small cell
+subsets — because accounting identities are exactly ±1-coefficient
+cancellations. Two engines:
+
+- **Naive enumeration** (pure Python, no dependency): the baseline,
+  built and run first.
+- **PSLQ** (integer-relation detection, `mpmath.pslq` — one call).
+
+The AHA's law is that PSLQ is *measured against* naive enumeration
+before adoption: same runs, same cells, compare rules found and
+wall-clock. **`mpmath` is not installed here and I have not
+installed it** — new dependencies are the lead's (`lanes.md`,
+frozen interface 5). **Proposed to the lead: `mpmath>=1.3`** (BSD,
+pure Python, no transitive dependencies). Round 1 therefore runs on
+the naive engine alone and reports what it costs; the PSLQ half
+follows approval. `numpy` (SVD) and `z3` are **not** proposed yet —
+Z3 belongs with Prism's tier-1 proposal so the dependency lands
+once, and round 1's rule family does not need either.
+
+### 4. Cleansing and stability
+
+- A candidate becomes a **rule** only if it holds across every kept
+  run within same-engine tolerance (relative 1e-9, floor 1e-12).
+- **Subsumption**: a rule implied by a smaller rule already in the
+  set is dropped (a 4-term identity that is two 3-term ones).
+- **Triviality**: relations among cells that are constant across
+  all runs are dropped — they are arithmetic about frozen numbers,
+  not laws of the model.
+- **Stability criterion (the plan's DONE)**: the whole mining is
+  run **twice with independent samples**; a rule counts only if
+  both runs find it. Agreement between the two sets is reported as
+  a number.
+
+### 5. Round 1 — the Monday experiment, exactly as the AHA names it
+
+- **Three gate-clean models**: `h7_new_debt_indexation_fds.xlsx`,
+  `h7_new_debt_indexation_fp.xlsx` (both 1.000000 on the fidelity
+  gate) and `DRAFT_GD3 PCFM_Jun25.xlsx` (1.000000, 8,185 cells) —
+  two rate models and one price-control model, so the rule sets are
+  not all one shape.
+- Inputs typed **by hand**, and the typing effort recorded (that
+  cost is a result: it is what productizing this would need).
+- **200 runs** per model, twice for stability.
+- **Print the rule set and read it before anything is scored.** The
+  test of round 1 is whether a modeller recognises the model in its
+  own discovered laws — not a number. Round 1 reports: the rule
+  set, the typing cost, the drop rate, the naive engine's
+  wall-clock, and my honest reading of whether the rules are
+  recognisable.
+- **No catch rate in round 1.** Catch-rate plants come in round 2,
+  and per the AHA they are drawn from the **PR24 draft→final real
+  diffs** (regressions nobody designed for us) as well as designed
+  plants — the designer-knows-the-detector bias, named.
+- **Detectors**: mined-rule violation, plus the **inert-reference
+  check** (a named edge the graph sees live that recalculation
+  shows dead) joins B5's list per the AHA.
+
+### 6. What gates what
+
+C6 (Prism's) and B6 (mine — diagnosis over broken rules) both
+consume B5's output, and the AHA is explicit that round 1's
+rule-set quality gates all three. **Nothing downstream registers
+until a modeller-recognisable rule set exists**, and if round 1's
+rules are not recognisable I will say so plainly and that is the
+result.
