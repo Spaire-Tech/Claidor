@@ -4544,3 +4544,8 @@ available. **Prism** published a coverage table stating what
 items to the lead. **Atelier** put the values-only truth on the
 screen where a person meets the file, so nobody is told a stripped
 model is a clean one. 756 tests green.
+
+**Certified, 28 Aug:** the independent gate on the tip carrying A4's
+adoption is **clean** — all 27 files report identically to the
+baseline, finding for finding. The audit now states its own
+denominator and says nothing else differently.
