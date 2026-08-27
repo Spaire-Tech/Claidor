@@ -1630,3 +1630,82 @@ to measure it on now exists and the judging sheets are already built.
 
 **Nothing ships.** The route's standing sentence is updated to carry
 this number, since a registered round's result is its only trigger.
+
+## 27 August 2026, tenth « go » — D3 round 6 registered: the column anchor, before any code
+
+Orders unchanged at the tip and my round-5 push not yet merged, so no
+new instruction is waiting. The pivot's three items are done; D4 and
+D5 both await decisions rather than work (D4's contract awaits the
+lead's approval before any table; D5's shape awaits the founder's
+choice). What is *not* waiting is round 5's own finding, which named
+its successor: **give the document side a column dimension.**
+
+Everything below is committed before the code exists.
+
+### The rule, frozen
+
+Round 5 proved the failure: a fact's anchor is its printed **line**,
+and in a table a line is a **row**, so every number in that row ties
+and the matcher goes silent. The fix is to give each fact the piece
+of the page it is missing — the **column header above it** — which
+D1 can see because it already records every number's box.
+
+**The column anchor, frozen here:** for one extracted number, walk
+the lines above it **on its own page**, nearest first, at most **12**
+lines. In each line, take the word tokens whose x-range overlaps the
+number's x-range by at least **1 point**. The first line up that
+yields at least one **non-numeric** token supplies the anchor — those
+tokens, in reading order. If no line does, the anchor is empty and
+the fact behaves exactly as it does today.
+
+**The matcher's change is one line of meaning:** a candidate's label
+tokens become the tokens of its line **plus** the tokens of its
+column anchor. Everything else stays frozen as v3 — the tokenizer
+(so purely numeric tokens still drop and **the value still plays no
+part in scoring**), `FLOOR = 0.5`, exact-tie abstention among
+eligible candidates, and both reference defenses.
+
+**A consequence, named rather than discovered later:** this changes
+what D1 records, so `EXTRACTOR_VERSION` goes from `"2"` to `"3"`.
+Fact ids are a UUID5 over the extractor version, so **every stored
+fact gets a new id and re-extraction replaces the old rows** — which
+is exactly what the store was built to do and why the version is in
+the id at all. No confirmed links exist yet, so nothing is orphaned;
+after D4 ships, an extractor bump would need a re-anchoring pass, and
+that is `anchor.py`'s whole purpose.
+
+### Part A — the same 27 rows, the same truth, v3 against v4
+
+Round 5's 42-cell sample, its hand-recorded truth, and its 27
+scorable rows, rescored with the new matcher. Identical ground, so
+the difference is the anchor and nothing else — the run-A pattern
+from round 2. Reported as the same table, beside round 5's.
+
+### Part B — the fifteen rows nobody could judge
+
+Round 5's deviation was that 15 of 42 cells could not be judged **at
+line granularity**: in a grid, a value recurs and no honest judge can
+say which occurrence was transcribed. A column anchor is evidence
+*in the document* — the header above the figure — so those rows
+become judgeable, and I judge them now with that evidence.
+
+**The bias this risks, stated plainly:** the judge and the matcher
+would be looking at the same feature, and truth built from the
+matcher's own mechanism would flatter it. Two guards, registered:
+the truth is recorded **before** part B is scored, in the same
+two-phase harness that enforces order everywhere in this lane; and
+the judging question stays what it has always been — « does this
+specific fact state this cell's quantity », answered from the
+document's own table, not « what would the matcher score ». Where
+the header does not settle it, the row **stays** indeterminate; the
+count of rows that remain so is reported.
+
+### The prediction, stated so it can be wrong
+
+Round 5's 12 tie-driven misses should convert to proposals; whether
+those proposals are *right* is the open question, and precision is
+now the number that matters, not abstention. The 4 misses from cells
+with no label words will not move — nothing about the document side
+can help a cell that has no name. **No target is promised. If the
+anchor produces confident wrong answers, it dies and the tie rule
+stays** — that is the outcome the whole design is arranged to prefer.
