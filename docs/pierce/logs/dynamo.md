@@ -2856,3 +2856,68 @@ Four for four, with the two failures inside prediction 3 and 4 doing
 the work. The coverage bar refused the rule set anyway, which is the
 bar behaving exactly as designed: a real improvement in typing does
 not entitle a rule set to be believed.
+
+---
+
+## E2's shippable verdict — the arming criteria, registered before the numbers
+
+*28 Aug, twenty-third sweep orders item 1, the single highest-value
+thing on my board. Sentinel cannot build E3 until this verdict
+exists, so the criteria go down **before** I re-run anything.*
+
+### Why the numbers in this log are not yet the verdict
+
+Every E2 accuracy figure above was measured before propagation, the
+column-wise reading and usage evidence went in. Worse, the E1 scorer
+classifies each row **row-wise in isolation**, which is not how the
+caller uses E2 at all: the real path decides the sheet's reading
+first and may read it sideways. A verdict Sentinel arms a finding on
+has to be measured through the path the product actually runs.
+
+So both scorers are re-run at HEAD, and the E1 scorer is upgraded to
+go through `sheet_reading` exactly as `inferred_inputs` does.
+
+### The two keys, and which one decides
+
+- **The author key** — 3,796 rows on ED2 and GD3 whose units were
+  written by Ofgem's own modellers in a `Units` column E2 never
+  reads. Not self-graded. **This decides.**
+- **E1's hundred** — hand-labelled by me. Same author as the
+  inference, so it *informs* and does not decide; its job is
+  regression, and it has already caught one change that had to come
+  out.
+
+### The criteria, fixed now
+
+A finding shown to a banker is wrong if the unit behind it is wrong,
+so **precision decides arming and reach does not**:
+
+| verdict | condition, on the author key |
+|---|---|
+| **arm** | wrong ≤ **1%** of decided rows, and ≥ 100 decided rows |
+| **arm with care** | wrong ≤ **5%** of decided rows |
+| **do not arm** | wrong > 5%, or fewer than 100 decided rows |
+
+« Decided » excludes abstentions throughout. Reach — what share of
+rows the dimension decides at all — is reported beside every verdict
+because it says how *often* a finding could fire, but a dimension
+that abstains constantly and is never wrong is safe to arm; one that
+answers constantly and is wrong 10% of the time is not, however
+useful it looks.
+
+### Predictions
+
+1. `kind` and `rate_form` **arm**. They were 96.4% before these
+   changes with essentially no wrong answers.
+2. `currency` and `scale` **arm** on precision and read as nearly
+   useless on reach — they abstain on most rows and, when they
+   answer, they have not yet been wrong.
+3. `period` **does not arm.** It was wrong on 24.9% and 64.1% of
+   rows and I have said since that it is not to be quoted; I expect
+   the criteria to say so formally.
+4. `b5_type` is the one I cannot call. E1 had it at 54 right / 30
+   wrong, which is nowhere near arming, but the author key is a
+   different and larger population.
+5. **At least one dimension moved since it was last measured** — the
+   three changes touched labels, and if none of them moved anything
+   I have been reporting numbers that no longer describe the code.
