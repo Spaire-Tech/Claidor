@@ -27,9 +27,11 @@ answering anything of record; register before results, always.
 | C3 delta report | `watch/delta.py`, `scripts/watch_delta.py` | Nine review classes (filled/emptied cells added at the sixteenth sweep); V1 parity with the study matcher **exact on both pairs**; V2 synthetic green; V3 (PR24) belongs to the lead — this container cannot reach the corpus |
 | C4 tier 0 (fingerprints) | `watch/trace.py`, `scripts/watch_stealth.py` | Soundness gate clean after round 2's observability fix; **93.2% of a real adjacent revision proved at hash cost in ~2 min** |
 | C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | Two hosts, **8 of 8 eligible on both, zero refusals, control silent**; `tail_hardcode` and `stealth_literal` 5/5 everywhere; the selector sweep closed the dead-branch case |
+| C5 deck delta | `watch/document.py`, `scripts/watch_deck.py` | Measured on the Cascade deck: a planted input move breaks **8 figures, each attributed to the model change underneath it**, while the deck's **8 pre-existing drifts stay off the revision's account** |
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
 
-Tests: `test_watch_{diff,align,plant,delta,trace,stealth}.py`, 57 green.
+Tests: `test_watch_{diff,align,plant,delta,trace,stealth,document}.py`,
+66 green.
 (Other lanes' tieout tests need the conftest and fail to collect here;
 name your five files explicitly.)
 
@@ -50,8 +52,11 @@ written round, never a tuning.
    (a dead branch is an *unselected* one; the harness reads the
    model's `CHOOSE`, forces the index, and stamps
    `selector_forced` on every instance it touches).
-3. **C6 (rule-set diff)** — founder-approved, yours; register it
-   when Dynamo's B5 round 1 lands a modeller-recognisable rule set.
+3. **C6 (rule-set diff)** — founder-approved, yours, and *not*
+   ready: B5's stability gates pass but its rule sets are
+   artifacts of low perturbation coverage, and the lead has put C6
+   behind Dynamo's E1/E2. Register it when coverage is measurable,
+   citing that number — not only the stability pair.
 4. **C3 deferrals — done** (filled/emptied cells; labelled rewrite
    targets). Successor item: the C2 harness should take its
    labelled rows from the engine's own `Cell.row_label` rather than
@@ -104,3 +109,10 @@ written round, never a tuning.
   example.com). V3 is the lead's to run; do not re-attempt.
 - A script appended to below its `if __name__ == "__main__":` guard
   will `NameError` at dispatch — twice now. Keep the guard last.
+- **openpyxl's save drops every cached value.** Any planted file
+  handed to something that reads *values* (the tie-out, the
+  linker, the audit's value rules) will mislead you: C4 round 1
+  lost its soundness gate to this and C5 round 1 lost 90 of 111
+  figures to it. Either re-inject the values
+  (`watch_plant._reinject_values`) or, better, let LibreOffice
+  save the file (`UnoCalculator.recalculate(path, store_to=…)`).

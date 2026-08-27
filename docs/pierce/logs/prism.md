@@ -1728,3 +1728,63 @@ never class 1. Then the real pair: the Cascade deck against
 planted by this lane's own planter so the cause is known before
 the report names it. Reported: the four counts, every break with
 its attributed cause, and any break the delta could not explain.
+
+## C5 — results: the deck delta works on a real deck, after the instrument bit again
+
+**Round 1 failed on my own instrument, and the trap was one this
+record has already paid for.** The revision was planted with
+openpyxl and handed straight to the tie-out; openpyxl's save drops
+every cached value, so the linker went blind: `checked_old: 111`
+against `checked_new: 25`, with **90 figures landing in
+`coverage_changed`**. Not one of those was a deck problem. It is
+the same lesson C4 round 1 learned about planted files, in a new
+place — and it earns a line in the handoff, because a lane that
+plants edits with openpyxl will meet it a third time.
+
+**The fix is the honest one: let a real engine save the
+revision.** `recalc.UnoCalculator(...).recalculate(planted,
+store_to=…)` — LibreOffice recalculates and stores, exactly as a
+person saving in Excel would. All 313 cells came back with values.
+
+**Round 2, the measured round.** Cascade deck, `cascade_model.xlsx`
+against a revision that moves one typed input (`Model!B6`,
+182.4 → 228.0 — planted by me, so the cause is known before the
+report speaks):
+
+| class | count |
+|---|---|
+| **broken_by_revision** | **8** |
+| repaired_by_revision | 0 |
+| **still_drifting** | **8** |
+| coverage_changed | **0** |
+| figures checked, old / new | 111 / 111 |
+
+**Every break names the change underneath it**, and the chain is
+right: the printed input itself is attributed to
+« moved assumption: 182.4 → 228 », and its seven dependents — FY23
+revenue growth, gross profit and its margin, reported and adjusted
+EBITDA and its margin — to the `material_output` blocks the delta
+report raised for exactly those rows (« moved 183.6% », « moved
+59.7% », « moved 40.7% »). A reviewer is told *this figure is now
+wrong* and *this is the model change that made it wrong*, in one
+line each.
+
+**The eight `still_drifting` figures are the result that makes the
+other eight worth reading.** The Cascade deck disagrees with its
+model in eight places *before* any revision — the engine's own
+notes record six such figures on the clean deck — and C5 keeps
+every one of them off this revision's account. A checker that
+blamed the revision for the deck's pre-existing state would be
+worse than no checker.
+
+**What C5 does not claim.** The revision is mine, not a real one:
+this measures that the mechanism finds a known break and attributes
+it correctly, not how often real revisions break real decks. The
+corpus holds no deck with two genuine model versions behind it —
+when the Chain's document corpus does, that is the round to run.
+The eight pre-existing drifts are counted, not diagnosed; they
+belong to the tie-out's own accuracy work, not the Watch's.
+
+**Track C now stands:** C1 hand-checked, C2 measured, C3 with nine
+classes and parity, C4 tier 0 and tier 2 measured (tier 1
+registered, blocked on the dependency), **C5 wired and measured**.
