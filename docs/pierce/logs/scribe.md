@@ -3086,3 +3086,82 @@ cannot be trimmed to what passes:
 | 12 | D5 flood: 22,693 candidates on a regulator model, 85 on Cascade | D5 round 1 |
 | 13 | D4: 8 of 8 on its registered table | D4 |
 | 14 | 562 colliding keys before the two-coordinate fix | part B |
+
+## The audit — measured. Thirteen of fourteen reproduce; the fourteenth understated my own defect by eight times.
+
+| # | claim | re-derived | verdict |
+|---|---|---|---|
+| 1 | ED2: 30 of 30 correct abstentions | 30/30, 0 stated | ✓ |
+| 2 | ED2 run B: 60 judged, 0 sourced | 60 judged, 0 sourced | ✓ |
+| 3 | part A+B: 0 true, 1 false, 4 abstain, 34 missed | identical | ✓ |
+| 4 | 39 of 42 scored; 35 rows stated | identical | ✓ |
+| 5 | part B settled 15 of 18; 3 unextracted | identical | ✓ |
+| 6 | round 5: recall 0 of 18 | **not reproducible by construction** | see below |
+| 7 | rounds 6–7: 0/2/7/18 | **not reproducible by construction** | see below |
+| 8 | 750 nils across the corpus | 750 | ✓ |
+| 9 | dash hand-check 20 of 20 | redrawn, all 20 re-read, all clean | ✓ |
+| 10 | 6,842 Finch facts, 8,015 ED2 | 6,842 / 8,015 | ✓ |
+| 11 | 56.1% of Finch facts in spaced lines | 3,835 = 56.1% | ✓ |
+| 12 | D5 flood 22,693 and 85 | 22,693 and 85 | ✓ |
+| 13 | D4 eight of eight | 12 tests pass (8 registered + 4) | ✓ |
+| 14 | **562 facts shared a key** | **562 *keys*, 4,456 facts** | ✗ **wrong** |
+
+### Claim 14, corrected — and the error ran in my favour
+
+The part B write-up says « **562 facts of this corpus shared a key with
+a fact on a different line** ». Two things in that sentence are wrong,
+and both make the defect sound smaller than it was:
+
+1. **562 was a count of *keys*, not facts.** Each colliding key names
+   two or more facts. The facts that shared an address with another
+   fact number **4,456** — eight times what I published, and 83% of
+   the 5,361 facts in the round's seven tasks.
+2. **« of this corpus » was the round's seven tasks, not the corpus.**
+   Across the whole Finch corpus it is **632 keys** naming **4,629
+   facts**.
+
+The finding that mattered — four of the twenty recorded truths were
+ambiguous addresses — is unaffected and reproduces. But the sentence a
+reader would quote was wrong by a factor of eight **in the direction
+that flattered my own apparatus**, and that is the direction I am least
+entitled to be wrong in.
+
+**One thing the correction adds.** Excluding the one-digit fragments
+that the character-spacing defect manufactures, the collisions are
+**240 keys naming 1,173 facts**. So the two defects compound: shredding
+a number into digits multiplies the addresses that collide. Fixing the
+reading (rounds S/T/U) would remove roughly three-quarters of the
+collision surface as a side effect.
+
+### Claims 6 and 7 — not reproducible, and the log should have said so
+
+Rounds 5, 6 and 7 were measured under extractor versions 2 and 3. The
+extractor is now version 4 and the round's truths were re-keyed in the
+dash round, so **those tables cannot be re-derived from the current
+tree** — running `score` today yields the dash round's numbers, which
+it does, exactly (0 true, 1 false, 4 abstentions, 19 missed, 24 scored,
+20 stated).
+
+That is correct behaviour, not a defect: a superseded measurement of a
+superseded extractor. But nothing in the log warns a reader who tries.
+**Every table in this log from rounds 5, 6 and 7 should be read as
+« measured under extractor version 2/3 », and the live number is part
+A + part B's 0 of 35.** Stated here once, plainly, since the earlier
+entries cannot be edited without rewriting the record.
+
+### What the audit says about this lane
+
+Four checks in three turns have now found four errors of my own: a fact
+key that addressed two facts, a criterion that could not tell repair
+from damage, a claim generalised from two samples to twenty-two, and a
+count off by a factor of eight. **None of them changed a headline
+finding** — recall is still 0 of 35, the nils still survive, D4 still
+passes eight of eight — and all four were found by checking rather than
+by anyone catching me.
+
+I do not think that rate is acceptable, and the pattern in all four is
+the same: **I write the sentence from the measurement I just ran, and
+the sentence generalises further than the run did.** The measurement
+was right every time; the prose was not. From here, any number that
+goes into this log in a sentence gets the population it was measured
+over named in the same sentence.
