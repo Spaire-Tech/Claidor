@@ -4330,3 +4330,26 @@ Integration: four lanes merged one at a time, engine files verified
 untouched by all four, 636 conftest-free tests green; the 13 new
 collection errors are Atelier's and Scribe's DB-fixture tests, the
 known environmental class, green where databases exist.
+
+---
+
+## 27 August — the AHA becomes plan: B5's laws, C6, B6
+
+The founder's research agent delivered the build's thesis measured
+(« every published tool reads the file; we are the only one who can
+run it ») with its own toy-model experiment, planted answer key, and
+a self-refuted headline — recorded and graded in `swens-aha.md`. On
+the founder's go: **C6** (the rule-set diff — version comparison by
+diffing discovered laws, position-proof by construction) and **B6**
+(minimal diagnosis over broken rules — one-decision-one-finding as
+an algorithm) join the plan; B5 gains binding design laws from the
+report's measured failures (typed perturbation, gate-refused files
+never mined, PSLQ candidate engine, plants drawn from the PR24 real
+diffs, and round 1 = print the rule set and read it before any
+score). Sentinel gains the reachability candidate (« this assumption
+changes nothing »— graph-only, no recalculation). The lead's caution
+stands in the record: the report's own numbers are its author's toy;
+only registered rounds on our corpus produce ours. Also noted: the
+founder is switching sessions to a different model tier as usage
+runs down — the discipline lives in the repository (orders,
+handoffs, registrations), which is what makes that switch safe.

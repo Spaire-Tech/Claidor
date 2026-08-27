@@ -37,3 +37,8 @@ diffs as well as designed ones, and B5 round 1 is the « Monday
 experiment »: three gate-clean models, hand-typed inputs, 200 runs,
 print the rule set and read it before any score exists. The
 inert-reference check joins B5's detector list.
+
+Sequence note: C6 (Prism's, approved) and B6 (yours, approved —
+diagnosis over broken rules) both consume B5's output. B5 round 1's
+rule-set quality gates all three; nothing downstream registers until
+a modeller-recognisable rule set exists.

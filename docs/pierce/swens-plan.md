@@ -158,6 +158,18 @@ Owner is Engine unless marked. Every step has a DONE test.
   rate with the per-class table, and zero false law-violations on
   the unedited model.
 
+- **B6. Diagnosis — the smallest explanation.** (Added 27 Aug,
+  founder-approved.) A broken mined rule names every cell in the
+  relation; the culprit is usually one. Reiter's minimal-diagnosis
+  (1987) with spectrum-based fault localisation over B5's
+  passing/failing rules computes the smallest cell sets that explain
+  every observed break — the one-authoring-decision-one-finding
+  principle as an algorithm. The academic blocker (spreadsheets have
+  no failing tests) is removed by the mined rules themselves. DONE:
+  on planted and real-diff defects, the diagnosis names the planted
+  cell in its smallest set at a measured rate, and multi-rule breaks
+  collapse to single findings.
+
 ## Track C — the Watch
 
 - **C1. The raw version diff** (cells added/removed/changed, by
@@ -193,6 +205,17 @@ Owner is Engine unless marked. Every step has a DONE test.
   always: named unsupported constructs, honest refusal. Tiers never
   blurred. DONE: planted stealth edits (a change hidden outside the
   declared cells) are caught by tier 2 at a measured rate.
+- **C6. The rule-set diff.** (Added 27 Aug, founder-approved.) Mine
+  the old version's invariant laws and the new version's (B5's
+  machinery), then diff the law sets: « v12 obeys all 47 rules v8
+  obeyed, adds 2, broke 1 — cash closing no longer ties to its
+  flows in periods 14–15. » Compares behaviour, not positions, so it
+  survives inserted rows, moved blocks and renamed sheets by
+  construction. Tier-2 strength (no divergence in N samples), stated
+  as such, never sold as proof. DONE: on a real revision pair, the
+  rule-set diff names the behavioural break the cell diff buries,
+  and a planted law-breaking edit is caught with the per-class
+  table.
 - **C5. The Watch on documents.** Model moved, deck did not ⇒
   finding (the tie-out re-run on the new version). DONE: wired.
 
@@ -381,3 +404,7 @@ what makes every deal after that cheaper than the last.
   recalculator, clean-room from the AutoMR paper), after B4's
   measured table stood at 37/37. Registered rounds and the
   planted-defect discipline apply unchanged.
+- **27 August 2026, second amendment** (founder-approved): C6 added
+  to Track C (the rule-set diff over B5's mined laws) and B6 to
+  Track B (Reiter/spectrum diagnosis over broken rules). Background
+  and adopted design laws: `swens-aha.md`.

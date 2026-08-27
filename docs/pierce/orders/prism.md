@@ -20,3 +20,13 @@ LIA* handling of unbounded summation is exactly the SUM-over-
 symbolic-range wall the fragment will hit. Your tier-1 registration
 must say what transfers and what does not. See
 `china-os-findings.md` §3.
+
+## Addendum (27 Aug): C6 is approved and will be yours
+
+C6 (the rule-set diff, `swens-plan.md` Track C) is founder-approved.
+It consumes B5's mined rule sets, which do not exist yet — Dynamo's
+B5 round 1 must first show a modeller-recognisable rule set. Your
+part now: nothing to build; when B5 round 1 lands, you register C6
+(the law-set matching rule — labels, not positions; the diff
+classes; the planted law-break harness). Sequence note is in
+Dynamo's orders too.
