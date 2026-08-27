@@ -2103,3 +2103,77 @@ survives an extractor change.
 `test_routes.py::TestTheVersionDelta::`
 `test_a_revision_answers_in_review_language`, which reproduces with
 my changes stashed. Suite otherwise 815 passed, 9 skipped.
+
+## 28 August 2026, twelfth « go » — part B, the promise I have not kept
+
+Orders read from the tip (`78024d57`, seventeenth sweep). **They are
+unchanged**, and the sweep's entry about this lane is a fair account
+of rounds 5–7. My lane's last five commits are not in the tip yet;
+rebased onto it, as every turn.
+
+One thing in my own record needs saying before anything else. Round
+6 deferred part B — the rows no judge could honestly judge at line
+granularity — with the words « It is the first item of round 7, not a
+dropped one. » Round 7's registration promised it again. **Round 7's
+write-up does not report it.** It reported part A and stopped. That
+is not a deferral, it is a promise quietly dropped, and I am the only
+one who could have caught it. It is this turn's work.
+
+## D3 round 6/7 part B — registration, amended and frozen before any judging
+
+The registration stands as written in round 6 (judging question, the
+two guards, rows the header does not settle stay indeterminate and
+are counted). Three amendments, each stated before a candidate is
+looked at:
+
+**1. The set is eighteen, not fifteen.** The dash round moved three
+rows into it — task 81's « GCO/HPL GRI/ACA », « Citrus AFUDC » and
+« NNG Shared Cost Surcharge », which were judged « not stated » in
+round 5 *only because no fact existed for them*. Now nils exist on
+their rows and the same line-granularity problem applies. This is
+recorded in the dash round's write-up already; part B inherits them.
+
+**2. The stored candidate lists are stale and are regenerated.**
+Those three rows carry `value_hits: []` in the round-5 sheet, from an
+extractor that could not see a dash. Judging them from a stale sheet
+would be judging an empty page. Part B rebuilds every candidate list
+from the current extractor (version `"4"`), and shows the judge each
+candidate's **column anchor** beside its line — that anchor is the
+evidence part B was registered to use.
+
+**3. What part B can and cannot deliver, said now rather than after.**
+Rounds 6 and 7 both died by their own criteria, so the matcher is
+back to v3 and **ignores the column anchor entirely**. Part B
+therefore *cannot* raise precision — a matcher blind to columns
+cannot be helped by a judge who can see them. What it delivers is
+two things that are worth having anyway:
+
+- **the honest denominator** — how many of the 42 drawn cells are
+  judgeable at all with the document in front of you, which is a
+  fact about the corpus and not about any matcher;
+- **truth that keeps** — matcher-independent judgements that any
+  future round reuses without re-judging, including the round that
+  runs once the model side can name a column.
+
+**The bias guard, restated because it matters more here.** The judge
+now sees the same feature (the column header) the matcher was built
+to score. So: truth is written to disk and committed **before**
+`score` is run, exactly as every round in this lane; and the judging
+question stays « does this specific fact state this cell's quantity,
+as printed », answered from the document's own table. Where the
+header does not settle it, the row **stays indeterminate** and is
+counted as such — that count is a headline number of the round, not
+a footnote.
+
+**The prediction, stated so it can be wrong.** Task 161's six
+(`Replacement Cost`, FY-labelled columns) should settle cleanly —
+the years are printed headers. Task 81's nil rows should **not**:
+a row of dashes across four unnamed columns is precisely the case
+where a header cannot say which nil is which. I expect between four
+and ten of the eighteen to remain indeterminate. **If nearly all
+eighteen settle, I should be suspicious of my own judging, not
+pleased** — that would mean I was reading the matcher's mechanism
+rather than the document, and I will say so.
+
+**No criterion here kills code**, because part B changes no code. It
+is a measurement of the corpus and a repair of the record.
