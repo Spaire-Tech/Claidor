@@ -66,6 +66,135 @@ amount. That does not overturn its conclusions — the label-set
 comparison never passed through the engine — but it turns the
 refusal to read fresh-vs-frozen as drift into a named mechanism.
 
+## 28 August 2026 — the own-check period defect fixed, and what could not certify it
+
+Proof 1A's failure had one cause and I took it as its own registered
+round rather than folding a fix into the proof. `_own_checks` in
+`analytics.py` scanned every numeric cell of a check row and ignored
+the period axes the structure layer had already handed it. Kelso and
+Newbattle park a covenant breach level (1.15) and a lockup level
+(1.1) in a scalar column beside a period grid that starts four
+columns later; both were quoted as failing periods while the real
+series was zero throughout. Eight of the proof's thirteen findings
+were that one class.
+
+The change is four lines: before the admission tests, drop from each
+check row the cells that are not in the sheet's own period columns.
+Two things about *where* it sits, both deliberate. It runs **before**
+the zero-share and cell-count admission rules, so those thresholds
+are computed on the same cells the verdict uses — admitting on one
+population and judging another is how a threshold quietly changes
+meaning. And a sheet whose axis the structure layer could not read
+keeps today's behaviour exactly: « we cannot see the axis » must
+never silently become « we stop checking ».
+
+**The honest part of this round is what could not certify it.**
+`scripts/corpus_gate.py` calls `audit()` only, and the golden-master
+baseline holds not one analytical finding. A clean gate here proves
+nothing about this change, and I said so in the registration before
+running anything, so that a green gate could not later be waved
+about as certification. What certified it instead: the 27-file AU-UK
+regulator corpus had to show **zero** analytical movement, and the
+SFT corpus had to move in exactly the way Proof 1A's hand-adjudication
+had already specified — a prediction with no room to interpret the
+outcome afterwards.
+
+Both held. AU-UK: 18 analytical findings before, 18 after, no file
+moved. SFT: Kelso 4→0, Newbattle 4→0 (all eight adjudicated false
+alarms gone), Inverurie 4→4, SNBTS 1→1, Inverness 1→1 (all five true
+breaks intact and identically worded), the five silent models still
+silent. Inverness's `FinClose` finding survived, which is what I
+expected — but it was registered as read-by-hand rather than as a
+prediction, because whether the axis admits a stub column is a fact
+about the structure layer and I did not want to be able to claim it
+either way. 168 engine tests green, three of them new and pinning
+both directions.
+
+The gate ran too, and was clean across all 27 files, finding for
+finding. That is written into the round as a tripwire and nothing
+more: it says the edit stayed inside the analytical layer it was
+aimed at, and it says nothing whatever about whether the fix is
+right. I registered that in advance precisely so a green gate could
+not be waved about afterwards as if it were certification.
+
+**One measurement thrown away, written into the round document
+rather than quietly redone.** My first AU-UK before/after was void
+twice over: the "before" baseline covered 19 of 27 files, and I had
+edited `analytics.py` while that sweep was still running — the
+mtimes prove it. I discarded it, re-extracted the pre-fix
+`analytics.py` from the commit before mine, re-ran it alone, and
+restored the new version. The number I report is the second
+measurement. The first is in the record as a measurement I threw
+away, because a corpus result taken while its own subject was being
+edited is not a weak result, it is not a result.
+
+**Next:** Proof 1A is re-run at a new named commit and reported as a
+**second run**. The first run's FAIL stands in the record exactly as
+taken; a re-run after a fix is a new measurement, not a correction
+of the old one.
+
+## 28 August 2026 — Proof 1A's second run, and what comparing more than the numbers found
+
+The re-run, at `327058a5`, invoked exactly as the first was (one
+file per process, the same bash loop) so the two are comparable in
+how they were taken and not only in what they measured. Kelso 4→0,
+Newbattle 4→0, Inverurie 4→4, SNBTS 1→1, Inverness 1→1, every
+surviving finding byte-identical in rule, cell and sentence —
+checked mechanically. Seven of the nine value-only models are now
+silent against five before. All three criteria pass: 5 of 5 true
+breaks, no false alarms, and the two genuinely clean models no
+longer speak.
+
+**And the pass is worth less than it looks, which the section says
+before it says anything else.** The first run tested a claim about
+models the engine had never seen. This run cannot test that claim,
+because the engine was changed *using these very models' failures* —
+Kelso and Newbattle are named in the fix's own code comment. The
+corpus is contaminated as evidence for the original claim,
+permanently. What the second run can honestly show is narrower: the
+named defect is gone and the true findings are undisturbed. I wrote
+that caveat above the numbers rather than below them, because
+« Proof 1A passes » is exactly the sentence that would travel
+without it.
+
+**The part I did not go looking for.** I compared the two runs'
+coverage *tallies* as well as their findings, and two check rows had
+quietly stopped being examined — `baldragon InpM!22` and
+`inverurie Input Cost Profiles!4`, both input-sheet check rows
+living entirely off the period grid (columns A–D and F–O, against
+axes starting at O and R). The period restriction empties them, they
+fall below the four-cell floor, and they leave the denominator with
+**no abstention raised**. Both are all-zero, so no finding was lost
+— only the confirmation that the model's own check passes.
+
+That is the failure mode my own comment on the restriction warns
+about, in the one form the comment does not cover: it guards the
+sheet whose axis we cannot read, not the row that has no cells in an
+axis we read perfectly well. I measured the blast radius with a
+committed instrument rather than guessing — `own_check_coverage.py`,
+one pass, admitting every check row with and without the
+restriction: the regulator corpus is **232 → 232, nothing dropped**;
+the SFT corpus is **137 → 135**. Two rows, both named.
+
+The adoption stands — against criteria fixed before the results, the
+change did what it said. But the criteria were narrower than the
+change, and that is the lesson going on the record: I registered
+findings and forgot that A4 had given me a coverage number that
+could also move. Fixing it means changing what the engine reports,
+so it is the next registered round, ahead of the « dead assumption »
+candidate: *an own-check row with no cells in the period grid must
+be abstained on, not dropped.*
+
+**Two smaller corrections, both mine.** The round's AU-UK
+before/after artifacts recorded findings only, not tallies, so they
+could not answer the coverage question and I had to measure it fresh
+— worth fixing in how I capture sweeps. And I first ran the re-run
+as a single process for all ten models, which is *not* how run 1 was
+taken; I re-ran it per-process before reporting. The two agree
+exactly apart from timings, which is a free piece of evidence that
+the engine carries no state between files, but agreeing afterwards
+is not a reason to have reported the wrong one.
+
 ## 28 August 2026 — Proof 1A run: FAIL, on one line of code
 
 The founder's population proof, analytical half, run cold under the
