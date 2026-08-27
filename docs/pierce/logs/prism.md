@@ -3038,3 +3038,84 @@ substance is **added cells inside matched structure** — twelve months
 of outturn typed into a sheet whose rows otherwise align perfectly.
 The next entry registers what C3 should say about that and measures
 what it does say.
+
+## Item 3 checked before it is worked on: the C3 hole is already closed
+
+The orders list « added-cells-within-matched-structure » as a real
+hole and mine. **It is not a hole — it was built at the sixteenth
+sweep** (`filled_cell` / `emptied_cell`), and this turn is the first
+time it has been run against a revision whose substance I know
+independently. C3's report on the registered ED2 pair:
+
+```
+new_defects 0 · repaired 0 · persistent 11 · unmatched 0/0
+moved_assumption  Annual Inflation row 50   11.636903442623 → 11.584699426229506
+moved_assumption  Annual Inflation row 53    9.14944682416672 → 9.066745554703903
+filled_cell       Monthly Inflation rows 284–295 [H,I]
+                     « a cell that was empty now holds 121.2 »
+material_output   94 blocks, the largest « Monthly Inflation rows
+                     284–352 [J,K,L,M,N] moved 16.7% »
+```
+
+**The `filled_cell` line is the revision**, folded to exactly the
+twelve months the frontier probe identified, on exactly the sheet and
+rows it identified — arrived at independently, by a different
+instrument, three rounds earlier. So the orders' item 3 is reported
+back to the lead as **already done**, with this as the evidence.
+
+### One thing it understates — registered, then fixed
+
+`_block_item` takes `details[0]`: a folded block reports the **first
+cell's** story and never says how many cells it covers. « A cell that
+was empty now holds 121.2 » is true of a block of twenty-four, and a
+reviewer reads one cell where twelve months were typed in.
+
+**The change**: when a block folds more than one cell, its detail
+carries the count. Uniform across every kind — a `material_output`
+block that moved 3.1% is also worth knowing the size of.
+**Predictions**: the `filled_cell` line comes back reading **24
+cells** (twelve rows across columns H and I, matching C1's count of
+added cells exactly); no item count changes; no kind changes; the
+delta tests stay green apart from any that pin a detail string
+verbatim, and those are the two single-cell cases, which by
+construction get no suffix.
+
+### Result: the prediction held, and the report now reconciles with C1 on its face
+
+```
+moved_assumption  Annual Inflation row 50  11.636903442623 → 11.584699426229506  (7 cells)
+moved_assumption  Annual Inflation row 53   9.14944682416672 → 9.066745554703903  (7 cells)
+filled_cell       Monthly Inflation rows 284–295 [H,I]
+                     « a cell that was empty now holds 121.2 »                    (24 cells)
+material_output   94 blocks, now each carrying its size
+```
+
+**24 cells**, as predicted, and no item count moved (2 / 1 / 94, as
+before). The unplanned dividend is the reconciliation: the two
+assumption lines read **7 + 7 = 14**, which is C1's count of content
+changes exactly, and the filled block reads **24**, which is C1's
+count of added cells exactly. The delta report and the raw diff now
+agree **on the face of the report**, where before a reader had to
+take it on trust.
+
+All delta and document tests green; the two that pin a detail string
+verbatim are single-cell cases and are unaffected by construction, as
+predicted.
+
+## Where Track C stands, at the end of this turn
+
+| Step | State |
+|---|---|
+| C1 raw diff | measured, hand-checked, reconciles with the ladder to one named cell |
+| C2 alignment | measured; 8,475 pairings on the registered pair, 0 suspect |
+| C3 delta report | measured on a revision whose substance is independently known; names it in one line, and now reconciles with C1 on its face |
+| C4 tier 0 | 93.19% at hash cost, gates clean |
+| C4 tier 1 | **blocked on one line in `server/pyproject.toml`** |
+| C4 tier 2 | 313 supported · 0 plain divergences · 7 latent · every refusal named |
+| C4 tier 3 | closed vocabulary, 1,203 refusals on the pair, 0 unnamed |
+| C5 deck delta | measured on a real deck |
+| C6 | gated, and the lead says not to wait |
+| The tier table | published: `docs/pierce/tier-table.md` |
+
+The only thing between this track and « complete » is tier 1, and
+the only thing between tier 1 and being built is the dependency line.
