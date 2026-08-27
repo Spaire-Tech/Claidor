@@ -45,7 +45,56 @@ they belong. Three are new and eligible:
 | `snbts_model.xlsm` | c8d838938035cb2c | 1,881,902 |
 
 **Every further candidate is hashed against the whole corpus before
-it counts.** Seven more unseen models are needed.
+it counts.**
+
+### The corpus is complete: eleven eligible models (27 Aug)
+
+The founder supplied the portal's alphabetical index and two
+mechanical routes. The portal host is unfetchable (expired
+certificate, `corpus-sources.md`) — but the **files sit in a public
+S3 bucket with a valid certificate**, under a stable convention
+discovered by probing a file we already held:
+`{Project Words}+Financial+Model.{ext}` at the bucket root. Swept
+across the whole index; committed as `scripts/corpus_sft_models.py`
+so the corpus is rebuildable and never committed.
+
+Found: **eleven models across eleven new deals** — eight readable
+(`.xlsm`), three format-blocked (two `.xlsb`, one `.xls`). Eighteen
+indexed projects have no model published at all, which matches the
+portal's own rule (the agreement publishes at financial close, the
+model two years after completion) and is recorded in the fetcher so
+a later sweep can tell « not yet published » from « never looked ».
+
+| eligible & readable | deal |
+|---|---|
+| `baldragon_model.xlsm` | Baldragon Academy |
+| `glasgow_college_model.xlsm` | City of Glasgow College |
+| `forfar_model.xlsm` | Forfar Community Campus |
+| `inverurie_foresterhill_model.xlsm` | Inverurie & Foresterhill Health Centres |
+| `kelso_model.xlsm` | Kelso High School |
+| `levenmouth_model.xlsm` | Levenmouth Academy |
+| `newbattle_model.xlsm` | Newbattle Centre |
+| `oban_campbeltown_model.xlsm` | Oban & Campbeltown High Schools |
+| `hwcbsb_model.xlsm` | (founder-supplied) |
+| `inverness_college_model.xlsm` | Inverness College |
+| `snbts_model.xlsm` | Scottish National Blood Transfusion Service |
+
+Eleven readable candidates for a proof that needs ten. **All eleven
+run**, and the eleventh is not a spare to drop if it scores badly —
+the sample is fixed here, before any of them has been opened.
+
+Format-blocked and excluded, held in the corpus so the gap stays
+visible: `barrhead_model.xlsb`, `largs_model.xlsb`,
+`inverclyde_model.xls`, `dalbeattie_model.xlsb`,
+`our_lady_st_patricks_model.xlsb` — **five of sixteen published
+models in this population cannot be opened by our reader**, which is
+the honest size of the A6 intake gap and a number the proof reports
+whatever else it finds.
+
+**Readability is asserted by extension only at registration time.**
+Whether the engine actually opens each `.xlsm` is part of the run,
+not a precondition assumed here; a file that fails to read is a
+refusal counted in the denominator, per the cold-run conditions.
 
 ### Contamination log (every candidate, accepted or rejected)
 
