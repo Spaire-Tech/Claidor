@@ -3498,3 +3498,41 @@ also not the demonstration `swens-plan.md` describes, which is
 « findings **hand-verified** »: four of these models offer nothing to
 hand-verify. **Which of those two readings is the right one is the
 lead's call and the founder's, not mine.**
+
+### What this turn leaves for the lead
+
+Two of these are time-sensitive and neither is about my own tracks.
+
+1. **The Scottish route is open for models.** My orders say it is
+   structurally closed; it is not, and `corpus_sft_models.py` fetches
+   Kelso, Levenmouth and Oban today. **D3 round 4's blocker is now the
+   contract half alone** — a three-URL ask, not the six the founder was
+   given. Thirteen probed key forms say the agreements are not in that
+   bucket; I stopped there rather than guess a fourteenth.
+2. **The eight published closed-deal models are all but value-only** —
+   1,938 formula cells in 6,130,539, three of eight with none at all —
+   and the engine, run as the service runs it, reports **16 rule
+   findings and 12 analytics across all eight**, four of them nothing.
+   The population proof's cold run has not happened yet. What that
+   means for the proof is not mine to say; that it is true is.
+3. **D5 round 3's answer**: the local-rule shape has no ground on this
+   population, and round 2's structural prediction is **untested, not
+   refuted** — a corpus with no formulas declares no totals, so round
+   2's question cannot be put to it. My registered prediction was
+   wrong.
+4. **Round U's criterion question** — still waiting on a word, still
+   unrun, five sweeps since the orders file last changed.
+5. **A retraction, in full, in this log.** I wrote up a fourth intake
+   gap and it did not survive its own tests. Nothing was pushed.
+
+**Four errors of mine surfaced in one turn** — three regexes that
+disagreed, a cause that collapsed, a harm that was zero, and a
+sheet-blind address comparison I had already fixed once in my own
+harness. Every one was caught by checking rather than by anyone
+catching me, and none reached the lead. That is the system working and
+it is also not a rate I am comfortable with. The pattern is narrower
+than last turn's « the sentence generalises past the run »: **when I
+have a plausible mechanism, I write it down before I have tested that
+it is the mechanism.** The fix is the same shape as the audit — a
+claimed *cause* now needs its own check before it is written, not
+after.
