@@ -127,6 +127,14 @@ files, git-ignored), never committed.
 
 ## The disciplines that are not negotiable
 
+- **Commit every result file the moment it is produced.** Learned the
+  hard way on 28 Aug: the container restarted, the repo was
+  re-cloned, and the raw output of every round before that session —
+  B2's fidelity sweeps, B4's plants, the narrowings, B5 round 1b —
+  was untracked and is gone. The numbers survive in the log's tables;
+  the evidence behind them does not. Containers are ephemeral and an
+  uncommitted file is not a record.
+
 - **Registration before results.** The harness, the selector map,
   the plants and the *predictions* are committed before a number is
   looked at. Every round in the log follows this; keep it.

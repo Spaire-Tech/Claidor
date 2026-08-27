@@ -2207,3 +2207,50 @@ promised « when it comes ».
 1b left open — does a 0-rule model produce rules once coverage
 rises? — is worth answering even under a typing I have just shown to
 be unconstrained. Its result will carry the same caveat.
+
+---
+
+## A loss to declare: the earlier rounds' raw run files are gone
+
+*28 Aug. This is my mistake and it is worth stating plainly rather
+than leaving for a successor to discover.*
+
+The container restarted mid-session and the repository was re-cloned.
+Everything committed survived; everything untracked did not. And the
+raw output of **every round before this session was untracked**:
+
+- `fidelity-au-uk*.json` — B2's fidelity sweeps over the golden-master
+  corpus (27 files, 3,862,412 comparisons)
+- `b4-*.json` — the behavioural-law plants and controls
+- `narrow-*.json` — the 43 ddmin narrowings
+- `stability-h7*.json` — B5's five-seed and cosmetic-invariance runs
+- `round1b.json` — the round this week's redirection was based on
+
+I wrote them into `docs/pierce/logs/dynamo/` and treated them as
+records without ever committing them. They were not in `.gitignore`;
+they were simply never added, and each sweep's numbers went into this
+log's tables instead.
+
+**What survives**: every number, in the tables written when the runs
+finished, in this log. The log cites no file path that no longer
+resolves — I checked — so nothing here is a dangling reference.
+
+**What does not**: the ability to re-derive those tables without
+re-running the machine. Anyone who wants to check B2's 99.88% must
+re-run the sweep; my word and my table are all that stand behind it
+today.
+
+Neither of those is good enough for numbers this lane asks other
+people to rely on, so:
+
+- **Every result file is committed the moment it is produced**, from
+  the propagation round onward. The eight JSONs now in
+  `docs/pierce/logs/dynamo/` are all tracked.
+- The re-runs are hours of machine time each and I am not going to
+  spend them on my own initiative while the orders point elsewhere.
+  **B2's fidelity sweep is the one worth re-running** — it is the
+  lane's headline number and the one most likely to be quoted — and
+  I will do it on the lead's word, or when the machine is otherwise
+  idle.
+- The 6-run smoke file `round2-smoke.json` is deleted rather than
+  left beside a 400-run result to be mistaken for one.
