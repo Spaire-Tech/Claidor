@@ -2088,3 +2088,122 @@ table* from the shape of its headers rather than from a word list,
 and a mixed-format row being an **abstention** rather than a vote.
 
 Registered as the next E2 round. `period` remains not to be quoted.
+
+---
+
+## B5 round 2 — coverage 100%, and the typing broke the law it was built to keep
+
+*28 Aug, orders addendum item 1: coverage first.*
+
+### Coverage, first, as the addendum asks
+
+| | round 1b (hand-typed) | round 2 (typed by E2) |
+|---|---|---|
+| typed inputs, whole workbook | 65 | **3,210** (3,203 rate, 7 held) |
+| watched formula cells | 144 | 144 |
+| **coverage** | artifacts of the frozen remainder | **144 of 144 — 100.0%** |
+| runs kept | 200 + 200, zero drops | 200 + 200, **zero drops** |
+| stable signed sums | 36 | **11 — 3 distinct sentences** |
+
+`docs/pierce/logs/dynamo/round2-h7fds.json`. Predictions 1 and 2
+hold: automatic typing types far more than the hand tables did, and
+it clears the registered 50% bar outright.
+
+**Prediction 4 was wrong, and wrong in the good direction.** I
+registered that the rule sets would get *bigger and mostly worse*.
+They got **smaller and better**: 36 stable rules became 11. Round
+1b's rules were equalities among cells that never moved
+(`J52 = K52`, whole rows equal across years); with everything
+moving, those coincidences die. That is the coverage argument
+working exactly as round 1b predicted it would, and I did not
+predict the direction.
+
+### What the three surviving sentences actually are
+
+I read them against the formulas rather than admiring them:
+
+    Nominal cost of fixed-rate debt (incl. HAL adj.) [42]
+      = Nominal cost of index-linked debt (excl. IL premium) [46]
+        I42: = SUM( I$9, $G$10 )
+        I46: = SUM( I$9, $G$10 )
+
+    Nominal cost of fixed-rate debt (in-year) [52]
+      = Nominal cost of new index-linked debt (in-year, excl. IL premium) [58]
+        J52: = SUM( J37, $G$12 )
+        J58: = SUM( J37, $G$12 )
+
+They are **identical formulas under different names**. The mining is
+right, the rules are true, and they are not accounting identities —
+they are duplicate calculations. Whether « these two differently
+named cost rows are the same calculation » is worth a reviewer's
+time is a real question and not mine to answer; it is at least a
+*checkable statement about the file*, which round 1b's set was not.
+The third sentence, `Real cost (in-year) = Real cost (cumulative)`
+in the first year only, is a boundary condition.
+
+So: still **not modeller-recognisable as accounting law**, but for a
+different and better reason than last time.
+
+### Prediction 5, and it is the finding of the round
+
+I registered that at least one rule would name a cell E2 typed
+wrongly. What happened is worse and more useful.
+
+**The weight rows were perturbed independently, and they are a
+constrained family.** Rows 15–20 are « Weight on embedded debt »,
+« Weight on new debt », « Weight on index linked debt », « Weight on
+fixed-rate debt ». The hand typing **held** them, for the reason
+written into `mine.py` in round 1: embedded + new = 1. E2 sees
+`0.00%` and says `rate`, correctly — a weight *is* a rate — and the
+typing map then perturbs each one on its own.
+
+Measured, not argued:
+
+| | I | J | K | L | M |
+|---|---|---|---|---|---|
+| the file: embedded + new | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 |
+
+    one draw under the inferred typing:
+      I: embedded 1.1333 + new 0.0058 = 1.1391
+      J: embedded 1.4452 + new 0.0634 = 1.5085
+
+**An embedded-debt weight of 113%.** The model was run in a capital
+structure that cannot exist — precisely the failure the AHA's typing
+law exists to prevent, and the failure the hand typing was written
+to avoid. 100% coverage is partly *because* of it.
+
+And the mirror error: **`Average RAB` (row 26), the sheet's only
+money row, came back `untyped` and was held.** E2 abstained — no
+decisive format, no currency in the label — so automatic typing
+loses the one MONEY input the hand typing had. It over-perturbs the
+weights and under-perturbs the money.
+
+### What this means, and the gap it names
+
+The three sentences survive: they are provable from the formulas and
+do not depend on the perturbation being legal. **What does not
+survive is any claim of completeness.** At illegal capital
+structures a true law that holds only on the simplex is broken and
+therefore never found, so « these are the model's laws » is exactly
+what round 2 may **not** say — the same sentence my own registration
+reserved for a round that earns it.
+
+The gap has a name now, and it is not a units gap:
+**constraint membership**. E1 and E2 label a row's *dimension* —
+this is a rate, in percent, per year. Nothing in that vocabulary can
+say **« rows 15 and 16 sum to 1 »**. A units classifier cannot
+express a simplex, and B5's typing needs both. That is a new
+dimension for Track E, or a separate detector for Track B, and it is
+the lead's call which; I will register whichever is chosen before
+building it.
+
+Registered as the next B5 round: **detect constrained families from
+the file itself** — rows that sum to a constant across every year
+column are the obvious first shape — and sample them jointly on
+their simplex rather than holding them, which is what round 1
+promised « when it comes ».
+
+`roe` is running under the same typing, because the question round
+1b left open — does a 0-rule model produce rules once coverage
+rises? — is worth answering even under a typing I have just shown to
+be unconstrained. Its result will carry the same caveat.
