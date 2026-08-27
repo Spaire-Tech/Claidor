@@ -596,3 +596,42 @@ with `net::ERR_FAILED` — CORS, not the app. Stop the dev server and
 serve the build on 3000.
 
 Still holding for the founder's review of the three screens.
+
+## 27 August 2026 — merged, and holding
+
+The states sweep and its production-build verification are merged
+(sixteenth sweep). Orders unchanged, so this turn was the check
+that matters while holding: nothing in the merged sweeps touched
+my paths, and the Chain contract my source viewer consumes
+(`FactRead` — page, page size, box, line, extractor) is unchanged,
+so the coupling that would break a screen silently has not moved.
+Scribe's new `chain/anchor.py` is added capability, not a contract
+change. Route suite **82 passed** against the merged tip.
+
+Holding for the founder's review of the three screens, which stand
+untouched until then, per orders.
+
+## 27 August 2026 — the build record catches up
+
+Tip and orders both unchanged, so still holding — and the screens
+stay untouched until the founder has looked at them. The one thing
+that was actually stale in my lane was the build record
+(`swens-product-build.md`, mine): it stopped at 25 August and did
+not mention the three screens the founder is about to review.
+
+Phase 7 added in the doc's own voice — what each screen is, on what
+endpoint, and the decisions worth keeping (the delta persisted
+nowhere against the mark persisted on the artifact's counts; the
+engine's rank never re-ranked by a screen; the ring in the page's
+own point coordinates) — plus the states sweep and its six fixes.
+
+Four honest gaps these ships left, now written down where the
+product's gaps live: no arbiter run exists, so an arbiter-routed
+file's true answer stays « we did not check this »; recalculation
+is manual and per-version (the endpoint behind the button is the
+gate's only caller — verified, not assumed); the differing cells
+beyond the twelve named have nowhere in the product to be read,
+since the marked-up copy is built from findings rather than from
+the mark; and the delta answers for models only. Gap 5
+(`rounding`/`writing` house rules) I left alone — not my claim to
+re-adjudicate, and I found no evidence it moved.
