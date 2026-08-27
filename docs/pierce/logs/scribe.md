@@ -1276,3 +1276,38 @@ usable section, so every trial places identically.
 sourced »** — threshold T3, nothing looser — and only on models
 whose blocks contain inputs. It still reports nothing until a shape
 is approved, and it still waits on D4 for real confirmations.
+
+## Round 4's harness: ready, and proved ready
+
+The orders say keep it ready. It did not exist, so it does now:
+`scripts.corpus_documents_kelso_round`, two phases like every round
+in this lane — `sheet` produces the judging sheet with **no matcher
+output on it**, and `score` runs the frozen matcher only after the
+truth is recorded. It takes `--model`, `--contract` and an optional
+`--provenance-sheet`; without the last it guesses the answer tab
+from its own words, prints what it chose, and **refuses to run if it
+cannot find one**, because guessing that wrong would leak the answer
+sheet into the matcher's inputs. Run with no files present it says
+so in a sentence and exits.
+
+It is proved by five tests
+(`tests/tieout/test_chain_kelso_round.py`) against a **synthetic
+stand-in pair** built inside the test — a workbook with a
+provenance-shaped tab and a contract stating one of its three
+figures. **Those tests say nothing about Kelso**; they assert the
+properties the registration calls structural: every provenance row
+becomes one sample row, the answer sheet contributes no cells to the
+model side (each figure exists twice in the workbook and the model
+side sees only one), the sheet phase carries no proposal or verdict,
+and the two unreachable conditions leave the scored table while
+still being counted (« reachable rows: 1 of 3 »).
+
+So the lead's container needs one command per phase the moment the
+six files land, and nothing about the round has to be invented then.
+
+**Turn's end state:** handoff pushed; D4's contract registered and
+proposed, no table until approval; D5 round 2 registered, run, and
+its shape decided by its own numbers; round 4's harness ready and
+tested. Chain tests 72 passed; full tieout suite **769 passed, 9
+skipped, nothing red** — the house-rules failure this lane reported
+two sweeps ago is fixed on the tip.
