@@ -3742,3 +3742,70 @@ extending it is not my file to edit.
 Orders unchanged for six sweeps. Everything above is inside D1, D3 and
 D5, which are mine; the engine is untouched and no other lane's file
 has been edited.
+
+## 28 August 2026, seventeenth « go » — measuring what round U's decision hinges on, without taking it
+
+Orders read from the tip (`6a4e5524`, twentieth sweep). **Byte-identical
+for the seventh sweep.** My lane merged again; the sweep records
+« Scribe returned five items to the lead » and answers none of them,
+which is not a complaint — the lead spent this sweep running Proof 1A
+and it failed honestly, which is worth more than answering me.
+
+**Round U is still not run**, and it will not be. What I wrote was: « I
+am not running it without a word from the lead, because choosing one's
+own success criterion after five deaths is exactly when a lane should
+not be alone. » Three turns of silence do not make that reasoning
+weaker; if anything they make it stronger, because the temptation to
+proceed is the thing the commitment was made against.
+
+**But a decision nobody can afford to think about is worth making
+cheap.** The lead's choice is: must a D1 change leave every ED2 line
+*unchanged*, or every line *undamaged*? That choice is easy if round T
+repaired 78 lines and broke 3, and genuinely hard if it broke 40. **I
+have never counted.** So this turn counts it.
+
+## The classification — registered before a line is read
+
+**What this is not, stated first and bindingly.** This does **not**
+accept round T, and its result cannot. The extractor stays at version
+`"4"`; `_words` stays out of `extract.py`; the rule ships only on the
+lead's word and on a criterion the lead sets. **I am producing the
+evidence for the decision, not applying it as a gate.** If the count
+comes back overwhelmingly favourable, that changes nothing about what
+ships this turn.
+
+**Method.** Round T's rule is reimplemented in a throwaway measurement
+script — `extract.py` is not touched — and every ED2 line whose text
+differs under it is printed as a before/after pair. **I read each pair
+and mark it**, by one question asked of the document itself:
+
+- **repair** — the « after » is what the page actually prints and the
+  « before » was not (a zipped line separated, a subscript rejoined);
+- **damage** — the « before » was right and the « after » is not (a
+  word split, a subscript orphaned, content moved between rows);
+- **neither** — both readings are defensible, or the line is display
+  mathematics whose « correct » single-line form is not well defined.
+
+**« Neither » is a real answer and I expect to use it.** Round T's own
+write-up found display equations whose subscripts genuinely live on
+separate visual rows; « what that line should read as » has no honest
+answer, and forcing those into repair or damage would be exactly the
+flattering that the criterion question exists to prevent.
+
+**The bias guard.** I have already read about a dozen of these pairs
+while diagnosing round T, and I recorded then that the guidance
+handbook's were mixed and the PCFM guidance's were mostly repairs.
+**That is not independent judging and I am not pretending otherwise.**
+The count is reported as what it is: one person's reading of 81 lines,
+some of which that person has seen before and formed a view on. A
+second reader would be worth more than my care here, and the lead is
+that reader.
+
+**No prediction of the split**, deliberately. I have made two
+predictions about this defect and lost one; a third guess before a
+hand-count I have partly pre-read would be theatre.
+
+**What is reported:** the three counts, the full pair list so the lead
+can spot-check any of them, and — the number that actually decides it —
+**how many lines are damage**, since « undamaged » as a criterion is
+satisfied at zero and fails at one.
