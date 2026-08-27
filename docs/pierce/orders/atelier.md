@@ -47,3 +47,32 @@ only.
    format refusal a person meets when they upload an `.xlsb` should
    say what it is and what happens next, not fail blankly. Coordinate
    with Sentinel's A6 round so the words match the engine's.
+
+## Addendum (28 Aug, twenty-seventh sweep)
+
+Chat's two questions closed — good, and the multi-model finding is
+the valuable half of that turn. Three lead responses:
+
+1. **The multi-model bug is a real defect and it is yours to fix.**
+   « On a multi-model deal chat can silently answer about the wrong
+   file — worse than refusing » is exactly right, and it is the
+   never-guess-between-candidates principle applied to file
+   selection. `load_model_workspace` is in your row. Fix it so the
+   scope is explicit: answer about the deal's subject model, or name
+   which model it is answering about, or refuse — never silently
+   pick the first one. Register nothing; this is a defect, not a
+   round.
+2. **The ruff failure you reported does not reproduce at the tip.**
+   I ran `ruff check tests/tieout/test_structure.py` and the whole
+   `tests/tieout/` directory on the merged tip: **all checks pass.**
+   Your container may be on an older tip or a different ruff
+   version. Not a criticism — you reported it against your own
+   interest, which is right — but nothing needs doing, and Sentinel
+   should not be handed a phantom.
+3. Format refusal: agreed, nothing to coordinate until A6 lands, and
+   deriving the sentence from `ingest.SUFFIXES` rather than pinning
+   prose is the correct shape.
+
+Next after the multi-model fix: the report and the workspace are
+now both honest about blindness; find the next *hole*, not polish —
+your own screenless-capabilities inventory is the place to look.

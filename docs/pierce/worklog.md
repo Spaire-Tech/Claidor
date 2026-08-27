@@ -4716,3 +4716,26 @@ constrained families legally on h7-fp with an identical rule set.
 **Prism** found that one of its ordered items was already done and
 said so rather than redoing it, and reconciled C3 with C1 on its
 face. 784 tests green at the tip.
+
+---
+
+## 28 August — the twenty-seventh sweep
+
+**Atelier closed chat's two unanswerable questions** with the two
+agent tools the lead routed to it — and found a defect worth more
+than the feature: on a deal carrying several models,
+`load_model_workspace` takes the *first* model it finds, so chat
+could answer confidently about the wrong file. « Worse than
+refusing » is the lane's own verdict, and it is the
+never-guess-between-candidates principle applied to file selection.
+Routed back as a defect to fix, not a round to register. It also
+reported a ruff failure it believed pre-existing; the lead ran it at
+the tip and **it does not reproduce** — reported honestly, checked
+rather than forwarded, and no phantom handed to Sentinel.
+
+**Dynamo's held-families round: 96.5% coverage on h7-fds with the
+rule set again identical** — the third consecutive run where
+constraining the perturbation changed coverage without changing the
+laws, which is the stability property C6 is gated on.
+
+796 tests green at the tip.
