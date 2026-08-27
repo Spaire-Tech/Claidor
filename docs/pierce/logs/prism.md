@@ -2606,3 +2606,133 @@ a line of its own in the report.
    class** — because a file against itself cannot differ on any
    branch, live or latent. If the control shows a latent divergence,
    the instrument is wrong and the round fails.
+
+## The gates at the top of this turn
+
+Tip `6a4e5524`, twentieth sweep. `z3-solver` still absent from
+`server/pyproject.toml`; Dynamo's log still ends without a B5 round 2
+*results* entry (its last two rounds are E2's generalisation onto the
+closed-deal corpus, which came back unmeasurable). Both gates shut,
+orders unchanged. The zero round it is.
+
+### Amendment to the zero round, before it runs: the draws are held fixed
+
+Waking the zeros enlarges the perturbed set, and with one RNG stream
+that changes **every** draw — so a divergence in this round could not
+be attributed to the woken zeros rather than to different numbers
+everywhere. The zeros therefore get their **own** stream
+(`TIER2_SEED + 1`), drawn after the non-zero literals, so every
+non-zero literal receives exactly the draw it received in the
+zeros-held round. Then a divergence that appears here and did not
+appear there is attributable to the zeros, which is the whole point
+of calling it latent.
+
+The as-configured half of the claim comes from the previous round —
+**0 divergences with zeros held** — and this round supplies only the
+latent half. Neither number is re-derived from the other.
+
+## The zero round — results: a clean negative, and it refutes my own diagnosis
+
+Control first, and it passed: the 31 July file against itself with
+the zeros woken — **19,231 literals perturbed, 0 diverged, 0 latent,
+0 gate violations**. Prediction 3 held.
+
+Then the pair, same configuration, 14.7 minutes:
+
+```
+literals perturbed         8,475  ->  19,207   (10,732 zeros woken)
+trace_differs split        96 supported / 198 frozen   — UNCHANGED
+unobservable_value split   76 -> 78 supported
+diverged                       0        latent divergences        0
+gate violations                0
+```
+
+**Prediction 1 — « between 60 and 160 of the 198 wake » — failed, at
+0.** **Prediction 2 — « at least one latent divergence » — failed, at
+0.** Waking ten thousand held zeros moved **not one** of the 198.
+
+**So last turn's diagnosis was wrong, and it was wrong in a way worth
+naming.** I measured a perfect correlation — 198 of 198 frozen cells
+reach a held categorical literal, 0 of 96 supported ones do — and I
+read a cause into it. The zero round is the experiment that
+correlation implied, and it says no. A correlation that survives one
+measurement is not a mechanism; the round that tests it is the only
+thing that decides.
+
+## Why they are actually frozen — asked of the calculator, not the graph
+
+Rather than guess a third time, two probes
+(`scratchpad/why_frozen.py`, `across_trials.py` — analysis, not
+lane code):
+
+**Probe 1 — the untouched file against one trial.** *197 of the 198
+moved.* They are not unreached. The perturbation arrives.
+
+**Probe 2 — trial 0 against trial 1, on the same cells.**
+
+```
+frozen (198)     identical across the two trials: 198
+                 trial-0 values: 121 error · 71 empty text · 6 zero
+supported (96)   identical across the two trials:   0
+                 trial-0 values: 96 numbers
+```
+
+There it is. The 198 do not vary **between** trials because the
+perturbation drives them into `#DIV/0!` or `""` — and an error is
+the same error whatever the numbers were. G5 sees « did not vary »
+and refuses, which is right; but the harness then *names* that state
+`no_perturbable_input`, « the trials never moved this cell's
+inputs », and **that sentence is false for 192 of the 198**. I
+published it last turn. The correction:
+
+> The trials reached these cells and pushed them out of the domain
+> where the model computes anything. Comparing two versions at
+> `#DIV/0!` is vacuous — the refusal is right and its stated reason
+> was not.
+
+**Fixed in the code, not only in prose**: `REFUSAL_DEGENERATE =
+"degenerate_under_perturbation"` is now a distinct member of the
+closed vocabulary, and the oracle decides between the two by reading
+what the trials actually returned. `no_perturbable_input` keeps its
+literal meaning — the value never moved and it is a number.
+
+**And it reframes the coverage table I published last turn.** The
+line « of the 294 disturbed cells the trials reached 96 » should
+read: the trials reached ~293 of them and produced a comparable
+number for 96; for the rest the model answered « undefined » under
+my inputs. The 0-divergence result is unaffected — a vacuous
+comparison supports nothing either way — but the reason the coverage
+is what it is has moved from « the perturbation cannot get there » to
+**« the perturbation is too crude for this model's domain »**, which
+is a defect in my harness rather than a fact about ED2.
+
+## The domain round — registered before results
+
+**The change**: a trial assignment is rejected and redrawn if it
+increases the model's error count materially. Concretely — the
+threshold fixed here, before any output: recalculate the untouched
+file once and count cells reading `#...`; a trial may raise that
+count by at most **10%** relative, and a draw that exceeds it is
+redrawn up to **5** times, after which the round reports the
+narrowest band it managed and refuses to pretend otherwise. Bands
+narrow multiplicatively per redraw: `0.5–1.5`, then `0.75–1.25`,
+then `0.9–1.1`, `0.95–1.05`, `0.99–1.01`.
+
+**Why a band and not a smarter perturbation**: because the honest
+alternative — respecting each input's declared unit and range — is
+E2's inference, which is Dynamo's and not yet generalisable off its
+own corpus. A narrowing band is crude, measurable and mine.
+
+**Predictions.**
+
+1. The baseline error count is **not** zero: a real regulatory model
+   carries `#N/A`s in its unused corners. I expect between 100 and
+   3,000 error cells in the untouched file.
+2. Narrowing releases **more than 60** of the 198 into a comparable
+   number — i.e. `degenerate_under_perturbation` falls by at least
+   a third.
+3. **Still zero as-configured divergences.** Nothing in the earlier
+   rounds suggests this revision computes differently, and a
+   narrower band tests the same claim more finely rather than
+   differently. If a divergence appears here, it is a finding about
+   the revision and I will say so loudly.
