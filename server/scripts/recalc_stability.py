@@ -57,6 +57,21 @@ def signature(
     )
 
 
+def _renamed_sheet(variant: Path, original: str) -> str:
+    """The variant's new sheet name, as the file actually stored it."""
+    from openpyxl import load_workbook
+
+    book = load_workbook(variant, read_only=True)
+    try:
+        names = list(book.sheetnames)
+    finally:
+        book.close()
+    for name in names:
+        if name != original and name.startswith(original[:15]):
+            return name
+    raise RuntimeError(f"no renamed sheet found in {variant.name}: {names}")
+
+
 def mine_once(
     calculator: UnoCalculator,
     path: Path,
@@ -159,11 +174,16 @@ def main() -> int:
                 # Rows inserted *above* the modelled block, so every
                 # watched cell moves — the whole point of the test.
                 "insert_rows": [{"sheet": sheet, "at": 0, "count": 3}],
-                "rename": [{"from": sheet, "to": f"{sheet} (renamed)"}],
+                "rename": [{"from": sheet, "to": (sheet[:20] + " (renamed)")[:31]}],
             },
             str(variant),
         )
-        renamed = f"{sheet} (renamed)"
+        # Excel caps a sheet name at 31 characters and truncates on
+        # save, so the new name is chosen to fit and then **read back
+        # from the stored file** rather than assumed — the first
+        # attempt addressed a sheet the file did not contain and
+        # every run failed (lane log).
+        renamed = _renamed_sheet(variant, sheet)
         base_rules, base_labels, _, base_typed = mine_once(
             calculator, source, sheet, typing, runs, seed=11
         )
