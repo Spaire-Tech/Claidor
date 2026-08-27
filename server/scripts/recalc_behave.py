@@ -94,6 +94,7 @@ ED2_DNOS = (
     "SSES",
 )
 
+
 #: The ED2 v5 pilot (lane log, 26 Aug, quoted there before this ran).
 #: The PCFM makes no volume-times-price promise, so proportionality
 #: and scale invariance are NOT measured on it — mapping them here
@@ -101,15 +102,31 @@ ED2_DNOS = (
 #: additive adjustments that vanish with their inputs (zero-input on
 #: the licence-fee pair), and totals that equal their components
 #: (three consolidation instances on the AR sheet, FY2024 column).
-ED2_V5_SELECTORS = Selectors(
-    volume=tuple(f"{dno}!{at}" for dno in ED2_DNOS for at in ("AP384", "AP385")),
-    revenue=("Legacy!AR85", "AR!AR33"),
-    totals={
-        "AR!AR45": tuple(f"AR!AR{row}" for row in range(22, 45)),
-        "AR!AR53": ("AR!AR49", "AR!AR50", "AR!AR51", "AR!AR52"),
-        "AR!AR58": ("AR!AR57", "AR!AR53"),
-    },
-)
+def ed2_selectors(payments_row: int, allowance_row: int) -> Selectors:
+    """The ED2 map, parameterized by the licence-fee input rows.
+
+    The AR-sheet layout is anchor-stable across the family, but the
+    DNO-sheet input rows drift by version — v1: 382/383, v2–v3:
+    385/386, v4–v5: 384/385, each found by chasing `Legacy!AP83/84`
+    through `SelectedInputs`, per file, never assumed (the widening
+    round's first run mis-zeroed v1–v3 by assuming; lane log).
+    """
+    return Selectors(
+        volume=tuple(
+            f"{dno}!AP{row}"
+            for dno in ED2_DNOS
+            for row in (payments_row, allowance_row)
+        ),
+        revenue=("Legacy!AR85", "AR!AR33"),
+        totals={
+            "AR!AR45": tuple(f"AR!AR{row}" for row in range(22, 45)),
+            "AR!AR53": ("AR!AR49", "AR!AR50", "AR!AR51", "AR!AR52"),
+            "AR!AR58": ("AR!AR57", "AR!AR53"),
+        },
+    )
+
+
+ED2_V5_SELECTORS = ed2_selectors(384, 385)
 
 ED2_V5_PLANTS = (
     Plant(
@@ -167,6 +184,27 @@ H7_PLANTS = (
     ),
 )
 
+#: The rest of the ED2 family: every version verified against the v5
+#: anchors before registration (lane log, 26 Aug, twelfth-sweep
+#: round) — `AR!AR33 = Legacy!AR85`, `AR45 = SUM(AR22:AR44)`,
+#: `AR53 = SUM(AR49:AR52)`, `AR58 = AR57+AR53`, `Legacy!AR85` on
+#: AP83/AP84, all 28 licence-fee inputs constants. All ten MATCH, so
+#: the v5 map and plants carry verbatim.
+#: version file → its licence-fee input rows, each chased through
+#: `Legacy!AP83/84` per file (26 Aug, corrected round).
+ED2_FAMILY: dict[str, tuple[int, int]] = {
+    "v1_2023-02.xlsx": (382, 383),
+    "v2_2023-07-14.xlsx": (385, 386),
+    "v2_2023-07-31.xlsx": (385, 386),
+    "v3_2023-10.xlsx": (385, 386),
+    "v3_2023-11.xlsx": (385, 386),
+    "v3_2024-01.xlsm": (385, 386),
+    "v4_2024-07.xlsx": (384, 385),
+    "v4_2025-01.xlsx": (384, 385),
+    "v4_2025-07.xlsx": (384, 385),
+    "v4_2026-01.xlsx": (384, 385),
+}
+
 #: file path (relative to server/) → (selectors, plants). Committed
 #: before running; the lane log quotes each entry it measures.
 PILOTS: dict[str, tuple[Selectors, tuple[Plant, ...]]] = {
@@ -174,6 +212,13 @@ PILOTS: dict[str, tuple[Selectors, tuple[Plant, ...]]] = {
         ED2_V5_SELECTORS,
         ED2_V5_PLANTS,
     ),
+    **{
+        f"scripts/corpus_au_uk/ofgem_ed2/{name}": (
+            ed2_selectors(*rows),
+            ED2_V5_PLANTS,
+        )
+        for name, rows in ED2_FAMILY.items()
+    },
     "scripts/corpus_au_uk/caa_h7/h7_new_debt_indexation_fds.xlsx": (
         H7_SELECTORS,
         H7_PLANTS,

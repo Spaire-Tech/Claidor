@@ -761,3 +761,96 @@ Still mechanism proofs, not catch-rate estimates. Next (orders item
 2): widen file-by-file across the remaining gated files, N plants
 per class registered before each run, toward the plan's B4 DONE —
 the hardcode-in-the-tail class measured across hosts.
+
+## 26 August 2026 — twelfth-sweep orders: the widening round, registered
+
+Orders note first: **item 2 (the volatile rules round, H7 folded
+in) was completed under the eleventh-sweep work and is in the
+integration tip** — the registration, the implementation behind
+tests, and the H7 re-derivation table all merged; nothing is redone
+here. Item 3 complied with: B3 stays design-only.
+
+**Item 1, the widening — ED2 family round, registered before any
+run.** Every other ED2 version was verified against the v5 anchors
+by formula shape, not assumption: `AR!AR33 = Legacy!AR85`,
+`AR!AR45 = SUM(AR22:AR44)`, `AR!AR53 = SUM(AR49:AR52)`,
+`AR!AR58 = AR57+AR53`, `Legacy!AR85` on AP83/AP84, and all 28
+licence-fee inputs constants. **All ten MATCH** (v1 through
+v4_2026-01, the .xlsm included), so the v5 selector map and the
+same three plants carry verbatim to each; v5 itself re-runs as a
+repeat measurement. Predictions per file, identical to the pilot's:
+omitted segment → consolidation flags `AR!AR53`; tail hardcode →
+consolidation flags `AR!AR58`; zero-input tail hardcode →
+zero-input flags `AR!AR33`; control clean. Eleven files, 33 plants,
+22 control law-runs. **No result from this round exists as this is
+written.**
+
+## 26 August 2026 — ED2 family run 1: 33/33 catches, and a selector
+defect of my own, caught by its control
+
+The run (eleven files, ~9.5 coarse minutes each): **all 33 planted
+defects were caught at their named cells**, and all eleven
+consolidation control runs were clean. But the six v1–v3 files
+showed zero-input **control violations** — `Legacy!AR85`/`AR!AR33`
+read 1.2356 with the supposed inputs zeroed — and the trace shows
+the defect is **mine, not the models'**: the DNO-sheet licence-fee
+input rows drift by version (v1: AP382/383, v2–v3: AP385/386,
+v4–v5: AP384/385, each found by chasing `Legacy!AP83/84` through
+`SelectedInputs` per file). My anchor verification checked that
+`Legacy!AR85` computes from AP83/AP84 but assumed the input rows —
+so on v1–v3 I zeroed the wrong constants (on v2–v3, the payments
+row but not the allowance). The residual was the un-zeroed genuine
+input.
+
+Scored honestly, run 1 therefore reads:
+
+- **Valid — v4/v5 quintet**: 15/15 catches at named cells, 0 false
+  positives across 10 control law-runs.
+- **Valid — consolidation on all eleven files** (it uses no input
+  map): 22/22 catches (`AR!AR53`, `AR!AR58` per file), 11/11
+  controls clean.
+- **Invalid — zero-input on v1–v3** (6 files): the law executed
+  correctly on wrong inputs; its catches there are contaminated and
+  are not counted. This is the control doing its registered job —
+  the false-positive check caught the harness, which is exactly the
+  kind of error it exists to catch.
+
+The verification standard is upgraded in the harness: input rows
+are chased through the model's own formulas per file, never carried
+by assumption. **Corrected re-run registered now**: the six v1–v3
+files, corrected input rows (v1: 382/383; v2–v3: 385/386), same
+plants, same predictions, controls expected clean. No result from
+the re-run exists as this is written.
+
+## 26 August 2026 — corrected re-run clean, and the B4 per-class table
+
+The six corrected files: **18/18 catches at named cells, all
+controls clean, no extra flags.** The residual that run 1's controls
+caught was, as diagnosed, only my mis-mapping.
+
+**The per-class table across every valid measured round** (ED2
+pilot + family with corrections, H7 debt pair — 13 of the 18 gated
+files):
+
+| Planted class | Law that owns it | Host files | Plants | Catches | Control FPs |
+|---|---|---|---|---|---|
+| hardcode-in-the-tail, additive adjustment chain | zero-input | 11 ED2 | 11 | **11** | 0 |
+| hardcode-in-the-tail, total line | consolidation | 11 ED2 | 11 | **11** | 0 |
+| hardcode-in-the-tail, multiplicative money chain | proportionality | 2 H7 | 2 | **2** | 0 |
+| omitted segment | consolidation | 11 ED2 | 11 | **11** | 0 |
+| hardcoded ratio leg | scale invariance | 2 H7 | 2 | **2** | 0 |
+
+**Totals: 37 plants, 37 catches — every catch naming its planted
+cell — and 0 false positives across 26 valid control law-runs.**
+The hardcode-in-the-tail class, the one static reading cannot see,
+now stands at 24/24 across 13 host files and three structural
+guises — the plan's B4 DONE sentence measured in the direction it
+asks, across hosts.
+
+Honest bounds, standing: one plant per class per file (single-digit
+Ns per class per host); the five remaining gated files (the RIIO-3
+set: two draft PCFMs, the RoE summary, both WACC models) await
+their own selector curation — the WACC pair at ~19 min per
+recalculation makes theirs the expensive round. And run 1's v1–v3
+zero-input results remain recorded as invalid; nothing from them is
+counted anywhere.
