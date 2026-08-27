@@ -3518,6 +3518,11 @@ export const ProjectPage = ({
           recalc={(model?.counts['recalc'] as RecalcMark | undefined) ?? null}
           coverage={page?.coverage ?? null}
           modelCounts={model?.counts ?? null}
+          stale={
+            page?.stale
+              ? { kind: page.stale_kind ?? null, at: page.stale_at ?? null }
+              : null
+          }
           onClose={() => setRepOpen(false)}
         />
       )}
@@ -3543,6 +3548,7 @@ const Report = ({
   recalc,
   coverage,
   modelCounts,
+  stale,
   onClose,
 }: {
   modelName: string
@@ -3559,6 +3565,9 @@ const Report = ({
   coverage: Coverage | null
   /** The model's own ingest counts — cells, formulas, named cells. */
   modelCounts: Record<string, unknown> | null
+  /** A current document arrived after the last run finished, so this
+   *  report describes a deal that has already moved on. */
+  stale: { kind: string | null; at: string | null } | null
   onClose: () => void
 }) => {
   const total = open.length
@@ -3567,20 +3576,31 @@ const Report = ({
   const record = lastRun ? auditRecord(lastRun) : null
   const summary = lastRun?.summary ?? {}
 
+  //: « Nothing failing » must never stand alone on a copy the rules
+  //: could not read. Measured on a real corpus model (Levenmouth
+  //: Academy, 27 Aug): 432,596 cells, **224 of them formulas** — a
+  //: values-pasted publication — reported nothing, and the reason it
+  //: found nothing sat a page away under « what could not be
+  //: checked ». A partner reads « nothing failing » as « checked and
+  //: clean », which is the one conclusion this file cannot support.
+  const blind = total === 0 && record?.values_only === true
+  const formulaCount =
+    typeof modelCounts?.['formulas'] === 'number'
+      ? (modelCounts['formulas'] as number)
+      : null
+  const cellCount =
+    typeof modelCounts?.['cells'] === 'number'
+      ? (modelCounts['cells'] as number)
+      : null
+
   const verdictLead =
     counts[1] > 0
       ? `Not ready to send. ${word(total)} finding${total === 1 ? '' : 's'}, ${word(counts[1]).toLowerCase()} of them material.`
       : total > 0
         ? `${word(total)} finding${total === 1 ? '' : 's'} open, none material.`
-        : 'Nothing failing.'
-  //: What a finding says in one clause. The engine's own sentence runs
-  //: to the formula that proves it — right on the findings page, wrong
-  //: in a verdict a partner reads first.
-  const clauseOf = (one: Finding): string => {
-    const said = one.headline || one.plain || one.title || ''
-    const cut = (said.split(/[:—]\s|\.\s/)[0] ?? said).trim()
-    return cut ? cut.charAt(0).toUpperCase() + cut.slice(1) : ''
-  }
+        : blind
+          ? 'Nothing failing — but little could be checked.'
+          : 'Nothing failing.'
 
   //: Some engine sentences stop inside the formula that proves them —
   //: stored that way, and not this lane's to rewrite. An ellipsis says
@@ -3596,15 +3616,66 @@ const Report = ({
     return dangling ? `${said}…` : said
   }
 
-  const materialClauses = [...new Set(material.map(clauseOf).filter(Boolean))]
+  //: What class a finding belongs to, for the verdict's summary, in
+  //: both numbers — « figures … that disagree » is not the singular
+  //: with an « s » on the end, and a partner reads the difference.
+  const classOf = (one: Finding): { one: string; many: string } => {
+    if (one.headline) {
+      const said = one.headline.toLowerCase()
+      return { one: said, many: said.endsWith('s') ? said : `${said}s` }
+    }
+    if (one.kind === 'drift')
+      return {
+        one: 'figure in the deliverables that disagrees with the model',
+        many: 'figures in the deliverables that disagree with the model',
+      }
+    //: The families are named in the plural (« Probable formula
+    //: defects »), so the singular is the trim, not the append —
+    //: « one probable formula defects » was the giveaway.
+    const family = (categoryOfKey(one.rule ?? '') || 'finding').toLowerCase()
+    return {
+      one: family.endsWith('s') ? family.slice(0, -1) : family,
+      many: family.endsWith('s') ? family : `${family}s`,
+    }
+  }
+
+  //: Grouped, not enumerated: fifteen material findings listed one by
+  //: one made the verdict a wall of numbers before the reader reached
+  //: a verb. Counted by class, largest first.
+  const byClass = new Map<string, { n: number; one: string; many: string }>()
+  for (const finding of material) {
+    const cls = classOf(finding)
+    const held = byClass.get(cls.one)
+    byClass.set(cls.one, { ...cls, n: (held?.n ?? 0) + 1 })
+  }
+  const materialClauses = [...byClass.values()]
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 3)
+    .map(
+      ({ n, one, many }) => `${word(n).toLowerCase()} ${n === 1 ? one : many}`,
+    )
+  const blindBody = blind
+    ? `This copy carries values only${
+        formulaCount !== null && cellCount !== null
+          ? `: ${formulaCount.toLocaleString()} of ${cellCount.toLocaleString()} cells hold a formula`
+          : ''
+      }, so the rules that read how the model is built had almost nothing to read. The checks that read values — the statements, the model's own check rows — found nothing failing. Ask for the working copy if the construction matters.`
+    : ''
+
   const verdictBody =
     material.length > 0
       ? `${
-          materialClauses.length > 0 ? `${materialClauses.join(' · ')}. ` : ''
-        }${material.length === 1 ? 'It is' : 'They are'} named with ${material.length === 1 ? 'its' : 'their'} cell overleaf, and ${material.length === 1 ? 'it' : 'they'} should clear before this model leaves the deal team.`
+          materialClauses.length > 0
+            ? `${materialClauses.slice(0, -1).join(', ')}${
+                materialClauses.length > 1 ? ', and ' : ''
+              }${materialClauses[materialClauses.length - 1]}${
+                byClass.size > materialClauses.length ? ', among others' : ''
+              }. `
+            : ''
+        }${material.length === 1 ? 'It is' : 'Each is'} named with its cell or page overleaf, and ${material.length === 1 ? 'it' : 'they'} should clear before this model leaves the deal team.`
       : total > 0
         ? 'The open findings are worth reading, but none of them on its own would stop the model going out.'
-        : ''
+        : blindBody
 
   //: Every claim on this page carries where it came from: the cell
   //: when the finding sits in the model, the document and page when it
@@ -3773,7 +3844,13 @@ const Report = ({
       </span>
       <span style={{ flex: 1, height: 1, background: 'rgba(16,22,35,.08)' }} />
       <span style={{ fontFamily: font.mono, fontSize: 10.5, color: '#b6bac1' }}>
-        Page {page} of {of}
+        {/* Section, not page. A sheet is one section of the report and
+            fits one printed page only while it is short: fifteen
+            material findings run to three pages, and « Page 3 of 4 »
+            then sat on physical page five, with pages four and five
+            carrying no number at all. The section number is true at
+            any length; the printer numbers the paper. */}
+        Section {page} of {of}
       </span>
     </div>
   )
@@ -3823,17 +3900,45 @@ const Report = ({
     </div>
   )
 
+  //: The report is the artifact a partner actually receives, and what
+  //: they receive is this PDF — so the print document has to be the
+  //: report, not an approximation of it. Measured on the real model:
+  //: without the three rules below the PDF came out set in Liberation
+  //: Serif and DejaVu (the product's faces are self-hosted and the
+  //: print window loaded none of them), the severity dots vanished
+  //: entirely because browsers drop background colour when printing,
+  //: and a trailing blank page followed the last sheet.
   const print = () => {
     const sheets = [...document.querySelectorAll('[data-report="sheet"]')]
     if (!sheets.length) return
     const w = window.open('', '_blank', 'width=900,height=1200')
     if (!w) return
+    const origin = window.location.origin
+    const face = (family: string, file: string, weight: string) =>
+      `@font-face{font-family:'${family}';src:url('${origin}/workspace/${file}') format('woff2');font-weight:${weight};font-display:block;font-style:normal}`
     w.document.write(
       '<!doctype html><meta charset="utf-8"><title>' +
         document.title +
         '</title>' +
-        '<style>body{margin:0;font-family:ui-sans-serif,system-ui,sans-serif}' +
-        '[data-report="sheet"]{box-shadow:none!important;border-radius:0!important;max-width:none!important;break-after:page}' +
+        '<style>' +
+        //: The report's own faces, carried over so the delivered
+        //: document is set in the typography it was designed in.
+        face('Instrument Sans', 'instrument-sans-var.woff2', '400 700') +
+        face('Newsreader', 'newsreader-var.woff2', '400 500') +
+        face('JetBrains Mono', 'jetbrains-mono-var.woff2', '400 500') +
+        "body{margin:0;font-family:'Instrument Sans',ui-sans-serif,system-ui,sans-serif}" +
+        //: Severity reads by colour, and a browser drops background
+        //: colour on print unless it is told not to.
+        '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+        //: The screen's sheet carries its own generous padding; on
+        //: paper the @page margin already provides it, and keeping
+        //: both pushed sheet one over the page — its footer orphaned
+        //: onto a page of its own, which also made « Page 1 of 3 »
+        //: false on a four-page document. Measured, not guessed.
+        '[data-report="sheet"]{box-shadow:none!important;border-radius:0!important;' +
+        'max-width:none!important;padding:0!important;break-after:page;break-inside:avoid}' +
+        //: …but not after the last one, which is a blank page.
+        '[data-report="sheet"]:last-of-type{break-after:auto}' +
         '@page{margin:16mm}</style>' +
         '<body>' +
         sheets.map((s) => s.outerHTML).join('') +
@@ -3841,10 +3946,29 @@ const Report = ({
     )
     w.document.close()
     w.focus()
-    setTimeout(() => w.print(), 250)
+    //: Print once the faces are actually in, or the document prints in
+    //: fallbacks anyway; the timeout is the backstop for a browser
+    //: whose `fonts.ready` never settles.
+    const go = () => w.print()
+    let printed = false
+    const once = () => {
+      if (printed) return
+      printed = true
+      go()
+    }
+    if (w.document.fonts?.ready) {
+      w.document.fonts.ready.then(once).catch(once)
+      setTimeout(once, 3000)
+    } else {
+      setTimeout(once, 250)
+    }
   }
 
-  const pages = 3
+  //: Four sheets since G4: the verdict page could not hold the
+  //: coverage and the refusals as well and still fit one printed
+  //: page — measured in the PDF, where its footer orphaned onto a
+  //: page of its own and « Page 1 of 3 » became false.
+  const pages = 4
   return (
     <div
       style={{
@@ -4033,6 +4157,50 @@ const Report = ({
                   margin: '28px 0 30px',
                 }}
               />
+              {/* A report that describes a superseded version, without
+                  saying so, is the one way this document can be quietly
+                  wrong — the deal page has a stale banner and the
+                  printed artifact had nothing. It sits above the
+                  verdict because a reader has to meet it before
+                  believing anything below. Agent-designed (G4). */}
+              {stale && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                    padding: '14px 16px',
+                    marginBottom: 4,
+                    background: '#fdf6e7',
+                    border: '1px solid rgba(232,163,0,.28)',
+                    borderRadius: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      flex: '0 0 auto',
+                      width: 7,
+                      height: 7,
+                      marginTop: 7,
+                      borderRadius: '50%',
+                      background: '#e8a300',
+                    }}
+                  />
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 14,
+                      lineHeight: 1.55,
+                      color: '#5a4a1f',
+                      textWrap: 'pretty',
+                    }}
+                  >
+                    {`This check ran before the current ${stale.kind ?? 'document'} was uploaded${
+                      stale.at ? ` ${when(stale.at).toLowerCase()}` : ''
+                    }. What follows describes the deal as it stood at the check, and a re-check may change it.`}
+                  </span>
+                </div>
+              )}
               {heading('The verdict')}
               {serif(verdictLead, 19)}
               {verdictBody && (
@@ -4138,12 +4306,18 @@ const Report = ({
                   {serif(recalcBody)}
                 </>
               )}
+              {foot(1, pages, 'Swens')}
+            </>,
+          )}
+
+          {sheet(
+            <>
               {/* Coverage on the report's face — G4's own requirement,
                   and the line the schema calls « what keeps the product
                   honest ». It comes from the tie-out, so a deal with no
                   deck or memo checked says that rather than printing a
                   meaningless « 0 of 0 ». Agent-designed. */}
-              {heading('How much was covered', 34)}
+              {heading('How much was covered')}
               {serif(
                 figuresSeen > 0 && coverage
                   ? `${coverage.reconciled} of ${figuresSeen} figures in the deliverables were reconciled against the model · ${coverage.unlinked} not checked.` +
@@ -4212,7 +4386,73 @@ const Report = ({
                   </span>
                 ))}
               </div>
-              {foot(1, pages, 'Swens')}
+              {versions.length > 0 && (
+                <>
+                  {heading('The versions this report covers', 34)}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      paddingTop: 2,
+                    }}
+                  >
+                    {versions
+                      .slice()
+                      .sort((a, b) => b.version - a.version)
+                      .slice(0, 4)
+                      .map((v, i) => (
+                        <span
+                          key={v.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            gap: 14,
+                            borderTop:
+                              i === 0 ? 0 : '1px solid rgba(16,22,35,.05)',
+                            padding: '11px 0',
+                          }}
+                        >
+                          <span
+                            style={{
+                              flex: '0 0 46px',
+                              fontFamily: font.mono,
+                              fontSize: 12.5,
+                              color: '#0060d0',
+                            }}
+                          >
+                            v{v.version}
+                          </span>
+                          <span
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              fontSize: 14.5,
+                              color: '#3a3a3c',
+                            }}
+                          >
+                            {v.uploaded_by
+                              ? `Uploaded by ${v.uploaded_by.name}`
+                              : 'Uploaded'}
+                          </span>
+                          <span
+                            style={{
+                              flex: '0 0 auto',
+                              fontSize: 13,
+                              color: '#9aa1ab',
+                            }}
+                          >
+                            {when(v.uploaded_at)}
+                          </span>
+                        </span>
+                      ))}
+                  </div>
+                </>
+              )}
+              {foot(
+                2,
+                pages,
+                modelName + (version ? `, version ${version}` : ''),
+              )}
             </>,
           )}
 
@@ -4221,7 +4461,7 @@ const Report = ({
               {heading('The material findings')}
               {serif(
                 material.length > 0
-                  ? `${word(material.length)} finding${material.length === 1 ? '' : 's'} that change a number someone will act on. The cell reference is given so the model owner can go straight to it.`
+                  ? `${word(material.length)} finding${material.length === 1 ? '' : 's'} that change a number someone will act on. Each is cited — the cell, or the document and page — so the owner can go straight to it.`
                   : 'No open finding is material.',
               )}
               <div
@@ -4368,7 +4608,7 @@ const Report = ({
                 ))}
               </div>
               {foot(
-                2,
+                3,
                 pages,
                 modelName + (version ? `, version ${version}` : ''),
               )}
@@ -4456,68 +4696,6 @@ const Report = ({
                   </div>
                 ))}
               </div>
-              {versions.length > 0 && (
-                <>
-                  {heading('The versions', 40)}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      paddingTop: 2,
-                    }}
-                  >
-                    {versions
-                      .slice()
-                      .sort((a, b) => b.version - a.version)
-                      .slice(0, 4)
-                      .map((v, i) => (
-                        <span
-                          key={v.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'baseline',
-                            gap: 14,
-                            borderTop:
-                              i === 0 ? 0 : '1px solid rgba(16,22,35,.05)',
-                            padding: '11px 0',
-                          }}
-                        >
-                          <span
-                            style={{
-                              flex: '0 0 46px',
-                              fontFamily: font.mono,
-                              fontSize: 12.5,
-                              color: '#0060d0',
-                            }}
-                          >
-                            v{v.version}
-                          </span>
-                          <span
-                            style={{
-                              flex: 1,
-                              minWidth: 0,
-                              fontSize: 14.5,
-                              color: '#3a3a3c',
-                            }}
-                          >
-                            {v.uploaded_by
-                              ? `Uploaded by ${v.uploaded_by.name}`
-                              : 'Uploaded'}
-                          </span>
-                          <span
-                            style={{
-                              flex: '0 0 auto',
-                              fontSize: 13,
-                              color: '#9aa1ab',
-                            }}
-                          >
-                            {when(v.uploaded_at)}
-                          </span>
-                        </span>
-                      ))}
-                  </div>
-                </>
-              )}
               {heading("What this doesn't tell you", 40)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {[
@@ -4539,7 +4717,7 @@ const Report = ({
                   </span>
                 ))}
               </div>
-              {foot(3, pages, 'Swens')}
+              {foot(4, pages, 'Swens')}
             </>,
           )}
         </div>

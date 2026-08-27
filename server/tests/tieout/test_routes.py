@@ -30,6 +30,7 @@ from polar.models import (
     User,
     UserOrganization,
 )
+from polar.tieout.ingest import SUFFIXES
 from polar.tieout.recalc.uno_calc import find_install
 from polar.tieout.repository import TieOutRepository
 from polar.tieout.service import tieout
@@ -357,7 +358,13 @@ class TestUpload:
         )
 
         assert response.status_code == 415
-        assert "models are .xlsx" in response.json()["detail"]
+        detail = response.json()["detail"]
+        #: The intent, not the prose: refused in words, naming what the
+        #: reader does take. Pinning the sentence's casing made this red
+        #: when the list started being derived from `SUFFIXES`.
+        assert "not a file this can read" in detail
+        for suffix in SUFFIXES[ArtifactKind.model]:
+            assert suffix in detail
 
     @pytest.mark.auth
     async def test_a_file_that_fails_to_parse_is_kept_with_its_reason(
@@ -1899,6 +1906,7 @@ class TestTheVersionDelta:
         #: new classes (`emptied_cell`, `filled_cell`) — a green test
         #: that fails on the engine growing is testing the wrong thing.
         from polar.tieout.watch.delta import _KIND_ORDER as order
+
         assert all(kind in order for kind in kinds)
         assert kinds == sorted(kinds, key=order.index)
         # Two entirely different workbooks under one lineage: the
@@ -2047,6 +2055,85 @@ class TestTheSourcePage:
         _, source = await self._source(session, save_fixture, stranger)
         response = await client.get(f"/v1/tieout/artifacts/{source.id}/page/1")
         assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestWhatIntakeWillNotRead:
+    """The refusal a person meets when the format is not ours.
+
+    Found by the corpus rather than by a customer: two of eleven
+    eligible models arrived as `.xlsb` (`population-proof.md`,
+    27 Aug), which openpyxl cannot open at all. Widening the reader is
+    plan step A6 and another lane's; what is tested here is that the
+    refusal says what to do, and that the formats it names are the
+    formats the reader actually takes.
+    """
+
+    @pytest.mark.auth
+    async def test_the_binary_workbook_is_refused_with_the_way_out(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        response = await client.post(
+            f"/v1/tieout/deals/{deal.id}/artifacts",
+            files={
+                "file": ("model.xlsb", b"PK\x03\x04binary", "application/octet-stream")
+            },
+        )
+        assert response.status_code == 415
+        detail = response.json()["detail"]
+        # The fix, not just the fact: a banker can act on this in Excel.
+        assert "Save As" in detail
+        assert ".xlsx" in detail
+
+    @pytest.mark.auth
+    async def test_the_formats_named_are_the_formats_read(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        response = await client.post(
+            f"/v1/tieout/deals/{deal.id}/artifacts",
+            files={"file": ("sketch.psd", b"8BPS", "application/octet-stream")},
+        )
+        assert response.status_code == 415
+        detail = response.json()["detail"]
+        #: Derived from the reader's own table, never a copy of it: the
+        #: sentence said « models are .xlsx or .xls » while `.xlsm` —
+        #: the format most project-finance models arrive in — had been
+        #: accepted all along.
+        for suffixes in SUFFIXES.values():
+            for suffix in suffixes:
+                assert suffix in detail, f"{suffix} is read but not named"
+
+    @pytest.mark.auth
+    async def test_a_macro_enabled_model_is_taken(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        response = await client.post(
+            f"/v1/tieout/deals/{deal.id}/artifacts",
+            files={
+                "file": (
+                    "macro_model.xlsm",
+                    MODEL.read_bytes(),
+                    "application/vnd.ms-excel.sheet.macroEnabled.12",
+                )
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "ready"
 
 
 @pytest.mark.asyncio

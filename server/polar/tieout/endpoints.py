@@ -18,6 +18,7 @@ already right for the day the work moves.
 """
 
 from datetime import timedelta
+from pathlib import Path
 from urllib.parse import quote
 from uuid import UUID
 
@@ -58,7 +59,7 @@ from . import auth
 from .agent import service as agent
 from .analytics import ANALYTIC_PASS_NAMES, ANALYTIC_RULE_NAMES
 from .audit import RULE_NAMES
-from .ingest import Unreadable, kind_for
+from .ingest import SUFFIXES, Unreadable, kind_for
 from .markup import MarkupFinding, MarkupRefused, marked_up_copy, marked_up_name
 from .repository import TieOutRepository
 from .schemas import (
@@ -775,6 +776,49 @@ async def identify(
 # --- files ---------------------------------------------------------------
 
 
+#: Excel ships more formats than this reads, and a person who has one
+#: needs the way out rather than the list. `.xlsb` is the one the
+#: corpus actually arrived in — two of eleven eligible models, found
+#: by the corpus rather than by a customer (`population-proof.md`,
+#: 27 Aug). Widening the reader is plan step A6 and another lane's;
+#: what belongs here is a refusal a banker can act on in ten seconds.
+UNREADABLE_EXCEL = {
+    ".xlsb": (
+        "an .xlsb is Excel's binary workbook, which this cannot open. "
+        "In Excel: File → Save As → Excel Workbook (.xlsx), then upload "
+        "that copy"
+    ),
+    ".csv": (
+        "a .csv carries values with no formulas, and the checks read "
+        "formulas. Upload the workbook it came from"
+    ),
+    ".numbers": (
+        "a .numbers file is Apple's format. Export it as .xlsx and upload that"
+    ),
+}
+
+
+def _unreadable_format(filename: str) -> str:
+    """Why this file was not taken, and what to do — read off `SUFFIXES`.
+
+    The list is derived rather than written out, because the sentence
+    that names the formats has to be the formats: it said « models are
+    .xlsx or .xls » while the reader had been taking `.xlsm` all along,
+    which is the format most project-finance models actually arrive in.
+    """
+    suffix = Path(filename).suffix.lower()
+    said = "; ".join(
+        f"{kind.value}s are {', '.join(suffixes[:-1])} or {suffixes[-1]}"
+        if len(suffixes) > 1
+        else f"a {kind.value} is {suffixes[0]}"
+        for kind, suffixes in SUFFIXES.items()
+    )
+    known = UNREADABLE_EXCEL.get(suffix)
+    if known is not None:
+        return f"{filename} was not taken — {known}. What this reads: {said}."
+    return f"{filename} is not a file this can read. {said[0].upper()}{said[1:]}."
+
+
 @router.post("/deals/{dossier_id}/artifacts", response_model=ArtifactRead)
 async def upload_artifact(
     dossier_id: UUID,
@@ -808,14 +852,7 @@ async def upload_artifact(
     filename = upload.filename or "upload"
     resolved = kind or kind_for(filename)
     if resolved is None:
-        raise HTTPException(
-            status_code=415,
-            detail=(
-                f"{filename} is not a file this can read — models are "
-                ".xlsx or .xls, decks are .pptx, memos are .docx, and a "
-                "source document is a .pdf"
-            ),
-        )
+        raise HTTPException(status_code=415, detail=_unreadable_format(filename))
 
     artifact = await tieout.ingest(
         session,

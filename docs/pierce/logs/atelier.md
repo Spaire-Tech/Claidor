@@ -767,3 +767,170 @@ both new kinds would have rendered as raw identifiers — so they now
 carry words and colour: emptying takes the amber of an assumption at
 risk (a removed input changes an answer silently), filling the blue
 of information. Suite back to **82 passed**.
+
+## 27 August 2026 — the report as a delivered artifact
+
+Orders unchanged (seventeenth sweep, and they say plainly that the
+founder not having reviewed **is not a hold**), and my four items
+were done. So I went at G4's own DONE test from the side it had not
+been tested from: « the report is the artifact a partner actually
+receives » — and what a partner receives is a **PDF**, not a screen.
+
+I had never opened one. Driving the real « Download PDF » on the
+Northgate deal and reading the file back with pdfplumber found three
+defects, all measured rather than guessed:
+
+1. **Every typeface was substituted.** The print window is a fresh
+   document that loaded **zero** font faces, so the report — set in
+   Newsreader, Instrument Sans and JetBrains Mono, all self-hosted —
+   came out embedding `LiberationSerif`, `DejaVuSans` and
+   `DejaVuSansMono`. The whole document was in the wrong faces. The
+   three `@font-face` rules now travel into the print document, and
+   printing waits on `document.fonts.ready` (with a backstop) so it
+   cannot fire before they arrive. The PDF now embeds
+   `Newsreader16pt`, `InstrumentSans` and `JetBrainsMono`.
+2. **The severity vanished.** Browsers drop background colour when
+   printing, so « Material · Significant · Observation » printed with
+   no dots at all — the severity that G4 asks to « read at a glance »
+   was invisible in the delivered artifact. `print-color-adjust:
+   exact` restores it; the coloured marks are back in the file.
+3. **The pagination lied, by my own hand.** Adding coverage and the
+   severity band pushed sheet one past a printed page, orphaning its
+   footer onto a page of its own — so a four-page document carried
+   « Page 1 of 3 ». Fixed properly rather than by shrinking type:
+   the verdict sheet now ends after the recalculation, and a second
+   sheet carries the scope — how much was covered, what could not be
+   checked, and the versions this report covers (moved off the last
+   sheet, where it sat oddly and left the scope page thin). Four
+   sheets, four printed pages, four honest footers.
+
+Before and after, page one: `logs/atelier/report-pdf-before.png`
+and `report-pdf-after.png`. Route suite **82 passed**; typecheck,
+prettier and lint clean.
+
+A note for whoever reads this next: the report *on screen* satisfied
+the order before any of this. The delivered file did not, and no
+screen test would have caught it — it took printing the thing and
+reading the bytes back.
+
+## 27 August 2026 — the report on a deal that has a deck
+
+Orders unchanged, and they say plainly this is not a hold. A gap in
+my own verification was the honest next thing: **every reading of
+the report so far was of a model-only deal**. Coverage with real
+numbers, and the « document and page » citation I built for deck
+findings, had never once rendered. Read it on the cascade demo deal
+(113 of 128 figures reconciled, 14 drift findings, a deck) and it
+found four defects — two of them mine, one serious.
+
+1. **The report never said the check was stale.** The deal page has
+   a stale banner; the printed artifact had nothing. On this deal the
+   check finished at 02:59 and the current model version arrived at
+   22:55 — so a partner would have read fifteen material findings
+   about a version that no longer exists, with no warning anywhere in
+   the document. That is the one way this report can be quietly
+   wrong, and it is now the first thing on the page, above the
+   verdict, in the amber of an assumption at risk: « This check ran
+   before the current model was uploaded yesterday 22:55. What
+   follows describes the deal as it stood at the check… »
+2. **The verdict enumerated instead of summarising.** Fifteen
+   material findings became a wall of thirteen clauses — « $49.6mm
+   where the model says $48.9mm · 10.4% where the model says 9.3% ·
+   … » — before the reader reached a verb. It now groups by class:
+   « 14 figures in the deliverables that disagree with the model, and
+   one unexpected hardcode. » Drift findings carry no headline of
+   their own, so their class is what they are; classes keep both
+   number forms, because « figures … that disagree » is not the
+   singular with an « s » stuck on the end (it first read « 14 figure
+   … disagrees with the models », which is how I found it).
+3. **« Page N of 4 » was still lying, at a deeper level than last
+   time.** Splitting the first sheet fixed a small deal; on this one
+   the material findings run to three printed pages, so the footers
+   landed 1, 2, 3, 4 on physical pages 1, 2, 5, 6 — and pages 3 and 4
+   carried no number at all. A sheet is a *section*, and only a short
+   section is also a page. The footer now says « Section N of 4 »,
+   which is true at any length, and the printer numbers the paper.
+4. Two claims that no longer matched what is printed: « Every finding
+   carries the cell it came from » and « The cell reference is given
+   » — both now say « the cell, or the document and page ».
+
+**What the deck path proves.** A drift finding now prints as
+« $49.6mm where the model says $48.9mm », cited
+`cascade_deck_broken.pptx · p. 2` and `against FY2025A adjusted
+EBITDA · Model!D26` — the slide to open and the cell to check, both
+on the page. That is « every claim cited to a cell or page » working
+on real data rather than in principle.
+
+Delivered page one: `logs/atelier/report-with-deck.png`. Route suite
+**82 passed**; tsc, eslint (a dead helper of mine removed on lint's
+word) and prettier clean; zero page errors.
+
+## 27 August 2026 — the corpus arrives: intake, and a report on a real model
+
+The eighteenth-sweep tip brought two things that touch this lane
+directly: the **`.xlsb` intake gap**, and **eleven real corpus
+models, fetched and reproducible**. Orders unchanged; both are
+squarely inside them.
+
+### The intake refusal (mine), rewritten
+
+Reading the `.xlsb` note against my own upload route found two
+defects in my endpoint, both confirmed against the running API:
+
+1. **A `.xlsb` was refused with no way forward.** It is Excel's
+   binary workbook — openpyxl cannot open it, widening the reader is
+   plan step A6 and another lane's — but the *refusal* is mine, and
+   it recited a format list instead of the ten-second fix. It now
+   reads: « model.xlsb was not taken — an .xlsb is Excel's binary
+   workbook, which this cannot open. In Excel: File → Save As →
+   Excel Workbook (.xlsx), then upload that copy. » Same for `.csv`
+   (values, no formulas — upload the workbook it came from) and
+   `.numbers`.
+2. **The list did not match what the reader takes.** It said
+   « models are .xlsx or .xls » while `.xlsm` — the format most
+   project-finance models actually arrive in, and the format of
+   eight of the eleven corpus models — had been accepted all along,
+   along with `.xlt`, `.pptm` and `.doc`. The sentence is now
+   derived from `SUFFIXES` itself, so it cannot drift again, and a
+   test asserts every suffix the reader takes is named. Three route
+   tests (`TestWhatIntakeWillNotRead`); one older test that pinned
+   the prose now asserts the intent instead. Suite **85 passed**.
+
+### The report, on a real out-of-sample model
+
+`scripts/corpus_sft_models.py` fetched all eleven (8 readable
+`.xlsm`, 3 format-blocked). Ran the demo kit on **Levenmouth
+Academy** — a real Scottish Futures Trust closed-deal model,
+432,596 cells across 26 sheets — and it produced the hardest case a
+report can face: **224 formulas in 432,596 cells**. The published
+model is a values-pasted copy, so the construction rules are nearly
+blind, and the audit found nothing.
+
+The report said « **Nothing failing.** » with 0 · 0 · 0, and the
+reason it found nothing sat a page away under « what could not be
+checked ». That is the most consequential defect I have found in
+this document: a partner reads « nothing failing » on a
+432,596-cell model as « checked and clean », which is the one
+conclusion this file cannot support. The verdict now qualifies
+itself where it stands:
+
+> **Nothing failing — but little could be checked.** This copy
+> carries values only: 224 of 432,596 cells hold a formula, so the
+> rules that read how the model is built had almost nothing to
+> read. The checks that read values — the statements, the model's
+> own check rows — found nothing failing. Ask for the working copy
+> if the construction matters.
+
+A grammar slip in the grouped verdict fell out of the same run
+(« one probable formula defects »): the families are named in the
+plural, so their singular is the trim, not the append.
+
+Evidence: `logs/atelier/report-values-only.png`. Route suite 85
+green; tsc, eslint and prettier clean.
+
+**Worth the lead's attention**: this is what the corpus is for. One
+real model, out of sample, immediately produced a state no fixture
+had — and the honest report on it is « we could barely read this »,
+not a clean bill. Seven more readable models are fetched and
+waiting; running the rest through the report is the obvious next
+pass if the lead wants it.
