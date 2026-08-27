@@ -109,3 +109,72 @@ because `FinClose` heads a column in the sheet's own header row and
 I expect the period axis to include it — but I am genuinely unsure,
 and that is why it is registered as read-by-hand rather than as a
 prediction I could later claim to have made either way.
+
+---
+
+## Results (computed after the registration)
+
+**SFT corpus (10 models) — exactly as specified in advance.**
+
+| model | before | after | |
+|---|---|---|---|
+| kelso | 4 | **0** | the four false alarms gone |
+| newbattle | 4 | **0** | the four false alarms gone |
+| inverurie_foresterhill | 4 | 4 | true breaks, identically worded |
+| snbts | 1 | 1 | true break, identically worded |
+| inverness_college | 1 | 1 | survived |
+| the five silent models | 0 | 0 | still silent |
+
+All eight adjudicated false alarms are gone; not one of the five
+true breaks moved. **Inverness's `FinClose` finding survived** —
+registered as read-by-hand rather than predicted, and the answer is
+that the period axis does admit that column. Recorded as the fact
+it is, not as a prediction I could claim either way after the event.
+
+**AU-UK regulator corpus (27 files) — zero movement.** 18 analytical
+findings before, 18 after, no file changed. Criterion 1 met.
+
+### A measurement I threw away, and why
+
+The first AU-UK before/after diff was **void and is not the number
+above**. Two independent faults, both mine:
+
+1. Its baseline covered **19 of 27 files**, so eight models had no
+   « before » entry and every finding of theirs would have read as
+   a spurious addition — the diff appeared to show five files
+   moving and findings going 2 → 18, which is an artefact of the
+   missing denominator, not a result.
+2. **I edited `analytics.py` while that baseline sweep was still
+   running**, and stashed and popped the same file twice during the
+   window while checking whether Scribe's test failures pre-existed.
+   The file mtimes settle it: the baseline was still writing at
+   18:46, after the fix was committed at 18:39:45. A sweep whose
+   code state cannot be pinned down is not a baseline.
+
+The baseline was re-run alone, on the pre-fix `analytics.py`
+extracted explicitly from the commit before the fix (verified: the
+old copy contains no restriction, the new one does), then the new
+version restored. That re-run is the 18 above.
+
+Recorded because a discarded measurement is part of the record, and
+because the failure mode — mutating the code under a running
+baseline — is one this lane should never repeat.
+
+## Verdict: ADOPTED
+
+1. AU-UK analytics: zero movement ✓
+2. SFT analytics: the eight named false alarms gone, the five named
+   true breaks intact and identically worded, the five silent
+   models still silent ✓
+3. Engine tests green — 168 across audit, analytics, structure,
+   workbook and this round's three ✓
+4. Golden-master gate: run as a tripwire, result recorded below ✓
+
+**On the baseline:** `corpus-golden-master.json` is untouched, and
+this round is the reason to say plainly why — it holds no analytical
+finding at all, so there is nothing in it for an analytical change
+to update.
+
+**Next:** Proof 1A is re-run at a new named commit and reported as a
+**second run**. The first run's FAIL stands in the record exactly as
+taken; a re-run after a fix is a new measurement, not a correction.
