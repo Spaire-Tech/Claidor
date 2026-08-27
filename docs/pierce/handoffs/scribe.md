@@ -186,6 +186,12 @@ Two harnesses are committed and ready:
 report nothing while no candidate rule is in the extractor, which is
 the current state.
 
+## The five open decisions are on one page
+
+`docs/pierce/logs/scribe-decisions.md` — each with its question, its
+evidence in a sentence, and what happens on either answer. Read that
+before the log; the log is 4,200 lines and the decisions are five.
+
 ## D5's state, as of round 4 — the shape finally has a real subject
 
 Rounds 1–3 could never put D5's question to a real model: the regulator
