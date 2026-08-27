@@ -2643,3 +2643,107 @@ of the rows I have already read closely.
 **This is a change to the hand-check** (the seed and the count stay;
 the pool shrinks), and it is registered here before it runs rather
 than explained afterwards.
+
+## D1 round R — dead at calibration, and the premise was wrong all along
+
+**The instrument does not separate the populations.** Median
+intra-line character gap over median character width, on the
+calibration half only, before any hand-check:
+
+| document | median ratio |
+|---|---|
+| ed2-pcfm-guidance | 0.005 |
+| ed2-financial-handbook | 0.007 |
+| 4_src_11 (normal) | 0.016 |
+| **4_src_8 (the « spaced » one)** | **0.038** |
+
+A factor of two between a normal document and the target, with the
+normal population's own spread crossing it. There is no constant to
+choose. **The round dies before the hand-check is drawn** — which is
+what a held-out calibration half is for, and it cost one measurement
+instead of a whole round.
+
+### And then the calibration said something much more useful
+
+If the target's characters are only twice as far apart as ordinary
+text's, they are **not drawn one glyph at a time.** So I looked at
+what the scrambled lines actually are, on the calibration half:
+
+| words on the line | distinct baselines | tops |
+|---|---|---|
+| 92 | **2** | 163.5, 166.5 |
+| 83 | **2** | 145.5, 148.5 |
+| 71 | **2** | 181.5, 184.5 |
+| 69 | **2** | 139.5, 142.5 |
+| 62 | **2** | 157.5, 160.5 |
+| 33 | **2** | 115.1, 118.1 |
+
+**Every one is two lines, exactly 3.0 points apart.** And
+`_LINE_TOLERANCE` is `3.0`, compared with `<=`. D1 merges them into
+one row and sorts by x, which zips two texts together character by
+character — « Crosswalk Renovation/Addition » over « Health
+Renovation » becomes `cu Cr r or o w s k H e a l t H R a eo l …`.
+
+The same thing happens one level lower and it is where the *facts*
+come from: `page.extract_words()` has its own `y_tolerance`, also 3,
+so it merges the same two baselines and then splits on x-gaps — and
+because the two texts alternate in x, every gap is a word gap. **That
+is why « 19,842 » becomes five facts reading 1, 9, 8, 4 and 2.**
+
+**So the defect is mine, not the PDF's.** For three rounds I have been
+designing ways to *refuse* text that D1 had scrambled itself. The
+document prints an ordinary table over an ordinary chart; a reader
+sees it perfectly well; D1 zips them together and then I write rules
+to detect the zip. Rounds P, Q and R were all treating a symptom, and
+the reason none of them worked is that they were looking at the
+damaged artefact for evidence of the damage.
+
+**Nothing needs refusing. The reading needs fixing** — and a fixed
+reading *recovers* those numbers instead of dropping them.
+
+## D1 round S — registration: separate the baselines, frozen before code
+
+**The change.** One number, in two places: the y-tolerance that decides
+whether two characters sit on one line — `_LINE_TOLERANCE` in `_lines`,
+and the `y_tolerance` handed to `page.extract_words()`, which today
+takes pdfplumber's default of 3. Nothing else moves: not the token
+pattern, not the nil rule, not the column anchor, not the refusals.
+
+**The constant, chosen from the calibration half and written here
+before the hand-check runs, as the round R registration promised.**
+Two populations, measured above:
+
+- *within* one line, character tops vary by at most **0.9 pt** across
+  the calibration half (ED2's sub-point 0.1–0.2 spreads are mixed fonts
+  and superscripts on one baseline; `4_src_7`'s largest is 0.9);
+- *between* lines, the tightest leading anywhere in the calibration
+  half is **3.0 pt** (`4_src_8`, 28 of its 36 gaps).
+
+**The tolerance is `1.5`** — clear of 0.9 below and 3.0 above, with the
+margin split roughly evenly on a log scale. Chosen now, on this
+evidence, before anything is read from the judging half.
+
+**The kill-criteria, frozen:**
+- **Nothing may be lost.** Task 81's nils, ED2's prose and ED2's
+  formula legend rows must not lose one fact — the three populations
+  rounds P and Q destroyed.
+- **The zip must actually break.** The seeded hand-check (173205, 20
+  lines, judging half only) is re-purposed: it now draws from lines
+  that *were* scrambled under tolerance 3.0, and every one must read
+  as ordinary text under 1.5. Any line still scrambled, or any line
+  newly broken in half, kills the rule.
+- **The registered ED2 sample** must still return 30 of 30 correct
+  abstentions.
+
+**The prediction, stated so it can be wrong.** Task 72's fact count
+falls a long way — but *not* to near-zero as rounds P and Q made it:
+the numbers come back as whole numbers, so I expect roughly 300–700
+facts, not 3,583 and not 299. Task 81, ED2 and task 5 move by nothing
+or nearly nothing. And **the part A + part B table may finally move**:
+`72!Scenario3!AC28` was `stated-but-unextracted` precisely because its
+« 19,842 » was shredded, and if the reading is fixed that row becomes
+scorable. **If the D3 table improves, that is D1's doing and not the
+matcher's, and I will say so in those words.**
+
+`EXTRACTOR_VERSION` goes to `"5"` if it clears: different code read the
+page, so they are different claims.
