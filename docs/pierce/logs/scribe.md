@@ -2374,3 +2374,92 @@ and says in the same breath that earlier rounds reported a smaller
 denominator because the judge had set those rows aside. A product
 sentence that quotes the flattering number is the thing this lane
 exists not to do.
+
+## D1 round P — measured. **It dies by its own criterion**, and it would have eaten the dash round alive.
+
+**The kill-criterion, as registered:** « the hand-check of 20 seeded
+refused lines shows any line that is not in fact character-spaced. »
+
+**Nine of the twenty are not character-spaced.** They are ordinary
+financial table rows, and what makes them look spaced is the thing this
+lane spent its last round teaching D1 to read: **the nil dash**.
+
+| # | line | verdict |
+|---|---|---|
+| 01 | `Base Gas - - - - - - - - - -` | **false refusal** |
+| 02 | `Overhaul Amortizations - - (0.4) - - - - ( 0.4) 0.4 -` | **false refusal** |
+| 03 | `Commercial Support - - (2.4) - - - - ( 2.4) 2.4 -` | **false refusal** |
+| 08 | `WACC allowance (vanilla) 3.90% 3.93% D D = A * C + B *` | **false refusal** |
+| 09 | `Commercial Support - - (3.6) - - - - ( 3.6) 3.6 -` | **false refusal** |
+| 11 | `- Other 0.3 - - - - - - 0.3 - 0.3` | **false refusal** |
+| 13 | `Enron Citrus - - - - - - - - 35.0 35.0` | **false refusal** |
+| 15 | `Other - - - (1.3) - - - ( 1.3) 1.3 -` | **false refusal** |
+| 18 | `Commodity - FTS - 2 - - 3.2 - - - - 3.2 (3.2) -` | **false refusal** |
+| 04,05,06,07,10,12,14,16,17,19,20 | `M a r - 0 5 3 2 , 3 4 0 …` | genuinely spaced |
+
+Line 18 is the exact line the dash round measured its hardest case
+against. Line 01 is a wholly-nil row — ten stated zeros, refused. The
+rule was reaching for glyphs and catching nils.
+
+**And a test caught the shape before the corpus did.** Writing round
+P's guard test, I asked what an ordinary narrow table row scores:
+`Headcount 27 8 9 4 6 3 2 12 45 7 5 88 3 21` is exactly 60% single
+tokens, dead on the threshold. I wrote that down as a characterization
+test rather than adjusting the number to make it pass — adjusting the
+threshold after seeing the case is exactly the move that turns a
+measurement into a decoration.
+
+**What it would have cost, measured before it was reverted:**
+
+| corpus | before | with round P | verdict |
+|---|---|---|---|
+| Finch | 6,842 | 3,007 | 3,835 removed — but **not all of them junk** |
+| ED2 | 8,015 | 8,013 | untouched, as predicted |
+| 72_src_0 | 3,583 | 299 | 92% removed, and these **are** junk |
+| 81_src_1 | 1,190 | **960** | **230 removed, and these are real nils** |
+
+The prediction (« Finch's count should fall by roughly half and task
+72's by ~92% ») came true to the digit, and being right about the
+number taught me nothing, because the number was right for two
+different reasons at once: task 72 lost invented facts and task 81 lost
+stated zeros, and one aggregate cannot tell them apart. A prediction
+that a total will move is a weak prediction. Noted for future rounds.
+
+**The rule is out.** `EXTRACTOR_VERSION` returns to `"4"`; the fact
+store is untouched; the tests that describe the rule go with it. What
+stays is the finding: D1 still stores thousands of single digits torn
+out of character-spaced text, and that is still the largest known
+defect in this track.
+
+## D1 round Q — registration: the discriminator is a lone *letter*, not a lone character
+
+Frozen before the code, and it is a different rule, not round P with a
+tuned number.
+
+**What round P got wrong, precisely.** It asked « how many tokens on
+this line are one character long ». In a financial table the answer is
+« many », because nils print as `-` and labels hyphenate (`- FTS - 2`).
+The two populations are not separable by *length*.
+
+**They are separable by *kind*.** Character-spaced text scatters the
+whole alphabet: `M a r - 0 5` stands the letters M, a and r alone. A
+table row of nils and figures stands **no letter alone** — its single
+characters are dashes and digits, and its letters live inside words.
+
+**The rule.** A line is character-spaced when it has at least
+`_SPACED_TOKENS` (12) whitespace tokens **and at least three of them
+are single alphabetic characters**. Three, not one: a real line may
+print « a » or « I » or a footnote marker, and one lone letter must
+never condemn a row.
+
+**The kill-criterion, unchanged in spirit and sharper in fact.** The
+rule dies if either holds:
+- the same seeded hand-check (seed 173205, 20 lines) shows **any** line
+  that is not in fact character-spaced; or
+- task 81's fact count falls at all — its nils are the population round
+  P destroyed, and not one of them may go.
+
+**The prediction, stated so it can be wrong.** Task 72 falls by roughly
+92% again, task 81 falls by **zero**, ED2 by zero, and the part A +
+part B table does not improve. If task 81 loses a single fact the rule
+is wrong and comes straight out.

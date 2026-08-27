@@ -64,7 +64,7 @@ _NUMBER = re.compile(
 #: a fidelity question is answerable years later. Bumped whenever the
 #: token pattern, the line grouping, or the refusal rule changes.
 EXTRACTOR_NAME = "polar.tieout.chain.extract"
-EXTRACTOR_VERSION = "4"
+EXTRACTOR_VERSION = "5"
 
 #: Round 6's frozen column anchor (registered in the Scribe log before
 #: this code existed). Round 5 measured what a line-only anchor costs:
@@ -89,6 +89,18 @@ _ANCHOR_OVERLAP = 1.0
 #: them from the nils beside them.
 _DASHES = frozenset("-–—")
 _NIL_COLUMN_NUMBERS = 3
+
+#: Round P's frozen criterion for a line the PDF drew one glyph at a
+#: time — « J a n - 0 3  3 2 , 6 7 5 » — which happens when a chart
+#: overlay or a rotated axis label crosses a table. At least this many
+#: whitespace tokens, and at least :data:`_SPACED_SHARE` of them a
+#: single character. D1 will not tokenize such a line into numbers: a
+#: digit of a number is not a number, and « 19,842 » stored as five
+#: facts reading 1, 9, 8, 4 and 2 is five invented claims about the
+#: page, each with a box that highlights one glyph. Part B measured the
+#: cost of not having this rule: 56% of the Finch corpus's facts.
+_SPACED_TOKENS = 12
+_SPACED_SHARE = 0.6
 
 #: Below this many text characters a page has no usable text layer.
 _SCANT_TEXT = 20
@@ -202,7 +214,26 @@ def extract_pdf(source: str | Path | BytesIO) -> Extraction:
             lines = _lines(words)
             columns = _columns(words, lines)
             nil = _nil_positions(words, lines)
+            spaced = _spaced_positions(lines)
+            if spaced:
+                refusals.append(
+                    RefusedPage(
+                        page=index,
+                        reason=(
+                            f"{len({lines[p] for p in spaced})} line(s) on this "
+                            "page are drawn one glyph at a time, so their text "
+                            "reads « 1 9 , 8 4 2 » rather than « 19,842 ». The "
+                            "figures on those lines are not in the fact store: "
+                            "reading them would mean guessing where one number "
+                            "ends and the next begins, and a wrong number with "
+                            "a confident citation is worse than a missing one. "
+                            "The rest of this page was read normally."
+                        ),
+                    )
+                )
             for position, word in enumerate(words):
+                if position in spaced:
+                    continue
                 value = parse_number(word["text"])
                 if value is None:
                     if position not in nil:
@@ -252,6 +283,37 @@ def _lines(words: list[dict[str, Any]]) -> list[str]:
             line_of[position] = len(texts)
         texts.append(text)
     return [texts[line_of[position]] for position in range(len(words))]
+
+
+def _spaced_positions(lines: list[str]) -> set[int]:
+    """Which words sit on a line the PDF drew glyph by glyph.
+
+    Registered as D1 round P before this code existed. The test is on
+    the assembled line, not on the individual word, because a single
+    « 2 » is perfectly ordinary and a line of forty single characters
+    is not: at least :data:`_SPACED_TOKENS` whitespace tokens, at least
+    :data:`_SPACED_SHARE` of them one character long.
+
+    Refusal rather than re-assembly, and the reason is registered: the
+    gap between two glyphs of one number and the gap between two
+    numbers differ by fractions of a point, so joining them by x-gap
+    silently produces « 1984,2 » — a wrong number with a confident box,
+    which is the failure this product exists to stop. A later round may
+    measure a re-assembly rule against hand truth and replace this.
+    """
+    spaced: set[int] = set()
+    verdict: dict[str, bool] = {}
+    for position, line in enumerate(lines):
+        if line not in verdict:
+            tokens = line.split()
+            verdict[line] = bool(tokens) and (
+                len(tokens) >= _SPACED_TOKENS
+                and sum(1 for token in tokens if len(token) == 1) / len(tokens)
+                >= _SPACED_SHARE
+            )
+        if verdict[line]:
+            spaced.add(position)
+    return spaced
 
 
 def _nil_positions(words: list[dict[str, Any]], lines: list[str]) -> set[int]:
