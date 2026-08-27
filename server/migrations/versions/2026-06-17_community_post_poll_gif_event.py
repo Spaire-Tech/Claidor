@@ -28,13 +28,8 @@ depends_on: tuple[str] | None = None
 
 def upgrade() -> None:
     # community_posts: poll + event_id
-    op.execute(
-        "ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS poll JSONB"
-    )
-    op.execute(
-        "ALTER TABLE community_posts "
-        "ADD COLUMN IF NOT EXISTS event_id UUID"
-    )
+    op.execute("ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS poll JSONB")
+    op.execute("ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS event_id UUID")
     op.execute(
         "ALTER TABLE community_posts "
         "DROP CONSTRAINT IF EXISTS community_posts_event_id_fkey"
@@ -52,8 +47,7 @@ def upgrade() -> None:
 
     # community_post_media: external_url + widen the type/branch CHECKs
     op.execute(
-        "ALTER TABLE community_post_media "
-        "ADD COLUMN IF NOT EXISTS external_url TEXT"
+        "ALTER TABLE community_post_media ADD COLUMN IF NOT EXISTS external_url TEXT"
     )
     op.execute(
         "ALTER TABLE community_post_media "
@@ -99,9 +93,7 @@ def downgrade() -> None:
         "ADD CONSTRAINT community_post_media_type_check "
         "CHECK (media_type IN ('image', 'video'))"
     )
-    op.execute(
-        "ALTER TABLE community_post_media DROP COLUMN IF EXISTS external_url"
-    )
+    op.execute("ALTER TABLE community_post_media DROP COLUMN IF EXISTS external_url")
     op.execute("DROP INDEX IF EXISTS ix_community_posts_event_id")
     op.execute(
         "ALTER TABLE community_posts "

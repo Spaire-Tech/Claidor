@@ -25,9 +25,7 @@ depends_on: tuple[str] | None = None
 def upgrade() -> None:
     op.add_column(
         "organizations",
-        sa.Column(
-            "customer_portal_sign_in_image_url", sa.String(), nullable=True
-        ),
+        sa.Column("customer_portal_sign_in_image_url", sa.String(), nullable=True),
     )
 
 

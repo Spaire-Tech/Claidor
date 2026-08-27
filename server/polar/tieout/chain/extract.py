@@ -289,7 +289,9 @@ def _words(page: Any) -> list[dict[str, Any]]:
     """
     import statistics
 
-    from pdfplumber.utils import extract_words
+    # pdfplumber does not mark this a public re-export; it is the same
+    # function `page.extract_words()` calls, taking a char list.
+    from pdfplumber.utils import extract_words  # type: ignore[attr-defined]
 
     chars = page.chars
     if not chars:

@@ -352,8 +352,16 @@ def test_a_conclusion_is_revised_when_the_other_terms_arrive() -> None:
 
 
 class GridCell:
-    def __init__(self, sheet, row, column, value, row_label="", column_label="",
-                 number_format="General"):
+    def __init__(
+        self,
+        sheet,
+        row,
+        column,
+        value,
+        row_label="",
+        column_label="",
+        number_format="General",
+    ):
         self.sheet = sheet
         self.row = row
         self.column = column
@@ -379,7 +387,10 @@ def record_sheet():
             (3, "CPI", 4.0 + index, "0.00"),
         ):
             cells[f"S!{column}{index}"] = GridCell(
-                "S", index, column, value,
+                "S",
+                index,
+                column,
+                value,
                 row_label=f"{year - 1}/{str(year)[2:]}",
                 column_label=header,
                 number_format=fmt,

@@ -17,12 +17,12 @@ from fastapi import Request
 from httpx import AsyncClient
 
 from polar.auth.middlewares import get_auth_subject
-from polar.oauth2.exceptions import InvalidTokenError
 from polar.auth.models import AuthSubject
 from polar.auth.scope import Scope
-from polar.kit.crypto import get_token_hash
 from polar.config import settings
+from polar.kit.crypto import get_token_hash
 from polar.models import User
+from polar.oauth2.exceptions import InvalidTokenError
 from polar.personal_access_token.service import (
     MAX_LIFETIME,
     TokenScopeError,

@@ -37,12 +37,8 @@ def upgrade() -> None:
             server_default=sa.text("'open_rate'"),
         ),
         sa.Column("winner_variant", sa.String(1), nullable=True),
-        sa.Column(
-            "test_sent_at", sa.TIMESTAMP(timezone=True), nullable=True
-        ),
-        sa.Column(
-            "winner_picked_at", sa.TIMESTAMP(timezone=True), nullable=True
-        ),
+        sa.Column("test_sent_at", sa.TIMESTAMP(timezone=True), nullable=True),
+        sa.Column("winner_picked_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(timezone=True),

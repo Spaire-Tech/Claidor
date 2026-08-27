@@ -86,7 +86,8 @@ async def main() -> None:
                     (
                         await session.execute(
                             select(CourtDecision).where(
-                                CourtDecision.decided_on == date.fromisoformat(parsed.decided_on),
+                                CourtDecision.decided_on
+                                == date.fromisoformat(parsed.decided_on),
                                 or_(*[CourtDecision.number == c for c in candidates]),
                             )
                         )

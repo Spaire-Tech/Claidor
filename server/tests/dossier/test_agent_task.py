@@ -62,7 +62,8 @@ async def _matter(
         await repository.set_extraction(
             document,
             status=(
-                ExtractionStatus.unextractable if unreadable
+                ExtractionStatus.unextractable
+                if unreadable
                 else ExtractionStatus.extracted
             ),
             text=None if unreadable else "The cap is 12 months' fees.",

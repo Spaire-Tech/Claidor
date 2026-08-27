@@ -116,7 +116,9 @@ def _plant_speaker_notes(payload: bytes) -> bytes | None:
     deck = Presentation(io.BytesIO(payload))
     if not deck.slides:
         return None
-    deck.slides[0].notes_slide.notes_text_frame.text = (
+    deck.slides[
+        0
+    ].notes_slide.notes_text_frame.text = (
         "Do not show them the downside case until after the fee is agreed."
     )
     out = io.BytesIO()
@@ -157,7 +159,9 @@ def _plant_cropped_image(payload: bytes) -> bytes | None:
 
 def _plant_hidden_slide(payload: bytes) -> bytes | None:
     names = zipfile.ZipFile(io.BytesIO(payload)).namelist()
-    slide = next((one for one in names if re.match(r"ppt/slides/slide\d+\.xml$", one)), None)
+    slide = next(
+        (one for one in names if re.match(r"ppt/slides/slide\d+\.xml$", one)), None
+    )
     if slide is None:
         return None
 
@@ -180,7 +184,9 @@ def _sheet_state(payload: bytes, state: str) -> bytes | None:
     if b"state=" in last:
         return None
     replaced = last.replace(b"<sheet ", b'<sheet state="' + state.encode() + b'" ', 1)
-    return _repack(payload, edit={"xl/workbook.xml": lambda _: data.replace(last, replaced)})
+    return _repack(
+        payload, edit={"xl/workbook.xml": lambda _: data.replace(last, replaced)}
+    )
 
 
 def _plant_very_hidden(payload: bytes) -> bytes | None:
@@ -249,7 +255,9 @@ def _plant_embedded_file(payload: bytes) -> bytes | None:
         return None
     return _repack(
         payload,
-        add={f"{folder}/embeddings/Project Falcon working file.xlsx": b"PK\x03\x04junk"},
+        add={
+            f"{folder}/embeddings/Project Falcon working file.xlsx": b"PK\x03\x04junk"
+        },
     )
 
 
@@ -378,7 +386,7 @@ def _plant_document_properties(payload: bytes) -> bytes | None:
         add={
             "docProps/core.xml": (
                 b'<?xml version="1.0"?><cp:coreProperties xmlns:cp="http://'
-                b'schemas.openxmlformats.org/package/2006/metadata/core-'
+                b"schemas.openxmlformats.org/package/2006/metadata/core-"
                 b'properties" xmlns:dc="http://purl.org/dc/elements/1.1/">'
                 b"<dc:creator>A. Analyst</dc:creator><cp:lastModifiedBy>"
                 b"MD, Coverage</cp:lastModifiedBy></cp:coreProperties>"

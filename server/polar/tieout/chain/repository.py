@@ -14,6 +14,7 @@ from sqlalchemy import select
 from polar.kit.repository import RepositoryBase
 from polar.models.tieout import Artifact
 
+from .link import ChainLink, LinkState
 from .store import ChainFact, ChainRefusal
 
 
@@ -85,3 +86,77 @@ class ChainRefusalRepository(RepositoryBase[ChainRefusal]):
             .order_by(ChainRefusal.page)
         )
         return list((await self.session.execute(statement)).scalars().all())
+
+
+class ChainLinkRepository(RepositoryBase[ChainLink]):
+    """D4's confirmed links. Every read is scoped by the deal.
+
+    Same access rule as the facts, and for a stronger reason: a link is
+    a person's statement about a deal, so a link id must never be a
+    capability to see one. Every method here either takes the
+    `dossier_id` the router has already checked membership of, or
+    returns it so the router can.
+    """
+
+    model = ChainLink
+
+    async def get_in_dossier(self, dossier_id: UUID, link_id: UUID) -> ChainLink | None:
+        """One link, only if it belongs to the deal the caller named."""
+        statement = self.get_base_statement().where(
+            ChainLink.id == link_id,
+            ChainLink.dossier_id == dossier_id,
+            ChainLink.deleted_at.is_(None),
+        )
+        return await self.get_one_or_none(statement)
+
+    async def list_for_dossier(
+        self, dossier_id: UUID, *, state: LinkState | None = None
+    ) -> list[ChainLink]:
+        """The deal's links, newest confirmation first.
+
+        `state` filters to one kind — the screen that asks « what is
+        broken on this deal » is the reason the composite index exists.
+        """
+        statement = self.get_base_statement().where(
+            ChainLink.dossier_id == dossier_id, ChainLink.deleted_at.is_(None)
+        )
+        if state is not None:
+            statement = statement.where(ChainLink.state == state)
+        statement = statement.order_by(ChainLink.confirmed_at.desc())
+        return list(await self.get_all(statement))
+
+    async def list_for_model_version(
+        self, dossier_id: UUID, model_version_id: UUID
+    ) -> list[ChainLink]:
+        """Every link confirmed against one upload of the workbook.
+
+        This is what a re-check iterates: the links whose model side
+        pointed at the version being superseded.
+        """
+        statement = (
+            self.get_base_statement()
+            .where(
+                ChainLink.dossier_id == dossier_id,
+                ChainLink.model_version_id == model_version_id,
+                ChainLink.deleted_at.is_(None),
+            )
+            .order_by(ChainLink.cell_name)
+        )
+        return list(await self.get_all(statement))
+
+    async def find_pair(
+        self, dossier_id: UUID, cell_id: UUID, fact_id: UUID
+    ) -> ChainLink | None:
+        """The existing link for this exact pair, if a person made one.
+
+        Used before writing, so confirming the same pair twice updates
+        one row instead of growing two contradictory ones — and so a
+        pair a person already *rejected* is not put to them again.
+        """
+        statement = self.get_base_statement().where(
+            ChainLink.dossier_id == dossier_id,
+            ChainLink.cell_id == cell_id,
+            ChainLink.fact_id == fact_id,
+            ChainLink.deleted_at.is_(None),
+        )
+        return await self.get_one_or_none(statement)

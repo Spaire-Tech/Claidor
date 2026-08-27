@@ -11,7 +11,6 @@ Usage:
 """
 
 import sys
-import time
 import warnings
 from collections import Counter
 from pathlib import Path
@@ -69,7 +68,9 @@ def diff(draft_path: str, final_path: str, label: str = "") -> dict:
                 "refs": [
                     f.ref
                     for f in final.defects
-                    if f.rule == rule and f.sheet == sheet and (f.name or "").strip() == name
+                    if f.rule == rule
+                    and f.sheet == sheet
+                    and (f.name or "").strip() == name
                 ][:3],
             }
             for (rule, sheet, name) in list((final_keys - draft_keys).keys())[:40]

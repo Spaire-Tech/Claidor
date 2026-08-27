@@ -6,7 +6,7 @@ from pydantic import HttpUrl
 
 from polar.auth.models import AuthSubject
 from polar.auth.scope import Scope
-from polar.exceptions import NotPermitted, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, NotPermitted
 from polar.kit.utils import utc_now
 from polar.member_session.schemas import MemberSessionCreate
 from polar.member_session.service import member_session

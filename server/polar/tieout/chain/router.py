@@ -25,6 +25,7 @@ pair, exactly as confirming a link does.
 """
 
 import io
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import Depends, File, HTTPException, UploadFile
@@ -40,8 +41,13 @@ from polar.routing import APIRouter
 from .. import auth, storage
 from ..repository import TieOutRepository
 from .extract import EXTRACTOR_NAME, EXTRACTOR_VERSION, Extraction, extract_pdf
+from .link import ChainLink, LinkState
 from .propose import Abstained, propose
-from .repository import ChainFactRepository, ChainRefusalRepository
+from .repository import (
+    ChainFactRepository,
+    ChainLinkRepository,
+    ChainRefusalRepository,
+)
 from .store import ChainFact, ChainRefusal, persist_extraction
 
 router = APIRouter(prefix="/chain", tags=["chain", APITag.private])
@@ -478,3 +484,198 @@ __all__ = [
     "EXTRACTOR_VERSION",
     "router",
 ]
+
+
+# --- D4: confirmed links -------------------------------------------------
+
+
+class LinkRead(Schema):
+    """A confirmed link, in the approved schema's own field names."""
+
+    id: UUID
+    dossier_id: UUID
+    state: str
+    document: dict[str, object]
+    model: dict[str, object]
+    transformation: str
+    scale: float
+    basis: str
+    note: str
+    confirmed_by_id: UUID | None
+    confirmed_at: datetime
+
+    @classmethod
+    def of(cls, link: ChainLink) -> "LinkRead":
+        return cls(
+            id=link.id,
+            dossier_id=link.dossier_id,
+            state=str(link.state),
+            document={
+                "document_id": str(link.document_id),
+                "document_version_id": str(link.document_version_id),
+                "fact_id": str(link.fact_id) if link.fact_id else None,
+                "page": link.page,
+                "printed_text": link.printed_text,
+                "anchor_line": link.anchor_line,
+                "ordinal_in_line": link.ordinal_in_line,
+                "value_at_confirmation": link.document_value_at_confirmation,
+            },
+            model={
+                "model_id": str(link.model_id),
+                "model_version_id": str(link.model_version_id),
+                "cell_id": str(link.cell_id),
+                "ref": link.model_ref,
+                "cell_name": link.cell_name,
+                "value_at_confirmation": link.model_value_at_confirmation,
+            },
+            transformation=link.transformation,
+            scale=link.scale,
+            basis=link.basis,
+            note=link.note,
+            confirmed_by_id=link.confirmed_by_id,
+            confirmed_at=link.confirmed_at,
+        )
+
+
+class ConfirmLink(Schema):
+    """What a person states when they confirm. Nothing here is inferred."""
+
+    cell_id: UUID
+    fact_id: UUID
+    #: document value × scale = model value. **The person states it.**
+    #: Swens never infers a scale: unit inference is Track E's, and this
+    #: field is deliberately the boundary between them.
+    scale: float = 1.0
+    transformation: str = "identity"
+    basis: str = ""
+    note: str = ""
+
+
+@router.post("/links", response_model=LinkRead, status_code=201)
+async def confirm_link(
+    body: ConfirmLink,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> LinkRead:
+    """A person vouches that this cell comes from this document figure.
+
+    The write D3 does not make. Both sides are checked to be on the same
+    deal, and everything the re-check will ever need is captured now —
+    the labels that re-find the pair, and both values, so a later check
+    can say which side moved.
+
+    Confirming the same pair twice updates the one row rather than
+    growing two contradictory ones.
+    """
+    repository = TieOutRepository.from_session(session)
+    cell = await repository.get_cell(body.cell_id)
+    if cell is None:
+        raise ResourceNotFound("Cell not found.")
+    model_artifact = await _artifact_for(
+        session, cell.artifact_id, auth_subject.subject.id
+    )
+
+    found = await ChainFactRepository.from_session(session).get(body.fact_id)
+    if found is None:
+        raise ResourceNotFound(NOT_FOUND)
+    fact, document_artifact = found
+    if document_artifact.dossier_id != model_artifact.dossier_id:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "That cell and that figure belong to different deals, so "
+                "one cannot be the source of the other."
+            ),
+        )
+    if cell.value is None:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{cell.ref} holds no value, so there is nothing to confirm.",
+        )
+    if body.scale <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail="Scale must be greater than zero: document value × scale = model value.",
+        )
+
+    ordinals = {
+        key: ordinal
+        for ordinal, key in enumerate(
+            [
+                other.id
+                for other in await ChainFactRepository.from_session(
+                    session
+                ).list_for_artifact(fact.artifact_id)
+                if other.page == fact.page and other.line == fact.line
+            ],
+            start=1,
+        )
+    }
+
+    links = ChainLinkRepository.from_session(session)
+    existing = await links.find_pair(model_artifact.dossier_id, cell.id, fact.id)
+    values = {
+        "state": LinkState.confirmed,
+        "document_id": document_artifact.lineage_id,
+        "document_version_id": document_artifact.id,
+        "fact_id": fact.id,
+        "page": fact.page,
+        "printed_text": fact.text,
+        "anchor_line": fact.line,
+        "ordinal_in_line": ordinals.get(fact.id, 1),
+        "document_value_at_confirmation": fact.value,
+        "model_id": model_artifact.lineage_id,
+        "model_version_id": model_artifact.id,
+        "cell_id": cell.id,
+        "model_ref": cell.ref,
+        "cell_name": cell.name or f"{cell.row_label} {cell.column_label}".strip(),
+        "model_value_at_confirmation": float(cell.value),
+        "transformation": body.transformation,
+        "scale": body.scale,
+        "basis": body.basis,
+        "note": body.note,
+        "confirmed_by_id": auth_subject.subject.id,
+        "confirmed_at": datetime.now(UTC),
+    }
+    if existing is not None:
+        link = await links.update(existing, update_dict=values)
+    else:
+        link = await links.create(
+            ChainLink(dossier_id=model_artifact.dossier_id, **values), flush=True
+        )
+    return LinkRead.of(link)
+
+
+@router.get("/dossiers/{dossier_id}/links", response_model=list[LinkRead])
+async def list_links(
+    dossier_id: UUID,
+    auth_subject: auth.TieOutRead,
+    state: str | None = None,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> list[LinkRead]:
+    """The deal's confirmed links, newest first; `state` narrows them."""
+    from polar.dossier.repository import DossierRepository
+
+    dossier = await DossierRepository.from_session(session).get_for_user(
+        dossier_id, auth_subject.subject.id
+    )
+    if dossier is None:
+        raise ResourceNotFound("Deal not found.")
+    wanted = None
+    if state is not None:
+        try:
+            wanted = LinkState(state)
+        except ValueError:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"'{state}' is not a link state. They are: "
+                    + ", ".join(s.value for s in LinkState)
+                    + " — and note there is no 'proposed': a proposal is "
+                    "computed on demand and never stored."
+                ),
+            ) from None
+    found = await ChainLinkRepository.from_session(session).list_for_dossier(
+        dossier_id, state=wanted
+    )
+    return [LinkRead.of(link) for link in found]

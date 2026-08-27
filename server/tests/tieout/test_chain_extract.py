@@ -255,7 +255,6 @@ def test_router_serves_the_extraction() -> None:
     assert "not a PDF" in refused.json()["detail"]
 
 
-
 # --- round V: baselines separated, scripts kept ---------------------------
 
 
@@ -340,4 +339,5 @@ def test_a_subscript_stays_part_of_its_word() -> None:
         assert "RPEt" in [word["text"] for word in extract._words(page)]
         # and the same page at the old tolerance is the defect itself
         loose = [word["text"] for word in page.extract_words()]
-        assert "1,234" not in loose and "AGlapmham" in loose
+        assert "1,234" not in loose
+        assert "AGlapmham" in loose

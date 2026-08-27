@@ -104,7 +104,8 @@ def parse_juricaf_decision_html(page: str) -> ParsedDecision:
     # would simply fail and drop the document (which is what happened to
     # the two 1999 avis).
     avis = re.search(
-        r"avis[.\s]*n?[°o]?\s*0*(\d{1,3})[./](\d{2,4})", (urn or "") + " " + (title or ""),
+        r"avis[.\s]*n?[°o]?\s*0*(\d{1,3})[./](\d{2,4})",
+        (urn or "") + " " + (title or ""),
         re.IGNORECASE,
     )
     if avis:

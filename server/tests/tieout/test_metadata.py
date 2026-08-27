@@ -307,7 +307,6 @@ class TestExcel:
         # so it is the one that keeps the path.
         assert not _of(report, "local-path")
 
-
     def test_a_threaded_comment_is_the_kind_people_actually_make(self) -> None:
         """Excel's « New Comment » has produced these since 2018.
 

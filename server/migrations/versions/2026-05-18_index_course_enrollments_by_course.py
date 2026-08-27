@@ -66,6 +66,5 @@ def upgrade() -> None:
 def downgrade() -> None:
     with op.get_context().autocommit_block():
         op.execute(
-            "DROP INDEX CONCURRENTLY IF EXISTS "
-            "ix_course_enrollments_course_active;"
+            "DROP INDEX CONCURRENTLY IF EXISTS ix_course_enrollments_course_active;"
         )

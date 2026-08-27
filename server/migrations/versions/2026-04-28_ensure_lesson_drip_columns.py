@@ -19,18 +19,12 @@ depends_on: tuple[str] | None = None
 
 
 def upgrade() -> None:
-    op.execute(
-        "ALTER TABLE course_lessons "
-        "ADD COLUMN IF NOT EXISTS description TEXT"
-    )
+    op.execute("ALTER TABLE course_lessons ADD COLUMN IF NOT EXISTS description TEXT")
     op.execute(
         "ALTER TABLE course_lessons "
         "ADD COLUMN IF NOT EXISTS release_at TIMESTAMP WITH TIME ZONE"
     )
-    op.execute(
-        "ALTER TABLE course_lessons "
-        "ADD COLUMN IF NOT EXISTS drip_days INTEGER"
-    )
+    op.execute("ALTER TABLE course_lessons ADD COLUMN IF NOT EXISTS drip_days INTEGER")
 
 
 def downgrade() -> None:

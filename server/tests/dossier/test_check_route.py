@@ -155,7 +155,9 @@ class TestCheckMatterRoute:
         assert body["critical_count"] == sum(
             d["critical_count"] for d in body["documents"]
         )
-        assert body["finding_count"] == sum(len(d["findings"]) for d in body["documents"])
+        assert body["finding_count"] == sum(
+            len(d["findings"]) for d in body["documents"]
+        )
 
     @pytest.mark.auth
     async def test_scans_are_reported_not_silently_dropped(
@@ -203,9 +205,7 @@ class TestCheckMatterRoute:
         # The same shape the Word panel receives. If the workspace and the
         # add-in described a finding differently, the same defect read in
         # two places would be two objects that can disagree.
-        dossier = await _matter_with(
-            session, save_fixture, user, readable=[DEFECTIVE]
-        )
+        dossier = await _matter_with(session, save_fixture, user, readable=[DEFECTIVE])
 
         body = (await client.post(f"/v1/dossiers/{dossier.id}/check")).json()
         finding = body["documents"][0]["findings"][0]
@@ -295,9 +295,7 @@ class TestDocumentTextRoute:
         document_id = listed["documents"][0]["id"]
 
         body = (
-            await client.get(
-                f"/v1/dossiers/{dossier.id}/documents/{document_id}/text"
-            )
+            await client.get(f"/v1/dossiers/{dossier.id}/documents/{document_id}/text")
         ).json()
 
         assert body["text"] is None

@@ -43,7 +43,7 @@ from polar.enums import (
 )
 from polar.event.repository import EventRepository
 from polar.event.system import SystemEvent
-from polar.exceptions import PaymentNotReady, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, PaymentNotReady
 from polar.integrations.stripe.service import StripeService
 from polar.kit.address import AddressInput
 from polar.kit.currency import PresentmentCurrency

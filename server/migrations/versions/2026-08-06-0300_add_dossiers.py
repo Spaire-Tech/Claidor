@@ -129,7 +129,9 @@ def upgrade() -> None:
     op.create_index(
         op.f("ix_dossier_questions_asked_by_id"), "dossier_questions", ["asked_by_id"]
     )
-    op.create_index(op.f("ix_dossier_questions_status"), "dossier_questions", ["status"])
+    op.create_index(
+        op.f("ix_dossier_questions_status"), "dossier_questions", ["status"]
+    )
     op.create_index(
         op.f("ix_dossier_questions_deleted_at"), "dossier_questions", ["deleted_at"]
     )
@@ -154,7 +156,9 @@ def upgrade() -> None:
     op.create_index(
         op.f("ix_dossier_citations_question_id"), "dossier_citations", ["question_id"]
     )
-    op.create_index(op.f("ix_dossier_citations_nature"), "dossier_citations", ["nature"])
+    op.create_index(
+        op.f("ix_dossier_citations_nature"), "dossier_citations", ["nature"]
+    )
     op.create_index(
         op.f("ix_dossier_citations_source_id"), "dossier_citations", ["source_id"]
     )

@@ -36,9 +36,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute(
-        "DELETE FROM community_reactions WHERE emoji = 'thumbsup'"
-    )
+    op.execute("DELETE FROM community_reactions WHERE emoji = 'thumbsup'")
     op.drop_constraint(
         "community_reactions_emoji_check",
         "community_reactions",

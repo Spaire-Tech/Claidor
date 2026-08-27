@@ -202,7 +202,9 @@ class TestTheInventionGate:
         report = CrossCheckReport()
 
         kept = verify_conflicts(
-            [commitment(), commitment()], [{"left": 0, "right": 1, "note": "  "}], report
+            [commitment(), commitment()],
+            [{"left": 0, "right": 1, "note": "  "}],
+            report,
         )
 
         assert kept == []
@@ -453,8 +455,12 @@ class TestGrouping:
 
         groups = group_conflicts(
             [
-                Conflict(subject="Governing law", note="MSA vs SL", left=msa, right=shared),
-                Conflict(subject="Governing law", note="LOI vs SL", left=loi, right=shared),
+                Conflict(
+                    subject="Governing law", note="MSA vs SL", left=msa, right=shared
+                ),
+                Conflict(
+                    subject="Governing law", note="LOI vs SL", left=loi, right=shared
+                ),
             ]
         )
 
@@ -510,7 +516,12 @@ class TestGrouping:
         shared = commitment(title="SL")
         groups = group_conflicts(
             [
-                Conflict(subject="Cap", note="differs", left=commitment(title="A"), right=shared),
+                Conflict(
+                    subject="Cap",
+                    note="differs",
+                    left=commitment(title="A"),
+                    right=shared,
+                ),
                 Conflict(
                     subject="Cap",
                     note="the MSA caps at 1.8M and the Side Letter at 2.5M",
@@ -528,8 +539,12 @@ class TestGrouping:
         shared = commitment(title="Side Letter")
         groups = group_conflicts(
             [
-                Conflict(subject="Cap", note="x", left=commitment(title="MSA"), right=shared),
-                Conflict(subject="Cap", note="y", left=commitment(title="LOI"), right=shared),
+                Conflict(
+                    subject="Cap", note="x", left=commitment(title="MSA"), right=shared
+                ),
+                Conflict(
+                    subject="Cap", note="y", left=commitment(title="LOI"), right=shared
+                ),
             ]
         )
 

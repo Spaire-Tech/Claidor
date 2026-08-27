@@ -2,6 +2,7 @@ from polar.kit.db.models import Model, TimestampedModel
 
 # The Chain's fact store lives in its own package; imported here so the
 # tables register in the metadata alembic and the test harness build from.
+from polar.tieout.chain.link import ChainLink
 from polar.tieout.chain.store import ChainFact, ChainRefusal
 
 from .account import Account
@@ -194,6 +195,7 @@ __all__ = [
     "BillingEntry",
     "Campaign",
     "ChainFact",
+    "ChainLink",
     "ChainRefusal",
     "CheckKind",
     "CheckRun",

@@ -28,7 +28,9 @@ def upgrade() -> None:
     )
     op.add_column(
         "client_invoices",
-        sa.Column("include_payment_link", sa.Boolean(), nullable=False, server_default="true"),
+        sa.Column(
+            "include_payment_link", sa.Boolean(), nullable=False, server_default="true"
+        ),
     )
     op.add_column(
         "client_invoices",
@@ -36,7 +38,9 @@ def upgrade() -> None:
     )
     op.add_column(
         "client_invoices",
-        sa.Column("user_metadata", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column(
+            "user_metadata", postgresql.JSONB(astext_type=sa.Text()), nullable=True
+        ),
     )
 
 

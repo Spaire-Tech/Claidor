@@ -46,7 +46,9 @@ def upgrade() -> None:
             nullable=False,
             server_default="evergreen",
         ),
-        sa.Column("paywall_enabled", sa.Boolean(), nullable=False, server_default="false"),
+        sa.Column(
+            "paywall_enabled", sa.Boolean(), nullable=False, server_default="false"
+        ),
         sa.Column("paywall_lesson_id", sa.Uuid(), nullable=True),
         sa.Column("ai_generated", sa.Boolean(), nullable=False, server_default="false"),
         sa.ForeignKeyConstraint(
@@ -111,7 +113,9 @@ def upgrade() -> None:
         sa.Column("video_asset_id", sa.String(length=255), nullable=True),
         sa.Column("duration_seconds", sa.Integer(), nullable=True),
         sa.Column("position", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("is_free_preview", sa.Boolean(), nullable=False, server_default="false"),
+        sa.Column(
+            "is_free_preview", sa.Boolean(), nullable=False, server_default="false"
+        ),
         sa.ForeignKeyConstraint(
             ["module_id"],
             ["course_modules.id"],

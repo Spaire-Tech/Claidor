@@ -19,7 +19,7 @@ from polar.benefit.strategies.custom.schemas import (
     BenefitCustomCreateProperties,
     BenefitCustomUpdate,
 )
-from polar.exceptions import NotPermitted, ClaidorRequestValidationError
+from polar.exceptions import ClaidorRequestValidationError, NotPermitted
 from polar.kit.pagination import PaginationParams
 from polar.models import Benefit, Organization, User, UserOrganization
 from polar.models.benefit import BenefitType

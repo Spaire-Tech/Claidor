@@ -46,9 +46,7 @@ def upgrade() -> None:
 
     # courses extra fields
     op.add_column("courses", sa.Column("description", sa.Text(), nullable=True))
-    op.add_column(
-        "courses", sa.Column("thumbnail_url", sa.String(500), nullable=True)
-    )
+    op.add_column("courses", sa.Column("thumbnail_url", sa.String(500), nullable=True))
 
 
 def downgrade() -> None:

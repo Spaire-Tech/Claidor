@@ -27,8 +27,12 @@ def upgrade() -> None:
             content TEXT NOT NULL DEFAULT ''
         )
     """)
-    op.execute("CREATE INDEX IF NOT EXISTS ix_course_notes_lesson_id ON course_notes (lesson_id)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_course_notes_enrollment_id ON course_notes (enrollment_id)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_course_notes_lesson_id ON course_notes (lesson_id)"
+    )
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_course_notes_enrollment_id ON course_notes (enrollment_id)"
+    )
 
 
 def downgrade() -> None:

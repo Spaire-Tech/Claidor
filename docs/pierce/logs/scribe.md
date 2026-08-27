@@ -4394,3 +4394,64 @@ and they moved anyway.
 sentence in `router.py` now reads **0 of 36** — one more row is
 scorable because round V unshredded it, and the matcher missed it too.
 Recall did not improve; the denominator got more honest.
+
+## D4 — the store, built
+
+Approved at the twenty-fourth sweep on D2's terms, and built on them.
+
+**`chain/link.py`** — `ChainLink` and `LinkState`, the approved schema
+as rows. Two things the table does on purpose, both from the contract:
+
+- **no « proposed » state.** A proposal is computed on demand and never
+  written, so a row always means a person acted. `broken` and
+  `ambiguous` are set by re-anchoring, never by a matcher.
+- **anchors are labels; refs and pages are citations.** `cell_name` and
+  `anchor_line` re-find the pair in a later version; `model_ref` and
+  `page` are stored so a screen can cite it and are never used to
+  locate. Insert a row above the linked cell and the ref is wrong while
+  the figure has not moved at all.
+
+The `value_at_confirmation` amendment is in as two columns —
+`document_value_at_confirmation` and `model_value_at_confirmation`.
+Without them the re-check cannot say *which side* moved, and three of
+its four verdicts are unproducible; that is what the D4 measurement
+found and why the amendment was registered before a table existed.
+
+**Migration** `2026-08-28-1000_chain_links.py` (`chain_links_0828`),
+applied. **Repository** `ChainLinkRepository` — every read scoped by
+the deal, because a link is a person's statement and a link id must
+never be a capability to see one. **Routes** `POST /chain/links` and
+`GET /chain/dossiers/{id}/links`.
+
+### What the routes refuse, and in words
+
+| | |
+|---|---|
+| a cell and a figure on **different deals** | 409 — « one cannot be the source of the other » |
+| a cell holding **no value** | 409 — « nothing to confirm » |
+| **scale ≤ 0** | 422 — scale multiplies; zero is not a statement about units, it is a way to make anything tie out |
+| `?state=proposed` | 422 naming the four real states **and why there is no fifth** |
+| a stranger's deal | 404 |
+
+Confirming the same pair twice **updates the one row** rather than
+growing two contradictory ones — a bug a person could never see.
+
+**Eight route-level tests**, walking the path a click would take: a
+real deal, a real extracted document, a real cell. `test_chain_link.py`.
+
+### Two things I got wrong and fixed before they shipped
+
+**The dossier foreign key pointed at `tieout_dossiers`, which does not
+exist** — the table is `dossiers`. Caught by reading the model rather
+than by the migration failing, because the migration would have failed
+loudly and I would rather it never ran.
+
+**I wrote a `dossier` relationship typed `Mapped["object"]`** that
+nothing used. A relationship nobody reads, typed as the base of
+everything, is noise pretending to be structure. Removed.
+
+Package is clean: **no mypy error and no lint finding in
+`polar/tieout/chain/` or `tests/tieout/test_chain*`**. The one mypy
+complaint was real — `pdfplumber.utils.extract_words` is not marked a
+public re-export — and carries a narrow ignore with the reason, not a
+blanket one.

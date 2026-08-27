@@ -15,9 +15,7 @@ and must never turn that judgment into an opinion.
 
 from polar.corpus.juricaf import parse_juricaf_decision_html
 
-URN = (
-    "urn:lex;ohada;cour.commune.justice.arbitrage;arret;{date};{tail}"
-)
+URN = "urn:lex;ohada;cour.commune.justice.arbitrage;arret;{date};{tail}"
 
 
 def page(body: str, *, date: str = "2006-10-17", tail: str = "01.2006") -> str:

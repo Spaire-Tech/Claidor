@@ -675,8 +675,7 @@ def _embedded(package: Package, report: Report) -> None:
                     f"{behind_charts} charts in this file each carry the "
                     "worksheet they were built from"
                     if behind_charts > 1
-                    else "a chart in this file carries the worksheet it was "
-                    "built from"
+                    else "a chart in this file carries the worksheet it was built from"
                 )
                 + " — every row of it, including the rows the chart does not "
                 "plot. A recipient reads them by double-clicking a chart",
