@@ -1042,3 +1042,51 @@ All four report cases re-read after the fixes — blind-and-silent
 `logs/atelier/report-corpus-verdict.png` and
 `report-corpus-findings.png`. Route suite **85 passed**; tsc, eslint
 and prettier clean.
+
+## 28 August 2026 — the landing screen was the last one lying
+
+I had made the report declare a values-pasted copy, then the document
+panel. This turn I looked at the screen a person actually **lands
+on** — the deal Overview — and it was the worst of the three.
+
+On Levenmouth (224 formulas in 432,596 cells) it read:
+
+> **Nothing failing** · Nothing failing as of today 16:53. · No
+> finding is open against this version. · **Every check that applies
+> to this model ran to the end.**
+
+That last sentence is the one that matters. It is arguably true in a
+narrow sense — the checks did run — but its plain meaning to a
+banker, sitting under a green « Nothing failing », is « we looked at
+everything and it is fine ». On a file where the construction rules
+could read 0.05% of the cells, that is the most misleading thing the
+product says, and it says it first.
+
+Now, on the same deal:
+
+> Nothing failing as of today 16:53 — **but little could be
+> checked.** … This copy carries values only — 224 of 432,596 cells
+> hold a formula — so the rules that read how the model is built
+> could not see it. The checks that read values still ran.
+
+The « every check ran » line stands down when the copy is blind
+rather than sitting beside its own contradiction, and the fact is
+stated in the founder's own bullet style beside the abstentions,
+where « what could not be done » already lives. Kelso (blind *and*
+seven material findings) carries both its abstentions and the
+blindness. A formula-bearing deal is untouched — cascade still reads
+« Every check that applies to this model ran to the end », which is
+true there.
+
+**One judgement call, for the founder.** The chip itself still reads
+« Nothing failing » in green: that is accurate about findings, and
+the qualification sits in the sentence directly beneath it. Making
+the chip itself hedge would change the meaning of an element the
+founder drew, so I have not. If a green chip over a blind read is
+still too much, that is a one-line change and their call.
+
+Three surfaces now tell the same truth in the same words — the
+Overview, the document panel, the report — which is the point: a
+person can arrive anywhere and not be misled. Evidence:
+`logs/atelier/overview-values-only.png`. Route suite **85 passed**;
+tsc, eslint and prettier clean.
