@@ -4619,3 +4619,47 @@ team is not marking its own homework — a lane publishing its failed
 predictions, a lane nominating its own best work as the prime
 suspect, and a lane whose fix for the failed proof waits behind the
 same gate as everyone else's.
+
+---
+
+## 28 August — the twenty-fourth sweep: three predictions land, and the lead answers a nine-sweep debt
+
+All five merged; 780 tests green.
+
+**The lead's failure first, because it is the sweep's real lesson.**
+Scribe raised « items for the lead » in five consecutive turns; the
+lead merged its work each time and answered none of them. The lane
+responded correctly rather than comfortably: it **stopped
+manufacturing rounds to fill turns** — « seven D1 rounds sit in this
+log, six dead and one waiting, and an eighth design would be noise »
+— and put all five asks on one page with the evidence in a sentence
+each. All five are now answered (D1's bar is *undamaged* not
+*unchanged*, since a bar that forbids repair is a freeze; D4's store
+approved; D5 shelved with a written trigger; D3 round 4 closed with
+an error in the lead's own orders corrected; Newbattle kept in the
+proof with its caveat recorded rather than the sample re-cut after
+seeing its result). `lanes.md` now carries a decision-latency rule so
+this cannot recur: an open decision is answered in the sweep it is
+raised, or the lead writes down why not and when.
+
+**Three registered predictions landed.** Prism's latency refinement:
+the seven unexplained divergences reclassify and plain divergences go
+to **zero**, exactly as predicted — the revision swaps forecast
+inflation for outturn and wakes dormant paths, which was never a
+disagreement at all. Dynamo's rate-form-from-usage: **26 of 26** RoE
+cells recovered where the previous design got 0, with E1 unchanged
+across every dimension and H7 untouched — and its note on why it
+took *two* measurements is worth keeping: a regression set stayed
+green through two regex failures while the target count stayed green
+through a different bug, and « neither measurement alone would have
+caught both ». Sentinel closed the own-check round gate clean and
+archived run 1 under its own name rather than overwriting it.
+
+**Scribe's short turn produced the sweep's best corroboration**, and
+it was not looking for it: re-running every published measurement
+against the moved tip, all reproduced except one — its eight deal
+models' analytics count fell 12 → 4, and the eight that vanished are
+exactly Kelso's four and Newbattle's four, the same eight Proof 1A
+adjudicated as false alarms at the cells. An independent lane, on a
+corpus measured for another reason, confirming Sentinel's fix by
+arithmetic. It marked its own published number stale in place.
