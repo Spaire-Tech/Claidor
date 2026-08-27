@@ -102,6 +102,15 @@ PDF nothing), that the verdict enumerated fifteen findings instead
 of grouping them, and that « Page N of 4 » lies whenever a section
 runs past one page — footers now say « Section N of 4 ».
 
+**The corpus is fetchable here**: `uv run python -m
+scripts.corpus_sft_models` pulls eleven real SFT models (8 readable
+`.xlsm`, 3 format-blocked) into `scripts/corpus_sft/`. Running one
+through the demo kit found the report's worst case — a values-pasted
+publication (224 formulas in 432,596 cells) reported « Nothing
+failing », with the reason a page away. The verdict now qualifies
+itself. **Intake refusals are derived from `SUFFIXES`** and name the
+fix for `.xlsb`/`.csv`/`.numbers`; never re-pin that prose in a test.
+
 **G2 — the five questions: measurable only in part.** Chat cannot
 run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503. What was
 measured is the tool surface: 1, 2 and 4 have their material

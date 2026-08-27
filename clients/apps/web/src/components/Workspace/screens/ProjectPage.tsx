@@ -3576,12 +3576,31 @@ const Report = ({
   const record = lastRun ? auditRecord(lastRun) : null
   const summary = lastRun?.summary ?? {}
 
+  //: « Nothing failing » must never stand alone on a copy the rules
+  //: could not read. Measured on a real corpus model (Levenmouth
+  //: Academy, 27 Aug): 432,596 cells, **224 of them formulas** — a
+  //: values-pasted publication — reported nothing, and the reason it
+  //: found nothing sat a page away under « what could not be
+  //: checked ». A partner reads « nothing failing » as « checked and
+  //: clean », which is the one conclusion this file cannot support.
+  const blind = total === 0 && record?.values_only === true
+  const formulaCount =
+    typeof modelCounts?.['formulas'] === 'number'
+      ? (modelCounts['formulas'] as number)
+      : null
+  const cellCount =
+    typeof modelCounts?.['cells'] === 'number'
+      ? (modelCounts['cells'] as number)
+      : null
+
   const verdictLead =
     counts[1] > 0
       ? `Not ready to send. ${word(total)} finding${total === 1 ? '' : 's'}, ${word(counts[1]).toLowerCase()} of them material.`
       : total > 0
         ? `${word(total)} finding${total === 1 ? '' : 's'} open, none material.`
-        : 'Nothing failing.'
+        : blind
+          ? 'Nothing failing — but little could be checked.'
+          : 'Nothing failing.'
 
   //: Some engine sentences stop inside the formula that proves them —
   //: stored that way, and not this lane's to rewrite. An ellipsis says
@@ -3610,8 +3629,14 @@ const Report = ({
         one: 'figure in the deliverables that disagrees with the model',
         many: 'figures in the deliverables that disagree with the model',
       }
+    //: The families are named in the plural (« Probable formula
+    //: defects »), so the singular is the trim, not the append —
+    //: « one probable formula defects » was the giveaway.
     const family = (categoryOfKey(one.rule ?? '') || 'finding').toLowerCase()
-    return { one: family, many: family.endsWith('s') ? family : `${family}s` }
+    return {
+      one: family.endsWith('s') ? family.slice(0, -1) : family,
+      many: family.endsWith('s') ? family : `${family}s`,
+    }
   }
 
   //: Grouped, not enumerated: fifteen material findings listed one by
@@ -3629,6 +3654,14 @@ const Report = ({
     .map(
       ({ n, one, many }) => `${word(n).toLowerCase()} ${n === 1 ? one : many}`,
     )
+  const blindBody = blind
+    ? `This copy carries values only${
+        formulaCount !== null && cellCount !== null
+          ? `: ${formulaCount.toLocaleString()} of ${cellCount.toLocaleString()} cells hold a formula`
+          : ''
+      }, so the rules that read how the model is built had almost nothing to read. The checks that read values — the statements, the model's own check rows — found nothing failing. Ask for the working copy if the construction matters.`
+    : ''
+
   const verdictBody =
     material.length > 0
       ? `${
@@ -3642,7 +3675,7 @@ const Report = ({
         }${material.length === 1 ? 'It is' : 'Each is'} named with its cell or page overleaf, and ${material.length === 1 ? 'it' : 'they'} should clear before this model leaves the deal team.`
       : total > 0
         ? 'The open findings are worth reading, but none of them on its own would stop the model going out.'
-        : ''
+        : blindBody
 
   //: Every claim on this page carries where it came from: the cell
   //: when the finding sits in the model, the document and page when it
