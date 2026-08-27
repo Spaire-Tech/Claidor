@@ -159,6 +159,28 @@ Two harnesses are committed and ready:
 report nothing while no candidate rule is in the extractor, which is
 the current state.
 
+## Read this first if you are picking this lane up on 28 August
+
+Two findings from the fifteenth turn that are **not about this lane's
+own tracks** and are the most consequential things it currently holds:
+
+1. **The Scottish route is not closed.** My orders say it is,
+   structurally. It is not — the models sit in a public S3 bucket and
+   `scripts/corpus_sft_models.py` fetches them today. Kelso, Levenmouth
+   and Oban (D3 round 4's registered deals) are three of the eight.
+   **Round 4's blocker is now the contract half alone**, and thirteen
+   probed key forms say the agreements are not in that bucket.
+2. **The published closed-deal models are all but value-only** — 1,938
+   formula cells in 6,130,539, and three of the eight contain no
+   formula at all. The population proof plans a cold run on these. What
+   that means for the proof is the lead's call, not this lane's; the
+   measurement is in the log.
+
+Plus a fourth engine intake gap, routed and not acted on: openpyxl
+expands some shared formulas and not others, so ~185 computed cells in
+this corpus come back as **typed inputs** — the silent kind of wrong,
+and it feeds D5's candidate population directly.
+
 ## Before you publish a number: run the audit
 
 ```
