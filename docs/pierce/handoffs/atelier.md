@@ -65,8 +65,18 @@ Three screens, in order, one shipped whole before the next:
    real-engine one skips honestly without LibreOffice); suite 82
    green; screenshots in `logs/atelier/recalc-*.png`.
 
-**The queue is empty** — all three design-unlock screens shipped
-whole. Holding for the next sweep's orders.
+**All three are merged** (fourteenth sweep) and have been **swept
+against their real states** — empty, loading, error, long-content —
+in the browser: six defects found and fixed in that pass (a
+paragraph printed in a summary column; a read pitched after it had
+failed; a silently capped failure list; a PDF wearing a Word icon;
+a dead-looking in-flight control; an unframed long list). The
+sweep's evidence is `logs/atelier/states-*.png`, one shot per
+state class, and the method is in the log — seed the state for
+real (dropping `storage_path` is the honest « documents dropped »
+lever) rather than mocking a refusal.
+
+**Holding for the founder's review of the three screens.**
 
 Mark every agent-designed screen in the log; the founder reviews.
 
@@ -87,7 +97,9 @@ Mark every agent-designed screen in the log; the founder reviews.
   transient download reset). The demo DB now also holds the
   repaired cascade v3 (validated), the doctored v2's honest fail
   mark, and « Project Live Feed Demo » (an RTD model, the standing
-  refusal-face subject).
+  refusal-face subject), plus four « Sweep — … » deals carrying the
+  awkward states (an unchanged re-upload, documents dropped, an
+  unread source, a model the engine could not reproduce).
 - Dev-stack proof rig: API
   `CLAIDOR_CURRENT_JWK_KID=polar_dev uv run uvicorn polar.app:app
   --port 8000`, web `pnpm dev`, Chromium at `/opt/pw-browsers/
@@ -98,6 +110,11 @@ Mark every agent-designed screen in the log; the founder reviews.
   `scripts.demo_deal`. The dev DB `claidor` holds
   « Project Cascade Watch Demo » (cascade v1 + a v2 with a
   typed-over F16 + the broken deck) — the standing demo subject.
+- To verify against a **production build**: `pnpm build`, then
+  `pnpm start` on **port 3000** (stop the dev server first). The
+  dev API's `CLAIDOR_CORS_ORIGINS` allows that origin only, so a
+  build served on any other port fails every API call with
+  `net::ERR_FAILED` — CORS, not the app.
 - If git dies at « could not read Username » after a container
   resume, the git-proxy sidecar was skipped; the GitHub MCP tools
   still work (push_files + blob-SHA verification against

@@ -378,7 +378,13 @@ export const DocPanel = ({
               ? fileIcon.xls
               : doc.kind === 'deck'
                 ? fileIcon.ppt
-                : fileIcon.doc
+                : doc.kind === 'memo'
+                  ? fileIcon.doc
+                  : //: A source document is a PDF, and the room's own
+                    //: list already says so — the panel header showing
+                    //: it as a Word file was the older three-kind
+                    //: mapping, from before sources could be opened.
+                    '/workspace/pdf.webp'
           }
           alt=""
           style={{
@@ -513,8 +519,8 @@ export const DocPanel = ({
                   >
                     This version has not been recalculated. The engine re-runs
                     every formula from the file&rsquo;s own inputs and compares
-                    what Excel left behind, cell by cell — or refuses, in
-                    words, a file it may not honestly compute.
+                    what Excel left behind, cell by cell — or refuses, in words,
+                    a file it may not honestly compute.
                   </div>
                   {recalcWord !== null && (
                     <div
@@ -544,9 +550,17 @@ export const DocPanel = ({
                       cursor: recalcing ? 'default' : 'pointer',
                     }}
                   >
-                    {recalcing
-                      ? 'Recalculating — the whole model is going through the engine…'
-                      : 'Run the recalculation'}
+                    {recalcing ? (
+                      //: A run can take minutes on a large model, so the
+                      //: label breathes — the workspace's own working
+                      //: idiom, not a dead grey control.
+                      <span style={{ animation: 'pcDim 1.4s infinite' }}>
+                        Recalculating — the whole model is going through the
+                        engine…
+                      </span>
+                    ) : (
+                      'Run the recalculation'
+                    )}
                   </button>
                 </>
               ) : (
@@ -664,6 +678,33 @@ export const DocPanel = ({
                               </span>
                             </div>
                           ))}
+                        {/* Never a silent cap: when more cells differ than
+                            the panel names, it says how many it is not
+                            showing rather than letting the list read as
+                            the whole truth. */}
+                        {mark.mismatch_count + mark.engine_error_count >
+                          [...mark.mismatches, ...mark.engine_errors].slice(
+                            0,
+                            12,
+                          ).length && (
+                          <div
+                            style={{
+                              padding: '6px 0 2px',
+                              fontSize: 12.5,
+                              color: ink.faint,
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            …and{' '}
+                            {mark.mismatch_count +
+                              mark.engine_error_count -
+                              [...mark.mismatches, ...mark.engine_errors].slice(
+                                0,
+                                12,
+                              ).length}{' '}
+                            more not named here.
+                          </div>
+                        )}
                       </div>
                     )}
                   {mark.verdict === 'refused' && (
@@ -777,7 +818,13 @@ export const DocPanel = ({
                         cursor: recalcing ? 'default' : 'pointer',
                       }}
                     >
-                      {recalcing ? 'Recalculating…' : 'Run again'}
+                      {recalcing ? (
+                        <span style={{ animation: 'pcDim 1.4s infinite' }}>
+                          Recalculating…
+                        </span>
+                      ) : (
+                        'Run again'
+                      )}
                     </button>
                   </div>
                   {recalcWord !== null && (
@@ -903,15 +950,45 @@ export const DocPanel = ({
             )}
             <div style={panelCard}>
               {chainWord !== null && (
+                //: A read that failed says why and offers another go —
+                //: and the « not read yet » invitation below stands
+                //: down, because promising a read we have just been
+                //: told cannot happen is the one thing worse than the
+                //: failure itself.
                 <div
                   style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 10,
                     padding: '13px 16px',
-                    fontSize: 13.5,
-                    color: ink.secondary,
-                    lineHeight: 1.5,
                   }}
                 >
-                  {chainWord}
+                  <span
+                    style={{
+                      fontSize: 13.5,
+                      color: ink.secondary,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {chainWord}
+                  </span>
+                  <button
+                    onClick={readDocument}
+                    disabled={reading}
+                    style={{
+                      border: 0,
+                      background: 'transparent',
+                      padding: 0,
+                      font: 'inherit',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: reading ? ink.faint : ink.accent,
+                      cursor: reading ? 'default' : 'pointer',
+                    }}
+                  >
+                    {reading ? 'Reading…' : 'Try reading it again'}
+                  </button>
                 </div>
               )}
               {chainWord === null && chain === null && (
@@ -925,7 +1002,8 @@ export const DocPanel = ({
                   Looking up what the Chain holds…
                 </div>
               )}
-              {chain !== null &&
+              {chainWord === null &&
+                chain !== null &&
                 chain.facts.length === 0 &&
                 chain.refusals.length === 0 && (
                   <div
@@ -966,6 +1044,24 @@ export const DocPanel = ({
                     </button>
                   </div>
                 )}
+              {chain !== null && chain.facts.length > 0 && (
+                //: How much is here, before the reader scrolls it —
+                //: a long list arriving unframed is the same silence
+                //: as a truncated one.
+                <div
+                  style={{
+                    padding: '11px 16px 10px',
+                    borderBottom: hairline,
+                    fontSize: 12.5,
+                    color: ink.faint,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {chain.facts.length} number
+                  {chain.facts.length === 1 ? '' : 's'} read from this document,
+                  each cited to its page. Click one to see it on the page.
+                </div>
+              )}
               {chain !== null &&
                 chain.facts
                   .slice()

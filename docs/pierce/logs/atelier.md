@@ -497,3 +497,102 @@ report's subject; worth a word with the lead someday.
 
 Next per orders: nothing further queued — the three design-unlock
 screens are shipped whole. Holding for the next sweep.
+
+## 27 August 2026 — the states sweep (fourteenth-sweep orders)
+
+Orders item 2: sweep my three agent-designed screens against the
+built workspace's real states — empty, loading, error, long-content
+— and fix what the sweep catches. Nineteen states driven in
+Chromium against seeded data; six defects found and fixed, one
+observation routed on. Screenshots beside this log
+(`logs/atelier/states-*.png`), one per state class.
+
+**How the states were made, honestly.** Four sweep deals seeded:
+an unchanged re-upload (two identical versions), documents dropped
+(`storage_path` set to NULL — the real « keep the chain, drop the
+documents » state, so every refusal is the server's own sentence
+rather than a mock), an unread source, and a model the engine
+cannot reproduce (the doctored v2's own bytes, re-ingested as a
+current version so its 19-cell failure lands on a live screen).
+
+**What the sweep caught, and what I changed.**
+
+1. **The delta's summary column was printing a paragraph.** A
+   version whose bytes were dropped put the whole storage sentence
+   in « What changed », ellipsis-cut mid-word: the column read as
+   if the revision's content were an error message. It now carries
+   the fact — « Not comparable — the file was dropped » — and the
+   server's full sentence, with what to do about it, still stands
+   under the table.
+2. **The source viewer pitched a read it knew would fail.** After a
+   failed extraction the panel showed the reason and then, directly
+   beneath, « This document has not been read into the Chain yet…
+   » with a primary blue button that could only fail again. The
+   invitation now stands down when a read has failed; the reason
+   stands with a quiet « Try reading it again ».
+3. **The failure list capped silently.** Nineteen cells differed,
+   twelve were named, and nothing said so — the count sentence was
+   the only clue. It now ends « …and 7 more not named here ». (No
+   destination is promised: the marked-up copy is built from
+   findings, not from the mark, so pointing there would have been
+   a false trail.)
+4. **A PDF wore a Word icon.** The panel header's kind mapping
+   predated openable sources; the room's own list already showed
+   the PDF icon. The panel now matches the room.
+5. **A run that takes minutes looked like a dead control.** The
+   in-flight recalculation was a greyed-out button. The label now
+   breathes with `pcDim`, the workspace's own working idiom (the
+   chat already speaks it) — no new vocabulary invented.
+6. **A long fact list arrived unframed.** Twenty-two rows with no
+   count. A line now heads them: « 22 numbers read from this
+   document, each cited to its page. »
+
+**What came through clean:** both loading lines (« Reading both
+versions and comparing… », « Rendering page 1… ») and the
+in-flight recalculation; the first-upload null; the unchanged
+re-upload (« No reviewed changes — the two versions read the same
+to the Watch »); the unread-source invitation; the page render
+with its ring; the refusal face; and every error path answering in
+the server's own words rather than a stack trace. Zero page errors
+across the whole sweep. Route suite **82 passed** against the
+merged tip; typecheck, prettier and lint clean (the panel's four
+setState-in-effect warnings are its own pre-existing idiom).
+
+**One observation, for the lead to route.** The Watch reports a
+*repair* — « a typed constant became a formula », tagged
+`repaired: typed-over-formula` — under the kind `class_change`,
+and my ink map paints that kind red, so a repair reads as damage
+at a glance. The screen renders the engine's kind and never
+re-ranks (lanes.md), so I have not re-coloured it: if the Watch
+means the item as a repair, the kind — or a flag on the item — is
+where that belongs, not a screen's second guess.
+
+Holding for the founder's review of the three screens, per orders
+item 3.
+
+## 27 August 2026 — the sweep's fixes, verified in the built app
+
+Orders unchanged (fourteenth sweep; item 3 is « hold for founder
+review »), so this turn was upkeep: rebased the lane onto the new
+tip (`ac733b3` — the adopted review; nothing in it touches my
+paths, and the sharpened thesis « the proof is the moat » is
+precisely what the recalculation mark puts on a screen), then
+verified what I shipped against a **production build** rather than
+the dev server alone.
+
+`pnpm build` clean, and every state re-driven against
+`pnpm start`: all six sweep fixes hold, the stored mark is repeated
+on a fresh load, the in-flight label's `pcDim` survives
+minification (`animation-name: pcDim` read off the built page), a
+re-run settles, and the built app throws no page errors. The one
+state the drive could not re-reach was « never run » — that model
+now carries a mark from the sweep itself, so the in-flight state
+was proven through « Run again » instead.
+
+Container lesson, for whoever verifies next: the dev API's
+`CLAIDOR_CORS_ORIGINS` allows `127.0.0.1:3000` only, so a
+production build served on any other port fails **every** API call
+with `net::ERR_FAILED` — CORS, not the app. Stop the dev server and
+serve the build on 3000.
+
+Still holding for the founder's review of the three screens.
