@@ -28,6 +28,7 @@ it falls.
 | A3 c2 family edge (`a3-family-edge.md`) | Adopted. Rule `typed-over-edge`. Round 1 refused on typed index-base 1s; round 2's identity + horizontal-seed guards fixed it. |
 | A3 c3 beat families (`a3-beat-families.md`) | **Unmeasurable** — zero plantable lattices in all 27 files. Implemented, tested, deliberately **unwired**, catalogue untouched. Revisit if the MCC ERR or Tasi corpora bring strided layouts. |
 | A3 c4 column typed (`a3-column-typed.md`) | **Adopted** (3 rounds). The island pass's left-formula guard is waived for interior islands that hold a substantive value. +12 corpus findings, baseline regenerated with it. No new rule — catalogue stays 19. |
+| Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
 
 Both adoptions moved the rule catalogue 17 → 19 and broke an
 Atelier test (routed). **Lesson the lead asked for: name any
@@ -35,24 +36,15 @@ catalogue-count change in the log the same day.**
 
 ## In flight
 
-**Nothing.** Candidate 4 is finished and pushed with its baseline.
-The next turn starts a new round from a clean slate.
+**Nothing.** Candidate 4 and the Tasi re-score are both finished
+and pushed. The next turn starts a new round from a clean slate.
 
 ## Next, per orders (in this order)
 
-1. **The Tasi re-score** — high priority, ahead of c5.
-   `china-os-findings.md` §1; shallow-clone `tcse-iscas/Tasi`
-   (verified reachable); ground truth is `Spreadsheet Error
-   Dataset/Subject/Groundtruth and tool results.xls` (291 worksheet
-   rows). **Registration first**: scoring conventions fixed against
-   *both* label sets' shapes before any number; our engine's row
-   beside the seven tools'; the 1,974-vs-3,702 label disagreement
-   measured and written as its own result. No licence in that repo
-   — benchmark internally, cite, **never redistribute**.
-2. A3 c5 (range vs block), same loop.
-3. A4 (coverage denominator) — report-JSON additions routed
+1. A3 c5 (range vs block), same loop.
+2. A4 (coverage denominator) — report-JSON additions routed
    through the lead, since Atelier owns what the product reads.
-4. The « dead assumption » reachability candidate
+3. The « dead assumption » reachability candidate
    (`swens-aha.md`): dependency-graph reachability, no
    recalculation, one-sentence finding. Coordinate the rule name
    with the lead before adoption (it needs Atelier's category map).
@@ -64,6 +56,10 @@ in the baseline, so it needs its own registered round.
 
 **Also parked:** the collapse fold's missing adjacency test (the
 `C_Capex` diagnosis from c1), and the A1 range-expansion round.
+
+**Best-funded open question in the record:** the Tasi
+serious-error gap — 1,206 of their 1,308 serious cells fall outside
+every finding we raise, with a ready-made sample to hand-read.
 
 ## What this container taught me
 
@@ -87,3 +83,13 @@ in the baseline, so it needs its own registered round.
 - Background a long job and wait on its PID; a killed *waiter* does
   not kill the job — check the log before assuming loss.
 - Beware `cmd | tail -1` masking a `ruff format --check` verdict.
+- **LibreOffice cannot convert the CUSTODES/Tasi `.xls` subjects
+  here** — 24.2.7.2 is installed and launches, but every one fails
+  « source file could not be loaded » (not profile, not
+  permissions). Read legacy `.xls` directly: our own reader has an
+  xlrd path, and xlrd's `cell_note_map` reads the comment-based
+  ground truth. Doing so recovers the cell the CUSTODES round lost
+  in conversion (1,974, the paper's figure).
+- The Tasi clone lives in `scripts/custodes_work/tasi` (git-ignored,
+  re-cloned on demand). **No licence in that repo** — internal
+  benchmarking and citation only, never redistribute, never commit.

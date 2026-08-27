@@ -199,3 +199,141 @@ So mapping rule 2 is amended, in the open and before any number:
   saying so is cheaper than a conclusion that would not hold.
 
 ## Results (computed and read after the registration)
+
+**The instrument validates itself.** Scoring Tasi's own tool column
+with this scorer on this truth reproduces their published figures
+**exactly**: `TasiError` recall **82.9%**, precision **75.2%** —
+the two numbers the paper reports, independently recomputed here
+from the label file by a scorer that knows nothing of them. And
+the frozen cold run against the CUSTODES truth returns **283**
+covered cells, the same numerator as 23 August. Both label sets
+mapped cleanly: **0 unmapped rows** of 291, all 70 subjects read.
+(One junk file in the ground-truth archive, `._01-38-PK…` — a macOS
+resource fork, not a spreadsheet — fails to open and holds no
+comments; reported, not hunted.)
+
+### Our engine against both label sets
+
+| engine | vs Tasi (3,702) | vs CUSTODES (1,974) |
+|---|---|---|
+| today (frozen at `eaa0153`) | 489 = **13.2%** | 438 = **22.2%** |
+| frozen cold run (23 Aug) | 333 = 9.0% | 283 = 14.3% |
+
+Agreement, today's engine: **26.7%** against Tasi (346/1,295),
+**25.7%** against CUSTODES. Per rule against Tasi, the shape is the
+one the CUSTODES round found and this one confirms on independent
+labels: `typed-over-formula` 57.2%, `skipped-cell` 68.4%,
+`inconsistent-total` 57.1% (the new rule's first outside score),
+`inconsistent-row` 41.2%, `hardcode-in-formula` 3.5% — the same
+taxonomy mismatch, priced the same way by a different labeller.
+
+### Tasi's two classes — the split CUSTODES could not give us
+
+- **Formula error** (678 cells): coverage **17.6%**, and it is
+  `skipped-cell` that carries it (80 of 119) — our incomplete-total
+  check meets their formula-error class almost exactly.
+- **Missing formula** (3,024 cells): coverage **12.2%**, carried
+  entirely by `typed-over-formula` (354 of 370).
+
+The classes barely share a covering rule: `typed-over-formula`
+covers **0** formula-error cells, `skipped-cell` covers **1**
+missing-formula cell. Two labels, two of our rules, cleanly
+partitioned — which is a stronger statement about the engine's
+taxonomy than either benchmark's headline number.
+
+### The seven tools, one truth, one scorer
+
+| tool | detected | hits | recall | precision |
+|---|---|---|---|---|
+| TasiError | 4,081 | 3,068 | 82.9% | 75.2% |
+| Custodes | 2,443 | 1,582 | 42.7% | 64.8% |
+| Cacheck | 1,814 | 1,388 | 37.5% | 76.5% |
+| AmCheck | 2,163 | 1,259 | 34.0% | 58.2% |
+| Excel | 4,980 | 481 | 13.0% | 9.7% |
+| ExceLint | 249 | 81 | 2.2% | 32.5% |
+| Ucheck&Dimension | 1,878 | 40 | 1.1% | 2.1% |
+
+**ExceLint scores 2.2% recall here**, which is the answer task #55's
+blocked run was for — and the reason is a convention difference the
+registration anticipated: ExceLint reports *regions*, and its
+column holds 249 cells against a truth of 3,702. The number is
+what one convention applied to all produces; it is not a verdict on
+their tool, and this round does not offer one.
+
+Our engine's 13.2% coverage sits above ExceLint's and
+Ucheck&Dimension's recall and below everything else. **That
+comparison is weaker than it looks and the weakness runs against
+us**: our coverage counts a truth cell as covered if it falls in
+any finding's cell set, and a folded finding's roster can blanket
+cells the finding is not really about — so our coverage is an
+*upper bound* on a like-for-like recall, while the tools' numbers
+are exact. Per the registration, no sentence here compares our
+agreement to any tool's precision.
+
+### The label disagreement — a nesting, not a conflict
+
+On the 136 `(workbook, sheet)` pairs both label sets cover:
+
+- CUSTODES: **1,963** cells · Tasi: **3,138** cells
+- In both: **1,952** · CUSTODES only: **11** · Tasi only: **1,186**
+- **Jaccard: 62.0%** of their union.
+
+The headline is not the Jaccard. It is that **99.4% of CUSTODES's
+labelled cells (1,952 of 1,963) are also labelled by Tasi**, while
+Tasi marks 1,186 cells CUSTODES does not. Two independent expert
+labellings of identical files **nest** rather than conflict: they
+agree almost perfectly on what CUSTODES calls a smell, and differ
+almost entirely on how much further the label extends. Exactly 11
+cells — 0.6% — are genuine one-way calls by CUSTODES.
+
+Per the registration's own prohibition, this is **not** a noise
+floor and is not offered as one. What it supports is narrower and
+more useful: on this corpus, « ground truth » is nearly
+scope-determined — who defines the question fixes the answer's
+size, not its centre.
+
+### The prediction, scored honestly: two right, three wrong
+
+- ✅ Coverage lands in the same low-tens band on both label sets.
+- ✅ **Missing-formula coverage (12.2%) is lower than formula-error
+  (17.6%)** — the loose-witness class is where quiet-by-design
+  costs us, as predicted.
+- ❌ **Serious-error coverage is *lower*, not higher: 7.8% against
+  13.2% overall.** The prediction assumed their serious class would
+  concentrate on cells any detector finds; it does the opposite.
+  Their 1,308 serious cells are ones our engine is *less* likely to
+  reach — the single most interesting miss of this round, and the
+  clearest pointer for a future mining round: read the serious
+  cells we do not cover.
+- ❌ **The fresh-vs-frozen difference is large, not small** (13.2%
+  vs 9.0%; 22.2% vs 14.3%) — and per the amendment it may **not**
+  be attributed to the four adopted rounds, because the sweeps also
+  differ in reading route. What can be said: `inconsistent-total`,
+  a rule that did not exist in August, covers 4 Tasi cells at 57.1%
+  agreement, and `typed-over-formula` coverage rose 202 → 354. How
+  much of that is the column-orientation round and how much is
+  reading originals instead of converted copies **this container
+  cannot separate**, and the honest answer is that it is unmeasured.
+- ❌ **The label sets agree on a majority of their union (62.0%),
+  not a minority** — and the nesting above is why.
+
+### What this round does not claim
+
+No precision for our engine. No verdict on any tool. No noise
+floor. No engine-drift conclusion from fresh-vs-frozen. The engine
+was not modified between the registration and these numbers, and
+nothing here changes what it reports.
+
+### What it hands the next round (named, not done)
+
+1. **The serious-error gap** — 1,206 of their 1,308 serious cells
+   are outside every finding we raise. That is a mining question
+   with a ready-made sample, and it is the first thing this record
+   would fund.
+2. **A conversion-free re-score of the frozen era** would separate
+   engine change from reading route — it needs a machine whose
+   LibreOffice can load these files, not this one.
+3. The `skipped-cell`/formula-error alignment (80 of 119) is the
+   strongest cross-corpus signal any of our rules has produced; a
+   witness-widening round for that class would now have two
+   independent label sets to be measured against.
