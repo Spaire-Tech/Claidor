@@ -488,7 +488,14 @@ export const Deals = ({
                       {hasFindings
                         ? `${d.open_findings} ${d.open_findings === 1 ? 'finding' : 'findings'}`
                         : d.checked_at
-                          ? 'Nothing failing'
+                          ? //: On a values-pasted copy the construction
+                            //: rules read almost nothing, so « nothing
+                            //: failing » alone would flatter the file.
+                            //: Two words, because the row is a triage
+                            //: line and the Overview carries the rest.
+                            d.values_only
+                            ? 'Nothing failing · values only'
+                            : 'Nothing failing'
                           : 'Not checked yet'}
                     </span>
                   </span>

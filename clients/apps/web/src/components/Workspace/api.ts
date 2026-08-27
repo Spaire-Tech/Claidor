@@ -188,6 +188,9 @@ export interface DealListItem {
    * share a word would be claiming a check nobody ran.
    */
   checked_at: string | null
+  /** The model is a values-pasted copy: « Nothing failing » on such a
+   *  row is true and misleading at once. */
+  values_only?: boolean
   visited_at: string | null
   arrived_since_visit: number
   findings_since_visit: number

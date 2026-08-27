@@ -17,7 +17,7 @@ carries a `processing` status and the screen polls it: the shape is
 already right for the day the work moves.
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 from uuid import UUID
@@ -35,6 +35,7 @@ from polar.models import (
     ArtifactKind,
     CheckKind,
     CheckRun,
+    CheckStatus,
     Correction,
     CorrectionState,
     Dossier,
@@ -579,7 +580,35 @@ async def list_deals(
     items: list[DealListItem] = []
     for deal in deals:
         counts = await repository.count_findings(deal.id)
-        run = await repository.latest_run(deal.id, CheckKind.tieout)
+        #: The last check of **any** kind that actually completed —
+        #: which is what the column says and what a reader means by it.
+        #: Two corrections in one line. Taking the tie-out alone made a
+        #: model-only deal (no deck to reconcile against, which is most
+        #: of the real corpus) read « Not checked yet » beside its own
+        #: eight findings, and left it permanently un-stale however many
+        #: versions arrived after its audit. And a *failed* run is not a
+        #: check: it carries a finishing time but checked nothing, so it
+        #: must not date the row. Where the newest run of a kind failed
+        #: over an older one that succeeded this under-claims rather
+        #: than over-claims, which is the right direction to be wrong.
+        audit_run = await repository.latest_run(deal.id, CheckKind.audit)
+        values_only = bool(
+            audit_run is not None
+            and audit_run.status is CheckStatus.done
+            and (audit_run.summary or {}).get("values_only")
+        )
+        dated: list[tuple[datetime, CheckRun]] = []
+        for candidate in (
+            await repository.latest_run(deal.id, CheckKind.tieout),
+            audit_run,
+        ):
+            if (
+                candidate is not None
+                and candidate.status is CheckStatus.done
+                and candidate.finished_at is not None
+            ):
+                dated.append((candidate.finished_at, candidate))
+        run = max(dated, key=lambda pair: pair[0])[1] if dated else None
         current = await repository.current_artifacts(deal.id)
 
         # **Stale is a fact about timestamps, not a judgement.** A current
@@ -650,6 +679,7 @@ async def list_deals(
                 # The run's own finishing time, not the row's: a run that
                 # was started and never finished has not checked anything.
                 checked_at=run.finished_at if run else None,
+                values_only=values_only,
                 stale=stale_at is not None,
                 stale_kind=stale_kind,
                 stale_at=stale_at,
