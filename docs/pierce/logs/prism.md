@@ -2994,3 +2994,47 @@ draws from its own stream, `Random(TIER2_SEED + 1000 * trial +
 band_index)`, so band *k* of trial *i* is always the same numbers
 whatever was tried before it. No result above depends on this; it is
 recorded so the next round is comparable to this one.
+
+## New orders (twenty-fifth sweep), and the one line that blocks half of them
+
+Tip `a6ae79dc`. **Orders reset**, and mine are to *finish* the Watch
+rather than widen it:
+
+1. C4 tier 1 per my registration, and then **the tier table as a
+   single published statement**.
+2. C6 stays gated, and I am told not to wait on it.
+3. If both stall, the parked C3 deferral
+   (added-cells-within-matched-structure) is mine.
+
+**Item 1 splits in two, and only half of it can move.**
+
+- **Tier 1's code is still blocked, and the blocker is one line.**
+  `grep -in z3 server/pyproject.toml` on the new tip returns nothing.
+  My registration binds me: no code of this lane imports z3 before
+  that line exists. Stated as plainly as I can, since the orders now
+  ask for the tier itself: **the lead adding `"z3-solver>=4.13"` to
+  `server/pyproject.toml` is the whole of what I need.** Until then
+  tier 1 decides nothing and every run prints the size of the hole
+  (1,516 cells on the registered pair).
+- **The tier table needs nothing from anyone**, and it is written:
+  `docs/pierce/tier-table.md`. What each tier claims, the exact
+  strength of the claim, its measured cost, what it refuses by name,
+  and the number it produced on the registered pair. Every figure is
+  taken from a run artifact and cross-checked against the round that
+  produced it; none is an estimate, and the two places this lane got
+  something wrong (the shape's literal blind spot, the misnamed
+  degenerate refusal) are in the document rather than tidied out of
+  it.
+
+**A note on where I put it.** `docs/pierce/` is not a path
+`lanes.md` assigns me, and the orders asked for a *published*
+statement rather than another section of my diary — so I created the
+file and am naming the deviation here instead of making it quietly.
+Move it if it belongs elsewhere.
+
+With tier 1 blocked and C6 gated, item 3 is the live work, and it is
+the right one: this turn's own findings are about a revision whose
+substance is **added cells inside matched structure** — twelve months
+of outturn typed into a sheet whose rows otherwise align perfectly.
+The next entry registers what C3 should say about that and measures
+what it does say.
