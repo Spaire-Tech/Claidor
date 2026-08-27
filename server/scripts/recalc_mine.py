@@ -83,6 +83,46 @@ def h7_inputs(values: dict[str, float]) -> list[TypedInput]:
     return typed
 
 
+ROE_PATH = (
+    "scripts/corpus_au_uk/ofgem_riio3/draft/"
+    "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx"
+)
+ROE_SHEET = "One-Off Wedge"
+
+
+def roe_inputs(values: dict[str, float]) -> list[TypedInput]:
+    """Hand-typing, 27 Aug, from this sheet's own headers.
+
+    The sheet is a rate model laid out plainly: years down column A,
+    `RPI` and `CPI` across, and a « % of 'legacy' RPI » share. So:
+
+    - **C6:C14 (RPI) and D6:D14 (CPI)** are RATE, sampled in band.
+    - **E6:E13, the legacy share**, is RATE bounded at 1.0 — it is a
+      proportion, and a run above 100% is a state the model never
+      occupies (the typing law, again).
+    - **Column A is the year index: HELD.** A date index is not a
+      quantity, and stepping it would rewrite the model's periods.
+    - **J3, K3, Q22, R22 and the P column carry no labels**, so they
+      are UNTYPED and never perturbed — recorded as gaps rather than
+      guessed at, which is the policy's whole point.
+    """
+    typed: list[TypedInput] = []
+    for row in range(6, 15):
+        for column, band in (("C", (0.4, 2.0)), ("D", (0.4, 2.0))):
+            ref = f"{ROE_SHEET}!{column}{row}"
+            if ref in values:
+                typed.append(TypedInput(ref, InputType.RATE, values[ref], band=band))
+    for row in range(6, 14):
+        ref = f"{ROE_SHEET}!E{row}"
+        if ref in values:
+            typed.append(TypedInput(ref, InputType.RATE, values[ref], band=(0.5, 1.0)))
+    for row in range(6, 37):
+        ref = f"{ROE_SHEET}!A{row}"
+        if ref in values:
+            typed.append(TypedInput(ref, InputType.DATE, values[ref]))
+    return typed
+
+
 #: model key → (path, sheet whose formula cells are watched, typing)
 MODELS: dict[str, tuple[str, str, Any]] = {
     "h7-fds": (
@@ -95,6 +135,7 @@ MODELS: dict[str, tuple[str, str, Any]] = {
         H7_SHEET,
         h7_inputs,
     ),
+    "roe": (ROE_PATH, ROE_SHEET, roe_inputs),
 }
 
 

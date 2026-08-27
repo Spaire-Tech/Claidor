@@ -175,3 +175,51 @@ def test_a_rule_reads_as_a_sentence() -> None:
         rule.render({"M!PROF": "Profit", "M!REV": "Revenue", "M!COST": "Cost"})
         == "Profit − Revenue + Cost = 0"
     )
+
+
+# --- the ratio family (registered before round 1b) ---
+
+
+def test_ratio_rules_find_a_constant_proportion() -> None:
+    from polar.tieout.recalc.mine import mine_ratios
+
+    runs = make_runs(40, seed=21)
+    rules = mine_ratios(runs, REFS)
+    pairs = {(r.numerator, r.denominator, round(r.k, 9)) for r in rules}
+    # REV and TOTAL are the same number in this model: k = 1.
+    assert ("M!REV", "M!TOTAL", 1.0) in pairs
+
+
+def test_a_ratio_that_only_held_once_is_discarded() -> None:
+    from polar.tieout.recalc.mine import mine_ratios
+
+    coincidence = [
+        {"M!A1": 10.0, "M!B1": 5.0},
+        {"M!A1": 11.0, "M!B1": 7.0},
+        {"M!A1": 12.0, "M!B1": 3.0},
+    ]
+    assert mine_ratios(coincidence, ["M!A1", "M!B1"]) == []
+
+
+def test_a_ratio_rule_reads_as_a_sentence() -> None:
+    from polar.tieout.recalc.mine import RatioRule
+
+    assert (
+        RatioRule("M!A1", "M!B1", 0.3).render(
+            {"M!A1": "Index-linked debt", "M!B1": "New debt"}
+        )
+        == "Index-linked debt = 0.3 × New debt"
+    )
+    assert (
+        RatioRule("M!A1", "M!B1", 1.0).render({"M!A1": "Revenue", "M!B1": "Total"})
+        == "Revenue = Total"
+    )
+
+
+def test_coverage_counts_what_the_perturbation_actually_reached() -> None:
+    from polar.tieout.recalc.mine import coverage
+
+    runs = make_runs(20, seed=31)
+    frozen_only = [{"M!FROZEN": r["M!FROZEN"]} for r in runs]
+    assert coverage(runs, REFS) == (7, 8)  # everything but M!FROZEN moved
+    assert coverage(frozen_only, ["M!FROZEN"]) == (0, 1)

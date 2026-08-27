@@ -152,6 +152,22 @@ def varying(runs: Sequence[Mapping[str, float]], refs: Sequence[str]) -> list[st
     return moved
 
 
+def coverage(
+    runs: Sequence[Mapping[str, float]], refs: Sequence[str]
+) -> tuple[int, int]:
+    """(cells that moved, cells watched) — the number that gates a round.
+
+    Round 1b's lesson, measured: a rule set is an artifact of which
+    inputs were allowed to move. On a model where the typing reached
+    10 of 193 watched cells, « no laws found » says nothing about the
+    model and everything about the perturbation. Coverage is
+    therefore reported beside every rule set, and a round with low
+    coverage is **reported as uninformative rather than as a
+    result**.
+    """
+    return len(varying(runs, refs)), len(refs)
+
+
 def mine_signed_sums(
     runs: Sequence[Mapping[str, float]],
     refs: Sequence[str],
@@ -186,6 +202,72 @@ def _sign_assignments(size: int) -> list[tuple[int, ...]]:
             signs.append(-1 if (mask >> bit) & 1 else 1)
         assignments.append(tuple(signs))
     return assignments
+
+
+@dataclass(frozen=True)
+class RatioRule:
+    """« This is always the same multiple of that. »
+
+    Signed sums cannot express a rate model's laws: « the index-linked
+    share is always 30% of new debt » is a proportion, not a
+    cancellation. A ratio rule holds when `numerator = k ×
+    denominator` in every kept run, with one `k` for all of them.
+    """
+
+    numerator: str
+    denominator: str
+    k: float
+
+    @property
+    def refs(self) -> frozenset[str]:
+        return frozenset({self.numerator, self.denominator})
+
+    def holds(self, values: Mapping[str, float]) -> bool:
+        top, bottom = values.get(self.numerator), values.get(self.denominator)
+        if top is None or bottom is None or bottom == 0.0:
+            return False
+        return abs(top - self.k * bottom) <= max(FLOOR, RELATIVE * abs(top))
+
+    def render(self, name: Mapping[str, str] | None = None) -> str:
+        labels = name or {}
+        top = labels.get(self.numerator, self.numerator)
+        bottom = labels.get(self.denominator, self.denominator)
+        if abs(self.k - 1.0) <= RELATIVE:
+            return f"{top} = {bottom}"
+        return f"{top} = {self.k:.10g} × {bottom}"
+
+
+def mine_ratios(
+    runs: Sequence[Mapping[str, float]], refs: Sequence[str]
+) -> list[RatioRule]:
+    """Pairs whose ratio never moves — the rate model's law shape.
+
+    The ratio is taken from the first run and then **tested against
+    every other run**, so a pair that merely happened to line up once
+    is discarded. Pairs that are equal (k = 1) are kept: « these two
+    are always the same number » is a real law, and often the
+    interesting one.
+    """
+    candidates = varying(runs, refs)
+    if not runs:
+        return []
+    found: list[RatioRule] = []
+    first = runs[0]
+    for numerator in candidates:
+        for denominator in candidates:
+            if numerator >= denominator:
+                continue
+            bottom = first.get(denominator)
+            top = first.get(numerator)
+            if not bottom or top is None:
+                continue
+            k = top / bottom
+            if k == 0.0:
+                continue
+            rule = RatioRule(numerator, denominator, k)
+            if all(rule.holds(run) for run in runs):
+                found.append(rule)
+    return found
 
 
 def cleanse(rules: Sequence[Rule]) -> list[Rule]:
