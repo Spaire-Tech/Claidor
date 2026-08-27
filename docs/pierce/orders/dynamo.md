@@ -42,3 +42,25 @@ Sequence note: C6 (Prism's, approved) and B6 (yours, approved —
 diagnosis over broken rules) both consume B5's output. B5 round 1's
 rule-set quality gates all three; nothing downstream registers until
 a modeller-recognisable rule set exists.
+
+## Addendum (27 Aug, evening): the review's gates — binding on B5
+
+Read the plan's third amendment (27 Aug). Binding changes:
+
+1. **Before any C6 diff code exists anywhere**, B5 round 1 gains two
+   registered stability tests: five-seed mining of one unmodified
+   model (rule sets must agree), and cosmetic-invariance mining
+   (blank rows inserted, a sheet renamed, a block reformatted — rule
+   sets must be identical). Cheap, decisive, first.
+2. **B5's catch-rate protocol registers both directions**: overlap
+   with the 84 static-found PR24 regressions, AND — the half that
+   matters — everything B5 flags on those pairs that the static
+   engine did not, hand-verified as a registered sample. Report the
+   two numbers separately, never blended.
+3. **The input-typing classifier is a shared component**: design it
+   as its own module with its own tests (continuous / flag /
+   rate-vs-amount / date-index), because Track E's unit inference
+   will consume it too. Propose its interface in your log for the
+   lead before building deep.
+4. While the Ofwat run runs, count how many rules break per real
+   regression — that number decides B6 (held pending it).

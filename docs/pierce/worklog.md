@@ -4353,3 +4353,25 @@ only registered rounds on our corpus produce ours. Also noted: the
 founder is switching sessions to a different model tier as usage
 runs down — the discipline lives in the repository (orders,
 handoffs, registrations), which is what makes that switch safe.
+
+---
+
+## 27 August — the review that sharpened the thesis
+
+A technical review relayed by the founder landed six corrections;
+all adopted. C6 is now gated on two one-day stability tests (seed
+stability; cosmetic invariance) before any diff code — the whole
+rule-set-diff advantage rests on a property nobody had checked. B6
+is held, not cancelled: whether Reiter-style diagnosis earns its
+keep depends on how many rules a real regression breaks at once,
+and the Ofwat run will say. The thesis sentence itself was wrong in
+an important way and is rewritten in the overview: calling
+recalculate is free — **the moat is not running the model, it is
+the proof that your run reproduces Excel on that file**, without
+which mined laws are noise dressed as mathematics. BlueFin is cited
+only for what its builder-population supports. B5's measurement now
+registers both directions (overlap with the static-found 84, and
+the hand-verified set only B5 catches — where the thesis lives or
+dies). And the input-typing classifier is declared one shared
+component with Track E's unit inference, built once, so two lanes
+never build two disagreeing versions of the same judgment.

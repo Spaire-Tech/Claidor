@@ -408,3 +408,21 @@ what makes every deal after that cheaper than the last.
   to Track C (the rule-set diff over B5's mined laws) and B6 to
   Track B (Reiter/spectrum diagnosis over broken rules). Background
   and adopted design laws: `swens-aha.md`.
+- **27 August 2026, third amendment** (founder-relayed review,
+  adopted): **C6 is gated on two stability preconditions, measured
+  before any diff code exists** — (1) seed stability: mine one
+  unmodified model five times under five seeds; the rule sets must
+  agree, or « v12 broke a rule » is seed noise; (2) cosmetic
+  invariance: insert blank rows, rename a sheet, reformat a block;
+  the mined rule sets must be identical, or the claimed advantage
+  over positional diff is unproven. **B6 is HELD, not cancelled**,
+  pending evidence: if real regressions typically break one or two
+  rules, blame-the-changed-cell wins and Reiter is over-engineering;
+  if they break many, B6 is exactly right — the Ofwat run decides.
+  **B5's measurement registers both directions**: overlap with the
+  84 static-found regressions AND the set B5 flags that the static
+  engine missed, hand-verified — the second set is where the thesis
+  lives or dies. **Input typing is one component**: the
+  continuous/flag/rate/date classifier B5 needs is E2's unit
+  inference wearing another hat — built once, consumed by both
+  tracks, never twice by two lanes.

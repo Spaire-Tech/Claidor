@@ -53,9 +53,13 @@ tail; the branch that can never fire.
 
 Moving from static inspection to live native execution removes the
 most damning limitation of both human reviewers and existing
-software. That is Swens's position, and it is defensible because the
-prerequisite is brutal: before you may run a model in judgment, you
-must prove your engine reproduces it. Swens's recalculation engine
+software. And the position is defensible for a precise reason:
+calling « recalculate » is free — LibreOffice is on every machine —
+but **running a model in judgment is worthless unless you can prove
+your recalculation reproduces Excel on that exact file.** Without
+that proof, discovered « laws » are noise dressed as mathematics.
+Nobody in this market runs the model as the basis of a check; that
+is the opportunity. The proof is the moat. Swens's recalculation engine
 was certified against the model's own stored results across **3.86
 million cells of real regulator and infrastructure models — 99.88%
 reproduced exactly, and every exception assigned to a named cause.**
@@ -266,4 +270,6 @@ a firm's store, it writes to nothing.
 The sentence under all of it:
 
 > Thirty years of spreadsheet-error research, and every published
-> tool reads the file. Swens is the only one that can run it.
+> tool reads the file. Nobody runs the model as the basis of a
+> check — and running it means nothing unless you can prove your
+> engine reproduces Excel on that file. Swens does both.

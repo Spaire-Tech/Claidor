@@ -30,3 +30,10 @@ part now: nothing to build; when B5 round 1 lands, you register C6
 (the law-set matching rule — labels, not positions; the diff
 classes; the planted law-break harness). Sequence note is in
 Dynamo's orders too.
+
+## Addendum (27 Aug, evening): C6 is gated
+
+The plan's third amendment gates C6 on Dynamo's two stability tests
+(five-seed agreement; cosmetic invariance). **Write no diff code
+until both pass on the record.** Your C6 registration, when it
+comes, cites their results first.
