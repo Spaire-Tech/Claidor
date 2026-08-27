@@ -2374,3 +2374,92 @@ after that run, not during it.*
 5. **Constrained families stay unfixed** and the H7 weights stay
    illegal — that is the round after this one, and no number from
    this round may be read as though it were solved.
+
+### `h7-fp` under round 2's typing: 167 stable rules became 17
+
+| | round 1b (hand) | round 2 (inferred) |
+|---|---|---|
+| typed inputs | 55 | **3,978** (3,971 rate, 7 held) |
+| watched cells | 161 | 161 |
+| coverage | artifacts of the frozen remainder | **161 of 161 — 100.0%** |
+| runs kept | 200 + 200 | 200 + 200, **zero drops** |
+| stable signed sums | **167** | **17 — 7 distinct sentences** |
+
+`docs/pierce/logs/dynamo/round2-h7fp.json`. The same movement as on
+`h7-fds`, and the same direction: **the rule set shrank by a factor
+of ten.** Round 1b's 167 were overwhelmingly equalities among cells
+that never moved; at full coverage they die. Prediction 4 of the
+round-2 registration — bigger and worse — is wrong on both models,
+and wrong the good way.
+
+The seven survivors are the same shape as `h7-fds`'s three:
+duplicate calculations under different names, plus first-year
+boundary conditions (`in-year = cumulative` in column I only). The
+weights are still perturbed illegally on this file too, so the
+completeness caveat stands unchanged: **these are true sentences
+about the file, not the model's laws.**
+
+---
+
+## The record-table round — measured, and the prediction I got wrong
+
+*28 Aug, against the registration two entries above.*
+
+### Prediction 1 — **failed, twice, and the second failure is the finding**
+
+Registered: 24 of the 26 RoE rate cells come back as rates.
+
+**First failure — the design was wrong.** As registered, an
+`unknown`-orientation sheet is refused. RoE's `One-Off Wedge` *is*
+`unknown` — its headers are `RPI · CPI · % of 'legacy' RPI`, none in
+the record-header word list, and its row labels are years — so the
+refusal fired and the column path never ran on the one sheet it was
+built for. **0 of 26.** Amended: an undecidable sheet is transposed
+and asked again, and if the sideways view is decisive it is read
+column-wise. Recorded here rather than quietly corrected.
+
+**Second failure — the measurement.** With the amendment the sheet
+is read column-wise, and the recovery is **8 of 26, not 24**:
+
+| column | label | format | E2 |
+|---|---|---|---|
+| E6:E13 | `% of 'legacy' RPI in the RPI Figure` | `0%` | **rate** ✓ |
+| C6:C14 | `RPI` | `0.00` | `unknown-quantity` — held |
+| D6:D14 | `CPI` | `0.00` | `unknown-quantity` — held |
+
+RPI is stored as `5.8` under a plain `0.00` format with a
+three-letter label. There is no percent format to key on, and `RPI`
+means nothing to the inference. **My hand typing knew RPI is an
+inflation rate; E2 has no vocabulary of named rates**, and that —
+not the orientation — is what holds two of the three input columns.
+The column path was necessary and is not sufficient.
+
+### Prediction 3 — **confirmed, and settled without the machine**
+
+Registered: H7 is untouched. Verified by comparing the old and new
+typing directly rather than by re-running an hour of mining: on
+`h7-fds` the typed-input list is **identical in order and in value**
+(3,210 inputs, 3,203 rate, 7 held; no sheet refused, none read
+column-wise), and `h7-fp` likewise. The perturbation is
+`random.Random(seed)` walked over that exact list, so identical
+inputs in identical order give identical runs. The argument is only
+valid because the order matched too, which is why I checked it.
+
+### Prediction 4 — **confirmed, on the real file as well as a fixture**
+
+The registered surprise arrived: read sideways, the year column
+comes back `unknown-quantity`, **not** `date`. The year-index rule
+reads a *row label*, and a transposed column's label is its header —
+blank, here. B5 holds an `unknown-quantity`, so it costs no
+coverage: the right outcome for the wrong reason. Registered for the
+next round rather than patched inside this one.
+
+### What this names for Track E
+
+A third gap, beside constraint membership: **a vocabulary of named
+rates.** `RPI`, `CPI`, `WACC`, `gearing`, `IRR`, `yield` — a
+modeller reads the label and knows; E2 reads `0.00` and abstains,
+correctly by its own rules and uselessly for B5. This is cheap to
+build and easy to get wrong (a list of words is exactly the kind of
+thing that quietly becomes a guess), so it is registered as its own
+round with its own answer key rather than added to this one.
