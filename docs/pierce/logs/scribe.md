@@ -3694,3 +3694,31 @@ Last turn I claimed openpyxl mis-reads shared formulas and retracted it
 the same turn. **This is independent confirmation that the retraction
 was right**, on a model with a hundred times more of them than the one
 that produced the wrong claim.
+
+### For the lead: exactly what I opened, so contamination is yours to judge
+
+Both round 4 subjects are in the population proof's registered sample.
+The proof is **suspended, not cancelled**, so I am naming precisely what
+this lane has now read, rather than leaving the lead to reconstruct it:
+
+| file | what this lane did with it |
+|---|---|
+| `inverness_college_model.xlsm` | read through `read_artifact`; counted cells, formulas, declared sections and typed cells inside them; ran the three D5 thresholds. **No engine code changed, no finding hand-verified, no output inspected.** |
+| `snbts_model.xlsm` | same, and it has no formulas, so the run stopped at the section count |
+| the eight of round 3 | the same, plus one read-only run of `audit()` as the service calls it, whose **finding counts** I recorded (16 rule findings, 12 analytics across all eight) — I did not read the findings themselves beyond nine `typed-over-formula` refs on Newbattle while chasing a claim I later retracted |
+
+**The one that is arguably contaminating is that last line**, and I am
+flagging it rather than defending it: on Newbattle I read nine finding
+records in full. If the proof's cold-run condition means « no lane has
+looked at what the engine says about this file », Newbattle is
+compromised for that condition and the other ten are not. **Drop it
+from the sample or discard my round; either costs less than a proof
+whose conditions were quietly broken.**
+
+I also fetched `inverness_college` and `snbts` from the S3 bucket by the
+same `{Project Words}+Financial+Model.xlsm` convention the committed
+fetcher uses — **both return 200** (2,265,188 and 1,881,902 bytes).
+They are not in `corpus_sft_models.py`, which holds eleven. If that
+matters to route 1 of the suspension (« find a formula-bearing
+population »), the convention reaches further than the committed list;
+extending it is not my file to edit.
