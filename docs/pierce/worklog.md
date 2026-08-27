@@ -4453,3 +4453,48 @@ baseline, finding for finding, on the tip carrying candidate 4's
 adoption. Sentinel's twelve new findings are exactly what the
 baseline says they are, and nothing else moved. V3 resumes with ten
 pairs banked.
+
+---
+
+## 27 August — the eighteenth sweep: B5's honest negative redirects the plan
+
+All five merged; 697 tests green; engine and baseline untouched
+since the certified tip.
+
+**The result of the week is a negative, and it is worth more than a
+win.** Dynamo ran B5's Monday experiment and refused to sell what
+the mathematics produced. The mining is stable under five seeds,
+invariant to cosmetic edits, and clean — and its rule sets are
+**artifacts of low perturbation coverage**: hand-typing reached 10
+of 193 cells on one model; another's cone holds 21,638 constants
+across 3,279 label groups, not hand-typeable at all; H7's « laws »
+turned out to be equalities between rows that never moved because
+almost nothing varied. « Laws found in a corner are not the model's
+laws. » Coverage is now reported beside every rule set, and a
+low-coverage round is declared uninformative rather than dressed as
+a result — the gate's discipline applied to mining.
+
+**The consequence, decided by the lead: Track E's first half moves
+to Dynamo.** The input-typing classifier the review already ruled
+must be built once *is* unit inference, and it is now the binding
+constraint on B5 — and therefore on C6 and B6 behind it. Dynamo owns
+E1 (registered hand-labelled ground truth) and E2 (the inference, as
+a library that reports nothing). **E3 — the unit mismatch findings —
+stays Sentinel's**, armed only when the inference measures accurate
+enough per dimension. Track E was the plan's untouched track and the
+flagship demo finding; it is now also the unblocker of the execution
+thesis. Two reasons to build it, one component.
+
+Elsewhere: **Sentinel** certified candidate 5's precondition gate
+clean. **Scribe** measured D1's dash round — a nil printed as « - »
+is now extracted as a fact, and the rule survived its own criterion.
+**Prism** made its refusals name which case they are. **Atelier**
+built the report face (G4) and measured chat's five canonical
+questions honestly: **not met** — three have their material
+reachable, one cannot be answered at all, one answers in the wrong
+register, and none has been judged as an answer because none can be
+generated in its container. It also caught a red route test the way
+the last one was fixed: assertions now read the engine's own kind
+order instead of copying it, so the Watch can grow without breaking
+the product's tests. Two agent-package tools would close two of the
+five questions — routed to the lead, not written by the wrong lane.
