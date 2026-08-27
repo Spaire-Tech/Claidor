@@ -302,7 +302,21 @@ def _apply(
                         cell.value = "=SUM(" + formula[1:] + ",0)"
                         done = True
         if not done:
-            raise _NoTarget(f"no formula on a labelled row at or after row {at_row}")
+            #: Say which of the two it is. On SWEST the answer was the
+            #: stronger one — no formula at all past row 203, that
+            #: sheet's tail being typed data rather than calculation —
+            #: and a message saying only « none labelled » left the
+            #: real fact to be dug out by hand.
+            any_formula = any(
+                _formula_of(cell.value) is not None
+                for row in sheet.iter_rows(min_row=max(at_row, 1))
+                for cell in row
+            )
+            raise _NoTarget(
+                f"no formula on a labelled row at or after row {at_row}"
+                if any_formula
+                else f"no formula cell of any kind at or after row {at_row}"
+            )
 
     return planted
 

@@ -1552,3 +1552,49 @@ should look like the CAA host's — `tail_hardcode` and
 `stealth_literal` catching every trial, control silent. If instead
 the forced branch still reports nothing, the dead-branch story is
 incomplete and that is the more interesting result.
+
+## Round C — results: the prediction met, on the refusal branch
+
+| sheet | before | after | `rewrite_formula` | refusals |
+|---|---|---|---|---|
+| InputSummary | 24/24 | **24/24** | 3/3 | 0 |
+| SWEST | 22/24 | **22/22** | **1/1** | **2, named** |
+
+The registered prediction was that SWEST's two failures « should
+become either recoveries or refusals ». They became refusals: « no
+formula on a labelled row at or after row 203 » and the same at
+312. Every other class reproduced 3/3 on both sheets, so the gate
+holds, and the harness now reports a denominator it can defend —
+22 of 22 hosted, not 22 of 24 attempted.
+
+**The refusal checked against the sheet, not taken on the
+instrument's word.** Read directly: SWEST spans rows 1–418 with
+298 labelled rows, and **no formula cells whatsoever at or after
+row 203** — the tail of that sheet is typed literals end to end.
+So the refusal is true and in fact understates itself: there is no
+formula there at all, labelled or otherwise. `rewrite_formula` is
+a class this sheet genuinely cannot host below its quartile mark,
+which is the fact the round was written to surface, and the wrap
+that used to hide it was the whole defect.
+
+Worth keeping beside C1's own finding about this corpus: a
+regulator model's lower half is often data, not calculation, and a
+harness that assumes « there is always a formula here » will
+manufacture results rather than measure them.
+
+## The C6 gate, checked this sweep
+
+Dynamo has now **registered** both stability tests — seed
+stability (five seeds, 200 runs, « identical, or the difference
+named rule by rule ») and cosmetic invariance (three blank rows
+inserted and the sheet renamed by LibreOffice itself, **compared
+by label, never by cell reference**). Both are written as claims
+with predictions and **carry no results yet**. So C6 stays
+unwritten, per the plan's third amendment. Recorded here so the
+gate's state at this sweep is on my record too, not only theirs.
+
+Their invariance test rests on the same principle this lane's
+alignment does: inserting rows moves every watched cell, so a
+reference-keyed comparison would report total disagreement for a
+model that behaves identically. When their numbers land, that is
+the shared ground C6's matching rule stands on.
