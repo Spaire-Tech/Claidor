@@ -203,11 +203,33 @@ class Finding:
     cells: str = ""
 
 
+@dataclass(frozen=True)
+class Abstention:
+    """A check that had nothing to look at, with the reason why.
+
+    Deliberately the same shape and the same field names as the
+    analytics layer's `Abstention`, so the product meets one
+    vocabulary rather than two (A4, docs/pierce/a4-coverage.md).
+    """
+
+    rule: str
+    why: str
+
+
 @dataclass
 class Audit:
     findings: list[Finding] = field(default_factory=list)
     #: Cells examined, so silence can be told apart from not looking.
     examined: int = 0
+    #: A4 — what each rule actually walked, keyed by rule. « No
+    #: findings » and « nothing to look at » are different sentences,
+    #: and without this the report cannot tell them apart. Absent
+    #: means the rule counted nothing.
+    tallies: dict[str, dict[str, int]] = field(default_factory=dict)
+    #: A4 — the rules whose denominator is zero for a nameable
+    #: reason. A rule with a non-zero denominator never appears here:
+    #: it looked, and silence means clean.
+    abstentions: list[Abstention] = field(default_factory=list)
 
     @property
     def errors(self) -> list[Finding]:
@@ -806,10 +828,88 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     #: The caches exist for the passes above; dropping them here keeps
     #: a corpus sweep's memory flat file after file. Content-keyed, so
     #: clearing is about memory only, never correctness.
+    #: A4 last, so its « raised » counts describe the report as it
+    #: actually leaves the engine — after every fold has settled.
+    _coverage(book, result)
     tokens_of.cache_clear()
     _shape_of.cache_clear()
     _literal_scan.cache_clear()
     return result
+
+
+#: A4 — which population each rule walks. The right-hand names are
+#: computed once in `_coverage`; a rule absent here is one whose
+#: denominator the reader surface cannot supply (`broken-name`, per
+#: the round's amendment).
+COVERAGE_OF: dict[str, str] = {
+    "long-formula": "formulas",
+    "volatile": "formulas",
+    "hardcode-in-formula": "formulas",
+    "inconsistent-anchoring": "formulas",
+    "inconsistent-row": "formulas",
+    "external-link": "formulas",
+    "error-value": "valued",
+    "typed-over-formula": "typed",
+    "typed-over-edge": "typed",
+    "skipped-cell": "aggregations",
+    "inconsistent-total": "aggregations",
+    "range-over-block": "aggregations",
+    "circular": "connected",
+    "hidden-sheet": "sheets",
+}
+
+
+#: A4 — why a denominator is zero, in the file's own terms. Ordered:
+#: the first matching reason wins, so the most informative sentence
+#: is the one that reaches the report.
+def _why_empty(population: str, formulas: int) -> str:
+    if population == "formulas" or (population != "sheets" and formulas == 0):
+        return "the workbook holds no formulas — a values-pasted copy"
+    return "nothing of this kind is present in the file"
+
+
+def _coverage(book: Workbook, result: Audit) -> None:
+    """A4 — what each rule walked, so « no findings » and « nothing to
+    look at » stop being the same sentence.
+
+    Registered in docs/pierce/a4-coverage.md. The populations are
+    counted from the reader's own cells, never estimated, and each is
+    the set the rule draws from — so a tally can never be smaller
+    than the findings it explains. A rule whose population is
+    non-empty never abstains: it looked, and silence means clean.
+    """
+    formulas = typed = valued = connected = aggregations = 0
+    for cell in book.cells.values():
+        if cell.formula:
+            formulas += 1
+            if BARE_SUM.match(cell.formula) or BARE_RANGE.match(cell.formula):
+                aggregations += 1
+        elif cell.value is not None:
+            typed += 1
+        if cell.value is not None:
+            valued += 1
+        if cell.precedents:
+            connected += 1
+    sizes = {
+        "formulas": formulas,
+        "typed": typed,
+        "valued": valued,
+        "connected": connected,
+        "aggregations": aggregations,
+        "sheets": len(book.sheets),
+    }
+    raised = Counter(finding.rule for finding in result.findings)
+    for rule, population in COVERAGE_OF.items():
+        total = sizes[population]
+        if total:
+            result.tallies[rule] = {"total": total, "raised": raised.get(rule, 0)}
+        else:
+            result.abstentions.append(
+                Abstention(
+                    rule=rule,
+                    why=_why_empty(population, formulas),
+                )
+            )
 
 
 def _flows(book: Workbook, result: Audit) -> None:

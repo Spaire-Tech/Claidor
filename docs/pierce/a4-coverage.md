@@ -98,3 +98,44 @@ names — and abstentions to appear, if anywhere, on the smallest
 files. If one appears on a large model, it is either a real fact
 worth knowing about that file or a bug in my denominator, and the
 hand check decides which.
+
+---
+
+## Amendment (27 Aug, before implementation)
+
+Two denominators as registered cannot be computed from the frozen
+reader surface, and both are corrected here rather than fudged:
+
+1. **`broken-name` is dropped from the coverage entirely.**
+   `Workbook` exposes `broken_names` and `foreign_names` but **no
+   count of declared names**, so « names examined » is not
+   available. A tally of `0 of 0` on a file carrying 800 defined
+   names would be worse than no tally at all, and the alternative —
+   counting only the names the reader already flagged — is not a
+   denominator, it is the numerator wearing a hat. Getting the real
+   figure means a reader change, which is outside Sentinel's paths
+   and is exactly the caution the previous round earned. The rule
+   therefore reports **no tally and no abstention**, and the record
+   says why.
+2. **The typed-over family's denominator becomes typed cells** —
+   cells the reader elected that hold a value and no formula —
+   rather than « typed cells sitting inside a run of formulas ».
+   The narrower figure would require re-walking the runs outside
+   the passes that own them, which risks the counter and the
+   detector disagreeing about what a run is. Typed cells is the
+   population these rules draw from, exactly computable, and
+   honest: « of N typed cells, none was judged an override ».
+
+**Third correction, found by the tests:** registered abstention
+reason 3 — « this workbook has one sheet » — is **unreachable, and
+is removed**. A one-sheet workbook has one sheet to examine, so
+`hidden-sheet` tallies `1` and reports honestly that it looked. The
+reason would only fire under a murkier denominator (« sheets that
+could be hidden while others are visible »), and bending the
+population to make a registered sentence reachable is exactly
+backwards. Reasons 1, 2 and 4 stand; 2 now applies to nothing since
+`broken-name` is dropped, so in practice the reachable reasons are
+the values-pasted one and the catch-all.
+
+Everything else stands. The measurement criteria are unchanged, and
+the gate must still be clean.
