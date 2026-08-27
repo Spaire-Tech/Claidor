@@ -635,3 +635,135 @@ since the marked-up copy is built from findings rather than from
 the mark; and the delta answers for models only. Gap 5
 (`rounding`/`writing` house rules) I left alone — not my claim to
 re-adjudicate, and I found no evidence it moved.
+
+## 27 August 2026 — G4 the report face, and G2 measured honestly
+
+Seventeenth-sweep orders. Item 3 first, because it gated the report.
+
+**The category map, re-checked against the merged catalogue.** Two
+were stale and one was missing outright: `interest` had been renamed
+`interest-consistency`, Sentinel's `range-over-block` was new, and
+both were falling into « Other findings ». Mapped. Then the real
+model turned up a third, worse case — below.
+
+## G4 — the report face
+
+Built on the founder's `fullRep` sheets (nothing they drew was
+removed), then read hostilely against a real model, which is the
+plan's own DONE test. Subject: `example_preapp_model.xlsx`, the
+repo's judged semiconductor-fab fixture — **in-sample, and said so
+plainly**: it is a committed fixture, not a cold corpus file. 6,186
+cells, 5,956 formulas, 13 sheets. Seeded through the demo kit
+exactly as a prospect's file would be.
+
+What the orders asked for, and what it now carries:
+
+- **Coverage on its face.** It was on *no screen at all* — served by
+  the API, rendered nowhere. Now a section of its own, in the
+  schema's own words. A model-only deal (this one) has no figures to
+  reconcile, so it says « No deck or memo has been reconciled
+  against this model … What follows is the model read against
+  itself » rather than printing a meaningless « 0 of 0 ».
+- **Severity at a glance.** Material · Significant · Observation as
+  counts, before a word of prose.
+- **Every claim cited.** A citation helper that gives the cell where
+  there is one and the document and page where there is not — a
+  deck-figure finding used to print with no citation at all.
+- **The recalculation verdict**, and the differing cells named *on
+  the page*: a printed report cannot send its reader to a screen.
+
+**The hostile read found seven of my own defects, all fixed:**
+
+1. Every citation said its sheet twice — « 'Assumptions
+   Processing'!Assumptions Processing!E50 ». The engine's anchor
+   already carries the sheet.
+2. « Formulas read: 6186 » was **false** — 6,186 is cells; formulas
+   are 5,956. It now says both, from the model's own counts.
+3. The verdict paragraph was two findings' full sentences with raw
+   formulas inline. It now leads with the headlines a partner scans.
+4. Findings whose stored sentence equals their evidence printed the
+   same words twice.
+5. « No debt schedule was located » printed twice — two rules
+   abstain for one reason. Deduped.
+6. The recalculation line pointed at a screen; it now names the
+   cells with both numbers.
+7. A material finding printed with no scan line, and one sentence
+   ended mid-formula (`…K10<0,L10<0`) because the engine stores it
+   truncated. Not this lane's text to rewrite, so it is marked with
+   an ellipsis — « abbreviated », not « broken » — and every finding
+   now gets a scan line, falling back to its family.
+
+Screenshots: `logs/atelier/report-face-sheet{1,2,3}.png`.
+
+**The recalculation, on a real model.** The gate reproduced
+**4,796 of 4,798 compared cells exactly**. The only two
+disagreements are `Balance Sheet!L39` and `L40`: 2.98e-07 stored
+against 0 recalculated — balance-check dust on a model denominated
+in millions. The verdict is nonetheless « fail », because the gate's
+absolute floor is 1e-12. **For Dynamo, via the lead**: two cells of
+3e-07 residue flip a 4,798-cell file from pass to fail; whether the
+floor should scale to the magnitudes in the file is the engine's
+call, not a screen's. I have not touched it.
+
+**A second finding for the lead — a rule that fires but is not in
+the catalogue.** `gapped-test` produced a **material** finding on
+this real model (`Balance Sheet!D7`, a negative-cash test that skips
+seven live periods — one of the four defects the Tracelight exam
+caught us missing). It is in neither `RULE_NAMES` nor
+`ANALYTIC_RULE_NAMES`, and `endpoints.py` builds the house-rules
+list from those two maps and rejects any key outside them. So a firm
+**cannot see or switch off a rule that is finding material defects**,
+and my category map had no family for it. I mapped it (its family is
+plain from what it detects) and am reporting the catalogue hole
+rather than editing another lane's audit module. My own
+`TestHouseRules` asserts the endpoint matches the catalogue — it
+passes, and it cannot catch this, because the gap is between the
+catalogue and what the audit actually emits.
+
+## G2 — the five canonical questions
+
+**The blocker first: chat cannot run in this container.** There is
+no `ANTHROPIC_API_KEY`, so `POST /deals/{id}/ask` answers 503 « No
+ANTHROPIC_API_KEY configured. » I could not judge a single generated
+answer, and I will not report on answers I did not see.
+
+What I could measure honestly is the surface any answer must be
+built from: I ran the agent's own six tools (`locate`, `trace_back`,
+`trace_forward`, `inventory`, `structure`, `versions`) against real
+deals — the preapp model, and the cascade deal for the version
+questions.
+
+| # | Question | Reachable today? | Measured |
+|---|---|---|---|
+| 1 | Why did DSCR fall between versions | **Yes** | `versions` names the moved cell (`Model!F16`, 59.056154 → 56.5561542); `trace_forward Model!F16` reaches 19 cells over 3 sheets incl. « FY2027E Adjusted EBITDA ». Both halves are there. |
+| 2 | What feeds equity IRR | **Yes** | `trace_back` returns the output's 20 direct inputs. Caveat: this model has no equity IRR, so it was judged on its real headline output, « Average Debt Service Coverage » (`CashFlow!D54`). |
+| 3 | Where is this from | **No** | No tool reaches the Chain. The cascade source PDF's 22 facts — each with page, box and line — are live and unreachable. The honest answer today is a decline, which is right, but it is a decline. |
+| 4 | Hardcodes above materiality | **Yes, with a caveat** | `inventory(kind='hardcodes')` returns 22 typed-in numbers *with their values*, so a threshold can be applied — but the tool takes no materiality argument, so the filtering is the model's, not the engine's. |
+| 5 | What changed | **Partly** | `versions` answers in raw cell moves, not the Watch's review language. The delta report — new defect, class change, methodology moved — is live at `/artifacts/{id}/delta` and no tool exposes it. |
+
+**Two tools would close 3 and 5**, and both are one function each in
+`agent/model_tools.py` — **not my lane**, so I have not written
+them, and the endpoints they would read already exist and are mine:
+a `sources` tool over `/v1/chain/documents/{id}/facts`, and the
+Watch's `delta_report` behind `versions` (or its own `delta` tool).
+Recommend routing to whoever owns the agent package.
+
+So, against the plan's DONE test for G2 — « the five answer
+correctly on a real model, judged » — the honest status is: **not
+met, and not measurable here.** Three of five have their material
+reachable; one cannot be answered at all; one answers in the wrong
+register. None has been judged as an answer, because no answer can
+be generated in this container.
+
+**One more thing the merge caught, before the push.** The route suite
+went red on `TestTheVersionDelta`: the merged tip registered two new
+Watch classes — `emptied_cell` (« a cell holding X is now empty »)
+and `filled_cell` (« a cell that was empty now holds X ») — and my
+test pinned the eight kinds as a literal. Same mistake as the rule
+catalogue, same fix: the assertion now reads the engine's own
+`_KIND_ORDER` instead of copying it, so the Watch can grow without
+turning my test red. The delta view's ink map had the same hole —
+both new kinds would have rendered as raw identifiers — so they now
+carry words and colour: emptying takes the amber of an assumption at
+risk (a removed input changes an answer silently), filling the blue
+of information. Suite back to **82 passed**.

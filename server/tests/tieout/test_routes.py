@@ -1894,16 +1894,11 @@ class TestTheVersionDelta:
             assert isinstance(body[key], int)
         # Items are the Watch's eight classes, in the engine's own rank.
         kinds = [item["kind"] for item in body["items"]]
-        order = [
-            "new_defect",
-            "class_change",
-            "relabelled_line",
-            "methodology_change",
-            "moved_assumption",
-            "material_output",
-            "structure",
-            "repaired_defect",
-        ]
+        #: The engine's own ranking, not a copy of it. Pinning the list
+        #: here made this test red the moment the Watch registered two
+        #: new classes (`emptied_cell`, `filled_cell`) — a green test
+        #: that fails on the engine growing is testing the wrong thing.
+        from polar.tieout.watch.delta import _KIND_ORDER as order
         assert all(kind in order for kind in kinds)
         assert kinds == sorted(kinds, key=order.index)
         # Two entirely different workbooks under one lineage: the
