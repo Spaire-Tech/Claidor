@@ -2921,3 +2921,96 @@ came from re-measuring the calibration half after finding my own
 measurement of it was too small a sample, and the judging half is still
 unread for this purpose. If the criterion fails again, round T dies
 rather than acquiring a third amendment.
+
+## D1 round T — measured. **It dies by the criterion I wrote, and the criterion was part of the problem.**
+
+**The criterion:** « Every line of the three ED2 PDFs must read
+character-for-character as it does at tolerance 3.0 today. Any
+difference kills it. »
+
+**81 lines differ** — 2 in the annex, 57 in the handbook, 22 in the
+PCFM guidance. **Round T is out.** `EXTRACTOR_VERSION` stays `"4"`.
+
+### But read what the differences are, because they are not one thing
+
+**Repairs** — the « now » is plainly the correct reading:
+
+| page | at 3.0 today | under round T |
+|---|---|---|
+| handbook p30 | `notio𝑊𝑊na𝐴𝐴l𝐶𝐶 g𝐶𝐶e 𝑡𝑡 a=ri𝑖𝑖n𝑖𝑖g𝑖𝑖 𝐴𝐴o 𝑡𝑡 ×th𝑊𝑊e+ lic𝐴𝐴e𝑅𝑅n𝑖𝑖s𝐴𝐴e…` | `𝑊𝑊𝐴𝐴𝐶𝐶𝐶𝐶𝑡𝑡 =…` **and** `where g is the notional gearing of the licensee, equal to 60%.` |
+| handbook p32 | `…Index (RPEI )` + a line reading `t` | `…Index (RPEIt)` |
+| handbook p22 | `S pC 2.2` | `SpC 2.2` |
+| guidance p5 | `…run to calculate AR by 31 A…` | `…run to calculate ARt by 31…` |
+| guidance p10 | `Allowed Revenue (AR) value` | `Allowed Revenue (ARt) value` |
+
+**All 22 of the PCFM guidance's changes are of that kind.** ED2's own
+handbook contains zips too — I had assumed ED2 was clean.
+
+**Damage** — display mathematics, a third population neither approach
+anticipated:
+
+| page | at 3.0 today | under round T |
+|---|---|---|
+| handbook p33 | `𝑅𝑅𝑅𝑅𝑗𝑗,𝑡𝑡` | `𝑅𝑅𝑅𝑅𝑗𝑗,𝑡𝑡 𝑡𝑡−1 𝑡𝑡` |
+| handbook p56 | `where: 1−(1+𝐷𝐷𝑅𝑅)` | `1−(1+𝐷𝐷𝑅𝑅)` — « where: » moved away |
+| annex p90 | `ED1 ED2 tax clawback gearing level test151` | split in two |
+
+A multi-line display equation puts its subscripts on genuinely separate
+visual rows, and moving each one to « the larger neighbour » shuffles
+them between rows of the equation. Real damage, and a real population.
+
+### The criterion forbade improvement as well as damage, and that is my error
+
+« Byte-identical » conflates *changed* with *damaged*. Round T is dead
+by it, and I am not overturning that after reading the result — the
+whole value of a frozen criterion is that it binds when it is
+inconvenient. But the criterion should have measured **damage**, and it
+did not, and I wrote it one round after complaining that my ED2 sample
+was blind to exactly this distinction. I replaced a blind check with a
+deaf one.
+
+### Where D1 actually stands, for the lead
+
+**Five rounds, five deaths, and they are not five failures of the same
+kind:**
+
+| round | what it tried | how it died |
+|---|---|---|
+| P | refuse lines ≥60% one-character tokens | hand-check: caught **nils** — 9 of 20 |
+| Q | refuse lines with ≥3 lone letters | hand-check: caught **prose and formula legends** — 4 of 20 |
+| R | character-gap geometry | **calibration**: populations 2× apart, no constant — and it found the real mechanism |
+| S | y-tolerance 1.5 | **subscripts**, 0.1 pt from the zips |
+| T | 1.5 + merge small runs by font size | **display mathematics** shuffled; 81 ED2 lines changed |
+
+**What is now known and was not known this morning:**
+
+1. The defect is **D1's own**, not the PDF's: `_LINE_TOLERANCE = 3.0`
+   merges baselines that are exactly 3.0 apart and zips two texts
+   together by x. `page.extract_words()` does the same at its own
+   default of 3.
+2. **Font size separates** sub/superscripts from merged baselines
+   cleanly where distance cannot — measured, and it works.
+3. The genuine glyph-by-glyph population is **four lines**, not
+   thousands.
+4. **Display mathematics is a third population** and nothing tried so
+   far handles it.
+5. Round T's shape recovers **~2,400 junk facts in task 72** (3,583 →
+   1,160), loses **nothing** in task 81, task 5, or ED2's fact counts,
+   and repairs every one of the PCFM guidance's changed lines.
+
+**The decision I am putting to the lead rather than taking myself:**
+round T's rule is one criterion away from shippable, and the criterion
+is the question — should a D1 change be required to leave every line
+*unchanged*, or to leave every line *undamaged*? The second is right
+and much harder to test. My proposal, registered but **not run**, is a
+hand-judged damage check: the seeded 20-line draw, restricted to lines
+that *changed*, each read and marked repair / damage / neither, with
+**zero damage** the bar and repairs counted but not required. That is
+the same shape as every hand-check this lane runs, and it is the only
+instrument I can see that does not forbid the fix along with the
+breakage. **I am not running it without a word from the lead**, because
+choosing one's own success criterion after five deaths is exactly when
+a lane should not be alone.
+
+Until then D1 ships version `"4"` with the defect documented, and every
+number this lane has published stands as measured under it.
