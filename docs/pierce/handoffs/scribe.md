@@ -146,12 +146,21 @@ is four lines, not thousands; display mathematics is a third population
 nothing yet handles; and round T's shape recovers ~2,400 junk facts in
 task 72 while losing nothing in task 81, task 5 or ED2.
 
-**What is open, and is the lead's call, not the lane's:** round T died
-because its criterion demanded every ED2 line be *unchanged*, and it
-both repaired and damaged lines. « Unchanged » is the wrong bar;
-« undamaged » is right and needs a hand-judged check. That check is
-proposed in the log and deliberately **not run** — picking your own
-success criterion after five deaths is when a lane should not be alone.
+**Measured since, and it changes the shape of the question.** All 143
+differing line entries — 32 logical changes — were hand-read against
+the page: **20 repairs, 1 damage, 11 neither** (display mathematics).
+The one damage is unambiguous: `8. Legacy adjustments` becomes
+`8. Legacy adju2s+tm𝑅𝑅ℎ𝐷𝐷e𝑅𝑅nts`, an equation denominator merged into a
+heading. **Both candidate criteria reject round T** — « unchanged » at
+32, « undamaged » at 1 — so the criterion question is not what blocks
+D1, and asking it before measuring that was my mistake.
+
+**The precise handover**: round T's *downward* (superscript) branch
+caused the only damage; the *upward* (subscript) branch caused none in
+143 entries, and nearly all 20 repairs are subscripts (`ARt`, `RPEIt`,
+`iBTAt`, `AR*2026/27`). **Round T minus the downward branch is the
+obvious next candidate** — registered nowhere yet, and it still needs
+the lead's word before it runs.
 
 Two harnesses are committed and ready:
 `corpus_documents_spaced_round.py` (seeded 20-line hand-check) and
