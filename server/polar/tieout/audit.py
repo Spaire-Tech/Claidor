@@ -237,6 +237,7 @@ RULE_NAMES: dict[str, str] = {
     "inconsistent-row": "Formulas inconsistent across a row",
     "circular": "Circular references",
     "skipped-cell": "Sum ranges that miss a cell",
+    "range-over-block": "Ranges that reach past their block",
     "inconsistent-total": "Totals that disagree with their siblings",
     "hidden-sheet": "Hidden sheets",
 }
@@ -263,6 +264,7 @@ HEADLINES: dict[str, str] = {
     "inconsistent-row": "Inconsistent formula",
     "circular": "Circular reference",
     "skipped-cell": "Incomplete total",
+    "range-over-block": "Range past its block",
     "inconsistent-total": "Disagreeing totals",
     "hidden-sheet": "Hidden sheet",
 }
@@ -422,6 +424,11 @@ def _elevated(book: Workbook, result: Audit) -> None:
             "designed layout can excuse one",
         ),
         "inconsistent-row": (0.9, "the row's own pattern shows the break"),
+        "range-over-block": (
+            0.9,
+            "both formulas are in the file — the inner total's rows are "
+            "inside the outer's range, so they are added twice",
+        ),
         "inconsistent-total": (
             0.9,
             "the family's own agreement shows the break — a family can "
@@ -582,6 +589,20 @@ def plain_words(finding: Finding, axes: "PeriodAxes | None" = None) -> str:
             f"{lead} a typed value at the edge of a row that otherwise "
             "calculates — the series runs out in a typed number. Check "
             "whether the late adjustment is intentional."
+        )
+    if finding.rule == "range-over-block":
+        if finding.severity == "error":
+            lead = f"{label}'s total" if label else f"The total at {at}"
+            return (
+                f"{lead} reaches over a subtotal of its own rows, so those "
+                "rows are counted twice. Check the range against the block "
+                "it is meant to add."
+            )
+        lead = f"{label}" if label else f"The range at {at}"
+        return (
+            f"{lead} spans a label inside its own range — the range has "
+            "left the block it is meant to cover. Check where the block "
+            "starts."
         )
     if finding.rule == "inconsistent-total":
         lead = (
@@ -768,6 +789,7 @@ def audit(book: Workbook, axes: "PeriodAxes | None" = None) -> Audit:
     _circularity(book, result)
     _skipped_cells(book, result)
     _sibling_totals(book, result)
+    _range_over_block(book, result)
     _gapped_tests(book, result)
     _hidden_sheets(book, result)
     _names_table(book, result)
@@ -4418,6 +4440,104 @@ def _sibling_totals(book: Workbook, result: Audit) -> None:
                     )
                 )
                 already.update(one.ref for one in survivors)
+
+
+#: One bare aggregation over a single own-column range — the shape
+#: this round judges. A tail, a second call or mixed arithmetic makes
+#: a different claim and stays out.
+BARE_RANGE = re.compile(
+    r"^=\s*\+?\s*(?P<fn>SUM|AVERAGE|COUNT|COUNTA|MIN|MAX|PRODUCT)\("
+    r"\s*\$?(?P<c1>[A-Z]{1,3})\$?(?P<r1>\d+)\s*:\s*"
+    r"\$?(?P<c2>[A-Z]{1,3})\$?(?P<r2>\d+)\s*\)\s*$",
+    re.IGNORECASE,
+)
+
+
+def _own_column_span(cell: Cell) -> tuple[int, int] | None:
+    """(first row, last row) when the cell is a bare aggregation over a
+    multi-row range in its own column, entirely above itself."""
+    m = BARE_RANGE.match(cell.formula or "")
+    if m is None:
+        return None
+    if m.group("c1").upper() != m.group("c2").upper():
+        return None
+    if m.group("c1").upper() != get_column_letter(cell.column):
+        return None
+    first, last = sorted((int(m.group("r1")), int(m.group("r2"))))
+    #: A cell inside its own range is the circularity check's business.
+    if last - first < 1 or first <= cell.row <= last:
+        return None
+    return first, last
+
+
+def _range_over_block(book: Workbook, result: Audit) -> None:
+    """A range that reaches past the block it is meant to cover.
+
+    The skipped-cell check asks what a total left *out*; nothing asked
+    what a range wrongly took *in*, and every mention of double
+    counting in this module until now was an exemption protecting that
+    check from accusing a correct total. This asks the other half,
+    registered in docs/pierce/a3-range-block.md.
+
+    **The double count** (error): the range contains a cell that is
+    itself a bare aggregation over a strict subrange of the same
+    range in the same column, so those rows are added twice — once
+    directly and once through the subtotal. Wrong arithmetic however
+    the model is used, and both formulas are in the file.
+
+    The round's second class — a range spanning a *label* — was
+    withdrawn before any result: the reader does not elect text
+    cells, so a detector on that surface cannot tell a label from a
+    blank, and blanks are ordinary layout. It needs a reader change,
+    which is a frozen interface and its own round.
+    """
+    already = {
+        finding.ref
+        for finding in result.findings
+        if finding.rule in ("skipped-cell", "inconsistent-total")
+    }
+    spans: dict[tuple[str, int], list[tuple[Cell, int, int]]] = {}
+    for cell in book.cells.values():
+        got = _own_column_span(cell)
+        if got is not None:
+            spans.setdefault((cell.sheet, cell.column), []).append(
+                (cell, got[0], got[1])
+            )
+
+    for (sheet, column), members in sorted(spans.items()):
+        letters = get_column_letter(column)
+        for cell, first, last in sorted(members, key=lambda one: one[0].row):
+            if cell.ref in already:
+                continue
+            inner = next(
+                (
+                    other
+                    for other, o_first, o_last in members
+                    if other.ref != cell.ref
+                    and first <= other.row <= last
+                    and first <= o_first
+                    and o_last <= last
+                    and (o_first, o_last) != (first, last)
+                ),
+                None,
+            )
+            if inner is not None:
+                result.findings.append(
+                    Finding(
+                        rule="range-over-block",
+                        severity="error",
+                        ref=cell.ref,
+                        sheet=sheet,
+                        name=cell.name,
+                        detail=(
+                            f"{cell.formula} reaches over {inner.ref.rsplit('!', 1)[-1]}"
+                            f" — {inner.formula} — which already adds rows inside "
+                            "that range, so they are counted twice"
+                        ),
+                        source="ICAEW P19, EuSpRIG",
+                    )
+                )
+                already.add(cell.ref)
 
 
 def _hidden_sheets(book: Workbook, result: Audit) -> None:

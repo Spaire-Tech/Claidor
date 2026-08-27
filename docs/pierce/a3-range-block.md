@@ -127,3 +127,34 @@ decides whether « the range spans a label » is a defect or a layout
 habit on real models. If class 2 floods, the round is refused and
 class 1 is re-registered alone — the split is anticipated here so
 that outcome is a planned branch, not an improvised rescue.
+
+---
+
+## Amendment (27 Aug, before any result): class 2 is not implementable
+
+Class 2 cannot be built as registered, and the reason is structural
+rather than a detail of my design: **the reader does not elect text
+cells**. A cell holding « Second section » is absent from
+`Workbook.cells` entirely — the reader elects a cell only when it
+holds a number or a formula — so a detector standing on that
+surface cannot tell « the range spans a label » from « the range
+spans a blank », and blanks are excluded by this registration's own
+words. Verified at the cells: a fixture with a text cell mid-range
+returns `MISSING` for that reference.
+
+Making it implementable means putting text cells into
+`Workbook.cells`, which is **frozen interface #1** in `lanes.md`
+and visible to every lane — a change that would move findings
+across the whole engine. That is not this round's to make, and not
+mine to make quietly.
+
+So, per the branch this registration anticipated: **class 1
+proceeds alone**, and class 2 is **withdrawn, not refused** — no
+result was computed for it, and the distinction matters. The case
+is routed to the lead in the log: class 2 becomes possible only
+behind a reader change, which is its own registered round and, by
+`lanes.md`, a lead-approved interface bump.
+
+Everything else in the registration stands unchanged: the criteria,
+the seed, the hosts rule, the marginal denominator. The catalogue
+consequence is unchanged too — one rule, 19 → 20.
