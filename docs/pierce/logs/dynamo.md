@@ -920,6 +920,56 @@ the per-class table was measured on. ddmin on the H7 four.
   reporting is the point. **No narrowing result exists as this is
   written.**
 
+## 27 August 2026 — the narrowing result: 43 narrowings, 0 misses
+
+Every registered prediction held, including the one predicted to
+fail. Across all 37 plants (each violated output is one narrowing,
+so 43 in total):
+
+| Planted class | Law violated | Narrowings | Exact | Hit | Miss |
+|---|---|---|---|---|---|
+| omitted segment | consolidation (structural) | 11 | **11** | — | 0 |
+| hardcode-in-the-tail (adjustment chain) | zero-input | 11 | **11** | — | 0 |
+| hardcode-in-the-tail (total line) | consolidation (structural) | 11 | — | 11 | 0 |
+| hardcode-in-the-tail (money chain) | proportionality | 4 | **4** | — | 0 |
+| hardcoded ratio leg | proportionality (cross-law) | 4 | **4** | — | 0 |
+| hardcoded ratio leg | scale invariance | 2 | **2** | — | 0 |
+| **Total** | | **43** | **32** | **11** | **0** |
+
+Every exact answer is a set of size **one** — the planted cell and
+nothing else. Every hit is a set of size **three**, and all eleven
+are the single predicted case: a constant pasted inside a total
+that still reaches every declared segment, where one run cannot
+localize and the method says so instead of guessing. Nothing landed
+outside its prediction; there were no misses and no unmeasurable
+plants.
+
+**ddmin agreed with the frontier on every one of the ten H7
+narrowings** (one confirmation test each): pinning the frontier's
+single cell to its law-predicted value and recalculating restored
+the law, and there is no proper subset of a singleton. That is a
+real check — the engine, not the algorithm, says the cell is
+responsible — but an honest reading is that ddmin's *search* value
+was never exercised here, because the frontier never proposed a
+wide candidate set. Its worth will show on a defect the frontier
+cannot resolve alone; that case has not been measured yet.
+
+The cross-law rows are the most interesting result. When the
+contaminated ratio broke **proportionality** two cells downstream
+(`J73`, `F86`), the frontier still named `J69` — the planted cell —
+rather than the cells that visibly moved. That is the whole point
+of the plan's sentence: one authoring decision, one finding, even
+when the symptom appears somewhere else.
+
+Bounds, stated: 37 plants is single-digit N per class per host; the
+frontier walk depends on the reader's precedent lists, which cap
+range expansion at 200 cells, so a defect reached only through a
+larger range could hide from the cone (not yet observed, recorded
+as a known edge); and consolidation's structural limit is now
+measured rather than predicted — closing it needs either a second
+run under perturbation or B6's diagnosis layer, which is exactly
+what B6 is for.
+
 ## 27 August 2026 — B5 registered: relation mining, the Monday experiment
 
 Founder-approved (`swens-plan.md` B5, 27 Aug); the binding design
