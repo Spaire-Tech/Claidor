@@ -1527,3 +1527,106 @@ before it.
 
 **Harness:** `scripts.corpus_documents_finch_round`, two phases —
 `sheet` then `score` — like every round in this lane.
+
+## D3 round 5 — measured. Recall 0 of 18. The matcher is not wrong; it is blind.
+
+*FinWorkBench/Finch, arXiv:2512.13168, CC BY 3.0 — this attribution
+travels with every number below.*
+
+The first hit-rate number this track has ever had, and it is the
+worst one it could be.
+
+| verdict | count |
+|---|---|
+| true proposal | **0** |
+| false proposal | 1 |
+| true abstention | 9 |
+| missed | **17** |
+
+Scored rows: 27 of 42 drawn (see the deviation below). **Of those 27,
+the document genuinely states 18** — so unlike every earlier round
+there was something to find in two thirds of them, and the matcher
+found **none**. Recall **0/18**. Precision 0/1.
+
+Per task, equal weight, six drawn each:
+
+| task | true | false | abstain | missed | not scorable |
+|---|---|---|---|---|---|
+| 5 | 0 | 1 | 1 | 3 | 1 |
+| 52 | 0 | 0 | 2 | 4 | 0 |
+| 72 | 0 | 0 | 2 | 0 | 4 |
+| 81 | 0 | 0 | 4 | 0 | 2 |
+| **156** | 0 | 0 | 0 | **6** | 0 |
+| 160 | 0 | 0 | 0 | 4 | 2 |
+| 161 | 0 | 0 | 0 | 0 | 6 |
+
+### Why, exactly — the diagnosis, counted rather than asserted
+
+Of the **17 misses**: **12 are the tie rule**, 4 are cells with no
+label words at all, 1 is coverage below the floor.
+
+Task 156 is the clean proof, because it is the case the matcher
+should own. Cell `CABC!I7` is named « $ Total Direct Expense »; the
+document line is `Total Direct Expense 8,067,693 100% 27 6,707,013
+100%`. Label coverage is **100%** — a perfect match. And the matcher
+abstained, because that one line carries **four numbers**, so four
+candidates tie at 1.00 and the tie rule fires. Six of six, the same
+way.
+
+This is exactly the failure predicted in the registration, now
+quantified: **the matcher's document side has no column dimension.**
+Its anchor is the printed line, and in a table a line is a *row* —
+the column identity (the year, the entity, « HC » versus « $ ») lives
+in a header line elsewhere on the page. On prose (Ofgem's annexes) a
+line names one number and the design works. On tables — which is what
+finance documents mostly are — every candidate on the right row ties,
+and the honest tie rule turns a perfect label match into silence.
+
+The other four misses are the mirror image on the model side: cells
+whose own name is empty (an account-code column with no row label),
+so there is nothing to match *with*. Nothing about the document side
+would help those.
+
+**The one false proposal** is worth its own line: task 5's « ENE
+Shares » was proposed at `p1|106` when the truth is `p1|6` — a
+different line stating a different quantity that happened to carry
+the label words. Not a tie, just wrong.
+
+### A deviation, named rather than made silently
+
+The registration foresaw two conditions (OCR loss, no cell located).
+Judging turned up a third and I added it mid-round: **fifteen of the
+42 drawn cells could not be judged at all at line granularity.** In a
+grid like task 161's, a value appears in many rows and pages and I
+cannot determine which occurrence the expert transcribed; scoring
+them either way would have been invention. They are counted, excluded
+from the table above, and named `indeterminate-line-granularity`.
+That count is itself the finding: **the same blindness that stops the
+matcher also stops the judge**, and no honest number can be produced
+for those rows without a column anchor.
+
+Two smaller notes, for the record: four drawn zeros are stated in
+their documents as a dash (« - »), which D1 does not extract as a
+number — so the matcher's silence there is correct, and « nil printed
+as a dash » is a real D1 gap worth its own registration; and the
+judging aid's value tolerance (0.5% relative) over-matched integer
+account codes (3484 matching 3470, 3481, 3489), which cost the judge
+time but never the matcher, since scoring never sees values.
+
+### What this means, plainly
+
+D3 as designed does not work on table-shaped documents, and finance
+documents are mostly tables. That is not a tuning problem and it will
+not be fixed by loosening the tie rule — loosening it would have
+turned all twelve of those ties into guesses among four candidates,
+which is the confident wrongness this product exists to prevent.
+
+**Round 6's candidate, registered when it is registered:** give the
+document side a **column anchor** — the header text above a fact's own
+x-position, which D1 already records in every box. Then « $ Total
+Direct Expense » can separate the `$` column from the `HC` column on
+the same row, and the tie rule fires only when it should. The corpus
+to measure it on now exists and the judging sheets are already built.
+
+**Nothing ships.** The route's standing sentence is updated to carry
+this number, since a registered round's result is its only trigger.
