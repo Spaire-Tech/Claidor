@@ -121,3 +121,71 @@ with this registration; results are appended below it.
 ---
 
 ## Results (computed and read after the registration)
+
+**Universe confirmed: 1,206 missed serious cells** — exactly the
+expected 1,308 − 102, computed by the committed scorer's own
+machinery.
+
+## The classification is VOID — the instrument cannot see the formulas
+
+The first run put **100.0% of 1,206 cells into one bucket**
+(`no-formula-context`, +76.1 points against the general misses'
+23.9%). A single-bucket result is not a finding; it is an
+instrument failing, and it was treated as one before anything was
+concluded.
+
+Run to ground at the cells. The sample's first entries are
+`Table II.5!E17/F17` — the very cells `custodes-mining.md` cites as
+`row-family-gap`, « where B–D compute `=AVERAGE(col 6:16)` ». My
+classifier saw no formula anywhere in their row. So either the
+first round was wrong or this instrument is blind.
+
+It is the instrument, and the proof is arithmetic: `B17`'s cached
+value is **1742354.0909090908**, which is exactly the mean of
+`B6:B16` computed from the file's own cached values. `B17` is
+`=AVERAGE(B6:B16)` beyond reasonable doubt — and
+`read_workbook(...)` returns `formula=None` for it.
+
+**The defect is in the engine's legacy `.xls` reader, and it is
+partial rather than total.** Counting `FORMULA` (0x0006) records
+straight from the BIFF stream against what the reader surfaces:
+
+| subject | FORMULA records | engine sees | missed |
+|---|---|---|---|
+| `01-38-PK_tables-figures.xls` | 144 | 125 | 19 (13%) |
+| `act3_lab23_posey.xls` | 40 | 30 | 10 (25%) |
+| `01sumdat.xls` | 349 | 349 | 0 |
+
+One file is read whole; two are not. Whatever the mechanism —
+shared-formula stubs, `CONTINUE`-split records or a swallowed
+decompile failure are the candidates named in `legacy.py`'s own
+docstring — the consequence is that on some `.xls` files the engine
+reads a computed cell as a typed value.
+
+## Verdict (27 Aug): BLOCKED, not refused — and the block is outside my lane
+
+No bucket distribution is reported and no candidate is proposed:
+the numbers this round would produce describe the reader's blind
+spots, not the detectors' witnesses, and publishing them as a
+mining result would mislead. Blocked, not refused — the difference
+being that nothing was measured, so nothing is concluded.
+
+`polar/tieout/legacy.py` is **not among Sentinel's paths** in
+`lanes.md`. The case is therefore written here and routed to the
+lead rather than fixed:
+
+- Fixing it changes what the engine reports on **every `.xls`
+  file** — a findings change on a file class the golden-master gate
+  does not cover (the corpus is `.xlsx`/`.xlsm`), so it needs its
+  own registered round with its own evidence, and a decision about
+  which corpus certifies it.
+- Until then, every measurement taken through the `.xls` route
+  understates the engine — including the Tasi round's fresh sweep,
+  whose record is amended accordingly.
+
+**What this round did establish**, and it is worth more than the
+bucket table would have been: **a first-order cause of the
+serious-coverage gap is that the engine cannot read some of these
+formulas at all.** That is a better answer to « why 7.8%? » than
+any witness-design hypothesis, and it was found because a 100%
+bucket was treated as a broken instrument instead of a result.

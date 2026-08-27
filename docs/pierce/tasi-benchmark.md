@@ -337,3 +337,32 @@ nothing here changes what it reports.
    strongest cross-corpus signal any of our rules has produced; a
    witness-widening round for that class would now have two
    independent label sets to be measured against.
+
+---
+
+## Amendment (27 Aug, after the serious-error mining round)
+
+The mining round that followed this one found a defect in the
+engine's legacy `.xls` reader: it **misses some formulas** —
+19 of 144 `FORMULA` records in `01-38-PK_tables-figures.xls`,
+10 of 40 in `act3_lab23_posey.xls`, 0 of 349 in `01sumdat.xls` —
+so on some subjects a computed cell is read as a typed value.
+Proof at the cells: `Table II.5!B17` holds exactly the mean of
+`B6:B16` and the reader returns `formula=None` for it.
+
+Every number in this round taken through the direct `.xls` route —
+which is today's-engine coverage and agreement against both label
+sets — therefore **understates the engine** by an unmeasured
+amount. The frozen cold run, produced on converted copies, does not
+share the defect.
+
+This does not overturn any conclusion here; it sharpens two:
+
+- The refusal to read fresh-vs-frozen as engine drift was correct,
+  and now has a named mechanism rather than a general caveat.
+- The label-set comparison stands, because it compares *labels* to
+  each other, not to our findings — the disagreement result never
+  passed through the engine.
+
+The fix is routed to the lead: `legacy.py` is outside Sentinel's
+paths, and correcting it changes findings on every `.xls` file.
