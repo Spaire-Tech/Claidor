@@ -28,6 +28,41 @@ golden-master gate and regenerates the baseline in the same commit.
   `a3-sibling-totals.md`, with the planting harness under
   `server/scripts/planting/`.
 
+## 27 August 2026 — candidate 5 adopted: the unasked half of the range question
+
+`skipped-cell` has always asked what a total left *out*. Nothing
+asked what a range wrongly took *in* — I checked before designing
+anything, and every mention of double counting in the engine was an
+*exemption* protecting that check, never a detection. So the
+question was genuinely unasked, and this round asks the half that
+carries arithmetic consequence: a range that swallows a subtotal of
+its own rows, counting them twice.
+
+**13 of 13 planted defects caught, all by the new rule; gate clean,
+so the corpus price is zero.** The prediction said the check would
+be absent on these templates and it is — a published regulator
+model that double-counted a subtotal would be a live defect in a
+document with legal force, so finding none is the right answer, and
+the check's worth is the 13 it caught when the defect was real.
+
+The round's second class — a range spanning a *label* — I withdrew
+**before computing anything**, because the reader does not elect
+text cells at all: a detector on that surface cannot tell a label
+from a blank, and blanks are ordinary layout. Withdrawn, not
+refused; no number was computed for it. The planter then found zero
+eligible sites for it too, which is the same limitation confirming
+itself from the other side.
+
+**Catalogue: 19 → 20** (14 audit + 6 analytic), named in the
+registration before adoption and flagged here the same day —
+Atelier's count-sensitive test needs the new number.
+
+**For the lead, one case to route:** class 2 becomes possible only
+if `Workbook.cells` carries text cells. That is frozen interface #1
+in `lanes.md`, visible to every lane, and would move findings
+engine-wide — so it needs a lead-approved interface bump and its own
+registered round. I have not touched it.
+
 ## 27 August 2026 — the Tasi re-score: a second labeller, and a nesting
 
 The engine met an independent expert labelling of the same 70 files
