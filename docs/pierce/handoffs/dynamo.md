@@ -108,6 +108,17 @@ files, git-ignored), never committed.
   against tens of thousands per model). Sample committed
   *unlabelled first*, then the labels:
   `docs/pierce/logs/dynamo/e1-{sample-unlabelled,ground-truth}.json`.
+- **E2's shippable verdict (28 Aug), the thing Sentinel needs**:
+  **ARM** `kind`, `currency`, `scale` (the last two answer on only
+  34.6% of rows); **ARM WITH CARE** `rate_form`; **DO NOT ARM**
+  `b5_type` or `period`. Measured through the path `inferred_inputs`
+  runs, taking the worse of two keys. The trap to inherit: the
+  3,796-row author key holds **one value for `kind`** — every row in
+  it declares £m or %, so it is continuous by construction, and its
+  96.4% is not evidence about categorical rows. E1's hundred is the
+  only key with the hard cases and it is self-graded. A second
+  hand-labelled set drawn by someone else is the highest-value thing
+  anyone could add to this lane.
 - **E2 — unit inference** (`polar/tieout/units/`). Blind pass
   (formats, labels, headers, values) measured on **3,796
   Ofgem-authored rows**: `kind` 96.4% with 0% wrong, `rate_form`
