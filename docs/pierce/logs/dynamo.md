@@ -2325,3 +2325,191 @@ Round 2's verdict across the three models, stated plainly: **on H7
 the typing works and over-reaches; on RoE it fails closed.** Neither
 result may be called the model's laws, and the reasons are now
 specific enough to fix.
+
+---
+
+## The record-table round — registration
+
+*28 Aug. The two fixes the RoE collapse and `Swap profile!81` both
+point at, registered with predictions before either is written. E2's
+reported numbers stand as measured at `c6430687`; this changes E2
+after that run, not during it.*
+
+### What is being built
+
+1. **The typing map reads the orientation.** `type_from_units` is
+   given the sheet's orientation. A sheet that is `unknown` is
+   **refused as untyped and the refusal is counted**, instead of
+   being frozen by accident because every row happened to look like
+   a date. A stated refusal and a silent freeze produce the same
+   coverage number and are not the same thing.
+
+2. **A column-wise path, by transposition.** On a record sheet the
+   unit lives in the column: `RPI` is the rate, `2021/22` is the
+   record. So the evidence is transposed — the **column header
+   becomes the label**, the row labels become the headers, the
+   column's cells become the values and formats — and the existing
+   `classify_row` is run on that. No second classifier: if the
+   inference is right about what evidence decides a unit, it should
+   work equally well down a column, and if it does not, that is
+   worth knowing too.
+
+### Predictions
+
+1. **RoE's rate columns come back as rates.** `C6:C14`, `D6:D14`,
+   `E6:E13` — 26 cells the hand typing perturbed and automatic
+   typing froze — are typed `rate` again on at least **24 of 26**.
+2. **RoE's coverage clears round 1b's 10 of 193.** I will not
+   predict it clears the 50% bar; the sheet has 193 watched cells
+   and only three input columns, and round 1b's evidence says the
+   rest are driven from elsewhere.
+3. **H7 is untouched.** Its sheet is row-wise, so the orientation
+   gate does not fire and `h7-fds` returns the same 144 of 144 and
+   the same 11 stable rules. If it does not, the change has a
+   side-effect I did not intend and the round stops there.
+4. **The transposition finds at least one new systematic problem.**
+   Registered in advance for the third time; the last two rounds
+   each produced one and I would be surprised if reading a model
+   sideways did not.
+5. **Constrained families stay unfixed** and the H7 weights stay
+   illegal — that is the round after this one, and no number from
+   this round may be read as though it were solved.
+
+### `h7-fp` under round 2's typing: 167 stable rules became 17
+
+| | round 1b (hand) | round 2 (inferred) |
+|---|---|---|
+| typed inputs | 55 | **3,978** (3,971 rate, 7 held) |
+| watched cells | 161 | 161 |
+| coverage | artifacts of the frozen remainder | **161 of 161 — 100.0%** |
+| runs kept | 200 + 200 | 200 + 200, **zero drops** |
+| stable signed sums | **167** | **17 — 7 distinct sentences** |
+
+`docs/pierce/logs/dynamo/round2-h7fp.json`. The same movement as on
+`h7-fds`, and the same direction: **the rule set shrank by a factor
+of ten.** Round 1b's 167 were overwhelmingly equalities among cells
+that never moved; at full coverage they die. Prediction 4 of the
+round-2 registration — bigger and worse — is wrong on both models,
+and wrong the good way.
+
+The seven survivors are the same shape as `h7-fds`'s three:
+duplicate calculations under different names, plus first-year
+boundary conditions (`in-year = cumulative` in column I only). The
+weights are still perturbed illegally on this file too, so the
+completeness caveat stands unchanged: **these are true sentences
+about the file, not the model's laws.**
+
+---
+
+## The record-table round — measured, and the prediction I got wrong
+
+*28 Aug, against the registration two entries above.*
+
+### Prediction 1 — **failed, twice, and the second failure is the finding**
+
+Registered: 24 of the 26 RoE rate cells come back as rates.
+
+**First failure — the design was wrong.** As registered, an
+`unknown`-orientation sheet is refused. RoE's `One-Off Wedge` *is*
+`unknown` — its headers are `RPI · CPI · % of 'legacy' RPI`, none in
+the record-header word list, and its row labels are years — so the
+refusal fired and the column path never ran on the one sheet it was
+built for. **0 of 26.** Amended: an undecidable sheet is transposed
+and asked again, and if the sideways view is decisive it is read
+column-wise. Recorded here rather than quietly corrected.
+
+**Second failure — the measurement.** With the amendment the sheet
+is read column-wise, and the recovery is **8 of 26, not 24**:
+
+| column | label | format | E2 |
+|---|---|---|---|
+| E6:E13 | `% of 'legacy' RPI in the RPI Figure` | `0%` | **rate** ✓ |
+| C6:C14 | `RPI` | `0.00` | `unknown-quantity` — held |
+| D6:D14 | `CPI` | `0.00` | `unknown-quantity` — held |
+
+RPI is stored as `5.8` under a plain `0.00` format with a
+three-letter label. There is no percent format to key on, and `RPI`
+means nothing to the inference. **My hand typing knew RPI is an
+inflation rate; E2 has no vocabulary of named rates**, and that —
+not the orientation — is what holds two of the three input columns.
+The column path was necessary and is not sufficient.
+
+### Prediction 3 — **confirmed, and settled without the machine**
+
+Registered: H7 is untouched. Verified by comparing the old and new
+typing directly rather than by re-running an hour of mining: on
+`h7-fds` the typed-input list is **identical in order and in value**
+(3,210 inputs, 3,203 rate, 7 held; no sheet refused, none read
+column-wise), and `h7-fp` likewise. The perturbation is
+`random.Random(seed)` walked over that exact list, so identical
+inputs in identical order give identical runs. The argument is only
+valid because the order matched too, which is why I checked it.
+
+### Prediction 4 — **confirmed, on the real file as well as a fixture**
+
+The registered surprise arrived: read sideways, the year column
+comes back `unknown-quantity`, **not** `date`. The year-index rule
+reads a *row label*, and a transposed column's label is its header —
+blank, here. B5 holds an `unknown-quantity`, so it costs no
+coverage: the right outcome for the wrong reason. Registered for the
+next round rather than patched inside this one.
+
+### What this names for Track E
+
+A third gap, beside constraint membership: **a vocabulary of named
+rates.** `RPI`, `CPI`, `WACC`, `gearing`, `IRR`, `yield` — a
+modeller reads the label and knows; E2 reads `0.00` and abstains,
+correctly by its own rules and uselessly for B5. This is cheap to
+build and easy to get wrong (a list of words is exactly the kind of
+thing that quietly becomes a guess), so it is registered as its own
+round with its own answer key rather than added to this one.
+
+### Prediction 2 — **failed, and the failure is completely explained**
+
+Registered: RoE's coverage clears round 1b's 10 of 193.
+
+    sheets: 5 read, 1 column-wise, 0 refused
+    coverage: 0 of 193 watched cells moved (0.0%)
+      — UNINFORMATIVE — not a result
+    0 stable rules
+
+`docs/pierce/logs/dynamo/round3-roe.json`. 400 runs, zero drops,
+nothing moved. The column path fixed the reading and did not fix the
+coverage.
+
+**Why, measured rather than guessed.** Of the 193 watched formula
+cells, the number that reference `E6:E13` — the one column the fix
+recovered — is **zero**. Their precedents are `C` and `D`, 31 cells
+each, and the sheet's own formulas say what those are:
+
+    F6 = GEOMEAN(1+(C6:C25/100)) / GEOMEAN(1+(D6:D25/100)) - 1
+
+The model divides by 100 itself, which is the file stating outright
+that `RPI` is a rate in percent-of-100 form — the exact fact E2 has
+no way to know from `0.00` and a three-letter label, and a value
+`rate_form` already has a name for.
+
+So on this model the blocker is **one missing capability, and it is
+now identified precisely**: the two columns that drive the entire
+watched sheet are the two E2 cannot type. Round 1b concluded « 0
+rules says nothing about the model and everything about the
+perturbation ». That still holds, and the perturbation is now
+blocked by a named-rate vocabulary rather than by hand-typing
+capacity.
+
+### The round's scorecard, against what I registered
+
+| prediction | outcome |
+|---|---|
+| 1 — 24 of 26 rate cells recovered | **failed**: 0 as designed, 8 as amended |
+| 2 — coverage clears 10 of 193 | **failed**: 0 of 193 |
+| 3 — H7 untouched | **confirmed**, verified without the machine |
+| 4 — one new systematic problem | **confirmed**: the transposed year column |
+| 5 — constrained families stay unfixed | holds; unchanged and still illegal |
+
+Two of five registered predictions failed. Both failures were
+instructive and neither was hidden: the design was wrong in a way
+the machine showed me, and the amendment was wrong about how much it
+would buy. What the round bought is a **precisely named blocker**
+instead of a vague one, which is worth more than the coverage number
+I predicted and did not get.

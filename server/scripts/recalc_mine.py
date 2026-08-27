@@ -40,7 +40,14 @@ from polar.tieout.recalc.mine import (
     type_from_units,
 )
 from polar.tieout.recalc.uno_calc import UnoCalculator, find_install
-from polar.tieout.units.inference import classify_sheet, rows_from_cells
+from polar.tieout.units.inference import (
+    Orientation,
+    classify_columns,
+    classify_sheet,
+    columns_from_cells,
+    rows_from_cells,
+    sheet_reading,
+)
 from polar.tieout.workbook import read_workbook
 from scripts.recalc_behave import perturb
 
@@ -148,38 +155,71 @@ MODELS: dict[str, tuple[str, str, Any]] = {
 }
 
 
-def inferred_inputs(cells: dict, sheets: list[str] | None = None) -> list[TypedInput]:
+def inferred_inputs(
+    cells: dict, sheets: list[str] | None = None
+) -> tuple[list[TypedInput], dict[str, str]]:
     """Type every constant input cell from E2, per the registered map.
 
     E2 is run **blind** — it never reads a Units column here — so the
-    typing is the same instrument measured in the last entry, not a
+    typing is the same instrument measured in the E2 rounds, not a
     privileged version of it.
+
+    The orientation decides *which way the sheet is read*, and that
+    is not optional. A `row-wise` sheet is typed by row. A
+    `column-wise` sheet is a record table whose units live in its
+    columns, so it is typed by column. An `unknown` sheet is
+    **refused, out loud** — E2's contract says the caller must not
+    treat its rows as quantities, and freezing it by accident (which
+    is what happened to the RoE model) is not the same thing as
+    saying so.
+
+    Returns the typed inputs and a per-sheet note of how each was
+    read, so a run can report its refusals rather than hide them.
     """
     typed: list[TypedInput] = []
+    how: dict[str, str] = {}
     for sheet in sorted(sheets or {cell.sheet for cell in cells.values()}):
         rows = rows_from_cells(cells, sheet)
         if not rows:
             continue
+        facing = sheet_reading(cells, sheet)
+        if facing is Orientation.UNKNOWN:
+            how[sheet] = "refused: orientation unknown, so no row is a quantity"
+            continue
+        by_sheet = {
+            ref: cell
+            for ref, cell in cells.items()
+            if cell.sheet == sheet and cell.formula is None and cell.value is not None
+        }
+        if facing is Orientation.COLUMN_WISE:
+            how[sheet] = "read column-wise: a record table's units live in its columns"
+            columns = columns_from_cells(cells, sheet)
+            labels = classify_columns(columns)
+            evidence = {column: row for column, row in columns}
+            for ref, cell in by_sheet.items():
+                label = labels.get(cell.column)
+                if label is None:
+                    continue
+                _append(typed, label, ref, cell, evidence[cell.column].values)
+            continue
+        how[sheet] = "read row-wise"
         labels = classify_sheet(rows)
         by_row = {row.row: row for row in rows}
-        for (sheet_name, number), label in labels.items():
-            evidence = by_row.get(number)
-            if evidence is None:
+        for ref, cell in by_sheet.items():
+            label = labels.get((sheet, cell.row))
+            row_evidence = by_row.get(cell.row)
+            if label is None or row_evidence is None:
                 continue
-            for ref, cell in cells.items():
-                if (
-                    cell.sheet != sheet_name
-                    or cell.row != number
-                    or cell.formula is not None
-                    or cell.value is None
-                ):
-                    continue
-                try:
-                    value = float(cell.value)
-                except (TypeError, ValueError):
-                    continue
-                typed.append(type_from_units(label, ref, value, evidence.values))
-    return typed
+            _append(typed, label, ref, cell, row_evidence.values)
+    return typed, how
+
+
+def _append(typed: list, label, ref: str, cell, values) -> None:
+    try:
+        value = float(cell.value)
+    except (TypeError, ValueError):
+        return
+    typed.append(type_from_units(label, ref, value, values))
 
 
 def one_mining(
@@ -244,7 +284,13 @@ def main() -> int:
         for ref, cell in cells.items()
         if cell.formula is None and cell.value is not None
     }
-    typed = typing(constants) if hand else inferred_inputs(cells)
+    how: dict[str, str] = {}
+    if hand:
+        typed = typing(constants)
+    else:
+        typed, how = inferred_inputs(cells)
+    refused = sorted(s for s, note in how.items() if note.startswith("refused"))
+    column_wise = sorted(s for s, note in how.items() if "column-wise" in note)
     watched = sorted(
         ref
         for ref, cell in cells.items()
@@ -259,6 +305,13 @@ def main() -> int:
         + f"), {len(watched)} watched formula cells",
         flush=True,
     )
+    if how:
+        print(
+            f"sheets: {len(how)} read, {len(column_wise)} column-wise, "
+            f"{len(refused)} refused for unknown orientation"
+            + (f" — {', '.join(refused[:4])}" if refused else ""),
+            flush=True,
+        )
 
     calculator = UnoCalculator(document_timeout=1800)
     calculator.start()
@@ -307,6 +360,8 @@ def main() -> int:
                 "typing": "hand" if hand else "inferred",
                 "typed_inputs": {str(kind): n for kind, n in counts.items() if n},
                 "coverage": [moved, watched_count],
+                "sheets_refused": refused,
+                "sheets_column_wise": column_wise,
                 "coverage_verdict": verdict,
                 "runs_requested": runs,
                 "kept": [len(first), len(second)],

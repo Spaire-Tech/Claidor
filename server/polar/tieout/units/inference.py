@@ -300,6 +300,96 @@ def rows_from_cells(
     return rows
 
 
+def columns_from_cells(
+    cells: Mapping[str, Any], sheet: str
+) -> list[tuple[int, RowEvidence]]:
+    """The same evidence read sideways, for a record sheet.
+
+    On a sheet whose rows are records — one period per row, `RPI`
+    and `CPI` across — a row has no single unit and a **column**
+    does. So the evidence is transposed: the column header becomes
+    the label, the row labels become the headers, and the column's
+    own cells become the values and formats. `classify_row` then
+    runs unchanged.
+
+    Measured reason this exists: on the RoE model every one of the
+    26 rate cells the hand typing perturbed was typed `date` and
+    frozen, because each row is labelled with its year and holds
+    that year in its first column. Coverage went from 10 of 193 to
+    0 (lane log, 28 Aug).
+
+    Returns `(column index, evidence)` so the caller can map a
+    verdict back onto the cells it came from.
+    """
+    grouped: dict[int, list[Any]] = {}
+    for _ref, cell in cells.items():
+        if cell.sheet != sheet or cell.formula is not None:
+            continue
+        if isinstance(cell.value, (int, float, Decimal)) and not isinstance(
+            cell.value, bool
+        ):
+            grouped.setdefault(cell.column, []).append(cell)
+    columns = []
+    for column, group in sorted(grouped.items()):
+        group.sort(key=lambda c: c.row)
+        columns.append(
+            (
+                column,
+                RowEvidence(
+                    sheet=sheet,
+                    row=group[0].row,
+                    row_label=(group[0].column_label or "").strip(),
+                    column_labels=[(c.row_label or "").strip() for c in group[:8]],
+                    number_formats=sorted(
+                        {c.number_format or "General" for c in group}
+                    )[:4],
+                    values=[float(c.value) for c in group[:8]],
+                ),
+            )
+        )
+    return columns
+
+
+def sheet_reading(cells: Mapping[str, Any], sheet: str) -> Orientation:
+    """Which way to read a sheet, asking twice before refusing.
+
+    Registered, then measured wrong, then amended (lane log, 28 Aug):
+    the first version refused an `unknown` sheet outright, and the
+    RoE `One-Off Wedge` sheet is exactly that — its headers are
+    `RPI · CPI · % of 'legacy' RPI`, none of them in the record-header
+    word list, and its row labels are years, so neither test decides.
+    Refusing it meant the column path never ran on the one sheet it
+    was built for.
+
+    So an undecidable sheet is **transposed and asked again**. If the
+    sideways view is decisive — the original row labels turn out to
+    be period headers, which is what a record table looks like from
+    the side — the sheet is column-wise. If it is still undecided, it
+    is `unknown` and the caller must refuse it.
+    """
+    rows = rows_from_cells(cells, sheet)
+    if not rows:
+        return Orientation.UNKNOWN
+    facing = orientation(rows)
+    if facing is not Orientation.UNKNOWN:
+        return facing
+    sideways = [row for _column, row in columns_from_cells(cells, sheet)]
+    if sideways and orientation(sideways) is Orientation.ROW_WISE:
+        return Orientation.COLUMN_WISE
+    return Orientation.UNKNOWN
+
+
+def classify_columns(
+    columns: Sequence[tuple[int, RowEvidence]],
+) -> dict[int, UnitLabel]:
+    """Every column of a record sheet, classified by the same rules."""
+    evidence = [row for _column, row in columns]
+    facing = orientation(evidence)
+    return {
+        column: classify_row(_without_declared(row), facing) for column, row in columns
+    }
+
+
 # --- propagation through the dependency graph -----------------------
 
 #: Functions that multiply their arguments. They must not be read as

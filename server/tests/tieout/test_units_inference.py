@@ -346,3 +346,79 @@ def test_a_conclusion_is_revised_when_the_other_terms_arrive() -> None:
     )
     assert "M!A9" not in known
     assert [c.ref for c in conflicts] == ["M!A9"]
+
+
+# --- reading a record sheet sideways (registered 28 Aug) ---
+
+
+class GridCell:
+    def __init__(self, sheet, row, column, value, row_label="", column_label="",
+                 number_format="General"):
+        self.sheet = sheet
+        self.row = row
+        self.column = column
+        self.value = value
+        self.formula = None
+        self.row_label = row_label
+        self.column_label = column_label
+        self.number_format = number_format
+
+
+def record_sheet():
+    """Years down, RPI and CPI across — the shape that broke the typing.
+
+    Each row is labelled with its year and holds that year's number,
+    so read row-wise every row is « a year holding its own year »
+    and three real rates freeze.
+    """
+    cells = {}
+    for index, year in enumerate((2022, 2023, 2024), start=6):
+        for column, header, value, fmt in (
+            (1, "", float(year), "General"),
+            (2, "RPI", 5.8 + index, "0.00"),
+            (3, "CPI", 4.0 + index, "0.00"),
+        ):
+            cells[f"S!{column}{index}"] = GridCell(
+                "S", index, column, value,
+                row_label=f"{year - 1}/{str(year)[2:]}",
+                column_label=header,
+                number_format=fmt,
+            )
+    return cells
+
+
+def test_read_row_wise_a_record_row_is_a_year_and_its_rates_freeze() -> None:
+    # The defect itself, held as a test so the fix has something to
+    # be a fix of. Measured on the RoE model: 26 rate cells typed
+    # `date`, coverage 10 of 193 down to 0.
+    from polar.tieout.units.inference import classify_sheet, rows_from_cells
+
+    labels = classify_sheet(rows_from_cells(record_sheet(), "S"))
+    assert all(label.b5_type == "date" for label in labels.values())
+
+
+def test_read_sideways_the_rate_columns_are_rates() -> None:
+    from polar.tieout.units.inference import classify_columns, columns_from_cells
+
+    labels = classify_columns(columns_from_cells(record_sheet(), "S"))
+    # Columns 2 and 3 are RPI and CPI, and read sideways they stop
+    # being dates — which is the fix.
+    assert labels[2].b5_type != "date"
+    assert labels[3].b5_type != "date"
+    # Column 1 is the year index, and this is the round's registered
+    # surprise: read sideways it is **not** recognised as a date.
+    # The year-index rule reads the *row label*, and a transposed
+    # column's label is its (here blank) header. It lands on
+    # `unknown-quantity`, which B5 holds — right outcome, wrong
+    # reason — so it costs no coverage and is registered as the next
+    # round's fix rather than patched mid-round.
+    assert labels[1].b5_type == "unknown-quantity"
+
+
+def test_a_transposed_column_carries_the_headers_row_labels() -> None:
+    from polar.tieout.units.inference import columns_from_cells
+
+    columns = dict(columns_from_cells(record_sheet(), "S"))
+    assert columns[2].row_label == "RPI"
+    assert list(columns[2].column_labels) == ["2021/22", "2022/23", "2023/24"]
+    assert columns[2].values == [11.8, 12.8, 13.8]
