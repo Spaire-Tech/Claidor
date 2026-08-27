@@ -1560,3 +1560,60 @@ first-class outcome** (2 rows here, and E2 abstaining where I
 abstained counts as correct); **every label carries its evidence in
 words**; **constrained families are declared, not inferred**. Added
 by finding 2: **orientation is decided before typing, and reported**.
+
+## 28 August 2026 — E2 registered: the blind rule, and an external truth set
+
+Building E2 as `polar/tieout/units/` (the name the orders offered,
+the interface proposed in my log on the 27th and unchanged since).
+Registered before the inference is measured.
+
+### The circularity I have to answer
+
+E1's 100 labels and E2's inference have the same author. If E2
+reproduces my labelling rules, agreement measures nothing except
+that I re-implemented myself. Naming it is not enough, so:
+
+**The primary measurement is against an external truth set I did not
+write.** ED2 and GD3 declare units in a `Units` column of their own,
+authored by Ofgem's modellers — « £m 20/21 prices », « £m nominal »,
+« annual real % », « % ». Every input row on those models carries
+one. So:
+
+- **E2 is forbidden to read the Units column.** It infers from
+  number formats, row labels, column headers, values and
+  propagation only. The Units column is held back as the answer key
+  and parsed only by the scorer.
+- That gives thousands of externally-authored labelled rows instead
+  of my hundred, and the accuracy on them is not self-graded.
+
+The E1 set stays as the **secondary** measurement — it is the only
+truth available for the three models that declare nothing (H7, the
+RoE summary, the WACC model), and it carries the human judgement my
+decision table alone did not have (the `mixed` record rows, the
+LIBOR curve). Its numbers are reported **with the shared-author
+caveat stated every time**, never as independent validation.
+
+### What is measured, per dimension
+
+Accuracy, abstention rate and error rate — separately, because an
+inference that abstains is not wrong in the way a confident mistake
+is wrong. **Reported split by declared/undeclared**, as registered
+on the 27th. A dimension where E2 is right 60% of the time and
+abstains 35% is a different (and better) instrument than one that is
+right 60% and wrong 40%, and the report must show the difference.
+
+### The predictions I am registering before running
+
+- **`scale` and `currency` on ED2/GD3 will be the hard ones blind.**
+  The £m is declared in the Units column and nowhere else — not in
+  the number format (`#,##0.0_);(#,##0.0)` says nothing about
+  millions), not in the row label. My honest expectation is that
+  E2 will abstain on most of them, and that abstention is the
+  correct behaviour, not a failure. If it guesses « units » and
+  scores well by luck, I will say so.
+- **`rate_form` will be the easy one**: a percent number format
+  decides it, and it is the dimension E3's « percent as decimal »
+  check needs most.
+- **`kind` (continuous vs categorical) — B5's need — should be
+  reachable**: dates, year indices and flags have formats and value
+  ranges that give them away.
