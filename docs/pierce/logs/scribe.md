@@ -2943,8 +2943,18 @@ PCFM guidance. **Round T is out.** `EXTRACTOR_VERSION` stays `"4"`.
 | guidance p5 | `…run to calculate AR by 31 A…` | `…run to calculate ARt by 31…` |
 | guidance p10 | `Allowed Revenue (AR) value` | `Allowed Revenue (ARt) value` |
 
-**All 22 of the PCFM guidance's changes are of that kind.** ED2's own
-handbook contains zips too — I had assumed ED2 was clean.
+ED2's own handbook and guidance contain zips too — I had assumed ED2
+was clean, and it is not.
+
+**A correction to a claim I nearly shipped.** I first wrote that all 22
+of the PCFM guidance's changed lines were repairs of that kind, on the
+strength of two of them. Checking all 22 before pushing: most are
+(`AR`+`t` → `ARt`, `(iBTA)`+`t` → `(iBTAt)`, `(AR*)`+`t` → `(AR*t)`,
+`BR`+`2026/27` → `BR2026/27`), but **at least two lose a space** —
+`paragraph 2.1.5 of Special` becomes `ofSpecial`, and `Condition 2.1`
+becomes `Condition2.1`. Tightening the *vertical* tolerance changed
+*horizontal* word-splitting as well, which I had not predicted and
+which round U must account for. Two samples are not twenty-two.
 
 **Damage** — display mathematics, a third population neither approach
 anticipated:
