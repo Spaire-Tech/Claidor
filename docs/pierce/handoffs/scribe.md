@@ -74,16 +74,35 @@ Ofgem ED2 PCFM V5 against three Ofgem PDFs):
 | true abstention | 22 | 28 | **30** |
 
 Read that correctly: it says the matcher stays quiet where there is
-nothing to find. **It does not say the matcher can find a source
-that exists** — that hit-rate case has never been measured, because
-this corpus runs the wrong direction (the Finance Annex derives
-*from* the model, so what it states are computed cells, while the
-typed cells D3 restricts itself to are machine inputs no narrative
-document restates: 90 seeded draws, zero stated). The route
-therefore carries `PROPOSAL_STANDING`, an **in-band sentence in
-every proposal response** stating the measured record. Update it
-only from a registered round's result; never let a screen present a
-proposal as a link.
+nothing to find, on a corpus running the wrong direction (the Finance
+Annex derives *from* the model, so the typed cells D3 restricts itself
+to are machine inputs no narrative document restates: 90 seeded draws,
+zero stated).
+
+**The hit-rate case has since been measured, on Finch, and the answer
+is zero.** Rounds 5–7 and part B, same 42-cell sample and recorded
+truth (seed 271828, seven document→spreadsheet workflows):
+
+| | round 5 | dash round | **A + B, the whole sample** |
+|---|---|---|---|
+| true proposal | 0 | 0 | **0** |
+| false proposal | 2 | 1 | **1** |
+| scored rows | 27 | 24 | **39 of 42** |
+| rows the documents state | 18 | 20 | **35** |
+
+**Recall is 0 of 35, and the earlier denominators were flattering** —
+the rows the judge had set aside as unjudgeable were the same rows the
+matcher finds hardest. The blockage is located and it is not on the
+document side: `Cell.column_label` reads one header row, so two money
+columns of a stacked-header workbook come back with the identical name
+« $ Total Direct Expense » and the tie is correct behaviour. That case
+is written up for Sentinel.
+
+The route carries `PROPOSAL_STANDING`, an **in-band sentence in
+every proposal response** stating the measured record — now 0 of 35,
+including the fact that earlier rounds quoted a smaller denominator.
+Update it only from a registered round's result; never let a screen
+present a proposal as a link.
 
 **D4 round 4** is registered and blocked only on bytes — see below.
 
@@ -93,6 +112,102 @@ regulator model, 85 on the small Cascade fixture). The proposed
 flood-proof shape — fire only where sourcing is the *local* rule —
 is with the lead and founder. D5 reports nothing until a shape is
 approved.
+
+## The largest open defect, handed over deliberately
+
+**D1 stores single digits torn out of character-spaced text.** Some
+PDFs place glyphs one at a time (a chart overlay, a rotated axis label
+crossing a table); pdfplumber's line then reads « 1 9 , 8 4 2 » and D1
+files five facts where the page prints one, each with a citation box
+around a single glyph. Measured at **56% of the Finch corpus** and
+0.0% of ED2 — which is why three ED2 rounds never saw it.
+
+**The cause is D1's own, and that took five rounds to establish.**
+`_LINE_TOLERANCE` is 3.0 and `page.extract_words()` defaults to 3;
+a financial PDF that prints a table over a chart routinely leads its
+rows exactly 3.0 apart, so D1 merges two baselines into one row, sorts
+by x, and zips two texts together character by character. Rounds P, Q
+and R all tried to *detect* that damage before round R's calibration
+showed D1 was inflicting it. **Read the log's rounds P through T before
+touching this** — five deaths, each by a criterion frozen in advance,
+and between them they rule out most of the obvious moves:
+
+| round | tried | died on |
+|---|---|---|
+| P | refuse lines ≥60% one-character tokens | caught **nils** |
+| Q | refuse lines with ≥3 lone letters | caught **prose**, formula legends |
+| R | character-gap geometry | no constant exists — and found the real cause |
+| S | y-tolerance 1.5 | split **subscripts**, 0.1 pt from the zips |
+| T | 1.5 + merge small runs by font size | shuffled **display mathematics** |
+
+**What is settled:** font size separates sub/superscripts from merged
+baselines where distance cannot; the genuine glyph-by-glyph population
+is four lines, not thousands; display mathematics is a third population
+nothing yet handles; and round T's shape recovers ~2,400 junk facts in
+task 72 while losing nothing in task 81, task 5 or ED2.
+
+**What is open, and is the lead's call, not the lane's:** round T died
+because its criterion demanded every ED2 line be *unchanged*, and it
+both repaired and damaged lines. « Unchanged » is the wrong bar;
+« undamaged » is right and needs a hand-judged check. That check is
+proposed in the log and deliberately **not run** — picking your own
+success criterion after five deaths is when a lane should not be alone.
+
+Two harnesses are committed and ready:
+`corpus_documents_spaced_round.py` (seeded 20-line hand-check) and
+`corpus_documents_linetext_check.py` (ED2 line-text regression). Both
+report nothing while no candidate rule is in the extractor, which is
+the current state.
+
+## Read this first if you are picking this lane up on 28 August
+
+Two findings from the fifteenth turn that are **not about this lane's
+own tracks** and are the most consequential things it currently holds:
+
+1. **The Scottish route is not closed.** My orders say it is,
+   structurally. It is not — the models sit in a public S3 bucket and
+   `scripts/corpus_sft_models.py` fetches them today. Kelso, Levenmouth
+   and Oban (D3 round 4's registered deals) are three of the eight.
+   **Round 4's blocker is now the contract half alone**, and thirteen
+   probed key forms say the agreements are not in that bucket.
+2. **The published closed-deal models are all but value-only** — 1,938
+   formula cells in 6,130,539, and three of the eight contain no
+   formula at all. The population proof plans a cold run on these. What
+   that means for the proof is the lead's call, not this lane's; the
+   measurement is in the log.
+
+I also wrote up a « fourth engine intake gap » that turn and
+**retracted it the same turn, before it was pushed** — wrong cause,
+wrong harm, wrong consequence; the log carries the retraction. What
+survives is small: in two of the eight models the reader returns fewer
+formula cells than the file holds (Kelso 814 of 875, Newbattle 492 of
+616), those cells carry neither formula nor value, and on this corpus
+the discrepancy is inert. **Cause unestablished — do not guess a
+mechanism**, two collapsed under test already.
+
+And, measured rather than inferred: running the engine as the service
+runs it over all eight gives **16 rule findings and 12 analytics in
+total**, with four of the eight producing nothing at all.
+
+## Before you publish a number: run the audit
+
+```
+uv run python -m scripts.corpus_documents_audit
+```
+
+Eight corpus-level numbers re-derived, non-zero exit on any mismatch,
+and it prints the four harnesses it cannot cover. Four self-checks in
+three turns found four errors of mine — a fact key that addressed two
+facts, a criterion that could not tell repair from damage, a claim
+generalised from two samples to twenty-two, and a count wrong by eight
+times. **None changed a headline finding, and all four were the same
+mistake:** the measurement was right and the sentence generalised
+further than the run did.
+
+So: **every number in the log names the population it was measured
+over, in the same sentence.** « 562 » was a count of colliding *keys*
+over the round's *seven tasks*, and it got written as « 562 facts of
+this corpus ». That is the whole failure mode.
 
 ## The corpus, and the one blocker
 
@@ -128,9 +243,36 @@ that runs the wrong direction; that is what round 2 taught.**
   committed: a current `uv` (the bundled one's manifest stops at
   rc2), `uv python install 3.14` (3.14.7), venv rebuilt on it.
 - Route tests need real services: native PostgreSQL 16, Redis, and a
-  downloaded MinIO started by hand with the `.env.testing`
-  credentials (plus a `claidor-development` MinIO user). **They die
-  between turns** and restart in seconds from their surviving data
-  directories — restart them before blaming a test.
-- Heavy workbook jobs run alone; a concurrent pair OOM-killed a
-  sweep on this hardware once.
+  downloaded MinIO. **They die between turns** and restart in seconds
+  from their surviving data directories — restart them before blaming
+  a test. The exact incantations, because guessing them cost half an
+  hour once:
+
+  ```
+  su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pgdata \
+      -l /tmp/pg.log -o '-p 5432' start"
+  redis-server --daemonize yes --port 6379
+  cd /var/tmp && MINIO_ROOT_USER=claidor MINIO_ROOT_PASSWORD=claidorclaidor \
+      setsid nohup minio server /var/tmp/minio-data \
+      --address 127.0.0.1:9000 --console-address 127.0.0.1:9001 \
+      > /var/tmp/minio.log 2>&1 < /dev/null &
+  ```
+
+  **MinIO's root user is `claidor` / `claidorclaidor`**, from
+  `MINIO_USER`/`MINIO_PWD` in `.env.testing` — *not* the
+  `claidor-development` access key beside it, which is the S3 key the
+  app uses. Starting MinIO with the wrong root gives every test
+  `InvalidAccessKeyId` and looks like a code failure. Postgres data is
+  `/var/tmp/pgdata`, not `/var/lib/postgresql/16/main` (that one has
+  no `postgresql.conf`).
+- **Never run two pytest sessions at once.** Both take the bucket
+  `testing-claidor-s3-master` and delete each other's; the symptom is
+  hundreds of setup errors in a suite that passes alone. Heavy workbook
+  jobs run alone too — a concurrent pair OOM-killed a sweep once.
+- `pgrep -f "<anything>"` matches the *wrapper shell* of any command
+  whose own text contains that string — **including the pgrep command
+  itself**. So `until ! pgrep -f "pytest tests/tieout"` never exits,
+  and `pgrep -f "bin/pytest" && echo BUSY || pytest …` always reports
+  BUSY and never runs the suite. Both happened here, the second one
+  *after* this note was written warning about the first. If you need a
+  guard, compare against a pid file or just run the thing.

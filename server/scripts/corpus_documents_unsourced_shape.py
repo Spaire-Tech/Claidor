@@ -19,7 +19,8 @@ Prints, per model and exactly as registered in the Scribe log:
   **greedy adversarial** placement (how bad can it get) and under
   **seeded random** placement, 20 trials, mean and max
 
-    uv run python -m scripts.corpus_documents_unsourced_shape
+    uv run python -m scripts.corpus_documents_unsourced_shape          # round 2
+    uv run python -m scripts.corpus_documents_unsourced_shape deals    # round 3
 """
 
 import random
@@ -37,13 +38,35 @@ SEED = 3141592
 TRIALS = 20
 BUDGETS = (10, 25, 50, 100)
 
-#: The same registered model set as round 1.
+#: Round 2's registered model set — regulator models plus two small
+#: deal-shaped ones. Unchanged, so round 2 stays reproducible.
 MODELS = [
     SCRIPTS / "corpus_models" / "ofgem_ed2_pcfm_v5.xlsx",
     SCRIPTS / "corpus_models" / "ofgem_ed2_pcfm_v3_2023.xlsx",
     SCRIPTS / "corpus_models" / "ofgem_riio_et1_pcfm_2015.xlsm",
     SCRIPTS / "cascade" / "cascade_model.xlsx",
     SCRIPTS / "cascade" / "example_preapp_model.xlsx",
+]
+
+#: Round 3's population: the eight readable Scottish Futures Trust
+#: closed-deal models, which is the market the founder chose. Round 2's
+#: own write-up named this round and could not run it — the only
+#: deal-shaped models this lane held were an 85-cell fixture and a
+#: 230-cell example. The three .xlsb/.xls files the portal also
+#: publishes are format-blocked by our reader; they are absent here and
+#: counted in the write-up, never quietly dropped.
+DEALS = [
+    SCRIPTS / "corpus_sft" / f"{stem}_model.xlsm"
+    for stem in (
+        "baldragon",
+        "glasgow_college",
+        "forfar",
+        "inverurie_foresterhill",
+        "kelso",
+        "levenmouth",
+        "newbattle",
+        "oban_campbeltown",
+    )
 ]
 
 
@@ -142,10 +165,14 @@ def _sections_of(path: Path):
     return sizes, len(found), typed_total
 
 
-def main() -> int:
-    for path in MODELS:
+def main(which: str = "round2") -> int:
+    models = DEALS if which == "deals" else MODELS
+    for path in models:
         if not path.exists():
-            print(f"\n{path.name}: NOT FETCHED — run scripts.model_corpus first")
+            print(
+                f"\n{path.name}: NOT FETCHED — run scripts.corpus_sft_models "
+                "(deals) or scripts.model_corpus (round 2's set)"
+            )
             continue
         sizes, declared, typed_total = _sections_of(path)
         inside = sum(sizes)
@@ -175,4 +202,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    import sys
+
+    raise SystemExit(main(sys.argv[1] if len(sys.argv) > 1 else "round2"))

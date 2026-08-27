@@ -253,3 +253,4 @@ def test_router_serves_the_extraction() -> None:
     refused = client.post("/chain/extract", files={"file": ("notes.txt", b"hello")})
     assert refused.status_code == 415
     assert "not a PDF" in refused.json()["detail"]
+

@@ -167,7 +167,9 @@ server/.corpus-cache/
 server/scripts/corpus_models/
 server/scripts/custodes_work/
 server/scripts/corpus_au_uk/
-server/scripts/corpus_documents/
+server/scripts/corpus_documents/pdfs/
+server/scripts/corpus_documents/sft/
+server/scripts/corpus_documents/ed2/*.pdf
 server/scripts/corpus_pairs/
 
 # Regulator corpus for the measurement rounds (Ofwat PR24, Ofgem RIIO-3).
@@ -202,8 +204,14 @@ server/scripts/seeded/
 server/scripts/corpus_sft/
 
 # Finch (FinWorkBench), fetched by scripts/corpus_documents_finch.py.
-# CC BY 3.0, re-fetchable, never committed.
-server/scripts/corpus_finch/
+# Scribe: the Finch corpus bytes are CC BY 3.0 and re-fetchable, so
+# they are ignored — but the round JSONs beside them are judgements,
+# not corpus: a truth recorded before scoring is only a discipline if
+# the record shows the order, and an ignored file has no history.
+# So the bytes are ignored and the verdicts are tracked.
+server/scripts/corpus_finch/files/
+server/scripts/corpus_finch/README.md
+server/scripts/corpus_finch/*.jsonl
 
 # Dynamo: perturbed-workbook scratch from mining and narrowing runs.
 # These are written and deleted per run; only the JSON result is a record.
