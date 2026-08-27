@@ -3169,3 +3169,19 @@ the sentence generalises further than the run did.** The measurement
 was right every time; the prose was not. From here, any number that
 goes into this log in a sentence gets the population it was measured
 over named in the same sentence.
+
+### The audit is now a command, not a thing I remembered to do
+
+`server/scripts/corpus_documents_audit.py` re-derives the eight
+corpus-level numbers in one run and exits non-zero on any mismatch. It
+carries the four harness commands it cannot cover (each needs its own
+truth file or the database) in its own output, so « run the audit »
+is a complete instruction.
+
+**Every row names the population it was measured over** — « facts,
+Finch corpus (17 PDFs) », « colliding keys, round's 7 tasks » — because
+the population being unnamed is precisely how claim 14 went wrong. A
+claim without its population is not auditable, and now it cannot be
+written down here without one.
+
+All eight rows pass on the current tree.
