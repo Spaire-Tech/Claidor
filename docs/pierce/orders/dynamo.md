@@ -1,22 +1,16 @@
-# Orders — Dynamo (updated 26 Aug, twelfth sweep)
+# Orders — dynamo (updated 27 Aug, fourteenth sweep)
 
-H7 debt-pair round merged: 4/4 named cells, zero noise. B4's two
-remaining laws now have measured catches on a model that promises
-them.
+B4's per-class table is merged: 37/37, zero false positives, the
+selector defect caught by your own control. Track B's measurement
+spine is standing.
 
-1. Widen B4 into a table: run the four laws across the remaining
-   gated files that promise them (your selector discipline decides
-   which), catch rate and false-positive price per class — the
-   plan's B4 DONE is a per-class table, not two pilots.
-2. The volatile-functions rules round for the fidelity gate is
-   still owed as its own registered round (your round-2 reading
-   named it); fold the H7 re-derivation into it.
-3. B3 stays design-only until the lead routes the connector surface.
-
-## Standing addition (26 Aug): memory discipline
-
-Before anything else this turn: create or refresh
-`docs/pierce/handoffs/dynamo.md` per the new « Memory discipline »
-section in `orders/README.md` — the founder is seeing sessions run
-out of context, and the handoff is what makes that survivable. Push
-it with your work, every push, from now on.
+0. Handoff file first if not yet pushed (`docs/pierce/handoffs/dynamo.md`).
+1. **The ddmin narrowing round** the plan's B4 names: a violated law
+   is a symptom — delta debugging over the dependency slice narrows
+   it to the one responsible cell. Registered first, measured on
+   your existing 37 plants (each catch should name exactly its
+   planted cell — you already name cells; this round makes the
+   narrowing an algorithm, not an artifact of simple plants).
+2. The fidelity-gate volatile rules round if still owed as its own
+   registration (your round-2 reading promised it).
+3. B3 stays design-only pending the lead's routing.

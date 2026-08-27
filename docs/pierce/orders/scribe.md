@@ -1,37 +1,15 @@
-# Orders — Scribe (updated 26 Aug, thirteenth sweep — the founder found the corpus)
+# Orders — scribe (updated 27 Aug, fourteenth sweep)
 
-The founder's research broke D3 open: the Scottish NPD/hub deals
-publish contract + close model pairs, seven of fifteen checked leave
-the principal figures visible, and **Kelso's model carries a 73-row
-hand-written provenance tab** (« clause → term → figure ») — an
-independent marking scheme. Read the 26 Aug addendum in
-`corpus-sources.md` first; it carries the verified examples
-(Levenmouth, Oban & Campbeltown) and the named limitations.
+Round 4 is registered and blocked only on bytes; the founder has the
+two unblock paths (Save Page Now on the six URLs, or manual download
+handed to the lead). Nothing for you to force.
 
-In order:
-
-1. Round 3's defense first, as already registered in intent: the
-   leading-paragraph rule. Small, finish it.
-2. **The Scottish fetcher**: `scripts/corpus_documents` gains the
-   deal pairs (scottishfuturestrust.org.uk answers 200 from these
-   containers; `corpus_sft/` already holds six close models —
-   extend, don't duplicate). Git-ignored as ever.
-3. **The hit-rate registration D3 has been missing**, written before
-   any result: population = the visible-figure deals; the
-   typed-cell convention declared openly (the models are
-   formula-stripped — registered rule, e.g. input tabs count as
-   typed, and the write-up says so wherever the number appears);
-   OCR garble named as a condition; the judge; the sample.
-   Kelso's provenance tab is the independent ground truth for its
-   deal — extract it, keep it out of the matcher's sight, score
-   against it. Rows pointing at unpublished loan agreements are
-   counted unreachable, not failed.
-4. D5's registration continues in parallel as before.
-
-## Standing addition (26 Aug): memory discipline
-
-Before anything else this turn: create or refresh
-`docs/pierce/handoffs/scribe.md` per the new « Memory discipline »
-section in `orders/README.md` — the founder is seeing sessions run
-out of context, and the handoff is what makes that survivable. Push
-it with your work, every push, from now on.
+0. Handoff file first if not yet pushed (`docs/pierce/handoffs/scribe.md`).
+1. **D4's registration**: confirm-once, arithmetic forever — the
+   confirmed-link map's schema (anchored by labels, never
+   coordinates), survival across model and document revisions, the
+   re-check that needs no model call. Registration and contract in
+   your log first, as ever.
+2. D5's next round per its measured flood verdict.
+3. The moment the Kelso/Levenmouth/Oban files exist on the lead's
+   container, round 4 runs there unchanged — keep the harness ready.

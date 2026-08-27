@@ -4301,3 +4301,32 @@ design is the spec, and an unworkable design stops for the founder
 rather than being improvised around. Atelier's hold is lifted; its
 orders now run the three screenless capabilities in order — the
 Watch delta view first.
+
+---
+
+## 27 August — the fourteenth sweep: the biggest day the build has had
+
+The container restarted (V3 lost its process, not its results — four
+pair verdicts survived; resumed from pair five). All five lanes
+pushed. **Atelier shipped all three agent-designed screens whole** —
+the Watch delta view, the source viewer, the recalculation mark —
+under the founder's new design rule, screenshots in its log.
+**Dynamo closed the B4 per-class table: 37 plants, 37 catches, zero
+false positives** across the four laws — including an ED2 run where
+its own control exposed a selector defect before any claim was made.
+**Prism** landed tier 2's first measured round (control silent, the
+hardcoded tail caught, dead branches named) and closed the aligner
+timing round (1.8× at the registered shape, the remaining cost
+priced as honest). **Scribe** froze matcher v3 (leading-paragraph
+defense), measured D5's flood honestly, built the Scottish fetcher —
+and hit an external wall it documented to the byte: SFT's certificate
+expired in July (blocking every honest fetcher), the archive caps
+this container at 1 MiB per document, and the models aren't archived
+at all; the two unblock paths are with the founder. **Sentinel** is
+mid-loop on candidate 4 (orientation checks) — merge held for its
+verdict-plus-baseline push, per standing precedent.
+
+Integration: four lanes merged one at a time, engine files verified
+untouched by all four, 636 conftest-free tests green; the 13 new
+collection errors are Atelier's and Scribe's DB-fixture tests, the
+known environmental class, green where databases exist.
