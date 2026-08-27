@@ -223,3 +223,55 @@ def test_coverage_counts_what_the_perturbation_actually_reached() -> None:
     frozen_only = [{"M!FROZEN": r["M!FROZEN"]} for r in runs]
     assert coverage(runs, REFS) == (7, 8)  # everything but M!FROZEN moved
     assert coverage(frozen_only, ["M!FROZEN"]) == (0, 1)
+
+
+# --- typing from E2's inference (round 2, registered 28 Aug) ---
+
+
+class FakeLabel:
+    def __init__(self, kind="unknown", b5_type="untyped"):
+        self.kind = kind
+        self.b5_type = b5_type
+
+
+def test_money_and_rate_come_straight_from_the_inference() -> None:
+    from polar.tieout.recalc.mine import type_from_units
+
+    money = type_from_units(FakeLabel("continuous", "money"), "M!A1", 100.0, [100.0])
+    rate = type_from_units(FakeLabel("continuous", "rate"), "M!A2", 0.05, [0.05])
+    assert money.type is InputType.MONEY
+    assert rate.type is InputType.RATE
+    assert rate.band == (0.6, 1.6)  # never handed a money factor
+
+
+def test_a_selectors_states_are_the_values_the_row_actually_takes() -> None:
+    from polar.tieout.recalc.mine import type_from_units
+
+    typed = type_from_units(
+        FakeLabel("categorical"), "M!A1", 2.0, [1.0, 2.0, 2.0, 3.0]
+    )
+    assert typed.type is InputType.SELECTOR
+    assert typed.states == (1.0, 2.0, 3.0)  # observed, never invented
+    draws = {sample([typed], random.Random(3))["M!A1"] for _ in range(50)}
+    assert draws <= {1.0, 2.0, 3.0}
+
+
+def test_a_categorical_row_with_many_values_is_held_not_stepped() -> None:
+    from polar.tieout.recalc.mine import type_from_units
+
+    typed = type_from_units(
+        FakeLabel("categorical"), "M!A1", 2.0, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    )
+    assert typed.type is InputType.FLAG
+    assert typed.states == ()
+    assert {sample([typed], random.Random(5))["M!A1"] for _ in range(20)} == {2.0}
+
+
+def test_an_abstention_is_still_a_hold() -> None:
+    # E2 declining to decide is not a licence to guess. This is the
+    # AHA's typing law arriving automatically instead of by hand.
+    from polar.tieout.recalc.mine import type_from_units
+
+    typed = type_from_units(FakeLabel("unknown", "untyped"), "M!A1", 7.0, [7.0])
+    assert typed.type is InputType.UNTYPED
+    assert {sample([typed], random.Random(9))["M!A1"] for _ in range(20)} == {7.0}
