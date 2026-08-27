@@ -3809,3 +3809,78 @@ hand-count I have partly pre-read would be theatre.
 can spot-check any of them, and — the number that actually decides it —
 **how many lines are damage**, since « undamaged » as a criterion is
 satisfied at zero and fails at one.
+
+## The classification — measured. **The criterion question does not decide round T. Round T fails either bar.**
+
+143 line entries differ across the three ED2 documents, grouping into
+**32 logical changes**. Read one at a time against the page:
+
+| | changes | line entries |
+|---|---|---|
+| **repair** | **20** | 59 |
+| **damage** | **1** | 2 |
+| **neither** (display mathematics) | 11 | 82 |
+
+### The one damage, and it is unambiguous
+
+**`ed2-financial-handbook` p61:**
+
+| | |
+|---|---|
+| today (tolerance 3.0) | `8. Legacy adjustments` |
+| under round T | `8. Legacy adju2s+tm𝑅𝑅ℎ𝐷𝐷e𝑅𝑅nts` |
+
+A clean section heading, destroyed by having an equation's denominator
+(`2+𝑅𝑅ℎ𝐷𝐷𝑅𝑅`) merged into it. Not a judgement call and not display
+mathematics: the page prints a heading, and round T returns rubble.
+
+**So the decision the lead has been carrying does not need to be
+taken to settle this round.** « Unchanged » fails round T at 32
+changes. « Undamaged » — the criterion I proposed, with zero damage as
+the bar — **fails it at one.** Both bars reject it. **The criterion
+question is real and still worth answering for the rule that comes
+next, but it is not what is blocking D1, and I should have measured
+that before asking.**
+
+### The diagnosis the damage hands over, precisely
+
+Round T's rule merges a small run into « whichever neighbouring
+baseline is within 3.5 pt and larger » — up for a subscript, **down for
+a superscript**. On p61 the *downward* branch fires on a formula
+denominator sitting above a heading: small text, big text below, within
+reach. The rule cannot tell **a subscript inside a line** from **a
+small line adjacent to a bigger one**, and that distinction is what a
+successor rule has to carry. A subscript sits inside its host's own
+horizontal run; a separate small line does not.
+
+The upward branch produced no damage in 143 entries. **If a next round
+wants a cheap, safe subset, it is round T with the superscript branch
+removed** — 20 repairs are almost all subscripts (`ARt`, `RPEIt`,
+`iBTAt`, `AR*2026/27`), and the one destroyed heading came from the
+other direction. **That is a registration for another turn, not a
+change made here**, and it still needs the lead's word.
+
+### A correction: I published this backwards last turn
+
+Last turn I wrote, as a correction to an earlier overclaim:
+
+> at least two lose a space — `paragraph 2.1.5 of Special` becomes
+> `ofSpecial`, and `Condition 2.1` becomes `Condition2.1`.
+
+**The opposite is true.** Today's shipping extractor produces
+`ofSpecial` and `Condition2.1`; round T **repairs** them to
+`of Special` and `Condition 2.1`. They are entries 18 and 19 in the
+repair column above.
+
+**How.** Last turn I printed the changed lines by zipping the
+`only-before` and `only-after` lists, which are not aligned — so I read
+a « was » against a « now » that was not its pair, and reported the
+arrow pointing the wrong way. It is the third time an unaligned or
+under-keyed comparison has produced a wrong claim in this lane: the
+fact key without its y-coordinate, the finding refs without their
+sheet, and now these. **Same defect, three dresses: I compared two
+lists as if position meant identity.**
+
+The correction runs against my own interest twice over — it removes the
+only damage I had claimed for round T *and* it means last turn's
+« correction » was itself wrong. Both are in the record.
