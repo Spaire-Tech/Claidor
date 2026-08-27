@@ -4142,3 +4142,57 @@ were all correct. The sentence about what they meant was not.
 
 Both places in this log that carried the claim are marked in place
 below, and the handoff is corrected.
+
+## Round V's residue, measured rather than asserted
+
+Last turn I wrote that the facts still sitting in character-spaced
+lines under round V « are the genuine glyph-by-glyph population,
+including task 72's four rows ». **That was an assertion, made in the
+same turn I caught myself asserting past a measurement**, so here is
+the measurement.
+
+**56 lines remain character-spaced under round V.** By the number of
+distinct character baselines each holds:
+
+| baselines | lines | what they are |
+|---|---|---|
+| **1** | **50** | genuinely drawn one glyph at a time — the real residue |
+| 3 | 2 | `72_src_0` rows whose baselines scatter 125.3 / 125.6 / 126.6 |
+| 5–6 | 4 | `16_src_0` p9 — **rotated chart axis labels** (`1 3 5 7 9 1 3 5 7 9…`, `7 7 7 7 7 8 8 8 8 8…`, tick years read vertically), whose per-character tops differ by tenths of a point |
+
+**So the assertion was substantially right and wrong in its details.**
+Right that the residue is not the defect round V fixes — not one of the
+56 is two ordinary text lines zipped together. Wrong that it is task
+72's four rows: it is **50 genuinely glyph-drawn lines spread across
+tasks 16, 81, 5 and 72**, plus six that are rotated axis labels and
+sub-point baseline scatter.
+
+### And the check that matters more: does round V make anything worse?
+
+Every document, both configurations, counting numeric tokens that land
+on a character-spaced line. **(The number-matcher here is cruder than
+the extractor's, so these totals differ from the audit's by a few
+percent; the comparison between columns is the point, not the
+absolute.)**
+
+| document | v4 spaced | round V spaced | |
+|---|---|---|---|
+| `72_src_0` | 3,286 | **152** | better |
+| `4_src_8` | 204 | **0** | better |
+| `16_src_0` | 108 | 108 | same |
+| `81_src_1` | 87 | 87 | same |
+| `5_src_0` | 10 | 10 | same |
+| `ed2-fd-finance-annex` | 2 | 2 | same |
+| the other eleven | 0 | 0 | same |
+
+**Nothing gets worse. Two documents get better. Everything else is
+identical to the unit.** That is the strongest form of the round V
+result and it is the one I should have led with: not « 87% repaired »,
+which is an aggregate, but **« no document loses anything, and the two
+that were broken are fixed »**, which is a statement about every file.
+
+**What the residue would take** is a different round again — rotated
+text and truly per-glyph drawing are not a line-grouping problem — and
+**I am not registering it.** Round V is undecided, six D1 rounds are
+already in this log unshipped, and adding a seventh design to the queue
+would be noise, not progress.
