@@ -2577,3 +2577,140 @@ round, registered when it comes ». It has come.
    quietly not check.
 6. **The three round-2 sentences survive**, because they are
    duplicate formulas and independent of whether a draw was legal.
+
+---
+
+## Rate form from usage, not from a word list — registration
+
+*28 Aug. Last entry I registered « a vocabulary of named rates » as
+the fix for the RoE blocker. Before building it I looked again at
+what the file actually says, and the word list is the worse idea.*
+
+### Why the obvious design is the wrong one
+
+The blocker is that `RPI` is stored as `5.8` under a plain `0.00`
+format, so E2 abstains and B5 holds the column that drives the
+entire sheet. A vocabulary — `RPI`, `CPI`, `WACC`, `gearing`,
+`IRR` — would fix that model and would be **a guess wearing a
+lookup table**: it is right because I know what those words mean,
+it fails silently on the next model's house abbreviations, and
+nothing in it is checkable from the file.
+
+The file already states the fact outright:
+
+    F6 = GEOMEAN(1 + (C6:C25/100)) / GEOMEAN(1 + (D6:D25/100)) - 1
+
+**A row whose consumers divide it by 100 and add 1 is a rate in
+percent-of-100 form.** That is evidence, not vocabulary. It is read
+from the dependency graph E2 already walks for propagation, it
+generalises to any model that does the same arithmetic whatever its
+rows are called, and when it is wrong the formula is there to show
+why.
+
+### What is being built
+
+`rate_form` inferred from **how a row is consumed**:
+
+- consumed as `x/100`, especially inside `1 + x/100` → `percent-of-100`
+- consumed as `1 + x` or `x *` an amount, with no division → `decimal`
+- consumed both ways, or by nothing → **abstain**, as always
+
+Read from the same precedents map propagation uses, so it costs no
+new machinery and no new file reading.
+
+### The honest limit, stated up front
+
+**This cannot help the closed-deal corpus.** Those eight models are
+value-only; there are no consumer formulas to read. So the two
+designs are complementary rather than rival — usage evidence for
+formula-bearing files, and something else, later, for files without
+formulas. That is the third time this week two corpora have failed
+in opposite directions, and it is worth the lead noticing as a
+pattern rather than as three separate remarks.
+
+### Predictions
+
+1. **RoE's `C` and `D` columns come back as rates in
+   `percent-of-100` form**, from the `GEOMEAN(1+(C6:C25/100))`
+   consumers. This is the whole point and I expect it.
+2. **RoE's coverage finally clears round 1b's 10 of 193.** Genuinely
+   uncertain: C and D drive 62 of the 224 precedents of the watched
+   cells, and `Q` and `R` — 48 each — are still untyped, so the
+   sheet may stay mostly frozen even with its two real inputs
+   moving. I am not predicting the 50% bar.
+3. **Measured against E1's hundred hand-labelled rows, `rate_form`
+   does not get worse.** Usage evidence must not overturn a
+   format-based answer that was already right; where E2 abstained it
+   may now decide. If accuracy falls anywhere, the round fails and
+   the change comes out.
+4. **It fires somewhere it should not, at least once** — a value
+   divided by 100 for display, or a percentage consumed by something
+   that is not a rate calculation. Fourth round running that I have
+   registered this and it has happened three times; I will hunt for
+   it deliberately rather than wait to be surprised.
+
+## Rate form from usage — built, and the gate did its job twice
+
+### Prediction 1 — confirmed
+
+RoE's `C6:C14` and `D6:D14` come back as rates in `percent` form,
+read from `GEOMEAN(1 + (C6:C25/100))`. **26 of 26** cells the hand
+typing perturbed are now typed automatically, from the file's own
+arithmetic and not from a list of words I happen to know.
+
+### Prediction 3 — the gate fired, and the change came out
+
+Registered: measured against E1's hundred rows, `rate_form` must not
+get worse or the change comes out. The first version made it much
+worse:
+
+| dimension | before | after the first version |
+|---|---|---|
+| `rate_form` | 80 right / 4 wrong | **71 / 14** |
+| `kind` | 97 / 0 | 97 / 1 |
+| `currency`, `scale` | 54 / 0 | 63 / 1 |
+
+Ten of E1's rows flipped, all the same shape: GD3's `Inflation`
+sheet rows — inflation **index** levels, hand-labelled `not-a-rate` —
+became « decimal rates ». The cause was that my `decimal` test
+matched a bare « 1 + » **anywhere** in a consumer formula, which is
+not evidence about any particular row. That half came out, exactly
+as registered, and was replaced by a test that requires the
+consumer to *name the cell*: `1 + <this row>`.
+
+Then it fired twice more before it was right, both regex
+backtracking, both caught by the same two measurements:
+
+- `1+(C6:C25/100)` backtracked to match `C6`, saw `:C25/100`
+  instead of `/100`, and called RoE's percent rows decimals —
+  **8 of 26**.
+- With `:` rejected it backtracked inside the digits to `C6:C2`,
+  saw `5`, and did it again — **8 of 26**.
+
+Anchored against `:`, a following digit and `/100`, all four shapes
+now read correctly, including the one the docstring had been
+promising and the code had not delivered: a row divided by 100 in
+one consumer and added to 1 in another is **an abstention**, not a
+percent. An `elif` had been letting « percent » win silently.
+
+**Final state, all three gates green:**
+
+| check | result |
+|---|---|
+| RoE cells recovered | **26 of 26** |
+| E1, every dimension | **unchanged** — 0 rows flipped |
+| H7 typing | **unchanged** — 3,203 and 3,971 rate, 7 held |
+
+### Prediction 4 — confirmed, three times over
+
+I registered that it would fire somewhere it should not, and said I
+would hunt for it rather than wait. The hunt is what found all three
+defects: E1's hundred rows caught the loose « 1 + », and the RoE
+recovery count caught both backtracking bugs. **Neither measurement
+alone would have caught both** — E1 stayed green through the two
+regex failures, and the RoE count stayed green through the loose
+« 1 + ». That is the argument for keeping a regression set and a
+target measurement pointed at every change, and it is now paid for.
+
+Prediction 2 — whether RoE's coverage finally moves — needs the
+machine, and the constrained-families runs have it.

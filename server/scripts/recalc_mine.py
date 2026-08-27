@@ -47,8 +47,10 @@ from polar.tieout.units.inference import (
     classify_columns,
     classify_sheet,
     columns_from_cells,
+    rate_form_from_usage,
     rows_from_cells,
     sheet_reading,
+    with_usage,
 )
 from polar.tieout.workbook import read_workbook
 from scripts.recalc_behave import perturb
@@ -180,6 +182,10 @@ def inferred_inputs(
     """
     typed: list[TypedInput] = []
     how: dict[str, str] = {}
+    # What the model's own formulas do with a cell, which is evidence
+    # its format and label do not carry: `GEOMEAN(1+(C6:C25/100))`
+    # says RPI is a percentage written as a number.
+    usage = rate_form_from_usage(cells)
     for sheet in sorted(sheets or {cell.sheet for cell in cells.values()}):
         rows = rows_from_cells(cells, sheet)
         if not rows:
@@ -202,7 +208,7 @@ def inferred_inputs(
                 label = labels.get(cell.column)
                 if label is None:
                     continue
-                _append(typed, label, ref, cell, evidence[cell.column].values)
+                _append(typed, label, ref, cell, evidence[cell.column].values, usage)
             continue
         how[sheet] = "read row-wise"
         labels = classify_sheet(rows)
@@ -212,15 +218,16 @@ def inferred_inputs(
             row_evidence = by_row.get(cell.row)
             if label is None or row_evidence is None:
                 continue
-            _append(typed, label, ref, cell, row_evidence.values)
+            _append(typed, label, ref, cell, row_evidence.values, usage)
     return typed, how
 
 
-def _append(typed: list, label, ref: str, cell, values) -> None:
+def _append(typed: list, label, ref: str, cell, values, usage=None) -> None:
     try:
         value = float(cell.value)
     except (TypeError, ValueError):
         return
+    label = with_usage(label, (usage or {}).get(ref))
     typed.append(type_from_units(label, ref, value, values))
 
 

@@ -390,6 +390,138 @@ def classify_columns(
     }
 
 
+# --- rate form read from how a row is consumed ----------------------
+
+#: A reference or range immediately divided by 100 — `C6:C25/100`,
+#: `$D$6/100`. The model dividing a row by 100 is the file stating
+#: that the row is a percentage written as a number, which is a fact
+#: about the row and not a guess about its name.
+OVER_HUNDRED = re.compile(
+    r"(?:'[^']+'!|[A-Za-z_][\w. ]*!)?"
+    r"(\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?)\s*/\s*100\b",
+    re.I,
+)
+
+#: `1 + <this cell>` — the shape that consumes a rate already in
+#: decimal form. It must name the cell: matching a bare « 1 + »
+#: anywhere in a consumer formula turned ten of E1's inflation
+#: **index** rows into « decimal rates » and took `rate_form` from
+#: 80 right / 4 wrong to 71 / 14. The registration said a fall
+#: anywhere means the change comes out; the loose half came out and
+#: this precise one replaced it (lane log, 28 Aug).
+ONE_PLUS_REF = re.compile(
+    r"1\s*\+\s*\(?\s*"
+    r"(?:'[^']+'!|[A-Za-z_][\w. ]*!)?"
+    r"(\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?)"
+    # Reject a following `/100`, `:` or digit. Without all three the
+    # match backtracks inside the range — `1+(C6:C25/100)` yields
+    # `C6`, then `C6:C2` — sees something other than `/100` after it,
+    # and calls the RoE model's own percent rows decimals, costing 18
+    # of the 26 cells this rule exists to recover.
+    r"(?!\s*(?::|\d|/\s*100))",
+    re.I,
+)
+
+
+def _in_span(token: str, column: int, row: int) -> bool:
+    """Does `C6:C25` (or `$D$6`) cover this column and row?"""
+    parts = token.replace("$", "").split(":")
+    bounds = []
+    for part in parts:
+        letters = "".join(ch for ch in part if ch.isalpha()).upper()
+        digits = "".join(ch for ch in part if ch.isdigit())
+        if not letters or not digits:
+            return False
+        index = 0
+        for ch in letters:
+            index = index * 26 + (ord(ch) - 64)
+        bounds.append((index, int(digits)))
+    if len(bounds) == 1:
+        return bounds[0] == (column, row)
+    (c1, r1), (c2, r2) = bounds
+    return min(c1, c2) <= column <= max(c1, c2) and min(r1, r2) <= row <= max(r1, r2)
+
+
+def rate_form_from_usage(cells: Mapping[str, Any]) -> dict[str, tuple[str, str]]:
+    """`{ref: (rate_form, why)}` read from the formulas that consume it.
+
+    The RoE model's blocker, and the reason this exists: `RPI` is
+    stored as `5.8` under a plain `0.00` format, so every
+    format-and-label rule abstains and B5 holds the column that
+    drives the whole sheet. The sheet's own formula says what it is:
+
+        F6 = GEOMEAN(1 + (C6:C25/100)) / GEOMEAN(1 + (D6:D25/100)) - 1
+
+    A row its consumers divide by 100 is a percentage written as a
+    number. A row a consumer names in `1 + <that row>` without
+    dividing is already a decimal. A row consumed both ways is an
+    **abstention**, because the file is then saying two things and
+    this module does not pick one.
+
+    Both tests check that the reference **covers the cell**. The
+    first version tested for a bare « 1 + » anywhere in the consumer
+    formula, which is not evidence about any particular row, and it
+    cost ten of E1's hundred rows.
+    """
+    verdicts: dict[str, set[str]] = {}
+    for _ref, cell in cells.items():
+        formula = getattr(cell, "formula", None)
+        if not formula:
+            continue
+        divided = [match.group(1) for match in OVER_HUNDRED.finditer(formula)]
+        added = [match.group(1) for match in ONE_PLUS_REF.finditer(formula)]
+        if not divided and not added:
+            continue
+        for precedent in getattr(cell, "precedents", ()) or ():
+            target = cells.get(precedent)
+            if target is None or getattr(target, "formula", None) is not None:
+                continue
+            # Both tests run: a row divided by 100 in one consumer and
+            # added to 1 in another is a file saying two things, and
+            # two entries in the set make it an abstention below. An
+            # `elif` here would have let « percent » win silently.
+            if any(_in_span(token, target.column, target.row) for token in divided):
+                verdicts.setdefault(precedent, set()).add("percent")
+            if any(_in_span(token, target.column, target.row) for token in added):
+                verdicts.setdefault(precedent, set()).add("decimal")
+    decided: dict[str, tuple[str, str]] = {}
+    for ref, seen in verdicts.items():
+        if len(seen) != 1:
+            continue
+        form = seen.pop()
+        decided[ref] = (
+            form,
+            "its own consumers divide it by 100"
+            if form == "percent"
+            else "its own consumers add it to 1 without dividing",
+        )
+    return decided
+
+
+def with_usage(label: UnitLabel, usage: tuple[str, str] | None) -> UnitLabel:
+    """A label upgraded by what the formulas do with the cell.
+
+    Only ever fills an abstention or agrees with what is there: a
+    format that already said `percent` is not overturned by usage,
+    per the registration (« usage evidence must not overturn a
+    format-based answer that was already right »).
+    """
+    if usage is None or label.rate_form not in ("unknown", "not-a-rate"):
+        return label
+    form, why = usage
+    if label.b5_type not in ("unknown-quantity", "untyped"):
+        return label
+    return UnitLabel(
+        kind="continuous",
+        b5_type="rate",
+        currency="none",
+        scale="units",
+        period=label.period,
+        rate_form=form,
+        why=f"{why} — so it is a rate, read from usage not from its name",
+    )
+
+
 # --- propagation through the dependency graph -----------------------
 
 #: Functions that multiply their arguments. They must not be read as

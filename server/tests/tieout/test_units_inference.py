@@ -352,8 +352,16 @@ def test_a_conclusion_is_revised_when_the_other_terms_arrive() -> None:
 
 
 class GridCell:
-    def __init__(self, sheet, row, column, value, row_label="", column_label="",
-                 number_format="General"):
+    def __init__(
+        self,
+        sheet,
+        row,
+        column,
+        value,
+        row_label="",
+        column_label="",
+        number_format="General",
+    ):
         self.sheet = sheet
         self.row = row
         self.column = column
@@ -379,7 +387,10 @@ def record_sheet():
             (3, "CPI", 4.0 + index, "0.00"),
         ):
             cells[f"S!{column}{index}"] = GridCell(
-                "S", index, column, value,
+                "S",
+                index,
+                column,
+                value,
                 row_label=f"{year - 1}/{str(year)[2:]}",
                 column_label=header,
                 number_format=fmt,
@@ -422,3 +433,72 @@ def test_a_transposed_column_carries_the_headers_row_labels() -> None:
     assert columns[2].row_label == "RPI"
     assert list(columns[2].column_labels) == ["2021/22", "2022/23", "2023/24"]
     assert columns[2].values == [11.8, 12.8, 13.8]
+
+
+# --- rate form read from usage (registered 28 Aug) ---
+
+
+def consumer_sheet(consumer_formula, precedents=("S!C6",)):
+    cells = {
+        "S!C6": GridCell(
+            "S",
+            6,
+            3,
+            5.8,
+            row_label="2021/22",
+            column_label="RPI",
+            number_format="0.00",
+        ),
+        "S!F6": GridCell("S", 6, 6, 0.0, row_label="2021/22", column_label="wedge"),
+    }
+    cells["S!F6"].formula = consumer_formula
+    cells["S!F6"].precedents = precedents
+    return cells
+
+
+def test_a_row_its_consumers_divide_by_100_is_a_percent() -> None:
+    # The RoE blocker, from the model's own formula.
+    from polar.tieout.units.inference import rate_form_from_usage
+
+    verdicts = rate_form_from_usage(consumer_sheet("=GEOMEAN(1+(C6:C25/100))-1"))
+    assert verdicts["S!C6"][0] == "percent"
+
+
+def test_a_row_a_consumer_names_in_one_plus_is_a_decimal() -> None:
+    from polar.tieout.units.inference import rate_form_from_usage
+
+    verdicts = rate_form_from_usage(consumer_sheet("=(1+C6)*100"))
+    assert verdicts["S!C6"][0] == "decimal"
+
+
+def test_a_bare_one_plus_elsewhere_is_not_evidence_about_this_row() -> None:
+    # The measured false positive: matching « 1 + » anywhere in a
+    # consumer turned ten of E1's inflation *index* rows into
+    # « decimal rates » and took rate_form from 80/4 to 71/14.
+    from polar.tieout.units.inference import rate_form_from_usage
+
+    verdicts = rate_form_from_usage(consumer_sheet("=C6*(1+$B$2)"))
+    assert "S!C6" not in verdicts
+
+
+def test_a_row_consumed_both_ways_is_an_abstention() -> None:
+    from polar.tieout.units.inference import rate_form_from_usage
+
+    cells = consumer_sheet("=(C6/100) + 1 + C6")
+    verdicts = rate_form_from_usage(cells)
+    assert "S!C6" not in verdicts
+
+
+def test_usage_never_overturns_a_format_that_already_decided() -> None:
+    from polar.tieout.units.inference import UnitLabel, with_usage
+
+    decided = UnitLabel(
+        kind="continuous",
+        b5_type="rate",
+        currency="none",
+        scale="units",
+        period="annual",
+        rate_form="percent",
+        why="the number format says so",
+    )
+    assert with_usage(decided, ("decimal", "consumers add it to 1")) == decided
