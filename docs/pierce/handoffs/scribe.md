@@ -159,6 +159,27 @@ Two harnesses are committed and ready:
 report nothing while no candidate rule is in the extractor, which is
 the current state.
 
+## D5's state, as of round 4 — the shape finally has a real subject
+
+Rounds 1–3 could never put D5's question to a real model: the regulator
+corpus has **zero** typed cells inside declared sections (inputs and
+totalled blocks are disjoint), and the eight published Scottish deal
+models are **value-only**, so they declare no totals at all.
+
+**Inverness College is the subject.** 380,506 cells, 20,027 formulas,
+21 sections declared, 6 usable, **175 typed cells inside one (0.09%)**.
+Round 2's threshold verdict replicates at scale: « any » floods (169
+findings from ten confirmations), « half » drives its random noise from
+0.1 to **66.8** as the budget grows 10 → 100, and **« all-but-this-one »
+survives** at 5 adversarial and about 1 random.
+
+**State the limitation with the result**: 0.09% is a small surface and
+this model yields roughly one finding at a hundred confirmations.
+Safely quiet, or too quiet to build — that is a product judgement and
+it is open.
+
+`uv run python -m scripts.corpus_documents_unsourced_shape formula-bearing`
+
 ## Read this first if you are picking this lane up on 28 August
 
 Two findings from the fifteenth turn that are **not about this lane's
