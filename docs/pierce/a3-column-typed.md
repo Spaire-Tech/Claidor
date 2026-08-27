@@ -167,3 +167,40 @@ findings — interior islands suppressed *solely* by the left-formula
 guard need a typed cell vertically sandwiched in a repeating
 family with no left formula, which in row-major regulator templates
 is rare; whatever appears is hand-read and the flood line decides.
+
+---
+
+## Round-2 partial results (27 Aug — checkpoint; the verdict is NOT
+## yet decided, honestly labelled)
+
+**Precondition: gate clean** — the pre-waiver engine's fresh 27-file
+sweep matches the committed baseline finding for finding (this is
+also the formal certification the lead's gate note was waiting on).
+
+**Planted recall, re-audited with the waiver live: 42 of 45.**
+`Inflation!B151` — the only plant suppressed *solely* by the
+left-formula guard — is now caught, the waiver doing exactly what
+it claims. Still missed, each run to ground:
+
+- `C_Capex!F294`: **criterion 3's letter refuses here**, and the
+  examination corrects this round's own record: the run's formulas
+  each pin their own absolute row (`I_InputSets!R253C[+0]`,
+  `R254`, …), so **no shape repeats and the island witness can
+  never fire** — verified shape by shape at the cells. The round-1
+  diagnosis stopped at the first failing condition (the left guard
+  does fail there) and missed that the witness fails too; F294 was
+  never recoverable by the registered change. This is the
+  pre-existing « no two shapes match » blind spot round 4 named,
+  not the guard. The mistaken attribution and its correction are
+  both on the record.
+- `C_Performance!F167` (top island) and `Inflation!E211` (seed):
+  predicted to stay missed; they did — the guards working as
+  designed.
+
+**The decisive sweep is complete on disk but its diff is not yet
+read** — checkpoint ordered before the comparison ran. The per-file
+counts already show movement (`final_wacc` 13 → 15), so the diff,
+the hand reading of every line against criteria 1–2, and the
+adopt-or-refuse decision — with criterion 3's letter-refusal and
+the examination above weighed in the open — are all still owed.
+Nothing is claimed for round 2 yet.
