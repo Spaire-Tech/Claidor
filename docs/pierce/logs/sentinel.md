@@ -28,6 +28,80 @@ golden-master gate and regenerates the baseline in the same commit.
   `a3-sibling-totals.md`, with the planting harness under
   `server/scripts/planting/`.
 
+## 27 August 2026 — the Tasi re-score: a second labeller, and a nesting
+
+The engine met an independent expert labelling of the same 70 files
+the CUSTODES benchmark uses. Registration and conventions committed
+first; the engine frozen at the candidate-4 adoption and unchanged
+throughout. Full record in `tasi-benchmark.md`.
+
+The instrument validates itself: our scorer reproduces Tasi's own
+published 82.9% / 75.2% exactly, and returns the same 283 covered
+cells the 23 August run recorded. Coverage of today's engine:
+**13.2%** of Tasi's 3,702 error cells, **22.2%** of CUSTODES's
+1,974 smell cells.
+
+Three things worth the founder's attention. **The two label sets
+nest rather than conflict** — 99.4% of CUSTODES's cells are also
+Tasi's, while Tasi marks 1,186 more on the same sheets, so on this
+corpus « ground truth » is nearly scope-determined. **Their two
+error classes partition our rules cleanly**: `skipped-cell` carries
+formula-error (80 of 119), `typed-over-formula` carries
+missing-formula (354 of 370), and each covers ~zero of the other.
+And **my prediction was wrong three times of five**, all recorded:
+serious-error coverage is *lower* than overall (7.8% vs 13.2%), the
+fresh-vs-frozen gap is large rather than small, and the label sets
+agree on a majority not a minority.
+
+Two honest limits. This container's LibreOffice cannot load these
+legacy files at all, so the round was amended before any number to
+read the originals directly — which recovered the cell the CUSTODES
+registration had written off as lost in conversion (1,974, the
+paper's own figure), but also means fresh-vs-frozen confounds
+engine change with reading route, so no drift conclusion is drawn.
+And ExceLint's 2.2% recall here is a convention artefact — it
+reports regions — not a verdict on the tool.
+
+**Catalogue consequence: none** — this round changed no code.
+**For the lead:** the serious-error gap (1,206 uncovered cells with
+a ready-made sample) is the best-funded mining question the record
+now holds.
+
+## 27 August 2026 — candidate 4 adopted: the column direction, widened
+
+Three rounds. Round 1 changed no code and measured what the engine
+already catches down columns: 41 of 45 plants, with the misses
+naming the island pass's left-formula history guard as a row-major
+bias. Round 2 waived that guard for interior islands — and was
+refused three ways: it admitted eight real hardcodes *and* sixteen
+typed-zero template rows, the class the mining round rejected by
+name. Round 3 carried candidate 2's identity guard inward (a cell
+admitted only by the waiver must be neither 0 nor ±1): the zeros
+vanished, the real finds stayed, and the gate now adds **12
+findings in 5 files, none removed**.
+
+What the engine can now say that it could not: FY2026's
+lookup-period dates are typed into **both WACC models** where every
+sibling row computes them; 646.26 and 919.70 sit in rows whose
+neighbours all pull per-entity through `CHOOSE(m_identity, …)`; a
+0.06 rate is typed into two passthrough interface columns. The
+baseline is regenerated **in this commit**, its diff the review
+artifact.
+
+Round 3 was refused by its own letter (12 findings predicted as 8)
+and adopted after examination: the four extra lines are cells round
+2 already reported inside a fold, now reporting individually
+because removing the zeros left three cells — below the fold's
+four-adjacent threshold. Content right, presentation mispredicted;
+both written in `a3-column-typed.md`.
+
+**Catalogue consequence, per the lead's standing request: none.**
+This round adds no rule — `typed-over-formula` already exists — so
+the count stays 19 and Atelier has nothing to route this time.
+**One open question for the lead:** the typed fold's four-adjacent
+threshold now leaves three-cell rows unfolded; moving it would
+touch baseline findings, so it needs its own registered round.
+
 ## 26 August 2026 — candidate 3: unmeasurable on this corpus, not shipped
 
 Beat families, the mining round's stride-lattice candidate. The
