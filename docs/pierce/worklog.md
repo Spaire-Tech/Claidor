@@ -4446,3 +4446,10 @@ together, which is exactly the failure `lanes.md` warns about and
 this record already paid for once. V3 is stopped with ten pairs
 banked; the gate is re-running alone on a verified-quiet machine,
 and the certification claim waits for it.
+
+**Certified, 27 Aug:** the re-run on a verified-quiet machine is
+**gate clean** — all 27 files report identically to the regenerated
+baseline, finding for finding, on the tip carrying candidate 4's
+adoption. Sentinel's twelve new findings are exactly what the
+baseline says they are, and nothing else moved. V3 resumes with ten
+pairs banked.
