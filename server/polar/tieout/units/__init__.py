@@ -40,9 +40,12 @@ from .inference import (
     Dimension,
     Orientation,
     UnitLabel,
+    classify_columns,
     classify_sheet,
+    columns_from_cells,
     orientation,
     propagate,
+    sheet_reading,
 )
 
 __all__ = [
@@ -50,7 +53,10 @@ __all__ = [
     "Dimension",
     "Orientation",
     "UnitLabel",
+    "classify_columns",
     "classify_sheet",
+    "columns_from_cells",
     "orientation",
     "propagate",
+    "sheet_reading",
 ]
