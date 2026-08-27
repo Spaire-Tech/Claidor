@@ -83,6 +83,19 @@ REFUSAL_UNAVAILABLE = "tier2_unavailable"
 #: Distinct from `not_offered_to_tier2` (the oracle never ran) and
 #: from `no_perturbable_input` (it ran and nothing moved).
 REFUSAL_NOT_READ = "not_read_by_driver"
+#: The two versions disagreed, but only on a branch that the model
+#: does not take as it is configured — reached by waking an input the
+#: file holds at zero. A real finding about the pair and **not** a
+#: claim about the revision, so it refuses rather than changing the
+#: verdict. Reported on its own line.
+REFUSAL_LATENT = "tier2_divergence_latent"
+#: The trials reached the cell and it answered `#DIV/0!` — or an
+#: empty string — in every one of them. Distinct from
+#: `no_perturbable_input`, which claims the perturbation never
+#: arrived: here it arrived and drove the cell out of the domain
+#: where it computes anything, so comparing the versions there is
+#: vacuous. Naming these apart cost a round to learn.
+REFUSAL_DEGENERATE = "degenerate_under_perturbation"
 
 REFUSALS = frozenset(
     {
@@ -92,6 +105,8 @@ REFUSALS = frozenset(
         REFUSAL_NOT_OFFERED,
         REFUSAL_UNAVAILABLE,
         REFUSAL_NOT_READ,
+        REFUSAL_LATENT,
+        REFUSAL_DEGENERATE,
     }
 )
 
@@ -124,6 +139,10 @@ class Tier2Answer:
     outcome: str
     detail: str = ""
     perturbed: bool = True
+    #: For a refusal: the vocabulary word, kept apart from `detail`
+    #: so the human line (« trial 2: 4.0 -> 4.7 ») survives into the
+    #: report instead of being overwritten by its own category.
+    refusal: str = ""
 
 
 #: Given the suspect refs, answer for whichever it can. A ref left out
@@ -361,18 +380,21 @@ def build_ladder(
                 detail=answer.detail,
             )
         elif answer.outcome == TIER2_SUPPORTED:
-            #: G5: nothing moved, so nothing was tested.
+            #: G5: the cell did not vary across the trials, so nothing
+            #: was tested — but *why* it did not vary is the oracle's
+            #: to say, and the two reasons are not the same claim.
             ladder.verdicts[ref] = Verdict(
                 ref=ref,
                 verdict=REFUSED,
                 rung=RUNG_TIER2,
-                reason=REFUSAL_NO_INPUT,
+                reason=answer.refusal or REFUSAL_NO_INPUT,
                 tier0_blockage=blockage,
                 old_ref=old_ref,
-                detail="the trials never moved this cell's inputs",
+                detail=answer.detail or "the trials never moved this cell's inputs",
             )
         else:
-            reason = answer.detail if answer.detail in REFUSALS else REFUSAL_UNAVAILABLE
+            named = answer.refusal or answer.detail
+            reason = named if named in REFUSALS else REFUSAL_UNAVAILABLE
             ladder.verdicts[ref] = Verdict(
                 ref=ref,
                 verdict=REFUSED,

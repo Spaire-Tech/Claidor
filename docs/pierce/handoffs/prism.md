@@ -28,6 +28,7 @@ answering anything of record; register before results, always.
 | C4 tier 0 (fingerprints) | `watch/trace.py`, `scripts/watch_stealth.py` | Soundness gate clean after round 2's observability fix; **93.2% of a real adjacent revision proved at hash cost in ~2 min** |
 | C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | Two hosts, **8 of 8 eligible on both, zero refusals, control silent**; `tail_hardcode` and `stealth_literal` 5/5 everywhere; the selector sweep closed the dead-branch case |
 | C5 deck delta | `watch/document.py`, `scripts/watch_deck.py` | Measured on the Cascade deck: a planted input move breaks **8 figures, each attributed to the model change underneath it**, while the deck's **8 pre-existing drifts stay off the revision's account** |
+| C4 tier 2, the domain round | `scripts/watch_tiers.py domain` | Perturbation bands narrowed against the file's own error count: ED2 tolerates **±1% and not ±5%** (1,379 errors at every wider band). Coverage of the disturbed cells **96 → 293 of 294**; seven divergences on `Finance&Tax` remain **unexplained**, five candidate causes eliminated |
 | C4 tier 2, why cells freeze | `scripts/watch_tiers.py` (verdict dump) | The 198 frozen disturbed cells are on live sheets, not licensee branches (**no `CHOOSE` names any of them**); **198/198 reach a held categorical literal, 0/96 supported ones do**, with a median 527 perturbed literals in cone — so reach is not the problem, the zero-holding rule is |
 | C4 tier 2, pair oracle | `scripts/watch_tiers.py oracle/control` | Control (file against itself) **0 diverged, 0 violations**. ED2 pair: **0 diverged** over 8,475 perturbed inputs, 172 supported, 1,344 `no_perturbable_input`. Coverage is the real story: of the **294** cells the revision disturbed, the trials reached **96** |
 | C4 ladder (one verdict per cell) | `watch/tiers.py`, `scripts/watch_tiers.py` | ED2 v2 14→31 July: **93.19% proved · 3.11% changed · 3.69% refused, all five gates clean**, and the count reconciles with C1's raw diff to a single named cell (`Cover!G4`) |
@@ -56,8 +57,21 @@ a report.
 
 ## Open, in order
 
-1. **The zero round** — registered, not run, and it is the live
-   one. The forced-selector round answered why 198 disturbed cells
+1. **The seven, and the pairing round** — the live item. The
+   domain round (±1% band, error-ceilinged) took tier 2's coverage
+   of the disturbed cells from 96 of 294 to **293**, and surfaced
+   **seven cells on `Finance&Tax` that compute differently in the
+   two versions under identical inputs**. Five explanations are
+   eliminated by measurement (held inputs, unperturbed literals,
+   iteration, out-of-universe precedents, class changes — all zero).
+   The registered next test is whether C2's alignment pairs some
+   literal to the wrong old cell. **Do not report the seven as a
+   finding about the revision until that is settled.**
+2. **The zero round — done, and a negative.** Waking 10,732 held
+   zeros moved none of the 198; the correlation that motivated it
+   was not the cause. What was: the perturbation drove those cells
+   into `#DIV/0!`/`""`, which the harness misnamed
+   `no_perturbable_input` for a round. The forced-selector round answered why 198 disturbed cells
    never moved, and the answer is a rule of mine: `_is_categorical`
    is true of **zero** (integral, magnitude ≤ 12), so every zero
    literal is held as though it were a flag, and a zero *quantity*
@@ -67,26 +81,26 @@ a report.
    non-zero small integers, and report a divergence found on a
    branch that only wakes when a zero is woken as
    `tier2_divergence_latent` — never as the revision's `changed`.
-2. **Tier 1 (Z3)** — the rung that would speak where the trials
+3. **Tier 1 (Z3)** — the rung that would speak where the trials
    cannot (1,344 frozen cells on the ED2 pair). Registered; blocked on the lead's
    `z3-solver` pyproject approval. No code may import z3 before
    that. Until it lands the ladder prints the hole's size every run
    as `tier1_would_have_been_asked` (1,516 on the ED2 pair).
-3. **Tier 2's planted-edit side — closed.** All three named follow-ups measured:
+4. **Tier 2's planted-edit side — closed.** All three named follow-ups measured:
    categorical inputs, conditional inputs, and the selector sweep
    (a dead branch is an *unselected* one; the harness reads the
    model's `CHOOSE`, forces the index, and stamps
    `selector_forced` on every instance it touches).
-4. **C6 (rule-set diff)** — founder-approved, yours, and *not*
+5. **C6 (rule-set diff)** — founder-approved, yours, and *not*
    ready: B5's stability gates pass but its rule sets are
    artifacts of low perturbation coverage, and the lead has put C6
    behind Dynamo's E1/E2. Register it when coverage is measurable,
    citing that number — not only the stability pair.
-5. **C3 deferrals — done** (filled/emptied cells; labelled rewrite
+6. **C3 deferrals — done** (filled/emptied cells; labelled rewrite
    targets). Successor item: the C2 harness should take its
    labelled rows from the engine's own `Cell.row_label` rather than
    from its string proxy — registered, not yet run.
-6. **Named next rounds if the aligner must go faster still**:
+7. **Named next rounds if the aligner must go faster still**:
    banding, or a Hirschberg (linear-space) traceback.
 
 ## What the corpus taught (facts about the files, not the code)

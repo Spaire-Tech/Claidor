@@ -354,7 +354,27 @@ class TestThePairOracleRules:
     def test_a_cell_the_driver_never_returned_is_refused_by_name(self) -> None:
         answer = self.answers([[1.0], [], [3.0]], [[1.0], [2.0], [3.0]])["M!B4"]
         assert answer.outcome == "refused"  # type: ignore[attr-defined]
-        assert answer.detail == "not_read_by_driver"  # type: ignore[attr-defined]
+        #: The vocabulary word and the human line are separate fields,
+        #: so naming the refusal does not cost the reader the reason.
+        assert answer.refusal == "not_read_by_driver"  # type: ignore[attr-defined]
+        assert "no value" in answer.detail  # type: ignore[attr-defined]
+
+    def test_a_woken_zero_diverging_refuses_as_latent_not_as_changed(self) -> None:
+        """The zero round: a disagreement only reachable by waking an
+        input the file holds at zero is a difference on a branch the
+        model does not take. It refuses under its own name — the
+        revision is not blamed for it."""
+        from scripts.watch_tiers import _answer
+
+        old = [{"M!B4": 1.0}, {"M!B4": 2.0}]
+        new = [{"M!B4": 1.0}, {"M!B4": 2.5}]
+        plain = _answer(("M!B4",), lambda r: r, old, new)["M!B4"]
+        assert plain.outcome == "diverged"
+        assert plain.refusal == ""
+        latent = _answer(("M!B4",), lambda r: r, old, new, latent=True)["M!B4"]
+        assert latent.outcome == "refused"
+        assert latent.refusal == "tier2_divergence_latent"
+        assert "trial 1" in latent.detail
 
     def test_text_results_are_compared_as_text(self) -> None:
         """The class tier 0 is blind to — a formula whose result is a
