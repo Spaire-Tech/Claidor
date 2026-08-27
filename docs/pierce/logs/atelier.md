@@ -934,3 +934,50 @@ had — and the honest report on it is « we could barely read this »,
 not a clean bill. Seven more readable models are fetched and
 waiting; running the rest through the report is the obvious next
 pass if the lead wants it.
+
+## 27 August 2026 — the values-only truth, where a person meets the file
+
+The tip split the population proof in two (1A analytical on this
+corpus, 1B structural awaiting a formula-bearing one) — Sentinel's
+run, not mine. What is mine is the consequence for the product:
+**last turn I made the *report* stop calling a blind read clean, but
+the report is the last thing a person sees.** They meet the file
+first, on the document panel, and there it still said nothing.
+
+Two defects in my own panel, both found by the real corpus and
+neither catchable on the fixture:
+
+1. **« Named cells » was showing the cell count.** The row read
+   `counts['cells']` under a « Named cells » label. On the cascade
+   fixture `named` and `cells` are both 313 — identical, so the
+   mislabel was invisible for as long as the fixture was the only
+   subject. On Levenmouth they are 413,049 and 432,596. The panel
+   now carries three honest rows: **Cells read**, **Formulas**
+   (« 224 of 432,596 cells »), and **Named cells** with the number
+   that actually means named.
+2. **Nothing said the file was a printout of a model.** « Ready »,
+   no findings, « Named cells 432,596 » — a reader concludes the
+   model is clean. The panel now says it in the amber of an
+   assumption at risk, above the facts: « This copy carries values,
+   not formulas — 224 of 432,596 cells hold one. The rules that read
+   how a model is built can see almost none of it; the checks that
+   read values still ran. » Absent on a formula-bearing model
+   (cascade: 228 of 313, 72.8% — verified no notice).
+
+The display line is 1% of cells, and it is a *display* threshold,
+said as such in the code: the engine's own `values_only` is what the
+report speaks from, and this is the same fact read off the
+artifact's counts where no run record is at hand.
+
+**A second thing the real corpus surfaced, unprompted.** « Hidden
+inside it » on Levenmouth is not empty: the workbook carries live
+external links with the original bidders' internal paths —
+`\\Londsbs01\company\Documents and Settings\John\My Documents\Work\
+Projects\North Ayrshire…` and SharePoint URLs from the sponsor's
+tenant. A published, closed-deal public document is leaking the
+folder structure of the firm that wrote it. That is the metadata
+checker earning its place on a real file, and it is worth the
+founder seeing: `logs/atelier/panel-values-only.png`.
+
+Route suite **85 passed**; tsc and prettier clean; the panel's lint
+warnings are its own pre-existing idiom, unchanged in count.

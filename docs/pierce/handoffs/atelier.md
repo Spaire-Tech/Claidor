@@ -111,6 +111,14 @@ failing », with the reason a page away. The verdict now qualifies
 itself. **Intake refusals are derived from `SUFFIXES`** and name the
 fix for `.xlsb`/`.csv`/`.numbers`; never re-pin that prose in a test.
 
+**The values-only truth is said twice now** — on the report's
+verdict and on the document panel where a person meets the file
+(« Cells read / Formulas 224 of 432,596 / Named cells », plus the
+notice). The panel's « Named cells » row had been showing the *cell*
+count: invisible on the fixture, where named == cells, obvious on a
+real model. Prefer a corpus model over a fixture when checking any
+count a screen prints.
+
 **G2 — the five questions: measurable only in part.** Chat cannot
 run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503. What was
 measured is the tool surface: 1, 2 and 4 have their material

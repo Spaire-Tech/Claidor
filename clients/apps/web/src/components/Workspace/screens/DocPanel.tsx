@@ -340,7 +340,29 @@ export const DocPanel = ({
             ? `${figures} across ${pages} pages`
             : String(figures),
     })
-  if (cells > 0) facts.push({ label: 'Named cells', value: String(cells) })
+  const formulas = Number(doc.counts['formulas'] ?? 0)
+  const named = Number(doc.counts['named'] ?? 0)
+  //: A published model is often a *printout* of a model: the formulas
+  //: are stripped before release and only values remain. Measured on
+  //: the real corpus (27 Aug): eight of eleven closed-deal models hold
+  //: under 0.1% formulas — one holds three. The panel used to show
+  //: « Named cells 432,596 » for such a file, which is both the wrong
+  //: label for that number and the wrong impression of the file.
+  const formulaShare = cells > 0 ? formulas / cells : 0
+  const valuesOnly = cells > 0 && formulaShare < 0.01
+
+  if (cells > 0)
+    facts.push({ label: 'Cells read', value: cells.toLocaleString() })
+  if (cells > 0)
+    facts.push({
+      label: 'Formulas',
+      value:
+        formulas === 0
+          ? 'none — values only'
+          : `${formulas.toLocaleString()} of ${cells.toLocaleString()} cells`,
+    })
+  if (named > 0)
+    facts.push({ label: 'Named cells', value: named.toLocaleString() })
   if (traced !== null && figures > 0) {
     facts.push({ label: 'Traced to the model', value: String(traced.yes) })
     facts.push({ label: 'Not traced', value: String(traced.no) })
@@ -1161,6 +1183,51 @@ export const DocPanel = ({
         {facts.length > 0 && (
           <>
             <div style={panelHead}>What Swens found in it</div>
+            {/* A published model is often a printout of a model. Saying
+                so where a person meets the file — not only in the
+                report — because « ready » and no findings on a
+                400,000-cell file reads as « clean », and the reason it
+                is empty is that there was almost nothing to read.
+                Agent-designed; the engine's own `values_only` is what
+                the report speaks from, this is the same fact from the
+                artifact's counts. */}
+            {isModel && valuesOnly && (
+              <div
+                style={{
+                  ...panelCard,
+                  display: 'flex',
+                  gap: 11,
+                  padding: '13px 16px',
+                  marginBottom: 8,
+                  background: '#fdf6e7',
+                  boxShadow: 'inset 0 0 0 1px rgba(232,163,0,.28)',
+                }}
+              >
+                <span
+                  style={{
+                    flex: '0 0 auto',
+                    width: 7,
+                    height: 7,
+                    marginTop: 7,
+                    borderRadius: '50%',
+                    background: '#e8a300',
+                  }}
+                />
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: 13.5,
+                    lineHeight: 1.55,
+                    color: '#5a4a1f',
+                  }}
+                >
+                  {formulas === 0
+                    ? 'This copy carries values only — not one cell holds a formula. The rules that read how a model is built have nothing to read here; the checks that read values still ran.'
+                    : `This copy carries values, not formulas — ${formulas.toLocaleString()} of ${cells.toLocaleString()} cells hold one. The rules that read how a model is built can see almost none of it; the checks that read values still ran.`}
+                </span>
+              </div>
+            )}
             <div style={panelCard}>
               {facts.map((fact, index) => (
                 <div
