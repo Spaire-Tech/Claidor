@@ -1393,3 +1393,137 @@ forced; D4's registered measurement run and passing eight of eight
 with two amendments proposed from it; chain tests 84 passed; full
 tieout suite **781 passed, 9 skipped**; zero mypy errors in the
 package. Still no table, and D4's contract still awaits approval.
+
+## 27 August 2026, ninth « go » — the Finch pivot, read by hand before anything was registered
+
+Orders: the Scottish route is closed and not to be attempted again
+(the Kelso harness stays committed and ready — it does); the pivot is
+FinWorkBench/Finch; **fetch it, read it, and say honestly whether its
+document-into-spreadsheet tasks are our task, before any
+registration.** This section is that answer. No matcher has been run
+against Finch at any point in forming it — what follows is corpus
+reading, which is how a sample gets designed, not a result.
+
+**The fetcher**: `scripts.corpus_documents_finch`, git-ignored as
+ever. It takes the dataset card, the workflow index, every task JSON,
+and the source/reference files of the tasks that carry a PDF — 218 of
+537 files, all fetched, no failures. `--all` takes the rest.
+**Attribution, CC BY 3.0, travelling with every number this corpus
+ever produces: FinWorkBench/Finch, arXiv:2512.13168,
+huggingface.co/datasets/FinWorkBench/Finch.**
+
+### Is it our task? Yes — in shape, with three caveats, one of which predicts the answer
+
+**What Finch is:** 172 expert-annotated finance workflows — an *agent
+benchmark* (« add the missing cross-sheet references », « add a
+Scenario3 sheet »), not a linking corpus. Most of it is not our task
+and I am not going to pretend otherwise.
+
+**What is ours:** of the 172, **nine carry a PDF**. One (16) runs the
+other way (spreadsheet → report), one (4) is images only. **Seven are
+document → spreadsheet**: 5, 52, 72, 81, 156, 160, 161. Together they
+hold **2,411 typed cells** whose values a human expert took from a
+source PDF, and all seven PDFs read clean — **3,590 extracted numbers,
+zero pages refused**.
+
+That is D3's task in shape, and the first corpus we have ever held
+that runs the document-into-model direction. ED2 gave 90 seeded draws
+with **zero** cells the documents stated; task 156 alone gives eleven
+typed cells against a two-page PDF that states every one of them.
+
+**It is also not a flat transcription in the cases that matter.**
+Task 156's reference workbook holds 11 typed cells and **31 computed**
+ones — a real workbook, where the typed cells are the document-fed
+ones and the computed cells' provenance is their formula, exactly the
+distinction D3 rests on. Task 81 holds 956 typed against 773 computed.
+
+**Caveat A — the ground truth is at the file level, not the link
+level.** Finch annotates « this workbook is the correct output for
+this PDF ». It does **not** annotate « cell `CABC!I9` came from page 1,
+line 3 ». So the per-cell truth is still judged by hand, exactly as in
+rounds 1–3. What Finch supplies that nothing else has is the
+*guarantee* that these cells are genuinely document-fed, and a
+document that actually states them. Nobody should read
+« hand-annotated ground truth » as « a link map ».
+
+**Caveat B — the sample is small and lopsided.** Seven workflows, and
+two of them (72, 81) hold 80% of the typed cells. A pooled per-cell
+number would be a number about tasks 72 and 81 wearing a corpus's
+clothes.
+
+**Caveat C — the difficulty is bimodal, and the hard mode exposes a
+limit in D3's own design.** Tasks 5 and 161 are flat transcriptions
+(104 and 312 typed cells, **zero computed**): the sheet mirrors the
+document's own table, so the labels match nearly by construction —
+an easy case that would flatter any hit-rate. Tasks 81, 156 and 72
+are the real thing, and reading them by hand turned up this:
+
+> cell `ETS!H13`, named « ETS Transport Margins Commodity - FTS - 2 »,
+> against the PDF line
+> `Commodity - FTS - 2  -  -  139.9  -  -  -  -  139.9  (139.9)  -`
+
+One printed line, **ten columns of numbers**, feeding ten different
+cells. The row label is in the line; the column identity
+(« ETS Transport Margins », the year, the entity) lives in a *header
+line elsewhere on the page*. **My matcher's document side has no
+column dimension at all** — a fact's anchor is its printed line, and
+`propose()` scores label overlap against that line alone. So on a
+multi-column table it can at best abstain, because ten facts share one
+line's labels and its tie rule fires. It cannot be right; it can only
+be quiet.
+
+That is a structural finding about D3, not about Finch: the
+line-anchored design was measured on prose-shaped documents (Ofgem's
+annexes) and this corpus is table-shaped. Round 5's candidate is a
+**column anchor** — the header line above a fact's own x-position,
+which D1 already records — and it is registered when it is registered,
+not patched in mid-round.
+
+**So: yes, run the round here** — it is the only document-into-model
+ground truth we have, it is licensed for commercial use, and it will
+give the first honest hit-rate number this track has ever had. And it
+will very likely be a low one, for the reason above.
+
+## D3 round 5 — registration, frozen before any matcher runs on Finch
+
+**Corpus:** the seven Finch document → spreadsheet workflows (5, 52,
+72, 81, 156, 160, 161), fetched by `scripts.corpus_documents_finch`.
+Attribution as above, in this write-up and every one that quotes a
+number from it.
+
+**Population:** the typed cells of each task's reference workbook —
+no formula, a value present. Tasks 5 and 161 carry no formulas at
+all, so *every* cell of theirs is typed; that is a property of a flat
+transcription and is recorded rather than corrected, and their numbers
+are reported separately for exactly that reason.
+
+**Sample: six typed cells per task, drawn with seed 271828 — 42 in
+all.** Equal weight per task, not per cell, so that tasks 72 and 81
+cannot carry the average; the pooled figure is labelled
+« equal-weight per task » wherever it appears, and the seven per-task
+figures are printed beside it always.
+
+**The judge is me**, from the PDF, blind: truth is recorded before any
+matcher output is looked at, with value search as the aid — the judge
+may use values, the matcher may not, as in every round here. For each
+drawn cell the truth is the fact key (page, line, token) the document
+states it at, or **empty** when the document does not state it.
+
+**Conditions** (counted, never scored as failures): `unreachable-ocr`
+if a page is refused — none are expected, all seven PDFs read clean;
+`no-cell-located` for a drawn cell whose value the sheet reader cannot
+place.
+
+**The matcher is the frozen v3.** No change to it during this round.
+If it needs a column anchor, that is round 5's *finding* and round
+6's registration.
+
+**The registered prediction, stated so it can be wrong:** high
+abstention on the table-shaped tasks (72, 81, 156, 160) from the tie
+rule, and whatever the flat transcriptions (5, 161) give being an
+upper bound rather than a representative number. **No target is
+promised, and a low number ships nothing** — same as every round
+before it.
+
+**Harness:** `scripts.corpus_documents_finch_round`, two phases —
+`sheet` then `score` — like every round in this lane.
