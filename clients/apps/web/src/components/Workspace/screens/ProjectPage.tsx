@@ -2622,7 +2622,11 @@ export const ProjectPage = ({
                       : held === 'loading'
                         ? 'Comparing with the version before…'
                         : held && typeof held === 'object' && 'refused' in held
-                          ? held.refused
+                          ? //: The column is a summary, so it carries the
+                            //: fact, not the paragraph — the server's own
+                            //: sentence, and what to do about it, is
+                            //: printed under the table in full.
+                            'Not comparable — the file was dropped'
                           : held === null
                             ? 'Nothing earlier was readable to compare'
                             : held
