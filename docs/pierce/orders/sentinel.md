@@ -31,3 +31,18 @@ Before anything else this turn: create or refresh
 section in `orders/README.md` — the founder is seeing sessions run
 out of context, and the handoff is what makes that survivable. Push
 it with your work, every push, from now on.
+
+## Addendum (27 Aug): the Tasi round — high priority
+
+After candidate 4 lands (verdict + baseline together, as ever), the
+next round is **the Tasi re-score**, ahead of candidate 5: see
+`docs/pierce/china-os-findings.md` §1. Fetcher: shallow-clone
+`github.com/tcse-iscas/Tasi` (verified reachable); the ground truth
+is `Spreadsheet Error Dataset/Subject/Groundtruth and tool
+results.xls` (291 worksheet rows; formula-error and missing-formula
+columns; per-tool cell lists incl. ExceLint). Registration first:
+scoring conventions fixed against BOTH label sets' shapes before any
+number; our engine's row beside the seven tools'; the
+1,974-vs-3,702 label disagreement measured and written as its own
+result. No licence in that repo — benchmark internally, cite, never
+redistribute.

@@ -11,3 +11,12 @@ lead's V3 resumed from pair 5 on the restarted container.
    code imports it.
 2. Tier 2's next round per your own registration (wider hosts) once
    tier 1's registration is committed.
+
+## Addendum (27 Aug): required reading before tier 1
+
+Before registering the Z3 tier-1 fragment, read SQLSolver
+(`github.com/SJTU-IPADS/SQLSolver`, Apache-2.0, SIGMOD 2024) — their
+LIA* handling of unbounded summation is exactly the SUM-over-
+symbolic-range wall the fragment will hit. Your tier-1 registration
+must say what transfers and what does not. See
+`china-os-findings.md` §3.
