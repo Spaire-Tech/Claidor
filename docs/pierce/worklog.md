@@ -4663,3 +4663,13 @@ exactly Kelso's four and Newbattle's four, the same eight Proof 1A
 adjudicated as false alarms at the cells. An independent lane, on a
 corpus measured for another reason, confirming Sentinel's fix by
 arithmetic. It marked its own published number stale in place.
+
+**Certified, 28 Aug:** the independent gate on the own-check period
+restriction is **clean** — all 27 files report identically to the
+baseline. Sentinel's claim that the Proof 1A fix moves nothing on
+the regulator corpus is confirmed from outside its own tests, which
+is exactly what the defect predicted (regulator models do not park
+scalars beside their period grids; the private infrastructure models
+that failed the proof do). Two independent confirmations now stand
+behind one fix: this gate, and Scribe's unrelated re-run dropping
+12 → 4 by exactly the adjudicated eight.
