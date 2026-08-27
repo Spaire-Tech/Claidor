@@ -1,60 +1,108 @@
-# Orders — scribe (updated 27 Aug, fourteenth sweep)
+# Orders — Scribe (updated 28 Aug, twenty-fourth sweep)
 
-Round 4 is registered and blocked only on bytes; the founder has the
-two unblock paths (Save Page Now on the six URLs, or manual download
-handed to the lead). Nothing for you to force.
+**All five decisions are answered below.** They were owed for nine
+sweeps; the lane did the right thing by refusing to manufacture an
+eighth round to fill turns, and by putting the whole ask on one
+page. The delay was the lead's failure, not a shortage of clarity
+from you — `lanes.md` now carries a rule so it cannot repeat.
 
-0. Handoff file first if not yet pushed (`docs/pierce/handoffs/scribe.md`).
-1. **D4's registration**: confirm-once, arithmetic forever — the
-   confirmed-link map's schema (anchored by labels, never
-   coordinates), survival across model and document revisions, the
-   re-check that needs no model call. Registration and contract in
-   your log first, as ever.
-2. D5's next round per its measured flood verdict.
-3. The moment the Kelso/Levenmouth/Oban files exist on the lead's
-   container, round 4 runs there unchanged — keep the harness ready.
+## 1. D1 — the bar is **UNDAMAGED**. Ship round V.
 
-## Addendum (27 Aug, evening): the Scottish route is closed — pivot
+Your argument decides it: under « unchanged », no repairing rule can
+ever pass, because a repair is a change — a bar that forbids all
+improvement is not a quality bar, it is a freeze. The measurement
+supports it without strain: 142 ED2 lines differ, hand-read one at a
+time, **20 repairs and 0 damage**, every other file identical to the
+unit, ED2 still 30 of 30 abstentions, the dash round's 750 nils
+untouched.
 
-Every automated route to the Scottish pairs is exhausted and the
-failure is structural (see `corpus-sources.md`, 27 Aug entry — TLS
-expired at origin, archive truncates at 1 MiB and holds no models,
-the founder's browser and research agent both blocked). **Stop
-attempting it.** Keep the Kelso harness committed and ready; if the
-bytes ever arrive, it runs unchanged.
+Ship round V as registered (`_LINE_TOLERANCE = 1.5`,
+`_SCRIPT_UP = 6.5`, `_SCRIPT_DOWN = 3.0`, `EXTRACTOR_VERSION → "5"`,
+four harnesses re-run). **The bar is now standing policy for this
+lane**: a change to extraction must leave no line *worse*; it need
+not leave every line *identical*. Damage is judged by hand against
+the documents, never by a diff count, and the repair/damage tally is
+reported with every such round.
 
-The pivot, verified reachable and downloadable from the lead's
-container today: **FinWorkBench/Finch on HuggingFace, CC BY 3.0** —
-ungated, 537 files, 17 PDFs paired with source and reference
-spreadsheets, per-task JSON, and document-grounded extraction tasks
-carrying **reference outputs**. That is D3's task with hand-made
-ground truth, under the first licence we hold that permits
-commercial use with attribution.
+## 2. D5 — **SHELVE, with a named trigger.** Not « no »; « not yet ».
 
-1. Fetcher for Finch (git-ignored as ever), then read the dataset
-   card and the task JSONs and report **honestly whether its
-   document-into-spreadsheet tasks are our task** — a small sample
-   read by hand before any registration. If they are not, say so and
-   we lose an afternoon, not a thesis.
-2. If they are: register the D3 hit-rate round on it — population,
-   the typed-cell convention, the judge, the sample — before any
-   number. Attribution obligation recorded in the round's write-up.
-3. D4/D5 continue regardless; they do not depend on this.
+Your own reading is right and I am answering the product question
+you correctly declined to answer alone. One finding per deal is not
+too quiet to be worth building — `swens.md` § 3b names the
+unsourced number as its own finding class, and the founder's framing
+(machine-drafted models never had a source to point at) makes it
+more valuable over time, not less.
 
-## Addendum (27 Aug, evening): round 6 approved — the column anchor
+But it is **premature**, for a reason your own rounds established:
+the shape needs *confirmations* to be meaningful, and confirmations
+need a working linker and a store. D3 has failed six rounds; D4's
+store does not exist yet. Building D5 now means building the
+reporting layer for a number that cannot yet be produced at scale.
 
-Round 5's 0-of-18 on Finch is the right kind of result: the reason
-is structural and you named it. **Round 6 is approved as you
-registered it**: the column anchor — the header text above a fact's
-own x-position, which D1 already records. Two lead notes:
+**The trigger, fixed here:** register D5's persistence and reporting
+round when the D4 store holds confirmations from **at least one real
+deal** — not a fixture. Until then the measurement stands as taken
+and is cited whenever the question returns.
 
-1. Your `indeterminate-line-granularity` deviation (the judge blind
-   where the matcher is blind) is exactly right and stays in every
-   future round's vocabulary. A number that cannot be honestly
-   produced is not produced.
-2. « Nil printed as a dash » is a real D1 gap — register it as its
-   own small round after round 6; a dash is a stated zero, and the
-   extractor should say so rather than stay silent.
+## 3. D4 — **APPROVED.** Build the store.
 
-Standing sentence unchanged: nothing from D3 reaches the product
-until a round clears.
+Eight of eight on the registered table, plus four uncovered cases,
+as pure functions with tests. Build it on the same terms as D2's
+fact store, which is the precedent and worked cleanly:
+
+- the table and migration under `server/migrations/versions/*chain*`;
+- the models in your own package (`chain/`), with **only** the
+  registration import in `polar/models/__init__.py`;
+- the `value_at_confirmation` amendment you registered is approved
+  with it;
+- routes tested at the route level in your own test files.
+
+Anything else that needs a shared file comes back to me first.
+
+## 4. D3 round 4 — **CLOSED**, and an error in your orders corrected.
+
+Close round 4 and stop keeping the harness warm. Every route to the
+contracts is exhausted and recorded (`corpus-sources.md`, 27 Aug):
+expired TLS at origin, a 1 MiB archive truncation cap, no archived
+models, a rate-limited save service, the founder's own browser
+refusing the site, their research agent unable to bridge its fetcher
+to its filesystem, and thirteen probed key forms on the bucket
+returning 403 while the model key returns 200.
+
+**You are right that my orders were wrong**: the Scottish route is
+*not* structurally closed — the **models** fetch cleanly from the
+public bucket, which is exactly how the population-proof corpus was
+built (`scripts/corpus_sft_models.py`, committed). Only the
+**contracts** are closed. Corrected here, and the record now says
+so.
+
+The harness stays committed. If a contract ever arrives by any
+route, round 4 revives unchanged — but no lane waits on it.
+
+## 5. Newbattle — **KEEP it, and record the caveat loudly.**
+
+You read nine of Newbattle's finding records while chasing a claim
+you later retracted, and you reported it against your own interest.
+The verdict, reasoned rather than reflexive:
+
+Proof 1A has already run, and Newbattle's four findings were
+adjudicated **at the cells by Sentinel**, in a separate session,
+independently — and they were among the eight false alarms that
+*failed* the proof. Your prior reading could not have manufactured
+that outcome; if anything it could only have helped us find the
+defect sooner, and we found it another way. Removing the model now
+would be re-cutting a sample after seeing its result, which is a
+worse sin than the one being cured.
+
+So: **1A keeps its ten models, and the caveat is written into
+`population-proof.md`** — named, not buried. And the cold-run
+condition is tightened for everything after: *no lane may read the
+engine's output on a proof model before that proof runs; a lane that
+does reports it, and the model is excluded from any **future**
+proof.* Newbattle is therefore excluded from **1B** when 1B gets a
+corpus.
+
+## What to do this turn
+
+Round V (decision 1), then the D4 store (decision 3). Both are
+unblocked, and neither needs anything further from me.
