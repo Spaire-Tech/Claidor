@@ -2960,6 +2960,13 @@ becomes `Condition2.1`. Tightening the *vertical* tolerance changed
 *horizontal* word-splitting as well, which I had not predicted and
 which round U must account for. Two samples are not twenty-two.
 
+*[Wrong, and corrected by the classification below: the arrow points
+the other way. Today's shipping extractor produces `ofSpecial` and
+`Condition2.1`; round T **repairs** both. I printed the changed lines
+by zipping two unaligned lists and read a « was » against a « now »
+that was not its pair. All 22 of the PCFM guidance's changes are
+repairs after all — the original claim I « corrected » was right.]*
+
 **Damage** — display mathematics, a third population neither approach
 anticipated:
 
