@@ -1382,3 +1382,69 @@ next rounds are the conditional-input fix above and the selector
 sweep (evaluating under each licensee) — the dead branch is now
 *reported* rather than mistaken for a clean result, which is the
 part that mattered.
+
+## Two rounds registered together (REGISTERED BEFORE RESULTS)
+
+Sixteenth sweep. My three numbered orders (handoff, tier 1's
+registration, tier 2's wider round) are merged; **tier 1 stays
+code-free** — `z3-solver` is still not in the tip's `pyproject`,
+so nothing imports it — and **C6 stays unwritten**: the plan's
+third amendment gates it on Dynamo's two stability tests, and
+their B5 log carries the criterion as a plan (« run twice with
+independent samples; agreement reported as a number ») with no
+five-seed agreement and no cosmetic-invariance result on the
+record yet. Checked, not assumed. So this turn takes the two
+things that are mine, unblocked, and already owed.
+
+### Round A — tier 2's conditional input must be able to fire
+
+Owed from the wider round's own finding: `conditional_divergence`
+drew its threshold input with `literal_target(nonzero=True)`,
+which can return a literal the **categorical** rule excludes from
+the assignment — so the condition can never activate and the
+instance reports a zero it did not earn (ED2 `AV102`,
+`factors: []`). Fixed rule: the class draws its threshold input
+from the **scaled** set only; when no scaled literal is available
+at or after the mark, the instance is a **refusal** naming that
+reason, never a zero. Nothing else moves — k, seed, threshold and
+every other class stay as registered.
+
+### Round B — the two C3 deferrals, now unparked
+
+The twelfth sweep parked these « until C4's first round lands »;
+tier 0 and tier 2 have both landed, so they are due.
+
+**B1. Cells added or removed inside matched structure.** Today
+`delta_of` walks matched row × matched column positions and
+`continue`s whenever either side is missing — so a number typed
+into a previously-empty cell of an existing row is invisible to
+every C3 class, while C1's raw diff sees it plainly. That gap is
+the deferral, and it is the commonest real revision there is: the
+new period's actual, filled in. Two new classes, **`emptied_cell`**
+and **`filled_cell`**, ranked between `moved_assumption` and
+`material_output` — authoring decisions before their consequences,
+removal before addition. Scope, stated so it cannot creep: only
+**matched** rows and columns, so an inserted row's cells stay
+`structure` and are never double-counted; the engine's cell
+universe, so C1's style-only stubs never appear. Folded to row
+blocks like every other class.
+
+**B2. `rewrite_formula` gets labelled targets and real positions.**
+The C2 harness recorded two warts against this class: its target
+rule ignores the position parameter (so its three instances per
+sheet were **one edit run three times**), and it lands on
+label-less row 1, whose wholesale rewrite reads honestly as
+delete + insert. New rule: the class targets the first formula
+cell at or after **its own mark** whose row carries a label,
+wrapping to the top as the other scans do; a sheet with no such
+cell is a refusal.
+
+**The prediction, on record before the run:** if a row's label is
+what rescues a rewritten row's match — which is what C2's round-3
+diagnosis claimed — then this class should stop reading as
+delete + insert and start recovering, moving the harness above
+21/24. **Predicted, not promised**; whatever the harness returns
+is what gets written, and a result that contradicts the diagnosis
+is the more interesting one. The gate stands unchanged: the other
+seven classes must reproduce their exact per-instance verdicts, or
+the round fails.
