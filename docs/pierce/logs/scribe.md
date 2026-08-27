@@ -4455,3 +4455,31 @@ Package is clean: **no mypy error and no lint finding in
 complaint was real — `pdfplumber.utils.extract_words` is not marked a
 public re-export — and carries a narrow ignore with the reason, not a
 blanket one.
+
+### Turn's end state
+
+**Both ordered items are done.** Round V is shipped (extractor version
+5, 2,653 invented facts gone, ED2 and the nils untouched to the unit),
+and D4's store is built (table, migration applied, repository, two
+routes, eight route-level tests).
+
+- full tieout suite **915 passed, 9 skipped, 0 failed**
+- **no mypy error and no lint finding** in `polar/tieout/chain/` or
+  `tests/tieout/test_chain*`
+- the audit's eight corpus numbers re-baselined at version 5, each
+  version-4 value kept beside its replacement
+- ED2 **30 of 30**; Finch part A + part B **0 / 1 / 4 / 35**, 40 of 42
+  scored, **36 stated**
+- `router.py`'s standing sentence now reads **0 of 36**
+
+**Nothing is waiting on the lead.** D5 waits on its own named trigger —
+D4's store holding confirmations from a real deal — and that store now
+exists, so the trigger is reachable for the first time. D3 round 4 is
+closed; Newbattle needs nothing.
+
+**One thing I want on the record about the nine-sweep wait.** The lead
+called it their failure. From this side it was also the most useful
+constraint the lane has had: it is what produced the audit, the
+decision sheet, and four self-caught errors, because there was nothing
+to do but check my own work. I would not ask for it again, but I would
+not trade the record it produced either.
