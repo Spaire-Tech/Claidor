@@ -3196,9 +3196,14 @@ All eight rows pass on the current tree.
    work, for six turns now.
 4. **New:** the part B write-up's « 562 facts » is corrected to « 562
    colliding keys naming 4,456 facts, over the round's seven tasks ».
-   If any of that sentence has already been quoted into the worklog or
-   a sweep entry, it needs the same correction there — I have not
-   touched those files, they are not mine.
+   **Checked rather than guessed:** the string does not appear in
+   `worklog.md` on the tip at all, and part B has never been swept, so
+   the wrong number has not travelled outside this log. Nothing for the
+   lead to correct elsewhere.
+
+   I first wrote this item as « if it has been quoted, it needs
+   correcting there too » — a speculation, one commit after committing
+   to name the population of every claim. Checking took one command.
 
 The tip has not moved in two turns and the orders file is four sweeps
 old. Everything this lane has done since is inside D1 and D3, and the
