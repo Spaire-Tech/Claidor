@@ -73,8 +73,29 @@ def sweep(out_path: str) -> None:
     Path(out_path).write_text(json.dumps(points, indent=1))
 
 
+def profile(rows: int) -> None:
+    """The timing round's instrument: cProfile over one alignment of
+    the registered synthetic shape, top functions by cumulative time —
+    the split between similarity's miss path, real LCS work, and the
+    DP loop's own bookkeeping."""
+    import cProfile
+    import pstats
+
+    old = synthetic(rows, edited=False)
+    new = synthetic(rows, edited=True)
+    profiler = cProfile.Profile()
+    profiler.enable()
+    align_lines(old, new)
+    profiler.disable()
+    stats = pstats.Stats(profiler)
+    stats.sort_stats("cumulative")
+    stats.print_stats(12)
+
+
 if __name__ == "__main__":
     if sys.argv[1] == "one":
         one(int(sys.argv[2]))
+    elif sys.argv[1] == "profile":
+        profile(int(sys.argv[2]))
     else:
         sweep(sys.argv[2] if sys.argv[1] == "sweep" else sys.argv[1])

@@ -930,3 +930,195 @@ hold no numeric-valued formula, so both target scans
 the tail holds nothing — the same mechanical fallback the round-1
 stealth retype registered. The chosen coordinate remains the
 recorded ground truth.
+
+## Aligner timing round — registration (REGISTERED BEFORE RESULTS)
+
+Ordered at the twelfth sweep: post-memory-fix, a PR24 FM02 pair
+costs ~90 minutes wall on the lead's container — the fat is gone
+and the minutes remain. This round measures where they live and
+fixes only what is avoidable without moving a single result.
+
+**Baseline already on record** (the memory round's sweep, same
+instrument): the fix made the synthetic shape ~1.9× *faster*
+(900 s → 477 s at 10k rows), so the 90 minutes is the O(R×N)
+recurrence's own price on ~1M-cell models, not a regression.
+
+**The instrument:** `cProfile` over `align_lines` on the
+registered synthetic shape (5k rows × 60), attributing time among
+(a) the per-pair `similarity` calls on the common miss path —
+label-differing pairs that today pay two string compares plus an
+element-wise tuple equality; (b) real LCS work on eligible pairs;
+(c) the DP loop's own bookkeeping. The profile decides; nothing is
+fixed on a hunch.
+
+**Candidate fix, designed now, applied only where the profile
+points:** per-call interning — each `align_lines` call maps every
+signature tuple to one canonical object so equality is `is`-fast,
+and precomputes per-line (label, signature-id) so the common miss
+path answers without entering `similarity` at all. Exact same
+verdicts by construction: the values compared do not change, only
+how fast the equal ones are recognized.
+
+**The gate, identical to the memory round's:** all watch unit
+tests; the C2 harness reproducing 21/24 twice with per-instance
+verdicts identical; the v4→v5 alignment equal in every sheet
+(name-ordered). **Reported:** the profile's split, the sweep
+before/after, and the projected FM02 pair time — or, if the
+profile says the minutes are the recurrence's honest price, that
+sentence and a stop, per the orders.
+
+Sequencing note: the tier-2 grid is running on this container as
+this registration is written; heavy jobs run alone, so the timing
+measurement starts only after the grid returns.
+
+## Tier 2 round 1 — the control failed for the instrument's reasons; round 2 registered
+
+The grid ran: 45 recalculations, 63 minutes, LibreOffice 25.8
+under UNO, 1,547 literals perturbed per trial. Recorded, not
+claimed: **every class reported 5/5 trials divergent — including
+`equivalent_rewrite`, so the round fails its own false-positive
+control.** Decomposed, the picture is two instrument defects and
+one clean result:
+
+1. **`Cover!G4` diverges in every comparison of every class.** Read
+   in the cells: `=MID(CELL("filename"),…)` — the model prints its
+   own filename on the cover, and the harness's scratch files all
+   have different names. An environment-reading formula is neither
+   volatile (Dynamo's set is time/randomness) nor behaviour, and
+   both false positives are exactly this one cell.
+2. **`stealth_literal` erased itself.** The trial assignment
+   rewrites every literal on the sheet — including the stealth
+   cell, whose +7 it overwrites. Those instances tested nothing;
+   their « catches » were `Cover!G4` again.
+3. **The clean result underneath:** `tail_hardcode` caught 5/5 at
+   the edited cell itself, both positions — the study's
+   Severn-Trent shape demonstrated behaviourally. And
+   `conditional_divergence` scored **zero real catches in ten
+   trials** against an analytic ~41% per instance: with k=5 and
+   the seed fixed, the drawn factors for that input simply never
+   crossed 1.4 — deterministic, not unlucky, and reported as such.
+
+**Round 2, registered before its results:**
+- An **environment cone** joins the exclusions: roots are formula
+  cells calling `CELL` or `INFO` (tokenized, the same discipline
+  as Dynamo's volatile scan), closed over the reader's precedent
+  lists; excluded from divergence comparison and counted in the
+  report. Implemented in the harness — `recalc/` stays Dynamo's.
+- **Build order flips**: the trial assignment lands first, the
+  edit second, so a stealth retype adds its 7 to the perturbed
+  value and survives.
+- k stays 5 and the seed stays — changing them after seeing
+  results would be tuning; the conditional class's drawn factors
+  are printed so its rate explains itself. The full grid re-runs
+  from scratch.
+
+## Tier 2 round 2 — the cone looked in the wrong universe; round 3 registered
+
+Round 2 recorded honestly: the control failed again with the same
+single cell, and `environment_cone: 0` is the tell — `Cover!G4`
+is **not in the engine's cell universe** (the Cover sheet
+contributes zero labelled numeric cells), so a cone computed over
+`book.cells` could never see it. Second finding: both
+`stealth_literal` targets were dead inputs (spare-row zeros
+feeding no formula), so their +7 moved nothing the driver reads —
+`tail_hardcode` remains the one cleanly-demonstrated class (5/5
+at both positions, real), and `conditional_divergence` repeats
+its seeded zero.
+
+**Round 3, registered before its results:**
+- The environment cone's **roots come from the raw grid** (the C1
+  reader holds every stored formula), closed over the engine's
+  precedent edges; root and cone counts land in the report, and a
+  run whose raw grid contains a `CELL(`/`INFO(` formula but whose
+  cone is empty aborts as an instrument error rather than
+  producing a polluted table.
+- The **stealth literal must feed something**: eligible targets
+  are literals whose ref appears in at least one engine cell's
+  precedents — first such at/after the mark, wrapping, same
+  fallback family as before.
+- `conditional_divergence` keeps its threshold, k and seed —
+  changing them now, knowing the draws, would be tuning. The drawn
+  factors for its input are printed per trial so the measured rate
+  explains itself against the analytic ~41%.
+
+## Tier 2 round 3 — the control passes; the first measured round, with its mechanics
+
+58 minutes, 45 recalculations, the environment cone rooted in the
+raw grid found exactly `Cover!G4`, and **the false-positive
+control passes: `equivalent_rewrite` 0/10 trials divergent.**
+
+**The catch table (the DONE number, first measurement):**
+
+| class | caught (per instance) | mechanics, read in the cells |
+|---|---|---|
+| tail_hardcode | **5/5, 5/5** | the edited cell's own recalculated output carries the −0.49 tail every trial |
+| conditional_divergence | 0/5, 0/5 | the printed factors (max 1.276, 1.238) never crossed the registered 1.4× threshold — the seed's arithmetic, now visible per trial |
+| equivalent_rewrite | 0/5, 0/5 | **correct silence** — the control |
+| stealth_literal | 0/5, 0/5 | see below — the model's own semantics |
+
+**Two findings about the model, not the method, both read in the
+cells and both material for tier 2's future:**
+
+1. **ED2 is a selector model.** Every licensee sheet feeds the live
+   calculation only through
+   `SelectedInputs!X = CHOOSE($B$3, ENWL!X, …)` — and v5 is saved
+   with SSES selected, so **SWEST is a dead branch**: an edit there
+   genuinely does not change current outputs, and will the moment
+   the selector moves. Differential evaluation under the saved
+   selector state cannot see dead-branch edits; a
+   selector-sweeping round (evaluate under each licensee) is the
+   named follow-up, for the lead to sequence.
+2. **Perturbing flag literals deadens flag paths symmetrically.**
+   `SWEST!AM102` is a categorical flag read as `=1` in
+   SUMPRODUCTs; scaling it by U(0.5,1.5) breaks the comparison in
+   *both* files, so the stealth's +7 had no remaining live path.
+   Input randomization needs to distinguish magnitude inputs from
+   categorical ones — a registered refinement for the same
+   follow-up round.
+
+**Where tier 2 stands.** The machinery is real end to end —
+LibreOffice 25.8 under UNO through Dynamo's calculator, prescan,
+volatile and environment cones, seeded trials, and a control that
+now stays silent. The measured sentence the round earns: *a
+behaviourally-demonstrable edit in the live cone is caught every
+trial; an edit the model's own selector makes dead, or the seed's
+draws never activate, is not — and the table says which is which,
+mechanically.* The dead-branch and categorical-input rounds are
+what stands between this and a catch-rate on arbitrary stealth
+edits.
+
+## Aligner timing round — results: the avoidable third removed, gates green
+
+**The profile pointed precisely:** of ~790 s on the 5k profile run,
+real LCS work was 172 s — and 1.94 billion `dict.get` calls
+(253 s, plus the churn around them) came from rebuilding a
+counting dict from scratch for every unlabelled pair at every DP
+cell, when the multiset bound only needs each line's Counter,
+buildable once per alignment.
+
+**The fix** (`_pair_similarity`): per-line Counters precomputed in
+`align_lines`, the bound served from their intersection. Same
+formula, same threshold, same verdicts; the public `similarity`
+stays untouched for the traceback and the tests.
+
+**The sweep, before → after** (memory-round baseline → this round):
+
+| rows | seconds | peak RSS |
+|---|---|---|
+| 2,000 | 18.1 → **8.7** | 87 → 88 MB |
+| 5,000 | 114.2 → **62.9** | 160 → 162 MB |
+| 10,000 | 476.7 → **265.4** | 318 → 323 MB |
+
+From the original pre-memory-round state, 10k rows has gone
+900 s / 1,389 MB → **265 s / 323 MB**. **Gates all green:** 49/49
+unit tests; the C2 harness 21/24 twice with per-instance verdicts
+identical; the v4→v5 alignment identical in every sheet.
+
+**The projection, and the honest remainder.** The lead's
+~90-minute FM02 pair should land near half that; sixteen pairs
+near half a day. What remains is the recurrence itself — the
+O(R×N) loop and the real LCS on eligible pairs — which is the
+price of the registered algorithm. If the lead needs the day back
+rather than half of it, the named next rounds are banding or a
+Hirschberg traceback, each a registered round of its own; nothing
+further is claimed here.

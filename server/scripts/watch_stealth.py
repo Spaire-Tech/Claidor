@@ -31,6 +31,7 @@ import json
 import sys
 import tempfile
 import time
+from collections.abc import Mapping
 from pathlib import Path
 
 import openpyxl
@@ -283,6 +284,55 @@ def _diverges(old: object, new: object) -> bool:
     return str(old) != str(new)
 
 
+#: Environment-reading functions: their values reflect the file's own
+#: path or the machine, not the model's behaviour — Cover!G4 prints
+#: the workbook's filename through CELL("filename") and diverged in
+#: every round-1 comparison because the harness's scratch files have
+#: different names.
+ENVIRONMENT_FUNCTIONS = frozenset({"CELL", "INFO"})
+
+
+def _environment_cone(
+    raw: Mapping[str, tuple[str, str]], cells: Mapping[str, object]
+) -> tuple[frozenset[str], frozenset[str]]:
+    """Roots calling CELL/INFO plus every dependent, per the same
+    tokenized discipline as Dynamo's volatile scan (recalc/ stays
+    Dynamo's; this cone is the harness's own)."""
+    from openpyxl.formula.tokenizer import Token, Tokenizer
+
+    def calls_environment(formula: str) -> bool:
+        try:
+            tokens = Tokenizer(formula).items
+        except Exception:
+            return False
+        for token in tokens:
+            if token.type == Token.FUNC and token.subtype == Token.OPEN:
+                name = token.value.rstrip("(").upper()
+                name = name.removeprefix("_XLFN.").lstrip("@")
+                if name in ENVIRONMENT_FUNCTIONS:
+                    return True
+        return False
+
+    roots = {
+        ref
+        for ref, (content, _) in raw.items()
+        if content.startswith("f:") and calls_environment(content[2:])
+    }
+    dependents: dict[str, list[str]] = {}
+    for ref, cell in cells.items():
+        for precedent in getattr(cell, "precedents", ()) or ():
+            dependents.setdefault(precedent, []).append(ref)
+    cone = set(roots)
+    frontier = list(roots)
+    while frontier:
+        node = frontier.pop()
+        for dependent in dependents.get(node, ()):
+            if dependent not in cone:
+                cone.add(dependent)
+                frontier.append(dependent)
+    return frozenset(roots), frozenset(cone)
+
+
 def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
     import random
 
@@ -301,7 +351,20 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
         Path(out_path).write_text(json.dumps(refusal, indent=1))
         print(json.dumps(refusal, indent=1))
         return 1
-    _, cone = volatile_cone(book.cells)
+    _, volatile = volatile_cone(book.cells)
+    base_raw, _ = read_raw(base_path)
+    environment_roots, environment = _environment_cone(base_raw, book.cells)
+    raw_has_environment = any(
+        content.startswith("f:")
+        and ("CELL(" in content.upper() or "INFO(" in content.upper())
+        for content, _ in base_raw.values()
+    )
+    if raw_has_environment and not environment_roots:
+        raise SystemExit(
+            "instrument error: the raw grid holds CELL()/INFO() formulas "
+            "but the environment cone found no roots"
+        )
+    cone = frozenset(volatile | environment)
 
     on_sheet = sorted(
         (cell for cell in book.cells.values() if cell.sheet == sheet_name),
@@ -317,7 +380,13 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                     return _coordinate(cell), cell.formula
         raise SystemExit("no numeric formula anywhere on the sheet")
 
+    fed: set[str] = set()
+    for engine_cell in book.cells.values():
+        fed.update(engine_cell.precedents or ())
+
     def literal_target(mark: int, *, nonzero: bool) -> tuple[str, float]:
+        """Round 3: the literal must feed at least one formula — a
+        spare-row zero that nothing reads demonstrates nothing."""
         for start in (mark, 0):
             for cell in on_sheet:
                 if (
@@ -327,8 +396,10 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                 ):
                     if nonzero and cell.value == 0:
                         continue
+                    if cell.ref not in fed:
+                        continue
                     return _coordinate(cell), float(cell.value)
-        raise SystemExit("no eligible literal anywhere on the sheet")
+        raise SystemExit("no feeding literal anywhere on the sheet")
 
     literals = {
         _coordinate(cell): float(cell.value)
@@ -347,6 +418,8 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                 assignment[coordinate] = current * rng.uniform(0.5, 1.5)
         trials.append(assignment)
 
+    conditional_inputs: dict[int, tuple[str, float]] = {}
+
     def edited_formula(kind: str, body: str, mark: int) -> str:
         if kind == "tail_hardcode":
             return f"=({body})-0.490096707821704"
@@ -354,6 +427,7 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
             return f"=({body})*2/2"
         if kind == "conditional_divergence":
             input_coordinate, current = literal_target(mark, nonzero=True)
+            conditional_inputs[mark] = (input_coordinate, current)
             threshold = 1.4 * current
             return f"=IF({input_coordinate}>{threshold!r},({body})*1.01,({body}))"
         raise ValueError(kind)
@@ -365,11 +439,16 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
     ) -> None:
         working = openpyxl.load_workbook(base)
         sheet = working[sheet_name]
-        if edit is not None:
-            coordinate, formula = edit
-            sheet[coordinate] = formula
         for coordinate, value in assignment.items():
             sheet[coordinate] = value
+        #: Edit after assignment (round 2): a stealth retype adds its 7
+        #: to the perturbed value instead of being overwritten by it.
+        if edit is not None:
+            coordinate, payload = edit
+            if isinstance(payload, str):
+                sheet[coordinate] = payload
+            else:
+                sheet[coordinate] = assignment.get(coordinate, payload) + 7.0
         working.save(target)
 
     instances: list[tuple[str, int, tuple[str, str | float]]] = []
@@ -377,7 +456,7 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
         for mark in marks:
             if kind == "stealth_literal":
                 coordinate, current = literal_target(mark, nonzero=False)
-                instances.append((kind, mark, (coordinate, current + 7)))
+                instances.append((kind, mark, (coordinate, current)))
             else:
                 coordinate, formula = formula_target(mark)
                 body = formula[1:] if formula.startswith("=") else formula
@@ -416,9 +495,18 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                     if divergent and len(sample) < 6:
                         sample.extend(sorted(divergent)[:3])
                 caught = sum(1 for n in per_trial if n)
+                factors = None
+                if kind == "conditional_divergence" and mark in conditional_inputs:
+                    input_coordinate, current = conditional_inputs[mark]
+                    factors = [
+                        round(trial_assignment[input_coordinate] / current, 3)
+                        for trial_assignment in trials
+                        if input_coordinate in trial_assignment and current
+                    ]
                 verdict = {
                     "kind": kind,
                     "mark": mark,
+                    "input_factors": factors,
                     "edit_at": f"{sheet_name}!{edit[0]}",
                     "trials_diverged": caught,
                     "trials": TIER2_TRIALS,
@@ -446,7 +534,9 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
         "trials": TIER2_TRIALS,
         "seed": TIER2_SEED,
         "perturbed_literals": len(literals),
-        "volatile_cone": len(cone),
+        "volatile_cone": len(volatile),
+        "environment_roots": sorted(environment_roots),
+        "environment_cone": len(environment),
         "false_positives": len(false_positives),
         "by_class": {
             kind: [r["trials_diverged"] for r in results if r["kind"] == kind]
