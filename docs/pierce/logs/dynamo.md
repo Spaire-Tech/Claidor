@@ -2802,3 +2802,57 @@ went in, so neither produced them. Not re-running an hour of machine
 time for an artifact when RoE's coverage — the open question that
 unblocks a whole model — needs the machine now; the next runs carry
 both.*
+
+### Prediction 2 of the usage round — confirmed, and the bar still refuses the result
+
+Registered: RoE's coverage clears round 1b's 10 of 193. It does.
+
+| | round 1b (hand) | round 2/3 (inferred) | round 5 (usage) |
+|---|---|---|---|
+| coverage | 10 of 193 | **0 of 193** | **55 of 193 — 28.5%** |
+| verdict | — | uninformative | **uninformative** |
+
+`docs/pierce/logs/dynamo/round5-roe.json`. The model that could not
+be perturbed at all now moves a quarter of its watched sheet, from
+inputs typed entirely by inference. And **28.5% is below the 50% bar
+I fixed before any of this**, so the round is reported as
+uninformative and its 903 « stable rules » are **not results**.
+
+Which is just as well, because they are the sameness pathology in
+its purest form yet: `2031/32 − 2032/33 = 0`, `2031/32 − 2033/34 =
+0`, and so on across a whole block that moves as one. The ratio
+family, mined on the same runs, returned **903 stable rules and 0
+real proportions** — every one of them k = 1. Round 1b said « there
+were no proportions to find, only sameness »; at nearly three times
+the coverage, still true.
+
+### Why the other 138 cells are frozen — measured, not guessed
+
+Of the 138 watched cells that did not move, **136 have no
+perturbable input anywhere upstream** (walked through the precedent
+graph, depth 8). They are not frozen because the perturbation is too
+timid; they are frozen because nothing that moves reaches them.
+
+69 inputs remain untyped: 34 on `One-Off Wedge`, 26 on
+`Beta Estimates`, 9 on `Step-1 Cost of Equity`. That is the next
+number to attack on this model, and it is a different problem again
+from named rates — those 69 are cells with no label, no header and
+no decisive format, where the file genuinely says nothing. Whether
+anything can be inferred for them, or whether the honest answer is
+that a model with 69 undocumented inputs cannot be fully mined, is a
+question I would rather put to the lead than answer by inventing a
+rule.
+
+### The scorecard for the usage round
+
+| prediction | outcome |
+|---|---|
+| 1 — RoE's C and D typed as percent rates | **confirmed**, 26 of 26 |
+| 2 — coverage clears 10 of 193 | **confirmed**, 55 of 193 |
+| 3 — E1 no worse on any dimension | **confirmed** after the gate fired once |
+| 4 — it fires where it should not | **confirmed**, three times, all fixed |
+
+Four for four, with the two failures inside prediction 3 and 4 doing
+the work. The coverage bar refused the rule set anyway, which is the
+bar behaving exactly as designed: a real improvement in typing does
+not entitle a rule set to be believed.

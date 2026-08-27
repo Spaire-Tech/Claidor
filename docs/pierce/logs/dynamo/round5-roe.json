@@ -1,0 +1,11783 @@
+{
+ "model": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+ "typing": "inferred",
+ "typed_inputs": {
+  "rate": 75,
+  "date": 49,
+  "untyped": 69
+ },
+ "coverage": [
+  55,
+  193
+ ],
+ "families": [],
+ "sheets_refused": [],
+ "sheets_column_wise": [
+  "One-Off Wedge"
+ ],
+ "coverage_verdict": "UNINFORMATIVE \u2014 not a result",
+ "runs_requested": 200,
+ "kept": [
+  200,
+  200
+ ],
+ "drops": [
+  {
+   "engine-error": 0,
+   "failed": 0
+  },
+  {
+   "engine-error": 0,
+   "failed": 0
+  }
+ ],
+ "rules_first": 903,
+ "rules_second": 903,
+ "agreement": 1.0,
+ "ratios_stable": 903,
+ "ratios_non_unit": [],
+ "distinct_sentences": 483,
+ "stable": [
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C17",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C18",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C19",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C20",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C21",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C22",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C23",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C24",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C25",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C16",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C18",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C19",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C20",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C21",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C22",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C23",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C24",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C25",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C17",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C19",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C20",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C21",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C22",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C23",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C24",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C25",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C18",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C20",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C21",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C22",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C23",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C24",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C25",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C19",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C21",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C22",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C23",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C24",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C25",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C20",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C22",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C23",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C24",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C25",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C21",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C23",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C24",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C25",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C22",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C24",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C25",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C23",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C25",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C24",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C26",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C25",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C27",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C26",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!C28",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C27",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!C29",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C28",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!C30",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C29",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!C31",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C30",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!C32",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C31",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!C33",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C32",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!C34",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C33",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!C35",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C34",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!C36",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C35",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D15",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2030/31 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!C36",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2051/52 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D16",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2031/32 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D15",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2030/31 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D17",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2032/33 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D16",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2031/32 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D18",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2033/34 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D17",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2032/33 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D19",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2034/35 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D18",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2033/34 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D20",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2035/36 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D19",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2034/35 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D21",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2036/37 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D20",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2035/36 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D22",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2037/38 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D21",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2036/37 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D23",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2038/39 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D22",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2037/38 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D24",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2039/40 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D23",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2038/39 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D25",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2040/41 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D24",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2039/40 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D26",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2041/42 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D25",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2040/41 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D27",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2042/43 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D26",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2041/42 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D27",
+     1
+    ],
+    [
+     "One-Off Wedge!D28",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2043/44 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D27",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D27",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D27",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D27",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D27",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D27",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D27",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D27",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2042/43 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D28",
+     1
+    ],
+    [
+     "One-Off Wedge!D29",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2044/45 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D28",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D28",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D28",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D28",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D28",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D28",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D28",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2043/44 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D29",
+     1
+    ],
+    [
+     "One-Off Wedge!D30",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2045/46 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D29",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D29",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D29",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D29",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D29",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D29",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2044/45 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D30",
+     1
+    ],
+    [
+     "One-Off Wedge!D31",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2046/47 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D30",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D30",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D30",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D30",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D30",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2045/46 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D31",
+     1
+    ],
+    [
+     "One-Off Wedge!D32",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2047/48 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D31",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D31",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D31",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D31",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2046/47 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D32",
+     1
+    ],
+    [
+     "One-Off Wedge!D33",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2048/49 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D32",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D32",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D32",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2047/48 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D33",
+     1
+    ],
+    [
+     "One-Off Wedge!D34",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2049/50 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D33",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D33",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2048/49 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D34",
+     1
+    ],
+    [
+     "One-Off Wedge!D35",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2050/51 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D34",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2049/50 \u2212 2051/52 = 0"
+  },
+  {
+   "terms": [
+    [
+     "One-Off Wedge!D35",
+     1
+    ],
+    [
+     "One-Off Wedge!D36",
+     -1
+    ]
+   ],
+   "sentence": "2050/51 \u2212 2051/52 = 0"
+  }
+ ],
+ "seconds_total": 366.9,
+ "seconds_naive_engine": 1.0
+}
