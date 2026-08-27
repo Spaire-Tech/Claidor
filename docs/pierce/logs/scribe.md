@@ -1311,3 +1311,85 @@ its shape decided by its own numbers; round 4's harness ready and
 tested. Chain tests 72 passed; full tieout suite **769 passed, 9
 skipped, nothing red** — the house-rules failure this lane reported
 two sweeps ago is fixed on the tip.
+
+## 27 August 2026, eighth « go » — D4 measured against its own registered table
+
+Orders unchanged at the tip (still the fourteenth sweep's), and the
+new adoptions there belong to Dynamo, Prism and Track E. Standing
+item 3 first: **the Scottish files have not landed** — no fresh
+capture of any of the six URLs (the archive still holds only its
+February timestamps), nothing in `corpus_sft/`. Round 4 stays
+blocked and is not forced, exactly as the orders say.
+
+So this turn ran **D4's registered measurement**. The approval line
+holds: `chain/anchor.py` is pure functions — **no table, no
+migration, no repository** — and the contract still awaits the
+lead's word. What exists is the logic the registered measurement
+needs, which is what the registration promised to build.
+
+### The registered table, measured
+
+Each row was written in the log before the code existed; each is now
+a test in `tests/tieout/test_chain_anchor.py`, and the revisions are
+planted for real — the workbook is rebuilt and read back through the
+engine's own reader, so « a row inserted above the linked cell »
+means that and not a rearranged tuple.
+
+| planted revision | expected | measured |
+|---|---|---|
+| row inserted above the linked cell | survived; ref changes; agrees | survived `Model!B2` → `Model!B3`; agrees ✓ |
+| the linked cell's value edited | survived; the model moved | ✓ |
+| the linked cell deleted | broken (model side, in words) | ✓ |
+| its label duplicated elsewhere | ambiguous; never re-pointed | ✓ (both refs returned) |
+| sheet renamed | survived (a name, not an address) | ✓ `Financial Model!B2` |
+| document figure edited | survived; the source moved | ✓ 3.741 → 3.905 |
+| document line deleted | broken (document side) | ✓ |
+| document repaginated, line intact | survived; agrees | ✓ page 4 → 9, unaffected |
+
+**Eight of eight as registered**, plus four cases the table did not
+cover and the code needed anyway: the ordinal tiebreak and its
+honest limit; « both moved » reported separately from « still ties
+out »; Levenmouth's scale case (a contract in pounds, a model in
+millions, the factor stated by the person); and the no-model-call
+claim.
+
+**« No model call », proved structurally rather than counted.** The
+test reads every source file in the package and asserts no client
+import appears at all. A runtime counter would only cover the paths
+a test happens to walk; this covers the package.
+
+**The wall-clock:** 1,000 confirmed links re-anchored against a
+22,693-cell model in **0.51 s — 0.51 ms per link**. Arithmetic-fast,
+as the promise requires. The honest caveat: the lookup is a linear
+scan, so it is O(links × cells) and a map ten times bigger would
+take ten times as long; an index by name makes it flat the day that
+matters. No timing assertion was added to the suite — a bound loose
+enough not to flake would prove nothing, and a tight one would flake.
+
+### Two things the measurement found, both worth the lead's eye
+
+**1. A hole in the proposed contract, found before it was approved.**
+The schema as proposed records the document side's `printed_text`
+but **nothing of the model side's value at confirmation** — and
+without that, the re-check cannot say *which* side moved, which is
+three of its four registered verdicts. **Amendment, proposed here:**
+`model.value_at_confirmation` (and, for symmetry and to avoid
+re-parsing, `document.value_at_confirmation` beside the printed
+text). Cheap now, expensive after a table exists — which is exactly
+what registering a contract before building it is for.
+
+**2. A real bug the planted cases caught.** The first cut numbered a
+figure's position by its *line text*, so a boilerplate line
+repeating on forty pages — a page header, a footer — numbered its
+figures 1…40 instead of 1,1,…,1. The tiebreak would then have
+separated identical lines by an accident of how deep in the document
+they sat, which is a coordinate wearing a label's clothes. Counting
+now restarts at every physical line. Found by the case for two
+identical lines, which the registered table did not include and the
+code plainly needed.
+
+**Turn's end state:** round 4 still blocked on bytes, checked, not
+forced; D4's registered measurement run and passing eight of eight
+with two amendments proposed from it; chain tests 84 passed; full
+tieout suite **781 passed, 9 skipped**; zero mypy errors in the
+package. Still no table, and D4's contract still awaits approval.
