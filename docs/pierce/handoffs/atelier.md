@@ -126,6 +126,13 @@ reader handed findings trusts the check. Corpus models with
 analytical findings (Kelso) are the only way to see the
 statement-finding fields render at all; fixtures never produce them.
 
+**Three surfaces say the values-only truth**: the deal Overview
+(where a person lands — it used to say « Every check that applies to
+this model ran to the end » under a green « Nothing failing »), the
+document panel, and the report. Keep them in step; the Overview chip
+itself still reads « Nothing failing » in green, a deliberate choice
+left to the founder.
+
 **G2 — the five questions: measurable only in part.** Chat cannot
 run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503. What was
 measured is the tool surface: 1, 2 and 4 have their material

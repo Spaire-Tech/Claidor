@@ -444,6 +444,27 @@ export const ProjectPage = ({
               ? { text: 'Findings open', fg: '#c8790a' }
               : { text: 'Nothing failing', fg: '#1f8a4c' }
 
+  //: A values-pasted copy — the published-model case the real corpus
+  //: is full of — must say so on the *landing* screen too. It said it
+  //: on the report and on the document panel, and here, where a person
+  //: arrives, it said « Nothing failing » over « Every check that
+  //: applies to this model ran to the end » on a file where 224 of
+  //: 432,596 cells held a formula.
+  const blindCopy = viewingPast
+    ? Boolean(pastData?.summary.values_only)
+    : lastRun
+      ? auditRecord(lastRun).values_only
+      : false
+  const blindSaid = (() => {
+    const f = model?.counts['formulas']
+    const c = model?.counts['cells']
+    const numbers =
+      typeof f === 'number' && typeof c === 'number'
+        ? ` — ${f.toLocaleString()} of ${c.toLocaleString()} cells hold a formula —`
+        : ''
+    return `This copy carries values only${numbers} so the rules that read how the model is built could not see it. The checks that read values still ran.`
+  })()
+
   //: « Five material, five significant, one observation. » — the
   //: sentence under the title, from the real counts.
   const sevSentence =
@@ -454,7 +475,9 @@ export const ProjectPage = ({
         : !checkedAt
           ? 'This model has not been checked. Re-check reads every sheet and reports what it finds.'
           : open.length === 0
-            ? `Nothing failing as of ${when(checkedAt).toLowerCase()}.`
+            ? `Nothing failing as of ${when(checkedAt).toLowerCase()}${
+                blindCopy ? ' — but little could be checked' : ''
+              }.`
             : `${[
                 counts[1] ? `${word(counts[1]).toLowerCase()} material` : '',
                 counts[2] ? `${word(counts[2]).toLowerCase()} significant` : '',
@@ -528,8 +551,9 @@ export const ProjectPage = ({
           .map((one) => one.why)
           .join('; ')}${abstentions.length > 2 ? '; and more' : ''}.`,
       )
-    else if (abstentions)
+    else if (abstentions && !blindCopy)
       out.push('Every check that applies to this model ran to the end.')
+    if (blindCopy) out.push(blindSaid)
     return out
   }, [
     checkedAt,
@@ -541,6 +565,8 @@ export const ProjectPage = ({
     viewingPast,
     pastArtifact,
     pastData,
+    blindCopy,
+    blindSaid,
   ])
 
   //: The chart: tier tallies per finished audit run, oldest first.
