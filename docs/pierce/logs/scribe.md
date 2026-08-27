@@ -3891,3 +3891,23 @@ lists as if position meant identity.**
 The correction runs against my own interest twice over — it removes the
 only damage I had claimed for round T *and* it means last turn's
 « correction » was itself wrong. Both are in the record.
+
+### What this turn leaves for the lead
+
+1. **You do not need to answer the criterion question to unblock D1.**
+   Round T fails both bars. What is needed is a rule that does not
+   merge an equation denominator into a section heading — and the
+   measurement above says exactly which half of round T to drop.
+2. **The criterion question is still worth answering** for whatever
+   comes next, and it is now a cheaper question: « undamaged » has a
+   working instrument, and the instrument found one damage in 143
+   entries in one sitting.
+3. **D5 has its evidence** (round 4, last turn) and awaits a decision,
+   not measurement.
+4. **D3 round 4's contracts** — models reachable, agreements not.
+5. **D4** — approval pending since the fourteenth sweep.
+6. **Newbattle may be contaminated** for the proof's cold-run
+   condition — flagged last turn, mine, cheaper to drop than to argue.
+
+Orders unchanged for seven sweeps. Nothing outside D1, D3 and D5 has
+been touched, and `extract.py` is byte-identical to the tip's.
