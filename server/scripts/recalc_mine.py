@@ -29,13 +29,15 @@ from pathlib import Path
 from typing import Any
 
 from polar.tieout.recalc.mine import (
+    Family,
     InputType,
     TypedInput,
     agreement,
     cleanse,
     coverage,
+    find_families,
     mine_signed_sums,
-    sample,
+    sample_with_families,
     stable_rules,
     type_from_units,
 )
@@ -222,6 +224,32 @@ def _append(typed: list, label, ref: str, cell, values) -> None:
     typed.append(type_from_units(label, ref, value, values))
 
 
+def families_of(cells: dict, typed: list[TypedInput], sheet: str) -> list[Family]:
+    """Constrained families among the perturbable rows of one sheet.
+
+    The sheet's period columns are its groups: the same rows seen in
+    every year. A family must hold its constant in all of them.
+    """
+    perturbable = {
+        t.ref
+        for t in typed
+        if t.type in (InputType.MONEY, InputType.RATE, InputType.COUNT)
+    }
+    by_column: dict[int, dict[int, str]] = {}
+    values: dict[str, float] = {}
+    for ref in perturbable:
+        cell = cells.get(ref)
+        if cell is None or cell.sheet != sheet or cell.value is None:
+            continue
+        try:
+            values[ref] = float(cell.value)
+        except (TypeError, ValueError):
+            continue
+        by_column.setdefault(cell.column, {})[cell.row] = ref
+    columns = [rows for _column, rows in sorted(by_column.items()) if len(rows) >= 2]
+    return find_families(values, columns)
+
+
 def one_mining(
     calculator: UnoCalculator,
     source: Path,
@@ -230,6 +258,7 @@ def one_mining(
     watched: list[str],
     runs: int,
     seed: int,
+    families: list[Family] | None = None,
 ) -> tuple[list[dict[str, float]], dict[str, int]]:
     """`runs` perturbed recalculations. Dropped runs are counted, not used."""
     rng = random.Random(seed)
@@ -237,7 +266,7 @@ def one_mining(
     drops = {"engine-error": 0, "failed": 0}
     for index in range(runs):
         copy = work / f"{source.stem}-s{seed}-r{index}.xlsx"
-        perturb(source, copy, sample(typed, rng))
+        perturb(source, copy, sample_with_families(typed, families or [], rng))
         try:
             values = calculator.recalculate(str(copy)).values
         except Exception:
@@ -313,16 +342,39 @@ def main() -> int:
             flush=True,
         )
 
+    families = [] if hand else families_of(cells, typed, sheet)
+    if families:
+        members = sorted({ref for f in families for ref in f.refs})
+        shapes = sorted(
+            {
+                (
+                    tuple(
+                        r.split("!")[-1].lstrip("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                        for r in f.refs
+                    ),
+                    round(f.constant, 9),
+                )
+                for f in families
+            }
+        )
+        print(
+            f"constrained families: {len(families)} across "
+            f"{len(members)} cells — {shapes[:6]}",
+            flush=True,
+        )
+    else:
+        print("constrained families: none detected", flush=True)
+
     calculator = UnoCalculator(document_timeout=1800)
     calculator.start()
     started = time.monotonic()
     try:
         first, drops_a = one_mining(
-            calculator, source, work, typed, watched, runs, seed=1
+            calculator, source, work, typed, watched, runs, seed=1, families=families
         )
         print(f"mining 1: {len(first)} kept, drops {drops_a}", flush=True)
         second, drops_b = one_mining(
-            calculator, source, work, typed, watched, runs, seed=2
+            calculator, source, work, typed, watched, runs, seed=2, families=families
         )
         print(f"mining 2: {len(second)} kept, drops {drops_b}", flush=True)
     finally:
@@ -360,6 +412,9 @@ def main() -> int:
                 "typing": "hand" if hand else "inferred",
                 "typed_inputs": {str(kind): n for kind, n in counts.items() if n},
                 "coverage": [moved, watched_count],
+                "families": [
+                    {"refs": list(f.refs), "constant": f.constant} for f in families
+                ],
                 "sheets_refused": refused,
                 "sheets_column_wise": column_wise,
                 "coverage_verdict": verdict,

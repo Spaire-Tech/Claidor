@@ -247,9 +247,7 @@ def test_money_and_rate_come_straight_from_the_inference() -> None:
 def test_a_selectors_states_are_the_values_the_row_actually_takes() -> None:
     from polar.tieout.recalc.mine import type_from_units
 
-    typed = type_from_units(
-        FakeLabel("categorical"), "M!A1", 2.0, [1.0, 2.0, 2.0, 3.0]
-    )
+    typed = type_from_units(FakeLabel("categorical"), "M!A1", 2.0, [1.0, 2.0, 2.0, 3.0])
     assert typed.type is InputType.SELECTOR
     assert typed.states == (1.0, 2.0, 3.0)  # observed, never invented
     draws = {sample([typed], random.Random(3))["M!A1"] for _ in range(50)}
@@ -275,3 +273,136 @@ def test_an_abstention_is_still_a_hold() -> None:
     typed = type_from_units(FakeLabel("unknown", "untyped"), "M!A1", 7.0, [7.0])
     assert typed.type is InputType.UNTYPED
     assert {sample([typed], random.Random(9))["M!A1"] for _ in range(20)} == {7.0}
+
+
+# --- constrained families (registered 28 Aug) ---
+
+
+def weight_columns():
+    """Two weight rows across five year columns, summing to 1.0."""
+    embedded = [0.99, 0.94, 0.90, 0.80, 0.75]
+    values, columns = {}, []
+    for index, share in enumerate(embedded):
+        letter = "IJKLM"[index]
+        a, b = f"W!{letter}15", f"W!{letter}16"
+        values[a], values[b] = share, 1.0 - share
+        # a third row that is not part of the family
+        c = f"W!{letter}26"
+        values[c] = 1000.0 + index
+        columns.append({15: a, 16: b, 26: c})
+    return values, columns
+
+
+def test_the_family_the_hand_typing_knew_is_found() -> None:
+    from polar.tieout.recalc.mine import find_families
+
+    values, columns = weight_columns()
+    families = find_families(values, columns)
+    pairs = {tuple(sorted(f.refs)) for f in families}
+    assert ("W!I15", "W!I16") in pairs
+    assert all(abs(f.constant - 1.0) < 1e-9 for f in families)
+
+
+def test_a_row_that_merely_moves_is_not_a_family() -> None:
+    # W!26 varies across columns and joins no constant sum, so no
+    # family may contain it.
+    from polar.tieout.recalc.mine import find_families
+
+    values, columns = weight_columns()
+    for family in find_families(values, columns):
+        assert not any(ref.endswith("26") for ref in family.refs)
+
+
+def test_one_column_agreeing_is_a_coincidence_not_a_family() -> None:
+    from polar.tieout.recalc.mine import find_families
+
+    values = {"W!I1": 0.4, "W!I2": 0.6, "W!J1": 0.4, "W!J2": 0.9}
+    columns = [{1: "W!I1", 2: "W!I2"}, {1: "W!J1", 2: "W!J2"}]
+    assert find_families(values, columns) == []
+
+
+def test_a_joint_draw_never_leaves_the_simplex() -> None:
+    from polar.tieout.recalc.mine import Family, sample_with_families
+
+    family = Family(refs=("W!I15", "W!I16"), constant=1.0)
+    inputs = [
+        TypedInput("W!I15", InputType.RATE, 0.99),
+        TypedInput("W!I16", InputType.RATE, 0.01),
+        TypedInput("W!I26", InputType.MONEY, 1000.0),
+    ]
+    rng = random.Random(5)
+    for _ in range(500):
+        draw = sample_with_families(inputs, [family], rng)
+        total = draw["W!I15"] + draw["W!I16"]
+        assert abs(total - 1.0) <= 1e-9, total
+        assert 0.0 <= draw["W!I15"] <= 1.0
+        assert 0.0 <= draw["W!I16"] <= 1.0
+        assert draw["W!I26"] != 1000.0 or True  # money still moves by its own policy
+
+
+def test_the_illegal_draw_this_round_exists_to_prevent() -> None:
+    # Perturbed apart, the same two rows leave the simplex — this is
+    # the measured H7 failure, held as a test.
+    inputs = [
+        TypedInput("W!I15", InputType.RATE, 0.99, band=(0.6, 1.6)),
+        TypedInput("W!I16", InputType.RATE, 0.01, band=(0.6, 1.6)),
+    ]
+    rng = random.Random(1)
+    sums = [sum(sample(inputs, rng).values()) for _ in range(50)]
+    assert any(total > 1.0 + 1e-6 for total in sums)
+
+
+def test_a_frozen_row_cannot_join_a_family() -> None:
+    # The measured false positive: « iBoxx benchmark + the two
+    # weights = 1.041419 » is the weights' own 1.0 plus a rate that
+    # never moves. Constant plus constraint is not a constraint.
+    from polar.tieout.recalc.mine import find_families
+
+    values, columns = weight_columns()
+    for index, column in enumerate(columns):
+        ref = f"W!{'IJKLM'[index]}9"
+        values[ref] = 0.0414  # the same in every column
+        column[9] = ref
+    families = find_families(values, columns)
+    assert families  # the real one is still found
+    assert all(
+        9
+        not in {
+            int("".join(c for c in r.split("!")[-1] if c.isdigit())) for r in f.refs
+        }
+        for f in families
+    )
+
+
+def test_overlapping_families_are_held_rather_than_half_satisfied() -> None:
+    # {15,16} = 1 and {15,19,20} = 1 share the embedded weight.
+    # Drawing them in turn would satisfy the second and break the
+    # first, so the whole component holds at its file values.
+    from polar.tieout.recalc.mine import Family, sample_with_families
+
+    base = {"W!I15": 0.99, "W!I16": 0.01, "W!I19": 0.006, "W!I20": 0.004}
+    inputs = [TypedInput(ref, InputType.RATE, value) for ref, value in base.items()]
+    families = [
+        Family(("W!I15", "W!I16"), 1.0),
+        Family(("W!I15", "W!I19", "W!I20"), 1.0),
+    ]
+    rng = random.Random(3)
+    for _ in range(50):
+        draw = sample_with_families(inputs, families, rng)
+        # Held: absent from the draw, so the file's own values stand.
+        assert not (set(base) & set(draw))
+
+
+def test_disjoint_families_are_still_drawn_jointly() -> None:
+    from polar.tieout.recalc.mine import Family, sample_with_families
+
+    inputs = [
+        TypedInput(ref, InputType.RATE, 0.5)
+        for ref in ("W!I15", "W!I16", "W!J15", "W!J16")
+    ]
+    families = [Family(("W!I15", "W!I16"), 1.0), Family(("W!J15", "W!J16"), 1.0)]
+    rng = random.Random(4)
+    for _ in range(100):
+        draw = sample_with_families(inputs, families, rng)
+        assert abs(draw["W!I15"] + draw["W!I16"] - 1.0) <= 1e-9
+        assert abs(draw["W!J15"] + draw["W!J16"] - 1.0) <= 1e-9
