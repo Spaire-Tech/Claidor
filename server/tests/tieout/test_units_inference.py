@@ -416,14 +416,13 @@ def test_read_sideways_the_rate_columns_are_rates() -> None:
     # being dates — which is the fix.
     assert labels[2].b5_type != "date"
     assert labels[3].b5_type != "date"
-    # Column 1 is the year index, and this is the round's registered
-    # surprise: read sideways it is **not** recognised as a date.
-    # The year-index rule reads the *row label*, and a transposed
-    # column's label is its (here blank) header. It lands on
-    # `unknown-quantity`, which B5 holds — right outcome, wrong
-    # reason — so it costs no coverage and is registered as the next
-    # round's fix rather than patched mid-round.
-    assert labels[1].b5_type == "unknown-quantity"
+    # Column 1 is the year index. Read sideways the label rule cannot
+    # fire — a transposed column's label is its (here blank) header —
+    # so the values carry it instead. Registered as costless when it
+    # was found here; the E1 measurement priced it at four rows on
+    # `kind` and four on `b5_type`, and it was fixed then.
+    assert labels[1].b5_type == "date"
+    assert labels[1].kind == "categorical"
 
 
 def test_a_transposed_column_carries_the_headers_row_labels() -> None:
@@ -502,3 +501,35 @@ def test_usage_never_overturns_a_format_that_already_decided() -> None:
         why="the number format says so",
     )
     assert with_usage(decided, ("decimal", "consumers add it to 1")) == decided
+
+
+def test_a_run_of_years_is_a_date_index_whichever_way_it_is_read() -> None:
+    from polar.tieout.units.inference import RowEvidence, classify_row, orientation
+
+    years = RowEvidence(
+        sheet="S",
+        row=1,
+        row_label="",
+        column_labels=[],
+        number_formats=["General"],
+        values=[2033.0, 2034.0, 2035.0, 2036.0],
+    )
+    label = classify_row(years, orientation([years]))
+    assert label.b5_type == "date"
+    assert label.kind == "categorical"
+
+
+def test_amounts_that_look_like_years_are_not_a_date_index() -> None:
+    # The tightness that keeps the rule honest: whole numbers in
+    # range but not stepping by one.
+    from polar.tieout.units.inference import RowEvidence, classify_row, orientation
+
+    money = RowEvidence(
+        sheet="S",
+        row=1,
+        row_label="Capex",
+        column_labels=["FY2024"],
+        number_formats=["#,##0"],
+        values=[2000.0, 2100.0, 1950.0],
+    )
+    assert classify_row(money, orientation([money])).b5_type != "date"

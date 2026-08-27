@@ -100,6 +100,21 @@ def orientation(rows: Sequence[RowEvidence]) -> Orientation:
     return Orientation.ROW_WISE if labelled > len(rows) / 2 else Orientation.UNKNOWN
 
 
+def _is_a_run_of_years(values: Sequence[float]) -> bool:
+    """Three or more whole numbers stepping up through plausible years.
+
+    Deliberately tight: whole numbers only, strictly increasing by
+    one, at least three of them, inside 1900–2200. A money column
+    holding 2000, 2100, 2200 fails on the step; a year column holding
+    2033, 2034, 2035 passes.
+    """
+    if len(values) < 3:
+        return False
+    if not all(float(v).is_integer() and 1900 <= v <= 2200 for v in values):
+        return False
+    return all(b - a == 1 for a, b in zip(values, values[1:], strict=False))
+
+
 def _from_declared(units: str) -> UnitLabel | None:
     """The model's own Units text, when the caller supplies it."""
     text = units.strip().lower()
@@ -178,6 +193,31 @@ def classify_row(
                 rate_form="not-a-rate",
                 why=f"the row is a year (« {label} ») holding its own year number",
             )
+
+    # The same index read sideways. A transposed column's label is
+    # its header, which is usually blank, so the label rule above
+    # cannot fire — and the year column then reads as a quantity.
+    # Registered as costless when it was found on a fixture; the E1
+    # measurement priced it at four of a hundred rows on `kind` and
+    # four on `b5_type`, all of them RoE's year column (lane log,
+    # 28 Aug). The values are the evidence when the label is not.
+    if _is_a_run_of_years(values):
+        return UnitLabel(
+            kind="categorical",
+            b5_type="date",
+            currency="none",
+            scale="units",
+            # `annual`, matching the row-wise year rule above so the
+            # two readings of the same index agree. E1's own hand
+            # labels split on this — two year rows labelled `annual`
+            # and two `point-in-time` — which is a defect in my key,
+            # not in the inference, and one more reason `period` has
+            # no answer key worth arming a finding on.
+            period="annual",
+            rate_form="not-a-rate",
+            why=f"a run of consecutive years ({values[0]:.0f}…{values[-1]:.0f}) "
+            "is a date index, whichever way the sheet is read",
+        )
 
     # Currency in the number format is the only currency evidence
     # that does not require reading the Units column.
