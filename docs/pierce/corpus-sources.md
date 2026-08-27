@@ -457,3 +457,39 @@ paper.
   172 expert-annotated workflows incl. document-grounded extraction
   with reference outputs — the only hand-annotated ground truth of
   this exact shape.
+
+### 27 August — the Scottish route is closed; the pivot
+
+The Scottish deal pairs are **unobtainable by any automated route**,
+and the failure is structural, not effort. Recorded so nobody spends
+another day on it:
+
+- Origin (`contracts.scottishfuturestrust.org.uk`): TLS certificate
+  expired 10 July 2026, issued for the wrong host. Every honest
+  client refuses it. Verified from the lead's container and by
+  Scribe independently.
+- Internet Archive: agreements truncate at exactly 1,048,576 bytes
+  (verified twice — a hard cap on that path, not a coincidence); the
+  **financial models are not archived at all** (every snapshot
+  predates their publication). Save Page Now rate-limits anonymous
+  robots (429 on first attempt).
+- The founder's browser: the site is refused client-side on their
+  machine.
+- The founder's research agent: its file-writing sandbox cannot
+  reach the host, and its fetching tool returns text into context
+  and cannot write bytes to disk. No bridge exists between the two.
+
+**The verified pivot: FinWorkBench/Finch** (HuggingFace, **CC BY
+3.0** — permissive, commercial use with attribution, unlike every
+academic corpus we hold). Verified from this container: dataset
+public and ungated, 537 files, **17 PDFs paired with source and
+reference spreadsheets**, per-task JSON, downloads succeed
+(`huggingface.co/datasets/FinWorkBench/Finch/resolve/main/...`).
+It contains document-grounded extraction tasks — values that must be
+pulled from supporting documents into a spreadsheet, **with
+reference outputs** — which is D3's exact shape with hand-annotated
+ground truth. Small, but it is the only such ground truth that
+exists and the only one we may use commercially.
+
+Also verified reachable and unclaimed: **MCC ERR** (~100 real
+third-party models, mcc.gov) as the round-4 unseen corpus.

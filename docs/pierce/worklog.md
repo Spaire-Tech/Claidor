@@ -4375,3 +4375,37 @@ the hand-verified set only B5 catches — where the thesis lives or
 dies). And the input-typing classifier is declared one shared
 component with Track E's unit inference, built once, so two lanes
 never build two disagreeing versions of the same judgment.
+
+---
+
+## 27 August, evening — the sixteenth sweep, and a corpus route closed for good
+
+Four lanes merged (674 tests green, engine untouched by all four);
+**Sentinel held again, correctly**: its candidate-4 round 3 is wired
+into the audit with no verdict yet, and a findings change merges only
+with its verdict and baseline. Sentinel also answered the founder's
+« is it stuck? » exactly as ordered — it checkpointed partial work,
+labelled it partial, then refused its own round 2 three ways by the
+registered criteria and registered round 3. Not stuck: disciplined.
+**Dynamo registered and built B5 whole** — typing policy, mining
+engine, cleansing, stability, and the Monday experiment on three
+gate-clean models with the rule set to be read before anything is
+scored — plus the ddmin narrowing round. **Prism** registered tier 1
+after reading SQLSolver first-hand and widened tier 2 to a second
+host. **Scribe** measured D4 at 8/8 planted revisions and proved the
+Kelso harness ready on a stand-in pair. **Atelier** swept its three
+agent-designed screens through every real state and fixed six things
+against a production build.
+
+**The Scottish deal pairs are abandoned as unobtainable**, and the
+dead ends are recorded in `corpus-sources.md` so nobody repeats
+them: expired TLS at origin, a 1 MiB archive truncation cap, no
+archived models at all, a rate-limited save service, the founder's
+own browser refusing the site, and their research agent unable to
+bridge its fetcher to its filesystem. The pivot is verified rather
+than hoped: **FinWorkBench/Finch** — public, ungated, 17 PDFs paired
+with source and reference spreadsheets, document-grounded extraction
+with reference outputs, and **CC BY 3.0**, the first corpus licence
+we hold that permits commercial use. Scribe's orders lead with a
+read-it-by-hand check before any registration: if it is not our
+task, we lose an afternoon rather than a thesis.

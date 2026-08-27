@@ -13,3 +13,30 @@ handed to the lead). Nothing for you to force.
 2. D5's next round per its measured flood verdict.
 3. The moment the Kelso/Levenmouth/Oban files exist on the lead's
    container, round 4 runs there unchanged — keep the harness ready.
+
+## Addendum (27 Aug, evening): the Scottish route is closed — pivot
+
+Every automated route to the Scottish pairs is exhausted and the
+failure is structural (see `corpus-sources.md`, 27 Aug entry — TLS
+expired at origin, archive truncates at 1 MiB and holds no models,
+the founder's browser and research agent both blocked). **Stop
+attempting it.** Keep the Kelso harness committed and ready; if the
+bytes ever arrive, it runs unchanged.
+
+The pivot, verified reachable and downloadable from the lead's
+container today: **FinWorkBench/Finch on HuggingFace, CC BY 3.0** —
+ungated, 537 files, 17 PDFs paired with source and reference
+spreadsheets, per-task JSON, and document-grounded extraction tasks
+carrying **reference outputs**. That is D3's task with hand-made
+ground truth, under the first licence we hold that permits
+commercial use with attribution.
+
+1. Fetcher for Finch (git-ignored as ever), then read the dataset
+   card and the task JSONs and report **honestly whether its
+   document-into-spreadsheet tasks are our task** — a small sample
+   read by hand before any registration. If they are not, say so and
+   we lose an afternoon, not a thesis.
+2. If they are: register the D3 hit-rate round on it — population,
+   the typed-cell convention, the judge, the sample — before any
+   number. Attribution obligation recorded in the round's write-up.
+3. D4/D5 continue regardless; they do not depend on this.
