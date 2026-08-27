@@ -1,16 +1,34 @@
-"""D1 round P's hand-check: twenty refused lines, drawn by a fixed seed.
+"""The hand-check that killed two rules: twenty refused lines, one seed.
 
-Registered in the Scribe log before the rule was written. The rule
-declines to tokenize a line the PDF drew glyph by glyph; its
-kill-criterion is that the hand-check must show no line that is not in
-fact character-spaced, because a false refusal is a lost fact and this
-rule must not eat ordinary tables.
+D1 stores thousands of single digits torn out of character-spaced text
+— a PDF that places glyphs one at a time turns « 19,842 » into five
+facts reading 1, 9, 8, 4 and 2, each with a citation box round one
+glyph. Part B measured it at 56% of the Finch corpus. This harness is
+how a candidate fix is judged, and both candidates so far have failed
+here rather than in production:
+
+- **round P** refused a line where ≥60% of tokens were one character
+  long. Nine of twenty drawn lines were ordinary financial rows whose
+  single characters are *nils* — « Base Gas - - - - - - - - - - ».
+- **round Q** refused a line standing ≥3 lone *letters*, since nils and
+  figures never do. Four of twenty were ordinary English prose
+  (« … calculate a tax allowance on a ») and regulator formula legends
+  (« … 3.90% 3.93% D D = A * C + B * »), which stand letters alone all
+  the time.
+
+Both died by the criterion registered before they ran: **any** drawn
+line that is not in fact character-spaced kills the rule. Neither is in
+the extractor. The reading this harness now supports is that assembled
+line text is the wrong instrument — the signal is in the PDF's own
+character geometry — and round R is registered on that basis.
 
     uv run python -m scripts.corpus_documents_spaced_round check
     uv run python -m scripts.corpus_documents_spaced_round survey
 
-``check`` prints the twenty drawn lines for a person to read.
-``survey`` prints what the rule costs and keeps, per document.
+``check`` prints the twenty drawn lines for a person to read; ``survey``
+prints what a candidate rule costs and keeps, per document. Both need a
+``_spaced_positions`` in ``extract.py`` to judge; with no rule in the
+extractor they report nothing, which is the current state.
 
 Attribution, CC BY 3.0, travels with any number this produces:
 FinWorkBench/Finch, arXiv:2512.13168.
@@ -61,6 +79,8 @@ def _refused_lines() -> list[tuple[str, int, str]]:
                 if extract._scan_refusal(index, page, words) is not None:
                     continue
                 lines = extract._lines(words)
+                if not hasattr(extract, "_spaced_positions"):
+                    return []
                 spaced = extract._spaced_positions(lines)
                 for text in dict.fromkeys(lines[p] for p in spaced):
                     out.append((pdf.stem, index, text))
@@ -81,7 +101,7 @@ def check() -> int:
 
 
 def survey() -> int:
-    print(f"{'document':36} {'kept':>7} {'refused lines':>14}")
+    print(f"{'document':36} {'kept':>7} {'refused pages':>14}")
     kept_all = 0
     for pdf in _documents():
         extraction = extract.extract_pdf(pdf)

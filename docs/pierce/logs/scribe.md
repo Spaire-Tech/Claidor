@@ -2463,3 +2463,95 @@ rule dies if either holds:
 92% again, task 81 falls by **zero**, ED2 by zero, and the part A +
 part B table does not improve. If task 81 loses a single fact the rule
 is wrong and comes straight out.
+
+## D1 round Q — measured. **It dies too**, and two deaths in a row say the instrument is wrong, not the number.
+
+**What it got right, and it is worth keeping in view:**
+
+| document | before | round P | **round Q** |
+|---|---|---|---|
+| 81_src_1 (the nils) | 1,190 | 960 ✗ | **1,190 ✓** |
+| 5_src_0 | 128 | 118 ✗ | **128 ✓** |
+| 16_src_0 | 457 | 349 ✗ | **457 ✓** |
+| 72_src_0 (the junk) | 3,583 | 299 | **371** |
+
+Round P's whole failure mode is gone. The nils survive, task 5 and 16
+survive, and task 72 still loses ~90% of its facts. The prediction
+« task 81 falls by zero » held exactly.
+
+**And the prediction « ED2 falls by zero » did not.** ED2 lost 19 facts
+across twelve pages, and the hand-check says why.
+
+**The kill-criterion, as registered:** « the same seeded hand-check
+shows **any** line that is not in fact character-spaced. » **Four of
+twenty**:
+
+| # | line | why it stands letters alone |
+|---|---|---|
+| 01 | `7.1 In RIIO-ED1, a financial model is used to calculate a tax allowance on a` | **English prose.** « a », « a », « a » |
+| 07 | `being conducted) by a no arbitrage condition, where a 20-year rate x years in` | prose again — « a », « a », « x » |
+| 11 | `CAPM-implied cost of equity 4.71% 5.23% 5.75% D D = A + B * (C-A)` | a **formula legend**: D, D, A, B name columns |
+| 13 | `WACC allowance (vanilla) 3.90% 3.93% D D = A * C + B *` | the same shape, and it costs three real percentages |
+
+Sixteen of twenty were genuinely spaced, and that is not the criterion.
+**The rule is out.** `EXTRACTOR_VERSION` stays `"4"`, the fact store is
+untouched, and D1 is exactly the extractor part B measured.
+
+### The lesson is about the instrument, and I am stopping rather than tuning
+
+Round P counted lone characters and caught nils. Round Q counted lone
+letters and caught prose. I can see the threshold that would pass this
+particular hand-check — and **fitting a threshold to a hand-check I
+have already read is how a measurement becomes a decoration.** That is
+the move this lane exists to refuse, and it is more tempting after two
+failures, not less.
+
+What both rounds share is the instrument: **statistics over assembled
+line text**. That text is already the damaged artefact — by the time
+pdfplumber has joined glyphs into « tokens », the evidence of how they
+were drawn is gone, and every statistic over it is a proxy. Prose,
+nils, and formula legends all look like scattered glyphs from there
+because *from there they are indistinguishable*.
+
+**So no third threshold.** The defect stands, unfixed and now precisely
+described, and round R is registered on a different instrument.
+
+## D1 round R — registration: measure the drawing, not the text
+
+Frozen before any code, and offered to the lead as the next D1 round
+rather than run this turn: it is a larger change than a predicate, it
+touches how D1 reads every page, and two dead rounds are enough for one
+sitting.
+
+**The instrument.** pdfplumber exposes each page's *characters*, with
+each one's `x0`, `x1`, `size` and font. In normally-drawn text the gap
+between consecutive characters of one word is a small fraction of the
+character width, and the gap between words is a large one — two clean
+populations. In glyph-by-glyph text every gap is a word gap, because
+every glyph was placed by its own operator. **That difference is in the
+geometry, before any word joining happens**, and it is the same
+evidence a human uses when they look at the page and see « M a r - 0 5 ».
+
+**The rule.** For each line, take the gaps between consecutive
+characters. A line is drawn glyph by glyph when the *median* gap
+between characters that pdfplumber joined into one word exceeds a
+fixed fraction of the median character width on that line. Prose has
+no such gaps; a row of nils has no such gaps; task 72's rows are made
+of nothing else.
+
+**Why this cannot make round P's or round Q's mistake.** Neither nils
+nor lone « a »s nor formula letters are *drawn* differently from the
+text around them — they are ordinary glyphs at ordinary spacing that
+merely happen to stand alone as tokens. The geometric test never sees
+them, because it never asks how many tokens are short.
+
+**The kill-criterion, unchanged and now with three named populations
+that must survive:** the rule dies if the same seeded hand-check
+(173205, 20 lines) shows **any** line that is not in fact
+character-spaced, or if task 81's nils, ED2's prose, or ED2's formula
+legend rows lose a single fact.
+
+**What must be reported whatever happens:** the fraction constant will
+be chosen **before** the hand-check is read, from the two gap
+populations measured on documents this hand-check does not draw from,
+and the number chosen will be written here before the check runs.
