@@ -1112,3 +1112,74 @@ promise is hollow.
 
 **Not promised:** any number about how often confirmations survive
 *real* revisions. That needs the real deal set, like round 4.
+
+## D5 round 2 — registration: the local-rule shape, measured before there is a single confirmation
+
+Round 1 killed the naive class with its own number (22,693
+candidates on a regulator model; 85 on the 313-cell deal fixture).
+The proposed replacement fires only where sourcing is the **local**
+rule. This round measures whether that shape is actually
+flood-proof — and it can be measured **today, with zero confirmed
+links in existence**, because the flood is a property of the model's
+own block structure crossed with how many confirmations a person
+makes.
+
+**The block is the model's own, never mine.** `polar.tieout.
+structure.sections()` reads the blocks a workbook declares through
+its own `SUM` formulas — « rows the model itself totals ». Read-only
+library use, and it means a block boundary is the model's claim
+about itself, not my heuristic.
+
+**The trigger under test:** a **typed** cell (a computed cell's
+provenance is its formula — the proposals route already refuses
+those) inside a declared section, carrying no confirmed source,
+where the section's *other* typed cells are confirmed to a degree
+**T**. Three thresholds are measured, because which one ships is
+exactly the decision these numbers should make and I will not make
+it in advance:
+
+- **T1 — any**: at least one other typed cell in the section is
+  confirmed.
+- **T2 — half**: at least half of the section's typed cells are.
+- **T3 — all but this one**: every other typed cell in the section
+  is confirmed. (The purest reading of the sentence the shape is
+  built on: « every other number in this block traces to the term
+  sheet; this one traces to nothing. »)
+
+**The two placements, both reported, neither alone believable:**
+
+- **Greedy adversarial** — spend a budget of **B** confirmations to
+  maximise findings (largest sections first, cheapest unlock per
+  confirmation). This is an *upper-bound estimate that greedy may
+  understate*, and it answers « how bad can this get ».
+- **Random** — B confirmations placed uniformly at random over the
+  typed cells that sit in sections, seeded (**3141592**), 20 trials,
+  mean and max reported.
+
+**B ∈ {10, 25, 50, 100}** — the range a banker plausibly confirms on
+one deal.
+
+**The registered limitation, stated before the numbers:** neither
+placement is how a person actually works. A banker confirms
+top-down and in clusters — the key lines of the blocks that matter —
+and clustering pushes individual sections toward T3 far faster than
+random placement does while touching far fewer sections. Which way
+that biases the total is **not obvious** (more findings per touched
+section, fewer sections touched), so I am not claiming a direction:
+the two placements bracket the behaviour, and the real number comes
+from a real deal, like every other real number in this lane.
+
+**A condition that will matter for the deal corpus:** sections are
+declared by `SUM` formulas, and the Scottish close models are
+formula-stripped — every cell a value. So on exactly the
+document-fed corpus D3 round 4 is waiting for, **this shape has no
+blocks to stand on**, and a different block rule (contiguity, or the
+provenance tab itself) would have to be registered for it. Recorded
+now rather than discovered later.
+
+**The models:** the same registered set as round 1 — ED2 PCFM V5,
+ED2 PCFM V3, RIIO-ET1 PCFM, the Cascade deal model, the pre-app
+example. **The harness:** `scripts.corpus_documents_unsourced_shape`
+(new), read-only, printing the registered numbers and nothing else.
+**No target is promised.** If the local-rule shape floods too, it
+dies exactly as the naive one did.
