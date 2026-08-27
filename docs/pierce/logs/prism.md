@@ -2952,3 +2952,45 @@ plain-divergence count goes to zero — which is the honest reading of
 « the revision rewrote nothing, and its data change moves dormant
 paths ». If any of the seven carries a non-zero stored value, I have
 misread the table above and will say so.
+
+### The refinement, measured
+
+The domain round re-run with dormancy deciding latency, 56.7 minutes:
+
+```
+tier0_proved     38,255      changed                      1,278
+tier2_supported     313      tier3_refused                1,203
+plain divergences     0      tier2_divergence_latent          7
+gate violations       0
+```
+
+All seven — `Finance&Tax!AS86/AS185/AT86/AT185/AU86/AV185/AV86` —
+reclassify as latent, and the plain-divergence count goes to zero.
+**The prediction held exactly**, and `changed` returns to 1,278: the
+raw evidence's own count, unchanged since the first ladder run. The
+revision's account is now what the files support — *it rewrote
+nothing, and its data change moves paths that are switched off* —
+with the seven reported on their own line rather than folded into
+either « changed » or « no divergence ».
+
+### An instrument defect this re-run exposed: the round is not reproducible
+
+The two domain runs accepted **different** assignments:
+
+```
+first run   bands accepted at (0.99,1.01) ×2, errors seen 56 / 1379 / 23 / 0 / 0
+this run    (0.95,1.05) ×1 and (0.99,1.01) ×1, errors 56 / 1379 / 23 / 0 / 0
+```
+
+The cause is in the acceptance loop, not in the model: **every
+rejected draw consumes the shared RNG stream**, so which numbers a
+trial finally uses depends on how many bands were tried before it.
+The run is deterministic for a fixed code path and *not* stable
+across any change that alters the rejection history — which is
+exactly the property a registered constant is supposed to have.
+
+**Registered fix, before it is written**: each (trial, band) pair
+draws from its own stream, `Random(TIER2_SEED + 1000 * trial +
+band_index)`, so band *k* of trial *i* is always the same numbers
+whatever was tried before it. No result above depends on this; it is
+recorded so the next round is comparable to this one.
