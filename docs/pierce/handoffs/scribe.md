@@ -186,7 +186,25 @@ Two harnesses are committed and ready:
 report nothing while no candidate rule is in the extractor, which is
 the current state.
 
-## The five open decisions are on one page
+## All five decisions were answered at the twenty-fourth sweep
+
+`docs/pierce/logs/scribe-decisions.md` holds the questions as they were
+asked; the answers are in `docs/pierce/orders/scribe.md` and acted on:
+
+| | decision | state |
+|---|---|---|
+| D1 | the bar is **undamaged**; ship round V | **shipped**, extractor version 5 |
+| D5 | **shelve** until D4's store holds confirmations from a real deal | waiting on that trigger |
+| D4 | **approved** | **built** — table, migration, repository, routes, eight tests |
+| D3 round 4 | **closed**; harness stays committed | closed |
+| Newbattle | **keep**, caveat recorded; excluded from 1B | nothing to do |
+
+**The standing bar for this lane, now policy:** a change to extraction
+must leave no line *worse*; it need not leave every line *identical*.
+Damage is judged by hand against the documents, never by a diff count,
+and the repair/damage tally is reported with every such round.
+
+## The decision sheet, kept for its shape
 
 `docs/pierce/logs/scribe-decisions.md` — each with its question, its
 evidence in a sentence, and what happens on either answer. Read that
