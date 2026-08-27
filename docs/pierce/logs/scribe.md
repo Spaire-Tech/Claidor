@@ -2177,3 +2177,200 @@ rather than the document, and I will say so.
 
 **No criterion here kills code**, because part B changes no code. It
 is a measurement of the corpus and a repair of the record.
+
+## D3 round 6/7 part B — measured. The rows were judgeable all along, and the honest number is worse than the one I published.
+
+*FinWorkBench/Finch, arXiv:2512.13168, CC BY 3.0.*
+
+### The prediction was wrong in the direction I told myself to distrust
+
+I registered: « I expect between four and ten of the eighteen to remain
+indeterminate… **If nearly all eighteen settle, I should be suspicious
+of my own judging, not pleased.** » **All eighteen resolved.** Fifteen
+settled; three did not settle for a reason that is not the judge's.
+
+So I owe the suspicion an answer, and the answer clears the judging but
+convicts something else. **Not one of the fifteen was settled by D1's
+column anchor** — the feature the matcher was built to score, and the
+source of the bias I feared. On these rows the anchor is mostly
+useless: task 160's three headers read `FUND`, `''` and
+`COLLECTED/SPENT` (the real header stands three lines up); task 161's
+WH rows read `''` (the header is more than twelve lines up, and
+`_ANCHOR_LINES_UP` is 12); task 81's read `-`. What settled them was
+the printed line's own **left-to-right column order** against the
+workbook's column index — Citrus is the third entity column, `12/1/2002`
+is the third column of page 2, « Undiscounted » is printed before
+« Discounted ». No model call, no matcher feature, nothing but counting.
+
+**Which means round 5's judge — me — was too cautious.** Fifteen rows
+were declared unjudgeable when a careful judge holding the workbook's
+column index could settle every one. `indeterminate-line-granularity`
+is a good name for a real thing, and I applied it to rows that were not
+that thing. The cost was not a wrong number; it was a **flattering
+denominator**, and that is the same sin one step removed.
+
+### The whole drawn sample, judged
+
+| | round 5 | dash round | **part A + part B** |
+|---|---|---|---|
+| true proposal | 0 | 0 | **0** |
+| false proposal | 2 | 1 | **1** |
+| true abstention | 7 | 4 | **4** |
+| missed | 18 | 19 | **34** |
+| scored rows | 27 | 24 | **39 of 42** |
+| rows the documents state | 18 | 20 | **35** |
+| unscored | 15 indeterminate | 18 indeterminate | **3 stated-but-unextracted** |
+
+**Recall is 0 of 35.** Every previous table in this family reported a
+smaller denominator because the rows that were hardest for the matcher
+were the rows the judge had set aside. They are the same rows. That is
+the number to carry forward, and the earlier ones should be read as
+the partial views they were.
+
+Nothing about the matcher changed, and nothing about the finding
+changed: the blockage is still the model-side name (round 7). What
+changed is that the measurement now covers the sample it drew.
+
+### A condition this lane did not have a name for
+
+Three rows are **stated by the document and absent from the fact
+store**. Calling them « not stated » would be a lie about the page;
+calling them « missed » would blame the matcher for D1's failure. They
+are counted, excluded from scoring, and named
+**`stated-but-unextracted`** — the D1-side sibling of
+`indeterminate-line-granularity`, and offered to the lead for the
+permanent vocabulary on the same grounds: a number that cannot be
+honestly produced is not produced.
+
+Each of the three names its own cause, and two of them are causes this
+lane already wrote down:
+
+1. **`72!Scenario3!AC28`** — the document prints « Jan-03 32,675 12,833
+   19,842 … » and D1 read `1`, `9`, `8`, `4`, `2` as five separate
+   one-digit numbers. See the defect below; this is its first casualty.
+2. **`81!ETS!G32`** — the GCO/HPL nil is a dash at x371, and page 1's
+   GCO and ETS columns hold **one** numeric token between them, so the
+   dash rule's third condition (three numbers at this x) cannot be met.
+   This is exactly the anti-correlation gap the dash round recorded and
+   declined to patch. Here is what it costs.
+3. **`81!ETS!E212`** — the document prints `AFUDC - - - - - - - - - -`
+   and D1 extracted **nothing** from that line, because the dash rule
+   requires the line to carry at least one number and a wholly-nil row
+   carries none. Ten stated zeros, not one of them a fact.
+
+## D1 — a defect found by judging, not by testing: 56% of Finch's facts are torn out of character-spaced text
+
+Chasing `AC28` turned up the largest D1 problem this lane has measured.
+Some PDFs place text **one glyph at a time** — a chart overlay does it,
+and so does a rotated axis label crossing a table — and pdfplumber's
+line then reads `J a n - 0 3  3 2 , 6 7 5  1 2 , 8 3 3  1 9 , 8 4 2`.
+D1 tokenizes that into single digits and stores each one as a fact.
+
+**The criterion, stated before the count** (a line is character-spaced
+when it has ≥12 whitespace tokens and ≥60% of them are one character
+long):
+
+| corpus | facts | in character-spaced lines |
+|---|---|---|
+| Finch | 6,842 | **3,835 (56.1%)** |
+| ED2 | 8,015 | 2 (0.0%) |
+
+| document | facts | spaced | share |
+|---|---|---|---|
+| 72_src_0 | 3,583 | 3,284 | **92%** |
+| 4_src_8 | 334 | 203 | 61% |
+| 16_src_0 | 457 | 108 | 24% |
+| 81_src_1 | 1,190 | 230 | 19% |
+
+**This is the direction D1 exists to refuse.** A digit of a number is
+not a number; `19,842` stored as five facts reading 1, 9, 8, 4 and 2 is
+five invented claims about the page, each with a citation box that will
+highlight a single glyph. It is worse than a missed fact, and the lane
+has said so about everything else.
+
+**Three rounds on ED2 could never have found it** — ED2 has two such
+facts in eight thousand — and no unit test would either, because the
+fixtures write clean lines. It took a corpus of real financial PDFs and
+a judge asking « where is the fact for this number I can see ».
+
+**Not patched.** Registered below as its own round, per the rule this
+lane keeps: the fix is measured against a criterion frozen before the
+code, and nothing is changed mid-measurement.
+
+## D1 round P — registration: a glyph is not a number
+
+Frozen before any code.
+
+**The change.** When a line is character-spaced by the criterion above,
+D1 does not tokenize it into numbers. It records the page as **refused
+for that line**, in words, in `ChainRefusal` — « this line's text is
+placed one glyph at a time and cannot be read as numbers; the figures
+on it are not in the fact store ». Coverage stays answerable, which is
+the whole reason refusals are stored.
+
+**Why refusal and not re-assembly.** Re-joining glyphs by x-gap is the
+obvious alternative and it is a guess: the gap between two glyphs of
+one number and the gap between two numbers differ by fractions of a
+point, and getting it wrong silently produces `1984,2` — a *wrong*
+number with a confident box, which is the failure mode this product
+exists to stop. If a later round measures a re-assembly rule against
+hand truth and it clears, it can replace the refusal. Refusing first is
+the safe order.
+
+**The kill-criterion, in advance.** The rule dies if either holds:
+- the hand-check of 20 seeded refused lines shows any line that is not
+  in fact character-spaced (a false refusal is a lost fact, and this
+  rule must not eat ordinary tables); or
+- ED2's registered 30-cell sample stops returning 30 of 30 correct
+  abstentions.
+
+**The prediction, stated so it can be wrong.** Finch's fact count
+should fall by roughly half and task 72's by ~92%; the part A + part B
+table should not improve, because none of the 35 stated rows depends on
+a spaced line except `AC28`, which is already unscored. **If the table
+improves, I should look for the reason and not take the credit** — a
+matcher that gets better when facts are deleted is telling me the
+deleted facts were the noise it was drowning in, which is a different
+finding and must be reported as one.
+
+### Two defects in the measurement apparatus, both found this turn and both fixed before scoring
+
+**1. A round key that named two facts.** The Finch harness keyed facts
+by `document|page|x|text`. In a table the row below prints at the same
+x, so **562 facts of this corpus shared a key with a fact on a
+different line** — and **four of the twenty recorded part-A truths were
+addresses naming two facts at once** (task 52's Case 2 and Case 3 rows
+both print « Miles Pipe 570 $ - $ - » at identical x). Scoring compares
+keys, so a false proposal landing on the wrong line could have been
+scored true.
+
+**No published number was wrong** — the affected rounds made no true
+proposal, so no verdict was ever decided by a key comparison — and that
+is luck, not design. The key now carries both coordinates. Sixteen
+truths remapped mechanically; the four ambiguous ones were resolved by
+hand from the printed line and are named in the commit and in the truth
+file. The ED2 harness (which keyed by *ordinal*, and so would have gone
+stale the moment the dash round added 179 nils to those documents) has
+the same key now; neither ED2 round recorded a fact key, so nothing
+there needed remapping.
+
+I introduced this defect myself, in the dash round, in the commit whose
+message said « from here a key survives an extractor change ». It
+survives an extractor change and does not survive a table. Said plainly
+because the alternative is a lane that only reports other people's
+mistakes.
+
+**2. Round JSONs were git-ignored with the corpus bytes.** « Truth
+recorded before scoring » is the discipline this whole lane rests on,
+and for the Finch rounds the file proving the order lived only in a
+container that dies between turns. The corpus bytes stay ignored — they
+are re-fetchable and large. The judgements are now tracked: sheet,
+truth and verdicts, each in its own commit, in order.
+
+### The standing sentence in the router is updated
+
+`PROPOSAL_STANDING` said « 0 times out of 18 ». It now says 0 of 35,
+and says in the same breath that earlier rounds reported a smaller
+denominator because the judge had set those rows aside. A product
+sentence that quotes the flattering number is the thing this lane
+exists not to do.

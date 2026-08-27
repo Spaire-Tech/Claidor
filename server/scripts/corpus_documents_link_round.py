@@ -74,8 +74,19 @@ def _facts():
     out = []
     for pdf in sorted(DOCUMENTS.glob("*.pdf")):
         extraction = extract.extract_pdf(pdf)
-        for ordinal, number in enumerate(extraction.numbers):
-            key = f"{pdf.stem}|p{number.page}|{ordinal}"
+        for number in extraction.numbers:
+            # Position, not ordinal, and both coordinates — the same key
+            # the Finch harness uses and for the same two reasons. An
+            # ordinal shifts whenever the extractor learns to see a new
+            # kind of number (the dash round added 179 nils to these
+            # three documents alone); an x without a y names every fact
+            # in the column, not one. Neither ED2 round recorded a fact
+            # key — both found zero sourced cells — so nothing here is
+            # remapped, but a future round inherits a key that holds.
+            key = (
+                f"{pdf.stem}|p{number.page}|x{number.box.x0:.0f}"
+                f"|y{number.box.top:.0f}|{number.text}"
+            )
             out.append((key, number))
     return out
 

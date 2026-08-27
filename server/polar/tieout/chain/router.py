@@ -57,14 +57,17 @@ MAX_UPLOAD_BYTES = 64 * 1024 * 1024
 #: travels with every proposal response; it is updated only from a
 #: registered round's result recorded in the Scribe log.
 PROPOSAL_STANDING = (
-    "Measured, and it does not work on tables: in round 5, on a real "
-    "document-fed corpus, the matcher proposed the correct source 0 "
-    "times out of 18 cells whose document states them - it abstains "
-    "because a table row carries several numbers and its anchor is "
-    "the line. It stays quiet rather than guessing (30 of 30 correct "
-    "abstentions where nothing was there to find, rounds 1-3). A "
-    "proposal is a candidate for a person to check against the cited "
-    "page - never a link."
+    "Measured, and it does not work on tables: over the whole drawn "
+    "sample of a real document-fed corpus, the matcher proposed the "
+    "correct source 0 times out of 35 cells whose document states "
+    "them - it abstains because a table row carries several numbers "
+    "and its anchor is the line. Earlier rounds of this measurement "
+    "reported 0 of 18, on a smaller denominator: the rows the judge "
+    "had set aside were the same rows the matcher finds hardest, and "
+    "35 is the honest count. It stays quiet rather than guessing (30 "
+    "of 30 correct abstentions where nothing was there to find, "
+    "rounds 1-3). A proposal is a candidate for a person to check "
+    "against the cited page - never a link."
 )
 
 
