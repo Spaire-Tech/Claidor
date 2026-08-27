@@ -1273,3 +1273,44 @@ machine without it loses tier 1 and keeps every other tier. Per
 `lanes.md` § frozen interfaces rule 5, the lead owns `pyproject`;
 **nothing here imports z3 until that approval lands**, and this
 registration is deliberately code-free until then.
+
+## Tier 2, wider round — REGISTERED BEFORE RESULTS
+
+The next round per the orders and per round 1's own findings. Three
+changes, each answering something round 1 measured, and nothing
+else moves: k = 5 and the seed stay as registered.
+
+**1. A liveness probe replaces guesswork about dead branches.**
+Round 1's zero-catch on stealth literals was the model's own
+selector semantics — SWEST is an unselected branch, so an edit
+there changes no current output. Rather than special-casing
+`CHOOSE`, a planting position is now **eligible only if it is
+demonstrably live**: one probe recalculation with that cell
+perturbed must move at least one cell the driver reads. Positions
+that fail the probe are **recorded as refusals** naming the reason
+(« dead under the file's saved state »), never silently swapped.
+This generalizes to any model, and it makes the catch table's
+denominator honest: tier 2 can only speak about live cells.
+
+**2. Categorical literals are left alone.** Round 1 scaled a `=1`
+flag read by SUMPRODUCT and deadened the flag path in *both*
+files. Registered rule, declared crude on purpose: a literal is
+**categorical** when it is integer-valued with |v| ≤ 12 (flags,
+switches, month and licensee indices) and is **excluded from the
+trial assignment**; every other literal is scaled as before. The
+counts under each class are reported, so the rule's crudeness is
+visible rather than hidden — a number-format-aware rule is a later
+round if these counts say it matters.
+
+**3. A second host.** `caa_h7/h7_new_debt_indexation_fds.xlsx` —
+a different publisher (CAA, not Ofgem), a different structure, and
+small enough to recalculate in seconds. Same classes, same
+judgement, same gate. Widening to a *second* file is what tests
+whether round 1's clean `tail_hardcode` result was the model or
+the method.
+
+**Reported:** the per-class catch table per host with its
+eligibility denominator, the refusals with reasons, the
+categorical/scaled literal counts, and — unchanged — the
+false-positive control, which must stay at zero for the round to
+stand.
