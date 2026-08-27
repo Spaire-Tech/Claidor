@@ -65,6 +65,22 @@ def _spaced(line: str) -> bool:
 
 
 def main() -> int:
+    # A missing corpus must not read as a wrong number. Both are
+    # git-ignored and re-fetchable; say which is absent and stop.
+    missing = [
+        name
+        for name, found in (("Finch", FINCH), ("ED2", ED2))
+        if not found
+    ]
+    if missing:
+        print(
+            f"corpus absent: {', '.join(missing)}. This is not a failed audit — "
+            "the corpora are git-ignored and re-fetchable. Run "
+            "scripts.corpus_documents_finch for Finch and "
+            "scripts.corpus_documents for ED2, then run this again."
+        )
+        return 2
+
     derived: dict[str, int] = {}
 
     finch = ed2 = nils = spaced = 0
