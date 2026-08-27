@@ -2960,6 +2960,13 @@ becomes `Condition2.1`. Tightening the *vertical* tolerance changed
 *horizontal* word-splitting as well, which I had not predicted and
 which round U must account for. Two samples are not twenty-two.
 
+*[Wrong, and corrected by the classification below: the arrow points
+the other way. Today's shipping extractor produces `ofSpecial` and
+`Condition2.1`; round T **repairs** both. I printed the changed lines
+by zipping two unaligned lists and read a « was » against a « now »
+that was not its pair. All 22 of the PCFM guidance's changes are
+repairs after all — the original claim I « corrected » was right.]*
+
 **Damage** — display mathematics, a third population neither approach
 anticipated:
 
@@ -3742,3 +3749,165 @@ extending it is not my file to edit.
 Orders unchanged for six sweeps. Everything above is inside D1, D3 and
 D5, which are mine; the engine is untouched and no other lane's file
 has been edited.
+
+## 28 August 2026, seventeenth « go » — measuring what round U's decision hinges on, without taking it
+
+Orders read from the tip (`6a4e5524`, twentieth sweep). **Byte-identical
+for the seventh sweep.** My lane merged again; the sweep records
+« Scribe returned five items to the lead » and answers none of them,
+which is not a complaint — the lead spent this sweep running Proof 1A
+and it failed honestly, which is worth more than answering me.
+
+**Round U is still not run**, and it will not be. What I wrote was: « I
+am not running it without a word from the lead, because choosing one's
+own success criterion after five deaths is exactly when a lane should
+not be alone. » Three turns of silence do not make that reasoning
+weaker; if anything they make it stronger, because the temptation to
+proceed is the thing the commitment was made against.
+
+**But a decision nobody can afford to think about is worth making
+cheap.** The lead's choice is: must a D1 change leave every ED2 line
+*unchanged*, or every line *undamaged*? That choice is easy if round T
+repaired 78 lines and broke 3, and genuinely hard if it broke 40. **I
+have never counted.** So this turn counts it.
+
+## The classification — registered before a line is read
+
+**What this is not, stated first and bindingly.** This does **not**
+accept round T, and its result cannot. The extractor stays at version
+`"4"`; `_words` stays out of `extract.py`; the rule ships only on the
+lead's word and on a criterion the lead sets. **I am producing the
+evidence for the decision, not applying it as a gate.** If the count
+comes back overwhelmingly favourable, that changes nothing about what
+ships this turn.
+
+**Method.** Round T's rule is reimplemented in a throwaway measurement
+script — `extract.py` is not touched — and every ED2 line whose text
+differs under it is printed as a before/after pair. **I read each pair
+and mark it**, by one question asked of the document itself:
+
+- **repair** — the « after » is what the page actually prints and the
+  « before » was not (a zipped line separated, a subscript rejoined);
+- **damage** — the « before » was right and the « after » is not (a
+  word split, a subscript orphaned, content moved between rows);
+- **neither** — both readings are defensible, or the line is display
+  mathematics whose « correct » single-line form is not well defined.
+
+**« Neither » is a real answer and I expect to use it.** Round T's own
+write-up found display equations whose subscripts genuinely live on
+separate visual rows; « what that line should read as » has no honest
+answer, and forcing those into repair or damage would be exactly the
+flattering that the criterion question exists to prevent.
+
+**The bias guard.** I have already read about a dozen of these pairs
+while diagnosing round T, and I recorded then that the guidance
+handbook's were mixed and the PCFM guidance's were mostly repairs.
+**That is not independent judging and I am not pretending otherwise.**
+The count is reported as what it is: one person's reading of 81 lines,
+some of which that person has seen before and formed a view on. A
+second reader would be worth more than my care here, and the lead is
+that reader.
+
+**No prediction of the split**, deliberately. I have made two
+predictions about this defect and lost one; a third guess before a
+hand-count I have partly pre-read would be theatre.
+
+**What is reported:** the three counts, the full pair list so the lead
+can spot-check any of them, and — the number that actually decides it —
+**how many lines are damage**, since « undamaged » as a criterion is
+satisfied at zero and fails at one.
+
+## The classification — measured. **The criterion question does not decide round T. Round T fails either bar.**
+
+143 line entries differ across the three ED2 documents, grouping into
+**32 logical changes**. Read one at a time against the page:
+
+| | changes | line entries |
+|---|---|---|
+| **repair** | **20** | 59 |
+| **damage** | **1** | 2 |
+| **neither** (display mathematics) | 11 | 82 |
+
+### The one damage, and it is unambiguous
+
+**`ed2-financial-handbook` p61:**
+
+| | |
+|---|---|
+| today (tolerance 3.0) | `8. Legacy adjustments` |
+| under round T | `8. Legacy adju2s+tm𝑅𝑅ℎ𝐷𝐷e𝑅𝑅nts` |
+
+A clean section heading, destroyed by having an equation's denominator
+(`2+𝑅𝑅ℎ𝐷𝐷𝑅𝑅`) merged into it. Not a judgement call and not display
+mathematics: the page prints a heading, and round T returns rubble.
+
+**So the decision the lead has been carrying does not need to be
+taken to settle this round.** « Unchanged » fails round T at 32
+changes. « Undamaged » — the criterion I proposed, with zero damage as
+the bar — **fails it at one.** Both bars reject it. **The criterion
+question is real and still worth answering for the rule that comes
+next, but it is not what is blocking D1, and I should have measured
+that before asking.**
+
+### The diagnosis the damage hands over, precisely
+
+Round T's rule merges a small run into « whichever neighbouring
+baseline is within 3.5 pt and larger » — up for a subscript, **down for
+a superscript**. On p61 the *downward* branch fires on a formula
+denominator sitting above a heading: small text, big text below, within
+reach. The rule cannot tell **a subscript inside a line** from **a
+small line adjacent to a bigger one**, and that distinction is what a
+successor rule has to carry. A subscript sits inside its host's own
+horizontal run; a separate small line does not.
+
+The upward branch produced no damage in 143 entries. **If a next round
+wants a cheap, safe subset, it is round T with the superscript branch
+removed** — 20 repairs are almost all subscripts (`ARt`, `RPEIt`,
+`iBTAt`, `AR*2026/27`), and the one destroyed heading came from the
+other direction. **That is a registration for another turn, not a
+change made here**, and it still needs the lead's word.
+
+### A correction: I published this backwards last turn
+
+Last turn I wrote, as a correction to an earlier overclaim:
+
+> at least two lose a space — `paragraph 2.1.5 of Special` becomes
+> `ofSpecial`, and `Condition 2.1` becomes `Condition2.1`.
+
+**The opposite is true.** Today's shipping extractor produces
+`ofSpecial` and `Condition2.1`; round T **repairs** them to
+`of Special` and `Condition 2.1`. They are entries 18 and 19 in the
+repair column above.
+
+**How.** Last turn I printed the changed lines by zipping the
+`only-before` and `only-after` lists, which are not aligned — so I read
+a « was » against a « now » that was not its pair, and reported the
+arrow pointing the wrong way. It is the third time an unaligned or
+under-keyed comparison has produced a wrong claim in this lane: the
+fact key without its y-coordinate, the finding refs without their
+sheet, and now these. **Same defect, three dresses: I compared two
+lists as if position meant identity.**
+
+The correction runs against my own interest twice over — it removes the
+only damage I had claimed for round T *and* it means last turn's
+« correction » was itself wrong. Both are in the record.
+
+### What this turn leaves for the lead
+
+1. **You do not need to answer the criterion question to unblock D1.**
+   Round T fails both bars. What is needed is a rule that does not
+   merge an equation denominator into a section heading — and the
+   measurement above says exactly which half of round T to drop.
+2. **The criterion question is still worth answering** for whatever
+   comes next, and it is now a cheaper question: « undamaged » has a
+   working instrument, and the instrument found one damage in 143
+   entries in one sitting.
+3. **D5 has its evidence** (round 4, last turn) and awaits a decision,
+   not measurement.
+4. **D3 round 4's contracts** — models reachable, agreements not.
+5. **D4** — approval pending since the fourteenth sweep.
+6. **Newbattle may be contaminated** for the proof's cold-run
+   condition — flagged last turn, mine, cheaper to drop than to argue.
+
+Orders unchanged for seven sweeps. Nothing outside D1, D3 and D5 has
+been touched, and `extract.py` is byte-identical to the tip's.
