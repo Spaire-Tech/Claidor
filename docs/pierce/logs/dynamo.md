@@ -2463,3 +2463,53 @@ correctly by its own rules and uselessly for B5. This is cheap to
 build and easy to get wrong (a list of words is exactly the kind of
 thing that quietly becomes a guess), so it is registered as its own
 round with its own answer key rather than added to this one.
+
+### Prediction 2 — **failed, and the failure is completely explained**
+
+Registered: RoE's coverage clears round 1b's 10 of 193.
+
+    sheets: 5 read, 1 column-wise, 0 refused
+    coverage: 0 of 193 watched cells moved (0.0%)
+      — UNINFORMATIVE — not a result
+    0 stable rules
+
+`docs/pierce/logs/dynamo/round3-roe.json`. 400 runs, zero drops,
+nothing moved. The column path fixed the reading and did not fix the
+coverage.
+
+**Why, measured rather than guessed.** Of the 193 watched formula
+cells, the number that reference `E6:E13` — the one column the fix
+recovered — is **zero**. Their precedents are `C` and `D`, 31 cells
+each, and the sheet's own formulas say what those are:
+
+    F6 = GEOMEAN(1+(C6:C25/100)) / GEOMEAN(1+(D6:D25/100)) - 1
+
+The model divides by 100 itself, which is the file stating outright
+that `RPI` is a rate in percent-of-100 form — the exact fact E2 has
+no way to know from `0.00` and a three-letter label, and a value
+`rate_form` already has a name for.
+
+So on this model the blocker is **one missing capability, and it is
+now identified precisely**: the two columns that drive the entire
+watched sheet are the two E2 cannot type. Round 1b concluded « 0
+rules says nothing about the model and everything about the
+perturbation ». That still holds, and the perturbation is now
+blocked by a named-rate vocabulary rather than by hand-typing
+capacity.
+
+### The round's scorecard, against what I registered
+
+| prediction | outcome |
+|---|---|
+| 1 — 24 of 26 rate cells recovered | **failed**: 0 as designed, 8 as amended |
+| 2 — coverage clears 10 of 193 | **failed**: 0 of 193 |
+| 3 — H7 untouched | **confirmed**, verified without the machine |
+| 4 — one new systematic problem | **confirmed**: the transposed year column |
+| 5 — constrained families stay unfixed | holds; unchanged and still illegal |
+
+Two of five registered predictions failed. Both failures were
+instructive and neither was hidden: the design was wrong in a way
+the machine showed me, and the amendment was wrong about how much it
+would buy. What the round bought is a **precisely named blocker**
+instead of a vague one, which is worth more than the coverage number
+I predicted and did not get.
