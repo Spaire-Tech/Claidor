@@ -81,6 +81,7 @@ from .schemas import (
     DealListItem,
     DealPage,
     DecisionRead,
+    DeltaItemRead,
     FigureMap,
     FigureRead,
     FindingCounts,
@@ -105,6 +106,7 @@ from .schemas import (
     OneOffDrift,
     OneOffResult,
     PanelToken,
+    RecalcMarkRead,
     RecentCheck,
     SlideFigures,
     SoloFindingRead,
@@ -113,6 +115,7 @@ from .schemas import (
     Uploader,
     VersionAudit,
     VersionAuditSummary,
+    VersionDeltaRead,
     VersionRead,
 )
 from .service import tieout
@@ -1118,6 +1121,159 @@ async def version_audit(
         ),
         findings=[_finding(one, filenames) for one in result["findings"]],
     )
+
+
+@router.get("/artifacts/{artifact_id}/delta", response_model=VersionDeltaRead | None)
+async def version_delta(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutRead,
+    against: UUID | None = Query(
+        default=None,
+        description="The older version to compare against. Left out, the "
+        "version before this one.",
+    ),
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> VersionDeltaRead | None:
+    """What this revision did, in review language — the Watch, served.
+
+    The Versions screen's report: what broke, what changed class, where
+    the method moved, which assumptions moved, which outputs moved
+    materially, the structure, then the repairs — ranked by the engine,
+    computed on request from the two versions' stored bytes, persisted
+    nowhere.
+
+    `null` when this is the first version: there is no revision to
+    report, which is not an error — the same sentence as the raw diff.
+    A version whose bytes were dropped under « keep the chain, drop the
+    documents » is a 404 carrying the storage sentence (upload it
+    again); an `against` outside this model's own lineage reads as not
+    found.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        result = await tieout.version_delta(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+            against_id=against,
+        )
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    if result is None:
+        if against is not None or artifact.kind is not ArtifactKind.model:
+            raise ResourceNotFound("Nothing to compare against.")
+        return None
+
+    users = UserRepository.from_session(session)
+    old, new = result["old"], result["new"]
+    report = result["report"]
+    return VersionDeltaRead(
+        old_artifact_id=old.id,
+        old_version=old.version,
+        old_uploaded_at=old.created_at,
+        old_uploaded_by=_uploader(await users.get_by_id(old.uploaded_by_id)),
+        new_artifact_id=new.id,
+        new_version=new.version,
+        new_uploaded_at=new.created_at,
+        new_uploaded_by=_uploader(await users.get_by_id(new.uploaded_by_id)),
+        computed_at=result["computed_at"],
+        new_defects=report.new_defects,
+        repaired_defects=report.repaired_defects,
+        persistent_defects=report.persistent_defects,
+        unmatched_old=report.unmatched_old,
+        unmatched_new=report.unmatched_new,
+        sheets_added=list(report.sheets_added),
+        sheets_removed=list(report.sheets_removed),
+        items=[
+            DeltaItemRead(
+                kind=item.kind,
+                sheet=item.sheet,
+                first_row=item.first_row,
+                last_row=item.last_row,
+                columns=list(item.columns),
+                detail=item.detail,
+                weight=item.weight,
+                findings=list(item.findings),
+            )
+            for item in report.items
+        ],
+    )
+
+
+@router.get("/artifacts/{artifact_id}/page/{page}", response_model=None)
+async def source_page(
+    artifact_id: UUID,
+    page: int,
+    auth_subject: auth.TieOutRead,
+    session: AsyncReadSession = Depends(get_db_read_session),
+) -> Response:
+    """One page of a stored source PDF, rendered — the viewer's ground.
+
+    The Chain's facts cite pages and boxes in the PDF's own points;
+    this serves the pixels those citations sit on, rendered fresh from
+    the stored bytes and cached nowhere. A non-PDF answers the same 404
+    as an artifact outside the caller's deals; a page outside the
+    document answers with the honest range; dropped bytes answer the
+    storage sentence.
+    """
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    try:
+        image = await tieout.page_image(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+            page=page,
+        )
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    except ValueError as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    if image is None:
+        raise ResourceNotFound("This document has no pages to render.")
+    return Response(
+        content=image,
+        media_type="image/png",
+        # Same bytes for the same version forever, so the browser may
+        # keep them for the session; a new upload is a new artifact id.
+        headers={"cache-control": "private, max-age=3600"},
+    )
+
+
+@router.post("/artifacts/{artifact_id}/recalculate", response_model=RecalcMarkRead)
+async def recalculate_artifact(
+    artifact_id: UUID,
+    auth_subject: auth.TieOutWrite,
+    session: AsyncSession = Depends(get_db_session),
+) -> RecalcMarkRead:
+    """Run the fidelity gate on this version and keep its mark.
+
+    Deliberate, and heavy: the file's formulas are prescanned for
+    constructs no engine of ours may honestly compute, and a clean file
+    is then recalculated whole through LibreOffice and compared cell by
+    cell against the values Excel left in it. The resulting mark —
+    validated, failed with the differing cells named, refused in words,
+    or nothing to compare — is stored on this version and served with
+    the artifact from then on. A machine without an adequate engine
+    answers 503 with the sentence saying so; it never stores a guess.
+    """
+    from .recalc import CalculatorError
+
+    artifact = await _artifact_in_deal(session, artifact_id, auth_subject.subject.id)
+    if artifact.kind is not ArtifactKind.model:
+        raise ResourceNotFound("Only a model can be recalculated.")
+    try:
+        mark = await tieout.recalculate(
+            session,
+            dossier_id=artifact.dossier_id,
+            artifact_id=artifact_id,
+        )
+    except FileNotKept as problem:
+        raise HTTPException(status_code=404, detail=str(problem)) from problem
+    except CalculatorError as problem:
+        raise HTTPException(status_code=503, detail=str(problem)) from problem
+    if mark is None:
+        raise ResourceNotFound("Only a ready model can be recalculated.")
+    return RecalcMarkRead(**mark)
 
 
 # --- checks --------------------------------------------------------------

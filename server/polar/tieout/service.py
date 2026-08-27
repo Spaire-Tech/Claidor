@@ -14,9 +14,11 @@ both the offline scripts and the running product.
 
 import hashlib
 import re
+import tempfile
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -633,6 +635,266 @@ class TieOutService:
                 "tallies": record["tallies"],
             },
         }
+
+    async def version_delta(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        against_id: UUID | None = None,
+    ) -> dict[str, Any] | None:
+        """The Watch's delta report between two stored versions.
+
+        The Versions screen's answer to « what did this revision do »:
+        the Watch (`polar.tieout.watch`, a read-only library here per
+        lanes.md) reads both files and reports in review language —
+        what broke, what changed class, where the method moved, which
+        assumptions moved, which outputs moved materially, the
+        structure, then the repairs. Computed on request and persisted
+        nowhere, same posture as the version audit and the marked-up
+        copy.
+
+        The Watch reads *files*, not rows — that is its own design (a
+        cell the ingest labeller skipped is still a cell the Watch
+        reports) — so this needs both versions' stored bytes. A version
+        whose bytes were dropped under « keep the chain, drop the
+        documents » raises :class:`storage.FileNotKept` with the
+        sentence that says what to do; the caller shows it as it
+        stands.
+
+        `against_id` picks the old side; left out, the version before
+        the given one. Returns None when there is nothing earlier —
+        a first upload has no revision to report, which is not an
+        error. Both sides must be ready models of the same lineage in
+        this deal; anything else reads as not found to the caller.
+        """
+        from .watch import delta_report
+
+        repository = TieOutRepository.from_session(session)
+        new_side = await repository.get_artifact(artifact_id)
+        if (
+            new_side is None
+            or new_side.dossier_id != dossier_id
+            or new_side.kind is not ArtifactKind.model
+            or new_side.status is not ArtifactStatus.ready
+        ):
+            return None
+        if against_id is None:
+            old_side = await repository.previous_version(new_side)
+            if old_side is None:
+                return None
+        else:
+            old_side = await repository.get_artifact(against_id)
+            if (
+                old_side is None
+                or old_side.dossier_id != dossier_id
+                or old_side.lineage_id != new_side.lineage_id
+                or old_side.kind is not ArtifactKind.model
+                or old_side.status is not ArtifactStatus.ready
+                or old_side.id == new_side.id
+            ):
+                return None
+
+        old_bytes = storage.fetch(old_side)
+        new_bytes = storage.fetch(new_side)
+        suffix = Path(new_side.filename).suffix or ".xlsx"
+        old_path = new_path = ""
+        try:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                f.write(old_bytes)
+                old_path = f.name
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                f.write(new_bytes)
+                new_path = f.name
+            report = delta_report(old_path, new_path)
+        finally:
+            for path in (old_path, new_path):
+                if path:
+                    Path(path).unlink(missing_ok=True)
+
+        return {
+            "old": old_side,
+            "new": new_side,
+            "computed_at": datetime.now(UTC),
+            "report": report,
+        }
+
+    async def page_image(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+        page: int,
+    ) -> bytes | None:
+        """One page of a stored source PDF, as pixels.
+
+        The source viewer's ground: the Chain's facts carry page
+        numbers and boxes in the PDF's own point coordinates, and this
+        renders the page those coordinates live on, at 2× for legible
+        text. Computed on request from the stored bytes, cached
+        nowhere — the same posture as every other derived answer here.
+
+        None when the artifact is not this deal's or not a PDF — the
+        caller turns that into the same 404 as everywhere. A page
+        outside the document raises :class:`ValueError` with the honest
+        range; missing bytes raise :class:`storage.FileNotKept` with
+        the upload-it-again sentence.
+        """
+        import io
+
+        #: The Chain's own approved reader (lanes.md, lead decision) —
+        #: its rendering backend included. Nothing here imports a
+        #: transitive dependency directly.
+        import pdfplumber
+
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.get_artifact(artifact_id)
+        if (
+            artifact is None
+            or artifact.dossier_id != dossier_id
+            or not artifact.filename.lower().endswith(".pdf")
+        ):
+            return None
+        payload = storage.fetch(artifact)
+
+        with pdfplumber.open(io.BytesIO(payload)) as document:
+            total = len(document.pages)
+            if page < 1 or page > total:
+                raise ValueError(
+                    f"{artifact.filename} has {total} page"
+                    f"{'' if total == 1 else 's'}; there is no page {page}."
+                )
+            #: 144dpi is 2× the PDF's own 72dpi points — the facts' box
+            #: coordinates scale onto these pixels by exactly ×2.
+            image = document.pages[page - 1].to_image(resolution=144).original
+            buffer = io.BytesIO()
+            image.save(buffer, format="PNG")
+            return buffer.getvalue()
+
+    #: How many differing or refused cells the mark names outright; the
+    #: rest are counted. A screen that lists ten thousand refs answers
+    #: nothing — the counts stay exact and the worst are named.
+    RECALC_NAMED = 12
+
+    async def recalculate(
+        self,
+        session: AsyncSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+    ) -> dict[str, Any] | None:
+        """Run the fidelity gate on one stored model and keep its mark.
+
+        The gate's question (`polar.tieout.recalc`, a read-only library
+        here per lanes.md): given this exact file, unchanged, does our
+        engine reproduce the values Excel left in it? The denylist
+        prescan runs first — a file carrying constructs no engine of
+        ours may honestly compute is **refused before any comparison**,
+        with each construct named and where it routes (real Excel via
+        the arbiter, or an honest no). Only a clean file is recalculated
+        through LibreOffice and diffed cell by cell.
+
+        Unlike the version delta this one is *persisted* — into the
+        artifact's own loose ``counts`` under ``recalc`` — because the
+        mark is a fact about a version that every screen must repeat
+        without re-running a calculation engine. A new upload is a new
+        artifact with no mark: the mark can never describe bytes other
+        than the ones it was computed from.
+
+        The engine work runs in a worker thread: one document at a time,
+        one soffice pair per call, torn down before returning — the
+        registered discipline for heavy workbook jobs on shared boxes.
+        Raises :class:`polar.tieout.recalc.CalculatorError` when no
+        adequate LibreOffice exists or the engine dies on the file; the
+        caller says that sentence rather than storing a guess. Returns
+        None when the artifact is not this deal's ready model.
+        """
+        repository = TieOutRepository.from_session(session)
+        artifact = await repository.get_artifact(artifact_id)
+        if (
+            artifact is None
+            or artifact.dossier_id != dossier_id
+            or artifact.kind is not ArtifactKind.model
+            or artifact.status is not ArtifactStatus.ready
+        ):
+            return None
+        payload = storage.fetch(artifact)
+        suffix = Path(artifact.filename).suffix or ".xlsx"
+
+        import asyncio
+
+        fidelity, engine = await asyncio.to_thread(
+            self._gate_stored_model, payload, suffix
+        )
+
+        named = self.RECALC_NAMED
+        mark: dict[str, Any] = {
+            "verdict": fidelity.verdict,
+            "engine": engine,
+            "computed_at": datetime.now(UTC).isoformat(),
+            "compared": fidelity.compared,
+            "matched": fidelity.matched,
+            "match_rate": fidelity.match_rate,
+            "mismatches": [_diff_fact(one) for one in fidelity.mismatches[:named]],
+            "mismatch_count": len(fidelity.mismatches),
+            "engine_errors": [
+                _diff_fact(one) for one in fidelity.engine_errors[:named]
+            ],
+            "engine_error_count": len(fidelity.engine_errors),
+            "not_computed": len(fidelity.not_computed),
+            "no_stored_value": len(fidelity.no_stored_value),
+            "refusals": [
+                {
+                    "ref": hit.ref,
+                    "category": str(hit.category),
+                    "target": hit.target,
+                    "route": str(hit.route),
+                }
+                for hit in fidelity.refusals[:named]
+            ],
+            "refusal_count": len(fidelity.refusals),
+            "route": str(fidelity.route) if fidelity.route is not None else None,
+            "volatile_roots": len(fidelity.volatile_roots),
+            "volatile_cone": fidelity.volatile_cone,
+        }
+        artifact.counts = {**artifact.counts, "recalc": mark}
+        return mark
+
+    @staticmethod
+    def _gate_stored_model(payload: bytes, suffix: str) -> tuple[Any, str | None]:
+        """Prescan, recalculate and gate one file's bytes. Blocking; threaded."""
+        from .recalc import gate_file, prescan
+        from .recalc.denylist import route_for
+        from .recalc.gate import read_calc_settings
+        from .recalc.uno_calc import UnoCalculator
+        from .workbook import read_workbook
+
+        path = ""
+        try:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                f.write(payload)
+                path = f.name
+            cells = read_workbook(path).cells
+            hits = prescan(cells)
+            route = route_for(hits)
+            if route is not None:
+                #: Refused before comparison: no engine runs, and the
+                #: mark carries the constructs and the route in words.
+                return gate_file(cells, {}, refusals=hits, route=route), None
+            settings = read_calc_settings(path)
+            calculator = UnoCalculator()
+            calculator.start()
+            try:
+                result = calculator.recalculate(path)
+            finally:
+                calculator.stop()
+            fidelity = gate_file(cells, result.values, settings=settings)
+            return fidelity, result.engine
+        finally:
+            if path:
+                Path(path).unlink(missing_ok=True)
 
     async def run_audit(
         self, session: AsyncSession, *, dossier_id: UUID, user_id: UUID | None
@@ -1688,6 +1950,17 @@ class _Candidates:
         #: with no Outputs tab, which is most of them.
         self.workbook = workbook
         self.cells = cells
+
+
+def _diff_fact(diff: Any) -> dict[str, Any]:
+    """One gate `CellDiff` as JSON facts — stored, computed, tolerance."""
+    stored = diff.stored
+    return {
+        "ref": diff.ref,
+        "stored": float(stored) if stored is not None else None,
+        "computed": diff.computed,
+        "tolerance": diff.tolerance,
+    }
 
 
 def _statement_json(statement: Statement) -> dict[str, Any]:

@@ -566,6 +566,110 @@ export interface Version {
   counts: Record<string, unknown>
 }
 
+/** Where a fact sits on its page, in the PDF's own point coordinates
+ *  — position as fractions of `page_width`/`page_height`, so a screen
+ *  scales without knowing the render resolution. */
+export interface FactBox {
+  x0: number
+  top: number
+  x1: number
+  bottom: number
+}
+
+/** One extracted number, cited to a page and a box — the Chain's D2
+ *  contract. `line` is the sentence around it, so a list can say what
+ *  the number is *of* without paraphrasing the document. */
+export interface ChainFact {
+  id: string
+  document_id: string
+  document_version_id: string
+  page: number
+  page_width: number
+  page_height: number
+  box: FactBox
+  text: string
+  value: number
+  line: string
+  extractor: { name: string; version: string }
+}
+
+/** A page the extractor refused, and why, in words — coverage said
+ *  out loud, never a silent gap. */
+export interface ChainRefusal {
+  document_version_id: string
+  page: number
+  reason: string
+}
+
+/** One document version's whole record: facts, refusals, coverage. */
+export interface DocumentFacts {
+  document_id: string
+  document_version_id: string
+  facts: ChainFact[]
+  refusals: ChainRefusal[]
+}
+
+/** One reviewed change from the Watch — one authoring decision where
+ *  possible. `kind` is one of its eight classes, already ranked by
+ *  the engine; the screen renders in order and never re-ranks. */
+export interface DeltaItem {
+  kind:
+    | 'new_defect'
+    | 'class_change'
+    | 'relabelled_line'
+    | 'methodology_change'
+    | 'moved_assumption'
+    | 'material_output'
+    | 'structure'
+    | 'repaired_defect'
+  sheet: string
+  /** Old-side row block for row-shaped items; 0 when not row-shaped. */
+  first_row: number
+  last_row: number
+  columns: string[]
+  /** The Watch's own sentence for the item, when it wrote one. */
+  detail: string
+  weight: number
+  /** Finding keys folded into this item — the class-change join. */
+  findings: string[]
+}
+
+/**
+ * What one revision did, in review language — the Watch, served.
+ *
+ * Computed on request from the two versions' stored bytes, persisted
+ * nowhere. Findings are matched by rule + sheet + name — never the
+ * address — and the nameless are counted apart, never guessed at; a
+ * screen shows that count when it is not zero.
+ */
+export interface VersionDelta {
+  old_artifact_id: string
+  old_version: number
+  old_uploaded_at: string
+  old_uploaded_by: {
+    id: string
+    name: string
+    avatar_url: string | null
+  } | null
+  new_artifact_id: string
+  new_version: number
+  new_uploaded_at: string
+  new_uploaded_by: {
+    id: string
+    name: string
+    avatar_url: string | null
+  } | null
+  computed_at: string
+  new_defects: number
+  repaired_defects: number
+  persistent_defects: number
+  unmatched_old: number
+  unmatched_new: number
+  sheets_added: string[]
+  sheets_removed: string[]
+  items: DeltaItem[]
+}
+
 /**
  * The audit re-run on one stored version, persisted nowhere.
  *
@@ -771,6 +875,47 @@ export interface RecentCheck {
   against: string
   checked_at: string
   counts: Record<string, number>
+}
+
+/** One cell the recalculation engine did not reproduce — both numbers. */
+export interface RecalcDiff {
+  ref: string
+  stored: number | null
+  computed: number | string | null
+  tolerance: number | null
+}
+
+/** One construct the engine may not honestly compute, in words. */
+export interface RecalcRefusal {
+  ref: string
+  category: string
+  target: string
+  route: 'arbiter' | 'refuse' | string
+}
+
+/** The fidelity gate's answer for one stored version — the mark.
+ *  `verdict` is the gate's own: `pass` is the only one that reads
+ *  « validated by recalculation »; `refused` carries its reasons in
+ *  `refusals`; `fail` names the differing cells; `nothing-compared`
+ *  means the formula cells carry no stored values to certify. */
+export interface RecalcMark {
+  verdict: 'pass' | 'fail' | 'refused' | 'nothing-compared' | string
+  engine: string | null
+  computed_at: string
+  compared: number
+  matched: number
+  match_rate: number | null
+  mismatches: RecalcDiff[]
+  mismatch_count: number
+  engine_errors: RecalcDiff[]
+  engine_error_count: number
+  not_computed: number
+  no_stored_value: number
+  refusals: RecalcRefusal[]
+  refusal_count: number
+  route: string | null
+  volatile_roots: number
+  volatile_cone: number
 }
 
 export class ApiError extends Error {
@@ -1113,6 +1258,68 @@ export class TieOutApi {
    *  persisted nowhere. What picking a version re-scopes the page to. */
   versionAudit(artifactId: string): Promise<VersionAudit> {
     return this.call(`/artifacts/${artifactId}/audit`)
+  }
+
+  /** What a revision did, in review language — the Watch, served.
+   *  `null` for a first version: no revision to report, not an error.
+   *  A version whose bytes were dropped answers 404 with the storage
+   *  sentence, shown to the person as it stands. */
+  versionDelta(
+    artifactId: string,
+    against?: string,
+  ): Promise<VersionDelta | null> {
+    const query = against ? `?against=${against}` : ''
+    return this.call(`/artifacts/${artifactId}/delta${query}`)
+  }
+
+  /** A source document's stored record — every extracted number with
+   *  its page and box, refusals alongside. Both lists empty usually
+   *  means the document has not been read into the Chain yet. */
+  documentFacts(artifactId: string): Promise<DocumentFacts> {
+    return this.at(`/v1/chain/documents/${artifactId}/facts`)
+  }
+
+  /** Read a stored source PDF and write its facts down — idempotent,
+   *  so re-reading replaces the earlier extraction wholesale. */
+  extractDocument(artifactId: string): Promise<DocumentFacts> {
+    return this.at(`/v1/chain/documents/${artifactId}/extract`, {
+      method: 'POST',
+    })
+  }
+
+  /** One page of a stored source PDF as pixels, for the viewer. The
+   *  caller owns the object URL and revokes it when done. */
+  async pageImage(artifactId: string, page: number): Promise<string> {
+    const token = this.options.token?.() ?? null
+    const response = await fetch(
+      `${this.options.baseUrl}/v1/tieout/artifacts/${artifactId}/page/${page}`,
+      {
+        credentials: 'include',
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      },
+    )
+    if (!response.ok) {
+      const problem = (await response.json().catch(() => null)) as {
+        detail?: string
+      } | null
+      throw new ApiError(
+        response.status,
+        problem?.detail ?? 'something went wrong',
+      )
+    }
+    return URL.createObjectURL(await response.blob())
+  }
+
+  /** Run the fidelity gate on this version and keep its mark —
+   *  deliberate and heavy: the whole model is recalculated through the
+   *  engine and compared cell by cell, unless the prescan refuses it
+   *  first. The stored mark then travels on the artifact's `counts`
+   *  under `recalc`. A machine without an adequate engine answers 503
+   *  with the sentence saying so. */
+  recalculate(artifactId: string): Promise<RecalcMark> {
+    return this.call(`/artifacts/${artifactId}/recalculate`, {
+      method: 'POST',
+    })
   }
 
   /** What travels with this file that is not on its screen. */

@@ -22,6 +22,7 @@ from httpx import AsyncClient
 from polar.auth.scope import Scope
 from polar.kit.db.postgres import AsyncSession
 from polar.models import (
+    Artifact,
     ArtifactKind,
     Dossier,
     DossierMember,
@@ -29,6 +30,7 @@ from polar.models import (
     User,
     UserOrganization,
 )
+from polar.tieout.recalc.uno_calc import find_install
 from polar.tieout.repository import TieOutRepository
 from polar.tieout.service import tieout
 from tests.fixtures.database import SaveFixture
@@ -1829,6 +1831,394 @@ class TestTheVersionAudit:
             if one.kind is ArtifactKind.model
         )
         response = await client.get(f"/v1/tieout/artifacts/{model.id}/audit")
+        assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestTheVersionDelta:
+    """The Watch, served: what a revision did, in review language.
+
+    The engine's own semantics are proven in `test_watch*`; what is
+    tested here is the route — deal posture, the honest null for a
+    first version, and that the wire shape carries the report's counts
+    and ranked items as the engine produced them.
+    """
+
+    async def _two_versions(
+        self, session: AsyncSession, save_fixture: SaveFixture, owner: User
+    ) -> tuple[Dossier, Artifact, Artifact]:
+        deal = await _deal_for(session, save_fixture, owner)
+        first = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=owner.id,
+        )
+        second = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=(CASCADE / "audit_fixture.xlsx").read_bytes(),
+            user_id=owner.id,
+        )
+        await session.flush()
+        return deal, first, second
+
+    @pytest.mark.auth
+    async def test_a_revision_answers_in_review_language(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        _, first, second = await self._two_versions(session, save_fixture, user)
+
+        response = await client.get(f"/v1/tieout/artifacts/{second.id}/delta")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["old_version"] == 1
+        assert body["new_version"] == 2
+        # The study's counts are integers, never blurred; the nameless
+        # are counted apart rather than guessed at.
+        for key in (
+            "new_defects",
+            "repaired_defects",
+            "persistent_defects",
+            "unmatched_old",
+            "unmatched_new",
+        ):
+            assert isinstance(body[key], int)
+        # Items are the Watch's eight classes, in the engine's own rank.
+        kinds = [item["kind"] for item in body["items"]]
+        order = [
+            "new_defect",
+            "class_change",
+            "relabelled_line",
+            "methodology_change",
+            "moved_assumption",
+            "material_output",
+            "structure",
+            "repaired_defect",
+        ]
+        assert all(kind in order for kind in kinds)
+        assert kinds == sorted(kinds, key=order.index)
+        # Two entirely different workbooks under one lineage: the
+        # report must have found *something* to say.
+        assert body["items"]
+
+    @pytest.mark.auth
+    async def test_a_first_version_is_null_not_an_error(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        only = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        response = await client.get(f"/v1/tieout/artifacts/{only.id}/delta")
+        assert response.status_code == 200
+        assert response.json() is None
+
+    @pytest.mark.auth
+    async def test_against_outside_the_lineage_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal, _, second = await self._two_versions(session, save_fixture, user)
+        deck = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.deck,
+            filename="cascade_deck.pptx",
+            payload=CLEAN.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        response = await client.get(
+            f"/v1/tieout/artifacts/{second.id}/delta?against={deck.id}"
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_a_strangers_revision_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        _, _, second = await self._two_versions(session, save_fixture, stranger)
+        response = await client.get(f"/v1/tieout/artifacts/{second.id}/delta")
+        assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestTheSourcePage:
+    """The source viewer's ground: a stored PDF's page, as pixels.
+
+    The Chain's facts cite pages and boxes; this route serves the
+    pixels those citations sit on. What matters at the route: the deal
+    posture, the honest out-of-range sentence, and that a non-PDF
+    reads as not found rather than half-rendering.
+    """
+
+    async def _source(
+        self, session: AsyncSession, save_fixture: SaveFixture, owner: User
+    ) -> tuple[Dossier, Artifact]:
+        deal = await _deal_for(session, save_fixture, owner)
+        source = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.source,
+            filename="cascade_accounts.pdf",
+            payload=(CASCADE / "cascade_accounts.pdf").read_bytes(),
+            user_id=owner.id,
+        )
+        await session.flush()
+        return deal, source
+
+    @pytest.mark.auth
+    async def test_a_page_renders_as_png(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        _, source = await self._source(session, save_fixture, user)
+        response = await client.get(f"/v1/tieout/artifacts/{source.id}/page/1")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "image/png"
+        assert response.content.startswith(b"\x89PNG")
+
+    @pytest.mark.auth
+    async def test_a_page_outside_the_document_says_the_range(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        _, source = await self._source(session, save_fixture, user)
+        response = await client.get(f"/v1/tieout/artifacts/{source.id}/page/999")
+        assert response.status_code == 404
+        assert "no page 999" in response.json()["detail"]
+
+    @pytest.mark.auth
+    async def test_a_model_is_not_a_page_source(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        model = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        response = await client.get(f"/v1/tieout/artifacts/{model.id}/page/1")
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_a_strangers_page_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        _, source = await self._source(session, save_fixture, stranger)
+        response = await client.get(f"/v1/tieout/artifacts/{source.id}/page/1")
+        assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestTheRecalculation:
+    """The mark: « validated by recalculation », and its honest refusal face.
+
+    The gate's own semantics are proven in the engine's tests; what is
+    tested here is the route — deal posture, that only a model earns a
+    mark, that a refused file answers in words without any engine
+    running, and that the mark persists onto the artifact so every
+    later read repeats it. The full-engine pass runs only where an
+    adequate LibreOffice exists, and is skipped honestly elsewhere.
+    """
+
+    @staticmethod
+    def _rtd_model() -> bytes:
+        """A tiny real workbook carrying one RTD call — refused, no engine."""
+        import io
+
+        from openpyxl import Workbook
+
+        book = Workbook()
+        sheet = book.active
+        assert sheet is not None
+        sheet["A1"] = "Revenue"
+        sheet["B1"] = 100
+        sheet["A2"] = "Live price"
+        sheet["B2"] = '=RTD("feed.prog",,"topic")'
+        buffer = io.BytesIO()
+        book.save(buffer)
+        return buffer.getvalue()
+
+    @pytest.mark.auth
+    async def test_a_denylisted_model_is_refused_in_words(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        model = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="live_feed_model.xlsx",
+            payload=self._rtd_model(),
+            user_id=user.id,
+        )
+        await session.flush()
+        response = await client.post(f"/v1/tieout/artifacts/{model.id}/recalculate")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["verdict"] == "refused"
+        # No engine ran, and none is claimed.
+        assert body["engine"] is None
+        assert body["compared"] == 0
+        # The refusal is words a person can act on: the construct, the
+        # cell, and where it routes — RTD is gone the moment the file
+        # is saved, so nothing we run could recompute it.
+        assert body["refusal_count"] >= 1
+        refusal = body["refusals"][0]
+        assert refusal["category"] == "rtd"
+        assert refusal["ref"] == "Sheet!B2"
+        assert body["route"] == "refuse"
+
+    @pytest.mark.auth
+    async def test_the_mark_persists_onto_the_artifact(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        model = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="live_feed_model.xlsx",
+            payload=self._rtd_model(),
+            user_id=user.id,
+        )
+        await session.flush()
+        marked = await client.post(f"/v1/tieout/artifacts/{model.id}/recalculate")
+        assert marked.status_code == 200
+        again = await client.get(f"/v1/tieout/artifacts/{model.id}")
+        assert again.status_code == 200
+        kept = again.json()["counts"]["recalc"]
+        assert kept["verdict"] == "refused"
+        assert kept["refusals"][0]["ref"] == "Sheet!B2"
+
+    @pytest.mark.skipif(
+        find_install() is None,
+        reason="no LibreOffice >= 25.8 on this machine (dev/setup-libreoffice)",
+    )
+    @pytest.mark.auth
+    async def test_a_clean_model_is_validated_by_the_real_engine(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        model = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        response = await client.post(f"/v1/tieout/artifacts/{model.id}/recalculate")
+        assert response.status_code == 200
+        body = response.json()
+        # The fixture's cached values were computed by a real engine, so
+        # a real recalculation reproduces them — and the mark names the
+        # engine so a fake can never be mistaken for a machine result.
+        assert body["verdict"] == "pass"
+        assert body["engine"] is not None
+        assert "LibreOffice" in body["engine"]
+        assert body["compared"] > 0
+        assert body["matched"] == body["compared"]
+        assert body["match_rate"] == 1.0
+
+    @pytest.mark.auth
+    async def test_a_deck_cannot_be_recalculated(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        deck = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.deck,
+            filename="cascade_deck.pptx",
+            payload=CLEAN.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        response = await client.post(f"/v1/tieout/artifacts/{deck.id}/recalculate")
+        assert response.status_code == 404
+
+    @pytest.mark.auth
+    async def test_a_strangers_model_does_not_exist(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+    ) -> None:
+        stranger = await create_user(save_fixture)
+        deal = await _deal_for(session, save_fixture, stranger)
+        model = await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=stranger.id,
+        )
+        await session.flush()
+        response = await client.post(f"/v1/tieout/artifacts/{model.id}/recalculate")
         assert response.status_code == 404
 
 

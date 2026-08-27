@@ -321,3 +321,179 @@ verified; full route suite 69 passed.
 
 The inventory (orders item 2) remains delivered — previous entries.
 Holding for founder designs, per item 3.
+
+## 27 August 2026 — the Watch delta view, shipped whole (agent-designed)
+
+The founder unlocked design (lanes.md, 26 Aug); orders name three
+screens in order, one shipped whole before the next. This is the
+first, **agent-designed and marked as such** — no founder drawing
+exists for it; what the founder did declare, the design export's own
+`vtCols` (« Version · What changed · Saved · By · Findings »), is
+kept verbatim as the table's columns.
+
+**The endpoint.** `GET /artifacts/{id}/delta[?against=]`
+(`version_delta` in `service.py`): the Watch's `delta_report` run
+over the two versions' stored bytes through temp files, persisted
+nowhere. First version → `null`, the raw diff's own convention; bytes
+dropped under retention → 404 carrying the storage sentence; an
+`against` outside the lineage → 404. The wire shape
+(`VersionDeltaRead`/`DeltaItemRead`) carries the study's counts —
+nameless findings counted apart, never folded away — and the items in
+the engine's own rank, never re-ranked by a screen. Four new route
+tests (`TestTheVersionDelta`), including rank-order preservation;
+**route suite 73 passed**.
+
+**The screen.** A « Versions » tab on the project page (the design's
+own `verAll` intent — the dropdown gains « See all versions », which
+opens it). The table: uploads newest first; the selected revision's
+row carries the counts sentence (« One defect introduced · none
+repaired · one standing ») and a `+n −r` findings column; the first
+upload says honestly that nothing earlier exists. Below, « What vN
+changed » in the design's gradient-heading pattern: the comparison
+line with the « computed just now, nothing here is a saved answer »
+honesty sentence, then the report card — each reviewed change as a
+row with its class dot (red defect/class-change, amber
+method/assumption, blue relabel/output, grey structure, green
+repair — the workspace's existing inks), the Watch's own sentence,
+folded finding keys in mono, and the place as a banker names it
+(« Model!F16 »). Refusals render as the server's sentence, as it
+stands.
+
+**Proven on the real stack, screenshots beside this log**
+(`logs/atelier/versions-tab.png`, `versions-first-upload.png`,
+`versions-dropdown.png`): Chromium on the dev API + web with the
+two-version demo deal — the planted formula-to-constant edit reads
+« Changed class — a live formula became a typed constant » folding
+`typed-over-formula`, at `Model!F16`; every drive assertion green,
+zero page errors. Frontend typecheck, eslint and prettier clean.
+
+**Also in this push:** the standing handoff file
+(`docs/pierce/handoffs/atelier.md`) per the new memory discipline —
+map, not diary; updated with every push from now on.
+
+Next per orders: the source viewer, then the recalculation mark.
+
+## 27 August 2026 — the source viewer, shipped whole (agent-designed)
+
+The second screen of the design unlock: the click-a-number,
+see-the-highlighted-page moment, built on the Chain exactly as it is
+served — the fact store's pages and boxes, the extractor's refusals
+in words, and nothing invented above them.
+
+**The endpoint (mine).** `GET /artifacts/{id}/page/{page}`: one page
+of a stored source PDF as pixels, rendered fresh at 144dpi through
+`pdfplumber`'s own rendering (the Chain's approved reader — no
+transitive dependency imported directly), cached nowhere. A non-PDF
+answers the same 404 as a stranger's artifact; a page outside the
+document answers with the honest range (« has 2 pages; there is no
+page 999 »); dropped bytes answer the storage sentence. Four route
+tests (`TestTheSourcePage`); **route suite 77 passed.**
+
+**The screen.** Inside the founder's document panel (the `docOpen`
+design), a new section for source PDFs, agent-designed:
+« Every number, cited to its page ». The Chain's facts as rows — the
+number in mono, the document's own line beside it, the page — and
+clicking one renders that page with the cited box **ringed in the
+accent blue**, scaled by the page's own point size so the ring lands
+at any resolution. The page card says its own honesty line
+(« rendered from the stored file, the cited box ringed »). A document
+the Chain has not read yet says so and offers « Read the document »
+(the chain's idempotent extract, a deliberate button, never
+automatic); refused pages are listed in the extractor's own words
+(« p. n not read — … »). Page pixels are cached per page and revoked
+when the panel moves on.
+
+**Proven on the real stack, screenshots beside this log**
+(`logs/atelier/source-viewer-facts.png`, `source-viewer-highlight.png`):
+the cascade accounts PDF read into the Chain (24 facts), the panel
+opened from the Sources tab, a fact clicked, and the page renders
+with « 31 » ringed inside « For the year ended 31 December 2025 » —
+every drive assertion green, zero page errors. Typecheck and prettier
+clean; the one new eslint warning class matches the panel's own
+pre-existing reset idiom (two identical warnings predate this
+change).
+
+One observation for Scribe, via the lead if it matters: the
+extractor reads bare day-numbers in dates (« 31 » in a date line) as
+facts. The viewer shows the store honestly either way; whether a
+date's day belongs in the fact store is the Chain's call, not a
+screen's.
+
+Next per orders: the recalculation mark.
+
+## 27 August 2026 — the recalculation mark, shipped whole (agent-designed)
+
+Design-unlock item 3, the last of the founder's three: the
+« validated by recalculation » state on the report and the model
+page, **including its honest refusal face** — designed at full
+effort in the existing style, per the orders' own words.
+
+**The ground.** This container never had the engine: LibreOffice
+was 24.2, below the recalculator's 25.8 floor. The lead's
+`dev/setup-libreoffice` installed 25.8.7 (one transient network
+reset, retried); its own verification passed (uno imports in the
+bundled python, headless Calc converts). First real run: the gate
+reproduced the cascade fixture's 228 formula cells exactly through
+UNO — the whole of Dynamo's pipeline (prescan → UnoCalculator →
+gate_file) works end to end on this box, first try.
+
+**The endpoint (mine).** `POST /artifacts/{id}/recalculate`
+(TieOutWrite, service `recalculate`): the artifact's stored bytes →
+denylist prescan → a clean file goes whole through LibreOffice via
+`UnoCalculator` (one soffice pair per call, torn down after, run in
+a worker thread — heavy jobs run alone) → `gate_file` cell by cell.
+The mark is **persisted** on the artifact's own loose `counts`
+under `recalc` — unlike the delta this answer must be repeated by
+every screen without re-running an engine, and a new upload is a
+new artifact with no mark, so the mark can never describe other
+bytes. Refused files never touch the engine and store the
+constructs in words (`RecalcMarkRead`: verdict, engine named,
+counts exact, worst twelve diffs/refusals named, the rest counted).
+A machine without the engine answers 503 with the sentence; nothing
+stored. Five route tests (`TestTheRecalculation`), one skipped
+honestly where no adequate LibreOffice exists; **route suite 82
+passed**. Backend lint, format and mypy clean on my files.
+
+**The screens.** On the model page (the founder's `docOpen` panel),
+a new section, agent-designed: « Validated by recalculation ». Four
+verdict faces plus never-run: never-run says what the engine would
+do and offers the deliberate « Run the recalculation » button —
+recalculation is heavy and never happens behind anyone's back; pass
+(green) names the engine and the count; fail (red) counts the
+disagreements and names the worst cells mono, stored beside
+recalculated; refused (amber) lists each construct in words
+(« RTD — a real-time feed — its value was gone the moment the file
+was saved ») and claims « we did not check this » rather than a
+number; nothing-compared explains the generator-written case. On
+the report sheet, the mark becomes prose between « What was
+checked » and « What could not be checked »: validated names the
+engine and count; a missing mark is **listed as a fact under what
+could not be checked**, never passed over.
+
+**Proven on the real stack, screenshots beside this log.** The
+doctored demo v2 (typed-over `Model!F16`) **failed its
+recalculation for real**: 19 of 227 compared cells differ, and the
+named cells are exactly the downstream damage — `Model!F17`, `F26`,
+`F27`, the DCF rows (`recalc-failed.png`; the mark re-shown from
+storage on a fresh load, no re-run). A repaired v3 (the clean bytes
+back on the lineage) earns the green face — « reproduced all 228
+compared cells exactly », engine named
+(`recalc-never-run.png`, `recalc-validated.png`) — and the report
+speaks it (`recalc-report-validated.png`); the report's
+never-run line is `recalc-report-notrun.png`. The refusal face
+lives in its own small demo deal (« Project Live Feed Demo »,
+`market_feed_model.xlsx` with a real `=RTD(...)`) so the cascade
+demo's report keeps its subject: `recalc-refused.png`. Every drive
+assertion green, zero page errors.
+
+Two demo-data notes on the record: the doctored v2's honest fail
+means the cascade deal's *current* model no longer reads
+« validated » — that is the truth the mark exists to tell, and the
+repaired v3 completes the story (v1 clean → v2 doctored, caught by
+the Watch and the gate → v3 repaired, validated). And the report
+follows the deal's newest model, which is why the refused model got
+its own deal — a second model lineage in one deal changes the
+report's subject; worth a word with the lead someday.
+
+Next per orders: nothing further queued — the three design-unlock
+screens are shipped whole. Holding for the next sweep.
