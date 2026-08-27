@@ -4409,3 +4409,40 @@ with reference outputs, and **CC BY 3.0**, the first corpus licence
 we hold that permits commercial use. Scribe's orders lead with a
 read-it-by-hand check before any registration: if it is not our
 task, we lose an afternoon rather than a thesis.
+
+---
+
+## 27 August — the seventeenth sweep, and a lead's error worth recording
+
+All five lanes merged (688 tests green). **Sentinel adopted
+candidate 4** — the column direction, after round 1 measured the
+engine's row-major bias, round 2 was refused three ways, and round 3
+carried candidate 2's identity guard inward: 12 new findings in 5
+files, none removed, baseline regenerated in the same commit. It
+also ran **the Tasi re-score**, and its most valuable output is three
+of its own predictions proved wrong: the two expert label sets
+*nest* rather than conflict (99.4% of CUSTODES's cells are Tasi's
+too), their two error classes partition our rules cleanly, and our
+coverage of *serious* errors is lower than our overall coverage —
+1,206 uncovered cells with a ready-made sample, now the best-funded
+mining lead the record holds. **Scribe** ran D3 round 5 on the Finch
+pivot: **0 of 18, and the reason is structural** — finance documents
+are tables and the matcher reads lines, so a label cannot separate
+the `$` column from the `HC` column on the same row. It refused to
+loosen the tie rule (that would manufacture confident guesses),
+named `indeterminate-line-granularity` for the fifteen cells its own
+*judge* could not honestly score, and registered the column anchor
+for round 6 — approved. **Dynamo** registered the review's four
+gates and measured the ddmin narrowing (43 narrowings, 32 exact, 11
+the predicted wide case, 0 misses). **Prism** ran four more tier-2
+rounds. **Atelier** caught the build record up and took new orders:
+the report face (G4) and chat's five canonical questions (G2).
+
+**The lead's own error, recorded because the rule is the rule:** the
+independent gate certification of Sentinel's adoption was OOM-killed
+at file 19 — because the V3 run was still alive. The lead's kill
+command matched the wrong process name, so two heavy jobs ran
+together, which is exactly the failure `lanes.md` warns about and
+this record already paid for once. V3 is stopped with ten pairs
+banked; the gate is re-running alone on a verified-quiet machine,
+and the certification claim waits for it.
