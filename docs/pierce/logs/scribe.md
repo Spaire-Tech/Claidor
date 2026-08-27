@@ -3330,3 +3330,101 @@ ground, not mine.
 **No kill-criterion, because this round changes no code.** It is a
 measurement, and its only obligation is to report what it finds
 including the case that kills the shape I proposed.
+
+## D5 round 3 — measured, and the answer is about the corpus, not the shape
+
+**Zero usable sections on all eight.** Not « zero typed cells inside a
+section » as on the regulator models — **zero sections declared at
+all**, on every one of the eight.
+
+Round 2 taught me that a zero that large is usually a bug, and to check
+rather than report. I checked, and it is not a bug in the shape or in
+the engine. **It is the corpus.**
+
+### The finding: the published closed-deal models are all but value-only
+
+Parsed out of the sheet XML directly — not through the reader, so the
+reader cannot be what is wrong:
+
+| model | cells | formula cells (text) | shared followers |
+|---|---|---|---|
+| baldragon | 914,364 | 220 | 0 |
+| glasgow_college | 631,904 | **0** | 0 |
+| forfar | 812,405 | **0** | 0 |
+| inverurie_foresterhill | 171,203 | 3 | 0 |
+| kelso | 1,074,011 | 717 | 158 |
+| levenmouth | 1,230,971 | 224 | 0 |
+| newbattle | 1,074,692 | 259 | 357 |
+| oban_campbeltown | 220,989 | **0** | 0 |
+| **total** | **6,130,539** | **1,423** | **515** |
+
+**1,938 formula cells in 6,130,539. That is 0.03%.** Three of the eight
+— Glasgow College, Forfar, Oban & Campbeltown — contain **no formula
+anywhere**, across 82, 26 and 18 sheets.
+
+These are published under transparency rules two years after
+completion, and what is published is the workbook with its formulas
+stripped: the numbers, not the model. It is a perfectly sensible thing
+for a publisher to do and it is fatal to anything that checks
+arithmetic.
+
+**So D5 round 3's answer, stated exactly:** the local-rule shape has no
+ground on this population, and **the reason is not the one round 2
+predicted.** Round 2 said « a block a model totals is a block of
+outputs », and predicted the shape would find ground on hand-built deal
+models. **That prediction is untested, not refuted** — these files
+declare no totals because they contain no formulas, so the question
+round 2 asked cannot be put to them at all. My registered prediction
+(« non-zero and substantial, between 0% and 68% ») is **wrong**, and
+wrong for a reason I could not have predicted from the corpus's
+description.
+
+### The consequence is not mine to draw, so I will state it and stop
+
+`swens-plan.md`'s first completion proof is « ten models from the
+chosen first population, run cold, findings hand-verified ». A tie-out
+engine finds disagreements between what a model computes and what it
+states. **On a workbook with 0.03% formulas there is almost nothing of
+that kind to find**, and on three of the eight there is nothing at all.
+
+I am not the lane that owns the population proof and I am not going to
+tell it what its result means. But it is registered, the corpus is
+fetched, and the run has not happened yet, so **this is worth knowing
+before the run rather than after it** — which is the only reason I am
+writing it here today rather than at my next turn.
+
+### A fourth intake gap, and it is the kind that manufactures false findings
+
+Separately, and much smaller: openpyxl expands *some* shared formulas
+(`<f t="shared" si="N"/>`, where only the group's master carries the
+text) and not others.
+
+| model | formula cells in the file | the reader sees | missed |
+|---|---|---|---|
+| kelso | 875 | 814 | **61** |
+| newbattle | 616 | 492 | **124** |
+| the other six | 447 | 447 | 0 |
+
+**185 formula cells across this corpus come back as typed cells.** That
+is the same class as the `.xlsb` and `.xls` gaps the lead logged today,
+and it is the worst-flavoured of them: a blocked *format* is visibly
+blocked, but a computed cell misread as an input is **silently wrong**,
+and it lands in exactly the population D5's unsourced-number finding
+draws from. A finding that says « this number has no source » about a
+cell that is computed by a formula is the confident wrongness this
+product exists to prevent. Routed to the lead; `ingest` is not mine.
+
+### Three counts before I got one right, recorded because that is the deal
+
+I measured the formula counts three times and published none of the
+first two. The first regex (`<f[ >/]`) was right; the second
+(`<f[^>]*>[^<]`) silently matched `<formula>` tags from conditional
+formatting and inflated Glasgow College from 0 to 217; the third
+disagreed with both. **I stopped pattern-matching XML and parsed it**,
+which is the number above.
+
+Last turn's audit named my failure mode as « the sentence generalises
+further than the run did ». This is its sibling: **the instrument was
+wrong and the number looked plausible.** Nothing but the third method
+would have caught it, and the only reason I ran a third is that the
+first two disagreed. Where two methods agree I would have published.
