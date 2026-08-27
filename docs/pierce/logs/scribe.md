@@ -2887,3 +2887,37 @@ Worth recording beside it: **`4_src_8` has zero runs of either kind**,
 so the rule cannot touch the zips it is meant to leave alone. The
 discriminator separates on the calibration half exactly as the
 registration claimed.
+
+### Round T, second amendment — the reach constant was measured from one page
+
+`_SCRIPT_REACH = 3.5` was wrong, and wrong because I sampled badly: I
+read « 2.6–2.9 pt » off a single page of the ED2 handbook and called it
+the population. The line-text check found subscripts at **3.66 pt** on
+the contents page, just outside it.
+
+Measured properly across the whole calibration half, splitting by the
+test the rule actually separates on:
+
+| population | n | min | p50 | p95 | p99 | max |
+|---|---|---|---|---|---|---|
+| size-qualified runs (sub/superscripts) | 329 | 1.60 | 2.91 | 5.15 | **6.03** | 6.27 |
+| same-sized baselines (the zips) | 576 | 1.80 | 6.00 | 7.44 | 7.68 | 7.82 |
+
+**The two overlap completely in distance** — which is the whole point
+of round T: distance was never going to separate them, and the size
+test already does. Reach is not a discriminator; its only job is to not
+exclude a real script. **It becomes 6.5**, clearing the measured p99 of
+6.03.
+
+**The risk this creates, named before the run:** a footnote block is
+small text too, and its *first* line now sits within reach of the body
+line above it. Its later lines are safe (their neighbour above is also
+small), so at most one line per block can be wrongly merged. The
+line-text criterion is exactly the instrument that will say whether it
+happens.
+
+**This is the last constant correction in this round.** Both amendments
+came from re-measuring the calibration half after finding my own
+measurement of it was too small a sample, and the judging half is still
+unread for this purpose. If the criterion fails again, round T dies
+rather than acquiring a third amendment.
