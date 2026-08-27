@@ -1,0 +1,48 @@
+{
+ "file": "forfar_model.xlsm",
+ "bytes": 3391415,
+ "cells": 369348,
+ "sheets": 26,
+ "formulas": 0,
+ "values_pasted": true,
+ "analytical": [],
+ "abstentions": [],
+ "tallies": {
+  "model-own-check": {
+   "total": 20,
+   "clean": 20
+  },
+  "balance-sheet": {
+   "total": 70,
+   "clean": 70
+  },
+  "time-axis": {
+   "total": 13,
+   "clean": 13
+  },
+  "cash-continuity": {
+   "total": 68,
+   "clean": 68
+  }
+ },
+ "structural_count": 6,
+ "audit_tallies": {
+  "error-value": {
+   "total": 369348,
+   "raised": 4
+  },
+  "typed-over-formula": {
+   "total": 369348,
+   "raised": 0
+  },
+  "typed-over-edge": {
+   "total": 369348,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 26,
+   "raised": 0
+  }
+ },
+ "seconds": 16.8
+}

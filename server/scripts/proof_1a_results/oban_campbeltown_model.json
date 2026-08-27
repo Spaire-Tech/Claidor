@@ -1,0 +1,49 @@
+{
+ "file": "oban_campbeltown_model.xlsm",
+ "bytes": 1770690,
+ "cells": 94012,
+ "sheets": 18,
+ "formulas": 0,
+ "values_pasted": true,
+ "analytical": [],
+ "abstentions": [
+  {
+   "rule": "balance-sheet",
+   "why": "No balance sheet was located."
+  }
+ ],
+ "tallies": {
+  "model-own-check": {
+   "total": 3,
+   "clean": 3
+  },
+  "time-axis": {
+   "total": 4,
+   "clean": 4
+  },
+  "cash-continuity": {
+   "total": 2,
+   "clean": 2
+  }
+ },
+ "structural_count": 4,
+ "audit_tallies": {
+  "error-value": {
+   "total": 94012,
+   "raised": 3
+  },
+  "typed-over-formula": {
+   "total": 94012,
+   "raised": 0
+  },
+  "typed-over-edge": {
+   "total": 94012,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 18,
+   "raised": 0
+  }
+ },
+ "seconds": 9.9
+}

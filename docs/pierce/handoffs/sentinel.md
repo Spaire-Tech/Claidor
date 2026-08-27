@@ -30,6 +30,7 @@ it falls.
 | A3 c4 column typed (`a3-column-typed.md`) | **Adopted** (3 rounds). The island pass's left-formula guard is waived for interior islands that hold a substantive value. +12 corpus findings, baseline regenerated with it. No new rule — catalogue stays 19. |
 | A3 c5 range vs block (`a3-range-block.md`) | **Adopted.** New rule `range-over-block`: a range swallowing a subtotal of its own rows. 13/13 planted caught, gate clean (zero corpus findings), baseline untouched. Catalogue **19 → 20**. Class 2 (range spanning a label) **withdrawn** — the reader does not elect text cells. |
 | Serious-error mining (`serious-mining.md`) | **BLOCKED**, no candidate. Universe confirmed (1,206) but the classifier bucketed 100% into one bucket — the engine's legacy `.xls` reader misses formulas (19/144, 10/40, 0/349 by subject). Routed to the lead: `legacy.py` is outside my paths. |
+| Proof 1A (`population-proof.md` § Results) | **FAIL**, run cold at `c6ff9a4e`. 10 of 11 models, 0 refusals, 5 silent. 8 of 13 findings are one false-alarm class: `_own_checks` reads a parameter column as a period. **Not fixed** — cold-run conditions; it is the next registered round. `hwcbsb_model.xlsm` unavailable. |
 | A4 coverage (`a4-coverage.md`) | **Adopted.** `Audit.tallies` + `Audit.abstentions`, same shapes as analytics'. Gate clean, baseline untouched, catalogue unchanged. **Product side routed to the lead** — Atelier owns the report JSON. |
 | Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
 
@@ -51,7 +52,12 @@ new round from a clean slate.
    decision on the `.xls` reader defect (see the table). If it is
    fixed, re-run `scripts.custodes_serious` — the registration and
    classifier are committed and ready; only the reader was wrong.
-1. The « dead assumption » reachability candidate
+1. **The own-check period defect** — Proof 1A's cause, now the
+   best-evidenced fix in the record: `_own_checks` in `analytics.py`
+   scans every numeric cell of a check row and ignores the period
+   axes it is already handed. Register it, plant against Kelso and
+   Newbattle (known false alarms), gate, and re-run 1A after.
+2. The « dead assumption » reachability candidate
    (`swens-aha.md`): dependency-graph reachability, no
    recalculation, one-sentence finding. Coordinate the rule name
    with the lead before adoption (it needs Atelier's category map).

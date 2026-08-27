@@ -1,0 +1,61 @@
+{
+ "file": "snbts_model.xlsm",
+ "bytes": 1881902,
+ "cells": 216864,
+ "sheets": 45,
+ "formulas": 0,
+ "values_pasted": true,
+ "analytical": [
+  {
+   "rule": "cash-continuity",
+   "severity": "error",
+   "ref": "Outputs!T73",
+   "sheet": "Outputs",
+   "detail": "\u00ab cash \u00bb does not carry forward into FY2017: closing 4.54747e-13 against opening 1,196.13."
+  }
+ ],
+ "abstentions": [
+  {
+   "rule": "balance-sheet",
+   "why": "No balance sheet was located."
+  }
+ ],
+ "tallies": {
+  "model-own-check": {
+   "total": 3,
+   "clean": 3
+  },
+  "time-axis": {
+   "total": 22,
+   "clean": 22
+  },
+  "cash-continuity": {
+   "total": 46,
+   "clean": 45
+  },
+  "debt-terminal": {
+   "total": 3,
+   "clean": 3
+  }
+ },
+ "structural_count": 2,
+ "audit_tallies": {
+  "error-value": {
+   "total": 216864,
+   "raised": 1
+  },
+  "typed-over-formula": {
+   "total": 216864,
+   "raised": 0
+  },
+  "typed-over-edge": {
+   "total": 216864,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 45,
+   "raised": 0
+  }
+ },
+ "seconds": 7.6
+}
