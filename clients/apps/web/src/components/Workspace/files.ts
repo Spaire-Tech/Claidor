@@ -74,7 +74,16 @@ export const initialsOf = (name: string): string =>
     .slice(0, 2)
     .join('')
 
-/** The design's finding families — the group heading over a row. */
+/**
+ * The design's finding families — the group heading over a row.
+ *
+ * Checked against what the engine *emits*, not against the rule
+ * catalogues: a rule missing from `RULE_NAMES` and
+ * `ANALYTIC_RULE_NAMES` is exactly the rule most likely to be missing
+ * here too, and reading the catalogues finds nothing wrong with it.
+ * `TestTheCategoryMap` (server/tests/tieout/test_routes.py) holds the
+ * two sides together.
+ */
 const CATEGORY_OF: Record<string, string> = {
   'inconsistent-row': 'Probable formula defects',
   'skipped-cell': 'Probable formula defects',
@@ -87,25 +96,29 @@ const CATEGORY_OF: Record<string, string> = {
   'inconsistent-total': 'Probable formula defects',
   'typed-over-edge': 'Probable formula defects',
   'range-over-block': 'Probable formula defects',
-  //: Fires on real models (a check formula that walks cells one by
-  //: one and skips a live block) but is in neither RULE_NAMES nor
-  //: ANALYTIC_RULE_NAMES, so Settings cannot list it and a firm
-  //: cannot switch it off — reported to the lead, seventeenth
-  //: sweep. Mapped here so a material finding is not filed under
-  //: « Other findings » on a partner's report.
+  //: The three below are emitted by the engine but are in neither
+  //: RULE_NAMES nor ANALYTIC_RULE_NAMES, so Settings cannot list them
+  //: and a firm cannot switch them off — reported to the lead.
+  //: Mapped here so a finding the engine calls an error is not filed
+  //: under « Other findings » on a partner's report.
+  //:
+  //: `gapped-test`: a check formula that walks cells one by one and
+  //: skips a live block. `typed-over-beat`: Sentinel's column-direction
+  //: extension of `typed-over-edge`, and it sits with it. `broken-name`:
+  //: defined names storing #REF! or pointing into another workbook —
+  //: the same defect `external-link` names, one level up in the file.
   'gapped-test': 'Probable formula defects',
+  'typed-over-beat': 'Probable formula defects',
   'balance-sheet': 'Structural exceptions',
   'cash-continuity': 'Structural exceptions',
   'debt-terminal': 'Structural exceptions',
   'model-own-check': 'Structural exceptions',
-  //: Renamed in the merged catalogue (was `interest`), and
-  //: Sentinel's column-direction extension joins its siblings —
-  //: re-checked against RULE_NAMES + ANALYTIC_RULE_NAMES,
-  //: seventeenth sweep. Nothing in the catalogue is unmapped.
+  //: Renamed in the merged catalogue (was `interest`).
   'interest-consistency': 'Structural exceptions',
   'typed-over-formula': 'Embedded hardcodes',
   'hardcode-in-formula': 'Embedded hardcodes',
   'external-link': 'Auditability risks',
+  'broken-name': 'Auditability risks',
   volatile: 'Auditability risks',
   'long-formula': 'Auditability risks',
   'hidden-sheet': 'Auditability risks',
