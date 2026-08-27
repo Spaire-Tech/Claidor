@@ -3270,3 +3270,63 @@ evidence allows:**
 
 **I have not modified `corpus_sft_models.py`** — it is not my file, and
 the models it fetches are not what round 4 is missing.
+
+## D5 round 3 — registration: the round D5 said it needed, on the population it named
+
+Frozen before any number is looked at.
+
+**This round was specified by D5 round 2's own write-up**, which said
+the local-rule shape « is measurable and possibly useful **on
+deal-shaped models**, which is the product's actual case, and
+untestable on the regulator corpus, which is not ». Round 2 could not
+run it: the only deal-shaped models this lane held were the Cascade
+fixture (85 typed cells) and a pre-app example (230). Two toys.
+
+**The population, and it is the founder's own choice of market.** The
+eight readable Scottish Futures Trust closed-deal models fetched by
+`scripts/corpus_sft_models.py` — Baldragon, City of Glasgow College,
+Forfar, Inverurie & Foresterhill, **Kelso**, **Levenmouth**,
+Newbattle, **Oban & Campbeltown**. Real models agreed at financial
+close, audited, lent against. The three `.xlsb`/`.xls` files are
+format-blocked by our reader and are **excluded and counted**, never
+quietly dropped.
+
+**A conflict of interest I am naming before it can bite.** These same
+eight models are the population proof's subjects, and the population
+proof is a *cold-run* proof — the engine must not have been tuned on
+them. **D5 round 3 changes no engine code and no chain code**; it reads
+the models through the engine's existing reader and counts structure.
+It is a measurement of the corpus, not a fit to it. If the lead judges
+that even reading them contaminates the cold run, this round is
+discarded and the finding with it — say so and I will drop it without
+argument.
+
+**What is measured, exactly as round 2 measured it on the regulator
+corpus, so the two tables are comparable line for line:**
+
+1. numeric cells, and typed cells (no formula, a value present);
+2. sections the model itself declares, via the engine's own
+   `structure.sections()` — « rows the model totals », from the
+   workbook's `SUM` formulas, never a heuristic of mine;
+3. **typed cells that fall inside a declared section** — the number
+   that was **0 of 22,693** on ED2 and is the whole question;
+4. where that number is not zero: findings that would fire under the
+   three thresholds (`any`, `half`, `all-but-this-one`) at
+   confirmation budgets B = 10, 25, 50, 100, adversarial (greedy worst
+   case) and random (seeded mean of 20) — the identical table.
+
+**The prediction, stated so it can be wrong.** Round 2's structural
+argument was « a block a model *totals* is a block of outputs », and it
+predicted the shape has ground only where inputs and totalled blocks
+coincide. A closed-deal project-finance model is hand-built by a
+modeller, not machine-generated, so I expect **a non-zero and
+substantial** typed-cells-inside-sections count — somewhere between the
+regulator models' 0% and the pre-app example's 68%. **If it is zero
+across all eight, the local-rule shape is dead in the product's actual
+market and I will say so in those words**, and D5 will need the
+input-block rule that does not come from `SUM` — which is Sentinel's
+ground, not mine.
+
+**No kill-criterion, because this round changes no code.** It is a
+measurement, and its only obligation is to report what it finds
+including the case that kills the shape I proposed.
