@@ -90,3 +90,29 @@ be opened by our reader at all** (three `.xlsb`, two `.xls`) — see
 file in three of a real population. When you reach it, the round is
 conversion *plus* a fidelity check on the conversion (a converted
 file is a different file until proven otherwise), not just intake.
+
+## Addendum (27 Aug): Proof 1A is yours to run — after the gate clears
+
+The founder split the population proof in two (`population-proof.md`,
+27 Aug): **1A the analytical proof** on the eleven value-only closed
+deals — runnable now — and **1B the structural proof**, blocked until
+a formula-bearing population exists.
+
+**1A is engine measurement on real files, so it is yours.** Read the
+registration before anything: the conditions are already fixed (engine
+frozen at one commit named in the results, house rules at defaults,
+one file at a time, refusals counted in the denominator, Inverness
+reported separately because it is the only file with formulas), and
+the criteria and the prediction are already written — *do not
+restate or soften them*, just run and report.
+
+Sequence: finish the serious-error mining round and candidate 5
+first if they are mid-flight; 1A does not expire. When you run it,
+the corpus rebuilds with `scripts.corpus_sft_models` (committed) plus
+the founder-supplied files already in `corpus_sft/`. Heavy job,
+alone, as ever.
+
+One caution the registration makes explicit and worth repeating:
+**silence is the expected pass.** These deals closed and were lent
+against. If the analytical checks light up across a clean audited
+model, the first hypothesis is our false alarm, not their defect.
