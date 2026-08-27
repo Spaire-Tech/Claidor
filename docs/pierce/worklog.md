@@ -4673,3 +4673,46 @@ scalars beside their period grids; the private infrastructure models
 that failed the proof do). Two independent confirmations now stand
 behind one fix: this gate, and Scribe's unrelated re-run dropping
 12 → 4 by exactly the adjudicated eight.
+
+---
+
+## 28 August — the twenty-sixth sweep: a pass that refuses to be quoted
+
+**Proof 1A run 2: PASS — and Sentinel wrote the sentence that stops
+anyone, including us, from selling it.** All three criteria now
+clear (5 of 5 findings true or defensible, 0 false alarms, both
+previously-noisy models silent). And the very next paragraph:
+
+> « This run cannot test that claim, because the engine was changed
+> **using these very models' failures** — Kelso and Newbattle are
+> named in the fix's own registration and code comment. The corpus
+> is contaminated as evidence for the original claim, permanently
+> and by design. Anyone quoting « Proof 1A passes » without that
+> sentence is misreporting it. »
+
+The first run's FAIL stands above it, unedited, as taken. Every
+surviving finding is byte-identical in rule, cell and sentence to
+the first run's — checked mechanically, not by eye. Seven of nine
+models are now silent against five before. And the plan's first
+completion proof is **still not met**, because 1B — the structural
+half — still has no corpus.
+
+**The second run also found something its own criteria never asked
+about.** Comparing the two runs' *coverage tallies* rather than
+their findings showed two check rows that quietly stopped being
+examined by the fix. Neither was ever a finding; neither raised an
+abstention. It is written up as a named consequence in the fix's own
+round — found only because the run compared more than the numbers
+the criteria demanded.
+
+Elsewhere: **Scribe** shipped round V (2,653 invented facts gone,
+ED2 and the nils untouched) and **built the D4 confirmed-link
+store** on D2's terms, hours after nine sweeps of waiting — 915
+tests green on its side. It had rebased onto the moved tip, so its
+own log and handoff conflicted with the copies already merged; both
+were taken whole from the lane, because hand-merging a lane's record
+of itself is how a record silently loses a line. **Dynamo** drew
+constrained families legally on h7-fp with an identical rule set.
+**Prism** found that one of its ordered items was already done and
+said so rather than redoing it, and reconciled C3 with C1 on its
+face. 784 tests green at the tip.
