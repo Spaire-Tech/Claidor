@@ -168,7 +168,14 @@ baseline — is one this lane should never repeat.
    models still silent ✓
 3. Engine tests green — 168 across audit, analytics, structure,
    workbook and this round's three ✓
-4. Golden-master gate: run as a tripwire, result recorded below ✓
+4. Golden-master gate: **clean**, all 27 files, finding for finding
+   ✓ — `corpus_gate sweep` over the full AU-UK corpus at `eb09e76a`,
+   diffed against `corpus-golden-master.json`: « gate clean: every
+   file reports identically, finding for finding ». The tripwire did
+   not trip: nothing in `audit()` moved. This is **not** certification
+   of the change — see « What certifies this » above — and it is
+   recorded here only as evidence that the edit stayed inside the
+   analytical layer it was aimed at.
 
 **On the baseline:** `corpus-golden-master.json` is untouched, and
 this round is the reason to say plainly why — it holds no analytical
