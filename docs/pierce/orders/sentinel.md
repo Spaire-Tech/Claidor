@@ -76,3 +76,17 @@ measured accurate enough per dimension, per the plan's condition —
 monthly-into-annual, percent-as-decimal, currency mixes, thousands
 vs millions, each through the normal loop. Nothing changes in your
 queue now; this is so no one else wires a finding.
+
+## Addendum (27 Aug, nineteenth sweep)
+
+A4 adopted — the audit states its own denominator — and the lead's
+independent gate is running. Next: the serious-error mining round
+(1,206 uncovered cells, the Tasi lead), then candidate 5's close.
+
+**One new thing for your queue, priced by the corpus:** of sixteen
+published models in a real infrastructure population, **five cannot
+be opened by our reader at all** (three `.xlsb`, two `.xls`) — see
+`population-proof.md`. A6 is no longer « legacy nicety »: it is one
+file in three of a real population. When you reach it, the round is
+conversion *plus* a fidelity check on the conversion (a converted
+file is a different file until proven otherwise), not just intake.

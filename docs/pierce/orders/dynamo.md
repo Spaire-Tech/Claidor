@@ -31,3 +31,25 @@ gated. This is a promotion of the blocker, not a detour.
 3. **Then B5 round 2** with automatic typing, coverage reported, and
    only then a rule set that may be called the model's.
 4. Standing: B3 design-only; B4's widening resumes after E2.
+
+## Addendum (27 Aug, nineteenth sweep): E2 measured — the round that matters next
+
+E2 measured blind on 3,796 author-labelled rows is the strongest
+foundation any lane has laid this week, and B5 round 2 now types
+from it rather than by hand. Next, in order:
+
+1. **Report B5 round 2's coverage number first**, beside its rule
+   set, per your own adopted practice — a rule set without its
+   coverage is not a result. If coverage is still low, say so and
+   name what the inference could not type.
+2. **The units corpus just changed shape.** The population-proof
+   corpus (`corpus_sft/`) is **value-only** — sixteen published
+   closed-deal models, one with a live calculation layer
+   (`inverness_college_model.xlsm`, 20k formulas); see
+   `population-proof.md`. For E2 that is *good* news: value-only
+   files still carry labels, number formats and column headers, so
+   they are a large, free, unseen test set for the inference's
+   label-and-format half — and a hostile one, because nothing can be
+   propagated through formulas that are not there. Register it as an
+   E2 generalisation round if you judge it worth the time; the
+   propagation half stays measured on formula-bearing files.
