@@ -2058,6 +2058,45 @@ class TestTheSourcePage:
 
 
 @pytest.mark.asyncio
+class TestTheDealsList:
+    """« Last checked » must mean what the column says.
+
+    A deal with no deck has nothing to reconcile, so its tie-out never
+    runs — and the list read « Not checked yet » beside the findings
+    its own audit had just produced. Most of the real corpus is exactly
+    that shape: a model, no deliverables.
+    """
+
+    @pytest.mark.auth
+    async def test_an_audited_deal_is_not_called_unchecked(
+        self,
+        client: AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        deal = await _deal_for(session, save_fixture, user)
+        await tieout.ingest(
+            session,
+            dossier_id=deal.id,
+            kind=ArtifactKind.model,
+            filename="cascade_model.xlsx",
+            payload=MODEL.read_bytes(),
+            user_id=user.id,
+        )
+        await session.flush()
+        run = await tieout.run_audit(session, dossier_id=deal.id, user_id=user.id)
+        await session.flush()
+        assert run.finished_at is not None
+
+        response = await client.get("/v1/tieout/deals")
+        assert response.status_code == 200
+        row = next(one for one in response.json() if one["id"] == str(deal.id))
+        #: The audit ran and finished; the column says « Last checked ».
+        assert row["checked_at"] is not None
+
+
+@pytest.mark.asyncio
 class TestWhatIntakeWillNotRead:
     """The refusal a person meets when the format is not ours.
 

@@ -568,8 +568,17 @@ class DealListItem(Schema):
     #: never a findings count, because one check can produce forty
     #: findings and the row would read like forty problems.
     failing_checks: int = 0
-    #: When this deal was last reconciled. Null: never.
+    #: When this deal was last **checked** — a tie-out or an audit,
+    #: whichever finished last. Null: neither has ever run. It was the
+    #: tie-out alone until a model-only deal (no deck to reconcile
+    #: against) was seen reading « Not checked yet » beside eight
+    #: findings of its own.
     checked_at: datetime | None = None
+    #: The model this row names is a values-pasted copy — the published
+    #: form most real models arrive in — so the construction rules read
+    #: almost none of it. « Nothing failing » on such a row is true and
+    #: misleading at once, and the row says so in two words.
+    values_only: bool = False
     #: When this person last opened the deal. Null: never. The two counts
     #: beneath derive from it — what arrived and what was found since,
     #: cleared by opening the deal. Zero for a first-time reader on

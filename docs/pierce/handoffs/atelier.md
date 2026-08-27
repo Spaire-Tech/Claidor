@@ -133,6 +133,13 @@ document panel, and the report. Keep them in step; the Overview chip
 itself still reads « Nothing failing » in green, a deliberate choice
 left to the founder.
 
+**The deals list dates a row by the last *completed* check of
+either kind** — it used to use the tie-out alone, so a model-only
+deal (most of the corpus) read « Not checked yet » beside its own
+findings and could never go stale. A failed run carries a finish time
+but is not a check. The row also says « Nothing failing · values
+only » where that applies — the fourth surface in the honesty thread.
+
 **G2 — the five questions: measurable only in part.** Chat cannot
 run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503. What was
 measured is the tool surface: 1, 2 and 4 have their material

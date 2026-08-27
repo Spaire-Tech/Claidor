@@ -1090,3 +1090,45 @@ Overview, the document panel, the report — which is the point: a
 person can arrive anywhere and not be misled. Evidence:
 `logs/atelier/overview-values-only.png`. Route suite **85 passed**;
 tsc, eslint and prettier clean.
+
+## 28 August 2026 — the list said « Not checked yet » beside eight findings
+
+Orders unchanged (seventh sweep). The honesty thread was complete on
+three surfaces, so I went to the two I had never read against real
+data. The **deals list** — the screen before any deal — was wrong in
+a way no fixture could show.
+
+**Kelso's row read « Last checked: Not checked yet » and « 8
+findings » side by side.** Its own schema says why that matters:
+« `checked_at` is the field that keeps the list honest … no open
+findings on a deal nobody checked reads exactly like no open findings
+on a deal checked this morning, and the whole product turns on those
+two never looking the same. » The field was fed by the **tie-out
+alone**, and a model-only deal has no deck to reconcile against — so
+it never ran, and the row said « never checked » forever. Most of the
+real corpus is exactly that shape.
+
+The same line fed staleness, so a model-only deal could never go
+stale either, however many versions arrived after its audit. One
+correction repaired both, and a second went with it: **a failed run
+is not a check.** It carries a finishing time but checked nothing, so
+it must not date the row. The row is now dated by the last run of
+either kind that actually completed; where the newest run of a kind
+failed over an older one that succeeded, it under-claims rather than
+over-claims, which is the right direction to be wrong.
+
+Proven on the real deals: Kelso « Today 18:37 · 8 findings »,
+Levenmouth « Today 16:53 », the never-checked Sweep deals still null
+— and a model-only deal now goes **stale: true** when a version
+arrives after its audit, which was impossible before. One route test
+(`TestTheDealsList`); suite **86 passed**.
+
+**And the fourth arrival point.** Levenmouth's row said « Nothing
+failing » with nothing to say it is a values-pasted copy — the same
+flattery I removed from the report, the panel and the Overview. The
+row is a triage line, so it gets two words: **« Nothing failing ·
+values only »**, carried on a new `values_only` field the endpoint
+reads off the audit's own record. The Overview carries the rest.
+
+Evidence: `logs/atelier/deals-list-checked.png`. ruff, mypy, tsc and
+prettier clean.
