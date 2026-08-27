@@ -3119,3 +3119,123 @@ predicted.
 
 The only thing between this track and « complete » is tier 1, and
 the only thing between tier 1 and being built is the dependency line.
+
+## Tier 1, part A — the boundary without the solver (REGISTERED BEFORE RESULTS)
+
+Tip `cacd60f2`, twenty-seventh sweep. `z3-solver` still absent, two
+sweeps after the orders asked for the tier. Orders otherwise
+unchanged; item 3 is done and reported back.
+
+**What I can build without breaking my own registration.** The
+registration binds me on one thing only — *no code imports z3 before
+the dependency lands*. It does not bind the half of tier 1 that has
+no solver in it, and the orders name that half explicitly: « the tier
+ladder's **honest refusal boundary** ». Deciding whether a formula
+pair is inside the fragment is pure syntax. So:
+
+**The eligibility classifier** (`watch/fragment.py`): given a
+formula, does it parse whole into the registered grammar — literals,
+`+ - * / ^` with literal integer exponent, comparisons, `AND OR
+NOT`, `IF`, `MIN MAX ABS`, `SUM`/`SUMPRODUCT` over concrete ranges,
+and cell references — or does it use a construct the fragment does
+not reach? Refusals carry the construct's **name**, from the
+registration's own list: lookups and data-dependent selection, text
+and date functions, whole-column or differing-extent aggregates,
+volatile and environment functions, array formulas, and « the reader
+could not parse this ».
+
+**Why this is worth doing while blocked, and not busywork.** The
+registration requires « the coverage denominator — how many suspects
+tier 1 was even eligible to judge — reported beside every catch
+number ». That denominator is measurable *now*, and it is the number
+that tells the lead whether the dependency buys anything: if a
+regulatory model is 5% inside the fragment, tier 1 is a footnote; if
+it is 60%, it is the crown the plan calls it. **I would rather hand
+over that number than an argument.**
+
+**The measurement**: every formula cell of ED2 v2 31 July (20,623 of
+them), classified; plus the 1,516 cells that reached tier 1's rung on
+the registered pair.
+
+**Predictions.**
+
+1. **Under 35%** of the 20,623 formula cells are inside the fragment.
+2. The commonest named refusal is a **lookup-family** construct
+   (`INDEX MATCH VLOOKUP CHOOSE OFFSET`).
+3. **All 1,516** cells at tier 1's rung on this pair have
+   byte-identical formulas on both sides — so tier 1 would prove them
+   equivalent trivially and learn nothing. Tier 1's value is on
+   *rewrites*, and **this revision contains none**; the tier's real
+   measurement therefore needs the planted-rewrite harness, which
+   needs the solver. If that prediction holds it is an argument for
+   the dependency and against pretending this pair could ever
+   exercise the tier.
+
+## Tier 1, part A — results: the fragment reaches three quarters of the model
+
+```
+ED2 v2 31 July, every formula cell            20,623
+   inside tier 1's fragment                   15,509   75.2%
+   refused: lookup_or_selection                2,752
+            text_or_date                       1,465
+            error_handling (IFERROR family)      839
+            conditional_aggregate                 39
+            unlisted_function (ROUND, …)          19
+```
+
+**Prediction 1 — « under 35% » — failed, and badly: it is 75.2%.**
+I expected a regulatory model to be mostly lookups and text; it is
+mostly arithmetic. That is the number the dependency question turns
+on, and it argues for the line rather than against it: **tier 1's
+fragment reaches three quarters of a real model's formula cells.**
+
+**Prediction 2 — the commonest refusal is a lookup — held**, model
+wide (2,752) and at the rung (748).
+
+```
+the pair's tier-1 rung                         1,516
+   inside the fragment                           477   31.5%
+   identical formulas on both sides             1,516   100%
+```
+
+**Prediction 3 held exactly: all 1,516.** Every cell that reaches
+tier 1's rung on this pair carries **byte-identical formulas on both
+sides** — so tier 1 would prove them equivalent trivially and learn
+nothing. This revision rewrote nothing, so it cannot exercise the
+tier at all. **The tier's real measurement needs the planted-rewrite
+harness, and that needs the solver**; there is no way to fake it on
+this pair, and I am not going to dress a trivial proof as a result.
+
+**A structural finding worth more than either prediction.**
+Eligibility at the rung (31.5%) is **less than half** the model-wide
+rate (75.2%). The reason is the ladder itself: each tier inherits
+what the tier above could not handle, and that residue is
+systematically harder — tier 0's silence is dominated by
+text-result formulas, which are exactly the lookups and text
+functions tier 1 refuses. **A tier's coverage on the whole model is
+not its coverage on the cells that actually reach it**, and every
+coverage number this lane publishes now says which one it is.
+
+**A defect in my own classifier, caught by the corpus and not by the
+tests.** The first run refused 100 cells as `unlisted_function: AND`
+— against a fragment whose registration names « comparisons and
+`AND OR NOT`, boolean-valued ». My `FRAGMENT_FUNCTIONS` omitted the
+three booleans. Fixed, re-run, and the remaining 19 unlisted are
+real (`ROUND` and friends). The constructed tests all passed while
+the classifier disagreed with its own registration; only the corpus
+saw it. Recorded at the constant.
+
+A second defect the tests *did* catch first: the first draft stripped
+the leading `=` before tokenizing, and openpyxl then returns the
+whole formula as one literal — so `INDEX(…)` came back **eligible**.
+It never reached a corpus number.
+
+### What this changes for the dependency request
+
+The ask is unchanged and now has a number behind it:
+
+> `z3-solver` in `server/pyproject.toml`. On the corpus we have,
+> tier 1's fragment covers **75.2%** of a real regulatory model's
+> formula cells and **31.5%** of the cells that reach its rung on an
+> adjacent revision. Nothing in this lane imports it until the line
+> exists.

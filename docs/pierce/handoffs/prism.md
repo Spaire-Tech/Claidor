@@ -28,6 +28,7 @@ answering anything of record; register before results, always.
 | C4 tier 0 (fingerprints) | `watch/trace.py`, `scripts/watch_stealth.py` | Soundness gate clean after round 2's observability fix; **93.2% of a real adjacent revision proved at hash cost in ~2 min** |
 | C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | Two hosts, **8 of 8 eligible on both, zero refusals, control silent**; `tail_hardcode` and `stealth_literal` 5/5 everywhere; the selector sweep closed the dead-branch case |
 | C5 deck delta | `watch/document.py`, `scripts/watch_deck.py` | Measured on the Cascade deck: a planted input move breaks **8 figures, each attributed to the model change underneath it**, while the deck's **8 pre-existing drifts stay off the revision's account** |
+| Tier 1 part A (boundary, no solver) | `watch/fragment.py`, `scripts/watch_fragment.py` | **75.2%** of ED2's formula cells are inside the registered fragment; **31.5%** of the tier-1 rung. All 1,516 rung cells have identical formulas both sides, so this pair cannot exercise tier 1 at all — its value is on rewrites |
 | The tier table | `docs/pierce/tier-table.md` | The single published statement the orders asked for: each rung's claim at its exact strength, measured cost, closed refusal vocabulary, and the number it produced on the registered pair. Every figure from a run artifact |
 | C3 on a known revision | `scripts/watch_delta.py` | Names the revision's substance in one line — `filled_cell: Monthly Inflation rows 284–295 (24 cells)` — and now reconciles with C1 **on the face of the report**: 7+7 = C1's 14 content changes, 24 = C1's 24 added |
 | C4 tier 2, what the revision *is* | `scratchpad` probes + `domain` mode | The frontier of divergence is `AVERAGEIFS` over whole `Monthly Inflation` columns; the revision **replaces twelve months of forecast with published outturn** (`H284:H295`, new-version-only). Seven `Finance&Tax` cells are byte-identical in both files (stored **0**) and compute differently once exercised — **a difference no cell diff can see** |
@@ -37,8 +38,8 @@ answering anything of record; register before results, always.
 | C4 ladder (one verdict per cell) | `watch/tiers.py`, `scripts/watch_tiers.py` | ED2 v2 14→31 July: **93.19% proved · 3.11% changed · 3.69% refused, all five gates clean**, and the count reconciles with C1's raw diff to a single named cell (`Cover!G4`) |
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
 
-Tests: `test_watch_{diff,align,plant,delta,trace,stealth,document,tiers}.py`,
-80 green.
+Tests: `test_watch_{diff,align,plant,delta,trace,stealth,document,
+tiers,fragment}.py`, **102 green**.
 (Other lanes' tieout tests need the conftest and fail to collect here;
 name your five files explicitly.)
 
@@ -62,7 +63,12 @@ a report.
 
 0. **Tier 1 is the only thing between Track C and complete**, and it
    needs one line: `z3-solver` in `server/pyproject.toml`, the
-   lead's to add. The orders (twenty-fifth sweep) now ask for the
+   lead's to add. **The ask now carries a number**: tier 1's
+   fragment covers **75.2%** of ED2's 20,623 formula cells
+   (`watch/fragment.py`, no solver involved) and 31.5% of the cells
+   that reach its rung. Part A — the classifier and the refusal
+   boundary — is built and measured; part B is the solver and the
+   planted-rewrite harness. The orders (twenty-fifth sweep) now ask for the
    tier; the registration forbids importing z3 before that line
    exists. Re-raise it every turn until it lands, and do not
    silently start.
