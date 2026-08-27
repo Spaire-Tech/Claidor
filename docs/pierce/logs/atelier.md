@@ -981,3 +981,64 @@ founder seeing: `logs/atelier/panel-values-only.png`.
 
 Route suite **85 passed**; tsc and prettier clean; the panel's lint
 warnings are its own pre-existing idiom, unchanged in count.
+
+## 28 August 2026 — the report on a model that speaks
+
+Proof 1A failed honestly (twentieth sweep) and, in failing, produced
+something my lane had never had: **a real model with analytical
+findings**. Every report I had read was of a fixture, a deck deal, or
+a silent corpus model. Kelso — 470,594 cells, 814 formulas, eight
+findings, two abstentions — exercises the statement-finding fields
+(`figure`, `period`, the model's own check-row sentence) that no
+fixture produces.
+
+**Said plainly, because it matters more than the screen work:** the
+seven « own check rows are firing » findings this report displays are
+the class Sentinel adjudicated as **false alarms** — a covenant
+threshold parked in a scalar column read as a failing period, traced
+to one line, registered as its own round and deliberately not fixed
+during the cold run. I am not presenting them as defects. What I used
+them for is what the report *does* with real analytical findings.
+
+Three defects, all mine, all only reachable with this data:
+
+1. **The verdict said nothing about blindness when the checks found
+   something.** Last turn I made « nothing failing » qualify itself on
+   a values-only copy — but I gated it on *finding nothing*. Kelso is
+   the other half: 814 formulas in 470,594 cells, seven material
+   findings, and the verdict page never said the construction rules
+   had seen almost none of the file. That is worse than the silent
+   case, because a reader who is handed findings now trusts the
+   check. The verdict now carries it either way: « This copy carries
+   values only — 814 of 470,594 cells hold a formula — so the rules
+   that read how the model is built saw almost none of it. What the
+   value-reading checks did find: seven structural exceptions. »
+2. **A headline that is a clause cannot be pluralised.** These
+   findings' headline is a sentence — « The model's own check rows
+   are firing » — and my grouping appended an « s »: « seven the
+   model's own check rows are firings ». A clause is now grouped by
+   its family instead, which is always a noun phrase, and the
+   sentence itself stays overleaf per finding.
+3. **The scan line repeated the sentence beneath it.** « THE MODEL'S
+   OWN CHECK ROWS ARE FIRING » over « The model's own check rows are
+   firing at ReportRatiosSA!E356 » is the same words twice; the scan
+   line now stands down when it is only an echo.
+
+Also, a typographic slip that had been there since the grouped
+verdict shipped: the body is its own paragraph under the lead, so it
+must start a sentence — « two inconsistent formulas … » had been
+opening lowercase under a full stop.
+
+**What the statement fields look like when they render** (they read
+well, and this is the first time anyone has seen them):
+
+> The model's own check rows are firing at ReportRatiosSA!E356
+> · ReportRatiosSA!E356 · 1.1 on the model's own « Check: Look
+> forward ADSCR > distribution lockup level » row, built to read zero
+
+All four report cases re-read after the fixes — blind-and-silent
+(Levenmouth), blind-with-findings (Kelso), formulas-with-findings
+(the preapp fixture), deck-and-stale (cascade). Evidence:
+`logs/atelier/report-corpus-verdict.png` and
+`report-corpus-findings.png`. Route suite **85 passed**; tsc, eslint
+and prettier clean.

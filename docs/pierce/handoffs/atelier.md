@@ -119,6 +119,13 @@ count: invisible on the fixture, where named == cells, obvious on a
 real model. Prefer a corpus model over a fixture when checking any
 count a screen prints.
 
+**A values-only copy is declared whether or not the checks found
+something** — the « found nothing » half shipped first and the
+« found something » half is the one that matters more, because a
+reader handed findings trusts the check. Corpus models with
+analytical findings (Kelso) are the only way to see the
+statement-finding fields render at all; fixtures never produce them.
+
 **G2 — the five questions: measurable only in part.** Chat cannot
 run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503. What was
 measured is the tool surface: 1, 2 and 4 have their material
