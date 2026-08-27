@@ -130,8 +130,14 @@ class CellDelta:
     ref: str
     #: « added » | « removed » | « changed ».
     kind: str
-    #: For « changed »: which axes moved. A retyped literal moves both.
-    formula_changed: bool = False
+    #: For « changed »: which axes moved. A retyped literal moves
+    #: both — which is why this axis is named for *content* and not
+    #: for formulas. It was `formula_changed` until the pair oracle's
+    #: round, where the name cost a prediction: fourteen « formula
+    #: changes » on the ED2 pair turned out to be fourteen retyped
+    #: inflation inputs, and the count reads as a logic change to
+    #: anyone who does not open the cells.
+    content_changed: bool = False
     value_changed: bool = False
     before_content: str | None = None
     after_content: str | None = None
@@ -159,13 +165,13 @@ class VersionDiff:
             "added": 0,
             "removed": 0,
             "changed": 0,
-            "formula_changed": 0,
+            "content_changed": 0,
             "value_changed": 0,
         }
         for delta in self.deltas:
             counts[delta.kind] += 1
-            if delta.formula_changed:
-                counts["formula_changed"] += 1
+            if delta.content_changed:
+                counts["content_changed"] += 1
             if delta.value_changed:
                 counts["value_changed"] += 1
         counts["unchanged"] = self.unchanged
@@ -211,7 +217,7 @@ def diff_raw(
                 CellDelta(
                     ref,
                     "changed",
-                    formula_changed=before[0] != after[0],
+                    content_changed=before[0] != after[0],
                     value_changed=before[1] != after[1],
                     before_content=before[0],
                     after_content=after[0],

@@ -132,6 +132,11 @@ a report.
 - **The UNO driver reads about half the engine's cells** (21,007 of
   41,049 on ED2 v2). Anything that concludes from a recalculation
   must say which cells it could see.
+- **An openpyxl workbook with images can be saved once.** The
+  handles to the embedded images are closed by the first `save()`,
+  and the second dies inside PIL with « I/O operation on closed
+  file ». Reload the workbook for every write; it cost the pair
+  oracle its first attempt.
 - **openpyxl's save drops every cached value.** Any planted file
   handed to something that reads *values* (the tie-out, the
   linker, the audit's value rules) will mislead you: C4 round 1

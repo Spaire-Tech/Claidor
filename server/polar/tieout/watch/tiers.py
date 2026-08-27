@@ -79,6 +79,10 @@ REFUSAL_VOLATILE = "volatile"
 REFUSAL_NO_INPUT = "no_perturbable_input"
 REFUSAL_NOT_OFFERED = "not_offered_to_tier2"
 REFUSAL_UNAVAILABLE = "tier2_unavailable"
+#: The recalculation did not return the cell on one side or both.
+#: Distinct from `not_offered_to_tier2` (the oracle never ran) and
+#: from `no_perturbable_input` (it ran and nothing moved).
+REFUSAL_NOT_READ = "not_read_by_driver"
 
 REFUSALS = frozenset(
     {
@@ -87,6 +91,7 @@ REFUSALS = frozenset(
         REFUSAL_NO_INPUT,
         REFUSAL_NOT_OFFERED,
         REFUSAL_UNAVAILABLE,
+        REFUSAL_NOT_READ,
     }
 )
 
@@ -174,6 +179,24 @@ class Ladder:
             if item.tier0_blockage
         )
         return dict(sorted(tally.items(), key=lambda pair: -pair[1]))
+
+    @property
+    def verdict_by_blockage(self) -> dict[str, dict[str, int]]:
+        """Verdict against the reason tier 0 could not speak. It is
+        the table that says *which* suspects the lower rungs could
+        actually answer — « of the cells whose inputs moved, how many
+        were testable » is not derivable from the totals."""
+        table: dict[str, dict[str, int]] = {}
+        for item in self.verdicts.values():
+            if not item.tier0_blockage:
+                continue
+            row = table.setdefault(item.tier0_blockage, {})
+            key = item.reason or item.verdict
+            row[key] = row.get(key, 0) + 1
+        return {
+            blockage: dict(sorted(row.items(), key=lambda pair: -pair[1]))
+            for blockage, row in sorted(table.items())
+        }
 
     @property
     def reason_census(self) -> dict[str, int]:

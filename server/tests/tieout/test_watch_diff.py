@@ -71,7 +71,7 @@ def test_a_retyped_literal_moves_both_axes(pair: tuple[str, str]) -> None:
     diff = diff_paths(*pair)
     by_ref = {delta.ref: delta for delta in diff.deltas}
     b1 = by_ref["Model!B1"]
-    assert b1.formula_changed
+    assert b1.content_changed
     assert b1.value_changed
     assert b1.before_content == "n:100"
     assert b1.after_content == "n:120"
@@ -86,7 +86,7 @@ def test_a_rewritten_formula_with_no_cached_value_is_a_content_change(
     diff = diff_paths(*pair)
     by_ref = {delta.ref: delta for delta in diff.deltas}
     b2 = by_ref["Model!B2"]
-    assert b2.formula_changed
+    assert b2.content_changed
     assert b2.before_content == "f:=B1*2"
     assert b2.after_content == "f:=B1*3"
 
@@ -119,7 +119,7 @@ def test_the_two_instruments_agree_on_the_synthetic_pair(
     changed = [d for d in diff.deltas if d.kind == "changed"]
     assert hand["added"] == diff.refs("added")
     assert hand["removed"] == diff.refs("removed")
-    assert hand["formula_changed"] == [d.ref for d in changed if d.formula_changed]
+    assert hand["content_changed"] == [d.ref for d in changed if d.content_changed]
     assert hand["value_changed"] == [d.ref for d in changed if d.value_changed]
     assert len(hand["unchanged"]) == diff.summary["unchanged"]
 
