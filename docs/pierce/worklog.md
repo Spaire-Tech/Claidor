@@ -4498,3 +4498,49 @@ the last one was fixed: assertions now read the engine's own kind
 order instead of copying it, so the Watch can grow without breaking
 the product's tests. Two agent-package tools would close two of the
 five questions — routed to the lead, not written by the wrong lane.
+
+---
+
+## 28 August — the twentieth sweep: the first completion proof runs, and fails honestly
+
+**Proof 1A ran and FAILED, on all three criteria, and it is the most
+valuable failure the project has had.** Sentinel ran the analytical
+proof on ten of the eleven closed-deal models, engine frozen, house
+rules at defaults, and adjudicated all thirteen findings at the
+cells. Five of nine value-only models were **completely silent** —
+the registration's predicted pass, and it held. Then: eight false
+alarms across Kelso and Newbattle, all one class, traced to one
+line — the own-checks pass collects every numeric cell of a
+check-labelled row and never asks the structure which columns are
+periods, so a covenant *threshold* parked in a scalar column
+(1.15 breach, 1.1 lockup) reads as a failing period. The remaining
+five findings are true breaks or defensible judgement calls. Per the
+cold-run conditions the defect was **not fixed during the run**; it
+becomes its own registered round and these numbers stand.
+
+The criteria were not re-cut afterwards, and that is the point:
+strike the eight and the rest pass, but the eight are exactly what
+the proof existed to find. What it bought is precise: a false-alarm
+class the entire regulator corpus never surfaced, because regulator
+models do not park scalars beside their period grid — which is the
+transfer question the proof asks, answered « not yet, and here is
+why, on one line of code ».
+
+Two disciplines worth recording. The container restart wiped the
+founder-supplied half of the corpus mid-proof; Sentinel recovered
+two files from the public bucket and **verified them byte-identical
+to the hashes in the registration** before using them, and reported
+the third (`hwcbsb`, unrecoverable, no deal name on record) as
+**unavailable** rather than as a refusal or a silent drop. And the
+scope sentence is carried everywhere the number goes: 1A is not
+evidence about the structural checks, which need formulas these
+files do not have.
+
+Elsewhere: **Dynamo** ran E2's generalisation round on the
+value-only corpus and reported it **unmeasurable on accuracy** with
+two failures named — the honest verdict where a weaker one was
+available. **Prism** published a coverage table stating what
+« 0 diverged » does and does not cover. **Scribe** returned five
+items to the lead. **Atelier** put the values-only truth on the
+screen where a person meets the file, so nobody is told a stripped
+model is a clean one. 756 tests green.
