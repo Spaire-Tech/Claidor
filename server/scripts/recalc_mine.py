@@ -156,7 +156,7 @@ def main() -> int:
     constants = {
         ref: float(cell.value)
         for ref, cell in cells.items()
-        if cell.formula is None and isinstance(cell.value, (int, float))
+        if cell.formula is None and cell.value is not None
     }
     typed = typing(constants)
     watched = sorted(
