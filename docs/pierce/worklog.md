@@ -4582,3 +4582,40 @@ meets it, not 900 lines later, which is a documentation discipline
 worth copying. **Atelier** made the report declare its blindness
 *even when findings exist*, so a page full of findings can still say
 what it could not see. 756 tests green.
+
+---
+
+## 28 August — the twenty-second sweep: predictions failing in public
+
+Four merged (Sentinel still held, its own-check fix awaiting its
+verdict and baseline); 760 tests green.
+
+**Dynamo published a scorecard against its own registered
+predictions and two of five failed** — 0 of 26 rate cells recovered
+where 24 were predicted, coverage 0 of 193 where a clear
+improvement was predicted. Neither was hidden or softened: « the
+design was wrong in a way the machine showed me, and the amendment
+was wrong about how much it would buy. What the round bought is a
+precisely named blocker instead of a vague one, which is worth more
+than the coverage number I predicted and did not get. » It also
+found a transposed year column as the round's one new systematic
+problem, exactly as it had predicted it would find one.
+
+**Prism turned its instrument on itself again.** Seven divergences
+its tier-2 round could not explain stay **open and unexplained**
+rather than being attributed to anything convenient — and the
+leading suspect it registered next is *its own aligner*: if a
+perturbed literal is paired to the wrong old cell, the two files
+receive the same number in different places and disagree exactly as
+those seven do. The test is registered with two numeric predictions
+before it runs, and it is explicitly a test that could indict C2 —
+its own completed, celebrated work — rather than the revision.
+**Scribe** priced a cheap decision honestly, including what getting
+there cost. **Atelier** made the landing screen say what it could
+not see, matching the report.
+
+The sweep's shape is worth naming: this is what it looks like when a
+team is not marking its own homework — a lane publishing its failed
+predictions, a lane nominating its own best work as the prime
+suspect, and a lane whose fix for the failed proof waits behind the
+same gate as everyone else's.
