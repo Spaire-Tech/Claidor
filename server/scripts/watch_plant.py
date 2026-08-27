@@ -165,6 +165,12 @@ def _rewrite_sheet(
                 )
 
 
+class _NoTarget(Exception):
+    """This sheet cannot host this class — a recorded refusal, never a
+    silent substitution and never a wrap onto a row the class was
+    written to avoid."""
+
+
 @dataclass
 class Planted:
     """Ground truth for one instance."""
@@ -176,17 +182,28 @@ class Planted:
 
 
 def _plant(
-    base: Path, sheet_name: str, kind: str, at_row: int, at_column: int, out: Path
+    base: Path,
+    sheet_name: str,
+    kind: str,
+    at_row: int,
+    at_column: int,
+    out: Path,
+    labelled_rows: frozenset[int] | None = None,
 ) -> Planted:
     book = openpyxl.load_workbook(base)
-    planted = _apply(book, sheet_name, kind, at_row, at_column)
+    planted = _apply(book, sheet_name, kind, at_row, at_column, labelled_rows)
     book.save(out)
     _reinject_values(base, out, sheet_name, planted)
     return planted
 
 
 def _apply(
-    book: openpyxl.Workbook, sheet_name: str, kind: str, at_row: int, at_column: int
+    book: openpyxl.Workbook,
+    sheet_name: str,
+    kind: str,
+    at_row: int,
+    at_column: int,
+    labelled_rows: frozenset[int] | None = None,
 ) -> Planted:
     """One declared edit applied to an open workbook — no save, so a
     caller (the stealth harness) can stack a second edit in the same
@@ -260,16 +277,19 @@ def _apply(
         #: as delete + insert. Now it takes its own mark, and a row
         #: the labeller can name, which is what C2's round-3
         #: diagnosis says should rescue the match.
-        labelled = {
-            cell.row
-            for row in sheet.iter_rows()
-            for cell in row
-            if isinstance(cell.value, str)
-            and cell.value.strip()
-            and not cell.value.startswith("=")
-        }
+        #: Round C: the labelled rows come from the **engine's own**
+        #: labeller through the frozen reader surface. The string
+        #: proxy this replaces called a titled row 1 « labelled »,
+        #: which the labeller does not — so on a sheet with no
+        #: labelled formula row after the mark, the scan wrapped back
+        #: onto the very row the fix was written to avoid.
+        if labelled_rows is None:
+            raise _NoTarget(
+                "rewrite_formula needs the engine's labelled rows; none were supplied"
+            )
+        labelled = labelled_rows
         done = False
-        for start in (max(at_row, 1), 1):
+        for start in (max(at_row, 1),):
             if done:
                 break
             for row in sheet.iter_rows(min_row=start):
@@ -282,7 +302,7 @@ def _apply(
                         cell.value = "=SUM(" + formula[1:] + ",0)"
                         done = True
         if not done:
-            raise SystemExit("no formula on a labelled row anywhere on the sheet")
+            raise _NoTarget(f"no formula on a labelled row at or after row {at_row}")
 
     return planted
 
@@ -486,11 +506,19 @@ def main() -> int:
 
     row_indices = [line.index for line in base_grid.rows]
     column_indices = [line.index for line in base_grid.columns]
+    #: The engine's own labels, read once — a row the labeller can
+    #: name, which is what the registration asked for.
+    labelled_rows = frozenset(
+        cell.row
+        for cell in base_book.cells.values()
+        if cell.sheet == sheet_name and (cell.row_label or "").strip()
+    )
 
     def quartiles(seq: list[int]) -> list[int]:
         return sorted({seq[len(seq) // 4], seq[len(seq) // 2], seq[3 * len(seq) // 4]})
 
     results: list[dict[str, object]] = []
+    refusals: list[dict[str, object]] = []
     started = time.monotonic()
     with tempfile.TemporaryDirectory() as scratch:
         for kind in CLASSES:
@@ -503,9 +531,22 @@ def main() -> int:
                 at_row = position if "column" not in kind else row_indices[0]
                 at_column = position if "column" in kind else column_indices[0]
                 target = Path(scratch) / f"{kind}_{position}.xlsx"
-                planted = _plant(
-                    Path(base_path), sheet_name, kind, at_row, at_column, target
-                )
+                try:
+                    planted = _plant(
+                        Path(base_path),
+                        sheet_name,
+                        kind,
+                        at_row,
+                        at_column,
+                        target,
+                        labelled_rows,
+                    )
+                except _NoTarget as absent:
+                    refusals.append(
+                        {"kind": kind, "position": position, "refused": str(absent)}
+                    )
+                    print(f"[refused] {kind} @ {position}  {absent}")
+                    continue
                 planted_book = read_workbook(str(target))
                 planted_grid = sheet_grids(planted_book)[sheet_name]
                 verdict = _judge(base_grid, planted_grid, planted)
@@ -535,6 +576,7 @@ def main() -> int:
         "by_class": by_class,
         "exact_total": sum(1 for v in results if v["exact"]),
         "instances_total": len(results),
+        "refusals": refusals,
         "instances": results,
     }
     Path(out_path).write_text(json.dumps(payload, indent=1))
