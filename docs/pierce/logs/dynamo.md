@@ -1821,3 +1821,79 @@ conclusion when more of its terms arrive. That went to 38 of 40.
 
 Next, per orders item 3: B5 round 2 with typing driven by E2's
 `kind`, coverage reported beside the rule set.
+
+---
+
+## B5 round 2 — registration, before the machine is touched
+
+*28 Aug, orders item 3. Nothing below is a result. The typing map,
+the coverage threshold and the predictions are committed first, and
+the numbers land in the entry after this one.*
+
+Round 1b's finding was that a rule set is an artifact of which
+inputs were allowed to move, and that hand-typing reached **10 of
+193 watched cells** on the H7 pair and is not attemptable on a model
+with 21,638 constants. E2 exists to remove that constraint. This
+round replaces the hand-written `H7_MONEY_ROWS`/`H7_RATE_ROWS`
+tables with typing driven by inference.
+
+### The typing map
+
+E2's vocabulary is not B5's, so the translation is written down
+here rather than buried in the runner. `b5_type` decides first,
+`kind` decides what is left:
+
+| E2 says | B5 perturbs it as |
+|---|---|
+| `b5_type=money` | `MONEY` — multiplicative band |
+| `b5_type=rate` | `RATE` — its own band, never a money factor |
+| `b5_type=date`, or `kind=categorical` with date evidence | `DATE` — **held** |
+| `kind=categorical`, ≤ 4 distinct values in the row | `SELECTOR` — **stepped through the row's own observed values** |
+| `kind=categorical`, more than 4 | `FLAG` with no states — **held** |
+| `kind=mixed` or `unknown`, `b5_type` untyped | `UNTYPED` — **held, and counted as a gap** |
+
+Two things in that table are load-bearing and both come from the
+AHA's typing law. **A selector's states are the values that row
+actually takes in the file** — never invented, never scaled; a
+categorical row with many distinct values is not a selector I
+understand, so it is held. And **`unknown` still means held**: E2
+abstaining is not a licence to guess, it is the same refusal
+arriving automatically instead of by hand.
+
+The hand-typed tables stay in the runner as `--hand`, because the
+comparison between hand and inferred typing is the point of the
+round.
+
+### The coverage threshold, fixed now
+
+A round is **informative only at coverage ≥ 50%** of watched cells.
+Below that the rule set is reported as uninformative and no rule
+from it is quoted — the standing practice from round 1b, given a
+number now so it cannot be negotiated after seeing the output.
+
+### Predictions
+
+1. **Automatic typing types more input cells than the hand tables
+   did** on the H7 pair — more than 10 of 193 watched cells move.
+2. **It clears the 50% bar on at least one of the three models.** I
+   am genuinely unsure of this one: H7's inputs are mostly rates,
+   and a rate model's watched cells may move on very few of them.
+3. **The stability gates still pass** — five seeds identical, two
+   independent minings agreeing above 0.5 — because nothing about
+   the mining changed, only which cells move.
+4. **The rule sets get bigger and mostly worse.** More movement
+   means more true relations *and* more three-term coincidences;
+   I expect the stability filter to carry most of that weight, and
+   I expect to still be unable to say the rule set is
+   modeller-recognisable. Recording that in advance so that a
+   recognisable set is a real surprise and not a story told
+   afterwards.
+5. **At least one rule will name a cell E2 typed wrongly.** `kind`
+   is 96.4% accurate, which on 193 cells is several errors, and a
+   money row perturbed as a rate is exactly the failure the typing
+   law exists to prevent. If I cannot find such a rule I will say
+   so.
+
+Judging recognisability is a judgement and is recorded as one: I
+print the rule set, read it, and write what I think — no metric is
+being invented for it.
