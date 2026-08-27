@@ -30,6 +30,7 @@ import json
 import random
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -63,7 +64,8 @@ def mine_once(
     typing: Any,
     runs: int,
     seed: int,
-) -> tuple[list[Rule], dict[str, tuple[str, str]], dict[str, int]]:
+    typed_override: Any = None,
+) -> tuple[list[Rule], dict[str, tuple[str, str]], dict[str, int], Any]:
     book = read_workbook(str(path))
     cells = book.cells
     constants = {
@@ -71,7 +73,7 @@ def mine_once(
         for ref, cell in cells.items()
         if cell.formula is None and cell.value is not None
     }
-    typed = typing(constants)
+    typed = typed_override if typed_override is not None else typing(constants)
     watched = sorted(
         ref for ref, cell in cells.items() if cell.sheet == sheet and cell.formula
     )
@@ -103,7 +105,7 @@ def mine_once(
                 kept.append(numeric)
     finally:
         calculator.close()
-    return cleanse(mine_signed_sums(kept, watched)), labels, drops
+    return cleanse(mine_signed_sums(kept, watched)), labels, drops, typed
 
 
 def main() -> int:
@@ -129,7 +131,7 @@ def main() -> int:
         seeds = [11, 22, 33, 44, 55]
         sets = []
         for seed in seeds:
-            rules, labels, drops = mine_once(
+            rules, labels, drops, _ = mine_once(
                 calculator, source, sheet, typing, runs, seed
             )
             sets.append({signature(rule, labels) for rule in rules})
@@ -151,11 +153,6 @@ def main() -> int:
 
         # --- 2. cosmetic invariance --------------------------------
         variant = work / f"{source.stem}-cosmetic.xlsx"
-        last_row = max(
-            cell.row
-            for cell in read_workbook(str(source)).cells.values()
-            if cell.sheet == sheet
-        )
         calculator.cosmetic(
             str(source),
             {
@@ -167,38 +164,22 @@ def main() -> int:
             str(variant),
         )
         renamed = f"{sheet} (renamed)"
-        base_rules, base_labels, _ = mine_once(
+        base_rules, base_labels, _, base_typed = mine_once(
             calculator, source, sheet, typing, runs, seed=11
         )
-        var_typing = MODELS[key][2]
-
-        def shifted_typing(constants: dict[str, float]) -> Any:
-            # The typing names cells by position, so it shifts with
-            # the inserted rows and follows the renamed sheet.
-            typed = var_typing(
-                {
-                    ref.replace(f"{renamed}!", f"{sheet}!"): value
-                    for ref, value in constants.items()
-                }
-            )
-            moved = []
-            for item in typed:
-                _, _, at = item.ref.partition("!")
-                column = "".join(c for c in at if c.isalpha())
-                row = int("".join(c for c in at if c.isdigit())) + 3
-                moved.append(
-                    type(item)(
-                        f"{renamed}!{column}{row}",
-                        item.type,
-                        item.base,
-                        item.states,
-                        item.band,
-                    )
-                )
-            return moved
-
-        var_rules, var_labels, var_drops = mine_once(
-            calculator, variant, renamed, shifted_typing, runs, seed=11
+        # The typing is done once on the original and *translated* to
+        # the variant's coordinates — three rows down, on the renamed
+        # sheet. Re-deriving it from the variant would ask the typing
+        # to recognise cells that have moved, which is a different
+        # (and later) question than whether the mining is invariant.
+        shifted = []
+        for item in base_typed:
+            _, _, at = item.ref.partition("!")
+            column = "".join(c for c in at if c.isalpha())
+            row = int("".join(c for c in at if c.isdigit())) + 3
+            shifted.append(replace(item, ref=f"{renamed}!{column}{row}"))
+        var_rules, var_labels, var_drops, _ = mine_once(
+            calculator, variant, renamed, typing, runs, seed=11, typed_override=shifted
         )
         base_set = {signature(r, base_labels) for r in base_rules}
         var_set = {signature(r, var_labels) for r in var_rules}
