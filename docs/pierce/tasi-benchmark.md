@@ -160,4 +160,42 @@ it.
 
 ---
 
+## Amendment (27 Aug, before any score was computed)
+
+**The conversion the registration assumed is impossible in this
+container.** LibreOffice 24.2.7.2 is installed and launches, but
+fails on **all 70** subjects with « Error: source file could not be
+loaded » — verified on an isolated user profile, with a writable
+HOME, and on a normal-permission copy of a file outside the work
+tree, so it is neither a profile nor a permissions problem. The
+files themselves are sound: `file` reports genuine Composite
+Document V2, and both xlrd and our own reader open them.
+
+So mapping rule 2 is amended, in the open and before any number:
+
+1. **The subjects are read directly as `.xls`**, through the
+   engine's own xlrd path — which the reader has always had. No
+   conversion, therefore no conversion artefacts at all.
+2. **The CUSTODES truth is extracted directly** from the 291
+   ground-truth `.xls` files via xlrd's note map — the same
+   registered rule (comment-bearing cells), a different reader. All
+   291 files read.
+
+**Two consequences, both stated rather than absorbed:**
+
+- The direct read finds **1,974** comment-bearing cells — *exactly
+  the paper's figure*, and one more than the converted route's
+  1,973. The CUSTODES registration recorded « one cell lost
+  somewhere in conversion or distribution; accepted and noted, not
+  hunted ». It was lost **in the LibreOffice conversion**, and the
+  direct read recovers it. This round's CUSTODES denominator is
+  therefore 1,974, and any comparison with the 23 August numbers
+  must carry that one-cell difference.
+- The frozen cold run was produced on LibreOffice-converted copies;
+  the fresh sweep reads the originals. A fresh-vs-frozen difference
+  now confounds engine change with conversion change, so **this
+  round will not attribute any such difference to engine drift** —
+  which costs the registration one of its stated purposes, and
+  saying so is cheaper than a conclusion that would not hold.
+
 ## Results (computed and read after the registration)

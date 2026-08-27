@@ -35,17 +35,15 @@ from pathlib import Path
 warnings.filterwarnings("ignore")
 
 import xlrd  # noqa: E402
-from openpyxl import load_workbook  # noqa: E402
+from openpyxl.utils import get_column_letter  # noqa: E402
 
 from scripts.custodes_score import (  # noqa: E402
     A1,
     OUT_OF_SCOPE,
     RECT,
     WORK,
-    _convert,
     _expand,
     _findings,
-    _truth_from_comments,
     _unpack,
 )
 
@@ -89,17 +87,72 @@ def _cells(text: str) -> set[str]:
     return out
 
 
+def _subjects() -> list[Path]:
+    """The 70 originals, any suffix case (`summ0602.XLS` is one)."""
+    return sorted(
+        p for p in (WORK / "subjects").iterdir() if p.suffix.lower() == ".xls"
+    )
+
+
 def _sheet_index() -> dict[str, list[str]]:
-    """Converted workbook stem (lowercased) -> its sheet names."""
+    """Workbook stem (lowercased) -> its sheet names, read straight from
+    the legacy `.xls` per the 27 August amendment: LibreOffice cannot
+    load these files in this container, and no conversion means no
+    conversion artefacts."""
     index: dict[str, list[str]] = {}
-    for path in sorted((WORK / "xlsx").glob("*.xlsx")):
+    for path in _subjects():
         try:
-            book = load_workbook(path, read_only=True)
-            index[path.stem.lower()] = list(book.sheetnames)
-            book.close()
+            book = xlrd.open_workbook(str(path), on_demand=True)
+            index[path.stem.lower()] = list(book.sheet_names())
+            book.release_resources()
         except Exception as problem:
             print(f"  unreadable {path.name}: {str(problem)[:60]}")
     return index
+
+
+def _custodes_truth(subjects: list[str]) -> set[tuple[str, str, str]]:
+    """The CUSTODES truth, extracted by the registered rule — the
+    comment-bearing cells of the 291 annotated sheets, mapped by
+    longest-prefix match — but read directly through xlrd's note map
+    rather than through a conversion this container cannot perform."""
+
+    def mapped(name: str) -> tuple[str, str] | None:
+        base = name.rsplit(".", 1)[0]
+        best = None
+        for subject in subjects:
+            if base == subject or base.startswith(subject + "_"):
+                if best is None or len(subject) > len(best):
+                    best = subject
+        if best is None:
+            return None
+        return best, base[len(best) + 1 :] if len(base) > len(best) else ""
+
+    truth: set[tuple[str, str, str]] = set()
+    unmapped: list[str] = []
+    for path in sorted((WORK / "groundtruth").iterdir()):
+        if path.suffix.lower() not in (".xls", ".xlt"):
+            continue
+        hit = mapped(path.name)
+        try:
+            book = xlrd.open_workbook(str(path))
+        except Exception as problem:
+            print(f"  gt unreadable {path.name}: {str(problem)[:50]}")
+            continue
+        cells = [
+            f"{get_column_letter(col + 1)}{row + 1}"
+            for sheet in book.sheets()
+            for (row, col) in (getattr(sheet, "cell_note_map", {}) or {})
+        ]
+        if hit is None:
+            if cells:
+                unmapped.append(path.name)
+            continue
+        for cell in cells:
+            truth.add((hit[0].lower(), hit[1], cell))
+    print(f"CUSTODES truth cells: {len(truth)} (paper 1974; converted route gave 1973)")
+    if unmapped:
+        print(f"  unmapped ground-truth files: {unmapped[:6]}")
+    return truth
 
 
 def _resolve(sheets: list[str], wanted: str) -> str | None:
@@ -164,7 +217,7 @@ def _fresh_sweep() -> list[tuple[str, str, set[tuple[str, str]]]]:
     from polar.tieout.workbook import read_workbook
 
     out: list[tuple[str, str, set[tuple[str, str]]]] = []
-    paths = sorted((WORK / "xlsx").glob("*.xlsx"))
+    paths = _subjects()
     for at, path in enumerate(paths, start=1):
         book = path.stem.lower()
         try:
@@ -274,12 +327,10 @@ def _disagreement(
 def main() -> None:
     WORK.mkdir(exist_ok=True)
     _unpack()
-    _convert(WORK / "subjects", WORK / "xlsx")
-    _convert(WORK / "groundtruth", WORK / "gt_xlsx")
     path = _clone()
 
     sheets = _sheet_index()
-    print(f"converted subjects: {len(sheets)}")
+    print(f"subjects read directly as .xls: {len(sheets)}")
     truth, tools, unmapped = _tasi_labels(path, sheets)
     print(f"Tasi truth cells: {len(truth['groundtruth'])} (registration figure 3702)")
     for label in ("serious", "formula-error", "missing-formula"):
@@ -296,8 +347,7 @@ def main() -> None:
         for label in ("groundtruth", "serious", "formula-error", "missing-formula"):
             _score(f"{name} vs Tasi {label}", findings, truth[label])
 
-    subjects = sorted(p.stem for p in (WORK / "subjects").iterdir())
-    custodes = {(b.lower(), s, c) for b, s, c in _truth_from_comments(subjects)}
+    custodes = _custodes_truth(sorted(p.stem for p in _subjects()))
     for name, findings in (("TODAY'S ENGINE", fresh), ("FROZEN COLD RUN", frozen)):
         _score(f"{name} vs CUSTODES truth", findings, custodes)
 
