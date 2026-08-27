@@ -262,6 +262,64 @@ The lead's recommendation: **(2) now and (1) in parallel** — the
 analytical proof is real and publishable on its own terms, and it
 does not pretend to be the structural one.
 
+**Founder's decision, 27 August: do both.** This document therefore
+splits into two proofs, each with its own corpus, its own criteria
+and its own honest name. Neither may be cited as the other.
+
+### Proof 1A — the analytical proof (this corpus, runnable now)
+
+**Claim under test:** on eleven real closed-deal infrastructure
+models it has never seen, published as values, the engine's
+*analytical* checks — the conservation laws — behave. Does the
+balance sheet balance? Does every cash carry hold? Does debt
+amortise to zero where it claims to? Does the time axis hold
+together? These read stored values and need no formulas, which is
+precisely why this corpus can carry them.
+
+**What it is not, stated in the same breath wherever it is quoted:**
+it is *not* evidence about the structural checks (typed-over
+formulas, skipped rows, hardcoded tails, frozen references), which
+cannot be tested on files with no formulas. Any published version
+of 1A carries that sentence.
+
+**Conditions:** the cold-run conditions above apply unchanged — the
+engine frozen at one commit, house rules at defaults, one file at a
+time, refusals counted. All eleven readable models run;
+`inverness_college_model.xlsm` runs too and is *reported
+separately*, because it is the one file with a live calculation
+layer and folding it in would blend two populations.
+
+**Criteria, fixed now:** every analytical finding is adjudicated by
+hand against the cells (these are conservation claims — there is a
+right answer, and it is checkable). **Pass:** ≥ 80% of analytical
+findings are true breaks or defensible judgement calls, false alarms
+≤ 10%, and — the criterion that matters most on a corpus of *audited,
+closed* models — a model that is genuinely clean produces **no**
+analytical findings. A flood of balance-sheet complaints on a deal
+that closed and was lent against would indict us, not the model.
+
+**A prediction, registered before the run:** most of these models
+will be analytically clean, because they were audited before
+financial close and banks lent against them. The expected result is
+therefore mostly silence, and silence is the pass. Whatever breaks
+is either a real post-close artifact of the value-only publication
+(a stripped file can lose a carry) or our own false alarm, and the
+hand check will say which.
+
+### Proof 1B — the structural proof (corpus not yet found)
+
+**Blocked on a formula-bearing population**, and it stays open with
+no target date rather than being quietly folded into 1A. Candidates,
+in order: MCC's ~114 published economic models (real, third-party,
+outside the regulator corpus — `assets.mcc.gov` fails certificate
+verification from these containers, so the route is unproven); a
+design partner's own working models under NDA (the best evidence and
+the slowest to obtain); the founder's browser as the fetch route of
+last resort, as with the SFT bucket.
+
+Until 1B has a corpus, **the plan's first completion proof is not
+met**, and no summary of Swens's state may say otherwise.
+
 ## Results
 
 *(Nothing here until a corpus that can carry the claim exists.)*
