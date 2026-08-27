@@ -931,3 +931,184 @@ nothing in the registration depends on who carried the bytes.
 **Turn's end state:** round 4 registered; the fetcher committed and
 proven against today's network; zero corpus files landed, said
 plainly; rounds 1–3 and D5 unchanged.
+
+## 27 August 2026, seventh « go » — fourteenth sweep: the handoff, D4's contract, D5's next round
+
+Orders read from the tip. The handoff file is pushed
+(`docs/pierce/handoffs/scribe.md`). Round 4 stays blocked on bytes
+and is not forced. What follows is D4's registration and contract —
+written and committed before any D4 code exists — and then D5's
+next round.
+
+## D4 — confirm-once, arithmetic forever: the contract, proposed before any database work
+
+**The one sentence the track rests on:** a person confirms that a
+model cell comes from a document figure; from then on, re-checking
+that pair is arithmetic — every time, on every revision, with no
+inference of any kind.
+
+**D4 is not blocked by D3, and that is worth stating plainly.** The
+matcher's hit-rate is unmeasured and its proposals ship nothing. But
+a *confirmed* link is human input, not engine output: a person can
+confirm a pair the matcher never proposed, or one it proposed
+wrongly, and the confirmation is what makes the link real either
+way. So D4 can be built and even shipped while D3 stays dark —
+proposing is a convenience, confirming is the product. This also
+keeps the line `swens.md` § 6 draws: the link is *determined* by a
+person, so every later re-check is determined, never inferred.
+
+**« No model call », honestly.** The plan's phrase means: no
+language-model call in the re-check. In this package that is true by
+construction, not by discipline — `polar/tieout/chain/` imports no
+model client at all, and the matcher is string comparison. What D4
+actually adds is stronger: after confirmation there is no *matching*
+either. Re-anchoring is exact-key lookup, and the answer is
+arithmetic.
+
+### The confirmed-link contract (JSON Schema, draft 2020-12)
+
+No table, no migration, no repository code until the lead approves —
+the same rule D2 followed.
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "claidor:tieout/chain/confirmed-link",
+  "title": "Confirmed link — a model cell and the document figure a person says it came from",
+  "type": "object",
+  "required": [
+    "id", "dossier_id", "state",
+    "document", "model", "transformation", "scale",
+    "confirmed_by_id", "confirmed_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "dossier_id": {
+      "type": "string", "format": "uuid",
+      "description": "The deal. Every read is scoped by membership of it."
+    },
+    "state": {
+      "enum": ["confirmed", "rejected", "broken", "ambiguous"],
+      "description": "No 'proposed' state on purpose: a proposal is computed on demand and never stored, so a row here always means a person acted. 'broken' and 'ambiguous' are set by re-anchoring, never by a guess."
+    },
+    "document": {
+      "type": "object",
+      "required": ["document_id", "document_version_id", "fact_id", "page", "printed_text", "anchor_line", "ordinal_in_line"],
+      "additionalProperties": false,
+      "description": "What was confirmed, and enough to re-find it in a later version by labels rather than coordinates.",
+      "properties": {
+        "document_id": { "type": "string", "format": "uuid", "description": "The artifact lineage — the document across all its versions." },
+        "document_version_id": { "type": "string", "format": "uuid", "description": "The exact version confirmed against." },
+        "fact_id": { "type": "string", "format": "uuid", "description": "The chain fact as confirmed. Stable within its version by construction; NOT the anchor across versions." },
+        "page": { "type": "integer", "minimum": 1, "description": "Recorded for the citation, never used for re-anchoring — a page number is a coordinate." },
+        "printed_text": { "type": "string", "description": "The token exactly as printed at confirmation. Used to report movement, never to locate." },
+        "anchor_line": { "type": "string", "description": "The printed line the figure sat in. THE document-side anchor." },
+        "ordinal_in_line": { "type": "integer", "minimum": 1, "description": "Which number within that line (1st, 2nd…) — the tiebreak when a line carries several." }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["model_id", "model_version_id", "cell_id", "ref", "cell_name"],
+      "additionalProperties": false,
+      "properties": {
+        "model_id": { "type": "string", "format": "uuid", "description": "The workbook lineage." },
+        "model_version_id": { "type": "string", "format": "uuid" },
+        "cell_id": { "type": "string", "format": "uuid" },
+        "ref": { "type": "string", "description": "« Model!D26 » at confirmation. A location, recorded for the citation, never the anchor." },
+        "cell_name": { "type": "string", "description": "« FY2025A Adjusted EBITDA » — the engine's own name for the cell. THE model-side anchor, exactly as FigureLink.cell_name already is." }
+      }
+    },
+    "transformation": {
+      "type": "string",
+      "description": "A named deterministic function, 'identity' today. The engine's own extension channel, same vocabulary as FigureLink.transformation, so one re-check serves both directions."
+    },
+    "scale": {
+      "type": "number", "exclusiveMinimum": 0,
+      "description": "document value x scale = model value. Levenmouth's contract says GBP 3,741,000 a year and the model cell holds 3.741 on a millions sheet: scale 0.000001. THE PERSON STATES IT AT CONFIRMATION — Swens never infers it. Unit inference is Track E's, and this field is deliberately the boundary: confirm once, arithmetic forever."
+    },
+    "basis": {
+      "type": "string",
+      "description": "Reported / adjusted / pro forma, and the period. Carried because the same two numbers on different bases are not in disagreement."
+    },
+    "confirmed_by_id": { "type": "string", "format": "uuid" },
+    "confirmed_at": { "type": "string", "format": "date-time" },
+    "note": { "type": "string", "description": "What the person wanted the next reader to know." }
+  }
+}
+```
+
+### Survival: the re-anchoring rules, frozen here
+
+**Anchor by labels, never coordinates** — the plan's words, made
+mechanical. Both sides abstain rather than guess, and every outcome
+says which rule produced it.
+
+*Model side* (the engine's own precedent, `FigureLink.cell_name`):
+1. Same version and the ref still carries that `cell_name` → done.
+2. New version: candidates are cells whose name equals `cell_name`
+   exactly. One → **survived** (report the ref change if any).
+   Zero → **broken**. More than one → **ambiguous**, a person
+   decides; the link is never silently re-pointed.
+
+*Document side* (new, and the reason `anchor_line` exists):
+1. Same version → `fact_id` is still valid by construction → done.
+2. New version: candidates are facts whose line's **label-token set
+   equals** the anchor line's label-token set — the same tokenizer
+   the matcher uses, so purely numeric tokens are dropped and the
+   *value plays no part in locating*. Then:
+   a. one → **survived**;
+   b. several → the `ordinal_in_line` tiebreak; resolving to one →
+      survived, flagged position-resolved; else **ambiguous**;
+   c. zero → **broken** (« the line this rested on is not in this
+      version »).
+
+**Values are used only to report, never to locate.** That asymmetry
+is the whole design: a revised contract whose figure *changed* must
+re-anchor successfully and then say « the source moved, £3,741,000 →
+£3,905,000 » — which is the finding a reviewer wants. Anchoring on
+the number instead would report that as « not found », losing
+exactly the case the product exists for.
+
+### The re-check, and its four verdicts
+
+Fetch the model cell's value and the document fact's value, apply
+`transformation` and `scale`, compare at the document's printed
+precision (the engine's existing tie-out discipline):
+
+- **agrees** — nothing to say.
+- **the model moved** — model side differs from the confirmed pair;
+  the cell changed and its source did not.
+- **the source moved** — document side differs; the term sheet was
+  revised under a model that still quotes the old figure.
+- **both moved** — reported as its own case, never averaged away.
+
+Plus the two anchoring outcomes, **broken** and **ambiguous**, each
+in words naming which side and which rule.
+
+### Registered measurement, before any result exists
+
+The plan's DONE condition is « a revised model re-checks its
+confirmed links with no model call and correct survival ». The
+harness plants revisions on a committed fixture pair and asserts the
+registered expectation per case, written here first:
+
+| planted revision | expected |
+|---|---|
+| row inserted above the linked cell | survived; ref changes; agrees |
+| the linked cell's value edited | survived; **the model moved** |
+| the linked cell deleted | **broken** (model side, in words) |
+| its label duplicated elsewhere | **ambiguous**; never re-pointed |
+| sheet renamed | survived (the anchor is a name, not an address) |
+| document figure edited | survived; **the source moved** |
+| document line deleted | **broken** (document side) |
+| document repaginated, line intact | survived; agrees |
+
+Reported with it: that the re-check made **zero language-model
+calls** — a structural fact (the package imports no model client),
+stated as such rather than as a runtime count; and the wall-clock of
+re-checking a confirmed map, which must be arithmetic-fast or the
+promise is hollow.
+
+**Not promised:** any number about how often confirmations survive
+*real* revisions. That needs the real deal set, like round 4.
