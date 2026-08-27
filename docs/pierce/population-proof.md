@@ -445,3 +445,74 @@ here**; one of them is worth a later look on its own terms
 (newbattle raises 68 structural findings on a value-only file), but
 nothing in this section rests on them.
 
+### Proof 1A — the second run (28 August 2026)
+
+**A second run, not a correction.** The first run's FAIL stands
+above exactly as taken. This is a new measurement of the same
+population after the defect it exposed was fixed in its own
+registered round (`own-check-periods.md`), and it is reported
+beside the first, not in place of it.
+
+**Read this before quoting any number below.** The first run tested
+a claim about *models the engine has never seen*. This run cannot
+test that claim, because the engine was changed **using these very
+models' failures** — Kelso and Newbattle are named in the fix's own
+registration and code comment. The corpus is contaminated as
+evidence for the original claim, permanently and by design. What
+this run can honestly show is narrower: that the named defect is
+gone, and that removing it did not disturb the findings that were
+adjudicated true. Anyone quoting « Proof 1A passes » without that
+sentence is misreporting it.
+
+**Engine frozen at `327058a5`.** House rules at shipped defaults,
+one file per process (the same bash loop that ran the first),
+no change of any kind between the first model and the last. Same
+ten models, same hashes, `hwcbsb_model.xlsm` still unavailable.
+
+**Refusals: none.** Ten of eleven ran, as before.
+
+| model | run 1 | run 2 | |
+|---|---|---|---|
+| baldragon | 0 | **0** | silent |
+| forfar | 0 | **0** | silent |
+| glasgow_college | 0 | **0** | silent |
+| levenmouth | 0 | **0** | silent |
+| oban_campbeltown | 0 | **0** | silent |
+| kelso | 4 | **0** | the four false alarms gone |
+| newbattle | 4 | **0** | the four false alarms gone |
+| inverurie_foresterhill | 4 | **4** | unchanged, word for word |
+| snbts | 1 | **1** | unchanged, word for word |
+| *inverness_college (separate)* | 1 | **1** | unchanged, word for word |
+
+**Seven of the nine value-only models are now completely silent**,
+against five in the first run. Every finding that survived is
+byte-identical in rule, cell reference and sentence to the one the
+first run raised — checked mechanically, not by eye.
+
+| criterion | required | run 1 | run 2 | |
+|---|---|---|---|---|
+| true breaks or judgement calls | ≥ 80% | 5 of 13 = 38.5% | **5 of 5 = 100%** | ✓ |
+| false alarms | ≤ 10% | 8 of 13 = 61.5% | **0 of 5 = 0%** | ✓ |
+| a genuinely clean model produces **no** analytical findings | — | Kelso and Newbattle spoke four times each | **both silent** | ✓ |
+
+**Second run: PASS, on a corpus that can no longer test the claim
+the criteria were written for.** Both halves of that sentence are
+required wherever it is quoted. The five surviving findings were
+adjudicated at the cells in the first run and are unchanged here;
+no new finding appeared, so no new adjudication was owed.
+
+**Scope, unchanged:** this is still **not** evidence about the
+structural checks, which cannot be tested on files with no
+formulas. That is Proof 1B, still without a corpus, and the plan's
+first completion proof is still not met.
+
+**What the second run found on its own.** Comparing the two runs'
+*coverage tallies* — not their findings — showed two check rows
+that stopped being examined: `baldragon InpM!22` and
+`inverurie Input Cost Profiles!4`. Neither was a finding in either
+run, and no abstention was recorded for either. This is a real
+consequence of the fix that the fix's own adoption criteria did not
+ask about; it is written up in `own-check-periods.md` § « After
+adoption: a coverage effect the criteria did not ask about », and
+it was found because the second run compared more
+than the numbers the criteria named.

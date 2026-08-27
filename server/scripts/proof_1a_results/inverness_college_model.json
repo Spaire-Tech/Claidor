@@ -1,0 +1,97 @@
+{
+ "file": "inverness_college_model.xlsm",
+ "bytes": 2265188,
+ "cells": 215102,
+ "sheets": 31,
+ "formulas": 19900,
+ "values_pasted": false,
+ "analytical": [
+  {
+   "rule": "model-own-check",
+   "severity": "error",
+   "ref": "PF5_SPV Running costs!C26",
+   "sheet": "PF5_SPV Running costs",
+   "detail": "The model's own check row \u00ab Check \u00bb reports 2.39e+05 in FY2013 \u2014 a row that is zero everywhere else."
+  }
+ ],
+ "abstentions": [
+  {
+   "rule": "balance-sheet",
+   "why": "PF8_Balance Sheet: the net-assets and equity rows are not unique (0 and 0 candidates) \u2014 not paired, not guessed."
+  }
+ ],
+ "tallies": {
+  "model-own-check": {
+   "total": 13,
+   "clean": 12
+  },
+  "time-axis": {
+   "total": 13,
+   "clean": 13
+  },
+  "cash-continuity": {
+   "total": 11,
+   "clean": 11
+  }
+ },
+ "structural_count": 23,
+ "audit_tallies": {
+  "long-formula": {
+   "total": 19900,
+   "raised": 2
+  },
+  "volatile": {
+   "total": 19900,
+   "raised": 1
+  },
+  "hardcode-in-formula": {
+   "total": 19900,
+   "raised": 1
+  },
+  "inconsistent-anchoring": {
+   "total": 19900,
+   "raised": 0
+  },
+  "inconsistent-row": {
+   "total": 19900,
+   "raised": 1
+  },
+  "external-link": {
+   "total": 19900,
+   "raised": 0
+  },
+  "error-value": {
+   "total": 215059,
+   "raised": 12
+  },
+  "typed-over-formula": {
+   "total": 195202,
+   "raised": 5
+  },
+  "typed-over-edge": {
+   "total": 195202,
+   "raised": 0
+  },
+  "skipped-cell": {
+   "total": 633,
+   "raised": 0
+  },
+  "inconsistent-total": {
+   "total": 633,
+   "raised": 0
+  },
+  "range-over-block": {
+   "total": 633,
+   "raised": 0
+  },
+  "circular": {
+   "total": 19899,
+   "raised": 0
+  },
+  "hidden-sheet": {
+   "total": 31,
+   "raised": 0
+  }
+ },
+ "seconds": 9.2
+}

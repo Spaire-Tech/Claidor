@@ -32,6 +32,8 @@ it falls.
 | Serious-error mining (`serious-mining.md`) | **BLOCKED**, no candidate. Universe confirmed (1,206) but the classifier bucketed 100% into one bucket — the engine's legacy `.xls` reader misses formulas (19/144, 10/40, 0/349 by subject). Routed to the lead: `legacy.py` is outside my paths. |
 | Proof 1A (`population-proof.md` § Results) | **FAIL**, run cold at `c6ff9a4e`. 10 of 11 models, 0 refusals, 5 silent. 8 of 13 findings are one false-alarm class: `_own_checks` reads a parameter column as a period. **Not fixed** — cold-run conditions; it is the next registered round. `hwcbsb_model.xlsm` unavailable. |
 | A4 coverage (`a4-coverage.md`) | **Adopted.** `Audit.tallies` + `Audit.abstentions`, same shapes as analytics'. Gate clean, baseline untouched, catalogue unchanged. **Product side routed to the lead** — Atelier owns the report JSON. |
+| Own-check periods (`own-check-periods.md`) | **Adopted.** `_own_checks` now judges only the sheet's own period columns. AU-UK unmoved (18 findings, 0 files), SFT exactly as specified in advance, gate clean 27/27 as a tripwire. **Its criteria were narrower than the change** — see the coverage effect below. |
+| Proof 1A, second run (`population-proof.md` § second run) | **PASS** at `327058a5` — 5 of 5 true breaks, 0 false alarms, Kelso and Newbattle silent. **The pass is narrow:** the engine was fixed *using this corpus's failures*, so it can no longer test the original « never seen » claim. Never quote the pass without that sentence. |
 | Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
 
 Three adoptions have moved the rule catalogue 17 → 20
@@ -42,21 +44,26 @@ same day.**
 
 ## In flight
 
-**Nothing.** A4 is adopted and pushed; the serious-error mining
-round is blocked on the lead (see below). The next turn starts a
-new round from a clean slate.
+**Nothing running.** The own-check round is closed and Proof 1A's
+second run is reported. The next turn starts the round named first
+below, from a clean slate.
 
 ## Next, per orders (in this order)
 
-0. **The serious-error mining round is blocked** pending the lead's
+0. **The own-check abstention round — start here.** The period
+   restriction I adopted drops a check row from the denominator when
+   none of its cells sit in the period grid, and raises **no
+   abstention** saying so. Measured with `scripts/own_check_coverage.py`:
+   AU-UK 232 → 232 (nothing), SFT 137 → 135 — `baldragon InpM!22`
+   and `inverurie Input Cost Profiles!4`, both all-zero input-sheet
+   check rows. No finding was lost, only a confirmation. The round:
+   *an own-check row with no cells in the period grid must be
+   abstained on, not dropped.* Full write-up in
+   `own-check-periods.md` § « After adoption ».
+1. **The serious-error mining round is blocked** pending the lead's
    decision on the `.xls` reader defect (see the table). If it is
    fixed, re-run `scripts.custodes_serious` — the registration and
    classifier are committed and ready; only the reader was wrong.
-1. **The own-check period defect** — Proof 1A's cause, now the
-   best-evidenced fix in the record: `_own_checks` in `analytics.py`
-   scans every numeric cell of a check row and ignores the period
-   axes it is already handed. Register it, plant against Kelso and
-   Newbattle (known false alarms), gate, and re-run 1A after.
 2. The « dead assumption » reachability candidate
    (`swens-aha.md`): dependency-graph reachability, no
    recalculation, one-sentence finding. Coordinate the rule name
@@ -91,6 +98,18 @@ every finding we raise, with a ready-made sample to hand-read.
 
 ## What this container taught me
 
+- **Capture tallies in a sweep, not just findings.** My AU-UK
+  before/after for the own-check round recorded findings only, so
+  when a coverage question arose it could not be answered from the
+  artifacts and had to be measured again. Findings are what a round
+  registers; tallies are what A4 made movable. Record both.
+- **Compare more than the criteria name.** The own-check round's
+  criteria passed cleanly and still missed a real effect, because
+  they asked about findings and the effect was in coverage. Diff
+  everything the run emits, then judge.
+- Proof 1A's first run is preserved at `scripts/proof_1a_run1/`;
+  the runner writes to `scripts/proof_1a_results/` and **skips any
+  model already there**, so archive a run before re-running.
 - Run everything from `server/`. `uv run python -m scripts.x` —
   bare script paths fail to import `polar`.
 - **Tests: `--noconftest`.** The root conftest can't load on this

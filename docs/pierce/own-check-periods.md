@@ -185,3 +185,72 @@ to update.
 **Next:** Proof 1A is re-run at a new named commit and reported as a
 **second run**. The first run's FAIL stands in the record exactly as
 taken; a re-run after a fix is a new measurement, not a correction.
+
+**Done, 28 August:** the second run is in `population-proof.md`
+§ « Proof 1A — the second run ». It passes all three criteria on a
+corpus that can no longer test the claim they were written for, and
+it surfaced the coverage effect recorded below — which the criteria
+of *this* round did not ask about.
+
+---
+
+## After adoption: a coverage effect the criteria did not ask about
+
+Found by Proof 1A's second run, by comparing the two runs' coverage
+*tallies* rather than their findings. Written here rather than
+quietly patched, because it is a consequence of the change this
+document adopted.
+
+**What happens.** The period restriction empties a check row whose
+numeric cells all sit outside the sheet's period columns. The
+emptied row then falls below the four-cell admission floor, so it
+is not examined — and, because `_own_checks` only records a tally
+when it admits a row, **no abstention is raised to say so**. The row
+simply leaves the denominator.
+
+**Where it bites, measured.** One pass over both corpora with
+`scripts/own_check_coverage.py`, which admits every check row under
+today's rules with and without the restriction and names the
+difference:
+
+| corpus | check rows examined before | after | dropped |
+|---|---|---|---|
+| AU-UK regulator (27 files) | 232 | 232 | **0** |
+| SFT (10 models) | 137 | 135 | **2** |
+
+The regulator corpus does not move at all, which is why the round's
+criterion 1 passed and why this went unseen. The two SFT rows:
+
+- `baldragon_model.xlsm` — `InpM!22`, « Checks: Not greater than
+  100% ». Numeric cells in F and I–O, all zero; the sheet's period
+  axis starts at **R**.
+- `inverurie_foresterhill_model.xlsm` — `Input Cost Profiles!4`,
+  « Error checks ». Numeric cells in A–D, all zero; the period axis
+  starts at **O**.
+
+Both are input-sheet check rows living entirely off the period grid.
+**Both are all-zero, so no finding was lost — only a confirmation
+that the model's own check passes.**
+
+**Why this is a defect and not a design choice.** The comment I
+wrote on the restriction says « we cannot see the axis » must never
+silently become « we stop checking ». It guards the sheet whose axis
+the structure layer could not read. It does **not** guard the row
+that has no cells *in* an axis we read perfectly well — and that is
+the case that actually occurred. The tally is not lying (an
+unexamined row is not counted as examined), but A4 exists precisely
+so that what was not checked is said out loud, and here it is not.
+
+**Not fixed in this round, and the reason.** Changing it means
+either raising an abstention for such rows or judging them outside
+the period grid, and both are changes to what the engine reports —
+which is a registered round with its own planted recall and
+false-positive price, not an amendment to a round already closed.
+The adoption stands: measured against the criteria fixed before the
+results, this change did what it said. The criteria were narrower
+than the change, which is the honest lesson and is now on the
+record.
+
+**Registered as the next round's subject**, ahead of the « dead
+assumption » candidate: *an own-check row with no cells in the
+period grid must be abstained on, not dropped.*
