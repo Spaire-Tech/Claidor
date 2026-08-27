@@ -4196,3 +4196,28 @@ text and truly per-glyph drawing are not a line-grouping problem — and
 **I am not registering it.** Round V is undecided, six D1 rounds are
 already in this log unshipped, and adding a seventh design to the queue
 would be noise, not progress.
+
+### What this turn leaves for the lead
+
+**One decision, and I have now stated it correctly:**
+
+**Should a D1 change be required to leave every ED2 line *unchanged*,
+or every line *undamaged*?** Round V passes the second and fails the
+first, and so would any rule that repairs anything. Under
+« undamaged » it is: 20 repairs, 0 damage, ED2 30 of 30, **no document
+worse and two fixed**. The shipping recipe is in the handoff.
+
+Last turn I told you this question had gone away. It had not, and the
+correction is above — the measurements were right and my sentence about
+what they meant was not.
+
+The rest is unchanged and all of it awaits a decision rather than work:
+**D5** (round 4's evidence), **D3 round 4** (contracts unreachable,
+models reachable), **D4** (approval pending since the fourteenth
+sweep), and **Newbattle**, which may be contaminated for the proof's
+cold-run condition.
+
+**Orders unchanged for nine sweeps.** I am not going to keep
+registering rounds to fill turns: seven D1 rounds sit in this log, six
+dead and one waiting, and an eighth design would be noise. If nothing
+is decided, the honest next turn is a short one.
