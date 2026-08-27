@@ -290,3 +290,15 @@ tests still run on every merged tip either way.
   the inference is measured accurate enough to arm them, per the
   plan's own condition. The one hard rule is untouched: the
   classifier reports nothing; only Sentinel wires findings.
+
+- **28 Aug — the decision-latency rule, written after the lead let a
+  lane wait nine sweeps.** Scribe reported « items for the lead » in
+  five consecutive turns; the lead merged its work each time and
+  answered none of them, and the lane — correctly — stopped
+  manufacturing rounds to fill turns rather than pretending to be
+  busy. That is the lane behaving well and the lead behaving badly.
+  From now on: **an open decision is answered in the sweep it is
+  raised, or the lead writes in that lane's orders why it is not and
+  when it will be.** « Merged, noted » is not an answer. A lane with
+  no answerable work says so and goes short; the cost of that lands
+  on the lead, and the record says whose it is.

@@ -343,6 +343,21 @@ saw it) and not dropped. **Ten of the eleven ran.**
 
 **Refusals: none.** Every one of the ten opened and was audited.
 
+**Caveat on the cold-run condition, recorded rather than buried
+(28 Aug).** Scribe reported, against its own interest, that it had
+read nine of `newbattle`'s finding records before this proof ran,
+while chasing a claim it later retracted. The lead's ruling: the
+model **stays in the sample**. Its four findings were adjudicated at
+the cells by Sentinel in a separate session, independently, and they
+were among the eight false alarms that *failed* the proof — a prior
+reading could not have manufactured that outcome, and removing a
+model after seeing its result would be re-cutting the sample, a
+worse fault than the one being cured. The condition is tightened for
+everything after: **no lane may read the engine's output on a proof
+model before that proof runs; a lane that does reports it, and the
+model is excluded from any future proof.** Newbattle is therefore
+excluded from **1B**.
+
 | model | formulas | analytical findings |
 |---|---|---|
 | baldragon | 220 | **0** |
