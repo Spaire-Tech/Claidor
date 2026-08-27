@@ -59,7 +59,7 @@ MAX_UPLOAD_BYTES = 64 * 1024 * 1024
 PROPOSAL_STANDING = (
     "Measured, and it does not work on tables: over the whole drawn "
     "sample of a real document-fed corpus, the matcher proposed the "
-    "correct source 0 times out of 35 cells whose document states "
+    "correct source 0 times out of 36 cells whose document states "
     "them - it abstains because a table row carries several numbers "
     "and its anchor is the line. Earlier rounds of this measurement "
     "reported 0 of 18, on a smaller denominator: the rows the judge "

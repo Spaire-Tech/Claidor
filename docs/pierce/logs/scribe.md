@@ -4366,3 +4366,31 @@ numbers for the dash rule's third condition — the anti-correlation gap
 the dash round recorded), and `E212`'s wholly-nil AFUDC row still
 yields nothing, because the dash rule requires a number on the line.
 Round V changed neither.
+
+### Round V's effect on the shipped record
+
+| | v4 | **v5 (round V)** |
+|---|---|---|
+| Finch facts | 6,842 | **4,189** |
+| facts in character-spaced lines (Finch) | 3,835 | **500** |
+| colliding keys, round's 7 tasks | 562 | **319** |
+| facts sharing an address | 4,456 | **1,895** |
+| **ED2 facts** | 8,015 | **8,015** |
+| **nils, both corpora** | 750 | **750** |
+| part B rows settled of 18 | 15 | **16** |
+| `stated-but-unextracted` | 3 | **2** |
+
+**2,653 invented facts are gone**, ED2 and the nils are untouched to
+the unit, and the collision surface more than halves as a side effect —
+which two turns before shipping I predicted would follow from fixing
+the reading.
+
+**The audit is re-baselined**, with each version-4 value kept beside
+its replacement. A deliberate extractor change moves these numbers;
+the point of that file is to notice when nothing deliberate happened
+and they moved anyway.
+
+**And the record the product quotes moves with them.** D3's standing
+sentence in `router.py` now reads **0 of 36** — one more row is
+scorable because round V unshredded it, and the matcher missed it too.
+Recall did not improve; the denominator got more honest.

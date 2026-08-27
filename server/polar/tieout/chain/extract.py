@@ -64,7 +64,7 @@ _NUMBER = re.compile(
 #: a fidelity question is answerable years later. Bumped whenever the
 #: token pattern, the line grouping, or the refusal rule changes.
 EXTRACTOR_NAME = "polar.tieout.chain.extract"
-EXTRACTOR_VERSION = "4"
+EXTRACTOR_VERSION = "5"
 
 #: Round 6's frozen column anchor (registered in the Scribe log before
 #: this code existed). Round 5 measured what a line-only anchor costs:
@@ -93,8 +93,43 @@ _NIL_COLUMN_NUMBERS = 3
 #: Below this many text characters a page has no usable text layer.
 _SCANT_TEXT = 20
 
-#: Words whose tops are within this many points sit on one printed line.
-_LINE_TOLERANCE = 3.0
+#: Words whose tops are within this many points sit on one printed
+#: line — and it is handed to ``extract_words`` too, so the word
+#: builder and the line builder agree on what a line is.
+#:
+#: **Round V's constant, adopted at the twenty-fourth sweep.**
+#: pdfplumber's default y-tolerance is 3, and a financial PDF that
+#: prints a table over a chart routinely leads its rows exactly 3.0
+#: points apart. At 3.0 the two baselines merge, the words are then
+#: split on x-gaps, and because two interleaved texts alternate in x
+#: **every gap becomes a word gap**: « 19,842 » comes back as five
+#: words reading 1, 9, 8, 4 and 2. Rounds P, Q and R tried to
+#: *detect* that damage; round R's calibration found D1 was
+#: inflicting it. 1.5 was chosen from two populations measured on a
+#: held-out half of the corpus: character tops vary by at most 0.9 pt
+#: *within* a line, and the tightest leading *between* lines is 3.0.
+_LINE_TOLERANCE = 1.5
+
+#: A run of characters this much smaller than the baseline beside it
+#: is a sub- or superscript and belongs to that baseline. ED2's
+#: subscripts are 6.5pt under 10pt text (0.65x); a merged second
+#: baseline is the same size as its neighbour (1.00x). 0.8 is the
+#: midpoint, measured on the calibration half before the judging half
+#: was read.
+_SCRIPT_SIZE = 0.8
+
+#: How far a sub- or superscript may sit from its base — **and it is
+#: directional, which is round V's whole finding.** Round T used one
+#: constant for both and destroyed a section heading: an equation
+#: denominator 5.1 pt above `8. Legacy adjustments` was pulled down
+#: into it. Measured across the ED2 documents, 21 of 22 downward
+#: merges sit between 1.8 and 2.4 pt and the 22nd is that damage at
+#: 5.1, while upward merges genuinely run out to 6.2. The two are
+#: different things: a subscript's base may be a tall display
+#: formula, so it reaches far; a superscript's base is ordinary text
+#: just below it, so it does not.
+_SCRIPT_UP = 6.5
+_SCRIPT_DOWN = 3.0
 
 #: Images covering more than this share of the page mark it as a scan.
 _IMAGE_SHARE = 0.5
@@ -194,7 +229,7 @@ def extract_pdf(source: str | Path | BytesIO) -> Extraction:
     with pdfplumber.open(source) as pdf:
         for index, page in enumerate(pdf.pages, start=1):
             sizes.append(PageSize(index, float(page.width), float(page.height)))
-            words = page.extract_words()
+            words = _words(page)
             refusal = _scan_refusal(index, page, words)
             if refusal is not None:
                 refusals.append(refusal)
@@ -225,6 +260,80 @@ def extract_pdf(source: str | Path | BytesIO) -> Extraction:
                 )
 
     return Extraction(tuple(numbers), tuple(refusals), tuple(sizes))
+
+
+def _words(page: Any) -> list[dict[str, Any]]:
+    """The page's words, with sub- and superscripts kept on their line.
+
+    Round V, registered in the Scribe log before this code existed and
+    adopted by the lead at the twenty-fourth sweep. Six rounds died
+    before it; each one's number is in that log.
+
+    The defect it fixes is D1's own. Group characters into candidate
+    baselines at :data:`_LINE_TOLERANCE`, which separates a table row
+    from the chart drawn 3.0 points below it — and then give a run of
+    markedly smaller characters (:data:`_SCRIPT_SIZE`) the baseline of
+    the larger neighbour within reach, so the word builder joins
+    « RPE » and « t » again instead of leaving a line reading « t ».
+
+    Reach is **directional** (:data:`_SCRIPT_UP`, :data:`_SCRIPT_DOWN`)
+    and that asymmetry is the round's finding, not a tuned pair of
+    numbers: a subscript reaches up to a base that may be a tall
+    display formula, a superscript reaches down to ordinary text just
+    below it. One constant for both pulls an equation's denominator
+    into the section heading underneath it.
+
+    Measured on the three ED2 documents, hand-read line by line:
+    **20 repairs, 0 damage**, ED2's fact count and the dash round's
+    nils unchanged to the unit.
+    """
+    import statistics
+
+    from pdfplumber.utils import extract_words
+
+    chars = page.chars
+    if not chars:
+        return []
+
+    rows: dict[float, list[dict[str, Any]]] = {}
+    for char in sorted(chars, key=lambda c: float(c["top"])):
+        top = float(char["top"])
+        key = next((k for k in rows if abs(k - top) <= _LINE_TOLERANCE), top)
+        rows.setdefault(key, []).append(char)
+
+    keys = sorted(rows)
+    size = {key: statistics.median(float(c["size"]) for c in rows[key]) for key in keys}
+    moved: list[dict[str, Any]] = []
+    for index, key in enumerate(keys):
+        host = None
+        above = keys[index - 1] if index else None
+        below = keys[index + 1] if index + 1 < len(keys) else None
+        if (
+            above is not None
+            and key - above <= _SCRIPT_UP
+            and size[key] < _SCRIPT_SIZE * size[above]
+        ):
+            host = above
+        elif (
+            below is not None
+            and below - key <= _SCRIPT_DOWN
+            and size[key] < _SCRIPT_SIZE * size[below]
+        ):
+            host = below
+        for char in rows[key]:
+            if host is None:
+                moved.append(char)
+                continue
+            shift = host - float(char["top"])
+            copy = dict(char)
+            copy["top"] = float(char["top"]) + shift
+            copy["bottom"] = float(char["bottom"]) + shift
+            if "doctop" in copy:
+                copy["doctop"] = float(char["doctop"]) + shift
+            moved.append(copy)
+
+    moved.sort(key=lambda c: (float(c["top"]), float(c["x0"])))
+    return list(extract_words(moved, y_tolerance=_LINE_TOLERANCE))
 
 
 def _lines(words: list[dict[str, Any]]) -> list[str]:

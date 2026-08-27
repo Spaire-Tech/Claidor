@@ -45,15 +45,24 @@ ED2 = sorted((HERE / "corpus_documents" / "ed2").glob("*.pdf"))
 ROUND_TASKS = ("5", "52", "72", "81", "156", "160", "161")
 
 #: What the log says, with the population each was measured over.
+#:
+#: **Re-baselined at extractor version 5 (round V, adopted at the
+#: twenty-fourth sweep).** Round V stopped D1 merging two baselines
+#: that sit 3.0 points apart, so most of the shredded single digits it
+#: used to file are gone. The version-4 values are kept beside each
+#: one: a deliberate extractor change moves these numbers, and the
+#: point of this file is to notice when nothing deliberate has
+#: happened and they move anyway.
 RECORDED = {
-    "facts, Finch corpus (17 PDFs)": 6842,
-    "facts, ED2 corpus (3 PDFs)": 8015,
-    "nils, both corpora": 750,
-    "facts in character-spaced lines, Finch corpus": 3835,
-    "colliding keys, one-coordinate scheme, round's 7 tasks": 562,
-    "facts sharing an address, round's 7 tasks": 4456,
-    "part B: rows settled of 18": 15,
-    "part B: rows stated-but-unextracted": 3,
+    # v4 → v5
+    "facts, Finch corpus (17 PDFs)": 4189,                     # was 6,842
+    "facts, ED2 corpus (3 PDFs)": 8015,                        # unchanged
+    "nils, both corpora": 750,                                 # unchanged
+    "facts in character-spaced lines, Finch corpus": 500,      # was 3,835
+    "colliding keys, one-coordinate scheme, round's 7 tasks": 319,   # was 562
+    "facts sharing an address, round's 7 tasks": 1895,         # was 4,456
+    "part B: rows settled of 18": 16,                          # was 15
+    "part B: rows stated-but-unextracted": 2,                  # was 3
 }
 
 

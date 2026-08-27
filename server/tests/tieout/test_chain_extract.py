@@ -254,3 +254,90 @@ def test_router_serves_the_extraction() -> None:
     assert refused.status_code == 415
     assert "not a PDF" in refused.json()["detail"]
 
+
+
+# --- round V: baselines separated, scripts kept ---------------------------
+
+
+def _round_v_pdf() -> bytes:
+    """One page holding both cases round V has to get right.
+
+    Line A and line B are drawn 3.0 points apart — the leading that
+    pdfplumber's default tolerance merges, zipping two texts together
+    by x. Line C carries a subscript 2.5 points below its base, which
+    must stay part of its word.
+    """
+    width, height = _LETTER
+    box = b"[0 0 %d %d]" % (width, height)
+    # two rows 3.0pt apart, interleaved in x — the zip case
+    zip_rows = (
+        b"BT /F1 6 Tf 72 700 Td (Alpha 1,234) Tj ET "
+        b"BT /F1 6 Tf 120 700 Td (Beta 5,678) Tj ET "
+        b"BT /F1 6 Tf 72 697 Td (Gamma 9,012) Tj ET "
+        b"BT /F1 6 Tf 120 697 Td (Delta 3,456) Tj ET "
+    )
+    # a base with a smaller run 2.5pt below it — the subscript case
+    script = b"BT /F1 10 Tf 72 660 Td (RPE) Tj ET BT /F1 6 Tf 88 657.5 Td (t) Tj ET "
+    return _pdf(
+        [
+            _obj(1, b"<< /Type /Catalog /Pages 2 0 R >>"),
+            _obj(2, b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>"),
+            _obj(
+                3,
+                b"<< /Type /Page /Parent 2 0 R /MediaBox "
+                + box
+                + b" /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+            ),
+            _obj(4, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"),
+            _stream(5, zip_rows + script),
+        ]
+    )
+
+
+@pytest.fixture(scope="module")
+def round_v_extraction():
+    pytest.importorskip(
+        "pdfplumber",
+        reason="pdfplumber is proposed in the Scribe log, not yet installed",
+    )
+    import io
+
+    return extract.extract_pdf(io.BytesIO(_round_v_pdf()))
+
+
+def test_two_baselines_three_points_apart_stay_apart(round_v_extraction) -> None:
+    """The zip case: neither row's numbers may land on the other's line."""
+    lines = {number.line for number in round_v_extraction.numbers}
+    zipped = [line for line in lines if "Alpha" in line and "Gamma" in line]
+    assert zipped == [], f"two rows merged into one line: {zipped}"
+
+
+def test_the_numbers_survive_the_separation(round_v_extraction) -> None:
+    """Separating the rows must not shred them: whole numbers, not digits."""
+    texts = sorted(number.text for number in round_v_extraction.numbers)
+    assert texts == ["1,234", "3,456", "5,678", "9,012"]
+
+
+def test_a_subscript_stays_part_of_its_word() -> None:
+    """The script case: « RPE » and « t » are one word, not two.
+
+    Read off `_words` rather than off the extraction, because no number
+    sits on that line — asserting against the facts would pass whatever
+    the rule did, which is not a test.
+
+    At pdfplumber's default tolerance this fixture's two data rows come
+    back as `AGlapmham`, `293,0412`, `53,,647586` — the zip — and at
+    1.5 alone the subscript comes back as its own word `t`. Only both
+    halves of round V give `RPEt`.
+    """
+    pytest.importorskip("pdfplumber")
+    import io
+
+    import pdfplumber
+
+    with pdfplumber.open(io.BytesIO(_round_v_pdf())) as pdf:
+        page = pdf.pages[0]
+        assert "RPEt" in [word["text"] for word in extract._words(page)]
+        # and the same page at the old tolerance is the defect itself
+        loose = [word["text"] for word in page.extract_words()]
+        assert "1,234" not in loose and "AGlapmham" in loose
