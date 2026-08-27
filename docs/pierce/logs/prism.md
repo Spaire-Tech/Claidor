@@ -1122,3 +1122,154 @@ price of the registered algorithm. If the lead needs the day back
 rather than half of it, the named next rounds are banding or a
 Hirschberg traceback, each a registered round of its own; nothing
 further is claimed here.
+
+## C4 tier 1 — the Z3 fragment (REGISTERED BEFORE RESULTS)
+
+Ordered at the fourteenth sweep, with SQLSolver as required
+reading first. **No code may import z3 until the lead approves the
+dependency** (proposal at the end of this section); this is the
+registration only.
+
+### Required reading: SQLSolver (SIGMOD 2024), read first-hand
+
+Read from the paper itself (Ding, Wang, Yang, Zhang, Xu, Chen,
+Piskac, Li — *Proving Query Equivalence Using Linear Integer
+Arithmetic*, Proc. ACM Manag. Data 1(4), Article 227; repo
+Apache-2.0). What it does: a LIA\* formula has the form
+`∃u,v. F₁(u,v) ∧ v ∈ {x | F₂(x)}*`, where `*` is the **additive
+closure** `S* = {v : v = Σᵢ λᵢ x⃗ᵢ, x⃗ᵢ ∈ S, λᵢ ≥ 0}` — the set of
+all sums of elements of `S`, with the number of terms arbitrary,
+which is exactly how a sum over an unbounded domain is expressed
+without bounding it. Each unbounded summation becomes one integer
+variable, the vector of those variables is constrained to lie in
+the additive closure of the per-element constraint set, and the
+whole thing reduces to plain LIA through a finite generator basis
+(their worked example collapses to `(v₁,v₂,v₃) = λ₁(1,0,1) +
+λ₂(0,1,1)`, whose unsatisfiability *is* the proof of the
+distributive law over unbounded sums).
+
+**What transfers to us.** Three things, and they are real:
+
+1. The **encoding shape** for the one case where our ranges are not
+   concrete — a whole-column or version-dependent-extent `SUM`.
+   Their Equation (3), `Σf₁(y) + Σf₂(y) = Σ(f₁(y)+f₂(y))`, is
+   literally a spreadsheet rewrite: two column totals replaced by
+   one total of a helper column.
+2. The **equisatisfiability discipline** — prove by asserting the
+   negation and getting `unsat`, never by sampling.
+3. Their **answer vocabulary**: EQ / NEQ / UNKNOWN / TIMEOUT, with
+   « the problem is undecidable in general » said out loud. Ours
+   will say the same.
+
+**What does not transfer, and this is the load-bearing half.**
+
+1. **LIA\* is integer arithmetic; our summands are money.** The
+   paper names its own boundary — U-expressions cannot be
+   translated when the formula « contains terms not supported by
+   the LIA\* theory, such as strings or **real numbers** ». Their
+   unbounded sums add *tuple multiplicities*, integers by
+   construction of bag semantics; ours add rates and currency. The
+   theory does not reach our summands, so LIA\* is **not** the tool
+   for our SUM-over-symbolic-range wall — the addendum's
+   anticipation was right that the wall exists, and the honest
+   finding is that their ladder does not climb it.
+2. **LIA\* forbids variable × variable** (their third listed
+   challenge, arising from joins). That product is the single
+   commonest shape in a financial model — `rate * base`. Over the
+   **reals**, though, nonlinear arithmetic is decidable (Tarski;
+   Z3's `nlsat`), so our setting gets for free the case they had to
+   extend around. This is the one place our problem is *easier*
+   than theirs, and it decides the fragment below.
+3. **Their unboundedness is intrinsic; ours is rare.** A relation
+   has unknown size by nature; a spreadsheet range is concrete at
+   read time (`A1:A1000` is a thousand cells). So the wall is
+   narrow — whole-column and differing-extent ranges only — and
+   round 1 **refuses** those rather than mis-modelling them.
+
+### The fragment, named precisely
+
+A matched-cell pair is *eligible* when both formulas parse whole
+into this grammar, over `Real` variables (one per referenced cell):
+
+- numeric literals; unary `-`, `+`;
+- `+  -  *  /  ^` with a **literal** integer exponent;
+- comparisons `= <> < <= > >=` and `AND OR NOT`, boolean-valued;
+- `IF(cond, a, b)` → `ite`; `MIN MAX ABS`;
+- `SUM(range)` / `SUMPRODUCT` over ranges whose extent is
+  **concretely known and identical on both sides** — unrolled to a
+  finite sum, no LIA\* required;
+- cell and cross-sheet references, resolved through the frozen
+  reader surface; **the same cell is the same variable on both
+  sides**, which is what makes the question « same function of the
+  same inputs? » rather than « same number? ».
+
+**Arithmetic semantics, declared, not assumed.** The fragment is
+interpreted over **exact reals**, and Excel computes in IEEE-754
+binary floats. So tier 1's positive verdict reads exactly: *these
+two formulas are the same function of the same inputs under exact
+real arithmetic.* It is **not** a claim that both round identically
+at every input. That gap is not swept anywhere: tier 2 is the
+behavioural check on the actual engine, and a pair that tier 1
+proves equivalent while tier 2 shows diverging is **its own
+finding** — a rounding-sensitive rewrite, which is worth a
+reviewer's attention rather than a silent tie-break.
+
+**Division** is partial: every `/` contributes a side condition
+`denominator ≠ 0`. A proof discharged under such conditions is
+reported *with them*, never as unconditional.
+
+### The refusal boundary (tier 3 — named, never blurred)
+
+Refused in words, per cell, with the construct named: lookups and
+data-dependent selection (`INDEX MATCH VLOOKUP XLOOKUP CHOOSE
+OFFSET INDIRECT`), text and date functions, aggregates over
+whole-column or differing-extent ranges (the LIA\* wall above),
+volatile and environment functions (`TODAY NOW RAND CELL INFO`),
+array/dynamic-array formulas, anything the reader could not parse,
+and every construct not listed in the fragment. **Tiers are never
+blurred**: a refusal is a refusal, not a weak pass, and the
+coverage denominator — how many suspects tier 1 was even eligible
+to judge — is reported beside every catch number.
+
+### Where tier 1 sits between the tiers
+
+It answers the question tier 2 can only sample: C3's
+`methodology_change` class — the reviewer's « did this rewrite
+change anything? ». Tier 0 discharges what did not move at hash
+cost; tier 1 *proves* eligible rewrites equivalent or produces a
+counterexample assignment; tier 2 remains the behavioural check on
+the real engine and the only tier that speaks about floats.
+
+### The harness and the gate (fixed now)
+
+Planted rewrite pairs on the registered corpus sheets, each with
+its truth known by construction: **equivalent** (`x*2/2`,
+`(a+b)+c` → `a+(b+c)`, `IF(c,a,a)` → `a`, `SUM(A1:A3)` →
+`A1+A2+A3`) and **inequivalent** (the study's hardcoded tail
+`−0.490096707821704`, an off-by-one range, a flipped comparison,
+a swapped operand of `−`). Reported per class: proved / refuted /
+unknown / refused, with counterexamples printed for refutations.
+
+**The hard gate — one violation fails the round: zero false
+proofs.** No pair the harness plants as inequivalent may come back
+`proved equivalent`. Unknown and refused are honest outcomes and
+are never counted as proofs; a timeout (registered: 10 s per pair)
+is UNKNOWN, never EQ.
+
+**Cross-tier agreement, also reported:** every planted pair also
+goes through tier 2. Agreement is expected; disagreement in the
+`tier 1 proves = / tier 2 diverges` direction is the
+rounding-sensitivity finding named above, and the opposite
+direction (`tier 1 refutes / tier 2 silent`) is expected whenever
+the seeded trials never activate the difference — exactly what the
+conditional class showed at tier 2.
+
+### Dependency proposal — for the lead's approval
+
+**`z3-solver`** (Microsoft Research, **MIT licence**), the Python
+distribution of Z3, needed for tier 1 and nothing else. Imported
+only inside the watch package's tier-1 module and its script, so a
+machine without it loses tier 1 and keeps every other tier. Per
+`lanes.md` § frozen interfaces rule 5, the lead owns `pyproject`;
+**nothing here imports z3 until that approval lands**, and this
+registration is deliberately code-free until then.
