@@ -1413,3 +1413,487 @@ makes the gate refuse a file rather than guess at it.
   clean — but until the typing is automatic, we are only perturbing
   the corner of the model we could label by hand, and laws found in
   a corner are not the model's laws.
+
+## 27 August 2026 — E1 registered: the ground truth, before any inference
+
+The lane is redirected by its own evidence: coverage is the binding
+constraint on B5, coverage is governed by input typing, and typing
+is E1/E2's unit inference wearing another hat. So Track E's first
+half is mine. **This entry is committed before a single row is
+drawn, and the sample is committed unlabelled before a single label
+is written** — a ground truth chosen after seeing what would be easy
+to label is not a ground truth.
+
+### The population and the sample
+
+- **Population**: every *input row* — a (sheet, row) that holds at
+  least one constant numeric cell and no formula in that cell — on
+  gate-clean corpus models. **Unlabelled rows are eligible.** They
+  are the hard cases (ED2's largest constant groups carry no row
+  label at all), and a truth set without them would flatter any
+  inference that guesses.
+- **Five models, registered, spanning shapes** — all gate-clean at
+  1.000000 in B2 round 1: `ofgem_ed2/v5_2026-06.xlsx` (price
+  control), `caa_h7/h7_new_debt_indexation_fds.xlsx` (rates),
+  `ofgem_riio3/draft/…Allowed Return on Equity Summary…xlsx`
+  (rates), `ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx` (price
+  control), `ofgem_riio3/final_wacc.xlsx` (WACC).
+- **20 rows per model, 100 in total**, drawn uniformly at random
+  from each model's population with **seed 1727** — registered here
+  so the draw cannot be re-rolled. Twenty per model is chosen to be
+  large enough that a per-dimension accuracy has a real denominator
+  and small enough that every row can be labelled carefully by
+  hand; E1 is a protocol, not a census.
+
+### The dimensions, and who needs them
+
+| Dimension | Values | Consumer |
+|---|---|---|
+| `kind` | continuous · categorical · unknown | B5 (perturb or hold) |
+| `b5_type` | money · rate · count · flag · selector · date · untyped | B5 (the perturbation policy) |
+| `currency` | GBP · USD · EUR · none · unknown | E2/E3 |
+| `scale` | units · thousands · millions · unknown | E2/E3 |
+| `period` | none · annual · quarterly · monthly · point-in-time · unknown | E2/E3 |
+| `rate_form` | percent · decimal · not-a-rate · unknown | E2/E3 |
+
+### The labelling rules
+
+1. **Evidence allowed**: the row's own label text, the column
+   headers above it, the cells' number formats, the values
+   themselves, and the labels of neighbouring rows in the same
+   block. Nothing else — no reading of the formulas that consume the
+   row, because E2 gets that as *propagation* and E1 must not be
+   contaminated by it.
+2. **`unknown` is a real label, not a failure.** Where the evidence
+   above does not decide, the answer is `unknown`, and E2 abstaining
+   on that row will count as **correct**. An inference that guesses
+   where a careful human abstains is worse than one that says
+   nothing.
+3. **A percent format decides `rate_form`**: `0.0%` means the stored
+   value is a decimal displayed as percent → `decimal`. A value near
+   5.8 labelled « RPI » with a plain format is `percent`.
+4. **Scale comes from the label or the header**, never from the
+   magnitude alone — « £m » says millions; a big number does not.
+5. **Categorical** covers flags, scenario selectors, indices and
+   year numbers: anything whose values name a state rather than
+   measure a quantity.
+6. Every row's label carries a **one-line reason**, so the truth set
+   can be argued with rather than trusted.
+
+### What gets reported as cost
+
+The AHA asks the typing cost to be priced. E1 reports: rows
+labelled, how many were decidable from label and format alone, how
+many needed the surrounding block, how many stayed `unknown`, and
+how long the pass took. That number is the argument for E2 existing.
+
+## 27 August 2026 — E1 done: the ground truth, its cost, and two findings
+
+100 rows labelled across the five registered models, seed 1727, the
+sample committed unlabelled first. The truth set is
+`docs/pierce/logs/dynamo/e1-ground-truth.json`; the labelling
+decisions and their evidence sentences are
+`server/scripts/recalc_units_label.py`, written out so the set can
+be argued with rather than trusted.
+
+| Dimension | Distribution |
+|---|---|
+| `kind` | continuous 69 · categorical 16 · **mixed 13** · unknown 2 |
+| `b5_type` | rate 51 · money 18 · date 16 · untyped 15 |
+| `currency` | none 67 · GBP 18 · unknown 15 |
+| `scale` | units 67 · millions 18 · unknown 15 |
+| `period` | annual 50 · point-in-time 20 · none 15 · unknown 15 |
+| `rate_form` | not-a-rate 43 · decimal 36 · percent 6 · unknown 15 |
+
+### The cost, since the AHA asked for it priced
+
+**31 of 100 rows were decided by the model telling me** — ED2 and
+GD3 carry a `Units` column of their own (« £m 20/21 prices », « £m
+nominal », « annual real % »), and those rows label themselves. The
+other 69 needed the column headers, the number format, the values
+and the sheet's own top matter, read together. **Two rows I could
+not decide and abstained on**; 13 more turned out not to be single
+quantities at all (below). One pass over 100 rows, with two rounds
+of correction, inside a single working session — so the honest
+figure is that a careful human can label of the order of a hundred
+rows an hour on models like these, and a real model has tens of
+thousands of input rows. That ratio is E2's whole justification.
+
+### Finding 1 — the models that declare their units are a different problem
+
+A third of the sample is self-describing: the sheet says « £m 20/21
+prices » beside the row. E2 will be nearly perfect there and the
+number will mean little. The other two thirds — H7, the RoE summary,
+the WACC model — **declare nothing anywhere**, and that is where
+inference is actually tested. **Registered now: E2's accuracy is
+reported split by whether the model declares units**, never as one
+blended figure, for the same reason B5's two catch-rate directions
+are never blended.
+
+### Finding 2 — a row is not always a quantity, and E2 must detect orientation
+
+I labelled the WACC model's curve sheets as rates and then re-read
+them: a row of `SONIA_Fwd_Curve` is **a record** — `Date | Maturity
+| rate` side by side — so calling the row « a rate » is simply
+false. **13 rows are now labelled `mixed`**, meaning the quantities
+live in the columns and the row has no single unit.
+
+This is a finding about the whole approach, not a labelling
+detail. A financial model sheet reads down the side and across the
+top; a data table reads the other way. **E2 must decide a sheet's
+orientation before it types anything**, and B5's perturbation
+inherits the same requirement. I would rather have found this in a
+hundred hand-labelled rows than in a rule set six weeks from now.
+
+### E2's interface, proposed for the lead (unchanged in shape, sharper now)
+
+Still proposed rather than built, per the amendment:
+
+```
+polar/tieout/units/          # the module name I propose
+    classify(cells) -> dict[str, TypedInput]   # per constant cell
+    orientation(cells, sheet) -> Orientation   # row-wise | column-wise
+```
+
+with the three properties the hand pass confirmed: **abstention is a
+first-class outcome** (2 rows here, and E2 abstaining where I
+abstained counts as correct); **every label carries its evidence in
+words**; **constrained families are declared, not inferred**. Added
+by finding 2: **orientation is decided before typing, and reported**.
+
+## 28 August 2026 — E2 registered: the blind rule, and an external truth set
+
+Building E2 as `polar/tieout/units/` (the name the orders offered,
+the interface proposed in my log on the 27th and unchanged since).
+Registered before the inference is measured.
+
+### The circularity I have to answer
+
+E1's 100 labels and E2's inference have the same author. If E2
+reproduces my labelling rules, agreement measures nothing except
+that I re-implemented myself. Naming it is not enough, so:
+
+**The primary measurement is against an external truth set I did not
+write.** ED2 and GD3 declare units in a `Units` column of their own,
+authored by Ofgem's modellers — « £m 20/21 prices », « £m nominal »,
+« annual real % », « % ». Every input row on those models carries
+one. So:
+
+- **E2 is forbidden to read the Units column.** It infers from
+  number formats, row labels, column headers, values and
+  propagation only. The Units column is held back as the answer key
+  and parsed only by the scorer.
+- That gives thousands of externally-authored labelled rows instead
+  of my hundred, and the accuracy on them is not self-graded.
+
+The E1 set stays as the **secondary** measurement — it is the only
+truth available for the three models that declare nothing (H7, the
+RoE summary, the WACC model), and it carries the human judgement my
+decision table alone did not have (the `mixed` record rows, the
+LIBOR curve). Its numbers are reported **with the shared-author
+caveat stated every time**, never as independent validation.
+
+### What is measured, per dimension
+
+Accuracy, abstention rate and error rate — separately, because an
+inference that abstains is not wrong in the way a confident mistake
+is wrong. **Reported split by declared/undeclared**, as registered
+on the 27th. A dimension where E2 is right 60% of the time and
+abstains 35% is a different (and better) instrument than one that is
+right 60% and wrong 40%, and the report must show the difference.
+
+### The predictions I am registering before running
+
+- **`scale` and `currency` on ED2/GD3 will be the hard ones blind.**
+  The £m is declared in the Units column and nowhere else — not in
+  the number format (`#,##0.0_);(#,##0.0)` says nothing about
+  millions), not in the row label. My honest expectation is that
+  E2 will abstain on most of them, and that abstention is the
+  correct behaviour, not a failure. If it guesses « units » and
+  scores well by luck, I will say so.
+- **`rate_form` will be the easy one**: a percent number format
+  decides it, and it is the dimension E3's « percent as decimal »
+  check needs most.
+- **`kind` (continuous vs categorical) — B5's need — should be
+  reachable**: dates, year indices and flags have formats and value
+  ranges that give them away.
+
+## 28 August 2026 — E2 built and measured: 3,796 externally-authored rows
+
+`polar/tieout/units/` exists, with 11 tests on hand-built evidence
+whose right answer is known — including the cases where the right
+answer is « nothing ». Measured blind, exactly as registered.
+
+### Primary: against Ofgem's own Units column (E2 never reads it)
+
+| Dimension | ED2 v5 (3,431 rows) | GD3 PCFM (365 rows) |
+|---|---|---|
+| `kind` (B5's need) | **96.4% right, 0.0% wrong**, 3.6% abstained | **96.2% right, 0.5% wrong**, 3.3% abstained |
+| `rate_form` | **96.4% right, 0.0% wrong** | **96.4% right, 0.3% wrong** |
+| `b5_type` / `currency` / `scale` | 31.1% right, **0.0% wrong**, 68.9% abstained | 66.6% right, 0.5% wrong, 32.9% abstained |
+| `period` | 71.5% right, **24.9% wrong** | 32.6% right, **64.1% wrong** |
+
+**3,796 rows whose answer key was written by the models' own
+authors, not by me.** The two predictions I registered both held:
+`rate_form` is the easy one, and blind inference **abstains rather
+than guesses on scale and currency** — 2,363 abstentions on ED2 and
+**not one wrong answer** among them. The £m lives in a column E2 was
+forbidden to read and nowhere else; abstaining is the correct
+behaviour and the number says so.
+
+`kind` at 96% with essentially no errors is the result B5 needed:
+the thing that governs perturbation coverage is now inferable.
+
+### The one bad number, and I am not explaining it away
+
+`period` is wrong on a quarter of ED2's rows and two thirds of
+GD3's. The confusion is one shape — **« said annual, was none »,
+828 of 856 on ED2 and 232 of 234 on GD3** — and it lands on rows the
+Units column describes only as « % ». My inference calls a rate
+under `FY2024` headers annual; my answer key calls it `none` because
+the model's own text does not say « annual ».
+
+I think the key is the weaker of the two, not the inference. But
+**that is an argument, not a measurement**, so the number stands as
+measured and `period` is **not to be quoted** until it has a key
+worth grading against — which means reading how the model uses the
+row, not how it labels it. Registered as the next E2 round.
+
+### Secondary: against E1's hundred, with the caveat restated
+
+E1 and E2 share an author, so this is **not independent
+validation** — it is a check that the inference reproduces careful
+human reading at scale.
+
+| | `kind` | `rate_form` | `b5_type`/`currency`/`scale` | `period` |
+|---|---|---|---|---|
+| Declares units (31 rows) | 96.8% / 0% wrong | 96.8% / 0% | 41.9% right, 0% wrong, 58% abstained | 67.7% / 29% wrong |
+| Declares nothing (69 rows) | 97.1% / 0% wrong | 72.5% / 5.8% | 59.4% right, 0% wrong, 41% abstained | 72.5% / 5.8% |
+
+The split I registered was worth having: the undeclared models are
+where the instrument is actually tested, and `rate_form` drops from
+96.8% to 72.5% there — the WACC model's curve sheets, where 13 of
+the 20 rows are records and E2 correctly refuses to type them.
+
+### What this unlocks, and what it does not
+
+- **B5 round 2 can now type automatically**: `kind` is 96% accurate
+  with near-zero confident errors, which is what decides hold vs
+  perturb. Coverage will be reported beside the rule set, per
+  standing practice.
+- **E3 stays unarmed.** The plan says the mismatch checks are armed
+  only where inference is measured accurate; `period` is not, and
+  `scale` is an abstention rather than an answer on two thirds of
+  ED2. A « monthly figure in an annual line » check cannot be built
+  on a period dimension that is wrong a quarter of the time — and
+  that is Sentinel's call to make with these numbers, not mine to
+  pre-empt.
+- **The propagation half is not built yet.** E2 today reads formats,
+  labels, headers and values; inheriting units through the
+  dependency graph is the Williams-2020 half still owed, and it is
+  the obvious way to rescue `scale` — a cell that sums £m rows is in
+  £m whether or not anyone wrote it down.
+
+---
+
+## E2's second half — propagation, and the bugs it took to report a zero honestly
+
+*28 Aug. Standing arrangement confirmed: I fetch
+`origin/claude/pierce-phase-6-writing-mjkaj6` and read
+`docs/pierce/orders/dynamo.md` at the start of every working turn,
+do what it says, push to `swens/dynamo`, and stop.*
+
+### The hypothesis I wrote down last time was wrong, and I measured
+### it before building on it
+
+I ended the last entry with « a cell that sums £m rows is in £m
+whether or not anyone wrote it down », and said propagation was the
+obvious way to rescue `scale`. The first thing I did was count the
+anchors a *blind* propagation would have.
+
+**Zero.** Not one currency-bearing number format on ED2 (43,178
+cells) or GD3 (16,656). The « £m » exists in the Units column and
+nowhere else in either file. So blind propagation has nothing to
+spread: it cannot rescue `scale`, and the sentence I wrote last time
+was a guess that the file disproves.
+
+What propagation *can* do is carry the **declared** units — the ones
+in that column — from the input rows into the tens of thousands of
+formula cells that consume them. That is what E3 would need and what
+B5 needs to read its watched cells, so that is what I built, with
+the seeds supplied by the caller rather than inferred.
+
+### The rules, and the reach
+
+`propagate(cells, seeds)` in `polar/tieout/units/inference.py`. A
+sum carries the unit of its terms. A formula that is *nothing but*
+one amount over another of the same currency is dimensionless. An
+amount times a dimensionless factor keeps the amount's unit. Where
+the terms do not settle it, **nothing is claimed** — a conclusion
+drawn from part of a formula is a guess about the rest.
+
+| | seeds | formula cells | reached | reach |
+|---|---|---|---|---|
+| ED2 v5 | 15,140 | 20,485 | 13,065 | **63.8%** |
+| GD3 PCFM | 1,837 | 14,399 | 6,250 | **43.4%** |
+
+`docs/pierce/logs/dynamo/propagate3.json`.
+
+### The part worth reading: five bugs, all mine
+
+The first run reported **216 « unit conflicts » on ED2**. I did not
+report them. I hand-read one — `InputSummary!AR124`,
+`= -SUMPRODUCT($I$117:$I$119,AR117:AR119)`, whose six precedents all
+declare « £m 20/21 prices » — and it was my detector's fault, not the
+model's. Then I kept going, because one artifact means the rest are
+suspect too. Every one of the following was found by reading a
+conflict the workbooks produced, and each is now a test carrying the
+formula that caught it:
+
+1. **`SUMPRODUCT` read as additive.** It contains no `*` character
+   and is a product all the same. Fixed → and the count went *up*,
+   to 276, which is the reason I kept reading rather than shipping.
+2. **A `SUM` leading a product read as a sum.**
+   `=SUM(AP65:AP67) * AP$16 * AQ$16 * AR$13` opens with SUM. 240 of
+   the 276.
+3. **A product taking the unit of its first *known* factor rather
+   than its first *moneyed* one.** « rate × £m » came out
+   dimensionless whenever the rate came first, and every sum below
+   it then read as a conflict.
+4. **A product with an unlabelled factor claiming
+   « dimensionless ».** `-(SUM($AI101:AQ101))*AR98` — the amounts
+   row is blank in this file and only the rate is labelled. It is
+   money × rate whose money happens to be zero.
+5. **« there is a `/` in here » read as a ratio.**
+   `(AP83/AP$13 - AP84) * AP$16 * AQ$16 * AR$13` is £m over an
+   inflation index, less £m, times factors. It is money. This one
+   alone was the last 18.
+
+After all five: **0 conflicts on ED2, 0 on GD3.**
+
+### A zero is worth nothing without a control, so here is the control
+
+« The detector found no unit mismatches » and « the detector cannot
+find a unit mismatch » produce the same number. So, registered
+before the run and then run: take each model's own declared units,
+corrupt **one row's scale** — a « £ » row summed into a « £m »
+column, the mistake a modeller actually makes — and ask whether
+propagation names the sum that adds them. A plant counts as caught
+only when the conflict is reported **at the planted formula's own
+ref**. Predicted ≥ 90%.
+
+| | plants | caught at the sum | unobservable | missed | from the declared row |
+|---|---|---|---|---|---|
+| ED2 v5 | 20 of 837 candidate sums | 20 | 0 | 0 | 13 of 13 |
+| GD3 PCFM | 20 of 797 | 18 | 2 | 0 | 14 of 14 |
+
+`docs/pierce/logs/dynamo/units-control.json`.
+
+**« Unobservable » is measured, not argued.** Both GD3 cases are
+sums whose *other* term is computed from the planted one
+(`=SUM(AN36:AN37)` where `AN37 = ((AN28+AN29)/PCf-AN36)*RIIO3`): the
+corruption reaches both sides, they agree, and there is no
+disagreement left to see. The script tests for that by walking the
+precedent graph rather than taking my word for it.
+
+The control also found a sixth bug, and the worst one: the first
+version of it caught **6 of 20**. A sum is reached before some of
+its own terms in a 20k-cell walk, and a conclusion drawn from two of
+five terms was never revisited. Propagation now **revises** a
+conclusion when more of its terms arrive. That went to 38 of 40.
+
+### What I am handing over, and what I am not
+
+- **The reach numbers and the control are results.** 63.8% and
+  43.4% of formula cells carry a declared unit; the instrument
+  catches a planted mismatch 38 times out of 38 observable.
+- **The zero is a result about these two files**: no unit mismatch
+  survives propagation from their own declared units. It is a
+  negative finding and it is Sentinel's to use or not — E3's
+  mismatch findings cannot be sourced from these two models.
+- **I am handing Sentinel nothing that looks like a finding**,
+  because there is nothing. Had I pushed the first run, I would have
+  handed over 216 of them, and all 216 were mine.
+- **`period` is still not to be quoted**, unchanged from last entry.
+- **Abstention got more expensive and I am keeping it**: GD3's reach
+  is 43.4% where the guessing version reached 47.4%. Four points of
+  reach is the price of not making things up.
+
+Next, per orders item 3: B5 round 2 with typing driven by E2's
+`kind`, coverage reported beside the rule set.
+
+---
+
+## B5 round 2 — registration, before the machine is touched
+
+*28 Aug, orders item 3. Nothing below is a result. The typing map,
+the coverage threshold and the predictions are committed first, and
+the numbers land in the entry after this one.*
+
+Round 1b's finding was that a rule set is an artifact of which
+inputs were allowed to move, and that hand-typing reached **10 of
+193 watched cells** on the H7 pair and is not attemptable on a model
+with 21,638 constants. E2 exists to remove that constraint. This
+round replaces the hand-written `H7_MONEY_ROWS`/`H7_RATE_ROWS`
+tables with typing driven by inference.
+
+### The typing map
+
+E2's vocabulary is not B5's, so the translation is written down
+here rather than buried in the runner. `b5_type` decides first,
+`kind` decides what is left:
+
+| E2 says | B5 perturbs it as |
+|---|---|
+| `b5_type=money` | `MONEY` — multiplicative band |
+| `b5_type=rate` | `RATE` — its own band, never a money factor |
+| `b5_type=date`, or `kind=categorical` with date evidence | `DATE` — **held** |
+| `kind=categorical`, ≤ 4 distinct values in the row | `SELECTOR` — **stepped through the row's own observed values** |
+| `kind=categorical`, more than 4 | `FLAG` with no states — **held** |
+| `kind=mixed` or `unknown`, `b5_type` untyped | `UNTYPED` — **held, and counted as a gap** |
+
+Two things in that table are load-bearing and both come from the
+AHA's typing law. **A selector's states are the values that row
+actually takes in the file** — never invented, never scaled; a
+categorical row with many distinct values is not a selector I
+understand, so it is held. And **`unknown` still means held**: E2
+abstaining is not a licence to guess, it is the same refusal
+arriving automatically instead of by hand.
+
+The hand-typed tables stay in the runner as `--hand`, because the
+comparison between hand and inferred typing is the point of the
+round.
+
+### The coverage threshold, fixed now
+
+A round is **informative only at coverage ≥ 50%** of watched cells.
+Below that the rule set is reported as uninformative and no rule
+from it is quoted — the standing practice from round 1b, given a
+number now so it cannot be negotiated after seeing the output.
+
+### Predictions
+
+1. **Automatic typing types more input cells than the hand tables
+   did** on the H7 pair — more than 10 of 193 watched cells move.
+2. **It clears the 50% bar on at least one of the three models.** I
+   am genuinely unsure of this one: H7's inputs are mostly rates,
+   and a rate model's watched cells may move on very few of them.
+3. **The stability gates still pass** — five seeds identical, two
+   independent minings agreeing above 0.5 — because nothing about
+   the mining changed, only which cells move.
+4. **The rule sets get bigger and mostly worse.** More movement
+   means more true relations *and* more three-term coincidences;
+   I expect the stability filter to carry most of that weight, and
+   I expect to still be unable to say the rule set is
+   modeller-recognisable. Recording that in advance so that a
+   recognisable set is a real surprise and not a story told
+   afterwards.
+5. **At least one rule will name a cell E2 typed wrongly.** `kind`
+   is 96.4% accurate, which on 193 cells is several errors, and a
+   money row perturbed as a rate is exactly the failure the typing
+   law exists to prevent. If I cannot find such a rule I will say
+   so.
+
+Judging recognisability is a judgement and is recorded as one: I
+print the rule set, read it, and write what I think — no metric is
+being invented for it.

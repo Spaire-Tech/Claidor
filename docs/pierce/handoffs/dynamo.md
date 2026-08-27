@@ -89,6 +89,37 @@ files, git-ignored), never committed.
   naming its planted cell, 0 false positives across 26 control
   law-runs**, over 13 host files — hardcode-in-the-tail 24/24 in
   three structural guises.
+- **Narrowing** (`recalc/narrow.py`, `scripts/recalc_narrow.py`) —
+  ddmin (Zeller) plus a frontier walk, taking a violated law down to
+  one cell. **43 narrowings, 32 exact (size 1), 11 hits on the one
+  case predicted wide, 0 misses**; ddmin agreed on all 10 H7 runs.
+- **B5 — mining a model's own laws** (`recalc/mine.py`,
+  `scripts/recalc_mine.py`). Clean-room: the ICSME 2019 reference is
+  LGPL, **has not been read and will not be**. Typed input
+  perturbation (flags held, selectors stepped, nothing categorical
+  scaled), signed-sum and ratio candidates, cleansing, and a
+  two-independent-minings stability rule. Both stability gates pass.
+  **The rule sets are not modeller-recognisable yet**, and the
+  measured root cause is perturbation coverage, which is governed by
+  input typing — hence E2. `coverage()` gates a round: low coverage
+  is **reported as uninformative, never as a result**.
+- **E1 — hand-labelled unit ground truth.** 100 rows, cost priced
+  (31 self-declared, 69 needed reading, 2 abstained, ~100 rows/hour
+  against tens of thousands per model). Sample committed
+  *unlabelled first*, then the labels:
+  `docs/pierce/logs/dynamo/e1-{sample-unlabelled,ground-truth}.json`.
+- **E2 — unit inference** (`polar/tieout/units/`). Blind pass
+  (formats, labels, headers, values) measured on **3,796
+  Ofgem-authored rows**: `kind` 96.4% with 0% wrong, `rate_form`
+  96.4%, `scale`/`currency` abstain rather than guess (2,363
+  abstentions, **zero wrong**). **`period` is wrong on 24.9% / 64.1%
+  and is not to be quoted** until it has a better answer key.
+  Propagation (`propagate()`) carries *declared* units through the
+  dependency graph — 63.8% of ED2's formula cells, 43.4% of GD3's —
+  and its planted-mismatch control catches **38 of 38 observable
+  plants**. It reports **0 conflicts on both models**; the first
+  draft reported 216, and all 216 were bugs in the detector, each
+  now a named test.
 - **B3 — designed, not built.** The Graph-API arbiter through the
   existing Microsoft connector, written up in the log; it waits on
   the lead routing the connector surface (shared ground) and on a
@@ -117,9 +148,10 @@ files, git-ignored), never committed.
 
 | Thing | Path |
 | --- | --- |
-| Your package | `server/polar/tieout/recalc/` |
-| Your tests | `server/tests/tieout/test_recalc_*.py` |
-| Your scripts | `server/scripts/recalc_{probe,gate,behave}.py` |
+| Your packages | `server/polar/tieout/recalc/`, `server/polar/tieout/units/` |
+| Your tests | `server/tests/tieout/test_recalc_*.py`, `test_units_inference.py` |
+| Your scripts | `server/scripts/recalc_*.py` |
+| Your measured runs | `docs/pierce/logs/dynamo/*.json` |
 | Your log / this map | `docs/pierce/logs/dynamo.md`, `docs/pierce/handoffs/dynamo.md` |
 | Orders | `docs/pierce/orders/dynamo.md` (integration tip) |
 | Lane rules | `docs/pierce/lanes.md` · canon: `docs/pierce/notes.md` |
@@ -127,6 +159,6 @@ files, git-ignored), never committed.
 | B5's binding design laws | `docs/pierce/swens-aha.md` |
 
 Run tests with `uv run pytest tests/tieout/test_recalc_*.py
---noconftest -q` from `server/` (the tieout suite is conftest-free;
-five unrelated test files fail *collection* in this container on a
+tests/tieout/test_units_inference.py --noconftest -q` from `server/` (the tieout suite is conftest-free;
+seven unrelated test files fail *collection* in this container on a
 pre-existing pydantic/3.14 issue — not yours, not new).

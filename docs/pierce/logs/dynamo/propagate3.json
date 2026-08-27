@@ -1,0 +1,26 @@
+{
+ "ed2-v5": {
+  "seed_cells": 15140,
+  "formula_cells": 20485,
+  "formula_cells_reached": 13065,
+  "reach_percent": 63.8,
+  "unit_conflicts": 0,
+  "conflict_sample": [],
+  "currencies_reached": {
+   "GBP": 12200,
+   "none": 865
+  }
+ },
+ "gd3-pcfm": {
+  "seed_cells": 1837,
+  "formula_cells": 14399,
+  "formula_cells_reached": 6250,
+  "reach_percent": 43.4,
+  "unit_conflicts": 0,
+  "conflict_sample": [],
+  "currencies_reached": {
+   "none": 1444,
+   "GBP": 4806
+  }
+ }
+}

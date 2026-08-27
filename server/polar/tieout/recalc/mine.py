@@ -34,6 +34,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from itertools import combinations
+from typing import Any
 
 #: Same-engine tolerance, as everywhere in this lane.
 RELATIVE = 1e-9
@@ -70,6 +71,43 @@ class TypedInput:
     states: tuple[float, ...] = ()
     #: For MONEY/COUNT/RATE: the multiplicative band sampled within.
     band: tuple[float, float] = (0.5, 2.0)
+
+
+#: How many distinct values a categorical row may take and still be
+#: a selector whose states B5 will step through. Above it the row is
+#: held: a categorical row with many values is not a selector this
+#: lane understands, and stepping it would run the model in states
+#: it may never occupy.
+SELECTOR_STATES = 4
+
+
+def type_from_units(
+    label: Any, ref: str, value: float, row_values: Sequence[float]
+) -> TypedInput:
+    """One input cell, typed from E2's inference rather than by hand.
+
+    The map is registered in the lane log (28 Aug, B5 round 2), and
+    the two load-bearing rules are the AHA's: a selector's states are
+    **the values the row actually takes in the file**, never
+    invented; and an abstention (`unknown`) is still a hold, because
+    E2 declining to decide is not a licence to guess.
+    """
+    b5_type = getattr(label, "b5_type", "untyped")
+    kind = getattr(label, "kind", "unknown")
+    if b5_type == "money":
+        return TypedInput(ref, InputType.MONEY, value)
+    if b5_type == "rate":
+        return TypedInput(ref, InputType.RATE, value, band=(0.6, 1.6))
+    if b5_type == "date":
+        return TypedInput(ref, InputType.DATE, value)
+    if kind == "categorical":
+        states = sorted(set(row_values))
+        if 0 < len(states) <= SELECTOR_STATES:
+            return TypedInput(
+                ref, InputType.SELECTOR, value, states=tuple(float(s) for s in states)
+            )
+        return TypedInput(ref, InputType.FLAG, value)
+    return TypedInput(ref, InputType.UNTYPED, value)
 
 
 def sample(inputs: Sequence[TypedInput], rng: random.Random) -> dict[str, float]:

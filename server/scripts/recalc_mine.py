@@ -1,6 +1,6 @@
-"""B5 round 1 — the Monday experiment: mine a model's own laws.
+"""B5 — mine a model's own laws under typed input perturbation.
 
-    cd server && uv run python -m scripts.recalc_mine MODEL_KEY OUT.json [RUNS]
+    cd server && uv run python -m scripts.recalc_mine MODEL_KEY OUT.json [RUNS] [--hand]
 
 Per the registration (lane log, 27 Aug): only gate-clean files are
 mined; inputs are **typed by hand** below and perturbed by their
@@ -13,6 +13,12 @@ both minings find are kept.
 Round 1 prints the rule set. **It is read before anything is
 scored** — the test of this round is whether a modeller recognises
 the model in its own discovered laws, not a number.
+
+**Round 2 (registered 28 Aug) types the inputs from E2's
+inference** rather than from the hand tables below, which stay
+reachable as `--hand` because the comparison between the two is the
+point of the round. Coverage is printed beside every rule set and a
+round below 50% is reported as uninformative.
 """
 
 import json
@@ -27,11 +33,14 @@ from polar.tieout.recalc.mine import (
     TypedInput,
     agreement,
     cleanse,
+    coverage,
     mine_signed_sums,
     sample,
     stable_rules,
+    type_from_units,
 )
 from polar.tieout.recalc.uno_calc import UnoCalculator, find_install
+from polar.tieout.units.inference import classify_sheet, rows_from_cells
 from polar.tieout.workbook import read_workbook
 from scripts.recalc_behave import perturb
 
@@ -139,6 +148,40 @@ MODELS: dict[str, tuple[str, str, Any]] = {
 }
 
 
+def inferred_inputs(cells: dict, sheets: list[str] | None = None) -> list[TypedInput]:
+    """Type every constant input cell from E2, per the registered map.
+
+    E2 is run **blind** — it never reads a Units column here — so the
+    typing is the same instrument measured in the last entry, not a
+    privileged version of it.
+    """
+    typed: list[TypedInput] = []
+    for sheet in sorted(sheets or {cell.sheet for cell in cells.values()}):
+        rows = rows_from_cells(cells, sheet)
+        if not rows:
+            continue
+        labels = classify_sheet(rows)
+        by_row = {row.row: row for row in rows}
+        for (sheet_name, number), label in labels.items():
+            evidence = by_row.get(number)
+            if evidence is None:
+                continue
+            for ref, cell in cells.items():
+                if (
+                    cell.sheet != sheet_name
+                    or cell.row != number
+                    or cell.formula is not None
+                    or cell.value is None
+                ):
+                    continue
+                try:
+                    value = float(cell.value)
+                except (TypeError, ValueError):
+                    continue
+                typed.append(type_from_units(label, ref, value, evidence.values))
+    return typed
+
+
 def one_mining(
     calculator: UnoCalculator,
     source: Path,
@@ -178,8 +221,10 @@ def main() -> int:
     if len(sys.argv) < 3:
         print(__doc__)
         return 2
-    key, out = sys.argv[1], Path(sys.argv[2])
-    runs = int(sys.argv[3]) if len(sys.argv) > 3 else 200
+    argv = [a for a in sys.argv[1:] if a != "--hand"]
+    hand = "--hand" in sys.argv
+    key, out = argv[0], Path(argv[1])
+    runs = int(argv[2]) if len(argv) > 2 else 200
     if find_install() is None:
         print("no LibreOffice >= 25.8 here — refusing")
         return 1
@@ -199,19 +244,19 @@ def main() -> int:
         for ref, cell in cells.items()
         if cell.formula is None and cell.value is not None
     }
-    typed = typing(constants)
+    typed = typing(constants) if hand else inferred_inputs(cells)
     watched = sorted(
         ref
         for ref, cell in cells.items()
         if cell.sheet == sheet and cell.formula is not None
     )
     labels = {ref: (cells[ref].row_label or ref) for ref in watched}
+    counts = {kind: sum(1 for t in typed if t.type is kind) for kind in InputType}
     print(
-        f"{source.name}: {len(typed)} typed inputs "
-        f"({sum(1 for t in typed if t.type is InputType.MONEY)} money, "
-        f"{sum(1 for t in typed if t.type is InputType.RATE)} rate, "
-        f"{sum(1 for t in typed if t.type is InputType.UNTYPED)} held), "
-        f"{len(watched)} watched formula cells",
+        f"{source.name}: typing={'hand' if hand else 'inferred'}, "
+        f"{len(typed)} typed inputs ("
+        + ", ".join(f"{n} {kind}" for kind, n in counts.items() if n)
+        + f"), {len(watched)} watched formula cells",
         flush=True,
     )
 
@@ -230,6 +275,15 @@ def main() -> int:
     finally:
         calculator.stop()
 
+    moved, watched_count = coverage(first, watched)
+    reach = moved / watched_count if watched_count else 0.0
+    verdict = "informative" if reach >= 0.5 else "UNINFORMATIVE — not a result"
+    print(
+        f"coverage: {moved} of {watched_count} watched cells moved "
+        f"({100 * reach:.1f}%) — {verdict}",
+        flush=True,
+    )
+
     mine_started = time.monotonic()
     rules_a = cleanse(mine_signed_sums(first, watched))
     rules_b = cleanse(mine_signed_sums(second, watched))
@@ -237,19 +291,30 @@ def main() -> int:
     mine_seconds = round(time.monotonic() - mine_started, 1)
 
     print(f"\n=== {source.name}: {len(stable)} stable rules ===", flush=True)
+    # Row labels repeat across a model's year columns, so distinct
+    # rules render as identical sentences. Printing the sentence with
+    # its cells keeps « eleven rules » from reading as eleven facts.
     for rule in stable:
-        print("  " + rule.render(labels), flush=True)
+        cells_in = " ".join(ref.split("!")[-1] for ref, _ in rule.terms)
+        print(f"  {rule.render(labels)}   [{cells_in}]", flush=True)
+    sentences = {rule.render(labels) for rule in stable}
+    print(f"  ({len(sentences)} distinct sentences)", flush=True)
 
     out.write_text(
         json.dumps(
             {
                 "model": source.name,
+                "typing": "hand" if hand else "inferred",
+                "typed_inputs": {str(kind): n for kind, n in counts.items() if n},
+                "coverage": [moved, watched_count],
+                "coverage_verdict": verdict,
                 "runs_requested": runs,
                 "kept": [len(first), len(second)],
                 "drops": [drops_a, drops_b],
                 "rules_first": len(rules_a),
                 "rules_second": len(rules_b),
                 "agreement": round(agreement(rules_a, rules_b), 4),
+                "distinct_sentences": len({rule.render(labels) for rule in stable}),
                 "stable": [
                     {
                         "terms": list(rule.terms),
