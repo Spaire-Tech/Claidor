@@ -1921,3 +1921,86 @@ than guessing, measured across four corpora — and it has never once
 proposed a correct source on a table-shaped document. The next move
 is not another document-side round. It is the model-side name, which
 is Sentinel's.
+
+## 28 August 2026, eleventh « go » — the lead's two notes, and D1 round N registered
+
+Orders read from the tip. Round 6 is approved as registered — it has
+since been run and it **died by its own criterion** (rounds 6 and 7
+above); the approval and the result crossed in the post, which is
+what happens when a lane runs ahead of a sweep, and nothing about the
+result is changed by the approval arriving after it.
+
+Both lead notes are taken:
+
+1. **`indeterminate-line-granularity` joins the permanent
+   vocabulary** — the judge blind where the matcher is blind, and a
+   number that cannot be honestly produced is not produced. It is
+   already in every round harness this lane owns; it stays.
+2. **« Nil printed as a dash » is registered below** as its own small
+   round, as ordered.
+
+## D1 round N — registration: a dash is a stated zero
+
+Round 5 turned this up and the lead named it: four of the drawn cells
+were zeros whose documents state them as « - », and D1 extracts
+nothing, so the matcher's silence was correct for the wrong reason —
+there was no fact to find. A financial table says nil with a dash far
+more often than it says `0`, and a document that states a quantity
+should produce a fact.
+
+**The rule, frozen before the code.** A token is extracted as a
+**nil fact** — `value = 0.0`, `text` the dash exactly as printed —
+when all three hold:
+
+1. the token is exactly one dash character: `-`, `–` or `—` (a
+   token like `FTS-1` or `(-)` is not a dash, and is untouched);
+2. its own **line contains at least one number**, so the line is a
+   data row rather than prose;
+3. on its own page, at least **three** numeric tokens have x-ranges
+   overlapping this token's by at least 1 point — the dash stands in
+   a column where numbers live.
+
+Condition 3 is geometry doing the one job round 6 proved it is good
+at: **saying whether there are columns at all.** Round 6's failure
+was reading a *preceding sentence* as a header; this asks only
+« do numbers stand at this x elsewhere on the page », which prose
+answers no to and a table answers yes to.
+
+**The dash inside a label is the case to beat.** In
+`Demand - FTS - 1 - - 123.1 - - - - 123.1 (123.1) -` the first two
+dashes belong to the row's name and the rest are nils. Condition 3 is
+what separates them: the label's dashes sit at x-positions where no
+numbers stand, the nils sit in the numeric columns. **Whether that
+holds is the measurement, not an assumption.**
+
+**Consequences, named now:**
+
+- Extractor output changes, so `EXTRACTOR_VERSION` goes `"3"` →
+  `"4"`; every stored fact takes a new id and re-extraction replaces
+  the rows, exactly as the version-in-the-id exists for. No confirmed
+  links exist, so nothing is orphaned.
+- **The matcher gets more candidates** — every nil in every table.
+  That could hurt: a cell whose value is 0 would suddenly find many
+  candidates and tie. Rounds 5–7's Finch sample is rescored to
+  measure it, on the same 27 rows and the same truth.
+- **Round 5's truth changes for four rows.** Those cells were judged
+  « not stated » because no fact existed; if a dash becomes a fact,
+  the document does state them and they become findable. Re-judged
+  explicitly, with the four named, and the before/after reported —
+  a truth file that changes silently would be worthless.
+
+**The measurement:**
+
+- **Coverage**: nils extracted per document, across the Finch seven
+  and the ED2 three, with the totals beside the existing number
+  counts.
+- **Precision, hand-checked**: a seeded sample of **20 extracted
+  nils** (seed 141421), each read against its page — is it really a
+  nil standing in a numeric column, or a hyphen in a label?
+  Reported as a count, failures named.
+- **Harm**: the Finch part-A table before and after, and rounds
+  1–3's ED2 sample, which must stay at 30 of 30 correct abstentions.
+
+**The kill-criterion, stated in advance:** if the hand-check shows
+label hyphens being read as nils, or if the Finch table gets worse,
+the rule comes out exactly as rounds 6 and 7's did.
