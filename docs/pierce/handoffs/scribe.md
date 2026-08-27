@@ -269,7 +269,10 @@ that runs the wrong direction; that is what round 2 taught.**
   `testing-claidor-s3-master` and delete each other's; the symptom is
   hundreds of setup errors in a suite that passes alone. Heavy workbook
   jobs run alone too — a concurrent pair OOM-killed a sweep once.
-- `pgrep -f "pytest tests/tieout"` matches the *wrapper shell* of any
-  command whose text contains that string, including the waiter
-  itself, so a `until ! pgrep …` loop never exits. Match
-  `bin/pytest tests/tieout`.
+- `pgrep -f "<anything>"` matches the *wrapper shell* of any command
+  whose own text contains that string — **including the pgrep command
+  itself**. So `until ! pgrep -f "pytest tests/tieout"` never exits,
+  and `pgrep -f "bin/pytest" && echo BUSY || pytest …` always reports
+  BUSY and never runs the suite. Both happened here, the second one
+  *after* this note was written warning about the first. If you need a
+  guard, compare against a pid file or just run the thing.
