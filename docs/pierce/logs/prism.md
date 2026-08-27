@@ -2370,3 +2370,50 @@ equivalent ». It covers the 172 cells the trials actually moved. It
 does *not* cover the 1,344 frozen ones, and it does not cover the
 model's text logic at all. Tier 1 would be the rung that speaks
 where the trials cannot, and tier 1 is still shut.
+
+### The coverage table, measured rather than inferred
+
+The totals above do not say *which* suspects tier 2 could answer, and
+that is the number a reviewer needs, so the report now carries the
+cross-tab and the pair was re-run for it. Identical totals on the
+second run — same seed, same counts, so the instrument is
+deterministic — plus:
+
+```
+                        supported   no_perturbable_input
+trace_differs (294)            96                    198
+unobservable_value (1,222)     76                  1,146
+no_aligned_counterpart (24)     —   (24 « added » at the raw rung)
+```
+
+**This is the honest reading of « 0 diverged », and it is a good
+deal weaker than the headline sounds.** Of the 294 cells this
+revision actually disturbed — the ones whose inputs moved
+underneath them — the trials reached **96**. The other **198 were
+refused by name**: the perturbation never moved them, so their
+agreement is not evidence of anything. Tier 2's claim covers 96 of
+294 disturbed cells and 76 of 1,222 text formulas. It does not
+cover the model.
+
+So the round's finding stands as written — *no divergence was found
+where the trials could look* — and the sentence it cannot support
+is « the revision changed no behaviour anywhere ». What it supports
+is: **nothing that the trials could exercise computes differently,
+and two-thirds of the disturbed cells could not be exercised at
+all.**
+
+**The next round is named by that 198, not invented.** Two candidate
+reasons, both already known to this lane and neither yet
+distinguished:
+
+1. Their inputs are **categorical** literals, which the registered
+   rule excludes from perturbation on purpose (scaling a flag
+   deadens the branch it selects, symmetrically, in both files).
+2. They sit on **unselected licensee branches** — round D's lesson,
+   « dead means unselected » — and nothing in the pair oracle forces
+   a selector, unlike the planted-edit harness which does.
+
+The round that separates them: re-run the pair with the model's own
+`CHOOSE` index forced, exactly as `watch_stealth` round D does, and
+see how much of the 198 lights up. Registered here; not run this
+turn, and no number from it is anticipated.
