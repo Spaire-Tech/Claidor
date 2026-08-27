@@ -2769,3 +2769,36 @@ family the hand typing knew was found on both files, the three false
 families were caught by reading and fixed, no draw left the simplex
 across 300 checks and 400 runs, coverage stayed at 100%, and the
 round-2 sentences survived.
+
+### `h7-fds`: coverage bought down to 96.5%, rule set again identical
+
+The other half of the contrast, and the one where holding bites.
+`h7-fds` has two families that share the embedded weight, so the
+whole component is held rather than drawn:
+
+| | round 2 (illegal draws) | round 4 (component held) |
+|---|---|---|
+| coverage | 144 of 144 (100%) | **139 of 144 (96.5%)** |
+| families detected | — | 10 instances, 2 row-sets |
+| stable rules | 11 | 11 |
+| **rule sets identical** | | **yes — 0 added, 0 lost** |
+
+Five watched cells stopped moving, which is exactly the price of
+refusing to half-satisfy overlapping constraints, and it is a price
+worth naming: **holding a constraint system costs coverage that a
+proper polytope sampler would keep.** Registered as the next round
+if a rate model ever turns out to need it — and after prediction 5,
+there is no evidence yet that it would buy a single rule.
+
+So on both H7 files, across two different ways of making the draws
+legal — jointly sampled on `h7-fp`, held on `h7-fds` — **the rule
+set does not move at all**. That is now three independent
+measurements saying the same thing, and it is the strongest form of
+the finding: whatever stops these rule sets from being
+modeller-recognisable, it is not the legality of the perturbation.
+
+*Both runs started before the ratio family and run-matrix saving
+went in, so neither produced them. Not re-running an hour of machine
+time for an artifact when RoE's coverage — the open question that
+unblocks a whole model — needs the machine now; the next runs carry
+both.*

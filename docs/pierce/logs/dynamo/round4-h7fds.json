@@ -1,0 +1,258 @@
+{
+ "model": "h7_new_debt_indexation_fds.xlsx",
+ "typing": "inferred",
+ "typed_inputs": {
+  "rate": 3203,
+  "untyped": 7
+ },
+ "coverage": [
+  139,
+  144
+ ],
+ "families": [
+  {
+   "refs": [
+    "H7 Cost of debt indexation!I15",
+    "H7 Cost of debt indexation!I16"
+   ],
+   "constant": 1.0
+  },
+  {
+   "refs": [
+    "H7 Cost of debt indexation!J15",
+    "H7 Cost of debt indexation!J16"
+   ],
+   "constant": 1.0
+  },
+  {
+   "refs": [
+    "H7 Cost of debt indexation!K15",
+    "H7 Cost of debt indexation!K16"
+   ],
+   "constant": 1.0
+  },
+  {
+   "refs": [
+    "H7 Cost of debt indexation!L15",
+    "H7 Cost of debt indexation!L16"
+   ],
+   "constant": 1.0
+  },
+  {
+   "refs": [
+    "H7 Cost of debt indexation!M15",
+    "H7 Cost of debt indexation!M16"
+   ],
+   "constant": 1.0
+  },
+  {
+   "refs": [
+    "H7 Cost of debt indexation!I15",
+    "H7 Cost of debt indexation!I19",
+    "H7 Cost of debt indexation!I20"
+   ],
+   "constant": 1.0
+  },
+  {
+   "refs": [
+    "H7 Cost of debt indexation!J15",
+    "H7 Cost of debt indexation!J19",
+    "H7 Cost of debt indexation!J20"
+   ],
+   "constant": 1.0
+  },
+  {
+   "refs": [
+    "H7 Cost of debt indexation!K15",
+    "H7 Cost of debt indexation!K19",
+    "H7 Cost of debt indexation!K20"
+   ],
+   "constant": 1.0
+  },
+  {
+   "refs": [
+    "H7 Cost of debt indexation!L15",
+    "H7 Cost of debt indexation!L19",
+    "H7 Cost of debt indexation!L20"
+   ],
+   "constant": 1.0
+  },
+  {
+   "refs": [
+    "H7 Cost of debt indexation!M15",
+    "H7 Cost of debt indexation!M19",
+    "H7 Cost of debt indexation!M20"
+   ],
+   "constant": 1.0
+  }
+ ],
+ "sheets_refused": [],
+ "sheets_column_wise": [],
+ "coverage_verdict": "informative",
+ "runs_requested": 200,
+ "kept": [
+  200,
+  200
+ ],
+ "drops": [
+  {
+   "engine-error": 0,
+   "failed": 0
+  },
+  {
+   "engine-error": 0,
+   "failed": 0
+  }
+ ],
+ "rules_first": 11,
+ "rules_second": 11,
+ "agreement": 1.0,
+ "distinct_sentences": 3,
+ "stable": [
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!G42",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!G46",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (including HAL-specific adj.) \u2212 Nominal cost of index-linked debt (excluding IL premium) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!I42",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!I46",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (including HAL-specific adj.) \u2212 Nominal cost of index-linked debt (excluding IL premium) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!I53",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!I55",
+     -1
+    ]
+   ],
+   "sentence": "Real cost of fixed-rate debt (in-year) \u2212 Real cost of fixed-rate debt (cumulative) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!J42",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!J46",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (including HAL-specific adj.) \u2212 Nominal cost of index-linked debt (excluding IL premium) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!J52",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!J58",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (in-year) \u2212 Nominal cost of new index-linked debt (in-year, excluding IL premium) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!K42",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!K46",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (including HAL-specific adj.) \u2212 Nominal cost of index-linked debt (excluding IL premium) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!K52",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!K58",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (in-year) \u2212 Nominal cost of new index-linked debt (in-year, excluding IL premium) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!L42",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!L46",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (including HAL-specific adj.) \u2212 Nominal cost of index-linked debt (excluding IL premium) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!L52",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!L58",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (in-year) \u2212 Nominal cost of new index-linked debt (in-year, excluding IL premium) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!M42",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!M46",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (including HAL-specific adj.) \u2212 Nominal cost of index-linked debt (excluding IL premium) = 0"
+  },
+  {
+   "terms": [
+    [
+     "H7 Cost of debt indexation!M52",
+     1
+    ],
+    [
+     "H7 Cost of debt indexation!M58",
+     -1
+    ]
+   ],
+   "sentence": "Nominal cost of fixed-rate debt (in-year) \u2212 Nominal cost of new index-linked debt (in-year, excluding IL premium) = 0"
+  }
+ ],
+ "seconds_total": 3078.8,
+ "seconds_naive_engine": 6.9
+}
