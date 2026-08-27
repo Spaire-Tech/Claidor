@@ -1824,3 +1824,100 @@ and headcount ones — and the honest risk is the mirror image, that a
 named « $ Total Direct Expense » now matches every `$` figure in the
 document. **If precision does not rise, the symbols go back out and
 the finding is that a column anchor alone cannot carry this.**
+
+## D3 round 7 — measured. The symbols work, the number does not move, and the blockage is now located: it is on the model side.
+
+*FinWorkBench/Finch, arXiv:2512.13168, CC BY 3.0.*
+
+**Part A: not one verdict changed.** 0 true, 2 false, 7 abstentions,
+18 missed — identical to round 6, cell for cell.
+
+**And yet the change did exactly what it was registered to do.** On
+task 156's line, with the symbols kept:
+
+| figure | column anchor | shared with « $ Total Direct Expense » | score |
+|---|---|---|---|
+| 8,067,693 | `$` | `$` direct expense total | **1.00** |
+| 100% | `%` | direct expense total | 0.75 |
+| 27 | (none) | direct expense total | 0.75 |
+| 6,707,013 | `$` | `$` direct expense total | **1.00** |
+| 100% | `%` | direct expense total | 0.75 |
+
+The percent column and the headcount column **separated correctly**
+from the money columns. The mechanism is right. Two candidates still
+tie — and the reason is the finding of this round.
+
+### The blockage is on the model side, and it is one line of the engine
+
+`CABC!C7` and `CABC!I7` hold different numbers from different years —
+2001 Forecast and 2002 Plan. Read through the engine:
+
+```
+CABC!C7  row_label='Total Direct Expense'  column_label='$'  name='$ Total Direct Expense'
+CABC!I7  row_label='Total Direct Expense'  column_label='$'  name='$ Total Direct Expense'
+```
+
+**The two cells have the same name.** The workbook's header is
+two-level — `2001 Forecast | 2002 Plan` above `$ | HC` — and
+`Cell.column_label` takes the nearest header row, so both money
+columns come back as `$` and the year never reaches the name.
+
+So the matcher's tie is **correct behaviour**. The labels genuinely
+cannot separate those two cells, because the label it is given is
+identical for both. No amount of document-side work can fix that:
+the ambiguity is in what the model side hands over. Three rounds of
+chasing the document have ended by locating the remaining blockage
+precisely — and it is not mine.
+
+**Cross-lane case, for the lead to route (lanes.md: I write it here
+and stop).** `polar/tieout/workbook.py`'s `Cell.column_label` reads
+one header row. Financial tables routinely stack two or three
+(`2001 Forecast` over `$`), and when they do, distinct cells collide
+on one name. This is not only D3's problem: `FigureLink.cell_name` is
+the engine's own re-anchoring key, and D4's survival rules rest on it
+too — **two cells sharing a name is exactly the `Ambiguous` outcome
+`anchor.py` returns**, and a workbook with stacked headers will
+produce those constantly. The ask is Sentinel's to judge and the
+lead's to route; I have changed nothing in the engine.
+
+### Both experiments die by their own registered criteria
+
+Round 6's criterion: « if the anchor produces confident wrong
+answers, it dies and the tie rule stays. » It produced two, and fixed
+none. Round 7's: « if precision does not rise, the symbols go back
+out. » It did not rise.
+
+**So the matcher is back to v3 behaviour exactly**, and the suite is
+green at 802. Both experiments stay in the source as *recorded*
+constants with the evidence attached, so that nobody re-runs them
+blind — `_SYMBOLS` says what keeping symbols did and why it is not
+behaviour, and `propose()` says it accepts a column anchor and
+ignores it.
+
+**One thing survives, deliberately: D1 keeps recording the column
+anchor.** The extraction is correct — it read `$`, `%`, `$`, `%` off
+the page exactly right — and the data is wanted by the judge (part B
+needs it), by the source viewer, and by any future round once the
+model side can say which column it means. Extractor version stays
+`"3"`; the scoring use is what failed, not the reading.
+
+**A regression I measured rather than assumed:** rounds 1–3's
+registered ED2 sample still returns **30 of 30 correct abstentions**
+under every variant tried this turn. Nothing that was right became
+wrong.
+
+**And the harm was found by a test, not by a corpus.** The route
+test's own fixture — three prose lines — started abstaining once the
+anchor was scored, because the line above « Loss (2,340) recorded » is
+« Revenue 1,234.5 », and my rule read that previous *sentence* as a
+column header. On prose the anchor invents headers. That is why it
+produced two confident wrong answers in task 52, and it is the
+clearest possible statement of the limit: **a column anchor is only
+meaningful where there are columns**, and nothing in the rule as
+frozen could tell the difference.
+
+**Where D3 stands, plainly:** it is honest — it stays silent rather
+than guessing, measured across four corpora — and it has never once
+proposed a correct source on a table-shaped document. The next move
+is not another document-side round. It is the model-side name, which
+is Sentinel's.

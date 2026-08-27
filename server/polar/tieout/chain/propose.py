@@ -54,6 +54,23 @@ REFERENCE_WORDS = frozenset(
 
 _WORD = re.compile(r"[a-z0-9]+")
 
+#: **Tried in round 7 and removed by its own criterion.** Kept as a
+#: record, not as behaviour. In a financial table the column identity
+#: is very often a *symbol* — « $ Total Direct Expense » against « HC
+#: Total Direct Expense », a `%` column beside a `$` one — and round 6
+#: measured what dropping them costs: the column anchor read « $ » and
+#: « % » correctly off the page and the tokenizer deleted both, so the
+#: tie survived and a perfect label match stayed silent. These are
+#: labels, not values: the value is the digits, and the digits stay
+#: dropped exactly as before. Keeping them separated the `%` column
+#: from the `$` one exactly as intended — and changed no verdict,
+#: because the residual tie is on the *model* side: two different
+#: money columns of one workbook share the single name « $ Total
+#: Direct Expense », since `Cell.column_label` reads only the nearest
+#: header row. That gap is the engine's, and the case is in the
+#: Scribe log for the lead to route.
+_SYMBOLS = frozenset("$%£€#")
+
 #: Round 3's frozen addition: the bare paragraph-number shape. Digits
 #: and dots only, optionally ending « . » or « : » — « 10.246 »,
 #: « 2.6 », « 1: » match; « £48.9mm », « 45% », « (2,340) » never do.
@@ -100,7 +117,10 @@ def label_tokens(text: str) -> frozenset[str]:
 
     Lowercased alphanumeric runs, with purely numeric runs dropped —
     the never-by-value rule enforced at the token level, so no caller
-    can leak a value into scoring by formatting it into a string.
+    can leak a value into scoring by formatting it into a string —
+    Round 7 tried keeping the currency and percent symbols as tokens
+    and its own criterion sent them back out; :data:`_SYMBOLS` records
+    what was tried and why it is not here.
     """
     return frozenset(
         token for token in _WORD.findall(text.lower()) if not token.isdigit()
@@ -143,12 +163,14 @@ def propose(
 
     ``cell_labels`` is the label text the workbook gives the cell (its
     name — row and column labels joined). ``candidates`` are
-    ``(fact id, printed line, printed token)`` triples, or 4-tuples
-    with the fact's **column anchor** last — the header standing above
-    it, which round 6 added after round 5 measured what a line-only
-    anchor costs on tables. A candidate's label tokens are its line's
-    plus its column's; the value still plays no part, since the
-    tokenizer drops numerals from both.
+    ``(fact id, printed line, printed token)`` triples; a 4-tuple's
+    last element is the fact's column anchor, **accepted and ignored**.
+    Round 6 scored it and its own criterion removed it: on prose the
+    line above a figure is the previous sentence, not a header, and
+    scoring it invented two confident wrong answers while fixing none.
+    D1 still records the anchor — it is correct data, and the judge
+    and the source viewer both want it — but the matcher does not
+    score it.
 
     Returns either the single proposed candidate with the full ranking
     behind it, or an abstention that says why in words. The floor and
@@ -174,13 +196,7 @@ def propose(
                 reference=is_reference(candidate[2], candidate[1]),
             )
             for candidate in candidates
-            for shared in [
-                wanted
-                & (
-                    label_tokens(candidate[1])
-                    | label_tokens(candidate[3] if len(candidate) > 3 else "")
-                )
-            ]
+            for shared in [wanted & label_tokens(candidate[1])]
         ),
         key=lambda candidate: (-candidate.score, str(candidate.fact_id)),
     )
