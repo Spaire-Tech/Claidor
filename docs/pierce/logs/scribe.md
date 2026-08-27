@@ -3428,3 +3428,73 @@ further than the run did ». This is its sibling: **the instrument was
 wrong and the number looked plausible.** Nothing but the third method
 would have caught it, and the only reason I ran a third is that the
 first two disagreed. Where two methods agree I would have published.
+
+## Retraction — the « fourth intake gap » I wrote up two hours ago is wrong in every part that mattered
+
+I published, above and in the handoff, that openpyxl mis-reads shared
+formulas, that **185 computed cells come back as typed inputs**, and
+that this « feeds D5's candidate population » and manufactures false
+findings. I then tested each of those claims properly. **All three are
+wrong.** Nothing has been pushed; the record is corrected before it
+leaves this container, which is the only reason this is a retraction
+and not a lie told to the lead.
+
+| what I claimed | what the test says |
+|---|---|
+| the cause is shared-formula followers | **no** — the reader resolves 158 of Kelso's 158 followers and 337 of Newbattle's 357 |
+| 5 of Newbattle's 9 `typed-over-formula` findings sit on such cells | **no — zero do** |
+| 185 computed cells come back as **typed inputs** | **no — zero do**; they carry no value either |
+
+**How the « 5 of 9 » happened, because it is a bug I have made before.**
+I compared a finding's cell reference against a set of follower
+references **without their sheet name**, so `Swap Profiles!D118` matched
+a `D118` on some other sheet. Two turns ago I found and fixed exactly
+this in the Finch round harness — a fact key that named two facts
+because it lacked a coordinate. **I fixed that address bug in my own
+harness and then made the identical mistake in the script that was
+checking it.** The hand-check that caught it took one look at the raw
+XML: `D118` has no `<f>` element at all.
+
+**What actually survives, stated with nothing added:** in two of the
+eight models the reader returns fewer formula cells than the file
+contains — Kelso 814 of 875, Newbattle 492 of 616, the other six exact.
+Those 185 cells appear in the reader's output with **neither a formula
+nor a value**, so they become neither findings nor typed inputs. On
+this corpus the discrepancy is **inert**. **I have not established its
+cause and I am not going to guess a third mechanism** — two have
+collapsed under test today, and a third guess is the move I refused
+when the extractor rounds were dying.
+
+It is worth one line to whoever owns `ingest`, as a discrepancy with a
+known size and an unknown cause. It is not an intake gap of the class
+the `.xlsb` finding is, and I should not have called it one.
+
+## The engine on the eight, measured — because « nothing to run on » deserved a number
+
+I wrote that a tie-out engine has « almost nothing to find » on a
+value-only workbook. That was an inference, so I ran the engine the way
+the service runs it (`read_structure` → `audit(book, axes=...)`), read-only:
+
+| model | formula cells | rule findings | analytics |
+|---|---|---|---|
+| baldragon | 220 | 0 | 0 |
+| glasgow_college | **0** | 0 | 0 |
+| forfar | **0** | 0 | 0 |
+| inverurie_foresterhill | 3 | 2 | 4 |
+| kelso | 814 | 0 | 4 |
+| levenmouth | 224 | 0 | 0 |
+| newbattle | 492 | **14** | 4 |
+| oban_campbeltown | **0** | 0 | 0 |
+
+**Sixteen rule findings and twelve analytics across all eight models**,
+and four of the eight produce nothing whatever.
+
+**And the honest reading cuts both ways, so both go here.** Zero
+findings on an audited, closed, lent-against model may be the engine
+being *right* — these files were checked by professionals before
+publication. A proof that says « we ran it cold on ten real models and
+it reported almost nothing » is not evidence of a broken engine. It is
+also not the demonstration `swens-plan.md` describes, which is
+« findings **hand-verified** »: four of these models offer nothing to
+hand-verify. **Which of those two readings is the right one is the
+lead's call and the founder's, not mine.**
