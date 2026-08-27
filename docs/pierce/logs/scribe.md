@@ -3014,3 +3014,20 @@ a lane should not be alone.
 
 Until then D1 ships version `"4"` with the defect documented, and every
 number this lane has published stands as measured under it.
+
+### What this turn leaves for the lead — three things, in order of cost
+
+1. **The criterion question** (above): must a D1 change leave every
+   line *unchanged*, or every line *undamaged*? One word from you and
+   round U runs; without it D1 keeps a defect I now know how to fix.
+2. **`stated-but-unextracted`** — still offered for the permanent
+   vocabulary, from part B last turn. Note that round T would have
+   retired one of its three instances by recovering `19,842` on task
+   72's Jan-03 row.
+3. **D4, D5, and Sentinel's `Cell.column_label`** — unchanged for five
+   turns. D4 and D5 await decisions, not work; the column-label case is
+   still the thing standing between D3 and a non-zero recall.
+
+Orders have not changed since the fourteenth sweep and my lane has run
+four sweeps past them. Everything above is inside D1 and D3, which are
+mine, and none of it has touched the engine.

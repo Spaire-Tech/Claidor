@@ -122,19 +122,42 @@ files five facts where the page prints one, each with a citation box
 around a single glyph. Measured at **56% of the Finch corpus** and
 0.0% of ED2 — which is why three ED2 rounds never saw it.
 
-Two fixes have been registered, built, measured and **killed by their
-own criteria** (rounds P and Q in the log, and the whole story is
-there). Both counted properties of the *assembled line text*, and both
-caught the wrong population: P caught nils, Q caught English prose and
-regulator formula legends. **Do not try a third threshold** — the
-constant that passes the hand-check is visible, and fitting it after
-reading the check is exactly the move this lane refuses.
+**The cause is D1's own, and that took five rounds to establish.**
+`_LINE_TOLERANCE` is 3.0 and `page.extract_words()` defaults to 3;
+a financial PDF that prints a table over a chart routinely leads its
+rows exactly 3.0 apart, so D1 merges two baselines into one row, sorts
+by x, and zips two texts together character by character. Rounds P, Q
+and R all tried to *detect* that damage before round R's calibration
+showed D1 was inflicting it. **Read the log's rounds P through T before
+touching this** — five deaths, each by a criterion frozen in advance,
+and between them they rule out most of the obvious moves:
 
-Round R is registered: measure the PDF's own **character geometry**,
-where prose, nils and lone letters simply do not look different, and
-glyph-by-glyph text does. `server/scripts/corpus_documents_spaced_round.py`
-is the judge, seeded and ready; it reports nothing while no rule is in
-the extractor, which is the current state.
+| round | tried | died on |
+|---|---|---|
+| P | refuse lines ≥60% one-character tokens | caught **nils** |
+| Q | refuse lines with ≥3 lone letters | caught **prose**, formula legends |
+| R | character-gap geometry | no constant exists — and found the real cause |
+| S | y-tolerance 1.5 | split **subscripts**, 0.1 pt from the zips |
+| T | 1.5 + merge small runs by font size | shuffled **display mathematics** |
+
+**What is settled:** font size separates sub/superscripts from merged
+baselines where distance cannot; the genuine glyph-by-glyph population
+is four lines, not thousands; display mathematics is a third population
+nothing yet handles; and round T's shape recovers ~2,400 junk facts in
+task 72 while losing nothing in task 81, task 5 or ED2.
+
+**What is open, and is the lead's call, not the lane's:** round T died
+because its criterion demanded every ED2 line be *unchanged*, and it
+both repaired and damaged lines. « Unchanged » is the wrong bar;
+« undamaged » is right and needs a hand-judged check. That check is
+proposed in the log and deliberately **not run** — picking your own
+success criterion after five deaths is when a lane should not be alone.
+
+Two harnesses are committed and ready:
+`corpus_documents_spaced_round.py` (seeded 20-line hand-check) and
+`corpus_documents_linetext_check.py` (ED2 line-text regression). Both
+report nothing while no candidate rule is in the extractor, which is
+the current state.
 
 ## The corpus, and the one blocker
 
