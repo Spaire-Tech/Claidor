@@ -2004,3 +2004,102 @@ holds is the measurement, not an assumption.**
 **The kill-criterion, stated in advance:** if the hand-check shows
 label hyphens being read as nils, or if the Finch table gets worse,
 the rule comes out exactly as rounds 6 and 7's did.
+
+## D1's dash round — measured. It survives its own criterion; the first in this family that does.
+
+*FinWorkBench/Finch, arXiv:2512.13168, CC BY 3.0.*
+
+**Coverage — 750 nils, and very unevenly:**
+
+| document | numbers | nils found |
+|---|---|---|
+| 81_src_1 (plan variance) | 623 | **567** |
+| ed2-fd-finance-annex | 6,325 | 178 |
+| 52_src_0 | 35 | 4 |
+| ed2-financial-handbook | 1,311 | 1 |
+| 72_src_0, 156, 160, 161, 5, 16, 4_src_* | 5,000+ | **0** |
+
+The spread is the point, not a defect: a plan-variance table is
+mostly dashes and a rate table is mostly digits. Where a document
+says nil with a dash, D1 now says so; where it says `0`, nothing
+changed.
+
+**Precision — 20 of 20.** The registered seeded hand-check (seed
+141421) drew twenty extracted nils and every one is a genuine nil
+standing in a numeric column.
+
+**The case to beat, checked directly rather than by sample.** In
+`Commodity - FTS - 1 - - 9.4 - - - - 9.4 (9.4) -`:
+
+| x | token | outcome |
+|---|---|---|
+| < 130 | the dashes inside « Commodity - FTS - 1 » | **not extracted** ✓ |
+| 220.8, 259.7, 337.5, 551.0 | the column nils | **extracted as 0** ✓ |
+
+The label's own dashes stayed out and the data's came in, which is
+exactly what the third condition was frozen to do.
+
+**A coverage gap the measurement found, and it is structural.** The
+third condition asks for three numbers standing at the dash's
+x-position — and **a column that is almost entirely nil has too few
+numbers to vouch for it.** On page 1 of `81_src_1`, the columns at
+x = 370.9, 403.6 and 436.4 hold exactly **one** number each, so their
+dashes are missed; on page 2 the same columns hold nine or ten and
+their dashes are found. The condition is anti-correlated with the
+thing it detects. This is under-extraction — the safe direction, a
+missed fact rather than an invented one — and it is recorded here
+rather than patched, because patching mid-round is what this lane
+does not do.
+
+### Harm: none measured, and one small good
+
+| | round 7 (no nils) | dash round |
+|---|---|---|
+| true proposal | 0 | 0 |
+| false proposal | 2 | **1** |
+| true abstention | 7 | 4 |
+| missed | 18 | 19 |
+| scored rows | 27 | 24 |
+| rows the documents state | 18 | **20** |
+
+**The denominators moved and that must be said plainly**, because a
+table read carelessly here would flatter the change. Three rows left
+the scored set — task 81's « GCO/HPL GRI/ACA », « Citrus AFUDC » and
+« NNG Shared Cost Surcharge » were judged « not stated » in round 5
+*only because no fact existed*; now nils exist on their rows, and I
+cannot say which column's nil belongs to which cell, so they are
+`indeterminate-line-granularity`, the condition the lead just blessed.
+Two rows joined the stated set: task 52's « Low End Cost Case 3 » and
+« High End Cost Case 3 », whose zeros the contract states as `$ - $ -`
+and which are now findable facts, determined by column order against
+the Case 1 row.
+
+One false proposal disappeared. Nothing that was right became wrong.
+**Rounds 1–3's ED2 sample still returns 30 of 30 correct
+abstentions.**
+
+**The kill-criterion, applied:** « if the hand-check shows label
+hyphens read as nils, or if the Finch table gets worse, the rule
+comes out. » The hand-check is clean and the table is not worse.
+**The rule stays** — extractor version `"4"`, and the first change in
+this family to survive its own test.
+
+**Still 0 true proposals**, and that is expected: the dash round was
+never aimed at the blockage. Round 7 located that on the model side —
+two cells of one workbook sharing the name « $ Total Direct Expense »
+because `Cell.column_label` reads one header row — and nothing on the
+document side moves it.
+
+### Two housekeeping notes, both named rather than slipped in
+
+**The round harness now keys facts by page and x-position, not by
+ordinal.** Adding nils shifted every ordinal and would have silently
+invalidated eighteen recorded truths — the kind of quiet corruption
+that makes a measurement worthless. All 18 remapped cleanly by
+(page, printed text, line) and are re-verified; from here a key
+survives an extractor change.
+
+**One red test on the tip is not mine**:
+`test_routes.py::TestTheVersionDelta::`
+`test_a_revision_answers_in_review_language`, which reproduces with
+my changes stashed. Suite otherwise 815 passed, 9 skipped.

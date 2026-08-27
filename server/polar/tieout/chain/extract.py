@@ -64,7 +64,7 @@ _NUMBER = re.compile(
 #: a fidelity question is answerable years later. Bumped whenever the
 #: token pattern, the line grouping, or the refusal rule changes.
 EXTRACTOR_NAME = "polar.tieout.chain.extract"
-EXTRACTOR_VERSION = "3"
+EXTRACTOR_VERSION = "4"
 
 #: Round 6's frozen column anchor (registered in the Scribe log before
 #: this code existed). Round 5 measured what a line-only anchor costs:
@@ -75,6 +75,20 @@ EXTRACTOR_VERSION = "3"
 #: it already records every number's box.
 _ANCHOR_LINES_UP = 12
 _ANCHOR_OVERLAP = 1.0
+
+#: The dash round's frozen rule (registered in the Scribe log before
+#: this code existed). A financial table says nil with a dash far more
+#: often than with a `0`, and a document that states a quantity should
+#: produce a fact — round 5 found four drawn cells whose zeros the
+#: documents state exactly this way, leaving the matcher silent for
+#: the wrong reason. A lone dash becomes a zero when its line carries
+#: a number and numbers stand at its x elsewhere on the page: the
+#: first says « this is a data row, not prose », the second says
+#: « this is a column ». The dashes inside a row's own name — « Demand
+#: - FTS - 1 » — sit where no numbers stand, and that is what parts
+#: them from the nils beside them.
+_DASHES = frozenset("-–—")
+_NIL_COLUMN_NUMBERS = 3
 
 #: Below this many text characters a page has no usable text layer.
 _SCANT_TEXT = 20
@@ -187,10 +201,13 @@ def extract_pdf(source: str | Path | BytesIO) -> Extraction:
                 continue
             lines = _lines(words)
             columns = _columns(words, lines)
+            nil = _nil_positions(words, lines)
             for position, word in enumerate(words):
                 value = parse_number(word["text"])
                 if value is None:
-                    continue
+                    if position not in nil:
+                        continue
+                    value = 0.0
                 numbers.append(
                     ExtractedNumber(
                         page=index,
@@ -235,6 +252,48 @@ def _lines(words: list[dict[str, Any]]) -> list[str]:
             line_of[position] = len(texts)
         texts.append(text)
     return [texts[line_of[position]] for position in range(len(words))]
+
+
+def _nil_positions(words: list[dict[str, Any]], lines: list[str]) -> set[int]:
+    """Which lone dashes stand in a numeric column, and so mean zero.
+
+    The three frozen conditions, in order of cheapness: the token is
+    one dash character; its line carries at least one number; and at
+    least :data:`_NIL_COLUMN_NUMBERS` numbers on the page stand at its
+    x-position. Nothing here reads meaning — it reads alignment, which
+    is the one thing page geometry says reliably.
+    """
+    dashes = [
+        position
+        for position, word in enumerate(words)
+        if word["text"] in _DASHES or set(word["text"]) <= _DASHES and word["text"]
+    ]
+    if not dashes:
+        return set()
+    numeric = [word for word in words if parse_number(word["text"]) is not None]
+    if not numeric:
+        return set()
+    numeric_lines = {
+        line
+        for line, word in zip(lines, words)
+        if parse_number(word["text"]) is not None
+    }
+    found = set()
+    for position in dashes:
+        if len(words[position]["text"]) != 1:
+            continue
+        if lines[position] not in numeric_lines:
+            continue
+        left, right = float(words[position]["x0"]), float(words[position]["x1"])
+        stacked = sum(
+            1
+            for word in numeric
+            if min(right, float(word["x1"])) - max(left, float(word["x0"]))
+            >= _ANCHOR_OVERLAP
+        )
+        if stacked >= _NIL_COLUMN_NUMBERS:
+            found.add(position)
+    return found
 
 
 def _columns(words: list[dict[str, Any]], lines: list[str]) -> list[str]:

@@ -70,8 +70,14 @@ def facts(task: str):
     for pdf in sorted((HERE / task).glob(f"{task}_src_*.pdf")):
         extraction = extract.extract_pdf(pdf)
         refusals.extend(extraction.refusals)
-        for ordinal, number in enumerate(extraction.numbers):
-            out.append((f"{pdf.stem}|p{number.page}|{ordinal}", number))
+        for number in extraction.numbers:
+            # Keyed by page and x-position, not by ordinal: an extractor
+            # change that adds facts (the dash round added a nil for
+            # every printed « - ») shifts every ordinal and would
+            # silently invalidate a recorded truth. Position is stable.
+            out.append(
+                (f"{pdf.stem}|p{number.page}|x{number.box.x0:.0f}|{number.text}", number)
+            )
     return out, refusals
 
 
