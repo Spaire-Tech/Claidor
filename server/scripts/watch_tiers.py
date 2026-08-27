@@ -2,6 +2,7 @@
 
     uv run python -m scripts.watch_tiers pair OLD.xlsx NEW.xlsx OUT.json
     uv run python -m scripts.watch_tiers cost FILE.xlsx
+    uv run python -m scripts.watch_tiers domain OLD.xlsx NEW.xlsx OUT.json
     uv run python -m scripts.watch_tiers oracle OLD.xlsx NEW.xlsx OUT.json [SHEET] [zeros]
     uv run python -m scripts.watch_tiers control FILE.xlsx OUT.json [SHEET] [zeros]
 
@@ -70,7 +71,12 @@ from polar.tieout.watch.tiers import (
 )
 from polar.tieout.watch.trace import proved_unchanged
 from polar.tieout.workbook import read_workbook
-from scripts.watch_stealth import TIER2_SEED, TIER2_TRIALS, _environment_cone
+from scripts.watch_stealth import (
+    TIER2_SEED,
+    TIER2_TRIALS,
+    _environment_cone,
+    _is_categorical,
+)
 
 
 def _ineligible(path: str) -> tuple[dict[str, str], dict[str, int]]:
@@ -196,8 +202,6 @@ def _assignments(
     scaling it deadens the branch it selects in both files at once.
     """
     import random
-
-    from scripts.watch_stealth import _is_categorical
 
     old_cells = old_book.cells  # type: ignore[attr-defined]
     new_cells = new_book.cells  # type: ignore[attr-defined]
@@ -368,6 +372,25 @@ def _answer(
             refusal=REFUSAL_DEGENERATE if degenerate else "",
         )
     return answers
+
+
+#: The domain round's bands, narrowed in order. A trial is drawn at
+#: the widest band that does not push the model materially further
+#: out of its own domain than the untouched file already is.
+DOMAIN_BANDS = ((0.5, 1.5), (0.75, 1.25), (0.9, 1.1), (0.95, 1.05), (0.99, 1.01))
+#: A trial may raise the file's error count by at most this, relative.
+DOMAIN_ERROR_CEILING = 0.10
+
+
+def _errors(values: Mapping[str, object]) -> int:
+    return sum(1 for value in values.values() if str(value).startswith("#"))
+
+
+def _banded(
+    inputs: Mapping[str, float], rng: object, band: tuple[float, float]
+) -> dict[str, float]:
+    low, high = band
+    return {ref: inputs[ref] * rng.uniform(low, high) for ref in sorted(inputs)}  # type: ignore[attr-defined]
 
 
 def _forced_index(path: str, sheet: str) -> tuple[str, int] | None:
@@ -560,10 +583,174 @@ def run_control(
     )
 
 
+def run_domain(old_path: str, new_path: str, out_path: str) -> int:
+    """The domain round: narrow the band until the trials stop driving
+    the model out of its own domain.
+
+    Registered in the lane log (« The domain round ») with the 10%
+    ceiling, the five bands and the five redraws fixed before any
+    output. The previous round's finding is what this exists for: 192
+    of 198 cells the oracle could not test were reading `#DIV/0!` or
+    `""` in every trial — reached, and pushed past where the model
+    computes.
+    """
+    import random
+
+    import openpyxl
+
+    from polar.tieout.recalc.uno_calc import UnoCalculator
+
+    started = time.monotonic()
+    old_book = read_workbook(old_path)
+    new_book = read_workbook(new_path)
+    old_raw, _ = read_raw(old_path)
+    new_raw, _ = read_raw(new_path)
+    ineligible, cone_sizes = _ineligible(new_path)
+    proof = proved_unchanged(old_book, new_book)
+
+    inputs: dict[str, float] = {}
+    landing: dict[str, str] = {}
+    for ref, old_ref in proof.pairing.items():
+        new_cell, old_cell = new_book.cells[ref], old_book.cells[old_ref]
+        if new_cell.formula is not None or old_cell.formula is not None:
+            continue
+        if new_cell.value is None or old_cell.value is None:
+            continue
+        value = float(new_cell.value)
+        if _is_categorical(value):
+            continue
+        inputs[ref] = value
+        landing[ref] = old_ref
+
+    rng = random.Random(TIER2_SEED)
+    accepted: list[dict[str, float]] = []
+    new_readings: list[Mapping[str, object]] = []
+    bands_used: list[dict[str, object]] = []
+
+    calc = UnoCalculator()
+    calc.start()
+    try:
+        with tempfile.TemporaryDirectory() as scratch:
+            base = Path(scratch) / "baseline.xlsx"
+            openpyxl.load_workbook(new_path).save(base)
+            baseline = calc.recalculate(str(base)).values
+            base.unlink()
+            floor = _errors(baseline)
+            ceiling = floor * (1 + DOMAIN_ERROR_CEILING)
+            print(f"[domain] baseline errors {floor}, ceiling {ceiling:.0f}")
+
+            for index in range(TIER2_TRIALS):
+                chosen: dict[str, object] | None = None
+                for band in DOMAIN_BANDS:
+                    assignment = _banded(inputs, rng, band)
+                    working = openpyxl.load_workbook(new_path)
+                    for ref, value in assignment.items():
+                        sheet, coordinate = _split(ref)
+                        working[sheet][coordinate] = value
+                    target = Path(scratch) / f"domain_new_{index}.xlsx"
+                    working.save(target)
+                    values = calc.recalculate(str(target)).values
+                    target.unlink()
+                    count = _errors(values)
+                    print(f"[domain] trial {index} band {band}: {count} errors")
+                    chosen = {
+                        "band": list(band),
+                        "errors": count,
+                        "accepted": count <= ceiling,
+                    }
+                    if count <= ceiling:
+                        accepted.append(assignment)
+                        new_readings.append(values)
+                        break
+                else:
+                    #: Registered: after the narrowest band, report what
+                    #: was managed rather than pretending it passed.
+                    accepted.append(assignment)
+                    new_readings.append(values)
+                bands_used.append(chosen or {})
+
+            old_readings = _recalculate_trials(
+                old_path,
+                accepted,
+                lambda ref: landing[ref],
+                calc,
+                Path(scratch),
+                "domain_old",
+            )
+    finally:
+        calc.stop()
+
+    def oracle(refs: tuple[str, ...]) -> Mapping[str, Tier2Answer]:
+        return _answer(
+            refs, lambda ref: landing.get(ref, ref), old_readings, new_readings
+        )
+
+    ladder = build_ladder(
+        old_book,
+        new_book,
+        old_raw,
+        new_raw,
+        proof=proof,
+        oracle=oracle,
+        ineligible=ineligible,
+    )
+    violations = gate_violations(ladder, new_book, old_raw, new_raw, proof)
+    diverged = sorted(
+        ref
+        for ref, item in ladder.verdicts.items()
+        if item.reason == SOURCE_TIER2_DIVERGENCE
+    )
+    payload = {
+        "mode": "domain",
+        "old": old_path,
+        "new": new_path,
+        "minutes": round((time.monotonic() - started) / 60, 1),
+        "literals_perturbed": len(inputs),
+        "baseline_errors": floor,
+        "error_ceiling": round(ceiling, 1),
+        "bands": bands_used,
+        "counts": ladder.counts,
+        "reason_census": ladder.reason_census,
+        "verdict_by_blockage": ladder.verdict_by_blockage,
+        "tier0_blockage_census": ladder.blockage_census,
+        "cone_sizes": cone_sizes,
+        "diverged_by_tier2": len(diverged),
+        "diverged_examples": [
+            {"ref": ref, "detail": ladder.verdicts[ref].detail} for ref in diverged[:10]
+        ],
+        "gate_violations": violations[:20],
+        "gate_violation_count": len(violations),
+    }
+    Path(out_path).write_text(json.dumps(payload, indent=1))
+    dump = Path(out_path).with_suffix(".verdicts.jsonl")
+    with dump.open("w") as handle:
+        for ref, item in sorted(ladder.verdicts.items()):
+            handle.write(
+                json.dumps(
+                    {
+                        "ref": ref,
+                        "verdict": item.verdict,
+                        "reason": item.reason,
+                        "blockage": item.tier0_blockage,
+                        "sheet": ref.rsplit("!", 1)[0],
+                    }
+                )
+                + "\n"
+            )
+    print(
+        json.dumps(
+            {k: v for k, v in payload.items() if k != "diverged_examples"}, indent=1
+        )
+    )
+    return 0 if not violations else 1
+
+
 def main() -> int:
     mode = sys.argv[1]
     if mode == "pair":
         return run_pair(*sys.argv[2:5])
+    if mode == "domain":
+        return run_domain(*sys.argv[2:5])
     if mode == "cost":
         return run_cost(sys.argv[2])
     if mode == "oracle":

@@ -2736,3 +2736,103 @@ own corpus. A narrowing band is crude, measurable and mine.
    narrower band tests the same claim more finely rather than
    differently. If a divergence appears here, it is a finding about
    the revision and I will say so loudly.
+
+## The domain round — results: coverage transformed, and seven divergences I cannot explain
+
+39.3 minutes, all five gates clean.
+
+```
+                        zeros-held round        domain round
+tier0_proved                     38,255              38,255
+changed                           1,278               1,285
+tier2_supported                     172                 313
+tier3_refused                     1,344               1,196
+
+the 294 disturbed cells (trace_differs):
+   supported                         96                 286
+   diverged                           0                   7
+   no_perturbable_input             198                   1
+```
+
+**Prediction 1 — « the baseline error count is between 100 and 3,000
+» — failed, at 0.** The untouched 31 July file computes **no error
+cells at all**. A good fact about the corpus and an awkward one for
+my threshold: « at most 10% more errors than the baseline » over a
+baseline of zero is an absolute zero-tolerance gate. That is the rule
+I fixed in advance, so it stood for this round, and it is why three
+of the five trials were accepted only at the narrowest band with
+`accepted: false` recorded against the other two.
+
+**Prediction 2 — « narrowing releases more than 60 of the 198 » —
+held, and then some: 197 of 198.** The cells that read `#DIV/0!` and
+`""` under a ±50% band compute ordinary numbers under ±1%.
+`degenerate_under_perturbation` on this pair drops to 0 within the
+disturbed class (257 remain among the text formulas).
+
+**The band's shape is worth recording, because it is a cliff and not
+a slope.** Error counts per trial, by band:
+
+```
+0.5–1.5   0.75–1.25   0.9–1.1   0.95–1.05   0.99–1.01
+ 1,379      1,379      1,381      1,379       0 / 23 / 56
+```
+
+Every band from ±50% down to ±5% produces the same ~1,379 errors.
+Only at **±1%** does the model stay inside its own domain. Something
+in ED2 tolerates a percent and not five; naming what would need the
+error cells' own formulas, which this round did not collect.
+
+**Prediction 3 — « still zero as-configured divergences » — failed:
+seven.** All on `Finance&Tax`, rows 86 and 185:
+
+```
+Finance&Tax!AS86    110.95274002367263 -> 112.87281706966078   (1.7%)
+Finance&Tax!AV86     74.54519169292493 ->  78.46610432193498   (5.3%)
+Finance&Tax!AS185     3.7871676589923404 -> 3.793477538889391  (0.17%)
+Finance&Tax!AT185     2.2025604632676705 -> 2.2024922758510534 (0.003%)
+```
+
+**I said I would say so loudly if this happened, so: seven cells
+computed different numbers in the two versions under identical
+inputs — and I cannot explain them, and I am not going to dress
+them up as a finding about the revision.** Five explanations were
+tested and every one is eliminated by measurement:
+
+1. **A held categorical input differing between versions** — there
+   are **0** such literals in the entire workbook.
+2. **An unperturbed literal in the cone differing** — **0** for
+   every cell checked.
+3. **Iteration or circularity** (the classic `Finance&Tax` interest
+   loop) — the file's own `calcPr` says `iterative=False`, and none
+   of the seven is in a cycle.
+4. **Inputs outside the engine's numeric universe** — each cone
+   holds 2,594–3,455 of them, and **0 differ**: 1,604 are blank in
+   both files, 990 populated and identical. My first version of this
+   check reported « 1,604 differ » because it read « missing from
+   both grids » as « present on one side », and it contradicted C1's
+   own count of 24 added cells — which is how I caught it. The wrong
+   number never left this log.
+5. **A cell changing class** (literal in one version, formula in the
+   other, so the perturbation skips it) — **0** in the workbook.
+
+So the seven stand as **unexplained**, and that is the entry.
+
+## The pairing round — registered before results
+
+The leading remaining candidate is my own alignment. The assignment
+is keyed by the new ref and landed on the old file at
+`proof.pairing[ref]`; if a literal is paired to the wrong old cell,
+both files receive the same number **in different places**, the old
+model computes from an input it should not have, and the two
+disagree — which would present exactly as these seven do, and would
+be a finding about C2 rather than about the revision.
+
+**The test, fixed before it runs**: for every perturbed literal,
+compare the new cell's `row_label` and `column_label` with its
+paired old cell's. A pairing whose labels disagree is a suspect.
+Report the count, the rate, and whether any suspect lies in the
+seven cells' cones. **Predictions**: fewer than 1% of the 8,475
+pairings have disagreeing labels; at least one suspect lies in the
+cone of at least one of the seven. If both hold, the explanation is
+the aligner and the fix is C2's, not tier 2's. If the second fails,
+the round says the candidate is dead and the seven stay open.
