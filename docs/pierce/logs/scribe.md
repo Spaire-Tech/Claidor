@@ -4288,3 +4288,81 @@ new work and adds no claim; it is an attempt to make five asks cost a
 minute rather than an hour.
 
 Suite: **904 passed, 9 skipped, 0 failed.**
+
+## 28 August 2026, twenty-first « go » — five decisions arrived; round V is shipped
+
+Orders read from the tip (`d782ed4e`, twenty-fourth sweep). **The
+orders file changed for the first time in ten sweeps, and all five
+decisions are answered.** The lead also names the delay as its own
+failure and has put a rule in `lanes.md` so it cannot repeat; I have
+nothing to add to that, and I am not going to spend a paragraph on it.
+
+The answers, and what each means here:
+
+| | decision | what this lane does |
+|---|---|---|
+| 1 | **D1: the bar is « undamaged ». Ship round V.** | shipped this turn |
+| 2 | **D5: shelve, with a named trigger** — register the reporting round when D4's store holds confirmations from at least one *real* deal | nothing to do until then |
+| 3 | **D4: approved. Build the store**, `value_at_confirmation` amendment approved with it | this turn |
+| 4 | **D3 round 4: closed.** Harness stays committed; if a contract ever arrives it revives | round 4 marked closed |
+| 5 | **Newbattle: keep it**, caveat recorded loudly; the cold-run condition tightens for everything after, and Newbattle is excluded from 1B | nothing to do; the reasoning is better than mine was |
+
+**The bar is now standing policy for this lane** and I have written it
+where I will meet it: a change to extraction must leave no line
+*worse*, need not leave every line *identical*, damage is judged by
+hand against the documents rather than by a diff count, and the
+repair/damage tally is reported with every such round.
+
+## Round V — shipped
+
+`_LINE_TOLERANCE = 1.5`, `_SCRIPT_SIZE = 0.8`, **`_SCRIPT_UP = 6.5`,
+`_SCRIPT_DOWN = 3.0`**, `EXTRACTOR_VERSION → "5"`, `_words()` in
+`extract.py` with the whole story in its docstring so nobody re-derives
+six dead rounds.
+
+**Three tests came with it**, and one of them I had to fix before it
+was a test at all. The fixture draws two rows 3.0 points apart and
+interleaved in x, plus a base with a subscript 2.5 points below:
+
+| | at pdfplumber's default tolerance | under round V |
+|---|---|---|
+| the two rows | `AGlapmham`, `1a,`, `293,0412`, `BDeetltaa`, `53,,647586` | `Alpha 1,234` / `Gamma 9,012` on separate lines |
+| the subscript | `RPE` + `t`, two words | **`RPEt`** |
+
+My first subscript test asserted against the *extraction*, and no
+number sits on that line — so it passed no matter what the rule did.
+**It is now read off `_words` directly, and it also asserts that the
+same page at the old tolerance still shows the defect**, so the test
+fails if either half of round V is removed.
+
+### The four harnesses, re-run
+
+| harness | result |
+|---|---|
+| ED2's registered sample | **30 of 30** correct abstentions |
+| Finch part A + part B | **0 / 1 / 4 / 34**, 39 of 42 scored, 35 stated — identical |
+| the 35 recorded truth keys | **all 35 still exist** — the position key held across an extractor change, which is what it was for |
+| D5 rounds 2 and 4 | untouched (they read models, not documents) |
+
+## Part B amendment — `72!Scenario3!AC28` is settled, because round V unshredded it
+
+**Registered before re-judging, and it is the same judging rule, not a
+new one.** AC28 was `stated-but-unextracted` for one recorded reason:
+« the document DOES print « Jan-03 32,675 12,833 19,842 … » and 19,842
+is this cell. No fact exists for it: that line is drawn glyph by glyph
+and D1 read it as five separate one-digit numbers. » **Round V removes
+exactly that reason.** The fact now exists:
+
+`72_src_0|p1|x289|y148|19,842`, on the line
+`e Monthly Jan-03 32,675 12,833 19,842 7,627 …`
+
+Column AC is « Short », the third of the volume columns — **identically
+to how I judged its siblings Jan-01 and Jan-02 in part B, both at
+x289**. So the condition becomes `ok` and the truth is that key.
+
+**The other two are unchanged, checked rather than assumed.** `G32`'s
+GCO dash is still not extracted (page 1's GCO column holds too few
+numbers for the dash rule's third condition — the anti-correlation gap
+the dash round recorded), and `E212`'s wholly-nil AFUDC row still
+yields nothing, because the dash rule requires a number on the line.
+Round V changed neither.
