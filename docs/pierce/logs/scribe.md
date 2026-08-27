@@ -1183,3 +1183,96 @@ example. **The harness:** `scripts.corpus_documents_unsourced_shape`
 (new), read-only, printing the registered numbers and nothing else.
 **No target is promised.** If the local-rule shape floods too, it
 dies exactly as the naive one did.
+
+## D5 round 2 — measured. One threshold survives; and on regulator models the shape has no ground at all
+
+Two findings, and the second was not what the round went looking
+for.
+
+### 1. On the regulator models the shape cannot be applied — inputs and blocks are disjoint
+
+| model | sections declared | typed cells inside one |
+|---|---|---|
+| ED2 PCFM V5 | 5 | **0** of 22,693 |
+| ED2 PCFM V3 | 5 | **0** of 20,426 |
+| RIIO-ET1 PCFM | 61 | **0** of 7,555 |
+| Cascade deal model | 1 | 32 of 85 |
+| pre-app example | 26 | 156 of 230 (68%) |
+
+I checked this rather than reporting it, because a zero that large
+is usually a bug. It is not. ED2's five declared sections
+(`Depn!24-26`, `Depn!210-247`, `ReturnAdj!72-73`, …) hold 3,194
+numeric cells between them and **every one is a formula cell**, and
+**not one of ED2's 22,693 typed cells lives on a sheet that declares
+any section at all** — the inputs sit on twenty-one per-licensee
+sheets that nothing sums, while the totalled blocks are pure
+computed rows.
+
+That is the structural point, and it generalizes past this round: a
+block a model *totals* is a block of outputs. The local-rule shape
+needs blocks of **inputs**, and a workbook's `SUM` formulas do not
+declare those. Where the two coincide — the small, hand-built deal
+models — the shape has ground; on a big machine-shaped model it has
+none. Two consequences, both for the lead and founder:
+
+- the shape is measurable and possibly useful **on deal-shaped
+  models**, which is the product's actual case, and untestable on
+  the regulator corpus, which is not;
+- if it is wanted on machine-shaped models, it needs an **input-block
+  rule** that does not come from `SUM` — contiguity of typed cells
+  under one label column, say — and that is a registration of its
+  own, and touches `structure.py`, which is Sentinel's ground, not
+  mine.
+
+### 2. Where it can be applied, exactly one threshold survives
+
+Findings that would fire, by threshold and confirmation budget
+(adversarial = greedy worst case; random = seeded mean of 20):
+
+**pre-app example** (230 typed cells, 156 in 7 sections):
+
+| threshold | B=10 | B=25 | B=50 | B=100 |
+|---|---|---|---|---|
+| any (adv / rand) | 149 / 115 | 149 / 130 | 149 / 106 | 149 / 56 |
+| half (adv / rand) | 10 / 0 | 18 / 0 | 48 / 2 | 78 / 50 |
+| **all-but-this-one** (adv / rand) | **0 / 0** | **1 / 0** | **2 / 0** | **5 / 0** |
+
+**Cascade deal model** (85 typed, 32 in 1 section): « any » fires 31
+of a possible 32 at B=10; « half » 16; « all-but-this-one » at most
+1.
+
+- **« any » is dead on arrival.** One confirmation anywhere in a
+  block turns every other typed cell in it into a finding: 149
+  findings on a 230-cell model. That is the naive flood wearing a
+  different hat.
+- **« half » has the worse property**: its noise *grows with the
+  work*. The more diligently a banker confirms, the more it fires
+  (0 → 50 random as B goes 10 → 100). A check that punishes
+  thoroughness will be turned off.
+- **« all-but-this-one » holds.** At most 5 findings under
+  adversarial placement at B=100, and zero under random placement
+  anywhere. It is flood-proof by construction, and the measurement
+  says so rather than the design arguing it.
+
+**What flood-proof costs, in the same numbers:** a T3 finding costs
+(section size − 1) confirmations — 19 for the pre-app's smallest
+block, 31 for Cascade's only one. So the finding appears exactly
+when a person has nearly finished sourcing a block, which is the
+moment it means something (« you sourced everything here except
+this ») and also means it will be **rare**. That is the trade, stated
+plainly: this class will fire seldom, and every time it fires it
+will be worth reading. If the founder wants a check that speaks more
+often, it is a different check, not a looser threshold on this one.
+
+**Two honest artifacts of the method**, neither hidden: where the
+budget exceeds the typed cells inside sections (Cascade at B ≥ 50),
+*everything* gets confirmed and the count falls to zero — that is
+the budget outgrowing the model, not flood-proofing; and Cascade's
+random column is deterministic because the model has exactly one
+usable section, so every trial places identically.
+
+**The verdict for the lead and founder:** if D5 ships, it ships as
+**« unsourced where every neighbour in the model's own block is
+sourced »** — threshold T3, nothing looser — and only on models
+whose blocks contain inputs. It still reports nothing until a shape
+is approved, and it still waits on D4 for real confirmations.
