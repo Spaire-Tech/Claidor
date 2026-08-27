@@ -596,3 +596,17 @@ with `net::ERR_FAILED` — CORS, not the app. Stop the dev server and
 serve the build on 3000.
 
 Still holding for the founder's review of the three screens.
+
+## 27 August 2026 — merged, and holding
+
+The states sweep and its production-build verification are merged
+(sixteenth sweep). Orders unchanged, so this turn was the check
+that matters while holding: nothing in the merged sweeps touched
+my paths, and the Chain contract my source viewer consumes
+(`FactRead` — page, page size, box, line, extractor) is unchanged,
+so the coupling that would break a screen silently has not moved.
+Scribe's new `chain/anchor.py` is added capability, not a contract
+change. Route suite **82 passed** against the merged tip.
+
+Holding for the founder's review of the three screens, which stand
+untouched until then, per orders.
