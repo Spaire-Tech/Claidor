@@ -116,3 +116,27 @@ One caution the registration makes explicit and worth repeating:
 **silence is the expected pass.** These deals closed and were lent
 against. If the analytical checks light up across a clean audited
 model, the first hypothesis is our false alarm, not their defect.
+
+## Orders reset (28 Aug, twenty-fifth sweep) — completeness is the bar
+
+The founder set the bar: **a fully complete product**, partner
+testing deferred, « build the best engine we can » (plan, fourth
+amendment). Priority is now by *hole*, not polish. Yours, in order:
+
+1. **A6 — intake. This is now your highest-value work**, and it is a
+   bigger hole than the plan's wording suggests: of sixteen real
+   published models in the closed-deal population, **five cannot be
+   opened at all** — three `.xlsb` (Excel binary) and two `.xls`.
+   One real model in three. Register it properly: the LibreOffice
+   conversion pass, and — the half that matters — **a fidelity check
+   on the conversion itself**, because a converted file is a
+   different file until proven otherwise (Dynamo's gate is the
+   precedent and the tool). DONE when the five held models open and
+   the conversion's fidelity is measured, not assumed.
+2. **E3 — the unit mismatch checks**, the flagship finding that does
+   not exist. Dynamo's E2 inference is measured; arm E3 dimension by
+   dimension **only where E2's accuracy earns it**, each through the
+   normal loop. Coordinate the arming threshold with the lead.
+3. Then Proof 1A **run 2** under the same frozen registration (run 1
+   is archived; the own-check fix is gate-certified), and the
+   serious-error mining lead when the queue clears.

@@ -53,3 +53,22 @@ from it rather than by hand. Next, in order:
    propagated through formulas that are not there. Register it as an
    E2 generalisation round if you judge it worth the time; the
    propagation half stays measured on formula-bearing files.
+
+## Orders reset (28 Aug, twenty-fifth sweep) — completeness is the bar
+
+The founder set the bar: a fully complete product, partner testing
+deferred (plan, fourth amendment). Yours, in order:
+
+1. **Finish E2 to a shippable verdict**: per-dimension accuracy
+   against E1, stated dimension by dimension, with the honest line
+   on which dimensions are good enough to arm a *finding* and which
+   are not. Sentinel cannot build E3 — the flagship missing feature
+   — until that verdict exists. This is the single highest-value
+   thing on your board.
+2. **B3 — the arbiter.** Four corpus files are engine-gap files that
+   only real Excel can certify, and B2's report has said so for
+   days. Your design is written; the lead now routes it: build it
+   against the existing Microsoft connector surface, propose the
+   interface in your log first, and treat a Graph call like any
+   other measured instrument.
+3. B5/B6 continue behind those two, not ahead of them.

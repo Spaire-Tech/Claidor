@@ -27,3 +27,23 @@ design it, full effort, existing style, marked agent-designed.
    and now a column-direction extension — the category map is
    already current, but re-check it against the merged catalogue
    before you ship the report.
+
+## Orders reset (28 Aug, twenty-fifth sweep) — completeness is the bar
+
+The founder set the bar: a fully complete product, partner testing
+deferred (plan, fourth amendment). So: **no demo polish.** Holes
+only.
+
+1. **G2's two unanswerable questions.** You measured chat honestly
+   as *not met* and identified that two tools in
+   `agent/model_tools.py` would close « where is this from » and
+   « what changed » — a `sources` tool over the Chain's facts, and
+   the Watch's delta behind `versions`. **The lead routes that file
+   to you** for these two tools only: the endpoints they read are
+   already yours, the change is one function each, and no other lane
+   owns the agent package. Then re-judge all five questions by hand
+   and report which now answer correctly.
+2. Then the honest surfacing of what the engine cannot do — the
+   format refusal a person meets when they upload an `.xlsb` should
+   say what it is and what happens next, not fail blankly. Coordinate
+   with Sentinel's A6 round so the words match the engine's.

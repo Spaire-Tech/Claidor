@@ -37,3 +37,19 @@ The plan's third amendment gates C6 on Dynamo's two stability tests
 (five-seed agreement; cosmetic invariance). **Write no diff code
 until both pass on the record.** Your C6 registration, when it
 comes, cites their results first.
+
+## Orders reset (28 Aug, twenty-fifth sweep) — completeness is the bar
+
+The founder set the bar: a fully complete product, partner testing
+deferred (plan, fourth amendment). The Watch is the most complete
+track we have — C1–C5 all measured — so your orders are about
+finishing it rather than widening it:
+
+1. **C4 tier 1**, per your SQLSolver-informed registration, and the
+   tier ladder's honest refusal boundary. Then the tier table as a
+   single published statement: what each tier proves, at what cost,
+   and what it refuses.
+2. **C6 remains gated** on Dynamo's stability tests, which are now
+   behind E2 — so do not wait on it; it will come.
+3. If both stall, the C3 deferrals you parked
+   (added-cells-within-matched-structure) are real holes and yours.
