@@ -109,7 +109,27 @@ def model() -> ModelWorkspace:
             "added": 0,
             "removed": 0,
         },
+        sources_map={
+            "Inputs!B2": {
+                "document": "audited_accounts_fy24.pdf",
+                "location": "page 42",
+                "label": "audited_accounts_fy24.pdf · page 42",
+                "printed": "2.7%",
+                "context": "RPI indexation for the year to 31 December 2024",
+                "state": "confirmed",
+                "note": "confirmed by someone on this deal",
+            }
+        },
+        sources_read=1,
     )
+
+
+@pytest.fixture
+def ungrounded(model: ModelWorkspace) -> ModelWorkspace:
+    """The same model on a deal where no source document was ever read."""
+    model.sources = {}
+    model.sources_read = 0
+    return model
 
 
 class TestTraceBack:
@@ -182,11 +202,210 @@ class TestStructureAndVersions:
             "Returns",
         ]
 
-    def test_versions_carry_the_diff(self, model: ModelWorkspace) -> None:
+    def test_versions_fall_back_to_the_diff_when_the_files_are_gone(
+        self, model: ModelWorkspace
+    ) -> None:
+        """No Watch reading available — and the answer says so.
+
+        A reviewer told « 1 cell changed » will not guess that the
+        reviewed reading was the thing that failed, so the note is the
+        point of this test, not the count.
+        """
         result = run_tool(model, "versions", {})
         assert result.ok
         assert result.data["changed"] == 1
         assert result.data["rows"][0]["ref"] == "Opex!C4"
+        assert "not the reviewed reading" in result.data["note"]
+
+    def test_versions_speak_the_watchs_review_language(
+        self, model: ModelWorkspace
+    ) -> None:
+        """The revision's authoring decisions, not its cell moves.
+
+        « Opex!C4 17,900 → 18,099 » is a true answer to « what changed »
+        the way a diff is a true answer. What a reviewer asked is what
+        the revision *did*, which is the Watch's own reading.
+        """
+
+        class _Item:
+            kind = "methodology_change"
+            sheet = "Opex"
+            first_row = 4
+            last_row = 4
+            columns = ("C",)
+            detail = "indexation moved from a typed rate to Inputs!B2"
+            weight = 1.0
+            findings = ()
+
+        class _Report:
+            items = [_Item()]
+            new_defects = 0
+            repaired_defects = 1
+            persistent_defects = 2
+            sheets_added = ()
+            sheets_removed = ()
+            summary = {
+                "new_defects": 0,
+                "repaired_defects": 1,
+                "persistent_defects": 2,
+                "methodology_change": 1,
+            }
+
+        model.delta = lambda: _Report()
+        result = run_tool(model, "versions", {})
+        assert result.ok
+        assert "formula rewritten to compute differently" in result.summary
+        assert result.data["counts"]["methodology_change"] == 1
+        assert result.data["rows"][0]["ref"] == "Opex!C4"
+        assert "indexation moved" in result.data["rows"][0]["what"]
+        #: The half the Watch cannot see — this deal's own deliverables —
+        #: still rides along.
+        assert result.data["cells_changed"] == 1
+
+    def test_a_watch_that_cannot_read_does_not_lose_the_tool(
+        self, model: ModelWorkspace
+    ) -> None:
+        """Dropped bytes cost the reviewed reading, not the answer."""
+
+        def _boom() -> None:
+            raise RuntimeError("the stored file was not kept")
+
+        model.delta = _boom
+        result = run_tool(model, "versions", {})
+        assert result.ok
+        assert result.data["changed"] == 1
+        assert "not the reviewed reading" in result.data["note"]
+
+    def test_the_watch_is_not_read_until_versions_is_asked(
+        self, model: ModelWorkspace
+    ) -> None:
+        """Two file reads must not ride on « what feeds equity IRR ».
+
+        The workspace loads before the loop starts, so anything eager
+        there is paid by every question. This is the guard on that.
+        """
+        calls = []
+
+        def _delta() -> None:
+            calls.append(1)
+            raise RuntimeError("no report here")
+
+        model.delta = _delta
+        run_tool(model, "trace_back", {"ref": "Returns!B2"})
+        run_tool(model, "inventory", {"kind": "typed"})
+        assert calls == []
+        run_tool(model, "versions", {})
+        run_tool(model, "versions", {})
+        #: Once, and cached — not once per question.
+        assert calls == [1]
+
+
+class TestSources:
+    """« Where is this from » — the one answer that leaves the workbook.
+
+    Every other tool reads the model. This one reports a fact the model
+    cannot hold: that a typed input was matched to a figure printed on
+    a page. The tests below are mostly about what it must *not* say,
+    because a guess at provenance is the one claim a banker would
+    repeat to a client without checking.
+    """
+
+    def test_a_grounded_input_names_its_document_and_page(
+        self, model: ModelWorkspace
+    ) -> None:
+        result = run_tool(model, "sources", {"ref": "Inputs!B2"})
+        assert result.ok
+        assert "audited_accounts_fy24.pdf · page 42" in result.summary
+        assert result.data["location"] == "page 42"
+        assert result.data["state"] == "confirmed"
+        #: The sentence as printed, not the label the matcher used.
+        assert "31 December 2024" in result.data["context"]
+
+    def test_a_label_resolves_the_same_as_a_ref(self, model: ModelWorkspace) -> None:
+        """A reviewer asks « where is the indexation from », not « B2 »."""
+        result = run_tool(model, "sources", {"ref": "Indexation"})
+        assert result.ok
+        assert result.data["document"] == "audited_accounts_fy24.pdf"
+
+    def test_a_calculated_cell_walks_to_the_typed_inputs_behind_it(
+        self, model: ModelWorkspace
+    ) -> None:
+        """The question is almost always asked about a computed line.
+
+        Declining it because the cell is a formula would be correct and
+        useless: the provenance is one walk away, through the same
+        precedent graph every other tool here reads.
+        """
+        result = run_tool(model, "sources", {"ref": "Opex!D4"})
+        assert result.ok
+        assert result.data["calculated"] is True
+        assert [row["ref"] for row in result.data["rows"]] == ["Inputs!B2"]
+        #: Opex!C4 is typed and carries nothing — counted, not hidden.
+        assert result.data["ungrounded_inputs"] == 1
+
+    def test_a_typed_input_with_no_document_says_which_kind_of_nothing(
+        self, model: ModelWorkspace
+    ) -> None:
+        result = run_tool(model, "sources", {"ref": "Debt!C4"})
+        assert result.ok
+        assert "no source document backs it" in result.summary
+        #: Documents *were* read here — so the answer is « none matched »,
+        #: which is a different fact from « nobody looked ».
+        assert "was matched to it" in result.data["note"]
+
+    def test_a_deal_with_no_source_document_says_that_instead(
+        self, ungrounded: ModelWorkspace
+    ) -> None:
+        """« Nothing matched » and « nobody looked » are different answers.
+
+        Flattening them would tell a reviewer the documents disagree
+        with the model when nobody has read one.
+        """
+        result = run_tool(ungrounded, "sources", {"ref": "Debt!C4"})
+        assert result.ok
+        assert "no source document has been read" in result.data["note"]
+        listing = run_tool(ungrounded, "sources", {})
+        assert listing.ok
+        assert "No source document has been read" in listing.data["note"]
+
+    def test_listing_says_what_is_sourced_at_all(self, model: ModelWorkspace) -> None:
+        result = run_tool(model, "sources", {})
+        assert result.ok
+        assert result.data["grounded"] == 1
+        assert result.data["rows"][0]["ref"] == "Inputs!B2"
+
+    def test_a_cell_outside_the_model_is_refused_not_guessed(
+        self, model: ModelWorkspace
+    ) -> None:
+        result = run_tool(model, "sources", {"ref": "Nowhere!Z99"})
+        assert not result.ok
+        assert "harbour.xlsx" in result.summary
+
+    def test_a_values_pasted_copy_says_so_before_it_says_nothing(
+        self, ungrounded: ModelWorkspace
+    ) -> None:
+        """« Typed, nothing behind it » is a libel on a stripped copy.
+
+        A published copy with the formulas removed answers every
+        provenance question the same way, and a reader takes that for a
+        finding about the model. Found on a real corpus model whose
+        blended equity IRR — a computed line in anybody's model — came
+        back as a typed value with nothing behind it, because the copy
+        holds 224 formulas in 432,596 cells.
+        """
+        ungrounded.counts = {"cells": 432_596, "formulas": 224}
+        result = run_tool(ungrounded, "sources", {"ref": "Debt!C4"})
+        assert result.ok
+        assert "224 of 432,596" in result.data["values_only"]
+        listing = run_tool(ungrounded, "sources", {})
+        assert "values only" in listing.data["values_only"]
+
+    def test_a_working_copy_carries_no_such_qualification(
+        self, ungrounded: ModelWorkspace
+    ) -> None:
+        ungrounded.counts = {"cells": 3_000, "formulas": 1_900}
+        result = run_tool(ungrounded, "sources", {"ref": "Debt!C4"})
+        assert "values_only" not in result.data
 
 
 class TestRows:
@@ -200,6 +419,8 @@ class TestRows:
             ("inventory", {"kind": "typed"}),
             ("structure", {}),
             ("versions", {}),
+            ("sources", {}),
+            ("sources", {"ref": "Inputs!B2"}),
         ]:
             result = run_tool(model, name, args)
             assert result.ok, name

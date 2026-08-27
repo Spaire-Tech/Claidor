@@ -1238,3 +1238,131 @@ a defect that is going to be fixed, so the prose stands.
 Evidence: `logs/atelier/rebuilt_gap.py` (the measurement),
 `logs/atelier/rebuild-gap-levenmouth.png` (the face). ruff, mypy,
 tsc and prettier clean; route suite 89 green.
+
+## Nineteenth turn — chat's two unanswerable questions, closed
+
+Orders reset, twenty-fifth sweep: the lead routed
+`polar/tieout/agent/model_tools.py` to me for two tools — a `sources`
+tool over the Chain's facts, and the Watch's delta behind `versions` —
+then a re-judgement of all five canonical questions by hand.
+
+### What I touched, and why it was more than one file each
+
+`model_tools.py` and its test file, plus two things the tools cannot
+work without: the loader in `agent/service.py` (a tool is a synchronous
+pure function over a workspace loaded before the loop starts, so the
+material has to be fetched there) and one refactor in `service.py`,
+which is mine.
+
+**The refactor is the interesting half.** `version_delta` resolved two
+artifacts and then read both files in one async method. Loading it in
+the workspace would have made every model question — « what feeds
+equity IRR » included — pay for two workbook reads it never uses. So
+it is split: `delta_sides` resolves (async, cheap), `delta_between`
+reads (sync, expensive). The loader calls the first and hands the tool
+a `partial` of the second; `versions` calls it **once, on demand, and
+caches**. There is a test whose only job is that the Watch is not read
+until `versions` is asked.
+
+### `sources` — « where is this from »
+
+The one question the graph cannot answer, because the answer is not in
+the file. The loader builds a ref → document map from the deal's links
+(the endpoint's own ranking: a **confirmed** link outranks a proposal,
+a rejected one is not an answer at all), and the tool reports the
+document, the page, and the sentence **as printed** — never the label
+the matcher normalised it to.
+
+Three behaviours that took the work past a stub:
+
+- **A calculated cell walks to the typed inputs behind it.** The
+  question is almost always asked about a computed line, and declining
+  it because the cell is a formula is correct and useless. Asked about
+  a CAGR on the Cascade deal it answers « 1 of the typed inputs behind
+  it carries a source document », and names it.
+- **« Nothing matched » and « nobody looked » are different answers**
+  and are never flattened. Telling a reviewer the documents did not
+  back a number when no document has been read would be the worst kind
+  of wrong.
+- **A values-pasted copy says so first** (below). 
+
+### The five questions, re-judged by hand
+
+The loop still cannot run here — no `ANTHROPIC_API_KEY`, `ask` answers
+503 — so this is **not** a measurement of how the assistant phrases an
+answer. It is a measurement of the thing that decides it: whether the
+tool it would reach for hands back the right material, with the right
+numbers, checked against the model by hand.
+
+| # | Question | Before | Now |
+|---|---|---|---|
+| 1 | why did DSCR fall between versions | parts only | **parts only** |
+| 2 | what feeds equity IRR | reachable | **wrong on a stripped copy** |
+| 3 | where is this from | **unreachable** | **answers** |
+| 4 | hardcodes above materiality | answers | answers |
+| 5 | what changed | raw cell moves | **review language** |
+
+**3 answers.** `sources('Model!D6')` → « came off cascade_accounts.pdf ·
+page 2 », printed `$228.9m`, context « Revenue for the year ended 31
+December 2025 was $228.9m. », state *proposed* with the note that says
+so. By label (« revenue ») and from a calculated output it walks and
+still lands on `Model!D6`.
+
+**5 answers in the right register.** `versions()` on Cascade v1→v2:
+« 1 defect this revision introduced, 1 defect still open, 1 cell that
+changed class », item `Model!F16 — a live formula became a typed
+constant`. That is the doctored F16, correctly named. It used to say
+« Model!F16 4.1 → 3.8 », which is a true answer the way a diff is a
+true answer and the wrong register for a reviewer asking what the
+revision *did*. The stored-cell diff still rides along for the one
+thing the Watch cannot see: how many of this deal's own deliverable
+figures the change made stale.
+
+**1 is still parts only, and the corpus is why.** `locate('DSCR')` on
+Kelso returns twelve real lines (`Natural Hedge!E8 Min DSCR 1.07524`,
+`ReportCharts!M120 FY2018 ADSCR 1.15524`) and `versions` reports a
+revision properly — but **no deal here has both a DSCR line and a
+second version**, so the joined answer is unproven. Seeding one means
+a second 470k-cell upload; worth doing when a corpus deal earns a
+revision.
+
+**2 is the one that got worse when looked at properly.** On Kelso,
+`locate('equity IRR')` finds `IRR Calculations and Sharing!C85 SFT
+Blended Equity IRR 0.0960581` — correct. `trace_back` on it returns
+**« typed value, 0 direct inputs »**. That is true of the file and
+false as an answer: Kelso is a values-pasted publication (814 formulas
+in 470,594 cells), so *every* line reads as typed, and a reader takes
+it for a devastating finding about the model rather than a fact about
+the copy. The values-only thread reaches its **fifth** surface.
+
+`sources` now carries the qualification — « This copy carries values
+only — 814 of 470,594 cells hold a formula — so almost everything in
+it reads as typed. That is a fact about this copy, not about how the
+model was built. » — measured off ingest's own counts, same 1% floor
+as the report and the document panel. **`trace_back` still does not**,
+and it is not one of the two tools routed to me. Routed to the lead.
+
+### Two more for the lead
+
+**The model workspace picks the first model on the deal.**
+`load_model_workspace` takes `next((one for one in artifacts if
+one.kind == "model"), None)`. Cascade Watch carries three model
+lineages, and chat answered about `macro_model.xlsm` while the deal's
+subject is `cascade_model.xlsx`. On a multi-model deal chat can
+silently answer about the wrong file — worse than refusing.
+
+**A pre-existing ruff failure** in `tests/tieout/test_structure.py`
+(import order, `BalancePair`) — Sentinel's row, untouched here, but it
+fails `ruff check tests/tieout/`.
+
+### Orders item 2 — the format refusal
+
+Already built, and built to follow the engine rather than pin prose:
+`_unreadable_format` derives its sentence from `ingest.SUFFIXES` and
+names the fix for `.xlsb`/`.csv`/`.numbers`. Sentinel's A6 round has
+not landed yet, and when it does the refusal narrows on its own —
+nothing to coordinate until then, and nothing to re-word by hand.
+
+Checks: 135 green across the route, model-tool, agent-tool and
+changeset suites (23 in `test_model_tools.py`, 12 of them new); ruff
+and mypy clean on every file I touched.
