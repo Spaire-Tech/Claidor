@@ -1693,3 +1693,131 @@ the 20 rows are records and E2 correctly refuses to type them.
   dependency graph is the Williams-2020 half still owed, and it is
   the obvious way to rescue `scale` — a cell that sums £m rows is in
   £m whether or not anyone wrote it down.
+
+---
+
+## E2's second half — propagation, and the bugs it took to report a zero honestly
+
+*28 Aug. Standing arrangement confirmed: I fetch
+`origin/claude/pierce-phase-6-writing-mjkaj6` and read
+`docs/pierce/orders/dynamo.md` at the start of every working turn,
+do what it says, push to `swens/dynamo`, and stop.*
+
+### The hypothesis I wrote down last time was wrong, and I measured
+### it before building on it
+
+I ended the last entry with « a cell that sums £m rows is in £m
+whether or not anyone wrote it down », and said propagation was the
+obvious way to rescue `scale`. The first thing I did was count the
+anchors a *blind* propagation would have.
+
+**Zero.** Not one currency-bearing number format on ED2 (43,178
+cells) or GD3 (16,656). The « £m » exists in the Units column and
+nowhere else in either file. So blind propagation has nothing to
+spread: it cannot rescue `scale`, and the sentence I wrote last time
+was a guess that the file disproves.
+
+What propagation *can* do is carry the **declared** units — the ones
+in that column — from the input rows into the tens of thousands of
+formula cells that consume them. That is what E3 would need and what
+B5 needs to read its watched cells, so that is what I built, with
+the seeds supplied by the caller rather than inferred.
+
+### The rules, and the reach
+
+`propagate(cells, seeds)` in `polar/tieout/units/inference.py`. A
+sum carries the unit of its terms. A formula that is *nothing but*
+one amount over another of the same currency is dimensionless. An
+amount times a dimensionless factor keeps the amount's unit. Where
+the terms do not settle it, **nothing is claimed** — a conclusion
+drawn from part of a formula is a guess about the rest.
+
+| | seeds | formula cells | reached | reach |
+|---|---|---|---|---|
+| ED2 v5 | 15,140 | 20,485 | 13,065 | **63.8%** |
+| GD3 PCFM | 1,837 | 14,399 | 6,250 | **43.4%** |
+
+`docs/pierce/logs/dynamo/propagate3.json`.
+
+### The part worth reading: five bugs, all mine
+
+The first run reported **216 « unit conflicts » on ED2**. I did not
+report them. I hand-read one — `InputSummary!AR124`,
+`= -SUMPRODUCT($I$117:$I$119,AR117:AR119)`, whose six precedents all
+declare « £m 20/21 prices » — and it was my detector's fault, not the
+model's. Then I kept going, because one artifact means the rest are
+suspect too. Every one of the following was found by reading a
+conflict the workbooks produced, and each is now a test carrying the
+formula that caught it:
+
+1. **`SUMPRODUCT` read as additive.** It contains no `*` character
+   and is a product all the same. Fixed → and the count went *up*,
+   to 276, which is the reason I kept reading rather than shipping.
+2. **A `SUM` leading a product read as a sum.**
+   `=SUM(AP65:AP67) * AP$16 * AQ$16 * AR$13` opens with SUM. 240 of
+   the 276.
+3. **A product taking the unit of its first *known* factor rather
+   than its first *moneyed* one.** « rate × £m » came out
+   dimensionless whenever the rate came first, and every sum below
+   it then read as a conflict.
+4. **A product with an unlabelled factor claiming
+   « dimensionless ».** `-(SUM($AI101:AQ101))*AR98` — the amounts
+   row is blank in this file and only the rate is labelled. It is
+   money × rate whose money happens to be zero.
+5. **« there is a `/` in here » read as a ratio.**
+   `(AP83/AP$13 - AP84) * AP$16 * AQ$16 * AR$13` is £m over an
+   inflation index, less £m, times factors. It is money. This one
+   alone was the last 18.
+
+After all five: **0 conflicts on ED2, 0 on GD3.**
+
+### A zero is worth nothing without a control, so here is the control
+
+« The detector found no unit mismatches » and « the detector cannot
+find a unit mismatch » produce the same number. So, registered
+before the run and then run: take each model's own declared units,
+corrupt **one row's scale** — a « £ » row summed into a « £m »
+column, the mistake a modeller actually makes — and ask whether
+propagation names the sum that adds them. A plant counts as caught
+only when the conflict is reported **at the planted formula's own
+ref**. Predicted ≥ 90%.
+
+| | plants | caught at the sum | unobservable | missed | from the declared row |
+|---|---|---|---|---|---|
+| ED2 v5 | 20 of 837 candidate sums | 20 | 0 | 0 | 13 of 13 |
+| GD3 PCFM | 20 of 797 | 18 | 2 | 0 | 14 of 14 |
+
+`docs/pierce/logs/dynamo/units-control.json`.
+
+**« Unobservable » is measured, not argued.** Both GD3 cases are
+sums whose *other* term is computed from the planted one
+(`=SUM(AN36:AN37)` where `AN37 = ((AN28+AN29)/PCf-AN36)*RIIO3`): the
+corruption reaches both sides, they agree, and there is no
+disagreement left to see. The script tests for that by walking the
+precedent graph rather than taking my word for it.
+
+The control also found a sixth bug, and the worst one: the first
+version of it caught **6 of 20**. A sum is reached before some of
+its own terms in a 20k-cell walk, and a conclusion drawn from two of
+five terms was never revisited. Propagation now **revises** a
+conclusion when more of its terms arrive. That went to 38 of 40.
+
+### What I am handing over, and what I am not
+
+- **The reach numbers and the control are results.** 63.8% and
+  43.4% of formula cells carry a declared unit; the instrument
+  catches a planted mismatch 38 times out of 38 observable.
+- **The zero is a result about these two files**: no unit mismatch
+  survives propagation from their own declared units. It is a
+  negative finding and it is Sentinel's to use or not — E3's
+  mismatch findings cannot be sourced from these two models.
+- **I am handing Sentinel nothing that looks like a finding**,
+  because there is nothing. Had I pushed the first run, I would have
+  handed over 216 of them, and all 216 were mine.
+- **`period` is still not to be quoted**, unchanged from last entry.
+- **Abstention got more expensive and I am keeping it**: GD3's reach
+  is 43.4% where the guessing version reached 47.4%. Four points of
+  reach is the price of not making things up.
+
+Next, per orders item 3: B5 round 2 with typing driven by E2's
+`kind`, coverage reported beside the rule set.

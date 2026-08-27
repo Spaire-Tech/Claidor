@@ -36,17 +36,21 @@ Two things E1's hand pass forced into the design:
 """
 
 from .inference import (
+    Conflict,
     Dimension,
     Orientation,
     UnitLabel,
     classify_sheet,
     orientation,
+    propagate,
 )
 
 __all__ = [
+    "Conflict",
     "Dimension",
     "Orientation",
     "UnitLabel",
     "classify_sheet",
     "orientation",
+    "propagate",
 ]

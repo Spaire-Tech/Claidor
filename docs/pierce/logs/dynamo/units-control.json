@@ -1,0 +1,28 @@
+{
+ "ed2-v5": {
+  "clean_conflicts": 0,
+  "candidate_formulas": 837,
+  "plants": 20,
+  "near_caught": 20,
+  "near_missed": 0,
+  "near_unobservable": 0,
+  "near_missed_refs": [],
+  "far_planted": 13,
+  "far_caught": 13,
+  "far_missed": 0,
+  "conflicts_per_far_plant_median": 1
+ },
+ "gd3-pcfm": {
+  "clean_conflicts": 0,
+  "candidate_formulas": 797,
+  "plants": 20,
+  "near_caught": 18,
+  "near_missed": 0,
+  "near_unobservable": 2,
+  "near_missed_refs": [],
+  "far_planted": 14,
+  "far_caught": 14,
+  "far_missed": 0,
+  "conflicts_per_far_plant_median": 12
+ }
+}

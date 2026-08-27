@@ -298,3 +298,198 @@ def rows_from_cells(
             )
         )
     return rows
+
+
+# --- propagation through the dependency graph -----------------------
+
+#: Functions that multiply their arguments. They must not be read as
+#: additive: `SUMPRODUCT(rates, amounts)` contains no `*` character
+#: and is a product all the same — which is exactly the mistake that
+#: produced 216 phantom « unit conflicts » on ED2 before it was
+#: caught by hand-reading one of them (lane log, 28 Aug).
+MULTIPLICATIVE_FUNCTIONS = re.compile(
+    r"\b(sumproduct|product|mmult|sumx2my2|sumx2py2|sumxmy2|sumsq)\s*\(", re.I
+)
+
+#: A formula that is nothing but one cell over another. The
+#: dimensionless conclusion needs this much: « `/` appears somewhere »
+#: fired on `(AP83/AP$13 - AP84) * AP$16 * AQ$16 * AR$13`, which is
+#: money divided by an inflation index and is money, and calling it
+#: dimensionless put 18 revenue rows into phantom conflict.
+_REF = r"(?:'[^']+'!|[A-Za-z_][\w. ]*!)?\$?[A-Z]{1,3}\$?\d+"
+SIMPLE_RATIO = re.compile(rf"^=\s*-?\s*{_REF}\s*/\s*{_REF}\s*$", re.I)
+
+#: Formulas that only add and subtract: every term must share a unit,
+#: and the result carries it. The test is the whole formula, not its
+#: leading function — `=SUM(AP65:AP67) * AP$16 * AQ$16` opens with a
+#: SUM and is a product, and reading it as a sum is what put 240
+#: phantom conflicts on ED2 (lane log, 28 Aug).
+ADDITIVE = re.compile(r"^[^*/^]*$")
+
+
+@dataclass(frozen=True)
+class Conflict:
+    """Cells added together whose declared units disagree.
+
+    Not a finding — this module reports nothing to anyone. It is
+    evidence handed to the lead, and Sentinel decides whether E3
+    turns any of it into something a banker reads.
+    """
+
+    ref: str
+    units: tuple[str, ...]
+    why: str
+
+
+def propagate(
+    cells: Mapping[str, Any],
+    seeds: Mapping[str, UnitLabel],
+    *,
+    rounds: int = 20,
+) -> tuple[dict[str, UnitLabel], list[Conflict]]:
+    """Carry units from input cells into the formulas that use them.
+
+    The Williams-2020 half. A formula that only adds and subtracts
+    must have one unit across every term, so it **inherits** that
+    unit — and when its terms disagree, that disagreement is recorded
+    rather than averaged away. A formula that is *nothing but* one
+    amount over another of the same currency is dimensionless;
+    multiplying an amount by a dimensionless factor keeps the
+    amount's unit; and where the terms do not settle it, nothing is
+    claimed. Every one of those conditions is narrower than it first
+    was, and each narrowing is a bug the ED2 and GD3 workbooks found
+    — see the tests, which carry the formulas that caught them.
+
+    **What this cannot do, measured before it was built**: neither
+    ED2 nor GD3 has a single currency-bearing number format — the
+    « £m » lives in a Units column and nowhere else in the file. So
+    propagation has no anchor to spread unless the caller supplies
+    the declared units. A blind run spreads what blind evidence
+    knows: percent, dates, and consistency.
+    """
+    known: dict[str, UnitLabel] = dict(seeds)
+    #: How many precedents each conclusion rested on. A cell settled
+    #: from two of its five terms is **revisited** when the other
+    #: three arrive: the first pass over a 20k-cell model reaches a
+    #: sum before some of its own terms, and a conclusion that is
+    #: never revised misses the disagreement that arrives later.
+    #: Measured: without revision the planted-mismatch control caught
+    #: 6 of 20 (lane log, 28 Aug).
+    rested_on: dict[str, int] = {}
+    conflicts: dict[str, Conflict] = {}
+    for _ in range(rounds):
+        changed = False
+        for ref, cell in cells.items():
+            formula = getattr(cell, "formula", None)
+            if formula is None or ref in seeds or ref in conflicts:
+                continue
+            precedents = [
+                known[p] for p in (getattr(cell, "precedents", ()) or ()) if p in known
+            ]
+            if not precedents or len(precedents) <= rested_on.get(ref, 0):
+                continue
+            body = formula
+            multiplicative = bool(MULTIPLICATIVE_FUNCTIONS.search(body))
+            additive = not multiplicative and bool(ADDITIVE.match(body))
+            currencies = {p.currency for p in precedents if p.currency != "unknown"}
+            scales = {p.scale for p in precedents if p.scale != "unknown"}
+            if additive:
+                if len(currencies) > 1 or len(scales) > 1:
+                    conflicts[ref] = Conflict(
+                        ref=ref,
+                        units=tuple(sorted(currencies | scales)),
+                        why="added or subtracted terms whose units disagree",
+                    )
+                    known.pop(ref, None)
+                    changed = True
+                    continue
+                source = precedents[0]
+                label = UnitLabel(
+                    kind=source.kind,
+                    b5_type=source.b5_type,
+                    currency=next(iter(currencies), "unknown"),
+                    scale=next(iter(scales), "unknown"),
+                    period=source.period,
+                    rate_form=source.rate_form,
+                    why="inherited: a sum carries the unit of its terms",
+                )
+            elif (
+                SIMPLE_RATIO.match(body)
+                and len(currencies) == 1
+                and len(precedents) > 1
+            ):
+                label = UnitLabel(
+                    kind="continuous",
+                    b5_type="rate",
+                    currency="none",
+                    scale="units",
+                    period="unknown",
+                    rate_form="decimal",
+                    why="one amount divided by another of the same currency "
+                    "is dimensionless",
+                )
+            elif ("*" in body or multiplicative) and currencies:
+                # The unit of a product is the unit of whichever term
+                # carries one. Taking the first *known* term instead of
+                # the first *moneyed* one labelled « rate × £m » as
+                # dimensionless whenever the rate came first, and every
+                # sum downstream then read as a unit conflict.
+                moneyed = [
+                    p for p in precedents if p.currency not in ("unknown", "none")
+                ]
+                if moneyed:
+                    money = moneyed[0]
+                    label = UnitLabel(
+                        kind="continuous",
+                        b5_type="money",
+                        currency=money.currency,
+                        scale=money.scale,
+                        period=money.period,
+                        rate_form="not-a-rate",
+                        why="an amount multiplied by a dimensionless factor "
+                        "keeps its unit",
+                    )
+                elif _all_known(cells, cell, known):
+                    label = UnitLabel(
+                        kind="continuous",
+                        b5_type="rate",
+                        currency="none",
+                        scale="units",
+                        period="unknown",
+                        rate_form="decimal",
+                        why="a product of dimensionless factors is dimensionless",
+                    )
+                else:
+                    # Some factor is unlabelled, and no labelled factor
+                    # carries a currency: the product's unit is not
+                    # known, and « dimensionless » would be a guess.
+                    # `-(SUM($AI101:AQ101))*AR98` reaches here — the
+                    # amounts are blank in this file and only the rate
+                    # is labelled — and calling it dimensionless made
+                    # every sum below it read as a unit conflict.
+                    continue
+            else:
+                continue
+            if known.get(ref) != label or rested_on.get(ref) != len(precedents):
+                known[ref] = label
+                rested_on[ref] = len(precedents)
+                changed = True
+        if not changed:
+            break
+    return known, list(conflicts.values())
+
+
+def _all_known(
+    cells: Mapping[str, Any], cell: Any, known: Mapping[str, UnitLabel]
+) -> bool:
+    """Every one of a formula's precedents carries a label.
+
+    Abstention's precondition: a conclusion drawn from part of a
+    formula's terms is a guess about the rest. A precedent that is
+    blank in this file counts as unlabelled, not as absent — the
+    row it sits on still has a unit, and `SUM($AI101:AQ101)*AR98`
+    over an empty amounts row is a money × rate product whose money
+    happens to be zero, not a dimensionless one.
+    """
+    del cells
+    return all(ref in known for ref in (getattr(cell, "precedents", ()) or ()))

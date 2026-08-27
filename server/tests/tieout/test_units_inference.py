@@ -160,3 +160,189 @@ def test_the_units_column_is_ignored_unless_the_caller_opts_in() -> None:
         "millions",
         "money",
     )
+
+
+# --- propagation through the dependency graph ---
+
+
+class FakeCell:
+    def __init__(self, ref, formula=None, precedents=()):
+        self.ref = ref
+        self.formula = formula
+        self.precedents = precedents
+        self.sheet = ref.split("!")[0]
+
+
+def money(currency="GBP", scale="millions"):
+    from polar.tieout.units.inference import UnitLabel
+
+    return UnitLabel(
+        kind="continuous",
+        b5_type="money",
+        currency=currency,
+        scale=scale,
+        period="annual",
+        rate_form="not-a-rate",
+        why="seed",
+    )
+
+
+def test_a_sum_carries_the_unit_of_its_terms() -> None:
+    from polar.tieout.units.inference import propagate
+
+    cells = {
+        "M!A1": FakeCell("M!A1"),
+        "M!A2": FakeCell("M!A2"),
+        "M!A3": FakeCell("M!A3", "=SUM(A1:A2)", ("M!A1", "M!A2")),
+        "M!A4": FakeCell("M!A4", "=A3+A1", ("M!A3", "M!A1")),
+    }
+    known, conflicts = propagate(cells, {"M!A1": money(), "M!A2": money()})
+    assert known["M!A3"].currency == "GBP"
+    assert known["M!A3"].scale == "millions"
+    assert known["M!A4"].currency == "GBP"  # two hops
+    assert conflicts == []
+
+
+def test_terms_whose_units_disagree_are_recorded_not_averaged() -> None:
+    from polar.tieout.units.inference import propagate
+
+    cells = {
+        "M!A1": FakeCell("M!A1"),
+        "M!A2": FakeCell("M!A2"),
+        "M!A3": FakeCell("M!A3", "=A1+A2", ("M!A1", "M!A2")),
+    }
+    known, conflicts = propagate(
+        cells, {"M!A1": money(scale="millions"), "M!A2": money(scale="units")}
+    )
+    assert "M!A3" not in known
+    assert conflicts
+    assert conflicts[0].ref == "M!A3"
+    assert "disagree" in conflicts[0].why
+
+
+def test_dividing_like_by_like_is_dimensionless() -> None:
+    from polar.tieout.units.inference import propagate
+
+    cells = {
+        "M!A1": FakeCell("M!A1"),
+        "M!A2": FakeCell("M!A2"),
+        "M!A3": FakeCell("M!A3", "=A1/A2", ("M!A1", "M!A2")),
+    }
+    known, _ = propagate(cells, {"M!A1": money(), "M!A2": money()})
+    assert known["M!A3"].b5_type == "rate"
+    assert known["M!A3"].currency == "none"
+
+
+def test_propagation_stops_where_it_knows_nothing() -> None:
+    from polar.tieout.units.inference import propagate
+
+    cells = {"M!A1": FakeCell("M!A1"), "M!A2": FakeCell("M!A2", "=A1*2", ("M!A1",))}
+    known, conflicts = propagate(cells, {})
+    assert known == {}
+    assert conflicts == []
+
+
+# --- the five ways propagation got this wrong on real models ---
+#
+# Every test below is a bug the ED2 and GD3 workbooks found first: the
+# fix is in the module, and the case is here so it stays fixed.
+
+
+def rate():
+    from polar.tieout.units.inference import UnitLabel
+
+    return UnitLabel(
+        kind="continuous",
+        b5_type="rate",
+        currency="none",
+        scale="units",
+        period="annual",
+        rate_form="decimal",
+        why="seed",
+    )
+
+
+def test_a_sum_that_leads_a_product_is_not_a_sum() -> None:
+    # `=SUM(AP65:AP67) * AP$16` opens with SUM and is a product.
+    # Reading it as a sum made £m × dimensionless a unit conflict.
+    from polar.tieout.units.inference import propagate
+
+    cells = {
+        "M!A1": FakeCell("M!A1"),
+        "M!A2": FakeCell("M!A2"),
+        "M!A3": FakeCell("M!A3", "=SUM(A1:A1) * A2", ("M!A1", "M!A2")),
+    }
+    known, conflicts = propagate(cells, {"M!A1": money(), "M!A2": rate()})
+    assert conflicts == []
+    assert known["M!A3"].currency == "GBP"
+    assert known["M!A3"].scale == "millions"
+
+
+def test_a_product_takes_the_unit_of_its_moneyed_factor() -> None:
+    # Taking the first *known* factor instead of the first *moneyed*
+    # one labelled « rate × £m » dimensionless whenever the rate came
+    # first in precedent order, poisoning every sum below it.
+    from polar.tieout.units.inference import propagate
+
+    cells = {
+        "M!A1": FakeCell("M!A1"),
+        "M!A2": FakeCell("M!A2"),
+        "M!A3": FakeCell("M!A3", "=A1*A2", ("M!A1", "M!A2")),
+    }
+    known, _ = propagate(cells, {"M!A1": rate(), "M!A2": money()})
+    assert known["M!A3"].currency == "GBP"
+    assert known["M!A3"].scale == "millions"
+
+
+def test_a_product_with_an_unlabelled_factor_abstains() -> None:
+    # `-(SUM($AI101:AQ101))*AR98`: the amounts are blank in the file
+    # and only the rate is labelled. « Dimensionless » would be a
+    # guess about the blank row, so nothing is claimed.
+    from polar.tieout.units.inference import propagate
+
+    cells = {
+        "M!A1": FakeCell("M!A1"),
+        "M!A2": FakeCell("M!A2"),
+        "M!A3": FakeCell("M!A3", "=A1*A2", ("M!A1", "M!A2")),
+    }
+    known, conflicts = propagate(cells, {"M!A1": rate()})
+    assert "M!A3" not in known
+    assert conflicts == []
+
+
+def test_only_a_bare_ratio_is_read_as_dimensionless() -> None:
+    # `(AP83/AP$13 - AP84) * AP$16` contains a « / » and is money:
+    # £m over an inflation index, less £m, times a factor. Calling it
+    # dimensionless put 18 revenue rows into phantom conflict.
+    from polar.tieout.units.inference import propagate
+
+    cells = {
+        "M!A1": FakeCell("M!A1"),
+        "M!A2": FakeCell("M!A2"),
+        "M!A3": FakeCell("M!A3"),
+        "M!A4": FakeCell("M!A4", "=(A1/A3 - A2) * A3", ("M!A1", "M!A2", "M!A3")),
+    }
+    known, conflicts = propagate(cells, {"M!A1": money(), "M!A2": money()})
+    assert conflicts == []
+    assert known["M!A4"].currency == "GBP"
+
+
+def test_a_conclusion_is_revised_when_the_other_terms_arrive() -> None:
+    # A 20k-cell model is walked in dictionary order, so a sum is
+    # reached before some of its own terms. A conclusion drawn from
+    # two of five terms and never revisited missed the disagreement
+    # that arrived later — 14 of 20 planted mismatches, on ED2.
+    from polar.tieout.units.inference import propagate
+
+    cells = {
+        # The sum comes first in iteration order, on purpose.
+        "M!A9": FakeCell("M!A9", "=A1+A8", ("M!A1", "M!A8")),
+        "M!A1": FakeCell("M!A1"),
+        "M!A7": FakeCell("M!A7"),
+        "M!A8": FakeCell("M!A8", "=A7+A7", ("M!A7",)),
+    }
+    known, conflicts = propagate(
+        cells, {"M!A1": money(scale="millions"), "M!A7": money(scale="units")}
+    )
+    assert "M!A9" not in known
+    assert [c.ref for c in conflicts] == ["M!A9"]
