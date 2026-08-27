@@ -2577,3 +2577,74 @@ round, registered when it comes ». It has come.
    quietly not check.
 6. **The three round-2 sentences survive**, because they are
    duplicate formulas and independent of whether a draw was legal.
+
+---
+
+## Rate form from usage, not from a word list — registration
+
+*28 Aug. Last entry I registered « a vocabulary of named rates » as
+the fix for the RoE blocker. Before building it I looked again at
+what the file actually says, and the word list is the worse idea.*
+
+### Why the obvious design is the wrong one
+
+The blocker is that `RPI` is stored as `5.8` under a plain `0.00`
+format, so E2 abstains and B5 holds the column that drives the
+entire sheet. A vocabulary — `RPI`, `CPI`, `WACC`, `gearing`,
+`IRR` — would fix that model and would be **a guess wearing a
+lookup table**: it is right because I know what those words mean,
+it fails silently on the next model's house abbreviations, and
+nothing in it is checkable from the file.
+
+The file already states the fact outright:
+
+    F6 = GEOMEAN(1 + (C6:C25/100)) / GEOMEAN(1 + (D6:D25/100)) - 1
+
+**A row whose consumers divide it by 100 and add 1 is a rate in
+percent-of-100 form.** That is evidence, not vocabulary. It is read
+from the dependency graph E2 already walks for propagation, it
+generalises to any model that does the same arithmetic whatever its
+rows are called, and when it is wrong the formula is there to show
+why.
+
+### What is being built
+
+`rate_form` inferred from **how a row is consumed**:
+
+- consumed as `x/100`, especially inside `1 + x/100` → `percent-of-100`
+- consumed as `1 + x` or `x *` an amount, with no division → `decimal`
+- consumed both ways, or by nothing → **abstain**, as always
+
+Read from the same precedents map propagation uses, so it costs no
+new machinery and no new file reading.
+
+### The honest limit, stated up front
+
+**This cannot help the closed-deal corpus.** Those eight models are
+value-only; there are no consumer formulas to read. So the two
+designs are complementary rather than rival — usage evidence for
+formula-bearing files, and something else, later, for files without
+formulas. That is the third time this week two corpora have failed
+in opposite directions, and it is worth the lead noticing as a
+pattern rather than as three separate remarks.
+
+### Predictions
+
+1. **RoE's `C` and `D` columns come back as rates in
+   `percent-of-100` form**, from the `GEOMEAN(1+(C6:C25/100))`
+   consumers. This is the whole point and I expect it.
+2. **RoE's coverage finally clears round 1b's 10 of 193.** Genuinely
+   uncertain: C and D drive 62 of the 224 precedents of the watched
+   cells, and `Q` and `R` — 48 each — are still untyped, so the
+   sheet may stay mostly frozen even with its two real inputs
+   moving. I am not predicting the 50% bar.
+3. **Measured against E1's hundred hand-labelled rows, `rate_form`
+   does not get worse.** Usage evidence must not overturn a
+   format-based answer that was already right; where E2 abstained it
+   may now decide. If accuracy falls anywhere, the round fails and
+   the change comes out.
+4. **It fires somewhere it should not, at least once** — a value
+   divided by 100 for display, or a percentage consumed by something
+   that is not a rate calculation. Fourth round running that I have
+   registered this and it has happened three times; I will hunt for
+   it deliberately rather than wait to be surprised.
