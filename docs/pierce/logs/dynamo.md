@@ -1336,3 +1336,80 @@ the ratio family to surface the weight-and-premium proportions that
 round 1's equalities were shadows of. **If the sentences are still
 not recognisable I will say so again** — the gate on C6 and B6 does
 not move because a second family was tried.
+
+## 27 August 2026 — round 1b: still not recognisable, and now I know why
+
+Three gate-clean models, both rule families, 200 runs under each of
+two seeds, zero dropped runs anywhere. The predictions I registered
+were wrong in a way worth more than being right.
+
+| Model | Typed inputs | Watched cells | Signed sums | Ratios |
+|---|---|---|---|---|
+| RoE `One-Off Wedge` | 57 | 193 | **0** | **0** |
+| H7 fds | 65 | 144 | 36 | 36 |
+| H7 fp | 55 | 161 | 167 | 167 |
+
+### The zero is not « this model has no laws »
+
+That is what it would have been easy to write. I measured instead:
+on the RoE model, **10 of 193 watched cells moved at all** across
+the runs — 183 sat frozen. The typed inputs (RPI, CPI, the legacy
+share) feed one small block; everything else on that sheet is driven
+by inputs I deliberately left UNTYPED because they carry no labels.
+So « 0 rules » says nothing about the model and everything about the
+perturbation.
+
+### And the H7 rules are the same artifact wearing a different face
+
+Read the sentences and they are not accounting identities:
+
+    Nominal cost of fixed-rate debt (in-year) [J52]
+        = Nominal cost of fixed-rate debt (in-year) [K52]
+    Nominal cost of fixed-rate debt (in-year) [J52]
+        = Nominal cost of new index-linked debt (in-year) [J58]
+
+Whole rows equal across every year, and two different cost rows
+equal to each other. They are true, stable under five seeds, and
+invariant to cosmetic edits — and they are **consequences of how
+little I let vary**. With few inputs moving, many outputs are
+functionally identical, so the mining finds equalities. The ratio
+family found exactly the same relations at k = 1, which is itself
+the proof: there were no proportions to find, only sameness.
+
+### The finding: coverage is the binding constraint, and typing governs it
+
+Three measurements from three directions now say one thing:
+
+- ED2's `AR` sheet: **21,638 constants across 3,279 label groups**
+  in its cone — not hand-typeable at all.
+- RoE: hand-typed honestly, and the typing reached **10 of 193**
+  cells.
+- H7: hand-typed honestly, and the rules are artifacts of the
+  frozen remainder.
+
+**B5's next step is not a third rule family.** It is the input-typing
+classifier — the shared component the amendment already identified
+and asked me to propose. Round 1b is the evidence for it: without
+automatic typing, perturbation coverage stays low, and at low
+coverage a rule set is not a finding about the model.
+
+Adopted now, and cheap: **`coverage(runs, refs)` is reported beside
+every rule set**, and a round whose coverage is low is **reported as
+uninformative rather than as a result** — the same discipline that
+makes the gate refuse a file rather than guess at it.
+
+### What this does and does not change
+
+- **The two stability gates still stand.** They are about the
+  mining's determinism, not its richness: identical rule sets under
+  five seeds, identical under inserted rows and a renamed sheet.
+  Those properties hold whatever the coverage.
+- **C6 and B6 remain gated**, exactly as the AHA requires: no
+  modeller-recognisable rule set exists yet, on any of the three
+  models, and I am not going to claim one because the mathematics
+  behaved.
+- **The honest summary for the founder**: the recalculator can run
+  these models thousands of times and the mining is stable and
+  clean — but until the typing is automatic, we are only perturbing
+  the corner of the model we could label by hand, and laws found in
+  a corner are not the model's laws.

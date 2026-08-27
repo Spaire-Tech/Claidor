@@ -152,6 +152,22 @@ def varying(runs: Sequence[Mapping[str, float]], refs: Sequence[str]) -> list[st
     return moved
 
 
+def coverage(
+    runs: Sequence[Mapping[str, float]], refs: Sequence[str]
+) -> tuple[int, int]:
+    """(cells that moved, cells watched) — the number that gates a round.
+
+    Round 1b's lesson, measured: a rule set is an artifact of which
+    inputs were allowed to move. On a model where the typing reached
+    10 of 193 watched cells, « no laws found » says nothing about the
+    model and everything about the perturbation. Coverage is
+    therefore reported beside every rule set, and a round with low
+    coverage is **reported as uninformative rather than as a
+    result**.
+    """
+    return len(varying(runs, refs)), len(refs)
+
+
 def mine_signed_sums(
     runs: Sequence[Mapping[str, float]],
     refs: Sequence[str],

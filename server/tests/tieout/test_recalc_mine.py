@@ -214,3 +214,12 @@ def test_a_ratio_rule_reads_as_a_sentence() -> None:
         RatioRule("M!A1", "M!B1", 1.0).render({"M!A1": "Revenue", "M!B1": "Total"})
         == "Revenue = Total"
     )
+
+
+def test_coverage_counts_what_the_perturbation_actually_reached() -> None:
+    from polar.tieout.recalc.mine import coverage
+
+    runs = make_runs(20, seed=31)
+    frozen_only = [{"M!FROZEN": r["M!FROZEN"]} for r in runs]
+    assert coverage(runs, REFS) == (7, 8)  # everything but M!FROZEN moved
+    assert coverage(frozen_only, ["M!FROZEN"]) == (0, 1)
