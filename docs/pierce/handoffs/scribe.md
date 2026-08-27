@@ -159,6 +159,26 @@ Two harnesses are committed and ready:
 report nothing while no candidate rule is in the extractor, which is
 the current state.
 
+## Before you publish a number: run the audit
+
+```
+uv run python -m scripts.corpus_documents_audit
+```
+
+Eight corpus-level numbers re-derived, non-zero exit on any mismatch,
+and it prints the four harnesses it cannot cover. Four self-checks in
+three turns found four errors of mine — a fact key that addressed two
+facts, a criterion that could not tell repair from damage, a claim
+generalised from two samples to twenty-two, and a count wrong by eight
+times. **None changed a headline finding, and all four were the same
+mistake:** the measurement was right and the sentence generalised
+further than the run did.
+
+So: **every number in the log names the population it was measured
+over, in the same sentence.** « 562 » was a count of colliding *keys*
+over the round's *seven tasks*, and it got written as « 562 facts of
+this corpus ». That is the whole failure mode.
+
 ## The corpus, and the one blocker
 
 Corpora are re-fetchable, never committed (`.gitignore`).
