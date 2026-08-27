@@ -2088,3 +2088,240 @@ table* from the shape of its headers rather than from a word list,
 and a mixed-format row being an **abstention** rather than a vote.
 
 Registered as the next E2 round. `period` remains not to be quoted.
+
+---
+
+## B5 round 2 — coverage 100%, and the typing broke the law it was built to keep
+
+*28 Aug, orders addendum item 1: coverage first.*
+
+### Coverage, first, as the addendum asks
+
+| | round 1b (hand-typed) | round 2 (typed by E2) |
+|---|---|---|
+| typed inputs, whole workbook | 65 | **3,210** (3,203 rate, 7 held) |
+| watched formula cells | 144 | 144 |
+| **coverage** | artifacts of the frozen remainder | **144 of 144 — 100.0%** |
+| runs kept | 200 + 200, zero drops | 200 + 200, **zero drops** |
+| stable signed sums | 36 | **11 — 3 distinct sentences** |
+
+`docs/pierce/logs/dynamo/round2-h7fds.json`. Predictions 1 and 2
+hold: automatic typing types far more than the hand tables did, and
+it clears the registered 50% bar outright.
+
+**Prediction 4 was wrong, and wrong in the good direction.** I
+registered that the rule sets would get *bigger and mostly worse*.
+They got **smaller and better**: 36 stable rules became 11. Round
+1b's rules were equalities among cells that never moved
+(`J52 = K52`, whole rows equal across years); with everything
+moving, those coincidences die. That is the coverage argument
+working exactly as round 1b predicted it would, and I did not
+predict the direction.
+
+### What the three surviving sentences actually are
+
+I read them against the formulas rather than admiring them:
+
+    Nominal cost of fixed-rate debt (incl. HAL adj.) [42]
+      = Nominal cost of index-linked debt (excl. IL premium) [46]
+        I42: = SUM( I$9, $G$10 )
+        I46: = SUM( I$9, $G$10 )
+
+    Nominal cost of fixed-rate debt (in-year) [52]
+      = Nominal cost of new index-linked debt (in-year, excl. IL premium) [58]
+        J52: = SUM( J37, $G$12 )
+        J58: = SUM( J37, $G$12 )
+
+They are **identical formulas under different names**. The mining is
+right, the rules are true, and they are not accounting identities —
+they are duplicate calculations. Whether « these two differently
+named cost rows are the same calculation » is worth a reviewer's
+time is a real question and not mine to answer; it is at least a
+*checkable statement about the file*, which round 1b's set was not.
+The third sentence, `Real cost (in-year) = Real cost (cumulative)`
+in the first year only, is a boundary condition.
+
+So: still **not modeller-recognisable as accounting law**, but for a
+different and better reason than last time.
+
+### Prediction 5, and it is the finding of the round
+
+I registered that at least one rule would name a cell E2 typed
+wrongly. What happened is worse and more useful.
+
+**The weight rows were perturbed independently, and they are a
+constrained family.** Rows 15–20 are « Weight on embedded debt »,
+« Weight on new debt », « Weight on index linked debt », « Weight on
+fixed-rate debt ». The hand typing **held** them, for the reason
+written into `mine.py` in round 1: embedded + new = 1. E2 sees
+`0.00%` and says `rate`, correctly — a weight *is* a rate — and the
+typing map then perturbs each one on its own.
+
+Measured, not argued:
+
+| | I | J | K | L | M |
+|---|---|---|---|---|---|
+| the file: embedded + new | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 |
+
+    one draw under the inferred typing:
+      I: embedded 1.1333 + new 0.0058 = 1.1391
+      J: embedded 1.4452 + new 0.0634 = 1.5085
+
+**An embedded-debt weight of 113%.** The model was run in a capital
+structure that cannot exist — precisely the failure the AHA's typing
+law exists to prevent, and the failure the hand typing was written
+to avoid. 100% coverage is partly *because* of it.
+
+And the mirror error: **`Average RAB` (row 26), the sheet's only
+money row, came back `untyped` and was held.** E2 abstained — no
+decisive format, no currency in the label — so automatic typing
+loses the one MONEY input the hand typing had. It over-perturbs the
+weights and under-perturbs the money.
+
+### What this means, and the gap it names
+
+The three sentences survive: they are provable from the formulas and
+do not depend on the perturbation being legal. **What does not
+survive is any claim of completeness.** At illegal capital
+structures a true law that holds only on the simplex is broken and
+therefore never found, so « these are the model's laws » is exactly
+what round 2 may **not** say — the same sentence my own registration
+reserved for a round that earns it.
+
+The gap has a name now, and it is not a units gap:
+**constraint membership**. E1 and E2 label a row's *dimension* —
+this is a rate, in percent, per year. Nothing in that vocabulary can
+say **« rows 15 and 16 sum to 1 »**. A units classifier cannot
+express a simplex, and B5's typing needs both. That is a new
+dimension for Track E, or a separate detector for Track B, and it is
+the lead's call which; I will register whichever is chosen before
+building it.
+
+Registered as the next B5 round: **detect constrained families from
+the file itself** — rows that sum to a constant across every year
+column are the obvious first shape — and sample them jointly on
+their simplex rather than holding them, which is what round 1
+promised « when it comes ».
+
+`roe` is running under the same typing, because the question round
+1b left open — does a 0-rule model produce rules once coverage
+rises? — is worth answering even under a typing I have just shown to
+be unconstrained. Its result will carry the same caveat.
+
+---
+
+## A loss to declare: the earlier rounds' raw run files are gone
+
+*28 Aug. This is my mistake and it is worth stating plainly rather
+than leaving for a successor to discover.*
+
+The container restarted mid-session and the repository was re-cloned.
+Everything committed survived; everything untracked did not. And the
+raw output of **every round before this session was untracked**:
+
+- `fidelity-au-uk*.json` — B2's fidelity sweeps over the golden-master
+  corpus (27 files, 3,862,412 comparisons)
+- `b4-*.json` — the behavioural-law plants and controls
+- `narrow-*.json` — the 43 ddmin narrowings
+- `stability-h7*.json` — B5's five-seed and cosmetic-invariance runs
+- `round1b.json` — the round this week's redirection was based on
+
+I wrote them into `docs/pierce/logs/dynamo/` and treated them as
+records without ever committing them. They were not in `.gitignore`;
+they were simply never added, and each sweep's numbers went into this
+log's tables instead.
+
+**What survives**: every number, in the tables written when the runs
+finished, in this log. The log cites no file path that no longer
+resolves — I checked — so nothing here is a dangling reference.
+
+**What does not**: the ability to re-derive those tables without
+re-running the machine. Anyone who wants to check B2's 99.88% must
+re-run the sweep; my word and my table are all that stand behind it
+today.
+
+Neither of those is good enough for numbers this lane asks other
+people to rely on, so:
+
+- **Every result file is committed the moment it is produced**, from
+  the propagation round onward. The eight JSONs now in
+  `docs/pierce/logs/dynamo/` are all tracked.
+- The re-runs are hours of machine time each and I am not going to
+  spend them on my own initiative while the orders point elsewhere.
+  **B2's fidelity sweep is the one worth re-running** — it is the
+  lane's headline number and the one most likely to be quoted — and
+  I will do it on the lead's word, or when the machine is otherwise
+  idle.
+- The 6-run smoke file `round2-smoke.json` is deleted rather than
+  left beside a 400-run result to be mistaken for one.
+
+### RoE under the same typing: coverage went **down**, 10 of 193 → 0 of 193
+
+The question round 1b left open was whether a model that produced
+zero rules would produce some once coverage rose. It did not,
+because coverage did not rise — it collapsed.
+
+    coverage: 0 of 193 watched cells moved (0.0%)
+      — UNINFORMATIVE — not a result
+    0 stable rules
+
+`docs/pierce/logs/dynamo/round2-roe.json`. 400 runs, zero drops, and
+**not one watched cell moved in any of them**. Hand typing reached
+10 of 193; automatic typing reached none. Reported as uninformative
+per the registered bar, which is the whole point of having fixed the
+bar in advance.
+
+**The cause, measured.** Every one of the 26 cells the hand typing
+perturbed — `C6:C14` (RPI), `D6:D14` (CPI), `E6:E13` (the legacy
+share) — came back typed `date` and was held:
+
+| | hand | inferred |
+|---|---|---|
+| `C6`…`C14`, `D6`…`D14`, `E6`…`E13` (26 cells) | rate | **date** |
+
+E2's reason is sound in isolation: « the row is a year (« 2025/26 »)
+holding its own year number ». Row 6 *is* labelled `2021/22` and
+*does* hold 2022.0 in column A. It also holds RPI 5.8, CPI 4.0 and a
+share of 1.0 in the next three columns, under headers `RPI · CPI ·
+% of 'legacy' RPI`. **It is a record row: one period, several
+fields, several units.** E2 gives the row one label, the year wins,
+and three real rates are typed as a date and frozen.
+
+### The same bug twice, from two different corpora
+
+This is failure (A) from the closed-deal round — `Swap profile!81`,
+a record table read as a model row — arriving again on a regulator
+file, and it is now the most load-bearing defect I have found:
+**row-level labelling cannot represent a row whose cells carry
+different units.**
+
+And there is a second, sharper part that is **my** fault, not E2's.
+`orientation` returned **`unknown`** for this sheet. E2's own
+contract says an unknown orientation means the caller must not treat
+a row as a quantity. My typing map is that caller, and it keys on
+`b5_type` and `kind` alone — it never asks the orientation. Had it
+asked, it would have refused the sheet honestly instead of freezing
+it by accident.
+
+On a record sheet the unit lives in the **column** — the RPI column
+is the rate, which is exactly what the hand typing perturbed. E2
+labels rows only; there is no column-wise path in either the
+inference or my map.
+
+### Registered as the next round, in this order
+
+1. **The typing map reads the orientation.** A sheet whose
+   orientation is `unknown` or `column-wise` is refused, loudly, as
+   an untyped sheet — not silently frozen. Cheap, and it turns this
+   accident into a stated refusal.
+2. **A column-wise path**: on a record sheet, classify the column
+   and let B5 perturb it. This is what makes the RoE model
+   mineable at all, and it is the same fix that keeps
+   `Swap profile!81` from being perturbed as one quantity.
+3. **Constrained families** (from the H7 round above), which is
+   independent of both.
+
+Round 2's verdict across the three models, stated plainly: **on H7
+the typing works and over-reaches; on RoE it fails closed.** Neither
+result may be called the model's laws, and the reasons are now
+specific enough to fix.

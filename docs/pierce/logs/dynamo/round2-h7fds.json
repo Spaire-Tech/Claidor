@@ -10,10 +10,10 @@
   144
  ],
  "coverage_verdict": "informative",
- "runs_requested": 6,
+ "runs_requested": 200,
  "kept": [
-  6,
-  6
+  200,
+  200
  ],
  "drops": [
   {
@@ -28,6 +28,7 @@
  "rules_first": 11,
  "rules_second": 11,
  "agreement": 1.0,
+ "distinct_sentences": 3,
  "stable": [
   {
    "terms": [
@@ -173,6 +174,6 @@
    "sentence": "Nominal cost of fixed-rate debt (in-year) \u2212 Nominal cost of new index-linked debt (in-year, excluding IL premium) = 0"
   }
  ],
- "seconds_total": 94.3,
- "seconds_naive_engine": 8.9
+ "seconds_total": 3179.2,
+ "seconds_naive_engine": 7.3
 }
