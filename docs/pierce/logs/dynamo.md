@@ -2921,3 +2921,100 @@ useful it looks.
 5. **At least one dimension moved since it was last measured** — the
    three changes touched labels, and if none of them moved anything
    I have been reporting numbers that no longer describe the code.
+
+---
+
+## E2's shippable verdict — per dimension, with what the evidence cannot cover
+
+*28 Aug, orders item 1. Measured at HEAD through the path
+`inferred_inputs` runs. Criteria registered before the numbers, two
+entries above.*
+
+### The author key, 3,796 Ofgem-labelled rows
+
+| dimension | right | wrong | abstained | **wrong of decided** | reach |
+|---|---|---|---|---|---|
+| `kind` | 3,660 | 2 | 134 | **0.05%** | 96.5% |
+| `rate_form` | 3,661 | 1 | 134 | **0.03%** | 96.5% |
+| `currency` | 1,311 | 2 | 2,483 | **0.15%** | 34.6% |
+| `scale` | 1,311 | 2 | 2,483 | **0.15%** | 34.6% |
+| `b5_type` | 1,311 | 2 | 2,483 | **0.15%** | 34.6% |
+| `period` | 2,572 | 1,090 | 134 | **29.8%** | 96.5% |
+
+### E1's hundred, as the caller uses E2
+
+| dimension | right | wrong | abstained | **wrong of decided** |
+|---|---|---|---|---|
+| `kind` | 97 | 0 | 3 | **0.0%** |
+| `currency`, `scale` | 54 | 0 | 46 | **0.0%** |
+| `rate_form` | 80 | 4 | 16 | **4.8%** |
+| `period` | 69 | 15 | 16 | **17.9%** |
+| `b5_type` | 54 | 30 | 16 | **35.7%** |
+
+### The finding that reshapes the verdict: the big key is a small test
+
+I registered « the author key decides ». Measuring what that key can
+*contain* shows why it cannot decide alone:
+
+| | values the key can hold |
+|---|---|
+| author key, `kind` | **`continuous`, and nothing else** — 6,226 rows, one value |
+| author key, `b5_type` | `money` or `rate`, nothing else |
+| E1, `kind` | `continuous` 69, `categorical` 16, `mixed` 13, `unknown` 2 |
+| E1, `b5_type` | `rate` 51, `money` 18, `date` 16, `untyped` 15 |
+
+The key is built from rows whose Units text is `£m …` or `%`, so
+**every row in it is continuous by construction.** `kind`'s 96.4% —
+the number these orders call the strongest foundation laid this week,
+and which I reported four times without noticing — was never evidence
+that E2 can tell a continuous row from a categorical one. It is
+evidence of precision *on rows that declare money or a percentage*,
+which is a narrower claim than I have been making.
+
+E1 is the only key containing the hard cases. It has a hundred rows
+and I graded it myself. **That is the true state of the evidence**,
+and the verdict below takes the worse of the two keys everywhere.
+
+### The verdict
+
+| dimension | verdict | on what |
+|---|---|---|
+| `kind` | **ARM** | 0.05% wrong on 3,662 decided; 0 of 97 on E1's categorical and mixed rows. Two keys, both clean. |
+| `currency` | **ARM** | 0.15% wrong, 0 of 54 on E1 — but **reach 34.6%**: it answers on a third of rows and abstains on the rest. |
+| `scale` | **ARM** | as `currency`. |
+| `rate_form` | **ARM WITH CARE** | 0.03% on the author key, **4.8% on E1** — inside the 5% band, and the worse number governs. |
+| `b5_type` | **DO NOT ARM** | the author key only tests money-vs-rate; E1, which tests the rest, is **35.7% wrong**. |
+| `period` | **DO NOT ARM** | 29.8% wrong on the author key, 17.9% on E1, and E1's own labels contradict themselves on identical year rows. |
+
+### What this means for E3, in Sentinel's terms
+
+- **A « £ figure in a £m line » check is armable.** `scale` and
+  `currency` are never wrong when they answer. It will only see
+  about a third of rows, so it will find less than it looks like it
+  should — that is a reach limit, not a correctness one.
+- **A « monthly figure in an annual line » check cannot be built.**
+  `period` is wrong on a quarter to two thirds of rows depending on
+  the model. There is no version of this that is safe today.
+- **Anything keyed on `b5_type`** — « a rate where money belongs » —
+  **cannot be built** either.
+- `kind` is safe, which is what B5 consumes; it is not by itself a
+  finding.
+
+### Against the registered predictions
+
+| prediction | outcome |
+|---|---|
+| 1 — `kind` and `rate_form` arm | `kind` **arms**; `rate_form` **arms with care** |
+| 2 — `currency`/`scale` arm, poor reach | **confirmed**, 34.6% |
+| 3 — `period` does not arm | **confirmed** |
+| 4 — `b5_type` I could not call | resolved: **does not arm** |
+| 5 — a dimension moved since last measured | **confirmed**, and it was a regression I had registered as costless |
+
+### What I would want before calling any of this settled
+
+E1 is a hundred rows, graded by the same person who wrote the
+inference. Every hard case in this verdict — categorical, date,
+mixed, the whole of `b5_type` — rests on it. **A second hand-labelled
+set, drawn by someone other than me, is the single thing that would
+most improve this verdict**, and I would rather say that than let a
+3,796-row number carry weight it cannot hold.
