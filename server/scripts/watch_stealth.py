@@ -255,6 +255,18 @@ def main() -> int:
 TIER2_SEED = 20260826
 TIER2_TRIALS = 5
 TIER2_DIVERGENCE = 1e-9
+#: Round 2 (registered): an integer-valued literal of small
+#: magnitude is a flag, a switch, a month or a licensee index —
+#: scaling it deadens the path it selects in *both* files, which is
+#: how round 1 lost its stealth instances. Declared crude on
+#: purpose; the counts under each class are reported.
+CATEGORICAL_LIMIT = 12
+
+
+def _is_categorical(value: float) -> bool:
+    return float(value).is_integer() and abs(value) <= CATEGORICAL_LIMIT
+
+
 TIER2_CLASSES = (
     "tail_hardcode",
     "conditional_divergence",
@@ -401,11 +413,17 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                     return _coordinate(cell), float(cell.value)
         raise SystemExit("no feeding literal anywhere on the sheet")
 
-    literals = {
+    all_literals = {
         _coordinate(cell): float(cell.value)
         for cell in on_sheet
         if cell.formula is None and cell.value is not None
     }
+    literals = {
+        coordinate: value
+        for coordinate, value in all_literals.items()
+        if not _is_categorical(value)
+    }
+    categorical = len(all_literals) - len(literals)
     rng = random.Random(TIER2_SEED)
     trials = []
     for _ in range(TIER2_TRIALS):
@@ -451,6 +469,7 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                 sheet[coordinate] = assignment.get(coordinate, payload) + 7.0
         working.save(target)
 
+    refusals: list[dict[str, str]] = []
     instances: list[tuple[str, int, tuple[str, str | float]]] = []
     for kind in TIER2_CLASSES:
         for mark in marks:
@@ -464,12 +483,57 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
                     (kind, mark, (coordinate, edited_formula(kind, body, mark)))
                 )
 
+    def probe_edit(coordinate: str) -> tuple[str, str | float]:
+        """A generic perturbation of one cell — never a class edit, so
+        the equivalent-rewrite control is never probed to death."""
+        cell = next(c for c in on_sheet if _coordinate(c) == coordinate)
+        if cell.formula:
+            body = cell.formula[1:] if cell.formula.startswith("=") else cell.formula
+            return coordinate, f"=({body})+1"
+        return coordinate, float(cell.value) if cell.value is not None else 0.0
+
     started = time.monotonic()
     results = []
     calc = UnoCalculator()
     calc.start()
     try:
         with tempfile.TemporaryDirectory() as scratch:
+            #: The registered liveness probe: a position is eligible
+            #: only if perturbing it moves something the driver reads.
+            #: Round 1 spent a whole grid on an unselected licensee
+            #: branch; a probe is one recalculation against that.
+            probe_base = Path(scratch) / "probe_base.xlsx"
+            build(probe_base, None, {})
+            probe_values = calc.recalculate(str(probe_base)).values
+            probe_base.unlink()
+            live: dict[str, bool] = {}
+            for _kind, _mark, edit in instances:
+                coordinate = edit[0]
+                if coordinate in live:
+                    continue
+                target = Path(scratch) / f"probe_{coordinate}.xlsx"
+                build(target, probe_edit(coordinate), {})
+                probed = calc.recalculate(str(target)).values
+                target.unlink()
+                live[coordinate] = any(
+                    ref not in cone and _diverges(probe_values[ref], probed[ref])
+                    for ref in probed.keys() & probe_values.keys()
+                )
+                print(
+                    f"[probe] {sheet_name}!{coordinate}: "
+                    f"{'live' if live[coordinate] else 'DEAD'}"
+                )
+            for _kind, _mark, edit in instances:
+                if not live[edit[0]]:
+                    refusals.append(
+                        {
+                            "kind": _kind,
+                            "at": f"{sheet_name}!{edit[0]}",
+                            "refused": "dead under the file's saved state "
+                            "(liveness probe moved nothing the driver reads)",
+                        }
+                    )
+            instances = [item for item in instances if live[item[2][0]]]
             old_values = []
             for index, assignment in enumerate(trials):
                 target = Path(scratch) / f"old_{index}.xlsx"
@@ -534,10 +598,13 @@ def run_tier2(base_path: str, sheet_name: str, out_path: str) -> int:
         "trials": TIER2_TRIALS,
         "seed": TIER2_SEED,
         "perturbed_literals": len(literals),
+        "categorical_literals_left_alone": categorical,
+        "refusals": refusals,
         "volatile_cone": len(volatile),
         "environment_roots": sorted(environment_roots),
         "environment_cone": len(environment),
         "false_positives": len(false_positives),
+        "eligible_instances": len(results),
         "by_class": {
             kind: [r["trials_diverged"] for r in results if r["kind"] == kind]
             for kind in TIER2_CLASSES
