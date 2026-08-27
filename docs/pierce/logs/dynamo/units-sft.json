@@ -1,0 +1,267 @@
+{
+ "baldragon_model.xlsm": {
+  "sheets": 26,
+  "input_rows": 8187,
+  "orientation": {
+   "unknown": 3,
+   "row-wise": 18,
+   "column-wise": 5
+  },
+  "kind": {
+   "continuous": 3514,
+   "categorical": 652,
+   "unknown": 749,
+   "mixed": 3272
+  },
+  "b5_type": {
+   "rate": 864,
+   "date": 652,
+   "untyped": 4021,
+   "money": 8,
+   "unknown-quantity": 2642
+  },
+  "abstained": {
+   "kind": 749,
+   "b5_type": 4021,
+   "currency": 6663,
+   "scale": 6671,
+   "period": 4029,
+   "rate_form": 4021
+  },
+  "b5_perturbable_rows": 872,
+  "b5_perturbable_percent": 10.7
+ },
+ "forfar_model.xlsm": {
+  "sheets": 24,
+  "input_rows": 7616,
+  "orientation": {
+   "row-wise": 21,
+   "unknown": 2,
+   "column-wise": 1
+  },
+  "kind": {
+   "categorical": 702,
+   "unknown": 920,
+   "continuous": 5864,
+   "mixed": 130
+  },
+  "b5_type": {
+   "date": 702,
+   "untyped": 1050,
+   "money": 56,
+   "rate": 1210,
+   "unknown-quantity": 4598
+  },
+  "abstained": {
+   "kind": 920,
+   "b5_type": 1050,
+   "currency": 5648,
+   "scale": 5704,
+   "period": 1106,
+   "rate_form": 1050
+  },
+  "b5_perturbable_rows": 1266,
+  "b5_perturbable_percent": 16.6
+ },
+ "glasgow_college_model.xlsm": {
+  "sheets": 79,
+  "input_rows": 10793,
+  "orientation": {
+   "row-wise": 74,
+   "unknown": 5
+  },
+  "kind": {
+   "continuous": 6465,
+   "unknown": 3775,
+   "categorical": 553
+  },
+  "b5_type": {
+   "money": 1791,
+   "untyped": 3775,
+   "date": 553,
+   "rate": 1069,
+   "unknown-quantity": 3605
+  },
+  "abstained": {
+   "kind": 3775,
+   "b5_type": 3775,
+   "currency": 7380,
+   "scale": 9171,
+   "period": 5566,
+   "rate_form": 3775
+  },
+  "b5_perturbable_rows": 2860,
+  "b5_perturbable_percent": 26.5
+ },
+ "inverurie_foresterhill_model.xlsm": {
+  "sheets": 20,
+  "input_rows": 2908,
+  "orientation": {
+   "row-wise": 17,
+   "column-wise": 3
+  },
+  "kind": {
+   "unknown": 567,
+   "categorical": 241,
+   "continuous": 1679,
+   "mixed": 421
+  },
+  "b5_type": {
+   "untyped": 988,
+   "date": 241,
+   "rate": 399,
+   "unknown-quantity": 1250,
+   "money": 30
+  },
+  "abstained": {
+   "kind": 567,
+   "b5_type": 988,
+   "currency": 2238,
+   "scale": 2268,
+   "period": 991,
+   "rate_form": 988
+  },
+  "b5_perturbable_rows": 429,
+  "b5_perturbable_percent": 14.8
+ },
+ "kelso_model.xlsm": {
+  "sheets": 53,
+  "input_rows": 7216,
+  "orientation": {
+   "column-wise": 10,
+   "row-wise": 41,
+   "unknown": 2
+  },
+  "kind": {
+   "mixed": 2056,
+   "unknown": 917,
+   "continuous": 3933,
+   "categorical": 310
+  },
+  "b5_type": {
+   "untyped": 2973,
+   "rate": 603,
+   "date": 310,
+   "money": 35,
+   "unknown-quantity": 3295
+  },
+  "abstained": {
+   "kind": 917,
+   "b5_type": 2973,
+   "currency": 6268,
+   "scale": 6303,
+   "period": 3008,
+   "rate_form": 2973
+  },
+  "b5_perturbable_rows": 638,
+  "b5_perturbable_percent": 8.8
+ },
+ "levenmouth_model.xlsm": {
+  "sheets": 24,
+  "input_rows": 7595,
+  "orientation": {
+   "row-wise": 22,
+   "unknown": 1,
+   "column-wise": 1
+  },
+  "kind": {
+   "categorical": 614,
+   "unknown": 955,
+   "continuous": 5893,
+   "mixed": 133
+  },
+  "b5_type": {
+   "date": 614,
+   "untyped": 1088,
+   "rate": 1223,
+   "unknown-quantity": 4667,
+   "money": 3
+  },
+  "abstained": {
+   "kind": 955,
+   "b5_type": 1088,
+   "currency": 5755,
+   "scale": 5758,
+   "period": 1091,
+   "rate_form": 1088
+  },
+  "b5_perturbable_rows": 1226,
+  "b5_perturbable_percent": 16.1
+ },
+ "newbattle_model.xlsm": {
+  "sheets": 52,
+  "input_rows": 7125,
+  "orientation": {
+   "column-wise": 10,
+   "row-wise": 40,
+   "unknown": 2
+  },
+  "kind": {
+   "mixed": 2061,
+   "unknown": 868,
+   "continuous": 3860,
+   "categorical": 336
+  },
+  "b5_type": {
+   "untyped": 2929,
+   "rate": 605,
+   "date": 336,
+   "money": 35,
+   "unknown-quantity": 3220
+  },
+  "abstained": {
+   "kind": 868,
+   "b5_type": 2929,
+   "currency": 6149,
+   "scale": 6184,
+   "period": 2964,
+   "rate_form": 2929
+  },
+  "b5_perturbable_rows": 640,
+  "b5_perturbable_percent": 9.0
+ },
+ "oban_campbeltown_model.xlsm": {
+  "sheets": 17,
+  "input_rows": 2392,
+  "orientation": {
+   "row-wise": 15,
+   "column-wise": 2
+  },
+  "kind": {
+   "unknown": 495,
+   "continuous": 1431,
+   "categorical": 287,
+   "mixed": 179
+  },
+  "b5_type": {
+   "untyped": 674,
+   "rate": 417,
+   "date": 287,
+   "unknown-quantity": 878,
+   "money": 136
+  },
+  "abstained": {
+   "kind": 495,
+   "b5_type": 674,
+   "currency": 1552,
+   "scale": 1688,
+   "period": 719,
+   "rate_form": 674
+  },
+  "b5_perturbable_rows": 553,
+  "b5_perturbable_percent": 23.1
+ },
+ "_totals": {
+  "input_rows": 53832,
+  "b5_perturbable_rows": 8484,
+  "b5_perturbable_percent": 15.8,
+  "abstained_percent": {
+   "kind": 17.2,
+   "b5_type": 32.5,
+   "currency": 77.4,
+   "scale": 81.3,
+   "period": 36.2,
+   "rate_form": 32.5
+  }
+ }
+}

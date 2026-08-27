@@ -1897,3 +1897,194 @@ number now so it cannot be negotiated after seeing the output.
 Judging recognisability is a judgement and is recorded as one: I
 print the rule set, read it, and write what I think — no metric is
 being invented for it.
+
+---
+
+## E2 generalisation onto the closed-deal corpus — registration
+
+*28 Aug, nineteenth-sweep addendum item 2. The lead asked me to
+judge whether the value-only corpus is worth E2's time. It is, and
+here is the round, registered before a single one of those files is
+opened.*
+
+### Why it is worth it
+
+E2's 96.4% was measured on **two files written by one organisation**
+under one house convention. Ofgem puts a `Units` column on nearly
+every sheet and writes « £m » in it; that convention is the answer
+key, and it may also be most of the reason the inference works.
+Sixteen Scottish Futures Trust closed-deal models are a different
+idiom entirely — different authors, different decades, private
+sector, no shared style guide — and E2 has never seen any of them.
+(The *engine* was tuned against six of them in another lane's
+rounds; E2 is not the engine and has never read them. Stating that
+because « unseen » is a claim, not a mood.)
+
+The hostility the lead names is the point: **value-only files cannot
+be propagated through**, so this round measures the label-and-format
+half alone. I will not report a reach number for these files, and
+the propagation half stays measured on ED2 and GD3.
+
+### The order of measurement — the key first, always
+
+The last two rounds both turned on measuring the anchor before
+building on it (zero currency-bearing formats on ED2 killed a
+hypothesis I had already written down). So, in order:
+
+1. **Count the answer key.** How many rows across the sixteen models
+   carry a declared unit E2 can be graded against — a `Units`
+   column, or a currency in the number format. This number is
+   reported whatever it is.
+2. **Only then, accuracy.** Per dimension, blind, exactly as on
+   ED2/GD3.
+
+**The bar, fixed now: no per-dimension accuracy is quoted on fewer
+than 100 keyed rows.** Below that the round is reported as
+unmeasurable — « the corpus has no key » is a finding about the
+corpus, and inventing one by reading titles and calling it truth
+would be the same mistake as grading myself.
+
+Independent of any key, three things are measurable and will be
+reported: **how often E2 declines**, whether **orientation** still
+decides correctly on these layouts, and whether `kind` — the one
+dimension B5 actually consumes — survives the change of idiom.
+
+### Predictions
+
+1. **The key is much thinner here.** Ofgem's Units column is a
+   regulatory artifact; a project-finance model more often puts
+   « £000s » in a sheet title or a header and nothing on the row. I
+   expect **fewer than 100 keyed rows on most of the sixteen**, and
+   I think there is a real chance the whole round comes back
+   unmeasurable on currency and scale.
+2. **Abstention rises.** Whatever the key says, E2 will decline more
+   often here than on ED2, because it was built where the evidence
+   was rich.
+3. **Orientation holds.** These are financial models laid out the
+   usual way — periods across, labels down — so `row-wise` on the
+   large majority of sheets. If this fails, the sheet-level
+   machinery is wrong and not just the dimensions.
+4. **At least one systematic failure Ofgem's convention hid.** I
+   expect to name it and I expect it to be embarrassing; the last
+   two rounds each produced one.
+5. `kind` **degrades but stays usable** — above 85%, against
+   whatever key exists. This is the prediction I would least like to
+   be wrong about, because B5 round 2's typing rests on it.
+
+Cold-run conditions, borrowed from the population proof because they
+are right: **E2 is frozen at the commit named when the run starts**,
+no detector change between the first file and the last, and anything
+the run exposes becomes a later round rather than a fix mid-flight.
+
+---
+
+## E2 on the closed-deal corpus — the round came back unmeasurable, and that is the result
+
+*28 Aug. E2 frozen at `c6430687` for the whole run, per the
+registration; nothing in the module changed between the first file
+and the last, and the two failures named below are a **later**
+round, not a fix made mid-flight.*
+
+Eight readable Scottish Futures Trust models rebuilt with
+`scripts/corpus_sft_models.py` (three more are format-blocked
+`.xlsb`/`.xls`, and the founder-supplied trio is not fetchable from
+this container — so eight, not sixteen, and I am not going to round
+that up).
+
+### Step 1: count the key. It is zero.
+
+| model | rows with a `Units` column | cells with a currency-bearing format |
+|---|---|---|
+| baldragon | **0** | 836 of 406,942 |
+| forfar | **0** | 1,591 of 383,497 |
+| glasgow_college | **0** | 4,793 of 321,227 |
+| inverurie_foresterhill | **0** | 64 of 105,953 |
+| kelso | **0** | 507 of 502,587 |
+| levenmouth | **0** | 8 of 446,663 |
+| newbattle | **0** | 505 of 503,754 |
+| oban_campbeltown | **0** | 316 of 99,227 |
+
+`docs/pierce/logs/dynamo/units-key-sft.json`. Not one of the eight
+declares its units in a column. **Zero gradeable rows against a
+100-row bar, so no per-dimension accuracy is quoted for this
+corpus** — and prediction 5, that `kind` would hold above 85%, is
+**unresolvable rather than confirmed**. There is nothing to score it
+against, and inventing a key by reading titles would be grading
+myself.
+
+Prediction 1 said the key would be thinner here. It is not thinner;
+it is absent.
+
+**The complementary finding is the one worth keeping.** ED2 and GD3
+declare units in text and have **zero** currency-bearing number
+formats. These eight have currency formats and **zero**
+declarations. The two corpora anchor opposite halves of E2's
+evidence and neither has both — which argues for keeping both halves
+far better than a good score on one would have.
+
+### Step 2: what is measurable without a key
+
+53,832 input rows across 295 sheets.
+
+| | measured |
+|---|---|
+| orientation | **248 row-wise, 32 column-wise, 15 unknown** (84% row-wise) |
+| abstained on `kind` | 17.2% |
+| abstained on `b5_type` | 32.5% |
+| abstained on `currency` / `scale` | **77.4% / 81.3%** |
+| **rows B5 could perturb** (money or rate) | **8,484 of 53,832 — 15.8%** |
+
+`docs/pierce/logs/dynamo/units-sft.json`. Prediction 3 (orientation
+holds) confirmed at 84%. Prediction 2 (abstention rises) confirmed:
+currency and scale abstained on 62% of ED2's rows and on ~79% here.
+
+**The 15.8% is the number Track B has to live with.** On the H7
+regulator file automatic typing typed 3,203 of 3,210 input *cells*
+and moved 144 of 144 watched cells; on a project-finance model only
+**15.8% of input rows** are typed as perturbable. Different
+denominators — rows against cells — so it is a contrast, not a
+ratio, and the honest reading is: B5 leaving the regulator corpus
+means mining a model where five sixths of the inputs are held.
+
+### Step 3: prediction 4, and it is as embarrassing as promised
+
+I predicted at least one systematic failure that Ofgem's house style
+had hidden. There are two, both found by reading twelve rows of
+`glasgow_college_model.xlsm`
+(`scripts/recalc_units_spot.py`, seed 11):
+
+**(A) A record table whose headers avoid six particular words reads
+as row-wise.** `Swap profile!81` has the row label `FY2028` and the
+headers `Period end · Balance b/f · Drawdown · Capitalised
+Interest`. That is a record table — a row is one period, and its
+cells are a date serial (47208), a balance (25,131) and a drawdown
+(−691), three different units. `orientation` looks for
+`date|maturity|tenor|ticker|code|id` and finds none of them, so it
+returns row-wise and E2 then asserts one `period` for the whole row.
+This is the exact thing orientation exists to prevent, and **B5
+would perturb that row as one quantity** — the typing law broken by
+an orientation error rather than by a typing error.
+
+**(B) One percent format among a row's several decides the row.**
+`Outputs!36`, `Project IRR, pre-tax`, holds `0.0776, 0.0515, 1.15,
+1.2302, 1.2295` under three different formats. One of the three is a
+percent format, so E2 says `rate_form=decimal` for all of it — but
+1.23 is a cover ratio, not an IRR. Ofgem writes one format per row;
+this corpus does not, and `number_formats` being a *set* of up to
+four with « any percent wins » is a confident wrong answer waiting
+for a mixed row.
+
+Both are hidden by uniformity. Neither would ever have appeared on
+ED2 or GD3, which is precisely why the lead was right that this
+corpus is worth the time.
+
+### What I am not doing
+
+Not fixing either of them in this entry. The run was registered
+frozen and it stays frozen; **the fix is the next round**, with the
+usual shape — register the change and the prediction, then measure.
+The two fixes I will propose are: orientation reading a *record
+table* from the shape of its headers rather than from a word list,
+and a mixed-format row being an **abstention** rather than a vote.
+
+Registered as the next E2 round. `period` remains not to be quoted.
