@@ -1189,3 +1189,91 @@ rules, blame-the-changed-cell wins and Reiter's minimal diagnosis is
 over-engineering; if they break many, B6 is exactly right. I have no
 prediction to register here — the honest position is that I do not
 know, which is why it is being measured.
+
+## 27 August 2026 — the two gates: both pass, and the rule set read
+
+### Seed stability — **PASSES**
+
+`h7_new_debt_indexation_fds.xlsx` (gate-clean at 1.000000), mined
+five times under seeds 11/22/33/44/55, 200 runs each, **zero dropped
+runs in all five**. Each mining found 36 raw signed-sum relations
+which cleanse to **8 distinct rules by label**, and the five sets
+are **identical**. Repeated across three separate executions of the
+whole gate, identical every time. So a rule that breaks between two
+versions is not seed noise — the precondition C6 was waiting on.
+
+### Cosmetic invariance — **PASSES, under a stated caveat**
+
+A variant with **three blank rows inserted above the modelled block
+and the sheet renamed**, made by LibreOffice so every formula moved
+with its cells. Mined with the same seed and run count: **8 rules
+versus 8, identical by label, zero in either direction only, zero
+drops.** Every watched cell has a different address in the variant,
+and the mined laws are the same laws — which is the property
+positional diffing cannot have.
+
+**The caveat, because it weakens what this proves**: the comparison
+key is (sign, row label, column label), and on this sheet the reader
+finds **no header row at all** — 144 formula cells carry 32 distinct
+row labels and only 2 distinct column labels. So the key cannot tell
+`I52` from `J52`, and « identical by label » is coarser here than
+« identical laws ». The pass is real but weaker than the words
+suggest, and strengthening the key — the period header read from the
+sheet's own layout, or the column's position in the modelled block —
+is registered as work before this gate is quoted as decisive.
+
+### Two harness defects of my own, both found by implausibly clean results
+
+Neither was a finding about the model; both were mine, and the run
+that exposed each is recorded rather than quietly re-run:
+
+1. **The un-shifted typing** — the variant's typed inputs were
+   shifted three rows down without un-shifting the lookup, so
+   nothing was perturbed, every watched cell was frozen, and a model
+   with no varying cells has no laws: 0 rules, reported as an
+   invariance failure that was not one. Fixed by typing once on the
+   original and translating the typing to the variant's coordinates.
+2. **The truncated sheet name** — Excel caps a sheet name at 31
+   characters and truncates on save, so `… (renamed)` landed as a
+   name the harness never addressed and **all 200 variant runs
+   failed**. The cosmetic edit itself had been correct all along.
+   Fixed by reading the new name back from the stored file.
+
+### The rule set, printed and read — **not yet modeller-recognisable**
+
+The AHA's test for round 1 is not a number: it is whether a modeller
+recognises the model in its own discovered laws. I printed the eight
+and read them. **They are not recognisable, and I am not going to
+present them as if they were.** They are pairwise equalities of the
+form « Nominal cost of fixed-rate debt (in-year) − Nominal cost of
+new index-linked debt (in-year) = 0 » — true across every run, and
+uninformative. Why, from the model itself:
+
+- The watched sheet is **144 formula cells**, mostly rate rows that
+  are equal to each other by construction in years where a weight is
+  zero. The signed-sum family over such a sheet finds equalities,
+  not accounting identities.
+- **The money chain is one row deep.** The identities a modeller
+  would recognise (« notional new debt × variance = the £ figure »)
+  are **products, not signed sums** — outside round 1's rule family
+  by design.
+- Cleansing works as registered and makes this visible rather than
+  hiding it: three-term shadows are subsumed, leaving the bare
+  two-term equalities.
+
+**What this gates.** Per the AHA, round 1's rule-set quality gates
+C6 and B6, so on this model the answer is: **not yet**. What changes
+for round 2, proposed here and not yet run:
+
+1. **Mine a model whose sheet carries real additive structure** —
+   the ED2 `AR` sheet, where allowed revenue is a sum of named
+   components, is the obvious candidate and is gate-clean.
+2. **Widen the rule family beyond signed sums** to ratio relations
+   (`a / b` constant across runs), which is where a rate model's
+   laws actually live. Registered as a family before it runs.
+3. **Fix the labels first** — an unrecognisable sentence is a
+   product defect even when the mathematics is right.
+
+The seed and cosmetic gates stand on their own: they are about the
+mining's *stability*, and both pass. What does not yet stand is the
+claim that mined rules read as a model's own laws.
