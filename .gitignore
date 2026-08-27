@@ -200,3 +200,7 @@ server/scripts/seeded/
 # Scottish deal pairs (contract + close model), fetched by
 # scripts/corpus_documents_sft.py. Public, OGL-adjacent, re-fetchable.
 server/scripts/corpus_sft/
+
+# Finch (FinWorkBench), fetched by scripts/corpus_documents_finch.py.
+# CC BY 3.0, re-fetchable, never committed.
+server/scripts/corpus_finch/

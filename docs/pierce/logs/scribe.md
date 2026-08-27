@@ -1393,3 +1393,240 @@ forced; D4's registered measurement run and passing eight of eight
 with two amendments proposed from it; chain tests 84 passed; full
 tieout suite **781 passed, 9 skipped**; zero mypy errors in the
 package. Still no table, and D4's contract still awaits approval.
+
+## 27 August 2026, ninth « go » — the Finch pivot, read by hand before anything was registered
+
+Orders: the Scottish route is closed and not to be attempted again
+(the Kelso harness stays committed and ready — it does); the pivot is
+FinWorkBench/Finch; **fetch it, read it, and say honestly whether its
+document-into-spreadsheet tasks are our task, before any
+registration.** This section is that answer. No matcher has been run
+against Finch at any point in forming it — what follows is corpus
+reading, which is how a sample gets designed, not a result.
+
+**The fetcher**: `scripts.corpus_documents_finch`, git-ignored as
+ever. It takes the dataset card, the workflow index, every task JSON,
+and the source/reference files of the tasks that carry a PDF — 218 of
+537 files, all fetched, no failures. `--all` takes the rest.
+**Attribution, CC BY 3.0, travelling with every number this corpus
+ever produces: FinWorkBench/Finch, arXiv:2512.13168,
+huggingface.co/datasets/FinWorkBench/Finch.**
+
+### Is it our task? Yes — in shape, with three caveats, one of which predicts the answer
+
+**What Finch is:** 172 expert-annotated finance workflows — an *agent
+benchmark* (« add the missing cross-sheet references », « add a
+Scenario3 sheet »), not a linking corpus. Most of it is not our task
+and I am not going to pretend otherwise.
+
+**What is ours:** of the 172, **nine carry a PDF**. One (16) runs the
+other way (spreadsheet → report), one (4) is images only. **Seven are
+document → spreadsheet**: 5, 52, 72, 81, 156, 160, 161. Together they
+hold **2,411 typed cells** whose values a human expert took from a
+source PDF, and all seven PDFs read clean — **3,590 extracted numbers,
+zero pages refused**.
+
+That is D3's task in shape, and the first corpus we have ever held
+that runs the document-into-model direction. ED2 gave 90 seeded draws
+with **zero** cells the documents stated; task 156 alone gives eleven
+typed cells against a two-page PDF that states every one of them.
+
+**It is also not a flat transcription in the cases that matter.**
+Task 156's reference workbook holds 11 typed cells and **31 computed**
+ones — a real workbook, where the typed cells are the document-fed
+ones and the computed cells' provenance is their formula, exactly the
+distinction D3 rests on. Task 81 holds 956 typed against 773 computed.
+
+**Caveat A — the ground truth is at the file level, not the link
+level.** Finch annotates « this workbook is the correct output for
+this PDF ». It does **not** annotate « cell `CABC!I9` came from page 1,
+line 3 ». So the per-cell truth is still judged by hand, exactly as in
+rounds 1–3. What Finch supplies that nothing else has is the
+*guarantee* that these cells are genuinely document-fed, and a
+document that actually states them. Nobody should read
+« hand-annotated ground truth » as « a link map ».
+
+**Caveat B — the sample is small and lopsided.** Seven workflows, and
+two of them (72, 81) hold 80% of the typed cells. A pooled per-cell
+number would be a number about tasks 72 and 81 wearing a corpus's
+clothes.
+
+**Caveat C — the difficulty is bimodal, and the hard mode exposes a
+limit in D3's own design.** Tasks 5 and 161 are flat transcriptions
+(104 and 312 typed cells, **zero computed**): the sheet mirrors the
+document's own table, so the labels match nearly by construction —
+an easy case that would flatter any hit-rate. Tasks 81, 156 and 72
+are the real thing, and reading them by hand turned up this:
+
+> cell `ETS!H13`, named « ETS Transport Margins Commodity - FTS - 2 »,
+> against the PDF line
+> `Commodity - FTS - 2  -  -  139.9  -  -  -  -  139.9  (139.9)  -`
+
+One printed line, **ten columns of numbers**, feeding ten different
+cells. The row label is in the line; the column identity
+(« ETS Transport Margins », the year, the entity) lives in a *header
+line elsewhere on the page*. **My matcher's document side has no
+column dimension at all** — a fact's anchor is its printed line, and
+`propose()` scores label overlap against that line alone. So on a
+multi-column table it can at best abstain, because ten facts share one
+line's labels and its tie rule fires. It cannot be right; it can only
+be quiet.
+
+That is a structural finding about D3, not about Finch: the
+line-anchored design was measured on prose-shaped documents (Ofgem's
+annexes) and this corpus is table-shaped. Round 5's candidate is a
+**column anchor** — the header line above a fact's own x-position,
+which D1 already records — and it is registered when it is registered,
+not patched in mid-round.
+
+**So: yes, run the round here** — it is the only document-into-model
+ground truth we have, it is licensed for commercial use, and it will
+give the first honest hit-rate number this track has ever had. And it
+will very likely be a low one, for the reason above.
+
+## D3 round 5 — registration, frozen before any matcher runs on Finch
+
+**Corpus:** the seven Finch document → spreadsheet workflows (5, 52,
+72, 81, 156, 160, 161), fetched by `scripts.corpus_documents_finch`.
+Attribution as above, in this write-up and every one that quotes a
+number from it.
+
+**Population:** the typed cells of each task's reference workbook —
+no formula, a value present. Tasks 5 and 161 carry no formulas at
+all, so *every* cell of theirs is typed; that is a property of a flat
+transcription and is recorded rather than corrected, and their numbers
+are reported separately for exactly that reason.
+
+**Sample: six typed cells per task, drawn with seed 271828 — 42 in
+all.** Equal weight per task, not per cell, so that tasks 72 and 81
+cannot carry the average; the pooled figure is labelled
+« equal-weight per task » wherever it appears, and the seven per-task
+figures are printed beside it always.
+
+**The judge is me**, from the PDF, blind: truth is recorded before any
+matcher output is looked at, with value search as the aid — the judge
+may use values, the matcher may not, as in every round here. For each
+drawn cell the truth is the fact key (page, line, token) the document
+states it at, or **empty** when the document does not state it.
+
+**Conditions** (counted, never scored as failures): `unreachable-ocr`
+if a page is refused — none are expected, all seven PDFs read clean;
+`no-cell-located` for a drawn cell whose value the sheet reader cannot
+place.
+
+**The matcher is the frozen v3.** No change to it during this round.
+If it needs a column anchor, that is round 5's *finding* and round
+6's registration.
+
+**The registered prediction, stated so it can be wrong:** high
+abstention on the table-shaped tasks (72, 81, 156, 160) from the tie
+rule, and whatever the flat transcriptions (5, 161) give being an
+upper bound rather than a representative number. **No target is
+promised, and a low number ships nothing** — same as every round
+before it.
+
+**Harness:** `scripts.corpus_documents_finch_round`, two phases —
+`sheet` then `score` — like every round in this lane.
+
+## D3 round 5 — measured. Recall 0 of 18. The matcher is not wrong; it is blind.
+
+*FinWorkBench/Finch, arXiv:2512.13168, CC BY 3.0 — this attribution
+travels with every number below.*
+
+The first hit-rate number this track has ever had, and it is the
+worst one it could be.
+
+| verdict | count |
+|---|---|
+| true proposal | **0** |
+| false proposal | 1 |
+| true abstention | 9 |
+| missed | **17** |
+
+Scored rows: 27 of 42 drawn (see the deviation below). **Of those 27,
+the document genuinely states 18** — so unlike every earlier round
+there was something to find in two thirds of them, and the matcher
+found **none**. Recall **0/18**. Precision 0/1.
+
+Per task, equal weight, six drawn each:
+
+| task | true | false | abstain | missed | not scorable |
+|---|---|---|---|---|---|
+| 5 | 0 | 1 | 1 | 3 | 1 |
+| 52 | 0 | 0 | 2 | 4 | 0 |
+| 72 | 0 | 0 | 2 | 0 | 4 |
+| 81 | 0 | 0 | 4 | 0 | 2 |
+| **156** | 0 | 0 | 0 | **6** | 0 |
+| 160 | 0 | 0 | 0 | 4 | 2 |
+| 161 | 0 | 0 | 0 | 0 | 6 |
+
+### Why, exactly — the diagnosis, counted rather than asserted
+
+Of the **17 misses**: **12 are the tie rule**, 4 are cells with no
+label words at all, 1 is coverage below the floor.
+
+Task 156 is the clean proof, because it is the case the matcher
+should own. Cell `CABC!I7` is named « $ Total Direct Expense »; the
+document line is `Total Direct Expense 8,067,693 100% 27 6,707,013
+100%`. Label coverage is **100%** — a perfect match. And the matcher
+abstained, because that one line carries **four numbers**, so four
+candidates tie at 1.00 and the tie rule fires. Six of six, the same
+way.
+
+This is exactly the failure predicted in the registration, now
+quantified: **the matcher's document side has no column dimension.**
+Its anchor is the printed line, and in a table a line is a *row* —
+the column identity (the year, the entity, « HC » versus « $ ») lives
+in a header line elsewhere on the page. On prose (Ofgem's annexes) a
+line names one number and the design works. On tables — which is what
+finance documents mostly are — every candidate on the right row ties,
+and the honest tie rule turns a perfect label match into silence.
+
+The other four misses are the mirror image on the model side: cells
+whose own name is empty (an account-code column with no row label),
+so there is nothing to match *with*. Nothing about the document side
+would help those.
+
+**The one false proposal** is worth its own line: task 5's « ENE
+Shares » was proposed at `p1|106` when the truth is `p1|6` — a
+different line stating a different quantity that happened to carry
+the label words. Not a tie, just wrong.
+
+### A deviation, named rather than made silently
+
+The registration foresaw two conditions (OCR loss, no cell located).
+Judging turned up a third and I added it mid-round: **fifteen of the
+42 drawn cells could not be judged at all at line granularity.** In a
+grid like task 161's, a value appears in many rows and pages and I
+cannot determine which occurrence the expert transcribed; scoring
+them either way would have been invention. They are counted, excluded
+from the table above, and named `indeterminate-line-granularity`.
+That count is itself the finding: **the same blindness that stops the
+matcher also stops the judge**, and no honest number can be produced
+for those rows without a column anchor.
+
+Two smaller notes, for the record: four drawn zeros are stated in
+their documents as a dash (« - »), which D1 does not extract as a
+number — so the matcher's silence there is correct, and « nil printed
+as a dash » is a real D1 gap worth its own registration; and the
+judging aid's value tolerance (0.5% relative) over-matched integer
+account codes (3484 matching 3470, 3481, 3489), which cost the judge
+time but never the matcher, since scoring never sees values.
+
+### What this means, plainly
+
+D3 as designed does not work on table-shaped documents, and finance
+documents are mostly tables. That is not a tuning problem and it will
+not be fixed by loosening the tie rule — loosening it would have
+turned all twelve of those ties into guesses among four candidates,
+which is the confident wrongness this product exists to prevent.
+
+**Round 6's candidate, registered when it is registered:** give the
+document side a **column anchor** — the header text above a fact's own
+x-position, which D1 already records in every box. Then « $ Total
+Direct Expense » can separate the `$` column from the `HC` column on
+the same row, and the tie rule fires only when it should. The corpus
+to measure it on now exists and the judging sheets are already built.
+
+**Nothing ships.** The route's standing sentence is updated to carry
+this number, since a registered round's result is its only trigger.

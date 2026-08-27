@@ -1,0 +1,308 @@
+[
+ {
+  "task": "5",
+  "ref": "Summary!L41",
+  "name": "Change in Stock and Stock Derivatives (since inception)",
+  "value": "-435884800",
+  "stated": [
+   "5_src_0|p1|92"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "5",
+  "ref": "Summary!Q54",
+  "name": "(e)  Amount is calculated as change in contributed TNPC stock since hedges were put in place at $21/share (ie. 24 MM shares * ($21-$Current TNPC Market Value)",
+  "value": "-244219118.892323",
+  "stated": [
+   "5_src_0|p1|108"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "5",
+  "ref": "Summary!L13",
+  "name": "Change in Stock and Stock Derivatives (since inception)",
+  "value": "-63007459.400000036",
+  "stated": [
+   "5_src_0|p1|21"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "5",
+  "ref": "Summary!Q24",
+  "name": "Current Credit Capacity",
+  "value": "135003270.2288938",
+  "stated": [],
+  "proposed": null,
+  "verdict": "true abstention",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "5",
+  "ref": "Summary!C9",
+  "name": "ENE Shares",
+  "value": "3876755",
+  "stated": [
+   "5_src_0|p1|6"
+  ],
+  "proposed": "5_src_0|p1|106",
+  "verdict": "false proposal",
+  "reason": null
+ },
+ {
+  "task": "52",
+  "ref": "EPSunDevil!D9",
+  "name": "Case 2",
+  "value": "570",
+  "stated": [
+   "52_src_0|p1|12"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "52",
+  "ref": "EPSunDevil!D5",
+  "name": "",
+  "value": "25000",
+  "stated": [
+   "52_src_0|p1|5"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "The cell has no label words to match on \u2014 its labels are empty or purely numeric \u2014 so proposing any source would be a guess about values, which this matcher never makes."
+ },
+ {
+  "task": "52",
+  "ref": "EPSunDevil!D14",
+  "name": "Case 3",
+  "value": "570",
+  "stated": [
+   "52_src_0|p1|22"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "52",
+  "ref": "EPSunDevil!E14",
+  "name": "Low End Cost Case 3",
+  "value": "0",
+  "stated": [],
+  "proposed": null,
+  "verdict": "true abstention",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 25%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "task": "52",
+  "ref": "EPSunDevil!D4",
+  "name": "Case 1",
+  "value": "440",
+  "stated": [
+   "52_src_0|p1|2"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "52",
+  "ref": "EPSunDevil!F14",
+  "name": "High End Cost Case 3",
+  "value": "0",
+  "stated": [],
+  "proposed": null,
+  "verdict": "true abstention",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 25%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "task": "72",
+  "ref": "Scenario3!AB47",
+  "name": "UDC Resources",
+  "value": "14570.69684603518",
+  "stated": [],
+  "proposed": null,
+  "verdict": "true abstention",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 0%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "task": "72",
+  "ref": "Scenario3!Z55",
+  "name": "Month",
+  "value": "38443",
+  "stated": [],
+  "proposed": null,
+  "verdict": "true abstention",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 0%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "task": "81",
+  "ref": "ETS!D188",
+  "name": "TW Other O&M Adjustment",
+  "value": "0",
+  "stated": [],
+  "proposed": null,
+  "verdict": "true abstention",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 20%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ },
+ {
+  "task": "81",
+  "ref": "ETS!G32",
+  "name": "GCO/HPL GRI/ACA",
+  "value": "0",
+  "stated": [],
+  "proposed": null,
+  "verdict": "true abstention",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "81",
+  "ref": "ETS!E212",
+  "name": "Citrus AFUDC",
+  "value": "0",
+  "stated": [],
+  "proposed": null,
+  "verdict": "true abstention",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "81",
+  "ref": "ETS!C21",
+  "name": "NNG Shared Cost Surcharge",
+  "value": "0",
+  "stated": [],
+  "proposed": null,
+  "verdict": "true abstention",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "156",
+  "ref": "CABC!I12",
+  "name": "$ Total Direct Expense EES Wholesale",
+  "value": "559671",
+  "stated": [
+   "156_src_0|p1|25"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "156",
+  "ref": "CABC!I7",
+  "name": "$ Total Direct Expense",
+  "value": "6707013.091",
+  "stated": [
+   "156_src_0|p1|5"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "156",
+  "ref": "CABC!G7",
+  "name": "HC Total Direct Expense",
+  "value": "27",
+  "stated": [
+   "156_src_0|p1|4"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "156",
+  "ref": "CABC!C11",
+  "name": "$ Total Direct Expense EBS",
+  "value": "784062",
+  "stated": [
+   "156_src_0|p1|17"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "156",
+  "ref": "CABC!I11",
+  "name": "$ Total Direct Expense EBS",
+  "value": "843732",
+  "stated": [
+   "156_src_0|p1|20"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "156",
+  "ref": "CABC!C7",
+  "name": "$ Total Direct Expense",
+  "value": "8067693.41904762",
+  "stated": [
+   "156_src_0|p1|2"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "Two or more candidates tie at the top score \u2014 the labels alone cannot tell them apart, and choosing between them would be a guess. A person can; this matcher will not."
+ },
+ {
+  "task": "160",
+  "ref": "Internal Service Page 9!D14",
+  "name": "",
+  "value": "3484",
+  "stated": [
+   "160_src_0|p1|14"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "The cell has no label words to match on \u2014 its labels are empty or purely numeric \u2014 so proposing any source would be a guess about values, which this matcher never makes."
+ },
+ {
+  "task": "160",
+  "ref": "Internal Service Page 9!D13",
+  "name": "",
+  "value": "3481",
+  "stated": [
+   "160_src_0|p1|10"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "The cell has no label words to match on \u2014 its labels are empty or purely numeric \u2014 so proposing any source would be a guess about values, which this matcher never makes."
+ },
+ {
+  "task": "160",
+  "ref": "Internal Service Page 9!D32",
+  "name": "",
+  "value": "100",
+  "stated": [
+   "160_src_0|p1|49"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "The cell has no label words to match on \u2014 its labels are empty or purely numeric \u2014 so proposing any source would be a guess about values, which this matcher never makes."
+ },
+ {
+  "task": "160",
+  "ref": "Internal Service Page 9!H11",
+  "name": "YEAR-TO-DATE",
+  "value": "119238.09",
+  "stated": [
+   "160_src_0|p1|4"
+  ],
+  "proposed": null,
+  "verdict": "missed",
+  "reason": "No candidate line covers at least half of the cell's label words (best eligible coverage: 33%), so nothing is proposed. The cell may simply have no source in the documents \u2014 that is a finding, not a failure."
+ }
+]
