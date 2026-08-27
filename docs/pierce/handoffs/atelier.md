@@ -140,13 +140,51 @@ findings and could never go stale. A failed run carries a finish time
 but is not a check. The row also says « Nothing failing · values
 only » where that applies — the fourth surface in the honesty thread.
 
-**G2 — the five questions: measurable only in part.** Chat cannot
-run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503. What was
-measured is the tool surface: 1, 2 and 4 have their material
-reachable; **3 (« where is this from ») is unreachable** — no tool
-touches the Chain; **5 answers in raw cell moves**, not the Watch's
-review language. Two tools in `agent/model_tools.py` (not our lane)
-would close both. Full table in the log.
+**G2 — the five questions, after the two tools.** Chat still cannot
+run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503 — so what is
+measured is the tool surface, judged by hand against real models:
+does the tool the assistant would reach for hand back the right
+material with the right numbers. **3 (« where is this from ») and 5
+(« what changed ») now answer**; 4 stands; **1 is parts only** (no
+deal here has both a DSCR line and a second version); **2 is wrong on
+a values-pasted copy** — see below. Full table in the log.
+
+**The two tools (twenty-fifth sweep, lead routed `agent/model_tools.py`
+to this lane for these only).** `sources` reports the document, page
+and the sentence **as printed** for a grounded typed input, walks a
+calculated cell to the typed inputs behind it, and never flattens
+« nothing matched » into « nobody looked ». `versions` now speaks the
+Watch's review language, keeping the stored-cell diff only for the one
+thing the Watch cannot see — how many of this deal's deliverable
+figures a change made stale.
+
+**The Watch is read lazily, and that is load-bearing.**
+`service.version_delta` was split into `delta_sides` (async, cheap,
+resolves the two artifacts) and `delta_between` (sync, expensive,
+reads both files). The agent loader hands the tool a `partial` of the
+second; nothing reads a file until `versions` is asked. A workspace
+loads before every question, so anything eager there is paid by all
+five. There is a test whose only job is that guard — keep it.
+
+**The values-only thread has a fifth surface: chat.** On a stripped
+copy `trace_back` answers « typed value, 0 direct inputs » for *every*
+line, including a blended equity IRR, and a reader takes it for a
+finding about the model. `sources` now says « this copy carries values
+only — 814 of 470,594 cells hold a formula — that is a fact about this
+copy » (ingest's counts, the same 1% floor as the report and the
+panel). **`trace_back` still does not**; it was outside the two tools
+routed here, and it is with the lead.
+
+**Two more with the lead**: `load_model_workspace` picks the *first*
+model artifact on a deal, so on a multi-model deal chat can silently
+answer about the wrong file (Cascade Watch has three lineages); and a
+pre-existing ruff failure in `tests/tieout/test_structure.py`
+(Sentinel's row) fails `ruff check tests/tieout/`.
+
+**Format refusals need nothing until A6 lands.**
+`_unreadable_format` derives its sentence from `ingest.SUFFIXES`, so
+it narrows on its own when Sentinel widens the reader. Never re-pin
+that prose in a test.
 
 **Three findings routed to the lead**: the gate's 1e-12 absolute
 floor fails a 4,798-cell model on two cells of 3e-07 balance dust;

@@ -18,6 +18,7 @@ asked about.
 better answer to « why did nothing happen » than silence.
 """
 
+from functools import partial
 from typing import Any
 from uuid import UUID
 
@@ -179,7 +180,7 @@ async def load_model_workspace(
     with its exact precedent graph, the time axes, the versions and the
     diff to the version before. None when the deal holds no model yet.
     """
-    from ..service import _workbook_of
+    from ..service import _workbook_of, delta_between
     from ..structure import period_axes
     from .model_tools import build_workspace
 
@@ -215,6 +216,22 @@ async def load_model_workspace(
         session, dossier_id=dossier_id, artifact_id=model_artifact.id
     )
 
+    #: The Watch's reading of the revision, as a callable rather than a
+    #: report. The sides are resolved here, where the session is; the
+    #: two file reads happen only if the `versions` tool is reached, so
+    #: a question about anything else does not pay for them.
+    sides = await tieout.delta_sides(
+        session, dossier_id=dossier_id, artifact_id=model_artifact.id
+    )
+    delta: Any = None
+    if sides is not None:
+        old_side, new_side = sides
+        delta = partial(delta_between, old_side, new_side)
+
+    sources_map, sources_read = await _sources_of(
+        session, dossier_id=dossier_id, model_artifact_id=model_artifact.id
+    )
+
     return build_workspace(
         dossier_id=dossier_id,
         name=name,
@@ -224,7 +241,90 @@ async def load_model_workspace(
         axes=period_axes(book),
         versions_list=versions_list,
         diff=diff,
+        sources_map=sources_map,
+        sources_read=sources_read,
+        delta=delta,
+        counts=dict(model_artifact.counts or {}),
     )
+
+
+async def _sources_of(
+    session: AsyncSession,
+    *,
+    dossier_id: UUID,
+    model_artifact_id: UUID,
+) -> tuple[dict[str, dict[str, Any]], int]:
+    """Every typed input in this model that a source read matched, by ref.
+
+    The chain endpoint answers this one cell at a time
+    (`service._grounding`). The assistant's tools are synchronous and
+    its workspace is loaded once, so the whole map is built here — and
+    it is small: a link exists only where a document figure matched a
+    cell, which is tens of rows, not thousands.
+
+    The ranking is the endpoint's, deliberately: a **confirmed** link
+    outranks a proposal, because from the moment somebody vouches for
+    it the last hop is a fact rather than a guess. A rejected link is
+    not an answer at all and never appears here.
+    """
+    from polar.models import ArtifactKind, LinkState
+
+    repository = TieOutRepository.from_session(session)
+    documents = {
+        one.id: one
+        for one in await repository.list_artifacts(dossier_id)
+        if one.kind is ArtifactKind.source
+    }
+    if not documents:
+        return {}, 0
+
+    links = [
+        one
+        for one in await repository.links_of(dossier_id)
+        if one.state in (LinkState.confirmed, LinkState.proposed)
+    ]
+    if not links:
+        return {}, len(documents)
+
+    figures = await repository.figures_by_id([one.figure_id for one in links])
+    cells = await repository.cells_by_id([one.cell_id for one in links])
+
+    ranked: dict[str, tuple[int, float, dict[str, Any]]] = {}
+    for link in links:
+        figure = figures.get(link.figure_id)
+        cell = cells.get(link.cell_id)
+        if figure is None or cell is None or cell.artifact_id != model_artifact_id:
+            continue
+        document = documents.get(figure.artifact_id)
+        if document is None:
+            continue
+        confirmed = link.state is LinkState.confirmed
+        rank = (1 if confirmed else 0, float(link.confidence or 0))
+        held = ranked.get(cell.ref)
+        if held is not None and held[:2] >= rank:
+            continue
+        ranked[cell.ref] = (
+            *rank,
+            {
+                "document": document.filename,
+                "location": figure.location,
+                "label": f"{document.filename} · {figure.location}",
+                "printed": figure.printed,
+                #: The sentence as printed on the page, never the label
+                #: the matcher normalised it to — showing a reader a
+                #: year this product invented, on the one answer whose
+                #: job is to say where a number came from, would be the
+                #: wrong place to be clever.
+                "context": figure.context or figure.label,
+                "state": "confirmed" if confirmed else "proposed",
+                "note": (
+                    "confirmed by someone on this deal"
+                    if confirmed
+                    else "proposed — nobody has confirmed this yet"
+                ),
+            },
+        )
+    return {ref: held[2] for ref, held in ranked.items()}, len(documents)
 
 
 async def ask_model(

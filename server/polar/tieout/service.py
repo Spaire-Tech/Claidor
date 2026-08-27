@@ -669,8 +669,6 @@ class TieOutService:
         error. Both sides must be ready models of the same lineage in
         this deal; anything else reads as not found to the caller.
         """
-        from .watch import delta_report
-
         repository = TieOutRepository.from_session(session)
         new_side = await repository.get_artifact(artifact_id)
         if (
@@ -696,29 +694,43 @@ class TieOutService:
             ):
                 return None
 
-        old_bytes = storage.fetch(old_side)
-        new_bytes = storage.fetch(new_side)
-        suffix = Path(new_side.filename).suffix or ".xlsx"
-        old_path = new_path = ""
-        try:
-            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
-                f.write(old_bytes)
-                old_path = f.name
-            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
-                f.write(new_bytes)
-                new_path = f.name
-            report = delta_report(old_path, new_path)
-        finally:
-            for path in (old_path, new_path):
-                if path:
-                    Path(path).unlink(missing_ok=True)
-
         return {
             "old": old_side,
             "new": new_side,
             "computed_at": datetime.now(UTC),
-            "report": report,
+            "report": delta_between(old_side, new_side),
         }
+
+    async def delta_sides(
+        self,
+        session: AsyncSession | AsyncReadSession,
+        *,
+        dossier_id: UUID,
+        artifact_id: UUID,
+    ) -> tuple[Artifact, Artifact] | None:
+        """The two versions :func:`delta_between` would read, resolved.
+
+        Split out for a caller that must decide *whether* to pay for the
+        report separately from paying for it. The model assistant is
+        one: it loads a workspace before its loop starts, and reading
+        two workbooks to answer a question nobody asked would put that
+        cost on every question. It resolves the sides here, in async
+        context, and calls :func:`delta_between` only if the `versions`
+        tool is actually reached.
+        """
+        repository = TieOutRepository.from_session(session)
+        new_side = await repository.get_artifact(artifact_id)
+        if (
+            new_side is None
+            or new_side.dossier_id != dossier_id
+            or new_side.kind is not ArtifactKind.model
+            or new_side.status is not ArtifactStatus.ready
+        ):
+            return None
+        old_side = await repository.previous_version(new_side)
+        if old_side is None:
+            return None
+        return old_side, new_side
 
     async def page_image(
         self,
@@ -1896,6 +1908,35 @@ class TieOutService:
 
 
 # --- adapters ------------------------------------------------------------
+
+
+def delta_between(old_side: Artifact, new_side: Artifact) -> Any:
+    """The Watch's delta report between two stored versions.
+
+    **Blocking and not cheap** — it fetches both files and reads both
+    workbooks — so it is a plain function rather than a method: the
+    caller decides when to pay, and every caller so far pays it inside
+    the request that asked for it. A version whose bytes were dropped
+    raises :class:`storage.FileNotKept`, whose sentence says what to do.
+    """
+    from .watch import delta_report
+
+    old_bytes = storage.fetch(old_side)
+    new_bytes = storage.fetch(new_side)
+    suffix = Path(new_side.filename).suffix or ".xlsx"
+    old_path = new_path = ""
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+            f.write(old_bytes)
+            old_path = f.name
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+            f.write(new_bytes)
+            new_path = f.name
+        return delta_report(old_path, new_path)
+    finally:
+        for path in (old_path, new_path):
+            if path:
+                Path(path).unlink(missing_ok=True)
 
 
 def _workbook_of(cells: Sequence[CellRow]) -> Workbook:

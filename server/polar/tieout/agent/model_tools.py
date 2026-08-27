@@ -24,8 +24,11 @@ Six tools, one per question a stranger actually asks, plus a locator so
 - **structure** — the day-one questions: the sheets in the workbook's
   own order, each sheet's time axis, what is hidden, whether iterative
   calculation is declared.
-- **versions** — what changed since the version before, from stored
-  cells, never from memory.
+- **versions** — what changed since the version before, in the Watch's
+  review language, never from memory.
+- **sources** — where a typed number came from *outside* the model: the
+  document and page a source read matched it to. The one question the
+  graph alone cannot answer, because the answer is not in the file.
 
 The same discipline as every agent here: **nothing computes an answer
 about a number** — every figure comes out of the stored graph the
@@ -68,6 +71,22 @@ class ModelWorkspace:
     dependents: dict[str, list[str]]
     versions: list[dict[str, Any]]
     diff: dict[str, Any] | None
+    #: Model ref -> the source document a read matched that typed input
+    #: to. Built by the loader from links this deal already carries;
+    #: empty when no source document has been read, which is a
+    #: different answer from « nothing matched » and is said as one.
+    sources: dict[str, dict[str, Any]] = field(default_factory=dict)
+    #: Whether any source document has been read on this deal at all.
+    sources_read: int = 0
+    #: A zero-argument call returning the Watch's `DeltaReport` for this
+    #: version against the one before, or None when there is no earlier
+    #: version. **Deliberately not called by the loader**: it fetches
+    #: two files and reads two workbooks, and a question about anything
+    #: else must not pay for it. The `versions` tool calls it once and
+    #: caches the answer in `_delta`.
+    delta: Any = None
+    _delta: Any = None
+    _delta_done: bool = False
     counts: dict[str, Any] = field(default_factory=dict)
 
 
@@ -337,8 +356,136 @@ def structure(workspace: ModelWorkspace) -> ToolResult:
     )
 
 
+#: How the Watch's item kinds read in a sentence. The tool hands the
+#: agent the kind *and* these words, so an answer never has to invent a
+#: gloss for `methodology_change` and never gets it wrong.
+#:
+#: Three forms, because a row and a count want different sentences. The
+#: row wants the whole gloss with its article (« a cell that changed
+#: class — typed over a formula, or back »); a count wants it short and
+#: article-free, in the reader's number (« 2 cells that changed class »).
+#: « 1 a cell that changed class » was the giveaway when there was one
+#: form doing both jobs.
+DELTA_WORDS: dict[str, tuple[str, str, str]] = {
+    "new_defect": (
+        "a defect this revision introduced",
+        "defect introduced",
+        "defects introduced",
+    ),
+    "repaired_defect": (
+        "a defect this revision fixed",
+        "defect fixed",
+        "defects fixed",
+    ),
+    "class_change": (
+        "a cell that changed class — typed over a formula, or back",
+        "cell that changed class",
+        "cells that changed class",
+    ),
+    "relabelled_line": (
+        "a line that was renamed",
+        "line renamed",
+        "lines renamed",
+    ),
+    "methodology_change": (
+        "a formula rewritten to compute differently",
+        "formula rewritten to compute differently",
+        "formulas rewritten to compute differently",
+    ),
+    "moved_assumption": (
+        "an assumption that was changed",
+        "assumption changed",
+        "assumptions changed",
+    ),
+    "material_output": (
+        "an output that moved materially",
+        "output moved materially",
+        "outputs moved materially",
+    ),
+    "structure": (
+        "rows or columns inserted, deleted or moved",
+        "structural change",
+        "structural changes",
+    ),
+    "emptied_cell": ("a cell that was emptied", "cell emptied", "cells emptied"),
+    "filled_cell": (
+        "a cell that was filled in",
+        "cell filled in",
+        "cells filled in",
+    ),
+    #: The study's three counts share the headline with the item kinds,
+    #: under the keys `DeltaReport.summary` gives them.
+    "new_defects": ("", "defect this revision introduced", "defects introduced"),
+    "repaired_defects": ("", "defect this revision fixed", "defects fixed"),
+    "persistent_defects": ("", "defect still open", "defects still open"),
+}
+
+
+def _said(kind: str) -> str:
+    """The row's gloss — the whole sentence, with its article."""
+    words = DELTA_WORDS.get(kind)
+    return words[0] if words and words[0] else kind
+
+
+def _counted(kind: str, count: int) -> str:
+    """The gloss after a numeral — short, and in the right number."""
+    words = DELTA_WORDS.get(kind)
+    if words is None:
+        return kind
+    return words[1] if count == 1 else words[2]
+
+
+def _item_ref(item: Any) -> str:
+    """The item's place, as a reference a reviewer can select.
+
+    One row and one column is a cell — « Model!F16 » — and saying so is
+    the difference between a location and a coordinate pair.
+    """
+    if not item.first_row:
+        return item.sheet
+    rows = (
+        str(item.first_row)
+        if item.last_row <= item.first_row
+        else f"{item.first_row}-{item.last_row}"
+    )
+    if len(item.columns) == 1 and item.last_row <= item.first_row:
+        return f"{item.sheet}!{item.columns[0]}{item.first_row}"
+    return f"{item.sheet}!{rows}"
+
+
+def _delta_report(workspace: ModelWorkspace) -> Any:
+    """The Watch's report, fetched once and only if asked."""
+    if workspace._delta_done:
+        return workspace._delta
+    workspace._delta_done = True
+    if workspace.delta is None:
+        return None
+    try:
+        workspace._delta = workspace.delta()
+    except Exception:
+        #: A version whose bytes were dropped, or a reader that refused
+        #: the file. The cell diff below is still a true answer, and
+        #: losing the whole tool would be a worse one.
+        workspace._delta = None
+    return workspace._delta
+
+
 def versions(workspace: ModelWorkspace) -> ToolResult:
-    """What changed since the version before, from stored cells."""
+    """What this revision did, in the Watch's review language.
+
+    Two sources, and they answer different halves. The **Watch** reads
+    both files and reports authoring decisions — what broke, what
+    changed class, where the method moved, which assumptions moved,
+    which outputs moved materially, the structure, then the repairs.
+    The **stored-cell diff** knows something the Watch cannot: how many
+    figures in this deal's own deliverables a changed cell has just
+    made stale. So the report leads and the diff supplies the staleness.
+
+    This tool used to hand back the raw cell moves alone — « B12 4.1 →
+    3.8 » — which is a true answer to « what changed » in the sense
+    that a diff is a true answer, and the wrong register for a reviewer
+    asking what the revision *did*.
+    """
     rows = [
         {
             "ref": f"v{one['version']}",
@@ -348,43 +495,315 @@ def versions(workspace: ModelWorkspace) -> ToolResult:
         for one in workspace.versions[:MAX_ROWS]
     ]
     diff = workspace.diff
-    if diff is None:
+    report = _delta_report(workspace)
+    if diff is None and report is None:
         return ToolResult(
             ok=True,
             summary=f"{len(workspace.versions)} versions, nothing to compare",
             data={
                 "rows": rows,
                 "note": "This is the first version — there is nothing "
-                "earlier in Ances to compare against.",
+                "earlier in Swens to compare against.",
             },
         )
-    changed = diff.get("changed", [])
-    by_sheet: dict[str, int] = {}
-    for one in changed:
-        sheet = str(one.get("ref", "")).split("!", 1)[0]
-        by_sheet[sheet] = by_sheet.get(sheet, 0) + 1
-    sample = [
+
+    changed = list((diff or {}).get("changed", []))
+    stale = {
+        str(one.get("ref", "")): int(one.get("stale_figures", 0) or 0)
+        for one in changed
+    }
+    stale_total = sum(stale.values())
+
+    if report is None:
+        #: The files are gone but the rows are not. Say which answer
+        #: this is — a reviewer told « 40 cells changed » will not
+        #: guess that the reviewed reading was unavailable.
+        by_sheet: dict[str, int] = {}
+        for one in changed:
+            sheet = str(one.get("ref", "")).split("!", 1)[0]
+            by_sheet[sheet] = by_sheet.get(sheet, 0) + 1
+        sample = [
+            {
+                "ref": str(one.get("ref", "")),
+                "what": f"{one.get('was', '')} → {one.get('now', '')}",
+                "value": "",
+            }
+            for one in changed[:MAX_ROWS]
+        ]
+        return ToolResult(
+            ok=True,
+            summary=(
+                f"v{(diff or {}).get('from_version')} → "
+                f"v{(diff or {}).get('to_version')}: {len(changed)} cells "
+                f"changed (values only — the reviewed reading is not available)"
+            ),
+            data={
+                "rows": sample or rows,
+                "changed": len(changed),
+                "added": (diff or {}).get("added", 0),
+                "removed": (diff or {}).get("removed", 0),
+                "stale_figures": stale_total,
+                "by_sheet": dict(sorted(by_sheet.items(), key=lambda kv: -kv[1])),
+                "from_version": (diff or {}).get("from_version"),
+                "to_version": (diff or {}).get("to_version"),
+                "note": "The two versions' files could not both be read, so "
+                "this is the change in stored values only, not the reviewed "
+                "reading of what the revision did.",
+            },
+        )
+
+    #: The engine ranks its own items; the order received is the order
+    #: reported, and nothing here re-ranks them.
+    items = [
         {
-            "ref": str(one.get("ref", "")),
-            "what": f"{one.get('was', '')} → {one.get('now', '')}",
-            "value": "",
+            "ref": _item_ref(item),
+            "what": f"{_said(item.kind)} — {item.detail}"
+            if item.detail
+            else _said(item.kind),
+            "value": ", ".join(item.columns[:6]),
         }
-        for one in changed[:MAX_ROWS]
+        for item in report.items[:MAX_ROWS]
     ]
+    counts = {kind: value for kind, value in report.summary.items() if value}
+    headline = ", ".join(
+        f"{value} {_counted(kind, value)}"
+        for kind, value in report.summary.items()
+        if value and kind in DELTA_WORDS
+    )
     return ToolResult(
         ok=True,
         summary=(
-            f"v{diff.get('from_version')} → v{diff.get('to_version')}: "
-            f"{len(changed)} cells changed"
+            f"v{(diff or {}).get('from_version', '?')} → "
+            f"v{(diff or {}).get('to_version', '?')}: "
+            + (headline or "no reviewed change")
         ),
         data={
-            "rows": sample or rows,
-            "changed": len(changed),
-            "added": diff.get("added", 0),
-            "removed": diff.get("removed", 0),
-            "by_sheet": dict(sorted(by_sheet.items(), key=lambda kv: -kv[1])),
-            "from_version": diff.get("from_version"),
-            "to_version": diff.get("to_version"),
+            "rows": items or rows,
+            "counts": counts,
+            "kinds": {
+                kind: _counted(kind, counts[kind])
+                for kind in counts
+                if kind in DELTA_WORDS
+            },
+            "items_shown": len(items),
+            "items_total": len(report.items),
+            "new_defects": report.new_defects,
+            "repaired_defects": report.repaired_defects,
+            "persistent_defects": report.persistent_defects,
+            "sheets_added": list(report.sheets_added),
+            "sheets_removed": list(report.sheets_removed),
+            "cells_changed": len(changed),
+            #: The half the Watch cannot see: this deal's own deliverables.
+            "stale_figures": stale_total,
+            "from_version": (diff or {}).get("from_version"),
+            "to_version": (diff or {}).get("to_version"),
+        },
+    )
+
+
+#: Below this share of formulas a workbook is a values-pasted copy, not
+#: a model — the same threshold the report and the document panel use.
+FORMULA_SHARE_FLOOR = 0.01
+
+
+def _values_only(workspace: ModelWorkspace) -> str:
+    """The sentence a values-pasted copy needs, or nothing.
+
+    A published copy with the formulas stripped answers every question
+    here the same way — « typed input, nothing behind it » — and that
+    reads as a devastating finding about the model when it is a fact
+    about the *copy*. Ingest counted both numbers; saying them is the
+    difference between an answer and a libel.
+    """
+    cells = int(workspace.counts.get("cells", 0) or 0)
+    formulas = int(workspace.counts.get("formulas", 0) or 0)
+    if cells <= 0 or formulas / cells >= FORMULA_SHARE_FLOOR:
+        return ""
+    return (
+        f"This copy carries values only — {formulas:,} of {cells:,} cells "
+        "hold a formula — so almost everything in it reads as typed. That "
+        "is a fact about this copy, not about how the model was built. Ask "
+        "for the working copy if where the numbers come from matters."
+    )
+
+
+def sources(workspace: ModelWorkspace, ref: str = "") -> ToolResult:
+    """Where a number came from *outside* the model.
+
+    Every other tool here reads the workbook. This one reads the only
+    fact the workbook cannot hold: that a typed input was matched to a
+    figure printed on page 42 of the audited accounts. Without it the
+    honest answer to « where is this from » stops at « somebody typed
+    it », which is where a reviewer's real question starts.
+
+    Nothing is inferred, and the difference between « nobody read a
+    source document » and « the reads found nothing for this cell » is
+    reported, never flattened — a guess at provenance is the one claim
+    a banker would repeat to a client without checking.
+
+    Called with no ref it says what *is* grounded, which is how the
+    assistant learns whether the question can be answered at all.
+    """
+    grounded = workspace.sources
+    blind = _values_only(workspace)
+    if not ref:
+        if not grounded:
+            return ToolResult(
+                ok=True,
+                summary="No number in this model is matched to a source document",
+                data={
+                    "rows": [],
+                    "sources_read": workspace.sources_read,
+                    "note": (
+                        f"{workspace.sources_read} source documents have been "
+                        "read on this deal, and none of their figures matched "
+                        "a typed input in this model."
+                        if workspace.sources_read
+                        else "No source document has been read on this deal, "
+                        "so nothing in this model can be traced past the cell "
+                        "somebody typed it into."
+                    ),
+                    **({"values_only": blind} if blind else {}),
+                },
+            )
+        rows = [
+            {"ref": at, "what": one["label"], "value": one["printed"]}
+            for at, one in list(grounded.items())[:MAX_ROWS]
+        ]
+        return ToolResult(
+            ok=True,
+            summary=f"{len(grounded)} typed inputs carry a source document",
+            data={"rows": rows, "grounded": len(grounded), "shown": len(rows)},
+        )
+
+    found = _resolve(workspace, ref)
+    if not found:
+        return _refuse(f"« {ref} » is not in {workspace.filename}")
+    start = found[0]
+
+    here = grounded.get(start.ref)
+    if here is not None:
+        return ToolResult(
+            ok=True,
+            summary=f"{start.ref} came off {here['label']}",
+            data={
+                "rows": [
+                    {
+                        "ref": start.ref,
+                        "what": here["label"],
+                        "value": here["printed"],
+                    }
+                ],
+                "document": here["document"],
+                "location": here["location"],
+                #: The sentence as printed on the page, not the label the
+                #: matcher normalised it to.
+                "context": here["context"],
+                "state": here["state"],
+                "note": here["note"],
+            },
+        )
+
+    if start.formula is None:
+        return ToolResult(
+            ok=True,
+            summary=f"{start.ref} is typed, and no source document backs it",
+            data={
+                "rows": [_row(start)],
+                "sources_read": workspace.sources_read,
+                "note": (
+                    "This is a typed input. No figure in the source documents "
+                    "read on this deal was matched to it, so where it came "
+                    "from is not recorded anywhere in Swens — the person who "
+                    "typed it is the only answer."
+                    if workspace.sources_read
+                    else "This is a typed input, and no source document has "
+                    "been read on this deal, so nothing here can say where it "
+                    "came from."
+                ),
+                **({"values_only": blind} if blind else {}),
+            },
+        )
+
+    #: A calculated cell has no source of its own, but the typed inputs
+    #: behind it may. Walking to them is the difference between
+    #: declining the question and answering it.
+    book = workspace.book
+    backed: list[dict[str, str]] = []
+    bare = 0
+    seen = {start.ref}
+    queue = deque([(start, 0)])
+    while queue and len(backed) < MAX_ROWS:
+        cell, depth = queue.popleft()
+        if cell.formula is None:
+            found_here = grounded.get(cell.ref)
+            if found_here is not None:
+                backed.append(
+                    {
+                        "ref": cell.ref,
+                        "what": found_here["label"],
+                        "value": found_here["printed"],
+                    }
+                )
+            elif cell.ref != start.ref:
+                bare += 1
+            continue
+        if depth >= 3:
+            continue
+        for parent_ref in cell.precedents[:4]:
+            if parent_ref in seen:
+                continue
+            seen.add(parent_ref)
+            parent = book.cells.get(parent_ref)
+            if parent is not None:
+                queue.append((parent, depth + 1))
+
+    if backed:
+        return ToolResult(
+            ok=True,
+            summary=(
+                f"{start.ref} is calculated; {len(backed)} of the typed "
+                f"inputs behind it "
+                f"{'carries' if len(backed) == 1 else 'carry'} "
+                "a source document"
+            ),
+            data={
+                "rows": backed,
+                "calculated": True,
+                "formula": start.formula,
+                "ungrounded_inputs": bare,
+                "note": (
+                    "This cell is calculated, so it has no source of its "
+                    "own. These are the typed inputs it stands on that were "
+                    "matched to a document"
+                    + (
+                        f"; {bare} more typed "
+                        f"{'input' if bare == 1 else 'inputs'} behind it "
+                        f"{'carries' if bare == 1 else 'carry'} none."
+                        if bare
+                        else "."
+                    )
+                ),
+            },
+        )
+    return ToolResult(
+        ok=True,
+        summary=f"{start.ref} is calculated, and nothing behind it is sourced",
+        data={
+            "rows": [_row(start)],
+            "calculated": True,
+            "formula": start.formula,
+            "ungrounded_inputs": bare,
+            "sources_read": workspace.sources_read,
+            "note": (
+                f"This cell is calculated. Of the typed inputs behind it, "
+                f"{bare} {'was' if bare == 1 else 'were'} reached and none "
+                "was matched to a source document, so this figure cannot be "
+                "traced past the model."
+                if bare
+                else "This cell is calculated, and the walk reached no typed "
+                "input within three steps — trace_back will show where it goes."
+            ),
         },
     )
 
@@ -456,10 +875,26 @@ DEFINITIONS: list[dict[str, Any]] = [
     {
         "name": "versions",
         "description": (
-            "The model's versions, and what changed between the latest "
-            "and the one before — counted from stored cells."
+            "The model's versions, and what the latest revision did to "
+            "the one before it — in review language: what broke, what "
+            "changed class, where the method moved, which assumptions "
+            "moved, which outputs moved materially, then the repairs."
         ),
         "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "sources",
+        "description": (
+            "Where a number came from outside the model: the document "
+            "and page a source read matched a typed input to. Use this "
+            "for « where is this from » — trace_back walks the model, "
+            "this leaves it. Takes a ref or a label; called with "
+            "neither, lists what is sourced at all."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"ref": {"type": "string"}},
+        },
     },
 ]
 
@@ -484,6 +919,8 @@ def run_tool(
         return structure(workspace)
     if name == "versions":
         return versions(workspace)
+    if name == "sources":
+        return sources(workspace, str(arguments.get("ref", "") or ""))
     return _refuse(f"No tool called {name}")
 
 
@@ -505,8 +942,16 @@ def build_workspace(
     axes: dict[str, Any],
     versions_list: list[dict[str, Any]],
     diff: dict[str, Any] | None,
+    sources_map: dict[str, dict[str, Any]] | None = None,
+    sources_read: int = 0,
+    delta: Any = None,
+    counts: dict[str, Any] | None = None,
 ) -> ModelWorkspace:
-    """The workspace, with the dependents index built once up front."""
+    """The workspace, with the dependents index built once up front.
+
+    `delta` is a *callable*, not a report: the Watch's reading costs two
+    file reads and belongs to one question out of six.
+    """
     return ModelWorkspace(
         dossier_id=dossier_id,
         name=name,
@@ -517,13 +962,20 @@ def build_workspace(
         dependents=dependents_index(book),
         versions=versions_list,
         diff=diff,
+        sources=sources_map or {},
+        sources_read=sources_read,
+        delta=delta,
+        counts=counts or {},
     )
 
 
 __all__ = [
     "DEFINITIONS",
+    "DELTA_WORDS",
     "MODEL_TOOLSET",
     "ModelWorkspace",
     "build_workspace",
     "run_tool",
+    "sources",
+    "versions",
 ]
