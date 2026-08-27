@@ -2417,3 +2417,192 @@ The round that separates them: re-run the pair with the model's own
 `CHOOSE` index forced, exactly as `watch_stealth` round D does, and
 see how much of the 198 lights up. Registered here; not run this
 turn, and no number from it is anticipated.
+
+## The gates at the top of this turn
+
+Tip `f33b6b1e`, nineteenth sweep — my lane merged at `04206fff`.
+
+- **Tier 1** — no `z3-solver` in `server/pyproject.toml` on the new
+  tip. Shut.
+- **C6** — E1 and E2 have landed (unit inference measured on 3,796
+  externally-authored rows, `kind` 96.4% with 0% wrong), and
+  **B5 round 2 is registered but not yet run**: it fixes a coverage
+  threshold (« informative only at coverage ≥ 50% of watched
+  cells ») and predicts, in writing, that it still will not be able
+  to call the rule sets modeller-recognisable. So the number my C6
+  registration must cite does not exist yet. Shut, and for the same
+  substantive reason as before, not a new one.
+
+Orders unchanged from the fourteenth sweep. This turn continues my
+own queue: the round the last one's 198 named.
+
+## The forced-selector round — separating the two reasons (REGISTERED BEFORE RESULTS)
+
+**What is being explained.** Of the 294 cells the ED2 revision
+actually disturbed, the pair oracle reached 96 and refused 198 as
+`no_perturbable_input`. Two candidate reasons were named last turn
+and neither was tested:
+
+1. their inputs are **categorical** literals, which the registered
+   rule excludes from perturbation on purpose;
+2. they sit on **unselected licensee branches** — round D's « dead
+   means unselected » — and the pair oracle, unlike the planted-edit
+   harness, forces no selector.
+
+**The instrument first, because the population is unknown.** Before
+spending recalculations on a hypothesis, the run now dumps every
+cell's verdict to a JSONL beside its report, so « where do the 198
+live » is answerable by reading rather than by guessing. Two runs
+are compared: the pair oracle as it stands, and the same run with
+the model's own `CHOOSE` index forced by `_selector_index`, exactly
+as `watch_stealth` round D does it — a declared intervention that
+overwrites the index cell, reported on every instance it touches.
+
+**Which index.** Not chosen by me: the run forces the index for the
+licensee sheet that holds the **most** frozen disturbed cells, and
+if the frozen cells are not on selectable sheets at all, the round
+says so and forces nothing. That rule is fixed here so the choice
+cannot be made after seeing which forcing helps.
+
+**Predictions, and I expect this round to fail its own hypothesis.**
+
+1. **The frozen 198 are not mostly on unselected licensee sheets.**
+   A cell in the `trace_differs` class is one whose input moved in
+   the real revision while its own value did not — that is the
+   signature of a **conditional that did not flip** (`IF(flag=1,…)`,
+   a clamp, a rounded band), not of an unselected branch. So I
+   expect forcing the selector to release **fewer than 40 of the
+   198**.
+2. **The real reason is the categorical rule**, which holds every
+   flag constant by design. If prediction 1 holds, the round that
+   follows is not more forcing — it is **stepping categorical
+   inputs through the values they actually take in the file**,
+   which is exactly what Dynamo's B5 does with its `SELECTOR` type
+   and what my tier-2 rule currently refuses wholesale.
+3. **The control still holds under forcing** — zero divergences on
+   the self-pair with the index forced. Round D's control did; this
+   pipeline is longer, so it is checked again rather than assumed.
+4. **No verdict moves for a cell that was already supported.**
+   Forcing changes which branch is live, so a supported cell may
+   become frozen or diverge — but a cell that agreed on five trials
+   unforced and diverges when forced would be a real finding about
+   the revision, and I predict **zero** of them.
+
+## The forced-selector round — results: both hypotheses wrong, and the reason is a rule of mine
+
+**Nothing was forced, and that is the result of the first half.** The
+registered rule was « force the index for the licensee sheet holding
+the most frozen disturbed cells, and if the frozen cells are not on
+selectable sheets at all, say so and force nothing ». They are not.
+The verdict dump (new this round: one line per cell beside every
+report) puts the 198 here:
+
+```
+frozen, disturbed (198)   Finance&Tax 93 · Annual Inflation 71
+                          AR 23 · Legacy 11
+supported, disturbed (96) Monthly Inflation 96
+```
+
+`_selector_index` — round D's reader, unchanged — finds **no
+`CHOOSE` naming any of those five sheets**. They are not licensee
+branches; they are the model's own finance, inflation and revenue
+sheets, live in every configuration. **Prediction 1 stands in a
+stronger form than I wrote it**: not « fewer than 40 of 198 released
+by forcing » but *forcing is not applicable*, and it took a graph
+question instead of the 28 minutes of recalculation the round had
+budgeted. Predictions 3 and 4 (the control under forcing; no
+supported verdict moving) are consequently **untested**, and stay
+untested rather than being quietly counted as passes.
+
+**Prediction 2 — the categorical rule is the real reason — is
+confirmed by measurement, not by inference.** Per-cell BFS over the
+engine's precedent graph, visited sets, no path-summing (the first
+attempt path-summed and produced a « median 9,681,341,370 » that was
+an artifact of the counter, thrown away rather than reported):
+
+```
+                     reach ≥1 held      reach no perturbed   perturbed literals
+                     categorical        literal at all       in cone (median)
+frozen    (198)      198  (100%)        0                    527
+supported  (96)        0  (  0%)        0                     10
+```
+
+A perfect separation, and the middle column kills the obvious
+alternative: **it is not that the perturbation cannot reach these
+cells.** Hundreds of perturbed inputs feed each of them — a median
+of 527 against the supported cells' 10 — and their values still
+never move. Something in the cone is pinning them, and it is
+categorical, in every single case.
+
+**What that something is, named concretely.**
+
+```
+Finance&Tax!AR144 = AR$129 * AR143            value 0
+Finance&Tax!AR143 = InputSummary!AR205        value 0
+   label: « RPI index-linked debt as a percentage of net debt »
+```
+
+`AR129` is a real number (−1,444.32) and moves freely. `AR143` is
+zero, so the product is zero, so every trial reads zero, so G5
+refuses to call it supported — correctly. And **`AR143` is zero
+because the literal behind it is held**, because of this rule of
+mine:
+
+> `CATEGORICAL_LIMIT = 12` — an integral literal of magnitude ≤ 12
+> is a flag, a month or a licensee index, and scaling it deadens the
+> path it selects.
+
+`_is_categorical(0.0)` is **true**: zero is integral and its
+magnitude is ≤ 12. So *every zero literal in the model is held as
+though it were a flag* — including « RPI index-linked debt is 0% of
+net debt for this licensee this year », which is not a flag at all
+but a quantity that happens to be zero. Holding it freezes the whole
+branch it multiplies.
+
+**Two consequences I have to state plainly.**
+
+1. **The rule was imported from a harness whose purpose was
+   different.** In the planted-edit harness the categorical rule
+   exists so a plant is not deadened *symmetrically in both files*,
+   destroying detection. In the pair oracle there is no plant, and
+   the question is whether two versions agree; the justification did
+   not transfer, and I carried the constant across without
+   re-deriving it. That is on me, and it is now written at the
+   constant.
+2. **There is dead code in my own assignment rule.** It reads « if
+   the literal is zero, draw from `uniform(-1, 1)` » — and that
+   branch can never execute, because every zero is filtered out as
+   categorical two lines earlier. It is left in place with a comment
+   saying so, rather than deleted or quietly fixed: what to do about
+   zeros is the next round's registered decision, not a tidy-up.
+
+## The zero round — registered before results
+
+**The change**: a literal that is **zero** is no longer held. It is
+perturbed, symmetrically in both files, like any other magnitude
+input. Non-zero integral literals of magnitude ≤ 12 stay held; that
+part of the rule keeps its original justification.
+
+**The new finding class, and why it must not be merged.** Waking a
+zero can activate a branch the model never activates as configured.
+If the two versions then disagree there, that is a **latent**
+difference — real, worth knowing, and *not* the same claim as « this
+revision computes differently ». It is reported as
+`tier2_divergence_latent`, distinct from `tier2_divergence`, and the
+ladder's `changed` verdict is reserved for the second. A latent
+divergence lands as a refusal-with-a-name in the pair's account and
+a line of its own in the report.
+
+**Predictions.**
+
+1. The 198 do not all wake: I expect **between 60 and 160** of them
+   to become testable, because a zero that is genuinely a switch
+   will now be on, but some cones are pinned by more than one zero.
+2. **At least one latent divergence appears**, and zero
+   as-configured divergences. The revision rewrote no formula, so
+   the as-configured answer should not change; the latent branches
+   are where two versions can differ without either file showing it.
+3. The self-pair control stays clean — **zero divergences of either
+   class** — because a file against itself cannot differ on any
+   branch, live or latent. If the control shows a latent divergence,
+   the instrument is wrong and the round fails.

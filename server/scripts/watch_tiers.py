@@ -2,8 +2,8 @@
 
     uv run python -m scripts.watch_tiers pair OLD.xlsx NEW.xlsx OUT.json
     uv run python -m scripts.watch_tiers cost FILE.xlsx
-    uv run python -m scripts.watch_tiers oracle OLD.xlsx NEW.xlsx OUT.json
-    uv run python -m scripts.watch_tiers control FILE.xlsx OUT.json
+    uv run python -m scripts.watch_tiers oracle OLD.xlsx NEW.xlsx OUT.json [SHEET]
+    uv run python -m scripts.watch_tiers control FILE.xlsx OUT.json [SHEET]
 
 `pair` assigns every cell of the new version exactly one verdict and
 checks the five registered gates (`docs/pierce/logs/prism.md`, « The
@@ -20,7 +20,15 @@ alignment, because the rows moved — both versions are recalculated
 five times, and a cell is supported only when it agreed on every
 trial *and* moved at least once. `control` runs one file against
 itself through that identical pipeline; a single divergence there
-means the instrument is noisy and no pair result may be read.
+means the instrument is noisy and no pair result may be read. A
+trailing SHEET argument forces the model's own `CHOOSE` index onto
+that sheet's branch for every trial — round D's intervention,
+declared in the report and never silent — because « dead » in a
+selector model usually means *unselected*.
+
+Both write a `.verdicts.jsonl` beside the report: one line per cell,
+so where the refusals live is a question of reading rather than of
+re-running.
 
 `cost` measures what the pair oracle will cost before anything
 depends on it: one openpyxl load-and-save of the file, and one
@@ -204,6 +212,14 @@ def _assignments(
         for ref in sorted(inputs):
             current = inputs[ref]
             if current == 0:
+                #: Unreachable as the rule stands, and left visible
+                #: rather than deleted: `_is_categorical(0.0)` is true
+                #: (integral, magnitude ≤ 12), so every zero literal is
+                #: filtered out above before it can be assigned. The
+                #: forced-selector round found that this is why 198
+                #: disturbed cells never moved — a zero *quantity* is
+                #: held as though it were a flag. Changing it is a
+                #: registered round, not a tidy-up.
                 assignment[ref] = rng.uniform(-1.0, 1.0)
             else:
                 assignment[ref] = current * rng.uniform(0.5, 1.5)
@@ -223,6 +239,7 @@ def _recalculate_trials(
     calc: object,
     scratch: Path,
     label: str,
+    forcing: tuple[str, int] | None = None,
 ) -> list[Mapping[str, object]]:
     """One file, five perturbed copies, five recalculations.
 
@@ -239,6 +256,9 @@ def _recalculate_trials(
     readings: list[Mapping[str, object]] = []
     for index, assignment in enumerate(trials):
         working = openpyxl.load_workbook(path)
+        if forcing is not None:
+            index_sheet, index_cell = _split(forcing[0])
+            working[index_sheet][index_cell] = forcing[1]
         for ref, value in assignment.items():
             sheet, coordinate = _split(key(ref))
             working[sheet][coordinate] = value
@@ -290,7 +310,21 @@ def _answer(
     return answers
 
 
-def _run_oracle(old_path: str, new_path: str, out_path: str, control: bool) -> int:
+def _forced_index(path: str, sheet: str) -> tuple[str, int] | None:
+    """The model's own `CHOOSE` index for a sheet, and the argument
+    position that selects it — round D's reader, reused unchanged."""
+    from scripts.watch_stealth import _selector_index
+
+    return _selector_index(read_workbook(path).cells, sheet)
+
+
+def _run_oracle(
+    old_path: str,
+    new_path: str,
+    out_path: str,
+    control: bool,
+    force_sheet: str = "",
+) -> int:
     from polar.tieout.recalc.uno_calc import UnoCalculator
 
     started = time.monotonic()
@@ -301,6 +335,17 @@ def _run_oracle(old_path: str, new_path: str, out_path: str, control: bool) -> i
     ineligible, cone_sizes = _ineligible(new_path)
     proof = proved_unchanged(old_book, new_book)
     trials, landing = _assignments(old_book, new_book, proof.pairing)
+    #: A declared intervention, never a silent one: the index cell is
+    #: overwritten with the argument position that selects
+    #: `force_sheet`, on both sides, in every trial.
+    forcing: tuple[str, int] | None = None
+    if force_sheet:
+        forcing = _forced_index(new_path, force_sheet)
+        if forcing is None:
+            raise SystemExit(
+                f"no CHOOSE selector names {force_sheet!r} — nothing to force"
+            )
+        print(f"[force] {force_sheet} = argument {forcing[1]} of {forcing[0]}")
     print(
         f"[setup] {time.monotonic() - started:.0f}s · "
         f"{len(trials[0])} literals perturbed · "
@@ -313,10 +358,16 @@ def _run_oracle(old_path: str, new_path: str, out_path: str, control: bool) -> i
     try:
         with tempfile.TemporaryDirectory() as scratch:
             readings["old"] = _recalculate_trials(
-                old_path, trials, lambda ref: landing[ref], calc, Path(scratch), "old"
+                old_path,
+                trials,
+                lambda ref: landing[ref],
+                calc,
+                Path(scratch),
+                "old",
+                forcing,
             )
             readings["new"] = _recalculate_trials(
-                new_path, trials, lambda ref: ref, calc, Path(scratch), "new"
+                new_path, trials, lambda ref: ref, calc, Path(scratch), "new", forcing
             )
     finally:
         calc.stop()
@@ -343,6 +394,8 @@ def _run_oracle(old_path: str, new_path: str, out_path: str, control: bool) -> i
     )
     payload = {
         "mode": "control" if control else "oracle",
+        "forced_sheet": force_sheet,
+        "forced_index": list(forcing) if forcing else None,
         "old": old_path,
         "new": new_path,
         "minutes": round((time.monotonic() - started) / 60, 1),
@@ -370,6 +423,25 @@ def _run_oracle(old_path: str, new_path: str, out_path: str, control: bool) -> i
         #: may be read at all.
         payload["control_clean"] = not diverged and not violations
     Path(out_path).write_text(json.dumps(payload, indent=1))
+    #: Every verdict, one per line, beside the report. « Where do the
+    #: refused cells live » is then a question answered by reading
+    #: rather than by re-running fourteen minutes of recalculation.
+    dump = Path(out_path).with_suffix(".verdicts.jsonl")
+    with dump.open("w") as handle:
+        for ref, item in sorted(ladder.verdicts.items()):
+            handle.write(
+                json.dumps(
+                    {
+                        "ref": ref,
+                        "verdict": item.verdict,
+                        "reason": item.reason,
+                        "blockage": item.tier0_blockage,
+                        "sheet": ref.rsplit("!", 1)[0],
+                    }
+                )
+                + "\n"
+            )
+    payload["verdicts_dumped_to"] = str(dump)
     print(
         json.dumps(
             {k: v for k, v in payload.items() if k != "diverged_examples"}, indent=1
@@ -380,12 +452,16 @@ def _run_oracle(old_path: str, new_path: str, out_path: str, control: bool) -> i
     return 0 if not violations else 1
 
 
-def run_oracle(old_path: str, new_path: str, out_path: str) -> int:
-    return _run_oracle(old_path, new_path, out_path, control=False)
+def run_oracle(
+    old_path: str, new_path: str, out_path: str, force_sheet: str = ""
+) -> int:
+    return _run_oracle(
+        old_path, new_path, out_path, control=False, force_sheet=force_sheet
+    )
 
 
-def run_control(path: str, out_path: str) -> int:
-    return _run_oracle(path, path, out_path, control=True)
+def run_control(path: str, out_path: str, force_sheet: str = "") -> int:
+    return _run_oracle(path, path, out_path, control=True, force_sheet=force_sheet)
 
 
 def main() -> int:
@@ -395,9 +471,9 @@ def main() -> int:
     if mode == "cost":
         return run_cost(sys.argv[2])
     if mode == "oracle":
-        return run_oracle(*sys.argv[2:5])
+        return run_oracle(*sys.argv[2:6])
     if mode == "control":
-        return run_control(*sys.argv[2:4])
+        return run_control(*sys.argv[2:5])
     raise SystemExit(f"unknown mode {mode!r}")
 
 
