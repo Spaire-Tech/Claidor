@@ -4065,3 +4065,22 @@ because 30/30 is also what v4 returns, and an identical number from two
 supposedly different configurations is not a confirmation — it is a
 question. **The check that saved it was asking why the result was
 unsurprising.**
+
+### What this turn leaves for the lead — one decision, and it is now cheap
+
+1. **Ship round V, or not.** It clears four stated criteria, repairs
+   87% of D1's largest known defect, and touches neither ED2's facts
+   nor the dash round's nils. The recipe is in the handoff. **This is
+   the whole ask**, and « unchanged versus undamaged » no longer needs
+   answering to make it: round V passes either way.
+2. **D5** has its evidence (round 4) and awaits a decision.
+3. **D3 round 4's contracts** — models reachable, agreements not.
+4. **D4** — approval pending since the fourteenth sweep.
+5. **Newbattle** may be contaminated for the proof's cold-run
+   condition; cheaper to drop than to argue.
+
+Orders unchanged for eight sweeps. Seven D1 rounds have now run: P, Q,
+R, S and T died by their own criteria, the classification measured what
+those deaths cost and bought, and V is the first to clear. **Six
+failures were the price of one rule that works, and every one of them
+is in this log with its number.**
