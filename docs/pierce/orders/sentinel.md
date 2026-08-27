@@ -46,3 +46,12 @@ number; our engine's row beside the seven tools'; the
 1,974-vs-3,702 label disagreement measured and written as its own
 result. No licence in that repo — benchmark internally, cite, never
 redistribute.
+
+## Addendum (27 Aug): the reachability candidate
+
+From `swens-aha.md`: after the Tasi round, register « dead
+assumption » — a dependency-graph reachability check (an assumption
+no output depends on), no recalculation, one-sentence finding.
+Normal loop: registration, planted defects, false-positive price on
+the corpus, gate. Coordinate the rule name with the lead before
+adoption (it will need Atelier's category map, as before).

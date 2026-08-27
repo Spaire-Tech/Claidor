@@ -25,3 +25,15 @@ criterion, planted law-breaking edits), **clean-room from the ICSME
 2019 paper — never read or copy the LGPL reference code**. Z3 comes
 through the lead's pyproject approval when you reach it (coordinate
 with Prism's tier-1 proposal so the dependency lands once).
+
+## Addendum (27 Aug): B5's design laws, from the AHA
+
+Read `docs/pierce/swens-aha.md` before registering B5. Its adopted
+design laws are binding: typed perturbation policy (the input-typing
+step is the engineering), gate-refused files never mined,
+non-converged runs dropped, PSLQ measured against naive enumeration
+as the candidate engine, catch-rate plants drawn from the PR24 real
+diffs as well as designed ones, and B5 round 1 is the « Monday
+experiment »: three gate-clean models, hand-typed inputs, 200 runs,
+print the rule set and read it before any score exists. The
+inert-reference check joins B5's detector list.
