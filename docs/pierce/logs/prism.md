@@ -1598,3 +1598,50 @@ alignment does: inserting rows moves every watched cell, so a
 reference-keyed comparison would report total disagreement for a
 model that behaves identically. When their numbers land, that is
 the shared ground C6's matching rule stands on.
+
+## Round D — results: the dead branch was a starting state, not a blind spot
+
+Selector found in the model's own text (`SelectedInputs!B3`, SWEST
+at index 7), and **only one position needed it**:
+`selector_forced_positions: ["AR312"]`. Everything else was
+already live and ran unforced — the intervention is applied where
+it is needed and declared where it is applied.
+
+| class | before (round C state) | **under round D** |
+|---|---|---|
+| tail_hardcode | 5/5, 5/5 | **5/5, 5/5** |
+| conditional_divergence | 0/5, 2/5 | 0/5, 2/5 (same draws) |
+| equivalent_rewrite (control) | 0/5, 0/5 | **0/5, 0/5** |
+| stealth_literal | 5/5, **1 refused as dead** | **5/5, 5/5 (forced)** |
+| eligible instances | 7 of 8 | **8 of 8, zero refusals** |
+| false positives | 0 | **0** |
+
+**`SWEST!AR312` — refused as dead for three rounds — catches every
+trial once its own branch is selected**, and catches loudly:
+155–234 diverging cells per trial against the 1–12 of the unforced
+instances, because selecting SWEST lights its whole downstream
+cone. The count varies by trial (155, 155, 234, 155, 230) since
+different draws activate different paths beneath it; that variation
+is the model's, not the harness's.
+
+**The control held under forcing**, which was this round's fail
+condition: if selecting a branch had made the equivalent rewrite
+speak, the forcing would have been changing behaviour rather than
+revealing it. It stayed silent at both positions.
+
+**What this closes.** The dead-branch finding from tier 2's first
+measured round is now fully resolved: it was never « differential
+evaluation cannot see this », it was « the file is currently about
+a different licensee ». One cell decides, the harness reads which,
+and a position still dead with its own branch selected would stay
+a refusal — none was. Tier 2's three named follow-ups (categorical
+inputs, conditional inputs, the selector sweep) are all measured
+and closed.
+
+**What it does not claim.** Forcing the selector measures the
+model's behaviour *in a state the file was not saved in*. That is
+the right question for « would this edit matter? » and the wrong
+one for « does this edit matter today », and the report says which
+it did by stamping `selector_forced` on exactly the instances it
+touched. Both readings are honest; only the unlabelled mixture
+would not be.

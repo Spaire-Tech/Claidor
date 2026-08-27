@@ -26,10 +26,10 @@ answering anything of record; register before results, always.
 | C2 DP alignment | `watch/align.py`, `watch/signature.py`, `scripts/watch_align.py`, `scripts/watch_plant.py` | **24/24 on InputSummary, 22/24 on SWEST** after the rewrite class got labelled targets; SWEST's remaining two are the harness's label *proxy* wrapping back to a titled row 1 — registered for the next round |
 | C3 delta report | `watch/delta.py`, `scripts/watch_delta.py` | Nine review classes (filled/emptied cells added at the sixteenth sweep); V1 parity with the study matcher **exact on both pairs**; V2 synthetic green; V3 (PR24) belongs to the lead — this container cannot reach the corpus |
 | C4 tier 0 (fingerprints) | `watch/trace.py`, `scripts/watch_stealth.py` | Soundness gate clean after round 2's observability fix; **93.2% of a real adjacent revision proved at hash cost in ~2 min** |
-| C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | First measured round on the real engine; control silent, `tail_hardcode` 5/5 at both positions |
+| C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | Two hosts, **8 of 8 eligible on both, zero refusals, control silent**; `tail_hardcode` and `stealth_literal` 5/5 everywhere; the selector sweep closed the dead-branch case |
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
 
-Tests: `test_watch_{diff,align,plant,delta,trace}.py`, 52 green.
+Tests: `test_watch_{diff,align,plant,delta,trace,stealth}.py`, 57 green.
 (Other lanes' tieout tests need the conftest and fail to collect here;
 name your five files explicitly.)
 
@@ -45,9 +45,11 @@ written round, never a tuning.
 1. **Tier 1 (Z3)** — registered in the log this sweep; blocked on
    the lead's `z3-solver` pyproject approval. No code may import z3
    before that.
-2. **Tier 2** — wider round done; the conditional-input fix is in
-   and verified (zeros are now earned). Still open: the selector
-   sweep (evaluate under each licensee) for dead branches.
+2. **Tier 2 — closed.** All three named follow-ups measured:
+   categorical inputs, conditional inputs, and the selector sweep
+   (a dead branch is an *unselected* one; the harness reads the
+   model's `CHOOSE`, forces the index, and stamps
+   `selector_forced` on every instance it touches).
 3. **C6 (rule-set diff)** — founder-approved, yours; register it
    when Dynamo's B5 round 1 lands a modeller-recognisable rule set.
 4. **C3 deferrals — done** (filled/emptied cells; labelled rewrite
@@ -61,10 +63,13 @@ written round, never a tuning.
 
 - **ED2 v5 is a selector model.** Licensee sheets reach the live
   calculation only through `SelectedInputs!X = CHOOSE($B$3, …)`,
-  and v5 is saved with SSES selected — so **SWEST is a dead
-  branch**: an edit there genuinely changes no current output.
-  Differential evaluation under the saved selector state cannot see
-  dead-branch edits.
+  `B3 = m_identity = 14`, and SWEST is argument **7** — so SWEST is
+  not unreachable, it is *unselected*. Round D forces the index and
+  the branch lights up (155–234 diverging cells against 1–12
+  unforced). Dead means unselected; check before concluding.
+- **SWEST carries no formula cells at all at or after row 203** —
+  that sheet's tail is typed data, not calculation. A harness that
+  assumes « there is always a formula here » manufactures results.
 - **`Cover!G4` = `MID(CELL("filename"),…)`** — the model prints its
   own filename, and it lives *outside* the engine's labelled cell
   universe, so a cone rooted in `book.cells` will never see it.
