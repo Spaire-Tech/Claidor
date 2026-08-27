@@ -22,11 +22,14 @@ from .align import (
 )
 from .delta import DeltaItem, DeltaReport, delta_of, delta_report
 from .diff import CellDelta, VersionDiff, diff_paths, diff_raw, read_raw
+from .document import DeckDelta, DeckItem, compare_tieouts, deck_delta
 from .signature import LITERAL, Line, SheetGrid, sheet_grids
 
 __all__ = [
     "LITERAL",
     "CellDelta",
+    "DeckDelta",
+    "DeckItem",
     "DeltaItem",
     "DeltaReport",
     "Line",
@@ -37,6 +40,8 @@ __all__ = [
     "VersionDiff",
     "align_lines",
     "align_sheet",
+    "compare_tieouts",
+    "deck_delta",
     "delta_of",
     "delta_report",
     "diff_paths",
