@@ -2338,7 +2338,11 @@ finding and must be reported as one.
 **1. A round key that named two facts.** The Finch harness keyed facts
 by `document|page|x|text`. In a table the row below prints at the same
 x, so **562 facts of this corpus shared a key with a fact on a
-different line** — and **four of the twenty recorded part-A truths were
+different line** — *[wrong, and corrected by the audit below: 562 was
+a count of colliding **keys** over the round's seven tasks, not facts,
+and not the whole corpus. The facts sharing an address number 4,456.
+The sentence understated the defect eightfold; the four ambiguous
+truths below are unaffected and reproduce.]* — and **four of the twenty recorded part-A truths were
 addresses naming two facts at once** (task 52's Case 2 and Case 3 rows
 both print « Miles Pipe 570 $ - $ - » at identical x). Scoring compares
 keys, so a false proposal landing on the wrong line could have been
