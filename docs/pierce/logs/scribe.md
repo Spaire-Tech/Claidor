@@ -3911,3 +3911,176 @@ only damage I had claimed for round T *and* it means last turn's
 
 Orders unchanged for seven sweeps. Nothing outside D1, D3 and D5 has
 been touched, and `extract.py` is byte-identical to the tip's.
+
+## 28 August 2026, eighteenth « go » — the damage is one constant, not one branch
+
+Orders read from the tip (`eea41373`, twenty-first sweep).
+**Byte-identical for the eighth sweep.** My lane merged; the sweep
+records the classification and the in-place correction discipline, and
+answers none of the six items — which is fair, the lead spent the sweep
+on Sentinel's held fix and Dynamo's unit-per-row defect.
+
+**Last turn's conclusion pointed at the wrong fix, and measuring first
+caught it.** I wrote that « round T minus the downward branch is the
+obvious next candidate ». Before registering that, I measured every
+merge round T performs across the three ED2 documents:
+
+| direction | n | min | p50 | p90 | max |
+|---|---|---|---|---|---|
+| **up** (subscript into the line above) | 272 | 1.6 | 2.9 | 3.7 | **6.2** |
+| **down** (superscript into the line below) | 22 | 1.8 | 2.3 | 2.4 | **5.1** |
+
+The downward histogram is the whole finding:
+
+`[(1.8, 1), (2.0, 9), (2.1, 1), (2.3, 3), (2.4, 7), (5.1, 1)]`
+
+**Twenty-one downward merges sit between 1.8 and 2.4 points. The
+twenty-second sits at 5.1, and it is the damage** — `2+𝑅𝑅ℎ𝐷𝐷𝑅𝑅`
+reaching down into `8. Legacy adjustments`. There is nothing between
+2.4 and 5.1.
+
+**So dropping the downward branch would have been wrong twice over:** it
+would have thrown away 21 correct merges to remove 1 bad one, and it
+would have left the actual cause — a reach constant of 6.5 applied to
+both directions — in place. **The upward branch genuinely needs 6.5**
+(its tail runs 5.3, 5.4, 5.7, 5.8, 6.2); the downward branch never
+needs more than 2.4.
+
+**Why the asymmetry is real and not a curve fitted to one failure.** A
+subscript sits below its base and merges *upward* — and its base may be
+a tall display formula, so the gap can be large. A superscript sits
+above its base and merges *downward* — and superscripts are footnote
+markers and exponents, which sit close to ordinary text. The two are
+different physical things with different natural ranges, and round T
+gave them one constant because I measured them as one population.
+
+## D1 round V — registration: reach is directional
+
+Frozen before the code. **One number splits into two, and nothing else
+moves.**
+
+`_SCRIPT_REACH = 6.5` becomes **6.5 upward** and **3.0 downward**.
+
+**How 3.0 was chosen, and the part I do not get to hide.** From the
+legitimate downward population's measured maximum of 2.4, with margin —
+the same calibration shape as every constant in this family. **But I
+have already seen the failure at 5.1, so this is not a blind choice**,
+and I am not going to present it as one. What makes it defensible is
+that the test is not the constant: **the 143-entry classification is
+the instrument, it was built and run before this round existed, and I
+did not design it around this number.**
+
+**The kill-criteria, frozen:**
+- **The damage must go.** `8. Legacy adjustments` must read as itself.
+- **No repair may be lost.** All 20 classified repairs must survive.
+- **No new damage.** The classification is re-run in full and every
+  changed entry re-read; any new damage kills it.
+- **ED2's registered sample** must still return 30 of 30.
+
+**The prediction, stated so it can be wrong.** All 21 legitimate
+downward merges sit at ≤2.4 and survive; the 20 repairs are almost all
+*upward* merges and are untouched; the damage disappears; and the
+« neither » column shrinks by the display-formula lines that the p61
+merge disturbed. **Net: 20 repairs, 0 damage.** If any repair is lost,
+the asymmetry story is wrong and the round dies.
+
+**This still does not ship.** `extract.py` stays at version `"4"`
+whatever this measures; the rule reaches the extractor on the lead's
+word, not on mine. What a clear result buys is that the word becomes
+cheap to give.
+
+## D1 round V — measured. **It clears every criterion. The first rule in this family to do so.**
+
+### The registered criteria, one at a time
+
+| criterion | result |
+|---|---|
+| the damage must go | **gone** — `8. Legacy adjustments` reads as itself; it no longer appears among the differing lines at all |
+| no repair may be lost | **all 20 present**, checked one by one against the classification |
+| no new damage | **one new entry**, and it is display mathematics — `2+𝑅𝑅ℎ𝐷𝐷𝑅𝑅` becomes its own line, the same « neither » class as every other formula fragment |
+| ED2's registered sample | **30 of 30** correct abstentions |
+
+**The classification under round V is 20 repairs, 0 damage.**
+
+Diffed against round T rather than re-read blind, so the comparison is
+exhaustive rather than sampled — **three entries change in the whole
+corpus**, and they are the two that constituted the damage plus the one
+formula line:
+
+```
+only in round T:  p61 NOW: 8. Legacy adju2s+tm𝑅𝑅ℎ𝐷𝐷e𝑅𝑅nts
+                  p61 WAS: 8. Legacy adjustments
+only in round V:  p61 NOW: 2+𝑅𝑅ℎ𝐷𝐷𝑅𝑅
+```
+
+**The prediction held exactly.** I said the 21 legitimate downward
+merges would survive, the 20 repairs were mostly upward and would be
+untouched, and the damage would disappear. All three.
+
+### What it does to the corpus, measured with the rule temporarily in place
+
+| | shipping (v4) | **round V** |
+|---|---|---|
+| Finch facts | 6,842 | **4,189** |
+| facts in character-spaced lines (Finch) | 3,835 | **500** |
+| colliding keys, round's 7 tasks | 562 | **319** |
+| facts sharing an address | 4,456 | **1,895** |
+| **ED2 facts** | 8,015 | **8,015** ✓ |
+| **nils, both corpora** | 750 | **750** ✓ |
+
+**87% of the shredded lines are repaired**, and the two populations the
+earlier rounds destroyed — ED2's facts and the dash round's nils — are
+untouched to the unit. The collision surface halves as a side effect,
+which two turns ago I predicted would happen if the reading were fixed.
+
+**The 500 that remain** are the genuine glyph-by-glyph population,
+including task 72's four rows on a single baseline. That is a real
+residue and it is not what this round was for.
+
+### It is still not shipped, and that is deliberate
+
+`extract.py` is byte-identical to the tip's — I applied the rule to run
+the registered ED2 check, then reverted and verified. The extractor
+stays at version `"4"`.
+
+**What the lead has to decide is now small and concrete:** a rule that
+clears four stated criteria, repairs 87% of a defect that costs 2,600
+invented facts on one corpus, changes nothing on ED2 or the nils, and
+whose entire remaining footprint on the ED2 documents is 20 repairs and
+zero damage across 142 line entries. **Round U's criterion question no
+longer blocks anything** — round V passes the strict bar and the loose
+one alike.
+
+If the answer is yes, shipping it is: the constants above,
+`_words` from round T with a directional reach, `EXTRACTOR_VERSION` to
+`"5"`, and the four harnesses re-run. If the answer is no, the finding
+stands and the extractor does not move.
+
+### One process note, against myself
+
+Half an hour of this turn went to a measurement I reported and then had
+to withdraw: a `cd` failed, the chained edit never applied, and I ran
+« round V's ED2 check » against the unmodified extractor. I caught it
+because 30/30 is also what v4 returns, and an identical number from two
+supposedly different configurations is not a confirmation — it is a
+question. **The check that saved it was asking why the result was
+unsurprising.**
+
+### What this turn leaves for the lead — one decision, and it is now cheap
+
+1. **Ship round V, or not.** It clears four stated criteria, repairs
+   87% of D1's largest known defect, and touches neither ED2's facts
+   nor the dash round's nils. The recipe is in the handoff. **This is
+   the whole ask**, and « unchanged versus undamaged » no longer needs
+   answering to make it: round V passes either way.
+2. **D5** has its evidence (round 4) and awaits a decision.
+3. **D3 round 4's contracts** — models reachable, agreements not.
+4. **D4** — approval pending since the fourteenth sweep.
+5. **Newbattle** may be contaminated for the proof's cold-run
+   condition; cheaper to drop than to argue.
+
+Orders unchanged for eight sweeps. Seven D1 rounds have now run: P, Q,
+R, S and T died by their own criteria, the classification measured what
+those deaths cost and bought, and V is the first to clear. **Six
+failures were the price of one rule that works, and every one of them
+is in this log with its number.**

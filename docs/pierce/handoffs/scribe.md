@@ -155,12 +155,22 @@ heading. **Both candidate criteria reject round T** — « unchanged » at
 32, « undamaged » at 1 — so the criterion question is not what blocks
 D1, and asking it before measuring that was my mistake.
 
-**The precise handover**: round T's *downward* (superscript) branch
-caused the only damage; the *upward* (subscript) branch caused none in
-143 entries, and nearly all 20 repairs are subscripts (`ARt`, `RPEIt`,
-`iBTAt`, `AR*2026/27`). **Round T minus the downward branch is the
-obvious next candidate** — registered nowhere yet, and it still needs
-the lead's word before it runs.
+**Round V clears all four criteria and is waiting on one word.** The
+damage was never the downward branch — it was one reach constant used
+for both directions. Measured: 21 of 22 downward merges sit between 1.8
+and 2.4 points, the 22nd sits at 5.1 and is the damage, and the upward
+branch genuinely needs the full 6.5 (its tail runs to 6.2). So reach
+becomes directional — **6.5 up, 3.0 down** — and nothing else moves.
+
+Result: **20 repairs, 0 damage**, ED2 still 30 of 30, Finch's facts
+6,842 → 4,189 (87% of the shredded lines repaired), **ED2's 8,015 facts
+and the dash round's 750 nils untouched to the unit**.
+
+**To ship it**: `_words` from round T with `_SCRIPT_UP = 6.5` /
+`_SCRIPT_DOWN = 3.0`, `_LINE_TOLERANCE = 1.5`, `EXTRACTOR_VERSION` to
+`"5"`, then re-run the four harnesses. **Do not ship it without the
+lead's word** — that is this lane's standing commitment, not a
+technical blocker.
 
 Two harnesses are committed and ready:
 `corpus_documents_spaced_round.py` (seeded 20-line hand-check) and
