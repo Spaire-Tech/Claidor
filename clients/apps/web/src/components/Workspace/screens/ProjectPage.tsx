@@ -3518,6 +3518,11 @@ export const ProjectPage = ({
           recalc={(model?.counts['recalc'] as RecalcMark | undefined) ?? null}
           coverage={page?.coverage ?? null}
           modelCounts={model?.counts ?? null}
+          stale={
+            page?.stale
+              ? { kind: page.stale_kind ?? null, at: page.stale_at ?? null }
+              : null
+          }
           onClose={() => setRepOpen(false)}
         />
       )}
@@ -3543,6 +3548,7 @@ const Report = ({
   recalc,
   coverage,
   modelCounts,
+  stale,
   onClose,
 }: {
   modelName: string
@@ -3559,6 +3565,9 @@ const Report = ({
   coverage: Coverage | null
   /** The model's own ingest counts — cells, formulas, named cells. */
   modelCounts: Record<string, unknown> | null
+  /** A current document arrived after the last run finished, so this
+   *  report describes a deal that has already moved on. */
+  stale: { kind: string | null; at: string | null } | null
   onClose: () => void
 }) => {
   const total = open.length
@@ -3573,14 +3582,6 @@ const Report = ({
       : total > 0
         ? `${word(total)} finding${total === 1 ? '' : 's'} open, none material.`
         : 'Nothing failing.'
-  //: What a finding says in one clause. The engine's own sentence runs
-  //: to the formula that proves it — right on the findings page, wrong
-  //: in a verdict a partner reads first.
-  const clauseOf = (one: Finding): string => {
-    const said = one.headline || one.plain || one.title || ''
-    const cut = (said.split(/[:—]\s|\.\s/)[0] ?? said).trim()
-    return cut ? cut.charAt(0).toUpperCase() + cut.slice(1) : ''
-  }
 
   //: Some engine sentences stop inside the formula that proves them —
   //: stored that way, and not this lane's to rewrite. An ellipsis says
@@ -3596,12 +3597,49 @@ const Report = ({
     return dangling ? `${said}…` : said
   }
 
-  const materialClauses = [...new Set(material.map(clauseOf).filter(Boolean))]
+  //: What class a finding belongs to, for the verdict's summary, in
+  //: both numbers — « figures … that disagree » is not the singular
+  //: with an « s » on the end, and a partner reads the difference.
+  const classOf = (one: Finding): { one: string; many: string } => {
+    if (one.headline) {
+      const said = one.headline.toLowerCase()
+      return { one: said, many: said.endsWith('s') ? said : `${said}s` }
+    }
+    if (one.kind === 'drift')
+      return {
+        one: 'figure in the deliverables that disagrees with the model',
+        many: 'figures in the deliverables that disagree with the model',
+      }
+    const family = (categoryOfKey(one.rule ?? '') || 'finding').toLowerCase()
+    return { one: family, many: family.endsWith('s') ? family : `${family}s` }
+  }
+
+  //: Grouped, not enumerated: fifteen material findings listed one by
+  //: one made the verdict a wall of numbers before the reader reached
+  //: a verb. Counted by class, largest first.
+  const byClass = new Map<string, { n: number; one: string; many: string }>()
+  for (const finding of material) {
+    const cls = classOf(finding)
+    const held = byClass.get(cls.one)
+    byClass.set(cls.one, { ...cls, n: (held?.n ?? 0) + 1 })
+  }
+  const materialClauses = [...byClass.values()]
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 3)
+    .map(
+      ({ n, one, many }) => `${word(n).toLowerCase()} ${n === 1 ? one : many}`,
+    )
   const verdictBody =
     material.length > 0
       ? `${
-          materialClauses.length > 0 ? `${materialClauses.join(' · ')}. ` : ''
-        }${material.length === 1 ? 'It is' : 'They are'} named with ${material.length === 1 ? 'its' : 'their'} cell overleaf, and ${material.length === 1 ? 'it' : 'they'} should clear before this model leaves the deal team.`
+          materialClauses.length > 0
+            ? `${materialClauses.slice(0, -1).join(', ')}${
+                materialClauses.length > 1 ? ', and ' : ''
+              }${materialClauses[materialClauses.length - 1]}${
+                byClass.size > materialClauses.length ? ', among others' : ''
+              }. `
+            : ''
+        }${material.length === 1 ? 'It is' : 'Each is'} named with its cell or page overleaf, and ${material.length === 1 ? 'it' : 'they'} should clear before this model leaves the deal team.`
       : total > 0
         ? 'The open findings are worth reading, but none of them on its own would stop the model going out.'
         : ''
@@ -3773,7 +3811,13 @@ const Report = ({
       </span>
       <span style={{ flex: 1, height: 1, background: 'rgba(16,22,35,.08)' }} />
       <span style={{ fontFamily: font.mono, fontSize: 10.5, color: '#b6bac1' }}>
-        Page {page} of {of}
+        {/* Section, not page. A sheet is one section of the report and
+            fits one printed page only while it is short: fifteen
+            material findings run to three pages, and « Page 3 of 4 »
+            then sat on physical page five, with pages four and five
+            carrying no number at all. The section number is true at
+            any length; the printer numbers the paper. */}
+        Section {page} of {of}
       </span>
     </div>
   )
@@ -4080,6 +4124,50 @@ const Report = ({
                   margin: '28px 0 30px',
                 }}
               />
+              {/* A report that describes a superseded version, without
+                  saying so, is the one way this document can be quietly
+                  wrong — the deal page has a stale banner and the
+                  printed artifact had nothing. It sits above the
+                  verdict because a reader has to meet it before
+                  believing anything below. Agent-designed (G4). */}
+              {stale && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                    padding: '14px 16px',
+                    marginBottom: 4,
+                    background: '#fdf6e7',
+                    border: '1px solid rgba(232,163,0,.28)',
+                    borderRadius: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      flex: '0 0 auto',
+                      width: 7,
+                      height: 7,
+                      marginTop: 7,
+                      borderRadius: '50%',
+                      background: '#e8a300',
+                    }}
+                  />
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 14,
+                      lineHeight: 1.55,
+                      color: '#5a4a1f',
+                      textWrap: 'pretty',
+                    }}
+                  >
+                    {`This check ran before the current ${stale.kind ?? 'document'} was uploaded${
+                      stale.at ? ` ${when(stale.at).toLowerCase()}` : ''
+                    }. What follows describes the deal as it stood at the check, and a re-check may change it.`}
+                  </span>
+                </div>
+              )}
               {heading('The verdict')}
               {serif(verdictLead, 19)}
               {verdictBody && (
@@ -4340,7 +4428,7 @@ const Report = ({
               {heading('The material findings')}
               {serif(
                 material.length > 0
-                  ? `${word(material.length)} finding${material.length === 1 ? '' : 's'} that change a number someone will act on. The cell reference is given so the model owner can go straight to it.`
+                  ? `${word(material.length)} finding${material.length === 1 ? '' : 's'} that change a number someone will act on. Each is cited — the cell, or the document and page — so the owner can go straight to it.`
                   : 'No open finding is material.',
               )}
               <div

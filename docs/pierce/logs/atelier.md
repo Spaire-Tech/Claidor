@@ -812,3 +812,55 @@ A note for whoever reads this next: the report *on screen* satisfied
 the order before any of this. The delivered file did not, and no
 screen test would have caught it — it took printing the thing and
 reading the bytes back.
+
+## 27 August 2026 — the report on a deal that has a deck
+
+Orders unchanged, and they say plainly this is not a hold. A gap in
+my own verification was the honest next thing: **every reading of
+the report so far was of a model-only deal**. Coverage with real
+numbers, and the « document and page » citation I built for deck
+findings, had never once rendered. Read it on the cascade demo deal
+(113 of 128 figures reconciled, 14 drift findings, a deck) and it
+found four defects — two of them mine, one serious.
+
+1. **The report never said the check was stale.** The deal page has
+   a stale banner; the printed artifact had nothing. On this deal the
+   check finished at 02:59 and the current model version arrived at
+   22:55 — so a partner would have read fifteen material findings
+   about a version that no longer exists, with no warning anywhere in
+   the document. That is the one way this report can be quietly
+   wrong, and it is now the first thing on the page, above the
+   verdict, in the amber of an assumption at risk: « This check ran
+   before the current model was uploaded yesterday 22:55. What
+   follows describes the deal as it stood at the check… »
+2. **The verdict enumerated instead of summarising.** Fifteen
+   material findings became a wall of thirteen clauses — « $49.6mm
+   where the model says $48.9mm · 10.4% where the model says 9.3% ·
+   … » — before the reader reached a verb. It now groups by class:
+   « 14 figures in the deliverables that disagree with the model, and
+   one unexpected hardcode. » Drift findings carry no headline of
+   their own, so their class is what they are; classes keep both
+   number forms, because « figures … that disagree » is not the
+   singular with an « s » stuck on the end (it first read « 14 figure
+   … disagrees with the models », which is how I found it).
+3. **« Page N of 4 » was still lying, at a deeper level than last
+   time.** Splitting the first sheet fixed a small deal; on this one
+   the material findings run to three printed pages, so the footers
+   landed 1, 2, 3, 4 on physical pages 1, 2, 5, 6 — and pages 3 and 4
+   carried no number at all. A sheet is a *section*, and only a short
+   section is also a page. The footer now says « Section N of 4 »,
+   which is true at any length, and the printer numbers the paper.
+4. Two claims that no longer matched what is printed: « Every finding
+   carries the cell it came from » and « The cell reference is given
+   » — both now say « the cell, or the document and page ».
+
+**What the deck path proves.** A drift finding now prints as
+« $49.6mm where the model says $48.9mm », cited
+`cascade_deck_broken.pptx · p. 2` and `against FY2025A adjusted
+EBITDA · Model!D26` — the slide to open and the cell to check, both
+on the page. That is « every claim cited to a cell or page » working
+on real data rather than in principle.
+
+Delivered page one: `logs/atelier/report-with-deck.png`. Route suite
+**82 passed**; tsc, eslint (a dead helper of mine removed on lint's
+word) and prettier clean; zero page errors.

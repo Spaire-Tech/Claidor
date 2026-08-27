@@ -94,6 +94,14 @@ four sheets so the footers stop lying. Verify a report change by
 **printing it and reading the PDF back** (pdfplumber: embedded
 fonts, page count, per-page text) — no screen test catches this.
 
+**Read the report on a deal that has a deck**, not just a
+model-only one: coverage with real numbers and the « document ·
+p. N » citation only render there. Doing so found that the report
+never declared a **stale** check (the deal page had a banner, the
+PDF nothing), that the verdict enumerated fifteen findings instead
+of grouping them, and that « Page N of 4 » lies whenever a section
+runs past one page — footers now say « Section N of 4 ».
+
 **G2 — the five questions: measurable only in part.** Chat cannot
 run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503. What was
 measured is the tool surface: 1, 2 and 4 have their material
