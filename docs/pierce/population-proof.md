@@ -187,8 +187,81 @@ A pass is not « the engine is good »; it is « the engine transfers
 from the population it was tuned on to a population it has never
 seen ». That is the only question this proof asks.
 
+## SUSPENDED, 27 August, before a single model was audited
+
+**The corpus is value-only. The proof cannot run on it as written.**
+
+Measured two ways before any claim: a formula count over every
+worksheet part of all sixteen models, then the real reader
+(openpyxl) on two of them as a check.
+
+| model | cells | formulas | share |
+|---|---|---|---|
+| `inverness_college_model.xlsm` | 380,506 | **20,027** | 5.26% |
+| `kelso_model.xlsm` | 1,074,011 | 875 | 0.08% |
+| `newbattle_model.xlsm` | 1,074,692 | 616 | 0.06% |
+| `levenmouth_model.xlsm` | 1,230,971 | 224 | 0.02% |
+| `baldragon_model.xlsm` | 914,364 | 220 | 0.02% |
+| `hwcbsb_model.xlsm` | 931,292 | 169 | 0.02% |
+| `bertha_park_model.xlsm` | 927,013 | 113 | 0.01% |
+| `inverurie_foresterhill_model.xlsm` | 171,203 | 3 | 0.00% |
+| `forfar`, `glasgow_college`, `oban_campbeltown`, `snbts`, `anderson`, `dumfries`, `elgin`, `rhsc_dcn` | 199k–1.9M each | **0** | 0.00% |
+
+The reader confirms it: Forfar returns **zero** formulas across
+383,497 populated values. These files are published as values —
+the formulas are stripped before release. Of eleven eligible
+models, **one** (Inverness College) carries a live calculation
+layer; the rest are printouts of a model, not models.
+
+**Why the engine cannot be proved on them.** Swens's structural
+checks — typed-over formulas, sums that skip rows, hardcodes in
+formula tails, frozen references, family disagreements — are
+statements *about formulas*. Run cold on a value-only file they
+have nothing to read and will report almost nothing, and that
+silence would measure the corpus, not the engine. Publishing « the
+engine found little on eleven real infrastructure models » would be
+one of the most misleading true sentences we could write.
+
+**The lead's error, named.** The founder's own research reported
+this in advance — « the spreadsheets are published with the
+formulas stripped out » — and the lead recorded it in
+`corpus-sources.md` as a limitation *for Track D*, then wrote this
+registration without carrying it across. Scribe found it
+independently from the other side (D5 round 3, « value-only, 0.03%
+formulas ») at almost the same hour. The registration discipline
+worked exactly as intended — the corpus was checked before it was
+scored, not after — but the check should have happened when the
+limitation was first written down, and that is on the lead.
+
+**What is *not* damaged.** This is a corpus property, not a product
+one: customers send their own working models, which carry formulas.
+Nothing measured on the regulator corpora, the fidelity gate, the
+behavioural laws or the Watch depends on these files. The
+value-only corpus remains useful for the analytical checks (balance,
+cash carries, debt terminal balances) — which is what the earlier
+Scottish rounds used it for — and it is exactly the right corpus for
+those.
+
+**What happens now.** The population question is open again and is
+the founder's to answer, with three routes and the lead's reading:
+
+1. **Find a formula-bearing population.** The proof needs models
+   with a live calculation layer. MCC's ~114 published economic
+   models are the named candidate (real, third-party, outside our
+   regulator corpus) — but `assets.mcc.gov` fails certificate
+   verification from these containers, so reachability is unproven
+   and the founder's browser may be the route again.
+2. **Redefine this proof for what the corpus can carry** — an
+   analytical-checks proof on eleven real closed deals, published
+   as exactly that, and the structural proof deferred to a
+   formula-bearing population. Honest, smaller, and available now.
+3. **Inverness College alone**, as a single deep hand-verified
+   subject rather than a population — evidence, not a proof.
+
+The lead's recommendation: **(2) now and (1) in parallel** — the
+analytical proof is real and publishable on its own terms, and it
+does not pretend to be the structural one.
+
 ## Results
 
-*(Nothing here until the ten eligible models exist and the run is
-complete. The engine commit, the per-model table, the drawn samples
-and the verdicts land here in one push.)*
+*(Nothing here until a corpus that can carry the claim exists.)*
