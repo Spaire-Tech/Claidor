@@ -167,3 +167,53 @@ consequence is unchanged too — one rule, 19 → 20.
 27-file sweep reports identically to the committed baseline, finding
 for finding. Per the lead's twelfth-sweep note, this is the formal
 certification for the round.
+
+**Planting (27 Aug):** 13 of 15 drawn sites planted across the three
+registered hosts — two refused by the harness's shared-master guard.
+The `over-label` class found **zero eligible sites on any host**,
+which is the withdrawal confirming itself from the other side: the
+same reader limitation that makes a label invisible to the detector
+makes it invisible to the planter. One limitation, two symptoms, not
+two problems.
+
+**Planted recall: 13 of 13 — every one by `range-over-block`.** No
+other rule caught any of them, so the marginal denominator and the
+plain one are the same number here: **100%**. The plants are the
+defect itself, not a simulation — `=SUM(AW265:AW266)` widened to
+`=SUM(AW50:AW266)`, swallowing `AW52` which already sums rows 50:51.
+
+**The decisive sweep: gate clean.** All 27 files report identically
+to the committed baseline, finding for finding. The false-positive
+price is **zero**: the check raises nothing at all on the unplanted
+corpus.
+
+## Verdict (27 Aug): ADOPTED — and the prediction held exactly
+
+Against the registered criteria: (1) the gate diff is empty, so no
+existing finding moved and there are no additions to judge;
+(2) nothing to hand-read, no file gained anything, no flood;
+(3) marginal recall 13 of 13; (4) the tieout tests are green (441
+passing, 6 of them this check's). **Adopted.**
+
+The prediction said class 1 would catch its plants and be *rare or
+absent* on these disciplined regulator templates. It is absent —
+and that is the right result, not a disappointing one. A published
+regulator model that double-counted a subtotal would be a live
+defect in a document with legal force; finding none is what the
+corpus should say, and the check's value is the 13 it caught when
+the defect was really there.
+
+**On the baseline:** untouched — no corpus report changed, so there
+is nothing to regenerate. The same-commit rule binds the day one
+does.
+
+**Catalogue: 19 → 20** (14 audit rules + 6 analytic), as the
+registration named in advance. Atelier's count-sensitive test needs
+the new number, and the log says so the same day.
+
+**Carried forward, named:** class 2 stays withdrawn behind the
+reader change; `over-label` is unplantable and undetectable until
+`Workbook.cells` carries text, which is a lead-approved interface
+bump and its own round. And membership is a single bare aggregation
+over one own-column range — a total written as `=SUM(a:b)+SUM(c:d)`
+or with a tail is out of scope this round, deliberately.

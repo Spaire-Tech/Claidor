@@ -28,23 +28,30 @@ it falls.
 | A3 c2 family edge (`a3-family-edge.md`) | Adopted. Rule `typed-over-edge`. Round 1 refused on typed index-base 1s; round 2's identity + horizontal-seed guards fixed it. |
 | A3 c3 beat families (`a3-beat-families.md`) | **Unmeasurable** — zero plantable lattices in all 27 files. Implemented, tested, deliberately **unwired**, catalogue untouched. Revisit if the MCC ERR or Tasi corpora bring strided layouts. |
 | A3 c4 column typed (`a3-column-typed.md`) | **Adopted** (3 rounds). The island pass's left-formula guard is waived for interior islands that hold a substantive value. +12 corpus findings, baseline regenerated with it. No new rule — catalogue stays 19. |
+| A3 c5 range vs block (`a3-range-block.md`) | **Adopted.** New rule `range-over-block`: a range swallowing a subtotal of its own rows. 13/13 planted caught, gate clean (zero corpus findings), baseline untouched. Catalogue **19 → 20**. Class 2 (range spanning a label) **withdrawn** — the reader does not elect text cells. |
+| Serious-error mining (`serious-mining.md`) | **BLOCKED**, no candidate. Universe confirmed (1,206) but the classifier bucketed 100% into one bucket — the engine's legacy `.xls` reader misses formulas (19/144, 10/40, 0/349 by subject). Routed to the lead: `legacy.py` is outside my paths. |
+| A4 coverage (`a4-coverage.md`) | **Adopted.** `Audit.tallies` + `Audit.abstentions`, same shapes as analytics'. Gate clean, baseline untouched, catalogue unchanged. **Product side routed to the lead** — Atelier owns the report JSON. |
 | Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
 
-Both adoptions moved the rule catalogue 17 → 19 and broke an
-Atelier test (routed). **Lesson the lead asked for: name any
-catalogue-count change in the log the same day.**
+Three adoptions have moved the rule catalogue 17 → 20
+(`inconsistent-total`, `typed-over-edge`, `range-over-block`); the
+first two broke an Atelier count test, which was routed. **Lesson
+the lead asked for: name any catalogue-count change in the log the
+same day.**
 
 ## In flight
 
-**Nothing.** Candidate 4 and the Tasi re-score are both finished
-and pushed. The next turn starts a new round from a clean slate.
+**Nothing.** A4 is adopted and pushed; the serious-error mining
+round is blocked on the lead (see below). The next turn starts a
+new round from a clean slate.
 
 ## Next, per orders (in this order)
 
-1. A3 c5 (range vs block), same loop.
-2. A4 (coverage denominator) — report-JSON additions routed
-   through the lead, since Atelier owns what the product reads.
-3. The « dead assumption » reachability candidate
+0. **The serious-error mining round is blocked** pending the lead's
+   decision on the `.xls` reader defect (see the table). If it is
+   fixed, re-run `scripts.custodes_serious` — the registration and
+   classifier are committed and ready; only the reader was wrong.
+1. The « dead assumption » reachability candidate
    (`swens-aha.md`): dependency-graph reachability, no
    recalculation, one-sentence finding. Coordinate the rule name
    with the lead before adoption (it needs Atelier's category map).
@@ -56,6 +63,21 @@ in the baseline, so it needs its own registered round.
 
 **Also parked:** the collapse fold's missing adjacency test (the
 `C_Capex` diagnosis from c1), and the A1 range-expansion round.
+
+**Needs the lead, not me (1):** the legacy `.xls` reader misses
+formulas — proven arithmetically, quantified per subject. Fixing it
+changes findings on every `.xls` file, which the golden-master gate
+(all `.xlsx`/`.xlsm`) does not cover. Every `.xls`-route measurement
+we hold understates the engine until then.
+
+**Needs the lead, not me (2):** candidate 5's class 2 (a range spanning
+a label) requires `Workbook.cells` to carry text cells — frozen
+interface #1, visible to every lane, findings-moving engine-wide.
+A lead-approved interface bump and its own round.
+
+**Waiting on the lead:** A4's product surfacing (see
+`a4-coverage.md` § Routed to the lead) — small, the schema shape
+already exists.
 
 **Best-funded open question in the record:** the Tasi
 serious-error gap — 1,206 of their 1,308 serious cells fall outside
@@ -80,6 +102,9 @@ every finding we raise, with a ready-made sample to hand-read.
   scratchpad and die with the container — they are reproducible
   from the committed harnesses under `server/scripts/planting/`
   plus the registered seeds.
+- **Do not audit two 500k-cell workbooks in one process** — the
+  second gets OOM-killed and can take the container with it. One
+  heavy file per process, or read the small ones.
 - Background a long job and wait on its PID; a killed *waiter* does
   not kill the job — check the log before assuming loss.
 - Beware `cmd | tail -1` masking a `ruff format --check` verdict.
@@ -90,6 +115,16 @@ every finding we raise, with a ready-made sample to hand-read.
   xlrd path, and xlrd's `cell_note_map` reads the comment-based
   ground truth. Doing so recovers the cell the CUSTODES round lost
   in conversion (1,974, the paper's figure).
+- **The legacy `.xls` reader misses some formulas** (`legacy.py`
+  decompiles BIFF records; some cells fall through). Verify with a
+  raw `FORMULA` (0x0006) record count before trusting any `.xls`
+  measurement. A 100%-one-bucket classification is the symptom that
+  found it.
+- **The reader elects only numeric-or-formula cells.** A text cell
+  mid-column is absent from `Workbook.cells` entirely — this killed
+  candidate 5's class 2 and is pinned by a test in
+  `test_audit_range_block.py`. Check this before designing anything
+  that needs to see labels in a range.
 - The Tasi clone lives in `scripts/custodes_work/tasi` (git-ignored,
   re-cloned on demand). **No licence in that repo** — internal
   benchmarking and citation only, never redistribute, never commit.

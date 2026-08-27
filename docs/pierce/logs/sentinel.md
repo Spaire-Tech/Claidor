@@ -28,6 +28,119 @@ golden-master gate and regenerates the baseline in the same commit.
   `a3-sibling-totals.md`, with the planting harness under
   `server/scripts/planting/`.
 
+## 27 August 2026 — the serious-error mining round: blocked, on a reader defect
+
+The lead's highest-value question — why our coverage of Tasi's
+serious cells is 7.8% against 13.2% overall — got an answer, but not
+the one the round was built to produce.
+
+The classifier put **100% of the 1,206 missed cells into a single
+bucket**. That is an instrument failing, not a finding, so I ran it
+to ground rather than publishing it. The sample's first cells are
+the ones the *first* mining round cites as computing `=AVERAGE(…)`;
+the proof is arithmetic — `Table II.5!B17` holds exactly the mean of
+`B6:B16`, and `read_workbook` returns `formula=None` for it.
+
+**The engine's legacy `.xls` reader misses formulas**, partially:
+144 `FORMULA` records against 125 seen in one subject, 40 against 30
+in another, 349 against 349 in a third. On some `.xls` files a
+computed cell is read as a typed value.
+
+So: **blocked, not refused.** No bucket table, no candidate — the
+numbers would describe the reader's blind spots rather than the
+detectors' witnesses. But the round established something better
+than its table would have been: **a first-order cause of the
+serious-coverage gap is that the engine cannot read some of these
+formulas at all.**
+
+**Routed to the lead, because it is outside my paths.**
+`polar/tieout/legacy.py` is not in Sentinel's list in `lanes.md`,
+and fixing it changes what the engine reports on **every `.xls`
+file** — a findings change on a file class the golden-master gate
+does not cover, so it needs its own registered round and a decision
+about which corpus certifies it. I have not touched it.
+
+I also amended the Tasi record in the same breath: its
+direct-`.xls` numbers understate the engine by an unmeasured
+amount. That does not overturn its conclusions — the label-set
+comparison never passed through the engine — but it turns the
+refusal to read fresh-vs-frozen as drift into a named mechanism.
+
+## 28 August 2026 — A4 adopted: the audit says what it walked
+
+The plan's A4 — « every audit states what was checked, what was
+not, and why ». I checked the code before designing and the gap was
+narrower than it reads: the tie-out already has `Coverage`, the
+analytics already have `tallies` and `abstentions`, the structure
+layer has `unlocated`. Only the mechanical audit was mute, carrying
+a raw cell count, so « this rule looked and found nothing » could
+not be told from « this rule had nothing to look at ». That
+sentence is the whole of A4, and it is now sayable.
+
+The audit gained `tallies` and `abstentions` — same names, same
+shapes as analytics, so the product meets one vocabulary. **Gate
+clean**, which was the round's sharp criterion: a coverage counter
+has no business changing what the engine reports, and it did not.
+Hand-checked against two real models: every tally equals the file's
+own count.
+
+Three corrections made in the open before the gate, and I would
+rather record them than have them look like design. **`broken-name`
+is dropped** — the reader exposes no count of declared names, and a
+tally of « 0 of 0 » on a file carrying 800 would be worse than
+none; counting only the flagged ones is the numerator wearing a
+hat. **The typed-over denominator became typed cells** rather than
+cells-inside-runs, so the counter cannot disagree with the
+detectors about what a run is. And **one registered abstention
+reason turned out unreachable** — « this workbook has one sheet »,
+since one sheet is one examination — so I removed it rather than
+bend the population to make my own sentence fire.
+
+**Catalogue: unchanged**, no rule added; nothing for Atelier.
+
+**Routed to the lead:** the product cannot yet *show* the coverage,
+and `schemas.py`/`service.py`/`endpoints.py` are Atelier's. The
+request is written in `a4-coverage.md` and is small — the schema
+shape already exists for the analytics summary. One difference is
+named rather than borrowed silently: my inner key is `raised`, not
+analytics' `clean`, because a folded finding can stand for many
+cells and « total − raised » would overstate what was verified.
+
+## 27 August 2026 — candidate 5 adopted: the unasked half of the range question
+
+`skipped-cell` has always asked what a total left *out*. Nothing
+asked what a range wrongly took *in* — I checked before designing
+anything, and every mention of double counting in the engine was an
+*exemption* protecting that check, never a detection. So the
+question was genuinely unasked, and this round asks the half that
+carries arithmetic consequence: a range that swallows a subtotal of
+its own rows, counting them twice.
+
+**13 of 13 planted defects caught, all by the new rule; gate clean,
+so the corpus price is zero.** The prediction said the check would
+be absent on these templates and it is — a published regulator
+model that double-counted a subtotal would be a live defect in a
+document with legal force, so finding none is the right answer, and
+the check's worth is the 13 it caught when the defect was real.
+
+The round's second class — a range spanning a *label* — I withdrew
+**before computing anything**, because the reader does not elect
+text cells at all: a detector on that surface cannot tell a label
+from a blank, and blanks are ordinary layout. Withdrawn, not
+refused; no number was computed for it. The planter then found zero
+eligible sites for it too, which is the same limitation confirming
+itself from the other side.
+
+**Catalogue: 19 → 20** (14 audit + 6 analytic), named in the
+registration before adoption and flagged here the same day —
+Atelier's count-sensitive test needs the new number.
+
+**For the lead, one case to route:** class 2 becomes possible only
+if `Workbook.cells` carries text cells. That is frozen interface #1
+in `lanes.md`, visible to every lane, and would move findings
+engine-wide — so it needs a lead-approved interface bump and its own
+registered round. I have not touched it.
+
 ## 27 August 2026 — the Tasi re-score: a second labeller, and a nesting
 
 The engine met an independent expert labelling of the same 70 files
