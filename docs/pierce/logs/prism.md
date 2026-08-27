@@ -1314,3 +1314,71 @@ eligibility denominator, the refusals with reasons, the
 categorical/scaled literal counts, and — unchanged — the
 false-positive control, which must stay at zero for the round to
 stand.
+
+## Tier 2, wider round — results: the apparatus is validated on two hosts
+
+Both hosts under the registration, nothing moved after seeing
+numbers. **The false-positive control is silent on both.**
+
+| class | CAA `h7_new_debt_indexation_fds` (Outturn) | Ofgem ED2 v5 (SWEST) |
+|---|---|---|
+| tail_hardcode | **5/5, 5/5** | **5/5, 5/5** |
+| conditional_divergence | 1/5, 0/5 | 0/5, 2/5 |
+| equivalent_rewrite (control) | **0/5, 0/5** | **0/5, 0/5** |
+| stealth_literal | **5/5, 5/5** | **5/5**, 1 refused |
+| eligible instances | 8 of 8 | 7 of 8 |
+| false positives | 0 | 0 |
+
+**The three registered changes each did exactly their job.**
+
+1. **The liveness probe** refused `SWEST!AR312` in one
+   recalculation — « dead under the file's saved state » — the
+   same dead-branch cell that silently consumed a whole grid in
+   round 1. The surviving stealth instance then caught **5/5**,
+   where round 1 reported zero. The catch table now carries an
+   honest denominator: 7 eligible of 8.
+2. **Categorical exclusion** left 849 of SWEST's 1,547 literals
+   alone — **over half the sheet is flags and switches**, which is
+   why round 1's scaling deadened so much. On the CAA host the
+   rule classified nothing (3,132 literals, all magnitudes), so it
+   costs nothing where it is not needed.
+3. **The second host** answers the question it was chosen for:
+   `tail_hardcode` catching 5/5 at both positions is **the method,
+   not the model** — a different publisher, a different structure,
+   the same result.
+
+**The conditional class now proves the whole apparatus.** Its
+divergence is predicted cell by cell by the printed factors, and
+the measurement matches exactly, twice:
+
+- CAA `B263`: draws `1.009, 1.097, 1.268, 0.547, **1.42**` — one
+  above the registered 1.4× threshold, and the diverging trial is
+  that one (`[0,0,0,0,40]`).
+- ED2 `AL1`: draws `**1.405**, 1.317, **1.432**, 1.133, 1.217` —
+  two above, and exactly trials 1 and 3 diverge (`[1,0,1,0,0]`).
+
+A behavioural check that fires precisely when the behaviour
+changes, and stays silent otherwise, is what tier 2 was for.
+
+**One new finding — two registered rules interacting.** The ED2
+`AV102` conditional instance printed `factors: []`: its threshold
+input was an integer flag, so the *categorical* rule excluded it
+from the assignment, and the condition could never activate. The
+instance was live and honest — it simply could not fire. Not
+patched after the fact; **registered for the next round**:
+`conditional_divergence` must draw its threshold input from the
+*scaled* set, and an instance whose input is categorical is a
+refusal, not a zero. Its two zeros in the table above should be
+read as « could not fire », and the class's real rate rests on the
+three instances that could (3 of 15 trials, against ~41% per
+instance analytically — small numbers, honestly small).
+
+**Where tier 2 stands now.** On live cells, in the selected
+branch, with flags left alone: a hardcoded tail is caught every
+trial on two unrelated hosts, a stealth retype is caught every
+trial, an equivalent rewrite is never flagged, and a conditional
+change is caught exactly when the trials activate it. The named
+next rounds are the conditional-input fix above and the selector
+sweep (evaluating under each licensee) — the dead branch is now
+*reported* rather than mistaken for a clean result, which is the
+part that mattered.

@@ -43,8 +43,11 @@ written round, never a tuning.
 1. **Tier 1 (Z3)** — registered in the log this sweep; blocked on
    the lead's `z3-solver` pyproject approval. No code may import z3
    before that.
-2. **Tier 2's next round** — wider hosts, plus the two findings
-   round 1 earned: selector sweeping and categorical inputs (below).
+2. **Tier 2** — the wider round is done (two hosts, control
+   silent, apparatus validated). Still open: the conditional
+   class must draw its threshold input from the *scaled* set (an
+   integer-flag input can never fire), and the selector sweep
+   (evaluate under each licensee) for dead branches.
 3. **C6 (rule-set diff)** — founder-approved, yours; register it
    when Dynamo's B5 round 1 lands a modeller-recognisable rule set.
 4. **C3 deferrals, parked**: added-cells-within-matched-structure;
