@@ -2254,3 +2254,74 @@ people to rely on, so:
   idle.
 - The 6-run smoke file `round2-smoke.json` is deleted rather than
   left beside a 400-run result to be mistaken for one.
+
+### RoE under the same typing: coverage went **down**, 10 of 193 → 0 of 193
+
+The question round 1b left open was whether a model that produced
+zero rules would produce some once coverage rose. It did not,
+because coverage did not rise — it collapsed.
+
+    coverage: 0 of 193 watched cells moved (0.0%)
+      — UNINFORMATIVE — not a result
+    0 stable rules
+
+`docs/pierce/logs/dynamo/round2-roe.json`. 400 runs, zero drops, and
+**not one watched cell moved in any of them**. Hand typing reached
+10 of 193; automatic typing reached none. Reported as uninformative
+per the registered bar, which is the whole point of having fixed the
+bar in advance.
+
+**The cause, measured.** Every one of the 26 cells the hand typing
+perturbed — `C6:C14` (RPI), `D6:D14` (CPI), `E6:E13` (the legacy
+share) — came back typed `date` and was held:
+
+| | hand | inferred |
+|---|---|---|
+| `C6`…`C14`, `D6`…`D14`, `E6`…`E13` (26 cells) | rate | **date** |
+
+E2's reason is sound in isolation: « the row is a year (« 2025/26 »)
+holding its own year number ». Row 6 *is* labelled `2021/22` and
+*does* hold 2022.0 in column A. It also holds RPI 5.8, CPI 4.0 and a
+share of 1.0 in the next three columns, under headers `RPI · CPI ·
+% of 'legacy' RPI`. **It is a record row: one period, several
+fields, several units.** E2 gives the row one label, the year wins,
+and three real rates are typed as a date and frozen.
+
+### The same bug twice, from two different corpora
+
+This is failure (A) from the closed-deal round — `Swap profile!81`,
+a record table read as a model row — arriving again on a regulator
+file, and it is now the most load-bearing defect I have found:
+**row-level labelling cannot represent a row whose cells carry
+different units.**
+
+And there is a second, sharper part that is **my** fault, not E2's.
+`orientation` returned **`unknown`** for this sheet. E2's own
+contract says an unknown orientation means the caller must not treat
+a row as a quantity. My typing map is that caller, and it keys on
+`b5_type` and `kind` alone — it never asks the orientation. Had it
+asked, it would have refused the sheet honestly instead of freezing
+it by accident.
+
+On a record sheet the unit lives in the **column** — the RPI column
+is the rate, which is exactly what the hand typing perturbed. E2
+labels rows only; there is no column-wise path in either the
+inference or my map.
+
+### Registered as the next round, in this order
+
+1. **The typing map reads the orientation.** A sheet whose
+   orientation is `unknown` or `column-wise` is refused, loudly, as
+   an untyped sheet — not silently frozen. Cheap, and it turns this
+   accident into a stated refusal.
+2. **A column-wise path**: on a record sheet, classify the column
+   and let B5 perturb it. This is what makes the RoE model
+   mineable at all, and it is the same fix that keeps
+   `Swap profile!81` from being perturbed as one quantity.
+3. **Constrained families** (from the H7 round above), which is
+   independent of both.
+
+Round 2's verdict across the three models, stated plainly: **on H7
+the typing works and over-reaches; on RoE it fails closed.** Neither
+result may be called the model's laws, and the reasons are now
+specific enough to fix.

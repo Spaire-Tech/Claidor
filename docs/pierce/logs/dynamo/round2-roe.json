@@ -1,0 +1,36 @@
+{
+ "model": "RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
+ "typing": "inferred",
+ "typed_inputs": {
+  "rate": 48,
+  "date": 108,
+  "untyped": 37
+ },
+ "coverage": [
+  0,
+  193
+ ],
+ "coverage_verdict": "UNINFORMATIVE \u2014 not a result",
+ "runs_requested": 200,
+ "kept": [
+  200,
+  200
+ ],
+ "drops": [
+  {
+   "engine-error": 0,
+   "failed": 0
+  },
+  {
+   "engine-error": 0,
+   "failed": 0
+  }
+ ],
+ "rules_first": 0,
+ "rules_second": 0,
+ "agreement": 0.0,
+ "distinct_sentences": 0,
+ "stable": [],
+ "seconds_total": 381.4,
+ "seconds_naive_engine": 0.0
+}
