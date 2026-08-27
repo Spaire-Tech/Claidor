@@ -110,6 +110,11 @@ Mark every agent-designed screen in the log; the founder reviews.
   `scripts.demo_deal`. The dev DB `claidor` holds
   « Project Cascade Watch Demo » (cascade v1 + a v2 with a
   typed-over F16 + the broken deck) — the standing demo subject.
+- To verify against a **production build**: `pnpm build`, then
+  `pnpm start` on **port 3000** (stop the dev server first). The
+  dev API's `CLAIDOR_CORS_ORIGINS` allows that origin only, so a
+  build served on any other port fails every API call with
+  `net::ERR_FAILED` — CORS, not the app.
 - If git dies at « could not read Username » after a container
   resume, the git-proxy sidecar was skipped; the GitHub MCP tools
   still work (push_files + blob-SHA verification against

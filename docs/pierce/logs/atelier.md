@@ -569,3 +569,30 @@ where that belongs, not a screen's second guess.
 
 Holding for the founder's review of the three screens, per orders
 item 3.
+
+## 27 August 2026 — the sweep's fixes, verified in the built app
+
+Orders unchanged (fourteenth sweep; item 3 is « hold for founder
+review »), so this turn was upkeep: rebased the lane onto the new
+tip (`ac733b3` — the adopted review; nothing in it touches my
+paths, and the sharpened thesis « the proof is the moat » is
+precisely what the recalculation mark puts on a screen), then
+verified what I shipped against a **production build** rather than
+the dev server alone.
+
+`pnpm build` clean, and every state re-driven against
+`pnpm start`: all six sweep fixes hold, the stored mark is repeated
+on a fresh load, the in-flight label's `pcDim` survives
+minification (`animation-name: pcDim` read off the built page), a
+re-run settles, and the built app throws no page errors. The one
+state the drive could not re-reach was « never run » — that model
+now carries a mark from the sweep itself, so the in-flight state
+was proven through « Run again » instead.
+
+Container lesson, for whoever verifies next: the dev API's
+`CLAIDOR_CORS_ORIGINS` allows `127.0.0.1:3000` only, so a
+production build served on any other port fails **every** API call
+with `net::ERR_FAILED` — CORS, not the app. Stop the dev server and
+serve the build on 3000.
+
+Still holding for the founder's review of the three screens.
