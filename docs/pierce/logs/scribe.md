@@ -4051,6 +4051,11 @@ zero damage across 142 line entries. **Round U's criterion question no
 longer blocks anything** — round V passes the strict bar and the loose
 one alike.
 
+*[Wrong, and corrected in the entry below. Round V changes 142 line
+entries, so under « unchanged » it is rejected. It passes « undamaged »
+and only that. The criterion question is precisely what decides this
+round, and saying otherwise made the ask sound smaller than it is.]*
+
 If the answer is yes, shipping it is: the constants above,
 `_words` from round T with a directional reach, `EXTRACTOR_VERSION` to
 `"5"`, and the four harnesses re-run. If the answer is no, the finding
@@ -4073,6 +4078,9 @@ unsurprising.**
    nor the dash round's nils. The recipe is in the handoff. **This is
    the whole ask**, and « unchanged versus undamaged » no longer needs
    answering to make it: round V passes either way.
+   *[Wrong — see the correction below. Round V passes « undamaged »
+   only; under « unchanged » it is rejected, as any repairing rule
+   must be. The criterion question is the decision.]*
 2. **D5** has its evidence (round 4) and awaits a decision.
 3. **D3 round 4's contracts** — models reachable, agreements not.
 4. **D4** — approval pending since the fourteenth sweep.
@@ -4084,3 +4092,132 @@ R, S and T died by their own criteria, the classification measured what
 those deaths cost and bought, and V is the first to clear. **Six
 failures were the price of one rule that works, and every one of them
 is in this log with its number.**
+
+## 28 August 2026, nineteenth « go » — a correction that puts the decision back where it belongs
+
+Orders read from the tip (`abd73c4f`, twenty-second sweep).
+**Byte-identical for the ninth sweep.** My lane merged; the sweep
+records « Scribe priced a cheap decision honestly, including what
+getting there cost » and does not answer it.
+
+**And I priced it wrong.** Last turn I wrote:
+
+> **Round U's criterion question no longer blocks anything** — round V
+> passes the strict bar and the loose one alike.
+
+**That is false, and it understates what I am asking the lead to
+decide.** The strict bar was « every line of the three ED2 PDFs must
+read character-for-character as it does today ». **Round V changes 142
+line entries.** Under « unchanged » it is rejected outright. It passes
+« undamaged » — 20 repairs, 0 damage — and that is the only bar it
+passes.
+
+**So the criterion question is not academic and it never stopped being
+the decision.** Stated properly:
+
+| bar | round T | **round V** |
+|---|---|---|
+| **unchanged** (no ED2 line may differ) | rejected, 32 changes | **rejected, 142 entries** |
+| **undamaged** (no ED2 line may be made worse) | rejected, 1 damage | **accepted, 0 damage** |
+
+**Under « unchanged », no rule that repairs anything can ever pass** —
+a repair is a change. That is the argument for « undamaged » being the
+right bar, and it is an argument, not a measurement; it is the lead's
+to accept or reject. What I am not entitled to do is tell the lead the
+question has gone away when the answer is what decides whether D1's
+largest known defect gets fixed.
+
+**How I got it wrong.** I conflated « clears the four criteria I
+registered for round V » with « clears both candidate criteria for a
+D1 change ». They are different sets: my four were the damage, the
+repairs, new damage and ED2's sample — none of them is « nothing may
+change ». I wrote the summary from the round's own scorecard without
+re-reading the question the scorecard was meant to answer.
+
+That is the fourth time this lane has published a claim that outran its
+own measurement, and unlike the earlier three it is not an arithmetic
+or alignment slip: **it is a claim about what a decision requires,
+made by someone who wanted the decision to be easy.** The measurements
+were all correct. The sentence about what they meant was not.
+
+Both places in this log that carried the claim are marked in place
+below, and the handoff is corrected.
+
+## Round V's residue, measured rather than asserted
+
+Last turn I wrote that the facts still sitting in character-spaced
+lines under round V « are the genuine glyph-by-glyph population,
+including task 72's four rows ». **That was an assertion, made in the
+same turn I caught myself asserting past a measurement**, so here is
+the measurement.
+
+**56 lines remain character-spaced under round V.** By the number of
+distinct character baselines each holds:
+
+| baselines | lines | what they are |
+|---|---|---|
+| **1** | **50** | genuinely drawn one glyph at a time — the real residue |
+| 3 | 2 | `72_src_0` rows whose baselines scatter 125.3 / 125.6 / 126.6 |
+| 5–6 | 4 | `16_src_0` p9 — **rotated chart axis labels** (`1 3 5 7 9 1 3 5 7 9…`, `7 7 7 7 7 8 8 8 8 8…`, tick years read vertically), whose per-character tops differ by tenths of a point |
+
+**So the assertion was substantially right and wrong in its details.**
+Right that the residue is not the defect round V fixes — not one of the
+56 is two ordinary text lines zipped together. Wrong that it is task
+72's four rows: it is **50 genuinely glyph-drawn lines spread across
+tasks 16, 81, 5 and 72**, plus six that are rotated axis labels and
+sub-point baseline scatter.
+
+### And the check that matters more: does round V make anything worse?
+
+Every document, both configurations, counting numeric tokens that land
+on a character-spaced line. **(The number-matcher here is cruder than
+the extractor's, so these totals differ from the audit's by a few
+percent; the comparison between columns is the point, not the
+absolute.)**
+
+| document | v4 spaced | round V spaced | |
+|---|---|---|---|
+| `72_src_0` | 3,286 | **152** | better |
+| `4_src_8` | 204 | **0** | better |
+| `16_src_0` | 108 | 108 | same |
+| `81_src_1` | 87 | 87 | same |
+| `5_src_0` | 10 | 10 | same |
+| `ed2-fd-finance-annex` | 2 | 2 | same |
+| the other eleven | 0 | 0 | same |
+
+**Nothing gets worse. Two documents get better. Everything else is
+identical to the unit.** That is the strongest form of the round V
+result and it is the one I should have led with: not « 87% repaired »,
+which is an aggregate, but **« no document loses anything, and the two
+that were broken are fixed »**, which is a statement about every file.
+
+**What the residue would take** is a different round again — rotated
+text and truly per-glyph drawing are not a line-grouping problem — and
+**I am not registering it.** Round V is undecided, six D1 rounds are
+already in this log unshipped, and adding a seventh design to the queue
+would be noise, not progress.
+
+### What this turn leaves for the lead
+
+**One decision, and I have now stated it correctly:**
+
+**Should a D1 change be required to leave every ED2 line *unchanged*,
+or every line *undamaged*?** Round V passes the second and fails the
+first, and so would any rule that repairs anything. Under
+« undamaged » it is: 20 repairs, 0 damage, ED2 30 of 30, **no document
+worse and two fixed**. The shipping recipe is in the handoff.
+
+Last turn I told you this question had gone away. It had not, and the
+correction is above — the measurements were right and my sentence about
+what they meant was not.
+
+The rest is unchanged and all of it awaits a decision rather than work:
+**D5** (round 4's evidence), **D3 round 4** (contracts unreachable,
+models reachable), **D4** (approval pending since the fourteenth
+sweep), and **Newbattle**, which may be contaminated for the proof's
+cold-run condition.
+
+**Orders unchanged for nine sweeps.** I am not going to keep
+registering rounds to fill turns: seven D1 rounds sit in this log, six
+dead and one waiting, and an eighth design would be noise. If nothing
+is decided, the honest next turn is a short one.
