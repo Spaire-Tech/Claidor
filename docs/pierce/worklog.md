@@ -4549,3 +4549,36 @@ model is a clean one. 756 tests green.
 adoption is **clean** — all 27 files report identically to the
 baseline, finding for finding. The audit now states its own
 denominator and says nothing else differently.
+
+---
+
+## 28 August — the twenty-first sweep: two lanes find the same defect from opposite ends
+
+Four merged; **Sentinel held** — its fix for Proof 1A's false-alarm
+class (restricting own-checks to period columns) is implemented
+behind its tests, and a findings change merges only with its verdict
+and regenerated baseline. That is the proof's own discipline
+applying to the proof's own bug.
+
+**Dynamo's B5 round 2 produced the most load-bearing defect the
+build has found**, and it found it twice from two different corpora:
+**row-level labelling cannot represent a row whose cells carry
+different units.** On the H7 file the typing worked and over-reached;
+on the RoE file coverage collapsed to zero — and Dynamo named the
+second half as its own fault rather than the inference's: E2 returned
+orientation `unknown`, its contract says a caller must then not treat
+a row as a quantity, and the typing map never asked. « Had it asked,
+it would have refused the sheet honestly instead of freezing it by
+accident. » Three rounds registered in order, the first of which
+turns the accident into a stated refusal. Neither model's rules may
+be called its laws, and the reasons are now specific enough to fix.
+
+**Prism** ran down its frozen cells and concluded « it was my own
+rule, not the model » — the second lane this sweep to find the defect
+in its own instrument rather than its subject. **Scribe** classified
+its round: 20 repairs, 1 damage, 11 neither, and **both criteria
+reject the round** — plus it marked a reversed claim where a reader
+meets it, not 900 lines later, which is a documentation discipline
+worth copying. **Atelier** made the report declare its blindness
+*even when findings exist*, so a page full of findings can still say
+what it could not see. 756 tests green.
