@@ -76,6 +76,29 @@ state class, and the method is in the log — seed the state for
 real (dropping `storage_path` is the honest « documents dropped »
 lever) rather than mocking a refusal.
 
+## G4 and G2 (seventeenth sweep)
+
+**G4 — the report face: built.** Coverage on its face (it was on no
+screen at all before), severity at a glance, every claim cited to a
+cell *or* a document and page, the recalculation verdict with its
+cells named on the page. Read hostilely against the repo's judged
+real model (`example_preapp_model.xlsx`, in-sample — say so) and
+seven of my own defects fixed, including a **false** « formulas
+read » count. Shots: `logs/atelier/report-face-sheet{1,2,3}.png`.
+
+**G2 — the five questions: measurable only in part.** Chat cannot
+run here — no `ANTHROPIC_API_KEY`, so `ask` answers 503. What was
+measured is the tool surface: 1, 2 and 4 have their material
+reachable; **3 (« where is this from ») is unreachable** — no tool
+touches the Chain; **5 answers in raw cell moves**, not the Watch's
+review language. Two tools in `agent/model_tools.py` (not our lane)
+would close both. Full table in the log.
+
+**Two findings routed to the lead**: the gate's 1e-12 absolute floor
+fails a 4,798-cell model on two cells of 3e-07 balance dust; and
+`gapped-test` fires **material** findings while being in neither
+rule catalogue, so no firm can see or switch it off.
+
 **Holding for the founder's review of the three screens.** The
 build record (`swens-product-build.md`, yours) carries them as
 Phase 7, with the four gaps they left open (no arbiter run;

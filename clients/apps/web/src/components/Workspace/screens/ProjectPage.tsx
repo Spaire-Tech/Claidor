@@ -54,6 +54,7 @@ import {
   Artifact,
   auditRecord,
   CheckRun,
+  Coverage,
   DealListItem,
   DealPage as DealPageData,
   Finding,
@@ -86,6 +87,12 @@ const DELTA_KIND = {
   relabelled_line: { word: 'Relabelled line', dot: '#2b6cf5' },
   methodology_change: { word: 'Methodology change', dot: '#e8a300' },
   moved_assumption: { word: 'Assumption moved', dot: '#e8a300' },
+  //: The Watch's C3 pair, merged in the seventeenth sweep: a cell that
+  //: was empty now holds a value, and a cell that held one is now
+  //: empty. Emptying carries the amber of an assumption at risk — a
+  //: removed input changes an answer silently; filling is information.
+  emptied_cell: { word: 'Cell emptied', dot: '#e8a300' },
+  filled_cell: { word: 'Cell filled', dot: '#2b6cf5' },
   material_output: { word: 'Output moved', dot: '#2b6cf5' },
   structure: { word: 'Structure', dot: '#8f96a0' },
   repaired_defect: { word: 'Repaired', dot: '#1f8a4c' },
@@ -3509,6 +3516,8 @@ export const ProjectPage = ({
           lastRun={lastRun}
           versions={versions ?? []}
           recalc={(model?.counts['recalc'] as RecalcMark | undefined) ?? null}
+          coverage={page?.coverage ?? null}
+          modelCounts={model?.counts ?? null}
           onClose={() => setRepOpen(false)}
         />
       )}
@@ -3532,6 +3541,8 @@ const Report = ({
   lastRun,
   versions,
   recalc,
+  coverage,
+  modelCounts,
   onClose,
 }: {
   modelName: string
@@ -3543,6 +3554,11 @@ const Report = ({
   versions: Version[]
   /** The current version's stored recalculation mark, when it has one. */
   recalc: RecalcMark | null
+  /** What the last tie-out reconciled and what it did not — the line
+   *  that keeps the report honest. Null before any deal page loads. */
+  coverage: Coverage | null
+  /** The model's own ingest counts — cells, formulas, named cells. */
+  modelCounts: Record<string, unknown> | null
   onClose: () => void
 }) => {
   const total = open.length
@@ -3557,24 +3573,84 @@ const Report = ({
       : total > 0
         ? `${word(total)} finding${total === 1 ? '' : 's'} open, none material.`
         : 'Nothing failing.'
+  //: What a finding says in one clause. The engine's own sentence runs
+  //: to the formula that proves it — right on the findings page, wrong
+  //: in a verdict a partner reads first.
+  const clauseOf = (one: Finding): string => {
+    const said = one.headline || one.plain || one.title || ''
+    const cut = (said.split(/[:—]\s|\.\s/)[0] ?? said).trim()
+    return cut ? cut.charAt(0).toUpperCase() + cut.slice(1) : ''
+  }
+
+  //: Some engine sentences stop inside the formula that proves them —
+  //: stored that way, and not this lane's to rewrite. An ellipsis says
+  //: « abbreviated » where a bare cut says « broken »; nothing is
+  //: invented and nothing is dropped.
+  const saidOf = (text: string): string => {
+    const said = text.trim()
+    if (!said.includes('=')) return said
+    const tail = said.slice(said.lastIndexOf('='))
+    const opens = (tail.match(/\(/g) ?? []).length
+    const closes = (tail.match(/\)/g) ?? []).length
+    const dangling = opens > closes || /[<>=+\-*/,(]$/.test(said)
+    return dangling ? `${said}…` : said
+  }
+
+  const materialClauses = [...new Set(material.map(clauseOf).filter(Boolean))]
   const verdictBody =
     material.length > 0
-      ? `${material
-          .slice(0, 2)
-          .map((one) => one.plain || one.title)
-          .join(
-            ' ',
-          )} ${material.length === 1 ? 'It' : 'These'} should clear before this model leaves the deal team.`
+      ? `${
+          materialClauses.length > 0 ? `${materialClauses.join(' · ')}. ` : ''
+        }${material.length === 1 ? 'It is' : 'They are'} named with ${material.length === 1 ? 'its' : 'their'} cell overleaf, and ${material.length === 1 ? 'it' : 'they'} should clear before this model leaves the deal team.`
       : total > 0
         ? 'The open findings are worth reading, but none of them on its own would stop the model going out.'
         : ''
+
+  //: Every claim on this page carries where it came from: the cell
+  //: when the finding sits in the model, the document and page when it
+  //: sits in a deck or a memo. A claim with nothing to cite is not
+  //: printed as a bare sentence — it says the file it came from.
+  const citeOf = (one: Finding): string => {
+    //: The engine's anchor already reads « Balance Sheet!D13 » — only a
+    //: bare ref needs its sheet put back, or the citation says the
+    //: sheet twice.
+    if (one.where.anchor.ref)
+      return one.where.anchor.ref.includes('!')
+        ? one.where.anchor.ref
+        : `${one.where.anchor.sheet ?? ''}!${one.where.anchor.ref}`
+    if (one.where.filename)
+      return one.page > 0
+        ? `${one.where.filename} · p. ${one.page}`
+        : one.where.filename
+    return one.where.label || ''
+  }
+  //: A drift finding is a claim about two places at once — the printed
+  //: figure and the cell it should have matched. Both are cited.
+  const againstOf = (one: Finding): string =>
+    one.source.ref && !one.where.anchor.ref
+      ? `against ${one.source.name ? `${one.source.name} · ` : ''}${one.source.ref}`
+      : ''
+
+  //: Coverage, in the words the schema itself uses: « 102 of 128
+  //: figures reconciled · 26 not checked ». A deal with no deck or memo
+  //: checked has no figures at all, and says so rather than printing a
+  //: meaningless « 0 of 0 » — the tie-out is what fills this line.
+  const figuresSeen = coverage ? coverage.reconciled + coverage.unlinked : 0
 
   const facts: [string, string][] = [
     ['Model', modelName + (version ? `, version ${version}` : '')],
     ['Checked', when(checkedAt)],
   ]
   if (typeof summary['cells'] === 'number')
-    facts.push(['Formulas read', String(summary['cells'])])
+    facts.push([
+      'Cells read',
+      //: `summary.cells` is cells — the row said « formulas read » over
+      //: it, which is a false claim on a document a partner keeps. The
+      //: model's own counts carry the formula count, so both are said.
+      typeof modelCounts?.['formulas'] === 'number'
+        ? `${summary['cells']} · ${modelCounts['formulas']} of them formulas`
+        : String(summary['cells']),
+    ])
   if (Array.isArray(summary['rules_off']) && summary['rules_off'].length > 0)
     facts.push([
       'Rules switched off',
@@ -3583,7 +3659,11 @@ const Report = ({
 
   const notChecked: string[] = []
   if (record) {
-    for (const one of record.abstentions) notChecked.push(one.why)
+    //: Two rules can abstain for one reason (« No debt schedule was
+    //: located » answers both the debt and the interest checks). The
+    //: reason is the same fact; printing it twice reads as carelessness.
+    for (const one of [...new Set(record.abstentions.map((a) => a.why))])
+      notChecked.push(one)
     if (record.values_only)
       notChecked.push(
         'This copy carries values only, so the construction rules could not read its formulas.',
@@ -3631,7 +3711,22 @@ const Report = ({
       (recalc.not_computed > 0
         ? `${recalc.not_computed} formula cells came back with nothing. `
         : '') +
-      'The differing cells are named on the model’s own page.'
+      //: A printed report cannot send its reader to a screen. The cells
+      //: are named here, with both numbers, so the disagreement can be
+      //: judged rather than taken on trust.
+      (recalc.mismatches.length > 0
+        ? `The differing cells: ${recalc.mismatches
+            .slice(0, 6)
+            .map(
+              (d) =>
+                `${d.ref} (${d.stored ?? '—'} stored, ${d.computed ?? 'nothing'} recalculated)`,
+            )
+            .join('; ')}${
+            recalc.mismatch_count > recalc.mismatches.slice(0, 6).length
+              ? `; and ${recalc.mismatch_count - recalc.mismatches.slice(0, 6).length} more not named here`
+              : ''
+          }.`
+        : '')
   } else if (recalc.verdict === 'refused') {
     const kinds = [
       ...new Set(
@@ -3943,9 +4038,63 @@ const Report = ({
               {verdictBody && (
                 <div style={{ paddingTop: 14 }}>{serif(verdictBody)}</div>
               )}
+              {/* Severity at a glance — the three tiers as counts, so a
+                  partner sees the shape of the answer before reading a
+                  word of it. Agent-designed (G4). */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 34,
+                  paddingTop: 26,
+                }}
+              >
+                {([1, 2, 3] as const).map((tier) => (
+                  <span
+                    key={tier}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
+                  >
+                    <span
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: '50%',
+                          background:
+                            counts[tier] > 0 ? SEV_DOT[tier] : '#d6d9de',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 12.5,
+                          color: '#6b7280',
+                          letterSpacing: '-.004em',
+                        }}
+                      >
+                        {SEV_WORD[tier]}
+                      </span>
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: font.serif,
+                        fontSize: 27,
+                        lineHeight: 1,
+                        color: counts[tier] > 0 ? '#1c1f23' : '#b6bac1',
+                      }}
+                    >
+                      {counts[tier]}
+                    </span>
+                  </span>
+                ))}
+              </div>
               {heading('What was checked', 40)}
               {serif(
-                'Read against the FAST and ICAEW conventions and against the model’s own check rows. Every finding carries the cell it came from.',
+                'Read against the FAST and ICAEW conventions and against the model’s own check rows. Every finding carries the cell — or the document and page — it came from.',
               )}
               <div
                 style={{
@@ -3989,6 +4138,62 @@ const Report = ({
                   {serif(recalcBody)}
                 </>
               )}
+              {/* Coverage on the report's face — G4's own requirement,
+                  and the line the schema calls « what keeps the product
+                  honest ». It comes from the tie-out, so a deal with no
+                  deck or memo checked says that rather than printing a
+                  meaningless « 0 of 0 ». Agent-designed. */}
+              {heading('How much was covered', 34)}
+              {serif(
+                figuresSeen > 0 && coverage
+                  ? `${coverage.reconciled} of ${figuresSeen} figures in the deliverables were reconciled against the model · ${coverage.unlinked} not checked.` +
+                      (coverage.drifting > 0
+                        ? ` ${word(coverage.drifting)} of the reconciled disagree with the model.`
+                        : coverage.reconciled > 0
+                          ? ' Every reconciled figure agrees with the model.'
+                          : '')
+                  : 'No deck or memo has been reconciled against this model, so no figures were checked. What follows is the model read against itself.',
+              )}
+              {figuresSeen > 0 &&
+                coverage !== null &&
+                coverage.reasons.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      paddingTop: 16,
+                    }}
+                  >
+                    {coverage.reasons.map((one, i) => (
+                      <span
+                        key={one.reason}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 46px',
+                          gap: 16,
+                          alignItems: 'baseline',
+                          borderTop:
+                            i === 0 ? 0 : '1px solid rgba(16,22,35,.05)',
+                          padding: '10px 0',
+                        }}
+                      >
+                        <span style={{ fontSize: 14, color: '#4a4f57' }}>
+                          {one.reason}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: font.mono,
+                            fontSize: 12.5,
+                            color: '#9aa1ab',
+                            textAlign: 'right',
+                          }}
+                        >
+                          {one.count}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               {heading('What could not be checked', 34)}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {notChecked.map((text, i) => (
@@ -4065,6 +4270,23 @@ const Report = ({
                         flexDirection: 'column',
                       }}
                     >
+                      {(m.headline || categoryOfKey(m.rule ?? '')) && (
+                        //: The scan line first — a partner reads the
+                        //: headlines down the page, then stops on one.
+                        //: A check with no headline of its own is named
+                        //: by its family, which is derived from the rule.
+                        <span
+                          style={{
+                            fontSize: 12.5,
+                            letterSpacing: '.02em',
+                            textTransform: 'uppercase',
+                            color: '#9aa1ab',
+                            paddingBottom: 5,
+                          }}
+                        >
+                          {m.headline || categoryOfKey(m.rule ?? '')}
+                        </span>
+                      )}
                       <span
                         style={{
                           fontSize: 16.5,
@@ -4074,7 +4296,7 @@ const Report = ({
                           textWrap: 'pretty',
                         }}
                       >
-                        {m.plain || m.title}
+                        {saidOf(m.plain || m.title)}
                       </span>
                       <span
                         style={{
@@ -4084,7 +4306,7 @@ const Report = ({
                           paddingTop: 9,
                         }}
                       >
-                        {m.where.anchor.ref && (
+                        {citeOf(m) && (
                           <span
                             style={{
                               display: 'inline-flex',
@@ -4097,7 +4319,23 @@ const Report = ({
                               color: '#4a4f57',
                             }}
                           >
-                            {`'${m.where.anchor.sheet ?? ''}'!${m.where.anchor.ref}`}
+                            {citeOf(m)}
+                          </span>
+                        )}
+                        {againstOf(m) && (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              background: '#f4f5f7',
+                              borderRadius: 999,
+                              padding: '4px 11px',
+                              fontFamily: font.mono,
+                              fontSize: 11.5,
+                              color: '#4a4f57',
+                            }}
+                          >
+                            {againstOf(m)}
                           </span>
                         )}
                         {m.figure && (
@@ -4117,9 +4355,14 @@ const Report = ({
                           </span>
                         )}
                       </span>
-                      <div style={{ paddingTop: 12 }}>
-                        {serif(m.context || m.title)}
-                      </div>
+                      {/* The evidence, only when it says something the
+                          sentence above did not — several checks store
+                          the same words in both. */}
+                      {(m.context || m.title) !== (m.plain || m.title) && (
+                        <div style={{ paddingTop: 12 }}>
+                          {serif(saidOf(m.context || m.title))}
+                        </div>
+                      )}
                     </span>
                   </div>
                 ))}
@@ -4194,9 +4437,9 @@ const Report = ({
                             textWrap: 'pretty',
                           }}
                         >
-                          {one.plain || one.title}
+                          {saidOf(one.plain || one.title)}
                         </span>
-                        {one.where.anchor.ref && (
+                        {citeOf(one) && (
                           <span
                             style={{
                               flex: '0 0 auto',
@@ -4205,7 +4448,7 @@ const Report = ({
                               color: '#9aa1ab',
                             }}
                           >
-                            {`'${one.where.anchor.sheet ?? ''}'!${one.where.anchor.ref}`}
+                            {citeOf(one)}
                           </span>
                         )}
                       </span>

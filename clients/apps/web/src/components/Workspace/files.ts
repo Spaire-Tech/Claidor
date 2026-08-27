@@ -86,11 +86,23 @@ const CATEGORY_OF: Record<string, string> = {
   //: lead's order once they merged — same family as their siblings.
   'inconsistent-total': 'Probable formula defects',
   'typed-over-edge': 'Probable formula defects',
+  'range-over-block': 'Probable formula defects',
+  //: Fires on real models (a check formula that walks cells one by
+  //: one and skips a live block) but is in neither RULE_NAMES nor
+  //: ANALYTIC_RULE_NAMES, so Settings cannot list it and a firm
+  //: cannot switch it off — reported to the lead, seventeenth
+  //: sweep. Mapped here so a material finding is not filed under
+  //: « Other findings » on a partner's report.
+  'gapped-test': 'Probable formula defects',
   'balance-sheet': 'Structural exceptions',
   'cash-continuity': 'Structural exceptions',
   'debt-terminal': 'Structural exceptions',
   'model-own-check': 'Structural exceptions',
-  interest: 'Structural exceptions',
+  //: Renamed in the merged catalogue (was `interest`), and
+  //: Sentinel's column-direction extension joins its siblings —
+  //: re-checked against RULE_NAMES + ANALYTIC_RULE_NAMES,
+  //: seventeenth sweep. Nothing in the catalogue is unmapped.
+  'interest-consistency': 'Structural exceptions',
   'typed-over-formula': 'Embedded hardcodes',
   'hardcode-in-formula': 'Embedded hardcodes',
   'external-link': 'Auditability risks',
