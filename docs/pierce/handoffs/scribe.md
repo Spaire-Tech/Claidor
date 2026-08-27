@@ -74,16 +74,35 @@ Ofgem ED2 PCFM V5 against three Ofgem PDFs):
 | true abstention | 22 | 28 | **30** |
 
 Read that correctly: it says the matcher stays quiet where there is
-nothing to find. **It does not say the matcher can find a source
-that exists** — that hit-rate case has never been measured, because
-this corpus runs the wrong direction (the Finance Annex derives
-*from* the model, so what it states are computed cells, while the
-typed cells D3 restricts itself to are machine inputs no narrative
-document restates: 90 seeded draws, zero stated). The route
-therefore carries `PROPOSAL_STANDING`, an **in-band sentence in
-every proposal response** stating the measured record. Update it
-only from a registered round's result; never let a screen present a
-proposal as a link.
+nothing to find, on a corpus running the wrong direction (the Finance
+Annex derives *from* the model, so the typed cells D3 restricts itself
+to are machine inputs no narrative document restates: 90 seeded draws,
+zero stated).
+
+**The hit-rate case has since been measured, on Finch, and the answer
+is zero.** Rounds 5–7 and part B, same 42-cell sample and recorded
+truth (seed 271828, seven document→spreadsheet workflows):
+
+| | round 5 | dash round | **A + B, the whole sample** |
+|---|---|---|---|
+| true proposal | 0 | 0 | **0** |
+| false proposal | 2 | 1 | **1** |
+| scored rows | 27 | 24 | **39 of 42** |
+| rows the documents state | 18 | 20 | **35** |
+
+**Recall is 0 of 35, and the earlier denominators were flattering** —
+the rows the judge had set aside as unjudgeable were the same rows the
+matcher finds hardest. The blockage is located and it is not on the
+document side: `Cell.column_label` reads one header row, so two money
+columns of a stacked-header workbook come back with the identical name
+« $ Total Direct Expense » and the tie is correct behaviour. That case
+is written up for Sentinel.
+
+The route carries `PROPOSAL_STANDING`, an **in-band sentence in
+every proposal response** stating the measured record — now 0 of 35,
+including the fact that earlier rounds quoted a smaller denominator.
+Update it only from a registered round's result; never let a screen
+present a proposal as a link.
 
 **D4 round 4** is registered and blocked only on bytes — see below.
 
@@ -93,6 +112,29 @@ regulator model, 85 on the small Cascade fixture). The proposed
 flood-proof shape — fire only where sourcing is the *local* rule —
 is with the lead and founder. D5 reports nothing until a shape is
 approved.
+
+## The largest open defect, handed over deliberately
+
+**D1 stores single digits torn out of character-spaced text.** Some
+PDFs place glyphs one at a time (a chart overlay, a rotated axis label
+crossing a table); pdfplumber's line then reads « 1 9 , 8 4 2 » and D1
+files five facts where the page prints one, each with a citation box
+around a single glyph. Measured at **56% of the Finch corpus** and
+0.0% of ED2 — which is why three ED2 rounds never saw it.
+
+Two fixes have been registered, built, measured and **killed by their
+own criteria** (rounds P and Q in the log, and the whole story is
+there). Both counted properties of the *assembled line text*, and both
+caught the wrong population: P caught nils, Q caught English prose and
+regulator formula legends. **Do not try a third threshold** — the
+constant that passes the hand-check is visible, and fitting it after
+reading the check is exactly the move this lane refuses.
+
+Round R is registered: measure the PDF's own **character geometry**,
+where prose, nils and lone letters simply do not look different, and
+glyph-by-glyph text does. `server/scripts/corpus_documents_spaced_round.py`
+is the judge, seeded and ready; it reports nothing while no rule is in
+the extractor, which is the current state.
 
 ## The corpus, and the one blocker
 
@@ -128,9 +170,33 @@ that runs the wrong direction; that is what round 2 taught.**
   committed: a current `uv` (the bundled one's manifest stops at
   rc2), `uv python install 3.14` (3.14.7), venv rebuilt on it.
 - Route tests need real services: native PostgreSQL 16, Redis, and a
-  downloaded MinIO started by hand with the `.env.testing`
-  credentials (plus a `claidor-development` MinIO user). **They die
-  between turns** and restart in seconds from their surviving data
-  directories — restart them before blaming a test.
-- Heavy workbook jobs run alone; a concurrent pair OOM-killed a
-  sweep on this hardware once.
+  downloaded MinIO. **They die between turns** and restart in seconds
+  from their surviving data directories — restart them before blaming
+  a test. The exact incantations, because guessing them cost half an
+  hour once:
+
+  ```
+  su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pgdata \
+      -l /tmp/pg.log -o '-p 5432' start"
+  redis-server --daemonize yes --port 6379
+  cd /var/tmp && MINIO_ROOT_USER=claidor MINIO_ROOT_PASSWORD=claidorclaidor \
+      setsid nohup minio server /var/tmp/minio-data \
+      --address 127.0.0.1:9000 --console-address 127.0.0.1:9001 \
+      > /var/tmp/minio.log 2>&1 < /dev/null &
+  ```
+
+  **MinIO's root user is `claidor` / `claidorclaidor`**, from
+  `MINIO_USER`/`MINIO_PWD` in `.env.testing` — *not* the
+  `claidor-development` access key beside it, which is the S3 key the
+  app uses. Starting MinIO with the wrong root gives every test
+  `InvalidAccessKeyId` and looks like a code failure. Postgres data is
+  `/var/tmp/pgdata`, not `/var/lib/postgresql/16/main` (that one has
+  no `postgresql.conf`).
+- **Never run two pytest sessions at once.** Both take the bucket
+  `testing-claidor-s3-master` and delete each other's; the symptom is
+  hundreds of setup errors in a suite that passes alone. Heavy workbook
+  jobs run alone too — a concurrent pair OOM-killed a sweep once.
+- `pgrep -f "pytest tests/tieout"` matches the *wrapper shell* of any
+  command whose text contains that string, including the waiter
+  itself, so a `until ! pgrep …` loop never exits. Match
+  `bin/pytest tests/tieout`.

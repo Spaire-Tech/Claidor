@@ -2555,3 +2555,39 @@ legend rows lose a single fact.
 be chosen **before** the hand-check is read, from the two gap
 populations measured on documents this hand-check does not draw from,
 and the number chosen will be written here before the check runs.
+
+### The turn's housekeeping, named rather than slipped in
+
+**A container condition that cost half an hour, now written into the
+handoff exactly.** The services died between turns again, and I
+restarted MinIO with the wrong root user — `claidor-development`,
+which is the *S3 access key* the app uses, where the tests need
+`claidor` / `claidorclaidor` from `MINIO_USER`/`MINIO_PWD`. Every test
+returned `InvalidAccessKeyId`, which reads exactly like a code failure.
+The handoff now carries the three start commands verbatim.
+
+**I made the lead's own error from this sweep.** Two pytest sessions
+ran at once; they take the same test bucket and delete each other's,
+and a suite that passes alone came back with 233 setup errors. The
+seventeenth sweep records the lead being OOM-killed for the same class
+of mistake, and I read that entry this morning before making it. It is
+in the handoff now as a rule, not a caution.
+
+**One red test on the tip is still not mine**:
+`test_routes.py::TestTheVersionDelta::`
+`test_a_revision_answers_in_review_language`. Suite otherwise **819
+passed, 9 skipped**.
+
+### What this turn leaves for the lead
+
+1. **`stated-but-unextracted`** — offered for the permanent vocabulary,
+   on the same grounds as `indeterminate-line-granularity`.
+2. **D1's character-spacing defect** — the largest known problem in this
+   track, precisely described, two fixes dead, **round R registered on
+   a different instrument and not run.** It is a bigger change than a
+   predicate and wants the lead's eyes first.
+3. **The cross-lane case for Sentinel** (`Cell.column_label` reads one
+   header row) is unchanged and still the thing standing between D3 and
+   a non-zero recall.
+4. **D4 and D5** still await decisions, not work — unchanged from the
+   last three turns, and I have not touched them.
