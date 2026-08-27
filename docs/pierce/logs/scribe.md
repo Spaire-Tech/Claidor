@@ -2591,3 +2591,55 @@ passed, 9 skipped**.
    a non-zero recall.
 4. **D4 and D5** still await decisions, not work — unchanged from the
    last three turns, and I have not touched them.
+
+## 28 August 2026, thirteenth « go » — round R runs, and why I am running it
+
+Orders read from the tip (`49063b01`, eighteenth sweep). **Unchanged
+for the fifth turn running.** My lane was merged at the eighteenth
+sweep — but at the *pre-rebase* hashes, so what reached the tip is
+rounds 6, 7 and the dash round; **part B and everything after it are
+still only on my branch.** Rebased onto the tip; git dropped the five
+merged commits as already applied and the seven new ones replayed
+clean.
+
+**Why round R and not something else, said plainly because I told the
+founder otherwise last turn.** D4 and D5 both await decisions rather
+than work — unchanged for four turns. Round 4 (Kelso) is blocked on
+bytes the lead has closed. That leaves round R, which I registered last
+turn with the words « offered to the lead as the next D1 round rather
+than run this turn », and in the handoff more strongly: « wants the
+lead's eyes first ».
+
+The lead has not seen it: the sweep that merged my lane predates the
+push that carried it. So « the lead's eyes first » would mean this lane
+does nothing at all this turn, on the largest known defect in its own
+package, waiting on a reader who does not yet know there is anything to
+read. That is worse than proceeding. **I am running it exactly as
+registered**, the protocol is the safeguard, and if the lead would
+rather I had waited, the round is a commit that can be reverted and the
+finding stands either way.
+
+## D4 round R — amendment, frozen before any measurement
+
+The registration promised: « the fraction constant will be chosen
+**before** the hand-check is read, from the two gap populations
+measured on documents this hand-check does not draw from, and the
+number chosen will be written here before the check runs. »
+
+That needs a held-out split, and here it is, declared now:
+
+- **Calibration half** (the constant is chosen from these, and the
+  hand-check never draws from them): the three ED2 PDFs, and the whole
+  `4_src_*` family — `4_src_7` and `4_src_9` through `4_src_12` for the
+  normally-drawn population, `4_src_8` for the glyph-by-glyph one.
+- **Judging half** (the hand-check draws from these only): Finch tasks
+  5, 16, 52, 72, 81, 156, 160, 161.
+
+The judging half holds every trap the last two rounds died on — task
+81's nils, task 160 and 161's tables, and task 5's prose — and the
+target, task 72. The calibration half holds both populations and none
+of the rows I have already read closely.
+
+**This is a change to the hand-check** (the seed and the count stay;
+the pool shrinks), and it is registered here before it runs rather
+than explained afterwards.
