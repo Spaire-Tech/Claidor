@@ -61,7 +61,7 @@
     "cells": "H7 Cost of debt indexation!I80, H7 Cost of debt indexation!J80, H7 Cost of debt indexation!J81, H7 Cost of debt indexation!K80, H7 Cost of debt indexation!K81, H7 Cost of debt indexation!K82, H7 Cost of debt indexation!L80, H7 Cost of debt indexation!L81, H7 Cost of debt indexation!L82, H7 Cost of debt indexation!L83, H7 Cost of debt indexation!M80, H7 Cost of debt indexation!M81, H7 Cost of debt indexation!M82, H7 Cost of debt indexation!M83, H7 Cost of debt indexation!M84"
    }
   ],
-  "seconds": 1.3
+  "seconds": 0.7
  },
  {
   "file": "caa_h7/h7_new_debt_indexation_fp.xlsx",
@@ -94,7 +94,7 @@
     "cells": "H7 Cost of debt indexation!I80, H7 Cost of debt indexation!J80, H7 Cost of debt indexation!J81, H7 Cost of debt indexation!K80, H7 Cost of debt indexation!K81, H7 Cost of debt indexation!K82, H7 Cost of debt indexation!L80, H7 Cost of debt indexation!L81, H7 Cost of debt indexation!L82, H7 Cost of debt indexation!L83, H7 Cost of debt indexation!M80, H7 Cost of debt indexation!M81, H7 Cost of debt indexation!M82, H7 Cost of debt indexation!M83, H7 Cost of debt indexation!M84"
    }
   ],
-  "seconds": 1.3
+  "seconds": 0.8
  },
  {
   "file": "caa_h7/h7_pcm_v2-10_final_proposals.xlsm",
@@ -403,7 +403,7 @@
     "cells": ""
    }
   ],
-  "seconds": 84.9
+  "seconds": 43.6
  },
  {
   "file": "caa_h7/h7_pcm_v2-11_final_determination.xlsm",
@@ -712,7 +712,7 @@
     "cells": ""
    }
   ],
-  "seconds": 84.1
+  "seconds": 44.4
  },
  {
   "file": "ofgem_ed2/v1_2023-02.xlsx",
@@ -847,7 +847,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 34.7
+  "seconds": 24.9
  },
  {
   "file": "ofgem_ed2/v2_2023-07-14.xlsx",
@@ -972,7 +972,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 33.4
+  "seconds": 24.5
  },
  {
   "file": "ofgem_ed2/v2_2023-07-31.xlsx",
@@ -1097,7 +1097,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 33.1
+  "seconds": 24.8
  },
  {
   "file": "ofgem_ed2/v3_2023-10.xlsx",
@@ -1222,7 +1222,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 32.6
+  "seconds": 23.5
  },
  {
   "file": "ofgem_ed2/v3_2023-11.xlsx",
@@ -1347,7 +1347,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 32.7
+  "seconds": 23.4
  },
  {
   "file": "ofgem_ed2/v3_2024-01.xlsm",
@@ -1442,7 +1442,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 32.7
+  "seconds": 23.1
  },
  {
   "file": "ofgem_ed2/v4_2024-07.xlsx",
@@ -1537,7 +1537,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 32.5
+  "seconds": 23.8
  },
  {
   "file": "ofgem_ed2/v4_2025-01.xlsx",
@@ -1632,7 +1632,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 32.6
+  "seconds": 23.4
  },
  {
   "file": "ofgem_ed2/v4_2025-07.xlsx",
@@ -1738,7 +1738,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 32.5
+  "seconds": 23.4
  },
  {
   "file": "ofgem_ed2/v4_2026-01.xlsx",
@@ -1844,7 +1844,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 32.8
+  "seconds": 22.9
  },
  {
   "file": "ofgem_ed2/v5_2026-06.xlsx",
@@ -1939,7 +1939,7 @@
     "cells": "EMID!AO75, ENWL!AO75, EPN!AO75, LPN!AO75, NPgN!AO75, NPgY!AO75, SPD!AO75, SPMW!AO75, SPN!AO75, SSEH!AO75, SSES!AO75, SWALES!AO75, SWEST!AO75, WMID!AO75"
    }
   ],
-  "seconds": 33.9
+  "seconds": 24.2
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_ET3 PCFM_Jun25.xlsx",
@@ -2066,7 +2066,7 @@
     "cells": ""
    }
   ],
-  "seconds": 6.6
+  "seconds": 3.5
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx",
@@ -2163,7 +2163,7 @@
     "cells": ""
    }
   ],
-  "seconds": 4.3
+  "seconds": 2.3
  },
  {
   "file": "ofgem_riio3/draft/DRAFT_GT3 PCFM_Jun25.xlsx",
@@ -2280,7 +2280,7 @@
     "cells": ""
    }
   ],
-  "seconds": 6.6
+  "seconds": 3.6
  },
  {
   "file": "ofgem_riio3/draft/RIIO ET3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -2979,18 +2979,19 @@
     "cells": ""
    }
   ],
-  "seconds": 671.8
+  "seconds": 385.9
  },
  {
   "file": "ofgem_riio3/draft/RIIO GD3 BPFM_Draft Determinations_Jun25.xlsm",
   "sheets": 46,
   "cells": 652176,
-  "errors": 6,
+  "errors": 9,
   "smells": 75,
   "by_rule": {
    "error-value": 7,
    "inconsistent-row": 2,
    "skipped-cell": 1,
+   "typed-over-formula": 3,
    "hardcode-in-formula": 28,
    "broken-name": 1,
    "volatile": 6,
@@ -3055,6 +3056,36 @@
     "detail": "=SUM(N182:N187) leaves out F2a - Financial Summary (TWA)!N194 above it \u2014 one formula filled across 7 cells (F2a - Financial Summary (TWA)!N195 to F2a - Financial Summary (TWA)!T195)",
     "tier": 1,
     "weight": 0.9,
+    "cells": ""
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "InputSummary!AO1172",
+    "figure": "",
+    "detail": "646.26 typed into a column that is otherwise calculated: =CHOOSE(m_identity, Cadent!AO1167, East!AO1167, London!AO1167, 'North West'!AO1167, 'West Midlands'!AO1167, Northern!AO1167, Scotland!AO1167, Southern!AO1167, 'Wales & West'!AO1167)",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "InputSummary!AP1172",
+    "figure": "",
+    "detail": "646.26 typed into a column that is otherwise calculated: =CHOOSE(m_identity, Cadent!AP1170, East!AP1170, London!AP1170, 'North West'!AP1170, 'West Midlands'!AP1170, Northern!AP1170, Scotland!AP1170, Southern!AP1170, 'Wales & West'!AP1170)",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "InputSummary!AQ1172",
+    "figure": "",
+    "detail": "919.698 typed into a column that is otherwise calculated: =CHOOSE(m_identity, Cadent!AQ1170, East!AQ1170, London!AQ1170, 'North West'!AQ1170, 'West Midlands'!AQ1170, Northern!AQ1170, Scotland!AQ1170, Southern!AQ1170, 'Wales & West'!AQ1170)",
+    "tier": 1,
+    "weight": 0.8,
     "cells": ""
    },
    {
@@ -3808,7 +3839,7 @@
     "cells": ""
    }
   ],
-  "seconds": 694.5
+  "seconds": 412.1
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 Allowed Return on Equity Summary File_Draft Determinations_Jun25.xlsx",
@@ -3861,20 +3892,41 @@
     "cells": ""
    }
   ],
-  "seconds": 1.6
+  "seconds": 1.5
  },
  {
   "file": "ofgem_riio3/draft/RIIO GDT3 WACC Rates Model_Draft Determinations_Jun25.xlsx",
   "sheets": 17,
   "cells": 527279,
-  "errors": 0,
+  "errors": 2,
   "smells": 10,
   "by_rule": {
+   "typed-over-formula": 2,
    "hardcode-in-formula": 5,
    "error-value": 2,
    "long-formula": 3
   },
   "findings": [
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "Key Outputs!D11",
+    "figure": "",
+    "detail": "45,717 typed into a column that is otherwise calculated: =DATE($A7-2, 10,1)",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "Key Outputs!E11",
+    "figure": "",
+    "detail": "45,747 typed into a column that is otherwise calculated: =DATE($A7-2, 10,31)",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
+   },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
@@ -3976,7 +4028,7 @@
     "cells": ""
    }
   ],
-  "seconds": 236.9
+  "seconds": 109.9
  },
  {
   "file": "ofgem_riio3/draft/RIIO GT3 BPFM_Draft Determinations_Jun25.xlsm",
@@ -4645,7 +4697,7 @@
     "cells": ""
    }
   ],
-  "seconds": 618.1
+  "seconds": 366.5
  },
  {
   "file": "ofgem_riio3/final_et3_bpfm.xlsm",
@@ -5405,19 +5457,19 @@
     "cells": "TaxPools!AP118, TaxPools!AQ118, TaxPools!AR118, TaxPools!AS118, TaxPools!AT118, TaxPools!AU118, TaxPools!AV118, TaxPools!AW118, TaxPools!AX118, TaxPools!AY118"
    }
   ],
-  "seconds": 625.9
+  "seconds": 378.3
  },
  {
   "file": "ofgem_riio3/final_gd3_bpfm.xlsm",
   "sheets": 49,
   "cells": 693753,
-  "errors": 8,
+  "errors": 11,
   "smells": 74,
   "by_rule": {
    "error-value": 7,
    "inconsistent-row": 3,
    "skipped-cell": 1,
-   "typed-over-formula": 2,
+   "typed-over-formula": 5,
    "hardcode-in-formula": 27,
    "broken-name": 1,
    "volatile": 7,
@@ -5493,6 +5545,36 @@
     "tier": 1,
     "weight": 0.8,
     "cells": "AP31, AQ31, AR31, AS31, AT31, AU31, AV31, AW31, AX31, AY31"
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "InputSummary!AO1179",
+    "figure": "",
+    "detail": "646.26 typed into a column that is otherwise calculated: =CHOOSE(m_identity, Cadent!AO1174, East!AO1174, London!AO1174, 'North West'!AO1174, 'West Midlands'!AO1174, Northern!AO1174, Scotland!AO1174, Southern!AO1174, 'Wales & West'!AO1174)",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "InputSummary!AP1179",
+    "figure": "",
+    "detail": "646.26 typed into a column that is otherwise calculated: =CHOOSE(m_identity, Cadent!AP1177, East!AP1177, London!AP1177, 'North West'!AP1177, 'West Midlands'!AP1177, Northern!AP1177, Scotland!AP1177, Southern!AP1177, 'Wales & West'!AP1177)",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "InputSummary!AQ1179",
+    "figure": "",
+    "detail": "919.698 typed into a column that is otherwise calculated: =CHOOSE(m_identity, Cadent!AQ1177, East!AQ1177, London!AQ1177, 'North West'!AQ1177, 'West Midlands'!AQ1177, Northern!AQ1177, Scotland!AQ1177, Southern!AQ1177, 'Wales & West'!AQ1177)",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
    },
    {
     "rule": "typed-over-formula",
@@ -6245,18 +6327,18 @@
     "cells": ""
    }
   ],
-  "seconds": 705.4
+  "seconds": 437.8
  },
  {
   "file": "ofgem_riio3/final_gt3_bpfm.xlsm",
   "sheets": 44,
   "cells": 604401,
-  "errors": 6,
+  "errors": 8,
   "smells": 67,
   "by_rule": {
    "skipped-cell": 2,
    "inconsistent-row": 2,
-   "typed-over-formula": 2,
+   "typed-over-formula": 4,
    "hardcode-in-formula": 17,
    "broken-name": 1,
    "volatile": 10,
@@ -6313,6 +6395,26 @@
     "tier": 1,
     "weight": 0.8,
     "cells": "AP29, AQ29, AR29, AS29, AT29, AU29, AV29, AW29, AX29, AY29"
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "PCFMInterface_SO!I184",
+    "figure": "",
+    "detail": "0.06 typed into a column that is otherwise calculated: ='NGGT SO'!I429",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "PCFMInterface_TO!I579",
+    "figure": "",
+    "detail": "0.06 typed into a column that is otherwise calculated: ='NGGT TO'!I943",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
    },
    {
     "rule": "typed-over-formula",
@@ -6995,20 +7097,41 @@
     "cells": "TaxPools!AP118, TaxPools!AQ118, TaxPools!AR118, TaxPools!AS118, TaxPools!AT118, TaxPools!AU118, TaxPools!AV118, TaxPools!AW118, TaxPools!AX118, TaxPools!AY118"
    }
   ],
-  "seconds": 634.3
+  "seconds": 386.9
  },
  {
   "file": "ofgem_riio3/final_wacc.xlsx",
   "sheets": 16,
   "cells": 500502,
-  "errors": 0,
+  "errors": 2,
   "smells": 13,
   "by_rule": {
+   "typed-over-formula": 2,
    "hardcode-in-formula": 5,
    "error-value": 2,
    "long-formula": 6
   },
   "findings": [
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "Key Outputs!D11",
+    "figure": "",
+    "detail": "45,566 typed into a column that is otherwise calculated: =DATE($A7-2, 10,1)",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
+   },
+   {
+    "rule": "typed-over-formula",
+    "severity": "error",
+    "ref": "Key Outputs!E11",
+    "figure": "",
+    "detail": "45,596 typed into a column that is otherwise calculated: =DATE($A7-2, 10,31)",
+    "tier": 1,
+    "weight": 0.8,
+    "cells": ""
+   },
    {
     "rule": "hardcode-in-formula",
     "severity": "smell",
@@ -7140,6 +7263,6 @@
     "cells": ""
    }
   ],
-  "seconds": 255.9
+  "seconds": 114.5
  }
 ]

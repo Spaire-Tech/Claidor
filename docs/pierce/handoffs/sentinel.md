@@ -27,38 +27,43 @@ it falls.
 | A3 c1 sibling totals (`a3-sibling-totals.md`) | Adopted. Rule `inconsistent-total`. Round 1 refused on a designed depreciation triangle; round 2's consequence guard fixed it. |
 | A3 c2 family edge (`a3-family-edge.md`) | Adopted. Rule `typed-over-edge`. Round 1 refused on typed index-base 1s; round 2's identity + horizontal-seed guards fixed it. |
 | A3 c3 beat families (`a3-beat-families.md`) | **Unmeasurable** — zero plantable lattices in all 27 files. Implemented, tested, deliberately **unwired**, catalogue untouched. Revisit if the MCC ERR or Tasi corpora bring strided layouts. |
+| A3 c4 column typed (`a3-column-typed.md`) | **Adopted** (3 rounds). The island pass's left-formula guard is waived for interior islands that hold a substantive value. +12 corpus findings, baseline regenerated with it. No new rule — catalogue stays 19. |
 
 Both adoptions moved the rule catalogue 17 → 19 and broke an
 Atelier test (routed). **Lesson the lead asked for: name any
 catalogue-count change in the log the same day.**
 
-## In flight — A3 c4, column typed-over (`a3-column-typed.md`)
+## In flight
 
-Round 1 (verification, no code): 45 plants, 41 caught; the island
-pass owns the column direction except where its **left-formula
-history guard** suppresses it. Round 2 (waive that guard for
-*interior* islands): implemented, tested, measured — **REFUSED**
-three ways (31% worth showing; a file gained 6; a letter-refusal on
-a plant that was never recoverable). Round 3 is **registered and
-being implemented now**: the waiver additionally requires the typed
-value to be neither 0 nor ±1, because 16 of the 26 new findings
-were typed-zero template rows — the class `custodes-mining.md`
-rejected by name.
+**Nothing.** Candidate 4 is finished and pushed with its baseline.
+The next turn starts a new round from a clean slate.
 
-**Next step, precisely:** implement the round-3 condition in
-`_island_findings`, add the zero test, re-audit the three planted
-files, run the full sweep, diff, and adopt only if the diff is
-exactly the eight worth-showing findings named in the round-3
-registration.
+## Next, per orders (in this order)
 
-## Then, per orders
+1. **The Tasi re-score** — high priority, ahead of c5.
+   `china-os-findings.md` §1; shallow-clone `tcse-iscas/Tasi`
+   (verified reachable); ground truth is `Spreadsheet Error
+   Dataset/Subject/Groundtruth and tool results.xls` (291 worksheet
+   rows). **Registration first**: scoring conventions fixed against
+   *both* label sets' shapes before any number; our engine's row
+   beside the seven tools'; the 1,974-vs-3,702 label disagreement
+   measured and written as its own result. No licence in that repo
+   — benchmark internally, cite, **never redistribute**.
+2. A3 c5 (range vs block), same loop.
+3. A4 (coverage denominator) — report-JSON additions routed
+   through the lead, since Atelier owns what the product reads.
+4. The « dead assumption » reachability candidate
+   (`swens-aha.md`): dependency-graph reachability, no
+   recalculation, one-sentence finding. Coordinate the rule name
+   with the lead before adoption (it needs Atelier's category map).
 
-1. **The Tasi re-score** (high priority, ahead of c5) —
-   `china-os-findings.md` §1; shallow-clone `tcse-iscas/Tasi`;
-   registration first; never redistribute (no licence).
-2. A3 c5 (range vs block), then A4 (coverage denominator, report
-   JSON routed through the lead), then the « dead assumption »
-   reachability candidate (`swens-aha.md`).
+**Open question parked for the lead:** the typed fold's
+four-adjacent threshold leaves three-cell typed rows unfolded
+(surfaced by c4 round 3). Moving it would change findings already
+in the baseline, so it needs its own registered round.
+
+**Also parked:** the collapse fold's missing adjacency test (the
+`C_Capex` diagnosis from c1), and the A1 range-expansion round.
 
 ## What this container taught me
 

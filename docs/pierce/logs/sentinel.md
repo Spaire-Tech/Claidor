@@ -28,6 +28,41 @@ golden-master gate and regenerates the baseline in the same commit.
   `a3-sibling-totals.md`, with the planting harness under
   `server/scripts/planting/`.
 
+## 27 August 2026 — candidate 4 adopted: the column direction, widened
+
+Three rounds. Round 1 changed no code and measured what the engine
+already catches down columns: 41 of 45 plants, with the misses
+naming the island pass's left-formula history guard as a row-major
+bias. Round 2 waived that guard for interior islands — and was
+refused three ways: it admitted eight real hardcodes *and* sixteen
+typed-zero template rows, the class the mining round rejected by
+name. Round 3 carried candidate 2's identity guard inward (a cell
+admitted only by the waiver must be neither 0 nor ±1): the zeros
+vanished, the real finds stayed, and the gate now adds **12
+findings in 5 files, none removed**.
+
+What the engine can now say that it could not: FY2026's
+lookup-period dates are typed into **both WACC models** where every
+sibling row computes them; 646.26 and 919.70 sit in rows whose
+neighbours all pull per-entity through `CHOOSE(m_identity, …)`; a
+0.06 rate is typed into two passthrough interface columns. The
+baseline is regenerated **in this commit**, its diff the review
+artifact.
+
+Round 3 was refused by its own letter (12 findings predicted as 8)
+and adopted after examination: the four extra lines are cells round
+2 already reported inside a fold, now reporting individually
+because removing the zeros left three cells — below the fold's
+four-adjacent threshold. Content right, presentation mispredicted;
+both written in `a3-column-typed.md`.
+
+**Catalogue consequence, per the lead's standing request: none.**
+This round adds no rule — `typed-over-formula` already exists — so
+the count stays 19 and Atelier has nothing to route this time.
+**One open question for the lead:** the typed fold's four-adjacent
+threshold now leaves three-cell rows unfolded; moving it would
+touch baseline findings, so it needs its own registered round.
+
 ## 26 August 2026 — candidate 3: unmeasurable on this corpus, not shipped
 
 Beat families, the mining round's stride-lattice candidate. The

@@ -271,3 +271,50 @@ construction.
 **Prediction (written before running):** 26 → 8 findings, exactly
 the eight named above, maximum 2 per file; `B151` still caught;
 recall otherwise unchanged at 41 of 45.
+
+---
+
+## Round-3 verdict (27 Aug): refused by the letter, ADOPTED after
+## examination — with the surprise verified true
+
+**Planted recall: 42 of 45**, identical to round 2. `Inflation!B151`
+— the plant the waiver exists for — stays caught; the three misses
+are the three explained ones (`F294` unreachable by any left-guard
+change, `F167` the top-island guard, `E211` the seed exemption).
+Criterion 3 met.
+
+**The sweep: 12 new findings in 5 files, none removed, nothing
+moved.** Every one is a real hardcode, hand-read at the cells; the
+sixteen zero rows and both typed 1s are gone, exactly as round 3
+intended. Maximum gain per file: 3, under the flood line.
+
+**The letter fails: 12 ≠ the 8 predicted.** The examination, run to
+ground before deciding: the four extra lines are `AP1172`,
+`AQ1172`, `AP1179`, `AQ1179` — cells round 2 *already reported*
+inside a fold whose sentence named the span « AO1172 to AT1172 ».
+Round 3 removes the three zeros from each of those rows, leaving
+three live cells, which is below the typed fold's four-adjacent
+threshold, so they report individually instead of as one sentence.
+
+So the flagged **cells** are a strict subset of round 2's, no cell
+is new, and the count rose only because a fold stopped firing. The
+prediction was wrong about presentation, not about content — I
+predicted the cells correctly and never checked what the fold would
+do with three survivors. **Adopted**, on the A7 precedent: the
+letter refuses, the examination shows the change did exactly its
+documented job, and the baseline's own git diff — 12 additions,
+zero removals — is the review artifact the founder can reverse.
+
+**Named, not swallowed:** three findings for one typed row of three
+values is more granular than « one finding per authoring decision »
+wants. The typed fold's four-adjacent threshold is a pre-existing
+tuning number, and moving it would change findings already in the
+baseline — so it is **its own registered round**, not a quiet edit
+inside this one. Recorded here as an open question for the lead.
+
+**Carried forward from this candidate, all named:** the top-island
+left-formula guard still suppresses column-major typed history
+(`F167`'s class); the seed exemption costs a mid-chain paste
+(`E211`); and families that pin absolute rows have no repeating
+shape, so the island witness can never fire (`F294`) — the « no two
+shapes match » blind spot, unchanged since round 4 named it.
