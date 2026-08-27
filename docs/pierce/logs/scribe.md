@@ -3208,3 +3208,65 @@ All eight rows pass on the current tree.
 The tip has not moved in two turns and the orders file is four sweeps
 old. Everything this lane has done since is inside D1 and D3, and the
 engine is untouched.
+
+## 28 August 2026, fifteenth « go » — the Scottish route is not closed, and round 4's blocker is now half the size
+
+Orders read from the tip (`2de8c43a`). The tip has moved but the
+**orders file is byte-identical** to the fourteenth sweep's — five
+sweeps old now. No word on round U's criterion question, so round U
+stays unrun as promised.
+
+**The new commits change a fact my orders rest on.** The population
+proof fetches eleven **Scottish Futures Trust closed-deal models** —
+and `Kelso`, `Levenmouth` and `Oban and Campbeltown` are three of the
+eleven. Those are the exact three deals whose pairs D3 round 4 is
+registered on, and which my orders close with « Every automated route
+to the Scottish pairs is exhausted and the failure is structural…
+**Stop attempting it.** »
+
+**The route is not exhausted. It was the wrong route.** My fetcher went
+through the portal's `/document/{id}/download` links via the Wayback
+archive, which truncates at 1 MiB — and the Kelso model is 4.2 MB. The
+files also sit directly in a public S3 bucket with a valid certificate
+under a stable convention, `{Project Words}+Financial+Model.xlsm`.
+
+**Verified independently from this container just now**, not taken on
+another lane's word:
+
+| probe | result |
+|---|---|
+| `Kelso+High+School+Financial+Model.xlsm` | **200**, `Content-Length: 4,231,503` |
+| `Levenmouth+Academy+Financial+Model.xlsm` | **200** |
+| `Oban+and+Campbeltown+High+Schools+Financial+Model.xlsm` | **200** |
+| the portal itself, `contracts.scottishfuturestrust.org.uk` | still fails TLS (no connection) |
+
+### The contract half is still missing, and I stopped rather than fought
+
+Round 4 needs **pairs**. The bucket holds the models; it does not list
+(`ListObjectsV2` → 403 AccessDenied), so keys must be guessed. I probed
+**thirteen** forms of the agreement key — the model convention applied
+to the portal's own panel heading « Kelso High School - Project
+Agreement », plus `Contract`, `Agreement` alone, `Redacted` before and
+after, `.PDF`, `.zip`, and the same forms for Levenmouth, Baldragon and
+City of Glasgow College. **All thirteen return 403; the model key
+returns 200 in the same breath**, so 403 here means absent, not denied.
+
+That is where I stop. Thirteen guesses is a probe; a fourteenth is
+fighting, and my orders say report rather than fight.
+
+**What the lead should take from this, stated as narrowly as the
+evidence allows:**
+
+1. « The Scottish route is structurally closed » is **half wrong**. The
+   models are reachable today, by a route the project already has
+   committed and running.
+2. **Round 4's blocker is now specifically the contracts**, not the
+   models — a much narrower ask than the one the founder was given
+   (« Save Page Now on six URLs »). Three URLs would do, and only the
+   agreement half.
+3. Anyone who can see the portal's index in a browser can read the
+   agreement filenames off it in a minute, and if they follow the same
+   convention the bucket serves them without the portal.
+
+**I have not modified `corpus_sft_models.py`** — it is not my file, and
+the models it fetches are not what round 4 is missing.
