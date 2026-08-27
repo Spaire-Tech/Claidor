@@ -1382,3 +1382,173 @@ next rounds are the conditional-input fix above and the selector
 sweep (evaluating under each licensee) — the dead branch is now
 *reported* rather than mistaken for a clean result, which is the
 part that mattered.
+
+## Two rounds registered together (REGISTERED BEFORE RESULTS)
+
+Sixteenth sweep. My three numbered orders (handoff, tier 1's
+registration, tier 2's wider round) are merged; **tier 1 stays
+code-free** — `z3-solver` is still not in the tip's `pyproject`,
+so nothing imports it — and **C6 stays unwritten**: the plan's
+third amendment gates it on Dynamo's two stability tests, and
+their B5 log carries the criterion as a plan (« run twice with
+independent samples; agreement reported as a number ») with no
+five-seed agreement and no cosmetic-invariance result on the
+record yet. Checked, not assumed. So this turn takes the two
+things that are mine, unblocked, and already owed.
+
+### Round A — tier 2's conditional input must be able to fire
+
+Owed from the wider round's own finding: `conditional_divergence`
+drew its threshold input with `literal_target(nonzero=True)`,
+which can return a literal the **categorical** rule excludes from
+the assignment — so the condition can never activate and the
+instance reports a zero it did not earn (ED2 `AV102`,
+`factors: []`). Fixed rule: the class draws its threshold input
+from the **scaled** set only; when no scaled literal is available
+at or after the mark, the instance is a **refusal** naming that
+reason, never a zero. Nothing else moves — k, seed, threshold and
+every other class stay as registered.
+
+### Round B — the two C3 deferrals, now unparked
+
+The twelfth sweep parked these « until C4's first round lands »;
+tier 0 and tier 2 have both landed, so they are due.
+
+**B1. Cells added or removed inside matched structure.** Today
+`delta_of` walks matched row × matched column positions and
+`continue`s whenever either side is missing — so a number typed
+into a previously-empty cell of an existing row is invisible to
+every C3 class, while C1's raw diff sees it plainly. That gap is
+the deferral, and it is the commonest real revision there is: the
+new period's actual, filled in. Two new classes, **`emptied_cell`**
+and **`filled_cell`**, ranked between `moved_assumption` and
+`material_output` — authoring decisions before their consequences,
+removal before addition. Scope, stated so it cannot creep: only
+**matched** rows and columns, so an inserted row's cells stay
+`structure` and are never double-counted; the engine's cell
+universe, so C1's style-only stubs never appear. Folded to row
+blocks like every other class.
+
+**B2. `rewrite_formula` gets labelled targets and real positions.**
+The C2 harness recorded two warts against this class: its target
+rule ignores the position parameter (so its three instances per
+sheet were **one edit run three times**), and it lands on
+label-less row 1, whose wholesale rewrite reads honestly as
+delete + insert. New rule: the class targets the first formula
+cell at or after **its own mark** whose row carries a label,
+wrapping to the top as the other scans do; a sheet with no such
+cell is a refusal.
+
+**The prediction, on record before the run:** if a row's label is
+what rescues a rewritten row's match — which is what C2's round-3
+diagnosis claimed — then this class should stop reading as
+delete + insert and start recovering, moving the harness above
+21/24. **Predicted, not promised**; whatever the harness returns
+is what gets written, and a result that contradicts the diagnosis
+is the more interesting one. The gate stands unchanged: the other
+seven classes must reproduce their exact per-instance verdicts, or
+the round fails.
+
+## Rounds A and B — results
+
+### Round A: the conditional class's zeros are now earned
+
+Re-run on both hosts, nothing else moved. **ED2 `AV102`, which
+reported `factors: []` and an unearned zero, now draws real ones —
+`0.532, 0.67, 1.151, 0.921, 0.921`** — none above the registered
+1.4× threshold, so its zero stands, but it is now a zero the
+trials *produced* rather than one the instrument manufactured.
+`AL1` unchanged (`1.405, 1.317, **1.432**, 1.133, 1.217`, two
+crossings, two divergent trials). CAA unchanged, as expected: that
+host has no categorical literals to freeze. Controls silent on
+both, false positives zero, and the one refusal is still the known
+dead cell.
+
+### Round B1: the deferral closes the loop with C1
+
+Unit tests pin the three semantics (a filled cell, an emptied
+cell, and an inserted row that must stay `structure`). On the real
+pair the result is the one I most wanted to see: **C1 measured 24
+added cells at `Monthly Inflation!H284:I295`; C3 now reports them
+as one `filled_cell` block — rows 284–295, columns H and I** —
+twenty-four cells folded into a single authoring decision, « a
+cell that was empty now holds 121.2 ». The report and the raw diff
+finally tell the same story about that pair, in their own
+languages, and nothing else in the report moved (0 new, 0
+repaired, 11 persistent, 2 moved assumptions, 94 material blocks —
+all identical to the committed run).
+
+### Round B2: the prediction held, and named its own remainder
+
+The registered prediction was that a labelled target should lift
+the harness above 21/24. Measured:
+
+| sheet | before | after | `rewrite_formula` |
+|---|---|---|---|
+| InputSummary | 21/24 | **24/24** | **3/3** |
+| SWEST | 21/24 | **22/24** | 1/3 |
+
+Every other class reproduced 3/3 on both sheets, so the gate
+holds. InputSummary is now perfect: the class that had never
+recovered once recovers at all three positions, which confirms
+C2's round-3 diagnosis — *the label is what rescues a rewritten
+row's match.*
+
+**The remainder, named rather than tuned.** SWEST's marks 203 and
+312 still report `inserted_rows 1 / deleted_rows 1` — row 1 again.
+The cause is my own proxy: the harness calls a row « labelled »
+when it holds any non-formula string, and SWEST's row 1 holds a
+*title*, which the engine's labeller does not treat as a row
+label. So when no labelled formula row exists at or after the
+mark, the scan wraps and lands back on the one row the fix was
+meant to avoid. The proxy is not the labeller, and the
+registration said « a row the labeller can name ».
+
+**Registered for the next round** (not patched after seeing the
+number): the harness takes its labelled-row set from the engine's
+own `Cell.row_label` through the frozen reader surface, and a
+sheet with no labelled formula row at all is a refusal rather than
+a wrap. Prediction, again in advance: SWEST's two failures should
+become either recoveries or refusals — and if they become
+refusals, `rewrite_formula` on SWEST is a class this sheet cannot
+host, which is a fact about the sheet worth having.
+
+## Round D — the selector sweep (REGISTERED BEFORE RESULTS)
+
+The last of tier 2's named follow-ups, and the one that decides
+whether « dead branch » is a permanent blind spot or just a
+starting state.
+
+**What the model actually does**, read in the cells rather than
+assumed: every licensee sheet reaches the live calculation through
+`SelectedInputs!X = CHOOSE($B$3, ENWL!X, NPgN!X, NPgY!X, WMID!X,
+EMID!X, SWALES!X, SWEST!X, LPN!X, SPN!X, EPN!X, SPD!X, SPMW!X, …)`,
+and `SelectedInputs!B3` is `=m_identity`, currently **14**. SWEST
+is argument **7**. So SWEST is not unreachable — it is unselected,
+and one cell decides which of the thirteen branches the model is
+about.
+
+**The rule, fixed now.** When the liveness probe refuses a
+position as dead, the harness looks for a selector: a `CHOOSE`
+whose first argument is a single cell and whose remaining
+arguments name sheets. If the sheet under edit appears at index
+*k*, the harness re-probes with that index cell **forced to k**
+(overwriting its formula with the literal — a declared
+intervention, not a discovery). If the position becomes live, its
+instances run under the forced selector and **every one of them
+carries `selector_forced: k` in the report**. A position that is
+still dead with its own branch selected is dead for a reason that
+is not the selector, and stays a refusal.
+
+**Nothing else moves**: k, seed, threshold, classes, the
+categorical rule and the gate are all as registered, and the
+false-positive control must stay silent under forcing too — if
+forcing the selector makes the equivalent rewrite speak, the
+forcing is wrong and the round fails.
+
+**The prediction, before the run:** SWEST's refused stealth
+position should become live under `B3 = 7`, and the class table
+should look like the CAA host's — `tail_hardcode` and
+`stealth_literal` catching every trial, control silent. If instead
+the forced branch still reports nothing, the dead-branch story is
+incomplete and that is the more interesting result.
