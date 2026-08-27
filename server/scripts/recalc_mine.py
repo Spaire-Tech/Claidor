@@ -36,6 +36,7 @@ from polar.tieout.recalc.mine import (
     cleanse,
     coverage,
     find_families,
+    mine_ratios,
     mine_signed_sums,
     sample_with_families,
     stable_rules,
@@ -400,7 +401,27 @@ def main() -> int:
     rules_a = cleanse(mine_signed_sums(first, watched))
     rules_b = cleanse(mine_signed_sums(second, watched))
     stable = stable_rules(rules_a, rules_b)
+    # Both families, every run. Round 1b found the ratio family
+    # returning the signed sums' own equalities at k = 1 — « there
+    # were no proportions to find, only sameness » — and that was
+    # measured under a starved perturbation. At full legal coverage
+    # it is worth asking again, and asking costs no machine time.
+    ratios_a = mine_ratios(first, watched)
+    ratios_b = mine_ratios(second, watched)
+    stable_ratio_keys = {(r.numerator, r.denominator) for r in ratios_b}
+    stable_ratios = [
+        r for r in ratios_a if (r.numerator, r.denominator) in stable_ratio_keys
+    ]
     mine_seconds = round(time.monotonic() - mine_started, 1)
+
+    non_unit = [r for r in stable_ratios if abs(r.k - 1.0) > 1e-9]
+    print(
+        f"\nratio family: {len(stable_ratios)} stable, "
+        f"{len(non_unit)} of them a real proportion (k != 1)",
+        flush=True,
+    )
+    for rule in non_unit[:8]:
+        print("  " + rule.render(labels), flush=True)
 
     print(f"\n=== {source.name}: {len(stable)} stable rules ===", flush=True)
     # Row labels repeat across a model's year columns, so distinct
@@ -411,6 +432,16 @@ def main() -> int:
         print(f"  {rule.render(labels)}   [{cells_in}]", flush=True)
     sentences = {rule.render(labels) for rule in stable}
     print(f"  ({len(sentences)} distinct sentences)", flush=True)
+
+    runs_path = out.with_name(out.stem + "-runs.json")
+    runs_path.write_text(
+        json.dumps({"watched": watched, "first": first, "second": second})
+    )
+    print(
+        f"wrote {runs_path} — the run matrices, so a new rule family "
+        f"can be mined without the machine",
+        flush=True,
+    )
 
     out.write_text(
         json.dumps(
@@ -431,6 +462,16 @@ def main() -> int:
                 "rules_first": len(rules_a),
                 "rules_second": len(rules_b),
                 "agreement": round(agreement(rules_a, rules_b), 4),
+                "ratios_stable": len(stable_ratios),
+                "ratios_non_unit": [
+                    {
+                        "numerator": r.numerator,
+                        "denominator": r.denominator,
+                        "k": r.k,
+                        "sentence": r.render(labels),
+                    }
+                    for r in non_unit[:50]
+                ],
                 "distinct_sentences": len({rule.render(labels) for rule in stable}),
                 "stable": [
                     {

@@ -2714,3 +2714,58 @@ target measurement pointed at every change, and it is now paid for.
 
 Prediction 2 — whether RoE's coverage finally moves — needs the
 machine, and the constrained-families runs have it.
+
+## Constrained families measured — `h7-fp` legal, and the rule set is identical
+
+### Prediction 5 — **failed, and the failure is the result**
+
+Registered: at least one new stable rule appears on `h7-fp`, having
+been broken in round 2 by illegal draws. I also registered the
+alternative — « the round has bought legality without buying a
+single law » — and that is what happened.
+
+| | round 2 (illegal draws) | round 4 (legal draws) |
+|---|---|---|
+| coverage | 161 of 161 | 161 of 161 |
+| families detected | — | 5, all `{embedded, new} = 1.0` |
+| stable rules | 17 | 17 |
+| distinct sentences | 7 | 7 |
+| **rule sets identical** | | **yes — 0 added, 0 lost** |
+
+Not merely the same counts: the same rules, term for term.
+
+**What that overturns is my own caveat.** Round 2 said the sets could
+not be called complete because « at illegal capital structures a law
+that holds only on the simplex is broken and therefore never found ».
+That worry was sound and, on this file, **not the operative one**:
+the same rules are found either way. So `h7-fp`'s seven sentences are
+now legally obtained and the completeness caveat comes off them.
+
+It does not make them the model's accounting laws. They are still
+duplicate calculations and first-year boundary conditions. What the
+round establishes is that **legality was not the blocker on
+recognisability** — which is worth knowing precisely because I had
+been treating it as one.
+
+### What the blocker looks like now
+
+At 100% coverage, under legal draws, over 400 runs, the signed-sum
+family finds equalities and nothing else on a rate model. Round 1b
+guessed at this — « there were no proportions to find, only
+sameness » — from a starved perturbation. It is now the reading from
+a full one, which makes it a much stronger claim: **on a cost-of-debt
+model the signed-sum family may simply be the wrong family.**
+
+So the runner now mines **both families every run** and prints the
+ratio rules that are real proportions (k ≠ 1) rather than the
+sameness the signed sums already found. It also writes each run's
+**run matrices** beside its result, so a new rule family can be
+mined against the same runs without spending the machine again —
+which is the direct, cheap answer to having lost every earlier
+round's raw output to a container restart.
+
+Predictions 1, 2, 3, 4 and 6 of that registration all held: the
+family the hand typing knew was found on both files, the three false
+families were caught by reading and fixed, no draw left the simplex
+across 300 checks and 400 runs, coverage stayed at 100%, and the
+round-2 sentences survived.
