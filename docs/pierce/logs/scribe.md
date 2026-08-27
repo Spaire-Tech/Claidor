@@ -3496,6 +3496,12 @@ the service runs it (`read_structure` → `audit(book, axes=...)`), read-only:
 **Sixteen rule findings and twelve analytics across all eight models**,
 and four of the eight produce nothing whatever.
 
+*[The analytics figure is now stale, and for a good reason: after
+Sentinel's own-check period restriction was adopted at the twenty-third
+sweep, the same run gives **16 rules and 4 analytics**. The eight that
+vanished are Kelso's four and Newbattle's four — exactly Proof 1A's
+eight false alarms. Re-measured and recorded in the twentieth « go ».]*
+
 **And the honest reading cuts both ways, so both go here.** Zero
 findings on an audited, closed, lent-against model may be the engine
 being *right* — these files were checked by professionals before
@@ -4221,3 +4227,64 @@ cold-run condition.
 registering rounds to fill turns: seven D1 rounds sit in this log, six
 dead and one waiting, and an eighth design would be noise. If nothing
 is decided, the honest next turn is a short one.
+
+## 28 August 2026, twentieth « go » — a short turn, as promised, and one number that moved
+
+Orders read from the tip (`bd174718`, twenty-third sweep in progress).
+**Byte-identical for the tenth sweep.** My lane merged. Round V is
+still undecided, and last turn I said that if nothing were decided the
+honest next turn would be a short one. This is that turn.
+
+**Two things were worth doing.**
+
+### 1. Re-running every registered measurement against the moved tip
+
+The engine is a read-only library to this lane, so when it changes my
+numbers can move without anyone noticing. `analytics.py` moved 299
+lines at this sweep (Sentinel's own-check period restriction, adopted).
+So I re-ran everything this lane has published:
+
+| measurement | result |
+|---|---|
+| the audit's 8 corpus numbers | **8 of 8 reproduce** |
+| ED2's registered sample | **30 of 30** |
+| Finch part A + part B | **0 / 1 / 4 / 34, 39 of 42 scored, 35 stated** — identical |
+| D5 round 2 (regulator + toys) | identical, including ED2's 0 of 22,693 |
+| D5 round 4 (Inverness College) | identical — 21 sections, 6 usable, 175 typed cells, and the whole threshold table |
+
+**One number moved, and it moved for a good reason.**
+
+### 2. The engine on the eight deal models: analytics 12 → 4
+
+| | round 3 (published) | now |
+|---|---|---|
+| rule findings | 16 | **16** |
+| analytics findings | 12 | **4** |
+
+The eight that disappeared are **Kelso's four and Newbattle's four**.
+Those are precisely the two models where Proof 1A found its eight false
+alarms, and precisely the class Sentinel's own-check period restriction
+was built to remove — a covenant threshold parked in a scalar column
+being read as a failing period.
+
+**12 − 8 = 4.** My independent re-run of my own registered measurement,
+on a corpus I measured for a different reason, drops by exactly the
+number the proof adjudicated at the cells. **That is corroboration of
+Sentinel's fix from outside its own tests**, and it is worth more than
+my saying so, because I did not set out to check it — I set out to see
+whether my numbers still held.
+
+**The published number is now stale and is marked in place** at the
+round 3 write-up. It was correct when measured, against an engine that
+has since been fixed.
+
+### What I did not do
+
+I did not register an eighth D1 round, and I will not while round V is
+undecided. **The five open decisions are now on one page** —
+`docs/pierce/logs/scribe-decisions.md` — each with its question, its
+evidence in a sentence, and what happens on either answer. That is not
+new work and adds no claim; it is an attempt to make five asks cost a
+minute rather than an hour.
+
+Suite: **904 passed, 9 skipped, 0 failed.**
