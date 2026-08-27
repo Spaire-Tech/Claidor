@@ -2325,3 +2325,52 @@ Round 2's verdict across the three models, stated plainly: **on H7
 the typing works and over-reaches; on RoE it fails closed.** Neither
 result may be called the model's laws, and the reasons are now
 specific enough to fix.
+
+---
+
+## The record-table round — registration
+
+*28 Aug. The two fixes the RoE collapse and `Swap profile!81` both
+point at, registered with predictions before either is written. E2's
+reported numbers stand as measured at `c6430687`; this changes E2
+after that run, not during it.*
+
+### What is being built
+
+1. **The typing map reads the orientation.** `type_from_units` is
+   given the sheet's orientation. A sheet that is `unknown` is
+   **refused as untyped and the refusal is counted**, instead of
+   being frozen by accident because every row happened to look like
+   a date. A stated refusal and a silent freeze produce the same
+   coverage number and are not the same thing.
+
+2. **A column-wise path, by transposition.** On a record sheet the
+   unit lives in the column: `RPI` is the rate, `2021/22` is the
+   record. So the evidence is transposed — the **column header
+   becomes the label**, the row labels become the headers, the
+   column's cells become the values and formats — and the existing
+   `classify_row` is run on that. No second classifier: if the
+   inference is right about what evidence decides a unit, it should
+   work equally well down a column, and if it does not, that is
+   worth knowing too.
+
+### Predictions
+
+1. **RoE's rate columns come back as rates.** `C6:C14`, `D6:D14`,
+   `E6:E13` — 26 cells the hand typing perturbed and automatic
+   typing froze — are typed `rate` again on at least **24 of 26**.
+2. **RoE's coverage clears round 1b's 10 of 193.** I will not
+   predict it clears the 50% bar; the sheet has 193 watched cells
+   and only three input columns, and round 1b's evidence says the
+   rest are driven from elsewhere.
+3. **H7 is untouched.** Its sheet is row-wise, so the orientation
+   gate does not fire and `h7-fds` returns the same 144 of 144 and
+   the same 11 stable rules. If it does not, the change has a
+   side-effect I did not intend and the round stops there.
+4. **The transposition finds at least one new systematic problem.**
+   Registered in advance for the third time; the last two rounds
+   each produced one and I would be surprised if reading a model
+   sideways did not.
+5. **Constrained families stay unfixed** and the H7 weights stay
+   illegal — that is the round after this one, and no number from
+   this round may be read as though it were solved.
