@@ -60,6 +60,36 @@ def test_a_top_island_without_a_left_formula_keeps_the_guard() -> None:
     assert not [f for f in _typed(result) if f.ref == "Sheet!B2"]
 
 
+def test_a_typed_zero_admitted_only_by_the_waiver_is_scaffolding() -> None:
+    """Round 3, from sixteen corpus cells: a zero row inside a formula
+    band is a template's spare line, not a paste over a calculation."""
+
+    def build(sheet) -> None:
+        for row in range(2, 11):
+            sheet[f"A{row}"] = float(row)
+            sheet[f"B{row}"] = 0 if row == 6 else f"=A{row}*2"
+
+    result = _audit(build)
+    assert not [f for f in _typed(result) if f.ref == "Sheet!B6"]
+
+
+def test_a_typed_zero_with_left_formulas_is_untouched_by_round_three() -> None:
+    """The narrowing applies only to what the waiver added: an island
+    that passes the left-formula test on its own keeps reporting,
+    zero or not — the round can never take away a pre-existing
+    finding."""
+
+    def build(sheet) -> None:
+        for row in range(2, 11):
+            sheet[f"A{row}"] = f"Item {row}"
+            sheet[f"B{row}"] = f"=D{row}+1"
+            sheet[f"D{row}"] = float(row)
+            sheet[f"F{row}"] = 0 if row == 6 else f"=B{row}*2"
+
+    result = _audit(build)
+    assert [f for f in _typed(result) if f.ref == "Sheet!F6"]
+
+
 def test_an_interior_island_with_left_formulas_still_reports() -> None:
     """The pre-round behaviour, unchanged: the waiver widens, never
     narrows."""

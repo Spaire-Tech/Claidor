@@ -197,10 +197,77 @@ it claims. Still missed, each run to ground:
   predicted to stay missed; they did — the guards working as
   designed.
 
-**The decisive sweep is complete on disk but its diff is not yet
-read** — checkpoint ordered before the comparison ran. The per-file
-counts already show movement (`final_wacc` 13 → 15), so the diff,
-the hand reading of every line against criteria 1–2, and the
-adopt-or-refuse decision — with criterion 3's letter-refusal and
-the examination above weighed in the open — are all still owed.
-Nothing is claimed for round 2 yet.
+**The decisive sweep (27 Aug):** 26 new findings across 8 files, no
+existing finding moved — every difference is a `typed-over-formula`
+addition, so criterion 1 holds. Every one hand-read at the cells:
+
+| what the cells hold | n | verdict |
+|---|---|---|
+| Typed **zero** rows and blocks inside formula bands (`F1 - Debt for BPFM` rows 260–261 in five files; `Scotland`/`Southern`/`Wales & West!AU816`; ET3's 6×5 zero block at `InputSummary!AP1976`) | 16 | **noise** |
+| Typed **1** in a passthrough column (`PCFMInterface!AW156`, `PCFMInterface_SO!I179`) | 2 | **noise** |
+| Real hardcodes | 8 | **worth showing** |
+
+The eight worth showing, and they are good: **`Key Outputs!D11/E11`
+in both WACC models** — FY2026's lookup-period start and end typed
+as dates where every sibling row computes `=DATE($A{row}-2,10,1)`,
+sitting exactly at the row where the policy approach changes, so a
+stale override would silently misprice the allowed return;
+**`InputSummary!AO1172`/`AO1179`** — 646.26 and 919.70 typed across
+a row whose every neighbour pulls per-entity through
+`=CHOOSE(m_identity, …)`; and **`PCFMInterface_SO!I184`,
+`PCFMInterface_TO!I579`** — a 0.06 rate typed into columns that
+otherwise pass values through from the source model.
+
+**Verified: the waiver is why they appear.** At `Key Outputs!D11`,
+row 11's only elected formula is at column 6 — right of D and E,
+because `B11`'s text formula is not elected — so the left-formula
+guard suppressed a genuine hardcode, and the waiver admits it.
+Exactly the registered mechanism.
+
+## Round-2 verdict (27 Aug): REFUSED, three ways, with the fix in hand
+
+- **Criterion 2, noise:** 8 of 26 worth showing (31%), against a
+  two-thirds bar.
+- **Criterion 2, flood:** the GD3 draft gains 6, over the line of 5.
+- **Criterion 3, letter:** `C_Capex!F294` uncaught — though the
+  examination above shows it was never this round's to catch.
+
+The diagnosis is one sentence: **the waiver admits real defects and
+the mining round's own rejected class in the same breath.** Typed
+zero rows inside a formula band are template scaffolding — the
+« template of zeros » `custodes-mining.md` rejected by name — and
+the interior island pass has no identity guard, while candidate 2's
+edge pass has had one since its own round 2. The evidence for
+carrying it inward is now sixteen cells deep.
+
+## Round 3, registered now, before it is implemented or measured
+
+**One condition, added to the waiver only:** an island admitted
+*solely* by the waiver — no formula to its left in the row — must
+hold a value that is neither 0 nor ±1. Islands that pass the
+left-formula test keep today's behaviour byte for byte: the change
+can only narrow what round 2 added, never touch what the engine
+reported before it, so no pre-existing finding can move by
+construction.
+
+**Criteria (fixed now):**
+
+1. The gate diff against the baseline is exactly the eight
+   worth-showing findings above and nothing else. Any other line
+   refuses.
+2. No file gains more than 5 (predicted maximum: 2).
+3. `Inflation!B151` — the interior no-left-formula plant the waiver
+   exists for — stays caught. `C_Capex!F294` is **excluded from
+   this criterion with its examination on record**: its family pins
+   absolute rows, no shape repeats, and the island witness can
+   never fire there whatever this round does; it belongs to the
+   named « no two shapes match » blind spot, and re-registering it
+   as a bar this round cannot clear would be theatre.
+4. Tieout tests green, with a test pinning the zero case. On
+   adoption the baseline regenerates **in the same commit**, and
+   the rule catalogue is unchanged (no new rule) — nothing for the
+   lead to route to Atelier this time.
+
+**Prediction (written before running):** 26 → 8 findings, exactly
+the eight named above, maximum 2 per file; `B151` still caught;
+recall otherwise unchanged at 41 of 45.

@@ -2966,6 +2966,19 @@ def _typed_islands(book: Workbook, result: Audit) -> None:
         _island_findings(sheet, run, leftmost, already, result)
 
 
+def _substantive(cell: Cell) -> bool:
+    """False for the values that carry no override: 0 is a template's
+    spare cell and ±1 is a base value or a switch. The edge pass has
+    tested this since candidate 2's round 2; the column-orientation
+    round carries it into the interior waiver on sixteen cells of
+    evidence."""
+    try:
+        value = float(cell.value) if cell.value is not None else None
+    except (TypeError, ValueError):
+        return False
+    return value is not None and value != 0 and abs(value) != 1
+
+
 def _island_findings(
     sheet: str,
     run: list[Cell],
@@ -3022,8 +3035,20 @@ def _island_findings(
             #: edges keep the guard: column-major models genuinely put
             #: typed history at the top of a column, and waiving it
             #: there is the flood the guard exists to prevent.
+            #: The waiver carries candidate 2's identity guard inward
+            #: with it (round 3): a typed 0 or ±1 admitted *only* by
+            #: the waiver is template scaffolding or a base value —
+            #: sixteen of the round's twenty-six new findings were
+            #: zero rows inside formula bands, the « template of
+            #: zeros » the mining round rejected by name. Islands that
+            #: pass the left-formula test on their own are untouched,
+            #: so this can only narrow what the waiver added.
             and (
-                (index > 0 and end < len(run))
+                (
+                    index > 0
+                    and end < len(run)
+                    and all(_substantive(cell) for cell in island)
+                )
                 or all(
                     leftmost.get((sheet, cell.row), 1 << 20) < cell.column
                     for cell in island
