@@ -2867,3 +2867,23 @@ hand-check is therefore no longer independent evidence *for task 72*,
 and I will not lean on it there; the line-text regression above is the
 criterion that decides this round, and it runs on the calibration half
 where nothing has been read for this purpose.
+
+### Round T, amended before the code — superscripts too
+
+The registration said « merge a candidate back into the line **above**
+when it is a subscript run ». Checking the calibration half before
+writing anything, ED2 also carries **44 superscript runs** (43 in the
+handbook, 1 in the annex) — footnote markers, which sit *above* their
+base and would be split off the other way.
+
+Implementing only the subscript half would send a rule I already know
+is incomplete at a criterion I already expect it to fail, which wastes
+a round and teaches nothing. **The rule is: a small run merges into
+whichever neighbouring baseline is within 3.5 pt and larger** — above
+for a subscript, below for a superscript. Same 0.8× size test, same
+1.5 pt grouping, nothing else changes.
+
+Worth recording beside it: **`4_src_8` has zero runs of either kind**,
+so the rule cannot touch the zips it is meant to leave alone. The
+discriminator separates on the calibration half exactly as the
+registration claimed.
