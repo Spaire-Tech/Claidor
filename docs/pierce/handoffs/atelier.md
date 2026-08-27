@@ -76,7 +76,11 @@ state class, and the method is in the log — seed the state for
 real (dropping `storage_path` is the honest « documents dropped »
 lever) rather than mocking a refusal.
 
-**Holding for the founder's review of the three screens.**
+**Holding for the founder's review of the three screens.** The
+build record (`swens-product-build.md`, yours) carries them as
+Phase 7, with the four gaps they left open (no arbiter run;
+recalculation manual and per-version; no home for the differing
+cells beyond the twelve named; the delta is model-only).
 
 Mark every agent-designed screen in the log; the founder reviews.
 

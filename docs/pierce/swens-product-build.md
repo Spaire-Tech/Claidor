@@ -146,6 +146,60 @@ gone; their shared helpers (`ago`, `avatarOf`, `initialsOf`,
 `categoryOfKey`) live in `files.ts`; nothing imports the removed
 screens.
 
+## Phase 7 — the three agent-designed screens
+
+27 August, Atelier lane, under the founder's design unlock (lanes.md,
+26 Aug): three pieces of engine capability that had no screen. Each
+shipped whole — design, endpoint, tests, screenshots — before the
+next was started. **Agent-designed: no founder drawing covers these
+three**, and they stand only until the founder reviews them.
+
+- **The Watch delta view** — the Versions tab answers « what did this
+  revision do » in review language. `GET /artifacts/{id}/delta`
+  (`?against=` picks the old side; service `version_delta`, both
+  versions' stored bytes through `watch.delta_report`, persisted
+  nowhere). The eight item kinds carry the workspace's attention inks
+  and are rendered **in the engine's own rank, never re-ranked by the
+  screen**; a first version answers `null` (« no revision to report »,
+  not an error); dropped bytes answer the storage sentence. The
+  version dropdown gains « See all versions ».
+- **The source viewer** — « Every number, cited to its page », inside
+  the founder's `docOpen` panel, for source PDFs. `GET
+  /artifacts/{id}/page/{page}` renders a stored page at 144dpi through
+  pdfplumber's own rendering, fresh and cached nowhere. The Chain's
+  stored facts are rows; clicking one renders that page with the cited
+  box **ringed in percent coordinates off the page's own points**,
+  so the ring lands at any resolution. An unread document offers « Read
+  the document » (the Chain's idempotent extract — deliberate, never
+  automatic); refused pages are listed in the extractor's own words.
+- **The recalculation mark** — « validated by recalculation » on the
+  model page and in the report. `POST /artifacts/{id}/recalculate`:
+  denylist prescan first, then a clean file goes whole through
+  LibreOffice (`UnoCalculator`, one soffice pair per call, in a worker
+  thread) and is diffed cell by cell by `gate_file`. The mark is
+  **persisted on the artifact's own counts** — unlike the delta, this
+  answer must be repeated by every screen without re-running an engine,
+  and a new upload is a new artifact with no mark, so a mark can never
+  describe other bytes. Four verdict faces plus never-run: validated
+  names the engine and the count; failed names the differing cells,
+  stored beside recalculated; refused lists the constructs in words and
+  claims « we did not check this » rather than a number;
+  nothing-compared explains the generator-written case. The report
+  speaks the mark in prose and lists a **missing** mark under « What
+  could not be checked ».
+
+**The states sweep.** All three were then driven through every real
+state — empty, loading, error, long-content — against a production
+build, with the awkward states seeded for real (dropping
+`storage_path` is the actual « keep the chain, drop the documents »
+lever, so every refusal on screen is the server's own sentence). Six
+defects found and fixed: a storage paragraph printed in a summary
+column; a read pitched after it had already failed; a failure list
+capped at twelve while the count said nineteen; a PDF wearing a Word
+icon; an in-flight control that looked dead on a run that takes
+minutes; an unframed twenty-two row list. Evidence, one shot per state
+class: `logs/atelier/states-*.png`. Route suite 82 green.
+
 ## What is not in the product yet, in one place
 
 1. ~~The marked-up workbook~~ — built 24 August (engine + endpoint +
@@ -159,3 +213,16 @@ screens.
    reconciliation and the grounding pass, which need more than the
    model's own cells.
 5. `rounding`/`writing` house rules persist with no engine consumer.
+6. The arbiter run: a file the prescan routes to the arbiter
+   (LAMBDA, CUBE*) is refused with « real Excel could settle this »,
+   and nothing yet runs real Excel — so the honest answer stays « we
+   did not check this ».
+7. Recalculation is manual and per-version — the only caller of
+   the gate is the endpoint behind the button; nothing recalculates on
+   upload, and a mark describes exactly the version it sits on.
+8. The differing cells beyond the twelve named have no home: the
+   panel says how many it is not naming; the marked-up copy is built
+   from findings, not from the mark, so there is nowhere in the
+   product to read the rest.
+9. The delta is model-only: a deck or memo revision has no delta
+   view, because `version_delta` answers only for models.
