@@ -931,3 +931,465 @@ nothing in the registration depends on who carried the bytes.
 **Turn's end state:** round 4 registered; the fetcher committed and
 proven against today's network; zero corpus files landed, said
 plainly; rounds 1–3 and D5 unchanged.
+
+## 27 August 2026, seventh « go » — fourteenth sweep: the handoff, D4's contract, D5's next round
+
+Orders read from the tip. The handoff file is pushed
+(`docs/pierce/handoffs/scribe.md`). Round 4 stays blocked on bytes
+and is not forced. What follows is D4's registration and contract —
+written and committed before any D4 code exists — and then D5's
+next round.
+
+## D4 — confirm-once, arithmetic forever: the contract, proposed before any database work
+
+**The one sentence the track rests on:** a person confirms that a
+model cell comes from a document figure; from then on, re-checking
+that pair is arithmetic — every time, on every revision, with no
+inference of any kind.
+
+**D4 is not blocked by D3, and that is worth stating plainly.** The
+matcher's hit-rate is unmeasured and its proposals ship nothing. But
+a *confirmed* link is human input, not engine output: a person can
+confirm a pair the matcher never proposed, or one it proposed
+wrongly, and the confirmation is what makes the link real either
+way. So D4 can be built and even shipped while D3 stays dark —
+proposing is a convenience, confirming is the product. This also
+keeps the line `swens.md` § 6 draws: the link is *determined* by a
+person, so every later re-check is determined, never inferred.
+
+**« No model call », honestly.** The plan's phrase means: no
+language-model call in the re-check. In this package that is true by
+construction, not by discipline — `polar/tieout/chain/` imports no
+model client at all, and the matcher is string comparison. What D4
+actually adds is stronger: after confirmation there is no *matching*
+either. Re-anchoring is exact-key lookup, and the answer is
+arithmetic.
+
+### The confirmed-link contract (JSON Schema, draft 2020-12)
+
+No table, no migration, no repository code until the lead approves —
+the same rule D2 followed.
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "claidor:tieout/chain/confirmed-link",
+  "title": "Confirmed link — a model cell and the document figure a person says it came from",
+  "type": "object",
+  "required": [
+    "id", "dossier_id", "state",
+    "document", "model", "transformation", "scale",
+    "confirmed_by_id", "confirmed_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "dossier_id": {
+      "type": "string", "format": "uuid",
+      "description": "The deal. Every read is scoped by membership of it."
+    },
+    "state": {
+      "enum": ["confirmed", "rejected", "broken", "ambiguous"],
+      "description": "No 'proposed' state on purpose: a proposal is computed on demand and never stored, so a row here always means a person acted. 'broken' and 'ambiguous' are set by re-anchoring, never by a guess."
+    },
+    "document": {
+      "type": "object",
+      "required": ["document_id", "document_version_id", "fact_id", "page", "printed_text", "anchor_line", "ordinal_in_line"],
+      "additionalProperties": false,
+      "description": "What was confirmed, and enough to re-find it in a later version by labels rather than coordinates.",
+      "properties": {
+        "document_id": { "type": "string", "format": "uuid", "description": "The artifact lineage — the document across all its versions." },
+        "document_version_id": { "type": "string", "format": "uuid", "description": "The exact version confirmed against." },
+        "fact_id": { "type": "string", "format": "uuid", "description": "The chain fact as confirmed. Stable within its version by construction; NOT the anchor across versions." },
+        "page": { "type": "integer", "minimum": 1, "description": "Recorded for the citation, never used for re-anchoring — a page number is a coordinate." },
+        "printed_text": { "type": "string", "description": "The token exactly as printed at confirmation. Used to report movement, never to locate." },
+        "anchor_line": { "type": "string", "description": "The printed line the figure sat in. THE document-side anchor." },
+        "ordinal_in_line": { "type": "integer", "minimum": 1, "description": "Which number within that line (1st, 2nd…) — the tiebreak when a line carries several." }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["model_id", "model_version_id", "cell_id", "ref", "cell_name"],
+      "additionalProperties": false,
+      "properties": {
+        "model_id": { "type": "string", "format": "uuid", "description": "The workbook lineage." },
+        "model_version_id": { "type": "string", "format": "uuid" },
+        "cell_id": { "type": "string", "format": "uuid" },
+        "ref": { "type": "string", "description": "« Model!D26 » at confirmation. A location, recorded for the citation, never the anchor." },
+        "cell_name": { "type": "string", "description": "« FY2025A Adjusted EBITDA » — the engine's own name for the cell. THE model-side anchor, exactly as FigureLink.cell_name already is." }
+      }
+    },
+    "transformation": {
+      "type": "string",
+      "description": "A named deterministic function, 'identity' today. The engine's own extension channel, same vocabulary as FigureLink.transformation, so one re-check serves both directions."
+    },
+    "scale": {
+      "type": "number", "exclusiveMinimum": 0,
+      "description": "document value x scale = model value. Levenmouth's contract says GBP 3,741,000 a year and the model cell holds 3.741 on a millions sheet: scale 0.000001. THE PERSON STATES IT AT CONFIRMATION — Swens never infers it. Unit inference is Track E's, and this field is deliberately the boundary: confirm once, arithmetic forever."
+    },
+    "basis": {
+      "type": "string",
+      "description": "Reported / adjusted / pro forma, and the period. Carried because the same two numbers on different bases are not in disagreement."
+    },
+    "confirmed_by_id": { "type": "string", "format": "uuid" },
+    "confirmed_at": { "type": "string", "format": "date-time" },
+    "note": { "type": "string", "description": "What the person wanted the next reader to know." }
+  }
+}
+```
+
+### Survival: the re-anchoring rules, frozen here
+
+**Anchor by labels, never coordinates** — the plan's words, made
+mechanical. Both sides abstain rather than guess, and every outcome
+says which rule produced it.
+
+*Model side* (the engine's own precedent, `FigureLink.cell_name`):
+1. Same version and the ref still carries that `cell_name` → done.
+2. New version: candidates are cells whose name equals `cell_name`
+   exactly. One → **survived** (report the ref change if any).
+   Zero → **broken**. More than one → **ambiguous**, a person
+   decides; the link is never silently re-pointed.
+
+*Document side* (new, and the reason `anchor_line` exists):
+1. Same version → `fact_id` is still valid by construction → done.
+2. New version: candidates are facts whose line's **label-token set
+   equals** the anchor line's label-token set — the same tokenizer
+   the matcher uses, so purely numeric tokens are dropped and the
+   *value plays no part in locating*. Then:
+   a. one → **survived**;
+   b. several → the `ordinal_in_line` tiebreak; resolving to one →
+      survived, flagged position-resolved; else **ambiguous**;
+   c. zero → **broken** (« the line this rested on is not in this
+      version »).
+
+**Values are used only to report, never to locate.** That asymmetry
+is the whole design: a revised contract whose figure *changed* must
+re-anchor successfully and then say « the source moved, £3,741,000 →
+£3,905,000 » — which is the finding a reviewer wants. Anchoring on
+the number instead would report that as « not found », losing
+exactly the case the product exists for.
+
+### The re-check, and its four verdicts
+
+Fetch the model cell's value and the document fact's value, apply
+`transformation` and `scale`, compare at the document's printed
+precision (the engine's existing tie-out discipline):
+
+- **agrees** — nothing to say.
+- **the model moved** — model side differs from the confirmed pair;
+  the cell changed and its source did not.
+- **the source moved** — document side differs; the term sheet was
+  revised under a model that still quotes the old figure.
+- **both moved** — reported as its own case, never averaged away.
+
+Plus the two anchoring outcomes, **broken** and **ambiguous**, each
+in words naming which side and which rule.
+
+### Registered measurement, before any result exists
+
+The plan's DONE condition is « a revised model re-checks its
+confirmed links with no model call and correct survival ». The
+harness plants revisions on a committed fixture pair and asserts the
+registered expectation per case, written here first:
+
+| planted revision | expected |
+|---|---|
+| row inserted above the linked cell | survived; ref changes; agrees |
+| the linked cell's value edited | survived; **the model moved** |
+| the linked cell deleted | **broken** (model side, in words) |
+| its label duplicated elsewhere | **ambiguous**; never re-pointed |
+| sheet renamed | survived (the anchor is a name, not an address) |
+| document figure edited | survived; **the source moved** |
+| document line deleted | **broken** (document side) |
+| document repaginated, line intact | survived; agrees |
+
+Reported with it: that the re-check made **zero language-model
+calls** — a structural fact (the package imports no model client),
+stated as such rather than as a runtime count; and the wall-clock of
+re-checking a confirmed map, which must be arithmetic-fast or the
+promise is hollow.
+
+**Not promised:** any number about how often confirmations survive
+*real* revisions. That needs the real deal set, like round 4.
+
+## D5 round 2 — registration: the local-rule shape, measured before there is a single confirmation
+
+Round 1 killed the naive class with its own number (22,693
+candidates on a regulator model; 85 on the 313-cell deal fixture).
+The proposed replacement fires only where sourcing is the **local**
+rule. This round measures whether that shape is actually
+flood-proof — and it can be measured **today, with zero confirmed
+links in existence**, because the flood is a property of the model's
+own block structure crossed with how many confirmations a person
+makes.
+
+**The block is the model's own, never mine.** `polar.tieout.
+structure.sections()` reads the blocks a workbook declares through
+its own `SUM` formulas — « rows the model itself totals ». Read-only
+library use, and it means a block boundary is the model's claim
+about itself, not my heuristic.
+
+**The trigger under test:** a **typed** cell (a computed cell's
+provenance is its formula — the proposals route already refuses
+those) inside a declared section, carrying no confirmed source,
+where the section's *other* typed cells are confirmed to a degree
+**T**. Three thresholds are measured, because which one ships is
+exactly the decision these numbers should make and I will not make
+it in advance:
+
+- **T1 — any**: at least one other typed cell in the section is
+  confirmed.
+- **T2 — half**: at least half of the section's typed cells are.
+- **T3 — all but this one**: every other typed cell in the section
+  is confirmed. (The purest reading of the sentence the shape is
+  built on: « every other number in this block traces to the term
+  sheet; this one traces to nothing. »)
+
+**The two placements, both reported, neither alone believable:**
+
+- **Greedy adversarial** — spend a budget of **B** confirmations to
+  maximise findings (largest sections first, cheapest unlock per
+  confirmation). This is an *upper-bound estimate that greedy may
+  understate*, and it answers « how bad can this get ».
+- **Random** — B confirmations placed uniformly at random over the
+  typed cells that sit in sections, seeded (**3141592**), 20 trials,
+  mean and max reported.
+
+**B ∈ {10, 25, 50, 100}** — the range a banker plausibly confirms on
+one deal.
+
+**The registered limitation, stated before the numbers:** neither
+placement is how a person actually works. A banker confirms
+top-down and in clusters — the key lines of the blocks that matter —
+and clustering pushes individual sections toward T3 far faster than
+random placement does while touching far fewer sections. Which way
+that biases the total is **not obvious** (more findings per touched
+section, fewer sections touched), so I am not claiming a direction:
+the two placements bracket the behaviour, and the real number comes
+from a real deal, like every other real number in this lane.
+
+**A condition that will matter for the deal corpus:** sections are
+declared by `SUM` formulas, and the Scottish close models are
+formula-stripped — every cell a value. So on exactly the
+document-fed corpus D3 round 4 is waiting for, **this shape has no
+blocks to stand on**, and a different block rule (contiguity, or the
+provenance tab itself) would have to be registered for it. Recorded
+now rather than discovered later.
+
+**The models:** the same registered set as round 1 — ED2 PCFM V5,
+ED2 PCFM V3, RIIO-ET1 PCFM, the Cascade deal model, the pre-app
+example. **The harness:** `scripts.corpus_documents_unsourced_shape`
+(new), read-only, printing the registered numbers and nothing else.
+**No target is promised.** If the local-rule shape floods too, it
+dies exactly as the naive one did.
+
+## D5 round 2 — measured. One threshold survives; and on regulator models the shape has no ground at all
+
+Two findings, and the second was not what the round went looking
+for.
+
+### 1. On the regulator models the shape cannot be applied — inputs and blocks are disjoint
+
+| model | sections declared | typed cells inside one |
+|---|---|---|
+| ED2 PCFM V5 | 5 | **0** of 22,693 |
+| ED2 PCFM V3 | 5 | **0** of 20,426 |
+| RIIO-ET1 PCFM | 61 | **0** of 7,555 |
+| Cascade deal model | 1 | 32 of 85 |
+| pre-app example | 26 | 156 of 230 (68%) |
+
+I checked this rather than reporting it, because a zero that large
+is usually a bug. It is not. ED2's five declared sections
+(`Depn!24-26`, `Depn!210-247`, `ReturnAdj!72-73`, …) hold 3,194
+numeric cells between them and **every one is a formula cell**, and
+**not one of ED2's 22,693 typed cells lives on a sheet that declares
+any section at all** — the inputs sit on twenty-one per-licensee
+sheets that nothing sums, while the totalled blocks are pure
+computed rows.
+
+That is the structural point, and it generalizes past this round: a
+block a model *totals* is a block of outputs. The local-rule shape
+needs blocks of **inputs**, and a workbook's `SUM` formulas do not
+declare those. Where the two coincide — the small, hand-built deal
+models — the shape has ground; on a big machine-shaped model it has
+none. Two consequences, both for the lead and founder:
+
+- the shape is measurable and possibly useful **on deal-shaped
+  models**, which is the product's actual case, and untestable on
+  the regulator corpus, which is not;
+- if it is wanted on machine-shaped models, it needs an **input-block
+  rule** that does not come from `SUM` — contiguity of typed cells
+  under one label column, say — and that is a registration of its
+  own, and touches `structure.py`, which is Sentinel's ground, not
+  mine.
+
+### 2. Where it can be applied, exactly one threshold survives
+
+Findings that would fire, by threshold and confirmation budget
+(adversarial = greedy worst case; random = seeded mean of 20):
+
+**pre-app example** (230 typed cells, 156 in 7 sections):
+
+| threshold | B=10 | B=25 | B=50 | B=100 |
+|---|---|---|---|---|
+| any (adv / rand) | 149 / 115 | 149 / 130 | 149 / 106 | 149 / 56 |
+| half (adv / rand) | 10 / 0 | 18 / 0 | 48 / 2 | 78 / 50 |
+| **all-but-this-one** (adv / rand) | **0 / 0** | **1 / 0** | **2 / 0** | **5 / 0** |
+
+**Cascade deal model** (85 typed, 32 in 1 section): « any » fires 31
+of a possible 32 at B=10; « half » 16; « all-but-this-one » at most
+1.
+
+- **« any » is dead on arrival.** One confirmation anywhere in a
+  block turns every other typed cell in it into a finding: 149
+  findings on a 230-cell model. That is the naive flood wearing a
+  different hat.
+- **« half » has the worse property**: its noise *grows with the
+  work*. The more diligently a banker confirms, the more it fires
+  (0 → 50 random as B goes 10 → 100). A check that punishes
+  thoroughness will be turned off.
+- **« all-but-this-one » holds.** At most 5 findings under
+  adversarial placement at B=100, and zero under random placement
+  anywhere. It is flood-proof by construction, and the measurement
+  says so rather than the design arguing it.
+
+**What flood-proof costs, in the same numbers:** a T3 finding costs
+(section size − 1) confirmations — 19 for the pre-app's smallest
+block, 31 for Cascade's only one. So the finding appears exactly
+when a person has nearly finished sourcing a block, which is the
+moment it means something (« you sourced everything here except
+this ») and also means it will be **rare**. That is the trade, stated
+plainly: this class will fire seldom, and every time it fires it
+will be worth reading. If the founder wants a check that speaks more
+often, it is a different check, not a looser threshold on this one.
+
+**Two honest artifacts of the method**, neither hidden: where the
+budget exceeds the typed cells inside sections (Cascade at B ≥ 50),
+*everything* gets confirmed and the count falls to zero — that is
+the budget outgrowing the model, not flood-proofing; and Cascade's
+random column is deterministic because the model has exactly one
+usable section, so every trial places identically.
+
+**The verdict for the lead and founder:** if D5 ships, it ships as
+**« unsourced where every neighbour in the model's own block is
+sourced »** — threshold T3, nothing looser — and only on models
+whose blocks contain inputs. It still reports nothing until a shape
+is approved, and it still waits on D4 for real confirmations.
+
+## Round 4's harness: ready, and proved ready
+
+The orders say keep it ready. It did not exist, so it does now:
+`scripts.corpus_documents_kelso_round`, two phases like every round
+in this lane — `sheet` produces the judging sheet with **no matcher
+output on it**, and `score` runs the frozen matcher only after the
+truth is recorded. It takes `--model`, `--contract` and an optional
+`--provenance-sheet`; without the last it guesses the answer tab
+from its own words, prints what it chose, and **refuses to run if it
+cannot find one**, because guessing that wrong would leak the answer
+sheet into the matcher's inputs. Run with no files present it says
+so in a sentence and exits.
+
+It is proved by five tests
+(`tests/tieout/test_chain_kelso_round.py`) against a **synthetic
+stand-in pair** built inside the test — a workbook with a
+provenance-shaped tab and a contract stating one of its three
+figures. **Those tests say nothing about Kelso**; they assert the
+properties the registration calls structural: every provenance row
+becomes one sample row, the answer sheet contributes no cells to the
+model side (each figure exists twice in the workbook and the model
+side sees only one), the sheet phase carries no proposal or verdict,
+and the two unreachable conditions leave the scored table while
+still being counted (« reachable rows: 1 of 3 »).
+
+So the lead's container needs one command per phase the moment the
+six files land, and nothing about the round has to be invented then.
+
+**Turn's end state:** handoff pushed; D4's contract registered and
+proposed, no table until approval; D5 round 2 registered, run, and
+its shape decided by its own numbers; round 4's harness ready and
+tested. Chain tests 72 passed; full tieout suite **769 passed, 9
+skipped, nothing red** — the house-rules failure this lane reported
+two sweeps ago is fixed on the tip.
+
+## 27 August 2026, eighth « go » — D4 measured against its own registered table
+
+Orders unchanged at the tip (still the fourteenth sweep's), and the
+new adoptions there belong to Dynamo, Prism and Track E. Standing
+item 3 first: **the Scottish files have not landed** — no fresh
+capture of any of the six URLs (the archive still holds only its
+February timestamps), nothing in `corpus_sft/`. Round 4 stays
+blocked and is not forced, exactly as the orders say.
+
+So this turn ran **D4's registered measurement**. The approval line
+holds: `chain/anchor.py` is pure functions — **no table, no
+migration, no repository** — and the contract still awaits the
+lead's word. What exists is the logic the registered measurement
+needs, which is what the registration promised to build.
+
+### The registered table, measured
+
+Each row was written in the log before the code existed; each is now
+a test in `tests/tieout/test_chain_anchor.py`, and the revisions are
+planted for real — the workbook is rebuilt and read back through the
+engine's own reader, so « a row inserted above the linked cell »
+means that and not a rearranged tuple.
+
+| planted revision | expected | measured |
+|---|---|---|
+| row inserted above the linked cell | survived; ref changes; agrees | survived `Model!B2` → `Model!B3`; agrees ✓ |
+| the linked cell's value edited | survived; the model moved | ✓ |
+| the linked cell deleted | broken (model side, in words) | ✓ |
+| its label duplicated elsewhere | ambiguous; never re-pointed | ✓ (both refs returned) |
+| sheet renamed | survived (a name, not an address) | ✓ `Financial Model!B2` |
+| document figure edited | survived; the source moved | ✓ 3.741 → 3.905 |
+| document line deleted | broken (document side) | ✓ |
+| document repaginated, line intact | survived; agrees | ✓ page 4 → 9, unaffected |
+
+**Eight of eight as registered**, plus four cases the table did not
+cover and the code needed anyway: the ordinal tiebreak and its
+honest limit; « both moved » reported separately from « still ties
+out »; Levenmouth's scale case (a contract in pounds, a model in
+millions, the factor stated by the person); and the no-model-call
+claim.
+
+**« No model call », proved structurally rather than counted.** The
+test reads every source file in the package and asserts no client
+import appears at all. A runtime counter would only cover the paths
+a test happens to walk; this covers the package.
+
+**The wall-clock:** 1,000 confirmed links re-anchored against a
+22,693-cell model in **0.51 s — 0.51 ms per link**. Arithmetic-fast,
+as the promise requires. The honest caveat: the lookup is a linear
+scan, so it is O(links × cells) and a map ten times bigger would
+take ten times as long; an index by name makes it flat the day that
+matters. No timing assertion was added to the suite — a bound loose
+enough not to flake would prove nothing, and a tight one would flake.
+
+### Two things the measurement found, both worth the lead's eye
+
+**1. A hole in the proposed contract, found before it was approved.**
+The schema as proposed records the document side's `printed_text`
+but **nothing of the model side's value at confirmation** — and
+without that, the re-check cannot say *which* side moved, which is
+three of its four registered verdicts. **Amendment, proposed here:**
+`model.value_at_confirmation` (and, for symmetry and to avoid
+re-parsing, `document.value_at_confirmation` beside the printed
+text). Cheap now, expensive after a table exists — which is exactly
+what registering a contract before building it is for.
+
+**2. A real bug the planted cases caught.** The first cut numbered a
+figure's position by its *line text*, so a boilerplate line
+repeating on forty pages — a page header, a footer — numbered its
+figures 1…40 instead of 1,1,…,1. The tiebreak would then have
+separated identical lines by an accident of how deep in the document
+they sat, which is a coordinate wearing a label's clothes. Counting
+now restarts at every physical line. Found by the case for two
+identical lines, which the registered table did not include and the
+code plainly needed.
+
+**Turn's end state:** round 4 still blocked on bytes, checked, not
+forced; D4's registered measurement run and passing eight of eight
+with two amendments proposed from it; chain tests 84 passed; full
+tieout suite **781 passed, 9 skipped**; zero mypy errors in the
+package. Still no table, and D4's contract still awaits approval.
