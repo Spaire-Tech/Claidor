@@ -3988,3 +3988,80 @@ the asymmetry story is wrong and the round dies.
 whatever this measures; the rule reaches the extractor on the lead's
 word, not on mine. What a clear result buys is that the word becomes
 cheap to give.
+
+## D1 round V — measured. **It clears every criterion. The first rule in this family to do so.**
+
+### The registered criteria, one at a time
+
+| criterion | result |
+|---|---|
+| the damage must go | **gone** — `8. Legacy adjustments` reads as itself; it no longer appears among the differing lines at all |
+| no repair may be lost | **all 20 present**, checked one by one against the classification |
+| no new damage | **one new entry**, and it is display mathematics — `2+𝑅𝑅ℎ𝐷𝐷𝑅𝑅` becomes its own line, the same « neither » class as every other formula fragment |
+| ED2's registered sample | **30 of 30** correct abstentions |
+
+**The classification under round V is 20 repairs, 0 damage.**
+
+Diffed against round T rather than re-read blind, so the comparison is
+exhaustive rather than sampled — **three entries change in the whole
+corpus**, and they are the two that constituted the damage plus the one
+formula line:
+
+```
+only in round T:  p61 NOW: 8. Legacy adju2s+tm𝑅𝑅ℎ𝐷𝐷e𝑅𝑅nts
+                  p61 WAS: 8. Legacy adjustments
+only in round V:  p61 NOW: 2+𝑅𝑅ℎ𝐷𝐷𝑅𝑅
+```
+
+**The prediction held exactly.** I said the 21 legitimate downward
+merges would survive, the 20 repairs were mostly upward and would be
+untouched, and the damage would disappear. All three.
+
+### What it does to the corpus, measured with the rule temporarily in place
+
+| | shipping (v4) | **round V** |
+|---|---|---|
+| Finch facts | 6,842 | **4,189** |
+| facts in character-spaced lines (Finch) | 3,835 | **500** |
+| colliding keys, round's 7 tasks | 562 | **319** |
+| facts sharing an address | 4,456 | **1,895** |
+| **ED2 facts** | 8,015 | **8,015** ✓ |
+| **nils, both corpora** | 750 | **750** ✓ |
+
+**87% of the shredded lines are repaired**, and the two populations the
+earlier rounds destroyed — ED2's facts and the dash round's nils — are
+untouched to the unit. The collision surface halves as a side effect,
+which two turns ago I predicted would happen if the reading were fixed.
+
+**The 500 that remain** are the genuine glyph-by-glyph population,
+including task 72's four rows on a single baseline. That is a real
+residue and it is not what this round was for.
+
+### It is still not shipped, and that is deliberate
+
+`extract.py` is byte-identical to the tip's — I applied the rule to run
+the registered ED2 check, then reverted and verified. The extractor
+stays at version `"4"`.
+
+**What the lead has to decide is now small and concrete:** a rule that
+clears four stated criteria, repairs 87% of a defect that costs 2,600
+invented facts on one corpus, changes nothing on ED2 or the nils, and
+whose entire remaining footprint on the ED2 documents is 20 repairs and
+zero damage across 142 line entries. **Round U's criterion question no
+longer blocks anything** — round V passes the strict bar and the loose
+one alike.
+
+If the answer is yes, shipping it is: the constants above,
+`_words` from round T with a directional reach, `EXTRACTOR_VERSION` to
+`"5"`, and the four harnesses re-run. If the answer is no, the finding
+stands and the extractor does not move.
+
+### One process note, against myself
+
+Half an hour of this turn went to a measurement I reported and then had
+to withdraw: a `cd` failed, the chained edit never applied, and I ran
+« round V's ED2 check » against the unmodified extractor. I caught it
+because 30/30 is also what v4 returns, and an identical number from two
+supposedly different configurations is not a confirmation — it is a
+question. **The check that saved it was asking why the result was
+unsurprising.**
