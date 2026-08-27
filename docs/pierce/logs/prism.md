@@ -1645,3 +1645,86 @@ one for « does this edit matter today », and the report says which
 it did by stamping `selector_forced` on exactly the instances it
 touched. Both readings are honest; only the unlabelled mixture
 would not be.
+
+## C6's gate after B5's negative — checked, and the answer is « still no »
+
+Dynamo's B5 round 1 landed as an honest negative, and it changes
+C6's position in a way worth stating precisely, because the
+literal gate and the substance now point different ways.
+
+- **The literal gate is met.** The orders gate C6 on « Dynamo's two
+  stability tests (five-seed agreement; cosmetic invariance) », and
+  the eighteenth sweep records the mining as *stable under five
+  seeds, invariant to cosmetic edits, and clean*.
+- **The substance is not.** The earlier addendum's actual
+  precondition was « B5 round 1 must first show a
+  modeller-recognisable rule set », and it did not: the rule sets
+  are **artifacts of low perturbation coverage** — 10 of 193 cells
+  typed on one model, another's cone holding 21,638 constants
+  across 3,279 label groups, H7's « laws » equalities between rows
+  that never moved. « Laws found in a corner are not the model's
+  laws. »
+- **The lead has re-sequenced it.** Track E's first half moved to
+  Dynamo precisely because the input-typing classifier is now the
+  binding constraint on B5 « and therefore on C6 and B6 behind it ».
+
+So C6 stays unwritten, and the reason is no longer « the gate has
+not fired » but « there is nothing worth diffing yet ». A rule-set
+diff over low-coverage rule sets would inherit their artifact
+status and dress it as a delta — the same error the mining round
+refused to make, one layer up. When E1/E2 make coverage
+measurable, C6's registration cites *that* number first, not only
+the stability pair.
+
+## C5 — the Watch on documents (REGISTERED BEFORE RESULTS)
+
+Track C's last unbuilt step, and unblocked: it needs the engine's
+tie-out and this lane's own delta report, nothing from another
+lane. The plan's line: « Model moved, deck did not ⇒ finding (the
+tie-out re-run on the new version). »
+
+**The method.** The same deck, tied out against **both** model
+versions through the engine's `tie_out(deck, model)`, and the two
+results compared. Because the deck is byte-identical in both runs,
+a printed figure's identity is stable: the key is
+`(slide, printed, location)`.
+
+**The four classes, and what each is worth.**
+
+1. **`broken_by_revision`** — agreed against the old model, drifts
+   against the new. **This is C5's finding**: the model moved and
+   the deck did not.
+2. **`repaired_by_revision`** — drifted before, agrees now. The
+   revision brought the model to the deck; still churn, and worth
+   a line.
+3. **`still_drifting`** — drifts against both. Pre-existing, and
+   **never blamed on this revision** — the discipline that makes
+   class 1 trustworthy.
+4. **`coverage_changed`** — a figure the linker could reconcile
+   against one version and not the other (its output row was
+   deleted or renamed). Reported as its own bucket, never counted
+   as a break, because « I lost sight of it » is not « it broke ».
+
+**Attribution, exactly and without approximation.** A broken
+figure agreed against the old model, so the old run hands back the
+output row it agreed *with* — an old-side ref. The delta report's
+items are keyed on old-side rows too, so the cause is looked up
+directly, with no mapping through the alignment and no guessing:
+« this figure broke, and here is the model change underneath it ».
+When no delta item covers that row, the report says so in words —
+« the model moved somewhere this figure reads, but not at this
+row » — rather than attaching the nearest change.
+
+**One-tick drifts stay labelled.** The engine already separates a
+one-unit-at-printed-precision difference from a real one; a break
+that is only a rounding tick is reported as such and never sold as
+a broken deck.
+
+**The round.** Unit tests on fabricated tie-out results, where
+each class's right answer is known by construction — including the
+one that matters most: a pre-existing drift must land in class 3,
+never class 1. Then the real pair: the Cascade deck against
+`cascade_model.xlsx` and a revised copy of it, with the edit
+planted by this lane's own planter so the cause is known before
+the report names it. Reported: the four counts, every break with
+its attributed cause, and any break the delta could not explain.
