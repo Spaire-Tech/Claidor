@@ -33,14 +33,17 @@ it falls.
 | A4 coverage (`a4-coverage.md`) | **Adopted.** `Audit.tallies` + `Audit.abstentions`, same shapes as analytics'. Gate clean, baseline untouched, catalogue unchanged. **Product side routed to the lead** — Atelier owns the report JSON. |
 | Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
 
-Both adoptions moved the rule catalogue 17 → 19 and broke an
-Atelier test (routed). **Lesson the lead asked for: name any
-catalogue-count change in the log the same day.**
+Three adoptions have moved the rule catalogue 17 → 20
+(`inconsistent-total`, `typed-over-edge`, `range-over-block`); the
+first two broke an Atelier count test, which was routed. **Lesson
+the lead asked for: name any catalogue-count change in the log the
+same day.**
 
 ## In flight
 
-**Nothing.** Candidate 4 and the Tasi re-score are both finished
-and pushed. The next turn starts a new round from a clean slate.
+**Nothing.** A4 is adopted and pushed; the serious-error mining
+round is blocked on the lead (see below). The next turn starts a
+new round from a clean slate.
 
 ## Next, per orders (in this order)
 
@@ -48,9 +51,7 @@ and pushed. The next turn starts a new round from a clean slate.
    decision on the `.xls` reader defect (see the table). If it is
    fixed, re-run `scripts.custodes_serious` — the registration and
    classifier are committed and ready; only the reader was wrong.
-1. A4 (coverage denominator) — report-JSON additions routed
-   through the lead, since Atelier owns what the product reads.
-2. The « dead assumption » reachability candidate
+1. The « dead assumption » reachability candidate
    (`swens-aha.md`): dependency-graph reachability, no
    recalculation, one-sentence finding. Coordinate the rule name
    with the lead before adoption (it needs Atelier's category map).
