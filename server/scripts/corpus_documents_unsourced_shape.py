@@ -21,6 +21,7 @@ Prints, per model and exactly as registered in the Scribe log:
 
     uv run python -m scripts.corpus_documents_unsourced_shape          # round 2
     uv run python -m scripts.corpus_documents_unsourced_shape deals    # round 3
+    uv run python -m scripts.corpus_documents_unsourced_shape formula-bearing  # round 4
 """
 
 import random
@@ -46,6 +47,17 @@ MODELS = [
     SCRIPTS / "corpus_models" / "ofgem_riio_et1_pcfm_2015.xlsm",
     SCRIPTS / "cascade" / "cascade_model.xlsx",
     SCRIPTS / "cascade" / "example_preapp_model.xlsx",
+]
+
+#: Round 4's subjects: the two deal models with a live calculation
+#: layer. Round 3 measured eight and found them value-only — the
+#: question round 2 asked could not be put to them at all. The lead's
+#: own sweep of sixteen turned up Inverness College at 20,027 formulas
+#: (5.26%), which is a subject. Both are fetched by the same bucket
+#: convention the committed fetcher uses and are git-ignored as ever.
+FORMULA_BEARING = [
+    SCRIPTS / "corpus_sft" / f"{stem}_model.xlsm"
+    for stem in ("inverness_college", "snbts")
 ]
 
 #: Round 3's population: the eight readable Scottish Futures Trust
@@ -166,7 +178,7 @@ def _sections_of(path: Path):
 
 
 def main(which: str = "round2") -> int:
-    models = DEALS if which == "deals" else MODELS
+    models = {"deals": DEALS, "formula-bearing": FORMULA_BEARING}.get(which, MODELS)
     for path in models:
         if not path.exists():
             print(

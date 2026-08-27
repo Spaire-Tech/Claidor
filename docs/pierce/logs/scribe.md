@@ -3536,3 +3536,209 @@ have a plausible mechanism, I write it down before I have tested that
 it is the mechanism.** The fix is the same shape as the audit — a
 claimed *cause* now needs its own check before it is written, not
 after.
+
+## 28 August 2026, sixteenth « go » — the round D5 round 3 could not run, now that a subject exists
+
+Orders read from the tip (`f33b6b1e`). **The orders file is
+byte-identical for the sixth sweep running** and there is still no word
+on round U's criterion question, so round U stays unrun as promised.
+
+**My lane merged at the nineteenth sweep**, and the lead acted on last
+turn's finding before I could raise it twice: **the population proof is
+suspended**, « the published corpus is value-only, verified before any
+audit ». The lead measured sixteen models where I measured eight, got
+the same answer, and named their own error in doing so. The write-up
+credits this lane finding it independently « from the other side ». I
+have nothing to add to that and am not going to re-litigate it.
+
+**What their sixteen contained that my eight did not.** One model with
+a live calculation layer: **Inverness College — 380,506 cells, 20,027
+formulas, 5.26%.** Every model I measured was under 0.1%.
+
+That matters to this lane specifically, because D5 round 3's conclusion
+was **not** « the shape is wrong »; it was:
+
+> round 2's structural prediction is **untested, not refuted** — a
+> corpus with no formulas declares no totals, so round 2's question
+> cannot be put to them.
+
+**A subject now exists.** Probed from this container just now:
+`Inverness+College+Financial+Model.xlsm` returns **200, 2,265,188
+bytes**, and Scottish National Blood Transfusion Service returns 200 at
+1,881,902 — both by the same bucket convention. Neither is in the
+committed fetcher, which holds eight readable models; the lead obtained
+them some other way.
+
+## D5 round 4 — registration, frozen before the file is opened
+
+**One question, the one round 2 asked and round 3 could not put:** on a
+hand-built, formula-bearing, closed-deal project-finance model, do the
+blocks a model *totals* contain typed cells — or are inputs and totalled
+blocks disjoint there too, as they are on every regulator model?
+
+**The subjects.** `inverness_college` and `snbts`, fetched by the same
+route the committed fetcher uses. **Both are in the population proof's
+registered sample**, and the proof is suspended, not cancelled — so the
+same conflict-of-interest note as round 3 applies and is repeated here:
+**this round changes no engine code and no chain code.** It reads the
+models through the engine's existing reader and counts structure. If the
+lead judges that reading them contaminates a later cold run, discard
+this round and its finding; say so and I will drop it without argument.
+
+**Measured, identically to rounds 2 and 3 so all three tables compare
+line for line:** numeric and typed cells; sections the model declares
+via the engine's own `structure.sections()`; **typed cells falling
+inside a declared section**; and where that is non-zero, the three
+thresholds (`any`, `half`, `all-but-this-one`) at budgets B = 10, 25,
+50, 100, adversarial and seeded-random.
+
+**SNBTS is measured but not predicted.** Its formula count is unknown to
+me — the lead's table does not list it separately, and I have not opened
+it. If it turns out to be value-only it joins round 3's eight and says
+nothing new; that is reported either way.
+
+**The prediction, for Inverness College, stated so it can be wrong.**
+Round 2's structural argument — « a block a model *totals* is a block of
+outputs » — predicts **zero or near-zero** typed cells inside declared
+sections even here. My round 3 prediction (« non-zero and substantial »)
+was already wrong once, for a reason I could not have foreseen. **This
+time I am predicting with round 2's argument rather than against it: I
+expect under 5%.** If it comes back substantial, round 2's structural
+claim is wrong on the product's actual market and the local-rule shape
+is alive — and I will say so in those words, having just bet against it.
+
+**No kill-criterion: this round changes no code.** Its only obligation
+is to report what it finds, including the case that revives a shape I
+have twice written off.
+
+## D5 round 4 — measured. Round 2's verdict **replicates on a real market model**, and I was right to bet against my own last prediction.
+
+### The population, stated first
+
+| model | cells | formulas | reader sees |
+|---|---|---|---|
+| **inverness_college** | 380,506 | **20,027** (2,826 written + 17,201 shared followers) | 19,900 |
+| snbts | 350,350 | **0** | 0 |
+
+**SNBTS is value-only** and joins round 3's eight; it says nothing new
+and is reported so the sample is not quietly one model. **The round's
+real subject is Inverness College**, and my formula count matches the
+lead's 20,027 exactly, arrived at independently.
+
+### The answer to round 2's question
+
+| | regulator models | round 3's eight deals | **Inverness College** |
+|---|---|---|---|
+| sections declared | 5–61 | **0** | **21** |
+| usable sections | 0 | 0 | **6** |
+| typed cells inside one | **0** of 22,693 | 0 (no formulas) | **175** of 195,202 |
+| share | 0% | — | **0.09%** |
+
+**The shape has ground for the first time on a model from the product's
+actual market.** Not zero, as on every regulator model; not
+inapplicable, as on nine value-only files. Six blocks a real modeller
+totalled contain 175 cells a real modeller typed.
+
+**My registered prediction was « under 5% », made deliberately *with*
+round 2's structural argument after round 3's prediction went the other
+way and lost. 0.09% — round 2's argument holds:** a block a model
+totals is overwhelmingly a block of outputs, even when a person built
+it by hand. Being right this time is worth less than the reason: I bet
+on the argument that had already survived a measurement, not on the
+outcome I wanted.
+
+### The threshold table, replicated on a real subject
+
+| threshold | B=10 | B=25 | B=50 | B=100 |
+|---|---|---|---|---|
+| **any** (adv / rand) | 169 / 144 | 169 / 146 | 169 / 122 | 169 / 75 |
+| **half** (adv / rand) | 2 / 0.1 | 20 / 0.3 | 35 / 0.4 | 86 / **66.8** |
+| **all-but-this-one** (adv / rand) | **2 / 0.1** | **2 / 0.3** | **3 / 0.4** | **5 / 0.9** |
+
+Every property round 2 found on a 230-cell example reappears on a
+380,506-cell closed deal:
+
+- **« any » floods** — 169 findings from ten confirmations.
+- **« half » punishes diligence** — its random noise climbs from 0.1 to
+  **66.8** as the banker's budget goes 10 → 100. The harder someone
+  works, the more it shouts at them.
+- **« all-but-this-one » survives**: at most 5 adversarial and about
+  1 random, at a hundred confirmations, on a model of this size.
+
+**This is the first time D5's shape has been measured on a real,
+formula-bearing model from the market the founder chose**, and the
+verdict round 2 reached on toys is the verdict here.
+
+### The honest limitation, which cuts against the shape I am reporting
+
+**0.09% is a very small surface.** At the surviving threshold and a
+hundred confirmations, this model yields **about one finding**. Two
+readings and I am not choosing between them:
+
+- it is **quiet enough to be safe**, which is the property the whole
+  design was arranged to get, and a check that fires once on a real
+  deal is not noise a banker will learn to ignore;
+- it may be **too quiet to be worth building** — a feature that
+  produces one finding per deal has to be very good at that one.
+
+Which of those matters more is a product judgement, and it is the
+founder's and the lead's. **What I can now say that I could not
+yesterday is that the number is real, measured on a real deal, and not
+extrapolated from a 230-cell example.**
+
+### One thing this round settles about last turn's retraction
+
+Inverness College carries **17,201 shared-formula followers** and the
+reader resolves essentially all of them — it sees 19,900 of 20,027.
+Last turn I claimed openpyxl mis-reads shared formulas and retracted it
+the same turn. **This is independent confirmation that the retraction
+was right**, on a model with a hundred times more of them than the one
+that produced the wrong claim.
+
+### For the lead: exactly what I opened, so contamination is yours to judge
+
+Both round 4 subjects are in the population proof's registered sample.
+The proof is **suspended, not cancelled**, so I am naming precisely what
+this lane has now read, rather than leaving the lead to reconstruct it:
+
+| file | what this lane did with it |
+|---|---|
+| `inverness_college_model.xlsm` | read through `read_artifact`; counted cells, formulas, declared sections and typed cells inside them; ran the three D5 thresholds. **No engine code changed, no finding hand-verified, no output inspected.** |
+| `snbts_model.xlsm` | same, and it has no formulas, so the run stopped at the section count |
+| the eight of round 3 | the same, plus one read-only run of `audit()` as the service calls it, whose **finding counts** I recorded (16 rule findings, 12 analytics across all eight) — I did not read the findings themselves beyond nine `typed-over-formula` refs on Newbattle while chasing a claim I later retracted |
+
+**The one that is arguably contaminating is that last line**, and I am
+flagging it rather than defending it: on Newbattle I read nine finding
+records in full. If the proof's cold-run condition means « no lane has
+looked at what the engine says about this file », Newbattle is
+compromised for that condition and the other ten are not. **Drop it
+from the sample or discard my round; either costs less than a proof
+whose conditions were quietly broken.**
+
+I also fetched `inverness_college` and `snbts` from the S3 bucket by the
+same `{Project Words}+Financial+Model.xlsm` convention the committed
+fetcher uses — **both return 200** (2,265,188 and 1,881,902 bytes).
+They are not in `corpus_sft_models.py`, which holds eleven. If that
+matters to route 1 of the suspension (« find a formula-bearing
+population »), the convention reaches further than the committed list;
+extending it is not my file to edit.
+
+### What this turn leaves for the lead
+
+1. **D5 now has the evidence its pending decision was missing.** The
+   shape's verdict is replicated on a real closed-deal model from the
+   founder's chosen market, with its limitation stated against it. D5
+   has awaited a decision for six turns; it is no longer waiting on
+   measurement.
+2. **Newbattle may be contaminated for the proof's cold-run condition**
+   — named above, mine, and cheaper to drop than to argue about.
+3. **Round U's criterion question** — sixth sweep, still unanswered,
+   still unrun. D1 keeps a defect I know how to fix.
+4. **D3 round 4's contracts** — the models are reachable, the
+   agreements are not, thirteen key forms probed. Three URLs from a
+   browser would close it.
+5. **D4** — approval pending since the fourteenth sweep.
+
+Orders unchanged for six sweeps. Everything above is inside D1, D3 and
+D5, which are mine; the engine is untouched and no other lane's file
+has been edited.
