@@ -98,6 +98,10 @@ class ChainFact(RecordModel):
     #: are the label; that inference lives in D3 where it is measured.
     line: Mapped[str] = mapped_column(Text, nullable=False)
 
+    #: The column header above the figure — the other half of a table
+    #: cell's identity, added at extractor version 3 (round 6).
+    column: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
     extractor_name: Mapped[str] = mapped_column(String(128), nullable=False)
     extractor_version: Mapped[str] = mapped_column(String(32), nullable=False)
 
@@ -162,6 +166,7 @@ async def persist_extraction(
             text=number.text,
             value=number.value,
             line=number.line,
+            column=number.column,
             extractor_name=EXTRACTOR_NAME,
             extractor_version=EXTRACTOR_VERSION,
         )

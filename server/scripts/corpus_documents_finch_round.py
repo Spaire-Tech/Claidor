@@ -138,7 +138,7 @@ def score(truth_path: str) -> int:
         if condition != "ok":
             counts[condition] = counts.get(condition, 0) + 1
             continue
-        candidates = [(key, n.line, n.text) for key, n in pools[task]]
+        candidates = [(key, n.line, n.text, n.column) for key, n in pools[task]]
         stated = entry.get("truth") or []
         answer = propose.propose(entry["name"] or entry["labels"], candidates)
         if isinstance(answer, propose.Proposed):

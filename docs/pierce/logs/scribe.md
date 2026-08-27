@@ -1709,3 +1709,118 @@ with no label words will not move — nothing about the document side
 can help a cell that has no name. **No target is promised. If the
 anchor produces confident wrong answers, it dies and the tie rule
 stays** — that is the outcome the whole design is arranged to prefer.
+
+## D3 round 6 — measured. The anchor works. The **tokenizer** throws it away.
+
+*FinWorkBench/Finch, arXiv:2512.13168, CC BY 3.0.*
+
+**Part A, identical rows and identical truth, v3 against v4:**
+
+| | round 5 (line only) | round 6 (+ column) |
+|---|---|---|
+| true proposal | 0 | **0** |
+| false proposal | 1 | **2** |
+| true abstention | 9 | 7 |
+| missed | 17 | **18** |
+
+**The prediction was wrong and the change made things slightly
+worse.** Three cells moved, all of them the wrong way: task 5's one
+false proposal became a miss, and two of task 52's correct
+abstentions became false proposals. Task 156 — the clean case the
+whole round was aimed at — is still six of six missed.
+
+### Why, exactly. The anchor is right; the tokenizer is deaf to it.
+
+The column anchor **does what it was registered to do.** On task
+156's line, the five figures come out with these headers, read
+straight off the page geometry:
+
+| figure | x | column anchor |
+|---|---|---|
+| 8,067,693 | 254.8 | **`$`** |
+| 100% | 327.7 | **`%`** |
+| 27 | 389.4 | (none) |
+| 6,707,013 | 425.0 | **`$`** |
+| 100% | 505.4 | **`%`** |
+
+That is exactly correct — those *are* the columns. And the matcher
+still ties at 1.00 across all five, because:
+
+```
+label_tokens("$ Total Direct Expense")  ->  ['direct', 'expense', 'total']
+```
+
+**The `$` is gone.** The tokenizer is `[a-z0-9]+`, so it keeps
+alphanumerics and drops everything else — and it drops the symbol on
+*both* sides, the cell's name and the fact's anchor alike. The
+anchors `$` and `%` tokenize to nothing at all, contribute nothing to
+any score, and the tie survives untouched.
+
+So round 5's diagnosis was right about the missing dimension and
+wrong about where the blockage sat. The document side was never the
+only problem: **in financial tables the column identity is very often
+a symbol** — `$`, `%`, `£`, `#` — and this lane's own value-blindness
+rule, written to stop numerals leaking into scoring, throws those
+symbols out with the numerals. The engine already knew this: it names
+the same two cells « $ Total Direct Expense » and « HC Total Direct
+Expense », and the only thing distinguishing them is the character my
+tokenizer deletes.
+
+**The two new false proposals say the same thing from the other
+side.** Task 52's « Low End Cost Case 3 » and « High End Cost Case 3 »
+are both zero, both unstated in the contract, and both were correctly
+silent in round 5. The anchor added *some* tokens to *some*
+candidates, broke their tie, and let a wrong candidate through. An
+anchor that carries only the words it happens to keep is worse than
+no anchor: it breaks ties arbitrarily rather than informatively.
+
+**Nothing is patched mid-round.** The tokenizer stays as frozen for
+this round's number; the fix is registered below.
+
+### Part B, deferred — named, not skipped
+
+The registration's part B was to re-judge the fifteen
+`indeterminate-line-granularity` rows using the column header as
+evidence. It is **deferred to round 7**, and the reason is the result
+above: those judgements are matcher-independent and will keep, and
+spending the judge's care now would enlarge the scored set for a
+matcher that provably cannot see the columns anyway. It is the first
+item of round 7, not a dropped one.
+
+## D3 round 7 — registration: let the symbols speak
+
+Frozen before the code, as ever. **One change, and nothing else
+moves.**
+
+**The tokenizer keeps the symbols that name columns.** `label_tokens`
+currently yields `[a-z0-9]+` runs with pure numerals dropped. It will
+additionally yield each of `$ % £ € #` appearing in the text as its
+own token, on **both** sides — a cell's name and a fact's line and
+column anchor alike.
+
+**Why this does not breach never-by-value, stated precisely:** the
+value is the digits, and the digits stay dropped exactly as they are
+today. `$` is not a quantity; it is the name of a column, and a
+document that prints `$` and `%` headers is *labelling*, not stating.
+The rule has always been « match on labels, never on values », and
+these symbols are labels. If anything the current behaviour breaches
+the rule's intent by discarding a label.
+
+**Everything else stays frozen:** `FLOOR = 0.5`, exact-tie
+abstention, both reference defenses, the column anchor exactly as
+round 6 built it. Extractor output is unchanged, so
+`EXTRACTOR_VERSION` stays `"3"` and no fact ids move.
+
+**The runs:** part A again — the same 27 rows and the same truth,
+v4 against v5, so three consecutive rounds are comparable on
+identical ground. Then **part B**, the fifteen deferred rows, judged
+from the document's own headers with truth recorded before scoring,
+rows the header does not settle staying indeterminate and counted.
+
+**The prediction, stated so it can be wrong:** task 156's six should
+now separate — `$` distinguishes its two money columns from its `%`
+and headcount ones — and the honest risk is the mirror image, that a
+`$` column shared by many rows creates *new* ties, or that a cell
+named « $ Total Direct Expense » now matches every `$` figure in the
+document. **If precision does not rise, the symbols go back out and
+the finding is that a column anchor alone cannot carry this.**

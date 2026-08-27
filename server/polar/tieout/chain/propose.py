@@ -136,16 +136,23 @@ class Abstained:
 
 
 def propose(
-    cell_labels: str, candidates: Sequence[tuple[UUID, str, str]]
+    cell_labels: str,
+    candidates: Sequence[tuple[UUID, str, str] | tuple[UUID, str, str, str]],
 ) -> Proposed | Abstained:
     """One cell's label text against every candidate fact's line.
 
     ``cell_labels`` is the label text the workbook gives the cell (its
     name — row and column labels joined). ``candidates`` are
-    ``(fact id, printed line, printed token)`` triples. Returns either
-    the single proposed candidate with the full ranking behind it, or
-    an abstention that says why in words. The floor and the tie rule
-    apply among eligible (non-reference) candidates only.
+    ``(fact id, printed line, printed token)`` triples, or 4-tuples
+    with the fact's **column anchor** last — the header standing above
+    it, which round 6 added after round 5 measured what a line-only
+    anchor costs on tables. A candidate's label tokens are its line's
+    plus its column's; the value still plays no part, since the
+    tokenizer drops numerals from both.
+
+    Returns either the single proposed candidate with the full ranking
+    behind it, or an abstention that says why in words. The floor and
+    the tie rule apply among eligible (non-reference) candidates only.
     """
     wanted = label_tokens(cell_labels)
     if not wanted:
@@ -161,13 +168,19 @@ def propose(
     scored = sorted(
         (
             Candidate(
-                fact_id=fact_id,
+                fact_id=candidate[0],
                 score=len(shared) / len(wanted),
                 shared=tuple(sorted(shared)),
-                reference=is_reference(token, line),
+                reference=is_reference(candidate[2], candidate[1]),
             )
-            for fact_id, line, token in candidates
-            for shared in [wanted & label_tokens(line)]
+            for candidate in candidates
+            for shared in [
+                wanted
+                & (
+                    label_tokens(candidate[1])
+                    | label_tokens(candidate[3] if len(candidate) > 3 else "")
+                )
+            ]
         ),
         key=lambda candidate: (-candidate.score, str(candidate.fact_id)),
     )
