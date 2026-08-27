@@ -25,7 +25,9 @@ import subprocess
 import tempfile
 import threading
 import uuid
+from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import Any
 
 from .gate import CalcSettings, read_calc_settings
 from .pool import CalculatorError, RecalcResult
@@ -164,6 +166,75 @@ class UnoCalculator:
             raise CalculatorError(f"malformed driver response for {path}")
         values = {str(ref): _jsonsafe(value) for ref, value in raw.items()}
         return RecalcResult(values=values, engine=self.engine)
+
+    def open(self, path: str) -> None:
+        """Hold one document open for many in-place perturbation runs.
+
+        A mining round changes a handful of input cells hundreds of
+        times; reloading a workbook each time is the whole cost. The
+        file's own `calcPr` is pushed once here, exactly as the
+        one-shot path pushes it.
+        """
+        settings = _settings_dict(read_calc_settings(path))
+        self._request({"open": str(Path(path).absolute()), "calc": settings})
+
+    def set_and_recalculate(
+        self, changes: Mapping[str, float], *, sheets: Sequence[str] | None = None
+    ) -> RecalcResult:
+        """Write named input cells into the held document and re-solve.
+
+        Only cells the caller names are written, so the document
+        stays the file it was; every other constant keeps its value
+        and every formula keeps its formula.
+        """
+        payload: dict[str, Any] = {
+            "set": {str(k): float(v) for k, v in changes.items()}
+        }
+        if sheets:
+            payload["sheets"] = list(sheets)
+        response = self._request(payload)
+        raw = response.get("values")
+        if not isinstance(raw, dict):
+            raise CalculatorError("malformed driver response to a set-and-recalculate")
+        return RecalcResult(
+            values={str(ref): _jsonsafe(value) for ref, value in raw.items()},
+            engine=self.engine,
+        )
+
+    def cosmetic(self, path: str, spec: dict[str, Any], store_to: str) -> None:
+        """Write a presentation-only variant of a workbook.
+
+        The engine performs the edits, so inserted rows and renamed
+        sheets carry every formula with them — the variant differs
+        from its original in appearance and position only.
+        """
+        self._request(
+            {
+                "cosmetic": {"path": str(Path(path).absolute()), **spec},
+                "store_to": str(Path(store_to).absolute()),
+            }
+        )
+
+    def close(self) -> None:
+        """Release the held document, leaving the process up."""
+        self._request({"close": True})
+
+    def _request(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if self._driver is None or self._driver.stdin is None:
+            raise CalculatorError("calculator not started")
+        self._request_id += 1
+        payload = {"id": self._request_id, **payload}
+        try:
+            self._driver.stdin.write(json.dumps(payload) + "\n")
+            self._driver.stdin.flush()
+        except OSError as error:
+            raise CalculatorError(f"driver pipe broken: {error}") from error
+        response = self._read(self.document_timeout)
+        if response is None:
+            raise CalculatorError(f"no answer within {self.document_timeout:.0f}s")
+        if response.get("error"):
+            raise CalculatorError(str(response["error"]).strip().splitlines()[-1])
+        return response
 
     def stop(self) -> None:
         if self._driver is not None:

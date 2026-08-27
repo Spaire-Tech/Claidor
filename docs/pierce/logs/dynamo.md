@@ -920,6 +920,56 @@ the per-class table was measured on. ddmin on the H7 four.
   reporting is the point. **No narrowing result exists as this is
   written.**
 
+## 27 August 2026 — the narrowing result: 43 narrowings, 0 misses
+
+Every registered prediction held, including the one predicted to
+fail. Across all 37 plants (each violated output is one narrowing,
+so 43 in total):
+
+| Planted class | Law violated | Narrowings | Exact | Hit | Miss |
+|---|---|---|---|---|---|
+| omitted segment | consolidation (structural) | 11 | **11** | — | 0 |
+| hardcode-in-the-tail (adjustment chain) | zero-input | 11 | **11** | — | 0 |
+| hardcode-in-the-tail (total line) | consolidation (structural) | 11 | — | 11 | 0 |
+| hardcode-in-the-tail (money chain) | proportionality | 4 | **4** | — | 0 |
+| hardcoded ratio leg | proportionality (cross-law) | 4 | **4** | — | 0 |
+| hardcoded ratio leg | scale invariance | 2 | **2** | — | 0 |
+| **Total** | | **43** | **32** | **11** | **0** |
+
+Every exact answer is a set of size **one** — the planted cell and
+nothing else. Every hit is a set of size **three**, and all eleven
+are the single predicted case: a constant pasted inside a total
+that still reaches every declared segment, where one run cannot
+localize and the method says so instead of guessing. Nothing landed
+outside its prediction; there were no misses and no unmeasurable
+plants.
+
+**ddmin agreed with the frontier on every one of the ten H7
+narrowings** (one confirmation test each): pinning the frontier's
+single cell to its law-predicted value and recalculating restored
+the law, and there is no proper subset of a singleton. That is a
+real check — the engine, not the algorithm, says the cell is
+responsible — but an honest reading is that ddmin's *search* value
+was never exercised here, because the frontier never proposed a
+wide candidate set. Its worth will show on a defect the frontier
+cannot resolve alone; that case has not been measured yet.
+
+The cross-law rows are the most interesting result. When the
+contaminated ratio broke **proportionality** two cells downstream
+(`J73`, `F86`), the frontier still named `J69` — the planted cell —
+rather than the cells that visibly moved. That is the whole point
+of the plan's sentence: one authoring decision, one finding, even
+when the symptom appears somewhere else.
+
+Bounds, stated: 37 plants is single-digit N per class per host; the
+frontier walk depends on the reader's precedent lists, which cap
+range expansion at 200 cells, so a defect reached only through a
+larger range could hide from the cone (not yet observed, recorded
+as a known edge); and consolidation's structural limit is now
+measured rather than predicted — closing it needs either a second
+run under perturbation or B6's diagnosis layer, which is exactly
+what B6 is for.
+
 ## 27 August 2026 — B5 registered: relation mining, the Monday experiment
 
 Founder-approved (`swens-plan.md` B5, 27 Aug); the binding design
@@ -1039,3 +1089,103 @@ rule-set quality gates all three. **Nothing downstream registers
 until a modeller-recognisable rule set exists**, and if round 1's
 rules are not recognisable I will say so plainly and that is the
 result.
+
+## 27 August 2026 — the review's gates, registered before they run
+
+The plan's third amendment is binding on B5 and this entry answers
+all four of its points. Registered before any of these numbers
+exist; **no stability result exists as this is written.**
+
+### The engineering that made these cheap, and its own check
+
+A mining round re-solves one model hundreds of times while changing
+a handful of input cells. Reloading the workbook each time cost
+**8.8 s per run**; holding the document open, writing only the named
+input cells, and reading back only the watched sheet costs
+**0.38 s** — 23× — which is the difference between these gates being
+a two-hour job and a five-minute one.
+
+Because it is my own optimization, it was checked before it was
+used: three draws through both paths, **9,828 cell-values compared,
+zero differences**. The in-place path writes only cells the caller
+names, so no formula is ever overwritten and every untouched
+constant keeps its value.
+
+### 1. Seed stability (gate on C6)
+
+One unmodified model (`h7_new_debt_indexation_fds.xlsx`, gate-clean
+at 1.000000), mined **five times under five seeds** (11, 22, 33, 44,
+55), 200 runs each. Registered claim shape: the five rule sets, how
+many rules appear in all five, and whether the five sets are
+**identical**. Prediction: identical, or the difference is named
+rule by rule. If they are not identical, « v12 broke a rule » is
+seed noise and I will say so — that is the point of the gate.
+
+### 2. Cosmetic invariance (gate on C6)
+
+A variant of the same model with **three blank rows inserted above
+the modelled block and the sheet renamed** — made by LibreOffice
+itself, so every formula and reference moves with them. Mined with
+the same seed and run count.
+
+**The comparison is by label, never by cell reference.** That is the
+test's whole substance: inserting rows moves every watched cell, so
+a reference-keyed comparison would report total disagreement for a
+model that behaves identically — exactly the failure of positional
+diffing that behavioural mining exists to escape. A rule's identity
+is the (sign, row label, column label) triples of its terms.
+Registered claim: identical by label, or the differences counted in
+both directions.
+
+### 3. The input-typing classifier as a shared component (interface
+proposed for the lead)
+
+The amendment is right that this is E2's unit inference wearing
+another hat, and it should be built once. What exists today is
+`polar/tieout/recalc/mine.py`'s `InputType` / `TypedInput` /
+`sample` — a policy, hand-fed. **Proposed interface**, for the lead
+to place and for Track E to consume:
+
+```
+classify_inputs(cells: Mapping[str, Cell]) -> dict[str, TypedInput]
+    # one typed input per constant cell, from number format,
+    # row/column labels, value range and neighbours
+
+class TypedInput: ref, type, base, states, band, confidence, why
+    # `why` is the evidence sentence; `confidence` gates auto-use
+InputType: MONEY | RATE | COUNT | FLAG | SELECTOR | DATE | UNTYPED
+```
+
+Three properties I would hold it to, from what the hand-typing
+taught: an undecidable cell returns **UNTYPED and is never
+perturbed** (a guess is worse than a gap); every type carries its
+evidence in words; and **constrained families are declared, not
+inferred cell by cell** — the H7 weight rows sum to one, and typing
+them independently would licence runs in a capital structure the
+model never occupies. Where this module should live is the lead's
+call, not mine; I have not built it deep pending that word.
+
+### 4. The catch-rate protocol, both directions (B5 round 2)
+
+Registered now so neither number can be chosen later:
+
+- **Direction A — overlap**: of the 84 static-found PR24
+  draft→final regressions, how many break at least one mined rule.
+- **Direction B — the half that matters**: everything B5 flags on
+  those pairs that the static engine did **not**, hand-verified as a
+  registered sample, each classified as a real defect, a legitimate
+  change, or a false alarm.
+
+**The two numbers are reported separately and never blended**, and
+Direction B's sample size and selection rule are registered before
+the verification begins.
+
+### 5. Rules broken per real regression (decides B6)
+
+While the PR24 pairs run, the count of **mined rules broken per real
+regression** is recorded as its own distribution. Per the amendment
+this decides B6: if real regressions typically break one or two
+rules, blame-the-changed-cell wins and Reiter's minimal diagnosis is
+over-engineering; if they break many, B6 is exactly right. I have no
+prediction to register here — the honest position is that I do not
+know, which is why it is being measured.

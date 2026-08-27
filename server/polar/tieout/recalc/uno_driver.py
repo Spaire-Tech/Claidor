@@ -124,12 +124,21 @@ def push_calc_settings(document, calc):
         document.setPropertyValue("IterationEpsilon", float(calc.get("delta", 0.001)))
 
 
-def read_formula_cells(document):
+def read_formula_cells(document, only=None):
+    """Every formula cell's value, or only those on the named sheets.
+
+    A mining round watches one sheet and re-solves hundreds of times;
+    reading the whole workbook each time is work nobody asked for.
+    The gate's one-shot path passes no filter and still reads all.
+    """
     values = {}
     sheets = document.Sheets
+    wanted = set(only) if only else None
     for i in range(sheets.Count):
         sheet = sheets.getByIndex(i)
         name = sheet.Name
+        if wanted is not None and name not in wanted:
+            continue
         enumeration = sheet.queryContentCells(FORMULA).Cells.createEnumeration()
         while enumeration.hasMoreElements():
             cell = enumeration.nextElement()
@@ -159,6 +168,91 @@ def store_copy(document, path):
         _prop("Overwrite", True),
     )
     document.storeToURL(url, props)
+
+
+#: One document held open across many perturbation runs. Opening a
+#: 40MB workbook costs seconds; a mining round does hundreds of runs
+#: that change only a handful of input cells, so the document is
+#: opened once and re-solved in place. Values are only ever written
+#: to cells the caller names — never to a formula cell — so the
+#: document stays the file it was.
+KEPT = {"document": None, "path": None}
+
+
+def close_kept():
+    document = KEPT.get("document")
+    KEPT["document"] = None
+    KEPT["path"] = None
+    if document is None:
+        return
+    try:
+        document.close(False)
+    except Exception:
+        document.dispose()
+
+
+def open_kept(desktop, request):
+    close_kept()
+    document = open_document(desktop, request["open"])
+    push_calc_settings(document, request.get("calc") or {})
+    KEPT["document"] = document
+    KEPT["path"] = request["open"]
+    return {"id": request.get("id"), "opened": request["open"]}
+
+
+def set_and_recalculate(request):
+    document = KEPT.get("document")
+    if document is None:
+        raise RuntimeError("no document is open; send {'open': path} first")
+    sheets = document.Sheets
+    for ref, value in (request.get("set") or {}).items():
+        name, _, at = ref.rpartition("!")
+        sheets.getByName(name).getCellRangeByName(at).setValue(float(value))
+    document.calculateAll()
+    return {
+        "id": request.get("id"),
+        "values": read_formula_cells(document, request.get("sheets")),
+    }
+
+
+def cosmetic(desktop, request):
+    """Make presentation-only edits and store the result.
+
+    Rows inserted, a sheet renamed, a block reformatted — the three
+    edits C6's claim stands or falls on. They go through LibreOffice
+    rather than a file library **because the engine adjusts every
+    formula and reference as it moves them**; a library that shifts
+    cells without rewriting the formulas that point at them produces
+    a broken model, not a cosmetic variant, and would make the test
+    a lie.
+    """
+    spec = request["cosmetic"]
+    document = open_document(desktop, spec["path"])
+    try:
+        for edit in spec.get("insert_rows", []):
+            sheet = document.Sheets.getByName(edit["sheet"])
+            sheet.Rows.insertByIndex(int(edit["at"]), int(edit.get("count", 1)))
+        for edit in spec.get("rename", []):
+            document.Sheets.getByName(edit["from"]).setName(edit["to"])
+        for edit in spec.get("reformat", []):
+            sheet = document.Sheets.getByName(edit["sheet"])
+            cells = sheet.getCellRangeByName(edit["range"])
+            formats = document.getNumberFormats()
+            from com.sun.star.lang import Locale
+
+            locale = Locale()
+            key = formats.queryKey(edit["format"], locale, False)
+            if key == -1:
+                key = formats.addNew(edit["format"], locale)
+            cells.NumberFormat = key
+        document.calculateAll()
+        store_copy(document, request["store_to"])
+        return {"id": request.get("id"), "stored": request["store_to"]}
+    finally:
+        try:
+            document.close(False)
+        except Exception:
+            document.dispose()
 
 
 def handle(desktop, request):
@@ -202,9 +296,20 @@ def main():
             continue
         request = json.loads(line)
         if request.get("exit"):
+            close_kept()
             break
         try:
-            response = handle(desktop, request)
+            if request.get("cosmetic"):
+                response = cosmetic(desktop, request)
+            elif request.get("open"):
+                response = open_kept(desktop, request)
+            elif request.get("close"):
+                close_kept()
+                response = {"id": request.get("id"), "closed": True}
+            elif "set" in request:
+                response = set_and_recalculate(request)
+            else:
+                response = handle(desktop, request)
         except Exception:
             response = {
                 "id": request.get("id"),
