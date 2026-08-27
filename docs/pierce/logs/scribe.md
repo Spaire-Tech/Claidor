@@ -3536,3 +3536,77 @@ have a plausible mechanism, I write it down before I have tested that
 it is the mechanism.** The fix is the same shape as the audit — a
 claimed *cause* now needs its own check before it is written, not
 after.
+
+## 28 August 2026, sixteenth « go » — the round D5 round 3 could not run, now that a subject exists
+
+Orders read from the tip (`f33b6b1e`). **The orders file is
+byte-identical for the sixth sweep running** and there is still no word
+on round U's criterion question, so round U stays unrun as promised.
+
+**My lane merged at the nineteenth sweep**, and the lead acted on last
+turn's finding before I could raise it twice: **the population proof is
+suspended**, « the published corpus is value-only, verified before any
+audit ». The lead measured sixteen models where I measured eight, got
+the same answer, and named their own error in doing so. The write-up
+credits this lane finding it independently « from the other side ». I
+have nothing to add to that and am not going to re-litigate it.
+
+**What their sixteen contained that my eight did not.** One model with
+a live calculation layer: **Inverness College — 380,506 cells, 20,027
+formulas, 5.26%.** Every model I measured was under 0.1%.
+
+That matters to this lane specifically, because D5 round 3's conclusion
+was **not** « the shape is wrong »; it was:
+
+> round 2's structural prediction is **untested, not refuted** — a
+> corpus with no formulas declares no totals, so round 2's question
+> cannot be put to them.
+
+**A subject now exists.** Probed from this container just now:
+`Inverness+College+Financial+Model.xlsm` returns **200, 2,265,188
+bytes**, and Scottish National Blood Transfusion Service returns 200 at
+1,881,902 — both by the same bucket convention. Neither is in the
+committed fetcher, which holds eight readable models; the lead obtained
+them some other way.
+
+## D5 round 4 — registration, frozen before the file is opened
+
+**One question, the one round 2 asked and round 3 could not put:** on a
+hand-built, formula-bearing, closed-deal project-finance model, do the
+blocks a model *totals* contain typed cells — or are inputs and totalled
+blocks disjoint there too, as they are on every regulator model?
+
+**The subjects.** `inverness_college` and `snbts`, fetched by the same
+route the committed fetcher uses. **Both are in the population proof's
+registered sample**, and the proof is suspended, not cancelled — so the
+same conflict-of-interest note as round 3 applies and is repeated here:
+**this round changes no engine code and no chain code.** It reads the
+models through the engine's existing reader and counts structure. If the
+lead judges that reading them contaminates a later cold run, discard
+this round and its finding; say so and I will drop it without argument.
+
+**Measured, identically to rounds 2 and 3 so all three tables compare
+line for line:** numeric and typed cells; sections the model declares
+via the engine's own `structure.sections()`; **typed cells falling
+inside a declared section**; and where that is non-zero, the three
+thresholds (`any`, `half`, `all-but-this-one`) at budgets B = 10, 25,
+50, 100, adversarial and seeded-random.
+
+**SNBTS is measured but not predicted.** Its formula count is unknown to
+me — the lead's table does not list it separately, and I have not opened
+it. If it turns out to be value-only it joins round 3's eight and says
+nothing new; that is reported either way.
+
+**The prediction, for Inverness College, stated so it can be wrong.**
+Round 2's structural argument — « a block a model *totals* is a block of
+outputs » — predicts **zero or near-zero** typed cells inside declared
+sections even here. My round 3 prediction (« non-zero and substantial »)
+was already wrong once, for a reason I could not have foreseen. **This
+time I am predicting with round 2's argument rather than against it: I
+expect under 5%.** If it comes back substantial, round 2's structural
+claim is wrong on the product's actual market and the local-rule shape
+is alive — and I will say so in those words, having just bet against it.
+
+**No kill-criterion: this round changes no code.** Its only obligation
+is to report what it finds, including the case that revives a shape I
+have twice written off.
