@@ -1413,3 +1413,76 @@ makes the gate refuse a file rather than guess at it.
   clean — but until the typing is automatic, we are only perturbing
   the corner of the model we could label by hand, and laws found in
   a corner are not the model's laws.
+
+## 27 August 2026 — E1 registered: the ground truth, before any inference
+
+The lane is redirected by its own evidence: coverage is the binding
+constraint on B5, coverage is governed by input typing, and typing
+is E1/E2's unit inference wearing another hat. So Track E's first
+half is mine. **This entry is committed before a single row is
+drawn, and the sample is committed unlabelled before a single label
+is written** — a ground truth chosen after seeing what would be easy
+to label is not a ground truth.
+
+### The population and the sample
+
+- **Population**: every *input row* — a (sheet, row) that holds at
+  least one constant numeric cell and no formula in that cell — on
+  gate-clean corpus models. **Unlabelled rows are eligible.** They
+  are the hard cases (ED2's largest constant groups carry no row
+  label at all), and a truth set without them would flatter any
+  inference that guesses.
+- **Five models, registered, spanning shapes** — all gate-clean at
+  1.000000 in B2 round 1: `ofgem_ed2/v5_2026-06.xlsx` (price
+  control), `caa_h7/h7_new_debt_indexation_fds.xlsx` (rates),
+  `ofgem_riio3/draft/…Allowed Return on Equity Summary…xlsx`
+  (rates), `ofgem_riio3/draft/DRAFT_GD3 PCFM_Jun25.xlsx` (price
+  control), `ofgem_riio3/final_wacc.xlsx` (WACC).
+- **20 rows per model, 100 in total**, drawn uniformly at random
+  from each model's population with **seed 1727** — registered here
+  so the draw cannot be re-rolled. Twenty per model is chosen to be
+  large enough that a per-dimension accuracy has a real denominator
+  and small enough that every row can be labelled carefully by
+  hand; E1 is a protocol, not a census.
+
+### The dimensions, and who needs them
+
+| Dimension | Values | Consumer |
+|---|---|---|
+| `kind` | continuous · categorical · unknown | B5 (perturb or hold) |
+| `b5_type` | money · rate · count · flag · selector · date · untyped | B5 (the perturbation policy) |
+| `currency` | GBP · USD · EUR · none · unknown | E2/E3 |
+| `scale` | units · thousands · millions · unknown | E2/E3 |
+| `period` | none · annual · quarterly · monthly · point-in-time · unknown | E2/E3 |
+| `rate_form` | percent · decimal · not-a-rate · unknown | E2/E3 |
+
+### The labelling rules
+
+1. **Evidence allowed**: the row's own label text, the column
+   headers above it, the cells' number formats, the values
+   themselves, and the labels of neighbouring rows in the same
+   block. Nothing else — no reading of the formulas that consume the
+   row, because E2 gets that as *propagation* and E1 must not be
+   contaminated by it.
+2. **`unknown` is a real label, not a failure.** Where the evidence
+   above does not decide, the answer is `unknown`, and E2 abstaining
+   on that row will count as **correct**. An inference that guesses
+   where a careful human abstains is worse than one that says
+   nothing.
+3. **A percent format decides `rate_form`**: `0.0%` means the stored
+   value is a decimal displayed as percent → `decimal`. A value near
+   5.8 labelled « RPI » with a plain format is `percent`.
+4. **Scale comes from the label or the header**, never from the
+   magnitude alone — « £m » says millions; a big number does not.
+5. **Categorical** covers flags, scenario selectors, indices and
+   year numbers: anything whose values name a state rather than
+   measure a quantity.
+6. Every row's label carries a **one-line reason**, so the truth set
+   can be argued with rather than trusted.
+
+### What gets reported as cost
+
+The AHA asks the typing cost to be priced. E1 reports: rows
+labelled, how many were decidable from label and format alone, how
+many needed the surrounding block, how many stayed `unknown`, and
+how long the pass took. That number is the argument for E2 existing.
