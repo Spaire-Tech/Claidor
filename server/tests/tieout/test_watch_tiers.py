@@ -359,11 +359,12 @@ class TestThePairOracleRules:
         assert answer.refusal == "not_read_by_driver"  # type: ignore[attr-defined]
         assert "no value" in answer.detail  # type: ignore[attr-defined]
 
-    def test_a_woken_zero_diverging_refuses_as_latent_not_as_changed(self) -> None:
-        """The zero round: a disagreement only reachable by waking an
-        input the file holds at zero is a difference on a branch the
-        model does not take. It refuses under its own name — the
-        revision is not blamed for it."""
+    def test_a_dormant_cell_diverging_refuses_as_latent_not_as_changed(self) -> None:
+        """A cell both versions store as zero is dormant as the model
+        is configured, so a disagreement there is a difference on a
+        path it does not take — the revision is not blamed for it.
+        Latency is the cell's property, never a property of which knob
+        the run happened to turn."""
         from scripts.watch_tiers import _answer
 
         old = [{"M!B4": 1.0}, {"M!B4": 2.0}]
@@ -371,10 +372,22 @@ class TestThePairOracleRules:
         plain = _answer(("M!B4",), lambda r: r, old, new)["M!B4"]
         assert plain.outcome == "diverged"
         assert plain.refusal == ""
-        latent = _answer(("M!B4",), lambda r: r, old, new, latent=True)["M!B4"]
+        latent = _answer(("M!B4",), lambda r: r, old, new, dormant=lambda _ref: True)[
+            "M!B4"
+        ]
         assert latent.outcome == "refused"
         assert latent.refusal == "tier2_divergence_latent"
         assert "trial 1" in latent.detail
+
+    def test_dormancy_reads_the_stored_values_of_both_versions(self) -> None:
+        from scripts.watch_tiers import _dormant
+
+        old_raw = {"M!B4": ("f:=A1*A2", "n:0"), "M!B5": ("f:=A1", "n:7")}
+        new_raw = {"M!B4": ("f:=A1*A2", "n:0"), "M!B5": ("f:=A1", "n:7")}
+        decide = _dormant(old_raw, new_raw, {"M!B4": "M!B4", "M!B5": "M!B5"})
+        assert decide("M!B4")  # zero in both — dormant
+        assert not decide("M!B5")  # a real number — not dormant
+        assert not decide("M!B9")  # unpaired — never assumed dormant
 
     def test_text_results_are_compared_as_text(self) -> None:
         """The class tier 0 is blind to — a formula whose result is a

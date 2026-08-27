@@ -2836,3 +2836,119 @@ pairings have disagreeing labels; at least one suspect lies in the
 cone of at least one of the seven. If both hold, the explanation is
 the aligner and the fix is C2's, not tier 2's. If the second fails,
 the round says the candidate is dead and the seven stay open.
+
+## The gates, twenty-second sweep
+
+Tip `abd73c4f`. `z3-solver` still absent; orders unchanged from the
+fourteenth sweep. Both gates shut; my own queue continues.
+
+## The pairing round — results: the candidate is dead
+
+Registered test, run exactly as written, over the 8,475 perturbed
+literals:
+
+```
+label disagreements   row 0 · column 0 · both 0   =  0 suspects (0.00%)
+positional displacement (new - old)               =  (0, 0) for all 8,475
+suspects in the seven cells' cones                =  0
+```
+
+**Prediction 1 held** (fewer than 1% disagree — none do).
+**Prediction 2 failed**: no suspect lies in any of the seven cones.
+Every perturbed literal is paired to the cell at the *same* row and
+column with the *same* labels, so the assignment cannot have landed
+in the wrong place. As registered: the candidate is dead.
+
+## The seven, resolved — by asking where the divergence starts
+
+Six explanations had been eliminated one at a time; enumerating a
+seventh would have been the wrong move. Instead, Dynamo's narrowing
+idea applied to a pair (`scratchpad/frontier.py`, analysis code):
+one ±1% assignment, applied to both versions, both recalculated,
+then the **frontier** — every divergent cell with no divergent
+precedent. That is where the two files stop computing the same
+thing, and it does not have to be guessed at.
+
+**The frontier is `Annual Inflation` rows 23, 26, 29 and 40**, and
+all four are the same shape:
+
+```
+=IFERROR(AVERAGEIFS('Monthly Inflation'!$M:$M,
+                    'Monthly Inflation'!$E:$E, ">="&DATE(AR$6-1,…)), …)
+```
+
+**Whole-column aggregates.** And the revision is in that column:
+
+```
+Monthly Inflation!H284:H295   absent in 14 July · typed in 31 July
+   H284 = 121.2 · H290 = 124.8 · …          (twelve months)
+L284   old 121.21485603502553  ->  new 121.2
+M284   old 342.89516070493306  ->  new 343.2
+N290   old 360.7912441432059   ->  new 360.3
+```
+
+**The 31 July revision replaces twelve months of forecast inflation
+(July 2022 → June 2023) with the published outturn**, by typing
+actuals into column H, which the index columns then prefer. That is
+what a regulator's July update *is*, and the Watch found it from the
+two files alone.
+
+**Why no perturbation could ever neutralise it**: those twelve cells
+exist in **one version only**. There is nothing in the old file to
+pair them with, so no assignment can put both files at the same
+point — correctly, because those cells *are* the revision. The
+divergence they cause is the revision's, not the harness's.
+
+**So the seven stand, and they are attributable.** The earlier entry
+recorded them as unexplained; this one closes it. The chain is
+measured end to end: twelve typed months → four whole-column
+averages that already differ in the saved files (`Annual
+Inflation!AR23`: 377.37686723666167 → 377.90919521289834) → the
+real-to-nominal conversions → `Finance&Tax`.
+
+**And the seven are exactly the cells a diff cannot see.** All seven
+are byte-identical in both files — same formula, and the same stored
+value, **zero**:
+
+```
+Finance&Tax!AS86   =AS76 * AS80 * AS84    value 0 in both files
+Finance&Tax!AS185  =AS184 / AS$17         value 0 in both files
+```
+
+C1's raw diff calls them unchanged, and it is right: as saved, they
+are. Tier 0 cannot prove them because their inputs moved. Only the
+evaluation separates them — **the two versions compute different
+numbers on a path that is currently switched off**. That is tier 2
+earning its keep: a behavioural difference that neither the cell
+diff nor the cheap proof can reach.
+
+**A correction to my own earlier sentence.** Two turns ago I wrote
+that this revision « changed no behaviour — it is the 14 July model
+evaluated at different inflation inputs ». The first half is too
+strong. It rewrote no formula, and that stands; but replacing
+forecast with outturn *does* change what downstream cells compute,
+and on the dormant paths it changes them from « both zero » to « two
+different numbers ». « No formula changed » and « no behaviour
+changed » are not the same claim, and I ran them together.
+
+## Registered refinement: latency is a property of the cell, not of the knob
+
+The zero round introduced `tier2_divergence_latent` for « the
+versions differ on a branch the model does not take », and made it
+conditional on *which knob* woke the branch (`wake_zeros`). That is
+the wrong test, and these seven show why: they are dormant at the
+operating point — both files store zero — and they were woken by an
+ordinary ±1% move of live inputs, so the harness reported them as
+plain divergences.
+
+**The refinement, registered before it is built**: a divergence is
+latent when the cell's **stored value in both versions is zero or
+empty** — dormant as configured — whatever perturbation reached it.
+A divergence in a cell that carries a real number in the saved files
+is a plain `tier2_divergence`. The `wake_zeros` condition is dropped.
+
+**Prediction**: on this pair, all seven reclassify as latent and the
+plain-divergence count goes to zero — which is the honest reading of
+« the revision rewrote nothing, and its data change moves dormant
+paths ». If any of the seven carries a non-zero stored value, I have
+misread the table above and will say so.

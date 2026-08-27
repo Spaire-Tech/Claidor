@@ -305,15 +305,18 @@ def _answer(
     landing_for: Callable[[str], str],
     old_readings: list[Mapping[str, object]],
     new_readings: list[Mapping[str, object]],
-    latent: bool = False,
+    dormant: Callable[[str], bool] = lambda _ref: False,
 ) -> dict[str, Tier2Answer]:
     """The per-cell verdict, under the registered rules.
 
-    In `latent` mode the trials woke inputs the file holds at zero, so
-    a disagreement is a difference on a branch the model does not take
-    as configured. That refuses — under its own name — instead of
-    calling the cell changed: a finding about the pair, never a claim
-    about the revision.
+    A cell that both versions store as zero or empty is **dormant**:
+    the model does not take that path as it is configured, so a
+    disagreement there refuses under its own name
+    (`tier2_divergence_latent`) instead of calling the cell changed.
+    A finding about the pair, and not the same claim as « this
+    revision computes differently ». The earlier `latent` flag —
+    « the zeros were woken this run » — is gone: which knob reached
+    the cell was never the right question.
     """
     from scripts.watch_stealth import _diverges
 
@@ -340,9 +343,16 @@ def _answer(
                 )
                 break
         if divergence:
+            #: Latency is a property of the *cell*, not of which knob
+            #: woke it (registered refinement). A cell both versions
+            #: store as zero or empty is dormant as configured, so a
+            #: divergence there is a difference on a path the model
+            #: does not currently take — however the trials reached
+            #: it. A cell carrying a real number in both saved files
+            #: is not dormant, and its divergence is plain.
             answers[ref] = (
                 Tier2Answer("refused", divergence[:200], refusal=REFUSAL_LATENT)
-                if latent
+                if dormant(ref)
                 else Tier2Answer("diverged", divergence[:200])
             )
             continue
@@ -391,6 +401,34 @@ def _banded(
 ) -> dict[str, float]:
     low, high = band
     return {ref: inputs[ref] * rng.uniform(low, high) for ref in sorted(inputs)}  # type: ignore[attr-defined]
+
+
+def _dormant(
+    old_raw: Mapping[str, tuple[str, str]],
+    new_raw: Mapping[str, tuple[str, str]],
+    pairing: Mapping[str, str],
+) -> Callable[[str], bool]:
+    """Is the cell dormant as the model is configured — stored as zero
+    or empty in **both** versions?
+
+    A divergence in such a cell is a difference on a path the model
+    does not currently take. Registered after the seven `Finance&Tax`
+    cells: every one of them stores `0` in both files and computes two
+    different numbers once the trials move the inputs.
+    """
+
+    def stored(raw: Mapping[str, tuple[str, str]], ref: str) -> str | None:
+        entry = raw.get(ref)
+        return None if entry is None else entry[1]
+
+    def decide(ref: str) -> bool:
+        old_ref = pairing.get(ref)
+        if old_ref is None:
+            return False
+        values = (stored(old_raw, old_ref), stored(new_raw, ref))
+        return all(value in ("n:0", "s:", "str:", "") for value in values)
+
+    return decide
 
 
 def _forced_index(path: str, sheet: str) -> tuple[str, int] | None:
@@ -456,13 +494,15 @@ def _run_oracle(
     finally:
         calc.stop()
 
+    dormant = _dormant(old_raw, new_raw, proof.pairing)
+
     def oracle(refs: tuple[str, ...]) -> Mapping[str, Tier2Answer]:
         return _answer(
             refs,
             lambda ref: landing.get(ref, ref),
             readings["old"],
             readings["new"],
-            latent=wake_zeros,
+            dormant=dormant,
         )
 
     ladder = build_ladder(
@@ -680,9 +720,15 @@ def run_domain(old_path: str, new_path: str, out_path: str) -> int:
     finally:
         calc.stop()
 
+    dormant = _dormant(old_raw, new_raw, proof.pairing)
+
     def oracle(refs: tuple[str, ...]) -> Mapping[str, Tier2Answer]:
         return _answer(
-            refs, lambda ref: landing.get(ref, ref), old_readings, new_readings
+            refs,
+            lambda ref: landing.get(ref, ref),
+            old_readings,
+            new_readings,
+            dormant=dormant,
         )
 
     ladder = build_ladder(
@@ -715,9 +761,17 @@ def run_domain(old_path: str, new_path: str, out_path: str) -> int:
         "tier0_blockage_census": ladder.blockage_census,
         "cone_sizes": cone_sizes,
         "diverged_by_tier2": len(diverged),
+        "latent_divergences": sum(
+            1 for item in ladder.verdicts.values() if item.reason == REFUSAL_LATENT
+        ),
         "diverged_examples": [
             {"ref": ref, "detail": ladder.verdicts[ref].detail} for ref in diverged[:10]
         ],
+        "latent_examples": [
+            {"ref": ref, "detail": item.detail}
+            for ref, item in sorted(ladder.verdicts.items())
+            if item.reason == REFUSAL_LATENT
+        ][:10],
         "gate_violations": violations[:20],
         "gate_violation_count": len(violations),
     }
