@@ -66,3 +66,13 @@ mining round on that sample (the same loop as `custodes-mining.md`:
 read by hand, name the classes, propose candidates with financial
 value argued — never threshold-tuning to score better on their
 corpus). Then A4.
+
+## Addendum (27 Aug, eighteenth sweep): E3 is reserved for you
+
+Dynamo now owns unit inference as a library (E1/E2 — `lanes.md`, 27
+Aug), because B5's coverage depends on it. **The unit mismatch
+checks (E3) remain yours** and arm only when the inference is
+measured accurate enough per dimension, per the plan's condition —
+monthly-into-annual, percent-as-decimal, currency mixes, thousands
+vs millions, each through the normal loop. Nothing changes in your
+queue now; this is so no one else wires a finding.

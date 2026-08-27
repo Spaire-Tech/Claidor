@@ -277,3 +277,16 @@ tests still run on every merged tip either way.
   replace anything the founder drew; where a founder design
   *exists*, it is the spec; when a founder design can't work as
   drawn, stop and ask.
+
+- **27 Aug, eighteenth sweep — Track E's first half moves to Dynamo,
+  by force of evidence.** B5 round 1b's finding is that perturbation
+  coverage, not mining, is the binding constraint, and coverage is
+  governed by input typing — which is E1/E2's unit inference wearing
+  another hat (the review's own ruling: build it once, never twice).
+  So **Dynamo owns E1 (the hand-labelled ground truth) and E2 (the
+  inference), as a standalone module with its own tests**, and
+  Track B's remaining rounds wait behind it. **E3 — the unit
+  *mismatch checks*, which are findings — remains Sentinel's** when
+  the inference is measured accurate enough to arm them, per the
+  plan's own condition. The one hard rule is untouched: the
+  classifier reports nothing; only Sentinel wires findings.
