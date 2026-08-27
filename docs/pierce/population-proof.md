@@ -58,6 +58,8 @@ it counts.** Seven more unseen models are needed.
 | `CopyofBerthaPark28SeptemberFINAL.HC.xlsm` | cd690a68ae340e87 | rejected — identical to `bertha_park_model.xlsm` |
 | `CopyofRHSCDCN_FinancialModel…Solved.HC.xlsm` | a4b52c7c6c9a9b94 | rejected — identical to `rhsc_dcn_model.xlsm` |
 | `DumfriesandGallowayRoyalInfirmary…xlsm` | b413cde63f9e4f1c | rejected — identical to `dumfries_model.xlsm` |
+| `DalbeattieLearningCampusFinancialModel.xlsb` | 900475eabfaf98e4 | **new deal, format-blocked** — `.xlsb` |
+| `OurLadyandStPatricksPrimarySchool…xlsb` | b366fb206a2c9bfe | **new deal, format-blocked** — `.xlsb` |
 
 Four of the founder's first seven were already in the tuning corpus.
 That is not waste: it is the contamination rule doing precisely the
@@ -80,7 +82,24 @@ must be a different deal from these nine.**
 2. **House rules at shipped defaults.** No per-file configuration.
 3. **One file at a time** (the heavy-job rule), each read and
    audited exactly as the product does it.
-4. **Refusals are results.** A file the reader cannot open, or opens
+4. **The `.xlsb` discovery, recorded on arrival (27 Aug).** Two
+   eligible new deals — Dalbeattie Learning Campus and Our Lady &
+   St Patrick's — arrived as **`.xlsb`, Excel's binary workbook
+   format**. Verified from the containers: both are valid zip
+   containers whose sheets are `.bin` parts, not XML (295 parts /
+   163 binary, and 404 / 258). Our reader is built on openpyxl,
+   which reads the XML formats only and **cannot open `.xlsb` at
+   all**. So this is a *third* intake gap beside `.xls`, it was
+   found by the corpus rather than by a customer, and it is
+   plan-visible now: **A6 widens from « legacy `.xls` » to « every
+   format Excel ships »**, and the conversion path (LibreOffice, the
+   same pass A6 already names) must be measured for fidelity like
+   everything else — a converted file is a different file until
+   proven otherwise. Until A6 lands, these two are held in the
+   corpus, **counted as format-blocked, and excluded from the ten**
+   rather than silently dropped.
+
+5. **Refusals are results.** A file the reader cannot open, or opens
    with structure it will not claim, is reported as such and counted
    in the denominator — never quietly dropped. (`.xls` intake is
    plan step A6 and is **not built**; if an eligible file is legacy
