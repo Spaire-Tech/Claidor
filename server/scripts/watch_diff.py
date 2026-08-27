@@ -1,7 +1,7 @@
 """Run the Watch's raw diff (C1) and write it where eyes can reach it.
 
 Output carries the same status lists as `scripts.watch_handcheck`
-(added / removed / formula_changed / value_changed, plus counts), so
+(added / removed / content_changed / value_changed, plus counts), so
 the registered comparison between the two instruments is a mechanical
 set comparison, not an interpretation.
 
@@ -25,7 +25,7 @@ def main() -> int:
         "sheets_removed": list(diff.sheets_removed),
         "added": diff.refs("added"),
         "removed": diff.refs("removed"),
-        "formula_changed": [d.ref for d in changed if d.formula_changed],
+        "content_changed": [d.ref for d in changed if d.content_changed],
         "value_changed": [d.ref for d in changed if d.value_changed],
         "examples": [
             {

@@ -28,6 +28,7 @@ answering anything of record; register before results, always.
 | C4 tier 0 (fingerprints) | `watch/trace.py`, `scripts/watch_stealth.py` | Soundness gate clean after round 2's observability fix; **93.2% of a real adjacent revision proved at hash cost in ~2 min** |
 | C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | Two hosts, **8 of 8 eligible on both, zero refusals, control silent**; `tail_hardcode` and `stealth_literal` 5/5 everywhere; the selector sweep closed the dead-branch case |
 | C5 deck delta | `watch/document.py`, `scripts/watch_deck.py` | Measured on the Cascade deck: a planted input move breaks **8 figures, each attributed to the model change underneath it**, while the deck's **8 pre-existing drifts stay off the revision's account** |
+| C4 tier 2, pair oracle | `scripts/watch_tiers.py oracle/control` | Control (file against itself) **0 diverged, 0 violations**. ED2 pair: **0 diverged** over 8,475 perturbed inputs, 172 supported, 1,344 `no_perturbable_input`. Coverage is the real story: of the **294** cells the revision disturbed, the trials reached **96** |
 | C4 ladder (one verdict per cell) | `watch/tiers.py`, `scripts/watch_tiers.py` | ED2 v2 14→31 July: **93.19% proved · 3.11% changed · 3.69% refused, all five gates clean**, and the count reconciles with C1's raw diff to a single named cell (`Cover!G4`) |
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
 
@@ -48,16 +49,15 @@ a report.
 
 ## Open, in order
 
-1. **The pair oracle for tier 2** — the ladder's next round, and
-   the one with real work in it: perturb the *matched* literals in
-   both files, recalculate both, and answer the 1,516 cells now
-   coming back `not_offered_to_tier2`. Cost is measured (15.5 min
-   for `2 x (1 + 5)` recalculations) so nothing depends on an
-   unmeasured number. **Its first question is registered: the UNO
-   driver returns 21,007 cells where the ladder's universe is
-   41,049 — find out which half before calling anything
-   « supported ».**
-2. **Tier 1 (Z3)** — registered in the log; blocked on the lead's
+1. **The forced-selector oracle round** — named by a measurement,
+   not invented: 198 of the 294 cells the ED2 revision disturbed
+   came back `no_perturbable_input`, and the two candidate reasons
+   (categorical inputs, excluded on purpose; unselected licensee
+   branches, which the pair oracle does not force) are not yet
+   separated. Re-run the pair with the model's own `CHOOSE` index
+   forced, as `watch_stealth` round D does. Registered, not run.
+2. **Tier 1 (Z3)** — the rung that would speak where the trials
+   cannot (1,344 frozen cells on the ED2 pair). Registered; blocked on the lead's
    `z3-solver` pyproject approval. No code may import z3 before
    that. Until it lands the ladder prints the hole's size every run
    as `tier1_would_have_been_asked` (1,516 on the ED2 pair).
@@ -132,6 +132,11 @@ a report.
 - **The UNO driver reads about half the engine's cells** (21,007 of
   41,049 on ED2 v2). Anything that concludes from a recalculation
   must say which cells it could see.
+- **An openpyxl workbook with images can be saved once.** The
+  handles to the embedded images are closed by the first `save()`,
+  and the second dies inside PIL with « I/O operation on closed
+  file ». Reload the workbook for every write; it cost the pair
+  oracle its first attempt.
 - **openpyxl's save drops every cached value.** Any planted file
   handed to something that reads *values* (the tie-out, the
   linker, the audit's value rules) will mislead you: C4 round 1

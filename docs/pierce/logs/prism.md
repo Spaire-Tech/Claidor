@@ -2108,3 +2108,312 @@ coverage, not on permission.
 
 Eighty tests green (`test_watch_{diff,align,plant,delta,trace,
 stealth,document,tiers}.py`, `--noconftest`).
+
+## The gates, and the tip, at the top of this turn
+
+The integration tip moved to `2de8c43a` — four commits, all the
+lead's own population proof (eleven eligible models, the
+contamination log, a third intake gap found in `.xlsb`). Nothing in
+them is mine and nothing in them changes my gates:
+
+- **Tier 1** — `z3-solver` still absent from `server/pyproject.toml`
+  on the new tip. Shut.
+- **C6** — the eighteenth sweep's redirection stands; E1/E2 are
+  Dynamo's and unreported. Shut.
+
+Orders unchanged from the fourteenth sweep. So this turn continues
+my own registered queue: the tier-2 **pair oracle**, which is the
+round the ladder was built to make possible.
+
+## The pair oracle — tier 2 over a real revision (REGISTERED BEFORE RESULTS)
+
+**The question the last round left.** 1,516 cells reached tier 2's
+door on the ED2 pair and every one came back `not_offered_to_tier2`,
+because there was no oracle. This round is the oracle: perturb the
+model's inputs, recalculate **both** versions, and see whether the
+two agree everywhere they can be compared.
+
+**First, the reach question I registered before designing anything,
+and it has an analytic answer rather than an empirical one.** The
+driver returns **formula cells only** (`uno_driver.read_formula_cells`
+queries `CellFlags.FORMULA`), so the 21,007 against the ladder's
+41,049 is not a halved universe:
+
+```
+engine cells 41,049 = formula 20,623 + typed literals 20,426
+driver returns 21,007 — a superset of the engine's formula cells
+                        (+384 formula cells outside the engine's
+                         numeric universe, Cover!G4 among them)
+```
+
+The ~20k cells the driver does not return are the model's **typed
+inputs**, and those are not tier 2's question at all: a literal's
+trace is its own value, so an unchanged literal is proved at tier 0
+and a changed one is `changed` at the raw rung. Neither reaches the
+oracle. And the arithmetic of the last round confirms it — the 1,516
+at tier 2's door are exactly `unobservable_value` 1,222 +
+`trace_differs` 294, both of which are formula classes.
+
+**So the reach constraint I flagged last turn was overstated, and
+the correction runs the other way**: the class tier 0 is worst at —
+formula cells whose own result is text, 81% of its silence — is a
+class the driver reads perfectly well, as a string. Tier 2 answers
+where tier 0 is blind. That is the round's thesis and it is written
+here before it is tested.
+
+**The method.**
+
+- **What is perturbed**: every literal cell matched between the two
+  versions and not categorical, by the registered rule
+  (`CATEGORICAL_LIMIT = 12`: an integral literal of magnitude ≤ 12 is
+  a flag, a month or a licensee index, and scaling it deadens the
+  path it selects). Assignment as registered in tier 2:
+  `value * uniform(0.5, 1.5)`, or `uniform(-1, 1)` for a zero.
+- **Where C2 earns its keep**: the same assignment must land on the
+  same *logical* input in both files, and rows moved between them.
+  The assignment is keyed by the new ref and applied to the old file
+  at `proof.pairing[ref]`. Without the alignment this round could not
+  be run at all.
+- **Seed and trials**, unchanged and not re-tuned:
+  `TIER2_SEED = 20260826`, `TIER2_TRIALS = 5`,
+  `TIER2_DIVERGENCE = 1e-9`.
+- **The verdict per cell**: `supported` if old and new agree within
+  the divergence rule on all five trials; `diverged` (⇒ the ladder
+  records `changed`, source `tier2_divergence`) if any trial
+  disagrees; refused otherwise, with a name.
+- **G5, in its operational form**: a cell may be called supported
+  only if its own value **varied across the five trials** — proof
+  that the perturbation reached it. A cell that never moved is
+  `no_perturbable_input`, not support. Five identical readings of a
+  frozen cell support nothing.
+
+**One addition to the closed refusal vocabulary**, registered here
+rather than slipped in: `not_read_by_driver`, for a cell the
+recalculation does not return on one or both sides. It is distinct
+from `not_offered_to_tier2` (the oracle never ran) and from
+`no_perturbable_input` (it ran and nothing moved).
+
+**The control, and it runs first.** The 31 July file against
+**itself**, through the identical pipeline — two independently built
+sides, same assignments, both recalculated. **Zero cells may
+diverge.** A control that diverges means the instrument is noisy and
+the real result is not read at all; this is the discipline tier 2's
+rounds 1–3 paid for, and it is not optional because the pipeline is
+now longer.
+
+**Cost, from the measured round**: 77.5 s per build-and-recalculate,
+20 recalculations (control 10, pair 10) ≈ **26 minutes**, run alone
+in the container. The workbook is loaded once per file and re-saved
+per trial, which spares the 12.6 s reload each time; each trial
+overwrites the same literal set, so no trial can leak into the next.
+
+**Predictions, before the run.**
+
+1. The control is clean — **0 diverged**. If it is not, the round
+   fails and the result is not looked at.
+2. Of the 1,516, **more than half come back `supported`**. The
+   revision is small (14 formula changes) and most of what tier 0
+   could not describe should prove behaviourally identical.
+3. **`diverged` is small but non-zero — between 5 and 150 cells** —
+   and every diverged cell is downstream of one of the 14 changed
+   formulas or the 1,240 changed values.
+4. `no_perturbable_input` is the largest refusal class in this run,
+   and is dominated by cells on the unselected licensee branches
+   (round D's lesson: SWEST is not dead, it is unselected — and
+   nothing here forces a selector).
+
+### Instrument abort before any result: openpyxl's images
+
+The first draft of the oracle loaded each workbook once and saved it
+five times — 63 s cheaper per file, and wrong. An ED2 model carries
+embedded images; openpyxl holds them as open file handles, the first
+`save()` closes them, and the second raises `ValueError: I/O
+operation on closed file` from inside PIL. No result was read; the
+harness reloads the workbook per trial, which is what the measured
+cost of 77.5 s per build-and-recalculate already assumed. The
+projection stands at ~26 minutes and the optimization was the
+deviation, not the estimate.
+
+Added to the container's lessons in the handoff: **an openpyxl
+workbook with images can be saved once.** Reload it for every write.
+
+## The pair oracle — the control, and what it already says
+
+Control first, as registered: **ED2 v2 31 July against itself**, two
+independently built sides, same assignments, ten recalculations.
+13.9 minutes.
+
+```
+literals perturbed        8,499        cells                 41,049
+tier0_proved             39,824        97.02%
+changed                       0         0.00%
+tier2_supported              76         0.19%
+tier3_refused             1,149         2.80%   no_perturbable_input 1,149
+diverged by tier 2            0
+gate violations               0
+```
+
+**Prediction 1 held: the control is clean.** Zero divergences and
+zero gate violations on a file against itself, so the instrument is
+not manufacturing differences and the pair result may be read. The
+partition closes exactly (39,824 + 0 + 76 + 1,149 = 41,049), and a
+self-pair proves more at tier 0 than a real pair does (97.02%
+against 93.19%), which is the shape one would expect.
+
+**But the control says something about the pair result before the
+pair has run, and it is worth writing down now rather than
+discovering it in the number.** Of the 1,225 cells that reached tier
+2 in the control, **1,149 never moved across five trials** — 8,499
+perturbed literals reached only 76 of them. The descending set in a
+self-pair is exactly the `unobservable_value` class, i.e. formulas
+whose result is text, and most text in a regulatory model does not
+move when numbers are scaled: `IF(flag=1,"Yes","No")`, a
+concatenated title, a blank arm returning `""`. They are frozen for
+a real reason, and G5 calls them `no_perturbable_input` instead of
+supporting them, which is exactly what it is for.
+
+So **prediction 2 — « more than half of the 1,516 come back
+supported » — is in trouble before the run**, and I am saying so
+here rather than after. The pair's descending set is 1,222
+unobservable + 294 `trace_differs`; if the control's ratio carries
+over, most of the first group will freeze and the support will come
+from the second. I will report the number against the prediction as
+written, not against this paragraph.
+
+## The pair oracle — results, two failed predictions, and one correction to my own record
+
+ED2 v2 **14 July → 31 July**, 8,475 matched non-categorical literals
+perturbed identically in both files through C2's alignment, five
+trials each side, ten recalculations, 14.1 minutes.
+
+```
+tier0_proved             38,255      93.19%
+changed                   1,278       3.11%   (raw_value 1,240 ·
+                                               added 24 · raw_content 14)
+tier2_supported             172       0.42%
+tier3_refused             1,344       3.27%   no_perturbable_input 1,344
+diverged by tier 2            0
+gate violations               0
+```
+
+**Prediction 1 held** — the control was clean and the result was
+read. **Prediction 4 held** — `no_perturbable_input` is not merely
+the largest refusal class, it is the only one. **Predictions 2 and 3
+both failed**, and the second failure is the interesting one.
+
+**Prediction 2 (« more than half of the 1,516 supported ») —
+failed: 172, or 11.3%.** The control had already told me this was
+coming and I said so before the run. The class that dominates tier
+2's door is formulas whose result is text, and most text in a
+regulatory model does not move when numbers are scaled. G5 calls
+those `no_perturbable_input` rather than supporting them, which is
+the honest answer: the trials never reached them, so five agreeing
+readings mean nothing.
+
+**Prediction 3 (« diverged between 5 and 150 ») — failed: 0. And
+the prediction was built on a mistake of mine, in my own
+instrument's vocabulary.** I wrote it believing this revision
+contained fourteen rewritten formulas, because C1 reports
+`formula_changed: 14`. It does not contain any. Checked directly
+over the raw grids:
+
+```
+content-changed cells                                    14
+  ... with formula text on either side                    0
+added cells                                              24
+  ... that are formulas                                   0
+```
+
+All fourteen are **retyped literals in `Annual Inflation` rows 50
+and 53** — the inflation series, updated:
+
+```
+Annual Inflation!AP50   11.636903442623  ->  11.584699426229506
+Annual Inflation!AP53    9.14944682416672 ->  9.066745554703903
+Annual Inflation!AV50    3                ->  2.802018348263724
+```
+
+C1's field counted *content* changes and was named for the case that
+motivated it. A retyped literal changes content too, so the count
+read as « fourteen logic changes » to anyone who did not open the
+cells — including me, one turn later, in my own log. **The field is
+renamed `content_changed`** in `watch/diff.py`, `watch_diff.py`,
+`watch_handcheck.py` and their tests, with the reason written at the
+definition.
+
+**Correction to the previous entry.** Where the ladder round says
+« of which formula changes 14 » and « the 14 formula changes agree
+exactly », read *content changes*: the agreement between the two
+instruments is exactly as reported, but the cells are retyped
+inputs, not rewritten formulas.
+
+**What the round actually found, and it is worth more than the
+predictions were.** Zero divergence over 8,475 perturbed inputs and
+five random assignments is not a weak result here — it is the
+correct one, and it says something the cell diff cannot say:
+
+> **The 31 July revision changed no behaviour. It is the 14 July
+> model evaluated at different inflation inputs.**
+
+The cell diff sees 1,255 changed cells and cannot tell a reader
+whether the model was rewritten. The ladder answers: 93.19% could
+not have moved (hash), 3.11% moved and is named (raw), 0 cells
+compute differently under randomized inputs (tier 2), and 3.27% is
+refused **by name** — the model's text outputs, which no
+number-scaling trial can exercise. That last line is the one a
+reviewer should read hardest, and it is printed rather than
+implied.
+
+**The claim's exact strength, so nobody upgrades it.** Tier 2, five
+trials, one seed — « no divergence found », never « proved
+equivalent ». It covers the 172 cells the trials actually moved. It
+does *not* cover the 1,344 frozen ones, and it does not cover the
+model's text logic at all. Tier 1 would be the rung that speaks
+where the trials cannot, and tier 1 is still shut.
+
+### The coverage table, measured rather than inferred
+
+The totals above do not say *which* suspects tier 2 could answer, and
+that is the number a reviewer needs, so the report now carries the
+cross-tab and the pair was re-run for it. Identical totals on the
+second run — same seed, same counts, so the instrument is
+deterministic — plus:
+
+```
+                        supported   no_perturbable_input
+trace_differs (294)            96                    198
+unobservable_value (1,222)     76                  1,146
+no_aligned_counterpart (24)     —   (24 « added » at the raw rung)
+```
+
+**This is the honest reading of « 0 diverged », and it is a good
+deal weaker than the headline sounds.** Of the 294 cells this
+revision actually disturbed — the ones whose inputs moved
+underneath them — the trials reached **96**. The other **198 were
+refused by name**: the perturbation never moved them, so their
+agreement is not evidence of anything. Tier 2's claim covers 96 of
+294 disturbed cells and 76 of 1,222 text formulas. It does not
+cover the model.
+
+So the round's finding stands as written — *no divergence was found
+where the trials could look* — and the sentence it cannot support
+is « the revision changed no behaviour anywhere ». What it supports
+is: **nothing that the trials could exercise computes differently,
+and two-thirds of the disturbed cells could not be exercised at
+all.**
+
+**The next round is named by that 198, not invented.** Two candidate
+reasons, both already known to this lane and neither yet
+distinguished:
+
+1. Their inputs are **categorical** literals, which the registered
+   rule excludes from perturbation on purpose (scaling a flag
+   deadens the branch it selects, symmetrically, in both files).
+2. They sit on **unselected licensee branches** — round D's lesson,
+   « dead means unselected » — and nothing in the pair oracle forces
+   a selector, unlike the planted-edit harness which does.
+
+The round that separates them: re-run the pair with the model's own
+`CHOOSE` index forced, exactly as `watch_stealth` round D does, and
+see how much of the 198 lights up. Registered here; not run this
+turn, and no number from it is anticipated.

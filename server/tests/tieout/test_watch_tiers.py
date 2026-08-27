@@ -312,3 +312,54 @@ class TestTheGates:
         #: passed through — so G4 stays clean and the detail survives.
         assert built.verdicts["M!B3"].reason == "tier2_unavailable"
         assert "because I said so" in built.verdicts["M!B3"].detail
+
+
+class TestThePairOracleRules:
+    """The oracle's per-cell verdict, without a calculation host.
+
+    The harness that drives LibreOffice is measured under its own
+    registration; what is pinned here is the rule it applies to the
+    readings once it has them.
+    """
+
+    def answers(
+        self,
+        old: list[list[object]],
+        new: list[list[object]],
+        refs: tuple[str, ...] = ("M!B4",),
+    ) -> dict[str, object]:
+        from scripts.watch_tiers import _answer
+
+        old_readings = [{"M!B4": row[0]} if row else {} for row in old]
+        new_readings = [{"M!B4": row[0]} if row else {} for row in new]
+        return dict(_answer(refs, lambda ref: ref, old_readings, new_readings))
+
+    def test_agreement_on_every_trial_is_support(self) -> None:
+        answer = self.answers([[1.0], [2.0], [3.0]], [[1.0], [2.0], [3.0]])["M!B4"]
+        assert answer.outcome == "supported"  # type: ignore[attr-defined]
+        assert answer.perturbed  # type: ignore[attr-defined]
+
+    def test_one_disagreeing_trial_is_divergence(self) -> None:
+        answer = self.answers([[1.0], [2.0], [3.0]], [[1.0], [2.5], [3.0]])["M!B4"]
+        assert answer.outcome == "diverged"  # type: ignore[attr-defined]
+        assert "trial 1" in answer.detail  # type: ignore[attr-defined]
+
+    def test_a_cell_the_trials_never_moved_is_not_supported(self) -> None:
+        """G5 in its operational form: five identical readings of a
+        frozen cell support nothing, however well they agree."""
+        answer = self.answers([[7.0], [7.0], [7.0]], [[7.0], [7.0], [7.0]])["M!B4"]
+        assert answer.outcome == "supported"  # type: ignore[attr-defined]
+        assert not answer.perturbed  # type: ignore[attr-defined]
+
+    def test_a_cell_the_driver_never_returned_is_refused_by_name(self) -> None:
+        answer = self.answers([[1.0], [], [3.0]], [[1.0], [2.0], [3.0]])["M!B4"]
+        assert answer.outcome == "refused"  # type: ignore[attr-defined]
+        assert answer.detail == "not_read_by_driver"  # type: ignore[attr-defined]
+
+    def test_text_results_are_compared_as_text(self) -> None:
+        """The class tier 0 is blind to — a formula whose result is a
+        string — is exactly the class the driver reads and compares."""
+        agreeing = self.answers([["12.2%"], ["9.9%"]], [["12.2%"], ["9.9%"]])["M!B4"]
+        assert agreeing.outcome == "supported"  # type: ignore[attr-defined]
+        differing = self.answers([["12.2%"], ["9.9%"]], [["12.2%"], ["9.8%"]])["M!B4"]
+        assert differing.outcome == "diverged"  # type: ignore[attr-defined]

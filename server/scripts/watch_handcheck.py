@@ -211,7 +211,7 @@ def read_cells(path: Path) -> dict[str, dict[str, str]]:
 def statuses(
     old: dict[str, dict[str, str]], new: dict[str, dict[str, str]]
 ) -> dict[str, list[str]]:
-    added, removed, formula_changed, value_changed, unchanged = [], [], [], [], []
+    added, removed, content_changed, value_changed, unchanged = [], [], [], [], []
     for ref in sorted(old.keys() | new.keys()):
         before, after = old.get(ref), new.get(ref)
         if before is None:
@@ -221,7 +221,7 @@ def statuses(
         else:
             touched = False
             if before["c"] != after["c"]:
-                formula_changed.append(ref)
+                content_changed.append(ref)
                 touched = True
             if before["v"] != after["v"]:
                 value_changed.append(ref)
@@ -231,7 +231,7 @@ def statuses(
     return {
         "added": added,
         "removed": removed,
-        "formula_changed": formula_changed,
+        "content_changed": content_changed,
         "value_changed": value_changed,
         "unchanged": unchanged,
     }

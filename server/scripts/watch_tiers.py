@@ -2,6 +2,8 @@
 
     uv run python -m scripts.watch_tiers pair OLD.xlsx NEW.xlsx OUT.json
     uv run python -m scripts.watch_tiers cost FILE.xlsx
+    uv run python -m scripts.watch_tiers oracle OLD.xlsx NEW.xlsx OUT.json
+    uv run python -m scripts.watch_tiers control FILE.xlsx OUT.json
 
 `pair` assigns every cell of the new version exactly one verdict and
 checks the five registered gates (`docs/pierce/logs/prism.md`, « The
@@ -10,6 +12,15 @@ runs **without a tier-2 oracle**: tiers 0 and 3 and the raw
 evidence, which need no calculation host. Every cell that reaches
 tier 2's rung comes back `not_offered_to_tier2` — the refusal that
 stops a cheap run from reading like a complete one.
+
+`oracle` is the same assignment with tier 2 answering: the model's
+matched, non-categorical literals are perturbed identically in both
+files — keyed by the new ref and applied to the old one through C2's
+alignment, because the rows moved — both versions are recalculated
+five times, and a cell is supported only when it agreed on every
+trial *and* moved at least once. `control` runs one file against
+itself through that identical pipeline; a single divergence there
+means the instrument is noisy and no pair result may be read.
 
 `cost` measures what the pair oracle will cost before anything
 depends on it: one openpyxl load-and-save of the file, and one
@@ -23,7 +34,9 @@ given (`polar.tieout.watch.tiers` drives nothing).
 
 import json
 import sys
+import tempfile
 import time
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from polar.tieout.watch import read_raw
@@ -31,15 +44,18 @@ from polar.tieout.watch.tiers import (
     CHANGED,
     PROVED,
     REFUSAL_ENVIRONMENT,
+    REFUSAL_NOT_READ,
     REFUSAL_VOLATILE,
     REFUSED,
+    SOURCE_TIER2_DIVERGENCE,
     SUPPORTED,
+    Tier2Answer,
     build_ladder,
     gate_violations,
 )
 from polar.tieout.watch.trace import proved_unchanged
 from polar.tieout.workbook import read_workbook
-from scripts.watch_stealth import _environment_cone
+from scripts.watch_stealth import TIER2_SEED, TIER2_TRIALS, _environment_cone
 
 
 def _ineligible(path: str) -> tuple[dict[str, str], dict[str, int]]:
@@ -96,6 +112,7 @@ def run_pair(old_path: str, new_path: str, out_path: str) -> int:
         "tier0_overruled_by_raw": ladder.tier0_overruled_by_raw,
         "tier1_would_have_been_asked": ladder.tier1_would_have_been_asked,
         "tier0_blockage_census": ladder.blockage_census,
+        "verdict_by_blockage": ladder.verdict_by_blockage,
         "reason_census": ladder.reason_census,
         "cone_sizes": cone_sizes,
         "proof_proved": len(proof.proved),
@@ -149,12 +166,238 @@ def run_cost(path: str) -> int:
     return 0
 
 
+def _assignments(
+    old_book: object, new_book: object, pairing: dict[str, str]
+) -> tuple[list[dict[str, float]], dict[str, str]]:
+    """The five trial assignments, keyed by the new ref, and the map
+    that lands each on the matching old cell.
+
+    Only literals matched in both versions are perturbed, and only
+    non-categorical ones: an integral literal of magnitude at most
+    `CATEGORICAL_LIMIT` is a flag, a month or a licensee index, and
+    scaling it deadens the branch it selects in both files at once.
+    """
+    import random
+
+    from scripts.watch_stealth import _is_categorical
+
+    old_cells = old_book.cells  # type: ignore[attr-defined]
+    new_cells = new_book.cells  # type: ignore[attr-defined]
+    inputs: dict[str, float] = {}
+    landing: dict[str, str] = {}
+    for ref, old_ref in pairing.items():
+        new_cell, old_cell = new_cells[ref], old_cells[old_ref]
+        if new_cell.formula is not None or old_cell.formula is not None:
+            continue
+        if new_cell.value is None or old_cell.value is None:
+            continue
+        value = float(new_cell.value)
+        if _is_categorical(value):
+            continue
+        inputs[ref] = value
+        landing[ref] = old_ref
+
+    rng = random.Random(TIER2_SEED)
+    trials: list[dict[str, float]] = []
+    for _ in range(TIER2_TRIALS):
+        assignment: dict[str, float] = {}
+        for ref in sorted(inputs):
+            current = inputs[ref]
+            if current == 0:
+                assignment[ref] = rng.uniform(-1.0, 1.0)
+            else:
+                assignment[ref] = current * rng.uniform(0.5, 1.5)
+        trials.append(assignment)
+    return trials, landing
+
+
+def _split(ref: str) -> tuple[str, str]:
+    sheet, coordinate = ref.rsplit("!", 1)
+    return sheet.strip("'"), coordinate
+
+
+def _recalculate_trials(
+    path: str,
+    trials: list[dict[str, float]],
+    key: Callable[[str], str],
+    calc: object,
+    scratch: Path,
+    label: str,
+) -> list[Mapping[str, object]]:
+    """One file, five perturbed copies, five recalculations.
+
+    The workbook is reloaded for **every** trial. The first draft
+    loaded it once and saved five times, which is 63 s cheaper and
+    does not work: an ED2 model carries embedded images, openpyxl
+    holds them as file handles, and the handles are closed by the
+    first save — the second raises « I/O operation on closed file »
+    from deep inside PIL. Recorded in the lane log as an instrument
+    abort before any result, not patched in silence.
+    """
+    import openpyxl
+
+    readings: list[Mapping[str, object]] = []
+    for index, assignment in enumerate(trials):
+        working = openpyxl.load_workbook(path)
+        for ref, value in assignment.items():
+            sheet, coordinate = _split(key(ref))
+            working[sheet][coordinate] = value
+        target = scratch / f"{label}_{index}.xlsx"
+        working.save(target)
+        started = time.monotonic()
+        readings.append(calc.recalculate(str(target)).values)  # type: ignore[attr-defined]
+        print(f"[{label}] trial {index}: {time.monotonic() - started:.0f}s")
+        target.unlink()
+    return readings
+
+
+def _answer(
+    refs: tuple[str, ...],
+    landing_for: Callable[[str], str],
+    old_readings: list[Mapping[str, object]],
+    new_readings: list[Mapping[str, object]],
+) -> dict[str, Tier2Answer]:
+    """The per-cell verdict, under the registered rules."""
+    from scripts.watch_stealth import _diverges
+
+    answers: dict[str, Tier2Answer] = {}
+    for ref in refs:
+        old_ref = landing_for(ref)
+        if not all(ref in reading for reading in new_readings) or not all(
+            old_ref in reading for reading in old_readings
+        ):
+            answers[ref] = Tier2Answer("refused", REFUSAL_NOT_READ, perturbed=False)
+            continue
+        divergence = ""
+        for index, (old_reading, new_reading) in enumerate(
+            zip(old_readings, new_readings, strict=True)
+        ):
+            if _diverges(old_reading[old_ref], new_reading[ref]):
+                divergence = (
+                    f"trial {index}: {old_reading[old_ref]!r} -> {new_reading[ref]!r}"
+                )
+                break
+        if divergence:
+            answers[ref] = Tier2Answer("diverged", divergence[:200])
+            continue
+        #: G5: support requires that the trials reached the cell.
+        moved = len({repr(reading[ref]) for reading in new_readings}) > 1
+        answers[ref] = Tier2Answer(
+            "supported",
+            f"{TIER2_TRIALS} trials, no divergence",
+            perturbed=moved,
+        )
+    return answers
+
+
+def _run_oracle(old_path: str, new_path: str, out_path: str, control: bool) -> int:
+    from polar.tieout.recalc.uno_calc import UnoCalculator
+
+    started = time.monotonic()
+    old_book = read_workbook(old_path)
+    new_book = read_workbook(new_path)
+    old_raw, _ = read_raw(old_path)
+    new_raw, _ = read_raw(new_path)
+    ineligible, cone_sizes = _ineligible(new_path)
+    proof = proved_unchanged(old_book, new_book)
+    trials, landing = _assignments(old_book, new_book, proof.pairing)
+    print(
+        f"[setup] {time.monotonic() - started:.0f}s · "
+        f"{len(trials[0])} literals perturbed · "
+        f"{len(proof.pairing)} cells matched"
+    )
+
+    readings: dict[str, list[Mapping[str, object]]] = {}
+    calc = UnoCalculator()
+    calc.start()
+    try:
+        with tempfile.TemporaryDirectory() as scratch:
+            readings["old"] = _recalculate_trials(
+                old_path, trials, lambda ref: landing[ref], calc, Path(scratch), "old"
+            )
+            readings["new"] = _recalculate_trials(
+                new_path, trials, lambda ref: ref, calc, Path(scratch), "new"
+            )
+    finally:
+        calc.stop()
+
+    def oracle(refs: tuple[str, ...]) -> Mapping[str, Tier2Answer]:
+        return _answer(
+            refs, lambda ref: landing.get(ref, ref), readings["old"], readings["new"]
+        )
+
+    ladder = build_ladder(
+        old_book,
+        new_book,
+        old_raw,
+        new_raw,
+        proof=proof,
+        oracle=oracle,
+        ineligible=ineligible,
+    )
+    violations = gate_violations(ladder, new_book, old_raw, new_raw, proof)
+    diverged = sorted(
+        ref
+        for ref, item in ladder.verdicts.items()
+        if item.reason == SOURCE_TIER2_DIVERGENCE
+    )
+    payload = {
+        "mode": "control" if control else "oracle",
+        "old": old_path,
+        "new": new_path,
+        "minutes": round((time.monotonic() - started) / 60, 1),
+        "literals_perturbed": len(trials[0]),
+        "cells": len(ladder.verdicts),
+        "counts": ladder.counts,
+        "shares": {
+            verdict: round(ladder.fraction(verdict), 4) for verdict in ladder.counts
+        },
+        "reason_census": ladder.reason_census,
+        "tier0_blockage_census": ladder.blockage_census,
+        "verdict_by_blockage": ladder.verdict_by_blockage,
+        "tier1_would_have_been_asked": ladder.tier1_would_have_been_asked,
+        "tier0_overruled_by_raw": ladder.tier0_overruled_by_raw,
+        "cone_sizes": cone_sizes,
+        "diverged_by_tier2": len(diverged),
+        "diverged_examples": [
+            {"ref": ref, "detail": ladder.verdicts[ref].detail} for ref in diverged[:10]
+        ],
+        "gate_violations": violations[:20],
+        "gate_violation_count": len(violations),
+    }
+    if control:
+        #: The control's own gate: one divergence and no pair result
+        #: may be read at all.
+        payload["control_clean"] = not diverged and not violations
+    Path(out_path).write_text(json.dumps(payload, indent=1))
+    print(
+        json.dumps(
+            {k: v for k, v in payload.items() if k != "diverged_examples"}, indent=1
+        )
+    )
+    if control:
+        return 0 if payload["control_clean"] else 1
+    return 0 if not violations else 1
+
+
+def run_oracle(old_path: str, new_path: str, out_path: str) -> int:
+    return _run_oracle(old_path, new_path, out_path, control=False)
+
+
+def run_control(path: str, out_path: str) -> int:
+    return _run_oracle(path, path, out_path, control=True)
+
+
 def main() -> int:
     mode = sys.argv[1]
     if mode == "pair":
         return run_pair(*sys.argv[2:5])
     if mode == "cost":
         return run_cost(sys.argv[2])
+    if mode == "oracle":
+        return run_oracle(*sys.argv[2:5])
+    if mode == "control":
+        return run_control(*sys.argv[2:4])
     raise SystemExit(f"unknown mode {mode!r}")
 
 
