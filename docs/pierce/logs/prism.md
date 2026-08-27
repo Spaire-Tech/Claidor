@@ -1448,3 +1448,67 @@ is what gets written, and a result that contradicts the diagnosis
 is the more interesting one. The gate stands unchanged: the other
 seven classes must reproduce their exact per-instance verdicts, or
 the round fails.
+
+## Rounds A and B — results
+
+### Round A: the conditional class's zeros are now earned
+
+Re-run on both hosts, nothing else moved. **ED2 `AV102`, which
+reported `factors: []` and an unearned zero, now draws real ones —
+`0.532, 0.67, 1.151, 0.921, 0.921`** — none above the registered
+1.4× threshold, so its zero stands, but it is now a zero the
+trials *produced* rather than one the instrument manufactured.
+`AL1` unchanged (`1.405, 1.317, **1.432**, 1.133, 1.217`, two
+crossings, two divergent trials). CAA unchanged, as expected: that
+host has no categorical literals to freeze. Controls silent on
+both, false positives zero, and the one refusal is still the known
+dead cell.
+
+### Round B1: the deferral closes the loop with C1
+
+Unit tests pin the three semantics (a filled cell, an emptied
+cell, and an inserted row that must stay `structure`). On the real
+pair the result is the one I most wanted to see: **C1 measured 24
+added cells at `Monthly Inflation!H284:I295`; C3 now reports them
+as one `filled_cell` block — rows 284–295, columns H and I** —
+twenty-four cells folded into a single authoring decision, « a
+cell that was empty now holds 121.2 ». The report and the raw diff
+finally tell the same story about that pair, in their own
+languages, and nothing else in the report moved (0 new, 0
+repaired, 11 persistent, 2 moved assumptions, 94 material blocks —
+all identical to the committed run).
+
+### Round B2: the prediction held, and named its own remainder
+
+The registered prediction was that a labelled target should lift
+the harness above 21/24. Measured:
+
+| sheet | before | after | `rewrite_formula` |
+|---|---|---|---|
+| InputSummary | 21/24 | **24/24** | **3/3** |
+| SWEST | 21/24 | **22/24** | 1/3 |
+
+Every other class reproduced 3/3 on both sheets, so the gate
+holds. InputSummary is now perfect: the class that had never
+recovered once recovers at all three positions, which confirms
+C2's round-3 diagnosis — *the label is what rescues a rewritten
+row's match.*
+
+**The remainder, named rather than tuned.** SWEST's marks 203 and
+312 still report `inserted_rows 1 / deleted_rows 1` — row 1 again.
+The cause is my own proxy: the harness calls a row « labelled »
+when it holds any non-formula string, and SWEST's row 1 holds a
+*title*, which the engine's labeller does not treat as a row
+label. So when no labelled formula row exists at or after the
+mark, the scan wraps and lands back on the one row the fix was
+meant to avoid. The proxy is not the labeller, and the
+registration said « a row the labeller can name ».
+
+**Registered for the next round** (not patched after seeing the
+number): the harness takes its labelled-row set from the engine's
+own `Cell.row_label` through the frozen reader surface, and a
+sheet with no labelled formula row at all is a refusal rather than
+a wrap. Prediction, again in advance: SWEST's two failures should
+become either recoveries or refusals — and if they become
+refusals, `rewrite_formula` on SWEST is a class this sheet cannot
+host, which is a fact about the sheet worth having.
