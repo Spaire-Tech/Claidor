@@ -2747,3 +2747,123 @@ matcher's, and I will say so in those words.**
 
 `EXTRACTOR_VERSION` goes to `"5"` if it clears: different code read the
 page, so they are different claims.
+
+## D1 round S — measured. It repairs the bulk, and **it dies on subscripts.**
+
+**What it repaired**, and this is the first real progress on this
+defect:
+
+| document | before | **round S** |
+|---|---|---|
+| 72_src_0 | 3,583 | **1,270** |
+| 4_src_8 | 334 | **105** |
+| 81_src_1 (the nils) | 1,190 | **1,190** ✓ |
+| ED2 (all three) | 8,015 | **8,015** ✓ |
+| 5_src_0, 16, 52, 156, 160, 161 | — | **unchanged** ✓ |
+
+The zips broke. `Jan-03 32,675 12,833 19,842 7,627 …` now reads as a
+row, and **`19,842` is a fact on all five January rows including
+Jan-03** — the very number part B recorded as `stated-but-unextracted`.
+ED2 still returns **30 of 30** correct abstentions.
+
+**My prediction was wrong.** I said task 72 would land at « roughly
+300–700 facts »; it landed at 1,270. Being outside my own stated range
+is the useful part: the residue is larger than I thought, and looking
+at it found a second population (below).
+
+### The kill-criterion it fails: « any line newly broken in half »
+
+Tolerance 1.5 **splits subscripts off their base**. In the ED2
+handbook, 270 lines change:
+
+| at 3.0 | at 1.5 |
+|---|---|
+| `Formula for calculating the Real Price Effects (RPEt) term` | `…(RPE) term` + a line reading `t` |
+| `update outturn data for RPIm and CPIHm until June` | `…for RPI and CPIH until June` + a line reading `m m` |
+| `labelled “CYRPIFt” and “CYCPIHt”` | `labelled “CYRPIF” and “CYCPIH”` + `t t` |
+
+In a regulator handbook **the subscript is the meaning** — `RPIm` and
+`RPIt` are different quantities — and `line` is exactly what D3 matches
+on and D4 anchors by. No fact is lost, but facts on those lines lose
+their name.
+
+**And no constant can fix it, which kills the design and not just the
+number.** Measured on the calibration half:
+
+| population | offset |
+|---|---|
+| ED2 subscripts below their base | **2.6 – 2.9 pt** |
+| `4_src_8`'s second baseline | **3.0 pt** |
+
+The two populations are 0.1 pt apart. There is no tolerance that keeps
+a subscript and splits a zip. **Round S is out**; `EXTRACTOR_VERSION`
+returns to `"4"`.
+
+### Two things this round found that outlive it
+
+**1. A second, genuine population — and it is small.** Four rows of
+`72_src_0` are still scrambled at 1.5, and their characters sit on
+**one** baseline (98 characters all at top 125.3). Those are really
+drawn glyph by glyph. So the original hypothesis was not wrong, only
+tiny: of the ~3,300 shredded facts, four lines' worth are genuine and
+the rest were D1's own doing.
+
+**2. My regression suite is blind to this class of damage.** ED2's
+30-of-30 passed *while 270 of its lines were being broken*, because
+every one of those 30 recorded truths is empty — the sample tests
+abstention, and an abstention stays correct however mangled the line.
+A line-text regression is a gap in my own safety net; noted, and the
+next round carries one.
+
+## D1 round T — registration: a subscript is *smaller*, a second line is not
+
+Frozen before the code. **The fourth attempt on this defect, and I am
+saying so plainly** — three have died by their own criteria and one at
+calibration. What justifies another is that this one is not another
+threshold on the same axis: rounds P, Q and R all measured the damaged
+text, round S measured distance, and distance is now *proved*
+insufficient by a 0.1 pt overlap. This measures a property neither has
+used, and the calibration half already shows it separating cleanly.
+
+**The discriminator, measured on the calibration half:**
+
+| | vertical offset | font size |
+|---|---|---|
+| ED2 subscript under its base | 2.6–2.9 | **6.5 under 10.0 → 0.65×** |
+| `4_src_8` second baseline | 3.0 | **same size → 1.00×** |
+
+**The rule.** Group characters into candidate baselines at a tight
+tolerance (**1.5**, round S's constant, which the calibration justified
+and which round S proved does break the zips). Then **merge a
+candidate back into the line above when it is a subscript run** — when
+its median font size is below **0.8×** the size of the line above it.
+Nothing else moves.
+
+**Both constants are chosen from the calibration half and written here
+before the judging half is judged**: 1.5 from round S's calibration
+(intra-line spread ≤1.4 in the ED2 annex, tightest leading 3.0), and
+0.8 as the midpoint between the measured 0.65 and 1.00.
+
+**The kill-criteria, frozen, and the first one is new because round S
+showed I needed it:**
+- **Line-text regression.** Every line of the three ED2 PDFs must read
+  character-for-character as it does at tolerance 3.0 today. Not « no
+  fact lost » — the exact line strings. Any difference kills it.
+- **Nothing lost.** Task 81's nils, ED2, and task 5 must not lose a
+  fact.
+- **The zips must break**: `19,842` must be a fact on task 72's Jan-03
+  row, as it was under round S.
+- **ED2's registered sample** must still return 30 of 30.
+
+**The prediction, stated so it can be wrong.** Task 72 lands at 1,270
+again — identical to round S, because task 72 has no subscripts — and
+ED2's line text is byte-identical to today's. **If ED2's lines are not
+byte-identical the rule is wrong**, and unlike round S I will know it
+this time, because the check now exists.
+
+**One honesty note about the hand-check.** I have now read task 72's
+line text at tolerance 1.5 while diagnosing round S. The seeded
+hand-check is therefore no longer independent evidence *for task 72*,
+and I will not lean on it there; the line-text regression above is the
+criterion that decides this round, and it runs on the calibration half
+where nothing has been read for this purpose.
