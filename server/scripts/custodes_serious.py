@@ -161,7 +161,7 @@ def main() -> None:
             print(f"  unreadable {subject.name}: {str(problem)[:50]}")
 
     buckets: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
-    caught_by = Counter()
+    caught_by: Counter[int] = Counter()
     per_bucket_tools: dict[str, list[int]] = defaultdict(list)
     for key in missed:
         book, sheet, ref = key
