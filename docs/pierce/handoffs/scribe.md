@@ -152,10 +152,18 @@ the page: **20 repairs, 1 damage, 11 neither** (display mathematics).
 The one damage is unambiguous: `8. Legacy adjustments` becomes
 `8. Legacy adju2s+tm𝑅𝑅ℎ𝐷𝐷e𝑅𝑅nts`, an equation denominator merged into a
 heading. **Both candidate criteria reject round T** — « unchanged » at
-32, « undamaged » at 1 — so the criterion question is not what blocks
-D1, and asking it before measuring that was my mistake.
+32, « undamaged » at 1.
 
-**Round V clears all four criteria and is waiting on one word.** The
+**Round V clears all four criteria it registered, and the criterion
+question is what decides whether that is enough.** Under « undamaged »
+it passes (20 repairs, 0 damage). Under « unchanged » it is rejected,
+because it changes 142 ED2 line entries — **and so would any rule that
+repairs anything, since a repair is a change.** That is the argument
+for « undamaged » being the right bar; it is an argument, not a
+measurement, and the lead's to accept or reject. Do not let this lane
+tell you the question has gone away — it did once, and it was wrong.
+
+The
 damage was never the downward branch — it was one reach constant used
 for both directions. Measured: 21 of 22 downward merges sit between 1.8
 and 2.4 points, the 22nd sits at 5.1 and is the damage, and the upward
