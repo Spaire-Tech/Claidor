@@ -28,10 +28,11 @@ answering anything of record; register before results, always.
 | C4 tier 0 (fingerprints) | `watch/trace.py`, `scripts/watch_stealth.py` | Soundness gate clean after round 2's observability fix; **93.2% of a real adjacent revision proved at hash cost in ~2 min** |
 | C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | Two hosts, **8 of 8 eligible on both, zero refusals, control silent**; `tail_hardcode` and `stealth_literal` 5/5 everywhere; the selector sweep closed the dead-branch case |
 | C5 deck delta | `watch/document.py`, `scripts/watch_deck.py` | Measured on the Cascade deck: a planted input move breaks **8 figures, each attributed to the model change underneath it**, while the deck's **8 pre-existing drifts stay off the revision's account** |
+| C4 ladder (one verdict per cell) | `watch/tiers.py`, `scripts/watch_tiers.py` | ED2 v2 14→31 July: **93.19% proved · 3.11% changed · 3.69% refused, all five gates clean**, and the count reconciles with C1's raw diff to a single named cell (`Cover!G4`) |
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
 
-Tests: `test_watch_{diff,align,plant,delta,trace,stealth,document}.py`,
-66 green.
+Tests: `test_watch_{diff,align,plant,delta,trace,stealth,document,tiers}.py`,
+80 green.
 (Other lanes' tieout tests need the conftest and fail to collect here;
 name your five files explicitly.)
 
@@ -40,28 +41,41 @@ name your five files explicitly.)
 `align.THRESHOLD = 0.5`, `align.LABEL_WEIGHT = 0.5`,
 `delta.MATERIAL = 1%`, `watch_stealth.TIER2_SEED = 20260826`,
 `TIER2_TRIALS = 5`. Each is registered in the log; moving one is a
-written round, never a tuning.
+written round, never a tuning. The ladder's two closed vocabularies
+(`tiers.REFUSALS`, `tiers.CHANGE_SOURCES`) are the same kind of
+thing: a reason outside them fails gate G4 rather than appearing in
+a report.
 
 ## Open, in order
 
-1. **Tier 1 (Z3)** — registered in the log this sweep; blocked on
-   the lead's `z3-solver` pyproject approval. No code may import z3
-   before that.
-2. **Tier 2 — closed.** All three named follow-ups measured:
+1. **The pair oracle for tier 2** — the ladder's next round, and
+   the one with real work in it: perturb the *matched* literals in
+   both files, recalculate both, and answer the 1,516 cells now
+   coming back `not_offered_to_tier2`. Cost is measured (15.5 min
+   for `2 x (1 + 5)` recalculations) so nothing depends on an
+   unmeasured number. **Its first question is registered: the UNO
+   driver returns 21,007 cells where the ladder's universe is
+   41,049 — find out which half before calling anything
+   « supported ».**
+2. **Tier 1 (Z3)** — registered in the log; blocked on the lead's
+   `z3-solver` pyproject approval. No code may import z3 before
+   that. Until it lands the ladder prints the hole's size every run
+   as `tier1_would_have_been_asked` (1,516 on the ED2 pair).
+3. **Tier 2's planted-edit side — closed.** All three named follow-ups measured:
    categorical inputs, conditional inputs, and the selector sweep
    (a dead branch is an *unselected* one; the harness reads the
    model's `CHOOSE`, forces the index, and stamps
    `selector_forced` on every instance it touches).
-3. **C6 (rule-set diff)** — founder-approved, yours, and *not*
+4. **C6 (rule-set diff)** — founder-approved, yours, and *not*
    ready: B5's stability gates pass but its rule sets are
    artifacts of low perturbation coverage, and the lead has put C6
    behind Dynamo's E1/E2. Register it when coverage is measurable,
    citing that number — not only the stability pair.
-4. **C3 deferrals — done** (filled/emptied cells; labelled rewrite
+5. **C3 deferrals — done** (filled/emptied cells; labelled rewrite
    targets). Successor item: the C2 harness should take its
    labelled rows from the engine's own `Cell.row_label` rather than
    from its string proxy — registered, not yet run.
-5. **Named next rounds if the aligner must go faster still**:
+6. **Named next rounds if the aligner must go faster still**:
    banding, or a Hirschberg (linear-space) traceback.
 
 ## What the corpus taught (facts about the files, not the code)
@@ -109,6 +123,15 @@ written round, never a tuning.
   example.com). V3 is the lead's to run; do not re-attempt.
 - A script appended to below its `if __name__ == "__main__":` guard
   will `NameError` at dispatch — twice now. Keep the guard last.
+- **The engine's shape erases numeric literals** (`=B2*0.4` and
+  `=B2*0.5` both hash as `#*R[-1]C[+0]`), so a verifying trace is
+  blind to a coefficient edit — *unless* the file's cached value was
+  refreshed, which is why the ladder puts raw evidence above the
+  hash and counts `tier0_overruled_by_raw`. It was 0 on the ED2
+  pair; do not assume that for a generated file.
+- **The UNO driver reads about half the engine's cells** (21,007 of
+  41,049 on ED2 v2). Anything that concludes from a recalculation
+  must say which cells it could see.
 - **openpyxl's save drops every cached value.** Any planted file
   handed to something that reads *values* (the tie-out, the
   linker, the audit's value rules) will mislead you: C4 round 1

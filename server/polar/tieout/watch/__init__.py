@@ -24,6 +24,7 @@ from .delta import DeltaItem, DeltaReport, delta_of, delta_report
 from .diff import CellDelta, VersionDiff, diff_paths, diff_raw, read_raw
 from .document import DeckDelta, DeckItem, compare_tieouts, deck_delta
 from .signature import LITERAL, Line, SheetGrid, sheet_grids
+from .tiers import Ladder, Tier2Answer, Verdict, build_ladder, gate_violations
 
 __all__ = [
     "LITERAL",
@@ -32,20 +33,25 @@ __all__ = [
     "DeckItem",
     "DeltaItem",
     "DeltaReport",
+    "Ladder",
     "Line",
     "LineAlignment",
     "Match",
     "SheetAlignment",
     "SheetGrid",
+    "Tier2Answer",
+    "Verdict",
     "VersionDiff",
     "align_lines",
     "align_sheet",
+    "build_ladder",
     "compare_tieouts",
     "deck_delta",
     "delta_of",
     "delta_report",
     "diff_paths",
     "diff_raw",
+    "gate_violations",
     "read_raw",
     "sheet_grids",
     "structural_changes",

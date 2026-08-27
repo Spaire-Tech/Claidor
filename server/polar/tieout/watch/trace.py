@@ -70,6 +70,13 @@ class Proof:
 
     #: New-version refs proved unchanged, mapped from their old ref.
     proved: dict[str, str] = field(default_factory=dict)
+    #: Every new-version ref the alignment matched to an old one —
+    #: a superset of `proved`, because a matched cell whose traces
+    #: differ is still a matched cell. The ladder (`tiers.py`) needs
+    #: the pairing to ask the lower rungs about *this* old cell;
+    #: without it, it would have to guess by position. Added after
+    #: C4 round 2; it moves no number in the proof itself.
+    pairing: dict[str, str] = field(default_factory=dict)
     #: Every new-version ref not proved.
     suspects: set[str] = field(default_factory=set)
     #: sheet -> (proved, total new cells on sheet).
@@ -127,6 +134,7 @@ def proved_unchanged(old_book: Workbook, new_book: Workbook) -> Proof:
             old_ref = old_by_position.get((sheet, old_row, old_column))
             if old_ref is None:
                 continue
+            proof.pairing[ref] = old_ref
             if not observable(cell) or not observable(old_book.cells[old_ref]):
                 continue
             if old_traces[old_ref] == new_traces[ref]:

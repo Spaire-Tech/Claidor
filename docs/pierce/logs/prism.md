@@ -1788,3 +1788,323 @@ belong to the tie-out's own accuracy work, not the Watch's.
 **Track C now stands:** C1 hand-checked, C2 measured, C3 with nine
 classes and parity, C4 tier 0 and tier 2 measured (tier 1
 registered, blocked on the dependency), **C5 wired and measured**.
+
+## The gates, re-checked at the top of this turn
+
+Standing routine first. `origin/claude/pierce-phase-6-writing-mjkaj6`
+is still `49063b01` (the eighteenth sweep — no new tip since my last
+push), and `docs/pierce/orders/prism.md` is unchanged from the
+fourteenth sweep. Its three numbered items are spent: the handoff is
+pushed, tier 1 is registered and waiting on the dependency, and the
+wider tier-2 round is measured on two hosts. Both addenda still bind:
+
+- **Tier 1** — `grep -in z3 server/pyproject.toml` on the integration
+  tip returns nothing. No code of mine imports z3, and none will
+  before the lead's approval lands in that file.
+- **C6** — unchanged from my last reading: the literal stability gate
+  is met, the substance is not, and the lead has put it behind
+  Dynamo's E1/E2. Nothing to write.
+
+So the orders name no runnable work this turn. What follows is my own
+initiative, named as such, inside my own paths only.
+
+## The tier ladder — one verdict per cell (REGISTERED BEFORE RESULTS)
+
+**Why.** C4's rungs exist separately and each was measured on its own
+terms: fingerprints over a real pair (`stealth pair`), differential
+evaluation over planted edits (`stealth tier2`). Nothing yet gives a
+reviewer *one* verdict per cell, and the plan's sentence — « Tiers
+never blurred. Tier 3 always: named unsupported constructs, honest
+refusal » — is precisely a statement about a single ordered
+assignment. Without it, « 93.2% proved » sits next to « 8 of 8
+caught » with no account of the cells in neither number.
+
+**The universe.** Every cell of the **new** version — the same
+universe `proved_unchanged` counts. Old-only cells get a count and no
+verdict: a cell that no longer exists has no « did it change »
+question, and inventing one would be dressing a deletion as an
+equivalence.
+
+**The verdicts. Exactly one per cell, and they partition the
+universe.**
+
+| Verdict | Means |
+|---|---|
+| `tier0_proved` | Verifying traces equal under C2's alignment — unchanged at hash cost, no evaluation |
+| `changed` | Evidence of difference, with a named source: `raw_content`, `raw_value`, `added`, `tier2_divergence` |
+| `tier2_supported` | No divergence in `TIER2_TRIALS` randomized trials. Strength, stated as such, never sold as proof |
+| `tier3_refused` | Undecided, with a named reason from the closed vocabulary below |
+
+**The order, and it is the whole point.** tier 0 → raw evidence →
+tier 1 → tier 2 → tier 3. A cell decided at one rung is never
+re-decided at a lower one, and the report carries the rung each
+verdict was reached at, so « proved » and « supported » can never be
+read off the same line.
+
+**Tier 1 is a declared hole, not a silent one.** `z3-solver` is
+absent, so tier 1 decides nothing. The ladder still counts the cells
+that arrive at its rung and reports
+`tier1_would_have_been_asked = N`. A cell tier 1 might have proved
+and tier 2 merely supported is reported as tier-2 supported **and**
+counted in that N — the hole is visible in every run, not inferred
+from this log.
+
+**The refusal vocabulary — closed. A reason outside it is a bug in
+the ladder, not a refusal.**
+
+1. `unobservable_value` — round 2's condition: a formula cell whose
+   own cached value the reader cannot see (a text result reads
+   `None` in the numeric universe), so no trace can carry it.
+2. `environment_dependent` — inside the CELL/INFO cone: the value
+   reflects the file's own name or the machine, not the model.
+   `Cover!G4` is the known instance.
+3. `volatile` — inside the volatile cone: a trial cannot separate a
+   change from the clock.
+4. `no_perturbable_input` — no matched, non-categorical literal
+   reaches the cell, so the trials never move it. Five identical
+   readings of a frozen cell support nothing; round 1 and round D
+   both learned this the expensive way.
+5. `not_offered_to_tier2` — the oracle was not run over this cell
+   (outside the run's scope, or no oracle configured at all). Its
+   presence is what stops a cheap run from reading like a complete
+   one.
+6. `tier2_unavailable` — the oracle refused wholesale: a denylist
+   prescan hit, or no calculation host.
+
+**The gates. One violation fails the round.**
+
+- **G1 soundness.** No cell whose type-tagged cached value differs
+  between the matched old and new *raw* cells may appear in
+  `tier0_proved` or `tier2_supported`. (C4 round 1's gate, now over
+  both proof tiers.)
+- **G2 no instrument drift.** The ladder's `tier0_proved` set equals
+  `proved_unchanged(old, new).proved` exactly — same cells, not the
+  same count.
+- **G3 partition.** The four verdict sets are pairwise disjoint and
+  their union is exactly the new version's cell set.
+- **G4 named refusals.** Every `tier3_refused` carries a reason from
+  the closed vocabulary; zero empty reasons, zero unknown ones.
+- **G5 tier-2 honesty.** Every `tier2_supported` cell was actually
+  perturbed — at least one trial moved at least one cell in its
+  precedent cone — else it is `no_perturbable_input`, not supported.
+
+**This turn's round, and what it deliberately does not do.** Round 1
+runs the ladder over the registered adjacent pair (ED2 v2 14 July →
+v2 31 July) **with no tier-2 oracle**: tiers 0 and 3 and the raw
+evidence, which needs no recalculation and no host. The pair oracle —
+perturbing matched literals in *both* files and recalculating both,
+`2 × (1 + TIER2_TRIALS)` recalculations — is registered here and run
+in a later round, after this round measures what one build and one
+recalculation of the real pair cost. Nothing depends on that cost
+before it is measured; that rule has held since C2 and it holds here.
+
+**Predictions, written before the run.**
+
+1. G2 makes the tier-0 share nearly tautological, so it is a plumbing
+   check, not a discovery: it reproduces C4 round 2's **93.2%** to
+   within 0.5pp, or the ladder is wired wrong.
+2. `changed` lands between **3% and 7%** of the universe.
+3. The largest refusal class is `unobservable_value`, and refusals
+   in total stay under **4%**.
+4. With no oracle, `tier2_supported` is exactly **0** and every
+   remaining suspect carries `not_offered_to_tier2` — if any cell
+   comes back supported in a run with no oracle, the ladder is
+   lying and the round fails.
+
+### Amendment to the registration, written before the run
+
+Drafting the module surfaced a real confusion in the vocabulary
+above, and it is fixed here rather than in the code's silence.
+
+`unobservable_value`, listed as a *refusal reason*, is nothing of the
+kind: it is a reason **tier 0** cannot speak. It does not stop tier 2,
+which compares text results as text perfectly well. Left as written,
+every unobservable cell in an oracle-less run would come back reading
+`not_offered_to_tier2` and the fact that its trace could never have
+carried it would vanish — the census would be true and useless.
+
+So the report carries **two** vocabularies, kept apart:
+
+- **Why tier 0 could not speak** (closed): `no_aligned_counterpart`,
+  `unobservable_value`, `trace_differs`. Counted for every cell tier 0
+  declines, whatever happens further down.
+- **Why the cell is undecided** — the refusal reasons, unchanged
+  except that `unobservable_value` leaves the list:
+  `environment_dependent`, `volatile`, `no_perturbable_input`,
+  `not_offered_to_tier2`, `tier2_unavailable`.
+
+One class the drafting also exposed, and it is the interesting one:
+a matched cell whose own content and cached value are **identical**
+in both files but whose trace differs — an input moved underneath it.
+Raw evidence has nothing to say about it and it is exactly tier 2's
+question, so it descends with the source `inputs_moved` recorded.
+G3's partition and G1's soundness are untouched.
+
+**Prediction 3 is restated accordingly** (still before the run): the
+largest tier-0 blockage is `trace_differs`, and `unobservable_value`
+is the largest of the two remaining, at under 4% of the universe.
+
+### Second amendment: the raw evidence outranks the hash
+
+Writing the ladder's tests, on constructed cells where the answer is
+known by construction, turned up something about tier 0 worth saying
+plainly. The verifying trace hashes the cell's **shape**, and the
+engine's shape erases numeric literals by design:
+
+    =B2*0.4   ->  #*R[-1]C[+0]
+    =B2*0.5   ->  #*R[-1]C[+0]
+
+So a coefficient edit is invisible to the shape, and if the file's
+cached value was not refreshed, the own-value and input-value halves
+of the trace match too. Tier 0 then proves the cell.
+
+**Is that unsound?** No, and the distinction matters. Tier 0's claim,
+as registered in C4 round 1, is « the cell's *stored value* did not
+change between the versions », and here it did not. What moved is the
+text, and with it what the cell *would* compute on recalculation —
+which the trace has never claimed to see (« a match does not claim
+the stored value is correct »). Excel recalculates on save, so a real
+pair is protected by the value half; a generated or unrefreshed file
+is not.
+
+**But it is misleading in a ladder**, which is a report a reviewer
+reads. « Proved unchanged » sitting beside a C1 diff that says « this
+formula was rewritten » invites exactly the wrong conclusion.
+
+So the rung order changes, before any run, and this is the reason:
+
+    tier 0 -> raw -> tier 1 -> tier 2 -> tier 3      (as registered)
+    raw -> tier 0 -> tier 1 -> tier 2 -> tier 3      (as built)
+
+Raw evidence is *evidence of difference*, and it is cheaper than the
+hash besides — two string compares against a SHA-256 over shape and
+inputs. Under the new order the tiers only ever see cells the raw
+grid says are byte-identical in content **and** in stored value, so
+tier 0's work is exactly what it claims: proving no input moved
+underneath a cell that otherwise looks untouched.
+
+**G2 is restated to match, and the restatement measures the blind
+spot rather than hiding it:**
+
+- **G2a**: every cell the ladder proves is in `proved_unchanged`'s
+  proved set — the ladder may never prove more than the fingerprints
+  do.
+- **G2b**: every cell the fingerprints proved and the ladder did not
+  carries the verdict `changed` with the source `raw_content` or
+  `raw_value` — no other reason may overrule a proof.
+- The count of those cells is reported as `tier0_overruled_by_raw`.
+  It is the size of the shape's literal blind spot on this pair, and
+  it is a number this lane has never measured before. **Prediction,
+  before the run: on the ED2 pair it is 0** — Excel recalculates on
+  save, so the value half should catch every coefficient edit.
+
+## The tier ladder — results, and one prediction I got wrong
+
+`uv run python -m scripts.watch_tiers pair` on the registered pair,
+ED2 v2 **14 July → 31 July**, no tier-2 oracle. 131 s, of which 86 s
+is reading the two files.
+
+```
+cells (new version)      41,049      old_only                    0
+tier0_proved             38,255      93.19%
+changed                   1,278       3.11%   raw_value 1,240
+                                              added        24
+                                              raw_content  14
+tier2_supported               0       0.00%
+tier3_refused             1,516       3.69%   not_offered_to_tier2 1,516
+tier0_overruled_by_raw        0
+tier1_would_have_been_asked  1,516
+tier-0 blockages:  unobservable_value 1,222 · trace_differs 294 ·
+                   no_aligned_counterpart 24
+gate violations               0       (G1, G2a, G2b, G3, G4, G5)
+```
+
+**All five gates pass.** The partition holds exactly — 38,255 +
+1,278 + 0 + 1,516 = 41,049 — every refusal carries a name from the
+closed list, and no proved cell's stored value moved.
+
+**Against the predictions, in order.**
+
+1. **Held.** 93.19% against C4 round 2's 93.2%. As registered, this
+   is a plumbing check and not a discovery.
+2. **Held.** `changed` at 3.11%, inside the 3–7% band — at its floor.
+3. **Wrong, and it is my prediction that was wrong, not the
+   instrument.** I predicted `trace_differs` would be the largest
+   tier-0 blockage. It is not: **`unobservable_value` 1,222 against
+   `trace_differs` 294** — four to one the other way. The magnitude
+   half of the prediction held (2.98%, under 4%), but the ordering
+   was backwards, and the correction is worth more than the
+   prediction was: on a real adjacent revision, **the commonest
+   reason the cheap proof cannot speak is not that a cell changed —
+   it is that the reader cannot see the cell's own result.** Text
+   results are 81% of tier 0's silence here. That is a fact about
+   the *instrument's* reach, not about the revision, and it is the
+   strongest argument yet for a tier that evaluates: 1,222 of the
+   1,516 cells at tier 2's door are there because a hash cannot
+   describe them, not because anything moved.
+4. **Held.** `tier2_supported` is exactly 0 with no oracle, and all
+   1,516 remaining cells carry `not_offered_to_tier2` — nothing came
+   back supported in a run that supported nothing.
+5. **Held** (the second amendment's): `tier0_overruled_by_raw = 0`.
+   The shape's literal blind spot did not fire once on this pair.
+   Excel recalculating on save is what closes it, exactly as
+   predicted — and the constructed test in
+   `test_watch_tiers.py` pins the case where it does fire, so the
+   count is a measurement and not a stub.
+
+**A note on prediction 4's wording.** The registration says the
+ladder refuses cone cells (`environment_dependent`, `volatile`)
+before the oracle is troubled, so « every remaining suspect carries
+`not_offered_to_tier2` » was imprecise as written. It came out true
+here for a reason worth recording: the volatile cone over this
+file's engine cells is **empty**, and the environment cone holds
+exactly **one** cell — `Cover!G4` — which lives outside the engine's
+universe and so was never in the ladder's 41,049 to begin with.
+
+**The independent cross-check, and it closes exactly.** C1's raw
+diff over the same pair, run separately:
+
+```
+C1 (raw universe, 60,609 cells)   added 24 · changed 1,255
+                                  (of which formula changes 14)
+ladder (engine universe, 41,049)  added 24 · raw_content 14
+                                  · raw_value 1,240      = 1,254
+```
+
+1,255 − 1,254 = **1**, and the one cell is
+**`Cover!G4`** — the `MID(CELL("filename"),…)` cell that prints the
+workbook's own name, which differs between two files called
+`v2_2023-07-14` and `v2_2023-07-31`. It is the same cell tier 2's
+round 3 found by falling over it. Two instruments written weeks
+apart, over different universes, reconcile to a single named cell.
+The 14 formula changes agree exactly.
+
+**The oracle's cost, measured before anything depends on it**
+(`watch_tiers cost`, on the 31 July file):
+
+```
+openpyxl load 12.6 s · save 5.8 s · UNO recalculate 59.1 s
+one build + recalculation                            77.5 s
+projected pair oracle, 2 files x (1 baseline + 5 trials)  15.5 min
+```
+
+So the pair oracle is affordable and is the next round. One number
+from that measurement is a constraint on it and is registered here
+before that round is designed: **the UNO driver read 21,007 cells
+where the ladder's universe is 41,049.** Tier 2 can only speak about
+cells the driver returns, so on this pair the oracle's reach is
+about half the ladder — and its first question must be *which* half,
+because « supported » over a universe the harness silently halved
+would be the same class of error as a rule set mined in a corner.
+
+## What is now true of Track C
+
+C1, C2, C3, C4 (tiers 0, 2, 3 and the ladder that keeps them apart)
+and C5 are built, measured and gated. Tier 1 is the one hole, it is
+declared in every run the ladder prints as
+`tier1_would_have_been_asked`, and it stays shut until `z3-solver`
+is in `server/pyproject.toml` by the lead's hand. C6 waits on
+coverage, not on permission.
+
+Eighty tests green (`test_watch_{diff,align,plant,delta,trace,
+stealth,document,tiers}.py`, `--noconftest`).
