@@ -3041,3 +3041,48 @@ number this lane has published stands as measured under it.
 Orders have not changed since the fourteenth sweep and my lane has run
 four sweeps past them. Everything above is inside D1 and D3, which are
 mine, and none of it has touched the engine.
+
+## 28 August 2026, fourteenth « go » — the audit: every number this lane has published, re-derived
+
+Orders read from the tip. **The tip has not moved** (`49063b01`, still
+the eighteenth sweep) and the orders file is byte-identical to the
+fourteenth sweep's. No word on round U's criterion question.
+
+**So there is nothing I may honestly start.** D4 and D5 await
+decisions. Round 4 is closed by the lead. Round U I registered one turn
+ago with the words « I am not running it without a word from the lead »,
+and a commitment made in writing to the founder does not expire because
+I am impatient.
+
+**What is unblocked, and overdue: checking my own arithmetic.** In two
+turns I have found two defects in my own measuring apparatus — a fact
+key that addressed two facts at once, and a criterion that could not
+tell repair from damage — and one claim I had generalised from two
+samples to twenty-two. The lead is about to read roughly forty numbers
+out of this log and act on them. **A base rate of two errors in two
+turns is a reason to check the rest before the sweep, not after.**
+
+This produces no new claim, so it needs no registration. It re-derives
+every headline number in this log from the committed harnesses and
+truths, and reports each as reproduced or not. **Anything that does not
+reproduce is written down here whether it flatters this lane or not.**
+
+The claims under audit, listed before any of them is re-run so the list
+cannot be trimmed to what passes:
+
+| # | claim | source round |
+|---|---|---|
+| 1 | ED2 sample: 30 of 30 correct abstentions | D3 rounds 1–3 |
+| 2 | ED2 run B: 60 judged, 0 sourced cells found | D3 round 2 |
+| 3 | Finch part A + B: 0 true, 1 false, 4 abstain, 34 missed | part B |
+| 4 | 39 of 42 scored; 35 rows the documents state | part B |
+| 5 | part B settled 15 of 18; 3 `stated-but-unextracted` | part B |
+| 6 | round 5: recall 0 of 18 | D3 round 5 |
+| 7 | rounds 6 and 7: 0 true, 2 false, 7 abstain, 18 missed | D3 rounds 6–7 |
+| 8 | dash round: 750 nils across the corpus | D1 dash round |
+| 9 | dash round hand-check: 20 of 20 clean | D1 dash round |
+| 10 | corpus totals: 6,842 Finch facts, 8,015 ED2 | D1, current |
+| 11 | 56.1% of Finch facts sit in character-spaced lines | part B |
+| 12 | D5 flood: 22,693 candidates on a regulator model, 85 on Cascade | D5 round 1 |
+| 13 | D4: 8 of 8 on its registered table | D4 |
+| 14 | 562 colliding keys before the two-coordinate fix | part B |
