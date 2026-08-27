@@ -45,8 +45,30 @@ they belong. Three are new and eligible:
 | `snbts_model.xlsm` | c8d838938035cb2c | 1,881,902 |
 
 **Every further candidate is hashed against the whole corpus before
-it counts.** Seven more unseen models are needed (the founder holds
-two; five remain to source).
+it counts.** Seven more unseen models are needed.
+
+### Contamination log (every candidate, accepted or rejected)
+
+| candidate (as supplied) | sha256 (16) | verdict |
+|---|---|---|
+| `HWCBSBBaseCase…FCclose.HC.xlsm` | 3b28834a98e3b7fe | **eligible** |
+| `InvernessCollegeFinancialModel.xlsm` | d2caf87b95277206 | **eligible** |
+| `ScottishNationalBloodTransfusionService…xlsm` | c8d838938035cb2c | **eligible** |
+| `ayrshirecollegefinancialmodel.xls` | 51ea8ab291a3f4ff | rejected — identical to `ayrshire_model.xls` (tuning corpus) |
+| `CopyofBerthaPark28SeptemberFINAL.HC.xlsm` | cd690a68ae340e87 | rejected — identical to `bertha_park_model.xlsm` |
+| `CopyofRHSCDCN_FinancialModel…Solved.HC.xlsm` | a4b52c7c6c9a9b94 | rejected — identical to `rhsc_dcn_model.xlsm` |
+| `DumfriesandGallowayRoyalInfirmary…xlsm` | b413cde63f9e4f1c | rejected — identical to `dumfries_model.xlsm` |
+
+Four of the founder's first seven were already in the tuning corpus.
+That is not waste: it is the contamination rule doing precisely the
+job it was written for, before a number existed to be flattered.
+
+### The deals already held — excluded from this proof by name
+
+Anderson · Ayrshire College · Bertha Park · Dumfries & Galloway
+Royal Infirmary · Elgin · RHSC/DCN (all six tuned against), plus the
+three eligible ones above once they are run. **Any further candidate
+must be a different deal from these nine.**
 
 ## Run cold — what that means here, fixed now
 
