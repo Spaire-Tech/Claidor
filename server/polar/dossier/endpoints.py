@@ -283,9 +283,7 @@ async def add_member(
             )
         user_id = user.id
     repository = DossierRepository.from_session(session)
-    await repository.add_member(
-        dossier_id=dossier_id, user_id=user_id, role=body.role
-    )
+    await repository.add_member(dossier_id=dossier_id, user_id=user_id, role=body.role)
     members = await repository.list_members(dossier_id)
     member = next(m for m in members if m.user_id == user_id)
     return DossierMemberRead(

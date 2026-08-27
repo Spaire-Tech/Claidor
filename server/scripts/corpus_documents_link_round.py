@@ -153,7 +153,9 @@ def score(truth_path: str) -> int:
     cells = _typed_cells()
     drawn = random.Random(SEED).sample(cells, SAMPLE)
     facts = _facts()
-    candidates = [(key, number.line, number.text, number.column) for key, number in facts]
+    candidates = [
+        (key, number.line, number.text, number.column) for key, number in facts
+    ]
 
     verdicts = []
     for cell in drawn:
@@ -265,7 +267,9 @@ def sourced_score(truth_path: str) -> int:
         f"{len(sourced)} sourced cells found",
     )
     facts = _facts()
-    candidates = [(key, number.line, number.text, number.column) for key, number in facts]
+    candidates = [
+        (key, number.line, number.text, number.column) for key, number in facts
+    ]
     cells = {cell.ref: cell for cell in _typed_cells()}
 
     verdicts = []

@@ -64,9 +64,7 @@ def upgrade() -> None:
         sa.Column("webhook_event_id", sa.String(length=255), nullable=False),
         sa.Column("event_type", sa.String(length=64), nullable=False),
         sa.Column("email_id", sa.String(length=255), nullable=True),
-        sa.Column(
-            "processed_at", sa.TIMESTAMP(timezone=True), nullable=True
-        ),
+        sa.Column("processed_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "webhook_event_id",
@@ -89,6 +87,5 @@ def downgrade() -> None:
 
     with op.get_context().autocommit_block():
         op.execute(
-            "DROP INDEX CONCURRENTLY IF EXISTS "
-            "ix_email_broadcast_sends_resend_email_id"
+            "DROP INDEX CONCURRENTLY IF EXISTS ix_email_broadcast_sends_resend_email_id"
         )

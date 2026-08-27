@@ -39,9 +39,7 @@ def upgrade() -> None:
         sa.Column(
             "submission_id",
             sa.Uuid(),
-            sa.ForeignKey(
-                "community_activity_submissions.id", ondelete="cascade"
-            ),
+            sa.ForeignKey("community_activity_submissions.id", ondelete="cascade"),
             nullable=False,
         ),
         sa.Column(

@@ -24,7 +24,9 @@ def upgrade() -> None:
         sa.Column("organization_id", sa.Uuid(), nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("trigger_type", sa.String(50), nullable=False, server_default="manual"),
+        sa.Column(
+            "trigger_type", sa.String(50), nullable=False, server_default="manual"
+        ),
         sa.Column(
             "trigger_config",
             postgresql.JSONB(astext_type=sa.Text()),
@@ -113,7 +115,9 @@ def upgrade() -> None:
         sa.Column("sequence_id", sa.Uuid(), nullable=False),
         sa.Column("subscriber_id", sa.Uuid(), nullable=False),
         sa.Column("status", sa.String(20), nullable=False, server_default="active"),
-        sa.Column("current_step_position", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column(
+            "current_step_position", sa.Integer(), nullable=False, server_default="0"
+        ),
         sa.Column(
             "enrolled_at",
             sa.TIMESTAMP(timezone=True),

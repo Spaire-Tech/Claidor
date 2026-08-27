@@ -287,7 +287,9 @@ def partb_score(truth_path: str, partb_path: str) -> int:
     raise precision. They give the round its honest denominator.
     """
     part_a = json.loads(Path(truth_path).read_text())
-    part_b = {(e["task"], e["ref"]): e for e in json.loads(Path(partb_path).read_text())}
+    part_b = {
+        (e["task"], e["ref"]): e for e in json.loads(Path(partb_path).read_text())
+    }
     pools = {task: facts(task)[0] for task in TASKS}
 
     counts: dict[str, int] = {}
@@ -305,7 +307,9 @@ def partb_score(truth_path: str, partb_path: str) -> int:
             continue
         if origin == "B":
             settled += 1
-        candidates = [(key, n.line, n.text, n.column) for key, n in pools[entry["task"]]]
+        candidates = [
+            (key, n.line, n.text, n.column) for key, n in pools[entry["task"]]
+        ]
         stated = row.get("truth") or []
         answer = propose.propose(entry["name"] or entry["labels"], candidates)
         if isinstance(answer, propose.Proposed):

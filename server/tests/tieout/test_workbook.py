@@ -349,9 +349,7 @@ def test_the_label_column_is_the_one_with_the_most_different_things_to_say() -> 
     """
     from polar.tieout.workbook import _label_column
 
-    grid = _sheet(
-        [["Allowed revenue", "£m", None], ["Actual opex", "£m", None]] * 6
-    )
+    grid = _sheet([["Allowed revenue", "£m", None], ["Actual opex", "£m", None]] * 6)
     assert _label_column(grid, grid.last_row, grid.last_column) == 1
 
 

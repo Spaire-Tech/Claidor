@@ -68,10 +68,16 @@ def upgrade() -> None:
         """
     )
 
-    op.alter_column("checkouts", "net_amount", existing_type=sa.INTEGER(), nullable=False)
-    op.alter_column("order_items", "net_amount", existing_type=sa.INTEGER(), nullable=False)
+    op.alter_column(
+        "checkouts", "net_amount", existing_type=sa.INTEGER(), nullable=False
+    )
+    op.alter_column(
+        "order_items", "net_amount", existing_type=sa.INTEGER(), nullable=False
+    )
     op.alter_column("orders", "net_amount", existing_type=sa.INTEGER(), nullable=False)
-    op.alter_column("subscriptions", "net_amount", existing_type=sa.INTEGER(), nullable=False)
+    op.alter_column(
+        "subscriptions", "net_amount", existing_type=sa.INTEGER(), nullable=False
+    )
 
     op.drop_index(op.f("ix_net_amount"), table_name="orders")
     op.drop_index(op.f("ix_total_amount"), table_name="orders")
@@ -86,10 +92,16 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.alter_column("subscriptions", "net_amount", existing_type=sa.INTEGER(), nullable=True)
+    op.alter_column(
+        "subscriptions", "net_amount", existing_type=sa.INTEGER(), nullable=True
+    )
     op.alter_column("orders", "net_amount", existing_type=sa.INTEGER(), nullable=True)
-    op.alter_column("order_items", "net_amount", existing_type=sa.INTEGER(), nullable=True)
-    op.alter_column("checkouts", "net_amount", existing_type=sa.INTEGER(), nullable=True)
+    op.alter_column(
+        "order_items", "net_amount", existing_type=sa.INTEGER(), nullable=True
+    )
+    op.alter_column(
+        "checkouts", "net_amount", existing_type=sa.INTEGER(), nullable=True
+    )
     op.drop_index("ix_total_amount", table_name="orders")
     with op.get_context().autocommit_block():
         op.create_index(

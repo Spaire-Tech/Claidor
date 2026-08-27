@@ -53,12 +53,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["organization_id"], ["organizations.id"], ondelete="CASCADE"
         ),
-        sa.ForeignKeyConstraint(
-            ["customer_id"], ["customers.id"], ondelete="RESTRICT"
-        ),
-        sa.ForeignKeyConstraint(
-            ["order_id"], ["orders.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["customer_id"], ["customers.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(["order_id"], ["orders.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(

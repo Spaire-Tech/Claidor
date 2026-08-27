@@ -304,9 +304,7 @@ PRODUCT_SPECS: list[ProductSpec] = [
 # ---------------------------------------------------------------------------
 
 
-def _configure_platform_org(
-    platform_org: Organization, *, dry_run: bool
-) -> str:
+def _configure_platform_org(platform_org: Organization, *, dry_run: bool) -> str:
     """Ensure the platform org is configured for self-billing.
 
     `allow_multiple_subscriptions` must be True so the upgrade-checkout flow
@@ -591,7 +589,9 @@ async def _upsert_catalog_price(
             price_currency=spec.price_currency,
         )
     else:
-        raise RuntimeError(f"Unsupported price amount_type for seeding: {spec.amount_type}")
+        raise RuntimeError(
+            f"Unsupported price amount_type for seeding: {spec.amount_type}"
+        )
 
     if not dry_run:
         session.add(new_price)

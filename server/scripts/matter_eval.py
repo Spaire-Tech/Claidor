@@ -126,8 +126,8 @@ def matches(group: Any, planted: dict[str, Any]) -> bool:
 
 async def main() -> int:
     from polar.config import settings
-    from polar.dossier.crosscheck import cross_check
     from polar.dossier.agent.service import build_client
+    from polar.dossier.crosscheck import cross_check
 
     if not settings.ANTHROPIC_API_KEY:
         print("No ANTHROPIC_API_KEY. Nothing to evaluate.", file=sys.stderr)
@@ -171,8 +171,10 @@ async def main() -> int:
     print(report.summary())
     print()
     print(f"recall (required)  {len(required_found)}/{len(required)}  {required_found}")
-    print(f"judgement call     {'found' if 'notice period' in found else 'not found'}"
-          "  (notice period — narrowed by the Side Letter; either is defensible)")
+    print(
+        f"judgement call     {'found' if 'notice period' in found else 'not found'}"
+        "  (notice period — narrowed by the Side Letter; either is defensible)"
+    )
     if missed:
         print(f"MISSED             {missed}")
     print(f"extras             {len(extras)}")

@@ -205,14 +205,17 @@ def _tool_text(workspace: Any, outcome: Any) -> list[str]:
     for document in workspace.documents:
         if document.extracted_text:
             text.append(
-                json.dumps(check_document(workspace, str(document.id)).data, default=str)
+                json.dumps(
+                    check_document(workspace, str(document.id)).data, default=str
+                )
             )
     return text
 
 
 async def main() -> int:
-    from polar.config import settings
     from polar.dossier.agent.loop import run
+
+    from polar.config import settings
     from polar.dossier.agent.service import build_client
     from polar.dossier.agent.tools import Workspace
 

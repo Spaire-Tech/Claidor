@@ -103,9 +103,7 @@ class PersonalAccessTokenService(ResourceServiceReader[PersonalAccessToken]):
         if lifetime <= timedelta(0):
             raise TokenScopeError("A token must expire in the future.")
         if lifetime > MAX_LIFETIME:
-            raise TokenScopeError(
-                f"A token may last at most {MAX_LIFETIME.days} days."
-            )
+            raise TokenScopeError(f"A token may last at most {MAX_LIFETIME.days} days.")
 
         token, token_hash = generate_token_hash_pair(
             secret=settings.SECRET, prefix=TOKEN_PREFIX

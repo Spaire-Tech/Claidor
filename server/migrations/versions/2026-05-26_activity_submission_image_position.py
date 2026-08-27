@@ -23,13 +23,9 @@ depends_on = None
 def upgrade() -> None:
     op.add_column(
         "community_activity_submissions",
-        sa.Column(
-            "image_object_position", sa.String(length=32), nullable=True
-        ),
+        sa.Column("image_object_position", sa.String(length=32), nullable=True),
     )
 
 
 def downgrade() -> None:
-    op.drop_column(
-        "community_activity_submissions", "image_object_position"
-    )
+    op.drop_column("community_activity_submissions", "image_object_position")

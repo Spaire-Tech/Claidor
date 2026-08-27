@@ -37,7 +37,9 @@ def upgrade() -> None:
     op.create_index(
         op.f("ix_veilles_organization_id"), "veilles", ["organization_id"], unique=False
     )
-    op.create_index(op.f("ix_veilles_target_id"), "veilles", ["target_id"], unique=False)
+    op.create_index(
+        op.f("ix_veilles_target_id"), "veilles", ["target_id"], unique=False
+    )
     op.create_table(
         "veille_signals",
         sa.Column("id", sa.Uuid(), nullable=False),

@@ -198,6 +198,18 @@
   "verdict": "missed"
  },
  {
+  "task": "72",
+  "ref": "Scenario3!AC28",
+  "name": "Short",
+  "value": "19842.069186955894",
+  "origin": "B",
+  "stated": [
+   "72_src_0|p1|x289|y148|19,842"
+  ],
+  "proposed": null,
+  "verdict": "missed"
+ },
+ {
   "task": "81",
   "ref": "ETS!E148",
   "name": "Citrus Field Operations Support",

@@ -4288,3 +4288,198 @@ new work and adds no claim; it is an attempt to make five asks cost a
 minute rather than an hour.
 
 Suite: **904 passed, 9 skipped, 0 failed.**
+
+## 28 August 2026, twenty-first « go » — five decisions arrived; round V is shipped
+
+Orders read from the tip (`d782ed4e`, twenty-fourth sweep). **The
+orders file changed for the first time in ten sweeps, and all five
+decisions are answered.** The lead also names the delay as its own
+failure and has put a rule in `lanes.md` so it cannot repeat; I have
+nothing to add to that, and I am not going to spend a paragraph on it.
+
+The answers, and what each means here:
+
+| | decision | what this lane does |
+|---|---|---|
+| 1 | **D1: the bar is « undamaged ». Ship round V.** | shipped this turn |
+| 2 | **D5: shelve, with a named trigger** — register the reporting round when D4's store holds confirmations from at least one *real* deal | nothing to do until then |
+| 3 | **D4: approved. Build the store**, `value_at_confirmation` amendment approved with it | this turn |
+| 4 | **D3 round 4: closed.** Harness stays committed; if a contract ever arrives it revives | round 4 marked closed |
+| 5 | **Newbattle: keep it**, caveat recorded loudly; the cold-run condition tightens for everything after, and Newbattle is excluded from 1B | nothing to do; the reasoning is better than mine was |
+
+**The bar is now standing policy for this lane** and I have written it
+where I will meet it: a change to extraction must leave no line
+*worse*, need not leave every line *identical*, damage is judged by
+hand against the documents rather than by a diff count, and the
+repair/damage tally is reported with every such round.
+
+## Round V — shipped
+
+`_LINE_TOLERANCE = 1.5`, `_SCRIPT_SIZE = 0.8`, **`_SCRIPT_UP = 6.5`,
+`_SCRIPT_DOWN = 3.0`**, `EXTRACTOR_VERSION → "5"`, `_words()` in
+`extract.py` with the whole story in its docstring so nobody re-derives
+six dead rounds.
+
+**Three tests came with it**, and one of them I had to fix before it
+was a test at all. The fixture draws two rows 3.0 points apart and
+interleaved in x, plus a base with a subscript 2.5 points below:
+
+| | at pdfplumber's default tolerance | under round V |
+|---|---|---|
+| the two rows | `AGlapmham`, `1a,`, `293,0412`, `BDeetltaa`, `53,,647586` | `Alpha 1,234` / `Gamma 9,012` on separate lines |
+| the subscript | `RPE` + `t`, two words | **`RPEt`** |
+
+My first subscript test asserted against the *extraction*, and no
+number sits on that line — so it passed no matter what the rule did.
+**It is now read off `_words` directly, and it also asserts that the
+same page at the old tolerance still shows the defect**, so the test
+fails if either half of round V is removed.
+
+### The four harnesses, re-run
+
+| harness | result |
+|---|---|
+| ED2's registered sample | **30 of 30** correct abstentions |
+| Finch part A + part B | **0 / 1 / 4 / 34**, 39 of 42 scored, 35 stated — identical |
+| the 35 recorded truth keys | **all 35 still exist** — the position key held across an extractor change, which is what it was for |
+| D5 rounds 2 and 4 | untouched (they read models, not documents) |
+
+## Part B amendment — `72!Scenario3!AC28` is settled, because round V unshredded it
+
+**Registered before re-judging, and it is the same judging rule, not a
+new one.** AC28 was `stated-but-unextracted` for one recorded reason:
+« the document DOES print « Jan-03 32,675 12,833 19,842 … » and 19,842
+is this cell. No fact exists for it: that line is drawn glyph by glyph
+and D1 read it as five separate one-digit numbers. » **Round V removes
+exactly that reason.** The fact now exists:
+
+`72_src_0|p1|x289|y148|19,842`, on the line
+`e Monthly Jan-03 32,675 12,833 19,842 7,627 …`
+
+Column AC is « Short », the third of the volume columns — **identically
+to how I judged its siblings Jan-01 and Jan-02 in part B, both at
+x289**. So the condition becomes `ok` and the truth is that key.
+
+**The other two are unchanged, checked rather than assumed.** `G32`'s
+GCO dash is still not extracted (page 1's GCO column holds too few
+numbers for the dash rule's third condition — the anti-correlation gap
+the dash round recorded), and `E212`'s wholly-nil AFUDC row still
+yields nothing, because the dash rule requires a number on the line.
+Round V changed neither.
+
+### Round V's effect on the shipped record
+
+| | v4 | **v5 (round V)** |
+|---|---|---|
+| Finch facts | 6,842 | **4,189** |
+| facts in character-spaced lines (Finch) | 3,835 | **500** |
+| colliding keys, round's 7 tasks | 562 | **319** |
+| facts sharing an address | 4,456 | **1,895** |
+| **ED2 facts** | 8,015 | **8,015** |
+| **nils, both corpora** | 750 | **750** |
+| part B rows settled of 18 | 15 | **16** |
+| `stated-but-unextracted` | 3 | **2** |
+
+**2,653 invented facts are gone**, ED2 and the nils are untouched to
+the unit, and the collision surface more than halves as a side effect —
+which two turns before shipping I predicted would follow from fixing
+the reading.
+
+**The audit is re-baselined**, with each version-4 value kept beside
+its replacement. A deliberate extractor change moves these numbers;
+the point of that file is to notice when nothing deliberate happened
+and they moved anyway.
+
+**And the record the product quotes moves with them.** D3's standing
+sentence in `router.py` now reads **0 of 36** — one more row is
+scorable because round V unshredded it, and the matcher missed it too.
+Recall did not improve; the denominator got more honest.
+
+## D4 — the store, built
+
+Approved at the twenty-fourth sweep on D2's terms, and built on them.
+
+**`chain/link.py`** — `ChainLink` and `LinkState`, the approved schema
+as rows. Two things the table does on purpose, both from the contract:
+
+- **no « proposed » state.** A proposal is computed on demand and never
+  written, so a row always means a person acted. `broken` and
+  `ambiguous` are set by re-anchoring, never by a matcher.
+- **anchors are labels; refs and pages are citations.** `cell_name` and
+  `anchor_line` re-find the pair in a later version; `model_ref` and
+  `page` are stored so a screen can cite it and are never used to
+  locate. Insert a row above the linked cell and the ref is wrong while
+  the figure has not moved at all.
+
+The `value_at_confirmation` amendment is in as two columns —
+`document_value_at_confirmation` and `model_value_at_confirmation`.
+Without them the re-check cannot say *which side* moved, and three of
+its four verdicts are unproducible; that is what the D4 measurement
+found and why the amendment was registered before a table existed.
+
+**Migration** `2026-08-28-1000_chain_links.py` (`chain_links_0828`),
+applied. **Repository** `ChainLinkRepository` — every read scoped by
+the deal, because a link is a person's statement and a link id must
+never be a capability to see one. **Routes** `POST /chain/links` and
+`GET /chain/dossiers/{id}/links`.
+
+### What the routes refuse, and in words
+
+| | |
+|---|---|
+| a cell and a figure on **different deals** | 409 — « one cannot be the source of the other » |
+| a cell holding **no value** | 409 — « nothing to confirm » |
+| **scale ≤ 0** | 422 — scale multiplies; zero is not a statement about units, it is a way to make anything tie out |
+| `?state=proposed` | 422 naming the four real states **and why there is no fifth** |
+| a stranger's deal | 404 |
+
+Confirming the same pair twice **updates the one row** rather than
+growing two contradictory ones — a bug a person could never see.
+
+**Eight route-level tests**, walking the path a click would take: a
+real deal, a real extracted document, a real cell. `test_chain_link.py`.
+
+### Two things I got wrong and fixed before they shipped
+
+**The dossier foreign key pointed at `tieout_dossiers`, which does not
+exist** — the table is `dossiers`. Caught by reading the model rather
+than by the migration failing, because the migration would have failed
+loudly and I would rather it never ran.
+
+**I wrote a `dossier` relationship typed `Mapped["object"]`** that
+nothing used. A relationship nobody reads, typed as the base of
+everything, is noise pretending to be structure. Removed.
+
+Package is clean: **no mypy error and no lint finding in
+`polar/tieout/chain/` or `tests/tieout/test_chain*`**. The one mypy
+complaint was real — `pdfplumber.utils.extract_words` is not marked a
+public re-export — and carries a narrow ignore with the reason, not a
+blanket one.
+
+### Turn's end state
+
+**Both ordered items are done.** Round V is shipped (extractor version
+5, 2,653 invented facts gone, ED2 and the nils untouched to the unit),
+and D4's store is built (table, migration applied, repository, two
+routes, eight route-level tests).
+
+- full tieout suite **915 passed, 9 skipped, 0 failed**
+- **no mypy error and no lint finding** in `polar/tieout/chain/` or
+  `tests/tieout/test_chain*`
+- the audit's eight corpus numbers re-baselined at version 5, each
+  version-4 value kept beside its replacement
+- ED2 **30 of 30**; Finch part A + part B **0 / 1 / 4 / 35**, 40 of 42
+  scored, **36 stated**
+- `router.py`'s standing sentence now reads **0 of 36**
+
+**Nothing is waiting on the lead.** D5 waits on its own named trigger —
+D4's store holding confirmations from a real deal — and that store now
+exists, so the trigger is reachable for the first time. D3 round 4 is
+closed; Newbattle needs nothing.
+
+**One thing I want on the record about the nine-sweep wait.** The lead
+called it their failure. From this side it was also the most useful
+constraint the lane has had: it is what produced the audit, the
+decision sheet, and four self-caught errors, because there was nothing
+to do but check my own work. I would not ask for it again, but I would
+not trade the record it produced either.

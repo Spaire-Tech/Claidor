@@ -15,9 +15,7 @@ depends_on: tuple[str] | None = None
 
 
 def upgrade() -> None:
-    op.execute(
-        "ALTER TABLE courses ADD COLUMN IF NOT EXISTS landing_overrides JSONB"
-    )
+    op.execute("ALTER TABLE courses ADD COLUMN IF NOT EXISTS landing_overrides JSONB")
 
 
 def downgrade() -> None:

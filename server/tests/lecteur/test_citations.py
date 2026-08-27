@@ -56,9 +56,7 @@ class TestArticles:
 
 class TestActAttachment:
     def test_nearest_act_wins(self) -> None:
-        text = (
-            "les articles 169 et 170 AUPSRVE, ensemble l'article 33 de l'AUS"
-        )
+        text = "les articles 169 et 170 AUPSRVE, ensemble l'article 33 de l'AUS"
         by_number = {c.number: c.act for c in extract(text)}
         assert by_number == {"169": "AUPSRVE", "170": "AUPSRVE", "33": "AUS"}
 
@@ -97,9 +95,7 @@ class TestDecisions:
         assert numbers("arrêt n° 90/2018", "decision") == ["090/2018"]
 
     def test_chamber_between_court_and_number(self) -> None:
-        assert numbers("CCJA, 1re ch., arrêt n° 022/2014", "decision") == [
-            "022/2014"
-        ]
+        assert numbers("CCJA, 1re ch., arrêt n° 022/2014", "decision") == ["022/2014"]
 
     def test_a_bare_year_is_not_a_decision(self) -> None:
         assert numbers("la loi du 12/2018 n'est pas visée", "decision") == []

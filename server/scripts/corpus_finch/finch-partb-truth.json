@@ -524,9 +524,11 @@
    }
   ],
   "candidate_count": 5,
-  "truth": [],
-  "condition": "stated-but-unextracted",
-  "note": "Row 28 is 2003-01. The document DOES print \u00ab Jan-03 32,675 12,833 19,842 \u2026 \u00bb and 19,842 is this cell. No fact exists for it: that line is drawn glyph by glyph (\u00ab 1 9 , 8 4 2 \u00bb) and D1 read it as five separate one-digit numbers. This is D1's failure, not the matcher's, and it is not \u00ab not stated \u00bb."
+  "truth": [
+   "72_src_0|p1|x289|y148|19,842"
+  ],
+  "condition": "ok",
+  "note": "Row 28 is 2003-01 \u2014 the Jan-03 line. Column AC is \u00ab Short \u00bb, the third volume figure, at x289 exactly as its siblings Jan-01 and Jan-02 were judged. Recorded as stated-but-unextracted until extractor version 5 (round V) stopped shredding that line; the amendment is registered in the Scribe log before this change."
  },
  {
   "task": "81",

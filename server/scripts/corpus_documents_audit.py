@@ -45,33 +45,38 @@ ED2 = sorted((HERE / "corpus_documents" / "ed2").glob("*.pdf"))
 ROUND_TASKS = ("5", "52", "72", "81", "156", "160", "161")
 
 #: What the log says, with the population each was measured over.
+#:
+#: **Re-baselined at extractor version 5 (round V, adopted at the
+#: twenty-fourth sweep).** Round V stopped D1 merging two baselines
+#: that sit 3.0 points apart, so most of the shredded single digits it
+#: used to file are gone. The version-4 values are kept beside each
+#: one: a deliberate extractor change moves these numbers, and the
+#: point of this file is to notice when nothing deliberate has
+#: happened and they move anyway.
 RECORDED = {
-    "facts, Finch corpus (17 PDFs)": 6842,
-    "facts, ED2 corpus (3 PDFs)": 8015,
-    "nils, both corpora": 750,
-    "facts in character-spaced lines, Finch corpus": 3835,
-    "colliding keys, one-coordinate scheme, round's 7 tasks": 562,
-    "facts sharing an address, round's 7 tasks": 4456,
-    "part B: rows settled of 18": 15,
-    "part B: rows stated-but-unextracted": 3,
+    # v4 → v5
+    "facts, Finch corpus (17 PDFs)": 4189,  # was 6,842
+    "facts, ED2 corpus (3 PDFs)": 8015,  # unchanged
+    "nils, both corpora": 750,  # unchanged
+    "facts in character-spaced lines, Finch corpus": 500,  # was 3,835
+    "colliding keys, one-coordinate scheme, round's 7 tasks": 319,  # was 562
+    "facts sharing an address, round's 7 tasks": 1895,  # was 4,456
+    "part B: rows settled of 18": 16,  # was 15
+    "part B: rows stated-but-unextracted": 2,  # was 3
 }
 
 
 def _spaced(line: str) -> bool:
     tokens = line.split()
-    return len(tokens) >= 12 and sum(
-        1 for t in tokens if len(t) == 1
-    ) / len(tokens) >= 0.6
+    return (
+        len(tokens) >= 12 and sum(1 for t in tokens if len(t) == 1) / len(tokens) >= 0.6
+    )
 
 
 def main() -> int:
     # A missing corpus must not read as a wrong number. Both are
     # git-ignored and re-fetchable; say which is absent and stop.
-    missing = [
-        name
-        for name, found in (("Finch", FINCH), ("ED2", ED2))
-        if not found
-    ]
+    missing = [name for name, found in (("Finch", FINCH), ("ED2", ED2)) if not found]
     if missing:
         print(
             f"corpus absent: {', '.join(missing)}. This is not a failed audit — "
@@ -102,7 +107,9 @@ def main() -> int:
     for task in ROUND_TASKS:
         for pdf in sorted((HERE / "corpus_finch" / "files" / task).glob("*_src_*.pdf")):
             for number in extract.extract_pdf(pdf).numbers:
-                keys[f"{pdf.stem}|p{number.page}|x{number.box.x0:.0f}|{number.text}"] += 1
+                keys[
+                    f"{pdf.stem}|p{number.page}|x{number.box.x0:.0f}|{number.text}"
+                ] += 1
     colliding = {k: v for k, v in keys.items() if v > 1}
     derived["colliding keys, one-coordinate scheme, round's 7 tasks"] = len(colliding)
     derived["facts sharing an address, round's 7 tasks"] = sum(colliding.values())

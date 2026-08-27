@@ -53,17 +53,17 @@ def upgrade() -> None:
     # the soft-delete WHERE clause in RepositorySoftDeletionMixin doesn't
     # full-scan once tables get traffic.
     op.execute(
-        'CREATE INDEX IF NOT EXISTS '
+        "CREATE INDEX IF NOT EXISTS "
         '"ix_community_settings_deleted_at" '
         'ON "community_settings" ("deleted_at")'
     )
     op.execute(
-        'CREATE INDEX IF NOT EXISTS '
+        "CREATE INDEX IF NOT EXISTS "
         '"ix_community_post_media_deleted_at" '
         'ON "community_post_media" ("deleted_at")'
     )
     op.execute(
-        'CREATE INDEX IF NOT EXISTS '
+        "CREATE INDEX IF NOT EXISTS "
         '"ix_community_reactions_deleted_at" '
         'ON "community_reactions" ("deleted_at")'
     )
@@ -74,18 +74,10 @@ def downgrade() -> None:
     op.execute('DROP INDEX IF EXISTS "ix_community_post_media_deleted_at"')
     op.execute('DROP INDEX IF EXISTS "ix_community_settings_deleted_at"')
 
-    op.execute(
-        'ALTER TABLE "community_reactions" DROP COLUMN IF EXISTS "deleted_at"'
-    )
-    op.execute(
-        'ALTER TABLE "community_reactions" DROP COLUMN IF EXISTS "modified_at"'
-    )
-    op.execute(
-        'ALTER TABLE "community_post_media" DROP COLUMN IF EXISTS "deleted_at"'
-    )
-    op.execute(
-        'ALTER TABLE "community_settings" DROP COLUMN IF EXISTS "deleted_at"'
-    )
+    op.execute('ALTER TABLE "community_reactions" DROP COLUMN IF EXISTS "deleted_at"')
+    op.execute('ALTER TABLE "community_reactions" DROP COLUMN IF EXISTS "modified_at"')
+    op.execute('ALTER TABLE "community_post_media" DROP COLUMN IF EXISTS "deleted_at"')
+    op.execute('ALTER TABLE "community_settings" DROP COLUMN IF EXISTS "deleted_at"')
 
 
 # Silence ruff's unused-import warning on sa (some migrations reference

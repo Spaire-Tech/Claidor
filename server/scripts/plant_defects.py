@@ -170,8 +170,7 @@ def plant(
         pool = [
             s
             for s in sorted(sites[kind])
-            if s not in taken
-            and not any(line in taken_lines for line in lines_of(*s))
+            if s not in taken and not any(line in taken_lines for line in lines_of(*s))
         ]
         for sheet, ref in rng.sample(pool, min(per_class, len(pool))):
             cells = cells_of(changed[sheet])

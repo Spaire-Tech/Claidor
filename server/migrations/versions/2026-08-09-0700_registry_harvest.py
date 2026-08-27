@@ -48,9 +48,7 @@ def upgrade() -> None:
             "source", "source_id", name="registry_opinions_source_source_id_key"
         ),
     )
-    op.create_index(
-        "ix_registry_opinions_court_id", "registry_opinions", ["court_id"]
-    )
+    op.create_index("ix_registry_opinions_court_id", "registry_opinions", ["court_id"])
     op.create_index(
         "ix_registry_opinions_date_filed", "registry_opinions", ["date_filed"]
     )
