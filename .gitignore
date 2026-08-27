@@ -196,3 +196,7 @@ server/scripts/corpus_pr24dd/
 # corpus models by scripts/seed_break.py; never evidence of anything
 # except that a check catches what it exists to catch.
 server/scripts/seeded/
+
+# Scottish deal pairs (contract + close model), fetched by
+# scripts/corpus_documents_sft.py. Public, OGL-adjacent, re-fetchable.
+server/scripts/corpus_sft/

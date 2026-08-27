@@ -692,3 +692,242 @@ Atelier's file). Reproduces with my changes stashed.
 and frozen; the hit-rate case on a document-fed pair (PR24 on a
 machine that reaches it, or a submission pair reachable here); same
 judge, same discipline.
+
+## 26 August 2026, fifth « go » — twelfth-sweep orders; two registrations before anything runs
+
+Orders read from the tip (round 2 merged; five lanes in). Three
+items: round 3 registered first; **the hit-rate measurement is held**
+until the lead's real deal set exists — acknowledged, nothing will be
+forced onto this corpus; and D5's registration with flood measured
+before anything reports. Both registrations follow, written and
+committed before matcher v3 existed and before any flood number was
+looked at.
+
+## D3 round 3 — registration, frozen before results
+
+**The leading-paragraph defense, joining the reference rule.** Run
+A's two survivors were numbered-paragraph prose: « *10.246* Ofgem's
+decision is that Valid Bad Debt Claims… ». The added rule, frozen: a
+candidate's token is also a reference when **it opens its line** (the
+first whitespace token), **matches the bare paragraph-number shape**
+(digits and dots only, optionally ending «.» or «:» — so « 10.246 »,
+« 2.6 », « 1: » match; « £48.9mm », « 45% », « (2,340) » never do),
+**and the next token starts with a letter** (prose follows). A line
+of numbers (« 86.4 89.6 84.6 … ») keeps its leading value eligible —
+the next token is numeric. **Registered limit:** a table line that
+prints a bare value *before* its label (« 84.2 Fast pot expenditure
+… ») will be over-excluded; on this corpus the tables put labels
+first, and the cost is counted, not hidden. Everything else stays as
+v2 froze it.
+
+**The run:** run A once more — the same 30-cell sample, the same
+recorded truth, matcher v3. The hit-rate side stays held per the
+orders. v1 → v2 → v3 on identical ground is the record the founder
+can read as one line.
+
+## D5 — registration: the unsourced-number finding, flood measured first
+
+The plan's D5 in one sentence: a typed number with no confirmable
+source, flagged as its own class — *measured for flood on real
+models first*. Registered here before any number is looked at:
+
+- **The naive candidate** is every typed numeric cell: no formula, a
+  value present. (In the product, « no confirmable source » will
+  mean no D4-confirmed link and no surviving proposal; today, with
+  zero confirmed links anywhere, the naive class is the whole typed
+  population — the honest upper bound of the flood.)
+- **The flood metric, per real model:** naive candidates, absolute;
+  as a share of all numeric cells; and the concentration — the top
+  sheets by candidate count and the share the top five sheets carry.
+  Concentration is the number that decides the finding's *shape*: a
+  class that fires tens of thousands of times per model cannot ship
+  as per-cell findings, and whether the honest unit is the cell, the
+  block, or the sheet is exactly what these numbers determine. **No
+  shape is chosen before the numbers exist.**
+- **The models:** the three real regulator models the committed
+  fetcher serves from here (ED2 PCFM V5, ED2 PCFM V3, RIIO-ET1
+  PCFM) and the two committed fixture models (the Cascade deal model
+  and the pre-app example) — the deal-shaped ones being closest to
+  the product case.
+- **The harness:** `scripts.corpus_documents_unsourced` (new, this
+  lane), read-only over the frozen reader surface; prints every
+  registered number and nothing else.
+
+## D3 round 3 — measured. The unsourced sample is clean: 30 of 30 abstentions
+
+Matcher v3 froze at `c79adcc`, after the registration and before any
+result. Run A on the identical sample and truth, third time:
+
+| | v1 | v2 | v3 |
+|---|---|---|---|
+| false proposal | 8 | 2 | **0** |
+| true abstention | 22 | 28 | **30** |
+
+The leading-paragraph rule caught both run-A survivors, and nothing
+new surfaced behind them. On the only ground measured so far — typed
+cells with no source in the documents — the matcher now does the
+right thing every time, and each of the ten proposals it ever made
+wrongly is covered by one of two named, tested reference shapes. What
+this does **not** say, kept plainly on the record: whether the
+matcher can *find* a source that exists. That is the held hit-rate
+case, waiting on the lead's real deal set, and the route's standing
+sentence was updated under its registered trigger to say exactly
+this. Verdicts: `scribe-d3-round3-runA-verdicts.json`.
+
+## D5 flood — measured. The naive class floods by orders of magnitude, and concentration says which shape survives
+
+The registered numbers, from the registered harness, on the
+registered model set:
+
+| model | numeric cells | naive candidates | share | top-5 sheets carry |
+|---|---|---|---|---|
+| ED2 PCFM V5 | 41,954 | 22,693 | 54% | 36% |
+| ED2 PCFM V3 | 39,724 | 20,426 | 51% | 35% |
+| RIIO-ET1 PCFM | 25,369 | 7,555 | 30% | 98% |
+| Cascade deal model | 313 | 85 | 27% | 100% |
+| Pre-app example | 5,028 | 230 | 5% | 100% |
+
+**Reading:** per-cell, the naive finding is unshippable everywhere —
+twenty thousand findings on a regulator model, and even the small
+deal model would carry 85. Concentration splits the corpus: the
+ED2 models spread candidates almost evenly across twenty-one
+per-licensee sheets (top five carry ~36%), while the ET1 and both
+deal-shaped models concentrate ≥98% in a handful of sheets. So no
+single roll-up unit is right by geography alone.
+
+**The shape this argues for — a proposal for the lead and founder,
+not a decision:** the honest trigger is not « typed and unsourced »
+(that is half of every model) but **« unsourced where sourcing is
+the local rule »** — a typed cell whose block neighbours have
+D4-confirmed sources while it has none. That shape starts at zero
+findings on day one, grows only as confirmations grow, is bounded by
+them (flood-proof by construction), and says something a reviewer
+actually wants to hear: « every other number in this block traces to
+the term sheet; this one traces to nothing. » It waits on D4, which
+waits on a cleared hit-rate round, which waits on the deal set —
+the dependency chain runs exactly through the thing the lead is
+already asking the founder for. Until then D5 reports nothing, per
+its own registration.
+
+**Turn's end state:** chain tests 67 passed; full tieout suite 751
+passed, 8 skipped, plus the one known cross-lane red (house-rules
+17-vs-19, reproduced on the clean tip, already routed by the lead's
+twelfth sweep). Nothing ships from D3 or D5, and both say so in
+words where a consumer would meet them.
+
+## 26 August 2026, sixth « go » — thirteenth sweep: the founder found the corpus
+
+The addendum read first, as ordered. The founder's fifteen-deal check
+corrects the record (« the Scottish contracts are censored » was a
+one-deal generalization, and wrong), and the Scottish NPD/hub pairs
+are exactly D3's missing direction: document feeds model. Order 1
+(round 3's leading-paragraph defense) was already finished and
+pushed last turn — this lane's round-3 commits were rebased onto the
+thirteenth-sweep tip per the lanes rule, nothing rewritten but the
+base. Order 4 (D5) stands as registered; the shape proposal is with
+the lead and founder.
+
+**The network truth about the contracts hub, measured today, before
+anything else was built on it.** `www.scottishfuturestrust.org.uk`
+answers 200, as the founder recorded. The documents, though, live on
+`contracts.scottishfuturestrust.org.uk`, and that subdomain is
+serving a certificate that is both **expired (ended 10 July 2026)
+and issued for the wrong host** (`bimportal.…`) — TLS verification
+fails correctly, this lane will not disable it, and plain HTTP
+force-redirects into the same broken TLS. An Anthropic-side fetch
+returned 503. The Internet Archive holds the index (13 A–C document
+links captured) and snapshots of the three deal tag pages —
+including a Kelso capture from **today**, so something reached the
+origin recently — but the archive is rate-limiting bulk retrieval
+from here this hour. The fetcher below is committed to work against
+origin first and the archive as fallback, and fetches what the
+network serves on the day it runs; what fetched today is recorded
+below, and what did not is a network condition, not a corpus
+conclusion.
+
+## D3 round 4 — the hit-rate registration, written before any result
+
+**The corpus:** the SFT deal pairs the founder verified — Kelso High
+School (with the provenance tab), Levenmouth Academy, Oban &
+Campbeltown High Schools — signed project agreement + financial
+close model, each fetched by `scripts.corpus_documents_sft` into
+git-ignored corpus directories.
+
+**The sample is Kelso's own marking scheme, not a draw.** The
+73-row provenance tab (« clause → term → figure ») was written by
+the deal team at close, independent of us — the only ground truth in
+this corpus nobody here influenced. Every row is scored; no seed is
+needed because the sample is exhaustive.
+
+**The typed-cell convention, declared openly (and attached wherever
+any number from this round is ever quoted):** the published models
+are formula-stripped — every cell a value — so typed-versus-computed
+cannot be read from the file. For this round the provenance tab
+itself names the document-fed figures; the « typed number » under
+test is the model cell carrying a provenance row's figure. Locating
+that cell may use the row's own pointer or value search — locating
+is sampling, and sampling by value stays legitimate where scoring by
+value is not. The matcher then sees only the cell's labels and the
+contract's extracted facts.
+
+**Blindness is structural:** the provenance sheet is excluded from
+the model side entirely — it contributes no cells, no labels, no
+candidates. It exists in this round only as the answer sheet.
+
+**Named conditions, counted as their own rows, never as failures or
+successes:**
+- *unreachable (unpublished paper)* — provenance rows pointing at
+  documents that were never published (some loan agreements);
+- *unreachable (OCR)* — rows whose contract-side statement falls on
+  pages D1's extractor refuses or where the printed number did not
+  survive the photocopy OCR; the extractor's own coverage and
+  refusals for each contract are reported with the round.
+
+**The verdict table** is the registered one from round 1, over
+reachable rows only, with the unreachable counts printed beside it.
+The judge is me, same discipline. **No target number is promised.**
+The matcher is the frozen v3; any change it needs after this round
+is a round-5 registration.
+
+## The fetch, attempted every honest way — what stands between round 4 and its corpus
+
+`scripts.corpus_documents_sft` is committed and correct: origin
+first with TLS verification on, Internet Archive snapshot fallback,
+per-file completeness gates (a PDF must carry its `%%EOF`, a zip its
+central directory), retries with backoff, every step printed. What
+the network served today, all of it measured, none of it guessed:
+
+- **Origin:** every request fails TLS verification, correctly — the
+  subdomain's certificate expired 10 July 2026 and names
+  `bimportal.…`. This blocks *everyone's* automated fetching, not
+  just ours, until SFT fixes it; the founder's manual verification
+  presumably clicked through a browser warning.
+- **Archive, pages:** all three deal tag pages fetched (via the raw
+  `id_` form). They bind the agreements to document ids 45 (Kelso),
+  50 (Levenmouth), 58 (Oban & Campbeltown) — the fetcher discovers
+  these itself.
+- **Archive, documents:** every download of an agreement is cut at
+  **exactly 1 MiB** — a hard cap on this path (other hosts serve
+  this container multi-megabyte files without truncation), and the
+  truncated streams arrive with no error, which is why the fetcher
+  now refuses incomplete bytes instead of saving them. Ranged
+  requests get one 206 chunk and then resets or redirects.
+- **The models are not in the archive at all.** The Feb/April
+  snapshots of all three tag pages list only the Project Agreements;
+  the financial models the founder saw are newer than every capture.
+  So even a cooperative archive yields only half of each pair.
+
+**What would unblock round 4, for the lead and founder:** (a) SFT
+fixing their certificate — the fetcher then works as written, both
+halves; (b) the founder, from a machine whose browser they can vouch
+for, either saving the six document URLs to the Wayback Machine
+(Save Page Now on `contracts…/document/{45,50,58}/download` and the
+three models' ids from the live pages) or downloading the six files
+and placing them in `scripts/corpus_sft/` and
+`scripts/corpus_documents/sft/` on the lead's container — the
+registered round runs unchanged the moment the files exist, and
+nothing in the registration depends on who carried the bytes.
+
+**Turn's end state:** round 4 registered; the fetcher committed and
+proven against today's network; zero corpus files landed, said
+plainly; rounds 1–3 and D5 unchanged.

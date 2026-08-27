@@ -193,7 +193,16 @@ def test_a_reference_cannot_block_a_proposal_by_tying() -> None:
         ("para 2.47 of the Finance Annex", "2.47", True),
         ("the allowance is 2.4% for the year", "2.4%", False),
         ("Fast pot expenditure 86.4 89.6 84.6", "84.6", False),
-        ("3.5 leads the line, nothing precedes it", "3.5", False),
+        # Round 3: a bare paragraph number opening a prose line is a
+        # label — the two run-A survivors, planted verbatim in shape.
+        ("10.246 Ofgem's decision is that Valid Bad Debt Claims", "10.246", True),
+        ("2.6 The licensee will update outturn data", "2.6", True),
+        ("3.5 leads the line, prose follows it", "3.5", True),
+        # ...but a leading number followed by numbers is a table value,
+        ("86.4 89.6 84.6 84.2 83.6", "86.4", False),
+        # and currency/percent shapes are never paragraph numbers.
+        ("£48.9mm was the figure the deck printed", "£48.9mm", False),
+        ("45% margin achieved in the period", "45%", False),
     ],
 )
 def test_the_reference_rule_reads_lines_right(
