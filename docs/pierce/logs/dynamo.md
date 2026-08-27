@@ -1277,3 +1277,62 @@ for round 2, proposed here and not yet run:
 The seed and cosmetic gates stand on their own: they are about the
 mining's *stability*, and both pass. What does not yet stand is the
 claim that mined rules read as a model's own laws.
+
+## 27 August 2026 — round 1b registered: what the ED2 typing cost, and what changes
+
+Round 1's reading said the rules were not recognisable and named
+three fixes. Two of them are registered here, before running; the
+third produced a measurement worth more than the round.
+
+### The ED2 typing was priced, and it is not hand-typeable
+
+The obvious answer to « mine a sheet with real additive structure »
+was ED2's `AR` sheet, where allowed revenue is a sum of named
+components. Measured before attempting it: the AR sheet's 408
+formula cells have a precedent cone of **39,865 cells containing
+21,638 constants across 3,279 distinct (sheet, label) groups**, and
+the largest groups carry **no row label at all**.
+
+Hand-typing that is not a long job, it is the wrong job. So the
+honest conclusion, and it strengthens the amendment's own point:
+**the input-typing classifier is not a convenience for Track E, it
+is the gate on B5 running against real price-control models.** Until
+it exists, B5's models are the small ones. This is now the concrete
+argument behind the interface I proposed for the lead.
+
+### The third model: the RIIO GDT3 Allowed Return on Equity summary
+
+Gate-clean at 1.000000 (B2 round 1), 304 compared cells, and its
+`One-Off Wedge` sheet is a rate model laid out plainly: years down
+column A, `RPI` and `CPI` across, a « % of legacy RPI » share, and
+193 formula cells carrying 32 row labels and 6 column labels — a
+sheet whose sentences can actually be read.
+
+Hand-typed, and the typing is quoted so it can be argued with:
+`C6:C14` (RPI) and `D6:D14` (CPI) are RATE in band; `E6:E13`, the
+legacy share, is RATE **bounded at 1.0** — a proportion above 100%
+is a state the model never occupies; **column A is the year index
+and is HELD**, because a date index is not a quantity and stepping
+it would rewrite the model's periods; `J3`, `K3`, `Q22`, `R22` and
+the whole `P` column carry no labels and are therefore **UNTYPED and
+never perturbed**, recorded as gaps rather than guessed at.
+
+### The ratio family, registered before it runs
+
+Round 1's finding was that a rate model's laws are proportions, not
+cancellations, so signed sums can only find equalities. Added:
+**`mine_ratios` — pairs whose ratio never moves across runs**,
+`numerator = k × denominator`, with `k` taken from the first run and
+then **tested against every other run**, so a pair that lined up
+once is discarded. `k = 1` is kept: « these two are always the same
+number » is a real law and often the interesting one. Three tests
+pin it, including the discard case.
+
+**Predictions for round 1b**, registered: on the RoE model I expect
+ratio rules that a modeller would recognise (a CPI/RPI wedge
+relation, and shares that hold their proportion across periods), and
+I expect signed sums to remain thin there. On the H7 pair I expect
+the ratio family to surface the weight-and-premium proportions that
+round 1's equalities were shadows of. **If the sentences are still
+not recognisable I will say so again** — the gate on C6 and B6 does
+not move because a second family was tried.
