@@ -30,6 +30,7 @@ it falls.
 | A3 c4 column typed (`a3-column-typed.md`) | **Adopted** (3 rounds). The island pass's left-formula guard is waived for interior islands that hold a substantive value. +12 corpus findings, baseline regenerated with it. No new rule — catalogue stays 19. |
 | A3 c5 range vs block (`a3-range-block.md`) | **Adopted.** New rule `range-over-block`: a range swallowing a subtotal of its own rows. 13/13 planted caught, gate clean (zero corpus findings), baseline untouched. Catalogue **19 → 20**. Class 2 (range spanning a label) **withdrawn** — the reader does not elect text cells. |
 | Serious-error mining (`serious-mining.md`) | **BLOCKED**, no candidate. Universe confirmed (1,206) but the classifier bucketed 100% into one bucket — the engine's legacy `.xls` reader misses formulas (19/144, 10/40, 0/349 by subject). Routed to the lead: `legacy.py` is outside my paths. |
+| A4 coverage (`a4-coverage.md`) | **Adopted.** `Audit.tallies` + `Audit.abstentions`, same shapes as analytics'. Gate clean, baseline untouched, catalogue unchanged. **Product side routed to the lead** — Atelier owns the report JSON. |
 | Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
 
 Both adoptions moved the rule catalogue 17 → 19 and broke an
@@ -73,6 +74,10 @@ a label) requires `Workbook.cells` to carry text cells — frozen
 interface #1, visible to every lane, findings-moving engine-wide.
 A lead-approved interface bump and its own round.
 
+**Waiting on the lead:** A4's product surfacing (see
+`a4-coverage.md` § Routed to the lead) — small, the schema shape
+already exists.
+
 **Best-funded open question in the record:** the Tasi
 serious-error gap — 1,206 of their 1,308 serious cells fall outside
 every finding we raise, with a ready-made sample to hand-read.
@@ -96,6 +101,9 @@ every finding we raise, with a ready-made sample to hand-read.
   scratchpad and die with the container — they are reproducible
   from the committed harnesses under `server/scripts/planting/`
   plus the registered seeds.
+- **Do not audit two 500k-cell workbooks in one process** — the
+  second gets OOM-killed and can take the container with it. One
+  heavy file per process, or read the small ones.
 - Background a long job and wait on its PID; a killed *waiter* does
   not kill the job — check the log before assuming loss.
 - Beware `cmd | tail -1` masking a `ruff format --check` verdict.

@@ -66,6 +66,46 @@ amount. That does not overturn its conclusions — the label-set
 comparison never passed through the engine — but it turns the
 refusal to read fresh-vs-frozen as drift into a named mechanism.
 
+## 28 August 2026 — A4 adopted: the audit says what it walked
+
+The plan's A4 — « every audit states what was checked, what was
+not, and why ». I checked the code before designing and the gap was
+narrower than it reads: the tie-out already has `Coverage`, the
+analytics already have `tallies` and `abstentions`, the structure
+layer has `unlocated`. Only the mechanical audit was mute, carrying
+a raw cell count, so « this rule looked and found nothing » could
+not be told from « this rule had nothing to look at ». That
+sentence is the whole of A4, and it is now sayable.
+
+The audit gained `tallies` and `abstentions` — same names, same
+shapes as analytics, so the product meets one vocabulary. **Gate
+clean**, which was the round's sharp criterion: a coverage counter
+has no business changing what the engine reports, and it did not.
+Hand-checked against two real models: every tally equals the file's
+own count.
+
+Three corrections made in the open before the gate, and I would
+rather record them than have them look like design. **`broken-name`
+is dropped** — the reader exposes no count of declared names, and a
+tally of « 0 of 0 » on a file carrying 800 would be worse than
+none; counting only the flagged ones is the numerator wearing a
+hat. **The typed-over denominator became typed cells** rather than
+cells-inside-runs, so the counter cannot disagree with the
+detectors about what a run is. And **one registered abstention
+reason turned out unreachable** — « this workbook has one sheet »,
+since one sheet is one examination — so I removed it rather than
+bend the population to make my own sentence fire.
+
+**Catalogue: unchanged**, no rule added; nothing for Atelier.
+
+**Routed to the lead:** the product cannot yet *show* the coverage,
+and `schemas.py`/`service.py`/`endpoints.py` are Atelier's. The
+request is written in `a4-coverage.md` and is small — the schema
+shape already exists for the analytics summary. One difference is
+named rather than borrowed silently: my inner key is `raised`, not
+analytics' `clean`, because a folded finding can stand for many
+cells and « total − raised » would overstate what was verified.
+
 ## 27 August 2026 — candidate 5 adopted: the unasked half of the range question
 
 `skipped-cell` has always asked what a total left *out*. Nothing
