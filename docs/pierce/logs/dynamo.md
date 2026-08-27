@@ -1617,3 +1617,79 @@ right 60% and wrong 40%, and the report must show the difference.
 - **`kind` (continuous vs categorical) — B5's need — should be
   reachable**: dates, year indices and flags have formats and value
   ranges that give them away.
+
+## 28 August 2026 — E2 built and measured: 3,796 externally-authored rows
+
+`polar/tieout/units/` exists, with 11 tests on hand-built evidence
+whose right answer is known — including the cases where the right
+answer is « nothing ». Measured blind, exactly as registered.
+
+### Primary: against Ofgem's own Units column (E2 never reads it)
+
+| Dimension | ED2 v5 (3,431 rows) | GD3 PCFM (365 rows) |
+|---|---|---|
+| `kind` (B5's need) | **96.4% right, 0.0% wrong**, 3.6% abstained | **96.2% right, 0.5% wrong**, 3.3% abstained |
+| `rate_form` | **96.4% right, 0.0% wrong** | **96.4% right, 0.3% wrong** |
+| `b5_type` / `currency` / `scale` | 31.1% right, **0.0% wrong**, 68.9% abstained | 66.6% right, 0.5% wrong, 32.9% abstained |
+| `period` | 71.5% right, **24.9% wrong** | 32.6% right, **64.1% wrong** |
+
+**3,796 rows whose answer key was written by the models' own
+authors, not by me.** The two predictions I registered both held:
+`rate_form` is the easy one, and blind inference **abstains rather
+than guesses on scale and currency** — 2,363 abstentions on ED2 and
+**not one wrong answer** among them. The £m lives in a column E2 was
+forbidden to read and nowhere else; abstaining is the correct
+behaviour and the number says so.
+
+`kind` at 96% with essentially no errors is the result B5 needed:
+the thing that governs perturbation coverage is now inferable.
+
+### The one bad number, and I am not explaining it away
+
+`period` is wrong on a quarter of ED2's rows and two thirds of
+GD3's. The confusion is one shape — **« said annual, was none »,
+828 of 856 on ED2 and 232 of 234 on GD3** — and it lands on rows the
+Units column describes only as « % ». My inference calls a rate
+under `FY2024` headers annual; my answer key calls it `none` because
+the model's own text does not say « annual ».
+
+I think the key is the weaker of the two, not the inference. But
+**that is an argument, not a measurement**, so the number stands as
+measured and `period` is **not to be quoted** until it has a key
+worth grading against — which means reading how the model uses the
+row, not how it labels it. Registered as the next E2 round.
+
+### Secondary: against E1's hundred, with the caveat restated
+
+E1 and E2 share an author, so this is **not independent
+validation** — it is a check that the inference reproduces careful
+human reading at scale.
+
+| | `kind` | `rate_form` | `b5_type`/`currency`/`scale` | `period` |
+|---|---|---|---|---|
+| Declares units (31 rows) | 96.8% / 0% wrong | 96.8% / 0% | 41.9% right, 0% wrong, 58% abstained | 67.7% / 29% wrong |
+| Declares nothing (69 rows) | 97.1% / 0% wrong | 72.5% / 5.8% | 59.4% right, 0% wrong, 41% abstained | 72.5% / 5.8% |
+
+The split I registered was worth having: the undeclared models are
+where the instrument is actually tested, and `rate_form` drops from
+96.8% to 72.5% there — the WACC model's curve sheets, where 13 of
+the 20 rows are records and E2 correctly refuses to type them.
+
+### What this unlocks, and what it does not
+
+- **B5 round 2 can now type automatically**: `kind` is 96% accurate
+  with near-zero confident errors, which is what decides hold vs
+  perturb. Coverage will be reported beside the rule set, per
+  standing practice.
+- **E3 stays unarmed.** The plan says the mismatch checks are armed
+  only where inference is measured accurate; `period` is not, and
+  `scale` is an abstention rather than an answer on two thirds of
+  ED2. A « monthly figure in an annual line » check cannot be built
+  on a period dimension that is wrong a quarter of the time — and
+  that is Sentinel's call to make with these numbers, not mine to
+  pre-empt.
+- **The propagation half is not built yet.** E2 today reads formats,
+  labels, headers and values; inheriting units through the
+  dependency graph is the Williams-2020 half still owed, and it is
+  the obvious way to rescue `scale` — a cell that sums £m rows is in
+  £m whether or not anyone wrote it down.
