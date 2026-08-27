@@ -4560,3 +4560,20 @@ than silently re-pointed**, and a version from another deal is refused.
 
 **Thirteen tests on `test_chain_link.py` now**; no lint finding and no
 mypy error in `polar/tieout/chain/` or `tests/tieout/test_chain*`.
+
+### Turn's end state
+
+- full tieout suite **940 passed, 9 skipped, 0 failed**
+- the audit's eight corpus numbers **8 of 8**; ED2 **30 of 30**
+- no lint finding and no mypy error in the chain package or its tests
+- **D4 is complete**: confirm, read, and re-check, thirteen tests
+
+**D5's trigger is now reachable and not yet met.** The store exists;
+what it does not hold is a confirmation from a real deal rather than a
+fixture. That is not something this lane can manufacture — a
+confirmation is a person's statement — so D5 waits where the lead put
+it, and correctly.
+
+**Nothing is blocked, and nothing is waiting on the lead.** The next
+thing this lane could usefully do is not obvious to me, which is a
+better position than it has been in for ten sweeps.
