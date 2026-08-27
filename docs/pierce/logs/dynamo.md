@@ -2513,3 +2513,67 @@ the machine showed me, and the amendment was wrong about how much it
 would buy. What the round bought is a **precisely named blocker**
 instead of a vague one, which is worth more than the coverage number
 I predicted and did not get.
+
+---
+
+## The constrained-families round — registration
+
+*28 Aug. This is the one standing between round 2 and orders item
+3's own condition: « only then a rule set that may be called the
+model's ». Registered before a line of it is written.*
+
+### The problem, restated from measurement
+
+On both H7 files E2 types the weight rows as `rate` — correctly, a
+weight is a rate — and the typing map then perturbs each on its own.
+`embedded + new = 1.0` in every year of the file; one draw gave
+`1.1333 + 0.0058 = 1.1391`. The mining then runs on a model in a
+capital structure that cannot exist, so a law that holds only on the
+simplex is broken in every run and can never be found. That is why
+round 2's rule sets are true sentences about a file and **not** the
+model's laws.
+
+Round 1's `mine.py` said sampling such a family jointly « is a later
+round, registered when it comes ». It has come.
+
+### What is being built
+
+1. **Detection, from the file itself.** A *constrained family* is a
+   set of input rows whose values sum to the same constant in every
+   period column of the sheet. Searched among rows E2 typed
+   perturbable, sizes 2 and 3, with the constant taken from the file
+   and required to hold in **every** column — one column agreeing is
+   a coincidence, which is the same anti-coincidence rule the mining
+   itself uses.
+2. **Joint sampling on the simplex.** A detected family is drawn as
+   one object: shares sampled together and rescaled so the family's
+   own constant is preserved exactly, and every member kept inside
+   `[0, constant]`. No member is ever drawn independently again.
+3. **Reported beside coverage**, like everything else: families
+   found, members held jointly, and — the number that matters —
+   whether any draw still leaves the simplex.
+
+### Predictions
+
+1. **The detector finds the family the hand typing knew**:
+   `{embedded, new}` (rows 15 and 16) on both H7 files, with
+   constant 1.0.
+2. **Zero false families on the H7 sheet.** Every family reported is
+   one I can confirm by reading the rows. If it reports a family I
+   cannot justify, that is a false positive and I will say so.
+3. **No draw leaves the simplex**: across 400 runs, every family's
+   sum stays at its constant to within the same 1e-9 relative
+   tolerance this lane uses everywhere, and no member goes negative
+   or above the constant. This is the whole point and it is
+   checkable exactly.
+4. **Coverage stays at 100%** on both H7 files — the weights still
+   move, legally.
+5. **At least one new stable rule appears on `h7-fp`**, having been
+   broken in round 2 by illegal draws. This is the genuinely
+   uncertain one: the alternative is that the model's real laws
+   involve rows the perturbation still cannot reach, in which case
+   the set is unchanged and the round has bought legality without
+   buying a single law. I would rather be wrong here in public than
+   quietly not check.
+6. **The three round-2 sentences survive**, because they are
+   duplicate formulas and independent of whether a draw was legal.
