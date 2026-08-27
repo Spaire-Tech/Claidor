@@ -28,6 +28,44 @@ golden-master gate and regenerates the baseline in the same commit.
   `a3-sibling-totals.md`, with the planting harness under
   `server/scripts/planting/`.
 
+## 27 August 2026 — the serious-error mining round: blocked, on a reader defect
+
+The lead's highest-value question — why our coverage of Tasi's
+serious cells is 7.8% against 13.2% overall — got an answer, but not
+the one the round was built to produce.
+
+The classifier put **100% of the 1,206 missed cells into a single
+bucket**. That is an instrument failing, not a finding, so I ran it
+to ground rather than publishing it. The sample's first cells are
+the ones the *first* mining round cites as computing `=AVERAGE(…)`;
+the proof is arithmetic — `Table II.5!B17` holds exactly the mean of
+`B6:B16`, and `read_workbook` returns `formula=None` for it.
+
+**The engine's legacy `.xls` reader misses formulas**, partially:
+144 `FORMULA` records against 125 seen in one subject, 40 against 30
+in another, 349 against 349 in a third. On some `.xls` files a
+computed cell is read as a typed value.
+
+So: **blocked, not refused.** No bucket table, no candidate — the
+numbers would describe the reader's blind spots rather than the
+detectors' witnesses. But the round established something better
+than its table would have been: **a first-order cause of the
+serious-coverage gap is that the engine cannot read some of these
+formulas at all.**
+
+**Routed to the lead, because it is outside my paths.**
+`polar/tieout/legacy.py` is not in Sentinel's list in `lanes.md`,
+and fixing it changes what the engine reports on **every `.xls`
+file** — a findings change on a file class the golden-master gate
+does not cover, so it needs its own registered round and a decision
+about which corpus certifies it. I have not touched it.
+
+I also amended the Tasi record in the same breath: its
+direct-`.xls` numbers understate the engine by an unmeasured
+amount. That does not overturn its conclusions — the label-set
+comparison never passed through the engine — but it turns the
+refusal to read fresh-vs-frozen as drift into a named mechanism.
+
 ## 27 August 2026 — candidate 5 adopted: the unasked half of the range question
 
 `skipped-cell` has always asked what a total left *out*. Nothing

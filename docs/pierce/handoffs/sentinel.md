@@ -29,6 +29,7 @@ it falls.
 | A3 c3 beat families (`a3-beat-families.md`) | **Unmeasurable** — zero plantable lattices in all 27 files. Implemented, tested, deliberately **unwired**, catalogue untouched. Revisit if the MCC ERR or Tasi corpora bring strided layouts. |
 | A3 c4 column typed (`a3-column-typed.md`) | **Adopted** (3 rounds). The island pass's left-formula guard is waived for interior islands that hold a substantive value. +12 corpus findings, baseline regenerated with it. No new rule — catalogue stays 19. |
 | A3 c5 range vs block (`a3-range-block.md`) | **Adopted.** New rule `range-over-block`: a range swallowing a subtotal of its own rows. 13/13 planted caught, gate clean (zero corpus findings), baseline untouched. Catalogue **19 → 20**. Class 2 (range spanning a label) **withdrawn** — the reader does not elect text cells. |
+| Serious-error mining (`serious-mining.md`) | **BLOCKED**, no candidate. Universe confirmed (1,206) but the classifier bucketed 100% into one bucket — the engine's legacy `.xls` reader misses formulas (19/144, 10/40, 0/349 by subject). Routed to the lead: `legacy.py` is outside my paths. |
 | Tasi re-score (`tasi-benchmark.md`) | **Done**, no code changed. Coverage 13.2% of Tasi's 3,702 / 22.2% of CUSTODES's 1,974. Scorer `scripts/custodes_tasi.py` reproduces Tasi's published 82.9%/75.2% exactly. The label sets **nest** (99.4% of CUSTODES ⊂ Tasi). Serious-error coverage is *lower* than overall — the named next mining question. |
 
 Both adoptions moved the rule catalogue 17 → 19 and broke an
@@ -42,6 +43,10 @@ and pushed. The next turn starts a new round from a clean slate.
 
 ## Next, per orders (in this order)
 
+0. **The serious-error mining round is blocked** pending the lead's
+   decision on the `.xls` reader defect (see the table). If it is
+   fixed, re-run `scripts.custodes_serious` — the registration and
+   classifier are committed and ready; only the reader was wrong.
 1. A4 (coverage denominator) — report-JSON additions routed
    through the lead, since Atelier owns what the product reads.
 2. The « dead assumption » reachability candidate
@@ -57,7 +62,13 @@ in the baseline, so it needs its own registered round.
 **Also parked:** the collapse fold's missing adjacency test (the
 `C_Capex` diagnosis from c1), and the A1 range-expansion round.
 
-**Needs the lead, not me:** candidate 5's class 2 (a range spanning
+**Needs the lead, not me (1):** the legacy `.xls` reader misses
+formulas — proven arithmetically, quantified per subject. Fixing it
+changes findings on every `.xls` file, which the golden-master gate
+(all `.xlsx`/`.xlsm`) does not cover. Every `.xls`-route measurement
+we hold understates the engine until then.
+
+**Needs the lead, not me (2):** candidate 5's class 2 (a range spanning
 a label) requires `Workbook.cells` to carry text cells — frozen
 interface #1, visible to every lane, findings-moving engine-wide.
 A lead-approved interface bump and its own round.
@@ -95,6 +106,11 @@ every finding we raise, with a ready-made sample to hand-read.
   xlrd path, and xlrd's `cell_note_map` reads the comment-based
   ground truth. Doing so recovers the cell the CUSTODES round lost
   in conversion (1,974, the paper's figure).
+- **The legacy `.xls` reader misses some formulas** (`legacy.py`
+  decompiles BIFF records; some cells fall through). Verify with a
+  raw `FORMULA` (0x0006) record count before trusting any `.xls`
+  measurement. A 100%-one-bucket classification is the symptom that
+  found it.
 - **The reader elects only numeric-or-formula cells.** A text cell
   mid-column is absent from `Workbook.cells` entirely — this killed
   candidate 5's class 2 and is pinned by a test in
