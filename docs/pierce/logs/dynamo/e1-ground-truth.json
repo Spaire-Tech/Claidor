@@ -1,0 +1,3557 @@
+[
+ {
+  "model": "ed2-v5",
+  "sheet": "EMID",
+  "row": 16,
+  "row_label": "Non-variant allowed non-load related capex - asset replacement",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   43.13,
+   43.21,
+   43.79,
+   41.28,
+   41.39
+  ],
+  "cells": 5,
+  "refs": [
+   "AR16",
+   "AS16",
+   "AT16",
+   "AU16",
+   "AV16"
+  ],
+  "declared_units": "\u00a3m 20/21 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 20/21 prices \u00bb, price base 20/21"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "EMID",
+  "row": 373,
+  "row_label": "Performance on normal weather supply restoration",
+  "column_labels": [
+   "FY2022",
+   "FY2023"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   0.0,
+   0.0
+  ],
+  "cells": 2,
+  "refs": [
+   "AP373",
+   "AQ373"
+  ],
+  "declared_units": "\u00a3m 2012/13 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 2012/13 prices \u00bb, price base 2012/13"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "ENWL",
+  "row": 148,
+  "row_label": "Smart Meter Communication Licensee Costs",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   2.214147645109051,
+   1.983083313204785,
+   2.215618525313823,
+   2.2752058624255262,
+   14.15912845032567
+  ],
+  "cells": 5,
+  "refs": [
+   "AR148",
+   "AS148",
+   "AT148",
+   "AU148",
+   "AV148"
+  ],
+  "declared_units": "\u00a3m 20/21 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 20/21 prices \u00bb, price base 20/21"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "EPN",
+  "row": 335,
+  "row_label": "Non Qualifying: 100% \u2018revenue pool\u2019 expenditure",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "0%"
+  ],
+  "values": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AR335",
+   "AS335",
+   "AT335",
+   "AU335",
+   "AV335"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0% \u00bb"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "LPN",
+  "row": 57,
+  "row_label": "New Control Room (SSES and SSEH only)",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AR57",
+   "AS57",
+   "AT57",
+   "AU57",
+   "AV57"
+  ],
+  "declared_units": "\u00a3m 20/21 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 20/21 prices \u00bb, price base 20/21"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "LPN",
+  "row": 103,
+  "row_label": "Wayleaves and Diversions Re-opener",
+  "column_labels": [
+   "FY2019",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)",
+   "0%"
+  ],
+  "values": [
+   2.0,
+   0.0,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cells": 8,
+  "refs": [
+   "AM103",
+   "AO103",
+   "AP103",
+   "AQ103",
+   "AR103",
+   "AS103",
+   "AT103",
+   "AU103"
+  ],
+  "declared_units": "mixed inputs",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab #,##0.0_);\\(#,##0.0\\);\\-_) 0% \u00bb, values around 2"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "Monthly Inflation",
+  "row": 250,
+  "row_label": "FY2019",
+  "column_labels": [
+   "CPIH Outturn (CPIHm)",
+   "RPI Outturn (RPIm)"
+  ],
+  "number_formats": [
+   "0.00",
+   "General"
+  ],
+  "values": [
+   108.4,
+   291.0
+  ],
+  "cells": 2,
+  "refs": [
+   "H250",
+   "I250"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "an inflation index level, not a rate and not an amount"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "NPgY",
+  "row": 162,
+  "row_label": "Time to connect ODI",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   0.0,
+   0.12970199999999998,
+   0.0,
+   0.04025889999999971,
+   0.32054589999999983
+  ],
+  "cells": 5,
+  "refs": [
+   "AR162",
+   "AS162",
+   "AT162",
+   "AU162",
+   "AV162"
+  ],
+  "declared_units": "\u00a3m 20/21 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 20/21 prices \u00bb, price base 20/21"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SPD",
+  "row": 38,
+  "row_label": "PCB Interventions",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   2.669238,
+   9.855648,
+   8.815982140200616,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AR38",
+   "AS38",
+   "AT38",
+   "AU38",
+   "AV38"
+  ],
+  "declared_units": "\u00a3m 20/21 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 20/21 prices \u00bb, price base 20/21"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SPD",
+  "row": 344,
+  "row_label": "General pool RIIO-2 opening balance brought forward",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   50.89921729601539
+  ],
+  "cells": 1,
+  "refs": [
+   "AR344"
+  ],
+  "declared_units": "\u00a3m nominal",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m nominal \u00bb"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SPMW",
+  "row": 368,
+  "row_label": "Complaints metric term",
+  "column_labels": [
+   "FY2022",
+   "FY2023"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   0.0,
+   0.0
+  ],
+  "cells": 2,
+  "refs": [
+   "AP368",
+   "AQ368"
+  ],
+  "declared_units": "\u00a3m 2012/13 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 2012/13 prices \u00bb, price base 2012/13"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SPN",
+  "row": 141,
+  "row_label": "Actual controllable opex",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   0.6439208386030632,
+   1.4455836311497214,
+   1.7761426405529108,
+   2.067190449226006,
+   1.8547800421337055
+  ],
+  "cells": 5,
+  "refs": [
+   "AR141",
+   "AS141",
+   "AT141",
+   "AU141",
+   "AV141"
+  ],
+  "declared_units": "\u00a3m 20/21 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 20/21 prices \u00bb, price base 20/21"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SPN",
+  "row": 148,
+  "row_label": "Smart Meter Communication Licensee Costs",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   2.14671732234959,
+   1.9910288109436134,
+   2.1133471874498144,
+   2.115784797363359,
+   13.68019527488687
+  ],
+  "cells": 5,
+  "refs": [
+   "AR148",
+   "AS148",
+   "AT148",
+   "AU148",
+   "AV148"
+  ],
+  "declared_units": "\u00a3m 20/21 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 20/21 prices \u00bb, price base 20/21"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SSEH",
+  "row": 268,
+  "row_label": "Recovered Bad Debt (enter as a -ve)",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   -0.05089346666666667,
+   0.0,
+   -0.077274,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AR268",
+   "AS268",
+   "AT268",
+   "AU268",
+   "AV268"
+  ],
+  "declared_units": "\u00a3m nominal",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m nominal \u00bb"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SSES",
+  "row": 169,
+  "row_label": "Collaborative Streetworks ODI (EPN, LPN and SPN only)",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AR169",
+   "AS169",
+   "AT169",
+   "AU169",
+   "AV169"
+  ],
+  "declared_units": "\u00a3m 20/21 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 20/21 prices \u00bb, price base 20/21"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SSES",
+  "row": 185,
+  "row_label": "Carry-over Network Innovation Allowance: cost multiplier",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "0%"
+  ],
+  "values": [
+   1.111111
+  ],
+  "cells": 1,
+  "refs": [
+   "AR185"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0% \u00bb"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SSES",
+  "row": 213,
+  "row_label": "Risk-free rate",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "0.00%"
+  ],
+  "values": [
+   0.0146,
+   0.0272,
+   0.0214,
+   0.0305,
+   0.0247
+  ],
+  "cells": 5,
+  "refs": [
+   "AR213",
+   "AS213",
+   "AT213",
+   "AU213",
+   "AV213"
+  ],
+  "declared_units": "annual real %",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab annual real % \u00bb; format \u00ab 0.00% \u00bb"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SWALES",
+  "row": 57,
+  "row_label": "New Control Room (SSES and SSEH only)",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "#,##0.0_);\\(#,##0.0\\);\\-_)"
+  ],
+  "values": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AR57",
+   "AS57",
+   "AT57",
+   "AU57",
+   "AV57"
+  ],
+  "declared_units": "\u00a3m 20/21 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 20/21 prices \u00bb, price base 20/21"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SWEST",
+  "row": 328,
+  "row_label": "Revenue: 100% \u2018revenue pool\u2019 expenditure",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "0%"
+  ],
+  "values": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AR328",
+   "AS328",
+   "AT328",
+   "AU328",
+   "AV328"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0% \u00bb"
+  }
+ },
+ {
+  "model": "ed2-v5",
+  "sheet": "SWEST",
+  "row": 331,
+  "row_label": "Non Qualifying: Non-load related capex - asset replacement",
+  "column_labels": [
+   "FY2024",
+   "FY2025",
+   "FY2026",
+   "FY2027",
+   "FY2028"
+  ],
+  "number_formats": [
+   "0%"
+  ],
+  "values": [
+   0.006677537915755671,
+   0.026050898666719956,
+   -0.01228345310235198,
+   -0.01228345310235198,
+   -0.01228345310235198
+  ],
+  "cells": 5,
+  "refs": [
+   "AR331",
+   "AS331",
+   "AT331",
+   "AU331",
+   "AV331"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0% \u00bb"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "H7 Cost of debt indexation",
+  "row": 52,
+  "row_label": "Nominal cost of fixed-rate debt (in-year)",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "0.00%"
+  ],
+  "values": [
+   0.043860540517940326
+  ],
+  "cells": 1,
+  "refs": [
+   "I52"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0.00% \u00bb, values around 0.04386"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 79,
+  "row_label": "FY2023",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C79",
+   "D79",
+   "E79"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 88,
+  "row_label": "FY2023",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C88",
+   "D88",
+   "E88"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 94,
+  "row_label": "FY2023",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C94",
+   "D94",
+   "E94"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 266,
+  "row_label": "FY2024",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C266",
+   "D266",
+   "E266"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 438,
+  "row_label": "FY2024",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C438",
+   "D438",
+   "E438"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 442,
+  "row_label": "FY2024",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C442",
+   "D442",
+   "E442"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 487,
+  "row_label": "FY2024",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C487",
+   "D487",
+   "E487"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 503,
+  "row_label": "FY2024",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C503",
+   "D503",
+   "E503"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 512,
+  "row_label": "FY2024",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C512",
+   "D512",
+   "E512"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 549,
+  "row_label": "FY2025",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C549",
+   "D549",
+   "E549"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 555,
+  "row_label": "FY2025",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C555",
+   "D555",
+   "E555"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 650,
+  "row_label": "FY2025",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C650",
+   "D650",
+   "E650"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 751,
+  "row_label": "FY2025",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C751",
+   "D751",
+   "E751"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 792,
+  "row_label": "FY2026",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C792",
+   "D792",
+   "E792"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 813,
+  "row_label": "FY2026",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C813",
+   "D813",
+   "E813"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 818,
+  "row_label": "FY2026",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C818",
+   "D818",
+   "E818"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 848,
+  "row_label": "FY2026",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C848",
+   "D848",
+   "E848"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 875,
+  "row_label": "FY2026",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C875",
+   "D875",
+   "E875"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "h7-fds",
+  "sheet": "Outturn",
+  "row": 992,
+  "row_label": "FY2026",
+  "column_labels": [
+   "\u00a3 Non-Financials A 10+",
+   "\u00a3 Non-Financials BBB 10+",
+   "Weighting"
+  ],
+  "number_formats": [
+   "0%",
+   "0.00%"
+  ],
+  "values": [
+   0.0523,
+   0.061,
+   0.5
+  ],
+  "cells": 3,
+  "refs": [
+   "C992",
+   "D992",
+   "E992"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% 0.00% \u00bb, values around 0.0523"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "Beta Estimates ",
+  "row": 6,
+  "row_label": "Pennon",
+  "column_labels": [
+   "2Yr",
+   "5yr",
+   "10yr"
+  ],
+  "number_formats": [
+   "0.0%"
+  ],
+  "values": [
+   0.6595661079107629,
+   0.4500401427632244,
+   0.43867252075361557
+  ],
+  "cells": 3,
+  "refs": [
+   "C6",
+   "D6",
+   "E6"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0.0% \u00bb, values around 0.6596"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 3,
+  "row_label": "",
+  "column_labels": [
+   "",
+   ""
+  ],
+  "number_formats": [
+   "0.0",
+   "General"
+  ],
+  "values": [
+   2.8,
+   2.0
+  ],
+  "cells": 2,
+  "refs": [
+   "J3",
+   "K3"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "unknown",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "no units declared, no informative label or header, format \u00ab 0.0 general \u00bb decides nothing \u2014 abstained"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 18,
+  "row_label": "2033/34",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "General"
+  ],
+  "values": [
+   2034.0
+  ],
+  "cells": 1,
+  "refs": [
+   "A18"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the row is a year (\u00ab 2033/34 \u00bb) holding its own year number"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 20,
+  "row_label": "2035/36",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "General"
+  ],
+  "values": [
+   2036.0
+  ],
+  "cells": 1,
+  "refs": [
+   "A20"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the row is a year (\u00ab 2033/34 \u00bb) holding its own year number"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 24,
+  "row_label": "2039/40",
+  "column_labels": [
+   "",
+   ""
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   2040.0,
+   46905.0
+  ],
+  "cells": 2,
+  "refs": [
+   "A24",
+   "P24"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab general mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 26,
+  "row_label": "2041/42",
+  "column_labels": [
+   "",
+   ""
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   2042.0,
+   46966.0
+  ],
+  "cells": 2,
+  "refs": [
+   "A26",
+   "P26"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab general mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 38,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   47331.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P38"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 41,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   47423.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P41"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 44,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   47515.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P44"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 46,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   47574.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P46"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 47,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   47604.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P47"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 54,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   47818.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P54"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 56,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   47880.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P56"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 58,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   47939.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P58"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 60,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   48000.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P60"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 61,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   48030.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P61"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 62,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   48061.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P62"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "One-Off Wedge",
+  "row": 65,
+  "row_label": "",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "mm-dd-yy"
+  ],
+  "values": [
+   48153.0
+  ],
+  "cells": 1,
+  "refs": [
+   "P65"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "categorical",
+   "b5_type": "date",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "not-a-rate",
+   "why": "date number format \u00ab mm-dd-yy \u00bb"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "Step-1 Cost of Equity",
+  "row": 7,
+  "row_label": "B",
+  "column_labels": [
+   "RIIO-3 Low",
+   "Proposed",
+   "RIIO-3 High"
+  ],
+  "number_formats": [
+   "0.000"
+  ],
+  "values": [
+   0.075,
+   0.075,
+   0.075
+  ],
+  "cells": 3,
+  "refs": [
+   "E7",
+   "F7",
+   "G7"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "unknown",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "no units declared, no informative label or header, format \u00ab 0.000 \u00bb decides nothing \u2014 abstained"
+  }
+ },
+ {
+  "model": "roe",
+  "sheet": "Step-1 Cost of Equity",
+  "row": 9,
+  "row_label": "D",
+  "column_labels": [
+   "RIIO-3 Low",
+   "Proposed",
+   "RIIO-3 High"
+  ],
+  "number_formats": [
+   "0%"
+  ],
+  "values": [
+   0.6,
+   0.6,
+   0.6
+  ],
+  "cells": 3,
+  "refs": [
+   "E9",
+   "F9",
+   "G9"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0% \u00bb, values around 0.6"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Inflation",
+  "row": 19,
+  "row_label": "FY2000",
+  "column_labels": [
+   "Outturn (index)"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   73.8
+  ],
+  "cells": 1,
+  "refs": [
+   "C19"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "an inflation index level, not a rate and not an amount"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Inflation",
+  "row": 33,
+  "row_label": "FY2001",
+  "column_labels": [
+   "Outturn (index)"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   74.9
+  ],
+  "cells": 1,
+  "refs": [
+   "C33"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "an inflation index level, not a rate and not an amount"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Inflation",
+  "row": 35,
+  "row_label": "FY2002",
+  "column_labels": [
+   "Outturn (index)"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   74.8
+  ],
+  "cells": 1,
+  "refs": [
+   "C35"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "an inflation index level, not a rate and not an amount"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Inflation",
+  "row": 69,
+  "row_label": "FY2004",
+  "column_labels": [
+   "Outturn (index)"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   78.3
+  ],
+  "cells": 1,
+  "refs": [
+   "C69"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "an inflation index level, not a rate and not an amount"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Inflation",
+  "row": 95,
+  "row_label": "FY2007",
+  "column_labels": [
+   "Outturn (index)"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   82.1
+  ],
+  "cells": 1,
+  "refs": [
+   "C95"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "an inflation index level, not a rate and not an amount"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Inflation",
+  "row": 170,
+  "row_label": "FY2013",
+  "column_labels": [
+   "Outturn (index)"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   98.0
+  ],
+  "cells": 1,
+  "refs": [
+   "C170"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "an inflation index level, not a rate and not an amount"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Inflation",
+  "row": 202,
+  "row_label": "FY2015",
+  "column_labels": [
+   "Outturn (index)"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   100.4
+  ],
+  "cells": 1,
+  "refs": [
+   "C202"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "an inflation index level, not a rate and not an amount"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Inflation",
+  "row": 300,
+  "row_label": "FY2024",
+  "column_labels": [
+   "Outturn (index)"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   130.8
+  ],
+  "cells": 1,
+  "refs": [
+   "C300"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "an inflation index level, not a rate and not an amount"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 26,
+  "row_label": "Pension Scheme Established Deficit repair",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   31.0,
+   33.0,
+   6.0,
+   12.0,
+   10.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU26",
+   "AV26",
+   "AW26",
+   "AX26",
+   "AY26"
+  ],
+  "declared_units": "\u00a3m 23/24 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 23/24 prices \u00bb, price base 23/24"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 33,
+  "row_label": "Stranraer LDZ [SGN Scotland only]",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   19.0,
+   50.0,
+   42.0,
+   23.0,
+   29.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU33",
+   "AV33",
+   "AW33",
+   "AX33",
+   "AY33"
+  ],
+  "declared_units": "\u00a3m nominal",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m nominal \u00bb"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 62,
+  "row_label": "Tax deductible net interest cost",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   500.0,
+   600.0,
+   500.0,
+   400.0,
+   500.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU62",
+   "AV62",
+   "AW62",
+   "AX62",
+   "AY62"
+  ],
+  "declared_units": "\u00a3m nominal",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m nominal \u00bb"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 93,
+  "row_label": "Cyber Resilience IT Baseline",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   17.0,
+   34.0,
+   18.0,
+   13.0,
+   48.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU93",
+   "AV93",
+   "AW93",
+   "AX93",
+   "AY93"
+  ],
+  "declared_units": "\u00a3m 23/24 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 23/24 prices \u00bb, price base 23/24"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 221,
+  "row_label": "Cyber Resilience OT Baseline",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "0.0%;\\(0.0%\\);\"-\""
+  ],
+  "values": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU221",
+   "AV221",
+   "AW221",
+   "AX221",
+   "AY221"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0.0%;\\(0.0%\\);\"-\" \u00bb"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 270,
+  "row_label": "HSE policy Re-opener",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "0.0%;\\(0.0%\\);\"-\""
+  ],
+  "values": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU270",
+   "AV270",
+   "AW270",
+   "AX270",
+   "AY270"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0.0%;\\(0.0%\\);\"-\" \u00bb"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 276,
+  "row_label": "Coordinated adjustment mechanism Re-opener",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "0.0%;\\(0.0%\\);\"-\""
+  ],
+  "values": [
+   0.2,
+   0.2,
+   0.2,
+   0.2,
+   0.2
+  ],
+  "cells": 5,
+  "refs": [
+   "AU276",
+   "AV276",
+   "AW276",
+   "AX276",
+   "AY276"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0.0%;\\(0.0%\\);\"-\" \u00bb"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 323,
+  "row_label": "Multiple Occupancy Buildings safety Re-opener",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "0.0%;\\(0.0%\\);\"-\""
+  ],
+  "values": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU323",
+   "AV323",
+   "AW323",
+   "AX323",
+   "AY323"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0.0%;\\(0.0%\\);\"-\" \u00bb"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 349,
+  "row_label": "Physical Security Re-Opener",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "0.0%;\\(0.0%\\);\"-\""
+  ],
+  "values": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU349",
+   "AV349",
+   "AW349",
+   "AX349",
+   "AY349"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0.0%;\\(0.0%\\);\"-\" \u00bb"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 371,
+  "row_label": "Non-variant allowed non-load related capex - other",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "#,##0.0;\\(#,##0.0\\);\"-\""
+  ],
+  "values": [
+   74.0,
+   26.0,
+   51.0,
+   36.0,
+   45.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU371",
+   "AV371",
+   "AW371",
+   "AX371",
+   "AY371"
+  ],
+  "declared_units": "\u00a3m 23/24 prices",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "money",
+   "currency": "GBP",
+   "scale": "millions",
+   "period": "annual",
+   "rate_form": "not-a-rate",
+   "why": "the sheet's own Units column says \u00ab \u00a3m 23/24 prices \u00bb, price base 23/24"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 395,
+  "row_label": "Spare non-TIM 1",
+  "column_labels": [
+   ""
+  ],
+  "number_formats": [
+   "0.0%;\\(0.0%\\);\"-\""
+  ],
+  "values": [
+   0.0
+  ],
+  "cells": 1,
+  "refs": [
+   "I395"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0.0%;\\(0.0%\\);\"-\" \u00bb"
+  }
+ },
+ {
+  "model": "gd3-pcfm",
+  "sheet": "Input",
+  "row": 469,
+  "row_label": "Capitalisation rate repex",
+  "column_labels": [
+   "FY2027",
+   "FY2028",
+   "FY2029",
+   "FY2030",
+   "FY2031"
+  ],
+  "number_formats": [
+   "0.0%;\\(0.0%\\);\"-\""
+  ],
+  "values": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "cells": 5,
+  "refs": [
+   "AU469",
+   "AV469",
+   "AW469",
+   "AX469",
+   "AY469"
+  ],
+  "declared_units": "%",
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "Units column says \u00ab % \u00bb; format \u00ab 0.0%;\\(0.0%\\);\"-\" \u00bb"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "BoE Rates",
+  "row": 1130,
+  "row_label": "FY2021",
+  "column_labels": [
+   "IUDLNZC",
+   "IUDLRZC",
+   "IUDSOIA"
+  ],
+  "number_formats": [
+   "General"
+  ],
+  "values": [
+   1.433,
+   -2.1652,
+   0.04970000000000001
+  ],
+  "cells": 3,
+  "refs": [
+   "B1130",
+   "C1130",
+   "D1130"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "percent",
+   "why": "a market rate series (headers \u00ab ['IUDLNZC', 'IUDLRZC'] \u00bb), values around 1.433 read as percent"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "BoE Rates",
+  "row": 1278,
+  "row_label": "FY2020",
+  "column_labels": [
+   "IUDLNZC",
+   "IUDLRZC",
+   "IUDSOIA"
+  ],
+  "number_formats": [
+   "General"
+  ],
+  "values": [
+   0.8506,
+   -2.4480999999999997,
+   0.0542
+  ],
+  "cells": 3,
+  "refs": [
+   "B1278",
+   "C1278",
+   "D1278"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "percent",
+   "why": "a market rate series (headers \u00ab ['IUDLNZC', 'IUDLRZC'] \u00bb), values around 0.8506 read as percent"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "BoE Rates",
+  "row": 2073,
+  "row_label": "FY2017",
+  "column_labels": [
+   "IUDLNZC",
+   "IUDLRZC",
+   "IUDSOIA"
+  ],
+  "number_formats": [
+   "General"
+  ],
+  "values": [
+   1.8161,
+   -1.6995,
+   0.21150000000000002
+  ],
+  "cells": 3,
+  "refs": [
+   "B2073",
+   "C2073",
+   "D2073"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "percent",
+   "why": "a market rate series (headers \u00ab ['IUDLNZC', 'IUDLRZC'] \u00bb), values around 1.816 read as percent"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "BoE Rates",
+  "row": 6739,
+  "row_label": "FY1999",
+  "column_labels": [
+   "IUDLNZC",
+   "IUDLRZC",
+   "IUDSOIA"
+  ],
+  "number_formats": [
+   "General"
+  ],
+  "values": [
+   4.6388,
+   1.9799,
+   5.439
+  ],
+  "cells": 3,
+  "refs": [
+   "B6739",
+   "C6739",
+   "D6739"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "percent",
+   "why": "a market rate series (headers \u00ab ['IUDLNZC', 'IUDLRZC'] \u00bb), values around 4.639 read as percent"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "Key Outputs",
+  "row": 62,
+  "row_label": "",
+  "column_labels": [
+   "",
+   "",
+   "",
+   ""
+  ],
+  "number_formats": [
+   "0.00%"
+  ],
+  "values": [
+   0.030376963939951616,
+   0.031285274444037184,
+   0.032498962113557246,
+   0.03379126064849885
+  ],
+  "cells": 4,
+  "refs": [
+   "P62",
+   "Q62",
+   "R62",
+   "S62"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "none",
+   "rate_form": "decimal",
+   "why": "percent number format \u00ab 0.00% \u00bb, values around 0.03038"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "LIBOR",
+  "row": 658,
+  "row_label": "FY2020",
+  "column_labels": [
+   "ON",
+   "1W",
+   "1M",
+   "2M",
+   "3M",
+   "6M",
+   "12M"
+  ],
+  "number_formats": [
+   "0.0000"
+  ],
+  "values": [
+   0.06588,
+   0.148,
+   0.23825,
+   0.4,
+   0.5419,
+   0.67713,
+   0.79463
+  ],
+  "cells": 7,
+  "refs": [
+   "C658",
+   "D658",
+   "E658",
+   "F658",
+   "G658",
+   "H658",
+   "I658"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "percent",
+   "why": "a market rate series (headers \u00ab ['ON', '1W'] \u00bb), values around 0.06588 read as percent"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "LIBOR",
+  "row": 3569,
+  "row_label": "FY2008",
+  "column_labels": [
+   "ON",
+   "1W",
+   "1M",
+   "2M",
+   "3M",
+   "6M",
+   "12M"
+  ],
+  "number_formats": [
+   "0.0000"
+  ],
+  "values": [
+   5.49375,
+   5.43625,
+   5.38125,
+   5.54375,
+   5.715,
+   5.85375,
+   5.94875
+  ],
+  "cells": 7,
+  "refs": [
+   "C3569",
+   "D3569",
+   "E3569",
+   "F3569",
+   "G3569",
+   "H3569",
+   "I3569"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "continuous",
+   "b5_type": "rate",
+   "currency": "none",
+   "scale": "units",
+   "period": "point-in-time",
+   "rate_form": "percent",
+   "why": "a market rate series (headers \u00ab ['ON', '1W'] \u00bb), values around 5.494 read as percent"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 17,
+  "row_label": "45961-8",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45961.0,
+   8.0,
+   4.348543232868499
+  ],
+  "cells": 3,
+  "refs": [
+   "A17",
+   "B17",
+   "D17"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 2351,
+  "row_label": "45622-25",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45622.0,
+   25.0,
+   3.7257050490374115
+  ],
+  "cells": 3,
+  "refs": [
+   "A2351",
+   "B2351",
+   "D2351"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 2796,
+  "row_label": "45609-22.5",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45609.0,
+   22.5,
+   3.9928836060225117
+  ],
+  "cells": 3,
+  "refs": [
+   "A2796",
+   "B2796",
+   "D2796"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 8903,
+  "row_label": "45434-1",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45434.0,
+   1.0,
+   4.575541208256019
+  ],
+  "cells": 3,
+  "refs": [
+   "A8903",
+   "B8903",
+   "D8903"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 9737,
+  "row_label": "45408-18",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45408.0,
+   18.0,
+   4.117885653942377
+  ],
+  "cells": 3,
+  "refs": [
+   "A9737",
+   "B9737",
+   "D9737"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 13110,
+  "row_label": "45310-4.5",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45310.0,
+   4.5,
+   3.2690210408856277
+  ],
+  "cells": 3,
+  "refs": [
+   "A13110",
+   "B13110",
+   "D13110"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 14329,
+  "row_label": "45273-14",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45273.0,
+   14.0,
+   3.7351244675275455
+  ],
+  "cells": 3,
+  "refs": [
+   "A14329",
+   "B14329",
+   "D14329"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 16605,
+  "row_label": "45209-2",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45209.0,
+   2.0,
+   4.460565226056876
+  ],
+  "cells": 3,
+  "refs": [
+   "A16605",
+   "B16605",
+   "D16605"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 19302,
+  "row_label": "45132-0.5",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45132.0,
+   0.5,
+   5.80645953273443
+  ],
+  "cells": 3,
+  "refs": [
+   "A19302",
+   "B19302",
+   "D19302"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 19305,
+  "row_label": "45132-2",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45132.0,
+   2.0,
+   4.928712437262539
+  ],
+  "cells": 3,
+  "refs": [
+   "A19305",
+   "B19305",
+   "D19305"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 20292,
+  "row_label": "45105-20.5",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45105.0,
+   20.5,
+   3.311363025402725
+  ],
+  "cells": 3,
+  "refs": [
+   "A20292",
+   "B20292",
+   "D20292"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 23345,
+  "row_label": "45013-22",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   45013.0,
+   22.0,
+   2.9468515292898365
+  ],
+  "cells": 3,
+  "refs": [
+   "A23345",
+   "B23345",
+   "D23345"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ },
+ {
+  "model": "final-wacc",
+  "sheet": "SONIA_Fwd_Curve",
+  "row": 25018,
+  "row_label": "44965-8.5",
+  "column_labels": [
+   "Date",
+   "Maturity_Years",
+   "Value"
+  ],
+  "number_formats": [
+   "General",
+   "mm-dd-yy"
+  ],
+  "values": [
+   44965.0,
+   8.5,
+   3.090724095181712
+  ],
+  "cells": 3,
+  "refs": [
+   "A25018",
+   "B25018",
+   "D25018"
+  ],
+  "declared_units": null,
+  "labels": {
+   "kind": "mixed",
+   "b5_type": "untyped",
+   "currency": "unknown",
+   "scale": "unknown",
+   "period": "unknown",
+   "rate_form": "unknown",
+   "why": "a record row on a data table (headers \u00ab ['Date', 'Maturity_Years', 'Value'] \u00bb): the quantities are the columns, so the row has no single unit"
+  }
+ }
+]

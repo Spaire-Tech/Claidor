@@ -1486,3 +1486,77 @@ The AHA asks the typing cost to be priced. E1 reports: rows
 labelled, how many were decidable from label and format alone, how
 many needed the surrounding block, how many stayed `unknown`, and
 how long the pass took. That number is the argument for E2 existing.
+
+## 27 August 2026 — E1 done: the ground truth, its cost, and two findings
+
+100 rows labelled across the five registered models, seed 1727, the
+sample committed unlabelled first. The truth set is
+`docs/pierce/logs/dynamo/e1-ground-truth.json`; the labelling
+decisions and their evidence sentences are
+`server/scripts/recalc_units_label.py`, written out so the set can
+be argued with rather than trusted.
+
+| Dimension | Distribution |
+|---|---|
+| `kind` | continuous 69 · categorical 16 · **mixed 13** · unknown 2 |
+| `b5_type` | rate 51 · money 18 · date 16 · untyped 15 |
+| `currency` | none 67 · GBP 18 · unknown 15 |
+| `scale` | units 67 · millions 18 · unknown 15 |
+| `period` | annual 50 · point-in-time 20 · none 15 · unknown 15 |
+| `rate_form` | not-a-rate 43 · decimal 36 · percent 6 · unknown 15 |
+
+### The cost, since the AHA asked for it priced
+
+**31 of 100 rows were decided by the model telling me** — ED2 and
+GD3 carry a `Units` column of their own (« £m 20/21 prices », « £m
+nominal », « annual real % »), and those rows label themselves. The
+other 69 needed the column headers, the number format, the values
+and the sheet's own top matter, read together. **Two rows I could
+not decide and abstained on**; 13 more turned out not to be single
+quantities at all (below). One pass over 100 rows, with two rounds
+of correction, inside a single working session — so the honest
+figure is that a careful human can label of the order of a hundred
+rows an hour on models like these, and a real model has tens of
+thousands of input rows. That ratio is E2's whole justification.
+
+### Finding 1 — the models that declare their units are a different problem
+
+A third of the sample is self-describing: the sheet says « £m 20/21
+prices » beside the row. E2 will be nearly perfect there and the
+number will mean little. The other two thirds — H7, the RoE summary,
+the WACC model — **declare nothing anywhere**, and that is where
+inference is actually tested. **Registered now: E2's accuracy is
+reported split by whether the model declares units**, never as one
+blended figure, for the same reason B5's two catch-rate directions
+are never blended.
+
+### Finding 2 — a row is not always a quantity, and E2 must detect orientation
+
+I labelled the WACC model's curve sheets as rates and then re-read
+them: a row of `SONIA_Fwd_Curve` is **a record** — `Date | Maturity
+| rate` side by side — so calling the row « a rate » is simply
+false. **13 rows are now labelled `mixed`**, meaning the quantities
+live in the columns and the row has no single unit.
+
+This is a finding about the whole approach, not a labelling
+detail. A financial model sheet reads down the side and across the
+top; a data table reads the other way. **E2 must decide a sheet's
+orientation before it types anything**, and B5's perturbation
+inherits the same requirement. I would rather have found this in a
+hundred hand-labelled rows than in a rule set six weeks from now.
+
+### E2's interface, proposed for the lead (unchanged in shape, sharper now)
+
+Still proposed rather than built, per the amendment:
+
+```
+polar/tieout/units/          # the module name I propose
+    classify(cells) -> dict[str, TypedInput]   # per constant cell
+    orientation(cells, sheet) -> Orientation   # row-wise | column-wise
+```
+
+with the three properties the hand pass confirmed: **abstention is a
+first-class outcome** (2 rows here, and E2 abstaining where I
+abstained counts as correct); **every label carries its evidence in
+words**; **constrained families are declared, not inferred**. Added
+by finding 2: **orientation is decided before typing, and reported**.
