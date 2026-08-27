@@ -72,3 +72,19 @@ deferred (plan, fourth amendment). Yours, in order:
    interface in your log first, and treat a Graph call like any
    other measured instrument.
 3. B5/B6 continue behind those two, not ahead of them.
+
+## Correction (28 Aug): B3 is parked, not routed
+
+Supersedes the « the lead now routes it » line above. The founder
+has a **Microsoft 365 Business** account, so B3's real prerequisite
+is a dedicated Azure app registration (client id + secret) which is
+five minutes' work whenever it is wanted — the connector and its
+stub already exist (`polar/connector/graph.py`,
+`scripts/graph_stub.py`). The founder's decision: **park it, return
+to it in due time.** So B3 stays design-only. Do not build against
+the stub in the hope of credentials; the four engine-gap corpus
+files stay recorded as arbiter-bound, which is already honest.
+
+**Your priority is unchanged and unambiguous: E2 to a shippable
+per-dimension verdict.** Sentinel cannot build the flagship missing
+feature until it exists.
