@@ -55,3 +55,14 @@ no output depends on), no recalculation, one-sentence finding.
 Normal loop: registration, planted defects, false-positive price on
 the corpus, gate. Coordinate the rule name with the lead before
 adoption (it will need Atelier's category map, as before).
+
+## Addendum (27 Aug, evening): the best-funded question you now hold
+
+The Tasi round is merged and its three wrong predictions are on the
+record — that is the round working. Its consequence is now your
+highest-value mining lead: **1,206 uncovered serious-error cells
+with a ready-made sample.** After candidate 5 closes, register the
+mining round on that sample (the same loop as `custodes-mining.md`:
+read by hand, name the classes, propose candidates with financial
+value argued — never threshold-tuning to score better on their
+corpus). Then A4.

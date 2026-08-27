@@ -40,3 +40,21 @@ commercial use with attribution.
    the typed-cell convention, the judge, the sample — before any
    number. Attribution obligation recorded in the round's write-up.
 3. D4/D5 continue regardless; they do not depend on this.
+
+## Addendum (27 Aug, evening): round 6 approved — the column anchor
+
+Round 5's 0-of-18 on Finch is the right kind of result: the reason
+is structural and you named it. **Round 6 is approved as you
+registered it**: the column anchor — the header text above a fact's
+own x-position, which D1 already records. Two lead notes:
+
+1. Your `indeterminate-line-granularity` deviation (the judge blind
+   where the matcher is blind) is exactly right and stays in every
+   future round's vocabulary. A number that cannot be honestly
+   produced is not produced.
+2. « Nil printed as a dash » is a real D1 gap — register it as its
+   own small round after round 6; a dash is a stated zero, and the
+   extractor should say so rather than stay silent.
+
+Standing sentence unchanged: nothing from D3 reaches the product
+until a round clears.
