@@ -3610,3 +3610,87 @@ is alive — and I will say so in those words, having just bet against it.
 **No kill-criterion: this round changes no code.** Its only obligation
 is to report what it finds, including the case that revives a shape I
 have twice written off.
+
+## D5 round 4 — measured. Round 2's verdict **replicates on a real market model**, and I was right to bet against my own last prediction.
+
+### The population, stated first
+
+| model | cells | formulas | reader sees |
+|---|---|---|---|
+| **inverness_college** | 380,506 | **20,027** (2,826 written + 17,201 shared followers) | 19,900 |
+| snbts | 350,350 | **0** | 0 |
+
+**SNBTS is value-only** and joins round 3's eight; it says nothing new
+and is reported so the sample is not quietly one model. **The round's
+real subject is Inverness College**, and my formula count matches the
+lead's 20,027 exactly, arrived at independently.
+
+### The answer to round 2's question
+
+| | regulator models | round 3's eight deals | **Inverness College** |
+|---|---|---|---|
+| sections declared | 5–61 | **0** | **21** |
+| usable sections | 0 | 0 | **6** |
+| typed cells inside one | **0** of 22,693 | 0 (no formulas) | **175** of 195,202 |
+| share | 0% | — | **0.09%** |
+
+**The shape has ground for the first time on a model from the product's
+actual market.** Not zero, as on every regulator model; not
+inapplicable, as on nine value-only files. Six blocks a real modeller
+totalled contain 175 cells a real modeller typed.
+
+**My registered prediction was « under 5% », made deliberately *with*
+round 2's structural argument after round 3's prediction went the other
+way and lost. 0.09% — round 2's argument holds:** a block a model
+totals is overwhelmingly a block of outputs, even when a person built
+it by hand. Being right this time is worth less than the reason: I bet
+on the argument that had already survived a measurement, not on the
+outcome I wanted.
+
+### The threshold table, replicated on a real subject
+
+| threshold | B=10 | B=25 | B=50 | B=100 |
+|---|---|---|---|---|
+| **any** (adv / rand) | 169 / 144 | 169 / 146 | 169 / 122 | 169 / 75 |
+| **half** (adv / rand) | 2 / 0.1 | 20 / 0.3 | 35 / 0.4 | 86 / **66.8** |
+| **all-but-this-one** (adv / rand) | **2 / 0.1** | **2 / 0.3** | **3 / 0.4** | **5 / 0.9** |
+
+Every property round 2 found on a 230-cell example reappears on a
+380,506-cell closed deal:
+
+- **« any » floods** — 169 findings from ten confirmations.
+- **« half » punishes diligence** — its random noise climbs from 0.1 to
+  **66.8** as the banker's budget goes 10 → 100. The harder someone
+  works, the more it shouts at them.
+- **« all-but-this-one » survives**: at most 5 adversarial and about
+  1 random, at a hundred confirmations, on a model of this size.
+
+**This is the first time D5's shape has been measured on a real,
+formula-bearing model from the market the founder chose**, and the
+verdict round 2 reached on toys is the verdict here.
+
+### The honest limitation, which cuts against the shape I am reporting
+
+**0.09% is a very small surface.** At the surviving threshold and a
+hundred confirmations, this model yields **about one finding**. Two
+readings and I am not choosing between them:
+
+- it is **quiet enough to be safe**, which is the property the whole
+  design was arranged to get, and a check that fires once on a real
+  deal is not noise a banker will learn to ignore;
+- it may be **too quiet to be worth building** — a feature that
+  produces one finding per deal has to be very good at that one.
+
+Which of those matters more is a product judgement, and it is the
+founder's and the lead's. **What I can now say that I could not
+yesterday is that the number is real, measured on a real deal, and not
+extrapolated from a 230-cell example.**
+
+### One thing this round settles about last turn's retraction
+
+Inverness College carries **17,201 shared-formula followers** and the
+reader resolves essentially all of them — it sees 19,900 of 20,027.
+Last turn I claimed openpyxl mis-reads shared formulas and retracted it
+the same turn. **This is independent confirmation that the retraction
+was right**, on a model with a hundred times more of them than the one
+that produced the wrong claim.
