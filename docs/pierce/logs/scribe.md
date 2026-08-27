@@ -1630,3 +1630,476 @@ to measure it on now exists and the judging sheets are already built.
 
 **Nothing ships.** The route's standing sentence is updated to carry
 this number, since a registered round's result is its only trigger.
+
+## 27 August 2026, tenth « go » — D3 round 6 registered: the column anchor, before any code
+
+Orders unchanged at the tip and my round-5 push not yet merged, so no
+new instruction is waiting. The pivot's three items are done; D4 and
+D5 both await decisions rather than work (D4's contract awaits the
+lead's approval before any table; D5's shape awaits the founder's
+choice). What is *not* waiting is round 5's own finding, which named
+its successor: **give the document side a column dimension.**
+
+Everything below is committed before the code exists.
+
+### The rule, frozen
+
+Round 5 proved the failure: a fact's anchor is its printed **line**,
+and in a table a line is a **row**, so every number in that row ties
+and the matcher goes silent. The fix is to give each fact the piece
+of the page it is missing — the **column header above it** — which
+D1 can see because it already records every number's box.
+
+**The column anchor, frozen here:** for one extracted number, walk
+the lines above it **on its own page**, nearest first, at most **12**
+lines. In each line, take the word tokens whose x-range overlaps the
+number's x-range by at least **1 point**. The first line up that
+yields at least one **non-numeric** token supplies the anchor — those
+tokens, in reading order. If no line does, the anchor is empty and
+the fact behaves exactly as it does today.
+
+**The matcher's change is one line of meaning:** a candidate's label
+tokens become the tokens of its line **plus** the tokens of its
+column anchor. Everything else stays frozen as v3 — the tokenizer
+(so purely numeric tokens still drop and **the value still plays no
+part in scoring**), `FLOOR = 0.5`, exact-tie abstention among
+eligible candidates, and both reference defenses.
+
+**A consequence, named rather than discovered later:** this changes
+what D1 records, so `EXTRACTOR_VERSION` goes from `"2"` to `"3"`.
+Fact ids are a UUID5 over the extractor version, so **every stored
+fact gets a new id and re-extraction replaces the old rows** — which
+is exactly what the store was built to do and why the version is in
+the id at all. No confirmed links exist yet, so nothing is orphaned;
+after D4 ships, an extractor bump would need a re-anchoring pass, and
+that is `anchor.py`'s whole purpose.
+
+### Part A — the same 27 rows, the same truth, v3 against v4
+
+Round 5's 42-cell sample, its hand-recorded truth, and its 27
+scorable rows, rescored with the new matcher. Identical ground, so
+the difference is the anchor and nothing else — the run-A pattern
+from round 2. Reported as the same table, beside round 5's.
+
+### Part B — the fifteen rows nobody could judge
+
+Round 5's deviation was that 15 of 42 cells could not be judged **at
+line granularity**: in a grid, a value recurs and no honest judge can
+say which occurrence was transcribed. A column anchor is evidence
+*in the document* — the header above the figure — so those rows
+become judgeable, and I judge them now with that evidence.
+
+**The bias this risks, stated plainly:** the judge and the matcher
+would be looking at the same feature, and truth built from the
+matcher's own mechanism would flatter it. Two guards, registered:
+the truth is recorded **before** part B is scored, in the same
+two-phase harness that enforces order everywhere in this lane; and
+the judging question stays what it has always been — « does this
+specific fact state this cell's quantity », answered from the
+document's own table, not « what would the matcher score ». Where
+the header does not settle it, the row **stays** indeterminate; the
+count of rows that remain so is reported.
+
+### The prediction, stated so it can be wrong
+
+Round 5's 12 tie-driven misses should convert to proposals; whether
+those proposals are *right* is the open question, and precision is
+now the number that matters, not abstention. The 4 misses from cells
+with no label words will not move — nothing about the document side
+can help a cell that has no name. **No target is promised. If the
+anchor produces confident wrong answers, it dies and the tie rule
+stays** — that is the outcome the whole design is arranged to prefer.
+
+## D3 round 6 — measured. The anchor works. The **tokenizer** throws it away.
+
+*FinWorkBench/Finch, arXiv:2512.13168, CC BY 3.0.*
+
+**Part A, identical rows and identical truth, v3 against v4:**
+
+| | round 5 (line only) | round 6 (+ column) |
+|---|---|---|
+| true proposal | 0 | **0** |
+| false proposal | 1 | **2** |
+| true abstention | 9 | 7 |
+| missed | 17 | **18** |
+
+**The prediction was wrong and the change made things slightly
+worse.** Three cells moved, all of them the wrong way: task 5's one
+false proposal became a miss, and two of task 52's correct
+abstentions became false proposals. Task 156 — the clean case the
+whole round was aimed at — is still six of six missed.
+
+### Why, exactly. The anchor is right; the tokenizer is deaf to it.
+
+The column anchor **does what it was registered to do.** On task
+156's line, the five figures come out with these headers, read
+straight off the page geometry:
+
+| figure | x | column anchor |
+|---|---|---|
+| 8,067,693 | 254.8 | **`$`** |
+| 100% | 327.7 | **`%`** |
+| 27 | 389.4 | (none) |
+| 6,707,013 | 425.0 | **`$`** |
+| 100% | 505.4 | **`%`** |
+
+That is exactly correct — those *are* the columns. And the matcher
+still ties at 1.00 across all five, because:
+
+```
+label_tokens("$ Total Direct Expense")  ->  ['direct', 'expense', 'total']
+```
+
+**The `$` is gone.** The tokenizer is `[a-z0-9]+`, so it keeps
+alphanumerics and drops everything else — and it drops the symbol on
+*both* sides, the cell's name and the fact's anchor alike. The
+anchors `$` and `%` tokenize to nothing at all, contribute nothing to
+any score, and the tie survives untouched.
+
+So round 5's diagnosis was right about the missing dimension and
+wrong about where the blockage sat. The document side was never the
+only problem: **in financial tables the column identity is very often
+a symbol** — `$`, `%`, `£`, `#` — and this lane's own value-blindness
+rule, written to stop numerals leaking into scoring, throws those
+symbols out with the numerals. The engine already knew this: it names
+the same two cells « $ Total Direct Expense » and « HC Total Direct
+Expense », and the only thing distinguishing them is the character my
+tokenizer deletes.
+
+**The two new false proposals say the same thing from the other
+side.** Task 52's « Low End Cost Case 3 » and « High End Cost Case 3 »
+are both zero, both unstated in the contract, and both were correctly
+silent in round 5. The anchor added *some* tokens to *some*
+candidates, broke their tie, and let a wrong candidate through. An
+anchor that carries only the words it happens to keep is worse than
+no anchor: it breaks ties arbitrarily rather than informatively.
+
+**Nothing is patched mid-round.** The tokenizer stays as frozen for
+this round's number; the fix is registered below.
+
+### Part B, deferred — named, not skipped
+
+The registration's part B was to re-judge the fifteen
+`indeterminate-line-granularity` rows using the column header as
+evidence. It is **deferred to round 7**, and the reason is the result
+above: those judgements are matcher-independent and will keep, and
+spending the judge's care now would enlarge the scored set for a
+matcher that provably cannot see the columns anyway. It is the first
+item of round 7, not a dropped one.
+
+## D3 round 7 — registration: let the symbols speak
+
+Frozen before the code, as ever. **One change, and nothing else
+moves.**
+
+**The tokenizer keeps the symbols that name columns.** `label_tokens`
+currently yields `[a-z0-9]+` runs with pure numerals dropped. It will
+additionally yield each of `$ % £ € #` appearing in the text as its
+own token, on **both** sides — a cell's name and a fact's line and
+column anchor alike.
+
+**Why this does not breach never-by-value, stated precisely:** the
+value is the digits, and the digits stay dropped exactly as they are
+today. `$` is not a quantity; it is the name of a column, and a
+document that prints `$` and `%` headers is *labelling*, not stating.
+The rule has always been « match on labels, never on values », and
+these symbols are labels. If anything the current behaviour breaches
+the rule's intent by discarding a label.
+
+**Everything else stays frozen:** `FLOOR = 0.5`, exact-tie
+abstention, both reference defenses, the column anchor exactly as
+round 6 built it. Extractor output is unchanged, so
+`EXTRACTOR_VERSION` stays `"3"` and no fact ids move.
+
+**The runs:** part A again — the same 27 rows and the same truth,
+v4 against v5, so three consecutive rounds are comparable on
+identical ground. Then **part B**, the fifteen deferred rows, judged
+from the document's own headers with truth recorded before scoring,
+rows the header does not settle staying indeterminate and counted.
+
+**The prediction, stated so it can be wrong:** task 156's six should
+now separate — `$` distinguishes its two money columns from its `%`
+and headcount ones — and the honest risk is the mirror image, that a
+`$` column shared by many rows creates *new* ties, or that a cell
+named « $ Total Direct Expense » now matches every `$` figure in the
+document. **If precision does not rise, the symbols go back out and
+the finding is that a column anchor alone cannot carry this.**
+
+## D3 round 7 — measured. The symbols work, the number does not move, and the blockage is now located: it is on the model side.
+
+*FinWorkBench/Finch, arXiv:2512.13168, CC BY 3.0.*
+
+**Part A: not one verdict changed.** 0 true, 2 false, 7 abstentions,
+18 missed — identical to round 6, cell for cell.
+
+**And yet the change did exactly what it was registered to do.** On
+task 156's line, with the symbols kept:
+
+| figure | column anchor | shared with « $ Total Direct Expense » | score |
+|---|---|---|---|
+| 8,067,693 | `$` | `$` direct expense total | **1.00** |
+| 100% | `%` | direct expense total | 0.75 |
+| 27 | (none) | direct expense total | 0.75 |
+| 6,707,013 | `$` | `$` direct expense total | **1.00** |
+| 100% | `%` | direct expense total | 0.75 |
+
+The percent column and the headcount column **separated correctly**
+from the money columns. The mechanism is right. Two candidates still
+tie — and the reason is the finding of this round.
+
+### The blockage is on the model side, and it is one line of the engine
+
+`CABC!C7` and `CABC!I7` hold different numbers from different years —
+2001 Forecast and 2002 Plan. Read through the engine:
+
+```
+CABC!C7  row_label='Total Direct Expense'  column_label='$'  name='$ Total Direct Expense'
+CABC!I7  row_label='Total Direct Expense'  column_label='$'  name='$ Total Direct Expense'
+```
+
+**The two cells have the same name.** The workbook's header is
+two-level — `2001 Forecast | 2002 Plan` above `$ | HC` — and
+`Cell.column_label` takes the nearest header row, so both money
+columns come back as `$` and the year never reaches the name.
+
+So the matcher's tie is **correct behaviour**. The labels genuinely
+cannot separate those two cells, because the label it is given is
+identical for both. No amount of document-side work can fix that:
+the ambiguity is in what the model side hands over. Three rounds of
+chasing the document have ended by locating the remaining blockage
+precisely — and it is not mine.
+
+**Cross-lane case, for the lead to route (lanes.md: I write it here
+and stop).** `polar/tieout/workbook.py`'s `Cell.column_label` reads
+one header row. Financial tables routinely stack two or three
+(`2001 Forecast` over `$`), and when they do, distinct cells collide
+on one name. This is not only D3's problem: `FigureLink.cell_name` is
+the engine's own re-anchoring key, and D4's survival rules rest on it
+too — **two cells sharing a name is exactly the `Ambiguous` outcome
+`anchor.py` returns**, and a workbook with stacked headers will
+produce those constantly. The ask is Sentinel's to judge and the
+lead's to route; I have changed nothing in the engine.
+
+### Both experiments die by their own registered criteria
+
+Round 6's criterion: « if the anchor produces confident wrong
+answers, it dies and the tie rule stays. » It produced two, and fixed
+none. Round 7's: « if precision does not rise, the symbols go back
+out. » It did not rise.
+
+**So the matcher is back to v3 behaviour exactly**, and the suite is
+green at 802. Both experiments stay in the source as *recorded*
+constants with the evidence attached, so that nobody re-runs them
+blind — `_SYMBOLS` says what keeping symbols did and why it is not
+behaviour, and `propose()` says it accepts a column anchor and
+ignores it.
+
+**One thing survives, deliberately: D1 keeps recording the column
+anchor.** The extraction is correct — it read `$`, `%`, `$`, `%` off
+the page exactly right — and the data is wanted by the judge (part B
+needs it), by the source viewer, and by any future round once the
+model side can say which column it means. Extractor version stays
+`"3"`; the scoring use is what failed, not the reading.
+
+**A regression I measured rather than assumed:** rounds 1–3's
+registered ED2 sample still returns **30 of 30 correct abstentions**
+under every variant tried this turn. Nothing that was right became
+wrong.
+
+**And the harm was found by a test, not by a corpus.** The route
+test's own fixture — three prose lines — started abstaining once the
+anchor was scored, because the line above « Loss (2,340) recorded » is
+« Revenue 1,234.5 », and my rule read that previous *sentence* as a
+column header. On prose the anchor invents headers. That is why it
+produced two confident wrong answers in task 52, and it is the
+clearest possible statement of the limit: **a column anchor is only
+meaningful where there are columns**, and nothing in the rule as
+frozen could tell the difference.
+
+**Where D3 stands, plainly:** it is honest — it stays silent rather
+than guessing, measured across four corpora — and it has never once
+proposed a correct source on a table-shaped document. The next move
+is not another document-side round. It is the model-side name, which
+is Sentinel's.
+
+## 28 August 2026, eleventh « go » — the lead's two notes, and D1 round N registered
+
+Orders read from the tip. Round 6 is approved as registered — it has
+since been run and it **died by its own criterion** (rounds 6 and 7
+above); the approval and the result crossed in the post, which is
+what happens when a lane runs ahead of a sweep, and nothing about the
+result is changed by the approval arriving after it.
+
+Both lead notes are taken:
+
+1. **`indeterminate-line-granularity` joins the permanent
+   vocabulary** — the judge blind where the matcher is blind, and a
+   number that cannot be honestly produced is not produced. It is
+   already in every round harness this lane owns; it stays.
+2. **« Nil printed as a dash » is registered below** as its own small
+   round, as ordered.
+
+## D1 round N — registration: a dash is a stated zero
+
+Round 5 turned this up and the lead named it: four of the drawn cells
+were zeros whose documents state them as « - », and D1 extracts
+nothing, so the matcher's silence was correct for the wrong reason —
+there was no fact to find. A financial table says nil with a dash far
+more often than it says `0`, and a document that states a quantity
+should produce a fact.
+
+**The rule, frozen before the code.** A token is extracted as a
+**nil fact** — `value = 0.0`, `text` the dash exactly as printed —
+when all three hold:
+
+1. the token is exactly one dash character: `-`, `–` or `—` (a
+   token like `FTS-1` or `(-)` is not a dash, and is untouched);
+2. its own **line contains at least one number**, so the line is a
+   data row rather than prose;
+3. on its own page, at least **three** numeric tokens have x-ranges
+   overlapping this token's by at least 1 point — the dash stands in
+   a column where numbers live.
+
+Condition 3 is geometry doing the one job round 6 proved it is good
+at: **saying whether there are columns at all.** Round 6's failure
+was reading a *preceding sentence* as a header; this asks only
+« do numbers stand at this x elsewhere on the page », which prose
+answers no to and a table answers yes to.
+
+**The dash inside a label is the case to beat.** In
+`Demand - FTS - 1 - - 123.1 - - - - 123.1 (123.1) -` the first two
+dashes belong to the row's name and the rest are nils. Condition 3 is
+what separates them: the label's dashes sit at x-positions where no
+numbers stand, the nils sit in the numeric columns. **Whether that
+holds is the measurement, not an assumption.**
+
+**Consequences, named now:**
+
+- Extractor output changes, so `EXTRACTOR_VERSION` goes `"3"` →
+  `"4"`; every stored fact takes a new id and re-extraction replaces
+  the rows, exactly as the version-in-the-id exists for. No confirmed
+  links exist, so nothing is orphaned.
+- **The matcher gets more candidates** — every nil in every table.
+  That could hurt: a cell whose value is 0 would suddenly find many
+  candidates and tie. Rounds 5–7's Finch sample is rescored to
+  measure it, on the same 27 rows and the same truth.
+- **Round 5's truth changes for four rows.** Those cells were judged
+  « not stated » because no fact existed; if a dash becomes a fact,
+  the document does state them and they become findable. Re-judged
+  explicitly, with the four named, and the before/after reported —
+  a truth file that changes silently would be worthless.
+
+**The measurement:**
+
+- **Coverage**: nils extracted per document, across the Finch seven
+  and the ED2 three, with the totals beside the existing number
+  counts.
+- **Precision, hand-checked**: a seeded sample of **20 extracted
+  nils** (seed 141421), each read against its page — is it really a
+  nil standing in a numeric column, or a hyphen in a label?
+  Reported as a count, failures named.
+- **Harm**: the Finch part-A table before and after, and rounds
+  1–3's ED2 sample, which must stay at 30 of 30 correct abstentions.
+
+**The kill-criterion, stated in advance:** if the hand-check shows
+label hyphens being read as nils, or if the Finch table gets worse,
+the rule comes out exactly as rounds 6 and 7's did.
+
+## D1's dash round — measured. It survives its own criterion; the first in this family that does.
+
+*FinWorkBench/Finch, arXiv:2512.13168, CC BY 3.0.*
+
+**Coverage — 750 nils, and very unevenly:**
+
+| document | numbers | nils found |
+|---|---|---|
+| 81_src_1 (plan variance) | 623 | **567** |
+| ed2-fd-finance-annex | 6,325 | 178 |
+| 52_src_0 | 35 | 4 |
+| ed2-financial-handbook | 1,311 | 1 |
+| 72_src_0, 156, 160, 161, 5, 16, 4_src_* | 5,000+ | **0** |
+
+The spread is the point, not a defect: a plan-variance table is
+mostly dashes and a rate table is mostly digits. Where a document
+says nil with a dash, D1 now says so; where it says `0`, nothing
+changed.
+
+**Precision — 20 of 20.** The registered seeded hand-check (seed
+141421) drew twenty extracted nils and every one is a genuine nil
+standing in a numeric column.
+
+**The case to beat, checked directly rather than by sample.** In
+`Commodity - FTS - 1 - - 9.4 - - - - 9.4 (9.4) -`:
+
+| x | token | outcome |
+|---|---|---|
+| < 130 | the dashes inside « Commodity - FTS - 1 » | **not extracted** ✓ |
+| 220.8, 259.7, 337.5, 551.0 | the column nils | **extracted as 0** ✓ |
+
+The label's own dashes stayed out and the data's came in, which is
+exactly what the third condition was frozen to do.
+
+**A coverage gap the measurement found, and it is structural.** The
+third condition asks for three numbers standing at the dash's
+x-position — and **a column that is almost entirely nil has too few
+numbers to vouch for it.** On page 1 of `81_src_1`, the columns at
+x = 370.9, 403.6 and 436.4 hold exactly **one** number each, so their
+dashes are missed; on page 2 the same columns hold nine or ten and
+their dashes are found. The condition is anti-correlated with the
+thing it detects. This is under-extraction — the safe direction, a
+missed fact rather than an invented one — and it is recorded here
+rather than patched, because patching mid-round is what this lane
+does not do.
+
+### Harm: none measured, and one small good
+
+| | round 7 (no nils) | dash round |
+|---|---|---|
+| true proposal | 0 | 0 |
+| false proposal | 2 | **1** |
+| true abstention | 7 | 4 |
+| missed | 18 | 19 |
+| scored rows | 27 | 24 |
+| rows the documents state | 18 | **20** |
+
+**The denominators moved and that must be said plainly**, because a
+table read carelessly here would flatter the change. Three rows left
+the scored set — task 81's « GCO/HPL GRI/ACA », « Citrus AFUDC » and
+« NNG Shared Cost Surcharge » were judged « not stated » in round 5
+*only because no fact existed*; now nils exist on their rows, and I
+cannot say which column's nil belongs to which cell, so they are
+`indeterminate-line-granularity`, the condition the lead just blessed.
+Two rows joined the stated set: task 52's « Low End Cost Case 3 » and
+« High End Cost Case 3 », whose zeros the contract states as `$ - $ -`
+and which are now findable facts, determined by column order against
+the Case 1 row.
+
+One false proposal disappeared. Nothing that was right became wrong.
+**Rounds 1–3's ED2 sample still returns 30 of 30 correct
+abstentions.**
+
+**The kill-criterion, applied:** « if the hand-check shows label
+hyphens read as nils, or if the Finch table gets worse, the rule
+comes out. » The hand-check is clean and the table is not worse.
+**The rule stays** — extractor version `"4"`, and the first change in
+this family to survive its own test.
+
+**Still 0 true proposals**, and that is expected: the dash round was
+never aimed at the blockage. Round 7 located that on the model side —
+two cells of one workbook sharing the name « $ Total Direct Expense »
+because `Cell.column_label` reads one header row — and nothing on the
+document side moves it.
+
+### Two housekeeping notes, both named rather than slipped in
+
+**The round harness now keys facts by page and x-position, not by
+ordinal.** Adding nils shifted every ordinal and would have silently
+invalidated eighteen recorded truths — the kind of quiet corruption
+that makes a measurement worthless. All 18 remapped cleanly by
+(page, printed text, line) and are re-verified; from here a key
+survives an extractor change.
+
+**One red test on the tip is not mine**:
+`test_routes.py::TestTheVersionDelta::`
+`test_a_revision_answers_in_review_language`, which reproduces with
+my changes stashed. Suite otherwise 815 passed, 9 skipped.

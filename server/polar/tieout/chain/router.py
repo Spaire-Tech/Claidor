@@ -121,6 +121,7 @@ class FactRead(Schema):
     text: str
     value: float
     line: str
+    column: str
     extractor: ExtractorRead
 
     @classmethod
@@ -136,6 +137,7 @@ class FactRead(Schema):
             text=fact.text,
             value=fact.value,
             line=fact.line,
+            column=fact.column,
             extractor=ExtractorRead(
                 name=fact.extractor_name, version=fact.extractor_version
             ),
@@ -176,6 +178,7 @@ class NumberRead(Schema):
     value: float
     box: BoxRead
     line: str
+    column: str
 
 
 class PageRead(Schema):
@@ -210,6 +213,7 @@ class ExtractionRead(Schema):
                         x0=n.box.x0, top=n.box.top, x1=n.box.x1, bottom=n.box.bottom
                     ),
                     line=n.line,
+                    column=n.column,
                 )
                 for n in extraction.numbers
             ],
@@ -429,7 +433,9 @@ async def propose_for_cell(
     by_id = {fact.id: (fact, artifact) for fact, artifact in pool}
 
     labels = cell.name or f"{cell.row_label} {cell.column_label}".strip()
-    answer = propose(labels, [(fact.id, fact.line, fact.text) for fact, _ in pool])
+    answer = propose(
+        labels, [(fact.id, fact.line, fact.text, fact.column) for fact, _ in pool]
+    )
 
     ranked = [
         RankedCandidateRead(
