@@ -368,14 +368,31 @@ def _grid_from(cells: Any, converted: bool = False) -> _Grid:
     return grid
 
 
-def _grid_of(written_sheet: Any, values_sheet: Any, converted: bool = False) -> _Grid:
+def _grid_of(
+    written_sheet: Any,
+    values_sheet: Any,
+    converted: bool = False,
+    toggle: Any = None,
+) -> _Grid:
     """One sheet from both loads, streamed into a :class:`_Grid`.
+
+    **The fallback path.** Most workbooks are read by
+    :func:`polar.tieout.sheets.cells_of` in a single pass and never come
+    here; this serves a legacy `.xls` and anything the fast reader
+    declines, so it must stay correct and it is worth keeping quick.
 
     `converted` marks a workbook that reached us through LibreOffice
     rather than from its author — a `.xlsb`. The converter writes
     booleans out as `=TRUE()` and `=FALSE()`, and those are undone here,
     at the one place every value passes through. See
     :mod:`polar.tieout.binary`.
+
+    `toggle` is the openpyxl workbook whose `data_only` flag is flipped
+    between the two passes when both sheets come from **one** load —
+    Scribe's measurement, kept when the fast reader superseded the path
+    it was written for. openpyxl decides formula-text against
+    cached-value per *iteration* rather than per open, so one workbook
+    serves both passes and the stylesheet is parsed once.
     """
     grid = _Grid()
     cells = getattr(written_sheet, "cells", None)
@@ -393,20 +410,42 @@ def _grid_of(written_sheet: Any, values_sheet: Any, converted: bool = False) -> 
             grid._saw(row, column)
         return grid
 
+    formulas_here = False
     for row in written_sheet.iter_rows():
         for cell in row:
-            if cell.value is None:
+            value = cell.value
+            if value is None:
                 continue
             at = (cell.row, cell.column)
-            grid.written[at] = unartifact(cell.value) if converted else cell.value
+            grid.written[at] = unartifact(value) if converted else value
             grid.formats[at] = getattr(cell, "number_format", None)
             grid._saw(*at)
-    for row in values_sheet.iter_rows():
-        for cell in row:
-            if cell.value is None:
-                continue
-            grid.values[(cell.row, cell.column)] = cell.value
-            grid._saw(cell.row, cell.column)
+            if not formulas_here and isinstance(value, str) and value[:1] == "=":
+                formulas_here = True
+    if not formulas_here:
+        # **Scribe's skip, kept.** The two loads differ *only* where a
+        # cell holds a formula: one gives the text, the other Excel's
+        # cached answer. On a sheet with no formula at all they agree
+        # cell for cell, so a second parse of the same XML buys nothing.
+        # Not rare and not cheap: the corpus's biggest file is 496,478
+        # cells with **three** formulas across twenty-seven sheets, and
+        # openpyxl was parsing 3.1 million cell elements twice to learn
+        # those three.
+        grid.values.update(grid.written)
+        return grid
+
+    if toggle is not None:
+        toggle._data_only = True
+    try:
+        for row in values_sheet.iter_rows():
+            for cell in row:
+                if cell.value is None:
+                    continue
+                grid.values[(cell.row, cell.column)] = cell.value
+                grid._saw(cell.row, cell.column)
+    finally:
+        if toggle is not None:
+            toggle._data_only = False
     return grid
 
 
@@ -430,6 +469,9 @@ def read_workbook(path: str) -> Workbook:
         path, folder = converted_copy(path)
 
     fast: dict[str, Any] | None = None
+    #: The workbook whose `data_only` flag the fallback flips between
+    #: its two passes; `None` on every path that does not need it.
+    toggle: Any = None
     #: What has to be closed at the end. One entry when the fast path
     #: read the cells, two when openpyxl was asked for both layers.
     close: tuple[Any, ...] | None = None
@@ -456,8 +498,27 @@ def read_workbook(path: str) -> Workbook:
         except Exception:
             fast = None
         if fast is None:
-            values = load_workbook(path, data_only=True, read_only=True)
-            close = (formulas, values)
+            # **The fallback re-opens with the stylesheet, and must.**
+            # `open_workbook` skips `apply_stylesheet` because the fast
+            # path takes number formats from the XML itself — but this
+            # path reads `cell.number_format` off openpyxl's own cells,
+            # and without the stylesheet every one of them would come
+            # back as the default. Nothing in the corpus reaches here,
+            # so no test and no gate would have caught it; it was found
+            # by reading Scribe's diff against this file.
+            formulas.close()
+            formulas = load_workbook(path, data_only=False, read_only=True)
+            # **One open, not two — Scribe's measurement, kept.** openpyxl
+            # decides formula-text against cached-value per *iteration*
+            # rather than per open (`_cells_by_row` reads
+            # `self.parent.data_only` when it builds its parser), so one
+            # workbook serves both passes and the stylesheet is parsed
+            # once. Scribe measured that at 7.9 s of a 23.5 s read on a
+            # real price-control model, where opening cost 15.5 s and
+            # iterating only 4.5 s.
+            values = formulas
+            toggle = formulas
+            close = (formulas,)
         else:
             values = None
             close = (formulas,)
@@ -492,7 +553,7 @@ def read_workbook(path: str) -> Workbook:
                 # Only reachable when the fast path declined, which is
                 # exactly when the second load was made.
                 assert values is not None
-                grids[name] = _grid_of(sheet, values[name], converted)
+                grids[name] = _grid_of(sheet, values[name], converted, toggle)
             book.populated[name] = len(grids[name].written)
         names = _names_of(formulas, grids)
         every_name = list(names.book.items()) + [

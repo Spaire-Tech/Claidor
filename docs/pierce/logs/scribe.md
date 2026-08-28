@@ -5661,3 +5661,314 @@ rather than a better matcher.
   here is a ceiling experiment, none is a round, and none revises them.
 - Nothing above loosens a bar. The floor and the tie rule are unchanged
   and the failures are reported at round 8's registered granularity.
+
+## 28 August 2026, twenty-ninth « go » — orders reset. The answer key is registered and its document is chosen.
+
+New orders: **stop hunting corpora, build the answer key.** I read
+`d3-reckoning.md` first, as instructed. It is right about my lane and I
+owe it two corrections — one against me, one against my own comfort.
+
+### Correction to me, and the lead is right
+
+My handoff said, as a heading: **« D3 has never made a correct
+proposal. »** Unqualified, that is **false**, and I have verified the
+counter-evidence rather than taking it on trust:
+`accuracy-backlog.md:967` records **5 of 6 true links, 83% precision**,
+on a real Ofgem pair against ~140,000 candidate cells — graded **fail on
+recall**, not on precision.
+
+My tally was over `scribe-d3-round*-verdicts.json`, which is **this
+lane's rounds on `chain/propose.py`**. I published a lane-scoped number
+under a task-scoped heading, and it travelled. The handoff now says
+which is which, and the reckoning's point stands: *do not treat « no
+correct link has ever been made » as true, because it is not.*
+
+### And a correction the other way, against my own comfort
+
+The reckoning classes FERC as a **no-show** — « FERC (no cells at all —
+the model is published as a PDF) ». **That is no longer true, and the
+evidence is mine.**
+
+The native workbook was found on the twenty-third turn:
+`rmu-2016-formula-rate.xlsx`, 262,916 bytes, magic `504b0304`, sha256
+`01be958d92ca…`, **4,472 cells, 2,239 formulas, 47 citation cells**,
+paired with a real 132-page FERC Form 1 whose every cited page resolves,
+with **the filer's own citations as truth**. Round 8 scored 15 rows on
+it and lost 0/2/13.
+
+So FERC was **Type A — a fair test that lost** — not Type B. The honest
+count is **two losses and several no-shows, not one.** That is worse for
+my lane than the reckoning currently says, and it is what happened. It
+also matters for the plan: the reckoning's « we still do not know
+whether the matcher works » is now supported by *two* independent fair
+tests rather than one, and both lost for causes that were then located.
+
+Orders item 3 — « keep chasing the native workbook » — is already
+satisfied. What is not is the table parsing, and that stands.
+
+### The protocol, registered before the first link exists
+
+`docs/pierce/scribe-answer-key-protocol.md`. The parts that matter:
+
+**Three rules that make the key honest.** Model labels are written from
+the deal's meaning, **never copied from the document's wording** — a
+copied label voids the round. Two separated passes, with the link log
+**committed before the matcher is ever pointed at the document**. The
+matcher is not consulted during construction.
+
+**What is admitted rather than mitigated away.** One author builds and
+runs. The orders offer two weakenings — a separate build pass, or a
+model built earlier for another purpose — and **only the first is
+available to this lane, so only the first is claimed.** A model built
+from a document is also more complete than a real one; recorded, not
+corrected, because correcting it by hand is re-cutting the sample.
+
+**The difficulty register, which is the point.** Every link is tagged as
+it is logged — `verbatim`, `synonym`, `in-table`, `in-prose`,
+`split-run`, `rounded`, `unit-shift`, `repeated` — and results are
+reported **per tag**. « 9 of 20 » teaches nothing; « 6 of 6 verbatim,
+1 of 7 synonym, 0 of 4 split-run » names what to build next. This is
+what turns the key from another pass/fail into a diagnosis, and it is
+registered rather than added afterwards.
+
+**Two kill criteria in advance.** If the matcher scores worse on
+`verbatim` than on `synonym`, the *harness* is broken and nothing is
+published until it is found. If any label proves to be a copy of its
+document line it is struck and reported; **more than a fifth struck
+voids the whole key.**
+
+**A concern, recorded before the work rather than after:** the binding
+constraint measured last turn is **page selection**, so a key searched
+with today's finder will very likely fail for a cause already known.
+That is why the register and `doc_page` exist — they make the
+page-selection half separable from the row-matching half at scoring
+time.
+
+### The document — selection rule executed, no second look
+
+The rule was frozen first, then run. The first document meeting all four
+conditions is taken, and **it was taken**:
+
+> **The executed £3,226,960,000 credit facility agreement between the
+> Commissioners of HM Treasury and Ireland, December 2010**, drafted by
+> Allen & Overy, published by HM Treasury.
+
+| | |
+|---|---|
+| bytes / magic / sha256 | 306,393 · `25504446` %PDF · `b70636bae70c17cf` |
+| native, not a scan | 74,896 characters in the text layer |
+| pages | 34 |
+| D1 v5 | **326 numbers, 0 refusals** |
+| numeric / pricing terms | **63** candidates |
+
+Executed, public, a named borrower, real pricing — `Commitment means
+£3,226,960,000`, `Margin means 2.29 per cent. per annum` — and never
+read by this lane before. Re-fetchable and byte-checked by
+`scripts/corpus_answer_key_fetch.py`.
+
+**And it brought its own hard case, unchosen:** page 10 prints **eight
+identical repayment instalments of £403,370,000**, distinguished only by
+the words *Third, Fourth, Fifth…*. That is the `repeated` tag at its
+worst, it arrived with the document rather than being selected for, and
+it is exactly the ambiguity that beat the FERC round.
+
+### I stopped hunting when the orders said to
+
+Two probes went to Contracts Finder before this: its attachments are
+tender packs, not executed agreements. I noticed I was one step from the
+corpus-hunting the orders had just told me to stop, said so, gave myself
+one targeted query, and it landed. Recording the near-miss because the
+habit is the thing being corrected, not the outcome.
+
+### Turn's end state
+
+- Protocol registered; document selected, fetched, byte-verified and made
+  re-fetchable. **No link has been logged yet** — construction is a real
+  pass and is next turn's work, not a rushed end-of-turn one.
+- `corpus_answer_key_fetch.py`: ruff, ruff-format and mypy clean, and run
+  end to end against the recorded sha256.
+- No change to the chain package.
+- **Kelso**: noted as live, not closed, per orders item 4. Nothing to do
+  until the bytes arrive.
+
+## 28 August 2026, thirtieth « go » — A1. The reader parsed every sheet twice. **75.9 s → 50.4 s.**
+
+Orders: the document chain stops, I move to the engine's speed and own
+it end to end. Method is not negotiable — profile, fix the top item,
+re-measure, repeat. No essays. So:
+
+### Profiled first
+
+The biggest corpus file, `hchs-sep-2015-trust-ccg.xlsx`, 19.0 MB,
+**496,478 cells and 3 formulas** across 27 sheets.
+
+| stage | before |
+|---|---|
+| `read_workbook` | — |
+| **`read_artifact` (read + outputs + audit)** | **75.91 s** |
+
+cProfile over the read (193.7 s under the profiler, ~2.5× overhead):
+
+```
+ cumtime  function
+  148.46  polar/tieout/workbook.py:334(_grid_of)          <- 77% of everything
+  115.47  openpyxl/worksheet/_reader.py:125(parse)
+   65.89  {method 'Parse' of 'pyexpat.xmlparser' objects}
+   33.50  polar/tieout/workbook.py:465(_read_sheet)
+```
+
+`parse_cell` was called **6,235,932 times to keep 496,478 cells.**
+
+### The top item, which was not the mutation detector
+
+A1's own note says « the mutation detector dominates ». On this file it
+does not, and the audit is not the problem either — it is **5.1 s**.
+
+`_grid_of` iterates the sheet **twice**: once from the `data_only=False`
+load for formula text, once from `data_only=True` for Excel's cached
+answers. That is two full XML parses of the same 3.1 million cell
+elements.
+
+**The two loads differ only where a cell holds a formula.** Everywhere
+else they agree cell for cell, so on a sheet with no formula the second
+parse buys nothing. This file has **three formulas in twenty-seven
+sheets** — openpyxl parsed 3.1 million cell elements twice to learn
+three values.
+
+The fix is nine lines: note whether the written pass saw a formula; if
+it did not, fill `values` from `written` and skip the second parse.
+
+### Re-measured
+
+| | before | after |
+|---|---|---|
+| `read_workbook` | — | **45.26 s** |
+| `period_axes` | — | 0.09 s |
+| `audit` | — | **5.08 s** |
+| **total** | **75.91 s** | **50.43 s** |
+
+**A third off, and the audit is already « in seconds ».**
+
+### Correctness, checked rather than assumed
+
+The change must not alter what is read, so the formula-heavy models —
+where the second pass is genuinely needed — must be identical:
+
+| model | cells | formulas | findings |
+|---|---|---|---|
+| `ofgem_ed2_pcfm_v5` | 43,178 | 20,485 | **8** — unchanged |
+| `ofgem_ed2_pcfm_v3_2023` | 40,948 | 20,522 | 11 |
+| `kelso_model` | 470,594 | 814 | 2 |
+
+ED2 v5 is cell-for-cell, formula-for-formula and finding-for-finding
+what it was before the change. **Full tieout suite: 1,037 passed, 9
+skipped, 0 failed.**
+
+### Where the spec's sentence now stands, stated exactly
+
+« 600k cells read in under a minute, checks in seconds. »
+
+- **checks in seconds** — audit is **5.1 s**. True.
+- **600k cells in under a minute** — the read is **45.3 s for 496,478
+  cells**. No corpus file has 600k cells (the next largest is Kelso at
+  470,594), so 600k cannot be measured directly here; at this file's
+  rate it scales to **≈54.7 s**. Under a minute, **by extrapolation and
+  not by measurement**, and I am not going to call that DONE.
+
+### Not finished — next turn continues without being asked
+
+The remaining 45.3 s is the single surviving XML pass: openpyxl still
+materialises a cell object for every one of 3.1 million elements to keep
+496 thousand. That is the next top item, and the formula-heavy case is a
+separate one — **ED2 is 23.5 s for 43,178 cells**, 20× slower per cell
+than this file, which points at formula parsing rather than XML.
+
+Services were down again and restarted from the handoff's recipe.
+
+## A1, second fix — the reader **opened** every workbook twice as well. **29.0 s → 17.7 s** on a real model.
+
+Same turn, continuing without being asked. Profiled again rather than
+guessing where the rest went, and the two corpus files turn out to have
+**opposite** bottlenecks.
+
+### The second profile
+
+`ofgem_ed2_pcfm_v5.xlsx` — 4.3 MB, 43,178 cells, **20,485 formulas**, a
+real price-control model, and 20× slower *per cell* than the big data
+dump. cProfile put the cost nowhere near the cells:
+
+```
+ cumtime  function
+   31.14  openpyxl/descriptors/serialisable.py:46(from_tree)   <- 33%
+   20.46  openpyxl/descriptors/serialisable.py:204(__hash__)   3,512,832 calls
+   19.78  openpyxl/descriptors/serialisable.py:173(__eq__)     2,394,104 calls
+    2.97  openpyxl/worksheet/_reader.py:189(parse_cell)        802,070 calls
+```
+
+That is openpyxl parsing and **de-duplicating the stylesheet**. Timing
+the two halves apart made it plain:
+
+| | ED2 (a model) | hchs (a data dump) |
+|---|---|---|
+| opening both loads | **15.48 s** | 0.15 s |
+| iterating both loads | 4.48 s | **33.37 s** |
+
+**A model's cost is opening; a data dump's is iterating.** The first fix
+this turn attacked iterating, which is why it barely moved ED2.
+
+### The fix
+
+`read_workbook` called `load_workbook` **twice** — once for formula text,
+once for cached values — and each parsed the whole style table, of which
+the second load's copy is never read.
+
+openpyxl decides formula-text against cached-value **per iteration, not
+per open**: `_cells_by_row` reads `self.parent.data_only` when it builds
+its parser. So **one open serves both passes**, with the flag flipped
+between them and restored after.
+
+### Re-measured, all four models
+
+| model | before this turn | after fix 1 | **after fix 2** |
+|---|---|---|---|
+| `ofgem_ed2_pcfm_v5` | 29.03 s | 27.24 s | **17.74 s** |
+| `ofgem_ed2_pcfm_v3_2023` | 26.58 s | 26.58 s | **17.75 s** |
+| `hchs-sep-2015-trust-ccg` | **75.91 s** | 50.43 s | **46.30 s** |
+| `kelso_model` | — | 14.10 s | **12.65 s** |
+
+**39% off the biggest file and 39% off a real model.**
+
+### Correctness
+
+Cell counts, formula counts and finding counts are **identical on all
+four** to what they were before either fix — ED2 v5 still 43,178 /
+20,485 / **8**, v3 still 40,948 / 20,522 / **11**, hchs 496,478 / 3 / 0,
+Kelso 470,594 / 814 / 2. **Full tieout suite: 1,037 passed, 9 skipped, 0
+failed.**
+
+### One instrument catch, the ninth this session
+
+My equality check reported the one-open read as **different** on sheet
+`UserInterface`. It is not: the cell holds an `ArrayFormula`, which has
+no `__eq__`, so two instances of the identical formula compare unequal by
+identity. Both are `E30` / `=INDEX(E15:E28,m_identity)`. **My comparison
+was the instrument again**, and I checked before believing it rather than
+after publishing it.
+
+### Where the spec's sentence stands now
+
+« 600k cells read in under a minute, checks in seconds. »
+
+- **checks in seconds** — audit is **5.14 s** on the biggest file, 3.20 s
+  on ED2. True, measured.
+- **600k cells under a minute** — **41.03 s for 496,478 cells**. The
+  biggest corpus file is 496k, so 600k still cannot be *measured* here;
+  it scales to **≈49.6 s**. Under a minute with margin, still by
+  extrapolation.
+
+### Next, and it continues next turn
+
+The remaining 41 s on the data dump is one XML pass in which openpyxl
+still builds a cell object for each of **3.1 million elements to keep
+496 thousand** — 2.6 million of them styled but empty. That is now the
+top item, and it is the same one for every large file.
