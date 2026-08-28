@@ -210,6 +210,15 @@ def find_units_columns(cells: Mapping[str, Any], sheet: str) -> list[Declaration
             except (TypeError, ValueError):
                 continue
             numbers_by_column.setdefault(cell.column, set()).add(cell.row)
+    return _declarations_from(sheet, text_by_column, numbers_by_column)
+
+
+def _declarations_from(
+    sheet: str,
+    text_by_column: Mapping[int, Mapping[int, str]],
+    numbers_by_column: Mapping[int, set[int]],
+) -> list[Declaration]:
+    """The judgement itself, once the cells are grouped by column."""
     found: list[Declaration] = []
     for column, entries in sorted(text_by_column.items()):
         if len(entries) < MIN_ENTRIES:
@@ -225,8 +234,6 @@ def find_units_columns(cells: Mapping[str, Any], sheet: str) -> list[Declaration
             continue
         if len(units) < len(entries) * MIN_UNIT_SHARE:
             continue
-        # It must describe values: a column of numbers sharing its
-        # rows, on either side, preferring the one on the right.
         neighbour = _values_beside(column, entries, numbers_by_column)
         if neighbour is None:
             continue
@@ -271,6 +278,42 @@ def _values_beside(
         if best is None or distance < best[0]:
             best = (distance, candidate)
     return best[1] if best else None
+
+
+def find_all_units_columns(
+    cells: Mapping[str, Any],
+) -> dict[str, list[Declaration]]:
+    """Every sheet's units columns, walking the workbook **once**.
+
+    `find_units_columns` iterates all cells to serve one sheet. Called
+    per sheet on a fifty-sheet, half-million-cell workbook that is
+    twenty-five million passes, and the period draw sat on it long
+    enough that I killed the job twice before reading the code. Same
+    logic, one walk.
+    """
+    text_by_sheet: dict[str, dict[int, dict[int, str]]] = {}
+    numbers_by_sheet: dict[str, dict[int, set[int]]] = {}
+    for _ref, cell in cells.items():
+        value = cell.value
+        if isinstance(value, str) and value.strip():
+            text_by_sheet.setdefault(cell.sheet, {}).setdefault(cell.column, {})[
+                cell.row
+            ] = value.strip()
+        elif not isinstance(value, (str, bool)) and value is not None:
+            try:
+                float(value)
+            except (TypeError, ValueError):
+                continue
+            numbers_by_sheet.setdefault(cell.sheet, {}).setdefault(
+                cell.column, set()
+            ).add(cell.row)
+    out: dict[str, list[Declaration]] = {}
+    for sheet, text_by_column in text_by_sheet.items():
+        numbers_by_column = numbers_by_sheet.get(sheet, {})
+        found = _declarations_from(sheet, text_by_column, numbers_by_column)
+        if found:
+            out[sheet] = found
+    return out
 
 
 def declarations_by_row(
