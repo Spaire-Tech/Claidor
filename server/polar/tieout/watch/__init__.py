@@ -24,6 +24,7 @@ from .delta import DeltaItem, DeltaReport, delta_of, delta_report
 from .diff import CellDelta, VersionDiff, diff_paths, diff_raw, read_raw
 from .document import DeckDelta, DeckItem, compare_tieouts, deck_delta
 from .fragment import Eligibility, classify, eligible_pair
+from .profile import Profile, Transition, describe, profile_of, unusual
 from .signature import LITERAL, Line, SheetGrid, sheet_grids
 from .tiers import Ladder, Tier2Answer, Verdict, build_ladder, gate_violations
 
@@ -39,9 +40,11 @@ __all__ = [
     "Line",
     "LineAlignment",
     "Match",
+    "Profile",
     "SheetAlignment",
     "SheetGrid",
     "Tier2Answer",
+    "Transition",
     "Verdict",
     "VersionDiff",
     "align_lines",
@@ -52,11 +55,14 @@ __all__ = [
     "deck_delta",
     "delta_of",
     "delta_report",
+    "describe",
     "diff_paths",
     "diff_raw",
     "eligible_pair",
     "gate_violations",
+    "profile_of",
     "read_raw",
     "sheet_grids",
     "structural_changes",
+    "unusual",
 ]

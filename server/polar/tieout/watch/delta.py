@@ -118,6 +118,12 @@ class DeltaReport:
     items: list[DeltaItem] = field(default_factory=list)
     sheets_added: tuple[str, ...] = ()
     sheets_removed: tuple[str, ...] = ()
+    #: How many cells this transition touched, before folding — the
+    #: report's own size measure. An update profile compares a
+    #: transition to *others of comparable size*, and « how many
+    #: blocks » is the wrong denominator for that: one block can be a
+    #: cell or two dozen.
+    changed_cells: int = 0
 
     @property
     def summary(self) -> dict[str, int]:
@@ -254,12 +260,15 @@ def delta_of(
     structure: list[DeltaItem] = []
     class_change_refs: dict[str, set[str]] = {}
 
+    touched: set[tuple[str, int, int]] = set()
+
     def record(
         kind: str, sheet: str, row: int, column: int, detail: str, weight: float
     ) -> None:
         events.setdefault((kind, sheet), {}).setdefault(row, []).append(
             (column, detail, weight)
         )
+        touched.add((sheet, row, column))
 
     for sheet in old_grids:
         if sheet not in new_grids:
@@ -372,12 +381,19 @@ def delta_of(
                             0.5,
                         )
                 elif _signature(before) != _signature(after):
+                    #: Both shapes, not just the fact of the change:
+                    #: « the calculation changed shape » is true and
+                    #: nearly useless on the specimen that motivated
+                    #: this — a vertical sum that became a horizontal
+                    #: one, where the shapes say it in one line and
+                    #: the formula text would drown the reader in
+                    #: absolute references.
                     record(
                         "methodology_change",
                         sheet,
                         old_row,
                         old_column,
-                        "the calculation changed shape",
+                        f"{_signature(before)[:70]} → {_signature(after)[:70]}",
                         0.75,
                     )
                 else:
@@ -451,4 +467,5 @@ def delta_of(
     items.extend(structure)
     items.sort(key=lambda item: (_KIND_ORDER.index(item.kind), -item.weight))
     report.items = items
+    report.changed_cells = len(touched)
     return report

@@ -29,6 +29,9 @@ answering anything of record; register before results, always.
 | C4 tier 2 (differential) | `scripts/watch_stealth.py tier2` | Two hosts, **8 of 8 eligible on both, zero refusals, control silent**; `tail_hardcode` and `stealth_literal` 5/5 everywhere; the selector sweep closed the dead-branch case |
 | C5 deck delta | `watch/document.py`, `scripts/watch_deck.py` | Measured on the Cascade deck: a planted input move breaks **8 figures, each attributed to the model change underneath it**, while the deck's **8 pre-existing drifts stay off the revision's account** |
 | Tier 1 part A (boundary, no solver) | `watch/fragment.py`, `scripts/watch_fragment.py` | **75.2%** of ED2's formula cells are inside the registered fragment; **31.5%** of the tier-1 rung. All 1,516 rung cells have identical formulas both sides, so this pair cannot exercise tier 1 at all — its value is on rewrites |
+| The ED2 chain and the update profile | `watch/profile.py`, `scripts/watch_chain.py` | Ten transitions, 66–72 s each. **The founder's reforecast/routine split replicates on a regulator's model**: four transitions of 247–911 cells move 0–2 assumptions, six of 5,050–9,865 move 44–464, and **nothing lies between 911 and 5,050**. The profile flags in the model's own terms (« rewrote more formulas than this model usually does ») and **refuses on the four small ones** — 0–2 comparable priors |
+| Two specimens from real commits | `tests/tieout/test_watch_specimens.py` | C3 already reports **both**: a vertical sum that became horizontal (same cell, same total — a value reader sees nothing) and one reference shifted inside a copied block, **with the other three rows silent**. The `methodology_change` line now carries both shapes, old → new |
+| The array-formula phantom class | `tests/tieout/test_watch_diff.py` | Pinned at the lead's request: a CSE formula reads as its text, and a version-string bump moves exactly one cell (their run saw 202 of 203 « changes » false) |
 | The tier table | `docs/pierce/tier-table.md` | The single published statement the orders asked for: each rung's claim at its exact strength, measured cost, closed refusal vocabulary, and the number it produced on the registered pair. Every figure from a run artifact |
 | C3 on a known revision | `scripts/watch_delta.py` | Names the revision's substance in one line — `filled_cell: Monthly Inflation rows 284–295 (24 cells)` — and now reconciles with C1 **on the face of the report**: 7+7 = C1's 14 content changes, 24 = C1's 24 added |
 | C4 tier 2, what the revision *is* | `scratchpad` probes + `domain` mode | The frontier of divergence is `AVERAGEIFS` over whole `Monthly Inflation` columns; the revision **replaces twelve months of forecast with published outturn** (`H284:H295`, new-version-only). Seven `Finance&Tax` cells are byte-identical in both files (stored **0**) and compute differently once exercised — **a difference no cell diff can see** |
@@ -39,14 +42,15 @@ answering anything of record; register before results, always.
 | Aligner memory + timing rounds | `watch/align.py`, `scripts/watch_membench.py` | 10k rows: 900 s / 1,389 MB → **265 s / 323 MB**, every gate green, no verdict moved |
 
 Tests: `test_watch_{diff,align,plant,delta,trace,stealth,document,
-tiers,fragment}.py`, **102 green**.
+tiers,fragment,specimens,profile}.py`, **121 green**.
 (Other lanes' tieout tests need the conftest and fail to collect here;
 name your five files explicitly.)
 
 ## Registered constants — never move these silently
 
 `align.THRESHOLD = 0.5`, `align.LABEL_WEIGHT = 0.5`,
-`delta.MATERIAL = 1%`, `watch_stealth.TIER2_SEED = 20260826`,
+`delta.MATERIAL = 1%`, `profile.COMPARABLE_FACTOR = 2.0`,
+`profile.MINIMUM_PRIORS = 3`, `watch_stealth.TIER2_SEED = 20260826`,
 `TIER2_TRIALS = 5`. Each is registered in the log; moving one is a
 written round, never a tuning. **`CATEGORICAL_LIMIT` has a known
 defect**: it holds zero, which in the pair oracle freezes any cone a
@@ -72,7 +76,26 @@ a report.
    tier; the registration forbids importing z3 before that line
    exists. Re-raise it every turn until it lands, and do not
    silently start.
-1. **The seven — resolved, and the next round is the reproducibility
+1. **The profile is done for now, and one of its features is
+   deliberately dead.** A profile built from priors outside the
+   comparable band answers *and discloses the size ratio in the
+   line*; it never refuses when the model has history. But it also
+   **never flags**: measured on the chain, the two quietest
+   transitions in ED2's history came back « unusual » because their
+   nearest priors by size were version steps, not other quiet
+   updates. The sentence stays, the boolean is off. **Do not
+   re-enable `unusual()` for qualified profiles** without a second
+   chain to test it on.
+   **There is no held-out chain in this corpus** — `ofgem_riio3` is
+   draft-versus-final of four *different* models and `caa_h7` is two
+   unrelated pairs. Every profile number we have is in-sample on
+   ED2; the founder's equity model with seventy transitions is where
+   this belongs.
+2. **Enron E08/E09** — a genuine version pair (45,274 identical
+   formulas, 920 differing) arriving behind Sentinel's A6. The
+   orders say **do not wait and register nothing yet**. When it
+   lands it is the first honest external answer key for C2/C3.
+3. **The seven — resolved, and the next round is the reproducibility
    fix.** The frontier probe traced them to the revision itself: it
    types twelve months of published outturn into `Monthly
    Inflation!H284:H295`, cells that exist in one version only and
@@ -85,7 +108,7 @@ a report.
    RNG on rejected draws, so it is not reproducible across a change
    in rejection history. Registered fix: one stream per (trial,
    band).
-2. **Superseded — the pairing round** ran and killed its own
+4. **Superseded — the pairing round** ran and killed its own
    candidate. The
    domain round (±1% band, error-ceilinged) took tier 2's coverage
    of the disturbed cells from 96 of 294 to **293**, and surfaced
@@ -96,7 +119,7 @@ a report.
    The registered next test is whether C2's alignment pairs some
    literal to the wrong old cell. **Do not report the seven as a
    finding about the revision until that is settled.**
-3. **The zero round — done, and a negative.** Waking 10,732 held
+5. **The zero round — done, and a negative.** Waking 10,732 held
    zeros moved none of the 198; the correlation that motivated it
    was not the cause. What was: the perturbation drove those cells
    into `#DIV/0!`/`""`, which the harness misnamed
@@ -110,26 +133,26 @@ a report.
    non-zero small integers, and report a divergence found on a
    branch that only wakes when a zero is woken as
    `tier2_divergence_latent` — never as the revision's `changed`.
-4. **Tier 1 (Z3)** — the rung that would speak where the trials
+6. **Tier 1 (Z3)** — the rung that would speak where the trials
    cannot (1,344 frozen cells on the ED2 pair). Registered; blocked on the lead's
    `z3-solver` pyproject approval. No code may import z3 before
    that. Until it lands the ladder prints the hole's size every run
    as `tier1_would_have_been_asked` (1,516 on the ED2 pair).
-5. **Tier 2's planted-edit side — closed.** All three named follow-ups measured:
+7. **Tier 2's planted-edit side — closed.** All three named follow-ups measured:
    categorical inputs, conditional inputs, and the selector sweep
    (a dead branch is an *unselected* one; the harness reads the
    model's `CHOOSE`, forces the index, and stamps
    `selector_forced` on every instance it touches).
-6. **C6 (rule-set diff)** — founder-approved, yours, and *not*
+8. **C6 (rule-set diff)** — founder-approved, yours, and *not*
    ready: B5's stability gates pass but its rule sets are
    artifacts of low perturbation coverage, and the lead has put C6
    behind Dynamo's E1/E2. Register it when coverage is measurable,
    citing that number — not only the stability pair.
-7. **C3 deferrals — done** (filled/emptied cells; labelled rewrite
+9. **C3 deferrals — done** (filled/emptied cells; labelled rewrite
    targets). Successor item: the C2 harness should take its
    labelled rows from the engine's own `Cell.row_label` rather than
    from its string proxy — registered, not yet run.
-8. **Named next rounds if the aligner must go faster still**:
+10. **Named next rounds if the aligner must go faster still**:
    banding, or a Hirschberg (linear-space) traceback.
 
 ## What the corpus taught (facts about the files, not the code)

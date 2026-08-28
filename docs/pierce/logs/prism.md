@@ -3239,3 +3239,410 @@ The ask is unchanged and now has a number behind it:
 > formula cells and **31.5%** of the cells that reach its rung on an
 > adjacent revision. Nothing in this lane imports it until the line
 > exists.
+
+## New orders (twenty-eighth sweep): three items, and the gate again
+
+Tip `2bde77d8`. `z3-solver` **still absent** — three sweeps after the
+orders asked for tier 1. Part A is built and measured (75.2%); part
+B waits on the line, and I will keep saying so rather than starting.
+
+The orders bring three new items, all from the founder's research
+round over real git history.
+
+### Item 2 — the array-formula phantom-change class, now pinned
+
+The lead checked `watch/diff.py::_formula_text` and found this lane
+clean: openpyxl hands back an `ArrayFormula` **object** rather than
+an `=`-string, and a reader that compares those objects compares
+identities — their run saw ~600 phantom changes in 17,200 cells
+(3.5%), and 202 of 203 « changes » on a version-string bump. We
+extract `.text`. **No test pinned it.** Two now do, on a real
+workbook carrying a real CSE formula: the array cell reads as its
+text, and a version-string bump moves **exactly one cell**.
+
+### Item 1 — the two specimens, measured before anything was pinned
+
+Both specimens come from real commits, and **C3 already reports both
+as `methodology_change`.** I wrote the tests expecting to find holes
+and found my own expectations wrong twice, which is the right way
+round:
+
+- **The vertical sum that became a horizontal one**
+  (`=SUM(B2:B5)` → `=SUM(C6:F6)`, same cell, same total): reported.
+  The shape layer sees it plainly —
+  `SUM(R[-5]C[+0]:R[-1]C[+0])` against `SUM(R[+0]C[-20]:R[+0]C[-17])`
+  — and a value-only reader sees **nothing at all**, since both sums
+  total 40. That is the whole argument for the class.
+- **The reference shifted one column and two rows inside a copied
+  block**: reported, and **only that row** — the three untouched
+  rows of the block stay silent, which is what makes the asymmetry a
+  signal rather than noise.
+
+**What the specimens did expose is the detail line.** A
+`methodology_change` reads « the calculation changed shape » and
+stops there. For the sum specimen that is true and nearly useless:
+it does not say *what* the calculation became. Registered before the
+change: the line carries **both shapes**, old → new, truncated,
+because the shape is the thing that changed and the formula text
+would drown a reader in absolute references. **Prediction**: the sum
+specimen's line reads
+`SUM(R[-5]C[+0]:R[-1]C[+0]) → SUM(R[+0]C[-20]:R[+0]C[-17])`, no item
+count moves anywhere, and the ED2 pair is unaffected because it
+contains no methodology changes at all.
+
+### Item 3 — the Enron E08/E09 pair
+
+« Do not wait on it; register nothing yet. » Noted and obeyed: it is
+recorded in the handoff's open list and nothing is built for it.
+
+### The specimens, measured — and a prediction that was right about the wrong strings
+
+Both specimens pass, and the detail line now carries both shapes:
+
+```
+SUM(R[-5]C[+0]:R[-2]C[+0]) → SUM(R[-1]C[+1]:R[-1]C[+4])
+```
+
+Read the halves: on the left the **row** offset varies and the
+column is fixed — a column of cells. On the right the row is fixed
+and the **column** offset varies — a row of cells. The direction
+change is legible in the line itself, which is the whole point of
+the specimen.
+
+**A correction to my own prediction, which was right in substance
+and wrong in its quoted strings.** I predicted the line would read
+`SUM(R[-5]C[+0]:R[-1]C[+0]) → SUM(R[+0]C[-20]:R[+0]C[-17])`. Those
+offsets came from the standalone probe, where the formula sits at
+`AM9`; the test fixture puts it at `B7`, so the real offsets differ.
+The prediction that mattered — the line carries both shapes, old →
+new — held; the strings I quoted were from a different geometry and
+I should not have written them as though they were the fixture's.
+No item count moved anywhere, as predicted, and the ED2 pair is
+untouched: it contains no methodology changes at all.
+
+## The update-profile finding — registered, and deliberately not built as a threshold
+
+The orders hand me a measured finding and an explicit instruction:
+« register how you want to use it; **do not bolt a threshold on** ».
+
+```
+measure                    quarterly reforecast (n=11)   routine commit (n=59)
+formula → hardcode                              83                          0
+reference changed                              228                          0
+changed cells                                1,169                         93
+```
+
+**What I take from it.** C3 today ranks by a fixed weight per class
+and a fixed materiality line (`MATERIAL = 1%`). That is exactly the
+« raw threshold » the finding warns against: 83 formulas replaced by
+hardcodes is *routine* in a quarterly reforecast and *alarming* on a
+Tuesday, and a report that treats them alike is wrong in both
+directions — it cries wolf every quarter and stays silent on the
+Tuesday that matters.
+
+**What I will build, when the material exists.** Not a threshold and
+not a classifier of intent. **A denominator.** The report already
+counts each class; what it lacks is « how unusual is this count, for
+this model ». The shape I am registering:
+
+- **The profile is per model and comes from that model's own
+  history** — the medians of each class's count across its previous
+  transitions. Nothing learned across models; a distribution network
+  and a private-equity model share nothing but a file format.
+- **It is reported beside the count, never instead of it.** « 83
+  formulas became hardcodes (this model's median for a transition of
+  this size: 79) » and « 4 formulas became hardcodes (median: 0) »
+  are two lines a reviewer can act on; a single « suspicious » score
+  is one they cannot.
+- **The comparison is to transitions of comparable size**, because
+  the finding's own table is a size effect as much as an intent
+  effect (1,169 changed cells against 93). Size is measurable from
+  the pair itself and needs no commit message; **intent is not, and
+  I am not going to infer it from a diff.**
+- **Below three prior transitions, it refuses**: « no profile for
+  this model » in words, never a median of one.
+
+**What blocks it, stated plainly**: this needs a model with a real
+version *history*, not a pair. The ED2 corpus has eleven versions of
+one model, which is exactly the material — and re-measuring C3 across
+all ten adjacent ED2 transitions is the round that makes a profile
+real rather than argued. That round is affordable (C3 is ~90 s per
+pair, so ~15 minutes for the chain) and it is the one I would run
+next if the orders leave room.
+
+## The ED2 chain — the update profile, measured (REGISTERED BEFORE RESULTS)
+
+Tip `2bde77d8`, unchanged; orders unchanged; `z3-solver` still
+absent. So the round I named last turn is the one to run: **C3 over
+every adjacent transition of the ED2 chain**, which is the only
+material we hold that has a version *history* rather than a pair.
+
+**The chain**: eleven files, ten adjacent transitions, in the
+corpus's own date order —
+`v1_2023-02 → v2_2023-07-14 → v2_2023-07-31 → v3_2023-10 →
+v3_2023-11 → v3_2024-01(.xlsm) → v4_2024-07 → v4_2025-01 →
+v4_2025-07 → v4_2026-01 → v5_2026-06`.
+
+**What is being built**, and it is the design registered last turn,
+not a threshold:
+
+- `watch/profile.py` — `profile_of(transitions)` gives, per delta
+  class, the **median count across a model's own prior
+  transitions**; `describe(kind, count, profile)` gives the line a
+  reviewer reads: « 83 (this model's median: 79) ».
+- **It refuses below three priors**, in words: « no profile for this
+  model ». A median of one is not a profile.
+- **Size-matched**, per the registration: the comparison uses the
+  priors whose total changed-cell count is nearest this
+  transition's, not all of them — because the founder's own table is
+  a size effect as much as an intent effect.
+- **Nothing is learned across models.** The profile is per file
+  chain and per class, and the module has no notion of « normal for
+  a spreadsheet ».
+
+**Predictions, before the chain runs.**
+
+1. **The spread is wide**: the largest transition's changed-cell
+   count is at least **10×** the smallest. If the chain is uniform,
+   the profile idea has nothing to stand on and I will say so.
+2. **`methodology_change` is zero or near-zero within a version
+   family** (v2→v2, v3→v3, v4→v4) and non-zero across families
+   (v2→v3, v3→v4, v4→v5). The 14→31 July pair is already known to be
+   0, and it is a within-family pair.
+3. **`filled_cell` appears in most transitions** — extending a
+   published data series is what a regulatory update *is*, and the
+   July pair showed exactly that.
+4. **At least one transition costs more than five minutes** in the
+   aligner, because a major-version step moves structure and the
+   alignment is quadratic in the moved dimension. If any pair
+   exceeds twenty minutes it is recorded as a refusal with its
+   timing, not waited out.
+
+### Amendment before the chain's numbers are read: « nearest » is not « comparable »
+
+Writing the profile's tests, on transitions whose right answer is
+known by construction, exposed a flaw in my own registered design.
+« The priors whose changed-cell count is nearest » taken as *the five
+nearest* does the wrong thing when a model's history is thin: for a
+95-cell update with only six priors, the five nearest include two
+reforecasts of 1,090 and 1,169 cells, and the median of « formulas
+replaced by hardcodes » comes back **1** where the comparable history
+says **0**. That is precisely the mixing the design exists to
+prevent, reintroduced by a lazy reading of my own rule.
+
+**The rule, fixed here before any chain number is read**: a prior is
+**comparable** only if its changed-cell count is within a **factor of
+two** of the transition being read; among those, the nearest
+`NEIGHBOURS` are used. If fewer than `MINIMUM_PRIORS` comparable
+priors exist, the profile **refuses in words** — « no profile for a
+transition this size » — which is a different and more honest refusal
+than « no profile for this model »: the model may have plenty of
+history and none of it comparable.
+
+The factor of two is declared, not derived. It is a constant of this
+lane now, and moving it is a written round.
+
+## The ED2 chain — results: the founder's finding replicates on a regulator's model
+
+Ten transitions, **66–72 s each**, ~11 minutes for the chain. Every
+one completed; none refused.
+
+```
+transition                              cells   the classes that moved
+v1_2023-02  → v2_2023-07-14               911   methodology 72 · structure 17 · relabelled 2
+v2_2023-07-14 → v2_2023-07-31             680   assumptions 2 · filled 1 · outputs 94
+v2_2023-07-31 → v3_2023-10                247   methodology 10 · structure 4
+v3_2023-10  → v3_2023-11                5,145   assumptions 44 · outputs 333
+v3_2023-11  → v3_2024-01                7,679   assumptions 464 · outputs 330 · structure 113
+                                                · class change 12 · filled 17
+v3_2024-01  → v4_2024-07                5,620   methodology 95 · outputs 269 · structure 14
+v4_2024-07  → v4_2025-01                9,865   assumptions 440 · outputs 362 · structure 52
+v4_2025-01  → v4_2025-07                  553   assumptions 2 · filled 1 · outputs 95
+v4_2025-07  → v4_2026-01                9,425   assumptions 436 · outputs 340 · filled 9
+v4_2026-01  → v5_2026-06                5,050   outputs 292 · structure 10 · relabelled 4
+```
+
+*(« cells » here is the **report's own** size measure — cells that
+produced a delta event — and it is not C1's raw changed-cell count.
+On the July pair it reads 680 where C1 reads 1,255. Two denominators,
+both honest, and I am naming which is which so nobody compares
+them.)*
+
+**The finding replicates, on a model class the research round never
+touched.** The founder's table came from an equity model's git
+history; this is a regulator's price-control model, and its own
+history splits the same way:
+
+```
+four transitions   247 – 911 cells      assumptions moved:   0, 2, 2, —
+six transitions  5,050 – 9,865 cells    assumptions moved:  44, 436, 440, 464
+```
+
+There is **no transition between 911 and 5,050 cells** — the gap is
+in the data, not in a threshold I chose. « 436 assumptions moved » is
+routine for this model in a periodic update and would be alarming in
+a July patch, which is precisely the founder's point arriving
+independently.
+
+**Against the predictions.**
+
+1. **Spread ≥ 10× — held, at 39.9×.**
+2. **`methodology_change` zero within a version family and non-zero
+   across — held nine times and failed on the tenth.** v1→v2: 72.
+   v2→v3: 10. v3→v4: 95. Within-family steps: 0 every time. But
+   **v4→v5, a major-version step, has zero methodology changes** —
+   its signature is 4 relabelled lines and 10 structure items. **The
+   version number is not a reliable predictor of a rewrite**, and the
+   chain says so plainly: v5 was a renaming and restructuring event.
+3. **`filled_cell` in most transitions — held, barely: 6 of 10.**
+4. **« At least one transition costs more than five minutes » —
+   failed, and this is the good kind.** The slowest was **72 s**,
+   including two major-version steps. The memory and timing rounds
+   paid for that; I predicted the aligner would struggle across
+   structural change and it did not.
+
+**The profile, run over the chain with each transition read against
+the other nine.** It flags, in this model's own terms:
+
+```
+v3_2023-11 → v3_2024-01   unusual: class_change, emptied_cell, filled_cell,
+                                   moved_assumption, structure
+v3_2024-01 → v4_2024-07   unusual: methodology_change, relabelled_line
+v4_2024-07 → v4_2025-01   unusual: emptied_cell, filled_cell, moved_assumption,
+                                   structure
+v4_2026-01 → v5_2026-06   unusual: relabelled_line
+```
+
+Those are review sentences, not scores: *this transition rewrote more
+formulas than this model usually does*, and *this one renamed more
+lines than it usually does*. Neither is available from a count alone.
+
+**And the honest limitation, which the run exposed rather than
+hid.** The four small transitions get **0 to 2 comparable priors** and
+the profile **refuses** on all of them — « no profile for a
+transition this size, 9 priors, 0 of comparable size ». That is the
+design behaving exactly as registered, and it means the profile is
+silent on precisely the transitions a reviewer most often reads: the
+small, routine-looking ones. The cause is arithmetic: ED2's history
+holds four small transitions, and a factor-of-two band splits even
+those (247's band is 123–494; the next smallest is 553).
+
+**I am not moving the factor now.** Widening it after seeing which
+transitions refused is tuning to the result, which is the one thing
+this lane does not do. Registered instead, for a later round and to
+be decided before it runs: replace the fixed factor with **bands
+taken from the chain's own distribution** — the gap between 911 and
+5,050 is a cluster boundary the data drew by itself, and a rule that
+finds such boundaries would give the small transitions three priors
+apiece without widening anything by hand.
+
+## The comparability round (REGISTERED BEFORE RESULTS)
+
+Tip `2bde77d8`, unchanged. Orders unchanged. `z3-solver` absent.
+The live registered item is the profile's comparability band, and
+the first thing to say about it is what I do **not** have.
+
+**There is no held-out chain.** I checked the corpus rather than
+assuming: `ofgem_riio3` is draft-versus-final of *four different*
+models, and `caa_h7` is two unrelated pairs. Neither is a history.
+**ED2 is the only version chain we hold**, so any rule I design now
+is designed by someone who has already seen ED2's ten transitions
+and knows there is a gap between 911 and 5,050 cells. I am not going
+to pretend otherwise, and the consequence is stated before the run:
+**a good result here is weak evidence.** The real test is a second
+chain — the founder's research corpus holds an equity model with
+seventy transitions, and that is where this rule should be tried by
+someone who has not seen its numbers.
+
+**What I will not do**, having seen the distribution: fit anything
+to it. No cluster boundary read off ED2's gap, no factor tuned until
+the refusals go away. The rule below is structural and contains no
+number taken from the data.
+
+**The rule.**
+
+1. **Comparable priors first**, unchanged: within
+   `COMPARABLE_FACTOR` (2.0) of this transition's size.
+2. **If fewer than `MINIMUM_PRIORS` are comparable, do not fall
+   silent — answer, and disclose.** Take the three nearest priors by
+   size and report the line *with the size ratio spelled out*:
+   « … compared with this model's 3 nearest updates, 2.2–3.7× larger ».
+   A qualified answer a reviewer can discount beats a refusal they
+   cannot act on, **provided the qualification is in the line
+   itself** and not in a footnote.
+3. **Refuse entirely only when the model has fewer than
+   `MINIMUM_PRIORS` transitions at all.** That refusal is about the
+   model's history and cannot be argued away.
+
+The distinction that matters: silence when the model has no history;
+a *disclosed* comparison when it has history of the wrong size.
+
+**Predictions.**
+
+1. All **four** small ED2 transitions (247–911 cells) get a
+   qualified profile where they now get a refusal; no large one
+   changes at all, because those already have five comparable
+   priors.
+2. The 247-cell transition's disclosed ratio is **between 2× and
+   4×** (its nearest are 553, 680 and 911).
+3. **The 247-cell transition — v2_2023-07-31 → v3_2023-10 — is
+   flagged unusual for `methodology_change`**, because it rewrote 10
+   formulas where this model's other small updates rewrote none.
+4. **The two genuinely routine transitions (553 and 680 cells) are
+   flagged for nothing at all.** If a rule that discloses its own
+   weakness still cries wolf on the quietest updates in the chain,
+   it is not worth having and I will say so.
+
+## The comparability round — results: three predictions held, the fourth killed a feature
+
+```
+transition                    cells   profile      ratio      unusual
+v1_2023-02 → v2_2023-07-14      911   QUALIFIED   1.3–3.7×   methodology, structure,
+                                                             relabelled, emptied, repaired
+v2_2023-07-14 → v2_2023-07-31   680   QUALIFIED   1.2–2.8×   filled, outputs, assumptions
+v2_2023-07-31 → v3_2023-10      247   QUALIFIED   2.2–3.7×   methodology, structure
+v4_2025-01 → v4_2025-07         553   QUALIFIED   1.2–2.2×   filled, outputs, assumptions
+the six large ones            5,050+  comparable      —      (unchanged from last round)
+```
+
+1. **All four small transitions now answer instead of refusing** —
+   held.
+2. **The 247-cell transition's ratio is 2.2–3.7×** — held, inside the
+   predicted 2–4×.
+3. **It is flagged for `methodology_change`** — held. Ten formulas
+   rewritten where this model's other small updates rewrote none.
+4. **« The two genuinely routine transitions are flagged for nothing
+   at all » — FAILED.** Both 680 and 553 — the quietest updates in
+   the whole chain, two moved assumptions and a filled cell apiece —
+   come back flagged for `filled_cell`, `material_output` **and**
+   `moved_assumption`.
+
+**I registered what to do if that happened, so I am doing it.** The
+words were: « if a rule that discloses its own weakness still cries
+wolf on the quietest updates in the chain, it is not worth having
+and I will say so ». It does, and it isn't.
+
+**Why it fails, and it is structural rather than a bad constant.** A
+small transition's three nearest priors are *not* three routine
+updates — they are whatever is nearest by size, which in this chain
+means a routine update sitting beside two version-family steps
+(247 rewrote 10 formulas, 911 rewrote 72). The median of a
+heterogeneous triple is not a habit, and a boolean drawn from it is
+noise wearing a verdict's clothes.
+
+**What I am changing, and it follows from the design's own
+principle rather than from these numbers**: `unusual()` returns
+`False` for any **qualified** profile. A disclosed comparison is
+weak by construction — that is what disclosing it means — and
+turning a weak comparison into a boolean is precisely the over-claim
+this whole module exists to avoid. The *line* stays: « 2
+moved_assumption (this model's median for updates this size: 0, but
+its nearest updates are 1.2–2.8× a different size) » is a sentence a
+reviewer can weigh. The flag was the machine weighing it for them,
+badly.
+
+So the round's net result is one feature narrowed and one honest
+sentence kept — and the ordering signal now fires only where the
+comparison is real: the six large transitions, where it says the
+reforecasts moved assumptions and structure, v3→v4 rewrote formulas,
+and v4→v5 renamed lines.
