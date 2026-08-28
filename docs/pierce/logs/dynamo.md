@@ -3303,3 +3303,62 @@ measurement here is not automatically blind to whole-number
 percentages — but the second convention is represented by **one row
 of 3,796**, which is far too thin to claim `rate_form` is tested
 against it. The caveat stands, with the count attached.
+
+---
+
+## Build order (b) — units in a column of their own — registration
+
+*28 Aug, URGENT addendum item 3(b). Nine of 27 real models keep
+units in a dedicated column beside the value rather than in the
+label; 698 declarations were extracted that way. An engine that
+parses only labels finds nothing in those nine **and reports full
+coverage on all of them** — the silent-blindness shape.*
+
+### The circularity, handled before it bites
+
+My 3,796-row author key **is** ED2's and GD3's Units column. The
+moment E2 reads units columns, scoring E2 against them is circular.
+So this round is built with that constraint written into it:
+
+- The detector is **measured on what it finds**, never on whether
+  what it finds agrees with itself. Its number is *recall of
+  declarations* — how many unit declarations exist and how many it
+  reaches — verified by hand-reading a sample.
+- **No accuracy number is reported against a units column**, then or
+  ever, once E2 can read one.
+- The measured configuration for the verdict stays **blind**: E2
+  with units-column reading off. The verdict published today keeps
+  its meaning, and a new verdict waits for a key that is not the
+  thing being read.
+
+That is the honest arrangement and it is also a smaller claim than
+« E2 got better », which is what a circular measurement would have
+let me say.
+
+### What is built
+
+A detector for a units column that does **not** rely on a `Units`
+header, because the models that need it do not have one: a narrow,
+mostly-text column adjacent to a block of numbers, whose entries are
+short and match unit-shaped patterns, bound to the row beside it. It
+returns declarations per row, with the column it came from, so a
+reader can check it.
+
+### Predictions
+
+1. **On ED2 and GD3 it finds the same columns the header-based
+   finder finds.** If it disagrees on models where I know the
+   answer, it is not ready for models where I do not.
+2. **It finds units columns in the closed-deal corpus, where my
+   header-based finder found zero.** This is the one I care about:
+   I reported « **zero** rows carry a declared unit » across eight
+   models and used it to declare the generalisation round
+   unmeasurable. If a header-free detector finds declarations there,
+   **that finding was partly an artifact of my finder**, and I would
+   rather discover it myself than have it stand.
+3. **It fires on something that is not a units column** — a comment
+   column, a category column. Registered for the fifth time; hunted
+   for deliberately, by hand-reading a sample rather than by
+   trusting a count.
+4. The verdict's dimensions do not move, because the measured
+   configuration stays blind.
