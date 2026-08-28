@@ -400,6 +400,28 @@ abstentions, 30 of 30 on round 3, plus round 8's finding that **10 of 25
 cited inputs are nils**. *"We looked and there is nothing there"* is the
 one statement D3 has earned.
 
+**But the zero is not the whole story, and an earlier version of this
+file said it was.** Stripping D3's floor and tie rule and asking only
+whether the truth is ever the *top-scoring* candidate:
+
+| | rows | truth is top-scoring (oracle) | blind pick among the tied |
+|---|---|---|---|
+| **Finch** (round 6) | 14 | **7** | 1.3 correct, 5.7 wrong |
+| **FERC** (round 8) | 15 | **4** | 0.79 |
+
+On prose the truth is top-scoring for **half** the rows and D3 abstains
+on every one because the top score is **tied** — so there the **rules**
+cost the recall, not the evidence. On the statutory form 11 of 15 are
+unreachable regardless, and 7 truth lines share *no words at all* with
+the cell's label.
+
+The tie rule is still correct today: blind tie-breaking returns more
+wrong than right and fails kill criterion 1. **The headroom is 1.3 → 7
+on Finch, 0.79 → 4 on FERC, and all of it belongs to a better-than-chance
+tie-breaker.** Do not read the lifetime zero as "the approach cannot
+work" — read it as "the tie rule converts every reachable answer into an
+abstention, and nothing yet breaks ties.
+
 ### Round 9 was investigated and **deliberately not built** — read this before you try
 
 The obvious next fix is the **two-page spread**: a wide table's
