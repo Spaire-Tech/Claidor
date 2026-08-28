@@ -220,6 +220,32 @@ sitting there unlisted the whole time. Still unsurfaced after this
 turn: the Watch's `classify` / `build_ladder` / `align_lines` /
 `Tier2Answer`, and `recalc.iterative_cells`.
 
+**The report has an oracle: `logs/atelier/report_oracle.mjs`.** It
+renders a real model's report, pulls every printed number, and checks
+each against the values the API served — plus the other four DONE
+clauses. Run it on four models before believing any change to the
+report. It lied twice before it worked: first by matching numbers as
+*substrings* of the raw JSON (« 3 » matches a timestamp), then by
+silently skipping findings whose printed sentence differs from the
+payload's title and reporting « 0 problems ». **Make a check count
+what it examined**, or a check that skips is indistinguishable from
+one that passes.
+
+**One statement is one entry.** A rule collapses when every one of its
+findings makes the identical statement once its own reference *and
+name* are removed. Newbattle's 53 hidden sheets took section 3 from
+**267 lines to 111**. Counts are never edited by the screen. Two traps
+found by reading the output: stripping the name breaks the sentence
+when the name is its subject (print the first finding's own sentence
+and roster the rest, as the engine does for `broken-name`), and the
+heading must not say « cells » when the group is sheets.
+
+**`dev/verify`'s changed-file set over-reaches for a just-rebased
+lane** — it includes `@{upstream}...HEAD`, and a lane's upstream is
+its own branch, so every file the tip merged from other lanes counts
+as yours. Check the failing file against the tip before touching it;
+**never format another lane's file to make your gate green.**
+
 **Only this lane measures the reader's load** — every other lane
 tests its module against planted fixtures. `logs/atelier/reader_load.py`
 runs the whole engine over the whole corpus and counts what a partner

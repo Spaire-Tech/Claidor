@@ -2240,3 +2240,101 @@ band still reading « Material 62 », which is the report lying about
 the engine on the engine's behalf. The count is wrong at source and
 that is where it gets fixed. Until then the report carries the
 engine's answer faithfully, which is its job.
+
+## Thirtieth turn — the piece: an oracle for the report, then what it found
+
+My piece is the report and the DONE test is « a real corpus model
+produces a report that survives a hostile read: findings ranked,
+coverage stated on its face, every claim citable to a cell, refusals
+in words, and no sentence the engine cannot defend ». **I accept that
+test as written.** It is the right one and I am not moving it.
+
+Worked by the method. **Task one was the oracle**, because without one
+« survives a hostile read » is an opinion:
+`logs/atelier/report_oracle.mjs` renders a real model's report, pulls
+every number off the page, and checks each against what the API
+actually served — then checks the other four clauses mechanically.
+
+### The oracle lied twice before it told the truth
+
+Worth recording, because both failures are the ones `lanes.md` warns
+about and neither was visible by eye.
+
+**First it was too permissive.** It asked whether a printed number
+appeared anywhere in the concatenated JSON. « 3 » matched a timestamp,
+« 4 » matched a UUID: 21 of 21 traced, meaning nothing. Rebuilt to
+parse each payload and collect its actual *values* — numeric leaves
+and numbers inside strings — and match exactly.
+
+**Then it passed by testing nothing.** It reported « 0 problems » on
+Kelso while silently skipping **3 of 5** findings, because it matched
+on the payload's title and the report prints a grouped sentence with
+the reference taken out. I only found it by making the skips print.
+**A check that skips is indistinguishable from a check that passes
+unless it counts what it examined.**
+
+Third time, on four real models: **166 numbers printed, all traced;
+94 findings, every reference on the page.**
+
+### What it found, once it worked: 267 lines for one fact
+
+Newbattle — the model that hides 53 of its 54 sheets — reported
+**72 findings, 66 material**, and section 3 ran to **267 lines**:
+entries 02 through 54 were the same sentence with a different sheet
+name in it.
+
+The verdict already grouped correctly (« 53 hidden sheets, nine
+unexpected hardcodes, and four structural exceptions »). Section 3 did
+not, because this morning's grouping keys on rule + sheet + row, and
+fifty-three sheets are fifty-three rows.
+
+**The rule now is: one statement is one entry.** A rule collapses when
+*every* one of its findings makes the identical statement once its own
+reference **and its own name** are removed. Where they genuinely
+differ, the sheet-and-row grouping still applies and nothing merges.
+Section 3: **267 lines → 111**.
+
+The counts are untouched. 66 material findings are 66; the engine's
+number is not this screen's to edit. What changed is that the page
+numbers *places to act*, and the severity band still says what the
+engine said.
+
+**Two defects in my own first attempt at it**, both caught by reading
+the output rather than the diff:
+
+- Stripping the name is right for *comparing* and wrong for
+  *displaying* when the name is the subject: fifty-three sheets
+  collapsed to « is very hidden — it does not appear in Excel's unhide
+  menu », a sentence with nothing to be about. The group still
+  collapses; it now prints the first finding's own sentence with the
+  rest rostered — the shape the engine already uses for `broken-name`.
+- The heading said « 53 CELLS ». They are sheets. It says « 53 IN
+  ALL », which is true whatever the group is made of.
+
+And a third, caught before it shipped: the grouping ran **eagerly**
+above the helpers it calls, which `tsc` cannot see and the browser
+would have thrown on. Moved below them.
+
+### The gate
+
+`dev/verify` is red on **`polar/tieout/audit.py`**, which is
+**Sentinel's file, byte-identical to the tip**, and this lane made no
+server change this turn at all. It is in the gate's « changed » set
+because that set includes `@{upstream}...HEAD`, and a lane's upstream
+is its own branch — so everything the integration tip merged from
+other lanes counts as this lane's change. **For any lane that has just
+rebased, `dev/verify`'s file selection over-reaches.** Diffing against
+the integration branch instead of `@{upstream}` would fix it;
+`dev/verify` is the lead's file, so it is reported rather than edited.
+
+Run scoped correctly: my files lint and format clean, no mypy error in
+any file this lane owns, and the suite under the heavy lock is
+**1063 passed, 4 skipped**.
+
+### Where the piece stands
+
+Mechanically the DONE test is met on four real corpus models,
+including the worst one. What no oracle can check is the prose, and
+one thing in it is still not defensible by the engine: the report says
+« 66 findings that change a number someone will act on » when 53 of
+them are one act. The verdict says so; that line does not. Next.

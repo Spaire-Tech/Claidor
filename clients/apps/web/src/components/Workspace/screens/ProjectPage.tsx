@@ -4028,51 +4028,12 @@ const Report = ({
   //: repeated rule varies — so this collapses « … firing at !M712 »
   //: and « … firing at !N712 » and refuses to collapse two genuinely
   //: different sentences that happen to sit on one row.
-  const sharedSentence = (place: Finding[]): string => {
-    if (place.length < 2) return ''
-    const bare = (one: Finding) =>
-      saidOf(one.plain || one.title)
-        .replace(citeOf(one), '')
-        .replace(/\s+at\s*$/, '')
-        .trim()
-    const first = bare(place[0]!)
-    return place.every((one) => bare(one) === first) ? first : ''
-  }
-
-  const placeOf = (one: Finding): string => {
-    const ref = String(one.where.anchor.ref ?? '')
-    const row = ref.match(/(\d+)$/)?.[1] ?? ''
-    if (!one.rule || !row) return `solo:${one.id}`
-    return `${one.rule}|${one.where.anchor.sheet ?? ''}|${row}`
-  }
-  const materialPlaces = (() => {
-    const byPlace = new Map<string, Finding[]>()
-    for (const one of material) {
-      const key = placeOf(one)
-      byPlace.set(key, [...(byPlace.get(key) ?? []), one])
-    }
-    //: Within a place, in the order a person reads a model: down the
-    //: columns, left to right. They arrived N712, M712, O712.
-    const at = (one: Finding) => {
-      const coordinate =
-        String(one.where.anchor.ref ?? '')
-          .split('!')
-          .pop() ?? ''
-      const column = coordinate.replace(/[^A-Za-z]/g, '')
-      const row = Number(coordinate.replace(/[^0-9]/g, '')) || 0
-      return { column, row }
-    }
-    return [...byPlace.values()].map((group) =>
-      [...group].sort((a, b) => {
-        const one = at(a)
-        const two = at(b)
-        if (one.column.length !== two.column.length)
-          return one.column.length - two.column.length
-        if (one.column !== two.column) return one.column < two.column ? -1 : 1
-        return one.row - two.row
-      }),
-    )
-  })()
+  //: A finding carries two things that identify *it* rather than what
+  //: is wrong: its reference and its name. Take both out and what is
+  //: left is the statement. When every statement in a group is the
+  //: same, the group is one statement about the model — whether that
+  //: is one row in three columns, or fifty-three sheets each hidden
+  //: the same way.
   const record = lastRun ? auditRecord(lastRun) : null
   const summary = lastRun?.summary ?? {}
 
@@ -4220,6 +4181,119 @@ const Report = ({
         : one.where.filename
     return one.where.label || ''
   }
+
+  const statementOf = (one: Finding): string => {
+    let said = saidOf(one.plain || one.title)
+    const ref = citeOf(one)
+    const name = String(one.where.anchor.sheet ?? one.source?.name ?? '')
+    if (ref) said = said.split(ref).join('')
+    if (name) said = said.split(name).join('')
+    return said
+      .replace(/«\s*»/g, '')
+      .replace(/\s+at\s*$/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  }
+  //: The one sentence a group shares, ready to print — or empty when
+  //: printing it would break it.
+  //:
+  //: Stripping a finding's own name is right for *comparing* and wrong
+  //: for *displaying* when the name is the sentence's subject: fifty-
+  //: three hidden sheets collapsed to « is very hidden — it does not
+  //: appear in Excel's unhide menu », a sentence with nothing to be
+  //: about. So the shared line is used only when the name sits inside
+  //: the sentence rather than at its head; where it is the subject,
+  //: the group keeps each finding's own sentence and the reader sees
+  //: the count in the heading.
+  const sharedSentence = (place: Finding[]): string => {
+    if (place.length < 2) return ''
+    const first = statementOf(place[0]!)
+    if (!first) return ''
+    if (!place.every((one) => statementOf(one) === first)) return ''
+    //: Whether the name is the sentence's *subject*. « BID PRICE » is
+    //: very hidden — take the name out and nothing is left to be about.
+    const heads = place.some((one) => {
+      const said = saidOf(one.plain || one.title)
+      const name = String(one.where.anchor.sheet ?? '')
+      const ref = citeOf(one)
+      return (
+        (!!name && said.startsWith(name)) ||
+        (!!ref && said.startsWith(ref)) ||
+        said.startsWith('«')
+      )
+    })
+    //: They still collapse — the group is one statement either way.
+    //: What changes is what gets printed: the stripped statement when
+    //: it survives stripping, and otherwise the first finding's own
+    //: sentence with the rest rostered beneath it. That is the shape
+    //: the engine already uses for `broken-name`: « 338 defined names
+    //: point into other workbooks … and 332 more ».
+    return heads ? saidOf(place[0]!.plain || place[0]!.title) : first
+  }
+
+  const placeOf = (one: Finding): string => {
+    const ref = String(one.where.anchor.ref ?? '')
+    const row = ref.match(/(\d+)$/)?.[1] ?? ''
+    if (!one.rule || !row) return `solo:${one.id}`
+    return `${one.rule}|${one.where.anchor.sheet ?? ''}|${row}`
+  }
+  const materialPlaces = (() => {
+    //: **First, one statement is one entry.** Newbattle hides 53 of
+    //: its 54 sheets, and the report printed 53 numbered entries
+    //: carrying the same sentence with a different sheet name in it —
+    //: section 3 ran to 267 lines. That is one act by one person and
+    //: a reader acts on it once.
+    //:
+    //: A rule collapses only when *every* one of its findings makes
+    //: the identical statement once its own reference and name are
+    //: removed. Where they genuinely differ, the sheet-and-row
+    //: grouping below still applies and nothing is merged. The tally
+    //: above is untouched either way: 66 material findings are 66,
+    //: and the engine's count is not this screen's to edit.
+    const byRule = new Map<string, Finding[]>()
+    for (const one of material) {
+      const key = one.rule ?? ''
+      if (!key) continue
+      byRule.set(key, [...(byRule.get(key) ?? []), one])
+    }
+    const collapsed = new Set<string>()
+    const wholeRule: Finding[][] = []
+    for (const group of byRule.values()) {
+      if (group.length > 1 && sharedSentence(group)) {
+        wholeRule.push(group)
+        for (const one of group) collapsed.add(one.id)
+      }
+    }
+
+    const byPlace = new Map<string, Finding[]>()
+    for (const one of material) {
+      if (collapsed.has(one.id)) continue
+      const key = placeOf(one)
+      byPlace.set(key, [...(byPlace.get(key) ?? []), one])
+    }
+    for (const group of wholeRule) byPlace.set(`rule:${group[0]!.rule}`, group)
+    //: Within a place, in the order a person reads a model: down the
+    //: columns, left to right. They arrived N712, M712, O712.
+    const at = (one: Finding) => {
+      const coordinate =
+        String(one.where.anchor.ref ?? '')
+          .split('!')
+          .pop() ?? ''
+      const column = coordinate.replace(/[^A-Za-z]/g, '')
+      const row = Number(coordinate.replace(/[^0-9]/g, '')) || 0
+      return { column, row }
+    }
+    return [...byPlace.values()].map((group) =>
+      [...group].sort((a, b) => {
+        const one = at(a)
+        const two = at(b)
+        if (one.column.length !== two.column.length)
+          return one.column.length - two.column.length
+        if (one.column !== two.column) return one.column < two.column ? -1 : 1
+        return one.row - two.row
+      }),
+    )
+  })()
   //: A drift finding is a claim about two places at once — the printed
   //: figure and the cell it should have matched. Both are cited.
   const againstOf = (one: Finding): string =>
@@ -5070,7 +5144,12 @@ const Report = ({
                             }}
                           >
                             {said}
-                            {place.length > 1 ? ` · ${place.length} cells` : ''}
+                            {/* Not « cells »: a group may be cells, rows
+                                or whole sheets, and the heading must
+                                not name the wrong thing. */}
+                            {place.length > 1
+                              ? ` · ${place.length} in all`
+                              : ''}
                           </span>
                         )
                       })()}
