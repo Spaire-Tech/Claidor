@@ -5327,3 +5327,111 @@ the table.
 - Every number above comes from verdict files already committed to this
   repository — nothing was re-judged, and the tally can be reproduced
   from `docs/pierce/scribe-d3-round*-verdicts.json`.
+
+## 28 August 2026, twenty-sixth « go » — **I generalised from one corpus again.** The rules, not the evidence, are what cost D3 half of Finch.
+
+Orders unchanged; the thirtieth tip is a priority correction for other
+lanes and **my round 9 and the cross-round tally are still unswept**, so
+the decision I put to the lead is pending. Rather than sit on it, I spent
+this turn making that decision safer by separating the two things it
+turns on: **do D3's decision rules fail, or does the evidence?**
+
+The answer is different on the two corpora, and my last entry got it
+wrong.
+
+### The measurement: an oracle upper bound
+
+Strip D3's floor and its tie rule entirely. Ask only: with label overlap
+alone, **is the truth ever the top-scoring candidate?** If it is not, no
+tie-breaker however clever can ever reach it and the rules are innocent.
+If it is, the rules are what stand in the way.
+
+| | rows | truth is top-scoring (**oracle bound**) | truth shares *no* words with the label | expected recall from a **blind** pick among the tied |
+|---|---|---|---|---|
+| **Finch** (round 6) | 14 | **7** | 3 | **1.3** |
+| **FERC** (round 8) | 15 | **4** | 7 | **0.79** |
+
+### The correction, and it is mine
+
+Last entry I wrote that round 8's failure is « in the evidence, not in
+the rules », and that « label-overlap scoring does not identify sources.
+Not on prose, not on a statutory form. »
+
+**On Finch that is false.** The truth is the single top-scoring candidate
+for **half** the rows. Those seven are not unreachable — they are
+reachable, and D3 abstains on every one of them because the top score is
+**tied**. The rule that was built to stop wrong answers is stopping every
+right one too.
+
+I had measured FERC and written a sentence about documents in general.
+That is the third time in four turns that this lane's failure has been to
+generalise from the case in front of it — the glue that explained the
+first row, the coverage rule that looked like 92%, and now this. The
+difference is that the previous two were caught before publication. This
+one was not: it went out in the twenty-fifth entry and in the handoff,
+and I am correcting it here.
+
+**What survives from that entry, unchanged:** the tally itself — six
+rounds, three corpora, 0 correct proposals, 15 false ones, 109 true
+abstentions — and the FERC half of the diagnosis. On the statutory form,
+the truth really is unreachable on 11 of 15, and 7 of 15 truth lines
+share **no words at all** with the model's label.
+
+### Why the tie rule is nonetheless right today
+
+The seven reachable Finch rows are not free. Their tied sets run from 2
+to 16 candidates, and a **blind** pick among them returns an expected
+**1.3 correct and 5.7 wrong**. Under kill criterion 1 — more wrong than
+right is a failure — blind tie-breaking is *worse* than abstaining.
+
+So the tie rule is not a mistake. It is a correct response to having
+nothing to break ties with. What the numbers say is narrower and more
+useful: **the headroom on Finch is 1.3 → 7**, and it belongs entirely to
+a tie-breaker that does better than chance.
+
+On FERC the same headroom is **0.79 → 4 of 15**, and one row shows why
+that corpus is the hard one: r12's tied set has **335 members**.
+
+### Two instrument errors this turn, both caught
+
+**7.** My first Finch run returned « 0 of 0 » — no recorded truth key
+resolved. I was one step from reporting that rounds 5 and 6's truths had
+been invalidated by the extractor bump, which would have been a serious
+claim about the lane's own record. The keys are **ordinals**, and I had
+reconstructed them as x-coordinates. Reading the harness's own
+`facts()` — which exists precisely so nobody re-derives this — showed the
+format.
+
+**8.** Before trusting the ordinals I checked whether they still address
+the right facts at v5, since the harness's comment warns that an
+extractor change shifts every ordinal. **17 of 18 still address a fact
+with the recorded cell's magnitude.** They survived. (One does not:
+`EPSunDevil!D14` records 570 and now addresses 2,000; it is excluded and
+named here rather than quietly dropped.)
+
+### What this changes for the lead's decision
+
+The choice I framed last turn — *change the matching approach, or reframe
+D3 as an abstention instrument* — is now better priced, and less stark:
+
+- D3's zero is **real and reproduced on three corpora**. That stands.
+- But on prose documents the ceiling for the current approach is **7 of
+  14, not zero**, and the whole gap is the tie-break.
+- A tie-breaker must beat chance by a wide margin to be worth shipping:
+  blind gives 1.3 right and 5.7 wrong, which fails the lane's own kill
+  criterion.
+- On statutory forms the ceiling is **4 of 15** and no tie-breaker
+  reaches the other eleven.
+
+I am **not** proposing a tie-breaker. I proposed one two turns ago
+(page context), measured it, and it resolved nothing. The honest position
+is that the headroom exists, is bounded, and is corpus-dependent — and
+that whether it is worth another round is the lead's call.
+
+### Turn's end state
+
+- **No package code changed.** The diff is this entry and the handoff.
+- Every number is reproduced from files already in the repository:
+  `scribe-d3-round6-finch-verdicts.json`, `scribe-d3-round8-sample.json`,
+  and the cached corpora. Nothing was re-judged, and no truth was
+  re-derived by me.
