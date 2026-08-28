@@ -1,4 +1,14 @@
-"""Did the engine catch the planted label-column defects?"""
+"""Did the engine catch the planted label-column defects?
+
+The step that refused `label-column-election.md`. It reported 0 of
+12, and the reason was structural rather than a matter of degree:
+the election keyed on a cell carrying a formula, and a typed-over
+cell has none, so the defect was the one thing the change still
+could not see.
+
+Kept because the successor round needs the same measurement,
+against the same planted files and the same truth.
+"""
 import json, sys, warnings
 from pathlib import Path
 warnings.filterwarnings("ignore")
