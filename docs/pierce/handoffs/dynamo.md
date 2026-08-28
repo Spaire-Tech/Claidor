@@ -138,6 +138,15 @@ files, git-ignored), never committed.
 
 ## The disciplines that are not negotiable
 
+- **Measure the shape of a key before quoting its accuracy.** Twice
+  on 28 Aug a number of mine measured something narrower than its
+  name: the 3,796-row author key holds **one value for `kind`**
+  (every row in it declares £m or %, so all are continuous), and the
+  whole corpus holds **one of the two real percent conventions**
+  (183,987 percent-formatted cells in `final_wacc.xlsx`, none above
+  1.5 — `scripts/recalc_units_convention.py` re-runs this anywhere).
+  Count the distinct values a key can hold, per dimension, before
+  publishing accuracy against it.
 - **Commit every result file the moment it is produced.** Learned the
   hard way on 28 Aug: the container restarted, the repo was
   re-cloned, and the raw output of every round before that session —
