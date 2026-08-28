@@ -62,6 +62,33 @@ Each lane writes its own running log at `docs/pierce/logs/<name>.md`
   merge. A lane rebases onto the integrated tip only when the lead
   says the tip moved.
 
+## Triple-verify, and what it actually means
+
+The founder's instruction, 28 Aug: aggressive, ship fast, and **triple
+verify every block**. Those are not in tension — the verifying is what
+makes the speed safe. Three things, and they are the three that have
+actually caught errors here:
+
+1. **Verify the number, not the run.** `dev/verify` is the floor. A
+   suite result taken beside another job is not a result.
+2. **Verify against something that did not come from us.** The `.xlsb`
+   work was gated on `xlrd` reading the originals — 243,812 cells,
+   100.0000% — before one line of it was wired in. An independent
+   reader, a second implementation, the file's own bytes: anything but
+   our own opinion.
+3. **Verify the claim you are about to make, especially when it is
+   good news.** A conversion appeared to recover 13,408 formulas. It
+   had manufactured 13,346 of them out of boolean cells. The tell was
+   one printed sample. **Before publishing a number, look at a sample
+   of the thing it counts.** Every false result today survived until
+   somebody looked at an example, and died immediately after.
+
+And the standing corollary: **a claim in our own code is not evidence.**
+Three docstrings were asserting things that were false — that
+LibreOffice could not run headless, that `.xls` was unreadable, that the
+818-model corpus was blocked on intake. Each cost weeks of avoided work.
+Test the sentence before you route work around it.
+
 ## Discipline every lane carries
 
 - Read `docs/pierce/notes.md` before answering anything of record.
@@ -76,6 +103,13 @@ Each lane writes its own running log at `docs/pierce/logs/<name>.md`
   **Both replace rules we kept re-breaking. A rule you have to
   remember while you are busy is not a guardrail; if a lesson recurs,
   prose has already failed and the fix is a tool.**
+- **`dev/verify` before any turn is reported. No exceptions.** It lints
+  what you changed, type-checks the package, runs the suite under the
+  heavy lock, refuses to start beside another suite, and re-runs
+  failures alone to tell a real one from a starved one. A turn that has
+  not passed it is not finished, and a number taken without it is not a
+  number: two runs on 28 Aug reported 461 and 741 errors and both were
+  the machine, not the code — believed for a while, each time.
 - Corpora are rebuilt with the committed fetchers
   (`scripts.corpus_au_uk`, `scripts.model_corpus`), never committed.
 - Plain-language reports to the founder; no model identifiers in any

@@ -311,3 +311,34 @@ reported:
 
 Standing: the golden master regenerates in the same commit as any
 findings change, and any new rule key routes to Atelier first.
+
+## Standing, from the founder (28 Aug): aggressive, and triple-verified
+
+Two instructions, and they are one instruction. **Ship fast and well.**
+
+**`dev/verify` before you report a turn. Every time.** It lints what you
+changed, type-checks tieout, runs the suite under a lock, refuses to
+start beside another suite, and re-runs failures alone. Two runs today
+reported 461 and 741 errors and *neither was real* — one starved beside
+a 9 GB job, the other collided with a second suite. Both were believed
+for a while. Your unaided judgement about a test result is now known to
+be worse than this script's; use the script.
+
+**Also `dev/heavy <cmd>`** for anything large, and **`dev/kill-job
+<pattern>`** instead of `pkill -f`, which matches the killing shell's
+own command line and has ended this team's session three times.
+
+**And read the new `lanes.md` section « Triple-verify, and what it
+actually means » before your next turn.** Its third point is the one
+that matters most and is the least natural: verify the claim hardest
+when it is *good* news. A conversion looked like it had recovered
+13,408 formulas today; it had manufactured 13,346 of them. One printed
+sample killed it. Before you publish a number, look at an example of
+the thing you counted.
+
+Standing corollary: **a claim in our own code is not evidence.** Three
+docstrings in this repository were asserting false things and each had
+cost real work — including that the 818-model project-finance corpus
+was unreachable, when the reader had handled that format all along.
+When a comment tells you something is impossible, test it before you
+route around it.
