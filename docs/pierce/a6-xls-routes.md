@@ -195,3 +195,126 @@ lead's standing instruction and the contamination rule. **If the
 converted route fails, no Enron fetch happens in this round** — a
 route that fails here will not be rescued by more files, and
 fetching anyway would be looking for a corpus that flatters it.
+
+---
+
+## Results (computed after the registration)
+
+### The native route — all 430 files
+
+| | |
+|---|---|
+| files scored (records hold ≥ 1 formula) | 428 |
+| **median formula recall** | **1.000000** |
+| aggregate recall (79,546 records) | **0.9872** |
+| files read exactly | 352 |
+| files below 1.0 | 76 — 1,213 formulas missed between them |
+| files above 1.0 (over-reported) | 7 — 192 formulas too many |
+| refusals | 1 |
+
+The single refusal is `._01-38-PK_tables-figures_Table II.2.xls`, a
+macOS AppleDouble resource fork rather than a workbook. **Refusing
+it is correct**, and it is not counted against the route.
+
+### The converted route — the registered 60
+
+| | |
+|---|---|
+| **median real-formula recall** | **1.000000** |
+| aggregate recall (15,113 records) | **0.9920** |
+| files read exactly | 50 |
+| refusals | **0** |
+| fabricated formulas | **4 — against exactly 4 `BOOLERR` records** |
+
+### Head to head, on the same 60 files
+
+| | native | converted |
+|---|---|---|
+| median recall | 1.000000 | 1.000000 |
+| aggregate recall | 0.9811 | **0.9920** |
+| better on | 1 file | 2 files |
+| equal on | 57 files | 57 files |
+
+The two routes agree on 57 of 60. Where they part, conversion
+usually wins by repairing a native shortfall —
+`2003-4%20budget.xls` goes 0.520 → 0.996, `01-38-PK_tables-figures`
+0.826 → 0.917 — and loses once, `Lalit_TimeReport_Fall02.xls`
+1.000 → 0.939.
+
+## The prediction was wrong, and this is the important part
+
+The registration predicted the native route's recall would be
+**bad — « very low, and 0/349 suggests it can be total »**. It is
+not. **The median `.xls` is read perfectly and the aggregate is
+98.7%.**
+
+The record has been carrying a stronger claim than the evidence
+supported. `serious-mining.md` measured three subjects, found two
+with losses, and the handoff generalised it to « every `.xls`-route
+measurement we hold understates the engine ». The three subjects
+reproduce here — `act3_lab23_posey.xls` matches exactly, 40 records
+and 30 read — so **the finding was real**; it was the *scope* that
+was wrong. A tail of 76 files out of 428 was described as the rule.
+
+**What this does to A6's price.** A6 has been carried as the gate on
+the Enron corpus, on the premise that we cannot read `.xls`. We can:
+today, natively, at 98.7% of formula cells. The corpus is
+**substantially readable now**, and A6 is a quality problem in a
+tail, not a locked door. That is a materially different plan input
+and is the single most useful thing this round produced.
+
+## What is still wrong, by class
+
+1. **Conversion fabricates a formula per boolean cell** — 4 for 4
+   here, exactly as round 1 found on the closed-deal models. Two
+   corpora, two formats, exact agreement.
+2. **The native reader counts text as formulas.** Seven files
+   over-report; on `ribimv001` the excess is exactly three cells
+   holding human notes that begin with `=`, such as `=tput learn x
+   unyld dice x ult yld`. `legacy.py` makes the same misclassification
+   my own instrument did.
+3. **The engine drops the label column, and any formula in it.**
+   `tables.xls` holds 8 formulas, all in column A (`=+A5+1`, cached
+   1989–1996). Both routes lose all 8: `read_workbook` returns 27
+   cells and **not one of them is in column A**. This is not an
+   intake defect at all — it is downstream of both routes, in code
+   that is mine, and it means **a formula written in a sheet's first
+   column is invisible to every rule we have**. Found here, not
+   chased to root cause, and it needs its own registered round with
+   the full gate because it changes what the engine reports on every
+   file.
+
+## Verdict
+
+**No route is adopted, and criterion 5 says nothing is wired
+regardless.** Both clear the median bar; neither has every shortfall
+class explained at the cells, which criterion 2 requires before
+adoption. What the round delivers instead is the comparison and the
+correction:
+
+- the native route is **good, not broken** — 98.7% aggregate;
+- conversion is **slightly better** (99.2%) and **repairs the worst
+  native failures**, at the cost of fabricating formulas from
+  booleans;
+- and the most valuable defect found is in **neither** route.
+
+**The Enron fetch does not happen in this round.** The registration
+made it conditional on the converted route passing, and « passing »
+means criterion 2 in full, not the median alone. It is also no
+longer urgent in the way the orders assumed: if `.xls` is already
+readable at 98.7%, the corpus can be sampled for Proof 1B on the
+native route while the tail is fixed.
+
+## Next, priced by what was measured
+
+1. **The label-column loss** (class 3) — the largest finding here,
+   engine-side, and it silently costs every rule. Its own round.
+2. **The native tail**: 76 files, 1,213 formulas. The two worst
+   (`2003-4%20budget.xls` at 0.520, `20030114144840!Superi` at
+   0.772) are where the mechanism will be legible.
+3. **Text-as-formula in `legacy.py`** (class 2) — small, mechanical,
+   and it currently inflates every `.xls` formula count we report.
+4. Only then, conversion as a *repair* for the native tail — it
+   demonstrably fixes the worst cases, but it is a second intake
+   surface and should be justified against a fixed native reader,
+   not against a broken one.
