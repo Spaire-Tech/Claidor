@@ -4782,3 +4782,33 @@ harness and found one class with no sites — the unmeasurable verdict
 again, reported rather than forced. **Prism** ran a comparability
 round with a disclosed comparison. **Atelier** traced the
 assistant's twenty-eight seconds to a single query.
+
+---
+
+## 28 August — the thirty-first sweep: a reverted merge comes back inverted
+
+Yesterday's revert had a better ending than the merge would have.
+Sentinel's tests-before-change had left the tip red; sent back with
+the new rule (tests-first stays on the lane's branch until its change
+lands). It returned having **implemented the change, priced it, and
+refused it** — and rewrote the tests to pin the *refusal*
+(`test_a_numeric_formula_in_the_label_column_is_still_not_elected`,
+« so the same design is not tried again by accident »). A refused
+design with its reasoning pinned in tests is a more durable artifact
+than the feature would have been.
+
+The refusal itself is well made. The reader deliberately excludes the
+label column from its numeric sweep — « a number in the label column
+is usually a label » — and electing those cells by *value* rather
+than by carrying a formula catches 6 of 6 planted defects but admits
+**58,536 content-like numerics** on the regulator corpus alone. The
+lane ran that as a diagnostic, labelled it as one, and **kept its
+numbers out of the record** because it was unregistered, on defects
+it had planted and already knew, with no false-positive price and no
+gate: « it says only that the successor is not obviously
+impossible ».
+
+It also recorded walking into a trap its own handoff warns about — a
+waiter matching its own command line — catching it before it cost
+anything and writing down that the lesson existed and it walked
+toward it anyway. 865 tests green at the tip.
