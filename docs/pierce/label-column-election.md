@@ -97,3 +97,96 @@ text-valued cells, and does not alter any rule. If new findings are
 noisy, the answer is **not** to tune a rule inside this round — that
 would be tuning to a corpus. It would be a refusal, and a separate
 question.
+
+---
+
+## Results (computed after the registration)
+
+### Criterion 2 — planted recall: **0 of 12**
+
+| host | planted | caught |
+|---|---|---|
+| `newbattle_model.xlsm` | 6 | **0** |
+| `inverness_college_model.xlsm` | 6 | **0** |
+
+Not a tuning problem. **The change cannot do what it was registered
+to do**, and the reason is visible in one screenful:
+
+```
+B97:  =IF(AND(C97>0,…),dEquityBridgeTrfr,OFFSET($H$2,0,A97))   elected
+B98:  (planted: typed over)                                     NOT elected
+B99:  =IF(AND(C99>0,…),dEquityBridgeTrfr,OFFSET($H$2,0,A99))   elected
+B100: (planted: typed over)                                     NOT elected
+```
+
+The election admits a label-column cell **when it carries a
+formula**. A typed-over cell has no formula. So the change elects
+every healthy cell of a computed ladder and excludes precisely the
+one an auditor needs to see — the defect it was built to reveal is
+the only thing it still cannot see. `typed-over-formula` never fires
+because the typed cell is not in `book.cells` at all; the series
+merely looks two cells shorter.
+
+**The other criteria were never reached.** With recall at zero there
+is nothing to weigh a false-positive price against, so the corpus
+sweeps, the twenty-finding hand-read and the gate were not run.
+Running them would have produced numbers describing a change that
+cannot work.
+
+### The change is reverted
+
+`workbook.py` is back to its pre-round state. The tests stay, with
+the refused case **pinned as refused**, so the same design is not
+tried again by accident.
+
+## Why this happened, and it is not the implementation
+
+The design error was in the registration, and it survived because
+the evidence that produced it was about *where formulas are*, not
+*where defects are*. `label-column-cost.md` measured 49,011 formula
+cells hidden in label columns and concluded the engine should see
+them. True — and it does not follow that electing them catches
+anything, because **a hardcode is defined by the absence of a
+formula**. I registered a rule keyed on the presence of one.
+
+Planted recall caught it in a single run. Nothing else would have:
+the corpus sweeps would have shown new findings appearing, the
+hand-read would have found them defensible, and the round would have
+been adopted having bought nothing at all. **This is the loop
+working exactly as it is meant to** — the step that exists to stop a
+plausible change on real evidence.
+
+## A diagnostic, labelled as such
+
+Before proposing a successor I checked the successor could work at
+all, by electing label-column cells on their **numeric value**,
+formula or not, and re-running the same planted files:
+
+> `newbattle`: **6 of 6 caught**, all `typed-over-formula`.
+
+**This is a diagnostic, not a measurement, and may not be quoted as
+one.** It was run against an unregistered change, on files whose
+defects I planted and already knew the location of, with no
+false-positive price taken and no gate. It says one thing only: the
+successor design is not obviously impossible. Its numbers do not
+enter the record.
+
+## What the next round registers
+
+**Elect label-column cells by their numeric value, not by carrying a
+formula** — and the false-positive price becomes the whole question,
+because that admits every year, index and section number a label
+column holds. `label-column-cost.md` already measured that
+population: 58,536 content-like numerics on the regulator corpus,
+against 3,210 the label-like test recognised. The likely shape is a
+guard — elect the numeric cells of a label column **only where the
+column is predominantly formula-bearing**, so a computed ladder is
+admitted whole and a static list of names is left alone. That is a
+different registration and it starts from a prediction I no longer
+hold confidently.
+
+## Verdict: REFUSED
+
+Criterion 2 fails at zero. Nothing is adopted, nothing is wired, the
+baseline is untouched, and the gate was not run because there was
+nothing to certify.

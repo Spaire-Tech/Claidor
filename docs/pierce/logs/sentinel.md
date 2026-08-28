@@ -243,6 +243,61 @@ edited is not a weak result, it is not a result.
 taken; a re-run after a fix is a new measurement, not a correction
 of the old one.
 
+## 28 August 2026 — the election refused: planted recall caught what nothing else would have
+
+The cost round said 49,011 formula cells sit in label columns
+unseen, and a hand-read said thirteen of twenty were computed series
+a rule should have something to say about. So I registered the
+change that follows: elect a label-column cell **when it carries a
+formula whose result is numeric**.
+
+**Planted recall came back 0 of 12, and the design is why.** Strip a
+formula from a ladder cell — which is exactly what typing over one
+looks like — and the cell no longer carries a formula, so the
+election excludes it. The change admits every healthy cell of the
+series and leaves out precisely the one an auditor needs. The
+neighbours either side of each planted gap were elected; the gap
+never was. `typed-over-formula` cannot fire on a cell that is not in
+`book.cells`.
+
+**The error was in the registration, not the code, and it survived
+because the evidence behind it was about where formulas are, not
+where defects are.** I measured hidden *formula* cells, concluded the
+engine should see them, and wrote a rule keyed on a formula being
+present — when a hardcode is defined by a formula being absent. That
+is a clean thinking error and it is now in the record as one.
+
+**What matters is which step caught it.** The corpus sweeps would not
+have: new findings would have appeared, the hand-read would have
+found them defensible, and the round would have been adopted having
+bought nothing at all. Only planting a defect I knew the location of
+and asking whether the engine found it could expose that, and it did
+so in a single run before any sweep was spent. This is the reason
+the loop puts planted recall before the corpus price, and it is the
+first time here that the ordering has actually saved a round.
+
+The engine is reverted, the baseline untouched, and the gate was not
+run — there was nothing to certify, and a green tick on a change
+that cannot work is exactly the kind of number this project does not
+collect. The remaining criteria are recorded as **not reached**
+rather than as passes.
+
+I also ran one diagnostic and labelled it as one: electing
+label-column cells by numeric *value* rather than by carrying a
+formula catches 6 of 6 on the same planted file. It was an
+unregistered change, on defects I planted and already knew, with no
+false-positive price and no gate — so it says only that the
+successor is not obviously impossible, and its numbers stay out of
+the record. The successor's whole difficulty is the price: electing
+by value admits every year and index a label column holds, 58,536
+content-like numerics on the regulator corpus alone.
+
+One process note. I armed a waiter with `pgrep -f` on a pattern
+contained in the waiter's own command line — the self-match trap my
+handoff already warns about — and it would have waited on itself
+forever. Caught it before it cost anything, but the lesson was
+written down and I still walked toward it.
+
 ## 28 August 2026 — the label column: a reasonable decision nobody had priced
 
 A6 round 2 turned up a file whose every formula sat in column A,

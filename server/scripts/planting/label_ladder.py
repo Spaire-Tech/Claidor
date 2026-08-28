@@ -130,9 +130,9 @@ def plant(host: Path, out: Path, truth_path: Path, seed: int) -> None:
                 break
 
     shutil.copy(host, out)
-    names = sheet_files(out)
     planted: list[dict[str, Any]] = []
     with zipfile.ZipFile(out) as archive:
+        names = sheet_files(archive)
         parts = {n: archive.read(n).decode("utf-8") for n in set(names.values())}
     for site in chosen:
         part = names.get(site["sheet"])
