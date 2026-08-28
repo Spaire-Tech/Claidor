@@ -5045,3 +5045,159 @@ nils finding, which is a product question rather than an accuracy one.
 two-page spread. It is D1's, it is the largest measured cause of round
 8's failure, and it falls under the standing extraction policy —
 undamaged bar, damage judged by hand, tally reported.
+
+## 28 August 2026, twenty-fourth « go » — round 9 investigated and **not built**. Four fixes, four ceilings, all zero.
+
+Orders and integration tip both unchanged — my twenty-third push has not
+been swept, so no new instruction is waiting. I took the thing my own
+handoff named next: **round 9, the two-page spread.**
+
+**I am not building it.** Not because it is hard, but because I measured
+what it would buy before building it, and the answer is nothing. What
+follows is four candidate fixes, each tested to its ceiling, and the
+conclusion they force.
+
+### The defect is real and exactly as described
+
+Printed page 207 is the right half of a spread. It carries columns (d)
+through (g) and the Line No. column, and **no label column at all**:
+
+```
+$ 10,895,809 58        <- printed 207, the figure
+58TOTAL Transmission Plant (Enter Total of lines 48 …   <- printed 206, the label
+```
+
+**73% of this document's distinct printed lines carry no label words**
+(2,772 of 3,786). The label is a page away. So far, so fixable.
+
+### Four join keys tried. Three fail outright.
+
+**1. PDF adjacency — fails by construction.** The document's pages are
+**out of printed order**: pdf index 43 is printed 204, 44 is **206**, 45
+is **205**, 46 is 207. Joining a continuation page to the preceding PDF
+page pairs 207 with 205, which is a different schedule. The filer
+assembled this PDF from separate exports, and nothing forbids that.
+
+**2. Line-number-set coverage — fails on measurement, and the hand-check
+is what caught it.** Rule: join to the nearest preceding page whose
+*labelled* line numbers cover ≥80% of this page's. It fires on 93 of 130
+pages and labels 2,349 lines, which looked like a triumph until I read a
+sample by hand. **Every donor was printed page 112** — the balance
+sheet, dense enough to carry a labelled line at nearly every number 1–40,
+and therefore a **universal false donor**. Printed page 330's line 17
+was given "LONG-TERM DEBT" from the balance sheet. Had I trusted the
+percentage I would have shipped 2,349 wrong labels.
+
+**3. Schedule title — fails on detection.** Rule: pair pages sharing a
+title. Only 75 of 132 pages yield a title at all, and on the four pages
+of the spread that matters it returns `None`, `None`, `None` and — worse
+— **a row label mistaken for a title** ("473. TRANSMISSION PLANT").
+
+**4. Column letters — right on the target, wrong in general.** The
+halves of a spread carry complementary letters: printed 206 shows (a)(c),
+printed 207 shows (d)(e)(f). This **correctly** pairs 207 → 206. But
+"nearest preceding page starting at (a)" also pairs printed 205 → 206
+(it continues **204**), and 224 → 206, and 227 → 206. It is right where I
+was looking and wrong on most pages it fires on.
+
+Under decision 1's standing policy — **no line may end up worse** — rule 4
+fails the bar outright: it would relabel page 205's rows from the wrong
+schedule. A rule that is right on the row you inspected and wrong on the
+ones you did not is the exact failure this lane keeps naming.
+
+### And then the ceiling, which makes the whole question moot
+
+Rather than search for a fifth join key, I **hand-supplied the perfect
+answer** — took printed 206's labels, which I verified by eye, and gave
+them to printed 207's rows — and re-ran round 8.
+
+| | pool | correct | wrong | abstained |
+|---|---|---|---|---|
+| round 8 as run | 4,913 | 0 | 2 | 13 |
+| **+ perfect spread fix** | 4,913 | **0** | 2 | 13 |
+| + drop lines repeating on ≥3 pages | 2,272 | **0** | 2 | 13 |
+| + both | 2,272 | **0** | 2 | 13 |
+
+**A perfect fix buys nothing. Halving the candidate pool buys nothing.**
+
+### Why — and this is the finding
+
+Under the perfect fix the four spread rows become *reachable* and then
+**tie**:
+
+| row | model label | top score | lines tied there |
+|---|---|---|---|
+| r19 | Electric Plant in Service | 1.00 | **17** |
+| r36 | Transmission Plant In Service | 0.75 | 25 |
+| r41 | General | 1.00 | **35** |
+| r44 | Less: General Plant Account 397 | 0.40 | 60 |
+
+And the tied lines are not rival data rows. For r19 they are **seventeen
+copies of the schedule's own title** — "ELECTRIC PLANT IN SERVICE
+(Account 101, 102, 103 and 106) (Continued)" — repeated on every page.
+For r41 ("General") they include running prose: *"where the general
+corporate books are kept. Chris Cardott, Finance Direc…"*.
+
+So fixing the document side converts **unreachable** into **tied**. It
+never converts either into **correct**. Dropping the repeated boilerplate
+does not help either, because the ties simply re-form among the remaining
+lines: a Form 1 says "General" and "Transmission" and "Total" on dozens
+of legitimate lines, and **a two-word label cannot pick one of them.**
+
+### A fifth idea, bounded before it was proposed
+
+The one discriminating key both sides genuinely share is the **FERC
+account number** — the document prints "(924) Property Insurance", the
+model's own `FERC Account No.` column says `924`. That is an
+**identifier, not a quantity**, and the tokenizer currently drops it as
+numeric. It is the shape of round 6's lesson all over again: the
+evidence is there and the tokenizer throws it away.
+
+I bounded it before recommending it. **The account number is shared by
+both sides on 2 of the 15 rows** — r119 (`924`) and r121 (`930.1`). Two
+of the model rows carry an account number at all. So it is a real signal
+with a **ceiling of 2 of 15**, not an answer.
+
+### The conclusion, which is above my charter to act on
+
+Round 8 failed. I have now tested every document-side repair I can name,
+and **none of them moves the number**:
+
+| candidate fix | ceiling |
+|---|---|
+| unglue the printed line number | 0 of 15 |
+| repair the two-page spread | 0 of 15 |
+| drop repeated page headers and prose | 0 of 15 |
+| match on the FERC account number | ≤ 2 of 15 |
+
+**The failure is not on the document side.** It is that label-overlap
+scoring — coverage of the cell's words by a candidate line, a hard floor,
+and abstention on an exact tie — cannot separate one row of a statutory
+form from the dozens that legitimately share its two or three words. On
+Finch that approach reached a real number. On a filed regulatory return
+it reaches zero, and cleaning the document does not rescue it.
+
+That is a **design question for D3**, not a defect I should quietly patch,
+so it goes to the lead rather than into the package. What I would
+propose, if asked: the model side is carrying evidence the matcher never
+sees — the sheet, the section header above the row, the account-number
+column, the cell's own neighbours — and D3 has only ever been given the
+row's own name. Round 6 gave the *document* side a second dimension. The
+symmetric move is to give the **model** side one. I have not measured
+that and am not claiming it works.
+
+### What I did not do
+
+I did not build round 9, and I did not tune a fifth join key until one
+passed. Four ceilings at zero is an answer, and "keep trying rules until
+the number moves" is how a lane starts fitting its own test set.
+
+### Turn's end state
+
+- **No package code changed.** The diff is this log entry alone.
+- Round 8's registration, verdicts and sample stand unchanged.
+- `test_chain_extract` **34 passed** last run; docker is still down in
+  this container so the DB-backed suite was not re-run, and nothing this
+  turn could have moved it.
+- **For the lead:** round 9 as conceived is dead, with evidence. The open
+  question is D3's matching approach, not D1's extraction.
